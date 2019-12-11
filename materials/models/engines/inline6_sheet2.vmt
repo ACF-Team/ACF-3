@@ -1,0 +1,19 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/engines/inline6_sheet2"
+	"$bumpmap" "models/engines/inline6_sheet_normal"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$envmaptint" "[.01 .01 .01]"
+	"$envmapcontrast" .1
+	"$envmapsaturation" 0.1
+	"$phong" "1" 
+	"$phongboost" "0.1" 
+	"$phongfresnelranges" "[1 1 1]"
+	"$phongexponent" "10"
+	"$model" 1
+	"$blendtintbybasealpha" "1"
+}
+
+

@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models/jojobull/wheels/wheel_009/grey64"
+	"$envmap" "env_cubemap"
+}

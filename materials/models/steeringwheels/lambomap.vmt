@@ -1,0 +1,6 @@
+VertexLitGeneric
+{
+	"$baseTexture" "models\steeringwheels\lambomap.vtf"
+	"$envmap" "env_cubemap"
+	"$envmapmask" "models\steeringwheels\lambomap_ref.vtf"
+}

@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/weapons/v_sniper/amr_sheet1"
+	"$bumpmap" "models/weapons/v_sniper/amr_sheet1_normal"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$envmaptint" "[.01 .01 .01]"
+	"$envmapcontrast" .1
+	"$envmapsaturation" 0.1
+	"$phong" "1" 
+	"$phongboost" "0.1" 
+	"$phongfresnelranges" "[1 1 1]"
+	"$phongexponent" "10"
+	"$model" 1
+}
+
+

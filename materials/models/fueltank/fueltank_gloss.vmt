@@ -1,0 +1,14 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/fueltank/fueltank_col_plastic"
+	"$bumpmap" "models/fueltank/fueltank_nor_gloss"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$envmaptint" "[.5 .5 .5]"
+
+	"$model" 1
+	"$blendtintbybasealpha" "1"
+}
+
+

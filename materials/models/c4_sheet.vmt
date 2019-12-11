@@ -1,0 +1,12 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/c4_sheet"
+	"$surfaceprop" "metal"
+	
+	//"$envmapmask" "Models/props_combine/combine_binocular01_mask"
+	//"$selfillum" 0
+	"$model" 1
+	"$HalfLambert" 1
+}
+
+

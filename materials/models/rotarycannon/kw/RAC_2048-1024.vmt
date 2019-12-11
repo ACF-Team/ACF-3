@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+
+	$basetexture "models/rotarycannon/kw/RAC_2x1_d1"
+	$envmapmask "models/rotarycannon/kw/RAC_2x1_n1"
+	$bumpmap "models/rotarycannon/kw/RAC_2x1_n1"
+
+	"$surfaceprop" "metal"
+	"$phong" "1" 
+	"$phongboost" "0.75" 
+	"$phongfresnelranges" "[0.5 0.5 0.5]"
+	"$phongexponent" "8"
+
+//	$envmap "env_cubemap"
+	$normalmapalphaenvmapmask "1"
+	$blendtintbybasealpha "1"
+	
+}

@@ -1,0 +1,9 @@
+
+"VertexLitGeneric"
+{
+	// Original shader: VertexLitTexture
+	"$basetexture" "Models/ammo/ammocrate_sheet"
+	"$surfaceprop" "metal"
+//	"$envmap" "env_cubemap"
+//	"$basealphaenvmapmask" 1
+}

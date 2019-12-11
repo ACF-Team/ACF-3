@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\mguns/texture_barrel_mg151-20"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+}

@@ -1,0 +1,13 @@
+VertexLitGeneric
+{
+	"$baseTexture" "models\steeringwheels\truckmap.vtf"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[0.25 0.257 0.264]"
+	"$normalmapalphaenvmapmask" "1"
+	"$phong"			"1"
+	"$bumpmap"		"models\steeringwheels\truckmap_bump.vtf"
+	"$phongexponent"		"15"	
+	"$phongboost"		"1.0"
+	"$phongfresnelranges"	"[1.25 1.8 2.5]"
+
+}

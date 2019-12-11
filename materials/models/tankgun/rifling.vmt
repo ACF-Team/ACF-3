@@ -1,0 +1,15 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\tankgun/rifling"
+	"$bumpmap" "models\tankgun/rfling_bump"
+	"$phong" "1"
+	"$phongexponent" "10"
+	"$phongboost" ".1"
+	"$phongfresnelranges" "[0 1 20]"
+	"$rimlight" "0"
+	"$rimlightexponent" "1"
+	"$rimlightboost" ".1"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmap" "models\tankgun/rifling_sm"
+	"$envmaptint" "[.005 .005 .005]"
+}

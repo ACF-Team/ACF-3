@@ -1,0 +1,9 @@
+VertexLitGeneric
+{
+	"$baseTexture" "models\steeringwheels\familymap.vtf"
+	"$phong"			"1"
+	"$bumpmap"		"models\steeringwheels\familymap_bump.vtf"
+	"$phongexponent"		"5"	
+	"$phongboost"		"1.0"
+	"$phongfresnelranges"	"[1.25 1.8 2.5]"
+}

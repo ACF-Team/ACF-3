@@ -1,0 +1,13 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/missiles/GBU12"
+	"$surfaceprop" "metal"
+	"$bumpmap" "models/missiles/GBU12_bump"
+	
+	//"$envmapmask" "Models/props_combine/combine_binocular01_mask"
+	//"$selfillum" 0
+	"$model" 1
+	"$HalfLambert" 1
+}
+
+

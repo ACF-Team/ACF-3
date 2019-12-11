@@ -1,0 +1,17 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/fueltank/fueltank_col_rust"
+	"$bumpmap" "models/fueltank/fueltank_nor_rust"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+
+	"$phong" "1" 
+	"$phongboost" "0.1" 
+	"$phongfresnelranges" "[0.5 0.5 0.5]"
+	"$phongexponent" "10"
+	"$model" 1
+	"$blendtintbybasealpha" "1"
+}
+
+
