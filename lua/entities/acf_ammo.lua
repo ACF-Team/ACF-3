@@ -81,8 +81,10 @@ if CLIENT then
 		end
 	end
 
-	usermessage.Hook("ACF_RefillEffect", function(msg)
-		local EntFrom, EntTo, _ = ents.GetByIndex(msg:ReadFloat()), ents.GetByIndex(msg:ReadFloat()), msg:ReadString()
+	net.Receive("ACF_RefillEffect", function()
+		local EntFrom = ents.GetByIndex(net.ReadFloat())
+		local EntTo   = ents.GetByIndex(net.ReadFloat())
+
 		if not IsValid(EntFrom) or not IsValid(EntTo) then return end
 		--local List = list.Get( "ACFRoundTypes")	
 		-- local Mdl = ACF.Weapons.Guns[Weapon].round.model or "models/munitions/round_100mm_shot.mdl"
@@ -97,8 +99,10 @@ if CLIENT then
 		})
 	end)
 
-	usermessage.Hook("ACF_StopRefillEffect", function(msg)
-		local EntFrom, EntTo = ents.GetByIndex(msg:ReadFloat()), ents.GetByIndex(msg:ReadFloat())
+	net.Receive("ACF_StopRefillEffect", function()
+		local EntFrom = ents.GetByIndex(net.ReadFloat())
+		local EntTo   = ents.GetByIndex(net.ReadFloat())
+
 		--print("stop", EntFrom, EntTo)
 		if not IsValid(EntFrom) or not IsValid(EntTo) or not EntFrom.RefillAmmoEffect then return end
 
@@ -117,6 +121,9 @@ if CLIENT then
 
 	return
 end
+
+util.AddNetworkString("ACF_RefillEffect")
+util.AddNetworkString("ACF_StopRefillEffect")
 
 function ENT:Initialize()
 	self.SpecialHealth = true --If true needs a special ACF_Activate function
