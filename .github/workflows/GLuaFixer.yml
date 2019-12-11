@@ -1,6 +1,16 @@
 name: GLuaFixer
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+    - '!lua/expadv/**'
+    - '!lua/starfall/**'
+    - '!lua/entities/gmod_wire_expression2/**'
+  pull_request:
+    paths:
+    - '!lua/expadv/**'
+    - '!lua/starfall/**'
+    - '!lua/entities/gmod_wire_expression2/**'
 
 jobs:
   build:
