@@ -339,7 +339,7 @@ function ACFChangelogHTTPCallBack(contents, size)
 		ACFHomeGUICreate(Tab)
 	end or nil)
 
-	Table.guiupdate = (function(Panel, tab)
+	Table.guiupdate = (function(Panel, Tab)
 		ACFHomeGUIUpdate(Tab)
 	end or nil)
 
