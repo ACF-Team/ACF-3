@@ -26,115 +26,52 @@
 ------------------------------------------------------------------------------]]
 AddCSLuaFile()
 
-if SERVER then
-	if ACF.EnableKillicons then
-		util.AddNetworkString( "ACF_PlayerKilledNPC" )
-		util.AddNetworkString( "ACF_NPCKilledNPC" )
+if SERVER and ACF.EnableKillicons then
+	util.AddNetworkString( "ACF_PlayerKilledNPC" )
+	util.AddNetworkString( "ACF_NPCKilledNPC" )
 
-		local function ACF_OnNPCKilled( ent, attacker, inflictor )
-			-- Don't spam the killfeed with scripted stuff
-			if ( ent:GetClass() == "npc_bullseye" || ent:GetClass() == "npc_launcher" ) then return end
+	local function ACF_OnNPCKilled( ent, attacker, inflictor )
+		-- Don't spam the killfeed with scripted stuff
+		if ( ent:GetClass() == "npc_bullseye" or ent:GetClass() == "npc_launcher" ) then return end
 
-			if ( IsValid( attacker ) && attacker:GetClass() == "trigger_hurt" ) then attacker = ent end
+		if ( IsValid( attacker ) and attacker:GetClass() == "trigger_hurt" ) then attacker = ent end
 
-			if ( IsValid( attacker ) && attacker:IsVehicle() && IsValid( attacker:GetDriver() ) ) then
-				attacker = attacker:GetDriver()
-			end
-
-			if ( !IsValid( inflictor ) && IsValid( attacker ) ) then
-				inflictor = attacker
-			end
-
-			-- Convert the inflictor to the weapon that they're holding if we can.
-			if ( IsValid( inflictor ) && attacker == inflictor && ( inflictor:IsPlayer() || inflictor:IsNPC() ) ) then
-
-				inflictor = inflictor:GetActiveWeapon()
-				if ( !IsValid( attacker ) ) then inflictor = attacker end
-
-			end
-
-			local InflictorClass = "worldspawn"
-			local AttackerClass = "worldspawn"
-
-			if ( IsValid( inflictor ) ) then
-				if inflictor.ACF and inflictor:GetClass() != "acf_ammo" then
-					InflictorClass = "acf_" .. inflictor.Class
-				else
-					InflictorClass = inflictor:GetClass()
-				end
-			end
-
-			if ( IsValid( attacker ) ) then
-
-				AttackerClass = attacker:GetClass()
-
-				if ( attacker:IsPlayer() ) then
-
-					net.Start( "ACF_PlayerKilledNPC" )
-
-						net.WriteString( ent:GetClass() )
-						net.WriteString( InflictorClass )
-						net.WriteEntity( attacker )
-
-					net.Broadcast()
-
-					return
-				end
-
-			end
-
-			if ( ent:GetClass() == "npc_turret_floor" ) then AttackerClass = ent:GetClass() end
-
-			net.Start( "ACF_NPCKilledNPC" )
-
-				net.WriteString( ent:GetClass() )
-				net.WriteString( InflictorClass )
-				net.WriteString( AttackerClass )
-
-			net.Broadcast()
+		if ( IsValid( attacker ) and attacker:IsVehicle() and IsValid( attacker:GetDriver() ) ) then
+			attacker = attacker:GetDriver()
 		end
-		hook.Add( "OnNPCKilled", "ACF_OnNPCKilled", ACF_OnNPCKilled )
 
-		util.AddNetworkString( "ACF_PlayerKilled" )
-		util.AddNetworkString( "ACF_PlayerKilledSelf" )
-		util.AddNetworkString( "ACF_PlayerKilledByPlayer" )
+		if ( !IsValid( inflictor ) and IsValid( attacker ) ) then
+			inflictor = attacker
+		end
 
-		local function ACF_PlayerDeath( ply, inflictor, attacker )
+		-- Convert the inflictor to the weapon that they're holding if we can.
+		if ( IsValid( inflictor ) and attacker == inflictor and ( inflictor:IsPlayer() or inflictor:IsNPC() ) ) then
 
-			if ( IsValid( attacker ) && attacker:GetClass() == "trigger_hurt" ) then attacker = ply end
+			inflictor = inflictor:GetActiveWeapon()
+			if ( !IsValid( attacker ) ) then inflictor = attacker end
 
-			if ( IsValid( attacker ) && attacker:IsVehicle() && IsValid( attacker:GetDriver() ) ) then
-				attacker = attacker:GetDriver()
-			end
+		end
 
-			if ( !IsValid( inflictor ) && IsValid( attacker ) ) then
-				inflictor = attacker
-			end
+		local InflictorClass = "worldspawn"
+		local AttackerClass = "worldspawn"
 
-			-- Convert the inflictor to the weapon that they're holding if we can.
-			-- This can be right or wrong with NPCs since combine can be holding a
-			-- pistol but kill you by hitting you with their arm.
-			local InflictorClass = "worldspawn"
-
-			if ( IsValid( inflictor ) && inflictor == attacker && ( inflictor:IsPlayer() || inflictor:IsNPC() ) ) then
-
-				inflictor = inflictor:GetActiveWeapon()
-				if ( !IsValid( inflictor ) ) then inflictor = attacker end
-			end
-
-			if inflictor.ACF and inflictor.Class and inflictor:GetClass() != "acf_ammo" then
+		if ( IsValid( inflictor ) ) then
+			if inflictor.ACF and inflictor:GetClass() != "acf_ammo" then
 				InflictorClass = "acf_" .. inflictor.Class
 			else
 				InflictorClass = inflictor:GetClass()
 			end
+		end
 
-			if ( attacker == ply ) then return end
+		if ( IsValid( attacker ) ) then
+
+			AttackerClass = attacker:GetClass()
 
 			if ( attacker:IsPlayer() ) then
 
-				net.Start( "ACF_PlayerKilledByPlayer" )
+				net.Start( "ACF_PlayerKilledNPC" )
 
-					net.WriteEntity( ply )
+					net.WriteString( ent:GetClass() )
 					net.WriteString( InflictorClass )
 					net.WriteEntity( attacker )
 
@@ -143,16 +80,77 @@ if SERVER then
 				return
 			end
 
-			net.Start( "ACF_PlayerKilled" )
+		end
+
+		if ( ent:GetClass() == "npc_turret_floor" ) then AttackerClass = ent:GetClass() end
+
+		net.Start( "ACF_NPCKilledNPC" )
+
+			net.WriteString( ent:GetClass() )
+			net.WriteString( InflictorClass )
+			net.WriteString( AttackerClass )
+
+		net.Broadcast()
+	end
+	hook.Add( "OnNPCKilled", "ACF_OnNPCKilled", ACF_OnNPCKilled )
+
+	util.AddNetworkString( "ACF_PlayerKilled" )
+	util.AddNetworkString( "ACF_PlayerKilledSelf" )
+	util.AddNetworkString( "ACF_PlayerKilledByPlayer" )
+
+	local function ACF_PlayerDeath( ply, inflictor, attacker )
+
+		if ( IsValid( attacker ) and attacker:GetClass() == "trigger_hurt" ) then attacker = ply end
+
+		if ( IsValid( attacker ) and attacker:IsVehicle() and IsValid( attacker:GetDriver() ) ) then
+			attacker = attacker:GetDriver()
+		end
+
+		if ( !IsValid( inflictor ) and IsValid( attacker ) ) then
+			inflictor = attacker
+		end
+
+		-- Convert the inflictor to the weapon that they're holding if we can.
+		-- This can be right or wrong with NPCs since combine can be holding a
+		-- pistol but kill you by hitting you with their arm.
+		local InflictorClass = "worldspawn"
+
+		if ( IsValid( inflictor ) and inflictor == attacker and ( inflictor:IsPlayer() or inflictor:IsNPC() ) ) then
+
+			inflictor = inflictor:GetActiveWeapon()
+			if ( !IsValid( inflictor ) ) then inflictor = attacker end
+		end
+
+		if inflictor.ACF and inflictor.Class and inflictor:GetClass() != "acf_ammo" then
+			InflictorClass = "acf_" .. inflictor.Class
+		else
+			InflictorClass = inflictor:GetClass()
+		end
+
+		if ( attacker == ply ) then return end
+
+		if ( attacker:IsPlayer() ) then
+
+			net.Start( "ACF_PlayerKilledByPlayer" )
 
 				net.WriteEntity( ply )
 				net.WriteString( InflictorClass )
-				net.WriteString( attacker:GetClass() )
+				net.WriteEntity( attacker )
 
 			net.Broadcast()
+
+			return
 		end
-		hook.Add( "PlayerDeath", "ACF_PlayerDeath", ACF_PlayerDeath )
+
+		net.Start( "ACF_PlayerKilled" )
+
+			net.WriteEntity( ply )
+			net.WriteString( InflictorClass )
+			net.WriteString( attacker:GetClass() )
+
+		net.Broadcast()
 	end
+	hook.Add( "PlayerDeath", "ACF_PlayerDeath", ACF_PlayerDeath )
 end
 
 if CLIENT then
@@ -233,20 +231,20 @@ if CLIENT then
 
 			GAMEMODE:AddDeathNotice( attacker:Name(), attacker:Team(), inflictor, victim, -1 )
 
-			local bIsLocalPlayer = ( IsValid(attacker) && attacker == LocalPlayer() )
+			local bIsLocalPlayer = ( IsValid(attacker) and attacker == LocalPlayer() )
 
 			local bIsEnemy = IsEnemyEntityName( victimtype )
 			local bIsFriend = IsFriendEntityName( victimtype )
 
-			if ( bIsLocalPlayer && bIsEnemy ) then
+			if ( bIsLocalPlayer and bIsEnemy ) then
 				achievements.IncBaddies()
 			end
 
-			if ( bIsLocalPlayer && bIsFriend ) then
+			if ( bIsLocalPlayer and bIsFriend ) then
 				achievements.IncGoodies()
 			end
 
-			if ( bIsLocalPlayer && ( !bIsFriend && !bIsEnemy ) ) then
+			if ( bIsLocalPlayer and ( !bIsFriend and !bIsEnemy ) ) then
 				achievements.IncBystander()
 			end
 

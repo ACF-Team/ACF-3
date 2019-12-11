@@ -10,7 +10,7 @@ local CLW = 20
 -- Torque Rating
 local CTT = 75
 local CST = 650
-local CMT = 1400 
+local CMT = 1400
 local CLT = 8000
 
 -- general description

@@ -28,7 +28,7 @@ if CLIENT then
 	language.Add( "Tool.acfmenu.desc", "Spawn the Armored Combat Framework weapons and ammo" )
 	language.Add( "Tool.acfmenu.0", "Left click to spawn the entity of your choice, Right click to link an entity to another (+Use to unlink)" )
 	language.Add( "Tool.acfmenu.1", "Right click to link the selected sensor to a pod" )
-	
+
 	language.Add( "Undone_ACF Entity", "Undone ACF Entity" )
 	language.Add( "Undone_acf_engine", "Undone ACF Engine" )
 	language.Add( "Undone_acf_gearbox", "Undone ACF Gearbox" )
@@ -43,13 +43,13 @@ if CLIENT then
 		BuildCPanel
 	------------------------------------*/
 	function TOOL.BuildCPanel( CPanel )
-	
+
 		local pnldef_ACFmenu = vgui.RegisterFile( "acf/client/cl_acfmenu_gui.lua" )
-		
-		// create
+
+		-- create
 		local DPanel = vgui.CreateFromTable( pnldef_ACFmenu )
 		CPanel:AddPanel( DPanel )
-	
+
 	end
 end
 
@@ -58,28 +58,28 @@ function TOOL:LeftClick( trace )
 
 	if CLIENT then return true end
 	if not IsValid( trace.Entity ) and not trace.Entity:IsWorld() then return false end
-	
+
 	local ply = self:GetOwner()
 	local Type = self:GetClientInfo( "type" )
 	local Id = self:GetClientInfo( "id" )
-	
+
 	local TypeId = ACF.Weapons[Type][Id]
 	if not TypeId then return false end
-	
-	local DupeClass = duplicator.FindEntityClass( TypeId["ent"] ) 
-	
+
+	local DupeClass = duplicator.FindEntityClass( TypeId["ent"] )
+
 	if DupeClass then
 		local ArgTable = {}
 			ArgTable[2] = trace.HitNormal:Angle():Up():Angle()
-			ArgTable[1] = trace.HitPos + trace.HitNormal*32
-			
+			ArgTable[1] = trace.HitPos + trace.HitNormal * 32
+
 		local ArgList = list.Get("ACFCvars")
-		
+
 		-- Reading the list packaged with the ent to see what client CVar it needs
 		for Number, Key in pairs( ArgList[ACF.Weapons[Type][Id]["ent"]] ) do
-			ArgTable[ Number+2 ] = self:GetClientInfo( Key )
+			ArgTable[ Number + 2 ] = self:GetClientInfo( Key )
 		end
-		
+
 		if trace.Entity:GetClass() == ACF.Weapons[Type][Id]["ent"] and trace.Entity.CanUpdate then
 			table.insert( ArgTable, 1, ply )
 			local success, msg = trace.Entity:Update( ArgTable )
@@ -92,13 +92,13 @@ function TOOL:LeftClick( trace )
 			--Ent:GetPhysicsObject():Wake()
 			Ent:DropToFloor()
 			Ent:GetPhysicsObject():EnableMotion( false )
-			
+
 			undo.Create( ACF.Weapons[Type][Id]["ent"] )
 				undo.AddEntity( Ent )
 				undo.SetPlayer( ply )
 			undo.Finish()
 		end
-			
+
 		return true
 	else
 		print("Didn't find entity duplicator records")
@@ -111,29 +111,29 @@ function TOOL:RightClick( trace )
 
 	if not IsValid( trace.Entity ) then return false end
 	if CLIENT then return true end
-	
+
 	local ply = self:GetOwner()
-	
+
 	if self:GetStage() == 0 and trace.Entity.IsMaster then
 		self.Master = trace.Entity
 		self:SetStage( 1 )
 		return true
 	elseif self:GetStage() == 1 then
 		local success, msg
-		
+
 		if ply:KeyDown( IN_USE ) or ply:KeyDown( IN_SPEED ) then
 			success, msg = self.Master:Unlink( trace.Entity )
 		else
 			success, msg = self.Master:Link( trace.Entity )
 		end
-		
+
 		ACF_SendNotify( ply, success, msg )
-		
+
 		self:SetStage( 0 )
 		self.Master = nil
 		return true
 	else
 		return false
 	end
-	
+
 end

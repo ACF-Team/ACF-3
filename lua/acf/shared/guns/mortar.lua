@@ -8,10 +8,11 @@ ACF_defineGunClass("MO", {
 	sound = "weapons/ACF_Gun/mortar_new.wav",
 	soundDistance = "Mortar.Fire",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("60mmM", { --id
+--id
+ACF_defineGun("60mmM", {
 	name = "60mm Mortar",
 	desc = "The 60mm is a common light infantry support weapon, with a high rate of fire but a puny payload.",
 	model = "models/mortar/mortar_60mm.mdl",
@@ -24,7 +25,7 @@ ACF_defineGun("60mmM", { --id
 		maxlength = 20,
 		propweight = 0.037
 	}
-} )
+})
 
 ACF_defineGun("80mmM", {
 	name = "80mm Mortar",
@@ -36,10 +37,10 @@ ACF_defineGun("80mmM", {
 	year = 1930,
 	round = {
 		maxlength = 28,
-		propweight = 0.055 
+		propweight = 0.055
 	}
-} )
-	
+})
+
 ACF_defineGun("120mmM", {
 	name = "120mm Mortar",
 	desc = "The versatile 120 is sometimes vehicle-mounted to provide quick boomsplat to support the infantry.  Carries more boom in its boomsplat, has good HEAT performance, and is more accurate in high-angle firing.",
@@ -50,10 +51,10 @@ ACF_defineGun("120mmM", {
 	year = 1935,
 	round = {
 		maxlength = 45,
-		propweight = 0.175 
+		propweight = 0.175
 	}
-} )
-	
+})
+
 ACF_defineGun("150mmM", {
 	name = "150mm Mortar",
 	desc = "The perfect balance between the 120mm and the 200mm. Can prove a worthy main gun weapon, as well as a mighty good mortar emplacement",
@@ -64,9 +65,9 @@ ACF_defineGun("150mmM", {
 	year = 1945,
 	round = {
 		maxlength = 58,
-		propweight = 0.235 
+		propweight = 0.235
 	}
-} )
+})
 
 ACF_defineGun("200mmM", {
 	name = "200mm Mortar",
@@ -78,10 +79,9 @@ ACF_defineGun("200mmM", {
 	year = 1940,
 	round = {
 		maxlength = 80,
-		propweight = 0.330 
+		propweight = 0.330
 	}
-} )
-
+})
 --[[
 ACF_defineGun("280mmM", {
 	name = "280mm Mortar",
@@ -96,4 +96,5 @@ ACF_defineGun("280mmM", {
 		propweight = 0.462 
 	}
 } )
-]]--
+]]
+--

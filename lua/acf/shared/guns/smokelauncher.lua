@@ -8,10 +8,11 @@ ACF_defineGunClass("SL", {
 	sound = "weapons/acf_gun/smoke_launch.wav",
 	soundDistance = "Mortar.Fire",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("40mmSL", { --id
+--id
+ACF_defineGun("40mmSL", {
 	name = "40mm Smoke Launcher",
 	desc = "",
 	model = "models/launcher/40mmsl.mdl",
@@ -22,12 +23,13 @@ ACF_defineGun("40mmSL", { --id
 	year = 1941,
 	round = {
 		maxlength = 17.5,
-		propweight = 0.000075 
+		propweight = 0.000075
 	}
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("40mmCL", { --id
+--id
+ACF_defineGun("40mmCL", {
 	name = "40mm Countermeasure Launcher",
 	desc = "A revolver-style launcher capable of firing off several smoke or flare rounds.",
 	model = "models/launcher/40mmgl.mdl",
@@ -43,4 +45,4 @@ ACF_defineGun("40mmCL", { --id
 		maxlength = 12,
 		propweight = 0.001
 	}
-} )
+})

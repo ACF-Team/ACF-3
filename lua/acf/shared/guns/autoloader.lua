@@ -8,10 +8,11 @@ ACF_defineGunClass("AL", {
 	sound = "weapons/ACF_Gun/autoloader.wav",
 	soundDistance = "Cannon.Fire",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("75mmAL", { --id
+--id
+ACF_defineGun("75mmAL", {
 	name = "75mm Autoloading Cannon",
 	desc = "A quick-firing 75mm gun, pops off a number of rounds in relatively short order.",
 	model = "models/tankgun/tankgun_al_75mm.mdl",
@@ -26,7 +27,7 @@ ACF_defineGun("75mmAL", { --id
 		maxlength = 78,
 		propweight = 3.8
 	}
-} )
+})
 
 ACF_defineGun("100mmAL", {
 	name = "100mm Autoloading Cannon",
@@ -43,7 +44,7 @@ ACF_defineGun("100mmAL", {
 		maxlength = 93,
 		propweight = 9.5
 	}
-} )
+})
 
 ACF_defineGun("120mmAL", {
 	name = "120mm Autoloading Cannon",
@@ -60,7 +61,7 @@ ACF_defineGun("120mmAL", {
 		maxlength = 110,
 		propweight = 18
 	}
-} )
+})
 
 ACF_defineGun("140mmAL", {
 	name = "140mm Autoloading Cannon",
@@ -77,8 +78,7 @@ ACF_defineGun("140mmAL", {
 		maxlength = 127,
 		propweight = 28
 	}
-} )
-		
+})
 --[[
 ACF_defineGun("170mmAL", {
 	name = "170mm Autoloading Cannon",
@@ -96,5 +96,5 @@ ACF_defineGun("170mmAL", {
 		propweight = 34
 	}
 } )
-]]--
-
+]]
+--
