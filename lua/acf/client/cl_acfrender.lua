@@ -6,7 +6,7 @@ local Damaged = {
 
 hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", function()
 	if not ACF_HealthRenderList then return end
-    cam.Start3D( EyePos(), EyeAngles() )
+	cam.Start3D( EyePos(), EyeAngles() )
 		for k,ent in pairs( ACF_HealthRenderList ) do
 			--if ent:EntIndex() == 227 then print(  ent.ACF_Material ) end
 			if IsValid(ent) then
@@ -30,7 +30,7 @@ net.Receive("ACF_RenderDamage", function()
 		if Health != MaxHealth then
 			ent.ACF_Health = Health
 			ent.ACF_MaxHealth = MaxHealth
-			ent.ACF_HelathPercent = (Health/MaxHealth)
+			ent.ACF_HelathPercent = Health / MaxHealth
 			if ent.ACF_HelathPercent > 0.7 then
 				ent.ACF_Material = Damaged[1]
 			elseif ent.ACF_HelathPercent > 0.3 then
@@ -42,7 +42,7 @@ net.Receive("ACF_RenderDamage", function()
 			ACF_HealthRenderList[ent:EntIndex()] = ent
 		else
 			if ACF_HealthRenderList then
-				if #ACF_HealthRenderList<=1 then
+				if #ACF_HealthRenderList <= 1 then
 					ACF_HealthRenderList = nil
 				else
 					table.remove(ACF_HealthRenderList,ent:EntIndex())
@@ -71,4 +71,4 @@ usermessage.Hook("Atest", function(msg)
 		end
 	end)
 end)
-]]-- 
+]]--

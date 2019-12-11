@@ -23,7 +23,7 @@ local AmmoMedCube = {}
 	AmmoMedCube.weight = 80
 	AmmoMedCube.volume = 17769
 AmmoTable["AmmoMedCube"] = AmmoMedCube
-	
+
 local AmmoMedium = {}
 	AmmoMedium.id = "AmmoMedium"
 	AmmoMedium.ent = "acf_ammo"
@@ -34,7 +34,7 @@ local AmmoMedium = {}
 	AmmoMedium.weight = 150
 	AmmoMedium.volume = 35105
 AmmoTable["AmmoMedium"] = AmmoMedium
-	
+
 local AmmoLarge = {}
 	AmmoLarge.id = "AmmoLarge"
 	AmmoLarge.ent = "acf_ammo"
@@ -397,5 +397,5 @@ local Ammo4x8x8 = {}
 	Ammo4x8x8.weight = 960
 	Ammo4x8x8.volume = 366397
 AmmoTable["Ammo4x8x8"] = Ammo4x8x8
-	
+
 list.Set( "ACFEnts", "Ammo", AmmoTable )	--end ammo containers listing

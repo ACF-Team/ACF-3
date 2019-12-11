@@ -8,10 +8,11 @@ ACF_defineGunClass("SA", {
 	sound = "acf_extra/tankfx/gnomefather/25mm1.wav",
 	soundDistance = " ",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("25mmSA", { --id
+--id
+ACF_defineGun("25mmSA", {
 	name = "25mm Semiautomatic Cannon",
 	desc = "The 25mm semiauto can quickly put five rounds downrange, being lethal, yet light.",
 	model = "models/autocannon/semiautocannon_25mm.mdl",
@@ -26,8 +27,8 @@ ACF_defineGun("25mmSA", { --id
 		maxlength = 39,
 		propweight = 0.5
 	}
-} )
-	
+})
+
 ACF_defineGun("37mmSA", {
 	name = "37mm Semiautomatic Cannon",
 	desc = "The 37mm is surprisingly powerful, its five-round clips boasting a respectable payload and a high muzzle velocity.",
@@ -43,7 +44,7 @@ ACF_defineGun("37mmSA", {
 		maxlength = 42,
 		propweight = 1.125
 	}
-} )
+})
 
 ACF_defineGun("45mmSA", {
 	name = "45mm Semiautomatic Cannon",
@@ -60,7 +61,7 @@ ACF_defineGun("45mmSA", {
 		maxlength = 52,
 		propweight = 1.8
 	}
-} )
+})
 
 ACF_defineGun("57mmSA", {
 	name = "57mm Semiautomatic Cannon",
@@ -77,7 +78,7 @@ ACF_defineGun("57mmSA", {
 		maxlength = 62,
 		propweight = 2
 	}
-} )
+})
 
 ACF_defineGun("76mmSA", {
 	name = "76mm Semiautomatic Cannon",
@@ -94,4 +95,4 @@ ACF_defineGun("76mmSA", {
 		maxlength = 70,
 		propweight = 4.75
 	}
-} )
+})

@@ -9,14 +9,13 @@ ACF_defineGunClass("HMG", {
 	soundDistance = " ",
 	soundNormal = " ",
 	longbarrel = {
-		index = 2, 
-		submodel = 4, 
+		index = 2,
+		submodel = 4,
 		newpos = "muzzle2"
 	}
-} )
+})
 
 --add a gun to the class
-
 ACF_defineGun("13mmHMG", {
 	name = "13mm Heavy Machinegun",
 	desc = "The lightest of the HMGs, the 13mm has a rapid fire rate but suffers from poor payload size.  Often used to strafe ground troops or annoy low-flying aircraft.",
@@ -25,14 +24,14 @@ ACF_defineGun("13mmHMG", {
 	caliber = 1.3,
 	weight = 90,
 	year = 1935,
-	rofmod = 3.3, 
+	rofmod = 3.3,
 	magsize = 35,
 	magreload = 6,
 	round = {
 		maxlength = 22,
 		propweight = 0.09
 	}
-} )
+})
 
 ACF_defineGun("20mmHMG", {
 	name = "20mm Heavy Machinegun",
@@ -49,7 +48,7 @@ ACF_defineGun("20mmHMG", {
 		maxlength = 30,
 		propweight = 0.12
 	}
-} )
+})
 
 ACF_defineGun("30mmHMG", {
 	name = "30mm Heavy Machinegun",
@@ -66,7 +65,7 @@ ACF_defineGun("30mmHMG", {
 		maxlength = 37,
 		propweight = 0.35
 	}
-} )
+})
 
 ACF_defineGun("40mmHMG", {
 	name = "40mm Heavy Machinegun",
@@ -83,5 +82,4 @@ ACF_defineGun("40mmHMG", {
 		maxlength = 42,
 		propweight = 0.9
 	}
-} )
-	
+})

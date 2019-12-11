@@ -8,10 +8,11 @@ ACF_defineGunClass("HW", {
 	sound = "weapons/ACF_Gun/howitzer_new2.wav",
 	soundDistance = "Howitzer.Fire",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("75mmHW", { --id
+--id
+ACF_defineGun("75mmHW", {
 	name = "75mm Howitzer",
 	desc = "Often found being towed by large smelly animals, the 75mm has a high rate of fire, and is surprisingly lethal against light armor.  Great for a sustained barrage against someone you really don't like.",
 	model = "models/howitzer/howitzer_75mm.mdl",
@@ -23,8 +24,8 @@ ACF_defineGun("75mmHW", { --id
 		maxlength = 60,
 		propweight = 1.8
 	}
-} )
-	
+})
+
 ACF_defineGun("105mmHW", {
 	name = "105mm Howitzer",
 	desc = "The 105 lobs a big shell far, and its HEAT rounds can be extremely effective against even heavier armor.",
@@ -37,7 +38,7 @@ ACF_defineGun("105mmHW", {
 		maxlength = 86,
 		propweight = 3.75
 	}
-} )
+})
 
 ACF_defineGun("122mmHW", {
 	name = "122mm Howitzer",
@@ -51,8 +52,8 @@ ACF_defineGun("122mmHW", {
 		maxlength = 106,
 		propweight = 7
 	}
-} )
-	
+})
+
 ACF_defineGun("155mmHW", {
 	name = "155mm Howitzer",
 	desc = "The 155 is a classic heavy artillery round, with good reason.  A versatile weapon, it's found on most modern SPGs.",
@@ -65,8 +66,8 @@ ACF_defineGun("155mmHW", {
 		maxlength = 124,
 		propweight = 13.5
 	}
-} )
-	
+})
+
 ACF_defineGun("203mmHW", {
 	name = "203mm Howitzer",
 	desc = "An 8-inch deck gun, found on siege artillery and cruisers.",
@@ -79,8 +80,7 @@ ACF_defineGun("203mmHW", {
 		maxlength = 162.4,
 		propweight = 28.5
 	}
-} )
-
+})
 --[[
 ACF_defineGun("240mmHW", {
 	name = "240mm Howitzer",
@@ -109,4 +109,5 @@ ACF_defineGun("290mmHW", {
 		propweight = 57.0
 	}
 } )
-]]--	
+]]
+--	

@@ -8,12 +8,13 @@ ACF_defineGunClass("C", {
 	sound = "weapons/ACF_Gun/cannon_new.wav",
 	soundDistance = "Cannon.Fire",
 	soundNormal = " "
-} )
+})
 
 --add a gun to the class
-ACF_defineGun("37mmC", { --id
-    name = "37mm Cannon",
-    desc = "A light and fairly weak cannon with good accuracy.",
+--id
+ACF_defineGun("37mmC", {
+	name = "37mm Cannon",
+	desc = "A light and fairly weak cannon with good accuracy.",
 	model = "models/tankgun/tankgun_37mm.mdl",
 	gunclass = "C",
 	caliber = 3.7,
@@ -25,7 +26,7 @@ ACF_defineGun("37mmC", { --id
 		maxlength = 48,
 		propweight = 1.125
 	}
-} )
+})
 
 ACF_defineGun("50mmC", {
 	name = "50mm Cannon",
@@ -40,8 +41,8 @@ ACF_defineGun("50mmC", {
 		maxlength = 63,
 		propweight = 2.1
 	}
-} )
-	
+})
+
 ACF_defineGun("75mmC", {
 	name = "75mm Cannon",
 	desc = "The 75mm is still rather respectable in rate of fire, but has only modest payload.  Often found on the Eastern Front, and on cold war light tanks.",
@@ -54,8 +55,8 @@ ACF_defineGun("75mmC", {
 		maxlength = 78,
 		propweight = 3.8
 	}
-} )
-	
+})
+
 ACF_defineGun("100mmC", {
 	name = "100mm Cannon",
 	desc = "The 100mm was a benchmark for the early cold war period, and has great muzzle velocity and hitting power, while still boasting a respectable, if small, payload.",
@@ -68,8 +69,8 @@ ACF_defineGun("100mmC", {
 		maxlength = 93,
 		propweight = 9.5
 	}
-} )
-	
+})
+
 ACF_defineGun("120mmC", {
 	name = "120mm Cannon",
 	desc = "Often found in MBTs, the 120mm shreds lighter armor with utter impunity, and is formidable against even the big boys.",
@@ -82,8 +83,8 @@ ACF_defineGun("120mmC", {
 		maxlength = 110,
 		propweight = 18
 	}
-} )
-	
+})
+
 ACF_defineGun("140mmC", {
 	name = "140mm Cannon",
 	desc = "The 140mm fires a massive shell with enormous penetrative capability, but has a glacial reload speed and a very hefty weight.",
@@ -96,8 +97,7 @@ ACF_defineGun("140mmC", {
 		maxlength = 127,
 		propweight = 28
 	}
-} )
-
+})
 --[[
 ACF_defineGun("170mmC", {
 	name = "170mm Cannon",
@@ -112,4 +112,5 @@ ACF_defineGun("170mmC", {
 		propweight = 34
 	}
 } )
-]]--	
+]]
+--	

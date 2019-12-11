@@ -7,11 +7,12 @@ ACF_defineGunClass("MG", {
 	rofmod = 0.9,
 	sound = "weapons/ACF_Gun/mg_fire4.wav",
 	soundNormal = "weapons/ACF_Gun/mg_fire4.wav",
-	soundDistance = "",
-} )
+	soundDistance = ""
+})
 
 --add a gun to the class
-ACF_defineGun("7.62mmMG", { --id
+--id
+ACF_defineGun("7.62mmMG", {
 	name = "7.62mm Machinegun",
 	desc = "The 7.62mm is effective against infantry, but its usefulness against armor is laughable at best.",
 	model = "models/machinegun/machinegun_762mm.mdl",
@@ -27,7 +28,7 @@ ACF_defineGun("7.62mmMG", { --id
 		maxlength = 13,
 		propweight = 0.04
 	}
-} )
+})
 
 ACF_defineGun("12.7mmMG", {
 	name = "12.7mm Machinegun",
@@ -45,8 +46,8 @@ ACF_defineGun("12.7mmMG", {
 		maxlength = 15.8,
 		propweight = 0.03
 	}
-} )
-	
+})
+
 ACF_defineGun("14.5mmMG", {
 	name = "14.5mm Machinegun",
 	desc = "The 14.5mm MG trades its smaller stablemates' rate of fire for more armor penetration and damage.",
@@ -63,21 +64,20 @@ ACF_defineGun("14.5mmMG", {
 		maxlength = 19.5,
 		propweight = 0.04
 	}
-} )
-	
+})
 --ACF_defineGun("20mmMG", {
-	--name = "20mm Machinegun",
-	--desc = "The 20mm MG is practically a cannon in its own right; the weight and recoil made it difficult to mount on light land vehicles, though it was adapted for use on both aircraft and ships.",
-	--model = "models/machinegun/machinegun_20mm.mdl",
-	--gunclass = "MG",
-	--caliber = 2.0,
-	--weight = 95,
-	--year = 1935,
-	--rofmod = 0.3,
-	--magsize = 50,
-	--magreload = 4,
-	--round = {
-		--maxlength = 22,
-		--propweight = 0.09
-	--}
+--name = "20mm Machinegun",
+--desc = "The 20mm MG is practically a cannon in its own right; the weight and recoil made it difficult to mount on light land vehicles, though it was adapted for use on both aircraft and ships.",
+--model = "models/machinegun/machinegun_20mm.mdl",
+--gunclass = "MG",
+--caliber = 2.0,
+--weight = 95,
+--year = 1935,
+--rofmod = 0.3,
+--magsize = 50,
+--magreload = 4,
+--round = {
+--maxlength = 22,
+--propweight = 0.09
+--}
 --} )
