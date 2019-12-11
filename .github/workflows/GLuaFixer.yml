@@ -3,11 +3,13 @@ name: GLuaFixer
 on:
   push:
     paths:
+    - 'lua/**'
     - '!lua/expadv/**'
     - '!lua/starfall/**'
     - '!lua/entities/gmod_wire_expression2/**'
   pull_request:
     paths:
+    - 'lua/**'
     - '!lua/expadv/**'
     - '!lua/starfall/**'
     - '!lua/entities/gmod_wire_expression2/**'
