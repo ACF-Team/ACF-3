@@ -9,7 +9,7 @@ function EFFECT:Init(data)
 	self.Mass = data:GetMagnitude() --Mass of the projectile in kg
 	self.Emitter = ParticleEmitter(self.Origin)
 	self.Scale = math.max(self.Mass * (self.Velocity / 39.37) / 100, 1) ^ 0.3
-	--self.Entity:EmitSound( "ambient/explosions/explode_1.wav" , 100 + self.Radius*10, 200 - self.Radius*10 )
+	--self.Entity:EmitSound( "ambient/explosions/explode_1.mp3" , 100 + self.Radius*10, 200 - self.Radius*10 )
 	local BulletEffect = {}
 	BulletEffect.Num = 1
 	BulletEffect.Src = self.Origin - self.DirVec
@@ -19,7 +19,7 @@ function EFFECT:Init(data)
 	BulletEffect.Force = 0
 	BulletEffect.Damage = 0
 	LocalPlayer():FireBullets(BulletEffect)
-	sound.Play("/acf_other/ricochets/0000032" .. math.random(0, 2) .. ".wav", self.Origin, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
+	sound.Play("/acf_other/ricochets/0000032" .. math.random(0, 2) .. ".mp3", self.Origin, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
 	util.Decal("ExplosiveGunshot", self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10)
 end
 

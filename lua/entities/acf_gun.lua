@@ -454,7 +454,7 @@ function ENT:Think()
 					totalcap = totalcap + Crate.Capacity
 				else
 					self:Unlink(Crate)
-					soundstr = "physics/metal/metal_box_impact_bullet" .. tostring(math.random(1, 3)) .. ".wav"
+					soundstr = "physics/metal/metal_box_impact_bullet" .. tostring(math.random(1, 3)) .. ".mp3"
 					self:EmitSound(soundstr, 500, 100)
 				end
 			end
@@ -510,7 +510,7 @@ function ENT:ReloadMag()
 		--Check if the roundtype loaded actually exists
 		if (ACF.RoundTypes[self.BulletData.Type]) then
 			self:LoadAmmo(self.MagReload, false)
-			self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+			self:EmitSound("weapons/357/357_reload4.mp3", 500, 100)
 			self.CurrentShot = 0
 			Wire_TriggerOutput(self, "Ready", 0)
 		else
@@ -590,7 +590,7 @@ function ENT:FireShell()
 
 			if ((self.CurrentShot >= self.MagSize) and (self.MagSize > 1)) then
 				self:LoadAmmo(self.MagReload, false)
-				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+				self:EmitSound("weapons/357/357_reload4.mp3", 500, 100)
 
 				timer.Simple(self.LastLoadDuration, function()
 					if IsValid(self) then
@@ -688,7 +688,7 @@ function ENT:LoadAmmo(AddTime, Reload)
 		self.BulletData.Type = "Empty"
 		self.BulletData.PropMass = 0
 		self.BulletData.ProjMass = 0
-		self:EmitSound("weapons/pistol/pistol_empty.wav", 500, 100)
+		self:EmitSound("weapons/pistol/pistol_empty.mp3", 500, 100)
 		Wire_TriggerOutput(self, "Loaded", "Empty")
 		self.NextFire = curTime + 0.5
 		self:Think()
@@ -713,7 +713,7 @@ function ENT:UnloadAmmo()
 
 	self.Ready = false
 	Wire_TriggerOutput(self, "Ready", 0)
-	self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+	self:EmitSound("weapons/357/357_reload4.mp3", 500, 100)
 	local unloadtime = self.ReloadTime / 2 -- base time to swap a fully loaded shell out
 
 	-- unloading in middle of reload

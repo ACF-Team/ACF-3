@@ -23,7 +23,7 @@ local engine_base = {
 local gearbox_base = {
 	ent = "acf_gearbox",
 	type = "Mobility",
-	sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
+	sound = "vehicles/junker/jnk_fourth_cruise_loop2.mp3"
 }
 
 local fueltank_base = {
