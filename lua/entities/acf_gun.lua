@@ -578,7 +578,7 @@ function ENT:FireShell()
 			local ShootVec = (MuzzleVec + spread):GetNormalized()
 			self:MuzzleEffect(MuzzlePos, MuzzleVec)
 			self.BulletData.Pos = MuzzlePos
-			self.BulletData.Flight = ShootVec * self.BulletData.MuzzleVel * 39.37 + ACF_GetPhysicalParent(self):GetVelocity()
+			self.BulletData.Flight = ShootVec * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
 			self.BulletData.Owner = self.User
 			self.BulletData.Gun = self
 			self.CreateShell = ACF.RoundTypes[self.BulletData.Type].create

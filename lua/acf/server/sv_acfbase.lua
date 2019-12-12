@@ -333,40 +333,78 @@ function ACF_SquishyDamage(Entity, Energy, FrAera, Angle, Inflictor, Bone, Gun)
 	return HitRes
 end
 
-----------------------------------------------------------
--- Returns a table of all physically connected entities
--- ignoring ents attached by only nocollides
-----------------------------------------------------------
-function ACF_GetAllPhysicalConstraints(ent, Tab)
-	local ResultTable = Tab or {}
-	if not IsValid(ent) then return end
-	if ResultTable[ent] then return end
-	ResultTable[ent] = ent
-	local ConTable = constraint.GetTable(ent)
-
-	for k, con in ipairs(ConTable) do
-		-- skip shit that is attached by a nocollide
-		if con.Type ~= "NoCollide" then
-			for EntNum, Ent in pairs(con.Entity) do
-				ACF_GetAllPhysicalConstraints(Ent.Entity, ResultTable)
+function ACF_HasConstraint(Ent)
+	if Ent.Constraints then
+		for K, V in pairs(Ent.Constraints) do
+			if V.Type ~= "NoCollide" then
+				return true
 			end
 		end
 	end
 
-	return ResultTable
+	return false
 end
 
--- for those extra sneaky bastards
-function ACF_GetAllChildren(ent, Tab)
-	local ResultTable = ResultTable or {}
-	if not IsValid(ent) then return end
-	if ResultTable[ent] then return end
-	ResultTable[ent] = ent
-	local ChildTable = ent:GetChildren()
+function ACF_GetAncestor(Ent)
+	if not IsValid(Ent) then return nil end
 
-	for k, v in pairs(ChildTable) do
-		ACF_GetAllChildren(v, ResultTable)
+	local Parent = Ent
+
+	while IsValid(Parent:GetParent()) do
+		Parent = Parent:GetParent()
 	end
 
-	return ResultTable
+	Ent.acfphysparent = Parent
+
+	return Parent
+end
+
+function ACF_GetAllPhysicalEntities(Ent, Tab)
+	if not IsValid(Ent) then return end
+
+	local Res = Tab or {}
+
+	if Res[Ent] then
+		return
+	else
+		Res[Ent] = true
+
+		if Ent.Constraints then
+			for K, V in pairs(Ent.Constraints) do
+				if V.Type ~= "NoCollide" then
+					ACF_GetAllPhysicalEntities(V.Ent1, Res)
+					ACF_GetAllPhysicalEntities(V.Ent2, Res)
+				end
+			end
+		end
+	end
+
+	return Res
+end
+
+function ACF_GetAllChildren(Ent, Tab)
+	if not IsValid(Ent) then return end
+
+	local Res = Tab or {}
+
+	for K in pairs(Ent:GetChildren()) do
+		Res[K] = true
+		ACF_GetAllChildren(K, Res)
+	end
+
+	return Res
+end
+
+function ACF_GetEnts(Ent)
+	local Ancestor = ACF_GetAncestor(Ent)
+	local Phys = ACF_GetAllPhysicalEntities(Ancestor)
+	local Pare = ACF_GetAllChildren(Ancestor)
+
+	for K in pairs(Phys) do
+		for P in pairs(ACF_GetAllChildren(K)) do
+			Pare[P] = true
+		end
+	end
+
+	return Phys, Pare
 end
