@@ -16,8 +16,8 @@ function EFFECT:Init(data)
 	ImpactTr.endpos = self.Origin + self.DirVec * 20
 	local Impact = util.TraceLine(ImpactTr) --Trace to see if it will hit anything
 	self.Normal = Impact.HitNormal
-	sound.Play("/acf_other/penetratingshots/0000029" .. math.random(2, 5) .. ".wav", Impact.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
-	--self.Entity:EmitSound( "ambient/explosions/explode_1.wav" , 100 + self.Radius*10, 200 - self.Radius*10 )
+	sound.Play("/acf_other/penetratingshots/0000029" .. math.random(2, 5) .. ".mp3", Impact.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
+	--self.Entity:EmitSound( "ambient/explosions/explode_1.mp3" , 100 + self.Radius*10, 200 - self.Radius*10 )
 	-- Material Enum
 	-- 65  ANTLION
 	-- 66 BLOODYFLESH
