@@ -324,7 +324,7 @@ function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bon
 		Bullet["Pos"] = HitPos + HitNormal * 0.75
 		Bullet.FlightTime = 0
 		Bullet.Flight = (ACF_RicochetVector(Bullet.Flight, HitNormal) + VectorRand()*0.025):GetNormalized() * Speed * Ricochet
-		Bullet.TraceBackComp = math.max(ACF_GetPhysicalParent(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)
+		Bullet.TraceBackComp = math.max(ACF_GetAncestor(Target):GetPhysicsObject():GetVelocity():Dot(Bullet["Flight"]:GetNormalized()),0)
 		HitRes.Ricochet = true
 	end
 	
@@ -374,7 +374,7 @@ function ACF_KEShove(Target, Pos, Vec, KE )
 	local CanDo = hook.Run("ACF_KEShove", Target, Pos, Vec, KE )
 	if CanDo == false then return end
 	
-	local parent = ACF_GetPhysicalParent(Target)
+	local parent = ACF_GetAncestor(Target)
 	local phys = parent:GetPhysicsObject()
 	
 	if (phys:IsValid()) then
@@ -412,36 +412,36 @@ local function ACF_KillChildProps( Entity, BlastPos, Energy )
 	local count = 0
 	local boom = {}
 	local children = ACF_GetAllChildren(Entity)
-	
+
 	-- do an initial processing pass on children, separating out explodey things to handle last
-	for _, ent in pairs( children ) do
-		ent.ACF_Killed = true  -- mark that it's already processed
-		local class = ent:GetClass()
+	for Ent in pairs( children ) do
+		Ent.ACF_Killed = true  -- mark that it's already processed
+		local class = Ent:GetClass()
 		if not ACF.Debris[class] then
-			children[ent] = nil -- ignoring stuff like holos
+			children[Ent] = nil -- ignoring stuff like holos
 		else
-			ent:SetParent(nil)
+			Ent:SetParent(nil)
 			if ACF.Splosive[class] then
-				table.insert(boom, ent) -- keep track of explosives to make them boom last
-				children[ent] = nil
+				table.insert(boom, Ent) -- keep track of explosives to make them boom last
+				children[Ent] = nil
 			else
-				count = count+1  -- can't use #table or :count() because of ent indexing...
+				count = count + 1  -- can't use #table or :count() because of ent indexing...
 			end
 		end
 	end
-	
+
 	-- HE kill the children of this ent, instead of disappearing them by removing parent
 	if count > 0 then
 		local DebrisChance = math.Clamp(ACF.ChildDebris/count, 0, 1)
 		local power = Energy/math.min(count,3)
 
-		for _, child in pairs( children ) do
-			if IsValid(child) then
+		for Child in pairs( children ) do
+			if IsValid(Child) then
 				if math.random() < DebrisChance then -- ignore some of the debris props to save lag
-					ACF_HEKill( child, (child:GetPos() - BlastPos):GetNormalized(), power )
+					ACF_HEKill( Child, (Child:GetPos() - BlastPos):GetNormalized(), power )
 				else
-					constraint.RemoveAll( child )
-					child:Remove()
+					constraint.RemoveAll( Child )
+					Child:Remove()
 				end
 			end
 		end

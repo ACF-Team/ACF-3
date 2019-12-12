@@ -437,51 +437,35 @@ end
 
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio()
-	local Mass = 0
-	local PhysMass = 0
-	local Check = nil
-	-- get the shit that is physically attached to the vehicle
-	local PhysEnts = ACF_GetAllPhysicalConstraints(self)
-	-- get the wheels directly connected to the drivetrain
-	local Wheels = ACF_GetLinkedWheels(self)
+	local PhysMass  = 0
+	local TotalMass = 0
 
-	-- check if any wheels aren't in the physicalconstraint tree
-	for _, Ent in pairs(Wheels) do
-		-- WE GOT EM BOIS
-		if not PhysEnts[Ent] then
-			Check = Ent
-			Wheels[Ent] = nil -- manual removal, idk how table.remove would handle indexing by ent. probably not well. indexing by entity sucks, please use ent id.
-			break
+	local Physical, Parented = ACF_GetEnts(self)
+
+	for K in pairs(Physical) do
+		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
+
+		if IsValid(Phys) then
+			local Mass = Phys:GetMass()
+
+			TotalMass = TotalMass + Mass
+			PhysMass  = PhysMass + Mass
 		end
 	end
 
-	-- if there's a wheel that's not in the engine constraint tree, use it as a start for getting physical constraints
-	-- sneaky bastards trying to get away with remote engines...  NOT ANYMORE
-	if IsValid(Check) then
-		table.Merge(PhysEnts, Wheels) -- I mean, they'll still be remote... but they wont get free extra power from calcmass not seeing the contraption it's powering
-		ACF_GetAllPhysicalConstraints(Check, PhysEnts) -- no need for assignment here
-	end
+	for K in pairs(Parented) do
+		if Physical[K] then continue end -- Skip overlaps
 
-	-- add any parented but not constrained props you sneaky bastards
-	local AllEnts = table.Copy(PhysEnts)
+		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
 
-	for k, v in pairs(PhysEnts) do
-		table.Merge(AllEnts, ACF_GetAllChildren(v))
-	end
-
-	for k, v in pairs(AllEnts) do
-		if not IsValid(v) then continue end
-		local phys = v:GetPhysicsObject()
-		if not IsValid(phys) then continue end
-		Mass = Mass + phys:GetMass()
-
-		if PhysEnts[v] then
-			PhysMass = PhysMass + phys:GetMass()
+		if IsValid(Phys) then
+			TotalMass = TotalMass + Phys:GetMass()
 		end
 	end
 
-	self.MassRatio = PhysMass / Mass
-	Wire_TriggerOutput(self, "Mass", math.Round(Mass, 2))
+	self.MassRatio = PhysMass / TotalMass
+
+	Wire_TriggerOutput(self, "Mass", math.Round(TotalMass, 2))
 	Wire_TriggerOutput(self, "Physical Mass", math.Round(PhysMass, 2))
 end
 

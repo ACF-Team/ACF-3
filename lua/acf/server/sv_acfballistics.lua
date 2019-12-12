@@ -46,7 +46,7 @@ function ACF_CreateBullet(BulletData)
 
 	--Check the Gun's velocity and add a modifier to the flighttime so the traceback system doesn't hit the originating contraption if it's moving along the shell path
 	if BulletData["Gun"]:IsValid() then
-		BulletData["TraceBackComp"] = math.max(ACF_GetPhysicalParent(BulletData["Gun"]):GetPhysicsObject():GetVelocity():Dot(BulletData["Flight"]:GetNormalized()), 0)
+		BulletData["TraceBackComp"] = math.max(ACF_GetAncestor(BulletData["Gun"]):GetPhysicsObject():GetVelocity():Dot(BulletData["Flight"]:GetNormalized()), 0)
 
 		--print(BulletData["TraceBackComp"])
 		if BulletData["Gun"].sitp_inspace then

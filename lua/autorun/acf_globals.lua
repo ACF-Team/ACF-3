@@ -243,24 +243,6 @@ function ACF_Kinetic(Speed, Mass, LimitVel)
 	return Energy
 end
 
--- returns last parent in chain, which has physics
-function ACF_GetPhysicalParent(obj)
-	if not IsValid(obj) then return nil end
-	--check for fresh cached parent
-	if obj.acfphysparent and ACF.CurTime < obj.acfphysstale then return obj.acfphysparent end
-	local Parent = obj
-
-	while Parent:GetParent():IsValid() do
-		Parent = Parent:GetParent()
-	end
-
-	--update cached parent
-	obj.acfphysparent = Parent
-	obj.acfphysstale = ACF.CurTime + 10 --when cached parent is considered stale and needs updating
-
-	return Parent
-end
-
 -- returns any wheels linked to this or child gearboxes
 function ACF_GetLinkedWheels(MobilityEnt)
 	if not IsValid(MobilityEnt) then return {} end
@@ -282,7 +264,7 @@ function ACF_GetLinkedWheels(MobilityEnt)
 					table.insert(ToCheck, v.Ent)
 				end
 			else
-				Wheels[Ent] = Ent -- indexing it same as ACF_GetAllPhysicalConstraints, for easy merge.  whoever indexed by entity in that function, uuuuuuggghhhhh
+				Wheels[Ent] = Ent -- indexing it same as ACF_GetAllPhysicalEntities, for easy merge.  whoever indexed by entity in that function, uuuuuuggghhhhh
 			end
 		end
 	end
@@ -290,56 +272,76 @@ function ACF_GetLinkedWheels(MobilityEnt)
 	return Wheels
 end
 
+
 -- Global Ratio Setting Function
-function ACF_CalcMassRatio(obj, pwr)
-	if not IsValid(obj) then return end
-	local Mass = 0
+function ACF_CalcMassRatio(Ent, Pwr)
+	if not IsValid(Ent) then return end
+
+	local TotMass  = 0
 	local PhysMass = 0
-	local power = 0
-	local fuel = 0
-	-- find the physical parent highest up the chain
-	local Parent = ACF_GetPhysicalParent(obj)
-	-- get the shit that is physically attached to the vehicle
-	local PhysEnts = ACF_GetAllPhysicalConstraints(Parent)
-	-- add any parented but not constrained props you sneaky bastards
-	local AllEnts = table.Copy(PhysEnts)
+	local Power    = 0
+	local Fuel     = 0
+	local Time     = CurTime()
 
-	for k, v in pairs(AllEnts) do
-		table.Merge(AllEnts, ACF_GetAllChildren(v))
-	end
+	local Physical, Parented = ACF_GetEnts(Ent)
 
-	for k, v in pairs(AllEnts) do
-		if IsValid(v) then
-			if v:GetClass() == "acf_engine" then
-				power = power + (v.peakkw * 1.34)
-				fuel = v.RequiresFuel and 2 or fuel
-			elseif v:GetClass() == "acf_fueltank" then
-				fuel = math.max(fuel, 1)
+	for K in pairs(Physical) do
+		if Pwr then
+			if K:GetClass() == "acf_engine" then
+				Power = Power + (K.peakkw * 1.34)
+				Fuel = K.RequiresFuel and 2 or Fuel
+			elseif K:GetClass() == "acf_fueltank" then
+				Fuel = math.max(Fuel, 1)
 			end
+		end
 
-			local phys = v:GetPhysicsObject()
+		local Phys = K:GetPhysicsObject() -- This should always exist, but just in case
 
-			if IsValid(phys) then
-				Mass = Mass + phys:GetMass()
+		if IsValid(Phys) then
+			local Mass = Phys:GetMass()
 
-				if PhysEnts[v] then
-					PhysMass = PhysMass + phys:GetMass()
-				end
-			end
+			TotMass  = TotMass + Mass
+			PhysMass = PhysMass + Mass
 		end
 	end
 
-	-- todo: replace with a reference to table containing data
-	for k, v in pairs(AllEnts) do
-		v.acfphystotal = PhysMass
-		v.acftotal = Mass
-		v.acflastupdatemass = ACF.CurTime
+	for K in pairs(Parented) do
+		if Physical[K] then continue end -- Skip overlaps
+
+		if Pwr then
+			if K:GetClass() == "acf_engine" then
+				Power = Power + (K.peakkw * 1.34)
+				Fuel = K.RequiresFuel and 2 or Fuel
+			elseif K:GetClass() == "acf_fueltank" then
+				Fuel = math.max(Fuel, 1)
+			end
+		end
+
+		local Phys = K:GetPhysicsObject()
+
+		if IsValid(Phys) then
+			TotMass = TotMass + Phys:GetMass()
+		end
 	end
 
-	if pwr then
+	for K in pairs(Physical) do
+		K.acfphystotal      = PhysMass
+		K.acftotal          = TotMass
+		K.acflastupdatemass = Time
+	end
+
+	for K in pairs(Parented) do
+		if Physical[K] then continue end -- Skip overlaps
+
+		K.acfphystotal      = PhysMass
+		K.acftotal          = TotMass
+		K.acflastupdatemass = Time
+	end
+
+	if Pwr then
 		return {
-			Power = power,
-			Fuel = fuel
+			Power = Power,
+			Fuel = Fuel
 		}
 	end
 end
@@ -411,7 +413,7 @@ function ACF_CheckLegal(Ent, Model, MinMass, MinInertia, CanMakesphere, Parentab
 		-- legal if weld not required, otherwise check if parented with weld
 		if ParentRequiresWeld then
 			local welded = false
-			local rootparent = ACF_GetPhysicalParent(Ent)
+			local rootparent = ACF_GetAncestor(Ent)
 
 			--make sure it"s welded to root parent
 			for k, v in pairs(constraint.FindConstraints(Ent, "Weld")) do

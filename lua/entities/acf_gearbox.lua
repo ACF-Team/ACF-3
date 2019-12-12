@@ -636,7 +636,7 @@ function ENT:Think()
 		self:UpdateOverlayText()
 
 		if self.Legal and self.Parentable then
-			self.RootParent = ACF_GetPhysicalParent(self)
+			self.RootParent = ACF_GetAncestor(self)
 		end
 	end
 
