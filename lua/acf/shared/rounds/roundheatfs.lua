@@ -13,10 +13,10 @@ end
 
 function Round.ConeCalc(ConeAngle, Radius, Length)
 	local ConeLength = math.tan(math.rad(ConeAngle)) * Radius
-	local ConeAera = 3.1416 * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
+	local ConeArea = 3.1416 * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
 	local ConeVol = (3.1416 * Radius ^ 2 * ConeLength) / 3
 
-	return ConeLength, ConeAera, ConeVol
+	return ConeLength, ConeArea, ConeVol
 end
 
 -- calculates conversion of filler from powering HEAT jet to raw HE based on crush vel
@@ -69,19 +69,19 @@ function Round.convert(Crate, PlayerData)
 
 	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
 	local ConeThick = Data.Caliber / 50
-	local ConeAera = 0
+	local ConeArea = 0
 	local AirVol = 0
-	ConeLength, ConeAera, AirVol = Round.ConeCalc(PlayerData.Data6, Data.Caliber / 2, PlayerData.ProjLength)
-	Data.ProjMass = math.max(GUIData.ProjVolume - PlayerData.Data5, 0) * 7.9 / 1000 + math.min(PlayerData.Data5, GUIData.ProjVolume) * ACF.HEDensity / 1000 + ConeAera * ConeThick * 7.9 / 1000 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Aera of the cone * thickness * density of steel
+	ConeLength, ConeArea, AirVol = Round.ConeCalc(PlayerData.Data6, Data.Caliber / 2, PlayerData.ProjLength)
+	Data.ProjMass = math.max(GUIData.ProjVolume - PlayerData.Data5, 0) * 7.9 / 1000 + math.min(PlayerData.Data5, GUIData.ProjVolume) * ACF.HEDensity / 1000 + ConeArea * ConeThick * 7.9 / 1000 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 	local Energy = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 	local MaxVol = 0
-	MaxVol, MaxLength, MaxRadius = ACF_RoundShellCapacity(Energy.Momentum, Data.FrAera, Data.Caliber, Data.ProjLength)
+	MaxVol, MaxLength, MaxRadius = ACF_RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
 	GUIData.MinConeAng = 0
 	GUIData.MaxConeAng = math.deg(math.atan((Data.ProjLength - ConeThick) / (Data.Caliber / 2)))
 	Data.ConeAng = math.Clamp(PlayerData.Data6 * 1, GUIData.MinConeAng, GUIData.MaxConeAng)
-	ConeLength, ConeAera, AirVol = Round.ConeCalc(Data.ConeAng, Data.Caliber / 2, Data.ProjLength)
-	local ConeVol = ConeAera * ConeThick
+	ConeLength, ConeArea, AirVol = Round.ConeCalc(Data.ConeAng, Data.Caliber / 2, Data.ProjLength)
+	local ConeVol = ConeArea * ConeThick
 	GUIData.MinFillerVol = 0
 	GUIData.MaxFillerVol = math.max(MaxVol - AirVol - ConeVol, GUIData.MinFillerVol)
 	GUIData.FillerVol = math.Clamp(PlayerData.Data5 * 1, GUIData.MinFillerVol, GUIData.MaxFillerVol)
@@ -96,9 +96,9 @@ function Round.convert(Crate, PlayerData)
 	Data.SlugMass = ConeVol * 7.9 / 1000
 	local Rad = math.rad(Data.ConeAng / 2)
 	Data.SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(Rad) * 0.5 + math.cos(Rad) * 1.5) / 2
-	local SlugFrAera = 3.1416 * (Data.SlugCaliber / 2) ^ 2
-	Data.SlugPenAera = (SlugFrAera ^ ACF.PenAreaMod) / 1.25
-	Data.SlugDragCoef = ((SlugFrAera / 10000) / Data.SlugMass)
+	local SlugFrArea = 3.1416 * (Data.SlugCaliber / 2) ^ 2
+	Data.SlugPenArea = (SlugFrArea ^ ACF.PenAreaMod) / 1.25
+	Data.SlugDragCoef = ((SlugFrArea / 10000) / Data.SlugMass)
 	Data.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	-- these are only for compatibility with other stuff. it's recalculated when the round is detonated
 	local _, heatfiller, boomfiller = Round.CrushCalc(Data.MuzzleVel, Data.FillerMass)
@@ -107,8 +107,8 @@ function Round.convert(Crate, PlayerData)
 	--Random bullshit left
 	Data.CasingMass = Data.ProjMass - Data.FillerMass - ConeVol * 7.9 / 1000
 	Data.ShovePower = 0.1
-	Data.PenAera = (Data.FrAera ^ ACF.PenAreaMod)
-	Data.DragCoef = ((Data.FrAera / 10000) / Data.ProjMass)
+	Data.PenArea = (Data.FrArea ^ ACF.PenAreaMod)
+	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass)
 	Data.LimitVel = 100 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet = 60 --Base ricochet angle
@@ -140,7 +140,7 @@ function Round.getDisplayData(Data)
 	GUIData.SlugMV = Round.CalcSlugMV(Data, GUIData.HEATFillerMass) * (Data.SlugPenMul or 1) -- slugpenmul is a missiles thing
 	GUIData.SlugMassUsed = Data.SlugMass * (1 - GUIData.Crushed)
 	local SlugEnergy = ACF_Kinetic(Data.MuzzleVel * 39.37 + GUIData.SlugMV * 39.37, GUIData.SlugMassUsed, 999999)
-	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenAera) * ACF.KEtoRHA
+	GUIData.MaxPen = (SlugEnergy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA
 	GUIData.TotalFragMass = Data.CasingMass + Data.SlugMass * GUIData.Crushed
 	GUIData.BlastRadius = GUIData.BoomFillerMass ^ 0.33 * 8 --*39.37
 	GUIData.Fragments = math.max(math.floor((GUIData.BoomFillerMass / GUIData.TotalFragMass) * ACF.HEFrag), 2)
@@ -186,7 +186,7 @@ function Round.detonate(Index, Bullet, HitPos, HitNormal)
 	Bullet.DragCoef = Bullet.SlugDragCoef
 	Bullet.ProjMass = Bullet.SlugMass * (1 - Crushed)
 	Bullet.Caliber = Bullet.SlugCaliber
-	Bullet.PenAera = Bullet.SlugPenAera
+	Bullet.PenArea = Bullet.SlugPenArea
 	Bullet.Ricochet = Bullet.SlugRicochet
 	local DeltaTime = SysTime() - Bullet.LastThink
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
@@ -364,10 +364,10 @@ function Round.guiupdate(Panel, Table)
 	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
 	--local RicoAngs = ACF_RicoProbability( Data.Ricochet, Data.MuzzleVel*ACF.VelScale )
 	--acfmenupanel:CPanelText("RicoDisplay", "Ricochet probability vs impact angle:\n".."    0% @ "..RicoAngs.Min.." degrees\n  50% @ "..RicoAngs.Mean.." degrees\n100% @ "..RicoAngs.Max.." degrees")
-	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenAera, Data.LimitVel, 300)
-	R1P = (ACF_Kinetic((R1V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenAera) * ACF.KEtoRHA
-	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenAera, Data.LimitVel, 800)
-	R2P = (ACF_Kinetic((R2V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenAera) * ACF.KEtoRHA
+	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
+	R1P = (ACF_Kinetic((R1V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
+	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+	R2P = (ACF_Kinetic((R2V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA
 	acfmenupanel:CPanelText("SlugDisplay", "Penetrator Mass : " .. (math.floor(Data.SlugMassUsed * 10000) / 10) .. " g \n Penetrator Caliber : " .. (math.floor(Data.SlugCaliber * 100) / 10) .. " mm \n Penetrator Velocity : " .. math.floor(Data.MuzzleVel + Data.SlugMV) .. " m/s \n Penetrator Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
