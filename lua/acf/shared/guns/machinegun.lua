@@ -5,8 +5,8 @@ ACF_defineGunClass("MG", {
 	desc = "Machineguns are light guns that fire equally light bullets at a fast rate.",
 	muzzleflash = "50cal_muzzleflash_noscale",
 	rofmod = 0.9,
-	sound = "weapons/ACF_Gun/mg_fire4.wav",
-	soundNormal = "weapons/ACF_Gun/mg_fire4.wav",
+	sound = "weapons/ACF_Gun/mg_fire4.mp3",
+	soundNormal = "weapons/ACF_Gun/mg_fire4.mp3",
 	soundDistance = ""
 })
 

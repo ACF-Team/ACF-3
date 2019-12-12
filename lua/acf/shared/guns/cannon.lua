@@ -5,7 +5,7 @@ ACF_defineGunClass("C", {
 	desc = "High velocity guns that can fire very powerful ammunition, but are rather slow to reload.",
 	muzzleflash = "120mm_muzzleflash_noscale",
 	rofmod = 2,
-	sound = "weapons/ACF_Gun/cannon_new.wav",
+	sound = "weapons/ACF_Gun/cannon_new.mp3",
 	soundDistance = "Cannon.Fire",
 	soundNormal = " "
 })
@@ -21,7 +21,7 @@ ACF_defineGun("37mmC", {
 	weight = 350,
 	year = 1919,
 	rofmod = 1.4,
-	sound = "weapons/ACF_Gun/ac_fire4.wav",
+	sound = "weapons/ACF_Gun/ac_fire4.mp3",
 	round = {
 		maxlength = 48,
 		propweight = 1.125
@@ -36,7 +36,7 @@ ACF_defineGun("50mmC", {
 	caliber = 5.0,
 	weight = 665,
 	year = 1935,
-	sound = "weapons/ACF_Gun/ac_fire4.wav",
+	sound = "weapons/ACF_Gun/ac_fire4.mp3",
 	round = {
 		maxlength = 63,
 		propweight = 2.1

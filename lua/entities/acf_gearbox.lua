@@ -870,7 +870,7 @@ function ENT:ChangeGear(value)
 	self.ChangeFinished = CurTime() + self.SwitchTime
 	self.InGear = false
 	Wire_TriggerOutput(self, "Current Gear", self.Gear)
-	self:EmitSound("buttons/lever7.wav", 250, 100)
+	self:EmitSound("buttons/lever7.mp3", 250, 100)
 	Wire_TriggerOutput(self, "Ratio", self.GearRatio)
 end
 
@@ -886,7 +886,7 @@ function ENT:ChangeDrive(value)
 		self.ChangeFinished = CurTime() + self.SwitchTime
 		self.InGear = false
 		Wire_TriggerOutput(self, "Current Gear", self.Gear)
-		self:EmitSound("buttons/lever7.wav", 250, 100)
+		self:EmitSound("buttons/lever7.mp3", 250, 100)
 		Wire_TriggerOutput(self, "Ratio", self.GearRatio)
 	else
 		self:ChangeGear(self.Drive) --autogearing in :calc will set correct gear
