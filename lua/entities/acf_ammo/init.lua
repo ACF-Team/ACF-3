@@ -335,7 +335,7 @@ function ENT:Think()
 			ACF_ScaledExplosion(self) -- going to let empty crates harmlessly poot still, as an audio cue it died
 		else
 			if not (self.BulletData.Type == "Refill") and math.Rand(0, 150) > self.BulletData.RoundVolume ^ 0.5 and math.Rand(0, 1) < self.Ammo / math.max(self.Capacity, 1) and ACF.RoundTypes[self.BulletData.Type] then
-				self:EmitSound("ambient/explosions/explode_4.wav", 350, math.max(255 - self.BulletData.PropMass * 100, 60))
+				self:EmitSound("ambient/explosions/explode_4.mp3", 350, math.max(255 - self.BulletData.PropMass * 100, 60))
 				local Speed = ACF_MuzzleVelocity(self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber)
 				self.BulletData.Pos = self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
 				self.BulletData.Flight = (VectorRand()):GetNormalized() * Speed * 39.37 + self:GetVelocity()
@@ -369,7 +369,7 @@ function ENT:Think()
 					Ammo.Ammo = Ammo.Ammo + Transfert
 					self.Ammo = self.Ammo - Transfert
 					Ammo.Supplied = true
-					Ammo.Entity:EmitSound("items/ammo_pickup.wav", 350, 80, 0.30)
+					Ammo.Entity:EmitSound("items/ammo_pickup.mp3", 350, 80, 0.30)
 				end
 			end
 		end

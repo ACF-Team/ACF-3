@@ -526,7 +526,7 @@ function ENT:CheckFuel()
 	for _, tank in pairs(self.FuelLink) do
 		if self:GetPos():Distance(tank:GetPos()) > 512 then
 			self:Unlink(tank)
-			soundstr = "physics/metal/metal_box_impact_bullet" .. tostring(math.random(1, 3)) .. ".wav"
+			soundstr = "physics/metal/metal_box_impact_bullet" .. tostring(math.random(1, 3)) .. ".mp3"
 			self:EmitSound(soundstr, 500, 100)
 		end
 	end
