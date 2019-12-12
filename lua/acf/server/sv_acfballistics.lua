@@ -49,10 +49,6 @@ function ACF_CreateBullet(BulletData)
 		BulletData["TraceBackComp"] = math.max(ACF_GetAncestor(BulletData["Gun"]):GetPhysicsObject():GetVelocity():Dot(BulletData["Flight"]:GetNormalized()), 0)
 
 		--print(BulletData["TraceBackComp"])
-		if BulletData["Gun"].sitp_inspace then
-			BulletData["Accel"] = Vector(0, 0, 0)
-			BulletData["DragCoef"] = 0
-		end
 	end
 
 	BulletData["Filter"] = {BulletData["Gun"]}
