@@ -5,7 +5,7 @@ ACF_defineGunClass("SC", {
 	desc = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
 	muzzleflash = "120mm_muzzleflash_noscale",
 	rofmod = 1.7,
-	sound = "weapons/ACF_Gun/cannon_new.wav",
+	sound = "weapons/ACF_Gun/cannon_new.mp3",
 	soundDistance = "Cannon.Fire",
 	soundNormal = " "
 } )
@@ -20,7 +20,7 @@ ACF_defineGun("37mmSC", {
 	weight = 200,
 	rofmod = 1.4,
 	year = 1915,
-	sound = "weapons/ACF_Gun/ac_fire4.wav",
+	sound = "weapons/ACF_Gun/ac_fire4.mp3",
 	round = {
 		maxlength = 45,
 		propweight = 0.29
@@ -36,7 +36,7 @@ ACF_defineGun("50mmSC", {
 	weight = 330,
 	rofmod = 1.4,
 	year = 1915,
-	sound = "weapons/ACF_Gun/ac_fire4.wav",
+	sound = "weapons/ACF_Gun/ac_fire4.mp3",
 	round = {
 		maxlength = 63,
 		propweight = 0.6,

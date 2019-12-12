@@ -5,7 +5,7 @@ ACF_defineGunClass("RAC", {
 	desc = "Rotary Autocannons sacrifice weight, bulk and accuracy over classic Autocannons to get the highest rate of fire possible.",
 	muzzleflash = "50cal_muzzleflash_noscale",
 	rofmod = 0.07,
-	sound = "weapons/acf_gun/mg_fire3.wav",
+	sound = "weapons/acf_gun/mg_fire3.mp3",
 	soundDistance = " ",
 	soundNormal = " ",
 	color = {135, 135, 135}
