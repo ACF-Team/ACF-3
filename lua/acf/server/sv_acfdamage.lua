@@ -485,7 +485,7 @@ function ACF_HEKill( Entity , HitVector , Energy , BlastPos )
 		return nil
 	end
 	
-	local Debris = ents.Create( "Debris" )
+	local Debris = ents.Create( "acf_debris" )
 		Debris:SetModel( Entity:GetModel() )
 		Debris:SetAngles( Entity:GetAngles() )
 		Debris:SetPos( Entity:GetPos() )
@@ -521,7 +521,7 @@ function ACF_APKill( Entity , HitVector , Power )
 		return nil
 	end
 
-	local Debris = ents.Create( "Debris" )
+	local Debris = ents.Create( "acf_debris" )
 		Debris:SetModel( Entity:GetModel() )
 		Debris:SetAngles( Entity:GetAngles() )
 		Debris:SetPos( Entity:GetPos() )
