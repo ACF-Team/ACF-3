@@ -536,30 +536,9 @@ function ENT:GetInaccuracy()
 end
 
 function ENT:FireShell()
-	local CanDo = hook.Run("ACF_FireShell", self, self.BulletData)
-	if CanDo == false then return end
+	if hook.Run("ACF_FireShell", self, self.BulletData) == false then return end
 
-	if (self.IsUnderWeight == nil) then
-		self.IsUnderWeight = true
-
-		if (ISBNK) then
-			self.IsUnderWeight = self:CheckWeight()
-		end
-	end
-
-	local bool = true
-
-	if (ISSITP) then
-		if (self.sitp_spacetype ~= "space" and self.sitp_spacetype ~= "planet") then
-			bool = false
-		end
-
-		if (self.sitp_core == false) then
-			bool = false
-		end
-	end
-
-	if (bool and self.IsUnderWeight and self.Ready and self.Legal) then
+	if self.Ready and self.Legal then
 		Blacklist = {}
 
 		if not ACF.AmmoBlacklist[self.BulletData.Type] then
@@ -569,7 +548,7 @@ function ENT:FireShell()
 		end
 
 		--Check if the roundtype loaded actually exists
-		if (ACF.RoundTypes[self.BulletData.Type] and not table.HasValue(Blacklist, self.Class)) then
+		if ACF.RoundTypes[self.BulletData.Type] and not table.HasValue(Blacklist, self.Class) then
 			local MuzzlePos = self:LocalToWorld(self.Muzzle)
 			local MuzzleVec = self:GetForward()
 			local coneAng = math.tan(math.rad(self:GetInaccuracy()))
