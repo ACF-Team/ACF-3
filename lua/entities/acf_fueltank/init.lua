@@ -271,9 +271,9 @@ function ENT:Think()
 					Tank.Fuel = Tank.Fuel + exchange
 
 					if Tank.FuelType == "Electric" then
-						sound.Play("ambient/energy/newspark04.wav", Tank:GetPos(), 75, 100, 0.5)
+						sound.Play("ambient/energy/newspark04.mp3", Tank:GetPos(), 75, 100, 0.5)
 					else
-						sound.Play("vehicles/jetski/jetski_no_gas_start.wav", Tank:GetPos(), 75, 120, 0.5)
+						sound.Play("vehicles/jetski/jetski_no_gas_start.mp3", Tank:GetPos(), 75, 120, 0.5)
 					end
 				end
 			end
