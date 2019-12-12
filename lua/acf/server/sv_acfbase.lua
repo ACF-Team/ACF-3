@@ -139,22 +139,7 @@ function ACF_CalcDamage(Entity, Energy, FrAera, Angle)
 	local losArmor = armor / math.abs(math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor) -- LOS Armor
 	local maxPenetration = (Energy.Penetration / FrAera) * ACF.KEtoRHA --RHA Penetration
 	local HitRes = {}
-	local dmul = 1 --This actually controls overall prop damage from rounds. It should be in globals but i'm suck's at Coding's -karb
 
-
-	--SITP Stuff
-	--TODO: comment out ISSITP when not necessary
-	local var = 1
-
-	if (ISSITP) then
-		if (not Entity.sitp_spacetype) then
-			Entity.sitp_spacetype = "space"
-		end
-
-		if (Entity.sitp_spacetype ~= "space" and Entity.sitp_spacetype ~= "planet") then
-			var = 0
-		end
-	end
 
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrAera ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
@@ -165,7 +150,7 @@ function ACF_CalcDamage(Entity, Energy, FrAera, Angle)
 
 	-- Breach chance roll
 	if breachProb > math.random() and maxPenetration > armor then
-		HitRes.Damage = var * dmul * FrAera -- Inflicted Damage
+		HitRes.Damage = FrAera -- Inflicted Damage
 		HitRes.Overkill = maxPenetration - armor -- Remaining penetration
 		HitRes.Loss = armor / maxPenetration -- Energy loss in percents
 
@@ -173,7 +158,7 @@ function ACF_CalcDamage(Entity, Energy, FrAera, Angle)
 	elseif penProb > math.random() then
 		-- Penetration chance roll
 		local Penetration = math.min(maxPenetration, losArmor)
-		HitRes.Damage = var * dmul * (Penetration / losArmor) ^ 2 * FrAera
+		HitRes.Damage = (Penetration / losArmor) ^ 2 * FrAera
 		HitRes.Overkill = (maxPenetration - Penetration)
 		HitRes.Loss = Penetration / maxPenetration
 
@@ -182,7 +167,7 @@ function ACF_CalcDamage(Entity, Energy, FrAera, Angle)
 
 	-- Projectile did not breach nor penetrate armor
 	local Penetration = math.min(maxPenetration, losArmor)
-	HitRes.Damage = var * dmul * (Penetration / losArmor) ^ 2 * FrAera
+	HitRes.Damage = (Penetration / losArmor) ^ 2 * FrAera
 	HitRes.Overkill = 0
 	HitRes.Loss = 1
 
@@ -305,24 +290,10 @@ function ACF_SquishyDamage(Entity, Energy, FrAera, Angle, Inflictor, Bone, Gun)
 		Damage = HitRes.Damage * 10
 	end
 
-	local dmul = 1
-
-
-	--SITP stuff
-	local var = 1
-
-	if (not Entity.sitp_spacetype) then
-		Entity.sitp_spacetype = "space"
-	end
-
-	if (Entity.sitp_spacetype == "homeworld") then
-		var = 0
-	end
-
 	--if Ammo == true then
 	--	Entity.KilledByAmmo = true
 	--end
-	Entity:TakeDamage(Damage * dmul * var, Inflictor, Gun)
+	Entity:TakeDamage(Damage, Inflictor, Gun)
 	--if Ammo == true then
 	--	Entity.KilledByAmmo = false
 	--end

@@ -443,10 +443,6 @@ function ENT:Think()
 	local cvarGrav = GetConVar("sv_gravity")
 	local vec = Vector(0, 0, cvarGrav:GetInt() * -1)
 
-	if (self.sitp_inspace) then
-		vec = Vector(0, 0, 0)
-	end
-
 	self:SetNWVector("Accel", vec)
 	self:NextThink(CurTime() + 1)
 
