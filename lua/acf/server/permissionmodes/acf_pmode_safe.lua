@@ -23,7 +23,7 @@ local modedescription = "Completely disables damage upon everything."
 	Return: boolean
 		true if the entity should be damaged, false if the entity should be protected from the damage.
 //]]
-local function modepermission(owner, attacker, ent)
+local function modepermission()
 	return false
 end
 

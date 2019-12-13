@@ -8,7 +8,7 @@ Round.desc = "A solid shell with a soft point, meant to flatten against armour"
 Round.netid = 3 --Unique ammotype ID for network transmission
 
 -- Function to convert the player's slider data into the complete round data
-function Round.convert(Crate, PlayerData)
+function Round.convert(_, PlayerData)
 	local Data = {}
 	local ServerData = {}
 	local GUIData = {}
@@ -93,7 +93,7 @@ function Round.cratetxt(BulletData)
 	return table.concat(str)
 end
 
-function Round.guicreate(Panel, Table)
+function Round.guicreate(Panel)
 	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.HP)
 	acfmenupanel:CPanelText("BonusDisplay", "")
 	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
@@ -109,7 +109,7 @@ function Round.guicreate(Panel, Table)
 	Round.guiupdate(Panel, nil)
 end
 
-function Round.guiupdate(Panel, Table)
+function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
 	PlayerData.Type = "HP" --Hardcoded, match ACFRoundTypes table index

@@ -13,7 +13,7 @@ end
    THINK
 ---------------------------------------------------------]]
 function EFFECT:Think()
-	for i = 0, 2 * self.Radius do
+	for _ = 0, 2 * self.Radius do
 		local Light = self.Emitter:Add("sprites/light_glow02_add.vmt", self.Origin)
 
 		if (Light) then

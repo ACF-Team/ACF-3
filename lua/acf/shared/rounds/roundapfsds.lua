@@ -6,12 +6,12 @@ Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
 Round.netid = 9 --Unique ammotype ID for network transmission
 
-function Round.create(Gun, BulletData)
+function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
 end
 
 -- Function to convert the player's slider data into the complete round data
-function Round.convert(Crate, PlayerData)
+function Round.convert(_, PlayerData)
 	local Data = {}
 	local ServerData = {}
 	local GUIData = {}
@@ -98,7 +98,7 @@ function Round.cratetxt(BulletData)
 	return table.concat(str)
 end
 
-function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
+function Round.propimpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 	if ACF_Check(Target) then
 		local Speed = Bullet.Flight:Length() / ACF.VelScale
 		local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
@@ -122,7 +122,7 @@ function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
 	end
 end
 
-function Round.worldimpact(Index, Bullet, HitPos, HitNormal)
+function Round.worldimpact(_, Bullet, HitPos, HitNormal)
 	local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.VelScale, Bullet.ProjMass, Bullet.LimitVel)
 	local HitRes = ACF_PenetrateGround(Bullet, Energy, HitPos, HitNormal)
 
@@ -135,12 +135,12 @@ function Round.worldimpact(Index, Bullet, HitPos, HitNormal)
 	end
 end
 
-function Round.endflight(Index, Bullet, HitPos)
+function Round.endflight(Index)
 	ACF_RemoveBullet(Index)
 end
 
 -- Bullet stops here
-function Round.endeffect(Effect, Bullet)
+function Round.endeffect(_, Bullet)
 	local Spall = EffectData()
 	Spall:SetEntity(Bullet.Crate)
 	Spall:SetOrigin(Bullet.SimPos)
@@ -151,7 +151,7 @@ function Round.endeffect(Effect, Bullet)
 end
 
 -- Bullet penetrated something
-function Round.pierceeffect(Effect, Bullet)
+function Round.pierceeffect(_, Bullet)
 	local Spall = EffectData()
 	Spall:SetEntity(Bullet.Crate)
 	Spall:SetOrigin(Bullet.SimPos)
@@ -162,7 +162,7 @@ function Round.pierceeffect(Effect, Bullet)
 end
 
 -- Bullet ricocheted off something
-function Round.ricocheteffect(Effect, Bullet)
+function Round.ricocheteffect(_, Bullet)
 	local Spall = EffectData()
 	Spall:SetEntity(Bullet.Crate)
 	Spall:SetOrigin(Bullet.SimPos)
@@ -186,7 +186,7 @@ function Round.guicreate(Panel, Table)
 	Round.guiupdate(Panel, Table)
 end
 
-function Round.guiupdate(Panel, Table)
+function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
 	PlayerData.Type = "APFSDS" --Hardcoded, match ACFRoundTypes table index
@@ -212,7 +212,7 @@ function Round.guiupdate(Panel, Table)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Penetrator Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. (Data.MaxTotalLength) .. " cm") --Total round length (Name, Desc)
+	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.VelScale) .. " m\\s") --Proj muzzle velocity (Name, Desc)
 	--local RicoAngs = ACF_RicoProbability( Data.Ricochet, Data.MuzzleVel*ACF.VelScale )
 	--acfmenupanel:CPanelText("RicoDisplay", "Ricochet probability vs impact angle:\n".."    0% @ "..RicoAngs.Min.." degrees\n  50% @ "..RicoAngs.Mean.." degrees\n100% @ "..RicoAngs.Max.." degrees")

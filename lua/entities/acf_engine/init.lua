@@ -1,6 +1,6 @@
 AddCSLuaFile("cl_init.lua")
-
 DEFINE_BASECLASS("base_wire_entity")
+
 ENT.PrintName     = "ACF Engine"
 ENT.WireDebugName = "ACF Engine"
 
@@ -124,7 +124,7 @@ function ENT:Update(ArgsTable)
 	if Lookup.fuel ~= self.FuelType then
 		Feedback = " Fuel type changed, fuel tanks unlinked."
 
-		for Key, Value in pairs(self.FuelLink) do
+		for Key in pairs(self.FuelLink) do
 			table.remove(self.FuelLink, Key)
 			--need to remove from tank master?
 		end
@@ -313,7 +313,7 @@ function ENT:ACF_Activate()
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = ((Type == "HEAT" and ACF.HEATMulEngine) or 1) --Heat penetrators deal bonus damage to engines
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
 	--This function needs to return HitRes
@@ -354,9 +354,8 @@ end
 
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio()
-	local PhysMass  = 0
+	local PhysMass = 0
 	local TotalMass = 0
-
 	local Physical, Parented = ACF_GetEnts(self)
 
 	for K in pairs(Physical) do
@@ -364,15 +363,13 @@ function ENT:CalcMassRatio()
 
 		if IsValid(Phys) then
 			local Mass = Phys:GetMass()
-
 			TotalMass = TotalMass + Mass
-			PhysMass  = PhysMass + Mass
+			PhysMass = PhysMass + Mass
 		end
 	end
 
 	for K in pairs(Parented) do
 		if Physical[K] then continue end -- Skip overlaps
-
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
 
 		if IsValid(Phys) then
@@ -381,7 +378,6 @@ function ENT:CalcMassRatio()
 	end
 
 	self.MassRatio = PhysMass / TotalMass
-
 	Wire_TriggerOutput(self, "Mass", math.Round(TotalMass, 2))
 	Wire_TriggerOutput(self, "Physical Mass", math.Round(PhysMass, 2))
 end
@@ -452,7 +448,7 @@ function ENT:CalcRPM()
 	local TotalReqTq = 0
 
 	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
-	for Key, Link in pairs(self.GearLink) do
+	for _, Link in pairs(self.GearLink) do
 		if not Link.Ent.Legal then continue end
 		Link.ReqTq = Link.Ent:Calc(self.FlyRPM, self.Inertia)
 		TotalReqTq = TotalReqTq + Link.ReqTq
@@ -464,7 +460,7 @@ function ENT:CalcRPM()
 	local AvailRatio = math.min(TorqueDiff / TotalReqTq / Boxes, 1)
 
 	-- Split the torque fairly between the gearboxes who need it
-	for Key, Link in pairs(self.GearLink) do
+	for _, Link in pairs(self.GearLink) do
 		if not Link.Ent.Legal then continue end
 		Link.Ent:Act(Link.ReqTq * AvailRatio * self.MassRatio, DeltaTime, self.MassRatio)
 	end
@@ -475,7 +471,7 @@ function ENT:CalcRPM()
 	table.insert(self.RPM, 1, self.FlyRPM)
 	local SmoothRPM = 0
 
-	for Key, RPM in pairs(self.RPM) do
+	for _, RPM in pairs(self.RPM) do
 		SmoothRPM = SmoothRPM + (RPM or 0)
 	end
 
@@ -494,7 +490,7 @@ function ENT:CalcRPM()
 end
 
 function ENT:CheckRopes()
-	for Key, Link in pairs(self.GearLink) do
+	for _, Link in pairs(self.GearLink) do
 		local Ent = Link.Ent
 		local OutPos = self:LocalToWorld(self.Out)
 		local InPos = Ent:LocalToWorld(Ent.In)
@@ -537,7 +533,7 @@ function ENT:Link(Target)
 	if Target:GetClass() == "acf_fueltank" then return self:LinkFuel(Target) end
 
 	-- Check if target is already linked
-	for Key, Link in pairs(self.GearLink) do
+	for _, Link in pairs(self.GearLink) do
 		if Link.Ent == Target then return false, "That is already linked to this engine!" end
 	end
 
@@ -599,13 +595,10 @@ function ENT:Unlink(Target)
 end
 
 function ENT:LinkFuel(Target)
-	if self.FuelType ~= "Multifuel" and not Target.FuelType ~= "Electric" and self.FuelType ~= Target.FuelType then
-		return false, "Cannot link because fuel type is incompatible."
-	end
-
+	if self.FuelType ~= "Multifuel" and not Target.FuelType ~= "Electric" and self.FuelType ~= Target.FuelType then return false, "Cannot link because fuel type is incompatible." end
 	if Target.NoLinks then return false, "This fuel tank doesn\'t allow linking." end
 
-	for Key, Value in pairs(self.FuelLink) do
+	for _, Value in pairs(self.FuelLink) do
 		if Value == Target then return false, "That fuel tank is already linked to this engine!" end
 	end
 
@@ -641,7 +634,7 @@ function ENT:PreEntityCopy()
 	end
 
 	--Then save it
-	for Key, Link in pairs(self.GearLink) do
+	for _, Link in pairs(self.GearLink) do
 		table.insert(entids, Link.Ent:EntIndex())
 	end
 
@@ -656,14 +649,14 @@ function ENT:PreEntityCopy()
 	local fuel_entids = {}
 
 	--First clean the table of any invalid entities
-	for Key, Value in pairs(self.FuelLink) do
+	for _, Value in pairs(self.FuelLink) do
 		if not Value:IsValid() then
 			table.remove(self.FuelLink, Value)
 		end
 	end
 
 	--Then save it
-	for Key, Value in pairs(self.FuelLink) do
+	for _, Value in pairs(self.FuelLink) do
 		table.insert(fuel_entids, Value:EntIndex())
 	end
 

@@ -49,7 +49,7 @@ if CLIENT then
 	surface.CreateFont( "Torchfont", { size = 40, weight = 1000, font = "arial" } )
 
 	-- clamp thickness if the change in ductility puts mass out of range
-	cvars.AddChangeCallback( "acfarmorprop_ductility", function( cvar, oldvalue, value )
+	cvars.AddChangeCallback( "acfarmorprop_ductility", function( _, _, value )
 
 		local area = ArmorProp_Area:GetInt()
 
@@ -74,7 +74,7 @@ if CLIENT then
 	end )
 
 	-- clamp ductility if the change in thickness puts mass out of range
-	cvars.AddChangeCallback( "acfarmorprop_thickness", function( cvar, oldvalue, value )
+	cvars.AddChangeCallback( "acfarmorprop_thickness", function( _, _, value )
 
 		local area = ArmorProp_Area:GetInt()
 
@@ -101,7 +101,7 @@ if CLIENT then
 end
 
 -- Apply settings to prop and store dupe info
-local function ApplySettings( ply, ent, data )
+local function ApplySettings( _, ent, data )
 
 	if not SERVER then return end
 
@@ -257,7 +257,7 @@ function TOOL:DrawHUD()
 
 end
 
-function TOOL:DrawToolScreen( w, h )
+function TOOL:DrawToolScreen()
 
 	if not CLIENT then return end
 

@@ -6,11 +6,11 @@ Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "HEAT, but fin stabilized with a fixed minimum propellant charge. Smoothbores only."
 Round.netid = 11 --Unique ammotype ID for network transmission
 
-function Round.create(Gun, BulletData)
+function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
 end
 
-function Round.ConeCalc(ConeAngle, Radius, Length)
+function Round.ConeCalc(ConeAngle, Radius)
 	local ConeLength = math.tan(math.rad(ConeAngle)) * Radius
 	local ConeArea = 3.1416 * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
 	local ConeVol = (3.1416 * Radius ^ 2 * ConeLength) / 3
@@ -38,7 +38,7 @@ function Round.CalcSlugMV(Data, HEATFillerMass)
 end
 
 -- Function to convert the player's slider data into the complete round data
-function Round.convert(Crate, PlayerData)
+function Round.convert(_, PlayerData)
 	local Data = {}
 	local ServerData = {}
 	local GUIData = {}
@@ -166,14 +166,14 @@ end
 
 --local fakeent = {ACF = {Armour = 0}}
 --local fakepen = {Penetration = 999999999}
-function Round.cratetxt(BulletData, builtFullData)
+function Round.cratetxt(BulletData)
 	local DData = Round.getDisplayData(BulletData)
 	local str = {"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n", "Max Penetration: ", math.floor(DData.MaxPen), " mm\n", "Blast Radius: ", math.Round(DData.BlastRadius, 1), " m\n", "Blast Energy: ", math.floor(DData.BoomFillerMass * ACF.HEPower), " KJ"}
 
 	return table.concat(str)
 end
 
-function Round.detonate(Index, Bullet, HitPos, HitNormal)
+function Round.detonate(_, Bullet, HitPos, HitNormal)
 	local Crushed, HEATFillerMass, BoomFillerMass = Round.CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
 	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
 	if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
@@ -260,11 +260,11 @@ function Round.worldimpact(Index, Bullet, HitPos, HitNormal)
 	end
 end
 
-function Round.endflight(Index, Bullet, HitPos, HitNormal)
+function Round.endflight(Index)
 	ACF_RemoveBullet(Index)
 end
 
-function Round.endeffect(Effect, Bullet)
+function Round.endeffect(_, Bullet)
 	local Impact = EffectData()
 	Impact:SetEntity(Bullet.Crate)
 	Impact:SetOrigin(Bullet.SimPos)
@@ -296,7 +296,7 @@ function Round.pierceeffect(Effect, Bullet)
 	end
 end
 
-function Round.ricocheteffect(Effect, Bullet)
+function Round.ricocheteffect(_, Bullet)
 	local Spall = EffectData()
 	Spall:SetEntity(Bullet.Gun)
 	Spall:SetOrigin(Bullet.SimPos)
@@ -325,7 +325,7 @@ function Round.guicreate(Panel, Table)
 	Round.guiupdate(Panel, Table)
 end
 
-function Round.guiupdate(Panel, Table)
+function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
 	PlayerData.Type = "HEATFS" --Hardcoded, match ACFRoundTypes table index

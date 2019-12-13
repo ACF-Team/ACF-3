@@ -25,7 +25,7 @@ function PANEL:Init()
 	for ID, Table in pairs(WeaponDisplay) do
 		self.WeaponDisplay[ID] = {}
 
-		for EntID, Data in pairs(Table) do
+		for _, Data in pairs(Table) do
 			table.insert(self.WeaponDisplay[ID], Data)
 		end
 
@@ -45,11 +45,11 @@ function PANEL:Init()
 	local HomeNode = self.WeaponSelect:AddNode("ACF Home")
 	HomeNode.mytable = {}
 
-	HomeNode.mytable.guicreate = (function(Panel, Table)
+	HomeNode.mytable.guicreate = (function(_, Table)
 		ACFHomeGUICreate(Table)
 	end or nil)
 
-	HomeNode.mytable.guiupdate = (function(Panel, Table)
+	HomeNode.mytable.guiupdate = (function(_, Table)
 		ACFHomeGUIUpdate(Table)
 	end or nil)
 
@@ -69,10 +69,10 @@ function PANEL:Init()
 	table.sort(self.RoundAttribs, function(a, b) return a.id < b.id end)
 	local Guns = self.WeaponSelect:AddNode("Guns")
 
-	for ClassID, Class in pairs(self.Classes["GunClass"]) do
+	for _, Class in pairs(self.Classes["GunClass"]) do
 		local SubNode = Guns:AddNode(Class.name or "No Name")
 
-		for Type, Ent in pairs(self.WeaponDisplay["Guns"]) do
+		for _, Ent in pairs(self.WeaponDisplay["Guns"]) do
 			if Ent.gunclass == Class.id then
 				local EndNode = SubNode:AddNode(Ent.name or "No Name")
 				EndNode.mytable = Ent
@@ -89,7 +89,7 @@ function PANEL:Init()
 
 	local Ammo = self.WeaponSelect:AddNode("Ammo")
 
-	for AmmoID, AmmoTable in pairs(self.RoundAttribs) do
+	for _, AmmoTable in pairs(self.RoundAttribs) do
 		local EndNode = Ammo:AddNode(AmmoTable.name or "No Name")
 		EndNode.mytable = AmmoTable
 
@@ -124,11 +124,11 @@ function PANEL:Init()
 		end
 
 		if MobilityTable.category and not EngineSubcats[MobilityTable.category] then
-				EngineSubcats[MobilityTable.category] = NodeAdd:AddNode(MobilityTable.category)
+			EngineSubcats[MobilityTable.category] = NodeAdd:AddNode(MobilityTable.category)
 		end
 	end
 
-	for MobilityID, MobilityTable in pairs(self.WeaponDisplay["Mobility"]) do
+	for _, MobilityTable in pairs(self.WeaponDisplay["Mobility"]) do
 		local NodeAdd = Mobility
 
 		if MobilityTable.ent == "acf_engine" then
@@ -225,14 +225,6 @@ function PANEL:UpdateDisplay(Table)
 	acfmenupanel:PerformLayout()
 end
 
-function PANEL:CreateAttribs(Table)
-	--You overwrite this with your own function, defined in the ammo definition file, so each ammotype creates it's own menu
-end
-
-function PANEL:UpdateAttribs(Table)
-	--You overwrite this with your own function, defined in the ammo definition file, so each ammotype creates it's own menu
-end
-
 function PANEL:PerformLayout()
 	--Starting positions
 	local vspacing = 10
@@ -250,7 +242,7 @@ function PANEL:PerformLayout()
 	end
 end
 
-function ACFHomeGUICreate(Table)
+function ACFHomeGUICreate()
 	if not acfmenupanel.CustomDisplay then return end
 	--start version
 	acfmenupanel["CData"]["VersionInit"] = vgui.Create("DLabel")
@@ -282,7 +274,7 @@ function ACFHomeGUICreate(Table)
 	if acfmenupanel.Changelog then
 		acfmenupanel["CData"]["Changelist"] = vgui.Create("DTree")
 
-		for Rev, Changes in pairs(acfmenupanel.Changelog) do
+		for Rev in pairs(acfmenupanel.Changelog) do
 			local Node = acfmenupanel["CData"]["Changelist"]:AddNode("Rev " .. Rev)
 			Node.mytable = {}
 			Node.mytable["rev"] = Rev
@@ -324,22 +316,22 @@ function ACFHomeGUIUpdate(Table)
 	acfmenupanel["CData"]["VersionText"]:SizeToContents()
 end
 
-function ACFChangelogHTTPCallBack(contents, size)
+function ACFChangelogHTTPCallBack(contents)
 	local Temp = string.Explode("*", contents)
 	acfmenupanel.Changelog = {}
 
-	for Key, String in pairs(Temp) do
+	for _, String in pairs(Temp) do
 		acfmenupanel.Changelog[tonumber(string.sub(String, 2, 4))] = string.Trim(string.sub(String, 5))
 	end
 
 	table.SortByKey(acfmenupanel.Changelog, true)
 	local Table = {}
 
-	Table.guicreate = (function(Panel, Tab)
+	Table.guicreate = (function(_, Tab)
 		ACFHomeGUICreate(Tab)
 	end or nil)
 
-	Table.guiupdate = (function(Panel, Tab)
+	Table.guiupdate = (function(_, Tab)
 		ACFHomeGUIUpdate(Tab)
 	end or nil)
 
@@ -370,7 +362,7 @@ function PANEL:AmmoSelect(Blacklist)
 		acfmenupanel.CData.CrateSelect:AddChoice(Value.id, Key)
 	end
 
-	acfmenupanel.CData.CrateSelect.OnSelect = function(index, value, data)
+	acfmenupanel.CData.CrateSelect.OnSelect = function(_, _, data)
 		RunConsoleCommand("acfmenu_id", data)
 		acfmenupanel.AmmoData["Id"] = data
 		self:UpdateAttribs()
@@ -389,7 +381,7 @@ function PANEL:AmmoSelect(Blacklist)
 		end
 	end
 
-	acfmenupanel.CData.CaliberSelect.OnSelect = function(index, value, data)
+	acfmenupanel.CData.CaliberSelect.OnSelect = function(_, _, data)
 		acfmenupanel.AmmoData["Data"] = acfmenupanel.WeaponData["Guns"][data]["round"]
 		self:UpdateAttribs()
 		self:UpdateAttribs() --Note : this is intentional
@@ -418,7 +410,7 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc)
 			acfmenupanel["CData"][Name]:SetValue(acfmenupanel.AmmoData[Name])
 		end
 
-		acfmenupanel["CData"][Name].OnValueChanged = function(slider, val)
+		acfmenupanel["CData"][Name].OnValueChanged = function(_, val)
 			if acfmenupanel.AmmoData[Name] ~= val then
 				acfmenupanel.AmmoData[Name] = val
 				self:UpdateAttribs(Name)
@@ -459,7 +451,7 @@ function PANEL:AmmoCheckbox(Name, Title, Desc)
 			acfmenupanel.AmmoData[Name] = false
 		end
 
-		acfmenupanel["CData"][Name].OnChange = function(check, bval)
+		acfmenupanel["CData"][Name].OnChange = function(_, bval)
 			acfmenupanel.AmmoData[Name] = bval
 			self:UpdateAttribs({Name, bval})
 		end

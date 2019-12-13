@@ -33,14 +33,14 @@ local fueltank_base = {
 
 -- add gui stuff to base classes if this is client
 if CLIENT then
-	gun_base.guicreate = function( Panel, Table ) ACFGunGUICreate( Table ) end or nil
+	gun_base.guicreate = function( _, tbl ) ACFGunGUICreate( tbl ) end or nil
 	gun_base.guiupdate = function() return end
-	engine_base.guicreate = function( panel, tbl ) ACFEngineGUICreate( tbl ) end or nil
+	engine_base.guicreate = function( _, tbl ) ACFEngineGUICreate( tbl ) end or nil
 	engine_base.guiupdate = function() return end
-	gearbox_base.guicreate = function( panel, tbl ) ACFGearboxGUICreate( tbl ) end or nil
+	gearbox_base.guicreate = function( _, tbl ) ACFGearboxGUICreate( tbl ) end or nil
 	gearbox_base.guiupdate = function() return end
-	fueltank_base.guicreate = function( panel, tbl ) ACFFuelTankGUICreate( tbl ) end or nil
-	fueltank_base.guiupdate = function( panel, tbl ) ACFFuelTankGUIUpdate( tbl ) end or nil
+	fueltank_base.guicreate = function( _, tbl ) ACFFuelTankGUICreate( tbl ) end or nil
+	fueltank_base.guiupdate = function( _, tbl ) ACFFuelTankGUIUpdate( tbl ) end or nil
 end
 
 -- some factory functions for defining ents

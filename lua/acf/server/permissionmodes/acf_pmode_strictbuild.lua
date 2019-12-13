@@ -28,7 +28,7 @@ local DefaultPermission = false
 	Return: boolean
 		true if the entity should be damaged, false if the entity should be protected from the damage.
 //]]
-local function modepermission(owner, attacker, ent)
+local function modepermission(owner, attacker)
 	if not (owner.SteamID or attacker.SteamID) then
 		--print("ACF ERROR: owner or attacker is not a player!", tostring(owner), tostring(attacker), "\n", debug.traceback())
 		if DefaultPermission then

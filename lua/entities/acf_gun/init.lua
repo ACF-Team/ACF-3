@@ -187,7 +187,7 @@ function ENT:Link(Target)
 	if table.HasValue(Blacklist, self.Class) then return false, "That round type cannot be used with this gun!" end
 
 	-- Don't link if it's already linked
-	for k, v in pairs(self.AmmoLink) do
+	for _, v in pairs(self.AmmoLink) do
 		if v == Target then return false, "That crate is already linked to this gun!" end
 	end
 
@@ -225,7 +225,7 @@ function ENT:Unlink(Target)
 	end
 end
 
-function ENT:CanProperty(ply, property)
+function ENT:CanProperty(_, property)
 	if property == "bodygroups" then
 		local longbarrel = list.Get("ACFClasses").GunClass[self.Class].longbarrel
 
@@ -344,7 +344,7 @@ function ENT:Think()
 		local rofbonus = 0
 		local totalcap = 0
 
-		for Key, Crate in pairs(self.AmmoLink) do
+		for _, Crate in pairs(self.AmmoLink) do
 			if IsValid(Crate) and Crate.Load and Crate.Legal then
 				if RetDist(self, Crate) < 512 then
 					Ammo = Ammo + (Crate.Ammo or 0)
@@ -624,14 +624,14 @@ function ENT:PreEntityCopy()
 	local entids = {}
 
 	--First clean the table of any invalid entities
-	for Key, Value in pairs(self.AmmoLink) do
+	for _, Value in pairs(self.AmmoLink) do
 		if not Value:IsValid() then
 			table.remove(self.AmmoLink, Value)
 		end
 	end
 
 	--Then save it
-	for Key, Value in pairs(self.AmmoLink) do
+	for _, Value in pairs(self.AmmoLink) do
 		table.insert(entids, Value:EntIndex())
 	end
 

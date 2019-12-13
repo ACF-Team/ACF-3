@@ -61,7 +61,7 @@ ACF.SoundToolSupport = {
 	}
 }
 
-local function ReplaceSound(ply, Entity, data)
+local function ReplaceSound(_, Entity, data)
 	if not IsValid(Entity) then return end
 	local sound = data[1]
 	local pitch = data[2] or 1

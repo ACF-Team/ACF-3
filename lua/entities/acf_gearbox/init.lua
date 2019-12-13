@@ -333,7 +333,7 @@ function ENT:UpdateOverlayText()
 end
 
 -- prevent people from changing bodygroup
-function ENT:CanProperty(ply, property)
+function ENT:CanProperty(_, property)
 	return property ~= "bodygroups"
 end
 
@@ -404,7 +404,7 @@ function ENT:Think()
 end
 
 function ENT:CheckRopes()
-	for Key, Link in pairs(self.WheelLink) do
+	for _, Link in pairs(self.WheelLink) do
 		local Ent = Link.Ent
 		local OutPos = self:LocalToWorld(Link.Output)
 		local InPos = Ent:GetPos()
@@ -570,7 +570,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 		AvailTq = math.min(math.abs(Torque) / self.TotalReqTq, 1) / self.GearRatio * -(-Torque / math.abs(Torque)) * Loss * Slop
 	end
 
-	for Key, Link in pairs(self.WheelLink) do
+	for _, Link in pairs(self.WheelLink) do
 		local Brake = 0
 
 		if Link.Side == 0 then
@@ -673,7 +673,7 @@ function ACF_SearchGearboxLinkTree(source, target)
 		if not ent.WheelLink then continue end
 
 		-- add each link to the queue
-		for k, v in ipairs(ent.WheelLink) do
+		for _, v in ipairs(ent.WheelLink) do
 			table.insert(queue, v.Ent)
 			parent[v.Ent:EntIndex()] = ent:EntIndex()
 		end
@@ -686,11 +686,10 @@ function ENT:Link(Target)
 	if not IsValid(Target) or not table.HasValue({"prop_physics", "acf_gearbox", "tire"}, Target:GetClass()) then return false, "Can only link props or gearboxes!" end
 
 	-- Check if target is already linked
-	for Key, Link in pairs(self.WheelLink) do
+	for _, Link in pairs(self.WheelLink) do
 		if Link.Ent == Target then return false, "That is already linked to this gearbox!" end
 	end
 
-	
 
 	-- make sure the angle is not excessive
 	local InPos = Vector(0, 0, 0)
@@ -702,7 +701,7 @@ function ENT:Link(Target)
 
 		return false, "You cannot link gearboxes in a loop!\n" .. loopStr
 	end
-	
+
 	if Target.IsGeartrain then
 		InPos = Target.In
 	end
@@ -782,7 +781,7 @@ function ENT:PreEntityCopy()
 	end
 
 	-- Then save it
-	for Key, Link in pairs(self.WheelLink) do
+	for _, Link in pairs(self.WheelLink) do
 		table.insert(entids, Link.Ent:EntIndex())
 	end
 
@@ -823,7 +822,7 @@ end
 
 function ENT:OnRemove()
 	--Let's unlink ourselves from the engines properly
-	for Key, Value in pairs(self.Master) do
+	for Key in pairs(self.Master) do
 		if IsValid(self.Master[Key]) then
 			self.Master[Key]:Unlink(self)
 		end

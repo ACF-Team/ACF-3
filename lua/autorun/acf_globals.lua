@@ -192,7 +192,7 @@ if CLIENT then
 end
 
 timer.Simple(0, function()
-	for Class, Table in pairs(ACF.Classes["GunClass"]) do
+	for _, Table in pairs(ACF.Classes["GunClass"]) do
 		PrecacheParticleSystem(Table["muzzleflash"])
 	end
 end)
@@ -208,7 +208,7 @@ function ACF_CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
 
-function ACF_MuzzleVelocity(Propellant, Mass, Caliber)
+function ACF_MuzzleVelocity(Propellant, Mass)
 	local PEnergy = ACF.PBase * ((1 + Propellant) ^ ACF.PScale - 1)
 	local Speed = ((PEnergy * 2000 / Mass) ^ ACF.MVScale)
 	local Final = Speed -- - Speed * math.Clamp(Speed/2000,0,0.5)
@@ -237,7 +237,7 @@ function ACF_GetLinkedWheels(MobilityEnt)
 	local Wheels = {}
 	local links = MobilityEnt.GearLink or MobilityEnt.WheelLink -- handling for usage on engine or gearbox
 
-	for k, link in pairs(links) do
+	for _, link in pairs(links) do
 		table.insert(ToCheck, link.Ent)
 	end
 
@@ -247,7 +247,7 @@ function ACF_GetLinkedWheels(MobilityEnt)
 
 		if IsValid(Ent) then
 			if Ent:GetClass() == "acf_gearbox" then
-				for k, v in pairs(Ent.WheelLink) do
+				for _, v in pairs(Ent.WheelLink) do
 					table.insert(ToCheck, v.Ent)
 				end
 			else
@@ -403,7 +403,7 @@ function ACF_CheckLegal(Ent, Model, MinMass, MinInertia, CanMakesphere, Parentab
 			local rootparent = ACF_GetAncestor(Ent)
 
 			--make sure it"s welded to root parent
-			for k, v in pairs(constraint.FindConstraints(Ent, "Weld")) do
+			for _, v in pairs(constraint.FindConstraints(Ent, "Weld")) do
 				if v.Ent1 == rootparent or v.Ent2 == rootparent then
 					welded = true
 					break
@@ -431,7 +431,7 @@ CreateConVar("acf_spalling", 0)
 CreateConVar("acf_gunfire", 1)
 CreateConVar("acf_modelswap_legal", 0)
 
-function ACF_CVarChangeCallback(CVar, Prev, New)
+function ACF_CVarChangeCallback(CVar, _, New)
 	if (CVar == "acf_healthmod") then
 		ACF.Threshold = 264.7 / math.max(New, 0.01)
 		print("Health Mod changed to a factor of " .. New)
@@ -487,7 +487,7 @@ else
 end
 
 function ACF_UpdateChecking()
-	http.Fetch("https://github.com/nrlulz/ACF", function(contents, size)
+	http.Fetch("https://github.com/nrlulz/ACF", function(contents, _)
 		local rev = tonumber(string.match(contents, "%s*(%d+)\n%s*</span>\n%s*commits")) or 0 --"history\"></span>\n%s*(%d+)\n%s*</span>"
 
 		if rev and ACF.Version >= rev then
@@ -511,7 +511,7 @@ ACF_UpdateChecking()
 local function OnInitialSpawn(ply)
 	local Table = {}
 
-	for k, v in pairs(ents.GetAll()) do
+	for _, v in pairs(ents.GetAll()) do
 		if v.ACF and v.ACF.PrHealth then
 			table.insert(Table, {
 				ID = v:EntIndex(),
@@ -537,13 +537,13 @@ cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
 
 -- smoke-wind cvar handling
 if SERVER then
-	local function msgtoconsole(hud, msg)
+	local function msgtoconsole(_, msg)
 		print(msg)
 	end
 
 	util.AddNetworkString("acf_smokewind")
 
-	concommand.Add("acf_smokewind", function(ply, cmd, args, str)
+	concommand.Add("acf_smokewind", function(ply, _, args, _)
 		local validply = IsValid(ply)
 
 		local printmsg = validply and function(hud, msg)
@@ -587,7 +587,7 @@ if SERVER then
 
 	hook.Add("PlayerInitialSpawn", "ACF_SendSmokeWind", sendSmokeWind)
 else
-	local function recvSmokeWind(len)
+	local function recvSmokeWind()
 		ACF.SmokeWind = net.ReadFloat()
 	end
 

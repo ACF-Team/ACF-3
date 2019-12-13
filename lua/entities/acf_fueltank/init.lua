@@ -64,7 +64,7 @@ function ENT:ACF_Activate(Recalc)
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = ((Type == "HEAT" and ACF.HEATMulFuel) or 1) --Heat penetrators deal bonus damage to fuel
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
@@ -100,7 +100,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
 	return HitRes
 end
 
-function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	if IsValid(Owner) and not Owner:CheckLimit("_acf_misc") then return false end
 	local SId = Data1
 	local Tanks = list.Get("ACFEnts").FuelTanks
@@ -135,7 +135,7 @@ end
 list.Set("ACFCvars", "acf_fueltank", {"id", "data1", "data2"})
 duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType")
 
-function ENT:UpdateFuelTank(Id, Data1, Data2)
+function ENT:UpdateFuelTank(_, Data1, Data2)
 	local lookup = list.Get("ACFEnts").FuelTanks
 	local pct = 1 --how full is the tank?
 
@@ -210,7 +210,7 @@ function ENT:Update(ArgsTable)
 	if (ArgsTable[1] ~= self.Owner) then return false, "You don't own that fuel tank!" end --Argtable[1] is the player that shot the tool
 
 	if (ArgsTable[6] ~= self.FuelType) then
-		for Key, Engine in pairs(self.Master) do
+		for _, Engine in pairs(self.Master) do
 			if Engine:IsValid() then
 				Engine:Unlink(self)
 			end
@@ -288,7 +288,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	for Key, Value in pairs(self.Master) do
+	for Key in pairs(self.Master) do
 		if IsValid(self.Master[Key]) then
 			self.Master[Key]:Unlink(self)
 		end
