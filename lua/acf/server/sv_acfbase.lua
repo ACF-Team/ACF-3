@@ -30,40 +30,29 @@ end
 
 function ACF_Activate(Entity, Recalc)
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+	local PhysObj = Entity:GetPhysicsObject()
+
+	if not IsValid(PhysObj) then return end
+
 	if Entity.SpecialHealth then
 		Entity:ACF_Activate(Recalc)
-
 		return
 	end
 
 	Entity.ACF = Entity.ACF or {}
-	local Count
-	local PhysObj = Entity:GetPhysicsObject()
+	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
 
-	if PhysObj:GetMesh() then
-		Count = #PhysObj:GetMesh()
-	end
+	local Count = PhysObj:GetMesh() and #PhysObj:GetMesh() or nil
 
-	if PhysObj:IsValid() and Count and Count > 100 then
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
-		end
-		--if not Entity.ACF.Volume then
-		--	Entity.ACF.Volume = (PhysObj:GetVolume() * 16.38)
-		--end
+	if Count and Count > 100 then
+		Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
 	else
 		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
 
-		if not Entity.ACF.Area then
-			Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45 --^ 1.15
-		end
-		--if not Entity.ACF.Volume then
-		--	Entity.ACF.Volume = Size.x * Size.y * Size.z * 16.38
-		--end
+		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45 --^ 1.15
 	end
 
 	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
-	--local Area = (Entity.ACF.Area+Entity.ACF.Area*math.Clamp(Entity.ACF.Ductility,-0.8,0.8))
 	local Area = Entity.ACF.Area
 	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
 	local Armour = ACF_CalcArmor(Area, Ductility, Entity:GetPhysicsObject():GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
@@ -81,7 +70,6 @@ function ACF_Activate(Entity, Recalc)
 	Entity.ACF.Type = nil
 	Entity.ACF.Mass = PhysObj:GetMass()
 
-	--Entity.ACF.Density = (PhysObj:GetMass()*1000)/Entity.ACF.Volume
 	if Entity:IsPlayer() or Entity:IsNPC() then
 		Entity.ACF.Type = "Squishy"
 	elseif Entity:IsVehicle() then
@@ -89,22 +77,23 @@ function ACF_Activate(Entity, Recalc)
 	else
 		Entity.ACF.Type = "Prop"
 	end
-	--print(Entity.ACF.Health)
 end
 
+local Baddies = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true}
 function ACF_Check(Entity)
 	if not IsValid(Entity) then return false end
-	local physobj = Entity:GetPhysicsObject()
-	if not (physobj:IsValid() and (physobj:GetMass() or 0) > 0 and not Entity:IsWorld() and not Entity:IsWeapon()) then return false end
+
+	local PhysObj = Entity:GetPhysicsObject()
+	if not IsValid(PhysObj) or PhysObj:GetMass() <= 0 or Entity:IsWorld() or Entity:IsWeapon() then return false end
+
 	local Class = Entity:GetClass()
-	if (Class == "gmod_ghost" or Class == "acf_debris" or Class == "prop_ragdoll" or string.find(Class, "func_")) then return false end
+	if Baddies[Class] or string.find(Class, "func_") then return false end
 
 	if not Entity.ACF then
 		ACF_Activate(Entity)
-	elseif Entity.ACF.Mass ~= physobj:GetMass() then
+	elseif Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
 		ACF_Activate(Entity, true)
 	end
-	--print("ACF_Check "..Entity.ACF.Type)
 
 	return Entity.ACF.Type
 end
@@ -174,7 +163,7 @@ function ACF_CalcDamage(Entity, Energy, FrArea, Angle)
 	return HitRes
 end
 
-function ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
+function ACF_PropDamage(Entity, Energy, FrArea, Angle)
 	local HitRes = ACF_CalcDamage(Entity, Energy, FrArea, Angle)
 	HitRes.Kill = false
 
@@ -195,7 +184,7 @@ function ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
 	return HitRes
 end
 
-function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
+function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun)
 	local HitRes = ACF_CalcDamage(Entity, Energy, FrArea, Angle)
 	local Driver = Entity:GetDriver()
 
@@ -306,7 +295,7 @@ end
 
 function ACF_HasConstraint(Ent)
 	if Ent.Constraints then
-		for K, V in pairs(Ent.Constraints) do
+		for _, V in pairs(Ent.Constraints) do
 			if V.Type ~= "NoCollide" then
 				return true
 			end
@@ -341,7 +330,7 @@ function ACF_GetAllPhysicalEntities(Ent, Tab)
 		Res[Ent] = true
 
 		if Ent.Constraints then
-			for K, V in pairs(Ent.Constraints) do
+			for _, V in pairs(Ent.Constraints) do
 				if V.Type ~= "NoCollide" then
 					ACF_GetAllPhysicalEntities(V.Ent1, Res)
 					ACF_GetAllPhysicalEntities(V.Ent2, Res)
