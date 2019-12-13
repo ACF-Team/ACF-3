@@ -654,8 +654,10 @@ function ENT:Link(Target)
 	end
 
 	-- Check to make sure target isn't trying to be linked to each other (Patches issue #8)
-	for Key, Link in pairs(Target.WheelLink) do
-		if Link.Ent == self then return false, "You cannot link two gearboxes to each other!" end
+	if Target:GetClass() == "acf_gearbox" and self:GetClass() == "acf_gearbox" then
+		for Key, Link in pairs(Target.WheelLink) do
+			if Link.Ent == self then return false, "You cannot link two gearboxes to each other!" end
+		end
 	end
 
 	-- make sure the angle is not excessive
