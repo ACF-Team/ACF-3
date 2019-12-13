@@ -653,6 +653,11 @@ function ENT:Link(Target)
 		if Link.Ent == Target then return false, "That is already linked to this gearbox!" end
 	end
 
+	-- Check to make sure target isn't trying to be linked to each other (Patches issue #8)
+	for Key, Link in pairs(Target.WheelLink) do
+		if Link.Ent == self then return false, "You cannot link two gearboxes to each other!" end
+	end
+
 	-- make sure the angle is not excessive
 	local InPos = Vector(0, 0, 0)
 
