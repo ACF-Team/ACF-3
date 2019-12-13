@@ -1,4 +1,3 @@
-AddCSLuaFile()
 local RoundTypes = list.Get("ACFRoundTypes")
 local Round = RoundTypes.AP -- inherit from AP
 ACF.AmmoBlacklist.HP = ACF.AmmoBlacklist.AP

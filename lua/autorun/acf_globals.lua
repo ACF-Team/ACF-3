@@ -165,19 +165,6 @@ elseif CLIENT then
 	end
 end
 
-include("acf/shared/rounds/roundap.lua")
-include("acf/shared/rounds/roundaphe.lua")
-include("acf/shared/rounds/roundhe.lua")
-include("acf/shared/rounds/roundheat.lua")
-include("acf/shared/rounds/roundheatfs.lua")
-include("acf/shared/rounds/roundapfsds.lua")
-include("acf/shared/rounds/roundapds.lua")
-include("acf/shared/rounds/roundapcr.lua")
-include("acf/shared/rounds/roundfl.lua")
-include("acf/shared/rounds/roundhp.lua")
-include("acf/shared/rounds/roundsmoke.lua")
-include("acf/shared/rounds/roundrefill.lua")
-include("acf/shared/rounds/roundfunctions.lua")
 include("acf/shared/acfloader.lua")
 include("acf/shared/acfcratelist.lua")
 --include("acf/shared/acfmissilelist.lua")
