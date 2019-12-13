@@ -82,27 +82,34 @@ end
 
 -- search for and load a bunch of files or whatever
 local guns = file.Find( "acf/shared/guns/*.lua", "LUA" )
-for k, v in pairs( guns ) do
+for _, v in ipairs( guns ) do
 	AddCSLuaFile( "acf/shared/guns/" .. v )
 	include( "acf/shared/guns/" .. v )
 end
 
 local engines = file.Find( "acf/shared/engines/*.lua", "LUA" )
-for k, v in pairs( engines ) do
+for _, v in ipairs( engines ) do
 	AddCSLuaFile( "acf/shared/engines/" .. v )
 	include( "acf/shared/engines/" .. v )
 end
 
 local gearboxes = file.Find( "acf/shared/gearboxes/*.lua", "LUA" )
-for k, v in pairs( gearboxes ) do
+for _, v in ipairs( gearboxes ) do
 	AddCSLuaFile( "acf/shared/gearboxes/" .. v )
 	include( "acf/shared/gearboxes/" .. v )
 end
 
 local fueltanks = file.Find( "acf/shared/fueltanks/*.lua", "LUA" )
-for k, v in pairs( fueltanks ) do
+for _, v in ipairs( fueltanks ) do
 	AddCSLuaFile( "acf/shared/fueltanks/" .. v )
 	include( "acf/shared/fueltanks/" .. v )
+end
+
+local rounds = file.Find( "acf/shared/rounds/*.lua", "LUA" )
+for _, v in ipairs( rounds ) do
+	AddCSLuaFile( "acf/shared/rounds/" .. v )
+	include( "acf/shared/rounds/" .. v )
+	print("cocks")
 end
 
 -- now that the tables are populated, throw them in the acf ents list
