@@ -109,7 +109,6 @@ local rounds = file.Find( "acf/shared/rounds/*.lua", "LUA" )
 for _, v in ipairs( rounds ) do
 	AddCSLuaFile( "acf/shared/rounds/" .. v )
 	include( "acf/shared/rounds/" .. v )
-	print("cocks")
 end
 
 -- now that the tables are populated, throw them in the acf ents list
