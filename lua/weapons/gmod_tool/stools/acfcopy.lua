@@ -13,7 +13,7 @@ if CLIENT then
 	language.Add("Tool.acfcopy.desc", "Copy ammo or gearbox data from one object to another")
 	language.Add("Tool.acfcopy.0", "Left click to paste data, Right click to copy data")
 
-	function TOOL.BuildCPanel(CPanel)
+	function TOOL.BuildCPanel()
 	end
 end
 

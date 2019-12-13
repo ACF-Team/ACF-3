@@ -28,7 +28,7 @@ local list
 
 
 
-net.Receive("ACF_refreshpermissions", function(len)
+net.Receive("ACF_refreshpermissions", function()
 
 	PermissionModes = net.ReadTable()
 	CurrentPermission = net.ReadString()
@@ -75,7 +75,7 @@ function Menu.MakePanel(Panel)
 		list:SetMultiSelect(false)
 		list:SetSize(30,100)
 
-		for permission,desc in pairs(PermissionModes) do
+		for permission in pairs(PermissionModes) do
 			list:AddLine(permission, "", "")
 		end
 

@@ -1,4 +1,4 @@
-local function HandleACFPodAnimation( vehicle, player )
+local function HandleACFPodAnimation( _, player )
 	return player:LookupSequence("drive_pd")
 end
 

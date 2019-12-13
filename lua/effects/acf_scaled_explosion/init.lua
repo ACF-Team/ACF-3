@@ -66,7 +66,7 @@ function EFFECT:Init(data)
 end
 
 function EFFECT:Core()
-	for i = 0, 2 * self.Radius * self.ParticleMul do
+	for _ = 0, 2 * self.Radius * self.ParticleMul do
 		local Flame = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if (Flame) then
@@ -85,7 +85,7 @@ function EFFECT:Core()
 		end
 	end
 
-	for i = 0, 4 * self.Radius * self.ParticleMul do
+	for _ = 0, 4 * self.Radius * self.ParticleMul do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
 		if (Debris) then
@@ -104,7 +104,7 @@ function EFFECT:Core()
 		end
 	end
 
-	for i = 0, 5 * self.Radius * self.ParticleMul do
+	for _ = 0, 5 * self.Radius * self.ParticleMul do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if (Embers) then
@@ -125,7 +125,7 @@ function EFFECT:Core()
 		end
 	end
 
-	for i = 0, 2 * self.Radius * self.ParticleMul do
+	for _ = 0, 2 * self.Radius * self.ParticleMul do
 		local Whisp = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Whisp) then
@@ -145,7 +145,7 @@ function EFFECT:Core()
 	end
 
 	if self.Radius * self.ParticleMul > 4 then
-		for i = 0, 0.5 * self.Radius * self.ParticleMul do
+		for _ = 0, 0.5 * self.Radius * self.ParticleMul do
 			local Cookoff = EffectData()
 			Cookoff:SetOrigin(self.Origin)
 			Cookoff:SetScale(self.Radius / 6)
@@ -163,7 +163,7 @@ function EFFECT:Shockwave(Ground, SmokeColor)
 	local Density = 15 * Radius
 	local Angle = Ground.HitNormal:Angle()
 
-	for i = 0, Density * self.ParticleMul do
+	for _ = 0, Density * self.ParticleMul do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 		local ShootVector = Angle:Up()
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Ground.HitPos)
@@ -188,7 +188,7 @@ end
 function EFFECT:Metal(SmokeColor)
 	self:Core()
 
-	for i = 0, 3 * self.Radius * self.ParticleMul do
+	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -211,7 +211,7 @@ end
 function EFFECT:Concrete(SmokeColor)
 	self:Core()
 
-	for i = 0, 3 * self.Radius * self.ParticleMul do
+	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -234,7 +234,7 @@ end
 function EFFECT:Dirt(SmokeColor)
 	self:Core()
 
-	for i = 0, 3 * self.Radius * self.ParticleMul do
+	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -257,7 +257,7 @@ end
 function EFFECT:Sand(SmokeColor)
 	self:Core()
 
-	for i = 0, 3 * self.Radius * self.ParticleMul do
+	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -280,7 +280,7 @@ end
 function EFFECT:Airburst(SmokeColor)
 	self:Core()
 
-	for i = 0, 3 * self.Radius * self.ParticleMul do
+	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -299,7 +299,7 @@ function EFFECT:Airburst(SmokeColor)
 		end
 	end
 
-	for i = 0, 10 * self.Radius * self.ParticleMul do
+	for _ = 0, 10 * self.Radius * self.ParticleMul do
 		local AirBurst = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (AirBurst) then

@@ -8,7 +8,7 @@ function EFFECT:Init(data)
 	local Scale = data:GetScale()
 	local Emitter = ParticleEmitter(Origin)
 
-	for i = 0, 80 * Scale do
+	for _ = 0, 80 * Scale do
 		local particle = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
 		if (particle) then
@@ -24,7 +24,7 @@ function EFFECT:Init(data)
 		end
 	end
 
-	for i = 0, 20 * Scale do
+	for _ = 0, 20 * Scale do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
 		if (Debris) then
@@ -43,7 +43,7 @@ function EFFECT:Init(data)
 		end
 	end
 
-	for i = 0, 20 * Scale do
+	for _ = 0, 20 * Scale do
 		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
 		if (Embers) then
@@ -62,7 +62,7 @@ function EFFECT:Init(data)
 		end
 	end
 
-	for i = 0, 20 * Scale do
+	for _ = 0, 20 * Scale do
 		local Smoke = Emitter:Add("particles/smokey", Origin)
 
 		if (Smoke) then

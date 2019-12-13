@@ -62,7 +62,7 @@ function ENT:ACF_Activate(Recalc)
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = ((Type == "HEAT" and ACF.HEATMulAmmo) or 1) --Heat penetrators deal bonus damage to ammo
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
 	if self.Exploding or not self.IsExplosive then return HitRes end
@@ -136,7 +136,7 @@ function ENT:Update(ArgsTable)
 
 	-- Argtable[5] is the weapon ID the new ammo loads into
 	if ArgsTable[5] ~= self.RoundId then
-		for Key, Gun in pairs(self.Master) do
+		for _, Gun in pairs(self.Master) do
 			if IsValid(Gun) then
 				Gun:Unlink(self)
 			end
@@ -146,7 +146,7 @@ function ENT:Update(ArgsTable)
 	else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
 		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]] or {}
 
-		for Key, Gun in pairs(self.Master) do
+		for _, Gun in pairs(self.Master) do
 			if IsValid(Gun) and table.HasValue(Blacklist, Gun.Class) then
 				Gun:Unlink(self)
 				msg = "New round type cannot be used with linked gun, crate unlinked."
@@ -185,7 +185,7 @@ function ENT:UpdateOverlayText()
 	self:SetOverlayText(text)
 end
 
-function ENT:CreateAmmo(Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+function ENT:CreateAmmo(_, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 	local GunData = list.Get("ACFEnts").Guns[Data1]
 
 	if not GunData then
@@ -291,7 +291,7 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:FirstLoad()
-	for Key, Value in pairs(self.Master) do
+	for Key in pairs(self.Master) do
 		local Gun = self.Master[Key]
 
 		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
@@ -416,7 +416,7 @@ function ENT:StopRefillEffect(TargetID)
 end
 
 function ENT:OnRemove()
-	for Key, Value in pairs(self.Master) do
+	for Key in pairs(self.Master) do
 		if self.Master[Key] and self.Master[Key]:IsValid() then
 			self.Master[Key]:Unlink(self)
 			self.Ammo = 0

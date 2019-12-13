@@ -5,7 +5,7 @@ function aaa_IncludeHere(dir)
 	--print("hi from "..dir)
 	local _, folders = file.Find(dir .. "/*", "LUA")
 
-	for k, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
+	for _, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
 		if aaa_debug then
 			Msg("AAA: including file \"" .. dir .. "/" .. v .. "\"!\n")
 		end
@@ -21,7 +21,7 @@ end
 function aaa_IncludeClient(dir)
 	local _, folders = file.Find(dir .. "/*", "LUA")
 
-	for k, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
+	for _, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
 		if aaa_debug then
 			Msg("AAA: adding client file \"" .. dir .. "/" .. v .. "\"!\n")
 		end
@@ -37,7 +37,7 @@ end
 function aaa_IncludeShared(dir)
 	local _, folders = file.Find(dir .. "/*", "LUA")
 
-	for k, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
+	for _, v in pairs(file.Find(dir .. "/*.lua", "LUA")) do
 		if aaa_debug then
 			Msg("AAA: adding client file \"" .. dir .. "/" .. v .. "\"!\n")
 		end

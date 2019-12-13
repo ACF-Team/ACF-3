@@ -50,7 +50,7 @@ end
 function EFFECT:Metal()
 	util.Decal("GunShot1", self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10)
 
-	for i = 0, 4 * self.Scale do
+	for _ = 0, 4 * self.Scale do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
 		if (Debris) then
@@ -69,7 +69,7 @@ function EFFECT:Metal()
 		end
 	end
 
-	for i = 0, 5 * self.Scale do
+	for _ = 0, 5 * self.Scale do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if (Embers) then
@@ -102,7 +102,7 @@ end
 function EFFECT:Concrete()
 	util.Decal("GunShot1", self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10)
 
-	for i = 0, 4 * self.Scale do
+	for _ = 0, 4 * self.Scale do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
 		if (Debris) then
@@ -121,7 +121,7 @@ function EFFECT:Concrete()
 		end
 	end
 
-	for i = 0, 3 * self.Scale do
+	for _ = 0, 3 * self.Scale do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
 		if (Smoke) then
@@ -140,7 +140,7 @@ function EFFECT:Concrete()
 		end
 	end
 
-	for i = 0, 5 * self.Scale do
+	for _ = 0, 5 * self.Scale do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if (Embers) then

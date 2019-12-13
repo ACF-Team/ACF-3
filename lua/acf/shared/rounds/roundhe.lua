@@ -6,12 +6,12 @@ Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A shell filled with explosives, detonating on impact"
 Round.netid = 2 --Unique ammotype ID for network transmission
 
-function Round.create(Gun, BulletData)
+function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
 end
 
 -- Function to convert the player's slider data into the complete round data
-function Round.convert(Crate, PlayerData)
+function Round.convert(_, PlayerData)
 	local Data = {}
 	local ServerData = {}
 	local GUIData = {}
@@ -98,7 +98,7 @@ function Round.cratetxt(BulletData)
 	return table.concat(str)
 end
 
-function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
+function Round.propimpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 	if ACF_Check(Target) then
 		local Speed = Bullet.Flight:Length() / ACF.VelScale
 		local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
@@ -109,7 +109,7 @@ function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
 	return false
 end
 
-function Round.worldimpact(Index, Bullet, HitPos, HitNormal)
+function Round.worldimpact()
 	return false
 end
 
@@ -118,7 +118,7 @@ function Round.endflight(Index, Bullet, HitPos, HitNormal)
 	ACF_RemoveBullet(Index)
 end
 
-function Round.endeffect(Effect, Bullet)
+function Round.endeffect(_, Bullet)
 	local Radius = Bullet.FillerMass ^ 0.33 * 8 * 39.37
 	local Flash = EffectData()
 	Flash:SetOrigin(Bullet.SimPos)
@@ -127,7 +127,7 @@ function Round.endeffect(Effect, Bullet)
 	util.Effect("ACF_Scaled_Explosion", Flash)
 end
 
-function Round.pierceeffect(Effect, Bullet)
+function Round.pierceeffect(_, Bullet)
 	local BulletEffect = {}
 	BulletEffect.Num = 1
 	BulletEffect.Src = Bullet.SimPos - Bullet.SimFlight:GetNormalized()
@@ -145,7 +145,7 @@ function Round.pierceeffect(Effect, Bullet)
 	util.Effect("AP_Hit", Spall)
 end
 
-function Round.ricocheteffect(Effect, Bullet)
+function Round.ricocheteffect(_, Bullet)
 	local Spall = EffectData()
 	Spall:SetEntity(Bullet.Crate)
 	Spall:SetOrigin(Bullet.SimPos)
@@ -171,7 +171,7 @@ function Round.guicreate(Panel, Table)
 	Round.guiupdate(Panel, Table)
 end
 
-function Round.guiupdate(Panel, Table)
+function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
 	PlayerData.Type = "HE" --Hardcoded, match ACFRoundTypes table index

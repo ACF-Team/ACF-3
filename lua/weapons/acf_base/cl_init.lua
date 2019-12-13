@@ -37,7 +37,7 @@ function SWEP:GetViewModelPosition(Pos, Ang)
 	return Pos, Ang
 end
 
-function SWEP:CalcView(Player, Origin, Angles, FOV)
+function SWEP:CalcView(_, Origin, Angles, FOV)
 	if self.FloatingAim then
 		--If this the first time we are called, set the current value for the view and exit. The process will start next frame
 		if not self.FloatingAim.lastaim then

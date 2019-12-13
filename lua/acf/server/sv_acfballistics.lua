@@ -329,15 +329,3 @@ function ACF_BulletClient(Index, Bullet, Type, Hit, HitPos)
 		util.Effect("ACF_BulletEffect", Effect, true, true)
 	end
 end
-
-function ACF_BulletWorldImpact(Bullet, Index, HitPos, HitNormal)
-	--You overwrite this with your own function, defined in the ammo definition file
-end
-
-function ACF_BulletPropImpact(Bullet, Index, Target, HitNormal, HitPos)
-	--You overwrite this with your own function, defined in the ammo definition file
-end
-
-function ACF_BulletEndFlight(Bullet, Index, HitPos)
-	--You overwrite this with your own function, defined in the ammo definition file
-end

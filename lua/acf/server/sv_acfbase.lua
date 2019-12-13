@@ -8,7 +8,7 @@ function ACF_UpdateVisualHealth(Entity)
 		timer.Create("ACF_HealthUpdateList", 1, 1, function()
 			local Table = {}
 
-			for k, v in pairs(ACF_HealthUpdateList) do
+			for _, v in pairs(ACF_HealthUpdateList) do
 				if IsValid(v) then
 					table.insert(Table, {
 						ID = v:EntIndex(),
