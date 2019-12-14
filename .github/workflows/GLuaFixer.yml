@@ -23,5 +23,9 @@ jobs:
       run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.12.0/glualint-1.12.0-linux.zip
     - name: Extract glualint.zip
       run: unzip glualint.zip
+    - name: Remove blacklisted folders
+      run: rm -r lua/expadv lua/starfall lua/entities/gmod_wire_expression2/
+    - name: Remove blacklisted files
+      run: rm lua/acf/server/sv_acfdamage.lua
     - name: Initiate linting
       run: ./glualint lua
