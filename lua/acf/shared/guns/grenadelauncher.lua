@@ -3,7 +3,7 @@ ACF_defineGunClass("GL", {
 	spread = 0.32,
 	name = "Grenade Launcher",
 	desc = "Grenade Launchers can fire shells with relatively large payloads at a fast rate, but with very limited velocities and poor accuracy.",
-	muzzleflash = "40mm_muzzleflash_noscale",
+	muzzleflash = "gl_muzzleflash_noscale",
 	rofmod = 1,
 	sound = "weapons/acf_gun/grenadelauncher.mp3",
 	soundDistance = " ",

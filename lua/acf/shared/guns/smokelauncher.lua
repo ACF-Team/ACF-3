@@ -3,7 +3,7 @@ ACF_defineGunClass("SL", {
 	spread = 0.32,
 	name = "Smoke Launcher",
 	desc = "Smoke launcher to block an attacker's line of sight.",
-	muzzleflash = "40mm_muzzleflash_noscale",
+	muzzleflash = "gl_muzzleflash_noscale",
 	rofmod = 45,
 	sound = "weapons/acf_gun/smoke_launch.mp3",
 	soundDistance = "Mortar.Fire",

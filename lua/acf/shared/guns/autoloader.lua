@@ -3,7 +3,7 @@ ACF_defineGunClass("AL", {
 	spread = 0.08,
 	name = "Autoloader",
 	desc = "A cannon with attached autoloading mechanism.  While it allows for several quick shots, the mechanism adds considerable bulk, weight, and magazine reload time.",
-	muzzleflash = "120mm_muzzleflash_noscale",
+	muzzleflash = "cannon_muzzleflash_noscale",
 	rofmod = 0.64,
 	sound = "weapons/ACF_Gun/autoloader.mp3",
 	soundDistance = "Cannon.Fire",
