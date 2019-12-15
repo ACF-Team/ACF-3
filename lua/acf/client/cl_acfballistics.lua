@@ -9,7 +9,7 @@ function ACF_ManageBulletEffects()
 end
 hook.Add("Think", "ACF_ManageBulletEffects", ACF_ManageBulletEffects)
 
-function ACF_SimBulletFlight( Bullet, Index )
+function ACF_SimBulletFlight(Bullet)
 
 	--local DeltaTime = ACF.CurTime - Bullet.LastThink
 	local DeltaTime = CurTime() - Bullet.LastThink --intentionally not using cached curtime value
