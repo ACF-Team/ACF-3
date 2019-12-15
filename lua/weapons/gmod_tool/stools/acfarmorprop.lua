@@ -82,7 +82,7 @@ if CLIENT then
 		if area == 0 then return end
 
 		local thickness = math.Clamp( tonumber( value ) or 0, 0.1, 5000 )
-		local ductility = math.Clamp( ArmorPop_Ductility:GetInt() / 100, -0.8, 0.8 )
+		local ductility = math.Clamp( ArmorProp_Ductility:GetInt() / 100, -0.8, 0.8 )
 		local mass = CalcArmor( area, ductility, thickness )
 
 		if mass > 50000 then
