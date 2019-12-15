@@ -188,14 +188,8 @@ function ACF_VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun)
 	local HitRes = ACF_CalcDamage(Entity, Energy, FrArea, Angle)
 	local Driver = Entity:GetDriver()
 
-	if Driver:IsValid() then
-		--if Ammo == true then
-		--	Driver.KilledByAmmo = true
-		--end
-		Driver:TakeDamage(HitRes.Damage * 40, Inflictor, Gun)
-		--if Ammo == true then
-		--	Driver.KilledByAmmo = false
-		--end
+	if IsValid(Driver) then
+		ACF_SquishyDamage(Driver, Energy, FrArea, Angle, Inflictor, math.Rand(0, 7), Gun)
 	end
 
 	HitRes.Kill = false
