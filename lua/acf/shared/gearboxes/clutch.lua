@@ -30,6 +30,7 @@ ACF_DefineGearbox( "Clutch-S-T", {
 	gears = 0,
 	geartable = {
 		[ 0 ] = 1,
+		[ 1 ] = 1,
 		[ -1 ] = 1
 	}
 } )
@@ -46,6 +47,7 @@ ACF_DefineGearbox( "Clutch-S-S", {
 	gears = 0,
 	geartable = {
 		[ 0 ] = 1,
+		[ 1 ] = 1,
 		[ -1 ] = 1
 	}
 } )
@@ -62,6 +64,7 @@ ACF_DefineGearbox( "Clutch-S-M", {
 	gears = 0,
 	geartable = {
 		[ 0 ] = 1,
+		[ 1 ] = 1,
 		[ -1 ] = 1
 	}
 } )
@@ -78,6 +81,7 @@ ACF_DefineGearbox( "Clutch-S-L", {
 	gears = 0,
 	geartable = {
 		[ 0 ] = 1,
+		[ 1 ] = 1,
 		[ -1 ] = 1
 	}
 } )
