@@ -3,7 +3,7 @@ ACF_defineGunClass("SB", {
 	spread = 0.08,
 	name = "Smoothbore Cannon",
 	desc = "More modern smoothbore cannons that can only fire munitions that do not rely on spinning for accuracy.",
-	muzzleflash = "120mm_muzzleflash_noscale",
+	muzzleflash = "cannon_muzzleflash_noscale",
 	rofmod = 1.72,
 	sound = "weapons/ACF_Gun/cannon_new.mp3",
 	soundDistance = "Cannon.Fire",
