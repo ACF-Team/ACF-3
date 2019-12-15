@@ -459,89 +459,75 @@ local function ACF_KillChildProps( Entity, BlastPos, Energy )
 end
 
 -- blast pos is an optional world-pos input for flinging away children props more realistically
-function ACF_HEKill( Entity , HitVector , Energy , BlastPos )
-
+function ACF_HEKill(Entity, HitVector, Energy, BlastPos)
 	-- if it hasn't been processed yet, check for children
-	if not Entity.ACF_Killed then
-		ACF_KillChildProps( Entity, BlastPos or Entity:GetPos(), Energy )
-	end
+	if not Entity.ACF_Killed then ACF_KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
 
-	-- process this prop into debris
-	local entClass = Entity:GetClass()
-	local obj = Entity:GetPhysicsObject()
-	local grav = true
-	local mass = 25
-	if obj:IsValid() then
-		mass = math.max(obj:GetMass(), mass)
-		if ISSITP then
-			grav = obj:IsGravityEnabled()
-		end
-	end
-	
-	constraint.RemoveAll( Entity )
+	local Obj  = Entity:GetPhysicsObject()
+	local Mass = 25
+
+	if IsValid(Obj) then Mass = Obj:GetMass() end
+
+	constraint.RemoveAll(Entity)
 	Entity:Remove()
 
-	if(Entity:BoundingRadius() < ACF.DebrisScale) then
-		return nil
-	end
-	
-	local Debris = ents.Create( "acf_debris" )
-		Debris:SetModel( Entity:GetModel() )
-		Debris:SetAngles( Entity:GetAngles() )
-		Debris:SetPos( Entity:GetPos() )
+	if Entity:BoundingRadius() < ACF.DebrisScale then return nil end
+	local Debris = ents.Create("acf_debris")
+		Debris:SetModel(Entity:GetModel())
+		Debris:SetAngles(Entity:GetAngles())
+		Debris:SetPos(Entity:GetPos())
 		Debris:SetMaterial("models/props_wasteland/metal_tram001a")
 		Debris:Spawn()
-		
-	if math.random() < ACF.DebrisIgniteChance then
-		Debris:Ignite(math.Rand(5,45),0)
-	end
-	
 	Debris:Activate()
 
-	local phys = Debris:GetPhysicsObject() 
-	if phys:IsValid() then
-		phys:SetMass(mass)
-		phys:ApplyForceOffset( HitVector:GetNormalized() * Energy * 10 , Debris:GetPos()+VectorRand()*20 ) 	-- previously energy*350
-		phys:EnableGravity( grav )
+	local Phys = Debris:GetPhysicsObject()
+	if IsValid(Phys) then
+		Phys:SetMass(Mass or 25)
+		Phys:ApplyForceOffset(HitVector:GetNormalized() * Energy * 10, Debris:GetPos() + VectorRand() * 20) -- previously energy*350
+	end
+
+	if math.random() < ACF.DebrisIgniteChance then
+		Debris:Ignite(math.Rand(5, 45), 0)
 	end
 
 	return Debris
-	
 end
 
-function ACF_APKill( Entity , HitVector , Power )
+function ACF_APKill(Entity, HitVector, Power)
 
-	-- kill the children of this ent, instead of disappearing them from removing parent
-	ACF_KillChildProps( Entity, Entity:GetPos(), Power )
+	ACF_KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
-	constraint.RemoveAll( Entity )
+	local Obj  = Entity:GetPhysicsObject()
+	local Mass = 25
+
+	if IsValid(Obj) then Mass = Obj:GetMass() end
+
+	constraint.RemoveAll(Entity)
 	Entity:Remove()
-	
-	if(Entity:BoundingRadius() < ACF.DebrisScale) then
-		return nil
+
+	if Entity:BoundingRadius() < ACF.DebrisScale then return end
+
+	local Debris = ents.Create("acf_debris")
+		Debris:SetModel(Entity:GetModel())
+		Debris:SetAngles(Entity:GetAngles())
+		Debris:SetPos(Entity:GetPos())
+		Debris:SetMaterial(Entity:GetMaterial())
+		Debris:SetColor(Color(120, 120, 120, 255))
+		Debris:Spawn()
+	Debris:Activate()
+
+	local Phys = Debris:GetPhysicsObject()
+	if IsValid(Phys) then
+		Phys:SetMass(Mass)
+		Phys:ApplyForceOffset(HitVector:GetNormalized() * Power * 350, Debris:GetPos() + VectorRand() * 20)
 	end
 
-	local Debris = ents.Create( "acf_debris" )
-		Debris:SetModel( Entity:GetModel() )
-		Debris:SetAngles( Entity:GetAngles() )
-		Debris:SetPos( Entity:GetPos() )
-		Debris:SetMaterial(Entity:GetMaterial())
-		Debris:SetColor(Color(120,120,120,255))
-		Debris:Spawn()
-		Debris:Activate()
-		
-	local BreakEffect = EffectData()				
-		BreakEffect:SetOrigin( Entity:GetPos() )
-		BreakEffect:SetScale( 20 )
-	util.Effect( "WheelDust", BreakEffect )	
-		
-	local phys = Debris:GetPhysicsObject() 
-	if (phys:IsValid()) then	
-		phys:ApplyForceOffset( HitVector:GetNormalized() * Power * 350 ,  Debris:GetPos()+VectorRand()*20 )	
-	end
+	local BreakEffect = EffectData()
+		BreakEffect:SetOrigin(Entity:GetPos())
+		BreakEffect:SetScale(20)
+	util.Effect("WheelDust", BreakEffect)
 
 	return Debris
-	
 end
 
 --converts what would be multiple simultaneous cache detonations into one large explosion
