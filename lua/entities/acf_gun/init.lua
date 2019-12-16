@@ -21,9 +21,7 @@ function ENT:Initialize()
 	self.Legal = true
 	self.LegalIssues = ""
 	self.IsMaster = true --needed?
-	self.AmmoLink = {}
-	self.CurAmmo = 1
-	self.Sequence = 1
+	self.Crates = {}
 	self.BulletData = {}
 	self.BulletData.Type = "Empty"
 	self.BulletData.PropMass = 0
@@ -187,12 +185,10 @@ function ENT:Link(Target)
 	if table.HasValue(Blacklist, self.Class) then return false, "That round type cannot be used with this gun!" end
 
 	-- Don't link if it's already linked
-	for _, v in pairs(self.AmmoLink) do
-		if v == Target then return false, "That crate is already linked to this gun!" end
-	end
+	if self.Crates[Target] then return false, "That crate is already linked to this gun!" end
 
-	table.insert(self.AmmoLink, Target)
-	table.insert(Target.Master, self)
+	self.Crates[Target] = true
+	Target.Weapons[self] = true
 
 	if self.BulletData.Type == "Empty" and Target.Load then
 		self:UnloadAmmo()
@@ -209,20 +205,13 @@ function ENT:Link(Target)
 end
 
 function ENT:Unlink(Target)
-	local Success = false
+	if self.Crates[Target] then
+		self.Crates[Target] = nil
 
-	for Key, Value in pairs(self.AmmoLink) do
-		if Value == Target then
-			table.remove(self.AmmoLink, Key)
-			Success = true
-		end
-	end
-
-	if Success then
 		return true, "Unlink successful!"
-	else
-		return false, "That entity is not linked to this gun!"
 	end
+
+	return false, "That entity is not linked to this gun!"
 end
 
 function ENT:CanProperty(_, property)
@@ -344,7 +333,7 @@ function ENT:Think()
 		local rofbonus = 0
 		local totalcap = 0
 
-		for _, Crate in pairs(self.AmmoLink) do
+		for Crate in pairs(self.Crates) do
 			if IsValid(Crate) and Crate.Load and Crate.Legal then
 				if RetDist(self, Crate) < 512 then
 					Ammo = Ammo + (Crate.Ammo or 0)
@@ -493,25 +482,18 @@ function ENT:CreateShell()
 end
 
 function ENT:FindNextCrate()
-	local MaxAmmo = #self.AmmoLink
-	local AmmoEnt = nil
-	local i = 0
+	if not next(self.Crates) then return end -- No crates linked to this gun
 
-	-- need to check ammoent here? returns if found
-	while i <= MaxAmmo and not (AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0) do
-		self.CurAmmo = self.CurAmmo + 1
+	local Select = next(self.Crates, self.CurrentCrate) or next(self.Crates) -- Next crate from Start or, if at last crate, first crate
+	local Start = Select
 
-		if self.CurAmmo > MaxAmmo then
-			self.CurAmmo = 1
-		end
+	repeat
+		if Select.Load and Select.Ammo > 0 then return Select end
 
-		AmmoEnt = self.AmmoLink[self.CurAmmo]
-		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0 and AmmoEnt.Load and AmmoEnt.Legal then return AmmoEnt end
-		AmmoEnt = nil
-		i = i + 1
-	end
+		Select = next(self.Crates, Select) or next(self.Crates)
+	until Select == Start -- If we've looped back around to the start then there's nothing to use
 
-	return false
+	return (Select.Load and Select.Ammo > 0) and Select
 end
 
 function ENT:LoadAmmo(AddTime, Reload)
@@ -520,6 +502,7 @@ function ENT:LoadAmmo(AddTime, Reload)
 
 	if AmmoEnt and AmmoEnt.Legal then
 		AmmoEnt.Ammo = AmmoEnt.Ammo - 1
+		self.CurrentCrate = AmmoEnt
 		self.BulletData = AmmoEnt.BulletData
 		self.BulletData.Crate = AmmoEnt:EntIndex()
 		local cb = 1
@@ -621,16 +604,8 @@ function ENT:PreEntityCopy()
 	local info = {}
 	local entids = {}
 
-	--First clean the table of any invalid entities
-	for _, Value in pairs(self.AmmoLink) do
-		if not Value:IsValid() then
-			table.remove(self.AmmoLink, Value)
-		end
-	end
-
-	--Then save it
-	for _, Value in pairs(self.AmmoLink) do
-		table.insert(entids, Value:EntIndex())
+	for Crate in pairs(self.Crates) do
+		table.insert(entids, Crate:EntIndex())
 	end
 
 	info.entities = entids
@@ -662,4 +637,16 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+end
+
+function ENT:OnRemove()
+	for Crate in pairs(self.Crates) do
+		self:Unlink(Crate)
+	end
+
+	Wire_Remove(self)
+end
+
+function ENT:OnRestore()
+	Wire_Restored(self)
 end

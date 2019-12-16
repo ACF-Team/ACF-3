@@ -25,8 +25,8 @@ Component.linkTables =
 	acf_engine 		= {GearLink = true, FuelLink = false},
 	acf_gearbox		= {WheelLink = true, Master = false},
 	acf_fueltank	= {Master = false},
-	acf_gun			= {AmmoLink = false},
-	acf_ammo		= {Master = false}
+	acf_gun			= {Crates = false},
+	acf_ammo		= {Weapons = false}
 }
 
 Component.getLinks = function(ent, enttype)
@@ -36,8 +36,10 @@ Component.getLinks = function(ent, enttype)
 		if not ent[entry] then error("Couldn't find link resource " .. entry .. " for entity " .. tostring(ent)) return end
 
 		-- find all the links inside the resources
-		for _, link in pairs(ent[entry]) do
-			ret[#ret+1] = mode and link.Ent or link
+		for index, link in pairs( ent[ entry ] ) do
+			local entity = isnumber(index) and link or index
+
+			ret[ #ret + 1 ] = mode and wrap( entity.Ent ) or entity
 		end
 	end
 
@@ -371,8 +373,8 @@ Component:AddFunctionHelper( "acfReload", "e:", "Causes an ACF weapon to reload.
 
 Component:AddPreparedFunction( "acfAmmoCount", "e:", "n",
 [[@define ret = 0
-if @value 1:IsValid() and @value 1:GetClass() == "acf_gun" and !EXPADV.Components.acf.restrictInfo(Context.player, @value 1) and @value 1.AmmoLink then
-	for _, AmmoEnt in pairs(@value 1.AmmoLink) do
+if @value 1:IsValid() and @value 1:GetClass() == "acf_gun" and !EXPADV.Components.acf.restrictInfo(Context.player, @value 1) and @value 1.Crates then
+	for AmmoEnt in pairs(@value 1.Crates) do
 		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt["Load"] then
 			@ret = @ret + (AmmoEnt.Ammo or 0)
 		end
@@ -382,8 +384,8 @@ Component:AddFunctionHelper( "acfAmmoCount", "e:", "Returns the number of rounds
 
 Component:AddPreparedFunction( "acfTotalAmmoCount", "e:", "n",
 [[@define ret = 0
-if @value 1:IsValid() and @value 1:GetClass() == "acf_gun" and !EXPADV.Components.acf.restrictInfo(Context.player, @value 1) and @value 1.AmmoLink then
-	for _, AmmoEnt in pairs(@value 1.AmmoLink) do
+if @value 1:IsValid() and @value 1:GetClass() == "acf_gun" and !EXPADV.Components.acf.restrictInfo(Context.player, @value 1) and @value 1.Crates then
+	for AmmoEnt in pairs(@value 1.Crates) do
 		if AmmoEnt and AmmoEnt:IsValid() then
 			@ret = @ret + (AmmoEnt.Ammo or 0)
 		end
