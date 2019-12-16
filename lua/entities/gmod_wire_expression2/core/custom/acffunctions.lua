@@ -138,8 +138,8 @@ ACF_E2_LinkTables = ACF_E2_LinkTables or
 	acf_engine 		= {GearLink = true, FuelLink = false},
 	acf_gearbox		= {WheelLink = true, Master = false},
 	acf_fueltank	= {Master = false},
-	acf_gun			= {AmmoLink = false},
-	acf_ammo		= {Master = false}
+	acf_gun			= {Crates = false},
+	acf_ammo		= {Weapons = false}
 }
 
 
@@ -151,8 +151,10 @@ local function getLinks(ent, enttype)
 		if not ent[entry] then error("Couldn't find link resource " .. entry .. " for entity " .. tostring(ent)) return end
 		
 		-- find all the links inside the resources
-		for _, link in pairs(ent[entry]) do
-			ret[#ret+1] = mode and link.Ent or link
+		for index, link in pairs( ent[ entry ] ) do
+			local entity = isnumber(index) and link or index
+
+			ret[ #ret + 1 ] = mode and wrap( entity.Ent ) or entity
 		end
 	end
 	
@@ -720,7 +722,7 @@ e2function number entity:acfAmmoCount()
 	if not isGun(this) then return 0 end
 	if restrictInfo(self, this) then return 0 end
 	local Ammo = 0
-	for Key,AmmoEnt in pairs(this.AmmoLink) do
+	for AmmoEnt in pairs(this.Crates) do
 		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt["Load"] then
 			Ammo = Ammo + (AmmoEnt.Ammo or 0)
 		end
@@ -733,7 +735,7 @@ e2function number entity:acfTotalAmmoCount()
 	if not isGun(this) then return 0 end
 	if restrictInfo(self, this) then return 0 end
 	local Ammo = 0
-	for Key,AmmoEnt in pairs(this.AmmoLink) do
+	for AmmoEnt in pairs(this.Crates) do
 		if AmmoEnt and AmmoEnt:IsValid() then
 			Ammo = Ammo + (AmmoEnt.Ammo or 0)
 		end

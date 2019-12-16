@@ -22,12 +22,10 @@ function ENT:Initialize()
 	self.NextLegalCheck = ACF.CurTime + 30 -- give any spawning issues time to iron themselves out
 	self.Legal = true
 	self.LegalIssues = ""
-	self.Master = {}
-	self.Sequence = 0
+	self.Weapons = {}
 	self.Inputs = Wire_CreateInputs(self, {"Active"}) --, "Fuse Length"
 	self.Outputs = Wire_CreateOutputs(self, {"Munitions", "On Fire"})
 	self.NextThink = CurTime() + 1
-	ACF.AmmoCrates = ACF.AmmoCrates or {}
 end
 
 function ENT:ACF_Activate(Recalc)
@@ -119,7 +117,9 @@ function MakeACF_Ammo(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, 
 	Ammo:UpdateMass()
 	Owner:AddCount("_acf_ammo", Ammo)
 	Owner:AddCleanup("acfmenu", Ammo)
-	table.insert(ACF.AmmoCrates, Ammo)
+
+	ACF.AmmoCrates = ACF.AmmoCrates or {}
+	ACF.AmmoCrates[Ammo] = true
 
 	return Ammo
 end
@@ -136,18 +136,16 @@ function ENT:Update(ArgsTable)
 
 	-- Argtable[5] is the weapon ID the new ammo loads into
 	if ArgsTable[5] ~= self.RoundId then
-		for _, Gun in pairs(self.Master) do
-			if IsValid(Gun) then
-				Gun:Unlink(self)
-			end
+		for Gun in pairs(self.Weapons) do
+			Gun:Unlink(self)
 		end
 
 		msg = "New ammo type loaded, crate unlinked."
 	else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
 		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]] or {}
 
-		for _, Gun in pairs(self.Master) do
-			if IsValid(Gun) and table.HasValue(Blacklist, Gun.Class) then
+		for Gun in pairs(self.Weapons) do
+			if table.HasValue(Blacklist, Gun.Class) then
 				Gun:Unlink(self)
 				msg = "New round type cannot be used with linked gun, crate unlinked."
 			end
@@ -291,10 +289,8 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:FirstLoad()
-	for Key in pairs(self.Master) do
-		local Gun = self.Master[Key]
-
-		if IsValid(Gun) and Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
+	for Gun in pairs(self.Weapons) do
+		if Gun.FirstLoad and Gun.BulletData.Type == "Empty" and Gun.Legal then
 			Gun:LoadAmmo(false, false)
 		end
 	end
@@ -351,7 +347,7 @@ function ENT:Think()
 		end
 		-- Completely new, fresh, genius, beautiful, flawless refill system.
 	elseif self.RoundType == "Refill" and self.Ammo > 0 and self.Load then
-		for _, Ammo in pairs(ACF.AmmoCrates) do
+		for Ammo in pairs(ACF.AmmoCrates) do
 			if Ammo.RoundType ~= "Refill" then
 				local dist = self:GetPos():Distance(Ammo:GetPos())
 
@@ -416,16 +412,11 @@ function ENT:StopRefillEffect(TargetID)
 end
 
 function ENT:OnRemove()
-	for Key in pairs(self.Master) do
-		if self.Master[Key] and self.Master[Key]:IsValid() then
-			self.Master[Key]:Unlink(self)
-			self.Ammo = 0
-		end
+	self.Ammo = 0
+
+	for Weapon in pairs(self.Weapons) do
+		Weapon:Unlink(self)
 	end
 
-	for k, v in pairs(ACF.AmmoCrates) do
-		if v == self then
-			table.remove(ACF.AmmoCrates, k)
-		end
-	end
+	ACF.AmmoCrates[self] = nil
 end
