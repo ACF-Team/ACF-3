@@ -28,7 +28,6 @@ function ENT:Initialize()
 	self.InGear = false
 	self.CanUpdate = true
 	self.LastActive = 0
-	self.RootParent = nil
 end
 
 function MakeACF_Gearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
@@ -144,11 +143,11 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data
 	Gearbox:PhysicsInit(SOLID_VPHYSICS)
 	Gearbox:SetMoveType(MOVETYPE_VPHYSICS)
 	Gearbox:SetSolid(SOLID_VPHYSICS)
-	local phys = Gearbox:GetPhysicsObject()
+	local Phys = Gearbox:GetPhysicsObject()
 
-	if IsValid(phys) then
-		phys:SetMass(Gearbox.Mass)
-		Gearbox.ModelInertia = 0.99 * phys:GetInertia() / phys:GetMass() -- giving a little wiggle room
+	if IsValid(Phys) then
+		Phys:SetMass(Gearbox.Mass)
+		Gearbox.ModelInertia = 0.99 * Phys:GetInertia() / Phys:GetMass() -- giving a little wiggle room
 	end
 
 	Gearbox.In = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("input")).Pos)
@@ -216,7 +215,6 @@ function ENT:Update(ArgsTable)
 		self.CVT = List.Mobility[Id].cvt or false
 		self.DoubleDiff = List.Mobility[Id].doublediff or false
 		self.Auto = List.Mobility[Id].auto or false
-		self.Parentable = List.Mobility[Id].parentable or false
 		local Inputs = {"Gear", "Gear Up", "Gear Down"}
 
 		if self.CVT then
@@ -596,13 +594,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 		end
 	end
 
-	local BoxPhys
-
-	if IsValid(self.RootParent) then
-		BoxPhys = self.RootParent:GetPhysicsObject()
-	else
-		BoxPhys = self:GetPhysicsObject()
-	end
+	local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 
 	if IsValid(BoxPhys) and ReactTq ~= 0 then
 		BoxPhys:ApplyTorqueCenter(self:GetRight() * math.Clamp(2 * math.deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
