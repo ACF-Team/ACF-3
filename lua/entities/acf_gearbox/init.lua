@@ -4,6 +4,8 @@ DEFINE_BASECLASS("base_wire_entity")
 ENT.PrintName     = "ACF Gearbox"
 ENT.WireDebugName = "ACF Gearbox"
 
+local CheckLegal = ACF_CheckLegal
+
 function ENT:Initialize()
 	self.IsGeartrain = true
 	self.Master = {}
@@ -18,7 +20,6 @@ function ENT:Initialize()
 	self.Gear = 0
 	self.GearRatio = 0
 	self.ChangeFinished = 0
-	self.LegalThink = 0
 	self.RPM = {}
 	self.CurRPM = 0
 	self.CVT = false
@@ -27,11 +28,7 @@ function ENT:Initialize()
 	self.InGear = false
 	self.CanUpdate = true
 	self.LastActive = 0
-	self.Legal = true
-	self.Parentable = false
 	self.RootParent = nil
-	self.NextLegalCheck = ACF.CurTime + 30 -- give any spawning issues time to iron themselves out
-	self.LegalIssues = ""
 end
 
 function MakeACF_Gearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
@@ -169,13 +166,37 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data
 
 	Gearbox:SetNWString("WireName", List.Mobility[Id].name)
 	Gearbox:UpdateOverlayText()
+
 	ACF_Activate(Gearbox, 0)
+
+	Gearbox.ACF.PhysObj   = Phys
+	Gearbox.ACF.LegalMass = Gearbox.Mass
+	Gearbox.ACF.Model     = Gearbox.Model
+
+	CheckLegal(Gearbox)
 
 	return Gearbox
 end
 
 list.Set("ACFCvars", "acf_gearbox", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10"})
 duplicator.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0")
+
+function ENT:Enable()
+	self.Disabled 		= nil
+	self.DisableReason 	= nil
+
+	CheckLegal(self)
+end
+
+function ENT:Disable()
+	self.Disabled = true
+
+	timer.Simple(ACF.IllegalDisableTime, function()
+		if IsValid(self) then
+			self:Enable()
+		end
+	end)
+end
 
 function ENT:Update(ArgsTable)
 	-- That table is the player data, as sorted in the ACFCvars above, with player who shot, 
@@ -325,8 +346,8 @@ function ENT:UpdateOverlayText()
 	text = text .. "Final Drive: " .. math.Round(self.Gear0, 2) .. "\n"
 	text = text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round(self.MaxTorque * 0.73) .. " ft-lb"
 
-	if not self.Legal then
-		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	if self.Disabled then
+		text = text .. "\nDisabled: " .. self.DisableReason
 	end
 
 	self:SetOverlayText(text)
@@ -338,6 +359,8 @@ function ENT:CanProperty(_, property)
 end
 
 function ENT:TriggerInput(iname, value)
+	if self.Disabled then return end
+
 	if (iname == "Gear") then
 		if self.Auto then
 			self:ChangeDrive(value)
@@ -382,16 +405,6 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:Think()
-	if ACF.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, self.Mass, self.ModelInertia, false, true, not self.Parentable, true) -- requiresweld overrides parentable, need to set it false for parent-only gearboxes
-		self.NextLegalCheck = ACF.LegalSettings:NextCheck(self.Legal)
-		self:UpdateOverlayText()
-
-		if self.Legal and self.Parentable then
-			self.RootParent = ACF_GetAncestor(self)
-		end
-	end
-
 	local Time = CurTime()
 
 	if self.LastActive + 2 > Time then
@@ -446,7 +459,7 @@ function ENT:CheckEnts()
 end
 
 function ENT:Calc(InputRPM, InputInertia)
-	if not self.Legal then return 0 end
+	if self.Disabled then return 0 end
 	if self.LastActive == CurTime() then return math.min(self.TotalReqTq, self.MaxTorque) end
 
 	if self.ChangeFinished < CurTime() then
@@ -497,7 +510,7 @@ function ENT:Calc(InputRPM, InputInertia)
 		Link.ReqTq = 0
 
 		if Link.Ent.IsGeartrain then
-			if not Link.Ent.Legal then continue end
+			if Link.Ent.Disabled then continue end
 			local Inertia = 0
 
 			if self.GearRatio ~= 0 then
@@ -552,11 +565,7 @@ function ENT:CalcWheel(Link, SelfWorld)
 end
 
 function ENT:Act(Torque, DeltaTime, MassRatio)
-	if not self.Legal then
-		self.LastActive = CurTime()
-
-		return
-	end
+	if self.Disabled then return end
 
 	--internal torque loss from being damaged
 	local Loss = math.Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1)

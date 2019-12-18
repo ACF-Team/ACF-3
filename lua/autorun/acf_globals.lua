@@ -1,7 +1,9 @@
 ACF = {}
 ACF.AmmoTypes = {}
+ACF.AmmoCrates = {}
 ACF.MenuFunc = {}
 ACF.AmmoBlacklist = {}
+ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 ACF.Version = 660 -- REMEMBER TO CHANGE THIS FOR GODS SAKE, OMFG!!!!!!! -wrex   Update the changelog too! -Ferv
 ACF.CurrentVersion = 0 -- just defining a variable, do not change
 ACF.Year = 1945
@@ -21,7 +23,7 @@ ACF.GunfireEnabled = true
 ACF.MeshCalcEnabled = false
 ACF.HEPower = 8000 --HE Filler power per KG in KJ
 ACF.HEDensity = 1.65 --HE Filler density (That"s TNT density)
-ACF.HEFrag = 1500 --Mean fragment number for equal weight TNT and casing
+ACF.HEFrag = 1000 --Mean fragment number for equal weight TNT and casing
 ACF.HEBlastPen = 0.4 --Blast penetration exponent based of HE power
 ACF.HEFeatherExp = 0.5 --exponent applied to HE dist/maxdist feathering, <1 will increasingly bias toward max damage until sharp falloff at outer edge of range
 ACF.HEATMVScale = 0.75 --Filler KE to HEAT slug KE conversion expotential
@@ -34,7 +36,6 @@ ACF.HEATMinCrush = 800 -- vel where crush starts, progressively converting round
 ACF.HEATMaxCrush = 1200 -- vel where fully crushed
 ACF.DragDiv = 40 --Drag fudge factor
 ACF.VelScale = 1 --Scale factor for the shell velocities in the game world
--- local PhysEnv = physenv.GetPerformanceSettings()
 ACF.PhysMaxVel = 4000
 ACF.SmokeWind = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 ACF.PBase = 1050 --1KG of propellant produces this much KE at the muzzle, in kj
@@ -45,20 +46,6 @@ ACF.TorqueBoost = 1.25 --torque multiplier from using fuel
 ACF.FuelRate = 5 --multiplier for fuel usage, 1.0 is approx real world
 ACF.ElecRate = 1.5 --multiplier for electrics
 ACF.TankVolumeMul = 0.5 -- multiplier for fuel tank capacity, 1.0 is approx real world
-
---[[
-	random, low cost legality check that discourages attempts to game checking with a hard to predict timing and punishing lockout time
-	usage:
-	Ent.Legal, Ent.LegalIssues = ACF_CheckLegal(Ent, Model, MinMass, MinInertia, CanMakesphere, Parentable, ParentRequiresWeld, CanVisclip)
-	Ent.NextLegalCheck = ACF.LegalSettings:NextCheck(Ent.Legal)
-]]
-ACF.LegalSettings = {
-	CanModelSwap = false,
-	Min = 5, -- min seconds between checks
-	Max = 25, -- max seconds between checks
-	Lockout = 35, -- lockout time on not legal
-	NextCheck = function(self, Legal) return ACF.CurTime + (Legal and math.random(self.Min, self.Max) or self.Lockout) end
-}
 
 --kg/liter
 ACF.FuelDensity = {
@@ -105,7 +92,7 @@ ACF.ChildDebris = 50 -- higher is more debris props;  Chance =  ACF.ChildDebris 
 ACF.DebrisIgniteChance = 0.25
 ACF.DebrisScale = 20 -- Ignore debris that is less than this bounding radius.
 ACF.SpreadScale = 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
-ACF.GunInaccuracyScale = 1 -- A multiplier for gun accuracy.
+ACF.GunInaccuracyScale = 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 ACF.GunInaccuracyBias = 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
 ACF.EnableDefaultDP = false -- Enable the inbuilt damage protection system.
 ACF.EnableKillicons = true -- Enable killicons overwriting.
@@ -337,87 +324,7 @@ end
 -- MinInertia needs to be mass normalized (normalized=inertia/mass)
 -- ballistics doesn"t check visclips on anything except prop_physics, so no need to check on acf ents
 function ACF_CheckLegal(Ent, Model, MinMass, MinInertia, CanMakesphere, Parentable, ParentRequiresWeld, CanVisclip)
-	-- check it exists
-	if not IsValid(Ent) then
-		return {
-			Legal = false,
-			Problems = {"Invalid Ent"}
-		}
-	end
-
-	local problems = {}
-	local physobj = Ent:GetPhysicsObject()
-
-	-- check if physics is valid
-	if not IsValid(physobj) then
-		return {
-			Legal = false,
-			Problems = {"Invalid Physics"}
-		}
-	end
-
-	--make sure traces can hit it (fade door, propnotsolid)
-	if not Ent:IsSolid() then
-		table.insert(problems, "Not solid")
-	end
-
-	-- check if the model matches
-	if Model ~= nil and not ACF.LegalSettings.CanModelSwap and Ent:GetModel() ~= Model then
-		table.insert(problems, "Wrong model")
-	end
-
-	-- check mass
-	if MinMass ~= nil and (physobj:GetMass() < MinMass) then
-		table.insert(problems, "Under min mass")
-	end
-
-	-- check inertia components
-	if MinInertia ~= nil then
-		local inertia = physobj:GetInertia() / physobj:GetMass()
-
-		if (inertia.x < MinInertia.x) or (inertia.y < MinInertia.y) or (inertia.z < MinInertia.z) then
-			table.insert(problems, "Under min inertia")
-		end
-	end
-
-	-- check makesphere
-	if not CanMakesphere and (physobj:GetVolume() == nil) then
-		table.insert(problems, "Makesphere")
-	end
-
-	-- check for clips
-	if not CanVisclip and (Ent.ClipData ~= nil) and (#Ent.ClipData > 0) then
-		table.insert(problems, "Visclip")
-	end
-
-	-- if it has a parent, check if legally parented
-	if IsValid(Ent:GetParent()) then
-		-- if no parenting allowed
-		if not (Parentable or ParentRequiresWeld) then
-			table.insert(problems, "Parented")
-		end
-
-		-- legal if weld not required, otherwise check if parented with weld
-		if ParentRequiresWeld then
-			local welded = false
-			local rootparent = ACF_GetAncestor(Ent)
-
-			--make sure it"s welded to root parent
-			for _, v in pairs(constraint.FindConstraints(Ent, "Weld")) do
-				if v.Ent1 == rootparent or v.Ent2 == rootparent then
-					welded = true
-					break
-				end
-			end
-
-			if not welded then
-				table.insert(problems, "Parented without weld to root parent")
-			end
-		end
-	end
-	-- legal if number of problems is 0
-
-	return #problems == 0, table.concat(problems, ", ")
+	return true
 end
 
 -- Cvars for recoil/he push
