@@ -348,7 +348,7 @@ function ENT:Think()
 		-- Completely new, fresh, genius, beautiful, flawless refill system.
 	elseif self.RoundType == "Refill" and self.Ammo > 0 and self.Load then
 		for Ammo in pairs(ACF.AmmoCrates) do
-			if Ammo.RoundType ~= "Refill" then
+			if IsValid(Ammo) and Ammo.RoundType ~= "Refill" then
 				local dist = self:GetPos():Distance(Ammo:GetPos())
 
 				if dist < ACF.RefillDistance and Ammo.Capacity > Ammo.Ammo then
