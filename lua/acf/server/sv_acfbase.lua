@@ -79,6 +79,72 @@ function ACF_Activate(Entity, Recalc)
 	end
 end
 
+--[[ ACF Legality Check
+	All SENTs MUST have:
+		ENT.ACF.PhysObj defined when spawned
+		ENT.ACF.LegalMass defined
+		ENT.ACF.Model defined
+
+		function ENT:Enable()
+			self.Disabled = nil
+
+			<code>
+
+			ACF_CheckLegal(self)
+		end
+
+	function ENT:Disable()
+		self.Disabled = true
+
+		timer.Simple(ACF.IllegalDisableTime, function()
+			if IsValid(self) then
+				self:Enable()
+			end
+		end)
+
+		<code>
+	end
+]]--
+function ACF_IsLegal(Entity)
+	local Phys = Entity:GetPhysicsObject()
+
+	if Entity.ACF.PhysObj ~= Phys then
+		if Phys:GetVolume() then
+			Entity.ACF.PhysObj = Phys -- Updated PhysObj
+		else
+			Entity:Remove() -- Remove spherical trash
+			return false, "Invalid physics" -- This shouldn't even run
+		end
+	end
+	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model" end
+	if Entity:GetNoDraw() then return false, "Not drawn" end
+	if Phys:GetMass() < Entity.ACF.LegalMass then return false, "Underweight" end -- You can make it heavier than the legal mass if you want
+	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid" end -- Entities must always be solid
+	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip" end -- No visclip
+
+	return true
+end
+
+local IsLegal = ACF_IsLegal
+function ACF_CheckLegal(Entity)
+	local Legal, Reason = IsLegal(Entity)
+
+	Entity.DisableReason = Reason
+
+	if not Legal then
+		Entity:Disable()
+		return false
+	end
+
+	timer.Simple(math.Rand(1, 3), function()
+		if IsValid(Entity) then
+			ACF_CheckLegal(Entity)
+		end
+	end)
+
+	return true
+end
+
 local Baddies = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true}
 function ACF_Check(Entity)
 	if not IsValid(Entity) then return false end

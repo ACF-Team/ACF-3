@@ -4,21 +4,19 @@ DEFINE_BASECLASS("base_wire_entity")
 ENT.PrintName     = "ACF Engine"
 ENT.WireDebugName = "ACF Engine"
 
+local CheckLegal = ACF_CheckLegal
+
 function ENT:Initialize()
 	self.Throttle = 0
 	self.Active = false
 	self.IsMaster = true
 	self.GearLink = {} -- a "Link" has these components: Ent, Rope, RopeLen, ReqTq
 	self.FuelLink = {}
-	self.NextUpdate = 0
 	self.LastThink = 0
 	self.MassRatio = 1
 	self.FuelTank = 0
 	self.CanUpdate = true
 	self.RequiresFuel = false
-	self.NextLegalCheck = ACF.CurTime + 30 -- give any spawning issues time to iron themselves out
-	self.Legal = true
-	self.LegalIssues = ""
 	self.Inputs = Wire_CreateInputs(self, {"Active", "Throttle"}) --use fuel input?
 	self.Outputs = WireLib.CreateSpecialOutputs(self, {"RPM", "Torque", "Power", "Fuel Use", "Entity", "Mass", "Physical Mass"}, {"NORMAL", "NORMAL", "NORMAL", "NORMAL", "ENTITY", "NORMAL", "NORMAL"})
 	Wire_TriggerOutput(self, "Entity", self)
@@ -103,13 +101,47 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 	Engine:UpdateOverlayText()
 	Owner:AddCount("_acf_misc", Engine)
 	Owner:AddCleanup("acfmenu", Engine)
+
 	ACF_Activate(Engine, 0)
 
+	Engine.ACF.PhysObj   = Engine:GetPhysicsObject()
+	Engine.ACF.LegalMass = Engine.Weight
+	Engine.ACF.Model     = Engine.Model
+
+	CheckLegal(Engine)
+
+	timer.Create("ACF Engine Clock " .. Engine:EntIndex(), 3, 0, function()
+		if IsValid(Engine) then
+			Engine:CheckRopes()
+			Engine:CheckFuel()
+			Engine:CalcMassRatio()
+		else
+			timer.Stop("ACF Engine Clock " .. Engine:EntIndex())
+		end
+	end)
 	return Engine
 end
 
 list.Set("ACFCvars", "acf_engine", {"id"})
 duplicator.RegisterEntityClass("acf_engine", MakeACF_Engine, "Pos", "Angle", "Id")
+
+function ENT:Enable()
+	self.Disabled      = nil
+	self.DisableReason = nil
+
+	CheckLegal(self)
+end
+
+function ENT:Disable()
+	self.Disabled = true
+	self.Active   = false -- Turn off the engine
+
+	timer.Simple(ACF.IllegalDisableTime, function()
+		if IsValid(self) then
+			self:Enable()
+		end
+	end)
+end
 
 function ENT:Update(ArgsTable)
 	-- That table is the player data, as sorted in the ACFCvars above, with player who shot, 
@@ -204,18 +236,20 @@ function ENT:UpdateOverlayText()
 	text = text .. "Powerband: " .. pbmin .. " - " .. pbmax .. " RPM\n"
 	text = text .. "Redline: " .. self.LimitRPM .. " RPM"
 
-	if not self.Legal then
-		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	if self.Disabled then
+		text = text .. "\nDisabled: " .. self.DisableReason
 	end
 
 	self:SetOverlayText(text)
 end
 
 function ENT:TriggerInput(iname, value)
+	if self.Disabled then return end
+
 	if (iname == "Throttle") then
 		self.Throttle = math.Clamp(value, 0, 100) / 100
 	elseif (iname == "Active") then
-		if (value > 0 and not self.Active and self.Legal) then
+		if (value > 0 and not self.Active ) then
 			--make sure we have fuel
 			local HasFuel
 
@@ -223,7 +257,7 @@ function ENT:TriggerInput(iname, value)
 				HasFuel = true
 			else
 				for _, fueltank in pairs(self.FuelLink) do
-					if fueltank.Fuel > 0 and fueltank.Active and fueltank.Legal then
+					if fueltank.Fuel > 0 and fueltank.Active and not fueltank.Disabled then
 						HasFuel = true
 						break
 					end
@@ -322,25 +356,6 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 end
 
 function ENT:Think()
-	if ACF.CurTime > self.NextLegalCheck then
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, self.Weight, self.ModelInertia, false, true, true, true)
-		self.NextLegalCheck = ACF.LegalSettings:NextCheck(self.Legal)
-		self:CheckRopes()
-		self:CheckFuel()
-		self:CalcMassRatio()
-		self:UpdateOverlayText()
-		self.NextUpdate = ACF.CurTime + 1
-
-		if not self.Legal and self.Active then
-			self:TriggerInput("Active", 0) -- disable if not legal and active
-		end
-	end
-
-	-- when not legal, update overlay displaying lockout and issues
-	if not self.Legal and ACF.CurTime > self.NextUpdate then
-		self:UpdateOverlayText()
-		self.NextUpdate = ACF.CurTime + 1
-	end
 
 	if self.Active then
 		self:CalcRPM()
@@ -401,7 +416,7 @@ function ENT:CalcRPM()
 	for i = 1, MaxTanks do
 		Tank = self.FuelLink[self.FuelTank + 1]
 		self.FuelTank = (self.FuelTank + 1) % MaxTanks
-		if IsValid(Tank) and Tank.Fuel > 0 and Tank.Active and Tank.Legal then break end --return Tank
+		if IsValid(Tank) and Tank.Fuel > 0 and Tank.Active and not Tank.Disabled then break end --return Tank
 		Tank = nil
 		i = i + 1
 	end
@@ -449,7 +464,7 @@ function ENT:CalcRPM()
 
 	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
 	for _, Link in pairs(self.GearLink) do
-		if not Link.Ent.Legal then continue end
+		if Link.Ent.Disabled then continue end
 		Link.ReqTq = Link.Ent:Calc(self.FlyRPM, self.Inertia)
 		TotalReqTq = TotalReqTq + Link.ReqTq
 	end
@@ -461,7 +476,7 @@ function ENT:CalcRPM()
 
 	-- Split the torque fairly between the gearboxes who need it
 	for _, Link in pairs(self.GearLink) do
-		if not Link.Ent.Legal then continue end
+		if Link.Ent.Disabled then continue end
 		Link.Ent:Act(Link.ReqTq * AvailRatio * self.MassRatio, DeltaTime, self.MassRatio)
 	end
 
