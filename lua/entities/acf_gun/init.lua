@@ -207,6 +207,7 @@ end
 function ENT:Unlink(Target)
 	if self.Crates[Target] then
 		self.Crates[Target] = nil
+		Target.Weapons[self] = nil
 
 		return true, "Unlink successful!"
 	end
@@ -644,9 +645,5 @@ function ENT:OnRemove()
 		self:Unlink(Crate)
 	end
 
-	Wire_Remove(self)
-end
-
-function ENT:OnRestore()
-	Wire_Restored(self)
+	WireLib.Remove(self)
 end
