@@ -320,13 +320,6 @@ function ACF_CalcMassRatio(Ent, Pwr)
 	end
 end
 
--- checks if an ent meets the given requirements for legality
--- MinInertia needs to be mass normalized (normalized=inertia/mass)
--- ballistics doesn"t check visclips on anything except prop_physics, so no need to check on acf ents
-function ACF_CheckLegal(Ent, Model, MinMass, MinInertia, CanMakesphere, Parentable, ParentRequiresWeld, CanVisclip)
-	return true
-end
-
 -- Cvars for recoil/he push
 CreateConVar("acf_hepush", 1)
 CreateConVar("acf_recoilpush", 1)
