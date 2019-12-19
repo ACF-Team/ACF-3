@@ -34,14 +34,14 @@ function SWEP:Initialize()
 		self:SetWeaponHoldType("pistol") --"357 hold type doesnt exist, it's the generic pistol one" Kaf
 	end
 
-	util.PrecacheSound("ambient/energy/NewSpark03.mp3")
-	util.PrecacheSound("ambient/energy/NewSpark04.mp3")
-	util.PrecacheSound("ambient/energy/NewSpark05.mp3")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap1.mp3")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap2.mp3")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap3.mp3")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap4.mp3")
-	util.PrecacheSound("items/medshot4.mp3")
+	util.PrecacheSound("ambient/energy/NewSpark03.wav")
+	util.PrecacheSound("ambient/energy/NewSpark04.wav")
+	util.PrecacheSound("ambient/energy/NewSpark05.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap1.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap2.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap3.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap4.wav")
+	util.PrecacheSound("items/medshot4.wav")
 	self.LastSend = 0
 end
 
@@ -102,7 +102,7 @@ function SWEP:PrimaryAttack()
 			effect:SetNormal(userid:GetAimVector())
 			effect:SetEntity(self)
 			util.Effect("thruster_ring", effect, true, true) --("The 2 booleans control clientside override, by default it doesn't display it since it'll lag a bit behind inputs in MP, same for sounds" Kaf)
-			ent:EmitSound("items/medshot4.mp3", true, true) --and play a sound.
+			ent:EmitSound("items/medshot4.wav", true, true) --and play a sound.
 		else
 			if CPPI and not ent:CPPICanTool(self.Owner, "torch") then return false end
 			local Valid = ACF_Check(ent)
@@ -110,7 +110,7 @@ function SWEP:PrimaryAttack()
 			if (Valid and ent.ACF.Health < ent.ACF.MaxHealth) then
 				ent.ACF.Health = math.min(ent.ACF.Health + (30 / ent.ACF.MaxArmour), ent.ACF.MaxHealth)
 				ent.ACF.Armour = ent.ACF.MaxArmour * (0.5 + ent.ACF.Health / ent.ACF.MaxHealth / 2)
-				ent:EmitSound("ambient/energy/NewSpark0" .. tostring(math.random(3, 5)) .. ".mp3", true, true) --Welding noise here, gotte figure out how to do a looped sound.
+				ent:EmitSound("ambient/energy/NewSpark0" .. tostring(math.random(3, 5)) .. ".wav", true, true) --Welding noise here, gotte figure out how to do a looped sound.
 				TeslaSpark(tr.HitPos, 1)
 			end
 
@@ -182,7 +182,7 @@ function SWEP:SecondaryAttack()
 				effectdata:SetStart(userid:GetShootPos())
 				effectdata:SetOrigin(tr.HitPos)
 				util.Effect("Sparks", effectdata, true, true)
-				ent:EmitSound("weapons/physcannon/superphys_small_zap" .. tostring(math.random(1, 4)) .. ".mp3", true, true) --old annoyinly loud sounds
+				ent:EmitSound("weapons/physcannon/superphys_small_zap" .. tostring(math.random(1, 4)) .. ".wav", true, true) --old annoyinly loud sounds
 			end
 		else
 			self:SetNWFloat("HP", 0)

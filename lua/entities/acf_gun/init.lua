@@ -367,7 +367,7 @@ function ENT:Unload()
 	SetState(self, "Reloading")
 
 	self.CurrentShot = 0
-	self:EmitSound("weapons/357/357_reload4.mp3", 500, 100)
+	self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
 
 	timer.Simple(self.ReloadTime * 0.5, function()
 		if IsValid(self) then
