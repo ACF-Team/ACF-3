@@ -428,3 +428,55 @@ function ACF_GetEnts(Ent)
 
 	return Phys, Pare
 end
+
+local EntityLink = {}
+local function GetEntityLinks(Entity, VarName, SingleEntry)
+	if not Entity[VarName] then return {} end
+
+	if SingleEntry then
+		return { [Entity[VarName]] = true }
+	end
+
+	local Result = {}
+
+	for K in pairs(Entity[VarName]) do
+		Result[K] = true
+	end
+
+	return Result
+end
+
+-- If your entity can link/unlink other entities, you should use this
+function ACF.RegisterLinkSource(Class, VarName, SingleEntry)
+	local Data = EntityLink[Class]
+
+	if not Data then
+		EntityLink[Class] = {
+			[VarName] = function(Entity)
+				return GetEntityLinks(Entity, VarName, SingleEntry)
+			end
+		}
+	else
+		Data[VarName] = function(Entity)
+			return GetEntityLinks(Entity, VarName, SingleEntry)
+		end
+	end
+end
+
+function ACF.GetAllLinkSources(Class)
+	if not EntityLink[Class] then return {} end
+
+	local Result = {}
+
+	for K, V in pairs(EntityLink[Class]) do
+		Result[K] = V
+	end
+
+	return Result
+end
+
+function ACF.GetLinkSource(Class, VarName)
+	if not EntityLink[Class] then return end
+
+	return EntityLink[Class][VarName]
+end
