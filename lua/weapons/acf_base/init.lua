@@ -19,7 +19,7 @@ end
 
 function SWEP:Reload()
 	if (self:Clip1() < self.Primary.ClipSize and self.Owner:GetAmmoCount(self.Primary.Ammo) > 0) then
-		self:EmitSound("weapons/AMR/sniper_reload.mp3", 350, 110)
+		self:EmitSound("weapons/AMR/sniper_reload.wav", 350, 110)
 		self:DefaultReload(ACT_VM_RELOAD)
 	end
 end
@@ -36,7 +36,7 @@ end
 
 --Server side effect, for external stuff
 function SWEP:MuzzleEffect()
-	self:EmitSound("weapons/AMR/sniper_fire.mp3")
+	self:EmitSound("weapons/AMR/sniper_fire.wav")
 	self.Owner:MuzzleFlash()
 	self.Owner:SetAnimation(PLAYER_ATTACK1)
 end

@@ -11,7 +11,6 @@ function EFFECT:Init(data)
 	self.Mass = data:GetMagnitude() --Velocity of the projectile in gmod units
 	self.Emitter = ParticleEmitter(self.Origin)
 	self.Scale = math.max(self.Mass * (self.Velocity / 39.37) / 100, 1) ^ 0.3
-	--self.Entity:EmitSound( "ambient/explosions/explode_1.mp3" , 100 + self.Radius*10, 200 - self.Radius*10 )
 	local BulletEffect = {}
 	BulletEffect.Num = 1
 	BulletEffect.Src = self.Origin - self.DirVec
