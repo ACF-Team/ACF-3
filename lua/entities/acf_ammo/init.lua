@@ -336,7 +336,6 @@ end
 function ENT:Disable()
 	self.Disabled = true
 	self.Load     = false
-	self.Ammo     = 0
 
 	self:UpdateOverlay()
 	self:UpdateMass()
