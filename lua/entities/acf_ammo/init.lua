@@ -24,13 +24,13 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5,
 	Crate:SetAngles(Angle)
 	Crate:SetPlayer(Player)
 	Crate:SetModel(ACF.Weapons.Ammo[Id].model)
-	Crate:Spawn()
-
 	Crate:PhysicsInit(SOLID_VPHYSICS)
 	Crate:SetMoveType(MOVETYPE_VPHYSICS)
+	Crate:Spawn()
 
 	Crate:CreateAmmo(Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 	Crate.IsMaster		= true
+	Crate.IsExplosive   = true
 	Crate.Ammo			= Crate.Capacity
 	Crate.EmptyMass		= ACF.Weapons.Ammo[Id].weight
 	Crate.Id			= Id
@@ -40,7 +40,6 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5,
 	Crate.Load			= true -- Crates should be ready to load by default
 	Crate.SpecialHealth	= true -- Will call self:ACF_Activate
 	Crate.SpecialDamage = true -- Will call self:ACF_OnDamage
-	Crate.Explosive     = true
 	Crate.Inputs		= Wire_CreateInputs( Crate, { "Load" } )
 	Crate.Outputs		= WireLib.CreateOutputs( Crate, { "Entity [ENTITY]", "Ammo" } )
 	Crate.CanUpdate		= true
@@ -296,7 +295,29 @@ function ENT:Think()
 	local Col = self:GetColor()
 	self:SetNWVector("TracerColour", Vector( Col.r, Col.g, Col.b ) )
 
-	self:NextThink(CurTime() + 5)
+	if self.Damaged then
+		if self.Ammo <= 1 or self.Damaged < CurTime() then -- immediately detonate if there's 1 or 0 shells
+			ACF_ScaledExplosion( self ) -- going to let empty crates harmlessly poot still, as an audio cue it died
+		elseif self.BulletData.Type ~= "Refill" and math.Rand(0,150) > self.BulletData.RoundVolume^0.5 and math.Rand(0,1) < self.Ammo / math.max(self.Capacity,1) and ACF.RoundTypes[self.BulletData.Type] then
+			self:EmitSound("ambient/explosions/explode_4.wav", 350, math.max(255 - self.BulletData.PropMass * 100,60))
+
+			local Speed = ACF_MuzzleVelocity( self.BulletData.PropMass, self.BulletData.ProjMass / 2, self.Caliber )
+
+			self.BulletData.Pos = self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
+			self.BulletData.Flight = (VectorRand()):GetNormalized() * Speed * 39.37 + self:GetVelocity()
+			self.BulletData.Owner = self.Inflictor or self.Owner
+			self.BulletData.Gun = self
+			self.BulletData.Crate = self:EntIndex()
+			self.CreateShell = ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData)
+
+			self.Ammo = self.Ammo - 1
+		end
+
+		self:NextThink( CurTime() + 0.01 + self.BulletData.RoundVolume^0.5 / 100 )
+	else
+		self:NextThink(CurTime() + 3)
+	end
+
 	return true
 end
 
@@ -309,7 +330,7 @@ function ENT:Enable()
 		self.Load = true
 	end
 
-	CheckLegal(Crate)
+	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -327,10 +348,9 @@ function ENT:Disable()
 	end)
 end
 
-function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type) print("ondamage", Entity, Energy, FrArea, Angle, Inflictor, _, Type)
+function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = ((Type == "HEAT" and ACF.HEATMulAmmo) or 1) --Heat penetrators deal bonus damage to ammo
 	local HitRes = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
-	Print(HitRes)
 	if self.Exploding or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
@@ -349,13 +369,10 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type) pri
 	end
 
 	-- cookoff chance calculation
-	if self.Damaged then print("????") return HitRes end
+	if self.Damaged then return HitRes end
 	local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
-	local A = (Ratio * self.Capacity / self.Ammo)
-	local B = math.Rand(0, 1)
-	print(A, B)
-	if A > B then
+	if (Ratio * self.Capacity / self.Ammo) > math.Rand(0, 1) then
 		self.Inflictor = Inflictor
 		self.Damaged = CurTime() + (5 - Ratio * 3)
 		Wire_TriggerOutput(self, "On Fire", 1)
