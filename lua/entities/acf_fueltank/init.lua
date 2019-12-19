@@ -3,6 +3,8 @@ DEFINE_BASECLASS("base_wire_entity")
 ENT.PrintName     = "ACF Fuel Tank"
 ENT.WireDebugName = "ACF Fuel Tank"
 
+local CheckLegal = ACF_CheckLegal
+
 function ENT:Initialize()
 	self.CanUpdate = true
 	self.SpecialHealth = true --If true, use the ACF_Activate function defined by this ent
@@ -20,15 +22,11 @@ function ENT:Initialize()
 	self.Active = false
 	self.SupplyFuel = false
 	self.Leaking = 0
-	self.NextLegalCheck = ACF.CurTime + 30 -- give any spawning issues time to iron themselves out
-	self.Legal = true
-	self.LegalIssues = ""
 	self.Inputs = Wire_CreateInputs(self, {"Active", "Refuel Duty"})
 	self.Outputs = WireLib.CreateSpecialOutputs(self, {"Fuel", "Capacity", "Leaking", "Entity"}, {"NORMAL", "NORMAL", "NORMAL", "ENTITY"})
 	Wire_TriggerOutput(self, "Leaking", 0)
 	Wire_TriggerOutput(self, "Entity", self)
 	self.Master = {} --engines linked to this tank
-	ACF.FuelTanks = ACF.FuelTanks or {} --master list of acf fuel tanks
 	self.LastThink = 0
 	self.NextThink = CurTime() + 1
 end
@@ -127,7 +125,15 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 		Owner:AddCleanup("acfmenu", Tank)
 	end
 
-	table.insert(ACF.FuelTanks, Tank)
+	ACF.FuelTanks[Tank] = true
+
+	ACF_Activate(Tank)
+
+	Tank.ACF.Mass    = 99999
+	Tank.ACF.PhysObj = Tank:GetPhysicsObject(0)
+	Tank.ACF.Model   = Tank.Model
+
+	CheckLegal(Tank)
 
 	return Tank
 end
@@ -176,8 +182,8 @@ function ENT:UpdateOverlayText()
 		text = text .. "\nFuel Remaining: " .. math.Round(self.Fuel, 1) .. " liters / " .. math.Round(self.Fuel * 0.264172, 1) .. " gallons"
 	end
 
-	if not self.Legal then
-		text = text .. "\nNot legal, disabled for " .. math.ceil(self.NextLegalCheck - ACF.CurTime) .. "s\nIssues: " .. self.LegalIssues
+	if self.Disabled then
+		text = text .. "\nDisabled: " .. self.DisableReason
 	end
 
 	self:SetOverlayText(text)
@@ -241,13 +247,6 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:Think()
-	if ACF.CurTime > self.NextLegalCheck then
-		--local minmass = math.floor(self.Mass-6)  -- fuel is light, may as well save complexity and just check it's above empty mass
-		self.Legal, self.LegalIssues = ACF_CheckLegal(self, self.Model, math.floor(self.EmptyMass), nil, false, true, false, true) -- mass-6, as mass update is granular to 5 kg
-		self.NextLegalCheck = ACF.LegalSettings:NextCheck(self.Legal)
-		self:UpdateOverlayText()
-	end
-
 	if self.Leaking > 0 then
 		self:NextThink(CurTime() + 0.25)
 		self.Fuel = math.max(self.Fuel - self.Leaking, 0)
@@ -258,10 +257,10 @@ function ENT:Think()
 	end
 
 	--refuelling
-	if self.Active and self.SupplyFuel and self.Fuel > 0 and self.Legal then
-		for _, Tank in pairs(ACF.FuelTanks) do
+	if self.Active and self.SupplyFuel and self.Fuel > 0 and not self.Disabled then
+		for Tank in pairs(ACF.FuelTanks) do
 			--don't refuel the refuellers, otherwise it'll be one big circlejerk
-			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel and Tank.Legal then
+			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel and not Tank.Disabled then
 				local dist = self:GetPos():Distance(Tank:GetPos())
 
 				if dist < ACF.RefillDistance and Tank.Capacity - Tank.Fuel > 0.1 then
@@ -294,11 +293,5 @@ function ENT:OnRemove()
 		end
 	end
 
-	if #ACF.FuelTanks > 0 then
-		for k, v in pairs(ACF.FuelTanks) do
-			if v == self then
-				table.remove(ACF.FuelTanks, k)
-			end
-		end
-	end
+	ACF.FuelTanks[self] = nil
 end
