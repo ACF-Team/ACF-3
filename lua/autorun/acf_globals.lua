@@ -1,6 +1,7 @@
 ACF = {}
 ACF.AmmoTypes = {}
 ACF.AmmoCrates = {}
+ACF.FuelTanks = {}
 ACF.MenuFunc = {}
 ACF.AmmoBlacklist = {}
 ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
