@@ -1,6 +1,4 @@
-DEFINE_BASECLASS("base_wire_entity")
-ENT.PrintName     = "ACF Ammo Crate"
-ENT.WireDebugName = "ACF Ammo Crate"
+include("shared.lua")
 
 --Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
 local function Bezier(a, b, c, d, t)

@@ -129,7 +129,7 @@ function TOOL:RightClick(Trace)
 	local Player = self:GetOwner()
 	local Entity = Trace.Entity
 
-	if self:GetStage() == 0 and Entity.IsMaster then
+	if self:GetStage() == 0 and Entity.Link then
 		self.Master = Entity
 		self:SetStage(1)
 

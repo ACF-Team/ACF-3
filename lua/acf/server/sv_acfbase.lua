@@ -34,13 +34,13 @@ function ACF_Activate(Entity, Recalc)
 
 	if not IsValid(PhysObj) then return end
 
+	Entity.ACF = Entity.ACF or {}
+	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
+
 	if Entity.SpecialHealth then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
-
-	Entity.ACF = Entity.ACF or {}
-	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
 
 	local Count = PhysObj:GetMesh() and #PhysObj:GetMesh() or nil
 
@@ -93,17 +93,17 @@ end
 			ACF_CheckLegal(self)
 		end
 
-	function ENT:Disable()
-		self.Disabled = true
+		function ENT:Disable()
+			self.Disabled = true
 
-		timer.Simple(ACF.IllegalDisableTime, function()
-			if IsValid(self) then
-				self:Enable()
-			end
-		end)
+			timer.Simple(ACF.IllegalDisableTime, function()
+				if IsValid(self) then
+					self:Enable()
+				end
+			end)
 
-		<code>
-	end
+			<code>
+		end
 ]]--
 function ACF_IsLegal(Entity)
 	local Phys = Entity:GetPhysicsObject()
@@ -479,4 +479,57 @@ function ACF.GetLinkSource(Class, VarName)
 	if not EntityLink[Class] then return end
 
 	return EntityLink[Class][VarName]
+end
+
+local ClassLink = { Link = {}, Unlink = {} }
+local function RegisterNewLink(Action, Class1, Class2, Function)
+	if not isfunction(Function) then return end
+
+	local Target = ClassLink[Action]
+	local Data1 = Target[Class1]
+	local Data2 = Target[Class2]
+
+	if not Data1 then
+		Target[Class1] = {
+			[Class2] = function(Ent1, Ent2)
+				return Function(Ent1, Ent2)
+			end
+		}
+	else
+		Data1[Class2] = function(Ent1, Ent2)
+			return Function(Ent1, Ent2)
+		end
+	end
+
+	if not Data2 then
+		Target[Class2] = {
+			[Class1] = function(Ent2, Ent1)
+				return Function(Ent1, Ent2)
+			end
+		}
+	else
+		Data2[Class1] = function(Ent2, Ent1)
+			return Function(Ent1, Ent2)
+		end
+	end
+end
+
+function ACF.RegisterClassLink(Class1, Class2, Function)
+	RegisterNewLink("Link", Class1, Class2, Function)
+end
+
+function ACF.GetClassLink(Class1, Class2)
+	if not ClassLink.Link[Class1] then return end
+
+	return ClassLink.Link[Class1][Class2]
+end
+
+function ACF.RegisterClassUnlink(Class1, Class2, Function)
+	RegisterNewLink("Unlink", Class1, Class2, Function)
+end
+
+function ACF.GetClassUnlink(Class1, Class2)
+	if not ClassLink.Unlink[Class1] then return end
+
+	return ClassLink.Unlink[Class1][Class2]
 end
