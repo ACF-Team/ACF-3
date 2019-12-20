@@ -38,6 +38,7 @@ function Round.convert(_, PlayerData)
 	Data.Ricochet = 60 --Base ricochet angle
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 	Data.BoomPower = Data.PropMass
+	Data.MassMod = 5
 
 	--Only the crates need this part
 	if SERVER then

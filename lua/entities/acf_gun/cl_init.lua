@@ -1,11 +1,8 @@
-DEFINE_BASECLASS("base_wire_entity")
-ENT.PrintName     = "ACF Gun"
-ENT.WireDebugName = "ACF Gun"
+include("shared.lua")
 
 local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 
 function ENT:Initialize()
-	self.BaseClass.Initialize(self)
 	self.LastFire = 0
 	self.Reload = 1
 	self.CloseTime = 1
@@ -13,13 +10,16 @@ function ENT:Initialize()
 	self.RateScale = 1
 	self.FireAnim = self:LookupSequence("shoot")
 	self.CloseAnim = self:LookupSequence("load")
+
+	self.BaseClass.Initialize(self)
 end
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
-	local lply = LocalPlayer()
-	local hideBubble = not ACF_GunInfoWhileSeated:GetBool() and IsValid(lply) and lply:InVehicle()
-	self.BaseClass.DoNormalDraw(self, false, hideBubble)
+	local Player = LocalPlayer()
+	local HideBubble = IsValid(Player) and Player:InVehicle() and not ACF_GunInfoWhileSeated:GetBool()
+
+	self.BaseClass.DoNormalDraw(self, false, HideBubble)
 	Wire_Render(self)
 
 	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then
@@ -30,7 +30,9 @@ end
 
 function ENT:Think()
 	self.BaseClass.Think(self)
+
 	local SinceFire = CurTime() - self.LastFire
+
 	self:SetCycle(SinceFire * self.Rate / self.RateScale)
 
 	if CurTime() > self.LastFire + self.CloseTime and self.CloseAnim then
