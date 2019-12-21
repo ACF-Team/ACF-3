@@ -105,7 +105,9 @@ local function FindNextCrate(Gun)
 	if not next(Gun.Crates) then return end
 
 	-- Find the next available crate to pull ammo from --
-	local Select = next(Gun.Crates, Gun.CurrentCrate) or next(Gun.Crates) -- Next crate from Start or, if at last crate, first crate
+	local Current = Gun.CurrentCrate
+	local NextKey = (IsValid(Current) and Gun.Crates[Current]) and Current or nil
+	local Select = next(Gun.Crates, NextKey) or next(Gun.Crates)
 	local Start  = Select
 
 	repeat
