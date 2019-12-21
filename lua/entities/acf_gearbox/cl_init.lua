@@ -1,6 +1,4 @@
-DEFINE_BASECLASS("base_wire_entity")
-ENT.PrintName     = "ACF Gearbox"
-ENT.WireDebugName = "ACF Gearbox"
+include("shared.lua")
 
 local SeatedInfo = CreateClientConVar("ACF_GearboxInfoWhileSeated", 0, true, false)
 
