@@ -96,18 +96,20 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local function GetNextFuelTank(Engine)
 	if not next(Engine.FuelTanks) then return end
 
-	local Select = next(Engine.FuelTanks, Engine.FuelTank) or next(Engine.FuelTanks)
+	local Current = Engine.FuelTank
+	local NextKey = (IsValid(Current) and Engine.FuelTanks[Current]) and Current or nil
+	local Select = next(Engine.FuelTanks, NextKey) or next(Engine.FuelTanks)
 	local Start = Select
 
 	repeat
-		if Select.Fuel > 0 and Select.Active and not Select.Disabled then
+		if Select.Active and Select.Fuel > 0 then
 			return Select
 		end
 
 		Select = next(Engine.FuelTanks, Select) or next(Engine.FuelTanks)
 	until Select == Start
 
-	return (Select.Fuel > 0 and Select.Active) and Select or nil
+	return (Select.Active and Select.Fuel > 0) and Select or nil
 end
 
 local function CheckDistantFuelTanks(Engine)
