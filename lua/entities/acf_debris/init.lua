@@ -1,20 +1,16 @@
-AddCSLuaFile("cl_init.lua")
+AddCSLuaFile("shared.lua")
 
-DEFINE_BASECLASS("base_anim")
-ENT.PrintName = "Debris"
+include("shared.lua")
 
--- todo: rename this to acf_debris
 function ENT:Initialize()
-	self.Timer = CurTime() + 60
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
-	self:SetSolid(SOLID_VPHYSICS)
 	self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 
-	local phys = self:GetPhysicsObject()
+	local PhysObj = self:GetPhysicsObject()
 
-	if IsValid(phys) then
-		phys:Wake()
+	if IsValid(PhysObj) then
+		PhysObj:Wake()
 	end
 
 	timer.Simple(30, function()
@@ -23,4 +19,3 @@ function ENT:Initialize()
 		end
 	end)
 end
-

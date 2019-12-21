@@ -1,6 +1,4 @@
-DEFINE_BASECLASS("base_wire_entity")
-ENT.PrintName     = "ACF Fuel Tank"
-ENT.WireDebugName = "ACF Fuel Tank"
+include("shared.lua")
 
 local SeatedInfo = CreateClientConVar("ACF_FuelInfoWhileSeated", 0, true, false)
 

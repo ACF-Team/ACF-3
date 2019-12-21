@@ -28,7 +28,8 @@ local gearbox_base = {
 
 local fueltank_base = {
 	ent = "acf_fueltank",
-	type = "Mobility"
+	type = "Mobility",
+	explosive = true
 }
 
 -- add gui stuff to base classes if this is client
