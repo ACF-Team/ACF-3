@@ -22,7 +22,7 @@ local function RefillEffect(Entity, Target)
 	net.Broadcast()
 end
 
-function StopRefillEffect(Entity, TargetID)
+local function StopRefillEffect(Entity, TargetID)
 	net.Start("ACF_StopRefillEffect")
 		net.WriteFloat(Entity:EntIndex())
 		net.WriteFloat(TargetID)

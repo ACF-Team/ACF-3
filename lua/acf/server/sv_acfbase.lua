@@ -487,7 +487,6 @@ local function RegisterNewLink(Action, Class1, Class2, Function)
 
 	local Target = ClassLink[Action]
 	local Data1 = Target[Class1]
-	local Data2 = Target[Class2]
 
 	if not Data1 then
 		Target[Class1] = {
@@ -500,6 +499,10 @@ local function RegisterNewLink(Action, Class1, Class2, Function)
 			return Function(Ent1, Ent2)
 		end
 	end
+
+	if Class1 == Class2 then return end
+
+	local Data2 = Target[Class2]
 
 	if not Data2 then
 		Target[Class2] = {
