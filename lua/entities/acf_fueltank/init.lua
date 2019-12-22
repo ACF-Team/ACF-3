@@ -3,18 +3,62 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+--===============================================================================================--
+-- Local Funcs and Vars
+--===============================================================================================--
+
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 
+local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
+	local Percentage = 1 --how full is the tank?
+
+	--if updating existing tank, keep fuel level
+	if Entity.Capacity and Entity.Capacity ~= 0 then
+		Percentage = Entity.Fuel / Entity.Capacity
+	end
+
+	local PhysObj = Entity:GetPhysicsObject()
+	local Area = PhysObj:GetSurfaceArea()
+	local Wall = 0.03937 --wall thickness in inches (1mm)
+
+	Entity.Id = Id
+	Entity.SizeId = Data1
+	Entity.FuelType = Data2
+	Entity.Model = FuelData.model
+	Entity.FuelDensity = ACF.FuelDensity[Data2]
+	Entity.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
+	Entity.Capacity = Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
+	Entity.EmptyMass = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
+	Entity.IsExplosive = Entity.FuelType ~= "Electric" and FuelData.explosive
+	Entity.NoLinks = FuelData.nolinks
+
+	if Entity.FuelType == "Electric" then
+		Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume
+		Entity.Capacity = Entity.Capacity * ACF.LiIonED
+	end
+
+	Entity.Fuel = Percentage * Entity.Capacity
+
+	Entity:UpdateMass()
+	Entity:UpdateOverlay()
+
+	WireLib.TriggerOutput(Entity, "Capacity", math.Round(Entity.Capacity, 2))
+end
+
 local Inputs = {
 	Active = function(Entity, Value)
 		Entity.Active = tobool(Value)
+
+		Entity:UpdateOverlay()
 	end,
 	["Refuel Duty"] = function(Entity, Value)
 		Entity.SupplyFuel = tobool(Value)
 	end
 }
+
+--===============================================================================================--
 
 function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	if not Owner:CheckLimit("_acf_misc") then return end
@@ -39,12 +83,9 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	Owner:AddCount("_acf_misc", Tank)
 	Owner:AddCleanup("acfmenu", Tank)
 
-	Tank:UpdateFuelTank(Data1, Data2)
+	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
 
-	Tank.Id = Id
 	Tank.Owner = Owner
-	Tank.SizeId = Data1
-	Tank.Model = FuelData.model
 	Tank.SpecialHealth = true
 	Tank.SpecialDamage = true
 	Tank.Engines = {}
@@ -84,39 +125,9 @@ list.Set("ACFCvars", "acf_fueltank", {"id", "data1", "data2"})
 duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType")
 ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
-function ENT:UpdateFuelTank(Data1, Data2)
-	local FuelData = list.Get("ACFEnts").FuelTanks[Data1]
-	local Percentage = 1 --how full is the tank?
-
-	--if updating existing tank, keep fuel level
-	if self.Capacity and self.Capacity ~= 0 then
-		Percentage = self.Fuel / self.Capacity
-	end
-
-	local PhysObj = self:GetPhysicsObject()
-	local Area = PhysObj:GetSurfaceArea()
-	local Wall = 0.03937 --wall thickness in inches (1mm)
-
-	self.FuelType = Data2
-	self.FuelDensity = ACF.FuelDensity[Data2]
-	self.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
-	self.Capacity = self.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
-	self.EmptyMass = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
-	self.IsExplosive = self.FuelType ~= "Electric" and FuelData.explosive
-	self.NoLinks = FuelData.nolinks == true
-
-	if self.FuelType == "Electric" then
-		self.Liters = self.Capacity --batteries capacity is different from internal volume
-		self.Capacity = self.Capacity * ACF.LiIonED
-	end
-
-	self.Fuel = Percentage * self.Capacity
-
-	self:UpdateMass()
-	self:UpdateOverlay()
-
-	WireLib.TriggerOutput(self, "Capacity", math.Round(self.Capacity, 2))
-end
+--===============================================================================================--
+-- Meta Funcs
+--===============================================================================================--
 
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
@@ -190,6 +201,11 @@ end
 function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that fuel tank!" end
 
+	local FuelData = list.Get("ACFEnts").FuelTanks[ArgsTable[5]]
+
+	if not FuelData then return false, "Invalid fuel tank type!" end
+	if FuelData.model ~= self.Model then return false, "The new fuel tank must have the same model!" end
+
 	local Feedback = ""
 
 	if self.FuelType ~= ArgsTable[6] then
@@ -200,7 +216,7 @@ function ENT:Update(ArgsTable)
 		Feedback = " New fuel type loaded, fuel tank unlinked."
 	end
 
-	self:UpdateFuelTank(ArgsTable[5], ArgsTable[6])
+	UpdateFuelData(self, ArgsTable[4], ArgsTable[5], ArgsTable[6], FuelData)
 
 	return true, "Fuel tank successfully updated." .. Feedback
 end
@@ -209,11 +225,20 @@ function ENT:Enable()
 	self.Disabled 		= nil
 	self.DisableReason 	= nil
 
+	if self.Inputs.Active.Path then
+		self.Active = tobool(self.Inputs.Active.Value)
+	else
+		self.Active = true
+	end
+
+	self:UpdateOverlay()
+
 	CheckLegal(self)
 end
 
 function ENT:Disable()
 	self.Disabled = true
+	self.Active = false
 
 	self:UpdateOverlay()
 

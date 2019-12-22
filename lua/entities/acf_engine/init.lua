@@ -61,8 +61,8 @@ ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		ReqTq = 0
 	}
 
-	Engine.Gearboxes[Target]	= Link
-	Target.Engines[Engine]	= true
+	Engine.Gearboxes[Target] = Link
+	Target.Engines[Engine]	 = true
 
 	Engine:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -88,10 +88,68 @@ ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
 	return true, "Engine unlinked successfully!"
 end)
 
+--===============================================================================================--
+-- Local Funcs and Vars
+--===============================================================================================--
+
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+local insert	  = table.insert
+local remove	  = table.remove
+local Round		  = math.Round
+local max		  = math.max
+
+local function UpdateEngineData(Entity, Id, EngineData)
+	Entity.Id = Id
+	Entity.Name = EngineData.name
+	Entity.SoundPath = EngineData.sound
+	Entity.SoundPitch = EngineData.pitch or 1
+	Entity.Mass = EngineData.weight
+	Entity.PeakTorque = EngineData.torque
+	Entity.PeakTorqueHeld = EngineData.torque
+	Entity.IdleRPM = EngineData.idlerpm
+	Entity.PeakMinRPM = EngineData.peakminrpm
+	Entity.PeakMaxRPM = EngineData.peakmaxrpm
+	Entity.LimitRPM = EngineData.limitrpm
+	Entity.Inertia = EngineData.flywheelmass * 3.1416 ^ 2
+	Entity.IsElectric = EngineData.iselec
+	Entity.FlywheelOverride = EngineData.flywheeloverride
+	Entity.IsTrans = EngineData.istrans -- driveshaft outputs to the side
+	Entity.FuelType = EngineData.fuel or "Petrol"
+	Entity.EngineType = EngineData.enginetype or "GenericPetrol"
+	Entity.RequiresFuel = EngineData.requiresfuel
+	Entity.TorqueMult = Entity.TorqueMult or 1
+	Entity.TorqueScale = ACF.TorqueScale[Entity.EngineType]
+	Entity.FuelTank = nil
+
+	--calculate boosted peak kw
+	if Entity.EngineType == "Turbine" or Entity.EngineType == "Electric" then
+		Entity.peakkw = (Entity.PeakTorque * (1 + Entity.PeakMaxRPM / Entity.LimitRPM)) * Entity.LimitRPM / (4 * 9548.8) --adjust torque to 1 rpm maximum, assuming a linear decrease from a max @ 1 rpm to min @ limiter
+		Entity.PeakKwRPM = math.floor(Entity.LimitRPM / 2)
+	else
+		Entity.peakkw = Entity.PeakTorque * Entity.PeakMaxRPM / 9548.8
+		Entity.PeakKwRPM = Entity.PeakMaxRPM
+	end
+
+	--calculate base fuel usage
+	if Entity.EngineType == "Electric" then
+		Entity.FuelUse = ACF.ElecRate / (ACF.Efficiency[Entity.EngineType] * 60 * 60) --elecs use current power output, not max
+	else
+		Entity.FuelUse = ACF.TorqueBoost * ACF.FuelRate * ACF.Efficiency[Entity.EngineType] * Entity.peakkw / (60 * 60)
+	end
+
+	local PhysObj = Entity:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		PhysObj:SetMass(Entity.Mass)
+	end
+
+	Entity:SetNWString("WireName", Entity.Name)
+
+	Entity:UpdateOverlay()
+end
 
 local function GetNextFuelTank(Engine)
 	if not next(Engine.FuelTanks) then return end
@@ -136,13 +194,7 @@ local function CheckGearboxes(Engine)
 		end
 
 		-- make sure the angle is not excessive
-		local Direction
-
-		if Engine.IsTrans then
-			Direction = -Engine:GetRight()
-		else
-			Direction = Engine:GetForward()
-		end
+		local Direction = Engine.IsTrans and -Engine:GetRight() or Engine:GetForward()
 
 		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
 			Engine:Unlink(Ent)
@@ -185,6 +237,8 @@ local function SetActive(Entity, Value)
 		Entity.Active = false
 		Entity.FlyRPM = 0
 		Entity.RPM = { Entity.IdleRPM }
+		Entity.SmoothRPM = Entity.IdleRPM
+		Entity.AmountRPM = 1
 
 		if Entity.Sound then
 			Entity.Sound:Stop()
@@ -197,6 +251,8 @@ local function SetActive(Entity, Value)
 		WireLib.TriggerOutput(Entity, "Power", 0)
 		WireLib.TriggerOutput(Entity, "Fuel Use", 0)
 	end
+
+	Entity:UpdateOverlay()
 end
 
 local Inputs = {
@@ -207,6 +263,8 @@ local Inputs = {
 		SetActive(Entity, tobool(Value))
 	end
 }
+
+--===============================================================================================--
 
 function MakeACF_Engine(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_acf_misc") then return end
@@ -231,74 +289,30 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 	Owner:AddCount("_acf_misc", Engine)
 	Owner:AddCleanup("acfmenu", Engine)
 
-	Engine.Id = Id
+	UpdateEngineData(Engine, Id, EngineData)
+
 	Engine.Owner = Owner
 	Engine.Model = EngineData.model
-	Engine.SoundPath = EngineData.sound
-	Engine.SoundPitch = EngineData.pitch or 1
-	Engine.Mass = EngineData.weight
 	Engine.SpecialHealth = true
 	Engine.SpecialDamage = true
 	Engine.CanUpdate = true
 	Engine.Active = false
-	Engine.Gearboxes = {} -- a "Link" has these components: Rope, RopeLen, ReqTq
+	Engine.Gearboxes = {}
 	Engine.FuelTanks = {}
 	Engine.LastThink = 0
 	Engine.MassRatio = 1
-
-	Engine.PeakTorque = EngineData.torque
-	Engine.PeakTorqueHeld = EngineData.torque
-	Engine.IdleRPM = EngineData.idlerpm
-	Engine.PeakMinRPM = EngineData.peakminrpm
-	Engine.PeakMaxRPM = EngineData.peakmaxrpm
-	Engine.LimitRPM = EngineData.limitrpm
-	Engine.Inertia = EngineData.flywheelmass * 3.1416 ^ 2
-	Engine.IsElectric = EngineData.iselec
-	Engine.FlywheelOverride = EngineData.flywheeloverride
-	Engine.IsTrans = EngineData.istrans -- driveshaft outputs to the side
-	Engine.FuelType = EngineData.fuel or "Petrol"
-	Engine.EngineType = EngineData.enginetype or "GenericPetrol"
-	Engine.RequiresFuel = EngineData.requiresfuel
-	Engine.TorqueMult = 1
-	Engine.TorqueScale = ACF.TorqueScale[Engine.EngineType]
 	Engine.FuelUsage = 0
 	Engine.Throttle = 0
 	Engine.FlyRPM = 0
 	Engine.RPM = {}
+	Engine.SmoothRPM = 0
+	Engine.AmountRPM = 0
 	Engine.Out = Engine:WorldToLocal(Engine:GetAttachment(Engine:LookupAttachment("driveshaft")).Pos)
 
 	Engine.Inputs = WireLib.CreateInputs(Engine, { "Active", "Throttle" })
 	Engine.Outputs = WireLib.CreateOutputs(Engine, { "RPM", "Torque", "Power", "Fuel Use", "Entity [ENTITY]", "Mass", "Physical Mass" })
 
-	--calculate boosted peak kw
-	if Engine.EngineType == "Turbine" or Engine.EngineType == "Electric" then
-		Engine.peakkw = (Engine.PeakTorque * (1 + Engine.PeakMaxRPM / Engine.LimitRPM)) * Engine.LimitRPM / (4 * 9548.8) --adjust torque to 1 rpm maximum, assuming a linear decrease from a max @ 1 rpm to min @ limiter
-		Engine.PeakKwRPM = math.floor(Engine.LimitRPM / 2)
-	else
-		Engine.peakkw = Engine.PeakTorque * Engine.PeakMaxRPM / 9548.8
-		Engine.PeakKwRPM = Engine.PeakMaxRPM
-	end
-
-	--calculate base fuel usage
-	if Engine.EngineType == "Electric" then
-		Engine.FuelUse = ACF.ElecRate / (ACF.Efficiency[Engine.EngineType] * 60 * 60) --elecs use current power output, not max
-	else
-		Engine.FuelUse = ACF.TorqueBoost * ACF.FuelRate * ACF.Efficiency[Engine.EngineType] * Engine.peakkw / (60 * 60)
-	end
-
-	local PhysObj = Engine:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		PhysObj:SetMass(Engine.Mass)
-
-		Engine.ModelInertia = 0.99 * PhysObj:GetInertia() / PhysObj:GetMass() -- giving a little wiggle room
-	end
-
-	Engine:SetNWString("WireName", EngineData.name)
-
 	WireLib.TriggerOutput(Engine, "Entity", Engine)
-
-	Engine:UpdateOverlay()
 
 	ACF_Activate(Engine)
 
@@ -325,6 +339,10 @@ list.Set("ACFCvars", "acf_engine", { "id" })
 duplicator.RegisterEntityClass("acf_engine", MakeACF_Engine, "Pos", "Angle", "Id")
 ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 ACF.RegisterLinkSource("acf_engine", "Gearboxes")
+
+--===============================================================================================--
+-- Meta Funcs
+--===============================================================================================--
 
 function ENT:Enable()
 	self.Disabled      = nil
@@ -360,16 +378,18 @@ function ENT:Disable()
 end
 
 function ENT:Update(ArgsTable)
-	-- That table is the player data, as sorted in the ACFCvars above, with player who shot, 
-	-- and pos and angle of the tool trace inserted at the start
 	if self.Active then return false, "Turn off the engine before updating it!" end
-	if ArgsTable[1] ~= self.Owner then return false, "You don't own that engine!" end -- Argtable[1] is the player that shot the tool
+	if ArgsTable[1] ~= self.Owner then return false, "You don't own that engine!" end
+
 	local Id = ArgsTable[4] -- Argtable[4] is the engine ID
-	local Lookup = list.Get("ACFEnts").Mobility[Id]
-	if Lookup.model ~= self.Model then return false, "The new engine must have the same model!" end
+	local EngineData = list.Get("ACFEnts").Mobility[Id]
+
+	if not EngineData then return false, "Invalid engine type!" end
+	if EngineData.model ~= self.Model then return false, "The new engine must have the same model!" end
+
 	local Feedback = ""
 
-	if Lookup.fuel ~= self.FuelType then
+	if EngineData.fuel ~= self.FuelType then
 		Feedback = " Fuel type changed, fuel tanks unlinked."
 
 		for Tank in pairs(self.FuelTanks) do
@@ -377,57 +397,9 @@ function ENT:Update(ArgsTable)
 		end
 	end
 
-	self.Id = Id
-	self.SoundPath = Lookup.sound
-	self.Mass = Lookup.weight
-	self.PeakTorque = Lookup.torque
-	self.PeakTorqueHeld = Lookup.torque
-	self.IdleRPM = Lookup.idlerpm
-	self.PeakMinRPM = Lookup.peakminrpm
-	self.PeakMaxRPM = Lookup.peakmaxrpm
-	self.LimitRPM = Lookup.limitrpm
-	self.Inertia = Lookup.flywheelmass * 3.1416 ^ 2
-	self.IsElectric = Lookup.iselec -- is the engine electric?
-	self.FlywheelOverride = Lookup.flywheeloverride -- modifies rpm drag on IsElectric==true
-	self.IsTrans = Lookup.istrans
-	self.FuelType = Lookup.fuel
-	self.EngineType = Lookup.enginetype
-	self.RequiresFuel = Lookup.requiresfuel
-	self.SoundPitch = Lookup.pitch or 1
-	self.SpecialHealth = true
-	self.SpecialDamage = true
-	self.TorqueMult = self.TorqueMult or 1
-	self.FuelTank = nil
-	self.TorqueScale = ACF.TorqueScale[self.EngineType]
+	UpdateEngineData(self, Id, EngineData)
 
-	--calculate boosted peak kw
-	if self.EngineType == "Turbine" or self.EngineType == "Electric" then
-		self.peakkw = (self.PeakTorque * (1 + self.PeakMaxRPM / self.LimitRPM)) * self.LimitRPM / (4 * 9548.8) --adjust torque to 1 rpm maximum, assuming a linear decrease from a max @ 1 rpm to min @ limiter
-		self.PeakKwRPM = math.floor(self.LimitRPM / 2)
-	else
-		self.peakkw = self.PeakTorque * self.PeakMaxRPM / 9548.8
-		self.PeakKwRPM = self.PeakMaxRPM
-	end
-
-	--calculate base fuel usage
-	if self.EngineType == "Electric" then
-		self.FuelUse = ACF.ElecRate / (ACF.Efficiency[self.EngineType] * 60 * 60) --elecs use current power output, not max
-	else
-		self.FuelUse = ACF.TorqueBoost * ACF.FuelRate * ACF.Efficiency[self.EngineType] * self.peakkw / (60 * 60)
-	end
-
-	self:SetModel(self.Model)
-	self.Out = self:WorldToLocal(self:GetAttachment(self:LookupAttachment("driveshaft")).Pos)
-	local PhysObj = self:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		PhysObj:SetMass(self.Mass)
-	end
-
-	self:SetNWString("WireName", Lookup.name)
-	self:UpdateOverlay()
-
-	ACF_Activate(self)
+	ACF_Activate(self, true)
 
 	self.ACF.LegalMass = self.Mass
 
@@ -440,28 +412,29 @@ function ENT:UpdateOutputs()
 	timer.Create("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
-		local SmoothRPM = 0
+		local Removed = 0
 
-		-- Then we calc a smoothed RPM value for the sound effects
-		table.remove(self.RPM, 10)
-		table.insert(self.RPM, 1, self.FlyRPM)
-
-		for _, RPM in pairs(self.RPM) do
-			SmoothRPM = SmoothRPM + (RPM or 0)
+		if self.AmountRPM == 5 then
+			Removed = remove(self.RPM)
+		else
+			self.AmountRPM = self.AmountRPM + 1
 		end
 
-		SmoothRPM = SmoothRPM / 10
+		insert(self.RPM, 1, self.FlyRPM)
 
-		local Power = self.Torque * SmoothRPM / 9548.8
+		self.SmoothRPM = self.SmoothRPM + self.FlyRPM - Removed
+
+		local Smooth = self.SmoothRPM / self.AmountRPM
+		local Power = self.Torque * Smooth / 9548.8
 
 		WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
 		WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
 		WireLib.TriggerOutput(self, "Power", math.floor(Power))
-		WireLib.TriggerOutput(self, "RPM", self.FlyRPM)
+		WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
 
 		if self.Sound then
-			self.Sound:ChangePitch(math.min(20 + (SmoothRPM * self.SoundPitch) / 50, 255), 0)
-			self.Sound:ChangeVolume(0.25 + (0.1 + 0.9 * ((SmoothRPM / self.LimitRPM) ^ 1.5)) * self.Throttle / 1.5, 0)
+			self.Sound:ChangePitch(math.min(20 + (Smooth * self.SoundPitch) / 50, 255), 0)
+			self.Sound:ChangeVolume(0.25 + (0.1 + 0.9 * ((Smooth / self.LimitRPM) ^ 1.5)) * self.Throttle / 1.5, 0)
 		end
 	end)
 end
@@ -475,17 +448,21 @@ function ENT:UpdateOverlay()
 		local Boost = self.RequiresFuel and ACF.TorqueBoost or 1
 		local PowerbandMin = self.IsElectric and self.IdleRPM or self.PeakMinRPM
 		local PowerbandMax = self.IsElectric and math.floor(self.LimitRPM / 2) or self.PeakMaxRPM
-
-		local text = "Power: " .. math.Round(self.peakkw * Boost) .. " kW / " .. math.Round(self.peakkw * Boost * 1.34) .. " hp\n"
-		text = text .. "Torque: " .. math.Round(self.PeakTorque * Boost) .. " Nm / " .. math.Round(self.PeakTorque * Boost * 0.73) .. " ft-lb\n"
-		text = text .. "Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n"
-		text = text .. "Redline: " .. self.LimitRPM .. " RPM"
+		local Text
 
 		if self.DisableReason then
-			text = text .. "\nDisabled: " .. self.DisableReason
+			Text = "Disabled: " .. self.DisableReason
+		else
+			Text = self.Active and "Active" or "Idle"
 		end
 
-		self:SetOverlayText(text)
+		Text = Text .. "\n\n" .. self.Name .. "\n" ..
+			"Power: " .. Round(self.peakkw * Boost) .. " kW / " .. Round(self.peakkw * Boost * 1.34) .. " hp\n" ..
+			"Torque: " .. Round(self.PeakTorque * Boost) .. " Nm / " .. Round(self.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
+			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
+			"Redline: " .. self.LimitRPM .. " RPM"
+
+		self:SetOverlayText(Text)
 	end)
 end
 
@@ -519,6 +496,7 @@ function ENT:ACF_Activate()
 	end
 
 	self.ACF.Ductility = self.ACF.Ductility or 0
+
 	local Area = self.ACF.Area
 	local Armour = PhysObj:GetMass() * 1000 / Area / 0.78
 	local Health = Area / ACF.Threshold
@@ -545,8 +523,11 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 end
 
 function ENT:Think()
+	self:NextThink(CurTime() + 1)
+
 	if self.Active then
 		self:CalcRPM()
+		self:NextThink(CurTime())
 	end
 
 	self.LastThink = CurTime()
@@ -585,8 +566,8 @@ function ENT:CalcMassRatio()
 
 	self.MassRatio = PhysMass / TotalMass
 
-	WireLib.TriggerOutput(self, "Mass", math.Round(TotalMass, 2))
-	WireLib.TriggerOutput(self, "Physical Mass", math.Round(PhysMass, 2))
+	WireLib.TriggerOutput(self, "Mass", Round(TotalMass, 2))
+	WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
 end
 
 function ENT:CalcRPM()
@@ -609,9 +590,9 @@ function ENT:CalcRPM()
 
 		Boost = ACF.TorqueBoost
 
-		FuelTank.Fuel = math.max(FuelTank.Fuel - Consumption, 0)
+		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
 
-		self.FuelUsage = math.Round(60 * Consumption / DeltaTime, 3)
+		self.FuelUsage = Round(60 * Consumption / DeltaTime, 3)
 	elseif self.RequiresFuel then
 		SetActive(self, false) --shut off if no fuel and requires it
 
@@ -624,17 +605,17 @@ function ENT:CalcRPM()
 	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 	self.PeakTorque = self.PeakTorqueHeld * self.TorqueMult
 	-- Calculate the current torque from flywheel RPM
-	self.Torque = Boost * self.Throttle * math.max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
+	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
 	local Drag
 
-	if self.IsElectric == true then
-		Drag = self.PeakTorque * (math.max(self.FlyRPM - self.IdleRPM, 0) / self.FlywheelOverride) * (1 - self.Throttle) / self.Inertia
+	if self.IsElectric then
+		Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / self.FlywheelOverride) * (1 - self.Throttle) / self.Inertia
 	else
-		Drag = self.PeakTorque * (math.max(self.FlyRPM - self.IdleRPM, 0) / self.PeakMaxRPM) * (1 - self.Throttle) / self.Inertia
+		Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / self.PeakMaxRPM) * (1 - self.Throttle) / self.Inertia
 	end
 
 	-- Let's accelerate the flywheel based on that torque
-	self.FlyRPM = math.max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1)
+	self.FlyRPM = max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1)
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	--local Boxes = table.Count(self.Gearboxes)
 	local Boxes = 0
@@ -650,7 +631,7 @@ function ENT:CalcRPM()
 	end
 
 	-- This is the presently available torque from the engine
-	local TorqueDiff = math.max(self.FlyRPM - self.IdleRPM, 0) * self.Inertia
+	local TorqueDiff = max(self.FlyRPM - self.IdleRPM, 0) * self.Inertia
 	-- Calculate the ratio of total requested torque versus what's available
 	local AvailRatio = math.min(TorqueDiff / TotalReqTq / Boxes, 1)
 

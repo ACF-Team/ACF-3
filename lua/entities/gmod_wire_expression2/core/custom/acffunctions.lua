@@ -142,63 +142,26 @@ ACF_E2_LinkTables = ACF_E2_LinkTables or
 	acf_ammo		= {Weapons = false}
 }
 
-
-local function getLinks(ent, enttype)
-	
-	local ret = {}
-	-- find the link resources available for this ent type
-	for entry, mode in pairs(ACF_E2_LinkTables[enttype]) do
-		if not ent[entry] then error("Couldn't find link resource " .. entry .. " for entity " .. tostring(ent)) return end
-		
-		-- find all the links inside the resources
-		for index, link in pairs( ent[ entry ] ) do
-			local entity = isnumber(index) and link or index
-
-			ret[ #ret + 1 ] = mode and wrap( entity.Ent ) or entity
-		end
-	end
-	
-	return ret
-end
-
-
-local function searchForGearboxLinks(ent)
-	local boxes = ents.FindByClass("acf_gearbox")
-	
-	local ret = {}
-	
-	for _, box in pairs(boxes) do
-		if IsValid(box) then
-			for _, link in pairs(box.WheelLink) do
-				if link.Ent == ent then
-					ret[#ret+1] = box
-					break
-				end
-			end
-		end
-	end
-	
-	return ret
-end
-
-
 __e2setcost( 20 )
 
+local LinkSources = ACF.GetAllLinkSources
+
 e2function array entity:acfLinks()
-	
 	if not IsValid(this) then return {} end
-	
-	local enttype = this:GetClass()
-	
-	if not ACF_E2_LinkTables[enttype] then
-		return searchForGearboxLinks(this)
+
+	local Sources = LinkSources(this:GetClass())
+	local Result = {}
+	local Count = 0
+
+	for _, Function in pairs(Sources) do
+		for Entity in pairs(Function(this)) do
+			Count = Count + 1
+			Result[Count] = Entity
+		end
 	end
-	
-	return getLinks(this, enttype)
-	
+
+	return Result
 end
-
-
 
 
 __e2setcost( 2 )
