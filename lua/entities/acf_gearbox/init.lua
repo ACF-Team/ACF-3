@@ -481,10 +481,14 @@ ACF.RegisterLinkSource("acf_gearbox", "Wheels")
 --===============================================================================================--
 
 function ENT:Enable()
-	self.Disabled		= nil
-	self.DisableReason	= nil
+	self.Disabled	   = nil
+	self.DisableReason = nil
 
-	ChangeGear(self, self.OldGear)
+	if self.Auto then
+		ChangeDrive(self, self.OldGear)
+	else
+		ChangeGear(self, self.OldGear)
+	end
 
 	self.OldGear = nil
 
@@ -495,7 +499,13 @@ end
 
 function ENT:Disable()
 	self.Disabled = true
-	self.OldGear  = self.Gear
+	self.OldGear  = self.Auto and self.Drive or self.Gear
+
+	if self.Auto then
+		ChangeDrive(self, 0)
+	else
+		ChangeGear(self, 0)
+	end
 
 	ChangeGear(self, 0)
 
@@ -557,10 +567,6 @@ function ENT:UpdateOverlay()
 
 		Text = Text .. "Final Drive: " .. math.Round(self.Gear0, 2) .. "\n"
 		Text = Text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round(self.MaxTorque * 0.73) .. " ft-lb"
-
-		if self.Disabled then
-			Text = Text .. "\nDisabled: " .. self.DisableReason
-		end
 
 		self:SetOverlayText(Text)
 	end)

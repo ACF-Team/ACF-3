@@ -222,8 +222,8 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:Enable()
-	self.Disabled 		= nil
-	self.DisableReason 	= nil
+	self.Disabled	   = nil
+	self.DisableReason = nil
 
 	if self.Inputs.Active.Path then
 		self.Active = tobool(self.Inputs.Active.Value)
