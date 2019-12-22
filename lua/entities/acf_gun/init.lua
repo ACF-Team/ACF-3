@@ -313,8 +313,8 @@ ACF.RegisterLinkSource("acf_gun", "Crates")
 --===============================================================================================--
 
 function ENT:Enable()
-	self.Disabled 		= nil
-	self.DisableReason 	= nil
+	self.Disabled	   = nil
+	self.DisableReason = nil
 
 	CheckLegal(self)
 end

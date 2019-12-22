@@ -220,7 +220,8 @@ function ENT:CreateAmmo(_, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data
 end
 
 function ENT:Enable()
-	self.Disabled = nil
+	self.Disabled	   = nil
+	self.DisableReason = nil
 
 	if self.Inputs.Load.Path then
 		self.Load = tobool(self.Inputs.Load.Value)
