@@ -4,10 +4,10 @@ local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, t
 
 function ENT:Initialize()
 	self.LastFire = 0
-	self.Reload = 1
-	self.CloseTime = 1
-	self.Rate = 1
-	self.RateScale = 1
+	self.Reload = 0
+	self.CloseTime = 0
+	self.Rate = 0
+	self.RateScale = 0
 	self.FireAnim = self:LookupSequence("shoot")
 	self.CloseAnim = self:LookupSequence("load")
 
@@ -43,7 +43,7 @@ function ENT:Think()
 	end
 end
 
-function ENT:Animate(_, ReloadTime, LoadOnly)
+function ENT:Animate(ReloadTime, LoadOnly)
 	if self.CloseAnim and self.CloseAnim > 0 then
 		self.CloseTime = math.max(ReloadTime - 0.75, ReloadTime * 0.75)
 	else
