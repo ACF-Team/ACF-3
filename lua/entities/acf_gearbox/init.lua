@@ -91,7 +91,8 @@ local function LinkWheel(Gearbox, Wheel)
 end
 
 local function LinkGearbox(Gearbox, Target)
-	if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked with each other!" end
+	if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked to each other!" end
+	if Target.GearboxIn[Gearbox] then return false, "These gearboxes are already linked to each other!" end
 	if CheckLoopedGearbox(Gearbox, Target) then return false, "You cannot link gearboxes in a loop!" end
 
 	local Link = GenerateLinkTable(Gearbox, Target)
@@ -109,34 +110,38 @@ ACF.RegisterClassLink("acf_gearbox", "acf_gearbox", LinkGearbox)
 ACF.RegisterClassLink("acf_gearbox", "tire", LinkWheel)
 
 local function UnlinkWheel(Gearbox, Wheel)
-	if not Gearbox.Wheels[Wheel] then return false, "This gearbox is not connected to this wheel!" end
+	if Gearbox.Wheels[Wheel] then
+		local Link = Gearbox.Wheels[Wheel]
 
-	local Link = Gearbox.Wheels[Wheel]
+		if IsValid(Link.Rope) then
+			Link.Rope:Remove()
+		end
 
-	if IsValid(Link.Rope) then
-		Link.Rope:Remove()
+		Link = nil
+
+		Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
+
+		return true, "Wheel unlinked successfully!"
 	end
 
-	Gearbox.Wheels[Wheel] = nil
-
-	Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
-
-	return true, "Wheel unlinked successfully!"
+	return false, "This wheel is not linked to this gearbox!"
 end
 
 local function UnlinkGearbox(Gearbox, Target)
-	if not Gearbox.GearboxOut[Target] then return false, "That entity is not linked to this gearbox!" end
+	if Gearbox.GearboxOut[Target] or Target.GearboxIn[Gearbox] then
+		local Link = Gearbox.GearboxOut[Target]
 
-	local Link = Gearbox.GearboxOut[Target]
+		if IsValid(Link.Rope) then
+			Link.Rope:Remove()
+		end
 
-	if IsValid(Link.Rope) then
-		Link.Rope:Remove()
+		Gearbox.GearboxOut[Target] = nil
+		Target.GearboxIn[Gearbox]  = nil
+
+		return true, "Gearbox unlinked successfully!"
 	end
 
-	Gearbox.GearboxOut[Target] = nil
-	Target.GearboxIn[Gearbox]  = nil
-
-	return true, "Gearbox unlinked successfully!"
+	return false, "That gearboxes are not linked to each other!"
 end
 
 ACF.RegisterClassUnlink("acf_gearbox", "prop_physics", UnlinkWheel)
@@ -739,8 +744,6 @@ function ENT:PreEntityCopy()
 
 		for Ent in pairs(self.Wheels) do
 			Wheels[#Wheels + 1] = Ent:EntIndex()
-
-			self:Unlink(Ent) -- Removing the existing ropes
 		end
 
 		duplicator.StoreEntityModifier(self, "ACFWheels", Wheels)
@@ -751,8 +754,6 @@ function ENT:PreEntityCopy()
 
 		for Ent in pairs(self.GearboxOut) do
 			Gearboxes[#Gearboxes + 1] = Ent:EntIndex()
-
-			self:Unlink(Ent) -- Removing the existing ropes
 		end
 
 		duplicator.StoreEntityModifier(self, "ACFGearboxes", Gearboxes)

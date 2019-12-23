@@ -4,9 +4,10 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
+	if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
+	if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
 	if Engine.FuelType ~= "Multifuel" and Engine.FuelType ~= Target.FuelType then return false, "Cannot link because fuel type is incompatible." end
 	if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
-	if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
 
 	Engine.FuelTanks[Target] = true
 	Target.Engines[Engine] = true
@@ -18,17 +19,17 @@ ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
 end)
 
 ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
-	if not Engine.FuelTanks[Target] then
-		return false, "This engine is not linked to this fuel tank."
+	if Engine.FuelTanks[Target] or Target.Engines[Engine] then
+			Engine.FuelTanks[Target] = nil
+		Target.Engines[Engine] = nil
+
+		Engine:UpdateOverlay()
+		Target:UpdateOverlay()
+
+		return true, "Engine unlinked successfully!"
 	end
 
-	Engine.FuelTanks[Target] = nil
-	Target.Engines[Engine] = nil
-
-	Engine:UpdateOverlay()
-	Target:UpdateOverlay()
-
-	return true, "Engine unlinked successfully!"
+	return false, "This engine is not linked to this fuel tank."
 end)
 
 ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
@@ -681,8 +682,6 @@ function ENT:PreEntityCopy()
 
 		for Gearbox in pairs(self.Gearboxes) do
 			Gearboxes[#Gearboxes + 1] = Gearbox:EntIndex()
-
-			self:Unlink(Gearbox) -- Unlinking to remove the rope
 		end
 
 		duplicator.StoreEntityModifier(self, "ACFGearboxes", Gearboxes)

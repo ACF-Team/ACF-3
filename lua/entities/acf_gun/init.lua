@@ -5,6 +5,7 @@ include("shared.lua")
 
 ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 	if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
+	if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
 	if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
 
 	Weapon.Crates[Target]  = true
@@ -17,15 +18,18 @@ ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 end)
 
 ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
+	if Weapon.Crates[Target] or Target.Weapons[Weapon] then
+		Weapon.Crates[Target]  = nil
+		Target.Weapons[Weapon] = nil
+
+		Weapon:UpdateOverlay()
+		Target:UpdateOverlay()
+
+		return true, "Weapon unlinked successfully."
+	end
+
+
 	if not Weapon.Crates[Target] then return false, "This weapon is not linked to this crate." end
-
-	Weapon.Crates[Target]  = nil
-	Target.Weapons[Weapon] = nil
-
-	Weapon:UpdateOverlay()
-	Target:UpdateOverlay()
-
-	return true, "Weapon unlinked successfully."
 end)
 
 --===============================================================================================--
@@ -414,7 +418,7 @@ function ENT:Reload(ForceReload)
 		self.BulletData = Crate.BulletData
 		self.BulletData.Fuze = self.SetFuze
 
-		ReloadEffect(self)
+		--ReloadEffect(self)
 
 		local Adj = self.BulletData.LengthAdj or 1 --FL firerate bonus adjustment
 		self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
@@ -438,6 +442,8 @@ function ENT:Reload(ForceReload)
 				SetState(self, "Loaded")
 
 				if Reload then self.CurrentShot = self.MagSize end
+
+				ReloadEffect(self)
 
 				WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
 				WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
