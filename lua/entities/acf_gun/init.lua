@@ -418,8 +418,6 @@ function ENT:Reload(ForceReload)
 		self.BulletData = Crate.BulletData
 		self.BulletData.Fuze = self.SetFuze
 
-		--ReloadEffect(self)
-
 		local Adj = self.BulletData.LengthAdj or 1 --FL firerate bonus adjustment
 		self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
@@ -500,7 +498,7 @@ function ENT:Think()
 
 	self:NextThink(CurTime() + 1)
 
-	return true -- Required to override think time
+	return true
 end
 
 function ENT:UpdateOverlay()
