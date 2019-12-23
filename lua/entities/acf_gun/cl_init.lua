@@ -82,7 +82,6 @@ function ACFGunGUICreate(Table)
 	acfmenupanel:CPanelText("Caliber", "Caliber : " .. (Table.caliber * 10) .. "mm")
 	acfmenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. "kg")
 
-	--PrintTable(Table)
 	if not Table.rack then
 		local RoundVolume = 3.1416 * (Table.caliber / 2) ^ 2 * Table.round.maxlength
 		local RoF = 60 / (((RoundVolume / 500) ^ 0.60) * GunClass.rofmod * (Table.rofmod or 1)) --class and per-gun use same var name
@@ -95,9 +94,7 @@ function ACFGunGUICreate(Table)
 		acfmenupanel:CPanelText("Spread", "Spread : " .. GunClass.spread .. " degrees")
 	end
 
-	if Table.canparent then
-		acfmenupanel:CPanelText("GunParentable", "\nThis weapon can be parented.")
-	end
+	acfmenupanel:CPanelText("GunParentable", "\nThis weapon can be parented.")
 
 	acfmenupanel.CustomDisplay:PerformLayout()
 end

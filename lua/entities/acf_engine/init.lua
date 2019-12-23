@@ -233,6 +233,12 @@ local function SetActive(Entity, Value)
 			Entity.LastThink = CurTime()
 			Entity.Torque = Entity.PeakTorque
 			Entity.FlyRPM = Entity.IdleRPM * 1.5
+
+			timer.Simple(engine.TickInterval(), function()
+				if not IsValid(Entity) then return end
+
+				Entity:CalcRPM()
+			end)
 		end
 	else
 		Entity.Active = false
@@ -523,21 +529,6 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	return ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor)
 end
 
-function ENT:Think()
-	self:NextThink(CurTime() + 1)
-
-	if self.Active then
-		self:CalcRPM()
-		self:NextThink(CurTime())
-	end
-
-	self.LastThink = CurTime()
-
-	self:NextThink(CurTime())
-
-	return true
-end
-
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio()
 	local PhysMass = 0
@@ -572,6 +563,8 @@ function ENT:CalcMassRatio()
 end
 
 function ENT:CalcRPM()
+	if not self.Active then return end
+
 	local DeltaTime = CurTime() - self.LastThink
 	local FuelTank = GetNextFuelTank(self)
 	local Boost = 1
@@ -618,7 +611,6 @@ function ENT:CalcRPM()
 	-- Let's accelerate the flywheel based on that torque
 	self.FlyRPM = max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1)
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
-	--local Boxes = table.Count(self.Gearboxes)
 	local Boxes = 0
 	local TotalReqTq = 0
 
@@ -644,10 +636,15 @@ function ENT:CalcRPM()
 	end
 
 	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
+	self.LastThink = CurTime()
 
 	self:UpdateOutputs()
 
-	return RPM
+	timer.Simple(engine.TickInterval(), function()
+		if not IsValid(self) then return end
+
+		self:CalcRPM()
+	end)
 end
 
 function ENT:Link(Target)
