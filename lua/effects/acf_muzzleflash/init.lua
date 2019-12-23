@@ -48,9 +48,9 @@ function EFFECT:Init(data)
 			ParticleEffect(Effect, GunPos, Gun:GetAngles(), Gun)
 		end
 
-		Gun:Animate(Class, ReloadTime, false)
+		Gun:Animate(ReloadTime, false)
 	else
-		Gun:Animate(Class, ReloadTime, true)
+		Gun:Animate(ReloadTime, true)
 	end
 end
 
