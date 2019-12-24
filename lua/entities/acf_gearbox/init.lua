@@ -447,6 +447,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.GearboxIn = {}
 	Gearbox.GearboxOut = {}
 	Gearbox.TotalReqTq = 0
+	Gearbox.TorqueOutput = 0
 	Gearbox.LBrake = 0
 	Gearbox.RBrake = 0
 	Gearbox.SteerRate = 0
@@ -571,7 +572,8 @@ function ENT:UpdateOverlay()
 		end
 
 		Text = Text .. "Final Drive: " .. math.Round(self.Gear0, 2) .. "\n"
-		Text = Text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round(self.MaxTorque * 0.73) .. " ft-lb"
+		Text = Text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round(self.MaxTorque * 0.73) .. " ft-lb\n"
+		Text = Text .. "Torque Output: " .. math.floor(self.TorqueOutput) .. " Nm / " .. math.Round(self.TorqueOutput * 0.73) .. " ft-lb"
 
 		self:SetOverlayText(Text)
 	end)
@@ -592,7 +594,7 @@ end
 
 function ENT:Calc(InputRPM, InputInertia)
 	if self.Disabled then return 0 end
-	if self.LastActive == CurTime() then return math.min(self.TotalReqTq, self.MaxTorque) end
+	if self.LastActive == CurTime() then return self.TorqueOutput end
 
 	if self.ChangeFinished < CurTime() then
 		self.InGear = true
@@ -623,6 +625,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	end
 
 	self.TotalReqTq = 0
+	self.TorqueOutput = 0
 
 	for Ent, Link in pairs(self.GearboxOut) do
 		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
@@ -675,7 +678,11 @@ function ENT:Calc(InputRPM, InputInertia)
 		end
 	end
 
-	return math.min(self.TotalReqTq, self.MaxTorque)
+	self.TorqueOutput = math.min(self.TotalReqTq, self.MaxTorque)
+
+	self:UpdateOverlay()
+
+	return self.TorqueOutput
 end
 
 function ENT:Act(Torque, DeltaTime, MassRatio)

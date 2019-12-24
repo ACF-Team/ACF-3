@@ -43,8 +43,7 @@ local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 
 	Entity:UpdateMass()
 	Entity:UpdateOverlay()
-
-	WireLib.TriggerOutput(Entity, "Capacity", math.Round(Entity.Capacity, 2))
+	Entity:UpdateOutputs()
 end
 
 local Inputs = {
@@ -327,6 +326,18 @@ function ENT:UpdateOverlay()
 	end)
 end
 
+function ENT:UpdateOutputs()
+	if timer.Exists("ACF Outputs Buffer" .. self:EntIndex()) then return end
+
+	timer.Create("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
+		if not IsValid(self) then return end
+
+		WireLib.TriggerOutput(self, "Fuel", math.Round(self.Fuel, 2))
+		WireLib.TriggerOutput(self, "Capacity", math.Round(self.Capacity, 2))
+		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
+	end)
+end
+
 function ENT:TriggerInput(Input, Value)
 	if self.Disabled then return end
 
@@ -336,9 +347,7 @@ function ENT:TriggerInput(Input, Value)
 end
 
 function ENT:Think()
-	local OldFuel = self.Fuel
-
-	self:NextThink(CurTime() + 2)
+	self:NextThink(CurTime() + 1)
 
 	if self.Leaking > 0 then
 		self.Fuel = math.max(self.Fuel - self.Leaking, 0)
@@ -346,7 +355,9 @@ function ENT:Think()
 
 		self:NextThink(CurTime() + 0.25)
 
-		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
+		self:UpdateMass()
+		self:UpdateOverlay()
+		self:UpdateOutputs()
 	end
 
 	--refuelling
@@ -369,6 +380,7 @@ function ENT:Think()
 
 					Tank:UpdateMass()
 					Tank:UpdateOverlay()
+					Tank:UpdateOutputs()
 
 					if Tank.FuelType == "Electric" then
 						Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
@@ -378,16 +390,13 @@ function ENT:Think()
 				end
 			end
 		end
+
+		self:UpdateMass()
+		self:UpdateOverlay()
+		self:UpdateOutputs()
 	end
 
 	self.LastThink = CurTime()
-
-	if self.Fuel ~= OldFuel then
-		self:UpdateMass()
-		self:UpdateOverlay()
-
-		WireLib.TriggerOutput(self, "Fuel", self.Fuel)
-	end
 
 	return true
 end

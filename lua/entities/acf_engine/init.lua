@@ -582,11 +582,15 @@ function ENT:CalcRPM()
 			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACF.FuelDensity[FuelTank.FuelType]
 		end
 
+		self.FuelUsage = Round(60 * Consumption / DeltaTime, 3)
+
 		Boost = ACF.TorqueBoost
 
 		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
+		FuelTank:UpdateMass()
+		FuelTank:UpdateOverlay()
+		FuelTank:UpdateOutputs()
 
-		self.FuelUsage = Round(60 * Consumption / DeltaTime, 3)
 	elseif self.RequiresFuel then
 		SetActive(self, false) --shut off if no fuel and requires it
 
