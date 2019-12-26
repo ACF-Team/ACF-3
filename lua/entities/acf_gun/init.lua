@@ -183,13 +183,6 @@ AttemptFire = function(Gun)
 	end
 end
 
-local function GetSpread(Entity)
-	local SpreadScale = ACF.SpreadScale
-	local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((Entity.ACF.Health / Entity.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
-
-	return Entity.Accuracy * ACF.GunInaccuracyScale * IaccMult
-end
-
 local function Recoil(Entity)
 	if not ACF_RECOIL:GetBool() then return end
 
@@ -381,8 +374,16 @@ function ENT:Unlink(Target)
 	return false, "Guns can't be unlinked from '" .. Target:GetClass() .. "'."
 end
 
+function ENT:GetSpread()
+	local SpreadScale = ACF.SpreadScale
+	local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
+
+	return self.Spread * ACF.GunInaccuracyScale * IaccMult
+end
+
+
 function ENT:Shoot()
-	local Cone = math.tan(math.rad(GetSpread(self)))
+	local Cone = math.tan(math.rad(self:GetSpread()))
 	local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 	local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 	local Dir = (self:GetForward() + Spread):GetNormalized()
