@@ -203,7 +203,6 @@ local function MuzzleEffect(Entity)
 		Effect:SetEntity(Entity)
 		Effect:SetScale(Entity.BulletData.PropMass)
 		Effect:SetMagnitude(Entity.ReloadTime)
-		Effect:SetSurfaceProp(ACF.RoundTypes[Entity.BulletData.Type].netid)
 
 	util.Effect("acf_muzzleflash", Effect, true, true)
 end
@@ -213,7 +212,6 @@ local function ReloadEffect(Entity)
 		Effect:SetEntity(Entity)
 		Effect:SetScale(0)
 		Effect:SetMagnitude(Entity.ReloadTime)
-		Effect:SetSurfaceProp(ACF.RoundTypes[Entity.BulletData.Type].netid)
 
 	util.Effect("acf_muzzleflash", Effect, true, true)
 end
@@ -413,12 +411,18 @@ function ENT:Reload(ForceReload)
 		SetState(self, "Reloading")
 
 		self.CurrentCrate = Crate
-		self.CurrentCrate:Consume()
+
+		if not ForceReload then
+			self.CurrentCrate:Consume()
+		else
+			ReloadEffect(self)
+		end
 
 		self.BulletData = Crate.BulletData
 		self.BulletData.Fuze = self.SetFuze
 
 		local Adj = self.BulletData.LengthAdj or 1 --FL firerate bonus adjustment
+
 		self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
 		-- Are we reloading mag or individual rounds? --
@@ -433,6 +437,8 @@ function ENT:Reload(ForceReload)
 			Time = self.ReloadTime
 		end
 
+		self.NextFire = CurTime() + Time
+
 		------------------------------------------------
 
 		timer.Simple(Time, function() -- Reload timer
@@ -441,7 +447,7 @@ function ENT:Reload(ForceReload)
 
 				if Reload then self.CurrentShot = self.MagSize end
 
-				ReloadEffect(self)
+				self.NextFire = nil
 
 				WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
 				WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
@@ -474,6 +480,8 @@ function ENT:Unload()
 
 	self.CurrentShot = 0
 	self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+
+	ReloadEffect(self)
 
 	timer.Simple(self.ReloadTime * 0.5, function()
 		if IsValid(self) then
