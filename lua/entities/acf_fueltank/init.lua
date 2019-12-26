@@ -26,6 +26,9 @@ local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	Entity.Id = Id
 	Entity.SizeId = Data1
 	Entity.FuelType = Data2
+	Entity.Name = Data2 .. " " .. Data1
+	Entity.ShortName = Entity.Name
+	Entity.EntType = Data2
 	Entity.Model = FuelData.model
 	Entity.FuelDensity = ACF.FuelDensity[Data2]
 	Entity.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness

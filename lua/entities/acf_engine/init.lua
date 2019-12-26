@@ -105,6 +105,8 @@ local max		  = math.max
 local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.Id = Id
 	Entity.Name = EngineData.name
+	Entity.ShortName = Id
+	Entity.EntType = EngineData.category
 	Entity.SoundPath = EngineData.sound
 	Entity.SoundPitch = EngineData.pitch or 1
 	Entity.Mass = EngineData.weight

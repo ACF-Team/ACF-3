@@ -247,19 +247,22 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	local ClassData = list.Get("ACFClasses").GunClass[Lookup.gunclass]
 
 	-- ACF Specific vars
-	Gun.Caliber        = Lookup.caliber
-	Gun.Class          = Lookup.gunclass
-	Gun.MagReload      = Lookup.magreload
-	Gun.MagSize        = Lookup.magsize or 1
-	Gun.CurrentShot    = 0
-	Gun.Muzzle         = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
-	Gun.Accuracy       = ClassData.spread
+	Gun.Name		   = Lookup.name
+	Gun.ShortName	   = Id
+	Gun.EntType		   = ClassData.name
+	Gun.Caliber		   = Lookup.caliber
+	Gun.Class		   = Lookup.gunclass
+	Gun.MagReload	   = Lookup.magreload
+	Gun.MagSize		   = Lookup.magsize or 1
+	Gun.CurrentShot	   = 0
+	Gun.Muzzle		   = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
+	Gun.Spread		   = ClassData.spread
 	Gun.MinLengthBonus = 0.75 * 3.1416 * (Gun.Caliber / 2) ^ 2 * Lookup.round.maxlength
-	Gun.Muzzleflash    = ClassData.muzzleflash
-	Gun.PGRoFmod       = math.max(0.01, Lookup.rofmod or 1)
-	Gun.RoFmod         = ClassData.rofmod
-	Gun.Sound          = ClassData.sound
-	Gun.BulletData = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+	Gun.Muzzleflash	   = ClassData.muzzleflash
+	Gun.PGRoFmod	   = math.max(0.01, Lookup.rofmod or 1)
+	Gun.RoFmod		   = ClassData.rofmod
+	Gun.Sound		   = ClassData.sound
+	Gun.BulletData	   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 	-- Set NWvars
 	Gun:SetNWString("Sound", Gun.Sound)
 	Gun:SetNWString("WireName", Lookup.name)

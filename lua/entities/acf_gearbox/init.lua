@@ -222,6 +222,8 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	if Entity.Id ~= Id then
 		Entity.Id = Id
 		Entity.Name = GearboxData.name
+		Entity.ShortName = Entity.Id
+		Entity.EntType = GearboxData.category
 		Entity.Model = GearboxData.model
 		Entity.Mass = GearboxData.weight
 		Entity.SwitchTime = GearboxData.switch
