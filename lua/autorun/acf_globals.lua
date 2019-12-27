@@ -218,36 +218,6 @@ function ACF_Kinetic(Speed, Mass, LimitVel)
 	return Energy
 end
 
--- returns any wheels linked to this or child gearboxes
-function ACF_GetLinkedWheels(MobilityEnt)
-	if not IsValid(MobilityEnt) then return {} end
-	local ToCheck = {}
-	local Wheels = {}
-	local links = MobilityEnt.GearLink or MobilityEnt.WheelLink -- handling for usage on engine or gearbox
-
-	for _, link in pairs(links) do
-		table.insert(ToCheck, link.Ent)
-	end
-
-	-- use a stack to traverse the link tree looking for wheels at the end
-	while #ToCheck > 0 do
-		local Ent = table.remove(ToCheck, #ToCheck)
-
-		if IsValid(Ent) then
-			if Ent:GetClass() == "acf_gearbox" then
-				for _, v in pairs(Ent.WheelLink) do
-					table.insert(ToCheck, v.Ent)
-				end
-			else
-				Wheels[Ent] = Ent -- indexing it same as ACF_GetAllPhysicalEntities, for easy merge.  whoever indexed by entity in that function, uuuuuuggghhhhh
-			end
-		end
-	end
-
-	return Wheels
-end
-
-
 -- Global Ratio Setting Function
 function ACF_CalcMassRatio(Ent, Pwr)
 	if not IsValid(Ent) then return end
