@@ -48,7 +48,7 @@ end
 
 local Inputs = {
 	Active = function(Entity, Value)
-		Entity.Active = tobool(Value)
+		Entity.Active = Entity.Fuel > 0 and tobool(Value)
 
 		Entity:UpdateOverlay()
 	end,
@@ -377,6 +377,10 @@ function ENT:Think()
 
 					self.Fuel = self.Fuel - Exchange
 					Tank.Fuel = Tank.Fuel + Exchange
+
+					if not Tank.Active then
+						Tank:TriggerInput("Active", Tank.Inputs.Active.Value or 1)
+					end
 
 					Tank:UpdateMass()
 					Tank:UpdateOverlay()
