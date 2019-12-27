@@ -416,12 +416,6 @@ function ENT:Reload(ForceReload)
 
 		self.CurrentCrate = Crate
 
-		if not ForceReload then
-			self.CurrentCrate:Consume()
-		else
-			ReloadEffect(self)
-		end
-
 		self.BulletData = Crate.BulletData
 		self.BulletData.Fuze = self.SetFuze
 
@@ -429,12 +423,19 @@ function ENT:Reload(ForceReload)
 
 		self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
+		if not ForceReload then
+			self.CurrentCrate:Consume()
+		else
+			ReloadEffect(self)
+		end
+
 		-- Are we reloading mag or individual rounds? --
-		local Time, Reload
+		local Time
 
 		if ForceReload or self.CurrentShot == 0 then -- if ForceReload or (self.MagReload and self.CurrentShot == 0) then
 			Time = self.MagReload or self.ReloadTime
-			Reload = true
+
+			self.OnReload = true
 
 			WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 		else
@@ -449,7 +450,10 @@ function ENT:Reload(ForceReload)
 			if IsValid(self) then
 				SetState(self, "Loaded")
 
-				if Reload then self.CurrentShot = self.MagSize end
+				if self.OnReload then
+					self.CurrentShot = self.MagSize
+					self.OnReload = nil
+				end
 
 				self.NextFire = nil
 
@@ -483,13 +487,16 @@ function ENT:Unload()
 	SetState(self, "Reloading")
 
 	self.CurrentShot = 0
+	self.ReloadTime = self.ReloadTime * 0.5
 	self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
 
 	ReloadEffect(self)
 
-	timer.Simple(self.ReloadTime * 0.5, function()
+	timer.Simple(self.ReloadTime, function()
 		if IsValid(self) then
 			SetState(self, "Empty")
+
+			self.ReloadTime = self.ReloadTime * 2
 		end
 	end)
 end
