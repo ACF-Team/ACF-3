@@ -376,17 +376,21 @@ function ENT:Think()
 					Crate.Ammo = Crate.Ammo + Transfer
 					self.Ammo = self.Ammo - Transfer
 
+					if not Crate.Load then
+						Crate:TriggerInput("Load", Crate.Inputs.Load.Value or 1)
+					end
+
 					Crate.Supplied = true
 					Crate:EmitSound("items/ammo_pickup.wav", 350, 80, 0.30)
 
 					Crate:UpdateMass()
-					self:UpdateMass()
-
 					Crate:UpdateOverlay()
-					self:UpdateOverlay()
 				end
 			end
 		end
+
+		self:UpdateMass()
+		self:UpdateOverlay()
 	end
 
 	-- checks to stop supply
