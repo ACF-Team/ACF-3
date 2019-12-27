@@ -564,6 +564,22 @@ function ENT:CalcMassRatio()
 	WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
 end
 
+function ENT:GetConsumption(Throttle, RPM)
+	if not IsValid(self.FuelTank) then return 0 end
+
+	local Consumption
+
+	if self.FuelType == "Electric" then
+		Consumption = self.Torque * RPM * self.FuelUse / 9548.8
+	else
+		local Load = 0.3 + Throttle * 0.7
+
+		Consumption = Load * self.FuelUse * (RPM / self.PeakKwRPM) / self.FuelTank.FuelDensity
+	end
+
+	return Round(Consumption, 2)
+end
+
 function ENT:CalcRPM()
 	if not self.Active then return end
 
@@ -573,18 +589,11 @@ function ENT:CalcRPM()
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
-		local Consumption
-
 		self.FuelTank = FuelTank
 
-		if self.FuelType == "Electric" then
-			Consumption = (self.Torque * self.FlyRPM / 9548.8) * self.FuelUse * DeltaTime
-		else
-			local Load = 0.3 + self.Throttle * 0.7
-			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACF.FuelDensity[FuelTank.FuelType]
-		end
+		local Consumption = self:GetConsumption(self.Throttle, self.FlyRPM) * DeltaTime
 
-		self.FuelUsage = Round(60 * Consumption / DeltaTime, 3)
+		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		Boost = ACF.TorqueBoost
 
@@ -595,6 +604,8 @@ function ENT:CalcRPM()
 
 	elseif self.RequiresFuel then
 		SetActive(self, false) --shut off if no fuel and requires it
+
+		self.FuelUsage = 0
 
 		return 0
 	else
