@@ -33,12 +33,12 @@ function Round.create(Gun, BulletData)
 		MuzzleVec = VectorRand()
 
 		for _ = 1, BulletData["Flechettes"] do
-			Inaccuracy = VectorRand() / 360 * ((Gun.Inaccuracy or 0) + BulletData["FlechetteSpread"])
+			Inaccuracy = VectorRand() / 360 * ((Gun.Spread or 0) + BulletData["FlechetteSpread"])
 			FlechetteData["Flight"] = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData["MuzzleVel"] * 39.37 + Gun:GetVelocity()
 			ACF_CreateBullet(FlechetteData)
 		end
 	else
-		local BaseInaccuracy = math.tan(math.rad(Gun:GetInaccuracy()))
+		local BaseInaccuracy = math.tan(math.rad(Gun:GetSpread()))
 		local AddInaccuracy = math.tan(math.rad(BulletData["FlechetteSpread"]))
 		MuzzleVec = Gun:GetForward()
 
