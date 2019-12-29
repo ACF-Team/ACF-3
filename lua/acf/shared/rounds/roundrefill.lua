@@ -12,10 +12,10 @@ function Round.convert(_, PlayerData)
 		Caliber = ACF.Weapons.Guns[PlayerData.Id].caliber,
 		ProjMass = 6 * 7.9 / 100, --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
 		PropMass = 6 * ACF.PDensity / 1000, --Volume of the case as a cylinder * Powder density converted from g to kg
-		FillerMass = BulletData.FillerMass or 0,
-		DragCoef = BulletData.DragCoef or 0,
-		Tracer = BulletData.Tracer or 0,
-		MuzzleVel = BulletData.MuzzleVel or 0,
+		FillerMass = 0,
+		DragCoef = 0,
+		Tracer = 0,
+		MuzzleVel = 0,
 		RoundVolume = 36,
 	}
 
