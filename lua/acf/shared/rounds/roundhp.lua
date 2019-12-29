@@ -5,7 +5,6 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "Hollow Point (HP)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A solid shell with a soft point, meant to flatten against armour"
-Round.netid = 3 --Unique ammotype ID for network transmission
 
 -- Function to convert the player's slider data into the complete round data
 function Round.convert(_, PlayerData)
@@ -149,4 +148,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "HP", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "HP") --Index must equal the ID entry in the table above, Data must equal the index of the table above

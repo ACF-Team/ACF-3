@@ -4,7 +4,6 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "Armor Piercing, Composite Rigid (APCR)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A hardened core munition designed for weapons in the 1940s. Short Cannons only."
-Round.netid = 11 --Unique ammotype ID for network transmission
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -223,4 +222,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "APCR", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "APCR") --Index must equal the ID entry in the table above, Data must equal the index of the table above

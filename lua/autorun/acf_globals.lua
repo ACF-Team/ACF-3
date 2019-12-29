@@ -159,7 +159,6 @@ include("acf/shared/acfcratelist.lua")
 ACF.Weapons = list.Get("ACFEnts")
 ACF.Classes = list.Get("ACFClasses")
 ACF.RoundTypes = list.Get("ACFRoundTypes")
-ACF.IdRounds = list.Get("ACFIdRounds") --Lookup tables so i can get rounds classes from clientside with just an integer
 game.AddParticles("particles/acf_muzzleflashes.pcf")
 game.AddParticles("particles/explosion1.pcf")
 game.AddParticles("particles/rocket_motor.pcf")
