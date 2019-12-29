@@ -1,9 +1,9 @@
-ACF = {}
-ACF.AmmoTypes = {}
-ACF.AmmoCrates = {}
-ACF.FuelTanks = {}
-ACF.MenuFunc = {}
-ACF.AmmoBlacklist = {}
+ACF = ACF or {}
+ACF.AmmoTypes = ACF.AmmoTypes or {}
+ACF.AmmoCrates = ACF.AmmoCrates or {}
+ACF.FuelTanks = ACF.FuelTanks or {}
+ACF.MenuFunc = ACF.MenuFunc or {}
+ACF.AmmoBlacklist = ACF.AmmoBlacklist or {}
 ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 ACF.Version = 660 -- REMEMBER TO CHANGE THIS FOR GODS SAKE, OMFG!!!!!!! -wrex   Update the changelog too! -Ferv
 ACF.CurrentVersion = 0 -- just defining a variable, do not change

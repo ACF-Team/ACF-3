@@ -55,9 +55,9 @@ local function GetMaxPower(Entity)
 	return MaxPower
 end
 
-local function GetLinkedWheels(Entity)
+local function GetLinkedWheels(Target)
 	local Current, Class, Sources
-	local Queued = { [Entity] = true }
+	local Queued = { [Target] = true }
 	local Checked = {}
 	local Linked = {}
 
@@ -750,7 +750,7 @@ __e2setcost(10)
 e2function number entity:acfFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if this.Fuel then return this.Fuel end
+	if this.Fuel then return Round(this.Fuel, 2) end
 
 	local Fuel = 0
 	local Source = LinkSource(this:GetClass(), "FuelTanks")
@@ -761,7 +761,7 @@ e2function number entity:acfFuel()
 		Fuel = Fuel + Tank.Fuel
 	end
 
-	return Fuel
+	return Round(Fuel, 2)
 end
 
 -- Returns the amount of fuel in an ACF fuel tank or linked to engine as a percentage of capacity
@@ -998,12 +998,20 @@ e2function number entity:acfProjectileMass()
 	return Round(this.BulletData.ProjMass, 2)
 end
 
+e2function number entity:acfDragCoef()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.DragCoef then return 0 end
+
+	return Round(this.BulletData.DragCoef / ACF.DragDiv, 2)
+end
+
 -- Returns the number of projectiles in a flechette round
 e2function number entity:acfFLSpikes()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 	if not this.BulletData then return 0 end
-	if this.BulletData.Type ~= "FL" then return 0 end
 
 	return this.BulletData.Flechettes or 0
 end
@@ -1013,7 +1021,7 @@ e2function number entity:acfFLSpikeMass()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 	if not this.BulletData then return 0 end
-	if this.BulletData.Type ~= "FL" then return 0 end
+	if not this.BulletData.FlechetteMass then return 0 end
 
 	return Round(this.BulletData.FlechetteMass, 2)
 end
@@ -1023,14 +1031,14 @@ e2function number entity:acfFLSpikeRadius()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 	if not this.BulletData then return 0 end
-	if this.BulletData.Type ~= "FL" then return 0 end
+	if not this.BulletData.FlechetteRadius then return 0 end
 
 	return Round(this.BulletData.FlechetteRadius * 10, 2)
 end
 
 __e2setcost(10)
 
--- Returns the penetration of an AP, APHE, or HEAT round
+-- Returns the penetration of an ACF round
 e2function number entity:acfPenetration()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
@@ -1049,7 +1057,7 @@ e2function number entity:acfPenetration()
 	return Round(DisplayData.MaxPen, 2)
 end
 
--- Returns the blast radius of an HE, APHE, or HEAT round
+-- Returns the blast radius of an ACF round
 e2function number entity:acfBlastRadius()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end

@@ -408,7 +408,7 @@ local Inputs = {
 		Entity.SteerRate = Clamp(Value, -1, 1)
 	end,
 	["Hold Gear"] = function(Entity, Value)
-		Entity.Hold = Value ~= 0
+		Entity.Hold = tobool(Value)
 	end,
 	["Shift Speed Scale"] = function(Entity, Value)
 		Entity.ShiftScale = Clamp(Value, 0.1, 1.5)

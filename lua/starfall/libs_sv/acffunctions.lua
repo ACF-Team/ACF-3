@@ -18,1184 +18,1323 @@
 
 -- #fuel
 
--- [ Helper Functions ] --
+--===============================================================================================--
+-- Local Variables and Helper Functions
+--===============================================================================================--
 
-local function isEngine ( ent )
-    if not validPhysics( ent ) then return false end
-    if ( ent:GetClass() == "acf_engine" ) then return true else return false end
+local RestrictInfoConVar = GetConVar("sbox_acf_restrictinfo")
+local AllLinkSources = ACF.GetAllLinkSources
+local LinkSource = ACF.GetLinkSource
+local RoundTypes = ACF.RoundTypes
+local CheckType = SF.CheckType
+local CheckLuaType = SF.CheckLuaType
+local match = string.match
+local floor = math.floor
+local Round = math.Round
+
+local function ValidPhysics(Entity)
+	if not IsValid(Entity) then return false end
+	if Entity:IsWorld() then return false end
+	if Entity:GetMoveType() ~= MOVETYPE_VPHYSICS then return false end
+
+	return IsValid(Entity:GetPhysicsObject())
 end
 
-local function isGearbox ( ent )
-    if not validPhysics( ent ) then return false end
-    if ( ent:GetClass() == "acf_gearbox" ) then return true else return false end
+local function IsACFEntity(Entity)
+	if not ValidPhysics(Entity) then return false end
+
+	local Match = match(Entity:GetClass(), "^acf_")
+
+	return Match and true or false
 end
 
-local function isGun ( ent )
-    if not validPhysics( ent ) then return false end
-    if ( ent:GetClass() == "acf_gun" ) then return true else return false end
+local function IsOwner(Player, Entity)
+	if not CPPI then return true end
+
+	return Entity:CPPIGetOwner() == Player
 end
 
-local function isAmmo ( ent )
-    if not validPhysics( ent ) then return false end
-    if ( ent:GetClass() == "acf_ammo" ) then return true else return false end
+local function RestrictInfo(Player, Entity)
+	if RestrictInfoConVar:GetInt() == 0 then return false end
+
+	return not IsOwner(Player, Entity)
 end
 
-local function isFuel ( ent )
-    if not validPhysics(ent) then return false end
-    if ( ent:GetClass() == "acf_fueltank" ) then return true else return false end
+local function GetReloadTime(Entity)
+	return Entity.OnReload and Entity.MagReload or Entity.ReloadTime or 0
 end
 
-local function reloadTime(ent)
-	if ent.CurrentShot and ent.CurrentShot > 0 then return ent.ReloadTime end
-	return ent.MagReload
+local function GetMaxPower(Entity)
+	if not Entity.PeakTorque then return 0 end
+
+	local MaxPower
+
+	if Entity.IsElectric then
+		if not Entity.LimitRPM then return 0 end
+
+		MaxPower = floor(Entity.PeakTorque * Entity.LimitRPM / 38195.2) --(4*9548.8)
+	else
+		if not Entity.PeakMaxRPM then return 0 end
+
+		MaxPower = floor(Entity.PeakTorque * Entity.PeakMaxRPM / 9548.8)
+	end
+
+	return MaxPower
 end
 
-local propProtectionInstalled = FindMetaTable("Entity").CPPIGetOwner and true
+local function GetLinkedWheels(Target)
+	local Current, Class, Sources
+	local Queued = { [Target] = true }
+	local Checked = {}
+	local Linked = {}
 
-local function restrictInfo ( ent )
-	if not propProtectionInstalled then return false end
-    if GetConVar("sbox_acf_restrictinfo"):GetInt() ~= 0 then
-        if ent:CPPIGetOwner() ~= SF.instance.player then return true else return false end
-    end
-    return false
-end
+	while next(Queued) do
+		Current = next(Queued)
+		Class = Current:GetClass()
+		Sources = AllLinkSources(Class)
 
-SF.AddHook("postload", function()
-	local ents_metatable = SF.Entities.Metatable
-	local ents_methods = SF.Entities.Methods
-	local wrap, unwrap = SF.Entities.Wrap, SF.Entities.Unwrap
+		Queued[Current] = nil
+		Checked[Current] = true
 
-	-- [General Functions ] --
-
-	-- Returns true if functions returning sensitive info are restricted to owned props
-	function ents_methods:acfInfoRestricted ()
-		return GetConVar( "sbox_acf_restrictinfo" ):GetInt() ~= 0
-	end
-
-	-- Returns the short name of an ACF entity
-	function ents_methods:acfNameShort ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if isEngine( this ) then return this.Id or "" end
-		if isGearbox( this ) then return this.Id or "" end
-		if isGun( this ) then return this.Id or "" end
-		if isAmmo( this ) then return this.RoundId or "" end
-		if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
-	end
-
-	-- Returns the capacity of an acf ammo crate or fuel tank
-	function ents_methods:acfCapacity ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isFuel( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.Capacity or 1
-	end
-
-	-- Returns true if the acf engine, fuel tank, or ammo crate is active
-	function ents_methods:acfGetActive ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )	
-
-		if not ( isEngine( this ) or isAmmo( this ) or isFuel( this ) ) then return false end
-		if restrictInfo( this ) then return false end
-		if not isAmmo( this ) then
-			if this.Active then return true end
-		else
-			if this.Load then return true end
-		end
-		return false
-	end
-
-	-- Turns an ACF engine, ammo crate, or fuel tank on or off
-	function ents_methods:acfSetActive ( on )
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )	
-
-		if not ( isEngine( this ) or isAmmo( this ) or isFuel( this ) ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Active", on and 1 or 0 )	
-	end
-
-	--returns 1 if hitpos is on a clipped part of prop
-	function ents_methods:acfHitClip( hitpos )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( hitpos, "vector" )
-		local this = unwrap( self )	
-
-		if not isOwner( self, this ) then return false end
-		if ACF_CheckClips( nil, nil, this, hitpos ) then return true else return false end
-	end
-
-	local linkTables =
-	{ -- link resources within each ent type. should point to an ent: true if adding link.Ent, false to add link itself
-		acf_engine 		= { GearLink = true, FuelLink = false },
-		acf_gearbox		= { WheelLink = true, Master = false },
-		acf_fueltank	= { Master = false },
-		acf_gun			= { Crates = false },
-		acf_ammo		= { Weapons = false }
-	}
-
-	local function getLinks ( ent, enttype )	
-		local ret = {}
-		-- find the link resources available for this ent type
-		for entry, mode in pairs( linkTables[ enttype ] ) do
-			if not ent[ entry ] then error( "Couldn't find link resource " .. entry .. " for entity " .. tostring( ent ) ) return end
-
-			-- find all the links inside the resources
-			for index, link in pairs( ent[ entry ] ) do
-				local entity = isnumber(index) and link or index
-
-				ret[ #ret + 1 ] = mode and wrap( entity.Ent ) or entity
-			end
-		end
-
-		return ret
-	end
-
-	local function searchForGearboxLinks ( ent )
-		local boxes = ents.FindByClass( "acf_gearbox" )
-
-		local ret = {}
-
-		for _, box in pairs( boxes ) do
-			if IsValid( box ) then
-				for _, link in pairs( box.WheelLink ) do
-					if link.Ent == ent then
-						ret[ #ret + 1 ] = wrap( box )
-						break
+		for Name, Action in pairs(Sources) do
+			for Entity in pairs(Action(Current)) do
+				if not (Checked[Entity] or Queued[Entity]) then
+					if Name == "Wheels" then
+						Checked[Entity] = true
+						Linked[Entity] = true
+					else
+						Queued[Entity] = true
 					end
 				end
 			end
 		end
-
-		return ret
 	end
 
-	-- Returns the ACF links associated with the entity
-	function ents_methods:acfLinks ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	return Linked
+end
 
-		if not IsValid( this ) then return {} end
+SF.AddHook("postload", function()
+	local vec_metatable = SF.Vectors.Metatable
+	local ents_metatable = SF.Entities.Metatable
+	local ents_methods = SF.Entities.Methods
+	local unwrap = SF.Entities.Unwrap
 
-		local enttype = this:GetClass()
+	--===============================================================================================--
+	-- General Functions
+	--===============================================================================================--
 
-		if not linkTables[ enttype ] then
-			return searchForGearboxLinks( this )
-		end
-
-		return getLinks( this, enttype )	
+	-- Returns true if functions returning sensitive info are restricted to owned props
+	function ents_methods:acfInfoRestricted()
+		return RestrictInfoConVar:GetInt() ~= 0
 	end
 
 	-- Returns the full name of an ACF entity
-	function ents_methods:acfName ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfName()
+		local This = unwrap(self)
 
-		if isAmmo( this ) then return ( this.RoundId .. " " .. this.RoundType) end
-		if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(self, This) then return "" end
 
-		local acftype = ""
-		if isEngine( this ) then acftype = "Mobility" end
-		if isGearbox( this ) then acftype = "Mobility" end
-		if isGun( this ) then acftype = "Guns" end
-		if ( acftype == "" ) then return "" end
-		local List = list.Get( "ACFEnts" )
-		return List[ acftype ][ this.Id ][ "name" ] or ""
+		return This.Name or ""
+	end
+
+	-- Returns the short name of an ACF entity
+	function ents_methods:acfNameShort()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+
+		return This.ShortName or ""
 	end
 
 	-- Returns the type of ACF entity
-	function ents_methods:acfType ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfType()
+		local This = unwrap(self)
 
-		if isEngine( this ) or isGearbox( this ) then
-			local List = list.Get( "ACFEnts" )
-			return List[ "Mobility" ][ this.Id ][ "category" ] or ""
-		end
-		if isGun( this ) then
-			local Classes = list.Get( "ACFClasses" )
-			return Classes[ "GunClass" ][ this.Class ][ "name" ] or ""
-		end
-		if isAmmo( this ) then return this.RoundType or "" end
-		if isFuel( this ) then return this.FuelType or "" end
-		return ""
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+
+		return This.EntType or ""
 	end
-
-	--perform ACF links
-	function ents_methods:acfLinkTo ( target, notify )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( target, ents_metatable )
-		SF.CheckType( notify, "number" )
-		local this = unwrap( self )
-		local tar = unwrap( target )
-
-		if not ( ( isGun( this ) or isEngine( this ) or isGearbox( this ) ) and ( isOwner( self, this ) and isOwner( self, tar ) ) ) then
-			if notify > 0 then
-				ACF_SendNotify( self.player, 0, "Must be called on a gun, engine, or gearbox you own." )
-			end
-			return 0
-		end
-
-	    local success, msg = this:Link( tar )
-	    if notify > 0 then
-		ACF_SendNotify( self.player, success, msg )
-	    end
-	    return success and 1 or 0
-	end
-
-	--perform ACF unlinks
-	function ents_methods:acfUnlinkFrom ( target, notify )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( target, ents_metatable )
-		SF.CheckType( notify, "number" )
-		local this = unwrap( self )
-		local tar = unwrap( target )
-
-		if not ( ( isGun( this ) or isEngine( this ) or isGearbox( this ) ) and ( isOwner( self, this ) and isOwner( self, tar ) ) ) then
-			if notify > 0 then
-				ACF_SendNotify( self.player, 0, "Must be called on a gun, engine, or gearbox you own." )
-			end
-			return 0
-		end
-
-	    local success, msg = this:Unlink( tar )
-	    if notify > 0 then
-		ACF_SendNotify( self.player, success, msg )
-	    end
-	    return success and 1 or 0
-	end
-
-
-
-	-- [ Engine Functions ] --
 
 	-- Returns true if the entity is an ACF engine
-	function ents_methods:acfIsEngine ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfIsEngine()
+		local This = unwrap(self)
 
-		if isEngine( this ) then return true else return false end
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This:GetClass() == "acf_engine"
 	end
-
-	-- Returns the torque in N/m of an ACF engine
-	function ents_methods:acfMaxTorque ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		return this.PeakTorque or 0
-	end
-
-	-- Returns the power in kW of an ACF engine
-	function ents_methods:acfMaxPower ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		local peakpower
-		if this.iselec then
-			peakpower = math.floor( this.PeakTorque * this.LimitRPM / ( 4 * 9548.8 ) )
-		else
-			peakpower = math.floor( this.PeakTorque * this.PeakMaxRPM / 9548.8 )
-		end
-		return peakpower or 0
-	end
-
-	-- Returns the idle rpm of an ACF engine
-	function ents_methods:acfIdleRPM ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		return this.IdleRPM or 0
-	end
-
-	-- Returns the powerband min of an ACF engine
-	function ents_methods:acfPowerbandMin ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		return this.PeakMinRPM or 0
-	end
-
-	-- Returns the powerband max of an ACF engine
-	function ents_methods:acfPowerbandMax ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		return this.PeakMaxRPM or 0
-	end
-
-	-- Returns the redline rpm of an ACF engine
-	function ents_methods:acfRedline ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		return this.LimitRPM or 0
-	end
-
-	-- Returns the current rpm of an ACF engine
-	function ents_methods:acfRPM ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return math.floor( this.FlyRPM ) or 0
-	end
-
-	-- Returns the current torque of an ACF engine
-	function ents_methods:acfTorque ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return math.floor( this.Torque or 0 )
-	end
-
-	-- Returns the inertia of an ACF engine's flywheel
-	function ents_methods:acfFlyInertia ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return nil end
-		if restrictInfo( this ) then return 0 end
-		return this.Inertia or 0
-	end
-
-	-- Returns the mass of an ACF engine's flywheel
-	function ents_methods:acfFlyMass ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return nil end
-		if restrictInfo( this ) then return 0 end
-		return this.Inertia / ( 3.1416 )^2 or 0
-	end
-
-	--- Returns the current power of an ACF engine
-	function ents_methods:acfPower ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return math.floor( ( this.Torque or 0 ) * ( this.FlyRPM or 0 ) / 9548.8 )
-	end
-
-	-- Returns true if the RPM of an ACF engine is inside the powerband
-	function ents_methods:acfInPowerband ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return false end
-		if restrictInfo( this ) then return false end
-		if ( this.FlyRPM < this.PeakMinRPM ) then return false end
-		if ( this.FlyRPM > this.PeakMaxRPM ) then return false end
-		return true
-	end
-
-	function ents_methods:acfGetThrottle ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return ( this.Throttle or 0 ) * 100
-	end
-
-	-- Sets the throttle value for an ACF engine
-	function ents_methods:acfSetThrottle ( throttle )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( throttle, "number" )
-		local this = unwrap( self )
-
-		if not isEngine( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Throttle", throttle )
-	end
-
-
-	-- [ Gearbox Functions ] --
 
 	-- Returns true if the entity is an ACF gearbox
-	function ents_methods:acfIsGearbox ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfIsGearbox()
+		local This = unwrap(self)
 
-		if isGearbox( this ) then return true else return false end
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This:GetClass() == "acf_gearbox"
 	end
-
-	-- Returns the current gear for an ACF gearbox
-	function ents_methods:acfGear ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.Gear or 0
-	end
-
-	-- Returns the number of gears for an ACF gearbox
-	function ents_methods:acfNumGears ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.Gears or 0
-	end
-
-	-- Returns the final ratio for an ACF gearbox
-	function ents_methods:acfFinalRatio ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.GearTable[ "Final" ] or 0
-	end
-
-	-- Returns the total ratio (current gear * final) for an ACF gearbox
-	function ents_methods:acfTotalRatio ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.GearRatio or 0
-	end
-
-	-- Returns the max torque for an ACF gearbox
-	function ents_methods:acfTorqueRating ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		return this.MaxTorque or 0
-	end
-
-	-- Returns whether an ACF gearbox is dual clutch
-	function ents_methods:acfIsDual ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return false end
-		if restrictInfo( this ) then return false end
-		if this.Dual then return true end
-		return false
-	end
-
-	-- Returns the time in ms an ACF gearbox takes to change gears
-	function ents_methods:acfShiftTime ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		return ( this.SwitchTime or 0 ) * 1000
-	end
-
-	-- Returns true if an ACF gearbox is in gear
-	function ents_methods:acfInGear ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return false end
-		if restrictInfo( this ) then return false end
-		if this.InGear then return true end
-		return false
-	end
-
-	-- Returns the ratio for a specified gear of an ACF gearbox
-	function ents_methods:acfGearRatio ( gear )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( gear, "number" )
-
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		local g = math.Clamp( math.floor( gear ), 1, this.Gears )
-		return this.GearTable[ g ] or 0
-	end
-
-	-- Returns the current torque output for an ACF gearbox
-	function ents_methods:acfTorqueOut ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return 0 end
-		return math.min( this.TotalReqTq or 0, this.MaxTorque or 0 ) / ( this.GearRatio or 1 )
-	end
-
-	-- Sets the gear ratio of a CVT, set to 0 to use built-in algorithm
-	function ents_methods:acfCVTRatio ( ratio )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( ratio, "number" )
-
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.CVT then return end
-		this.CVTRatio = math.Clamp( ratio, 0, 1 )
-	end
-
-	-- Sets the current gear for an ACF gearbox
-	function ents_methods:acfShift ( gear )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( gear, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Gear", gear )
-	end
-
-	-- Cause an ACF gearbox to shift up
-	function ents_methods:acfShiftUp ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Gear Up", 1 ) --doesn't need to be toggled off
-	end
-
-	-- Cause an ACF gearbox to shift down
-	function ents_methods:acfShiftDown ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Gear Down", 1 ) --doesn't need to be toggled off
-	end
-
-	-- Sets the brakes for an ACF gearbox
-	function ents_methods:acfBrake ( brake )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( brake, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput("Brake", brake)
-	end
-
-	-- Sets the left brakes for an ACF gearbox
-	function ents_methods:acfBrakeLeft ( brake )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( brake, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Dual then return end
-		this:TriggerInput( "Left Brake", brake )
-	end
-
-	-- Sets the right brakes for an ACF gearbox
-	function ents_methods:acfBrakeRight ( brake )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( brake, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Dual then return end
-		this:TriggerInput("Right Brake", brake )
-	end
-
-	-- Sets the clutch for an ACF gearbox
-	function ents_methods:acfClutch ( clutch )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( clutch, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Clutch", clutch )
-	end
-
-	-- Sets the left clutch for an ACF gearbox
-	function ents_methods:acfClutchLeft( clutch )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( clutch, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Dual then return end
-		this:TriggerInput( "Left Clutch", clutch )
-	end
-
-	-- Sets the right clutch for an ACF gearbox
-	function ents_methods:acfClutchRight ( clutch )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( clutch, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Dual then return end
-		this:TriggerInput( "Right Clutch", clutch )
-	end
-
-	-- Sets the steer ratio for an ACF gearbox
-	function ents_methods:acfSteerRate ( rate )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( rate, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.DoubleDiff then return end
-		this:TriggerInput( "Steer Rate", rate )
-	end
-
-	-- Applies gear hold for an automatic ACF gearbox
-	function ents_methods:acfHoldGear( hold )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( hold, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Auto then return end
-		this:TriggerInput( "Hold Gear", hold )
-	end
-
-	-- Sets the shift point scaling for an automatic ACF gearbox
-	function ents_methods:acfShiftPointScale( scale )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( scale, "number" )
-		local this = unwrap( self )
-
-		if not isGearbox( this ) then return end
-		if restrictInfo( this ) then return end
-		if not this.Auto then return end
-		this:TriggerInput( "Shift Speed Scale", scale )
-	end
-
-
-	-- [ Gun Functions ] --
 
 	-- Returns true if the entity is an ACF gun
-	function ents_methods:acfIsGun ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfIsGun()
+		local This = unwrap(self)
 
-		if isGun( this ) and not restrictInfo( this ) then return true else return false end
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This:GetClass() == "acf_gun"
 	end
-
-	-- Returns true if the ACF gun is ready to fire
-	function ents_methods:acfReady ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return false end
-		if restrictInfo( this ) then return false end
-		if ( this.Ready ) then return true end
-		return false
-	end
-
-	-- Returns the magazine size for an ACF gun
-	function ents_methods:acfMagSize ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return 0 end
-		return this.MagSize or 1
-	end
-
-	-- Returns the spread for an ACF gun or flechette ammo
-	function ents_methods:acfSpread ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) or isAmmo( this ) then return 0 end
-		local Spread = this.GetInaccuracy and this:GetInaccuracy() or this.Inaccuracy or 0
-		if this.BulletData[ "Type" ] == "FL" then
-			if restrictInfo( this ) then return Spread end
-			return Spread + ( this.BulletData[ "FlechetteSpread" ] or 0 )
-		end
-		return Spread
-	end
-
-	-- Returns true if an ACF gun is reloading
-	function ents_methods:acfIsReloading ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return false end
-		if restrictInfo( this ) then return false end
-		if (this.Reloading) then return true end
-		return false
-	end
-
-	-- Returns the rate of fire of an acf gun
-	function ents_methods:acfFireRate ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return 0 end
-		return math.Round( this.RateOfFire or 0, 3 )
-	end
-
-	-- Returns the number of rounds left in a magazine for an ACF gun
-	function ents_methods:acfMagRounds ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if this.MagSize > 1 then
-			return ( this.MagSize - this.CurrentShot ) or 1
-		end
-		if this.Ready then return 1 end
-		return 0
-	end
-
-	-- Sets the firing state of an ACF weapon
-	function ents_methods:acfFire ( fire )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( fire, "number" )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Fire", fire )
-	end
-
-	-- Causes an ACF weapon to unload
-	function ents_methods:acfUnload ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return end
-		if restrictInfo( this ) then return end
-		this:UnloadAmmo()
-	end
-
-	-- Causes an ACF weapon to reload
-	function ents_methods:acfReload ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return end
-		if restrictInfo( this ) then return end
-		this.Reloading = true
-	end
-
-	--Returns the number of rounds in active ammo crates linked to an ACF weapon
-	function ents_methods:acfAmmoCount ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		local Ammo = 0
-		for AmmoEnt in pairs( this.Crates ) do
-			if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt[ "Load" ] then
-				Ammo = Ammo + ( AmmoEnt.Ammo or 0 )
-			end
-		end
-		return Ammo
-	end
-
-	--Returns the number of rounds in all ammo crates linked to an ACF weapon
-	function ents_methods:acfTotalAmmoCount ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not isGun( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		local Ammo = 0
-		for AmmoEnt in pairs( this.Crates ) do
-			if AmmoEnt and AmmoEnt:IsValid() then
-				Ammo = Ammo + ( AmmoEnt.Ammo or 0 )
-			end
-		end
-		return Ammo
-	end
-
-    -- Returns time to next shot of an ACF weapon
-    function ents_methods:acfReloadTime ()
-        SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-	    if restrictInfo( this ) or not isGun( this ) or this.Ready then return 0 end
-	    return reloadTime( this )
-    end
-
-    -- Returns number between 0 and 1 which represents reloading progress of an ACF weapon. Useful for progress bars
-    function ents_methods:acfReloadProgress ()
-        SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-        if restrictInfo( this ) or not isGun( this ) or this.Ready then return 1 end
-        return math.Clamp( 1 - (this.NextFire - CurTime()) / reloadTime( this ), 0, 1 )
-    end
-
-    -- Returns time it takes for an ACF weapon to reload magazine
-    function ents_methods:acfMagReloadTime ()
-        SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-        if restrictInfo( SF.instance.player , this ) or not isGun( this ) or not this.MagReload then return 0 end
-        return this.MagReload
-    end
-
-	-- [ Ammo Functions ] --
 
 	-- Returns true if the entity is an ACF ammo crate
-	function ents_methods:acfIsAmmo ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfIsAmmo()
+		local This = unwrap(self)
 
-		if isAmmo( this ) and not restrictInfo( this ) then return true else return false end
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This:GetClass() == "acf_ammo"
 	end
 
-	-- Returns the rounds left in an acf ammo crate
-	function ents_methods:acfRounds ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	-- Returns true if the entity is an ACF fuel tank
+	function ents_methods:acfIsFuel()
+		local This = unwrap(self)
 
-		if not isAmmo( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return this.Ammo or 0
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This:GetClass() == "acf_fueltank"
 	end
 
-	-- Returns the type of weapon the ammo in an ACF ammo crate loads into
-	function ents_methods:acfRoundType () --cartridge?
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	-- Returns the capacity of an acf ammo crate or fuel tank
+	function ents_methods:acfCapacity()
+		local This = unwrap(self)
 
-		if not isAmmo( this ) then return "" end
-		if restrictInfo( this ) then return "" end
-		return this.RoundId or ""
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.Capacity or 0
 	end
 
-	-- Returns the type of ammo in a crate or gun
-	function ents_methods:acfAmmoType ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	-- Returns the path of an ACF entity's sound
+	function ents_methods:acfSoundPath()
+		local This = unwrap(self)
 
-		if not isAmmo( this ) or isGun( this ) then return "" end
-		if restrictInfo( this ) then return "" end
-		return this.BulletData[ "Type" ] or ""
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+
+		return This.SoundPath or ""
 	end
 
-	-- Returns the caliber of an ammo or gun
-	function ents_methods:acfCaliber ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	-- Returns true if the acf engine, fuel tank, or ammo crate is active
+	function ents_methods:acfGetActive()
+		local This = unwrap(self)
 
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return ( this.Caliber or 0 ) * 10
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return (This.Active or This.Load) and true or false
 	end
 
-	-- Returns the muzzle velocity of the ammo in a crate or gun
-	function ents_methods:acfMuzzleVel ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	-- Turns an ACF engine, ammo crate, or fuel tank on or off
+	function ents_methods:acfSetActive(On)
+		CheckLuaType(On, TYPE_BOOL)
 
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return math.Round( ( this.BulletData[ "MuzzleVel" ] or 0 ) * ACF.VelScale, 3 )
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Active", On and 1 or 0)
 	end
-
-	-- Returns the mass of the projectile in a crate or gun
-	function ents_methods:acfProjectileMass ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return math.Round( this.BulletData[ "ProjMass" ] or 0, 3 )
-	end
-
-	-- Returns the number of projectiles in a flechette round
-	function ents_methods:acfFLSpikes ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not this.BulletData[ "Type" ] == "FL" then return 0 end
-		return this.BulletData[ "Flechettes" ] or 0
-	end
-
-	-- Returns the mass of a single spike in a FL round in a crate or gun
-	function ents_methods:acfFLSpikeMass ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not this.BulletData[ "Type" ] == "FL" then return 0 end
-		return math.Round( this.BulletData[ "FlechetteMass" ] or 0, 3)
-	end
-
-	-- Returns the radius of the spikes in a flechette round in mm
-	function ents_methods:acfFLSpikeRadius ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not this.BulletData[ "Type" ] == "FL" then return 0 end
-		return math.Round( ( this.BulletData[ "FlechetteRadius" ] or 0 ) * 10, 3)
-	end
-
-	-- Returns the penetration of an AP, APHE, or HEAT round
-	function ents_methods:acfPenetration ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		local Type = this.BulletData[ "Type" ] or ""
-		local Energy
-		if Type == "AP" or Type == "APHE" then
-			Energy = ACF_Kinetic( this.BulletData[ "MuzzleVel" ] * 39.37, this.BulletData[ "ProjMass" ] - ( this.BulletData[ "FillerMass" ] or 0 ), this.BulletData[ "LimitVel" ] )
-			return math.Round( ( Energy.Penetration / this.BulletData[ "PenArea" ] ) * ACF.KEtoRHA, 3 )
-		elseif Type == "HEAT" then
-			Energy = ACF_Kinetic( this.BulletData[ "SlugMV" ] * 39.37, this.BulletData[ "SlugMass" ], 9999999 )
-			return math.Round( ( Energy.Penetration / this.BulletData[ "SlugPenArea" ] ) * ACF.KEtoRHA, 3 )
-		elseif Type == "FL" then
-			Energy = ACF_Kinetic( this.BulletData[ "MuzzleVel" ] * 39.37 , this.BulletData[ "FlechetteMass" ], this.BulletData[ "LimitVel" ] )
-			return math.Round( ( Energy.Penetration / this.BulletData[ "FlechettePenArea" ] ) * ACF.KEtoRHA, 3 )
-		end
-		return 0
-	end
-
-	-- Returns the blast radius of an HE, APHE, or HEAT round
-	function ents_methods:acfBlastRadius ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		local Type = this.BulletData[ "Type" ] or ""
-		if Type == "HE" or Type == "APHE" then
-			return math.Round( this.BulletData[ "FillerMass" ]^0.33 * 8, 3 )
-		elseif Type == "HEAT" then
-			return math.Round( ( this.BulletData[ "FillerMass" ] / 3)^0.33 * 8, 3 )
-		end
-		return 0
-	end
-
-	-- Returns the drag coef of the ammo in a crate or gun
-	function ents_methods:acfDragCoef()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
-
-		if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		return ( this.BulletData[ "DragCoef" ] or 0 ) / ACF.DragDiv
-	end
-
-	-- [ Armor Functions ] --
 
 	-- Returns the current health of an entity
-	function ents_methods:acfPropHealth ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPropHealth()
+		local This = unwrap(self)
 
-		if not validPhysics( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not ACF_Check( this ) then return 0 end
-		return math.Round( this.ACF.Health or 0, 3 )
+		if not ValidPhysics(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not ACF_Check(This) then return 0 end
+		if not This.ACF.Health then return 0 end
+
+		return Round(This.ACF.Health, 2)
 	end
 
 	-- Returns the current armor of an entity
-	function ents_methods:acfPropArmor ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPropArmor()
+		local This = unwrap(self)
 
-		if not validPhysics( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not ACF_Check( this ) then return 0 end
-		return math.Round( this.ACF.Armour or 0, 3 )
+		if not ValidPhysics(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not ACF_Check(This) then return 0 end
+		if not This.ACF.Armour then return 0 end
+
+		return Round(This.ACF.Armour, 2)
 	end
 
 	-- Returns the max health of an entity
-	function ents_methods:acfPropHealthMax ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPropHealthMax()
+		local This = unwrap(self)
 
-		if not validPhysics( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not ACF_Check( this ) then return 0 end
-		return math.Round( this.ACF.MaxHealth or 0, 3 )
+		if not ValidPhysics(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not ACF_Check(This) then return 0 end
+		if not This.ACF.MaxHealth then return 0 end
+
+		return Round(This.ACF.MaxHealth, 2)
 	end
 
 	-- Returns the max armor of an entity
-	function ents_methods:acfPropArmorMax ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPropArmorMax()
+		local This = unwrap(self)
 
-		if not validPhysics( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not ACF_Check( this ) then return 0 end
-		return math.Round( this.ACF.MaxArmour or 0, 3 )
+		if not ValidPhysics(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not ACF_Check(This) then return 0 end
+		if not This.ACF.MaxArmour then return 0 end
+
+		return Round(This.ACF.MaxArmour, 2)
 	end
 
 	-- Returns the ductility of an entity
-	function ents_methods:acfPropDuctility ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPropDuctility()
+		local This = unwrap(self)
 
-		if not validPhysics( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not ACF_Check( this ) then return 0 end
-		return ( this.ACF.Ductility or 0 ) * 100
+		if not ValidPhysics(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not ACF_Check(This) then return 0 end
+		if not This.ACF.Ductility then return 0 end
+
+		return This.ACF.Ductility * 100
 	end
 
-	-- [ Fuel Functions ] --
+	--returns true if hitpos is on a clipped part of prop
+	function ents_methods:acfHitClip(HitPos)
+		CheckType(HitPos, vec_metatable)
 
-	-- Returns true if the entity is an ACF fuel tank
-	function ents_methods:acfIsFuel ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+		local This = unwrap(self)
 
-		if isFuel( this ) and not restrictInfo( this ) then return true else return false end
+		if not ValidPhysics(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return ACF_CheckClips(This, HitPos)
+	end
+
+	-- Returns the ACF links associated with the entity
+	function ents_methods:acfLinks()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return {} end
+		if RestrictInfo(SF.instance.player, This) then return {} end
+
+		local Sources = AllLinkSources(This:GetClass())
+		local Result = {}
+		local Count = 0
+
+		for _, Function in pairs(Sources) do
+			for Entity in pairs(Function(This)) do
+				Count = Count + 1
+				Result[Count] = Entity
+			end
+		end
+
+		return Result
+	end
+
+	--perform ACF links
+	function ents_methods:acfLinkTo(Target, Notify)
+		CheckType(Target, ents_metatable)
+		CheckLuaType(Notify, TYPE_BOOL)
+
+		local This = unwrap(self)
+		local TargetEnt = unwrap(Target)
+
+		if not validPhysics(This) then return false end
+		if not validPhysics(TargetEnt) then return false end
+		if not (IsOwner(SF.instance.player, This) and IsOwner(SF.instance.player, TargetEnt)) then
+			if Notify then
+				ACF_SendNotify(SF.instance.player, 0, "Must be called on entities you own.")
+			end
+
+			return false
+		end
+
+		if not This.Link then
+			if Notify then
+				ACF_SendNotify(SF.instance.player, 0, "This entity is not linkable.")
+			end
+
+			return false
+		end
+
+		local Sucess, Message = This:Link(TargetEnt)
+
+		if Notify then
+			ACF_SendNotify(SF.instance.player, Sucess, Message)
+		end
+
+		return Sucess
+	end
+
+	--perform ACF unlinks
+	function ents_methods:acfUnlinkFrom(Target, Notify)
+		CheckType(Target, ents_metatable)
+		CheckLuaType(Notify, TYPE_BOOL)
+
+		local This = unwrap(self)
+		local TargetEnt = unwrap(Target)
+
+		if not validPhysics(This) then return false end
+		if not validPhysics(TargetEnt) then return false end
+		if not (IsOwner(SF.instance.player, This) and IsOwner(SF.instance.player, TargetEnt)) then
+			if Notify then
+				ACF_SendNotify(SF.instance.player, 0, "Must be called on entities you own.")
+			end
+
+			return false
+		end
+
+		if not This.Unlink then
+			if Notify then
+				ACF_SendNotify(SF.instance.player, 0, "This entity is not linkable.")
+			end
+
+			return false
+		end
+
+		local Sucess, Message = This:Unlink(TargetEnt)
+
+		if Notify then
+			ACF_SendNotify(SF.instance.player, Sucess, Message)
+		end
+
+		return Sucess
+	end
+
+	--===============================================================================================--
+	-- Mobility Functions
+	--===============================================================================================--
+
+	-- Returns true if an ACF entity is electric
+	function ents_methods:acfIsElectric()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This.IsElectric or false
+	end
+
+	-- Returns the torque in N/m of an ACF engine
+	function ents_methods:acfMaxTorque()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.PeakTorque or 0
+	end
+
+	-- Returns the power in kW of an ACF engine
+	function ents_methods:acfMaxPower()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return GetMaxPower(This)
+	end
+
+	function ents_methods:acfMaxTorqueWithFuel()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.PeakTorque then return 0 end
+
+		return This.PeakTorque * ACF.TorqueBoost
+	end
+
+	function ents_methods:acfMaxPowerWithFuel()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return GetMaxPower(This) * ACF.TorqueBoost
+	end
+
+	-- Returns the idle rpm of an ACF engine
+	function ents_methods:acfIdleRPM()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.IdleRPM or 0
+	end
+
+	-- Returns the powerband min of an ACF engine
+	function ents_methods:acfPowerbandMin()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.PeakMinRPM then return 0 end
+
+		if This.IsElectric and This.IdleRPM then
+			return math.max(This.IdleRPM, This.PeakMinRPM)
+		end
+
+		return This.PeakMinRPM
+	end
+
+	-- Returns the powerband max of an ACF engine
+	function ents_methods:acfPowerbandMax()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		if This.IsElectric and This.LimitRPM then
+			return floor(This.LimitRPM * 0.5)
+		end
+
+		return This.PeakMaxRPM or 0
+	end
+
+	-- Returns the redline rpm of an ACF engine
+	function ents_methods:acfRedline()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.LimitRPM or 0
+	end
+
+	-- Returns the current rpm of an ACF engine
+	function ents_methods:acfRPM()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.FlyRPM then return 0 end
+
+		return floor(This.FlyRPM)
+	end
+
+	-- Returns the current torque of an ACF engine
+	function ents_methods:acfTorque()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.Torque then return 0 end
+
+		return floor(This.Torque)
+	end
+
+	-- Returns the inertia of an ACF engine's flywheel
+	function ents_methods:acfFlyInertia()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.Inertia or 0
+	end
+
+	-- Returns the mass of an ACF engine's flywheel
+	function ents_methods:acfFlyMass()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.Inertia then return 0 end
+
+		return (This.Inertia / 3.1416) * (This.Inertia / 3.1416)
+	end
+
+	--- Returns the current power of an ACF engine
+	function ents_methods:acfPower()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.Torque then return 0 end
+		if not This.FlyRPM then return 0 end
+
+		return floor(This.Torque * This.FlyRPM / 9548.8)
+	end
+
+	-- Returns true if the RPM of an ACF engine is inside the powerband
+	function ents_methods:acfInPowerband()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+		if not This.FlyRPM then return false end
+
+		local PowerbandMin
+		local PowerbandMax
+
+		if This.IsElectric then
+			PowerbandMin = This.IdleRPM
+			PowerbandMax = floor((This.LimitRPM or 0) * 0.5)
+		else
+			PowerbandMin = This.PeakMinRPM
+			PowerbandMax = This.PeakMaxRPM
+		end
+
+		if not PowerbandMin then return false end
+		if not PowerbandMax then return false end
+		if This.FlyRPM < PowerbandMin then return false end
+		if This.FlyRPM > PowerbandMax then return false end
+
+		return true
+	end
+
+	function ents_methods:acfGetThrottle()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.Throttle then return 0 end
+
+		return This.Throttle * 100
+	end
+
+	-- Sets the throttle value for an ACF engine
+	function ents_methods:acfSetThrottle(Throttle)
+		CheckLuaType(Throttle, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		This:TriggerInput("Throttle", Throttle)
+	end
+
+	-- Returns the current gear for an ACF gearbox
+	function ents_methods:acfGear()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.Gear or 0
+	end
+
+	-- Returns the number of gears for an ACF gearbox
+	function ents_methods:acfNumGears()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.Gears or 0
+	end
+
+	-- Returns the final ratio for an ACF gearbox
+	function ents_methods:acfFinalRatio()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.GearTable then return 0 end
+
+		return This.GearTable.Final or 0
+	end
+
+	-- Returns the total ratio (current gear * final) for an ACF gearbox
+	function ents_methods:acfTotalRatio()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.GearRatio or 0
+	end
+
+	-- Returns the max torque for an ACF gearbox
+	function ents_methods:acfTorqueRating()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.MaxTorque or 0
+	end
+
+	-- Returns whether an ACF gearbox is dual clutch
+	function ents_methods:acfIsDual()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This.Dual or false
+	end
+
+	-- Returns the time in ms an ACF gearbox takes to change gears
+	function ents_methods:acfShiftTime()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.SwitchTime then return 0 end
+
+		return This.SwitchTime * 1000
+	end
+
+	-- Returns true if an ACF gearbox is in gear
+	function ents_methods:acfInGear()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This.InGear or false
+	end
+
+	-- Returns the ratio for a specified gear of an ACF gearbox
+	function ents_methods:acfGearRatio(Gear)
+		CheckLuaType(Gear, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.GearTable then return 0 end
+		if not This.Gears then return 0 end
+
+		local GearNum = math.Clamp(floor(Gear), 1, This.Gears)
+
+		return This.GearTable[GearNum] or 0
+	end
+
+	-- Returns the current torque output for an ACF gearbox
+	function ents_methods:acfTorqueOut()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return math.min(This.TotalReqTq or 0, This.MaxTorque or 0) / (This.GearRatio or 1)
+	end
+
+	-- Sets the gear ratio of a CVT, set to 0 to use built-in algorithm
+	function ents_methods:acfCVTRatio(Ratio)
+		CheckLuaType(Ratio, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.CVT then return end
+
+		This:TriggerInput("CVT Ratio", math.Clamp(Ratio, 0, 1))
+	end
+
+	-- Sets the current gear for an ACF gearbox
+	function ents_methods:acfShift(Gear)
+		CheckLuaType(Gear, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Gear", Gear)
+	end
+
+	-- Cause an ACF gearbox to shift up
+	function ents_methods:acfShiftUp()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Gear Up", 1)
+	end
+
+	-- Cause an ACF gearbox to shift down
+	function ents_methods:acfShiftDown()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Gear Down", 1)
+	end
+
+	-- Sets the brakes for an ACF gearbox
+	function ents_methods:acfBrake(Brake)
+		CheckLuaType(Brake, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Brake", Brake)
+	end
+
+	-- Sets the left brakes for an ACF gearbox
+	function ents_methods:acfBrakeLeft(Brake)
+		CheckLuaType(Brake, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Dual then return end
+
+		This:TriggerInput("Left Brake", Brake)
+	end
+
+	-- Sets the right brakes for an ACF gearbox
+	function ents_methods:acfBrakeRight (Brake)
+		CheckLuaType(Brake, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Dual then return end
+
+		This:TriggerInput("Right Brake", Brake)
+	end
+
+	-- Sets the clutch for an ACF gearbox
+	function ents_methods:acfClutch(Clutch)
+		CheckLuaType(Clutch, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Clutch", Clutch)
+	end
+
+	-- Sets the left clutch for an ACF gearbox
+	function ents_methods:acfClutchLeft(Clutch)
+		CheckLuaType(Clutch, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Dual then return end
+
+		This:TriggerInput("Left Clutch", Clutch)
+	end
+
+	-- Sets the right clutch for an ACF gearbox
+	function ents_methods:acfClutchRight(Clutch)
+		CheckLuaType(Clutch, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Dual then return end
+
+		This:TriggerInput("Right Clutch", Clutch)
+	end
+
+	-- Sets the steer ratio for an ACF gearbox
+	function ents_methods:acfSteerRate(Rate)
+		CheckLuaType(Rate, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.DoubleDiff then return end
+
+		This:TriggerInput("Steer Rate", Rate)
+	end
+
+	-- Applies gear hold for an automatic ACF gearbox
+	function ents_methods:acfHoldGear(Hold)
+		CheckLuaType(Hold, TYPE_BOOL)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Auto then return end
+
+		This:TriggerInput("Hold Gear", Hold)
+	end
+
+	-- Sets the shift point scaling for an automatic ACF gearbox
+	function ents_methods:acfShiftPointScale(Scale)
+		CheckLuaType(Scale, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+		if not This.Auto then return end
+
+		This:TriggerInput("Shift Speed Scale", Scale)
 	end
 
 	-- Returns true if the current engine requires fuel to run
-	function ents_methods:acfFuelRequired ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfFuelRequired()
+		local This = unwrap(self)
 
-		if not isEngine( this ) then return false end
-		if restrictInfo( this ) then return false end
-		return ( this.RequiresFuel and true ) or false
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+
+		return This.RequiresFuel or false
 	end
 
 	-- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks
-	function ents_methods:acfRefuelDuty ( on )
-		SF.CheckType( self, ents_metatable )
-		SF.CheckType( on, "boolean" )
-		local this = unwrap( self )
+	function ents_methods:acfRefuelDuty (On)
+		CheckLuaType(On, TYPE_BOOL)
 
-		if not isFuel( this ) then return end
-		if restrictInfo( this ) then return end
-		this:TriggerInput( "Refuel Duty", on )
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Refuel Duty", On)
 	end
 
 	-- Returns the remaining liters or kilowatt hours of fuel in an ACF fuel tank or engine
 	function ents_methods:acfFuel ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+		local This = unwrap(self)
 
-		if isFuel( this ) then
-			if restrictInfo( this ) then return 0 end
-			return math.Round( this.Fuel, 3 )
-		elseif isEngine( this ) then
-			if restrictInfo( this ) then return 0 end
-			if not #(this.FuelLink) then return 0 end --if no tanks, return 0
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+		if This.Fuel then return Round(This.Fuel, 2) end
 
-			local liters = 0
-			for _, tank in pairs( this.FuelLink ) do
-				if validPhysics( tank ) and tank.Active then
-					liters = liters + tank.Fuel
-				end
-			end
+		local Fuel = 0
+		local Source = LinkSource(This:GetClass(), "FuelTanks")
 
-			return math.Round( liters, 3 )
+		if not Source then return 0 end
+
+		for Tank in pairs(Source(This)) do
+			Fuel = Fuel + Tank.Fuel
 		end
-		return 0
+
+		return Round(Fuel, 2)
 	end
 
 	-- Returns the amount of fuel in an ACF fuel tank or linked to engine as a percentage of capacity
-	function ents_methods:acfFuelLevel ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfFuelLevel()
+		local This = unwrap(self)
 
-		if isFuel( this ) then
-			if restrictInfo( this ) then return 0 end
-			return math.Round( this.Fuel / this.Capacity, 3 )
-		elseif isEngine( this ) then
-			if restrictInfo( this ) then return 0 end
-			if not #( this.FuelLink ) then return 0 end --if no tanks, return 0
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+		if This.Capacity then return Round((This.Fuel or 0) / This.Capacity, 2) end
 
-			local liters = 0
-			local capacity = 0
-			for _, tank in pairs( this.FuelLink ) do
-				if validPhysics( tank ) and tank.Active then 
-					capacity = capacity + tank.Capacity
-					liters = liters + tank.Fuel
-				end
-			end
-			if not capacity > 0 then return 0 end
+		local Fuel = 0
+		local Capacity = 0
+		local Source = LinkSource(This:GetClass(), "FuelTanks")
 
-			return math.Round( liters / capacity, 3 )
+		if not Source then return 0 end
+
+		for Tank in pairs(Source(This)) do
+			Fuel = Fuel + Tank.Fuel
+			Capacity = Capacity + Tank.Capacity
 		end
-		return 0
+
+		return Round(Fuel / Capacity, 2)
 	end
 
 	-- Returns the current fuel consumption in liters per minute or kilowatts of an engine
-	function ents_methods:acfFuelUse ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfFuelUse()
+		local This = unwrap(self)
 
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not #( this.FuelLink ) then return 0 end --if no tanks, return 0
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.GetConsumption then return 0 end
+		if not This.Throttle then return 0 end
+		if not This.FlyRPM then return 0 end
 
-		local tank
-		for _, fueltank in pairs( this.FuelLink ) do
-			if validPhysics( fueltank ) and fueltank.Fuel > 0 and fueltank.Active then
-				tank = fueltank
-				break
-			end
-		end
-		if not tank then return 0 end
-
-		local Consumption
-		if this.FuelType == "Electric" then
-			Consumption = 60 * ( this.Torque * this.FlyRPM / 9548.8 ) * this.FuelUse
-		else
-			local Load = 0.3 + this.Throttle * 0.7
-			Consumption = 60 * Load * this.FuelUse * ( this.FlyRPM / this.PeakKwRPM ) / ACF.FuelDensity[ tank.FuelType ]
-		end
-		return math.Round( Consumption, 3 )
+		return This:GetConsumption(This.Throttle, This.FlyRPM) * 60
 	end
 
 	-- Returns the peak fuel consumption in liters per minute or kilowatts of an engine at powerband max, for the current fuel type the engine is using
-	function ents_methods:acfPeakFuelUse ()
-		SF.CheckType( self, ents_metatable )
-		local this = unwrap( self )
+	function ents_methods:acfPeakFuelUse()
+		local This = unwrap(self)
 
-		if not isEngine( this ) then return 0 end
-		if restrictInfo( this ) then return 0 end
-		if not #( this.FuelLink ) then return 0 end --if no tanks, return 0
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.GetConsumption then return 0 end
+		if not This.LimitRPM then return 0 end
 
-		local fuel = "Petrol"
-		local tank
-		for _, fueltank in pairs( this.FuelLink ) do
-			if fueltank.Fuel > 0 and fueltank.Active then tank = fueltank break end
+		return This:GetConsumption(1, This.LimitRPM) * 60
+	end
+
+	-- returns any wheels linked to this mobility setup
+	function ents_methods:acfGetLinkedWheels()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return {} end
+		if RestrictInfo(SF.instance.player, This) then return {} end
+
+		local Wheels = {}
+		local Count = 0
+
+		for Wheel in pairs(GetLinkedWheels(This)) do
+			Count = Count + 1
+			Wheels[Count] = Wheel
 		end
-		if tank then fuel = tank.Fuel end
 
-		local Consumption
-		if this.FuelType == "Electric" then
-			Consumption = 60 * ( this.PeakTorque * this.LimitRPM / ( 4 * 9548.8 ) ) * this.FuelUse
-		else
-			local Load = 0.3 + this.Throttle * 0.7
-			Consumption = 60 * this.FuelUse / ACF.FuelDensity[ fuel ]
+		return Wheels
+	end
+
+	--===============================================================================================--
+	-- Weaponry Functions
+	--===============================================================================================--
+
+	-- Returns true if the ACF gun is ready to fire
+	function ents_methods:acfReady()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+		if not This.State then return false end
+
+		return This.State == "Loaded"
+	end
+
+	-- Returns the state of the ACF entity
+	function ents_methods:acfState()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+
+		return This.State or ""
+	end
+
+	-- Returns time to next shot of an ACF weapon
+	function ents_methods:acfReloadTime()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if This.State and This.State == "Loaded" then return 0 end
+
+		return GetReloadTime(This)
+	end
+
+	-- Returns number between 0 and 1 which represents reloading progress of an ACF weapon. Useful for progress bars
+	function ents_methods:acfReloadProgress()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.NextFire then return 0 end
+
+		return math.Clamp(1 - (This.NextFire - CurTime()) / GetReloadTime(This), 0, 1)
+	end
+
+	-- Returns time it takes for an ACF weapon to reload magazine
+	function ents_methods:acfMagReloadTime()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.MagReload or 0
+	end
+
+	-- Returns the magazine size for an ACF gun
+	function ents_methods:acfMagSize()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.MagSize or 0
+	end
+
+	-- Returns the spread for an ACF gun or flechette ammo
+	function ents_methods:acfSpread()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
+
+		if This.BulletData and This.BulletData.Type == "FL" then
+			return Spread + (This.BulletData.FlechetteSpread or 0)
 		end
-		return math.Round( Consumption, 3 )
+
+		return Spread
+	end
+
+	-- Returns true if an ACF gun is reloading
+	function ents_methods:acfIsReloading()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return false end
+		if RestrictInfo(SF.instance.player, This) then return false end
+		if not This.State then return false end
+
+		return This.State == "Reloading"
+	end
+
+	-- Returns the rate of fire of an acf gun
+	function ents_methods:acfFireRate()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.ReloadTime then return 0 end
+
+		return Round(60 / This.ReloadTime, 2)
+	end
+
+	-- Returns the number of rounds left in a magazine for an ACF gun
+	function ents_methods:acfMagRounds()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.CurrentShot or 0
+	end
+
+	-- Sets the firing state of an ACF weapon
+	function ents_methods:acfFire(Fire)
+		CheckLuaType(Fire, TYPE_BOOL)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Fire", Fire)
+	end
+
+	-- Causes an ACF weapon to unload
+	function ents_methods:acfUnload()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Unload", true)
+	end
+
+	-- Causes an ACF weapon to reload
+	function ents_methods:acfReload()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return end
+		if not IsOwner(SF.instance.player, This) then return end
+
+		This:TriggerInput("Reload", true)
+	end
+
+	-- Returns the rounds left in an acf ammo crate
+	function ents_methods:acfRounds()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		return This.Ammo or 0
+	end
+
+	-- Returns the type of weapon the ammo in an ACF ammo crate loads into
+	function ents_methods:acfRoundType()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+
+		return This.RoundId or ""
+	end
+
+	-- Returns the type of ammo in a crate or gun
+	function ents_methods:acfAmmoType()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return "" end
+		if RestrictInfo(SF.instance.player, This) then return "" end
+		if not This.BulletData then return "" end
+
+		return This.BulletData.Type or ""
+	end
+
+	-- [ Ammo Functions ] --
+
+	-- Returns the caliber of an ammo or gun
+	function ents_methods:acfCaliber()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.Caliber then return 0 end
+
+		return This.Caliber * 10
+	end
+
+	-- Returns the muzzle velocity of the ammo in a crate or gun
+	function ents_methods:acfMuzzleVel()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.MuzzleVel then return 0 end
+
+		return Round(This.BulletData.MuzzleVel * ACF.VelScale, 2)
+	end
+
+	-- Returns the mass of the projectile in a crate or gun
+	function ents_methods:acfProjectileMass()
+local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.ProjMass then return 0 end
+
+		return Round(This.BulletData.ProjMass, 2)
+	end
+
+	-- Returns the drag coef of the ammo in a crate or gun
+	function ents_methods:acfDragCoef()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.DragCoef then return 0 end
+
+		return Round(This.BulletData.DragCoef / ACF.DragDiv, 2)
+	end
+
+	-- Returns the number of projectiles in a flechette round
+	function ents_methods:acfFLSpikes()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+
+	return This.BulletData.Flechettes or 0
+	end
+
+	-- Returns the mass of a single spike in a FL round in a crate or gun
+	function ents_methods:acfFLSpikeMass()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.FlechetteMass then return 0 end
+
+		return Round(This.BulletData.FlechetteMass, 2)
+	end
+
+	-- Returns the radius of the spikes in a flechette round in mm
+	function ents_methods:acfFLSpikeRadius()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.FlechetteRadius then return 0 end
+
+		return Round(This.BulletData.FlechetteRadius * 10, 2)
+	end
+
+	-- Returns the penetration of an ACF round
+	function ents_methods:acfPenetration()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.Type then return 0 end
+
+		local BulletData = This.BulletData
+		local RoundData = RoundTypes[BulletData.Type]
+
+		if not RoundData then return 0 end
+
+		local DisplayData = RoundData.getDisplayData(BulletData)
+
+		if not DisplayData.MaxPen then return 0 end
+
+		return Round(DisplayData.MaxPen, 2)
+	end
+
+	-- Returns the blast radius of an ACF round
+	function ents_methods:acfBlastRadius()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+		if not This.BulletData then return 0 end
+		if not This.BulletData.Type then return 0 end
+
+		local BulletData = This.BulletData
+		local RoundData = RoundTypes[BulletData.Type]
+
+		if not RoundData then return 0 end
+
+		local DisplayData = RoundData.getDisplayData(BulletData)
+
+		if not DisplayData.BlastRadius then return 0 end
+
+		return Round(DisplayData.BlastRadius, 2)
+	end
+
+	--Returns the number of rounds in active ammo crates linked to an ACF weapon
+	function ents_methods:acfAmmoCount()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		local Count = 0
+		local Source = LinkSource(This:GetClass(), "Crates")
+
+		if not Source then return 0 end
+
+		for Crate in pairs(Source(This)) do
+			if Crate.Load then
+				Count = Count + Crate.Ammo
+			end
+		end
+
+		return Count
+	end
+
+	--Returns the number of rounds in all ammo crates linked to an ACF weapon
+	function ents_methods:acfTotalAmmoCount ()
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then return 0 end
+		if RestrictInfo(SF.instance.player, This) then return 0 end
+
+		local Count = 0
+		local Source = LinkSource(This:GetClass(), "Crates")
+
+		if not Source then return 0 end
+
+		for Crate in pairs(Source(This)) do
+			Count = Count + Crate.Ammo
+		end
+
+		return Count
 	end
 end)
