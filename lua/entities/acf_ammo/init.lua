@@ -444,6 +444,8 @@ function ENT:UpdateOverlay()
 
 	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if IsValid(self) then
+			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
+			local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
 			local Status
 
 			if self.DisableReason then
@@ -454,9 +456,7 @@ function ENT:UpdateOverlay()
 				Status = "Not linked to a weapon!"
 			end
 
-			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-
-			self:SetOverlayText(string.format("%s\n\n%sRounds remaining: %s", Status, self.BulletData.Type .. Tracer .. "\n", self.Ammo))
+			self:SetOverlayText(string.format(Text, Status, self.BulletData.Type .. Tracer, self.Ammo, self.Capacity))
 		end
 	end)
 end
