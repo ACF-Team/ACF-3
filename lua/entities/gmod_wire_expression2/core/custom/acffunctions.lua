@@ -133,7 +133,7 @@ e2function number entity:acfIsEngine()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return Entity:GetClass() == "acf_engine" and 1 or 0
+	return this:GetClass() == "acf_engine" and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF gearbox
