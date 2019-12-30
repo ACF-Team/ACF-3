@@ -299,6 +299,10 @@ end
 function ENT:TriggerInput(_, Value)
 	if self.Disabled then return end -- Ignore input if disabled
 
+	if not self.Inputs.Load.Path then
+		Value = true
+	end
+
 	self.Load = self.Ammo ~= 0 and tobool(Value)
 
 	WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)

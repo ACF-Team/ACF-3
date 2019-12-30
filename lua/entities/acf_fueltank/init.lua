@@ -51,6 +51,10 @@ end
 
 local Inputs = {
 	Active = function(Entity, Value)
+		if not Entity.Inputs.Active.Path then
+			Value = true
+		end
+
 		Entity.Active = tobool(Value)
 
 		Entity:UpdateOverlay()
