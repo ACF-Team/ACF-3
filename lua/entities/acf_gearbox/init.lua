@@ -117,7 +117,7 @@ local function UnlinkWheel(Gearbox, Wheel)
 			Link.Rope:Remove()
 		end
 
-		Link = nil
+		Gearbox.Wheels[Wheel] = nil
 
 		Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
