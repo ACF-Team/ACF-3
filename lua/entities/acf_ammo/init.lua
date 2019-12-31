@@ -14,6 +14,69 @@ local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 
+local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+	local GunData = list.Get("ACFEnts").Guns[Data1]
+
+	if not GunData then
+		Entity:Remove()
+		return
+	end
+
+	local GunClass = list.Get("ACFClasses").GunClass[GunData.gunclass]
+
+	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
+	Entity.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
+	Entity.RoundType = Data2 --Type of round, IE AP, HE, HEAT ...
+	Entity.RoundPropellant = Data3 --Lenght of propellant
+	Entity.RoundProjectile = Data4 --Lenght of the projectile
+	Entity.RoundData5 = Data5 or 0
+	Entity.RoundData6 = Data6 or 0
+	Entity.RoundData7 = Data7 or 0
+	Entity.RoundData8 = Data8 or 0
+	Entity.RoundData9 = Data9 or 0
+	Entity.RoundData10 = Data10 or 0
+
+	Entity.Name = Data1 .. " " .. Data2
+	Entity.ShortName = Data1
+	Entity.EntType = Data2
+
+	local PlayerData = {
+		Id = Entity.RoundId,
+		Type = Entity.RoundType,
+		PropLength = Entity.RoundPropellant,
+		ProjLength = Entity.RoundProjectile,
+		Data5 = Entity.RoundData5,
+		Data6 = Entity.RoundData6,
+		Data7 = Entity.RoundData7,
+		Data8 = Entity.RoundData8,
+		Data9 = Entity.RoundData9,
+		Data10 = Entity.RoundData10
+	}
+
+	Entity.BulletData = ACF.RoundTypes[Entity.RoundType].convert(Entity, PlayerData)
+	Entity.BulletData.Crate = Entity:EntIndex()
+
+	Entity.SupplyingTo = {}
+
+	local Efficiency = 0.1576 * ACF.AmmoMod
+	local Volume = math.floor(Entity:GetPhysicsObject():GetVolume())
+	local CapMul = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
+	local MassMod = Entity.BulletData.MassMod or 1
+
+	Entity.Volume = Volume * Efficiency
+	Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
+	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass * MassMod + Entity.BulletData.PropMass) * Entity.Capacity * 2) -- why *2 ?
+	Entity.Caliber = GunData.caliber
+	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
+	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
+
+	Entity:SetNWString("WireName", GunData.name .. " Ammo")
+
+	ACF.RoundTypes[Entity.RoundType].network(Entity, Entity.BulletData)
+
+	Entity:UpdateOverlay()
+end
+
 local function RefillEffect(Entity, Target)
 	net.Start("ACF_RefillEffect")
 		net.WriteFloat(Entity:EntIndex())
@@ -31,8 +94,12 @@ end
 
 --===============================================================================================--
 
-function MakeACF_Ammo(Player, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
-	if not Player:CheckLimit("_acf_ammo") then return false end
+function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
+	if not Player:CheckLimit("_acf_ammo") then return end
+
+	local CrateData = ACF.Weapons.Ammo[Id]
+
+	if not CrateData then return end
 
 	local Crate = ents.Create("acf_ammo")
 
@@ -44,16 +111,17 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, Data1, Data2, Data3, Data4, Data5,
 	Crate:SetPos(Pos)
 	Crate:SetAngles(Angle)
 	Crate:SetPlayer(Player)
-	Crate:SetModel(ACF.Weapons.Ammo[Id].model)
+	Crate:SetModel(CrateData.model)
 	Crate:Spawn()
 
 	Crate:PhysicsInit(SOLID_VPHYSICS)
 	Crate:SetMoveType(MOVETYPE_VPHYSICS)
 
-	Crate:CreateAmmo(Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+	UpdateAmmoData(Crate, ...)
+
 	Crate.IsExplosive   = true
 	Crate.Ammo			= Crate.Capacity
-	Crate.EmptyMass		= math.floor(ACF.Weapons.Ammo[Id].weight)
+	Crate.EmptyMass		= math.floor(CrateData.weight)
 	Crate.Id			= Id
 	Crate.Owner			= Player
 	Crate.Size			= Size
@@ -161,64 +229,6 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	return HitRes
 end
 
-function ENT:CreateAmmo(_, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
-	local GunData = list.Get("ACFEnts").Guns[Data1]
-
-	if not GunData then
-		self:Remove()
-		return
-	end
-
-	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
-	self.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
-	self.RoundType = Data2 --Type of round, IE AP, HE, HEAT ...
-	self.RoundPropellant = Data3 --Lenght of propellant
-	self.RoundProjectile = Data4 --Lenght of the projectile
-	self.RoundData5 = Data5 or 0
-	self.RoundData6 = Data6 or 0
-	self.RoundData7 = Data7 or 0
-	self.RoundData8 = Data8 or 0
-	self.RoundData9 = Data9 or 0
-	self.RoundData10 = Data10 or 0
-
-	local PlayerData = {
-		Id = self.RoundId,
-		Type = self.RoundType,
-		PropLength = self.RoundPropellant,
-		ProjLength = self.RoundProjectile,
-		Data5 = self.RoundData5,
-		Data6 = self.RoundData6,
-		Data7 = self.RoundData7,
-		Data8 = self.RoundData8,
-		Data9 = self.RoundData9,
-		Data10 = self.RoundData10
-	}
-
-	self.Convert = ACF.RoundTypes[self.RoundType].convert
-	self.BulletData = self:Convert(PlayerData)
-	self.BulletData.Crate = self:EntIndex()
-
-	self.SupplyingTo = {}
-
-	local Efficiency = 0.1576 * ACF.AmmoMod
-	local vol = math.floor(self:GetPhysicsObject():GetVolume())
-	self.Volume = vol * Efficiency
-	local CapMul = (vol > 40250) and ((math.log(vol * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-	local MassMod = self.BulletData.MassMod or 1
-
-	self.Capacity = math.floor(CapMul * self.Volume * 16.38 / self.BulletData.RoundVolume)
-	self.AmmoMassMax = math.floor((self.BulletData.ProjMass * MassMod + self.BulletData.PropMass) * self.Capacity * 2) -- why *2 ?
-	self.Caliber = GunData.caliber
-	self.RoFMul = (vol > 27000) and (1 - (math.log(vol * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
-
-	self:SetNWString("Ammo", self.Ammo)
-	self:SetNWString("WireName", GunData.name .. " Ammo")
-
-	self.NetworkData = ACF.RoundTypes[self.RoundType].network
-	self:NetworkData(self.BulletData)
-	self:UpdateOverlay()
-end
-
 function ENT:Enable()
 	self.Disabled	   = nil
 	self.DisableReason = nil
@@ -277,8 +287,10 @@ function ENT:Update(ArgsTable)
 
 	local AmmoPercent = self.Ammo / math.max(self.Capacity, 1)
 
-	self:CreateAmmo(ArgsTable[4], ArgsTable[5], ArgsTable[6], ArgsTable[7], ArgsTable[8], ArgsTable[9], ArgsTable[10], ArgsTable[11], ArgsTable[12], ArgsTable[13], ArgsTable[14])
+	UpdateAmmoData(self, unpack(ArgsTable, 5, 14))
+
 	self.Ammo = math.floor(self.Capacity * AmmoPercent)
+
 	self:UpdateMass()
 
 	return true, Message
@@ -286,6 +298,10 @@ end
 
 function ENT:TriggerInput(_, Value)
 	if self.Disabled then return end -- Ignore input if disabled
+
+	if not self.Inputs.Load.Path then
+		Value = true
+	end
 
 	self.Load = self.Ammo ~= 0 and tobool(Value)
 
@@ -436,6 +452,8 @@ function ENT:UpdateOverlay()
 
 	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if IsValid(self) then
+			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
+			local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
 			local Status
 
 			if self.DisableReason then
@@ -446,9 +464,7 @@ function ENT:UpdateOverlay()
 				Status = "Not linked to a weapon!"
 			end
 
-			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-
-			self:SetOverlayText(string.format("%s\n\n%sRounds remaining: %s", Status, self.BulletData.Type .. Tracer .. "\n", self.Ammo))
+			self:SetOverlayText(string.format(Text, Status, self.BulletData.Type .. Tracer, self.Ammo, self.Capacity))
 		end
 	end)
 end

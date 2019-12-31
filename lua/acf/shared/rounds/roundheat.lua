@@ -4,7 +4,6 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "High Explosive Anti-Tank (HEAT)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A shell with a shaped charge.  When the round detonates, the explosive energy is focused into driving a small molten metal penetrator into the victim with extreme force, though this results in reduced damage from the explosion itself.  Multiple layers of armor will dissipate the penetrator quickly."
-Round.netid = 4 --Unique ammotype ID for network transmission
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -372,4 +371,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "HEAT", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "HEAT") --Index must equal the ID entry in the table above, Data must equal the index of the table above

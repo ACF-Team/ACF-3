@@ -183,13 +183,6 @@ AttemptFire = function(Gun)
 	end
 end
 
-local function GetSpread(Entity)
-	local SpreadScale = ACF.SpreadScale
-	local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((Entity.ACF.Health / Entity.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
-
-	return Entity.Accuracy * ACF.GunInaccuracyScale * IaccMult
-end
-
 local function Recoil(Entity)
 	if not ACF_RECOIL:GetBool() then return end
 
@@ -203,7 +196,6 @@ local function MuzzleEffect(Entity)
 		Effect:SetEntity(Entity)
 		Effect:SetScale(Entity.BulletData.PropMass)
 		Effect:SetMagnitude(Entity.ReloadTime)
-		Effect:SetSurfaceProp(ACF.RoundTypes[Entity.BulletData.Type].netid)
 
 	util.Effect("acf_muzzleflash", Effect, true, true)
 end
@@ -213,7 +205,6 @@ local function ReloadEffect(Entity)
 		Effect:SetEntity(Entity)
 		Effect:SetScale(0)
 		Effect:SetMagnitude(Entity.ReloadTime)
-		Effect:SetSurfaceProp(ACF.RoundTypes[Entity.BulletData.Type].netid)
 
 	util.Effect("acf_muzzleflash", Effect, true, true)
 end
@@ -256,19 +247,22 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	local ClassData = list.Get("ACFClasses").GunClass[Lookup.gunclass]
 
 	-- ACF Specific vars
-	Gun.Caliber        = Lookup.caliber
-	Gun.Class          = Lookup.gunclass
-	Gun.MagReload      = Lookup.magreload
-	Gun.MagSize        = Lookup.magsize or 1
-	Gun.CurrentShot    = 0
-	Gun.Muzzle         = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
-	Gun.Accuracy       = ClassData.spread
+	Gun.Name		   = Lookup.name
+	Gun.ShortName	   = Id
+	Gun.EntType		   = ClassData.name
+	Gun.Caliber		   = Lookup.caliber
+	Gun.Class		   = Lookup.gunclass
+	Gun.MagReload	   = Lookup.magreload
+	Gun.MagSize		   = Lookup.magsize or 1
+	Gun.CurrentShot	   = 0
+	Gun.Muzzle		   = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
+	Gun.Spread		   = ClassData.spread
 	Gun.MinLengthBonus = 0.75 * 3.1416 * (Gun.Caliber / 2) ^ 2 * Lookup.round.maxlength
-	Gun.Muzzleflash    = ClassData.muzzleflash
-	Gun.PGRoFmod       = math.max(0.01, Lookup.rofmod or 1)
-	Gun.RoFmod         = ClassData.rofmod
-	Gun.Sound          = ClassData.sound
-	Gun.BulletData = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+	Gun.Muzzleflash	   = ClassData.muzzleflash
+	Gun.PGRoFmod	   = math.max(0.01, Lookup.rofmod or 1)
+	Gun.RoFmod		   = ClassData.rofmod
+	Gun.Sound		   = ClassData.sound
+	Gun.BulletData	   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 	-- Set NWvars
 	Gun:SetNWString("Sound", Gun.Sound)
 	Gun:SetNWString("WireName", Lookup.name)
@@ -383,8 +377,16 @@ function ENT:Unlink(Target)
 	return false, "Guns can't be unlinked from '" .. Target:GetClass() .. "'."
 end
 
+function ENT:GetSpread()
+	local SpreadScale = ACF.SpreadScale
+	local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
+
+	return self.Spread * ACF.GunInaccuracyScale * IaccMult
+end
+
+
 function ENT:Shoot()
-	local Cone = math.tan(math.rad(GetSpread(self)))
+	local Cone = math.tan(math.rad(self:GetSpread()))
 	local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 	local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 	local Dir = (self:GetForward() + Spread):GetNormalized()
@@ -413,25 +415,34 @@ function ENT:Reload(ForceReload)
 		SetState(self, "Reloading")
 
 		self.CurrentCrate = Crate
-		self.CurrentCrate:Consume()
 
 		self.BulletData = Crate.BulletData
 		self.BulletData.Fuze = self.SetFuze
 
 		local Adj = self.BulletData.LengthAdj or 1 --FL firerate bonus adjustment
+
 		self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
+		if not ForceReload then
+			self.CurrentCrate:Consume()
+		else
+			ReloadEffect(self)
+		end
+
 		-- Are we reloading mag or individual rounds? --
-		local Time, Reload
+		local Time
 
 		if ForceReload or self.CurrentShot == 0 then -- if ForceReload or (self.MagReload and self.CurrentShot == 0) then
 			Time = self.MagReload or self.ReloadTime
-			Reload = true
+
+			self.OnReload = true
 
 			WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 		else
 			Time = self.ReloadTime
 		end
+
+		self.NextFire = CurTime() + Time
 
 		------------------------------------------------
 
@@ -439,9 +450,12 @@ function ENT:Reload(ForceReload)
 			if IsValid(self) then
 				SetState(self, "Loaded")
 
-				if Reload then self.CurrentShot = self.MagSize end
+				if self.OnReload then
+					self.CurrentShot = self.MagSize
+					self.OnReload = nil
+				end
 
-				ReloadEffect(self)
+				self.NextFire = nil
 
 				WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
 				WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
@@ -473,11 +487,16 @@ function ENT:Unload()
 	SetState(self, "Reloading")
 
 	self.CurrentShot = 0
+	self.ReloadTime = self.ReloadTime * 0.5
 	self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
 
-	timer.Simple(self.ReloadTime * 0.5, function()
+	ReloadEffect(self)
+
+	timer.Simple(self.ReloadTime, function()
 		if IsValid(self) then
 			SetState(self, "Empty")
+
+			self.ReloadTime = self.ReloadTime * 2
 		end
 	end)
 end

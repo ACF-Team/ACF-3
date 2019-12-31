@@ -4,7 +4,6 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "Armour Piercing Explosive (APHE)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "An armour piercing round with a cavity for High explosives. Less capable of defeating armour than plain Armour Piercing, but will explode after penetration"
-Round.netid = 5 --Unique ammotype ID for network transmission
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -230,4 +229,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "APHE", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "APHE") --Index must equal the ID entry in the table above, Data must equal the index of the table above

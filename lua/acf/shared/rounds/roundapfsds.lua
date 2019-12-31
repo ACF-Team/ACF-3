@@ -4,7 +4,6 @@ Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "AP Fin Stabilized, Discarding Sabot (APFSDS)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
 Round.desc = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
-Round.netid = 9 --Unique ammotype ID for network transmission
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -223,4 +222,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "APFSDS", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "APFSDS") --Index must equal the ID entry in the table above, Data must equal the index of the table above

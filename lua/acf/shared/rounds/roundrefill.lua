@@ -6,17 +6,18 @@ Round.desc = "Ammo Refill"
 
 -- Function to convert the player's slider data into the complete round data
 function Round.convert(_, PlayerData)
-	local BulletData = {}
-	BulletData.Id = PlayerData.Id or "12.7mmMG"
-	BulletData.Type = PlayerData.Type or "AP"
-	BulletData.Caliber = ACF.Weapons.Guns[PlayerData.Id].caliber
-	BulletData.ProjMass = 2 * 7.9 / 100 --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
-	BulletData.PropMass = 2 * ACF.PDensity / 1000 --Volume of the case as a cylinder * Powder density converted from g to kg
-	BulletData.FillerMass = BulletData.FillerMass or 0
-	BulletData.DragCoef = BulletData.DragCoef or 0
-	BulletData.Tracer = BulletData.Tracer or 0
-	BulletData.MuzzleVel = BulletData.MuzzleVel or 0
-	BulletData.RoundVolume = 1
+	local BulletData = {
+		Id = PlayerData.Id,
+		Type = PlayerData.Type,
+		Caliber = ACF.Weapons.Guns[PlayerData.Id].caliber,
+		ProjMass = 6 * 7.9 / 100, --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
+		PropMass = 6 * ACF.PDensity / 1000, --Volume of the case as a cylinder * Powder density converted from g to kg
+		FillerMass = 0,
+		DragCoef = 0,
+		Tracer = 0,
+		MuzzleVel = 0,
+		RoundVolume = 36,
+	}
 
 	return BulletData
 end
@@ -48,7 +49,7 @@ function Round.guicreate(Panel, Table)
 end
 
 function Round.guiupdate()
-	RunConsoleCommand("acfmenu_data1", acfmenupanel.CData.AmmoId)
+	RunConsoleCommand("acfmenu_data1", acfmenupanel.CData.AmmoId or "12.7mmMG")
 	RunConsoleCommand("acfmenu_data2", "Refill")
 	acfmenupanel.CustomDisplay:PerformLayout()
 end

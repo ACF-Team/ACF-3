@@ -3,8 +3,7 @@ local Round = {}
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "Smoke (SM)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
-Round.desc = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly. \n\n Can only be used in the 40mm Smoke Launcher"
-Round.netid = 6 --Unique ammotype ID for network transmission
+Round.desc = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly."
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -265,4 +264,3 @@ function Round.guiupdate(Panel)
 end
 
 list.Set("ACFRoundTypes", "SM", Round) --Set the round properties
-list.Set("ACFIdRounds", Round.netid, "SM") --Index must equal the ID entry in the table above, Data must equal the index of the table above

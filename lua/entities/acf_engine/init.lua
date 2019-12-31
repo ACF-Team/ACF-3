@@ -20,8 +20,8 @@ end)
 
 ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
 	if Engine.FuelTanks[Target] or Target.Engines[Engine] then
-			Engine.FuelTanks[Target] = nil
-		Target.Engines[Engine] = nil
+		Engine.FuelTanks[Target] = nil
+		Target.Engines[Engine]	 = nil
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -80,8 +80,8 @@ ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
 
 	if IsValid(Rope) then Rope:Remove() end
 
-	Engine.Gearboxes[Target]	= nil
-	Target.Engines[Engine]	= nil
+	Engine.Gearboxes[Target] = nil
+	Target.Engines[Engine]	 = nil
 
 	Engine:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -105,6 +105,8 @@ local max		  = math.max
 local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.Id = Id
 	Entity.Name = EngineData.name
+	Entity.ShortName = Id
+	Entity.EntType = EngineData.category
 	Entity.SoundPath = EngineData.sound
 	Entity.SoundPitch = EngineData.pitch or 1
 	Entity.Mass = EngineData.weight
@@ -150,6 +152,26 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity:SetNWString("WireName", Entity.Name)
 
 	Entity:UpdateOverlay()
+end
+
+local function UpdateSmoothRPM(Engine)
+	local Removed = 0
+
+	if Engine.AmountRPM == 10 then
+		Removed = remove(Engine.RPM)
+	else
+		Engine.AmountRPM = Engine.AmountRPM + 1
+	end
+
+	insert(Engine.RPM, 1, Engine.FlyRPM)
+
+	Engine.SmoothRPM = Engine.SmoothRPM + Engine.FlyRPM - Removed
+
+	local Smooth = Engine.SmoothRPM / Engine.AmountRPM
+	local Pitch = math.Clamp(20 + (Smooth * Engine.SoundPitch) / 50, 1, 255)
+	local Volume = 0.25 + (0.1 + 0.9 * ((Smooth / Engine.LimitRPM) ^ 1.5)) * Engine.Throttle / 1.5
+
+	return Pitch, Volume
 end
 
 local function GetNextFuelTank(Engine)
@@ -223,16 +245,18 @@ local function SetActive(Entity, Value)
 		if HasFuel then
 			Entity.Active = true
 
-			if Entity.SoundPath ~= "" then
-				Entity.Sound = CreateSound(Entity, Entity.SoundPath)
-				Entity.Sound:PlayEx(0.5, 100)
-			end
-
 			Entity:CalcMassRatio()
 
 			Entity.LastThink = CurTime()
 			Entity.Torque = Entity.PeakTorque
 			Entity.FlyRPM = Entity.IdleRPM * 1.5
+
+			local Pitch, Volume = UpdateSmoothRPM(Entity)
+
+			if Entity.SoundPath ~= "" then
+				Entity.Sound = CreateSound(Entity, Entity.SoundPath)
+				Entity.Sound:PlayEx(Volume, Pitch)
+			end
 
 			timer.Simple(engine.TickInterval(), function()
 				if not IsValid(Entity) then return end
@@ -246,20 +270,16 @@ local function SetActive(Entity, Value)
 		Entity.RPM = { Entity.IdleRPM }
 		Entity.SmoothRPM = Entity.IdleRPM
 		Entity.AmountRPM = 1
+		Entity.Torque = 0
 
 		if Entity.Sound then
 			Entity.Sound:Stop()
-
 			Entity.Sound = nil
 		end
-
-		WireLib.TriggerOutput(Entity, "RPM", 0)
-		WireLib.TriggerOutput(Entity, "Torque", 0)
-		WireLib.TriggerOutput(Entity, "Power", 0)
-		WireLib.TriggerOutput(Entity, "Fuel Use", 0)
 	end
 
 	Entity:UpdateOverlay()
+	Entity:UpdateOutputs()
 end
 
 local Inputs = {
@@ -419,18 +439,7 @@ function ENT:UpdateOutputs()
 	timer.Create("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
-		local Removed = 0
-
-		if self.AmountRPM == 5 then
-			Removed = remove(self.RPM)
-		else
-			self.AmountRPM = self.AmountRPM + 1
-		end
-
-		insert(self.RPM, 1, self.FlyRPM)
-
-		self.SmoothRPM = self.SmoothRPM + self.FlyRPM - Removed
-
+		local Pitch, Volume = UpdateSmoothRPM(self)
 		local Smooth = self.SmoothRPM / self.AmountRPM
 		local Power = self.Torque * Smooth / 9548.8
 
@@ -440,8 +449,8 @@ function ENT:UpdateOutputs()
 		WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
 
 		if self.Sound then
-			self.Sound:ChangePitch(math.min(20 + (Smooth * self.SoundPitch) / 50, 255), 0)
-			self.Sound:ChangeVolume(0.25 + (0.1 + 0.9 * ((Smooth / self.LimitRPM) ^ 1.5)) * self.Throttle / 1.5, 0)
+			self.Sound:ChangePitch(Pitch, 0)
+			self.Sound:ChangeVolume(Volume, 0)
 		end
 	end)
 end
@@ -562,6 +571,22 @@ function ENT:CalcMassRatio()
 	WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
 end
 
+function ENT:GetConsumption(Throttle, RPM)
+	if not IsValid(self.FuelTank) then return 0 end
+
+	local Consumption
+
+	if self.FuelType == "Electric" then
+		Consumption = self.Torque * RPM * self.FuelUse / 9548.8
+	else
+		local Load = 0.3 + Throttle * 0.7
+
+		Consumption = Load * self.FuelUse * (RPM / self.PeakKwRPM) / self.FuelTank.FuelDensity
+	end
+
+	return Round(Consumption, 2)
+end
+
 function ENT:CalcRPM()
 	if not self.Active then return end
 
@@ -571,18 +596,11 @@ function ENT:CalcRPM()
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
-		local Consumption
-
 		self.FuelTank = FuelTank
 
-		if self.FuelType == "Electric" then
-			Consumption = (self.Torque * self.FlyRPM / 9548.8) * self.FuelUse * DeltaTime
-		else
-			local Load = 0.3 + self.Throttle * 0.7
-			Consumption = Load * self.FuelUse * (self.FlyRPM / self.PeakKwRPM) * DeltaTime / ACF.FuelDensity[FuelTank.FuelType]
-		end
+		local Consumption = self:GetConsumption(self.Throttle, self.FlyRPM) * DeltaTime
 
-		self.FuelUsage = Round(60 * Consumption / DeltaTime, 3)
+		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		Boost = ACF.TorqueBoost
 
@@ -594,6 +612,8 @@ function ENT:CalcRPM()
 	elseif self.RequiresFuel then
 		SetActive(self, false) --shut off if no fuel and requires it
 
+		self.FuelUsage = 0
+
 		return 0
 	else
 		self.FuelUsage = 0
@@ -604,13 +624,9 @@ function ENT:CalcRPM()
 	self.PeakTorque = self.PeakTorqueHeld * self.TorqueMult
 	-- Calculate the current torque from flywheel RPM
 	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
-	local Drag
 
-	if self.IsElectric then
-		Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / self.FlywheelOverride) * (1 - self.Throttle) / self.Inertia
-	else
-		Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / self.PeakMaxRPM) * (1 - self.Throttle) / self.Inertia
-	end
+	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
+	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
 
 	-- Let's accelerate the flywheel based on that torque
 	self.FlyRPM = max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1)

@@ -117,7 +117,7 @@ local function UnlinkWheel(Gearbox, Wheel)
 			Link.Rope:Remove()
 		end
 
-		Link = nil
+		Gearbox.Wheels[Wheel] = nil
 
 		Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
@@ -222,6 +222,8 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	if Entity.Id ~= Id then
 		Entity.Id = Id
 		Entity.Name = GearboxData.name
+		Entity.ShortName = Entity.Id
+		Entity.EntType = GearboxData.category
 		Entity.Model = GearboxData.model
 		Entity.Mass = GearboxData.weight
 		Entity.SwitchTime = GearboxData.switch
@@ -406,7 +408,7 @@ local Inputs = {
 		Entity.SteerRate = Clamp(Value, -1, 1)
 	end,
 	["Hold Gear"] = function(Entity, Value)
-		Entity.Hold = Value ~= 0
+		Entity.Hold = tobool(Value)
 	end,
 	["Shift Speed Scale"] = function(Entity, Value)
 		Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
