@@ -14,6 +14,22 @@ local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 
+local function Overlay(Ent)
+	local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
+	local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
+	local Status
+
+	if Ent.DisableReason then
+		Status = "Disabled: " .. Ent.DisableReason
+	elseif next(Ent.Weapons) then
+		Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
+	else
+		Status = "Not linked to a weapon!"
+	end
+
+	Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity))
+end
+
 local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 	local GunData = list.Get("ACFEnts").Guns[Data1]
 
@@ -150,6 +166,7 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Crate.ACF.LegalMass = math.floor(Mass)
 
 	CheckLegal(Crate)
+	Crate:UpdateOverlay(true)
 
 	return Crate
 end
@@ -239,7 +256,7 @@ function ENT:Enable()
 		self.Load = true
 	end
 
-	self:UpdateOverlay()
+	self:UpdateOverlay(true)
 	self:UpdateMass()
 
 	CheckLegal(self)
@@ -249,7 +266,7 @@ function ENT:Disable()
 	self.Disabled = true
 	self.Load     = false
 
-	self:UpdateOverlay()
+	self:UpdateOverlay(true)
 	self:UpdateMass()
 
 	timer.Simple(ACF.IllegalDisableTime, function()
@@ -443,26 +460,19 @@ function ENT:Consume()
 	WireLib.TriggerOutput(self, "Ammo", self.Ammo)
 end
 
-function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if IsValid(self) then
-			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-			local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
-			local Status
-
-			if self.DisableReason then
-				Status = "Disabled: " .. self.DisableReason
-			elseif next(self.Weapons) then
-				Status = self.Load and "Providing Ammo" or (self.Ammo ~= 0 and "Idle" or "Empty")
-			else
-				Status = "Not linked to a weapon!"
+	if not timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then
+		timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
 			end
-
-			self:SetOverlayText(string.format(Text, Status, self.BulletData.Type .. Tracer, self.Ammo, self.Capacity))
-		end
-	end)
+		end)
+	end
 end
 
 function ENT:UpdateMass()

@@ -11,8 +11,8 @@ ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 	Weapon.Crates[Target]  = true
 	Target.Weapons[Weapon] = true
 
-	Weapon:UpdateOverlay()
-	Target:UpdateOverlay()
+	Weapon:UpdateOverlay(true)
+	Target:UpdateOverlay(true)
 
 	return true, "Weapon linked successfully."
 end)
@@ -22,8 +22,8 @@ ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
 		Weapon.Crates[Target]  = nil
 		Target.Weapons[Weapon] = nil
 
-		Weapon:UpdateOverlay()
-		Target:UpdateOverlay()
+		Weapon:UpdateOverlay(true)
+		Target:UpdateOverlay(true)
 
 		return true, "Weapon unlinked successfully."
 	end
@@ -36,7 +36,7 @@ end)
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local AttemptFire
+local AttemptFire -- Defined later
 local ACF_RECOIL  = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
 local Trace		  = util.TraceLine
 local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID}
@@ -104,6 +104,23 @@ local TriggerTable = {
 }
 
 -----
+
+local function Overlay(Ent)
+	local Status
+
+	if Ent.DisableReason then
+		Status = "Disabled: " .. Ent.DisableReason
+	elseif not next(Ent.Crates) then
+		Status = "Not linked to an ammo crate!"
+	else
+		Status = Ent.State
+	end
+
+	local AmmoType = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
+	local Firerate = math.floor(60 / Ent.ReloadTime)
+
+	Ent:SetOverlayText(string.format("%s\n\nStatus: %s\nRate of Fire: %s rpm\nShots Left: %s", AmmoType, Status, Firerate, Ent.CurrentShot))
+end
 
 local function FindNextCrate(Gun)
 	if not next(Gun.Crates) then return end
@@ -295,7 +312,7 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	Gun.ACF.LegalMass     = Mass
 	Gun.ACF.Model         = Lookup.model
 
-	Gun:UpdateOverlay()
+	Gun:UpdateOverlay(true)
 
 	CheckLegal(Gun)
 
@@ -520,27 +537,19 @@ function ENT:Think()
 	return true
 end
 
-function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if IsValid(self) then
-			local Status
-
-			if self.DisableReason then
-				Status = "Disabled: " .. self.DisableReason
-			elseif not next(self.Crates) then
-				Status = "Not linked to an ammo crate!"
-			else
-				Status = self.State
+	if not timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then
+		timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
 			end
-
-			local AmmoType = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
-			local Firerate = math.floor(60 / self.ReloadTime)
-
-			self:SetOverlayText(string.format("%s\n\nStatus: %s\nRate of Fire: %s rpm\nShots Left: %s", AmmoType, Status, Firerate, self.CurrentShot))
-		end
-	end)
+		end)
+	end
 end
 
 function ENT:CanProperty(_, property)
