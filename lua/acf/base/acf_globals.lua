@@ -127,6 +127,8 @@ end
 
 ACF.Weapons = list.Get("ACFEnts")
 ACF.RoundTypes = list.Get("ACFRoundTypes")
+ACF.Classes = list.Get("ACFClasses")
+
 game.AddParticles("particles/acf_muzzleflashes.pcf")
 game.AddParticles("particles/explosion1.pcf")
 game.AddParticles("particles/rocket_motor.pcf")
