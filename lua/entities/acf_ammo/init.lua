@@ -31,14 +31,14 @@ local function Overlay(Ent)
 end
 
 local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
-	local GunData = list.Get("ACFEnts").Guns[Data1]
+	local GunData = ACF.Weapons.Guns[Data1]
 
 	if not GunData then
 		Entity:Remove()
 		return
 	end
 
-	local GunClass = list.Get("ACFClasses").GunClass[GunData.gunclass]
+	local GunClass = ACF.Classes.GunClass[GunData.gunclass]
 
 	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
 	Entity.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
@@ -292,7 +292,7 @@ function ENT:Update(ArgsTable)
 
 		Message = "New ammo type loaded, crate unlinked."
 	else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
-		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]] or {}
+		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]]
 
 		for Gun in pairs(self.Weapons) do
 			if table.HasValue(Blacklist, Gun.Class) then

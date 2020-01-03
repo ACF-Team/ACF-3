@@ -69,7 +69,7 @@ local Inputs = {
 function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
-	local FuelData = list.Get("ACFEnts").FuelTanks[Data1]
+	local FuelData = ACF.Weapons.FuelTanks[Data1]
 
 	if not FuelData then return end
 
@@ -207,7 +207,7 @@ end
 function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that fuel tank!" end
 
-	local FuelData = list.Get("ACFEnts").FuelTanks[ArgsTable[5]]
+	local FuelData = ACF.Weapons.FuelTanks[ArgsTable[5]]
 
 	if not FuelData then return false, "Invalid fuel tank type!" end
 	if FuelData.model ~= self.Model then return false, "The new fuel tank must have the same model!" end

@@ -420,7 +420,7 @@ local Inputs = {
 function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
-	local GearboxData = list.Get("ACFEnts").Mobility[Id]
+	local GearboxData = ACF.Weapons.Mobility[Id]
 
 	if not GearboxData then return end
 
@@ -530,7 +530,7 @@ function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that gearbox!" end
 
 	local Id = ArgsTable[4] -- Argtable[4] is the engine ID
-	local GearboxData = list.Get("ACFEnts").Mobility[Id]
+	local GearboxData = ACF.Weapons.Mobility[Id]
 
 	if not GearboxData then return false, "Invalid gearbox type!" end
 	if GearboxData.model ~= self.Model then return false, "The new gearbox must have the same model!" end
@@ -617,11 +617,11 @@ function ENT:Calc(InputRPM, InputInertia)
 	end
 
 	if self.Auto and self.Drive == 1 and self.InGear then
-		local vel = BoxPhys:GetVelocity():Length()
+		local PhysVel = BoxPhys:GetVelocity():Length()
 
-		if vel > (self.ShiftPoints[self.Gear] * self.ShiftScale) and not (self.Gear == self.Gears) and not self.Hold then
+		if not self.Hold and self.Gear ~= self.Gears and PhysVel > (self.ShiftPoints[self.Gear] * self.ShiftScale) then
 			ChangeGear(self, self.Gear + 1)
-		elseif vel < (self.ShiftPoints[self.Gear - 1] * self.ShiftScale) then
+		elseif PhysVel < (self.ShiftPoints[self.Gear - 1] * self.ShiftScale) then
 			ChangeGear(self, self.Gear - 1)
 		end
 	end

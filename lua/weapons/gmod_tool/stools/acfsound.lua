@@ -24,7 +24,7 @@ ACF.SoundToolSupport = {
 		end,
 		ResetSound = function(ent)
 			local Class = ent.Class
-			local Classes = list.Get("ACFClasses")
+			local Classes = ACF.Classes
 
 			local soundData = {
 				Sound = Classes["GunClass"][Class]["sound"]
@@ -47,7 +47,7 @@ ACF.SoundToolSupport = {
 		end,
 		ResetSound = function(ent)
 			local Id = ent.Id
-			local List = list.Get("ACFEnts")
+			local List = ACF.Weapons
 			local pitch = List["Mobility"][Id]["pitch"] or 1
 
 			local soundData = {

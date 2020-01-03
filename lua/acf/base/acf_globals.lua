@@ -1,4 +1,3 @@
-ACF = ACF or {}
 ACF.AmmoTypes = ACF.AmmoTypes or {}
 ACF.AmmoCrates = ACF.AmmoCrates or {}
 ACF.FuelTanks = ACF.FuelTanks or {}
@@ -125,10 +124,6 @@ elseif CLIENT then
 	end
 end
 
-ACF.Weapons = list.Get("ACFEnts")
-ACF.RoundTypes = list.Get("ACFRoundTypes")
-ACF.Classes = list.Get("ACFClasses")
-
 game.AddParticles("particles/acf_muzzleflashes.pcf")
 game.AddParticles("particles/explosion1.pcf")
 game.AddParticles("particles/rocket_motor.pcf")
@@ -149,7 +144,7 @@ if CLIENT then
 end
 
 timer.Simple(0, function()
-	for _, Table in pairs(list.Get("ACFClasses")["GunClass"]) do
+	for _, Table in pairs(ACF.Classes.GunClass) do
 		PrecacheParticleSystem(Table["muzzleflash"])
 	end
 end)

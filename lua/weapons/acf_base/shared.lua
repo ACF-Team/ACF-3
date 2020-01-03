@@ -14,17 +14,6 @@ SWEP.WorldModel			= "models/weapons/w_sniper.mdl"
 
 SWEP.Weight				= 10
 
--- local GunsList = list.GetForEdit("ACFEnts")["Guns"]
--- GunsList.AMR = {}
--- GunsList.AMR.nomenu = true	--Don't add that to the ACF menu
--- GunsList.AMR.id = "15.3mmAMR"
--- GunsList.AMR.caliber = 15.3
--- GunsList.AMR.round = {}
-	-- GunsList.AMR.round.id = "15.3mmAMR"
-	-- GunsList.AMR.round.maxlength = 999
-	-- GunsList.AMR.round.propweight = 999
--- list.Set("ACFEnts", "Guns", GunsList) --The ID and the index you add to the table need to be identical
-
 SWEP.Primary.ClipSize		= 1
 SWEP.Primary.DefaultClip	= 25
 SWEP.Primary.Automatic		= false

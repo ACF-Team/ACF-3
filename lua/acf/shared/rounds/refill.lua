@@ -54,4 +54,4 @@ function Round.guiupdate()
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 
-list.Set("ACFRoundTypes", "Refill", Round) --Set the round properties
+ACF.RoundTypes.Refill = Round --Set the round properties

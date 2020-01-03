@@ -229,7 +229,7 @@ end
 --===============================================================================================--
 
 function MakeACF_Gun(Player, Pos, Angle, Id)
-	local List   = list.Get("ACFEnts")
+	local List   = ACF.Weapons
 	local EID    = List.Guns[Id] and Id or "50mmC"
 	local Lookup = List.Guns[EID]
 	local Ext  = Lookup.gunclass == "SL" and "_acf_smokelauncher" or "_acf_gun"
@@ -261,7 +261,7 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	Gun.Inputs  	 = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
 	Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
-	local ClassData = list.Get("ACFClasses").GunClass[Lookup.gunclass]
+	local ClassData = ACF.Classes.GunClass[Lookup.gunclass]
 
 	-- ACF Specific vars
 	Gun.Name		   = Lookup.name
@@ -554,7 +554,7 @@ end
 
 function ENT:CanProperty(_, property)
 	if property == "bodygroups" then
-		local longbarrel = list.Get("ACFClasses").GunClass[self.Class].longbarrel
+		local longbarrel = ACF.Classes.GunClass[self.Class].longbarrel
 
 		if longbarrel ~= nil then
 			--need to wait until after the property is actually set

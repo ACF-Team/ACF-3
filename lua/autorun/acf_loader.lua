@@ -22,6 +22,18 @@ local FuelTankTable = {}
 
 if not ACF then ACF = {} end
 
+ACF.RoundTypes = ACF.RoundTypes or {}
+
+ACF.Classes = ACF.Classes or {
+	GunClass = GunClasses
+}
+
+ACF.Weapons = ACF.Weapons or {
+	Guns = GunTable,
+	Mobility = MobilityTable,
+	FuelTanks = FuelTankTable
+}
+
 local gun_base = {
 	ent = "acf_gun",
 	type = "Guns"
@@ -167,10 +179,5 @@ elseif CLIENT then
 	Load("acf")
 	Load = nil
 end
-
-list.Set( "ACFClasses", "GunClass", GunClasses )
-list.Set( "ACFEnts", "Guns", GunTable )
-list.Set( "ACFEnts", "Mobility", MobilityTable )
-list.Set( "ACFEnts", "FuelTanks", FuelTankTable )
 
 MsgN("|\n=======[ Finished Loading ACF ]=======")

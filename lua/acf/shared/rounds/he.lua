@@ -207,4 +207,4 @@ function Round.guiupdate(Panel)
 	--acfmenupanel:CPanelText("RicoDisplay", "Ricochet probability vs impact angle:\n".."    0% @ "..RicoAngs.Min.." degrees\n  50% @ "..RicoAngs.Mean.." degrees\n100% @ "..RicoAngs.Max.." degrees")
 end
 
-list.Set("ACFRoundTypes", "HE", Round) --Set the round properties
+ACF.RoundTypes.HE = Round --Set the round properties

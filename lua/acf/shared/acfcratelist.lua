@@ -396,4 +396,4 @@ local Ammo4x8x8 = {}
 	Ammo4x8x8.volume = 366397
 AmmoTable["Ammo4x8x8"] = Ammo4x8x8
 
-list.Set( "ACFEnts", "Ammo", AmmoTable )	--end ammo containers listing
+ACF.Weapons.Ammo = AmmoTable	--end ammo containers listing

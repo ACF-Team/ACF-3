@@ -161,10 +161,10 @@ end
 function Round.cratetxt(BulletData)
 	local DData = Round.getDisplayData(BulletData)
 	local inaccuracy = 0
-	local Gun = list.Get("ACFEnts").Guns[BulletData.Id]
+	local Gun = ACF.Weapons.Guns[BulletData.Id]
 
 	if Gun then
-		local Classes = list.Get("ACFClasses")
+		local Classes = ACF.Classes
 
 		inaccuracy = (Classes.GunClass[Gun.gunclass] or {
 			spread = 0
@@ -311,4 +311,4 @@ function Round.guiupdate(Panel)
 	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
-list.Set("ACFRoundTypes", "FL", Round) --Set the round properties
+ACF.RoundTypes.FL = Round --Set the round properties

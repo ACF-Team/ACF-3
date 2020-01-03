@@ -296,7 +296,7 @@ local Inputs = {
 function MakeACF_Engine(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
-	local EngineData = list.Get("ACFEnts").Mobility[Id]
+	local EngineData = ACF.Weapons.Mobility[Id]
 
 	if not EngineData then return end
 
@@ -409,7 +409,7 @@ function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that engine!" end
 
 	local Id = ArgsTable[4] -- Argtable[4] is the engine ID
-	local EngineData = list.Get("ACFEnts").Mobility[Id]
+	local EngineData = ACF.Weapons.Mobility[Id]
 
 	if not EngineData then return false, "Invalid engine type!" end
 	if EngineData.model ~= self.Model then return false, "The new engine must have the same model!" end
