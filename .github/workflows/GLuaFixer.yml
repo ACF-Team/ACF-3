@@ -5,13 +5,11 @@ on:
     paths:
     - 'lua/**'
     - '!lua/expadv/**'
-    - '!lua/starfall/**'
     - '!lua/entities/gmod_wire_expression2/**'
   pull_request:
     paths:
     - 'lua/**'
     - '!lua/expadv/**'
-    - '!lua/starfall/**'
     - '!lua/entities/gmod_wire_expression2/**'
 
 jobs:
@@ -24,8 +22,8 @@ jobs:
     - name: Extract glualint.zip
       run: unzip glualint.zip
     - name: Remove blacklisted folders
-      run: rm -r lua/expadv lua/starfall lua/entities/gmod_wire_expression2/
+      run: rm -r lua/expadv lua/entities/gmod_wire_expression2/
     - name: Remove blacklisted files
-      run: rm lua/acf/server/sv_acfdamage.lua
+      run: rm lua/acf/server/damage.lua
     - name: Initiate linting
       run: ./glualint lua
