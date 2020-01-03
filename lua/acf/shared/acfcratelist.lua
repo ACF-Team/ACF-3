@@ -1,5 +1,3 @@
-AddCSLuaFile( "acf/shared/acfcratelist.lua" )
-
 local AmmoTable = {}  --Start ammo containers listing
 
 local AmmoSmall = {}

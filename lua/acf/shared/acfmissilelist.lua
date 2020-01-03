@@ -1,7 +1,6 @@
 --ACF missile list.
 --Obviously none of this is balanced yet.
 
-AddCSLuaFile("acf/shared/acfmissilelist.lua")
 
 local RackTable = {}
 

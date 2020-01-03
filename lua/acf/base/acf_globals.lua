@@ -98,46 +98,18 @@ ACF.GunInaccuracyBias = 2 -- Higher numbers make shots more likely to be inaccur
 ACF.EnableDefaultDP = false -- Enable the inbuilt damage protection system.
 ACF.EnableKillicons = true -- Enable killicons overwriting.
 
-if file.Exists("acf/shared/acf_userconfig.lua", "LUA") then
-	include("acf/shared/acf_userconfig.lua")
-end
-
 CreateConVar("sbox_max_acf_gun", 16)
 CreateConVar("sbox_max_acf_smokelauncher", 10)
 CreateConVar("sbox_max_acf_ammo", 32)
 CreateConVar("sbox_max_acf_misc", 32)
 CreateConVar("acf_meshvalue", 1)
 CreateConVar("sbox_acf_restrictinfo", 1) -- 0=any, 1=owned
-AddCSLuaFile()
-AddCSLuaFile("acf/client/cl_acfballistics.lua")
-AddCSLuaFile("acf/client/cl_acfmenu_gui.lua")
-AddCSLuaFile("acf/client/cl_acfrender.lua")
-
-if SERVER and ACF.EnableDefaultDP then
-	AddCSLuaFile("acf/client/cl_acfpermission.lua")
-	AddCSLuaFile("acf/client/gui/cl_acfsetpermission.lua")
-end
 
 if SERVER then
 	util.AddNetworkString("ACF_KilledByACF")
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
-	include("acf/server/sv_acfbase.lua")
-	include("acf/server/sv_acfdamage.lua")
-	include("acf/server/sv_acfballistics.lua")
-
-	if ACF.EnableDefaultDP then
-		include("acf/server/sv_acfpermission.lua")
-	end
 elseif CLIENT then
-	include("acf/client/cl_acfballistics.lua")
-	include("acf/client/cl_acfrender.lua")
-
-	if ACF.EnableDefaultDP then
-		include("acf/client/cl_acfpermission.lua")
-		include("acf/client/gui/cl_acfsetpermission.lua")
-	end
-
 	CreateConVar("acf_cl_particlemul", 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", "1", true, true)
 	-- Cache results so we don"t need to do expensive filesystem checks every time
@@ -153,11 +125,7 @@ elseif CLIENT then
 	end
 end
 
-include("acf/shared/acfloader.lua")
-include("acf/shared/acfcratelist.lua")
---include("acf/shared/acfmissilelist.lua")
 ACF.Weapons = list.Get("ACFEnts")
-ACF.Classes = list.Get("ACFClasses")
 ACF.RoundTypes = list.Get("ACFRoundTypes")
 game.AddParticles("particles/acf_muzzleflashes.pcf")
 game.AddParticles("particles/explosion1.pcf")
@@ -179,7 +147,7 @@ if CLIENT then
 end
 
 timer.Simple(0, function()
-	for _, Table in pairs(ACF.Classes["GunClass"]) do
+	for _, Table in pairs(list.Get("ACFClasses")["GunClass"]) do
 		PrecacheParticleSystem(Table["muzzleflash"])
 	end
 end)
