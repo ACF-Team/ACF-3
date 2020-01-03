@@ -601,16 +601,25 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-	local Crates = Ent.EntityMods and Ent.EntityMods.ACFCrates
+	local EntMods = Ent.EntityMods
 
-	if Crates and next(Crates) then
-		for _, CrateID in pairs(Crates) do
-			local Crate = CreatedEntities[CrateID]
+	-- Backwards compatibility
+	if EntMods.ACFAmmoLink then
+		local Entities = EntMods.ACFAmmoLink.entities
 
-			self:Link(Crate)
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		Crates = nil
+		EntMods.ACFAmmoLink = nil
+	end
+
+	if EntMods.ACFCrates then
+		for _, EntID in pairs(EntMods.ACFCrates) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.ACFCrates = nil
 	end
 
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)

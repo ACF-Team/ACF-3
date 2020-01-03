@@ -721,28 +721,42 @@ end
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 	local EntMods =  Ent.EntityMods
 
-	if EntMods.ACFGearboxes then
-		local Gearboxes = EntMods.ACFGearboxes
+	-- Backwards compatibility
+	if EntMods.GearLink then
+		local Entities = EntMods.GearLink.entities
 
-		for _, EntID in ipairs(Gearboxes) do
-			local Gearbox = CreatedEntities[EntID]
-
-			self:Link(Gearbox)
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		Gearboxes = nil
+		EntMods.GearLink = nil
+	end
+
+	-- Backwards compatibility
+	if EntMods.FuelLink then
+		local Entities = EntMods.FuelLink.entities
+
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.FuelLink = nil
+	end
+
+	if EntMods.ACFGearboxes then
+		for _, EntID in ipairs(EntMods.ACFGearboxes) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.ACFGearboxes = nil
 	end
 
 	if EntMods.ACFFuelTanks then
-		local FuelTanks = EntMods.ACFFuelTanks
-
-		for _, EntID in ipairs(FuelTanks) do
-			local Tank = CreatedEntities[EntID]
-
-			self:Link(Tank)
+		for _, EntID in ipairs(EntMods.ACFFuelTanks) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		FuelTanks = nil
+		EntMods.ACFFuelTanks = nil
 	end
 
 	--Wire dupe info

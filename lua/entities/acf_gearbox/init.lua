@@ -775,25 +775,28 @@ end
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 	local EntMods = Ent.EntityMods
 
+	-- Backwards compatibility
+	if EntMods.WheelLink then
+		local Entities = EntMods.WheelLink.entities
+
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.WheelLink = nil
+	end
+
 	if EntMods.ACFWheels then
-		local Wheel
-
 		for _, EntID in ipairs(EntMods.ACFWheels) do
-			Wheel = CreatedEntities[EntID]
-
-			self:Link(Wheel)
+			self:Link(CreatedEntities[EntID])
 		end
 
 		EntMods.ACFWheels = nil
 	end
 
 	if EntMods.ACFGearboxes then
-		local Gearbox
-
 		for _, EntID in ipairs(EntMods.ACFGearboxes) do
-			Gearbox = CreatedEntities[EntID]
-
-			self:Link(Gearbox)
+			self:Link(CreatedEntities[EntID])
 		end
 
 		EntMods.ACFGearboxes = nil
