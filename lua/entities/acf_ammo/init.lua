@@ -13,6 +13,9 @@ util.AddNetworkString("ACF_StopRefillEffect")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+local TimerSimple = timer.Simple
 
 local function Overlay(Ent)
 	local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
@@ -269,7 +272,7 @@ function ENT:Disable()
 	self:UpdateOverlay(true)
 	self:UpdateMass()
 
-	timer.Simple(ACF.IllegalDisableTime, function()
+	TimerSimple(ACF.IllegalDisableTime, function()
 		if IsValid(self) then
 			self:Enable()
 		end
@@ -466,8 +469,8 @@ function ENT:UpdateOverlay(Instant)
 		return
 	end
 
-	if not timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then
-		timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 			if IsValid(self) then
 				Overlay(self)
 			end
@@ -476,9 +479,9 @@ function ENT:UpdateOverlay(Instant)
 end
 
 function ENT:UpdateMass()
-	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
+	TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if IsValid(self) then
 			self.ACF.LegalMass = math.floor(self.EmptyMass + self.AmmoMassMax * (self.Ammo / math.max(self.Capacity, 1)))
 

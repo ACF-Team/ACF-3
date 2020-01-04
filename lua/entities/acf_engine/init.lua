@@ -101,6 +101,10 @@ local insert	  = table.insert
 local remove	  = table.remove
 local Round		  = math.Round
 local max		  = math.max
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+local TimerSimple = timer.Simple
+
 
 local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.Id = Id
@@ -258,7 +262,7 @@ local function SetActive(Entity, Value)
 				Entity.Sound:PlayEx(Volume, Pitch)
 			end
 
-			timer.Simple(engine.TickInterval(), function()
+			TimerSimple(engine.TickInterval(), function()
 				if not IsValid(Entity) then return end
 
 				Entity:CalcRPM()
@@ -348,7 +352,7 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 
 	CheckLegal(Engine)
 
-	timer.Create("ACF Engine Clock " .. Engine:EntIndex(), 3, 0, function()
+	TimerCreate("ACF Engine Clock " .. Engine:EntIndex(), 3, 0, function()
 		if IsValid(Engine) then
 			CheckGearboxes(Engine)
 			CheckDistantFuelTanks(Engine)
@@ -397,7 +401,7 @@ function ENT:Disable()
 
 	self:UpdateOverlay()
 
-	timer.Simple(ACF.IllegalDisableTime, function()
+	TimerSimple(ACF.IllegalDisableTime, function()
 		if IsValid(self) then
 			self:Enable()
 		end
@@ -434,9 +438,9 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:UpdateOutputs()
-	if timer.Exists("ACF Output Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Output Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
+	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
 		local Pitch, Volume = UpdateSmoothRPM(self)
@@ -456,9 +460,9 @@ function ENT:UpdateOutputs()
 end
 
 function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if not IsValid(self) then return end
 
 		local Boost = self.RequiresFuel and ACF.TorqueBoost or 1
@@ -591,8 +595,8 @@ function ENT:CalcRPM()
 	if not self.Active then return end
 
 	local DeltaTime = CurTime() - self.LastThink
-	local FuelTank = GetNextFuelTank(self)
-	local Boost = 1
+	local FuelTank 	= GetNextFuelTank(self)
+	local Boost 	= 1
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
@@ -660,7 +664,7 @@ function ENT:CalcRPM()
 
 	self:UpdateOutputs()
 
-	timer.Simple(engine.TickInterval(), function()
+	TimerSimple(engine.TickInterval(), function()
 		if not IsValid(self) then return end
 
 		self:CalcRPM()

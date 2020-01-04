@@ -10,6 +10,9 @@ include("shared.lua")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+local TimerSimple = timer.Simple
 
 local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	local Percentage = 1 --how full is the tank?
@@ -248,7 +251,7 @@ function ENT:Disable()
 
 	self:UpdateOverlay()
 
-	timer.Simple(ACF.IllegalDisableTime, function()
+	TimerSimple(ACF.IllegalDisableTime, function()
 		if IsValid(self) then
 			self:Enable()
 		end
@@ -282,9 +285,9 @@ function ENT:Unlink(Target)
 end
 
 function ENT:UpdateMass()
-	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
+	TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if not IsValid(self) then return end
 
 		local Fuel = self.FuelType == "Electric" and self.Liters or self.Fuel
@@ -300,9 +303,9 @@ function ENT:UpdateMass()
 end
 
 function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if not IsValid(self) then return end
 
 		local Text
@@ -334,9 +337,9 @@ function ENT:UpdateOverlay()
 end
 
 function ENT:UpdateOutputs()
-	if timer.Exists("ACF Outputs Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Outputs Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
+	TimerCreate("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
 		WireLib.TriggerOutput(self, "Fuel", math.Round(self.Fuel, 2))
