@@ -1,3 +1,7 @@
+local StringFind  = string.find
+local TimerCreate = timer.Create
+local TimerSimple = timer.Simple
+
 function ACF_UpdateVisualHealth(Entity)
 	if Entity.ACF.PrHealth == Entity.ACF.Health then return end
 
@@ -5,7 +9,7 @@ function ACF_UpdateVisualHealth(Entity)
 		ACF_HealthUpdateList = {}
 
 		-- We should send things slowly to not overload traffic.
-		timer.Create("ACF_HealthUpdateList", 1, 1, function()
+		TimerCreate("ACF_HealthUpdateList", 1, 1, function()
 			local Table = {}
 
 			for _, v in pairs(ACF_HealthUpdateList) do
@@ -136,7 +140,7 @@ function ACF_CheckLegal(Entity)
 		return false
 	end
 
-	timer.Simple(math.Rand(1, 3), function()
+	TimerSimple(math.Rand(1, 3), function()
 		if IsValid(Entity) then
 			ACF_CheckLegal(Entity)
 		end
@@ -153,7 +157,7 @@ function ACF_Check(Entity)
 	if not IsValid(PhysObj) or PhysObj:GetMass() <= 0 or Entity:IsWorld() or Entity:IsWeapon() then return false end
 
 	local Class = Entity:GetClass()
-	if Baddies[Class] or string.find(Class, "func_") then return false end
+	if Baddies[Class] or StringFind(Class, "func_") then return false end
 
 	if not Entity.ACF then
 		ACF_Activate(Entity)
