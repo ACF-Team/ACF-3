@@ -478,7 +478,7 @@ end
 function ENT:UpdateMass()
 	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if IsValid(self) then
 			self.ACF.LegalMass = math.floor(self.EmptyMass + self.AmmoMassMax * (self.Ammo / math.max(self.Capacity, 1)))
 

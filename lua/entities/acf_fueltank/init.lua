@@ -284,7 +284,7 @@ end
 function ENT:UpdateMass()
 	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if not IsValid(self) then return end
 
 		local Fuel = self.FuelType == "Electric" and self.Liters or self.Fuel
