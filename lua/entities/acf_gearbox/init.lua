@@ -196,14 +196,14 @@ local function ChangeGear(Entity, Value)
 	if Entity.Gear == Value then return end
 
 	Entity.Gear = Value
-	Entity.GearRatio = (Entity.GearTable[Entity.Gear] or 0) * Entity.GearTable.Final
+	Entity.GearRatio = Entity.GearTable[Value] * Entity.GearTable.Final
 	Entity.ChangeFinished = CurTime() + Entity.SwitchTime
 	Entity.InGear = false
 
 	Entity:EmitSound("buttons/lever7.wav", 250, 100)
 	Entity:UpdateOverlay()
 
-	WireLib.TriggerOutput(Entity, "Current Gear", Entity.Gear)
+	WireLib.TriggerOutput(Entity, "Current Gear", Value)
 	WireLib.TriggerOutput(Entity, "Ratio", Entity.GearRatio)
 end
 
@@ -245,18 +245,20 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		end
 	end
 
-	Entity.GearTable = GearboxData.geartable
-	Entity.GearTable.Final = Data10
-	Entity.GearTable[1] = Data1
-	Entity.GearTable[2] = Data2
-	Entity.GearTable[3] = Data3
-	Entity.GearTable[4] = Data4
-	Entity.GearTable[5] = Data5
-	Entity.GearTable[6] = Data6
-	Entity.GearTable[7] = Data7
-	Entity.GearTable[8] = Data8
-	Entity.GearTable[9] = Data9
-	Entity.GearTable[0] = GearboxData.geartable[0]
+	Entity.GearTable = {
+		[0] = GearboxData.geartable[0],
+		[1] = Data1,
+		[2] = Data2,
+		[3] = Data3,
+		[4] = Data4,
+		[5] = Data5,
+		[6] = Data6,
+		[7] = Data7,
+		[8] = Data8,
+		[9] = Data9,
+		Final = Data10,
+	}
+
 	Entity.Gear0 = Data10
 	Entity.Gear1 = Data1
 	Entity.Gear2 = Data2
@@ -267,7 +269,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	Entity.Gear7 = Data7
 	Entity.Gear8 = Data8
 	Entity.Gear9 = Data9
-	Entity.GearRatio = (Entity.GearTable[0] or 0) * Entity.GearTable.Final
+	Entity.GearRatio = Entity.GearTable[0] * Entity.GearTable.Final
 
 	if Entity.CVT then
 		Entity.TargetMinRPM = Data3
@@ -515,8 +517,6 @@ function ENT:Disable()
 		ChangeGear(self, 0)
 	end
 
-	ChangeGear(self, 0)
-
 	self:UpdateOverlay()
 
 	timer.Simple(ACF.IllegalDisableTime, function()
@@ -606,13 +606,14 @@ function ENT:Calc(InputRPM, InputInertia)
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 
 	if self.CVT and self.Gear == 1 then
-		if self.CVTRatio and self.CVTRatio > 0 then
+		if self.CVTRatio > 0 then
 			self.GearTable[1] = Clamp(self.CVTRatio, 0.01, 1)
 		else
-			self.GearTable[1] = Clamp((InputRPM - self.TargetMinRPM) / ((self.TargetMaxRPM - self.TargetMinRPM) or 1), 0.05, 1)
+			self.GearTable[1] = Clamp((InputRPM - self.TargetMinRPM) / (self.TargetMaxRPM - self.TargetMinRPM), 0.05, 1)
 		end
 
-		self.GearRatio = (self.GearTable[1] or 0) * self.GearTable.Final
+		self.GearRatio = self.GearTable[1] * self.GearTable.Final
+
 		WireLib.TriggerOutput(self, "Ratio", self.GearRatio)
 	end
 
@@ -649,29 +650,25 @@ function ENT:Calc(InputRPM, InputInertia)
 
 	for Wheel, Link in pairs(self.Wheels) do
 		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
+		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
-
-		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		if self.GearRatio ~= 0 and ((InputRPM > 0 and RPM < InputRPM) or (InputRPM < 0 and RPM > InputRPM)) then
 			if self.DoubleDiff then
 				local NTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
-				local Sign = 0
-
-				if self.SteerRate ~= 0 then
-					Sign = self.SteerRate / math.abs(self.SteerRate)
-				end
+				local Sign = self.SteerRate ~= 0 and self.SteerRate / math.abs(self.SteerRate) or 0
+				local DTq, Mult
 
 				if Link.Side == 0 then
-					local DTq = Clamp((self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) - (RPM * Sign))) * InputInertia, -self.MaxTorque, self.MaxTorque)
-
-					Link.ReqTq = NTq + DTq
+					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) - (RPM * Sign))
+					Mult = 1
 				else
-					local DTq = Clamp((self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) + (RPM * Sign))) * InputInertia, -self.MaxTorque, self.MaxTorque)
-
-					Link.ReqTq = NTq - DTq
+					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) + (RPM * Sign))
+					Mult = -1
 				end
+
+				Link.ReqTq = NTq + Clamp(DTq * InputInertia, -self.MaxTorque, self.MaxTorque) * Mult
 			else
 				Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
 			end
@@ -706,16 +703,19 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 
 	for Ent, Link in pairs(self.Wheels) do
 		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
+		local WheelTorque = Link.ReqTq * AvailTq
 
-		ActWheel(Link, Ent, Link.ReqTq * AvailTq, Brake, DeltaTime)
+		ActWheel(Link, Ent, WheelTorque, Brake, DeltaTime)
 
-		ReactTq = ReactTq + Link.ReqTq * AvailTq
+		ReactTq = ReactTq + WheelTorque
 	end
 
-	local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
+	if ReactTq ~= 0 then
+		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 
-	if IsValid(BoxPhys) and ReactTq ~= 0 then
-		BoxPhys:ApplyTorqueCenter(self:GetRight() * Clamp(2 * math.deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
+		if IsValid(BoxPhys) then
+			BoxPhys:ApplyTorqueCenter(self:GetRight() * Clamp(2 * math.deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
+		end
 	end
 
 	self.LastActive = CurTime()
