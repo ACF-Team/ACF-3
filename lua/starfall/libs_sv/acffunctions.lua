@@ -117,7 +117,7 @@ SF.AddHook("postload", function()
 	local vec_metatable = SF.Vectors.Metatable
 	local ents_metatable = SF.Entities.Metatable
 	local ents_methods = SF.Entities.Methods
-	local unwrap = SF.Entities.Unwrap
+	local wrap, unwrap = SF.Entities.Wrap, SF.Entities.Unwrap
 
 	--===============================================================================================--
 	-- General Functions
@@ -336,7 +336,7 @@ SF.AddHook("postload", function()
 		for _, Function in pairs(Sources) do
 			for Entity in pairs(Function(This)) do
 				Count = Count + 1
-				Result[Count] = Entity
+				Result[Count] = wrap(Entity)
 			end
 		end
 
@@ -988,7 +988,7 @@ SF.AddHook("postload", function()
 
 		for Wheel in pairs(GetLinkedWheels(This)) do
 			Count = Count + 1
-			Wheels[Count] = Wheel
+			Wheels[Count] = wrap(Wheel)
 		end
 
 		return Wheels
