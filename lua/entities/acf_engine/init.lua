@@ -232,7 +232,7 @@ end
 local function SetActive(Entity, Value)
 	if Entity.Active == tobool(Value) then return end
 
-	if not Entity.Active then
+	if not Entity.Active then -- Was off, turn on
 		local HasFuel
 
 		if not Entity.RequiresFuel then
@@ -267,6 +267,9 @@ local function SetActive(Entity, Value)
 
 				Entity:CalcRPM()
 			end)
+
+			Entity:UpdateOverlay()
+			Entity:UpdateOutputs()
 		end
 	else
 		Entity.Active = false
@@ -280,10 +283,10 @@ local function SetActive(Entity, Value)
 			Entity.Sound:Stop()
 			Entity.Sound = nil
 		end
-	end
 
-	Entity:UpdateOverlay()
-	Entity:UpdateOutputs()
+		Entity:UpdateOverlay()
+		Entity:UpdateOutputs()
+	end
 end
 
 local Inputs = {
