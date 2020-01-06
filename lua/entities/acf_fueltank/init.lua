@@ -388,6 +388,10 @@ function ENT:Think()
 					self.Fuel = self.Fuel - Exchange
 					Tank.Fuel = Tank.Fuel + Exchange
 
+					if not Tank.Active then
+						Tank:TriggerInput("Active", Tank.Inputs.Active.Value or 1)
+					end
+
 					Tank:UpdateMass()
 					Tank:UpdateOverlay()
 					Tank:UpdateOutputs()
