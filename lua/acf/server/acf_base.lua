@@ -411,6 +411,8 @@ function ACF_GetAllChildren(Ent, Tab)
 
 	local Res = Tab or {}
 
+	if Res[Ent] then return end
+
 	for K in pairs(Ent:GetChildren()) do
 		Res[K] = true
 		ACF_GetAllChildren(K, Res)
