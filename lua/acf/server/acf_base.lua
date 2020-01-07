@@ -157,7 +157,13 @@ function ACF_Check(Entity)
 	if not IsValid(PhysObj) or PhysObj:GetMass() <= 0 or Entity:IsWorld() or Entity:IsWeapon() then return false end
 
 	local Class = Entity:GetClass()
-	if Baddies[Class] or StringFind(Class, "func_") then return false end
+
+	if Baddies[Class] then return false end
+	if StringFind(Class, "func_") then
+		Baddies[Class] = true
+
+		return false
+	end
 
 	if not Entity.ACF then
 		ACF_Activate(Entity)
