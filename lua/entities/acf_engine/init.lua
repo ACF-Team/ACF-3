@@ -383,6 +383,8 @@ ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 --===============================================================================================--
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled      = nil
 	self.DisableReason = nil
 
@@ -397,8 +399,6 @@ function ENT:Enable()
 	SetActive(self, Active)
 
 	self:UpdateOverlay()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -407,12 +407,6 @@ function ENT:Disable()
 	SetActive(self, false) -- Turn off the engine
 
 	self:UpdateOverlay()
-
-	TimerSimple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Update(ArgsTable)

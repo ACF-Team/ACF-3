@@ -328,10 +328,10 @@ ACF.RegisterLinkSource("acf_gun", "Crates")
 --===============================================================================================--
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -340,12 +340,6 @@ function ENT:Disable()
 
 	self:Unload() -- Unload the gun for being a big baddie
 	self:UpdateOverlay()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:GetUser(Input)

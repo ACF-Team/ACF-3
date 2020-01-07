@@ -229,6 +229,8 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
 
@@ -239,8 +241,6 @@ function ENT:Enable()
 	end
 
 	self:UpdateOverlay()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -248,12 +248,6 @@ function ENT:Disable()
 	self.Active = false
 
 	self:UpdateOverlay()
-
-	TimerSimple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Link(Target)

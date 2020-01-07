@@ -248,6 +248,8 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 end
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
 
@@ -259,8 +261,6 @@ function ENT:Enable()
 
 	self:UpdateOverlay(true)
 	self:UpdateMass()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -269,12 +269,6 @@ function ENT:Disable()
 
 	self:UpdateOverlay(true)
 	self:UpdateMass()
-
-	TimerSimple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Update(ArgsTable)

@@ -491,6 +491,8 @@ ACF.RegisterLinkSource("acf_gearbox", "Wheels")
 --===============================================================================================--
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
 
@@ -503,8 +505,6 @@ function ENT:Enable()
 	self.OldGear = nil
 
 	self:UpdateOverlay()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -518,12 +518,6 @@ function ENT:Disable()
 	end
 
 	self:UpdateOverlay()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Update(ArgsTable)
