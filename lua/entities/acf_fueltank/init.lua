@@ -94,12 +94,10 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 
 	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
 
-	Tank.Owner = Owner
-	Tank.SpecialHealth = true
-	Tank.SpecialDamage = true
-	Tank.Engines = {}
-	Tank.Active = true
-	Tank.Leaking = 0
+	Tank.Owner     = Owner
+	Tank.Engines   = {}
+	Tank.Active    = true
+	Tank.Leaking   = 0
 	Tank.CanUpdate = true
 	Tank.LastThink = 0
 

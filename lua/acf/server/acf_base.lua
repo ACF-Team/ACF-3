@@ -41,7 +41,7 @@ function ACF_Activate(Entity, Recalc)
 	Entity.ACF = Entity.ACF or {}
 	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
 
-	if Entity.SpecialHealth then
+	if Entity.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
@@ -188,7 +188,7 @@ function ACF_Damage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type)
 		}
 	end
 
-	if Entity.SpecialDamage then
+	if Entity.ACF_OnDamage then
 		return Entity:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
 	elseif Activated == "Prop" then
 		return ACF_PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)

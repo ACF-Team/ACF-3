@@ -146,8 +146,6 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Crate.Size			= Size
 	Crate.Weapons		= {}
 	Crate.Load			= true -- Crates should be ready to load by default
-	Crate.SpecialHealth	= true -- Will call self:ACF_Activate
-	Crate.SpecialDamage = true -- Will call self:ACF_OnDamage
 	Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
 	Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading", "On Fire" })
 	Crate.CanUpdate		= true

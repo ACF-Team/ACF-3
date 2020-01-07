@@ -344,8 +344,6 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 
 	Engine.Owner = Owner
 	Engine.Model = EngineData.model
-	Engine.SpecialHealth = true
-	Engine.SpecialDamage = true
 	Engine.CanUpdate = true
 	Engine.Active = false
 	Engine.Gearboxes = {}
@@ -547,8 +545,13 @@ end
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = Type == "HEAT" and ACF.HEATMulEngine or 1 --Heat penetrators deal bonus damage to engines
+	local Res = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor)
 
-	return ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor)
+	--adjusting performance based on damage
+	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+
+	return Res
 end
 
 -- specialized calcmassratio for engines
@@ -632,9 +635,6 @@ function ENT:CalcRPM()
 		self.FuelUsage = 0
 	end
 
-	--adjusting performance based on damage
-	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	-- Calculate the current torque from flywheel RPM
 	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
 
