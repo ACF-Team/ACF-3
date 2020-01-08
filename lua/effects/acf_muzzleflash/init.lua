@@ -10,7 +10,7 @@ function EFFECT:Init(data)
 	local Propellant = data:GetScale()
 	local ReloadTime = data:GetMagnitude()
 	local Class = Gun:GetNWString("Class")
-	local ClassData = list.Get("ACFClasses").GunClass[Class]
+	local ClassData = ACF.Classes.GunClass[Class]
 	local Attachment = "muzzle"
 	local LongBarrel = ClassData.LongBarrel
 

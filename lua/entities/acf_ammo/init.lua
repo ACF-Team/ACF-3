@@ -13,16 +13,34 @@ util.AddNetworkString("ACF_StopRefillEffect")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+
+local function Overlay(Ent)
+	local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
+	local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
+	local Status
+
+	if Ent.DisableReason then
+		Status = "Disabled: " .. Ent.DisableReason
+	elseif next(Ent.Weapons) then
+		Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
+	else
+		Status = "Not linked to a weapon!"
+	end
+
+	Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity))
+end
 
 local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
-	local GunData = list.Get("ACFEnts").Guns[Data1]
+	local GunData = ACF.Weapons.Guns[Data1]
 
 	if not GunData then
 		Entity:Remove()
 		return
 	end
 
-	local GunClass = list.Get("ACFClasses").GunClass[GunData.gunclass]
+	local GunClass = ACF.Classes.GunClass[GunData.gunclass]
 
 	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
 	Entity.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
@@ -127,8 +145,6 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Crate.Size			= Size
 	Crate.Weapons		= {}
 	Crate.Load			= true -- Crates should be ready to load by default
-	Crate.SpecialHealth	= true -- Will call self:ACF_Activate
-	Crate.SpecialDamage = true -- Will call self:ACF_OnDamage
 	Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
 	Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading", "On Fire" })
 	Crate.CanUpdate		= true
@@ -150,6 +166,7 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Crate.ACF.LegalMass = math.floor(Mass)
 
 	CheckLegal(Crate)
+	Crate:UpdateOverlay(true)
 
 	return Crate
 end
@@ -230,6 +247,8 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 end
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
 
@@ -239,24 +258,16 @@ function ENT:Enable()
 		self.Load = true
 	end
 
-	self:UpdateOverlay()
+	self:UpdateOverlay(true)
 	self:UpdateMass()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
 	self.Disabled = true
 	self.Load     = false
 
-	self:UpdateOverlay()
+	self:UpdateOverlay(true)
 	self:UpdateMass()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Update(ArgsTable)
@@ -275,7 +286,7 @@ function ENT:Update(ArgsTable)
 
 		Message = "New ammo type loaded, crate unlinked."
 	else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
-		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]] or {}
+		local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]]
 
 		for Gun in pairs(self.Weapons) do
 			if table.HasValue(Blacklist, Gun.Class) then
@@ -447,32 +458,25 @@ function ENT:Consume()
 	WireLib.TriggerOutput(self, "Ammo", self.Ammo)
 end
 
-function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if IsValid(self) then
-			local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-			local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
-			local Status
-
-			if self.DisableReason then
-				Status = "Disabled: " .. self.DisableReason
-			elseif next(self.Weapons) then
-				Status = self.Load and "Providing Ammo" or (self.Ammo ~= 0 and "Idle" or "Empty")
-			else
-				Status = "Not linked to a weapon!"
+	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
 			end
-
-			self:SetOverlayText(string.format(Text, Status, self.BulletData.Type .. Tracer, self.Ammo, self.Capacity))
-		end
-	end)
+		end)
+	end
 end
 
 function ENT:UpdateMass()
-	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if IsValid(self) then
 			self.ACF.LegalMass = math.floor(self.EmptyMass + self.AmmoMassMax * (self.Ammo / math.max(self.Capacity, 1)))
 

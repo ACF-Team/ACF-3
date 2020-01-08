@@ -3,92 +3,96 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
-	if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
-	if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-	if Engine.FuelType ~= "Multifuel" and Engine.FuelType ~= Target.FuelType then return false, "Cannot link because fuel type is incompatible." end
-	if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+--===============================================================================================--
+-- Engine class setup
+--===============================================================================================--
+do
+	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
+		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
+		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
+		if Engine.FuelType ~= "Multifuel" and Engine.FuelType ~= Target.FuelType then return false, "Cannot link because fuel type is incompatible." end
+		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
 
-	Engine.FuelTanks[Target] = true
-	Target.Engines[Engine] = true
+		Engine.FuelTanks[Target] = true
+		Target.Engines[Engine] = true
 
-	Engine:UpdateOverlay()
-	Target:UpdateOverlay()
+		Engine:UpdateOverlay()
+		Target:UpdateOverlay()
 
-	return true, "Engine linked successfully!"
-end)
+		return true, "Engine linked successfully!"
+	end)
 
-ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
-	if Engine.FuelTanks[Target] or Target.Engines[Engine] then
-		Engine.FuelTanks[Target] = nil
+	ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
+		if Engine.FuelTanks[Target] or Target.Engines[Engine] then
+			Engine.FuelTanks[Target] = nil
+			Target.Engines[Engine]	 = nil
+
+			Engine:UpdateOverlay()
+			Target:UpdateOverlay()
+
+			return true, "Engine unlinked successfully!"
+		end
+
+		return false, "This engine is not linked to this fuel tank."
+	end)
+
+	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
+		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+
+		-- make sure the angle is not excessive
+		local InPos = Target:LocalToWorld(Target.In)
+		local OutPos = Engine:LocalToWorld(Engine.Out)
+		local Direction
+
+		if Engine.IsTrans then
+			Direction = -Engine:GetRight()
+		else
+			Direction = Engine:GetForward()
+		end
+
+		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+			return false, "Cannot link due to excessive driveshaft angle!"
+		end
+
+		local Rope
+
+		if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
+			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
+		end
+
+		local Link = {
+			Rope = Rope,
+			RopeLen = (OutPos - InPos):Length(),
+			ReqTq = 0
+		}
+
+		Engine.Gearboxes[Target] = Link
+		Target.Engines[Engine]	 = true
+
+		Engine:UpdateOverlay()
+		Target:UpdateOverlay()
+
+		return true, "Engine linked successfully!"
+	end)
+
+	ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
+		if not Engine.Gearboxes[Target] then
+			return false, "This engine is not linked to this gearbox."
+		end
+
+		local Rope = Engine.Gearboxes[Target].Rope
+
+		if IsValid(Rope) then Rope:Remove() end
+
+		Engine.Gearboxes[Target] = nil
 		Target.Engines[Engine]	 = nil
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
 		return true, "Engine unlinked successfully!"
-	end
-
-	return false, "This engine is not linked to this fuel tank."
-end)
-
-ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
-	if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
-
-	-- make sure the angle is not excessive
-	local InPos = Target:LocalToWorld(Target.In)
-	local OutPos = Engine:LocalToWorld(Engine.Out)
-	local Direction
-
-	if Engine.IsTrans then
-		Direction = -Engine:GetRight()
-	else
-		Direction = Engine:GetForward()
-	end
-
-	if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
-		return false, "Cannot link due to excessive driveshaft angle!"
-	end
-
-	local Rope
-
-	if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
-		Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
-	end
-
-	local Link = {
-		Rope = Rope,
-		RopeLen = (OutPos - InPos):Length(),
-		ReqTq = 0
-	}
-
-	Engine.Gearboxes[Target] = Link
-	Target.Engines[Engine]	 = true
-
-	Engine:UpdateOverlay()
-	Target:UpdateOverlay()
-
-	return true, "Engine linked successfully!"
-end)
-
-ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
-	if not Engine.Gearboxes[Target] then
-		return false, "This engine is not linked to this gearbox."
-	end
-
-	local Rope = Engine.Gearboxes[Target].Rope
-
-	if IsValid(Rope) then Rope:Remove() end
-
-	Engine.Gearboxes[Target] = nil
-	Target.Engines[Engine]	 = nil
-
-	Engine:UpdateOverlay()
-	Target:UpdateOverlay()
-
-	return true, "Engine unlinked successfully!"
-end)
-
+	end)
+end
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -101,31 +105,33 @@ local insert	  = table.insert
 local remove	  = table.remove
 local Round		  = math.Round
 local max		  = math.max
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+local TimerSimple = timer.Simple
+local TimerStop   = timer.Stop
 
 local function UpdateEngineData(Entity, Id, EngineData)
-	Entity.Id = Id
-	Entity.Name = EngineData.name
-	Entity.ShortName = Id
-	Entity.EntType = EngineData.category
-	Entity.SoundPath = EngineData.sound
-	Entity.SoundPitch = EngineData.pitch or 1
-	Entity.Mass = EngineData.weight
-	Entity.PeakTorque = EngineData.torque
-	Entity.PeakTorqueHeld = EngineData.torque
-	Entity.IdleRPM = EngineData.idlerpm
-	Entity.PeakMinRPM = EngineData.peakminrpm
-	Entity.PeakMaxRPM = EngineData.peakmaxrpm
-	Entity.LimitRPM = EngineData.limitrpm
-	Entity.Inertia = EngineData.flywheelmass * 3.1416 ^ 2
-	Entity.IsElectric = EngineData.iselec
+	Entity.Id 				= Id
+	Entity.Name 			= EngineData.name
+	Entity.ShortName 		= Id
+	Entity.EntType 			= EngineData.category
+	Entity.SoundPath		= EngineData.sound
+	Entity.SoundPitch 		= EngineData.pitch or 1
+	Entity.Mass 			= EngineData.weight
+	Entity.PeakTorque 		= EngineData.torque
+	Entity.PeakTorqueHeld 	= EngineData.torque
+	Entity.IdleRPM 			= EngineData.idlerpm
+	Entity.PeakMinRPM 		= EngineData.peakminrpm
+	Entity.PeakMaxRPM 		= EngineData.peakmaxrpm
+	Entity.LimitRPM 		= EngineData.limitrpm
+	Entity.Inertia 			= EngineData.flywheelmass * 3.1416 ^ 2
+	Entity.IsElectric 		= EngineData.iselec
 	Entity.FlywheelOverride = EngineData.flywheeloverride
-	Entity.IsTrans = EngineData.istrans -- driveshaft outputs to the side
-	Entity.FuelType = EngineData.fuel or "Petrol"
-	Entity.EngineType = EngineData.enginetype or "GenericPetrol"
-	Entity.RequiresFuel = EngineData.requiresfuel
-	Entity.TorqueMult = Entity.TorqueMult or 1
-	Entity.TorqueScale = ACF.TorqueScale[Entity.EngineType]
-	Entity.FuelTank = nil
+	Entity.IsTrans 			= EngineData.istrans -- driveshaft outputs to the side
+	Entity.FuelType 		= EngineData.fuel or "Petrol"
+	Entity.EngineType 		= EngineData.enginetype or "GenericPetrol"
+	Entity.RequiresFuel 	= EngineData.requiresfuel
+	Entity.TorqueScale 		= ACF.TorqueScale[Entity.EngineType]
 
 	--calculate boosted peak kw
 	if Entity.EngineType == "Turbine" or Entity.EngineType == "Electric" then
@@ -228,21 +234,23 @@ end
 local function SetActive(Entity, Value)
 	if Entity.Active == tobool(Value) then return end
 
-	if not Entity.Active then
-		local HasFuel
+	if not Entity.Active then -- Was off, turn on
+		-- Check fuel requirement --
+		local ShouldActivate
 
 		if not Entity.RequiresFuel then
-			HasFuel = true
+			ShouldActivate = true
 		else
 			for Tank in pairs(Entity.FuelTanks) do
 				if Tank.Active and Tank.Fuel > 0 then
-					HasFuel = true
+					ShouldActivate = true
 					break
 				end
 			end
 		end
+		----------------------------
 
-		if HasFuel then
+		if ShouldActivate then
 			Entity.Active = true
 
 			Entity:CalcMassRatio()
@@ -258,10 +266,24 @@ local function SetActive(Entity, Value)
 				Entity.Sound:PlayEx(Volume, Pitch)
 			end
 
-			timer.Simple(engine.TickInterval(), function()
+			TimerSimple(engine.TickInterval(), function()
 				if not IsValid(Entity) then return end
 
 				Entity:CalcRPM()
+			end)
+
+			Entity:UpdateOverlay()
+			Entity:UpdateOutputs()
+
+			TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
+				if IsValid(Entity) then
+					CheckGearboxes(Entity)
+					CheckDistantFuelTanks(Entity)
+
+					Entity:CalcMassRatio()
+				else
+					TimerStop("ACF Engine Clock " .. Entity:EntIndex())
+				end
 			end)
 		end
 	else
@@ -276,10 +298,12 @@ local function SetActive(Entity, Value)
 			Entity.Sound:Stop()
 			Entity.Sound = nil
 		end
-	end
 
-	Entity:UpdateOverlay()
-	Entity:UpdateOutputs()
+		Entity:UpdateOverlay()
+		Entity:UpdateOutputs()
+
+		TimerStop("ACF Engine Clock " .. Entity:EntIndex())
+	end
 end
 
 local Inputs = {
@@ -296,7 +320,7 @@ local Inputs = {
 function MakeACF_Engine(Owner, Pos, Angle, Id)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
-	local EngineData = list.Get("ACFEnts").Mobility[Id]
+	local EngineData = ACF.Weapons.Mobility[Id]
 
 	if not EngineData then return end
 
@@ -320,8 +344,6 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 
 	Engine.Owner = Owner
 	Engine.Model = EngineData.model
-	Engine.SpecialHealth = true
-	Engine.SpecialDamage = true
 	Engine.CanUpdate = true
 	Engine.Active = false
 	Engine.Gearboxes = {}
@@ -348,17 +370,6 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 
 	CheckLegal(Engine)
 
-	timer.Create("ACF Engine Clock " .. Engine:EntIndex(), 3, 0, function()
-		if IsValid(Engine) then
-			CheckGearboxes(Engine)
-			CheckDistantFuelTanks(Engine)
-
-			Engine:CalcMassRatio()
-		else
-			timer.Stop("ACF Engine Clock " .. Engine:EntIndex())
-		end
-	end)
-
 	return Engine
 end
 
@@ -372,6 +383,8 @@ ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 --===============================================================================================--
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled      = nil
 	self.DisableReason = nil
 
@@ -386,8 +399,6 @@ function ENT:Enable()
 	SetActive(self, Active)
 
 	self:UpdateOverlay()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -396,12 +407,6 @@ function ENT:Disable()
 	SetActive(self, false) -- Turn off the engine
 
 	self:UpdateOverlay()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Update(ArgsTable)
@@ -409,7 +414,7 @@ function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that engine!" end
 
 	local Id = ArgsTable[4] -- Argtable[4] is the engine ID
-	local EngineData = list.Get("ACFEnts").Mobility[Id]
+	local EngineData = ACF.Weapons.Mobility[Id]
 
 	if not EngineData then return false, "Invalid engine type!" end
 	if EngineData.model ~= self.Model then return false, "The new engine must have the same model!" end
@@ -434,9 +439,9 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:UpdateOutputs()
-	if timer.Exists("ACF Output Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Output Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
+	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
 		local Pitch, Volume = UpdateSmoothRPM(self)
@@ -456,9 +461,9 @@ function ENT:UpdateOutputs()
 end
 
 function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if not IsValid(self) then return end
 
 		local Boost = self.RequiresFuel and ACF.TorqueBoost or 1
@@ -534,13 +539,18 @@ end
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = Type == "HEAT" and ACF.HEATMulEngine or 1 --Heat penetrators deal bonus damage to engines
+	local Res = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor)
 
-	return ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor)
+	--adjusting performance based on damage
+	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+
+	return Res
 end
 
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio()
-	local PhysMass = 0
+	local PhysMass 	= 0
 	local TotalMass = 0
 	local Physical, Parented = ACF_GetEnts(self)
 
@@ -551,13 +561,13 @@ function ENT:CalcMassRatio()
 			local Mass = Phys:GetMass()
 
 			TotalMass = TotalMass + Mass
-			PhysMass = PhysMass + Mass
+			PhysMass  = PhysMass + Mass
 		end
 	end
 
 	for K in pairs(Parented) do
 		if not Physical[K] then
-			local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
+			local Phys = K:GetPhysicsObject()
 
 			if IsValid(Phys) then
 				TotalMass = TotalMass + Phys:GetMass()
@@ -591,8 +601,8 @@ function ENT:CalcRPM()
 	if not self.Active then return end
 
 	local DeltaTime = CurTime() - self.LastThink
-	local FuelTank = GetNextFuelTank(self)
-	local Boost = 1
+	local FuelTank 	= GetNextFuelTank(self)
+	local Boost 	= 1
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
@@ -619,9 +629,6 @@ function ENT:CalcRPM()
 		self.FuelUsage = 0
 	end
 
-	--adjusting performance based on damage
-	self.TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
-	self.PeakTorque = self.PeakTorqueHeld * self.TorqueMult
 	-- Calculate the current torque from flywheel RPM
 	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
 
@@ -660,7 +667,7 @@ function ENT:CalcRPM()
 
 	self:UpdateOutputs()
 
-	timer.Simple(engine.TickInterval(), function()
+	TimerSimple(engine.TickInterval(), function()
 		if not IsValid(self) then return end
 
 		self:CalcRPM()
@@ -721,28 +728,42 @@ end
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 	local EntMods =  Ent.EntityMods
 
-	if EntMods.ACFGearboxes then
-		local Gearboxes = EntMods.ACFGearboxes
+	-- Backwards compatibility
+	if EntMods.GearLink then
+		local Entities = EntMods.GearLink.entities
 
-		for _, EntID in ipairs(Gearboxes) do
-			local Gearbox = CreatedEntities[EntID]
-
-			self:Link(Gearbox)
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		Gearboxes = nil
+		EntMods.GearLink = nil
+	end
+
+	-- Backwards compatibility
+	if EntMods.FuelLink then
+		local Entities = EntMods.FuelLink.entities
+
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.FuelLink = nil
+	end
+
+	if EntMods.ACFGearboxes then
+		for _, EntID in ipairs(EntMods.ACFGearboxes) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.ACFGearboxes = nil
 	end
 
 	if EntMods.ACFFuelTanks then
-		local FuelTanks = EntMods.ACFFuelTanks
-
-		for _, EntID in ipairs(FuelTanks) do
-			local Tank = CreatedEntities[EntID]
-
-			self:Link(Tank)
+		for _, EntID in ipairs(EntMods.ACFFuelTanks) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		FuelTanks = nil
+		EntMods.ACFFuelTanks = nil
 	end
 
 	--Wire dupe info

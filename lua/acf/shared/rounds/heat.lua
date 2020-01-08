@@ -1,9 +1,9 @@
-ACF.AmmoBlacklist.HEATFS = {"MO", "SL", "C", "HW", "AC", "SC", "SA", "MG", "AL", "RAC", "GL", "HMG", "AAM", "ARTY", "ASM", "BOMB", "GBU", "POD", "SAM", "UAR", "FFAR", "FGL"}
+ACF.AmmoBlacklist.HEAT = {"MG", "HMG", "RAC", "AC", "SL", "SB"}
 local Round = {}
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
-Round.name = "High Explosive Anti-Tank Fin Stabilized (HEAT-FS)" --Human readable name
+Round.name = "High Explosive Anti-Tank (HEAT)" --Human readable name
 Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
-Round.desc = "HEAT, but fin stabilized with a fixed minimum propellant charge. Smoothbores only."
+Round.desc = "A shell with a shaped charge.  When the round detonates, the explosive energy is focused into driving a small molten metal penetrator into the victim with extreme force, though this results in reduced damage from the explosion itself.  Multiple layers of armor will dissipate the penetrator quickly."
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -43,14 +43,13 @@ function Round.convert(_, PlayerData)
 	local GUIData = {}
 
 	if not PlayerData.PropLength then
-		PlayerData.PropLength = Data.Caliber * 3.75
+		PlayerData.PropLength = 0
 	end
 
 	if not PlayerData.ProjLength then
 		PlayerData.ProjLength = 0
 	end
 
-	--PlayerData.PropLength = math.min(PlayerData.PropLength, PlayerData.ProjLength *2)
 	PlayerData.Data5 = math.max(PlayerData.Data5 or 0, 0)
 
 	if not PlayerData.Data6 then
@@ -90,12 +89,13 @@ function Round.convert(_, PlayerData)
 	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity / 1450
 	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 7.9 / 1000 + Data.FillerMass + ConeVol * 7.9 / 1000
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
+
 	--Let's calculate the actual HEAT slug
 	Data.SlugMass = ConeVol * 7.9 / 1000
 	local Rad = math.rad(Data.ConeAng / 2)
 	Data.SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(Rad) * 0.5 + math.cos(Rad) * 1.5) / 2
 	local SlugFrArea = 3.1416 * (Data.SlugCaliber / 2) ^ 2
-	Data.SlugPenArea = (SlugFrArea ^ ACF.PenAreaMod) / 1.25
+	Data.SlugPenArea = SlugFrArea ^ ACF.PenAreaMod
 	Data.SlugDragCoef = ((SlugFrArea / 10000) / Data.SlugMass)
 	Data.SlugRicochet = 500 --Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	-- these are only for compatibility with other stuff. it's recalculated when the round is detonated
@@ -105,7 +105,7 @@ function Round.convert(_, PlayerData)
 	--Random bullshit left
 	Data.CasingMass = Data.ProjMass - Data.FillerMass - ConeVol * 7.9 / 1000
 	Data.ShovePower = 0.1
-	Data.PenArea = (Data.FrArea ^ ACF.PenAreaMod)
+	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
 	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass)
 	Data.LimitVel = 100 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
@@ -149,7 +149,7 @@ function Round.getDisplayData(Data)
 end
 
 function Round.network(Crate, BulletData)
-	Crate:SetNWString("AmmoType", "HEATFS")
+	Crate:SetNWString("AmmoType", "HEAT")
 	Crate:SetNWString("AmmoID", BulletData.Id)
 	Crate:SetNWFloat("Caliber", BulletData.Caliber)
 	Crate:SetNWFloat("ProjMass", BulletData.ProjMass)
@@ -176,6 +176,7 @@ function Round.detonate(_, Bullet, HitPos, HitNormal)
 	local Crushed, HEATFillerMass, BoomFillerMass = Round.CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
 	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
 	if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
+
 	Bullet.Detonated = true
 	Bullet.InitTime = SysTime()
 	Bullet.Flight = Bullet.Flight + Bullet.Flight:GetNormalized() * Round.CalcSlugMV(Bullet, HEATFillerMass) * 39.37
@@ -306,7 +307,7 @@ function Round.ricocheteffect(_, Bullet)
 end
 
 function Round.guicreate(Panel, Table)
-	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.HEATFS)
+	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.HEAT)
 	acfmenupanel:CPanelText("BonusDisplay", "")
 	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "") --Total round length (Name, Desc)
@@ -327,7 +328,7 @@ end
 function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
-	PlayerData.Type = "HEATFS" --Hardcoded, match ACFRoundTypes table index
+	PlayerData.Type = "HEAT" --Hardcoded, match ACFRoundTypes table index
 	PlayerData.PropLength = acfmenupanel.AmmoData.PropLength --PropLength slider
 	PlayerData.ProjLength = acfmenupanel.AmmoData.ProjLength --ProjLength slider
 	PlayerData.Data5 = acfmenupanel.AmmoData.FillerVol
@@ -350,7 +351,7 @@ function Round.guiupdate(Panel)
 	local vol = ACF.Weapons.Ammo[acfmenupanel.AmmoData["Id"]].volume
 	local Cap, CapMul, RoFMul = ACF_CalcCrateStats(vol, Data.RoundVolume)
 	acfmenupanel:CPanelText("BonusDisplay", "Crate info: +" .. (math.Round((CapMul - 1) * 100, 1)) .. "% capacity, +" .. (math.Round((RoFMul - 1) * -100, 1)) .. "% RoF\nContains " .. Cap .. " rounds")
-	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength + (Data.Caliber * 3.75), Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
+	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ConeAng", Data.ConeAng, Data.MinConeAng, Data.MaxConeAng, 0, "Crush Cone Angle", "") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "HE Filler Volume", "HE Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
@@ -369,4 +370,4 @@ function Round.guiupdate(Panel)
 	acfmenupanel:CPanelText("SlugDisplay", "Penetrator Mass : " .. (math.floor(Data.SlugMassUsed * 10000) / 10) .. " g \n Penetrator Caliber : " .. (math.floor(Data.SlugCaliber * 100) / 10) .. " mm \n Penetrator Velocity : " .. math.floor(Data.MuzzleVel + Data.SlugMV) .. " m/s \n Penetrator Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
-list.Set("ACFRoundTypes", "HEATFS", Round) --Set the round properties
+ACF.RoundTypes.HEAT = Round --Set the round properties

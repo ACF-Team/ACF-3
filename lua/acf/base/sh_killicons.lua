@@ -24,7 +24,6 @@
 	attached and if so to send its ACF class.
 
 ------------------------------------------------------------------------------]]
-AddCSLuaFile()
 
 if SERVER and ACF.EnableKillicons then
 	util.AddNetworkString( "ACF_PlayerKilledNPC" )

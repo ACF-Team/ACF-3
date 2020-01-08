@@ -1,7 +1,6 @@
 --ACF missile list.
 --Obviously none of this is balanced yet.
 
-AddCSLuaFile("acf/shared/acfmissilelist.lua")
 
 local RackTable = {}
 
@@ -73,7 +72,7 @@ local Minipod = {}
 	end
 RackTable["minipod"] = Minipod
 
-list.Set( "ACFEnts", "Missiles", RackTable )
+ACF.Weapons.Missiles = RackTable
 
 -- missile list
 
@@ -200,4 +199,4 @@ local Paveway = {}
 		Paveway.mechanics.guidanceweight = 1
 Missiles["paveway"] = Paveway
 
-list.Set( "ACFClasses", "MissileTypes", Missiles )
+ACF.Classes.MissileTypes = Missiles

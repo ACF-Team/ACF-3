@@ -5,7 +5,7 @@ function PANEL:Init()
 	--Weapon Select
 	self.WeaponSelect = vgui.Create("DTree", self)
 	self.WeaponData = ACF.Weapons
-	local Classes = list.Get("ACFClasses")
+	local Classes = ACF.Classes
 	self.Classes = {}
 
 	for ID, Table in pairs(Classes) do
@@ -19,7 +19,7 @@ function PANEL:Init()
 		table.sort(self.Classes[ID], function(a, b) return a.id < b.id end)
 	end
 
-	local WeaponDisplay = list.Get("ACFEnts")
+	local WeaponDisplay = ACF.Weapons
 	self.WeaponDisplay = {}
 
 	for ID, Table in pairs(WeaponDisplay) do
@@ -58,7 +58,7 @@ function PANEL:Init()
 	end
 
 	HomeNode.Icon:SetImage("icon16/newspaper.png")
-	local RoundAttribs = list.Get("ACFRoundTypes")
+	local RoundAttribs = ACF.RoundTypes
 	self.RoundAttribs = {}
 
 	for ID, Table in pairs(RoundAttribs) do

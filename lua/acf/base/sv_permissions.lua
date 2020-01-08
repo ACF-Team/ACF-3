@@ -1,5 +1,4 @@
 -- This file defines damage permission with all ACF weaponry
-ACF = ACF or {}
 ACF.Permissions = {}
 local this = ACF.Permissions
 --TODO: make player-customizable
@@ -101,7 +100,7 @@ end
 
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
 	if not getMapSZs() then
-		print("!!!!!!!!!!!!!!!!!!\nWARNING: Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt!  Safezones will not be restored this time.\n!!!!!!!!!!!!!!!!!!")
+		print("Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt!  Safezones will not be restored this time.")
 	end
 end)
 
@@ -369,39 +368,6 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 	end
 end)
 
-concommand.Add("ACF_ReloadPermissionModes", function(ply)
-	local validply = IsValid(ply)
-
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
-	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
-
-		return false
-	else
-		if not aaa_IncludeHere then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: folder-loading function is not available.")
-
-			return false
-		end
-
-		aaa_IncludeHere("ACF/server/permissionmodes")
-		local mode = table.KeyFromValue(this.Modes, this.DamagePermission)
-
-		if not mode then
-			this.DamagePermission = function() end
-			hook.Call("ACF_ProtectionModeChanged", GAMEMODE, "default", nil)
-			mode = "default"
-		end
-
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
-
-		return true
-	end
-end)
-
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
@@ -430,22 +396,27 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	this.ModeDescs[name] = desc
 	this.ModeThinks[name] = think or function() end
 	this.DefaultCanDamage = defaultaction or false
-	print("ACF: Registered damage permission mode \"" .. name .. "\"!")
 	local DPM = LoadMapDPM()
 
 	if DPM ~= nil then
 		if DPM == name then
-			print("ACF: Found default permission mode: " .. DPM)
-			print("ACF: Setting permission mode to: " .. name)
 			this.DamagePermission = this.Modes[name]
 			this.DefaultPermission = name
+
+			timer.Simple(1, function()
+				print("ACF: Found default permission mode: " .. DPM)
+				print("ACF: Setting permission mode to: " .. name)
+			end)
 		end
 	else
 		if default then
-			print("ACF: Map does not have default permission set, using default")
-			print("ACF: Setting permission mode to: " .. name)
 			this.DamagePermission = this.Modes[name]
 			this.DefaultPermission = name
+
+			timer.Simple(1, function()
+				print("ACF: Map does not have default permission set, using default")
+				print("ACF: Setting permission mode to: " .. name)
+			end)
 		end
 	end
 	--Old method - can break on rare occasions!
@@ -639,17 +610,10 @@ end
 hook.Add("ACF_ProtectionModeChanged", "ACF_ResendPermissionsOnChanged", this.ResendPermissionsOnChanged)
 
 -- -- -- -- -- Initial DP mode load -- -- -- -- --
-if not aaa_IncludeHere then
+local m = table.KeyFromValue(this.Modes, this.DamagePermission)
+
+if not m then
 	this.DamagePermission = function() end
 	hook.Call("ACF_ProtectionModeChanged", GAMEMODE, "default", nil)
 	mode = "default"
-else
-	aaa_IncludeHere("ACF/server/permissionmodes")
-	local m = table.KeyFromValue(this.Modes, this.DamagePermission)
-
-	if not m then
-		this.DamagePermission = function() end
-		hook.Call("ACF_ProtectionModeChanged", GAMEMODE, "default", nil)
-		mode = "default"
-	end
 end

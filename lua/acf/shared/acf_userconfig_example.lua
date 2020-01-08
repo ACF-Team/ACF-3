@@ -8,11 +8,6 @@
 
 ]]--
 
--- IMPORTANT: AddCSLuaFile is required!  Do not remove it.
-AddCSLuaFile()
-
-
-
 -- Some example settings are below.  They enable damage protection, double gun accuracy, and make shots more likely to be accurate.
 -- There are more settings like this.  Find them all in lua/autorun/shared/acf_globals.lua
 

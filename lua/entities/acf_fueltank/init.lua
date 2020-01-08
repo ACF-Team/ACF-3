@@ -10,6 +10,8 @@ include("shared.lua")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
 
 local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	local Percentage = 1 --how full is the tank?
@@ -69,7 +71,7 @@ local Inputs = {
 function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
-	local FuelData = list.Get("ACFEnts").FuelTanks[Data1]
+	local FuelData = ACF.Weapons.FuelTanks[Data1]
 
 	if not FuelData then return end
 
@@ -91,12 +93,10 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 
 	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
 
-	Tank.Owner = Owner
-	Tank.SpecialHealth = true
-	Tank.SpecialDamage = true
-	Tank.Engines = {}
-	Tank.Active = true
-	Tank.Leaking = 0
+	Tank.Owner     = Owner
+	Tank.Engines   = {}
+	Tank.Active    = true
+	Tank.Leaking   = 0
 	Tank.CanUpdate = true
 	Tank.LastThink = 0
 
@@ -207,7 +207,7 @@ end
 function ENT:Update(ArgsTable)
 	if ArgsTable[1] ~= self.Owner then return false, "You don't own that fuel tank!" end
 
-	local FuelData = list.Get("ACFEnts").FuelTanks[ArgsTable[5]]
+	local FuelData = ACF.Weapons.FuelTanks[ArgsTable[5]]
 
 	if not FuelData then return false, "Invalid fuel tank type!" end
 	if FuelData.model ~= self.Model then return false, "The new fuel tank must have the same model!" end
@@ -228,6 +228,8 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
 
@@ -238,8 +240,6 @@ function ENT:Enable()
 	end
 
 	self:UpdateOverlay()
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -247,12 +247,6 @@ function ENT:Disable()
 	self.Active = false
 
 	self:UpdateOverlay()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:Link(Target)
@@ -282,9 +276,9 @@ function ENT:Unlink(Target)
 end
 
 function ENT:UpdateMass()
-	if timer.Exists("ACF Mass Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 		if not IsValid(self) then return end
 
 		local Fuel = self.FuelType == "Electric" and self.Liters or self.Fuel
@@ -300,9 +294,9 @@ function ENT:UpdateMass()
 end
 
 function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 		if not IsValid(self) then return end
 
 		local Text
@@ -334,9 +328,9 @@ function ENT:UpdateOverlay()
 end
 
 function ENT:UpdateOutputs()
-	if timer.Exists("ACF Outputs Buffer" .. self:EntIndex()) then return end
+	if TimerExists("ACF Outputs Buffer" .. self:EntIndex()) then return end
 
-	timer.Create("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
+	TimerCreate("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
 		WireLib.TriggerOutput(self, "Fuel", math.Round(self.Fuel, 2))

@@ -630,7 +630,7 @@ e2function void entity:acfShift(number Gear)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
 
-	this:TriggerInput("Gear", gear)
+	this:TriggerInput("Gear", Gear)
 end
 
 -- Cause an ACF gearbox to shift up

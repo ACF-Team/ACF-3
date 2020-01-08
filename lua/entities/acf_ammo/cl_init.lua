@@ -82,8 +82,6 @@ net.Receive("ACF_RefillEffect", function()
 	local EntTo   = ents.GetByIndex(net.ReadFloat())
 
 	if not IsValid(EntFrom) or not IsValid(EntTo) then return end
-	--local List = list.Get( "ACFRoundTypes")	
-	-- local Mdl = ACF.Weapons.Guns[Weapon].round.model or "models/munitions/round_100mm_shot.mdl"
 	local Mdl = "models/munitions/round_100mm_shot.mdl"
 	EntFrom.RefillAmmoEffect = EntFrom.RefillAmmoEffect or {}
 

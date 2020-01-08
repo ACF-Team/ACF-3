@@ -11,8 +11,8 @@ ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 	Weapon.Crates[Target]  = true
 	Target.Weapons[Weapon] = true
 
-	Weapon:UpdateOverlay()
-	Target:UpdateOverlay()
+	Weapon:UpdateOverlay(true)
+	Target:UpdateOverlay(true)
 
 	return true, "Weapon linked successfully."
 end)
@@ -22,8 +22,8 @@ ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
 		Weapon.Crates[Target]  = nil
 		Target.Weapons[Weapon] = nil
 
-		Weapon:UpdateOverlay()
-		Target:UpdateOverlay()
+		Weapon:UpdateOverlay(true)
+		Target:UpdateOverlay(true)
 
 		return true, "Weapon unlinked successfully."
 	end
@@ -36,7 +36,7 @@ end)
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local AttemptFire
+local AttemptFire -- Defined later
 local ACF_RECOIL  = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
 local Trace		  = util.TraceLine
 local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID}
@@ -104,6 +104,23 @@ local TriggerTable = {
 }
 
 -----
+
+local function Overlay(Ent)
+	local Status
+
+	if Ent.DisableReason then
+		Status = "Disabled: " .. Ent.DisableReason
+	elseif not next(Ent.Crates) then
+		Status = "Not linked to an ammo crate!"
+	else
+		Status = Ent.State
+	end
+
+	local AmmoType = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
+	local Firerate = math.floor(60 / Ent.ReloadTime)
+
+	Ent:SetOverlayText(string.format("%s\n\nStatus: %s\nRate of Fire: %s rpm\nShots Left: %s", AmmoType, Status, Firerate, Ent.CurrentShot))
+end
 
 local function FindNextCrate(Gun)
 	if not next(Gun.Crates) then return end
@@ -212,7 +229,7 @@ end
 --===============================================================================================--
 
 function MakeACF_Gun(Player, Pos, Angle, Id)
-	local List   = list.Get("ACFEnts")
+	local List   = ACF.Weapons
 	local EID    = List.Guns[Id] and Id or "50mmC"
 	local Lookup = List.Guns[EID]
 	local Ext  = Lookup.gunclass == "SL" and "_acf_smokelauncher" or "_acf_gun"
@@ -244,7 +261,7 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	Gun.Inputs  	 = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
 	Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
-	local ClassData = list.Get("ACFClasses").GunClass[Lookup.gunclass]
+	local ClassData = ACF.Classes.GunClass[Lookup.gunclass]
 
 	-- ACF Specific vars
 	Gun.Name		   = Lookup.name
@@ -295,7 +312,7 @@ function MakeACF_Gun(Player, Pos, Angle, Id)
 	Gun.ACF.LegalMass     = Mass
 	Gun.ACF.Model         = Lookup.model
 
-	Gun:UpdateOverlay()
+	Gun:UpdateOverlay(true)
 
 	CheckLegal(Gun)
 
@@ -311,10 +328,10 @@ ACF.RegisterLinkSource("acf_gun", "Crates")
 --===============================================================================================--
 
 function ENT:Enable()
+	if not CheckLegal(self) then return end
+
 	self.Disabled	   = nil
 	self.DisableReason = nil
-
-	CheckLegal(self)
 end
 
 function ENT:Disable()
@@ -323,12 +340,6 @@ function ENT:Disable()
 
 	self:Unload() -- Unload the gun for being a big baddie
 	self:UpdateOverlay()
-
-	timer.Simple(ACF.IllegalDisableTime, function()
-		if IsValid(self) then
-			self:Enable()
-		end
-	end)
 end
 
 function ENT:GetUser(Input)
@@ -520,32 +531,24 @@ function ENT:Think()
 	return true
 end
 
-function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if IsValid(self) then
-			local Status
-
-			if self.DisableReason then
-				Status = "Disabled: " .. self.DisableReason
-			elseif not next(self.Crates) then
-				Status = "Not linked to an ammo crate!"
-			else
-				Status = self.State
+	if not timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then
+		timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
 			end
-
-			local AmmoType = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
-			local Firerate = math.floor(60 / self.ReloadTime)
-
-			self:SetOverlayText(string.format("%s\n\nStatus: %s\nRate of Fire: %s rpm\nShots Left: %s", AmmoType, Status, Firerate, self.CurrentShot))
-		end
-	end)
+		end)
+	end
 end
 
 function ENT:CanProperty(_, property)
 	if property == "bodygroups" then
-		local longbarrel = list.Get("ACFClasses").GunClass[self.Class].longbarrel
+		local longbarrel = ACF.Classes.GunClass[self.Class].longbarrel
 
 		if longbarrel ~= nil then
 			--need to wait until after the property is actually set
@@ -592,16 +595,25 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-	local Crates = Ent.EntityMods and Ent.EntityMods.ACFCrates
+	local EntMods = Ent.EntityMods
 
-	if Crates and next(Crates) then
-		for _, CrateID in pairs(Crates) do
-			local Crate = CreatedEntities[CrateID]
+	-- Backwards compatibility
+	if EntMods.ACFAmmoLink then
+		local Entities = EntMods.ACFAmmoLink.entities
 
-			self:Link(Crate)
+		for _, EntID in ipairs(Entities) do
+			self:Link(CreatedEntities[EntID])
 		end
 
-		Crates = nil
+		EntMods.ACFAmmoLink = nil
+	end
+
+	if EntMods.ACFCrates then
+		for _, EntID in pairs(EntMods.ACFCrates) do
+			self:Link(CreatedEntities[EntID])
+		end
+
+		EntMods.ACFCrates = nil
 	end
 
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
