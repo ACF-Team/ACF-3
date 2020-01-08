@@ -15,7 +15,6 @@ local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local TimerSimple = timer.Simple
 
 local function Overlay(Ent)
 	local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""

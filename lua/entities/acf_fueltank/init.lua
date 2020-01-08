@@ -12,7 +12,6 @@ local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local TimerSimple = timer.Simple
 
 local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	local Percentage = 1 --how full is the tank?
