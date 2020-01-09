@@ -13,8 +13,6 @@ local function GetAncestor(Ent)
 		Parent = Parent:GetParent()
 	end
 
-	Ent.acfphysparent = Parent
-
 	return Parent
 end
 
@@ -628,6 +626,35 @@ do -- Entity Links ---------------------------------
 		return ClassLink.Unlink[Class1][Class2]
 	end
 end ------------------------------------------------
+
+local Detours = {}
+function ACF.AddParentDetour(Class, Variable)
+	if not Class then return end
+	if not Variable then return end
+
+	Detours[Class] = function(Entity)
+		return Entity[Variable]
+	end
+end
+
+hook.Add("Initialize", "ACF Parent Detour", function()
+	local EntMeta = FindMetaTable("Entity")
+	local SetParent = EntMeta.SetParent
+
+	function EntMeta:SetParent(Entity)
+		if IsValid(Entity) then
+			local Detour = Detours[Entity:GetClass()]
+
+			if Detour then
+				Entity = Detour(Entity)
+			end
+		end
+
+		SetParent(self, Entity)
+	end
+
+	hook.Remove("Initialize", "ACF Parent Detour")
+end)
 
 -- Globalize
 ACF_IsLegal 				= IsLegal
