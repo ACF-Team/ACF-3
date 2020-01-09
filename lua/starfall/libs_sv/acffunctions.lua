@@ -1194,7 +1194,7 @@ SF.AddHook("postload", function()
 		if not This.BulletData then return 0 end
 		if not This.BulletData.MuzzleVel then return 0 end
 
-		return Round(This.BulletData.MuzzleVel * ACF.VelScale, 2)
+		return Round(This.BulletData.MuzzleVel * ACF.Scale, 2)
 	end
 
 	-- Returns the mass of the projectile in a crate or gun

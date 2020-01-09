@@ -51,7 +51,7 @@ end
 --not terribly accurate for acf, particularly small caliber (7.62mm off by 120 m/s at 800m), but is good enough for quick indicator
 --range in m, vel is m/s
 function ACF_PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
-	local V0 = (MuzzleVel * 39.37 * ACF.VelScale) --initial velocity
+	local V0 = (MuzzleVel * 39.37 * ACF.Scale) --initial velocity
 	local D0 = (DragCoef * V0 ^ 2 / ACF.DragDiv) --initial drag
 	local K1 = (D0 / (V0 ^ (3 / 2))) ^ -1 --estimated drag coefficient
 	local Vel = (math.sqrt(V0) - ((Range * 39.37) / (2 * K1))) ^ 2

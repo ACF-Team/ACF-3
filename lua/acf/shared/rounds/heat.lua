@@ -189,7 +189,7 @@ function Round.detonate(_, Bullet, HitPos, HitNormal)
 	Bullet.Ricochet = Bullet.SlugRicochet
 	local DeltaTime = SysTime() - Bullet.LastThink
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
-	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.VelScale * DeltaTime) --Calculates the next shell position
+	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
 
 	return true
 end
@@ -198,7 +198,7 @@ function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
 	if ACF_Check(Target) then
 		if Bullet.Detonated then
 			Bullet.NotFirstPen = true
-			local Speed = Bullet.Flight:Length() / ACF.VelScale
+			local Speed = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, 999999)
 			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
 
@@ -212,7 +212,7 @@ function Round.propimpact(Index, Bullet, Target, HitNormal, HitPos, Bone)
 				return false
 			end
 		else
-			local Speed = Bullet.Flight:Length() / ACF.VelScale
+			local Speed = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
 			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
 
@@ -248,7 +248,7 @@ function Round.worldimpact(Index, Bullet, HitPos, HitNormal)
 		end
 	end
 
-	local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.VelScale, Bullet.ProjMass, 999999)
+	local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, 999999)
 	local HitRes = ACF_PenetrateGround(Bullet, Energy, HitPos, HitNormal)
 
 	if HitRes.Penetrated then
@@ -358,10 +358,10 @@ function Round.guiupdate(Panel)
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
-	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.VelScale) .. " m/s") --Proj muzzle velocity (Name, Desc)	
+	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.Scale) .. " m/s") --Proj muzzle velocity (Name, Desc)	
 	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m") --Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
-	--local RicoAngs = ACF_RicoProbability( Data.Ricochet, Data.MuzzleVel*ACF.VelScale )
+	--local RicoAngs = ACF_RicoProbability( Data.Ricochet, Data.MuzzleVel*ACF.Scale )
 	--acfmenupanel:CPanelText("RicoDisplay", "Ricochet probability vs impact angle:\n".."    0% @ "..RicoAngs.Min.." degrees\n  50% @ "..RicoAngs.Mean.." degrees\n100% @ "..RicoAngs.Max.." degrees")
 	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
 	R1P = (ACF_Kinetic((R1V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA

@@ -114,7 +114,7 @@ function ACF_CalcBulletFlight(Index, Bullet, BackTraceOverride)
 	local DeltaTime = ACF.SysTime - Bullet.LastThink
 	--actual motion of the bullet
 	local Drag = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
-	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.VelScale * DeltaTime) --Calculates the next shell position
+	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
 	Bullet.Flight = Bullet.Flight + (Bullet.Accel - Drag) * DeltaTime --Calculates the next shell vector
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * (math.min(ACF.PhysMaxVel * 0.025, Bullet.FlightTime * Bullet.Flight:Length() - Bullet.TraceBackComp * DeltaTime))
 	--print(math.Round((Bullet.Pos-Bullet.StartTrace):Length(),1))
