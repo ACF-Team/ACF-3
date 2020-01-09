@@ -658,7 +658,7 @@ end)
 -- Globalize
 ACF_IsLegal 				= IsLegal
 ACF_GetAllPhysicalEntities 	= GetAllPhysicalEntities
-ACF_GetAllChidren 			= GetAllChidren
+ACF_GetAllChildren 			= GetAllChildren
 ACF_GetEnts 				= GetEnts
 ACF_GetAncestor 			= GetAncestor
 ACF_CheckLegal 				= CheckLegal
