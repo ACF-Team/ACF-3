@@ -641,7 +641,7 @@ hook.Add("Initialize", "ACF Parent Detour", function()
 	local EntMeta = FindMetaTable("Entity")
 	local SetParent = EntMeta.SetParent
 
-	function EntMeta:SetParent(Entity)
+	function EntMeta:SetParent(Entity, ...)
 		if IsValid(Entity) then
 			local Detour = Detours[Entity:GetClass()]
 
@@ -650,7 +650,7 @@ hook.Add("Initialize", "ACF Parent Detour", function()
 			end
 		end
 
-		SetParent(self, Entity)
+		SetParent(self, Entity, ...)
 	end
 
 	hook.Remove("Initialize", "ACF Parent Detour")
