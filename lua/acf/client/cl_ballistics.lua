@@ -18,7 +18,7 @@ function ACF_SimBulletFlight(Bullet)
 	--print(Drag)
 	--debugoverlay.Cross(Bullet.SimPos,3,15,Color(255,255,255,32), true)
 	Bullet.SimPosLast = Bullet.SimPos
-	Bullet.SimPos = Bullet.SimPos + (Bullet.SimFlight * ACF.VelScale * DeltaTime)		--Calculates the next shell position
+	Bullet.SimPos = Bullet.SimPos + (Bullet.SimFlight * ACF.Scale * DeltaTime)		--Calculates the next shell position
 	Bullet.SimFlight = Bullet.SimFlight + (Bullet.Accel - Drag) * DeltaTime			--Calculates the next shell vector
 
 	if Bullet and Bullet.Effect:IsValid() then

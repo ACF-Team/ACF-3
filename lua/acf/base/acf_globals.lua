@@ -5,7 +5,7 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.DragDiv 			= 40 --Drag fudge factor
-	ACF.VelScale 			= 1 --Scale factor for the shell velocities in the game world
+	ACF.Scale 				= 1 --Scale factor for ACF in the game world
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 	ACF.Version 			= 660 -- REMEMBER TO CHANGE THIS FOR GODS SAKE, OMFG!!!!!!! -wrex   Update the changelog too! -Ferv
 	ACF.CurrentVersion 		= 0 -- just defining a variable, do not change

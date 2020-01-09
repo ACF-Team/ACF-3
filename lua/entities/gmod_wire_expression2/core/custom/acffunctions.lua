@@ -985,7 +985,7 @@ e2function number entity:acfMuzzleVel()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.MuzzleVel then return 0 end
 
-	return Round(this.BulletData.MuzzleVel * ACF.VelScale, 2)
+	return Round(this.BulletData.MuzzleVel * ACF.Scale, 2)
 end
 
 -- Returns the mass of the projectile in a crate or gun

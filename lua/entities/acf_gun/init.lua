@@ -472,7 +472,7 @@ function ENT:Reload(ForceReload)
 				WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 				WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
-				WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.VelScale, 2))
+				WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
 
 				if self.Firing then AttemptFire(self) end
 			end

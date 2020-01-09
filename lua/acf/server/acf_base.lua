@@ -46,9 +46,8 @@ local function GetAllChildren(Ent, Tab)
 
 	local Res = Tab or {}
 
-	if Res[Ent] then return end
-
 	for K in pairs(Ent:GetChildren()) do
+		if Res[K] then continue end
 		Res[K] = true
 		GetAllChildren(K, Res)
 	end
