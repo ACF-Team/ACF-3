@@ -2,7 +2,7 @@
 local StringFind  = string.find
 local TimerCreate = timer.Create
 local TimerSimple = timer.Simple
-local Baddies 	  = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true} -- Ignored by ACF
+local Baddies 	  = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true, gmod_wire_hologram = true} -- Ignored by ACF
 
 local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
@@ -12,8 +12,6 @@ local function GetAncestor(Ent)
 	while IsValid(Parent:GetParent()) do
 		Parent = Parent:GetParent()
 	end
-
-	Ent.acfphysparent = Parent
 
 	return Parent
 end
@@ -222,19 +220,19 @@ end
 local function Check(Entity)
 	if not IsValid(Entity) then return false end
 
-	local PhysObj = Entity:GetPhysicsObject()
-	if not IsValid(PhysObj) or PhysObj:GetMass() <= 0 or Entity:IsWorld() or Entity:IsWeapon() then return false end
-
 	local Class = Entity:GetClass()
-
 	if Baddies[Class] then return false end
-	if StringFind(Class, "func_") then
-		Baddies[Class] = true
 
-		return false
-	end
+	local PhysObj = Entity:GetPhysicsObject()
+	if not IsValid(PhysObj) then return false end
 
 	if not Entity.ACF then
+		if Entity:IsWorld() or Entity:IsWeapon() or StringFind(Class, "func_") then
+			Baddies[Class] = true
+
+			return false
+		end
+
 		ACF_Activate(Entity)
 	elseif Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
 		ACF_Activate(Entity, true)
@@ -628,10 +626,39 @@ do -- Entity Links ---------------------------------
 	end
 end ------------------------------------------------
 
+local Detours = {}
+function ACF.AddParentDetour(Class, Variable)
+	if not Class then return end
+	if not Variable then return end
+
+	Detours[Class] = function(Entity)
+		return Entity[Variable]
+	end
+end
+
+hook.Add("Initialize", "ACF Parent Detour", function()
+	local EntMeta = FindMetaTable("Entity")
+	local SetParent = EntMeta.SetParent
+
+	function EntMeta:SetParent(Entity, ...)
+		if IsValid(Entity) then
+			local Detour = Detours[Entity:GetClass()]
+
+			if Detour then
+				Entity = Detour(Entity)
+			end
+		end
+
+		SetParent(self, Entity, ...)
+	end
+
+	hook.Remove("Initialize", "ACF Parent Detour")
+end)
+
 -- Globalize
 ACF_IsLegal 				= IsLegal
 ACF_GetAllPhysicalEntities 	= GetAllPhysicalEntities
-ACF_GetAllChidren 			= GetAllChidren
+ACF_GetAllChildren 			= GetAllChildren
 ACF_GetEnts 				= GetEnts
 ACF_GetAncestor 			= GetAncestor
 ACF_CheckLegal 				= CheckLegal
