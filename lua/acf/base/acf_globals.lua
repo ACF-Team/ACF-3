@@ -7,8 +7,6 @@ do -- ACF global vars
 	ACF.DragDiv 			= 40 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
-	ACF.Version 			= 660 -- REMEMBER TO CHANGE THIS FOR GODS SAKE, OMFG!!!!!!! -wrex   Update the changelog too! -Ferv
-	ACF.CurrentVersion 		= 0 -- just defining a variable, do not change
 	ACF.Year 				= 1945
 	ACF.Threshold 			= 264.7 --Health Divisor (don"t forget to update cvar function down below)
 	ACF.PartialPenPenalty 	= 5 --Exponent for the damage penalty for partial penetration
@@ -340,28 +338,4 @@ do -- Smoke/Wind -----------------------------------
 
 		net.Receive("acf_smokewind", recvSmokeWind)
 	end
-end ------------------------------------------------
-
-do -- Check Version --------------------------------
-	function ACF_UpdateChecking()
-		http.Fetch("https://github.com/nrlulz/ACF", function(contents, _)
-			local rev = tonumber(string.match(contents, "%s*(%d+)\n%s*</span>\n%s*commits")) or 0 --"history\"></span>\n%s*(%d+)\n%s*</span>"
-
-			if rev and ACF.Version >= rev then
-				print("[ACF] ACF Is Up To Date, Latest Version: " .. rev)
-			elseif not rev then
-				print("[ACF] No Internet Connection Detected! ACF Update Check Failed")
-			else
-				print("[ACF] A newer version of ACF is available! Version: " .. rev .. ", You have Version: " .. ACF.Version)
-
-				if CLIENT then
-					chat.AddText(Color(255, 0, 0), "A newer version of ACF is available!")
-				end
-			end
-
-			ACF.CurrentVersion = rev
-		end, function() end)
-	end
-
-	ACF_UpdateChecking()
 end ------------------------------------------------
