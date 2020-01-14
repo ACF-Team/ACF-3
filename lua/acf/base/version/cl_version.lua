@@ -41,11 +41,11 @@ local function CheckServerVersion()
 
 		Server.Status = "Unknown"
 	elseif Server.Code == Git.Code or Server.Date >= Git.Date then
-		PrintToChat("Version", "Server is running the latest version, ", Server.Code, ".")
+		PrintToChat("Version", "Server is running the latest version: ", Server.Code)
 
 		Server.Status = "Up to Date"
 	else
-		PrintToChat("Update", "Server is outdated. Running on version ", Server.Code, ".")
+		PrintToChat("Update", "Server is outdated. Running on version: ", Server.Code)
 
 		Server.Status = "Outdated"
 	end
