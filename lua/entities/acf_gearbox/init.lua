@@ -472,7 +472,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 			CheckRopes(Gearbox, "GearboxOut")
 			CheckRopes(Gearbox, "Wheels")
 		else
-			timer.Stop("ACF Engine Clock " .. Gearbox:EntIndex())
+			timer.Remove("ACF Engine Clock " .. Gearbox:EntIndex())
 		end
 	end)
 
