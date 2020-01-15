@@ -107,19 +107,25 @@ local TriggerTable = {
 
 local function Overlay(Ent)
 	local Status
+	local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
+	local Firerate  = math.floor(60 / Ent.ReloadTime)
+	local CrateAmmo = 0
 
 	if Ent.DisableReason then
 		Status = "Disabled: " .. Ent.DisableReason
 	elseif not next(Ent.Crates) then
 		Status = "Not linked to an ammo crate!"
 	else
-		Status = Ent.State
+		Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
 	end
 
-	local AmmoType = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
-	local Firerate = math.floor(60 / Ent.ReloadTime)
+	for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
+		if Crate.Load then
+			CrateAmmo = CrateAmmo + Crate.Ammo
+		end
+	end
 
-	Ent:SetOverlayText(string.format("%s\n\nStatus: %s\nRate of Fire: %s rpm\nShots Left: %s", AmmoType, Status, Firerate, Ent.CurrentShot))
+	Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
 end
 
 local function FindNextCrate(Gun)
