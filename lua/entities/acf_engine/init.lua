@@ -108,7 +108,7 @@ local max		  = math.max
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local TimerSimple = timer.Simple
-local TimerStop   = timer.Stop
+local TimerRemove = timer.Remove
 
 local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.Id 				= Id
@@ -282,7 +282,7 @@ local function SetActive(Entity, Value)
 
 					Entity:CalcMassRatio()
 				else
-					TimerStop("ACF Engine Clock " .. Entity:EntIndex())
+					TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 				end
 			end)
 		end
@@ -302,7 +302,7 @@ local function SetActive(Entity, Value)
 		Entity:UpdateOverlay()
 		Entity:UpdateOutputs()
 
-		TimerStop("ACF Engine Clock " .. Entity:EntIndex())
+		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
 end
 
