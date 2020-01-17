@@ -97,7 +97,24 @@ if CLIENT then
 		RunConsoleCommand( "acfarmorprop_ductility", math.Clamp( ductility * 100, -80, 80 ) )
 
 	end )
+elseif SERVER then
+	util.AddNetworkString("acf_requestinfo")
+	net.Receive("acf_requestinfo", function(_, Ply)
+		local Ent = net.ReadEntity()
 
+		local Power, Fuel, ReqFuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
+
+		local Total 		= Ent.acftotal
+		local phystotal 	= Ent.acfphystotal
+		local parenttotal 	= Total - Ent.acfphystotal
+		local physratio 	= 100 * Ent.acfphystotal / Total, 1
+		local Mul			= (ReqFuel and Fuel > 0) and 1.25 or 1
+
+		Ply:ChatPrint("-- ACF Contraption Readout (Owner: " .. Name .. ") --")
+		Ply:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
+		Ply:ChatPrint("Mobility: " .. math.Round(Power * Mul / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power * Mul) .. " | " .. math.Round(Fuel) .. " liters of fuel")
+		Ply:ChatPrint("Entities: " .. PhysNum + ParNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented) | " .. ConNum .. " constraints")
+	end)
 end
 
 -- Apply settings to prop and store dupe info
@@ -169,30 +186,17 @@ end
 -- Total up mass of constrained ents
 function TOOL:Reload( trace )
 
-	local ent = trace.Entity
+	local Ent = trace.Entity
 
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
-	if CLIENT then return true end
+	if not IsValid(Ent) or Ent:IsPlayer() then return false end
+	if SERVER then return true end
+	if not IsFirstTimePredicted() then return end
 
-	local data = ACF_CalcMassRatio(ent, true)
+	net.Start("acf_requestinfo")
+		net.WriteEntity(Ent)
+	net.SendToServer()
 
-	local total = math.Round( ent.acftotal, 1 )
-	local phystotal = math.Round( ent.acfphystotal, 1 )
-	local parenttotal = math.Round( ent.acftotal - ent.acfphystotal, 1 )
-	local physratio = math.Round(100 * ent.acfphystotal / ent.acftotal, 1)
-
-	local pwr = "\n"
-	if data.Fuel == 2 then
-		pwr = pwr .. math.Round(data.Power * 1.25 / (ent.acftotal / 1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp"
-	else
-		pwr = pwr .. math.Round(data.Power / (ent.acftotal / 1000), 1) .. " hp/ton @ " .. math.Round(data.Power) .. " hp"
-		if data.Fuel == 1 then
-			pwr = pwr .. "\n" .. math.Round(data.Power * 1.25 / (ent.acftotal / 1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp with fuel"
-		end
-	end
-
-	self:GetOwner():ChatPrint( "Total mass is " .. total .. " kg  (" .. phystotal .. " kg physical, " .. parenttotal .. " kg parented, " .. physratio .. "% physical)" .. pwr )
-
+	return true
 end
 
 function TOOL:Think()

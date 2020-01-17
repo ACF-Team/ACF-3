@@ -77,25 +77,43 @@ function ACF_HasConstraint(Ent)
 	return false
 end
 
-function ACF_CalcMassRatio(Ent, Pwr)
+function ACF_CalcMassRatio(Ent, Tally)
 	if not IsValid(Ent) then return end
 
 	local TotMass  = 0
 	local PhysMass = 0
+	local Time     = CurTime()
+
+	-- Tally Vars
 	local Power    = 0
 	local Fuel     = 0
-	local Time     = CurTime()
+	local PhysN    = 0
+	local ParN 	   = 0
+	local ConN	   = 0
+	local ReqFuel  = false
 
 	local Physical, Parented = GetEnts(Ent)
 
 	for K in pairs(Physical) do
-		if Pwr then
-			if K:GetClass() == "acf_engine" then
-				Power = Power + (K.peakkw * 1.34)
-				Fuel = K.RequiresFuel and 2 or Fuel
-			elseif K:GetClass() == "acf_fueltank" then
-				Fuel = math.max(Fuel, 1)
+		if Tally then
+			local Class = K:GetClass()
+
+			if Class == "acf_engine" then
+				Power   = Power + (K.peakkw * 1.34)
+				ReqFuel = ReqFuel or K.RequiresFuel
+			elseif Class == "acf_fueltank" then
+				Fuel = Fuel + K.Capacity
 			end
+
+			if K.Constraints then
+				for _, Con in pairs(K.Constraints) do
+					if IsValid(Con) and Con.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
+						ConN = ConN + 1
+					end
+				end
+			end
+
+			PhysN = PhysN + 1
 		end
 
 		local Phys = K:GetPhysicsObject() -- This should always exist, but just in case
@@ -111,13 +129,17 @@ function ACF_CalcMassRatio(Ent, Pwr)
 	for K in pairs(Parented) do
 		if Physical[K] then continue end -- Skip overlaps
 
-		if Pwr then
-			if K:GetClass() == "acf_engine" then
-				Power = Power + (K.peakkw * 1.34)
-				Fuel = K.RequiresFuel and 2 or Fuel
-			elseif K:GetClass() == "acf_fueltank" then
-				Fuel = math.max(Fuel, 1)
+		if Tally then
+			local Class = K:GetClass()
+
+			if Class == "acf_engine" then
+				Power   = Power + (K.peakkw * 1.34)
+				ReqFuel = ReqFuel or K.RequiresFuel
+			elseif Class == "acf_fueltank" then
+				Fuel = Fuel + K.Capacity
 			end
+
+			ParN = ParN + 1
 		end
 
 		local Phys = K:GetPhysicsObject()
@@ -141,11 +163,8 @@ function ACF_CalcMassRatio(Ent, Pwr)
 		K.acflastupdatemass = Time
 	end
 
-	if Pwr then
-		return {
-			Power = Power,
-			Fuel = Fuel
-		}
+	if Tally then
+		return Power, Fuel, ReqFuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():Nick()
 	end
 end
 
