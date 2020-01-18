@@ -18,7 +18,8 @@ local TimerExists = timer.Exists
 
 local function Overlay(Ent)
 	local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-	local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s"
+	local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s%s"
+	local AmmoData = ""
 	local Status
 
 	if Ent.DisableReason then
@@ -29,7 +30,11 @@ local function Overlay(Ent)
 		Status = "Not linked to a weapon!"
 	end
 
-	Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity))
+	if Ent.RoundData.cratetxt then
+		AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
+	end
+
+	Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
 end
 
 local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
@@ -57,6 +62,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.Name = Data1 .. " " .. Data2
 	Entity.ShortName = Data1
 	Entity.EntType = Data2
+	Entity.RoundData = ACF.RoundTypes[Entity.RoundType]
 
 	local PlayerData = {
 		Id = Entity.RoundId,
@@ -71,7 +77,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		Data10 = Entity.RoundData10
 	}
 
-	Entity.BulletData = ACF.RoundTypes[Entity.RoundType].convert(Entity, PlayerData)
+	Entity.BulletData = Entity.RoundData.convert(Entity, PlayerData)
 	Entity.BulletData.Crate = Entity:EntIndex()
 
 	Entity.SupplyingTo = {}
@@ -90,7 +96,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 	Entity:SetNWString("WireName", GunData.name .. " Ammo")
 
-	ACF.RoundTypes[Entity.RoundType].network(Entity, Entity.BulletData)
+	Entity.RoundData.network(Entity, Entity.BulletData)
 
 	Entity:UpdateOverlay()
 end
@@ -386,7 +392,7 @@ function ENT:Think()
 	if self.Damaged then
 		if self.Ammo <= 1 or self.Damaged < CurTime() then -- immediately detonate if there's 1 or 0 shells
 			ACF_ScaledExplosion(self) -- going to let empty crates harmlessly poot still, as an audio cue it died
-		elseif self.BulletData.Type ~= "Refill"  and ACF.RoundTypes[self.BulletData.Type] then
+		elseif self.BulletData.Type ~= "Refill" and self.RoundData then
 			local VolumeRoll = math.Rand(0, 150) > self.BulletData.RoundVolume ^ 0.5
 			local AmmoRoll = math.Rand(0, 1) < self.Ammo / math.max(self.Capacity, 1)
 
@@ -400,7 +406,7 @@ function ENT:Think()
 				self.BulletData.Owner = self.Inflictor or self.Owner
 				self.BulletData.Gun = self
 				self.BulletData.Crate = self:EntIndex()
-				self.CreateShell = ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData)
+				self.CreateShell = self.RoundData.create(self, self.BulletData)
 
 				self:Consume()
 			end
