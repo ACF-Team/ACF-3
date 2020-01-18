@@ -12,7 +12,7 @@ function EFFECT:Init(data)
 	local Class = Gun:GetNWString("Class")
 	local ClassData = ACF.Classes.GunClass[Class]
 	local Attachment = "muzzle"
-	local LongBarrel = ClassData.LongBarrel
+	local LongBarrel = ClassData.longbarrel
 
 	if LongBarrel and Gun:GetBodygroup(LongBarrel.index) == LongBarrel.submodel then
 		Attachment = LongBarrel.newpos

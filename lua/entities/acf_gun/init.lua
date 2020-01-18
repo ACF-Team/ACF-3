@@ -63,7 +63,6 @@ do -- Spawn Func --------------------------------
 		Gun.MagReload	   = Lookup.magreload
 		Gun.MagSize		   = Lookup.magsize or 1
 		Gun.CurrentShot	   = 0
-		Gun.Muzzle		   = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
 		Gun.Spread		   = ClassData.spread
 		Gun.MinLengthBonus = 0.75 * 3.1416 * (Caliber / 2) ^ 2 * Lookup.round.maxlength
 		Gun.Muzzleflash	   = ClassData.muzzleflash
@@ -72,6 +71,10 @@ do -- Spawn Func --------------------------------
 		Gun.Sound		   = ClassData.sound
 		Gun.BulletData	   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 		Gun.HitBoxes 	   = ACF.HitBoxes[Lookup.model]
+		Gun.Long		   = ClassData.longbarrel
+		Gun.NormalMuzzle   = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
+		Gun.LongMuzzle	   = Gun.Long and Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos)).Pos)
+		Gun.Muzzle		   = Gun.NormalMuzzle
 
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
@@ -80,13 +83,14 @@ do -- Spawn Func --------------------------------
 		Gun:SetNWString("Class", Gun.Class)
 
 		-- Adjustable barrel length
-		local Long = ClassData.longbarrel
+		if Gun.Long then
+			timer.Simple(0, function()
+				if not IsValid(Gun) then return end
 
-		if Long ~= nil then
-			--need to wait until after the property is actually set
-			timer.Simple(0.25, function()
+				local Long = Gun.Long
+
 				if Gun:GetBodygroup(Long.index) == Long.submodel then
-					Gun.Muzzle = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment(Long.newpos)).Pos)
+					Gun.Muzzle = Gun.LongMuzzle
 				end
 			end)
 		end
@@ -592,22 +596,16 @@ do -- Metamethods --------------------------------
 			self:UpdateOverlay()
 		end
 
-		function ENT:CanProperty(_, property)
-			if property == "bodygroups" then
-				local longbarrel = ACF.Classes.GunClass[self.Class].longbarrel
+		function ENT:CanProperty(_, Property)
+			if self.Long and Property == "bodygroups" then
+				timer.Simple(0, function()
+					if not IsValid(self) then return end
 
-				if longbarrel ~= nil then
-					--need to wait until after the property is actually set
-					timer.Simple(0.25, function()
-						if self:GetBodygroup(longbarrel.index) == longbarrel.submodel then
-							local Muzzle = self:GetAttachment(self:LookupAttachment(longbarrel.newpos))
-							self.Muzzle = self:WorldToLocal(Muzzle.Pos)
-						else
-							local Muzzle = self:GetAttachment(self:LookupAttachment("muzzle"))
-							self.Muzzle = self:WorldToLocal(Muzzle.Pos)
-						end
-					end)
-				end
+					local Long = self.Long
+					local IsLong = self:GetBodygroup(Long.index) == Long.submodel
+
+					self.Muzzle = IsLong and self.LongMuzzle or self.NormalMuzzle
+				end)
 			end
 
 			return true
