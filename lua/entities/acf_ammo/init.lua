@@ -112,7 +112,7 @@ end
 
 --===============================================================================================--
 
-function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
+function MakeACF_Ammo(Player, Pos, Ang, Id, ...)
 	if not Player:CheckLimit("_acf_ammo") then return end
 
 	local CrateData = ACF.Weapons.Ammo[Id]
@@ -127,7 +127,7 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Player:AddCleanup("acfmenu", Crate)
 
 	Crate:SetPos(Pos)
-	Crate:SetAngles(Angle)
+	Crate:SetAngles(Ang)
 	Crate:SetPlayer(Player)
 	Crate:SetModel(CrateData.model)
 	Crate:Spawn()
@@ -145,9 +145,15 @@ function MakeACF_Ammo(Player, Pos, Angle, Id, ...)
 	Crate.Size			= Size
 	Crate.Weapons		= {}
 	Crate.Load			= true -- Crates should be ready to load by default
-	Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
+	Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load", "Output [VECTOR]"})
 	Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading", "On Fire" })
 	Crate.CanUpdate		= true
+	Crate.HitBoxes 		= {
+				Main = {
+					Pos = Crate:OBBCenter(),
+					Scale = (Crate:OBBMaxs() - Crate:OBBMins()) - Vector(0.5, 0.5, 0.5),
+				}
+			}
 
 	WireLib.TriggerOutput(Crate, "Entity", Crate)
 	WireLib.TriggerOutput(Crate, "Ammo", Crate.Ammo)
@@ -307,16 +313,36 @@ function ENT:Update(ArgsTable)
 	return true, Message
 end
 
-function ENT:TriggerInput(_, Value)
+function ENT:TriggerInput(Name, Value)
 	if self.Disabled then return end -- Ignore input if disabled
 
-	if not self.Inputs.Load.Path then
-		Value = true
+	if not self.Inputs.Load.Path then -- If unwired turn on loading
+		self.Load = self.Ammo ~= 0
+		WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
 	end
 
-	self.Load = self.Ammo ~= 0 and tobool(Value)
 
-	WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
+	if Name == "Output" then
+		if not self.Inputs.Output.Path then -- Reset output of unwired
+			self.Output = nil
+
+			return
+		end
+
+		Value = self:WorldToLocal(Value)
+
+		local Mins, Maxs = self:OBBMins(), self:OBBMaxs()
+		local X = math.Clamp(Value[1], Mins[1], Maxs[1])
+		local Y = math.Clamp(Value[2], Mins[2], Maxs[2])
+		local Z = math.Clamp(Value[3], Mins[3], Maxs[3])
+
+		self.Output = Vector(X, Y, Z)
+
+	elseif Name == "Load" then
+		self.Load = self.Ammo ~= 0 and tobool(Value)
+		WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
+	end
+
 
 	self:UpdateOverlay()
 end

@@ -99,6 +99,12 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	Tank.Leaking   = 0
 	Tank.CanUpdate = true
 	Tank.LastThink = 0
+	Tank.HitBoxes  = {
+			Main = {
+				Pos = Tank:OBBCenter(),
+				Scale = (Tank:OBBMaxs() - Tank:OBBMins()) - Vector(0.5, 0.5, 0.5),
+			}
+		}
 
 	Tank.Inputs = WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
 	Tank.Outputs = WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })

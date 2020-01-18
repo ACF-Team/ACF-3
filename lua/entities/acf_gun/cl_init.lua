@@ -3,13 +3,14 @@ include("shared.lua")
 local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 
 function ENT:Initialize()
-	self.LastFire = 0
-	self.Reload = 0
-	self.CloseTime = 0
-	self.Rate = 0
-	self.RateScale = 0
-	self.FireAnim = self:LookupSequence("shoot")
-	self.CloseAnim = self:LookupSequence("load")
+	self.LastFire 	= 0
+	self.Reload 	= 0
+	self.CloseTime 	= 0
+	self.Rate 		= 0
+	self.RateScale 	= 0
+	self.FireAnim 	= self:LookupSequence("shoot")
+	self.CloseAnim 	= self:LookupSequence("load")
+	self.HitBoxes 	= ACF.HitBoxes[self:GetModel()]
 
 	self.BaseClass.Initialize(self)
 end

@@ -39,9 +39,8 @@ if CLIENT then
 	language.Add( "SBoxLimit_acf_ammo", "You've reached the ACF Explosives limit!" )
 	language.Add( "SBoxLimit_acf_sensor", "You've reached the ACF Sensors limit!" )
 
-	/*------------------------------------
-		BuildCPanel
-	------------------------------------*/
+	local DrawBoxes = CreateConVar("acf_drawboxes", 1, FCVAR_ARCHIVE, "Whether or not to draw hitboxes on ACF entities", 0, 1)
+
 	function TOOL.BuildCPanel( CPanel )
 
 		local pnldef_ACFmenu = vgui.RegisterFile( "acf/client/sk_menu.lua" )
@@ -50,6 +49,21 @@ if CLIENT then
 		local DPanel = vgui.CreateFromTable( pnldef_ACFmenu )
 		CPanel:AddPanel( DPanel )
 
+	end
+
+	function TOOL:DrawHUD()
+		if DrawBoxes:GetBool() then
+			local Ent = LocalPlayer():GetEyeTrace().Entity
+
+			if IsValid(Ent) and Ent.HitBoxes then
+				cam.Start3D()
+				render.SetColorMaterial()
+				for _, Tab in pairs(Ent.HitBoxes) do
+					render.DrawBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Color(214, 160, 190, 50) or Color(160, 190, 215, 50))
+				end
+				cam.End3D()
+			end
+		end
 	end
 end
 

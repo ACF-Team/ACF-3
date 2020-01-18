@@ -71,6 +71,7 @@ do -- Spawn Func --------------------------------
 		Gun.RoFmod		   = ClassData.rofmod
 		Gun.Sound		   = ClassData.sound
 		Gun.BulletData	   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+		Gun.HitBoxes 	   = ACF.HitBoxes[Lookup.model]
 
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
