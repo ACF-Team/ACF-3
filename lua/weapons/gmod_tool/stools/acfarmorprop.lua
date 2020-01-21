@@ -102,6 +102,8 @@ elseif SERVER then
 	net.Receive("acf_requestinfo", function(_, Ply)
 		local Ent = net.ReadEntity()
 
+		if not IsValid(Ent) then return end
+
 		local Power, Fuel, ReqFuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
 
 		local Total 		= Ent.acftotal

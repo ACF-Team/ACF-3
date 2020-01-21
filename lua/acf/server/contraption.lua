@@ -2,6 +2,9 @@
 
 -- Local Funcs ----------------------------------
 -- These functions are used within this file and made global at the end
+
+local ColGroupFilter = {COLLISION_GROUP_DEBRIS = true, COLLISION_GROUP_DEBRIS_TRIGGER = true}
+
 local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
@@ -15,8 +18,6 @@ local function GetAncestor(Ent)
 end
 
 local function GetAllPhysicalEntities(Ent, Tab)
-	if not IsValid(Ent) then return end
-
 	local Res = Tab or {}
 
 	if Res[Ent] then
@@ -26,7 +27,7 @@ local function GetAllPhysicalEntities(Ent, Tab)
 
 		if Ent.Constraints then
 			for _, V in pairs(Ent.Constraints) do
-				if V.Type ~= "NoCollide" then
+				if V.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
 					GetAllPhysicalEntities(V.Ent1, Res)
 					GetAllPhysicalEntities(V.Ent2, Res)
 				end
@@ -38,28 +39,25 @@ local function GetAllPhysicalEntities(Ent, Tab)
 end
 
 local function GetAllChildren(Ent, Tab)
-	if not IsValid(Ent) then return end
-
 	local Res = Tab or {}
 
-	for K in pairs(Ent:GetChildren()) do
-		if Res[K] then continue end
-		Res[K] = true
-		GetAllChildren(K, Res)
+	for _, V in pairs(Ent:GetChildren()) do
+		if Res[V] then continue end
+
+		Res[V] = true
+		GetAllChildren(V, Res)
 	end
 
 	return Res
 end
 
 local function GetEnts(Ent)
-	local Ancestor = GetAncestor(Ent)
-	local Phys = GetAllPhysicalEntities(Ancestor)
-	local Pare = GetAllChildren(Ancestor)
+	local Ancestor 	= GetAncestor(Ent)
+	local Phys 		= GetAllPhysicalEntities(Ancestor)
+	local Pare 		= {}
 
 	for K in pairs(Phys) do
-		for P in pairs(GetAllChildren(K)) do
-			Pare[P] = true
-		end
+		GetAllChildren(K, Pare)
 	end
 
 	return Phys, Pare
@@ -78,8 +76,6 @@ function ACF_HasConstraint(Ent)
 end
 
 function ACF_CalcMassRatio(Ent, Tally)
-	if not IsValid(Ent) then return end
-
 	local TotMass  = 0
 	local PhysMass = 0
 	local Time     = CurTime()
@@ -123,6 +119,10 @@ function ACF_CalcMassRatio(Ent, Tally)
 
 			TotMass  = TotMass + Mass
 			PhysMass = PhysMass + Mass
+
+			if ColGroupFilter[K:GetCollisionGroup()] then
+				K:SetCollisionGroup(COLLISION_GROUP_NONE)
+			end
 		end
 	end
 
@@ -146,6 +146,10 @@ function ACF_CalcMassRatio(Ent, Tally)
 
 		if IsValid(Phys) then
 			TotMass = TotMass + Phys:GetMass()
+
+			if ColGroupFilter[K:GetCollisionGroup()] then
+				K:SetCollisionGroup(COLLISION_GROUP_NONE)
+			end
 		end
 	end
 

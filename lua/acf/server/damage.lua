@@ -5,11 +5,22 @@ local TimerCreate 	= timer.Create
 local TraceRes 		= { }
 local TraceInit 	= { output = TraceRes }
 local Check			= ACF_Check
+local HookRun		= hook.Run
+local Debris 		= { -- Whitelist for things that can be turned into debris
+	acf_ammo = true,
+	acf_gun = true,
+	acf_gearbox = true,
+	acf_fueltank = true,
+	acf_engine = true,
+	prop_physics = true,
+	prop_vehicle_prisoner_pod = true
+}
+local ChildDebris 	= ACF.ChildDebris
 -------------------------------------------------
 do -- ACF Damage --------------------------------
 	function ACF_Damage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type)
 		local Activated = Check(Entity)
-		local CanDo = hook.Run("ACF_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
+		local CanDo = HookRun("ACF_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
 
 		-- above (default) hook does nothing with activated
 		if CanDo == false or Activated == false then
@@ -517,91 +528,70 @@ function ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 end
 
 function ACF_KEShove(Target, Pos, Vec, KE )
-	local CanDo = hook.Run("ACF_KEShove", Target, Pos, Vec, KE )
-	if CanDo == false then return end
-	
-	local parent = ACF_GetAncestor(Target)
-	local phys = parent:GetPhysicsObject()
-	
-	if (phys:IsValid()) then
-		if(!Target.acflastupdatemass) or ((Target.acflastupdatemass + 10) < CurTime()) then
+	if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
+
+	local Phys = ACF_GetAncestor(Target):GetPhysicsObject()
+
+	if IsValid(Phys) then
+		if not Target.acflastupdatemass or Target.acflastupdatemass + 10 < CurTime() then
 			ACF_CalcMassRatio(Target)
 		end
-		if not Target.acfphystotal then return end --corner case error check
+
 		local physratio = Target.acfphystotal / Target.acftotal
-		phys:ApplyForceOffset( Vec:GetNormalized() * KE * physratio, Pos )
+		Phys:ApplyForceOffset( Vec:GetNormalized() * KE * physratio, Pos )
 	end
 end
-
-
--- whitelist for things that can be turned into debris
-ACF.Debris = {
-	acf_ammo = true,
-	acf_gun = true,
-	acf_gearbox = true,
-	acf_fueltank = true,
-	acf_engine = true,
-	prop_physics = true,
-	prop_vehicle_prisoner_pod = true
-}
-
--- things that should have scaledexplosion called on them instead of being turned into debris
-ACF.Splosive = {
-	acf_ammo = true,
-	acf_fueltank = true
-}
 
 -- helper function to process children of an acf-destroyed prop
 -- AP will HE-kill children props like a detonation; looks better than a directional spray of unrelated debris from the AP kill
 local function ACF_KillChildProps( Entity, BlastPos, Energy )
 
-	local count = 0
-	local boom = {}
-	local children = ACF_GetAllChildren(Entity)
+	local Explosives = {}
+	local Children 	 = ACF_GetAllChildren(Entity)
+	local Count		 = 0
 
 	-- do an initial processing pass on children, separating out explodey things to handle last
-	for Ent in pairs( children ) do
+	for Ent in pairs( Children ) do
 		Ent.ACF_Killed = true  -- mark that it's already processed
-		local class = Ent:GetClass()
-		if not ACF.Debris[class] then
-			children[Ent] = nil -- ignoring stuff like holos
+
+		if not Debris[Ent:GetClass()] then
+			Children[Ent] = nil -- ignoring stuff like holos, wiremod components, etc.
 		else
 			Ent:SetParent(nil)
-			if ACF.Splosive[class] then
-				table.insert(boom, Ent) -- keep track of explosives to make them boom last
-				children[Ent] = nil
+
+			if Ent.IsExplosive and not Ent.Exploding then
+				Explosives[Ent] = true
+				Children[Ent] 	= nil
 			else
-				count = count + 1  -- can't use #table or :count() because of ent indexing...
+				Count = Count + 1
 			end
 		end
 	end
 
 	-- HE kill the children of this ent, instead of disappearing them by removing parent
-	if count > 0 then
-		local DebrisChance = math.Clamp(ACF.ChildDebris/count, 0, 1)
-		local power = Energy/math.min(count,3)
+	if next(Children) then
+		local DebrisChance 	= math.Clamp(ChildDebris / Count, 0, 1)
+		local Power 		= Energy / math.min(Count,3)
 
-		for Child in pairs( children ) do
-			if IsValid(Child) then
-				if math.random() < DebrisChance then -- ignore some of the debris props to save lag
-					ACF_HEKill( Child, (Child:GetPos() - BlastPos):GetNormalized(), power )
-				else
-					constraint.RemoveAll( Child )
-					Child:Remove()
-				end
+		for Ent in pairs( Children ) do
+			if math.random() < DebrisChance then
+				ACF_HEKill(Ent, (Ent:GetPos() - BlastPos):GetNormalized(), Power)
+			else
+				constraint.RemoveAll(Ent)
+				Ent:Remove()
 			end
 		end
 	end
-	
+
 	-- explode stuff last, so we don't re-process all that junk again in a new explosion
-	if #boom > 0 then
-		for _, child in pairs( boom ) do
-			if not IsValid(child) or child.Exploding then continue end
-			child.Exploding = true
-			ACF_ScaledExplosion( child ) -- explode any crates that are getting removed
+	if next(Explosives) then
+		for Ent in pairs(Explosives) do
+			if Ent.Exploding then continue end
+
+			Ent.Exploding = true
+			ACF_ScaledExplosion(Ent) -- explode any crates that are getting removed
 		end
 	end
-	
 end
 
 -- blast pos is an optional world-pos input for flinging away children props more realistically
