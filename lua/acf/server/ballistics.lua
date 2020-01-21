@@ -317,7 +317,7 @@ function ACF_BulletClient(Index, Bullet, Type, Hit, HitPos)
 		end
 
 		Effect:SetScale(Hit) --Hit Type 
-		util.Effect("ACF_BulletEffect", Effect, true, true)
+		util.Effect("acf_bulleteffect", Effect, true, true)
 	else
 		local Effect = EffectData()
 
@@ -326,6 +326,6 @@ function ACF_BulletClient(Index, Bullet, Type, Hit, HitPos)
 		Effect:SetOrigin(Bullet.Pos)
 		Effect:SetEntity(Entity(Bullet["Crate"]))
 		Effect:SetScale(0)
-		util.Effect("ACF_BulletEffect", Effect, true, true)
+		util.Effect("acf_bulleteffect", Effect, true, true)
 	end
 end
