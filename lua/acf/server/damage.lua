@@ -260,7 +260,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 					if not TraceRes.Entity.Exploding and (TraceRes.Entity == Ent or Check(TraceRes.Entity)) then
 						Ent = TraceRes.Entity
 
-						if not Damaged[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
+						if not Damaged[Ent] and not Damage[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
 							local Pos		= Ent:GetPos()
 							local Distance	= Origin:Distance(Pos)
 							local Sphere 	= math.max(4 * 3.1415 * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
