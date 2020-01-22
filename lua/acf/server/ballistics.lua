@@ -2,23 +2,53 @@
 ACF.Bullet = {} --when ACF is loaded, this table holds bullets
 ACF.CurBulletIndex = 0 --used to track where to insert bullets
 ACF.BulletIndexLimt = 1000 --The maximum number of bullets in flight at any one time. oldest existing bullets are overwritten if limit overflow
-
---entities that cause issue with acf and should be not be processed at all
-ACF.TraceFilter = {
+ACF.TraceFilter = { --entities that cause issue with acf and should be not be processed at all
 	prop_vehicle_crane = true,
 	prop_dynamic = true
 }
-
 ACF.SkyboxGraceZone = 100 --grace zone for the high angle fire
--- optimization; reuse tables for ballistics traces
+
+local TraceLine = util.TraceLine
 local FlightRes = {}
+local FlightTr  = { output = FlightRes }
 
-local FlightTr = {
-	output = FlightRes
-}
+local function HitClip(Ent, Pos)
+	if not IsValid(Ent) or Ent.ClipData == nil or Ent:GetClass() ~= "prop_physics" or (Ent:GetPhysicsObject():GetVolume() == nil) then return false end -- makesphere
 
--- end init
---creates a new bullet being fired
+	local Clip
+	local Normal
+	local Origin
+
+	for I = 1, #Ent.ClipData do
+		Clip   = Ent.ClipData[I]
+		Normal = Ent:LocalToWorldAngles(Clip.n):Forward()
+		Origin = Ent:LocalToWorld(Ent:OBBCenter()) + Normal * Clip.d
+
+		--debugoverlay.BoxAngles( origin, Vector(0,-24,-24), Vector(1,24,24), Ent:LocalToWorldAngles(Ent.ClipData[i]["n"]), 15, Color(255,0,0,32) )
+		if Normal:Dot((Origin - Pos):GetNormalized()) > 0 then return true end
+	end
+
+	return false
+end
+
+local function Trace(TraceData)
+	local T = TraceLine(TraceData)
+
+	if T.HitNonWorld and HitClip(T.Entity, T.HitPos) then
+		TraceData.filter[#TraceData.filter + 1] = T.Entity
+
+		return Trace(TraceData)
+	end
+
+	debugoverlay.Line(TraceData.start, T.HitPos, 30, ColorRand(100, 255), true)
+	return T
+end
+
+-------------------------------------------------
+ACF.Trace 		= Trace
+ACF.CheckClips 	= HitClip
+-------------------------------------------------
+
 function ACF_CreateBullet(BulletData)
 	ACF.CurBulletIndex = ACF.CurBulletIndex + 1 --Increment the index
 
@@ -77,23 +107,6 @@ function ACF_RemoveBullet(Index)
 	if Bullet and Bullet.OnRemoved then
 		Bullet:OnRemoved()
 	end
-end
-
---checks the visclips of an entity, to determine if round should pass through or not
--- ignores anything that's not a prop (acf components, seats) or with nil volume (makesphere props)
-function ACF_CheckClips(Ent, HitPos)
-	if not IsValid(Ent) or (Ent.ClipData == nil) or Ent:GetClass() ~= "prop_physics" or (Ent:GetPhysicsObject():GetVolume() == nil) then return false end -- makesphere
-	local normal
-	local origin
-
-	for i = 1, #Ent.ClipData do
-		normal = Ent:LocalToWorldAngles(Ent.ClipData[i]["n"]):Forward()
-		origin = Ent:LocalToWorld(Ent:OBBCenter()) + normal * Ent.ClipData[i]["d"]
-		--debugoverlay.BoxAngles( origin, Vector(0,-24,-24), Vector(1,24,24), Ent:LocalToWorldAngles(Ent.ClipData[i]["n"]), 15, Color(255,0,0,32) )
-		if normal:Dot((origin - HitPos):GetNormalized()) > 0 then return true end
-	end
-
-	return false
 end
 
 --handles non-terminal ballistics and fusing of bullets
@@ -190,34 +203,12 @@ function ACF_DoBulletsFlight(Index, Bullet)
 		end
 	end
 
-	-- I'm leaving disabled tracehull setup here, from when I was testing it. just need to set the mins/maxs and swap trace methods a few lines below. --ferv
-	-- tracehull is causing issues with hit detections on clips (ie slipping through clipped glacis seams; reported hitpos is on clipped side of both?)
-	-- ocassional issues with determining hit normal on prop seams, may be related to clip seams
-	-- issues with determining if a glancing hit; these settings have a reduced hull size so that only non-glancing hits count
-	-- possible fix: do a secondary traceline of flight through tracehull hitpos, as if the bullet was travelling through hitpos
-	--    worth the extra trace overhead? only run hulls for large shells? 3" (75mm)? 4" (100mm)? extra complexity for handling different cal traces
-	--local radius = 0.3937 * Bullet.Caliber / 2  -- caliber (shell diameter) is in cm. 
-	--FlightTr.maxs = Vector(radius, radius, radius) * 0.667 -- defining hullsize; reduced size to filter out glancing hits that would deal full damage
-	--FlightTr.mins = -FlightTr.maxs
-	FlightTr.mask = Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID -- cals 30mm and smaller will pass through things like chain link fences
+	FlightTr.mask 	= Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID -- cals 30mm and smaller will pass through things like chain link fences
 	FlightTr.filter = Bullet.Filter -- any changes to bullet filter will be reflected in the trace
-	--perform the trace for damage
-	local RetryTrace = true
+	FlightTr.start  = Bullet.StartTrace
+	FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
 
-	--if trace hits clipped part of prop, add prop to trace filter and retry
-	while RetryTrace do
-		RetryTrace = false
-		FlightTr.start = Bullet.StartTrace
-		FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025) --compensation
-		util.TraceLine(FlightTr) -- trace result is stored in supplied output FlightRes (at top of file)
-
-		--util.TraceHull(FlightTr)
-		--We hit something that's not world, if it's visclipped, filter it out and retry
-		if FlightRes.HitNonWorld and ACF_CheckClips(FlightRes.Entity, FlightRes.HitPos) then
-			table.insert(Bullet.Filter, FlightRes.Entity)
-			RetryTrace = true
-		end
-	end
+	Trace(FlightTr)
 
 	--bullet is told to ignore the next hit, so it does and resets flag
 	if Bullet.SkipNextHit then
