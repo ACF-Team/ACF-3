@@ -172,9 +172,9 @@ function Round.cratetxt(BulletData)
 	return table.concat(str)
 end
 
-function Round.detonate(_, Bullet, HitPos, HitNormal)
+function Round.detonate(_, Bullet, HitPos)
 	local Crushed, HEATFillerMass, BoomFillerMass = Round.CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
-	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, HitNormal, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
+	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
 	if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
 	Bullet.Detonated = true
