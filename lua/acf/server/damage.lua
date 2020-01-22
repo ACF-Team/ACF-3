@@ -237,6 +237,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 		local TotalArea  = 0
 		local PowerSpent = 0
+		local Damage 	 = {}
 
 		for K, Ent in ipairs(Ents) do -- Find entities to deal damage to
 			if Ent.Exploding then -- Filter out exploding crates
@@ -255,19 +256,17 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 				Trace(TraceData) -- Outputs to TraceRes
 
-				debugoverlay.Line(Origin, TraceRes.HitPos, 15, ColorRand(100, 255), false)
-
 				if TraceRes.HitNonWorld then
-					if TraceRes.Entity == Ent or Check(TraceRes.Entity) then
+					if not TraceRes.Entity.Exploding and (TraceRes.Entity == Ent or Check(TraceRes.Entity)) then
 						Ent = TraceRes.Entity
 
-						if not Damaged[Ent] then -- Hit an entity that we haven't already damaged this pass
+						if not Damaged[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
 							local Pos		= Ent:GetPos()
 							local Distance	= Origin:Distance(Pos)
 							local Sphere 	= math.max(4 * 3.1415 * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 							local Area 		= math.min(Ent.ACF.Area / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 
-							Damaged[Ent] = {
+							Damage[Ent] = {
 								Dist = Distance,
 								Vec  = (Pos - Origin):GetNormalized(),
 								Area = Area,
@@ -275,6 +274,8 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 							}
 
 							TotalArea = TotalArea + Area
+
+							Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
 						end
 					else -- If check on new ent fails
 						Ents[K] = nil -- Remove from list
@@ -287,7 +288,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			end
 		end
 
-		for Ent, Table in pairs(Damaged) do -- Deal damage to the entities we found
+		for Ent, Table in pairs(Damage) do -- Deal damage to the entities we found
 			local Feathering 	= (1 - math.min(1, Table.Dist / Radius)) ^ ACF.HEFeatherExp
 			local AreaFraction 	= Table.Area / TotalArea
 			local PowerFraction = Power * AreaFraction --How much of the total power goes to that prop
@@ -315,6 +316,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			end
 
 			PowerSpent = PowerSpent + PowerFraction * Losses --Removing the energy spent killing props
+			Damaged[Ent] = true -- This entity can no longer recieve damage from this explosion
 		end
 
 		Power = math.max(Power - PowerSpent, 0)
