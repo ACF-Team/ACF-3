@@ -40,13 +40,13 @@ local function Trace(TraceData)
 		return Trace(TraceData)
 	end
 
-	debugoverlay.Line(TraceData.start, T.HitPos, 30, ColorRand(100, 255), true)
+	--debugoverlay.Line(TraceData.start, T.HitPos, 30, ColorRand(100, 255), true)
 	return T
 end
 
 -------------------------------------------------
 ACF.Trace 		= Trace
-ACF.CheckClips 	= HitClip
+ACF_CheckClips 	= HitClip
 -------------------------------------------------
 
 function ACF_CreateBullet(BulletData)
