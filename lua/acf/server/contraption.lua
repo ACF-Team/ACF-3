@@ -26,7 +26,12 @@ local function GetAllPhysicalEntities(Ent, Tab)
 		Res[Ent] = true
 
 		if Ent.Constraints then
-			for _, V in pairs(Ent.Constraints) do
+			for K, V in pairs(Ent.Constraints) do
+				if not IsValid(V) then -- Constraints don't clean up after themselves
+					Ent.Constraints[K] = nil -- But we will do Garry a favor and clean up after him
+					continue
+				end
+
 				if V.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
 					GetAllPhysicalEntities(V.Ent1, Res)
 					GetAllPhysicalEntities(V.Ent2, Res)
