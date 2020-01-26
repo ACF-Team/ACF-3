@@ -157,7 +157,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 
 	Entity:SetNWString("WireName", Entity.Name)
 
-	Entity:UpdateOverlay()
+	Entity:UpdateOverlay(true)
 end
 
 local function UpdateSmoothRPM(Engine)
@@ -383,11 +383,6 @@ ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 --===============================================================================================--
 
 function ENT:Enable()
-	if not CheckLegal(self) then return end
-
-	self.Disabled      = nil
-	self.DisableReason = nil
-
 	local Active
 
 	if self.Inputs.Active.Path then
@@ -402,8 +397,6 @@ function ENT:Enable()
 end
 
 function ENT:Disable()
-	self.Disabled = true
-
 	SetActive(self, false) -- Turn off the engine
 
 	self:UpdateOverlay()
@@ -460,31 +453,40 @@ function ENT:UpdateOutputs()
 	end)
 end
 
-function ENT:UpdateOverlay()
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+local function Overlay(Ent)
+	local Boost = Ent.RequiresFuel and ACF.TorqueBoost or 1
+	local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
+	local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
+	local Text
 
-	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if not IsValid(self) then return end
+	if Ent.DisableReason then
+		Text = "Disabled: " .. Ent.DisableReason
+	else
+		Text = Ent.Active and "Active" or "Idle"
+	end
 
-		local Boost = self.RequiresFuel and ACF.TorqueBoost or 1
-		local PowerbandMin = self.IsElectric and self.IdleRPM or self.PeakMinRPM
-		local PowerbandMax = self.IsElectric and math.floor(self.LimitRPM / 2) or self.PeakMaxRPM
-		local Text
+	Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
+		"Power: " .. Round(Ent.peakkw * Boost) .. " kW / " .. Round(Ent.peakkw * Boost * 1.34) .. " hp\n" ..
+		"Torque: " .. Round(Ent.PeakTorque * Boost) .. " Nm / " .. Round(Ent.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
+		"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
+		"Redline: " .. Ent.LimitRPM .. " RPM"
 
-		if self.DisableReason then
-			Text = "Disabled: " .. self.DisableReason
-		else
-			Text = self.Active and "Active" or "Idle"
-		end
+	Ent:SetOverlayText(Text)
+end
 
-		Text = Text .. "\n\n" .. self.Name .. "\n" ..
-			"Power: " .. Round(self.peakkw * Boost) .. " kW / " .. Round(self.peakkw * Boost * 1.34) .. " hp\n" ..
-			"Torque: " .. Round(self.PeakTorque * Boost) .. " Nm / " .. Round(self.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
-			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
-			"Redline: " .. self.LimitRPM .. " RPM"
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-		self:SetOverlayText(Text)
-	end)
+	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
+			end
+		end)
+	end
 end
 
 function ENT:TriggerInput(Input, Value)

@@ -582,14 +582,10 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Enable()
-			if not CheckLegal(self) then return end
-
-			self.Disabled	   = nil
-			self.DisableReason = nil
+			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
-			self.Disabled = true
 			self.Firing   = false -- Stop firing
 
 			self:Unload() -- Unload the gun for being a big baddie

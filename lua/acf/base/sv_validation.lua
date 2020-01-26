@@ -50,21 +50,29 @@ end
 local function CheckLegal(Entity)
 	local Legal, Reason = IsLegal(Entity)
 
-	Entity.DisableReason = Reason
+	if not Legal then -- Not legal
+		Entity.Disabled		 = true
+		Entity.DisableReason = Reason
 
-	if not Legal then
-		Entity:Disable()
+		Entity:Disable() -- Let the entity know it's disabled
 
-		TimerSimple(ACF.IllegalDisableTime, function()
-			if IsValid(Entity) then
+		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
+
+		TimerSimple(ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
+			if IsValid(Entity) and CheckLegal(Entity) then
+				Entity.Disabled	   	 = nil
+				Entity.DisableReason = nil
+
 				Entity:Enable()
+
+				if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
 			end
 		end)
 
 		return false
 	end
 
-	TimerSimple(math.Rand(1, 3), function()
+	TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
 		if IsValid(Entity) then
 			CheckLegal(Entity)
 		end

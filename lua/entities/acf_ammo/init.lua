@@ -251,11 +251,6 @@ do -- Metamethods -------------------------------
 
 	do -- Legal Checks --------------------------
 		function ENT:Enable()
-			if not CheckLegal(self) then return end
-
-			self.Disabled	   = nil
-			self.DisableReason = nil
-
 			if self.Inputs.Load.Path then
 				self.Load = tobool(self.Inputs.Load.Value)
 			else
@@ -267,8 +262,7 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:Disable()
-			self.Disabled = true
-			self.Load     = false
+			self.Load = false
 
 			self:UpdateOverlay(true)
 			self:UpdateMass()
