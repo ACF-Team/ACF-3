@@ -15,7 +15,6 @@ hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", function()
 	cam.Start3D(EyePos(), EyeAngles())
 
 	for k, ent in pairs(ACF_HealthRenderList) do
-		--if ent:EntIndex() == 227 then print(  ent.ACF_Material ) end
 		if IsValid(ent) then
 			render.ModelMaterialOverride(ent.ACF_Material)
 			render.SetBlend(math.Clamp(1 - ent.ACF_HelathPercent, 0, 0.8))

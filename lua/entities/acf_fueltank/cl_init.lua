@@ -2,6 +2,17 @@ include("shared.lua")
 
 local SeatedInfo = CreateClientConVar("ACF_FuelInfoWhileSeated", 0, true, false)
 
+function ENT:Initialize()
+	self.HitBoxes = {
+		Main = {
+			Pos = self:OBBCenter(),
+			Scale = (self:OBBMaxs() - self:OBBMins()) - Vector(2, 2, 2),
+			Angle = Angle(0, 0, 0),
+			Sensitive = false
+		}
+	}
+end
+
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 	local lply = LocalPlayer()

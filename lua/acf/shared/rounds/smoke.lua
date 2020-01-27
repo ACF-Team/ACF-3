@@ -157,7 +157,7 @@ function Round.worldimpact()
 end
 
 function Round.endflight(Index)
-	--ACF_HE( HitPos - Bullet.Flight:GetNormalized()*3 , HitNormal, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner )
+	--ACF_HE( HitPos - Bullet.Flight:GetNormalized()*3, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner )
 	ACF_RemoveBullet(Index)
 end
 

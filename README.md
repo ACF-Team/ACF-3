@@ -13,17 +13,22 @@ Ammunition is customizable with varying ballistic performance along with armor b
 
 ## Installation
 
+### Dependencies
+> ACF requires these additional addons in order to function properly
+
+Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf). We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
+
 ### Git Client (Recommended)
 
 Install a Git client, such as the [Github client](https://desktop.github.com/) or [GitKraken](https://www.gitkraken.com/), then clone ACF to your addons folder. With the Github client installed you can click the green button at the top of the ACF repo page and select clone. Updating ACF on your server or client after install simply requires clicking the pull button in your respective Git client.
 
-### Manual
+### Manually
 
 Click the green button at the top of the ACF repo and select zip. Extract and move to your addons folder.
 
 ## Contributing
 
-Found an annoying bug on the addon? Want to suggest a brand new feature? Think something should be changed? Make sure to check out [Contributing to ACF](CONTRIBUTING.md), where we have a full guide on how to properly contribute to this project.
+Found an annoying bug in the addon? Want to suggest a brand new feature? Think something should be changed? Make sure to check out [Contributing to ACF](CONTRIBUTING.md), where we have a full guide on how to properly contribute to this project.
 
 ## Links
 

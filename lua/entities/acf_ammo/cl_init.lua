@@ -1,5 +1,16 @@
 include("shared.lua")
 
+function ENT:Initialize()
+	self.HitBoxes = {
+		Main = {
+			Pos = self:OBBCenter(),
+			Scale = (self:OBBMaxs() - self:OBBMins()) - Vector(2, 2, 2),
+			Angle = Angle(0, 0, 0),
+			Sensitive = false
+		}
+	}
+end
+
 --Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
 local function Bezier(a, b, c, d, t)
 	local ab, bc, cd, abbc, bccd

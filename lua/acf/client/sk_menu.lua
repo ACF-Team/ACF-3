@@ -49,10 +49,6 @@ function PANEL:Init()
 		ACFHomeGUICreate(Table)
 	end or nil)
 
-	HomeNode.mytable.guiupdate = (function(_, Table)
-		ACFHomeGUIUpdate(Table)
-	end or nil)
-
 	function HomeNode:DoClick()
 		acfmenupanel:UpdateDisplay(self.mytable)
 	end
@@ -244,101 +240,26 @@ end
 
 function ACFHomeGUICreate()
 	if not acfmenupanel.CustomDisplay then return end
-	--start version
-	acfmenupanel["CData"]["VersionInit"] = vgui.Create("DLabel")
-	versiontext = "Version\n\n" .. "Git Version: " .. ACF.CurrentVersion .. "\nCurrent Version: " .. ACF.Version
-	acfmenupanel["CData"]["VersionInit"]:SetText(versiontext)
-	acfmenupanel["CData"]["VersionInit"]:SetDark(true)
-	acfmenupanel["CData"]["VersionInit"]:SizeToContents()
-	acfmenupanel.CustomDisplay:AddItem(acfmenupanel["CData"]["VersionInit"])
-	acfmenupanel["CData"]["VersionText"] = vgui.Create("DLabel")
-	local color
-	local versionstring
 
-	if ACF.Version >= ACF.CurrentVersion then
-		versionstring = "Up To Date"
-		color = Color(0, 225, 0, 255)
+	local Text
+	local CData  = acfmenupanel.CData
+	local Git	 = ACF.GitVersion
+	local Server = ACF.ServerVersion
+
+	if Server.Code == Git.Code or Server.Date >= Git.Date then
+		Text = "Up to date!"
+	elseif Git.Code then
+		Text = "Out of date!"
 	else
-		versionstring = "Out Of Date"
-		color = Color(225, 0, 0, 255)
+		Text = "Version is unknown!"
 	end
 
-	acfmenupanel["CData"]["VersionText"]:SetText("ACF Is " .. versionstring .. "!\n\n\n\n")
-	acfmenupanel["CData"]["VersionText"]:SetDark(true)
-	acfmenupanel["CData"]["VersionText"]:SetColor(color)
-	acfmenupanel["CData"]["VersionText"]:SizeToContents()
-	acfmenupanel.CustomDisplay:AddItem(acfmenupanel["CData"]["VersionText"])
-	-- end version
-	acfmenupanel:CPanelText("Header", "Changelog")
-
-	if acfmenupanel.Changelog then
-		acfmenupanel["CData"]["Changelist"] = vgui.Create("DTree")
-
-		for Rev in pairs(acfmenupanel.Changelog) do
-			local Node = acfmenupanel["CData"]["Changelist"]:AddNode("Rev " .. Rev)
-			Node.mytable = {}
-			Node.mytable["rev"] = Rev
-
-			function Node:DoClick()
-				acfmenupanel:UpdateAttribs(Node.mytable)
-			end
-
-			Node.Icon:SetImage("icon16/newspaper.png")
-		end
-
-		acfmenupanel.CData.Changelist:SetSize(acfmenupanel.CustomDisplay:GetWide(), 60)
-		acfmenupanel.CustomDisplay:AddItem(acfmenupanel["CData"]["Changelist"])
-		acfmenupanel.CustomDisplay:PerformLayout()
-
-		acfmenupanel:UpdateAttribs({
-			rev = table.maxn(acfmenupanel.Changelog)
-		})
-	end
+	CData["VersionInit"] = vgui.Create("DLabel")
+		CData["VersionInit"]:SetText("ACF Version: " .. Text .. "\n\n" .. "Server Version: " .. Server.Code .. "\nClient Version: " .. Git.Code)
+		CData["VersionInit"]:SetDark(true)
+		CData["VersionInit"]:SizeToContents()
+	acfmenupanel.CustomDisplay:AddItem(CData["VersionInit"])
 end
-
-function ACFHomeGUIUpdate(Table)
-	acfmenupanel:CPanelText("Changelog", acfmenupanel.Changelog[Table["rev"]])
-	acfmenupanel.CustomDisplay:PerformLayout()
-	local color
-	local versionstring
-
-	if ACF.Version >= ACF.CurrentVersion then
-		versionstring = "Up To Date"
-		color = Color(0, 225, 0, 255)
-	else
-		versionstring = "Out Of Date"
-		color = Color(225, 0, 0, 255)
-	end
-
-	acfmenupanel["CData"]["VersionText"]:SetText("ACF Is " .. versionstring .. "!\n\n\n\n")
-	acfmenupanel["CData"]["VersionText"]:SetDark(true)
-	acfmenupanel["CData"]["VersionText"]:SetColor(color)
-	acfmenupanel["CData"]["VersionText"]:SizeToContents()
-end
-
-function ACFChangelogHTTPCallBack(contents)
-	local Temp = string.Explode("*", contents)
-	acfmenupanel.Changelog = {}
-
-	for _, String in pairs(Temp) do
-		acfmenupanel.Changelog[tonumber(string.sub(String, 2, 4))] = string.Trim(string.sub(String, 5))
-	end
-
-	table.SortByKey(acfmenupanel.Changelog, true)
-	local Table = {}
-
-	Table.guicreate = (function(_, Tab)
-		ACFHomeGUICreate(Tab)
-	end or nil)
-
-	Table.guiupdate = (function(_, Tab)
-		ACFHomeGUIUpdate(Tab)
-	end or nil)
-
-	acfmenupanel:UpdateDisplay(Table)
-end
-
-http.Fetch("http://raw.github.com/nrlulz/ACF/master/changelog.txt", ACFChangelogHTTPCallBack, function() end)
 
 function PANEL:AmmoSelect(Blacklist)
 	if not acfmenupanel.CustomDisplay then return end

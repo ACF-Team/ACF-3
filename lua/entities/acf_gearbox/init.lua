@@ -7,6 +7,9 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
+local TimerCreate = timer.Create
+local TimerExists = timer.Exists
+
 local function CheckLoopedGearbox(This, Target)
 	local Queued = { [Target] = true }
 	local Checked = {}
@@ -302,12 +305,13 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	ChangeGear(Entity, 1)
 
 	Entity:SetNWString("WireName", Entity.Name)
-	Entity:UpdateOverlay()
 
 	ACF_Activate(Entity)
 
 	Entity.ACF.LegalMass = Entity.Mass
 	Entity.ACF.Model     = Entity.Model
+
+	Entity:UpdateOverlay()
 end
 
 local function CheckRopes(Entity, Target)
@@ -442,8 +446,6 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Owner:AddCount("_acf_misc", Gearbox)
 	Owner:AddCleanup("acfmenu", Gearbox)
 
-	UpdateGearboxData(Gearbox, GearboxData, Id, ...)
-
 	Gearbox.Owner = Owner
 	Gearbox.IsGeartrain = true
 	Gearbox.Engines = {}
@@ -465,6 +467,9 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.OutL = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("driveshaftL")).Pos)
 	Gearbox.OutR = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("driveshaftR")).Pos)
 
+	UpdateGearboxData(Gearbox, GearboxData, Id, ...)
+	Gearbox:UpdateOverlay(true)
+
 	CheckLegal(Gearbox)
 
 	timer.Create("ACF Gearbox Clock " .. Gearbox:EntIndex(), 3, 0, function()
@@ -472,7 +477,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 			CheckRopes(Gearbox, "GearboxOut")
 			CheckRopes(Gearbox, "Wheels")
 		else
-			timer.Stop("ACF Engine Clock " .. Gearbox:EntIndex())
+			timer.Remove("ACF Engine Clock " .. Gearbox:EntIndex())
 		end
 	end)
 
@@ -491,11 +496,6 @@ ACF.RegisterLinkSource("acf_gearbox", "Wheels")
 --===============================================================================================--
 
 function ENT:Enable()
-	if not CheckLegal(self) then return end
-
-	self.Disabled	   = nil
-	self.DisableReason = nil
-
 	if self.Auto then
 		ChangeDrive(self, self.OldGear)
 	else
@@ -508,7 +508,6 @@ function ENT:Enable()
 end
 
 function ENT:Disable()
-	self.Disabled = true
 	self.OldGear  = self.Auto and self.Drive or self.Gear
 
 	if self.Auto then
@@ -534,45 +533,54 @@ function ENT:Update(ArgsTable)
 	return true, "Gearbox updated successfully!"
 end
 
-function ENT:UpdateOverlay()
-	if timer.Exists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+local function Overlay(Ent)
+	local Text
 
-	timer.Create("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if not IsValid(self) then return end
+	if Ent.DisableReason then
+		Text = "Disabled: " .. Ent.DisableReason
+	else
+		Text = "Current Gear: " .. Ent.Gear
+	end
 
-		local Text
+	Text = Text .. "\n\n" .. Ent.Name .. "\n"
 
-		if self.DisableReason then
-			Text = "Disabled: " .. self.DisableReason
-		else
-			Text = "Current Gear: " .. self.Gear
+	if Ent.CVT then
+		Text = "Reverse Gear: " .. math.Round(Ent.GearTable[2], 2) ..
+				"\nTarget: " .. math.Round(Ent.TargetMinRPM) .. " - " .. math.Round(Ent.TargetMaxRPM) .. " RPM\n"
+	elseif Ent.Auto then
+		for i = 1, Ent.Gears do
+			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) ..
+					", Upshift @ " .. math.Round(Ent.ShiftPoints[i] / 10.936, 1) .. " kph / " ..
+					math.Round(Ent.ShiftPoints[i] / 17.6, 1) .. " mph\n"
 		end
 
-		Text = Text .. "\n\n" .. self.Name .. "\n"
-
-		if self.CVT then
-			Text = "Reverse Gear: " .. math.Round(self.GearTable[2], 2) ..
-					"\nTarget: " .. math.Round(self.TargetMinRPM) .. " - " .. math.Round(self.TargetMaxRPM) .. " RPM\n"
-		elseif self.Auto then
-			for i = 1, self.Gears do
-				Text = Text .. "Gear " .. i .. ": " .. math.Round(self.GearTable[i], 2) ..
-						", Upshift @ " .. math.Round(self.ShiftPoints[i] / 10.936, 1) .. " kph / " ..
-						math.Round(self.ShiftPoints[i] / 17.6, 1) .. " mph\n"
-			end
-
-			Text = Text .. "Reverse gear: " .. math.Round(self.GearTable[self.Reverse], 2) .. "\n"
-		else
-			for i = 1, self.Gears do
-				Text = Text .. "Gear " .. i .. ": " .. math.Round(self.GearTable[i], 2) .. "\n"
-			end
+		Text = Text .. "Reverse gear: " .. math.Round(Ent.GearTable[Ent.Reverse], 2) .. "\n"
+	else
+		for i = 1, Ent.Gears do
+			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) .. "\n"
 		end
+	end
 
-		Text = Text .. "Final Drive: " .. math.Round(self.Gear0, 2) .. "\n"
-		Text = Text .. "Torque Rating: " .. self.MaxTorque .. " Nm / " .. math.Round(self.MaxTorque * 0.73) .. " ft-lb\n"
-		Text = Text .. "Torque Output: " .. math.floor(self.TorqueOutput) .. " Nm / " .. math.Round(self.TorqueOutput * 0.73) .. " ft-lb"
+	Text = Text .. "Final Drive: " .. math.Round(Ent.Gear0, 2) .. "\n"
+	Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
+	Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
 
-		self:SetOverlayText(Text)
-	end)
+	Ent:SetOverlayText(Text)
+end
+
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
+
+	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
+			end
+		end)
+	end
 end
 
 -- prevent people from changing bodygroup

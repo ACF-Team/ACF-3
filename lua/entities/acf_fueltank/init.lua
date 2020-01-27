@@ -99,6 +99,12 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	Tank.Leaking   = 0
 	Tank.CanUpdate = true
 	Tank.LastThink = 0
+	Tank.HitBoxes  = {
+			Main = {
+				Pos = Tank:OBBCenter(),
+				Scale = (Tank:OBBMaxs() - Tank:OBBMins()) - Vector(0.5, 0.5, 0.5),
+			}
+		}
 
 	Tank.Inputs = WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
 	Tank.Outputs = WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
@@ -228,11 +234,6 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:Enable()
-	if not CheckLegal(self) then return end
-
-	self.Disabled	   = nil
-	self.DisableReason = nil
-
 	if self.Inputs.Active.Path then
 		self.Active = tobool(self.Inputs.Active.Value)
 	else
@@ -243,7 +244,6 @@ function ENT:Enable()
 end
 
 function ENT:Disable()
-	self.Disabled = true
 	self.Active = false
 
 	self:UpdateOverlay()
@@ -293,38 +293,47 @@ function ENT:UpdateMass()
 	end)
 end
 
-function ENT:UpdateOverlay()
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+local function Overlay(Ent)
+	local Text
 
-	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-		if not IsValid(self) then return end
+	if Ent.DisableReason then
+		Text = "Disabled: " .. Ent.DisableReason
+	elseif Ent.Leaking > 0 then
+		Text = "Leaking"
+	else
+		Text = Ent.Active and "Providing Fuel" or "Idle"
+	end
 
-		local Text
+	Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
 
-		if self.DisableReason then
-			Text = "Disabled: " .. self.DisableReason
-		elseif self.Leaking > 0 then
-			Text = "Leaking"
-		else
-			Text = self.Active and "Providing Fuel" or "Idle"
-		end
+	if Ent.FuelType == "Electric" then
+		local KiloWatt = math.Round(Ent.Fuel, 1)
+		local Joules = math.Round(Ent.Fuel * 3.6, 1)
 
-		Text = Text .. "\n\nFuel Type: " .. self.FuelType
+		Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+	else
+		local Liters = math.Round(Ent.Fuel, 1)
+		local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
 
-		if self.FuelType == "Electric" then
-			local KiloWatt = math.Round(self.Fuel, 1)
-			local Joules = math.Round(self.Fuel * 3.6, 1)
+		Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
+	end
 
-			Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
-		else
-			local Liters = math.Round(self.Fuel, 1)
-			local Gallons = math.Round(self.Fuel * 0.264172, 1)
+	Ent:SetOverlayText(Text)
+end
 
-			Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
-		end
+function ENT:UpdateOverlay(Instant)
+	if Instant then
+		Overlay(self)
+		return
+	end
 
-		self:SetOverlayText(Text)
-	end)
+	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) then
+				Overlay(self)
+			end
+		end)
+	end
 end
 
 function ENT:UpdateOutputs()

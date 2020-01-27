@@ -78,6 +78,12 @@ function EFFECT:Init(data)
 		self:SetAngles(BulletData.SimFlight:Angle())
 		self.Alive = true
 		ACF_SimBulletFlight(ACF.BulletEffect[self.Index], self.Index)
+
+		local CustomEffect = hook.Run("ACF_BulletEffect", BulletData.AmmoType)
+
+		if CustomEffect then
+			self.ApplyMovement = CustomEffect
+		end
 	end
 end
 
