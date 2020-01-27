@@ -312,7 +312,8 @@ do -- Metamethods -------------------------------
 						self.BulletData.Owner = self.Inflictor or self.Owner
 						self.BulletData.Gun = self
 						self.BulletData.Crate = self:EntIndex()
-						self.CreateShell = self.RoundData.create(self, self.BulletData)
+
+						self.RoundData.create(self, self.BulletData)
 
 						self:Consume()
 					end

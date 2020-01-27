@@ -1,7 +1,7 @@
 -- init
 ACF.Bullet = {} --when ACF is loaded, this table holds bullets
 ACF.CurBulletIndex = 0 --used to track where to insert bullets
-ACF.BulletIndexLimt = 1000 --The maximum number of bullets in flight at any one time. oldest existing bullets are overwritten if limit overflow
+ACF.BulletIndexLimit = 1000 --The maximum number of bullets in flight at any one time. oldest existing bullets are overwritten if limit overflow
 ACF.TraceFilter = { --entities that cause issue with acf and should be not be processed at all
 	prop_vehicle_crane = true,
 	prop_dynamic = true
@@ -52,7 +52,7 @@ ACF_CheckClips 	= HitClip
 function ACF_CreateBullet(BulletData)
 	ACF.CurBulletIndex = ACF.CurBulletIndex + 1 --Increment the index
 
-	if ACF.CurBulletIndex > ACF.BulletIndexLimt then
+	if ACF.CurBulletIndex > ACF.BulletIndexLimit then
 		ACF.CurBulletIndex = 1
 	end
 
@@ -83,9 +83,14 @@ function ACF_CreateBullet(BulletData)
 
 	BulletData["Filter"] = {BulletData["Gun"]}
 	BulletData["Index"] = ACF.CurBulletIndex
-	ACF.Bullet[ACF.CurBulletIndex] = table.Copy(BulletData) --Place the bullet at the current index pos
-	ACF_BulletClient(ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex], "Init", 0)
-	ACF_CalcBulletFlight(ACF.CurBulletIndex, ACF.Bullet[ACF.CurBulletIndex])
+
+	local Bullet = table.Copy(BulletData)
+
+	ACF.Bullet[ACF.CurBulletIndex] = Bullet --Place the bullet at the current index pos
+	ACF_BulletClient(ACF.CurBulletIndex, Bullet, "Init", 0)
+	ACF_CalcBulletFlight(ACF.CurBulletIndex, Bullet)
+
+	return Bullet
 end
 
 --global update function where acf updates ALL bullets at once--this runs once per tick, handling bullet physics for all bullets in table.
