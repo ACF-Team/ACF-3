@@ -67,7 +67,7 @@ function EFFECT:Init(data)
 
 		if BulletData.Crate:GetNWFloat("Tracer") > 0 then
 			BulletData.Tracer = ParticleEmitter(BulletData.SimPos)
-			BulletData.TracerColour = BulletData.Crate:GetNWVector("TracerColour", BulletData.Crate:GetColor()) or Vector(255, 255, 255)
+			BulletData.TracerColour = BulletData.Crate:GetColor()
 		end
 
 		BulletData.Accel = BulletData.Crate:GetNWVector("Accel", Vector(0, 0, -600))
@@ -142,9 +142,11 @@ function EFFECT:ApplyMovement(Bullet)
 		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", setPos) -- - DeltaPos )
 
 		if (Light) then
+			local Color = Bullet.TracerColour
+
 			Light:SetAngles(Bullet.SimFlight:Angle())
 			Light:SetVelocity(Bullet.SimFlight:GetNormalized()) --Vector() ) --Bullet.SimFlight )
-			Light:SetColor(Bullet.TracerColour.x, Bullet.TracerColour.y, Bullet.TracerColour.z)
+			Light:SetColor(Color.r, Color.g, Color.b)
 			Light:SetDieTime(math.Clamp(ACF.CurTime - self.CreateTime, 0.075, 0.15)) -- 0.075, 0.1
 			Light:SetStartAlpha(255)
 			Light:SetEndAlpha(155)

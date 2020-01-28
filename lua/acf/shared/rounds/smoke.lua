@@ -162,18 +162,16 @@ function Round.endflight(Index)
 end
 
 function Round.endeffect(_, Bullet)
+	local Crate = Bullet.Crate
+	local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
+
 	local Flash = EffectData()
 	Flash:SetOrigin(Bullet.SimPos)
 	Flash:SetNormal(Bullet.SimFlight:GetNormalized())
 	Flash:SetRadius(math.max(Bullet.FillerMass * 8 * 39.37, 0)) --(Bullet.FillerMass)^0.33*8*39.37
 	Flash:SetMagnitude(math.max(Bullet.WPMass * 8 * 39.37, 0))
-	local vec = Vector(255, 255, 255)
+	Flash:SetStart(Vector(Color.r, Color.g, Color.b))
 
-	if IsValid(Bullet.Crate) then
-		vec = Bullet.Crate:GetNWVector("TracerColour", Bullet.Crate:GetColor())
-	end
-
-	Flash:SetStart(vec)
 	util.Effect("ACF_Smoke", Flash)
 end
 
