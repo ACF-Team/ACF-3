@@ -248,19 +248,22 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		end
 	end
 
-	Entity.GearTable = {
-		[0] = GearboxData.geartable[0],
-		[1] = Data1,
-		[2] = Data2,
-		[3] = Data3,
-		[4] = Data4,
-		[5] = Data5,
-		[6] = Data6,
-		[7] = Data7,
-		[8] = Data8,
-		[9] = Data9,
-		Final = Data10,
-	}
+	Entity.GearTable = {}
+
+	for K, V in pairs(GearboxData.geartable) do
+		Entity.GearTable[K] = V
+	end
+
+	Entity.GearTable[1] = Data1
+	Entity.GearTable[2] = Data2
+	Entity.GearTable[3] = Data3
+	Entity.GearTable[4] = Data4
+	Entity.GearTable[5] = Data5
+	Entity.GearTable[6] = Data6
+	Entity.GearTable[7] = Data7
+	Entity.GearTable[8] = Data8
+	Entity.GearTable[9] = Data9
+	Entity.GearTable.Final = Data10
 
 	Entity.Gear0 = Data10
 	Entity.Gear1 = Data1
@@ -277,7 +280,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	if Entity.CVT then
 		Entity.TargetMinRPM = Data3
 		Entity.TargetMaxRPM = math.max(Data4, Data3 + 100)
-		Entity.CVTRatio = nil
+		Entity.CVTRatio = 0
 
 		WireLib.TriggerOutput(Entity, "Min Target RPM", Entity.TargetMinRPM)
 		WireLib.TriggerOutput(Entity, "Max Target RPM", Entity.TargetMaxRPM)
@@ -301,8 +304,6 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	else
 		Entity:SetBodygroup(1, 0)
 	end
-
-	ChangeGear(Entity, 1)
 
 	Entity:SetNWString("WireName", Entity.Name)
 
