@@ -3,8 +3,17 @@
 -- Local Vars -----------------------------------
 local StringFind  = string.find
 local TimerSimple = timer.Simple
-local Baddies 	  = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true, gmod_wire_hologram = true} -- Ignored by ACF
+local Baddies 	  = { -- Ignored by ACF
+	gmod_ghost = true,
+	acf_debris = true,
+	prop_ragdoll = true,
+	gmod_wire_hologram = true,
+	prop_vehicle_crane = true,
+	prop_dynamic = true,
+	npc_strider = true
+}
 -- Local Funcs ----------------------------------
+
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
 	ENT.ACF.PhysObj defined when spawned
@@ -14,16 +23,10 @@ local Baddies 	  = {gmod_ghost = true, acf_debris = true, prop_ragdoll = true, g
 	ACF_CheckLegal(entity) called when finished spawning
 
 	function ENT:Enable()
-		if not ACF_CheckLegal(self) then return end
-		self.Disabled = nil
-
 		<code>
-
 	end
 
 	function ENT:Disable()
-		self.Disabled = true
-
 		<code>
 	end
 ]]--
@@ -267,5 +270,6 @@ do -- Entity Links ------------------------------
 end ---------------------------------------------
 
 -- Globalize ------------------------------------
-ACF_IsLegal 	= IsLegal
-ACF_CheckLegal 	= CheckLegal
+ACF.GlobalFilter = Baddies
+ACF_IsLegal 	 = IsLegal
+ACF_CheckLegal 	 = CheckLegal

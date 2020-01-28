@@ -2,15 +2,12 @@
 ACF.Bullet = {} --when ACF is loaded, this table holds bullets
 ACF.CurBulletIndex = 0 --used to track where to insert bullets
 ACF.BulletIndexLimit = 1000 --The maximum number of bullets in flight at any one time. oldest existing bullets are overwritten if limit overflow
-ACF.TraceFilter = { --entities that cause issue with acf and should be not be processed at all
-	prop_vehicle_crane = true,
-	prop_dynamic = true
-}
 ACF.SkyboxGraceZone = 100 --grace zone for the high angle fire
 
-local TraceLine = util.TraceLine
-local FlightRes = {}
-local FlightTr  = { output = FlightRes }
+local TraceLine 	= util.TraceLine
+local FlightRes 	= {}
+local FlightTr  	= { output = FlightRes }
+local GlobalFilter 	= ACF.GlobalFilter
 
 local function HitClip(Ent, Pos)
 	if not IsValid(Ent) or Ent.ClipData == nil or Ent:GetClass() ~= "prop_physics" or (Ent:GetPhysicsObject():GetVolume() == nil) then return false end -- makesphere
@@ -223,8 +220,8 @@ function ACF_DoBulletsFlight(Index, Bullet)
 
 		Bullet.Pos = Bullet.NextPos
 		--bullet hit something that isn't world and is allowed to hit
-	elseif FlightRes.HitNonWorld and not ACF.TraceFilter[FlightRes.Entity:GetClass()] then
-		--don't process ACF.TraceFilter ents
+	elseif FlightRes.HitNonWorld and not GlobalFilter[FlightRes.Entity:GetClass()] then
+		--don't process GlobalFilter ents
 		--If we hit stuff then send the resolution to the bullets damage function
 		ACF_BulletPropImpact = ACF.RoundTypes[Bullet.Type]["propimpact"]
 		local Retry = ACF_BulletPropImpact(Index, Bullet, FlightRes.Entity, FlightRes.HitNormal, FlightRes.HitPos, FlightRes.HitGroup)
