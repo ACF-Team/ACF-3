@@ -213,6 +213,7 @@ do -- ACF Damage --------------------------------
 end ---------------------------------------------
 
 function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
+	debugoverlay.Cross(Origin, 15, 15, Color( 255, 255, 255 ), true)
 	Filter = Filter or {}
 
 	local Power 	 = FillerMass * ACF.HEPower --Power in KiloJoules of the filler mass of  TNT
@@ -235,7 +236,6 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 	while Loop and Power > 0 do
 		Loop = false
 
-		local TotalArea  = 0
 		local PowerSpent = 0
 		local Damage 	 = {}
 
@@ -247,9 +247,18 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 				continue
 			end
 
+			local IsChar = Ent:IsPlayer() or Ent:IsNPC()
+			if IsChar and not Ent:Alive() then
+				Ents[K] = nil
+				Filter[#Filter + 1] = Ent -- Shouldn't need to filter a dead player but we'll do it just in case
+
+				continue
+			end
+
 			if Check(Ent) then -- ACF-valid entity
-				local Mins, Maxs = Ent:OBBMins(), Ent:OBBMaxs()
-				local Target 	 = Ent:LocalToWorld(Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))) -- Try to hit a random spot on the entity
+				local Mul 		 = IsChar and 0.5 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
+				local Mins, Maxs = Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul
+				local Target 	 = Ent:LocalToWorld(Ent:OBBCenter() + Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))) -- Try to hit a random spot on the entity
 				local Displ		 = Target - Origin
 
 				TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
@@ -261,6 +270,8 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 						Ent = TraceRes.Entity
 
 						if not Damaged[Ent] and not Damage[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
+							debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(0, 255, 0)) -- Green line for a hit trace
+
 							local Pos		= Ent:GetPos()
 							local Distance	= Origin:Distance(Pos)
 							local Sphere 	= math.max(4 * 3.1415 * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
@@ -273,14 +284,18 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 								Index = K
 							}
 
-							TotalArea = TotalArea + Area
-
 							Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
+						else
+							debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
 						end
 					else -- If check on new ent fails
+						debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(255, 0, 0)) -- Red line for a invalid ent
+
 						Ents[K] = nil -- Remove from list
 						Filter[#Filter + 1] = Ent -- Filter from traces
 					end
+				else
+					debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(0, 0, 255)) -- Blue line for a miss
 				end
 			else -- Target was invalid
 				Ents[K] = nil -- Remove from list
@@ -290,7 +305,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 		for Ent, Table in pairs(Damage) do -- Deal damage to the entities we found
 			local Feathering 	= (1 - math.min(1, Table.Dist / Radius)) ^ ACF.HEFeatherExp
-			local AreaFraction 	= Table.Area / TotalArea
+			local AreaFraction 	= Table.Area / MaxSphere
 			local PowerFraction = Power * AreaFraction --How much of the total power goes to that prop
 			local AreaAdjusted 	= (Ent.ACF.Area / ACF.Threshold) * Feathering
 			local Blast 		= { Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted }
