@@ -47,7 +47,7 @@ local function GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
-		if Res[V] then continue end
+		if not IsValid(V) or Res[V] then continue end
 
 		Res[V] = true
 		GetAllChildren(V, Res)

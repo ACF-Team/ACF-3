@@ -148,3 +148,5 @@ function Round.guiupdate(Panel)
 end
 
 ACF.RoundTypes.HP = Round --Set the round properties
+
+ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")

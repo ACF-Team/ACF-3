@@ -297,28 +297,24 @@ function ACF_DoBulletsFlight(Index, Bullet)
 end
 
 function ACF_BulletClient(Index, Bullet, Type, Hit, HitPos)
-	if Type == "Update" then
-		local Effect = EffectData()
-		Effect:SetAttachment(Index) --Bulet Index
-		Effect:SetStart(Bullet.Flight / 10) --Bullet Direction
+	local Effect = EffectData()
+	Effect:SetAttachment(Index) --Bulet Index
+	Effect:SetStart(Bullet.Flight * 0.1) --Bullet Direction
 
+	if Type == "Update" then
 		-- If there is a hit then set the effect pos to the impact pos instead of the retry pos
 		if Hit > 0 then
-			Effect:SetOrigin(HitPos) --Bullet Pos
+			Effect:SetOrigin(HitPos)
 		else
 			Effect:SetOrigin(Bullet.Pos)
 		end
 
 		Effect:SetScale(Hit) --Hit Type 
-		util.Effect("acf_bulleteffect", Effect, true, true)
 	else
-		local Effect = EffectData()
-
-		Effect:SetAttachment(Index) --Bulet Index
-		Effect:SetStart(Bullet.Flight / 10) --Bullet Direction
 		Effect:SetOrigin(Bullet.Pos)
-		Effect:SetEntity(Entity(Bullet["Crate"]))
+		Effect:SetEntity(Entity(Bullet.Crate))
 		Effect:SetScale(0)
-		util.Effect("acf_bulleteffect", Effect, true, true)
 	end
+
+	util.Effect("ACF_Bullet_Effect", Effect, true, true)
 end

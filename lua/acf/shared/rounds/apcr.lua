@@ -138,37 +138,40 @@ function Round.endflight(Index)
 	ACF_RemoveBullet(Index)
 end
 
--- Bullet stops here
+local DecalIndex = ACF.GetAmmoDecalIndex
+
 function Round.endeffect(_, Bullet)
-	local Spall = EffectData()
-	Spall:SetEntity(Bullet.Crate)
-	Spall:SetOrigin(Bullet.SimPos)
-	Spall:SetNormal((Bullet.SimFlight):GetNormalized())
-	Spall:SetScale(Bullet.SimFlight:Length())
-	Spall:SetMagnitude(Bullet.RoundMass)
-	util.Effect("ACF_AP_Impact", Spall)
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetRadius(Bullet.Caliber)
+	Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+	util.Effect("ACF_Impact", Effect)
 end
 
--- Bullet penetrated something
 function Round.pierceeffect(_, Bullet)
-	local Spall = EffectData()
-	Spall:SetEntity(Bullet.Crate)
-	Spall:SetOrigin(Bullet.SimPos)
-	Spall:SetNormal((Bullet.SimFlight):GetNormalized())
-	Spall:SetScale(Bullet.SimFlight:Length())
-	Spall:SetMagnitude(Bullet.RoundMass)
-	util.Effect("ACF_AP_Penetration", Spall)
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetScale(Bullet.SimFlight:Length())
+	Effect:SetMagnitude(Bullet.RoundMass)
+	Effect:SetRadius(Bullet.Caliber)
+	Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+	util.Effect("ACF_Penetration", Effect)
 end
 
--- Bullet ricocheted off something
 function Round.ricocheteffect(_, Bullet)
-	local Spall = EffectData()
-	Spall:SetEntity(Bullet.Crate)
-	Spall:SetOrigin(Bullet.SimPos)
-	Spall:SetNormal((Bullet.SimFlight):GetNormalized())
-	Spall:SetScale(Bullet.SimFlight:Length())
-	Spall:SetMagnitude(Bullet.RoundMass)
-	util.Effect("ACF_AP_Ricochet", Spall)
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetScale(Bullet.SimFlight:Length())
+	Effect:SetMagnitude(Bullet.RoundMass)
+	Effect:SetRadius(Bullet.Caliber)
+	Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+	util.Effect("ACF_Ricochet", Effect)
 end
 
 function Round.guicreate(Panel, Table)
@@ -221,3 +224,5 @@ function Round.guiupdate(Panel)
 end
 
 ACF.RoundTypes.APCR = Round --Set the round properties
+
+ACF.RegisterAmmoDecal("APCR", "damage/apcr_pen", "damage/apcr_rico")

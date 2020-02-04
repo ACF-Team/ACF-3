@@ -1,0 +1,7 @@
+"VertexLitGeneric"
+{
+   "$basetexture" "damage/he_rico"
+   "$decal" "1"
+   "$decalscale" "0.05"
+   "$translucent" "1"
+}

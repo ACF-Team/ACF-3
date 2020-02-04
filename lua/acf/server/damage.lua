@@ -581,115 +581,121 @@ end
 
 --converts what would be multiple simultaneous cache detonations into one large explosion
 function ACF_ScaledExplosion( ent )
-	local Inflictor = nil
-	if( ent.Inflictor ) then
-		Inflictor = ent.Inflictor
-	end
-	
+	local Inflictor = IsValid(ent.Inflictor) and ent.Inflictor or nil
 	local HEWeight
+
 	if ent:GetClass() == "acf_fueltank" then
 		HEWeight = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
 	else
 		local HE, Propel
+
 		if ent.RoundType == "Refill" then
 			HE = 0.001
 			Propel = 0.001
-		else 
-			HE = ent.BulletData["FillerMass"] or 0
-			Propel = ent.BulletData["PropMass"] or 0
+		else
+			HE = ent.BulletData.FillerMass or 0
+			Propel = ent.BulletData.PropMass or 0
 		end
-		HEWeight = (HE+Propel*(ACF.PBase/ACF.HEPower))*ent.Ammo
+
+		HEWeight = (HE + Propel * (ACF.PBase / ACF.HEPower)) * ent.Ammo
 	end
-	local Radius = HEWeight^0.33*8*39.37
-	local ExplodePos = {}
+
+	local Radius = HEWeight ^ 0.33 * 8 * 39.37
 	local Pos = ent:LocalToWorld(ent:OBBCenter())
-	table.insert(ExplodePos, Pos)
+	local ExplodePos = { Pos }
 	local LastHE = 0
-	
+
 	local Search = true
-	local Filter = {ent}
+	local Filter = { ent }
 	while Search do
-		for key,Found in pairs(ents.FindInSphere(Pos, Radius)) do
-			if Found.IsExplosive and not Found.Exploding then	
-				local Hitat = Found:NearestPoint( Pos )
-				
-				local Occlusion = {}
-					Occlusion.start = Pos
-					Occlusion.endpos = Hitat
-					Occlusion.filter = Filter
-				local Occ = util.TraceLine( Occlusion )
-				
-				if ( Occ.Fraction == 0 ) then
-					table.insert(Filter,Occ.Entity)
-					local Occlusion = {}
-						Occlusion.start = Pos
-						Occlusion.endpos = Hitat
-						Occlusion.filter = Filter
-					Occ = util.TraceLine( Occlusion )
-					--print("Ignoring nested prop")
+		for _, Found in pairs(ents.FindInSphere(Pos, Radius)) do
+			if Found.IsExplosive and not Found.Exploding then
+				local Hitat = Found:NearestPoint(Pos)
+
+				local Occlusion = {
+					start = Pos,
+					endpos = Hitat,
+					filter = Filter
+				}
+
+				local Occ = util.TraceLine(Occlusion)
+
+				if Occ.Fraction == 0 then
+					table.insert(Filter, Occ.Entity)
+
+					Occlusion = {
+						start = Pos,
+						endpos = Hitat,
+						filter = Filter
+					}
+
+					Occ = util.TraceLine(Occlusion)
 				end
-					
-				if ( Occ.Hit and Occ.Entity:EntIndex() != Found.Entity:EntIndex() ) then 
-						--Msg("Target Occluded\n")
-				else
+
+				if Occ.Hit and Occ.Entity:EntIndex() == Found.Entity:EntIndex() then
 					local FoundHEWeight
 					if Found:GetClass() == "acf_fueltank" then
 						FoundHEWeight = (math.max(Found.Fuel, Found.Capacity * 0.0025) / ACF.FuelDensity[Found.FuelType]) * 0.1
 					else
 						local HE, Propel
+
 						if Found.RoundType == "Refill" then
 							HE = 0.001
 							Propel = 0.001
-						else 
-							HE = Found.BulletData["FillerMass"] or 0
-							Propel = Found.BulletData["PropMass"] or 0
+						else
+							HE = Found.BulletData.FillerMass or 0
+							Propel = Found.BulletData.PropMass or 0
 						end
-						FoundHEWeight = (HE+Propel*(ACF.PBase/ACF.HEPower))*Found.Ammo
+
+						FoundHEWeight = (HE + Propel * (ACF.PBase / ACF.HEPower)) * Found.Ammo
 					end
-					
+
 					table.insert(ExplodePos, Found:LocalToWorld(Found:OBBCenter()))
 					HEWeight = HEWeight + FoundHEWeight
 					Found.IsExplosive = false
 					Found.DamageAction = false
 					Found.KillAction = false
 					Found.Exploding = true
-					table.insert(Filter,Found)
+					table.insert(Filter, Found)
 					Found:Remove()
-				end			
+				end
 			end
-		end	
-		
+		end
+
 		if HEWeight > LastHE then
 			Search = true
 			LastHE = HEWeight
-			Radius = (HEWeight)^0.33*8*39.37
+			Radius = HEWeight ^ 0.33 * 8 * 39.37
 		else
 			Search = false
 		end
-		
-	end	
+	end
 
 	local totalpos = Vector()
-	for _, cratepos in pairs(ExplodePos) do totalpos = totalpos + cratepos end
-	local AvgPos = totalpos / #ExplodePos
+	local countpos = 0
+
+	for _, cratepos in pairs(ExplodePos) do
+		totalpos = totalpos + cratepos
+		countpos = countpos + 1
+	end
+
+	local AvgPos = totalpos / countpos
+
+	ACF_HE(AvgPos, HEWeight, HEWeight * 0.5, Inflictor, { ent }, ent)
 
 	ent:Remove()
-	ACF_HE( AvgPos, HEWeight , HEWeight*0.5 , Inflictor , {ent}, ent )
-	
-	local Flash = EffectData()
-		Flash:SetOrigin( AvgPos )
-		Flash:SetNormal( Vector(0,0,-1) )
-		Flash:SetRadius( math.max( Radius, 1 ) )
-	util.Effect( "ACF_Scaled_Explosion", Flash )
+
+	local Effect = EffectData()
+	Effect:SetOrigin(AvgPos)
+	Effect:SetNormal(Vector(0, 0, -1))
+	Effect:SetScale(math.max(Radius, 1))
+	Effect:SetRadius(0)
+
+	util.Effect("ACF_Explosion", Effect)
 end
 
-function ACF_GetHitAngle( HitNormal , HitVector )
-	
-	HitVector = HitVector*-1
-	local Angle = math.min(math.deg(math.acos(HitNormal:Dot( HitVector:GetNormalized() ) ) ),89.999 )
-	--Msg("Angle : " ..Angle.. "\n")
-	return Angle
-	
+function ACF_GetHitAngle(HitNormal, HitVector)
+	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
 end
 
 function ACF_UpdateVisualHealth(Entity)
