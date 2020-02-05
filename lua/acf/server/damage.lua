@@ -8,7 +8,7 @@ local TraceData 	= { output = TraceRes, mask = MASK_SOLID, filter = false }
 local Check			= ACF_Check
 local HookRun		= hook.Run
 local Trace 		= ACF.Trace
-local Debris 		= { -- Whitelist for things that can be turned into debris
+local ValidDebris 	= { -- Whitelist for things that can be turned into debris
 	acf_ammo = true,
 	acf_gun = true,
 	acf_gearbox = true,
@@ -262,7 +262,6 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 				local Displ		 = Target - Origin
 
 				TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-
 				Trace(TraceData) -- Outputs to TraceRes
 
 				if TraceRes.HitNonWorld then
@@ -270,7 +269,8 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 						Ent = TraceRes.Entity
 
 						if not Damaged[Ent] and not Damage[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
-							debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(0, 255, 0)) -- Green line for a hit trace
+							debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 255, 0), true) -- Green line for a hit trace
+							debugoverlay.BoxAngles(Ent:LocalToWorld(Ent:OBBCenter()), Ent:OBBMins(), Ent:OBBMaxs(), Ent:GetAngles(), 30, Color(255, 0, 0, 1))
 
 							local Pos		= Ent:GetPos()
 							local Distance	= Origin:Distance(Pos)
@@ -286,18 +286,20 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 							Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
 						else
-							debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
+							--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
 						end
 					else -- If check on new ent fails
-						debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(255, 0, 0)) -- Red line for a invalid ent
+						--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(255, 0, 0)) -- Red line for a invalid ent
 
 						Ents[K] = nil -- Remove from list
 						Filter[#Filter + 1] = Ent -- Filter from traces
 					end
 				else
-					debugoverlay.Line(Origin, TraceRes.HitPos, 15, Color(0, 0, 255)) -- Blue line for a miss
+					-- Not removed from future damage sweeps so as to provide multiple chances to be hit
+					--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 0, 255)) -- Blue line for a miss
 				end
 			else -- Target was invalid
+
 				Ents[K] = nil -- Remove from list
 				Filter[#Filter + 1] = Ent -- Filter from traces
 			end
@@ -323,7 +325,11 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 			if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
 				Ents[Table.Index] = nil
-				Filter[#Filter + 1] = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin)
+				local Debris = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin)
+
+				if IsValid(Debris) then
+					Filter[#Filter + 1] = Debris
+				end
 
 				Loop = true -- look for fresh targets since we blew a hole somewhere
 			elseif ACF_HEPUSH:GetBool() then
@@ -468,7 +474,7 @@ local function ACF_KillChildProps( Entity, BlastPos, Energy )
 	for Ent in pairs( Children ) do
 		Ent.ACF_Killed = true  -- mark that it's already processed
 
-		if not Debris[Ent:GetClass()] then
+		if not ValidDebris[Ent:GetClass()] then
 			Children[Ent] = nil -- ignoring stuff like holos, wiremod components, etc.
 		else
 			Ent:SetParent(nil)
