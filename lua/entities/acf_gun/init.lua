@@ -334,7 +334,7 @@ do -- Metamethods --------------------------------
 				Effect:SetScale(self.BulletData.PropMass)
 				Effect:SetMagnitude(self.ReloadTime)
 
-			util.Effect("acf_muzzleflash", Effect, true, true)
+			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
 		end
 
 		function ENT:ReloadEffect()
@@ -343,7 +343,7 @@ do -- Metamethods --------------------------------
 				Effect:SetScale(0)
 				Effect:SetMagnitude(self.ReloadTime)
 
-			util.Effect("acf_muzzleflash", Effect, true, true)
+			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
 		end
 
 		function ENT:Recoil()

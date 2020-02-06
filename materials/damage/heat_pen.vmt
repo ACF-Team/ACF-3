@@ -1,0 +1,7 @@
+"VertexLitGeneric"
+{
+   "$basetexture" "damage/heat_pen"
+   "$decal" "1"
+   "$decalscale" "0.05"
+   "$translucent" "1"
+}

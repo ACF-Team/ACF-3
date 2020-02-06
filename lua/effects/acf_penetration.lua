@@ -1,42 +1,27 @@
---[[--------------------------------------------------------- 
-	Initializes the effect. The data is a table of data  
-	which was passed from the server. 
- ---------------------------------------------------------]]
-function EFFECT:Init(data)
-	self.Ent = data:GetEntity()
-	self.Caliber = self.Ent:GetNWFloat("Caliber", 10)
-	self.Origin = data:GetOrigin()
-	self.DirVec = data:GetNormal()
-	self.Velocity = data:GetScale() --Mass of the projectile in kg
-	self.Mass = data:GetMagnitude() --Velocity of the projectile in gmod units
+local TraceData = { start = true, endpos = true }
+local TraceLine = util.TraceLine
+local ValidDecal = ACF.IsValidAmmoDecal
+local GetDecal = ACF.GetPenetrationDecal
+local GetScale = ACF.GetDecalScale
+
+function EFFECT:Init(Data)
+	self.Caliber = Data:GetRadius()
+	self.Origin = Data:GetOrigin()
+	self.DirVec = Data:GetNormal()
+	self.Velocity = Data:GetScale() --Mass of the projectile in kg
+	self.Mass = Data:GetMagnitude() --Velocity of the projectile in gmod units
+	self.Type = Data:GetDamageType()
 	self.Emitter = ParticleEmitter(self.Origin)
-	self.Scale = math.max(self.Mass * (self.Velocity / 39.37) / 100, 1) ^ 0.3
-	local ImpactTr = {}
-	ImpactTr.start = self.Origin - self.DirVec * 20
-	ImpactTr.endpos = self.Origin + self.DirVec * 20
-	local Impact = util.TraceLine(ImpactTr) --Trace to see if it will hit anything
-	self.Normal = Impact.HitNormal
-	sound.Play("/acf_other/penetratingshots/0000029" .. math.random(2, 5) .. ".mp3", Impact.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
-	-- Material Enum
-	-- 65  ANTLION
-	-- 66 BLOODYFLESH
-	-- 67 CONCRETE / NODRAW
-	-- 68 DIRT
-	-- 70 FLESH
-	-- 71 GRATE
-	-- 72 ALIENFLESH
-	-- 73 CLIP
-	-- 76 PLASTIC
-	-- 77 METAL
-	-- 78 SAND
-	-- 79 FOLIAGE
-	-- 80 COMPUTER
-	-- 83 SLOSH
-	-- 84 TILE
-	-- 86 VENT
-	-- 87 WOOD
-	-- 89 GLASS
-	local Mat = Impact.MatType
+	self.Scale = math.max(self.Mass * (self.Velocity * 0.0254) * 0.01, 1) ^ 0.3
+
+	TraceData.start = self.Origin - self.DirVec
+	TraceData.endpos = self.Origin + self.DirVec * self.Velocity
+
+	local Trace = TraceLine(TraceData) --Trace to see if it will hit anything
+
+	self.Normal = Trace.HitNormal
+
+	local Mat = Trace.MatType
 
 	-- Metal
 	if Mat == 71 or Mat == 73 or Mat == 77 or Mat == 80 then
@@ -44,11 +29,18 @@ function EFFECT:Init(data)
 	else -- Nonspecific
 		self:Concrete()
 	end
+
+	if IsValid(Trace.Entity) or Trace.HitWorld then
+		local Type = ValidDecal(self.Type) and self.Type or 1
+		local Scale = GetScale(Type, self.Caliber)
+
+		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, self.Normal, Color(255, 255, 255), Scale, Scale)
+	end
+
+	sound.Play("/acf_other/penetratingshots/0000029" .. math.random(2, 5) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
 end
 
 function EFFECT:Metal()
-	util.Decal("GunShot1", self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10)
-
 	for _ = 0, 4 * self.Scale do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
@@ -99,8 +91,6 @@ function EFFECT:Metal()
 end
 
 function EFFECT:Concrete()
-	util.Decal("GunShot1", self.Origin + self.DirVec * 10, self.Origin - self.DirVec * 10)
-
 	for _ = 0, 4 * self.Scale do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
@@ -169,15 +159,9 @@ function EFFECT:Concrete()
 	util.Effect("Sparks", Sparks)
 end
 
---[[---------------------------------------------------------
-   THINK
----------------------------------------------------------]]
 function EFFECT:Think()
 	return false
 end
 
---[[---------------------------------------------------------
-   Draw the effect
----------------------------------------------------------]]
 function EFFECT:Render()
 end

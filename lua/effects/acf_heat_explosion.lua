@@ -1,18 +1,14 @@
---[[--------------------------------------------------------- 
-	Initializes the effect. The data is a table of data  
-	which was passed from the server. 
- ---------------------------------------------------------]]
-function EFFECT:Init(data)
-	self.Origin = data:GetOrigin()
-	self.DirVec = data:GetNormal()
-	self.Radius = math.max(data:GetRadius() / 50, 1)
+function EFFECT:Init(Data)
+	self.Origin = Data:GetOrigin()
+	self.DirVec = Data:GetNormal()
+	self.Radius = math.max(Data:GetRadius() * 0.02, 1)
 	self.Emitter = ParticleEmitter(self.Origin)
-	self.ParticleMul = tonumber(LocalPlayer():GetInfo("acf_cl_particlemul")) or 1
+	self.ParticleMul = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
 
 	for _ = 0, 3 * self.Radius * self.ParticleMul do
 		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
 
-		if (Smoke) then
+		if Smoke then
 			Smoke:SetVelocity((-self.DirVec + VectorRand() / 10) * math.random(50, 130 * self.Radius))
 			Smoke:SetLifeTime(0)
 			Smoke:SetDieTime(math.Rand(1, 2) * self.Radius / 3)
@@ -31,7 +27,7 @@ function EFFECT:Init(data)
 	for _ = 0, 4 * self.Radius * self.ParticleMul do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
-		if (Debris) then
+		if Debris then
 			Debris:SetVelocity((self.DirVec + VectorRand() / 10) * math.random(250 * self.Radius, 450 * self.Radius))
 			Debris:SetLifeTime(0)
 			Debris:SetDieTime(math.Rand(1.5, 3) * self.Radius / 3)
@@ -50,7 +46,7 @@ function EFFECT:Init(data)
 	for _ = 0, 5 * self.Radius * self.ParticleMul do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
-		if (Embers) then
+		if Embers then
 			Embers:SetVelocity((self.DirVec + VectorRand() / 10) * math.random(50 * self.Radius, 300 * self.Radius))
 			Embers:SetLifeTime(0)
 			Embers:SetDieTime(math.Rand(0.3, 1) * self.Radius / 3)
@@ -68,21 +64,20 @@ function EFFECT:Init(data)
 		end
 	end
 
-	local Flash = EffectData()
-	Flash:SetOrigin(self.Origin)
-	Flash:SetScale(self.Radius)
-	Flash:SetNormal(self.DirVec)
-	util.Effect("ACF_Scaled_Explosion", Flash)
+	self.Emitter:Finish()
+
+	local Effect = EffectData()
+	Effect:SetOrigin(self.Origin)
+	Effect:SetNormal(self.DirVec)
+	Effect:SetScale(self.Radius * 50)
+	Effect:SetRadius(0)
+
+	util.Effect("ACF_Explosion", Effect)
 end
 
---[[---------------------------------------------------------
-   THINK
----------------------------------------------------------]]
 function EFFECT:Think()
+	return false
 end
 
---[[---------------------------------------------------------
-   Draw the effect
----------------------------------------------------------]]
 function EFFECT:Render()
 end

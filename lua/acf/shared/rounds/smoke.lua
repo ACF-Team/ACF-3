@@ -157,50 +157,48 @@ function Round.worldimpact()
 end
 
 function Round.endflight(Index)
-	--ACF_HE( HitPos - Bullet.Flight:GetNormalized()*3, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner )
 	ACF_RemoveBullet(Index)
 end
+
+local DecalIndex = ACF.GetAmmoDecalIndex
 
 function Round.endeffect(_, Bullet)
 	local Crate = Bullet.Crate
 	local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
 
-	local Flash = EffectData()
-	Flash:SetOrigin(Bullet.SimPos)
-	Flash:SetNormal(Bullet.SimFlight:GetNormalized())
-	Flash:SetRadius(math.max(Bullet.FillerMass * 8 * 39.37, 0)) --(Bullet.FillerMass)^0.33*8*39.37
-	Flash:SetMagnitude(math.max(Bullet.WPMass * 8 * 39.37, 0))
-	Flash:SetStart(Vector(Color.r, Color.g, Color.b))
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetScale(math.max(Bullet.FillerMass * 8 * 39.37, 0))
+	Effect:SetMagnitude(math.max(Bullet.WPMass * 8 * 39.37, 0))
+	Effect:SetStart(Vector(Color.r, Color.g, Color.b))
+	Effect:SetRadius(Bullet.Caliber)
 
-	util.Effect("ACF_Smoke", Flash)
+	util.Effect("ACF_Smoke", Effect)
 end
 
 function Round.pierceeffect(_, Bullet)
-	local BulletEffect = {}
-	BulletEffect.Num = 1
-	BulletEffect.Src = Bullet.SimPos - Bullet.SimFlight:GetNormalized()
-	BulletEffect.Dir = Bullet.SimFlight:GetNormalized()
-	BulletEffect.Spread = Vector(0, 0, 0)
-	BulletEffect.Tracer = 0
-	BulletEffect.Force = 0
-	BulletEffect.Damage = 0
-	LocalPlayer():FireBullets(BulletEffect)
-	util.Decal("ExplosiveGunshot", Bullet.SimPos + Bullet.SimFlight * 10, Bullet.SimPos - Bullet.SimFlight * 10)
-	local Spall = EffectData()
-	Spall:SetOrigin(Bullet.SimPos)
-	Spall:SetNormal((Bullet.SimFlight):GetNormalized())
-	Spall:SetScale(math.max(((Bullet.RoundMass * (Bullet.SimFlight:Length() / 39.37) ^ 2) / 2000) / 10000, 1))
-	util.Effect("AP_Hit", Spall)
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetScale(Bullet.SimFlight:Length())
+	Effect:SetMagnitude(Bullet.RoundMass)
+	Effect:SetRadius(Bullet.Caliber)
+	Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+	util.Effect("ACF_Penetration", Effect)
 end
 
 function Round.ricocheteffect(_, Bullet)
-	local Spall = EffectData()
-	Spall:SetEntity(Bullet.Gun)
-	Spall:SetOrigin(Bullet.SimPos)
-	Spall:SetNormal((Bullet.SimFlight):GetNormalized())
-	Spall:SetScale(Bullet.SimFlight:Length())
-	Spall:SetMagnitude(Bullet.RoundMass)
-	util.Effect("ACF_AP_Ricochet", Spall)
+	local Effect = EffectData()
+	Effect:SetOrigin(Bullet.SimPos)
+	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+	Effect:SetScale(Bullet.SimFlight:Length())
+	Effect:SetMagnitude(Bullet.RoundMass)
+	Effect:SetRadius(Bullet.Caliber)
+	Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+	util.Effect("ACF_Ricochet", Effect)
 end
 
 function Round.guicreate(Panel, Table)
@@ -262,3 +260,5 @@ function Round.guiupdate(Panel)
 end
 
 ACF.RoundTypes.SM = Round --Set the round properties
+
+ACF.RegisterAmmoDecal("SM", "damage/he_pen", "damage/he_rico")

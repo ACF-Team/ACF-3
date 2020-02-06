@@ -1,14 +1,11 @@
---[[--------------------------------------------------------- 
-	Initializes the effect. The data is a table of data  
-	which was passed from the server. 
- ---------------------------------------------------------]]
-function EFFECT:Init(data)
-	if not IsValid(data:GetEntity()) then return end
+function EFFECT:Init(Data)
+	local Gun = Data:GetEntity()
 
-	local Gun = data:GetEntity()
+	if not IsValid(Gun) then return end
+
+	local Propellant = Data:GetScale()
+	local ReloadTime = Data:GetMagnitude()
 	local Sound = Gun:GetNWString("Sound")
-	local Propellant = data:GetScale()
-	local ReloadTime = data:GetMagnitude()
 	local Class = Gun:GetNWString("Class")
 	local ClassData = ACF.Classes.GunClass[Class]
 	local Attachment = "muzzle"
@@ -39,7 +36,7 @@ function EFFECT:Init(data)
 			end
 		end
 
-		local Effect = ClassData["muzzleflash"]
+		local Effect = ClassData.muzzleflash
 		local AttachID = Gun:LookupAttachment(Attachment)
 
 		if AttachID > 0 then
@@ -54,15 +51,9 @@ function EFFECT:Init(data)
 	end
 end
 
---[[---------------------------------------------------------
-   THINK
----------------------------------------------------------]]
 function EFFECT:Think()
 	return false
 end
 
---[[---------------------------------------------------------
-   Draw the effect
----------------------------------------------------------]]
 function EFFECT:Render()
 end

@@ -28,16 +28,26 @@ local function HitClip(Ent, Pos)
 	return false
 end
 
-local function Trace(TraceData)
+-- Creates a local copy of TraceData's filter to prevent interference
+-- Pass true as second argument to use the original filter
+local function Trace(TraceData, Filter)
+	if not Filter then
+		Filter = TraceData.filter -- Store the original filter
+
+		local NewFilter = {}; for I = 1, #Filter do NewFilter[I] = Filter[I] end
+		TraceData.filter = NewFilter -- Make a new filter to modify
+	end
+
 	local T = TraceLine(TraceData)
 
 	if T.HitNonWorld and HitClip(T.Entity, T.HitPos) then
 		TraceData.filter[#TraceData.filter + 1] = T.Entity
 
-		return Trace(TraceData)
+		return Trace(TraceData, Filter)
 	end
 
 	--debugoverlay.Line(TraceData.start, T.HitPos, 30, ColorRand(100, 255), true)
+	if Filter and Filter ~= true then TraceData.filter = Filter end -- Restore the original filter
 	return T
 end
 
@@ -210,7 +220,7 @@ function ACF_DoBulletsFlight(Index, Bullet)
 	FlightTr.start  = Bullet.StartTrace
 	FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
 
-	Trace(FlightTr)
+	Trace(FlightTr, true) -- Pass true to not create a copy of filter
 
 	--bullet is told to ignore the next hit, so it does and resets flag
 	if Bullet.SkipNextHit then
@@ -297,28 +307,24 @@ function ACF_DoBulletsFlight(Index, Bullet)
 end
 
 function ACF_BulletClient(Index, Bullet, Type, Hit, HitPos)
-	if Type == "Update" then
-		local Effect = EffectData()
-		Effect:SetAttachment(Index) --Bulet Index
-		Effect:SetStart(Bullet.Flight / 10) --Bullet Direction
+	local Effect = EffectData()
+	Effect:SetAttachment(Index) --Bulet Index
+	Effect:SetStart(Bullet.Flight * 0.1) --Bullet Direction
 
+	if Type == "Update" then
 		-- If there is a hit then set the effect pos to the impact pos instead of the retry pos
 		if Hit > 0 then
-			Effect:SetOrigin(HitPos) --Bullet Pos
+			Effect:SetOrigin(HitPos)
 		else
 			Effect:SetOrigin(Bullet.Pos)
 		end
 
 		Effect:SetScale(Hit) --Hit Type 
-		util.Effect("acf_bulleteffect", Effect, true, true)
 	else
-		local Effect = EffectData()
-
-		Effect:SetAttachment(Index) --Bulet Index
-		Effect:SetStart(Bullet.Flight / 10) --Bullet Direction
 		Effect:SetOrigin(Bullet.Pos)
-		Effect:SetEntity(Entity(Bullet["Crate"]))
+		Effect:SetEntity(Entity(Bullet.Crate))
 		Effect:SetScale(0)
-		util.Effect("acf_bulleteffect", Effect, true, true)
 	end
+
+	util.Effect("ACF_Bullet_Effect", Effect, true, true)
 end
