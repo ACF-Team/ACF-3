@@ -203,7 +203,7 @@ end
 
 function Round.guicreate(Panel, Table)
 	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.SM)
-	acfmenupanel:CPanelText("BonusDisplay", "")
+
 	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "") --Total round length (Name, Desc)
 	acfmenupanel:AmmoSlider("PropLength", 0, 0, 1000, 3, "Propellant Length", "") --Slider (Name, Value, Min, Max, Decimals, Title, Desc)
@@ -243,9 +243,6 @@ function Round.guiupdate(Panel)
 	RunConsoleCommand("acfmenu_data6", Data.WPVol)
 	RunConsoleCommand("acfmenu_data7", Data.FuseLength)
 	RunConsoleCommand("acfmenu_data10", Data.Tracer)
-	local vol = ACF.Weapons.Ammo[acfmenupanel.AmmoData["Id"]].volume
-	local Cap, CapMul, RoFMul = ACF_CalcCrateStats(vol, Data.RoundVolume)
-	acfmenupanel:CPanelText("BonusDisplay", "Crate info: +" .. (math.Round((CapMul - 1) * 100, 1)) .. "% capacity, +" .. (math.Round((RoFMul - 1) * -100, 1)) .. "% RoF\nContains " .. Cap .. " rounds")
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "Smoke Filler Volume", "Smoke Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)

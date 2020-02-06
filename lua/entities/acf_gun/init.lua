@@ -407,10 +407,7 @@ do -- Metamethods --------------------------------
 
 				self.BulletData = Crate.BulletData
 				self.BulletData.Fuze = self.SetFuze
-
-				local Adj = self.BulletData.LengthAdj or 1 --FL firerate bonus adjustment
-
-				self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus * Adj) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
+				self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
 				if not ForceReload then
 					self.CurrentCrate:Consume()

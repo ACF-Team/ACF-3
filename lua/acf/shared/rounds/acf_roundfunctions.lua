@@ -59,11 +59,3 @@ function ACF_PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
 
 	return Vel * 0.0254, Pen
 end
-
-function ACF_CalcCrateStats(CrateVol, RoundVol)
-	local CapMul = (CrateVol > 40250) and ((math.log(CrateVol * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-	local RoFMul = (CrateVol > 40250) and (1 - (math.log(CrateVol * 0.00066) / math.log(2) - 4) * 0.05) or 1
-	local Cap = math.floor(CapMul * CrateVol * ACF.AmmoMod * ACF.CrateVolEff * 16.38 / RoundVol)
-
-	return Cap, CapMul, RoFMul
-end
