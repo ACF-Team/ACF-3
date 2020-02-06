@@ -14,16 +14,16 @@ local Colors = {
 }
 
 function EFFECT:Init(Data)
-	local Direction = Data:GetNormal()
 	local Caliber = Data:GetRadius()
 
 	self.Origin = Data:GetOrigin()
+	self.DirVec = Data:GetNormal()
 	self.Radius = math.max(Data:GetScale() * 0.02, 1)
 	self.Emitter = ParticleEmitter(self.Origin)
 	self.ParticleMul = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
 
-	TraceData.start = self.Origin - Direction
-	TraceData.endpos = self.Origin + Direction * 100
+	TraceData.start = self.Origin - self.DirVec
+	TraceData.endpos = self.Origin + self.DirVec * 100
 	TraceData.mask = MASK_SOLID
 
 	local Impact = TraceLine(TraceData)
@@ -46,7 +46,7 @@ function EFFECT:Init(Data)
 
 			local Effect = EffectData()
 			Effect:SetOrigin(self.Origin)
-			Effect:SetNormal(Direction)
+			Effect:SetNormal(self.DirVec)
 			Effect:SetRadius(Caliber)
 			Effect:SetDamageType(GetIndex("AP"))
 
@@ -54,31 +54,24 @@ function EFFECT:Init(Data)
 		end
 	end
 
-	TraceData.start = self.Origin + Vector(0, 0, 1)
-	TraceData.endpos = self.Origin - Vector(0, 0, self.Radius)
-	TraceData.mask = MASK_NPCWORLDSTATIC
-
-	local Ground = TraceLine(TraceData)
-
-	if Ground.HitWorld then
-		self:Shockwave(Ground)
-	end
-
 	self.Emitter:Finish()
 end
 
-function EFFECT:Core()
-	for _ = 0, 2 * self.Radius * self.ParticleMul do
+function EFFECT:Core(Direction)
+	local Radius = self.Radius
+	local Mult = self.ParticleMul
+
+	for _ = 0, 2 * Radius * Mult do
 		local Flame = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if Flame then
-			Flame:SetVelocity(VectorRand(50, 150 * self.Radius))
+			Flame:SetVelocity((Direction + VectorRand()) * 150 * Radius)
 			Flame:SetLifeTime(0)
 			Flame:SetDieTime(0.15)
-			Flame:SetStartAlpha(math.Rand(50, 255))
+			Flame:SetStartAlpha(math.Rand(100, 200))
 			Flame:SetEndAlpha(0)
-			Flame:SetStartSize(2.5 * self.Radius)
-			Flame:SetEndSize(15 * self.Radius)
+			Flame:SetStartSize(Radius)
+			Flame:SetEndSize(Radius * 15)
 			Flame:SetRoll(math.random(120, 360))
 			Flame:SetRollDelta(math.Rand(-1, 1))
 			Flame:SetAirResistance(300)
@@ -87,92 +80,88 @@ function EFFECT:Core()
 		end
 	end
 
-	for _ = 0, 4 * self.Radius * self.ParticleMul do
+	for _ = 0, 5 * Radius * Mult do
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), self.Origin)
 
 		if Debris then
-			Debris:SetVelocity(VectorRand(150 * self.Radius, 250 * self.Radius))
+			Debris:SetVelocity((Direction + VectorRand()) * 150 * Radius)
 			Debris:SetLifeTime(0)
-			Debris:SetDieTime(math.Rand(1.5, 3) * self.Radius / 3)
+			Debris:SetDieTime(math.Rand(0.5, 1) * Radius)
 			Debris:SetStartAlpha(255)
 			Debris:SetEndAlpha(0)
-			Debris:SetStartSize(1 * self.Radius)
-			Debris:SetEndSize(1 * self.Radius)
+			Debris:SetStartSize(Radius)
+			Debris:SetEndSize(Radius)
 			Debris:SetRoll(math.Rand(0, 360))
 			Debris:SetRollDelta(math.Rand(-3, 3))
-			Debris:SetAirResistance(10)
+			Debris:SetAirResistance(30)
 			Debris:SetGravity(Vector(0, 0, -650))
 			Debris:SetColor(120, 120, 120)
 		end
 	end
 
-	for _ = 0, 5 * self.Radius * self.ParticleMul do
+	for _ = 0, 20 * Radius * Mult do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), self.Origin)
 
 		if Embers then
-			Embers:SetVelocity(VectorRand(70 * self.Radius, 160 * self.Radius))
+			Embers:SetVelocity((Direction + VectorRand()) * 150 * Radius)
 			Embers:SetLifeTime(0)
-			Embers:SetDieTime(math.Rand(0.3, 1) * self.Radius / 3)
+			Embers:SetDieTime(math.Rand(0.1, 0.2) * Radius)
 			Embers:SetStartAlpha(255)
 			Embers:SetEndAlpha(0)
-			Embers:SetStartSize(1 * self.Radius)
-			Embers:SetEndSize(0 * self.Radius)
-			Embers:SetStartLength(5 * self.Radius)
-			Embers:SetEndLength(0 * self.Radius)
+			Embers:SetStartSize(Radius * 0.5)
+			Embers:SetEndSize(0)
+			Embers:SetStartLength(Radius * 4)
+			Embers:SetEndLength(0)
 			Embers:SetRoll(math.Rand(0, 360))
 			Embers:SetRollDelta(math.Rand(-0.2, 0.2))
 			Embers:SetAirResistance(20)
-			Embers:SetGravity(Vector(0, 0, -650))
 			Embers:SetColor(200, 200, 200)
 		end
 	end
 
-	for _ = 0, 2 * self.Radius * self.ParticleMul do
-		local Whisp = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
-
-		if Whisp then
-			Whisp:SetVelocity(VectorRand(150, 250 * self.Radius))
-			Whisp:SetLifeTime(0)
-			Whisp:SetDieTime(math.Rand(3, 5) * self.Radius / 3)
-			Whisp:SetStartAlpha(math.Rand(20, 50))
-			Whisp:SetEndAlpha(0)
-			Whisp:SetStartSize(10 * self.Radius)
-			Whisp:SetEndSize(80 * self.Radius)
-			Whisp:SetRoll(math.Rand(150, 360))
-			Whisp:SetRollDelta(math.Rand(-0.2, 0.2))
-			Whisp:SetAirResistance(100)
-			Whisp:SetGravity(Vector(math.random(-5, 5) * self.Radius, math.random(-5, 5) * self.Radius, 0))
-			Whisp:SetColor(150, 150, 150)
-		end
-	end
-
-	if self.Radius * self.ParticleMul > 4 then
-		for _ = 0, 0.5 * self.Radius * self.ParticleMul do
-			local Effect = EffectData()
-			Effect:SetOrigin(self.Origin)
-			Effect:SetScale(self.Radius * 0.1667)
-
-			util.Effect("ACF_Cookoff", Effect)
-		end
-	end
-
-	sound.Play("ambient/explosions/explode_5.wav", self.Origin, math.Clamp(self.Radius * 10, 75, 165), math.Clamp(300 - self.Radius * 12, 15, 255))
-	sound.Play("ambient/explosions/explode_4.wav", self.Origin, math.Clamp(self.Radius * 10, 75, 165), math.Clamp(300 - self.Radius * 25, 15, 255))
+	sound.Play("ambient/explosions/explode_5.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 12, 15, 255))
+	sound.Play("ambient/explosions/explode_4.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 25, 15, 255))
 end
 
-function EFFECT:Shockwave(Ground)
-	local Radius = (1 - Ground.Fraction) * self.Radius
-	local Density = 15 * Radius
-	local Angle = Ground.HitNormal:Angle()
+function EFFECT:GroundImpact()
 	local SmokeColor = self.Color
+	local Emitter = self.Emitter
+	local Origin = self.Origin
+	local Radius = self.Radius
+	local Normal = self.Normal
+	local Mult = self.ParticleMul
 
-	for _ = 0, Density * self.ParticleMul do
-		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
-		local ShootVector = Angle:Up()
-		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Ground.HitPos)
+	self:Core(Normal)
+
+	for _ = 0, 5 * Radius * Mult do
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
 
 		if Smoke then
-			Smoke:SetVelocity(ShootVector * math.Rand(5, 200 * Radius))
+			Smoke:SetVelocity((Normal + VectorRand()) * 30 * Radius)
+			Smoke:SetLifeTime(0)
+			Smoke:SetDieTime(math.Rand(0.5, 1) * Radius)
+			Smoke:SetStartAlpha(math.Rand(50, 150))
+			Smoke:SetEndAlpha(0)
+			Smoke:SetStartSize(5 * Radius)
+			Smoke:SetEndSize(30 * Radius)
+			Smoke:SetRoll(math.Rand(150, 360))
+			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
+			Smoke:SetAirResistance(75)
+			Smoke:SetGravity(Vector(math.random(-5, 5) * Radius, math.random(-5, 5) * Radius, -50))
+			Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
+		end
+	end
+
+	local Density = Radius * 15
+	local Angle = Normal:Angle()
+
+	for _ = 0, Density * Mult do
+		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
+
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
+
+		if Smoke then
+			Smoke:SetVelocity(Angle:Up() * math.Rand(5, 200 * Radius))
 			Smoke:SetLifeTime(0)
 			Smoke:SetDieTime(math.Rand(1, 2) * Radius / 3)
 			Smoke:SetStartAlpha(math.Rand(50, 120))
@@ -188,70 +177,49 @@ function EFFECT:Shockwave(Ground)
 	end
 end
 
-function EFFECT:GroundImpact()
-	self:Core()
-
-	local SmokeColor = self.Color
-
-	for _ = 0, 3 * self.Radius * self.ParticleMul do
-		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
-
-		if Smoke then
-			Smoke:SetVelocity(self.Normal * math.random(50, 80 * self.Radius) + VectorRand(30, 60 * self.Radius))
-			Smoke:SetLifeTime(0)
-			Smoke:SetDieTime(math.Rand(1, 2) * self.Radius / 3)
-			Smoke:SetStartAlpha(math.Rand(50, 150))
-			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize(5 * self.Radius)
-			Smoke:SetEndSize(30 * self.Radius)
-			Smoke:SetRoll(math.Rand(150, 360))
-			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(100)
-			Smoke:SetGravity(Vector(math.random(-5, 5) * self.Radius, math.random(-5, 5) * self.Radius, -50))
-			Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
-		end
-	end
-end
-
 function EFFECT:Airburst()
-	self:Core()
-
 	local SmokeColor = self.Color
+	local Emitter = self.Emitter
+	local Origin = self.Origin
+	local Radius = self.Radius
+	local Mult = self.ParticleMul
 
-	for _ = 0, 3 * self.Radius * self.ParticleMul do
-		local Smoke = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
+	self:Core(self.DirVec)
+
+	for _ = 0, 5 * Radius * Mult do
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
 
 		if Smoke then
-			Smoke:SetVelocity(VectorRand(25, 50 * self.Radius))
+			Smoke:SetVelocity(VectorRand(-30, 30) * Radius)
 			Smoke:SetLifeTime(0)
-			Smoke:SetDieTime(math.Rand(1, 2) * self.Radius / 3)
+			Smoke:SetDieTime(math.Rand(0.5, 1) * Radius)
 			Smoke:SetStartAlpha(math.Rand(50, 150))
 			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize(5 * self.Radius)
-			Smoke:SetEndSize(30 * self.Radius)
+			Smoke:SetStartSize(5 * Radius)
+			Smoke:SetEndSize(30 * Radius)
 			Smoke:SetRoll(math.Rand(150, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(100)
-			Smoke:SetGravity(Vector(math.random(-5, 5) * self.Radius, math.random(-5, 5) * self.Radius, -50))
+			Smoke:SetAirResistance(75)
+			Smoke:SetGravity(Vector(math.random(-5, 5) * Radius, math.random(-5, 5) * Radius, -50))
 			Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 		end
 	end
 
-	for _ = 0, 10 * self.Radius * self.ParticleMul do
-		local AirBurst = self.Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), self.Origin)
+	for _ = 0, 5 * Radius * Mult do
+		local AirBurst = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
 
 		if AirBurst then
-			AirBurst:SetVelocity(VectorRand(150, 200 * self.Radius))
+			AirBurst:SetVelocity(VectorRand(-100, 100) * Radius)
 			AirBurst:SetLifeTime(0)
-			AirBurst:SetDieTime(math.Rand(1, 2) * self.Radius / 3)
+			AirBurst:SetDieTime(math.Rand(0.33, 0.66) * Radius)
 			AirBurst:SetStartAlpha(math.Rand(100, 255))
 			AirBurst:SetEndAlpha(0)
-			AirBurst:SetStartSize(6 * self.Radius)
-			AirBurst:SetEndSize(35 * self.Radius)
+			AirBurst:SetStartSize(6 * Radius)
+			AirBurst:SetEndSize(35 * Radius)
 			AirBurst:SetRoll(math.Rand(150, 360))
 			AirBurst:SetRollDelta(math.Rand(-0.2, 0.2))
 			AirBurst:SetAirResistance(200)
-			AirBurst:SetGravity(Vector(math.random(-10, 10) * self.Radius, math.random(-10, 10) * self.Radius, 20))
+			AirBurst:SetGravity(Vector(math.random(-10, 10) * Radius, math.random(-10, 10) * Radius, 20))
 			AirBurst:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 		end
 	end
