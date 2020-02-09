@@ -22,10 +22,10 @@ local checkluatype = SF.CheckLuaType
 local checkpermission = SF.Permissions.check
 local registerprivilege = SF.Permissions.registerPrivilege
 
-registerprivilege("acf.createMobility", "Create acf engine", "Allows the user to create ACF engines and gearboxes")
-registerprivilege("acf.createFuelTank", "Create acf fuel tank", "Allows the user to create ACF fuel tanks")
-registerprivilege("acf.createGun", "Create acf gun", "Allows the user to create ACF guns")
-registerprivilege("acf.createAmmo", "Create acf ammo", "Allows the user to create ACF ammoboxes")
+registerprivilege("acf.createMobility", "Create acf engine", "Allows the user to create ACF engines and gearboxes", { usergroups = { default = 3 } })
+registerprivilege("acf.createFuelTank", "Create acf fuel tank", "Allows the user to create ACF fuel tanks", { usergroups = { default = 3 } })
+registerprivilege("acf.createGun", "Create acf gun", "Allows the user to create ACF guns", { usergroups = { default = 3 } })
+registerprivilege("acf.createAmmo", "Create acf ammo", "Allows the user to create ACF ammoboxes", { usergroups = { default = 3 } } )
 registerprivilege("entities.acf", "ACF", "Allows the user to control ACF components", { entities = {} })
 
 local plyCount = SF.LimitObject("acf_components", "acf_components", -1, "The number of ACF components allowed to spawn via Starfall")
