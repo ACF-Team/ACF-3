@@ -100,3 +100,35 @@ do -- Ricochet/Penetration materials
 		end
 	end
 end
+
+do -- Time lapse function
+	local Units = {
+		{ Unit = "year", Reduction = 1970 },
+		{ Unit = "month", Reduction = 1 },
+		{ Unit = "day", Reduction = 1 },
+		{ Unit = "hour", Reduction = 0 },
+		{ Unit = "min", Reduction = 0 },
+		{ Unit = "sec", Reduction = 0 },
+	}
+
+	local function LocalToUTC()
+		return os.time(os.date("!*t", os.time()))
+	end
+
+	function ACF.GetTimeLapse(Date)
+		if not Date then return end
+
+		local Time = LocalToUTC() - Date
+		local DateData = os.date("!*t", Time)
+
+		if Time == 0 then return "now" end
+
+		for _, Data in ipairs(Units) do
+			Time = DateData[Data.Unit] - Data.Reduction
+
+			if Time > 0 then
+				return Time .. " " .. Data.Unit .. (Time ~= 1 and "s" or "") .. " ago"
+			end
+		end
+	end
+end

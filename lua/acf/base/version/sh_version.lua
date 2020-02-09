@@ -1,65 +1,99 @@
+local Repos = ACF.Repositories
 
-local sub = string.sub
-local format = string.format
-local Exists = file.Exists
-local Read = file.Read
-local Time = file.Time
-
-if not ACF.Version then
-	ACF.Version = {
-		Code = false,
-		Date = false,
-	}
+local function LocalToUTC(Time)
+	return os.time(os.date("!*t", Time))
 end
 
-ACF.RepoInfo = {
-	Owner = "Stooberton",
-	Name  = "ACF-3",
-	API   = "https://api.github.com/repos/%s/%s/commits?per_page=5",
-}
+local function GetGitData(Path, Version)
+	local _, _, Head = file.Read(Path .. "/.git/HEAD", "GAME"):find("heads/(.+)$")
+	local Heads = Path .. "/.git/refs/heads/"
+	local Files = file.Find(Heads .. "*", "GAME")
+	local Code, Date
 
-function ACF.GetVersion()
-	local Version = ACF.Version
+	Version.Head = Head:Trim()
 
-	if Version.Code then return Version end
+	for _, Name in ipairs(Files) do
+		if Name == Version.Head then
+			local SHA = file.Read(Heads .. Name, "GAME"):Trim()
 
-	local DataPath = "addons/ACF"
+			Code = Name .. "-" .. SHA:sub(1, 7)
+			Date = file.Time(Heads .. Name, "GAME")
 
-	if not Exists(DataPath, "GAME") then
-		local _, Folders = file.Find("addons/*", "GAME")
-
-		for _, v in ipairs(Folders) do
-			if Exists("addons/" .. v .. "/lua/autorun/acf_loader.lua", "GAME") then
-				DataPath = "addons/" .. v
-
-				break
-			end
+			break
 		end
 	end
 
-	if Exists(DataPath .. "/.git/refs/heads/master", "GAME") then
-		DataPath = DataPath .. "/.git/refs/heads/master"
+	return Code, Date
+end
 
-		Version.Code = "Git-" .. sub(Read(DataPath, "GAME"), 1, 8)
-		Version.Date = Time(DataPath, "GAME")
+function ACF.GetVersion(Owner, Name)
+	local Version = Repos[Owner .. "/" .. Name]
 
-	elseif Exists(DataPath .. "/.svn/wc.db", "GAME") then
-		local Repo = ACF.RepoInfo
-		local Database = Read(DataPath .. "/.svn/wc.db", "GAME")
-		local Start = Database:find(format("/%s/%s/!svn/ver/", Repo.Owner, Repo.Name))
-		local Offset = (Start or 0) + #Repo.Owner + #Repo.Name + 12
+	if not Version then return end
+	if Version.Code then return Version.Code end
 
-		Version.Code = "SVN-" .. Start and sub(Database, Offset, Offset + 3) or "Unknown"
-		Version.Date = Time(DataPath .. "/.svn/wc.db", "GAME")
+	local _, Folders = file.Find("addons/*", "GAME")
+	local Pattern = Version.Path
+	local Path, Code, Date
 
-	elseif Exists(DataPath .. "/LICENSE", "GAME") then
-		Version.Code = "ZIP-Unknown"
-		Version.Date = Time(DataPath .. "/LICENSE", "GAME")
+	for _, Folder in ipairs(Folders) do
+		if file.Exists(Pattern:format(Folder), "GAME") then
+			Path = "addons/" .. Folder
+			break
+		end
+	end
 
-	else
+	if not Path then
 		Version.Code = "Not Installed"
-		Version.Date = os.time()
+		Version.Date = 0
+	elseif file.Exists(Path .. "/.git/HEAD", "GAME") then
+		Code, Date = GetGitData(Path, Version)
+
+		Version.Code = "Git-" .. Code
+		Version.Date = LocalToUTC(Date)
+	elseif file.Exists(Path .. "/LICENSE", "GAME") then
+		Date = file.Time(Path .. "/LICENSE", "GAME")
+
+		Version.Code = "ZIP-Unknown"
+		Version.Date = LocalToUTC(Date)
+	end
+
+	if not Version.Head then
+		Version.Head = "master"
 	end
 
 	return Version
+end
+
+function ACF.GetBranch(Owner, Name, Branch)
+	local Version = Repos[Owner .. "/" .. Name]
+
+	if not Version then return end
+	if not Version.Branches then return end
+
+	return Version.Branches[Branch or Version.Head]
+end
+
+function ACF.GetVersionStatus(Owner, Name)
+	local Version = Repos[Owner .. "/" .. Name]
+
+	if not Version then return end
+	if Version.Status then return Version.Status end
+
+	local Branch = ACF.GetBranch(Owner, Name)
+	local Status
+
+	if not Branch or Version.Code == "Not Installed" then
+		Status = "Unable to check"
+	elseif Version.Code == Branch.Code
+	or Version.Date
+	>= Branch.Date then
+		Status = "Up to date"
+	else
+		Status = "Out of date"
+	end
+
+	Version.Status = Status
+
+	return Status
 end

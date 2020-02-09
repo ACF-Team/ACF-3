@@ -42,18 +42,22 @@ function PANEL:Init()
 		end
 	end
 
-	local HomeNode = self.WeaponSelect:AddNode("ACF Home")
+	local HomeNode = self.WeaponSelect:AddNode("ACF Home", "icon16/newspaper.png")
+	local OldSelect = HomeNode.OnNodeSelected
 	HomeNode.mytable = {}
 
 	HomeNode.mytable.guicreate = (function(_, Table)
 		ACFHomeGUICreate(Table)
 	end or nil)
 
-	function HomeNode:DoClick()
+	function HomeNode:OnNodeSelected(Node)
 		acfmenupanel:UpdateDisplay(self.mytable)
+
+		OldSelect(self, Node)
 	end
 
-	HomeNode.Icon:SetImage("icon16/newspaper.png")
+	self.WeaponSelect:SetSelectedItem(HomeNode)
+
 	local RoundAttribs = ACF.RoundTypes
 	self.RoundAttribs = {}
 
@@ -241,24 +245,32 @@ end
 function ACFHomeGUICreate()
 	if not acfmenupanel.CustomDisplay then return end
 
-	local Text
-	local CData  = acfmenupanel.CData
-	local Git	 = ACF.GitVersion
-	local Server = ACF.ServerVersion
+	local Display = acfmenupanel.CustomDisplay
+	local CData   = acfmenupanel.CData
+	local Repo	  = ACF.Repositories["Stooberton/ACF-3"]
+	local Server  = Repo.Server
+	local Text	  = "%s Status\n\nVersion: %s\nBranch:  %s\nStatus:   %s\n\n"
 
-	if Server.Code == Git.Code or Server.Date >= Git.Date then
-		Text = "Up to date!"
-	elseif Git.Code then
-		Text = "Out of date!"
-	else
-		Text = "Version is unknown!"
-	end
+	CData.Header = vgui.Create("DLabel")
+	CData.Header:SetText("ACF Version Status\n")
+	CData.Header:SetFont("ACF_Subtitle")
+	CData.Header:SetDark(true)
+	CData.Header:SizeToContents()
+	Display:AddItem(CData.Header)
 
-	CData["VersionInit"] = vgui.Create("DLabel")
-		CData["VersionInit"]:SetText("ACF Version: " .. Text .. "\n\n" .. "Server Version: " .. Server.Code .. "\nClient Version: " .. Git.Code)
-		CData["VersionInit"]:SetDark(true)
-		CData["VersionInit"]:SizeToContents()
-	acfmenupanel.CustomDisplay:AddItem(CData["VersionInit"])
+	CData.ServerStatus = vgui.Create("DLabel")
+	CData.ServerStatus:SetText(Text:format("Server", Server.Code, Server.Head, Server.Status))
+	CData.ServerStatus:SetFont("ACF_Paragraph")
+	CData.ServerStatus:SetDark(true)
+	CData.ServerStatus:SizeToContents()
+	Display:AddItem(CData.ServerStatus)
+
+	CData.ClientStatus = vgui.Create("DLabel")
+	CData.ClientStatus:SetText(Text:format("Client", Repo.Code, Repo.Head, Repo.Status))
+	CData.ClientStatus:SetFont("ACF_Paragraph")
+	CData.ClientStatus:SetDark(true)
+	CData.ClientStatus:SizeToContents()
+	Display:AddItem(CData.ClientStatus)
 end
 
 function PANEL:AmmoSelect(Blacklist)
