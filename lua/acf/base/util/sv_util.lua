@@ -50,6 +50,7 @@ function ACF.PrintLog(Type, ...)
 	local Prefix = "[ACF" .. Data.Prefix .. "] "
 	local Message = istable(...) and ... or { ... }
 
+	Message[#Message + 1] = "\n"
+
 	MsgC(Data.Color, Prefix, color_white, unpack(Message))
-	MsgN()
 end
