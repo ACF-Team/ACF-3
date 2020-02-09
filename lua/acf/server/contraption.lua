@@ -20,9 +20,7 @@ end
 local function GetAllPhysicalEntities(Ent, Tab)
 	local Res = Tab or {}
 
-	if Res[Ent] then
-		return
-	else
+	if IsValid(Ent) and not Res[Ent] then
 		Res[Ent] = true
 
 		if Ent.Constraints then
