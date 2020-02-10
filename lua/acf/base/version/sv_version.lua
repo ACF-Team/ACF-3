@@ -179,7 +179,7 @@ do -- Branch version retrieval and version printing
 	end
 
 	hook.Add("Initialize", "ACF Request Git Data", function()
-		timer.Simple(2, CheckAllRepos)
+		timer.Simple(0, CheckAllRepos)
 
 		hook.Add("Initialize", "ACF Request Git Data")
 	end)
@@ -201,7 +201,7 @@ do -- Client syncronization
 	end
 
 	hook.Add("PlayerInitialSpawn", "ACF_VersionSync", function(Player)
-		timer.Simple(10, function()
+		timer.Simple(5, function()
 			SyncInformation(Player)
 		end)
 	end)

@@ -1,6 +1,8 @@
 local Repos = ACF.Repositories
 
-do -- Server syncronization
+do -- Server syncronization and status printing
+	local PrintToChat = ACF.PrintToChat
+
 	local Relevant = {
 		Owner = true,
 		Name = true,
@@ -12,6 +14,21 @@ do -- Server syncronization
 	local Unique = {
 		Link = true,
 		Branches = true,
+	}
+
+	local Messages = {
+		["Unable to check"] = {
+			Type = "Update_Error",
+			Message = "%s: Server is running on version %s. Unable to check for updates.",
+		},
+		["Out of date"] = {
+			Type = "Update_Old",
+			Message = "%s: Server is running on version %s. There's an update available, pushed %s.",
+		},
+		["Up to date"] = {
+			Type = "Update_Ok",
+			Message = "%s: Server is running on version %s. No updates available, running on the latest version."
+		},
 	}
 
 	local function GenerateCopy(Name, Data)
@@ -32,36 +49,6 @@ do -- Server syncronization
 		end
 	end
 
-	net.Receive("ACF_VersionSync", function()
-		local Table = net.ReadTable()
-
-		for Name, Data in pairs(Table) do
-			GenerateCopy(Name, Data)
-
-			ACF.GetVersion(Data.Owner, Data.Name)
-			ACF.GetVersionStatus(Data.Owner, Data.Name)
-		end
-	end)
-end
-
-do -- Status printing
-	local PrintToChat = ACF.PrintToChat
-
-	local Messages = {
-		["Unable to check"] = {
-			Type = "Update_Error",
-			Message = "%s: Server is running on version %s. Unable to check for updates.",
-		},
-		["Out of date"] = {
-			Type = "Update_Old",
-			Message = "%s: Server is running on version %s. There's an update available, pushed %s.",
-		},
-		["Up to date"] = {
-			Type = "Update_Ok",
-			Message = "%s: Server is running on version %s. No updates available, running on the latest version."
-		},
-	}
-
 	local function PrintStatus(Server)
 		local Branch = ACF.GetBranch(Server.Owner, Server.Name, Server.Head)
 		local Lapse = ACF.GetTimeLapse(Branch.Date)
@@ -72,14 +59,25 @@ do -- Status printing
 		PrintToChat(Data.Type, Message:format(Server.Name, Server.Code, Lapse))
 	end
 
-	hook.Add("CreateMove", "ACF Print Version", function(Move)
-		if Move:GetButtons() ~= 0 then
-			for _, Data in pairs(Repos) do
-				PrintStatus(Data.Server)
-			end
+	net.Receive("ACF_VersionSync", function()
+		local Table = net.ReadTable()
 
-			hook.Remove("CreateMove", "ACF Print Version")
+		for Name, Data in pairs(Table) do
+			GenerateCopy(Name, Data)
+
+			ACF.GetVersion(Data.Owner, Data.Name)
+			ACF.GetVersionStatus(Data.Owner, Data.Name)
 		end
+
+		hook.Add("CreateMove", "ACF Print Version", function(Move)
+			if Move:GetButtons() ~= 0 then
+				for _, Data in pairs(Repos) do
+					PrintStatus(Data.Server)
+				end
+
+				hook.Remove("CreateMove", "ACF Print Version")
+			end
+		end)
 	end)
 
 	ACF.AddMessageType("Update_Ok", "Updates")
