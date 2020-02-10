@@ -9,15 +9,18 @@ local FlightTr  	= { output = FlightRes }
 local GlobalFilter 	= ACF.GlobalFilter
 
 local function HitClip(Ent, Pos)
-	if not IsValid(Ent) or Ent.ClipData == nil or Ent:GetClass() ~= "prop_physics" or (Ent:GetPhysicsObject():GetVolume() == nil) then return false end
-	local Clip
-	local Normal
-	local Origin
+	if not IsValid(Ent) then return false end
+	if Ent.ClipData == nil then return false end -- Doesn't have clips
+	if Ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
+	if Ent:GetPhysicsObject():GetVolume() == nil then return false end -- Has Makespherical applied to it
+
+	local Center = Ent:LocalToWorld(Ent:OBBCenter())
 
 	for I = 1, #Ent.ClipData do
-		Clip = Ent.ClipData[I]
-		Normal = Ent:LocalToWorldAngles(Clip.n):Forward()
-		Origin = Ent:LocalToWorld(Ent:OBBCenter()) + Normal * Clip.d
+		local Clip 	 = Ent.ClipData[I]
+		local Normal = Ent:LocalToWorldAngles(Clip.n):Forward()
+		local Origin = Center + Normal * Clip.d
+
 		if Normal:Dot((Origin - Pos):GetNormalized()) > 0 then return true end
 	end
 
