@@ -248,7 +248,8 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			end
 
 			local IsChar = Ent:IsPlayer() or Ent:IsNPC()
-			if IsChar and not Ent:Alive() then
+			if IsChar then print(Ent) end
+			if IsChar and Ent:Health() <= 0 then
 				Ents[K] = nil
 				Filter[#Filter + 1] = Ent -- Shouldn't need to filter a dead player but we'll do it just in case
 
@@ -256,9 +257,10 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			end
 
 			if Check(Ent) then -- ACF-valid entity
-				local Mul 		 = IsChar and 0.5 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
+				local Mul 		 = IsChar and 0.75 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
 				local Mins, Maxs = Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul
-				local Target 	 = Ent:LocalToWorld(Ent:OBBCenter() + Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))) -- Try to hit a random spot on the entity
+				local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
+				local Target 	 = Ent:LocalToWorld(Rand) -- Try to hit a random spot on the entity
 				local Displ		 = Target - Origin
 
 				TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
@@ -270,7 +272,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 						if not Damaged[Ent] and not Damage[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
 							debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 255, 0), true) -- Green line for a hit trace
-							debugoverlay.BoxAngles(Ent:LocalToWorld(Ent:OBBCenter()), Ent:OBBMins(), Ent:OBBMaxs(), Ent:GetAngles(), 30, Color(255, 0, 0, 1))
+							debugoverlay.BoxAngles(Ent:GetPos(), Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul, Ent:GetAngles(), 30, Color(255, 0, 0, 1))
 
 							local Pos		= Ent:GetPos()
 							local Distance	= Origin:Distance(Pos)
@@ -286,7 +288,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 
 							Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
 						else
-							--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
+							debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
 						end
 					else -- If check on new ent fails
 						--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(255, 0, 0)) -- Red line for a invalid ent
@@ -296,7 +298,7 @@ function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 					end
 				else
 					-- Not removed from future damage sweeps so as to provide multiple chances to be hit
-					--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 0, 255)) -- Blue line for a miss
+					debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 0, 255)) -- Blue line for a miss
 				end
 			else -- Target was invalid
 
