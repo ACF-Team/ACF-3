@@ -1,3 +1,5 @@
+local Bullets = ACF.BulletEffect
+
 function EFFECT:Init(Data)
 	self.Index = Data:GetAttachment()
 
@@ -11,7 +13,7 @@ function EFFECT:Init(Data)
 
 	self.CreateTime = CurTime()
 
-	local Bullet = ACF.BulletEffect[self.Index]
+	local Bullet = Bullets[self.Index]
 	local Flight = Data:GetStart() * 10
 	local Origin = Data:GetOrigin()
 	local Hit = Data:GetScale()
@@ -69,7 +71,11 @@ function EFFECT:Init(Data)
 		}
 
 		--Add all that data to the bullet table, overwriting if needed
-		ACF.BulletEffect[self.Index] = BulletData
+		Bullets[self.Index] = BulletData
+
+		self:SetPos(Origin)
+		self:SetAngles(Flight:Angle())
+		self:SetModelScale(BulletData.Caliber * 0.1, 0)
 
 		local CustomEffect = hook.Run("ACF_BulletEffect", BulletData.AmmoType)
 
@@ -80,16 +86,16 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Think()
-	if not self.Kill and self.CreateTime > CurTime() - 30 then return true end
+	local Bullet = Bullets[self.Index]
 
-	local Bullet = self.Index and ACF.BulletEffect[self.Index]
+	if Bullet and not self.Kill and self.CreateTime > CurTime() - 30 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then
 			Bullet.Tracer:Finish()
 		end
 
-		ACF.BulletEffect[self.Index] = nil
+		Bullets[self.Index] = nil
 	end
 
 	return false
@@ -113,22 +119,22 @@ function EFFECT:ApplyMovement(Bullet)
 	if Bullet.Tracer and IsValid(Bullet.Tracer) then
 		local DeltaPos = Position - Bullet.SimPosLast
 		local Length = math.max(DeltaPos:Length() * 2, 1)
-		local MaxSprites = 2 --math.min(math.floor(math.max(Bullet.Caliber/5,1)*1.333)+1,5)
-		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", Position) -- - DeltaPos )
+		local MaxSprites = 2
+		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", Position)
 
 		if Light then
 			local Color = Bullet.TracerColour
 
 			Light:SetAngles(Bullet.SimFlight:Angle())
-			Light:SetVelocity(Bullet.SimFlight:GetNormalized()) --Vector() ) --Bullet.SimFlight )
+			Light:SetVelocity(Bullet.SimFlight:GetNormalized())
 			Light:SetColor(Color.r, Color.g, Color.b)
-			Light:SetDieTime(math.Clamp(CurTime() - self.CreateTime, 0.075, 0.15)) -- 0.075, 0.1
+			Light:SetDieTime(0.075)
 			Light:SetStartAlpha(255)
-			Light:SetEndAlpha(155)
-			Light:SetStartSize(15 * Bullet.Caliber) -- 5
-			Light:SetEndSize(1) --15*Bullet.Caliber
+			Light:SetEndAlpha(0)
+			Light:SetStartSize(Bullet.Caliber * 15)
+			Light:SetEndSize(Bullet.Caliber * 15)
 			Light:SetStartLength(Length)
-			Light:SetEndLength(1) --Length
+			Light:SetEndLength(Length)
 		end
 
 		for i = 1, MaxSprites do
@@ -138,7 +144,7 @@ function EFFECT:ApplyMovement(Bullet)
 				Smoke:SetAngles(Bullet.SimFlight:Angle())
 				Smoke:SetVelocity(Bullet.SimFlight * 0.05)
 				Smoke:SetColor(200, 200, 200)
-				Smoke:SetDieTime(0.6) -- 1.2
+				Smoke:SetDieTime(0.6)
 				Smoke:SetStartAlpha(10)
 				Smoke:SetEndAlpha(0)
 				Smoke:SetStartSize(1)
@@ -152,10 +158,5 @@ function EFFECT:ApplyMovement(Bullet)
 end
 
 function EFFECT:Render()
-	local Bullet = ACF.BulletEffect[self.Index]
-
-	if Bullet then
-		self:SetModelScale(Bullet.Caliber * 0.1, 0)
-		self:DrawModel()
-	end
+	self:DrawModel()
 end
