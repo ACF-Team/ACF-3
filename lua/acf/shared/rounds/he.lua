@@ -1,4 +1,4 @@
-ACF.AmmoBlacklist.HE = {"MG", "RAC", "SL"}
+ACF.AmmoBlacklist.HE = {"MG", "RAC"}
 local Round = {}
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "High Explosive (HE)" --Human readable name
