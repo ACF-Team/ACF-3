@@ -180,8 +180,6 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity:SetNWString("WireName", GunData.name .. " Ammo")
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
-
-	Entity:UpdateOverlay()
 end
 
 do -- Spawn Func --------------------------------
@@ -540,6 +538,7 @@ do -- Metamethods -------------------------------
 			self.Ammo = math.floor(self.Capacity * AmmoPercent)
 
 			self:UpdateMass()
+			self:UpdateOverlay(true)
 
 			return true, Message
 		end
