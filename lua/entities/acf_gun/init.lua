@@ -208,7 +208,7 @@ do -- Metamethods --------------------------------
 					self:AttemptFire() -- Attempt to fire the gun
 				end
 			elseif Input == "Fuze" then
-				self.SetFuze = Bool and math.abs(Value) + math.Rand(-0.05, 0.05) or nil
+				self.SetFuze = Bool and math.abs(Value) or nil
 			elseif Input == "Unload" then
 				if Bool and self.State == "Loaded" then
 					self:Unload()
@@ -316,6 +316,7 @@ do -- Metamethods --------------------------------
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck()
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
+			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 
 			ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData) -- Spawn projectile
 
@@ -404,7 +405,6 @@ do -- Metamethods --------------------------------
 				self.CurrentCrate = Crate
 
 				self.BulletData = Crate.BulletData
-				self.BulletData.Fuze = self.SetFuze
 				self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
 
 				if not ForceReload then
@@ -439,6 +439,9 @@ do -- Metamethods --------------------------------
 							self.OnReload = nil
 						end
 
+						local Variance 	= math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+
+						self.Fuze 	  = (self.BulletData.CanFuze and self.SetFuze) and math.max(self.SetFuze, 0.02) + Variance or nil -- Set fuze when done reloading
 						self.NextFire = nil
 
 						WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)

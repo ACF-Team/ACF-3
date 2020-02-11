@@ -61,27 +61,25 @@ function ACF_CreateBullet(BulletData)
 	ACF.CurBulletIndex = ACF.CurBulletIndex + 1
 	if ACF.CurBulletIndex > ACF.BulletIndexLimit then ACF.CurBulletIndex = 1 end
 
-	BulletData.Accel 		 = Vector(0, 0, GetConVar("sv_gravity"):GetInt() * -1)
-	BulletData.LastThink 	 = ACF.SysTime
-	BulletData.FlightTime 	 = 0
-	BulletData.TraceBackComp = 0
-
-	if type(BulletData.FuseLength) ~= "number" then
-		BulletData.FuseLength = 0
-	else
-		if BulletData.FuseLength > 0 then
-			BulletData.InitTime = ACF.SysTime
-		end
-	end
-
-	if BulletData.Gun:IsValid() then
-		BulletData.TraceBackComp = math.max(ACF_GetAncestor(BulletData.Gun):GetPhysicsObject():GetVelocity():Dot(BulletData.Flight:GetNormalized()), 0)
-	end
-
-	BulletData.Filter = {BulletData.Gun}
-	BulletData.Index = ACF.CurBulletIndex
 	local Bullet = table.Copy(BulletData)
+
+	if IsValid(Bullet.Gun) then
+		Bullet.TraceBackComp = math.max(ACF_GetAncestor(BulletData.Gun):GetPhysicsObject():GetVelocity():Dot(BulletData.Flight:GetNormalized()), 0)
+		Bullet.Filter 		 = {BulletData.Gun}
+	else
+		Bullet.Filter = {}
+	end
+
+	Bullet.Index  		 = ACF.CurBulletIndex
+	Bullet.Accel 		 = Vector(0, 0, GetConVar("sv_gravity"):GetInt() * -1)
+	Bullet.LastThink 	 = ACF.SysTime
+	Bullet.FlightTime 	 = 0
+	Bullet.TraceBackComp = 0
+	Bullet.Fuze			 = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
+	Bullet.Mask			 = Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
+
 	ACF.Bullet[ACF.CurBulletIndex] = Bullet
+
 	ACF_BulletClient(ACF.CurBulletIndex, Bullet, "Init", 0)
 	ACF_CalcBulletFlight(ACF.CurBulletIndex, Bullet)
 
@@ -122,11 +120,14 @@ function ACF_CalcBulletFlight(Index, Bullet, BackTraceOverride)
 
 	local DeltaTime = ACF.SysTime - Bullet.LastThink
 	local Drag = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
+
 	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
 	Bullet.Flight = Bullet.Flight + (Bullet.Accel - Drag) * DeltaTime
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * (math.min(ACF.PhysMaxVel * 0.025, Bullet.FlightTime * Bullet.Flight:Length() - Bullet.TraceBackComp * DeltaTime))
 	Bullet.LastThink = ACF.SysTime
 	Bullet.FlightTime = Bullet.FlightTime + DeltaTime
+	Bullet.DeltaTime = DeltaTime
+
 	ACF_DoBulletsFlight(Index, Bullet)
 
 	if Bullet.PostCalcFlight then
@@ -135,37 +136,23 @@ function ACF_CalcBulletFlight(Index, Bullet, BackTraceOverride)
 end
 
 function ACF_DoBulletsFlight(Index, Bullet)
-	local CanDo = hook.Run("ACF_BulletsFlight", Index, Bullet)
-	if CanDo == false then return end
-
-	if Bullet.FuseLength and Bullet.FuseLength > 0 then
-		local Time = ACF.SysTime - Bullet.InitTime
-
-		if Time > Bullet.FuseLength then
-			if not util.IsInWorld(Bullet.Pos) then
-				ACF_RemoveBullet(Index)
-			else
-				if Bullet.OnEndFlight then
-					Bullet.OnEndFlight(Index, Bullet, nil)
-				end
-
-				ACF_BulletClient(Index, Bullet, "Update", 1, Bullet.Pos)
-				ACF_BulletEndFlight = ACF.RoundTypes[Bullet.Type].endflight
-				ACF_BulletEndFlight(Index, Bullet, Bullet.Pos, Bullet.Flight:GetNormalized())
-			end
-		end
-	end
+	if hook.Run("ACF_BulletsFlight", Index, Bullet) == false then return end
 
 	if Bullet.SkyLvL then
-		if (ACF.CurTime - Bullet.LifeTime) > 30 then
+		if ACF.CurTime - Bullet.LifeTime > 30 then
 			ACF_RemoveBullet(Index)
 
 			return
 		end
 
 		if Bullet.NextPos.z + ACF.SkyboxGraceZone > Bullet.SkyLvL then
-			Bullet.Pos = Bullet.NextPos
+			if Bullet.Fuze and Bullet.Fuze <= CurTime() then -- Fuze detonated outside map
+				ACF_RemoveBullet(Index)
 
+				return
+			end
+
+			Bullet.Pos = Bullet.NextPos
 			return
 		elseif not util.IsInWorld(Bullet.NextPos) then
 			ACF_RemoveBullet(Index)
@@ -181,11 +168,36 @@ function ACF_DoBulletsFlight(Index, Bullet)
 		end
 	end
 
-	FlightTr.mask = Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
+	FlightTr.mask = Bullet.Mask
 	FlightTr.filter = Bullet.Filter
 	FlightTr.start = Bullet.StartTrace
 	FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
 	Trace(FlightTr, true)
+
+	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
+		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
+			ACF_RemoveBullet(Index)
+		else
+			if Bullet.OnEndFlight then
+				Bullet.OnEndFlight(Index, Bullet, nil)
+			end
+
+			local DeltaTime = Bullet.DeltaTime
+			local DeltaFuze = ACF.CurTime - Bullet.Fuze
+			local Lerp = DeltaFuze / DeltaTime
+			--print(DeltaTime, DeltaFuze, Lerp)
+			if FlightRes.Hit and Lerp < FlightTr.Fraction or true then -- Fuze went off before running into something
+				local Pos = LerpVector(DeltaFuze / DeltaTime, Bullet.Pos, Bullet.NextPos)
+
+				debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Color( 0, 255, 0 ))
+
+				ACF_BulletClient(Index, Bullet, "Update", 1, Pos)
+				ACF_BulletEndFlight = ACF.RoundTypes[Bullet.Type].endflight
+				ACF_BulletEndFlight(Index, Bullet, Pos, Bullet.Flight:GetNormalized())
+
+			end
+		end
+	end
 
 	if Bullet.SkipNextHit then
 		if not FlightRes.StartSolid and not FlightRes.HitNoDraw then

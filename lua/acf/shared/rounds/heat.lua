@@ -113,7 +113,7 @@ function Round.convert(_, PlayerData)
 	Data.DetonatorAngle = 75
 	Data.Detonated = false
 	Data.NotFirstPen = false
-	Data.BoomPower = Data.PropMass + Data.FillerMass -- for when a crate is cooking off
+	Data.CanFuze = Data.Caliber > 2 -- Can fuze on calibers > 20mm
 
 	--Only the crates need this part
 	if SERVER then
