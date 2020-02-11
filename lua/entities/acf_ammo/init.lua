@@ -257,6 +257,8 @@ end
 
 do -- Metamethods -------------------------------
 	do -- Inputs/Outputs/Linking ----------------
+		WireLib.AddInputAlias("Active", "Load")
+
 		function ENT:TriggerInput(Name, Value)
 			if self.Disabled then return end -- Ignore input if disabled
 
