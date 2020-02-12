@@ -171,7 +171,7 @@ end
 
 function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local Mul = Type == "HEAT" and ACF.HEATMulFuel or 1 --Heat penetrators deal bonus damage to fuel
-	local HitRes = ACF_PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
+	local HitRes = ACF.PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end

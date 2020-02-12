@@ -54,3 +54,7 @@ function ACF.PrintLog(Type, ...)
 
 	MsgC(Data.Color, Prefix, color_white, unpack(Message))
 end
+
+function ACF_GetHitAngle(HitNormal, HitVector)
+	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
+end

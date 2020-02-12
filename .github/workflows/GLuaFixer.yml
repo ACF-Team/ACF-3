@@ -23,7 +23,5 @@ jobs:
       run: unzip glualint.zip
     - name: Remove blacklisted folders
       run: rm -r lua/entities/gmod_wire_expression2/ lua/starfall/
-    - name: Remove blacklisted files
-      run: rm lua/acf/server/damage.lua
     - name: Initiate linting
       run: ./glualint lua

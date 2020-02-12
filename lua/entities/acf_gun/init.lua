@@ -10,6 +10,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local Shove		  = ACF.KEShove
 local TraceRes    = {} -- Output for traces
 local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace		  = util.TraceLine
@@ -350,7 +351,7 @@ do -- Metamethods --------------------------------
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 
-			ACF_KEShove(self, MassCenter, -self:GetForward(), self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37)
+			Shove(self, MassCenter, -self:GetForward(), self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37)
 		end
 	end -----------------------------------------
 

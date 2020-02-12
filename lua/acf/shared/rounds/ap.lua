@@ -76,22 +76,7 @@ end
 function Round.cratetxt(BulletData)
 	--local FrArea = BulletData.FrArea
 	local DData = Round.getDisplayData(BulletData)
-	--fakeent.ACF.Armour = DData.MaxPen or 0
-	--fakepen.Penetration = (DData.MaxPen * FrArea) / ACF.KEtoRHA	
-	--local fakepen = ACF_Kinetic( BulletData.SlugMV*39.37 , BulletData.SlugMass, 9999999 )
-	--local MaxHP = ACF_CalcDamage( fakeent , fakepen , FrArea , 0 )
-	--[[
-	local TotalMass = BulletData.ProjMass + BulletData.PropMass
-	local MassUnit
-	
-	if TotalMass < 0.1 then
-		TotalMass = TotalMass * 1000
-		MassUnit = " g"
-	else
-		MassUnit = " kg"
-	end
-	]]
-	--
+
 	local str = {"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n", "Max Penetration: ", math.floor(DData.MaxPen), " mm"} --"Cartridge Mass: ", math.Round(TotalMass, 2), MassUnit, "\n", --"Max Pen. Damage: ", math.Round(MaxHP.Damage, 1), " HP\n",
 
 	return table.concat(str)
