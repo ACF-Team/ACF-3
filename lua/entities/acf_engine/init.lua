@@ -101,8 +101,6 @@ local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local insert	  = table.insert
-local remove	  = table.remove
 local Round		  = math.Round
 local max		  = math.max
 local TimerCreate = timer.Create
@@ -160,22 +158,10 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity:UpdateOverlay(true)
 end
 
-local function UpdateSmoothRPM(Engine)
-	local Removed = 0
-
-	if Engine.AmountRPM == 10 then
-		Removed = remove(Engine.RPM)
-	else
-		Engine.AmountRPM = Engine.AmountRPM + 1
-	end
-
-	insert(Engine.RPM, 1, Engine.FlyRPM)
-
-	Engine.SmoothRPM = Engine.SmoothRPM + Engine.FlyRPM - Removed
-
-	local Smooth = Engine.SmoothRPM / Engine.AmountRPM
-	local Pitch = math.Clamp(20 + (Smooth * Engine.SoundPitch) / 50, 1, 255)
-	local Volume = 0.25 + (0.1 + 0.9 * ((Smooth / Engine.LimitRPM) ^ 1.5)) * Engine.Throttle / 1.5
+local function GetPitchVolume(Engine)
+	local RPM = Engine.FlyRPM
+	local Pitch = math.Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
+	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Engine.Throttle * 0.666
 
 	return Pitch, Volume
 end
@@ -259,7 +245,7 @@ local function SetActive(Entity, Value)
 			Entity.Torque = Entity.PeakTorque
 			Entity.FlyRPM = Entity.IdleRPM * 1.5
 
-			local Pitch, Volume = UpdateSmoothRPM(Entity)
+			local Pitch, Volume = GetPitchVolume(Entity)
 
 			if Entity.SoundPath ~= "" then
 				Entity.Sound = CreateSound(Entity, Entity.SoundPath)
@@ -289,9 +275,6 @@ local function SetActive(Entity, Value)
 	else
 		Entity.Active = false
 		Entity.FlyRPM = 0
-		Entity.RPM = { Entity.IdleRPM }
-		Entity.SmoothRPM = Entity.IdleRPM
-		Entity.AmountRPM = 1
 		Entity.Torque = 0
 
 		if Entity.Sound then
@@ -353,9 +336,6 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 	Engine.FuelUsage = 0
 	Engine.Throttle = 0
 	Engine.FlyRPM = 0
-	Engine.RPM = {}
-	Engine.SmoothRPM = 0
-	Engine.AmountRPM = 0
 	Engine.Out = Engine:WorldToLocal(Engine:GetAttachment(Engine:LookupAttachment("driveshaft")).Pos)
 
 	Engine.Inputs = WireLib.CreateInputs(Engine, { "Active", "Throttle" })
@@ -437,9 +417,8 @@ function ENT:UpdateOutputs()
 	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
-		local Pitch, Volume = UpdateSmoothRPM(self)
-		local Smooth = self.SmoothRPM / self.AmountRPM
-		local Power = self.Torque * Smooth / 9548.8
+		local Pitch, Volume = GetPitchVolume(self)
+		local Power = self.Torque * self.FlyRPM / 9548.8
 
 		WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
 		WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
