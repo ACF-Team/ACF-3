@@ -1,0 +1,149 @@
+local PANEL = {}
+
+DEFINE_BASECLASS("Panel")
+
+function PANEL:Init()
+	self.Items = {}
+	self.TempItems = {}
+end
+
+function PANEL:Clear()
+	if not next(self.Items) then return end
+
+	for K in pairs(self.Items) do
+		if IsValid(K) then
+			K:Remove()
+		end
+
+		self.Items[K] = nil
+	end
+end
+
+function PANEL:ClearTemporal(Panel)
+	local Target = IsValid(Panel) and Panel or self
+
+	if not Target.TempItems then return end
+
+	for K in pairs(Target.TempItems) do
+		if IsValid(K) then
+			K:Remove()
+		end
+
+		Target.TempItems[K] = nil
+	end
+end
+
+local TemporalPanels = {}
+
+function PANEL:StartTemporal(Panel)
+	local Target = IsValid(Panel) and Panel or self
+
+	if not Target.TempItems then
+		Target.TempItems = {}
+	end
+
+	TemporalPanels[Target] = true
+end
+
+function PANEL:EndTemporal(Panel)
+	local Target = IsValid(Panel) and Panel or self
+
+	TemporalPanels[Target] = nil
+end
+
+function PANEL:AddPanel(Name)
+	if not Name then return end
+
+	local Panel = vgui.Create(Name, self)
+
+	if not IsValid(Panel) then return end
+
+	Panel:Dock(TOP)
+	Panel:DockMargin(0, 0, 0, 10)
+	Panel:InvalidateLayout()
+
+	self:InvalidateLayout()
+	self.Items[Panel] = true
+
+	if next(TemporalPanels) then
+		for K in pairs(TemporalPanels) do
+			K.TempItems[Panel] = true
+		end
+	end
+
+	return Panel
+end
+
+function PANEL:AddButton(Text, Command, ...)
+	local Panel = self:AddPanel("DButton")
+	Panel:SetText(Text or "Button")
+	Panel:SetFont("ACF_Control")
+
+	if Command then
+		Panel:SetConsoleCommand(Command, ...)
+	end
+
+	return Panel
+end
+
+function PANEL:AddTitle(Text)
+	local Panel = self:AddPanel("DLabel")
+	Panel:SetAutoStretchVertical(true)
+	Panel:SetText(Text or "Text")
+	Panel:SetFont("ACF_Title")
+	Panel:SetWrap(true)
+	Panel:SetDark(true)
+
+	return Panel
+end
+
+function PANEL:AddSubtitle(Text)
+	local Panel = self:AddTitle(Text)
+	Panel:SetFont("ACF_Subtitle")
+
+	return Panel
+end
+
+function PANEL:AddParagraph(Text)
+	local Panel = self:AddTitle(Text)
+	Panel:SetFont("ACF_Paragraph")
+
+	return Panel
+end
+
+function PANEL:AddHelp(Text)
+	local TextColor = self:GetSkin().Colours.Tree.Hover
+	local Panel = self:AddParagraph(Text)
+	Panel:DockMargin(32, 0, 32, 10)
+	Panel:SetTextColor(TextColor)
+	Panel:InvalidateLayout()
+
+	return Panel
+end
+
+function PANEL:AddComboBox()
+	local Panel = self:AddPanel("DComboBox")
+	Panel:SetFont("ACF_Control")
+	Panel:SetSortItems(false)
+	Panel:SetDark(true)
+	Panel:SetWrap(true)
+
+	return Panel
+end
+
+function PANEL:AddSlider(Title)
+	local Panel = self:AddPanel("DNumSlider")
+	Panel:SetText(Title or "")
+	Panel:SetDark(true)
+
+	return Panel
+end
+
+function PANEL:PerformLayout()
+	self:SizeToChildren(true, true)
+end
+
+function PANEL:GenerateExample()
+end
+
+derma.DefineControl("ACF_Panel", "", PANEL, "Panel")
