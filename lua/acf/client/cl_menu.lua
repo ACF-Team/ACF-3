@@ -109,8 +109,8 @@ do -- ACF Menu context panel
 	end
 
 	local function UpdateTree(Tree, Old, New)
-		local OldParent = Old and Old.Parent or Old
-		local NewParent = New.Parent or New
+		local OldParent = Old and Old.Parent
+		local NewParent = New.Parent
 
 		if OldParent == NewParent then return end
 
@@ -140,25 +140,25 @@ do -- ACF Menu context panel
 		end
 
 		local Reload = Menu:AddButton("Reload Menu")
-		Reload.DoClickInternal = function()
+		function Reload:DoClickInternal()
 			ACF.BuildContextPanel(Panel)
 		end
 
 		Menu:AddTitle("Available Options")
 
 		local Tree = Menu:AddPanel("DTree")
-		Tree.OnNodeSelected = function(_, Node)
-			if Tree.Selected == Node then return end
+		function Tree:OnNodeSelected(Node)
+			if self.Selected == Node then return end
 
 			if Node.Master then
-				Tree:SetSelectedItem(Node.Selected)
+				self:SetSelectedItem(Node.Selected)
 				return
 			end
 
-			UpdateTree(Tree, Tree.Selected, Node)
+			UpdateTree(self, self.Selected, Node)
 
 			Node.Parent.Selected = Node
-			Tree.Selected = Node
+			self.Selected = Node
 
 			Menu:ClearTemporal()
 			Menu:StartTemporal()

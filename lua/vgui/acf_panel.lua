@@ -131,9 +131,12 @@ function PANEL:AddComboBox()
 	return Panel
 end
 
-function PANEL:AddSlider(Title)
+function PANEL:AddSlider(Title, Min, Max, Decimals)
 	local Panel = self:AddPanel("DNumSlider")
+	Panel:SetDecimals(Decimals or 0)
 	Panel:SetText(Title or "")
+	Panel:SetMinMax(Min, Max)
+	Panel:SetValue(Min)
 	Panel:SetDark(true)
 
 	return Panel
