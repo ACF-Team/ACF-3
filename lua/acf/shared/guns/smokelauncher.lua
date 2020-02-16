@@ -46,3 +46,43 @@ ACF_defineGun("40mmCL", {
 		propweight = 0.001
 	}
 })
+
+ACF.RegisterWeaponClass("SL", {
+	Name		  = "Smoke Launcher",
+	Description	  = "Smoke launcher to block an attacker's line of sight.",
+	MuzzleFlash	  = "gl_muzzleflash_noscale",
+	ROFMod		  = 45,
+	Spread		  = 0.32,
+	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
+	soundDistance = "Mortar.Fire",
+	soundNormal	  = " ",
+})
+
+ACF.RegisterWeapon("40mmSL", "SL", {
+	Name		= "40mm Smoke Launcher",
+	Description	= "",
+	Model		= "models/launcher/40mmsl.mdl",
+	Caliber		= 40,
+	Mass		= 1,
+	Year		= 1941,
+	Round = {
+		MaxLength = 17.5,
+		PropMass  = 0.000075,
+	}
+})
+
+ACF.RegisterWeapon("40mmCL", "SL", {
+	Name		= "40mm Countermeasure Launcher",
+	Description	= "A revolver-style launcher capable of firing off several smoke or flare rounds.",
+	Model		= "models/launcher/40mmgl.mdl",
+	Caliber		= 40,
+	Mass		= 20,
+	ROFMod		= 0.015,
+	Year		= 1950,
+	MagSize		= 6,
+	MagReload	= 40,
+	Round = {
+		MaxLength = 12,
+		PropMass  = 0.001,
+	}
+})
