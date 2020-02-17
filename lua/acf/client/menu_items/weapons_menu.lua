@@ -30,16 +30,14 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
+	local EntText = "Mass:     %skg\nFirerate: %srpm\nSpread:  %s degrees%s"
+	local MagText = "\nRounds: %s rounds\nReload:   %s seconds"
+
 	local ClassList = Menu:AddComboBox()
 	local EntList = Menu:AddComboBox()
-	local Title = Menu:AddTitle()
+	local EntName = Menu:AddSubtitle()
 	local ClassDesc = Menu:AddParagraph()
-
-	local Test1 = Menu:AddSlider("Test1", 37, 140, 2)
-	Test1:SetDataVariable("Test")
-
-	local Test2 = Menu:AddSlider("Test2", 37, 140, 2)
-	Test2:SetDataVariable("Test")
+	local EntData = Menu:AddParagraph()
 
 	ACF.WriteValue("Class", "acf_gun")
 
@@ -61,10 +59,18 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
-		local Choices = Sorted[ClassList.Selected.Items]
+		local ClassData = ClassList.Selected
+		local RoundVolume = 3.1416 * (Data.Caliber * 0.05) ^ 2 * Data.Round.MaxLength
+		local Firerate = 60 / (((RoundVolume / 500) ^ 0.6) * ClassData.ROFMod * (Data.ROFMod or 1))
+		local Magazine = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
+
+		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
 
-		Title:SetText(Data.Name)
+		ACF.WriteValue("Weapon", Data.ID)
+
+		EntName:SetText(Data.Name)
+		EntData:SetText(EntText:format(Data.Mass, math.Round(Firerate, 2), ClassData.Spread * 100, Magazine))
 	end
 
 	LoadSortedList(ClassList, Weapons, "Name")
