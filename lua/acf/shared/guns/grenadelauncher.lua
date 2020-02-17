@@ -34,8 +34,10 @@ ACF.RegisterWeaponClass("GL", {
 	ROFMod		  = 1,
 	Spread		  = 0.32,
 	Sound		  = "weapons/acf_gun/grenadelauncher.mp3",
-	soundDistance = " ",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 25,
+		Max = 40,
+	},
 })
 
 ACF.RegisterWeapon("40mmGL", "GL", {

@@ -106,8 +106,10 @@ ACF.RegisterWeaponClass("MO", {
 	ROFMod		  = 2.5,
 	Spread		  = 0.64,
 	Sound		  = "weapons/ACF_Gun/mortar_new.mp3",
-	soundDistance = "Mortar.Fire",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 37,
+		Max = 150,
+	},
 })
 
 ACF.RegisterWeapon("60mmM", "MO", {

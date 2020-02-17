@@ -104,8 +104,10 @@ ACF.RegisterWeaponClass("RAC", {
 	ROFMod		  = 0.07,
 	Spread		  = 0.4,
 	Sound		  = "weapons/acf_gun/mg_fire3.mp3",
-	soundDistance = " ",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 7.62,
+		Max = 30,
+	},
 })
 
 ACF.RegisterWeapon("14.5mmRAC", "RAC", {

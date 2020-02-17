@@ -87,8 +87,10 @@ ACF.RegisterWeaponClass("AC", {
 	ROFMod		  = 0.85,
 	Spread		  = 0.12,
 	Sound		  = "weapons/ACF_Gun/ac_fire4.mp3",
-	soundDistance = " ",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 20,
+		Max = 50,
+	},
 })
 
 ACF.RegisterWeapon("20mmAC", "AC", {

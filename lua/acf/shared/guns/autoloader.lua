@@ -106,8 +106,10 @@ ACF.RegisterWeaponClass("AL", {
 	ROFMod		  = 0.64,
 	Spread		  = 0.08,
 	Sound		  = "weapons/ACF_Gun/autoloader.mp3",
-	soundDistance = "Cannon.Fire",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 75,
+		Max = 140,
+	},
 })
 
 ACF.RegisterWeapon("75mmAL", "AL", {

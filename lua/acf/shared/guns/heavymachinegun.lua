@@ -91,8 +91,10 @@ ACF.RegisterWeaponClass("HMG", {
 	ROFMod		  = 0.14,
 	Spread		  = 0.4,
 	Sound		  = "weapons/ACF_Gun/mg_fire3.mp3",
-	soundDistance = " ",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 13,
+		Max = 40,
+	},
 	LongBarrel = {
 		Index	 = 2,
 		Submodel = 4,

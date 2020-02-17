@@ -119,8 +119,10 @@ ACF.RegisterWeaponClass("HW", {
 	ROFMod		  = 1.8,
 	Spread		  = 0.12,
 	Sound		  = "weapons/ACF_Gun/howitzer_new2.mp3",
-	soundDistance = "Howitzer.Fire",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 75,
+		Max = 203,
+	},
 })
 
 ACF.RegisterWeapon("75mmHW", "HW", {

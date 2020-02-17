@@ -122,8 +122,10 @@ ACF.RegisterWeaponClass("C", {
 	ROFMod		  = 2,
 	Spread		  = 0.08,
 	Sound		  = "weapons/ACF_Gun/cannon_new.mp3",
-	soundDistance = "Cannon.Fire",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 20,
+		Max = 140,
+	},
 })
 
 ACF.RegisterWeapon("37mmC", "C", {

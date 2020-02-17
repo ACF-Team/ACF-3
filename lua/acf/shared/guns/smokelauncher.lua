@@ -54,8 +54,10 @@ ACF.RegisterWeaponClass("SL", {
 	ROFMod		  = 45,
 	Spread		  = 0.32,
 	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
-	soundDistance = "Mortar.Fire",
-	soundNormal	  = " ",
+	Caliber	= {
+		Min = 40,
+		Max = 76,
+	},
 })
 
 ACF.RegisterWeapon("40mmSL", "SL", {
