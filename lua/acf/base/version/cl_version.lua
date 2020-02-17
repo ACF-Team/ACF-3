@@ -50,7 +50,7 @@ do -- Server syncronization and status printing
 	end
 
 	local function PrintStatus(Server)
-		local Branch = ACF.GetBranch(Server.Owner, Server.Name, Server.Head)
+		local Branch = ACF.GetBranch(Server.Name, Server.Head)
 		local Lapse = ACF.GetTimeLapse(Branch.Date)
 
 		local Data = Messages[Server.Status]
@@ -65,8 +65,8 @@ do -- Server syncronization and status printing
 		for Name, Data in pairs(Table) do
 			GenerateCopy(Name, Data)
 
-			ACF.GetVersion(Data.Owner, Data.Name)
-			ACF.GetVersionStatus(Data.Owner, Data.Name)
+			ACF.GetVersion(Data.Name)
+			ACF.GetVersionStatus(Data.Name)
 		end
 
 		hook.Add("CreateMove", "ACF Print Version", function(Move)
