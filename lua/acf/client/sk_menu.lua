@@ -247,7 +247,7 @@ function ACFHomeGUICreate()
 
 	local Display = acfmenupanel.CustomDisplay
 	local CData   = acfmenupanel.CData
-	local Repo	  = ACF.Repositories["Stooberton/ACF-3"]
+	local Repo	  = ACF.GetVersion("ACF-3")
 	local Server  = Repo.Server
 	local Text	  = "%s Status\n\nVersion: %s\nBranch:  %s\nStatus:   %s\n\n"
 
