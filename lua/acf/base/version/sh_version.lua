@@ -39,7 +39,7 @@ function ACF.GetVersion(Name)
 	local Version = Repos[Name]
 
 	if not Version then return end
-	if Version.Code then return Version.Code end
+	if Version.Code then return Version end
 
 	local _, Folders = file.Find("addons/*", "GAME")
 	local Pattern = Version.Path
