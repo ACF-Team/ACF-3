@@ -44,7 +44,6 @@ do -- Weapon class registration functions
 				Class = Class,
 				ClassID = ClassID,
 				EntClass = "acf_gun",
-				Type = "Weapons",
 			}
 
 			Class.Count = Class.Count + 1
@@ -58,6 +57,32 @@ do -- Weapon class registration functions
 
 		if Weapon.MuzzleFlash then
 			PrecacheParticleSystem(Weapon.MuzzleFlash)
+		end
+	end
+end
+
+do -- Ammo crate registration function
+	ACF.Classes.Crates = ACF.Classes.Crates or {}
+
+	local Crates = ACF.Classes.Crates
+
+	function ACF.RegisterCrate(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local Crate = Crates[ID]
+
+		if not Crate then
+			Crate = {
+				ID = ID,
+				EntClass = "acf_ammo",
+			}
+
+			Crates[ID] = Crate
+		end
+
+		for K, V in pairs(Data) do
+			Crate[K] = V
 		end
 	end
 end
