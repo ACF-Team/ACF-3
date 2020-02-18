@@ -1,25 +1,6 @@
 local Repos = ACF.Repositories
 local PrintLog = ACF.PrintLog
 
-do -- Repository tracking
-	function ACF.AddRepository(Owner, Name, Path)
-		if not Owner then return end
-		if not Name then return end
-		if not Path then return end
-		if Repos[Name] then return end
-
-		Repos[Name] = {
-			Owner = Owner,
-			Name = Name,
-			Path = "addons/%s/" .. Path,
-			Code = false,
-			Date = false,
-		}
-	end
-
-	ACF.AddRepository("Stooberton", "ACF-3", "lua/autorun/acf_loader.lua")
-end
-
 do -- HTTP Request
 	local function SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
 		local Data = Body and util.JSONToTable(Body)
@@ -199,7 +180,7 @@ do -- Client syncronization
 	end
 
 	hook.Add("PlayerInitialSpawn", "ACF_VersionSync", function(Player)
-		timer.Simple(5, function()
+		timer.Simple(7.5, function()
 			SyncInformation(Player)
 		end)
 	end)

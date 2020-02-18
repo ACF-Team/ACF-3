@@ -3,16 +3,7 @@ local Repos = ACF.Repositories
 do -- Server syncronization and status printing
 	local PrintToChat = ACF.PrintToChat
 
-	local Relevant = {
-		Owner = true,
-		Name = true,
-		Path = true,
-		Link = true,
-		Branches = true,
-	}
-
 	local Unique = {
-		Link = true,
 		Branches = true,
 	}
 
@@ -32,21 +23,21 @@ do -- Server syncronization and status printing
 	}
 
 	local function GenerateCopy(Name, Data)
-		Repos[Name] = {
-			Server = {}
-		}
+		local Version = ACF.GetVersion(Name)
 
-		local Version = Repos[Name]
+		if not Version.Server then
+			Version.Server = {}
+		end
 
 		for K, V in pairs(Data) do
-			if Relevant[K] then
-				Version[K] = V
-			end
-
 			if not Unique[K] then
 				Version.Server[K] = V
+			else
+				Version[K] = V
 			end
 		end
+
+		ACF.GetVersionStatus(Name)
 	end
 
 	local function PrintStatus(Server)
@@ -64,9 +55,6 @@ do -- Server syncronization and status printing
 
 		for Name, Data in pairs(Table) do
 			GenerateCopy(Name, Data)
-
-			ACF.GetVersion(Data.Name)
-			ACF.GetVersionStatus(Data.Name)
 		end
 
 		hook.Add("CreateMove", "ACF Print Version", function(Move)
