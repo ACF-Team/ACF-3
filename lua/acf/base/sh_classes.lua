@@ -167,3 +167,14 @@ do -- Ammo crate registration function
 		end
 	end
 end
+
+do -- Ammo type registration function
+	ACF.Classes.AmmoTypes = ACF.Classes.AmmoTypes or {}
+
+	local RegisterClass = ACF.RegisterClass
+	local Types = ACF.Classes.AmmoTypes
+
+	function ACF.RegisterAmmoType(Name, Base)
+		return RegisterClass(Name, Base, Types)
+	end
+end

@@ -56,7 +56,7 @@ ACF.RegisterWeaponClass("SL", {
 	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
 	Caliber	= {
 		Min = 40,
-		Max = 76,
+		Max = 81,
 	},
 })
 
