@@ -136,10 +136,12 @@ do -- ACF Menu context panel
 
 			Panel:AddItem(Menu)
 		else
-			Menu:Clear()
+			Menu:ClearAllTemporal()
+			Menu:ClearAll()
 		end
 
 		local Reload = Menu:AddButton("Reload Menu")
+		Reload:SetTooltip("You can also type 'acf_reload_menu' in console.")
 		function Reload:DoClickInternal()
 			ACF.BuildContextPanel(Panel)
 		end

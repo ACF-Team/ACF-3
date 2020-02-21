@@ -7,9 +7,7 @@ function PANEL:Init()
 	self.TempItems = {}
 end
 
-function PANEL:Clear()
-	if not next(self.Items) then return end
-
+function PANEL:ClearAll()
 	for K in pairs(self.Items) do
 		if IsValid(K) then
 			K:Remove()
@@ -17,6 +15,8 @@ function PANEL:Clear()
 
 		self.Items[K] = nil
 	end
+
+	self:Clear()
 end
 
 function PANEL:ClearTemporal(Panel)
@@ -49,6 +49,15 @@ function PANEL:EndTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
 
 	TemporalPanels[Target] = nil
+end
+
+function PANEL:ClearAllTemporal()
+	for Panel in pairs(TemporalPanels) do
+		if not IsValid(Panel) then continue end
+
+		self:EndTemporal(Panel)
+		self:ClearTemporal(Panel)
+	end
 end
 
 function PANEL:AddPanel(Name)

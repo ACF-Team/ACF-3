@@ -32,7 +32,7 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
-	local EntText = "Mass:     %skg\nFirerate: %srpm\nSpread:  %s degrees%s"
+	local EntText = "Mass:     %s kg\nFirerate: %s rpm\nSpread:  %s degrees%s"
 	local MagText = "\nRounds: %s rounds\nReload:   %s seconds"
 
 	local ClassList = Menu:AddComboBox()
