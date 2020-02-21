@@ -56,7 +56,7 @@ local function CreateMenu(Menu)
 		local Choices = Sorted[Weapons]
 		Selected[Choices] = Index
 
-		ACF.WriteValue("Class", Data.ID)
+		ACF.WriteValue("WeaponClass", Data.ID)
 
 		ClassDesc:SetText(Data.Description)
 
