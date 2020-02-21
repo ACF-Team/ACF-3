@@ -250,7 +250,9 @@ do -- Metamethods --------------------------------
 
 	do -- Shooting ------------------------------
 		function ENT:BarrelCheck()
-			TraceData.start	 = self:GetPos()
+			if not CPPI then return self:LocalToWorld(self.Muzzle) end
+
+			TraceData.start	 = self:LocalToWorld(Vector())
 			TraceData.endpos = self:LocalToWorld(self.Muzzle)
 			TraceData.filter = self.BarrelFilter
 

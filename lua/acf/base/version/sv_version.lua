@@ -1,28 +1,6 @@
 local Repos = ACF.Repositories
 local PrintLog = ACF.PrintLog
 
-do -- Repository tracking
-	local RepoLink = "https://github.com/%s/%s/"
-
-	function ACF.AddRepository(Owner, Name, Path)
-		if not Owner then return end
-		if not Name then return end
-		if not Path then return end
-		if Repos[Owner .. "/" .. Name] then return end
-
-		Repos[Owner .. "/" .. Name] = {
-			Owner = Owner,
-			Name = Name,
-			Path = "addons/%s/" .. Path,
-			Link = RepoLink:format(Owner, Name),
-			Code = false,
-			Date = false,
-		}
-	end
-
-	ACF.AddRepository("Stooberton", "ACF-3", "lua/autorun/acf_loader.lua")
-end
-
 do -- HTTP Request
 	local function SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
 		local Data = Body and util.JSONToTable(Body)
@@ -45,7 +23,7 @@ do -- HTTP Request
 		OnSuccess(Body, Data)
 	end
 
-	function ACF.StartRequest(Link, OnSuccess, OnFailure)
+	function ACF.StartRequest(Link, OnSuccess, OnFailure, Headers)
 		OnSuccess = OnSuccess or function() end
 		OnFailure = OnFailure or function() end
 
@@ -58,7 +36,8 @@ do -- HTTP Request
 				PrintLog("Error", Error)
 
 				OnFailure(Error)
-			end)
+			end,
+			Headers)
 	end
 end
 
@@ -93,8 +72,8 @@ do -- Github data conversion
 end
 
 do -- Branch version retrieval and version printing
-	local Branches = "https://api.github.com/repos/%s/branches"
-	local Commits = "https://api.github.com/repos/%s/commits?per_page=1%s"
+	local Branches = "https://api.github.com/repos/%s/%s/branches"
+	local Commits = "https://api.github.com/repos/%s/%s/commits?per_page=1&sha=%s"
 
 	local Messages = {
 		["Unable to check"] = {
@@ -112,7 +91,7 @@ do -- Branch version retrieval and version printing
 	}
 
 	local function PrintStatus(Version)
-		local Branch = ACF.GetBranch(Version.Owner, Version.Name)
+		local Branch = ACF.GetBranch(Version.Name)
 		local Lapse = ACF.GetTimeLapse(Branch.Date)
 
 		local Data = Messages[Version.Status]
@@ -131,7 +110,7 @@ do -- Branch version retrieval and version printing
 		Branch.Link = Commit.html_url
 
 		if Data.Head == Branch.Name then
-			ACF.GetVersionStatus(Data.Owner, Data.Name)
+			ACF.GetVersionStatus(Data.Name)
 
 			PrintStatus(Data)
 		end
@@ -157,7 +136,7 @@ do -- Branch version retrieval and version printing
 			local Current = Data.Branches[Branch.name]
 
 			Request(
-				Commits:format(Name, "&sha=" .. SHA),
+				Commits:format(Data.Owner, Name, SHA),
 				function(_, Commit)
 					GetBranchData(Data, Current, unpack(Commit))
 				end)
@@ -168,10 +147,10 @@ do -- Branch version retrieval and version printing
 		local Request = ACF.StartRequest
 
 		for Name, Data in pairs(Repos) do
-			ACF.GetVersion(Data.Owner, Data.Name)
+			ACF.GetVersion(Name)
 
 			Request(
-				Branches:format(Name),
+				Branches:format(Data.Owner, Name),
 				function(_, List)
 					GetBranches(Name, Data, List)
 				end)
@@ -201,7 +180,7 @@ do -- Client syncronization
 	end
 
 	hook.Add("PlayerInitialSpawn", "ACF_VersionSync", function(Player)
-		timer.Simple(5, function()
+		timer.Simple(7.5, function()
 			SyncInformation(Player)
 		end)
 	end)

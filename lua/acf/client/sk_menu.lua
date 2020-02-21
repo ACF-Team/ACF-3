@@ -245,11 +245,19 @@ end
 function ACFHomeGUICreate()
 	if not acfmenupanel.CustomDisplay then return end
 
-	local Display = acfmenupanel.CustomDisplay
-	local CData   = acfmenupanel.CData
-	local Repo	  = ACF.Repositories["Stooberton/ACF-3"]
-	local Server  = Repo.Server
-	local Text	  = "%s Status\n\nVersion: %s\nBranch:  %s\nStatus:   %s\n\n"
+	local Display	= acfmenupanel.CustomDisplay
+	local CData		= acfmenupanel.CData
+
+	local Text		= "%s Status\n\nVersion: %s\nBranch:  %s\nStatus:   %s\n\n"
+	local Repo		= ACF.GetVersion("ACF-3")
+	local Server	= Repo.Server
+	local SVCode	= Server and Server.Code or "Unable to Retrieve"
+	local SVHead	= Server and Server.Head or "Unable to Retrieve"
+	local SVStatus	= Server and Server.Status or "Unable to Retrieve"
+
+	if not Repo.Status then
+		ACF.GetVersionStatus("ACF-3")
+	end
 
 	CData.Header = vgui.Create("DLabel")
 	CData.Header:SetText("ACF Version Status\n")
@@ -259,7 +267,7 @@ function ACFHomeGUICreate()
 	Display:AddItem(CData.Header)
 
 	CData.ServerStatus = vgui.Create("DLabel")
-	CData.ServerStatus:SetText(Text:format("Server", Server.Code, Server.Head, Server.Status))
+	CData.ServerStatus:SetText(Text:format("Server", SVCode, SVHead, SVStatus))
 	CData.ServerStatus:SetFont("ACF_Paragraph")
 	CData.ServerStatus:SetDark(true)
 	CData.ServerStatus:SizeToContents()
