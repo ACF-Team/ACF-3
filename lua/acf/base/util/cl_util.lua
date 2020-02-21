@@ -77,6 +77,16 @@ do -- Tool data functions
 	local ToolData = {}
 
 	do -- Read functions
+		function ACF.GetPlayerData()
+			local Result = {}
+
+			for K, V in pairs(ToolData[Player]) do
+				Result[K] = V
+			end
+
+			return Result
+		end
+
 		function ACF.ReadBool(Key)
 			if not Key then return false end
 

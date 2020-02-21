@@ -89,6 +89,19 @@ do -- Tool data functions
 	end
 
 	do -- Read functions
+		function ACF.GetPlayerData(Player)
+			if not IsValid(Player) then return {} end
+			if not ToolData[Player] then return {} end
+
+			local Result = {}
+
+			for K, V in pairs(ToolData[Player]) do
+				Result[K] = V
+			end
+
+			return Result
+		end
+
 		function ACF.ReadBool(Player, Key)
 			if not Key then return false end
 			if not ToolData[Player] then return false end
