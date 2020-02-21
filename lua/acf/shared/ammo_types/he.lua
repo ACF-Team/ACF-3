@@ -1,9 +1,9 @@
-local Ammo = ACF.RegisterAmmoType("High Explosive", "Armor Piercing Explosive")
+local Ammo = ACF.RegisterAmmoType("HE", "APHE")
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
-	self.ID = "HE"
+	self.Name = "High Explosive"
 	self.Description = "A shell filled with explosives, detonating on impact."
 	self.Blacklist = { "MG", "RAC" }
 end

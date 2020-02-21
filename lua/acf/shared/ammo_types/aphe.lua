@@ -1,9 +1,9 @@
-local Ammo = ACF.RegisterAmmoType("Armor Piercing Explosive", "Armor Piercing")
+local Ammo = ACF.RegisterAmmoType("APHE", "AP")
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
-	self.ID = "APHE"
+	self.Name = "Armor Piercing High Explosive"
 	self.Description = "An armor piercing round with a cavity for High explosives. Less capable of defeating armor than plain Armor Piercing, but will explode after penetration"
 	self.Blacklist = { "MO", "MG", "SL", "RAC" }
 end

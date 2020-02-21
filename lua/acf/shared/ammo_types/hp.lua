@@ -1,9 +1,9 @@
-local Ammo = ACF.RegisterAmmoType("Hollow Point", "Armor Piercing")
+local Ammo = ACF.RegisterAmmoType("HP", "AP")
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
-	self.ID = "HP"
+	self.Name = "Hollow Point"
 	self.Description = "A solid shell with a soft point, meant to flatten against armor."
 end
 

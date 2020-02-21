@@ -1,8 +1,8 @@
-local Ammo = ACF.RegisterAmmoType("Armor Piercing")
+local Ammo = ACF.RegisterAmmoType("AP")
 local DecalIndex = ACF.GetAmmoDecalIndex
 
 function Ammo:OnLoaded()
-	self.ID = "AP"
+	self.Name = "Armor Piercing"
 	self.Type = "Ammo"
 	self.Model = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."

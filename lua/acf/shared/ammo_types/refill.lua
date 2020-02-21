@@ -1,7 +1,7 @@
-local Ammo = ACF.RegisterAmmoType("Refill", "Armor Piercing")
+local Ammo = ACF.RegisterAmmoType("Refill", "AP")
 
 function Ammo:OnLoaded()
-	self.ID = "Refill"
+	self.Name = "Refill"
 	self.Description = "Ammunition refilling station."
 	self.Blacklist = {}
 end

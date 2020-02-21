@@ -1,9 +1,9 @@
-local Ammo = ACF.RegisterAmmoType("Flechette", "Armor Piercing")
+local Ammo = ACF.RegisterAmmoType("FL", "AP")
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
-	self.ID = "FL"
+	self.Name = "Flechette"
 	self.Model = "models/munitions/dart_100mm.mdl"
 	self.Description = "Flechette rounds contain several long thin steel spikes, functioning as a shotgun shell for cannons.  While it seems like the spikes would penetrate well, they tend to tumble in flight and impact at less than ideal angles, causing only minor penetration and structural damage. They are best used against infantry or lightly armored mobile targets such as aircraft or light tanks, since flechettes trade brute damage for a better chance to hit."
 	self.Blacklist = { "AC", "RAC", "MG", "HMG", "GL", "SL" }

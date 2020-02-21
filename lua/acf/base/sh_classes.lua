@@ -14,15 +14,15 @@ do -- Class registration function
 		return New
 	end
 
-	local function QueueBaseClass(Name, Base)
+	local function QueueBaseClass(ID, Base)
 		if not Queued[Base] then
-			Queued[Base] = { [Name] = true }
+			Queued[Base] = { [ID] = true }
 		else
-			Queued[Base][Name] = true
+			Queued[Base][ID] = true
 		end
 	end
 
-	local function AttachMetaTable(Class, Name, Base)
+	local function AttachMetaTable(Class, ID, Base)
 		local OldMeta = getmetatable(Class) or {}
 
 		if Base then
@@ -32,7 +32,7 @@ do -- Class registration function
 				Class.BaseClass = BaseClass
 				OldMeta.__index = BaseClass
 			else
-				QueueBaseClass(Name, Base)
+				QueueBaseClass(ID, Base)
 			end
 		end
 
@@ -49,30 +49,30 @@ do -- Class registration function
 		end)
 	end
 
-	function ACF.RegisterClass(Name, Base, Destiny)
-		if not Classes[Name] then
-			Classes[Name] = {}
+	function ACF.RegisterClass(ID, Base, Destiny)
+		if not Classes[ID] then
+			Classes[ID] = {}
 		end
 
-		local Class = Classes[Name]
-		Class.Name = Name
+		local Class = Classes[ID]
+		Class.ID = ID
 
-		AttachMetaTable(Class, Name, Base)
+		AttachMetaTable(Class, ID, Base)
 
-		if Queued[Name] then
+		if Queued[ID] then
 			local Current
 
-			for K in pairs(Queued[Name]) do
+			for K in pairs(Queued[ID]) do
 				Current = Classes[K]
 
-				AttachMetaTable(Current, Current.Name, Name)
+				AttachMetaTable(Current, Current.ID, ID)
 			end
 
-			Queued[Name] = nil
+			Queued[ID] = nil
 		end
 
 		if Destiny then
-			Destiny[Name] = Class
+			Destiny[ID] = Class
 		end
 
 		return Class
@@ -174,7 +174,7 @@ do -- Ammo type registration function
 	local RegisterClass = ACF.RegisterClass
 	local Types = ACF.Classes.AmmoTypes
 
-	function ACF.RegisterAmmoType(Name, Base)
-		return RegisterClass(Name, Base, Types)
+	function ACF.RegisterAmmoType(ID, Base)
+		return RegisterClass(ID, Base, Types)
 	end
 end
