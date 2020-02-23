@@ -113,6 +113,13 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(self)
 	end
 
+	local Test = Menu:AddComboBox()
+	Test:TrackDataVar("WeaponClass")
+	Test:TrackDataVar("Weapon")
+	Test:SetValueFunction(function()
+		return ACF.ReadString("WeaponClass") .. " - " .. ACF.ReadString("Weapon")
+	end)
+
 	LoadSortedList(ClassList, Weapons, "Name")
 	LoadSortedList(CrateList, Crates, "ID")
 	LoadSortedList(AmmoList, AmmoTypes, "Name")

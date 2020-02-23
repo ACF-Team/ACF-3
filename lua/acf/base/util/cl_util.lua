@@ -135,59 +135,119 @@ do -- Tool data functions
 
 	do -- Panel functions
 		local PANEL = FindMetaTable("Panel")
+		local Variables = {}
 		local Panels = {}
 
-		local function AddFunctions(Panel)
-			Panel.LegacySetValue = Panel.SetValue
-			Panel.LegacyRemove = Panel.Remove
+		local function AddVariable(Panel, Key)
+			local PData = Panels[Panel]
+			local VData = Variables[Key]
 
-			Panels[Panel] = true
-
-			function Panel:SetValue(Value, ...)
-				ACF.WriteValue(self.DataVar, Value)
-
-				self:LegacySetValue(Value, ...)
+			if not PData then
+				Panels[Panel] = {
+					[Key] = true
+				}
+			else
+				PData[Key] = true
 			end
 
-			function Panel:Remove(...)
-				Panels[Panel] = nil
-
-				self:LegacyRemove(...)
+			if not VData then
+				Variables[Key] = {
+					[Panel] = true
+				}
+			else
+				VData[Panel] = true
 			end
 		end
 
-		function PANEL:SetDataVariable(Key)
+		local function ClearVariables(Panel)
+			local Vars = Panels[Panel]
+
+			if not Vars then return end
+
+			for K in pairs(Vars) do
+				Variables[K][Panel] = nil
+			end
+
+			Panels[Panel] = nil
+		end
+
+		local function LoadFunctions(Panel)
+			if Panel.LegacyRemove then return end
+
+			Panel.LegacySetValue = Panel.SetValue
+			Panel.LegacyRemove = Panel.Remove
+
+			function Panel:SetValue(Value)
+				if not self.DataVar then
+					return Panel:LegacySetValue(Value)
+				end
+
+				ACF.WriteValue(self.DataVar, Value)
+			end
+
+			function Panel:Remove()
+				ClearVariables(self)
+
+				self:LegacyRemove()
+			end
+		end
+
+		function PANEL:SetDataVar(Key)
 			if not Key then return end
 			if not self.SetValue then return end
 
 			self.DataVar = Key
 
+			AddVariable(self, Key)
+			LoadFunctions(self)
+
 			if not ToolData[Key] then
 				ACF.WriteValue(Key, self:GetValue())
 			end
-
-			if not self.LegacySetValue then
-				AddFunctions(self)
-			end
 		end
 
-		function PANEL:ClearDataVariable()
-			if not self.LegacySetValue then return end
+		function PANEL:TrackDataVar(Key)
+			AddVariable(self, Key)
+			LoadFunctions(self)
+		end
 
-			Panels[self] = nil
+		function PANEL:SetValueFunction(Function)
+			if not isfunction(Function) then return end
 
-			self.SetValue = self.LegacySetValue
-			self.Remove = self.LegacyRemove
-			self.LegacySetValue = nil
-			self.LegacyRemove = nil
+			LoadFunctions(self)
+
+			self.ValueFunction = Function
+
+			self:LegacySetValue(self:ValueFunction())
+		end
+
+		function PANEL:ClearDataVars()
+			if self.LegacyRemove then
+				self.SetValue = self.LegacySetValue
+				self.Remove = self.LegacyRemove
+				self.LegacySetValue = nil
+				self.LegacyRemove = nil
+			end
+
+			self.ValueFunction = nil
 			self.DataVar = nil
+
+			ClearVariables(self)
 		end
 
 		hook.Add("OnToolDataUpdate", "ACF Update Panel Values", function(Key, Value)
-			for Panel in pairs(Panels) do
-				if Panel.DataVar == Key then
-					Panel:LegacySetValue(Value)
+			local Affected = Variables[Key]
+
+			if not Affected then return end
+
+			for Panel in pairs(Affected) do
+				local RealValue = Value
+
+				if Panel.ValueFunction then
+					RealValue = Panel:ValueFunction()
 				end
+
+				Panel:LegacySetValue(RealValue)
 			end
 		end)
 	end
