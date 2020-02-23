@@ -77,14 +77,8 @@ do -- Tool data functions
 	local ToolData = {}
 
 	do -- Read functions
-		function ACF.GetPlayerData()
-			local Result = {}
-
-			for K, V in pairs(ToolData[Player]) do
-				Result[K] = V
-			end
-
-			return Result
+		function ACF.GetToolData()
+			return ToolData
 		end
 
 		function ACF.ReadBool(Key)
@@ -122,7 +116,9 @@ do -- Tool data functions
 			return tostring(Value):match(ValuePattern) and true or false
 		end
 
-		local function UpdateKeyValue(Key, Value)
+		function ACF.WriteValue(Key, Value)
+			if not IsValidKey(Key) then return end
+			if not IsValidValue(Value) then return end
 			if ToolData[Key] == Value then return end
 
 			ToolData[Key] = Value
@@ -134,13 +130,6 @@ do -- Tool data functions
 			hook.Run("OnToolDataUpdate", Key, Value)
 
 			print("Sent", LocalPlayer(), Key, Value)
-		end
-
-		function ACF.WriteValue(Key, Value)
-			if not IsValidKey(Key) then return end
-			if not IsValidValue(Value) then return end
-
-			UpdateKeyValue(Key, Value)
 		end
 	end
 

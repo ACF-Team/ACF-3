@@ -89,7 +89,7 @@ do -- Tool data functions
 	end
 
 	do -- Read functions
-		function ACF.GetPlayerData(Player)
+		function ACF.GetToolData(Player)
 			if not IsValid(Player) then return {} end
 			if not ToolData[Player] then return {} end
 
