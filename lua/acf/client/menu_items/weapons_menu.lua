@@ -120,6 +120,36 @@ local function CreateMenu(Menu)
 		return ACF.ReadString("WeaponClass") .. " - " .. ACF.ReadString("Weapon")
 	end)
 
+	local Test1 = Menu:AddSlider("Projectile", 0, 10, 2)
+	Test1:SetDataVar("Projectile")
+	Test1:TrackDataVar("Propellant")
+	Test1:SetValueFunction(function(Panel)
+		local Min, Max = Panel:GetMin(), Panel:GetMax()
+		local Projectile = math.Clamp(ACF.ReadNumber("Projectile"), Min, Max)
+		local Propellant = ACF.ReadNumber("Propellant")
+		local Difference = Max - Projectile
+
+		ACF.WriteValue("Projectile", Projectile)
+		ACF.WriteValue("Propellant", math.min(Propellant, Difference))
+
+		return Projectile
+	end)
+
+	local Test2 = Menu:AddSlider("Propellant", 0, 10, 2)
+	Test2:SetDataVar("Propellant")
+	Test2:TrackDataVar("Projectile")
+	Test2:SetValueFunction(function(Panel)
+		local Min, Max = Panel:GetMin(), Panel:GetMax()
+		local Projectile = ACF.ReadNumber("Projectile")
+		local Propellant = math.Clamp(ACF.ReadNumber("Propellant"), Min, Max)
+		local Difference = Max - Propellant
+
+		ACF.WriteValue("Propellant", Propellant)
+		ACF.WriteValue("Projectile", math.min(Projectile, Difference))
+
+		return Propellant
+	end)
+
 	LoadSortedList(ClassList, Weapons, "Name")
 	LoadSortedList(CrateList, Crates, "ID")
 	LoadSortedList(AmmoList, AmmoTypes, "Name")

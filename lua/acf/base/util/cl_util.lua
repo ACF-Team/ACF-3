@@ -143,23 +143,19 @@ do -- Tool data functions
 
 	do -- Panel functions
 		local PANEL = FindMetaTable("Panel")
-		local Variables = {}
-		local Panels = {}
+		local Trackers = {}
+		local Setters = {}
+		local Variables = {
+			Trackers = {},
+			Setters = {},
+		}
 
-		local function AddVariable(Panel, Key)
-			local PData = Panels[Panel]
-			local VData = Variables[Key]
-
-			if not PData then
-				Panels[Panel] = {
-					[Key] = true
-				}
-			else
-				PData[Key] = true
-			end
+		local function AddVariable(Panel, Key, Target)
+			local Data = Variables[Target]
+			local VData = Data[Key]
 
 			if not VData then
-				Variables[Key] = {
+				Data[Key] = {
 					[Panel] = true
 				}
 			else
@@ -167,16 +163,50 @@ do -- Tool data functions
 			end
 		end
 
-		local function ClearVariables(Panel)
-			local Vars = Panels[Panel]
+		local function AddTracker(Panel, Key)
+			local Data = Trackers[Panel]
 
-			if not Vars then return end
-
-			for K in pairs(Vars) do
-				Variables[K][Panel] = nil
+			if not Data then
+				Trackers[Panel] = {
+					[Key] = true
+				}
+			else
+				Data[Key] = true
 			end
 
-			Panels[Panel] = nil
+			AddVariable(Panel, Key, "Trackers")
+		end
+
+		local function AddSetter(Panel, Key)
+			local Data = Setters[Panel]
+
+			if not Data then
+				Setters[Panel] = {
+					[Key] = true
+				}
+			else
+				Data[Key] = true
+			end
+
+			AddVariable(Panel, Key, "Setters")
+		end
+
+		local function ClearVariables(Panel)
+			if Trackers[Panel] then
+				for K in pairs(Trackers[Panel]) do
+					Variables.Trackers[K][Panel] = nil
+				end
+
+				Trackers[Panel] = nil
+			end
+
+			if Setters[Panel] then
+				for K in pairs(Setters[Panel]) do
+					Variables.Setters[K][Panel] = nil
+				end
+
+				Setters[Panel] = nil
+			end
 		end
 
 		local function LoadFunctions(Panel)
@@ -186,11 +216,12 @@ do -- Tool data functions
 			Panel.LegacyRemove = Panel.Remove
 
 			function Panel:SetValue(Value)
-				if not self.DataVar then
-					return Panel:LegacySetValue(Value)
+				if self.DataVar then
+					ACF.WriteValue(self.DataVar, Value)
+					return
 				end
 
-				ACF.WriteValue(self.DataVar, Value)
+				self:LegacySetValue(Value)
 			end
 
 			function Panel:Remove()
@@ -206,7 +237,7 @@ do -- Tool data functions
 
 			self.DataVar = Key
 
-			AddVariable(self, Key)
+			AddSetter(self, Key)
 			LoadFunctions(self)
 
 			if not ToolData[Key] then
@@ -215,7 +246,7 @@ do -- Tool data functions
 		end
 
 		function PANEL:TrackDataVar(Key)
-			AddVariable(self, Key)
+			AddTracker(self, Key)
 			LoadFunctions(self)
 		end
 
@@ -244,18 +275,33 @@ do -- Tool data functions
 		end
 
 		hook.Add("OnToolDataUpdate", "ACF Update Panel Values", function(Key, Value)
-			local Affected = Variables[Key]
+			local TrackerPanels = Variables.Trackers[Key]
+			local SetterPanels = Variables.Setters[Key]
 
-			if not Affected then return end
+			-- First we'll process the panels that set the value of this key
+			if SetterPanels then
+				for Panel in pairs(SetterPanels) do
+					local NewValue = Value
 
-			for Panel in pairs(Affected) do
-				local RealValue = Value
+					if Panel.ValueFunction then
+						NewValue = Panel:ValueFunction()
+					end
 
-				if Panel.ValueFunction then
-					RealValue = Panel:ValueFunction()
+					Panel:LegacySetValue(NewValue)
 				end
+			end
 
-				Panel:LegacySetValue(RealValue)
+			-- Then we'll process the panels that just keep track of this value
+			if TrackerPanels then
+				for Panel in pairs(TrackerPanels) do
+					local NewValue = Value
+
+					if Panel.ValueFunction then
+						NewValue = Panel:ValueFunction()
+					end
+
+					Panel:LegacySetValue(NewValue)
+				end
 			end
 		end)
 	end
