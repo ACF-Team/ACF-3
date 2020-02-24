@@ -59,15 +59,8 @@ local function RefillCrates(Entity)
 					RefillEffect(Entity, Crate)
 				end
 
-				Crate.Ammo = Crate.Ammo + Transfer
-				Entity.Ammo = Entity.Ammo - Transfer
-
-				WireLib.TriggerOutput(Crate, "Ammo", Crate.Ammo)
-				WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
-
-				if Entity.Ammo == 0 then
-					Entity:TriggerOutput("Load", 0)
-				end
+				Crate:Consume(-Transfer)
+				Entity:Consume(Transfer)
 
 				if not Crate.Load then
 					local Enabled =  Crate.Inputs.Load.Path and Crate.Inputs.Load.Value or 1
@@ -76,14 +69,8 @@ local function RefillCrates(Entity)
 				end
 
 				Crate:EmitSound("items/ammo_pickup.wav", 350, 80, 0.30)
-
-				Crate:UpdateMass()
-				Crate:UpdateOverlay()
 			end
 		end
-
-		Entity:UpdateMass()
-		Entity:UpdateOverlay()
 	end
 
 	-- checks to stop supply
@@ -374,8 +361,8 @@ do -- Metamethods -------------------------------
 	end
 
 	do -- Consuming ammo, updating mass --------
-		function ENT:Consume()
-			self.Ammo = self.Ammo - 1
+		function ENT:Consume(Num)
+			self.Ammo = self.Ammo - (Num or 1)
 
 			self:UpdateOverlay()
 			self:UpdateMass()
