@@ -90,13 +90,21 @@ do -- Tool data functions
 		function ACF.ReadNumber(Key)
 			if not Key then return 0 end
 
-			return tonumber(ToolData[Key])
+			local Data = ToolData[Key]
+
+			if Data == nil then return 0 end
+
+			return tonumber(Data)
 		end
 
 		function ACF.ReadString(Key)
 			if not Key then return "" end
 
-			return tostring(ToolData[Key])
+			local Data = ToolData[Key]
+
+			if Data == nil then return "" end
+
+			return tostring(Data)
 		end
 	end
 

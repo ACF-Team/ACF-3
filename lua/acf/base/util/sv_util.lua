@@ -103,24 +103,38 @@ do -- Tool data functions
 		end
 
 		function ACF.ReadBool(Player, Key)
+			if not IsValid(Player) then return false end
 			if not Key then return false end
-			if not ToolData[Player] then return false end
 
-			return tobool(ToolData[Player][Key])
+			local Data = ToolData[Player]
+
+			if not Data then return false end
+
+			return tobool(Data[Key])
 		end
 
 		function ACF.ReadNumber(Player, Key)
+			if not IsValid(Player) then return 0 end
 			if not Key then return 0 end
-			if not ToolData[Player] then return 0 end
 
-			return tonumber(ToolData[Player][Key])
+			local Data = ToolData[Player]
+
+			if not Data then return 0 end
+			if not Data[Key] then return 0 end
+
+			return tonumber(Data[Key])
 		end
 
 		function ACF.ReadString(Player, Key)
+			if not IsValid(Player) then return "" end
 			if not Key then return "" end
-			if not ToolData[Player] then return "" end
 
-			return tostring(ToolData[Player][Key])
+			local Data = ToolData[Player]
+
+			if not Data then return "" end
+			if not Data[Key] then return "" end
+
+			return tostring(Data[Key])
 		end
 	end
 end
