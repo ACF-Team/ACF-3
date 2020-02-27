@@ -17,24 +17,11 @@ function Ammo.Create(_, BulletData)
 	ACF_CreateBullet(BulletData)
 end
 
-function Ammo.Convert(_, PlayerData)
-	local Data = {}
-	local ServerData = {}
-	local GUIData = {}
+function Ammo.BaseConvert(_, ToolData)
+	if not ToolData.Projectile then ToolData.Projectile = 0 end
+	if not ToolData.Propellant then ToolData.Propellant = 0 end
 
-	if not PlayerData.PropLength then
-		PlayerData.PropLength = 0
-	end
-
-	if not PlayerData.ProjLength then
-		PlayerData.ProjLength = 0
-	end
-
-	if not PlayerData.Data10 then
-		PlayerData.Data10 = 0
-	end
-
-	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
+	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
 	Data.ProjMass = Data.FrArea * (Data.ProjLength * 7.9 / 1000) --Volume of the projectile as a cylinder * density of steel
 	Data.ShovePower = 0.2
@@ -46,31 +33,41 @@ function Ammo.Convert(_, PlayerData)
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
 	Data.BoomPower = Data.PropMass
 
-	--Only the crates need this part
-	if SERVER then
-		ServerData.Id = PlayerData.Id
-		ServerData.Type = PlayerData.Type
+	return Data, GUIData
+end
 
-		return table.Merge(Data, ServerData)
+function Ammo.ClientConvert(_, ToolData)
+	local Data, GUIData = Ammo.BaseConvert(_, ToolData)
+
+	for K, V in pairs(GUIData) do
+		Data[K] = V
 	end
 
-	--Only the GUI needs this part
-	if CLIENT then
-		GUIData = table.Merge(GUIData, Ammo.GetDisplayData(Data))
-
-		return table.Merge(Data, GUIData)
+	for K, V in pairs(Ammo.GetDisplayData(Data)) do
+		Data[K] = V
 	end
+
+	return Data
+end
+
+function Ammo.ServerConvert(_, ToolData)
+	local Data = Ammo.BaseConvert(_, ToolData)
+
+	Data.Id = ToolData.Weapon
+	Data.Type = ToolData.Ammo
+
+	return Data
 end
 
 function Ammo.Network(Crate, BulletData)
-	Crate:SetNWString("AmmoType", "AP")
-	Crate:SetNWString("AmmoID", BulletData.Id)
-	Crate:SetNWFloat("Caliber", BulletData.Caliber)
-	Crate:SetNWFloat("ProjMass", BulletData.ProjMass)
-	Crate:SetNWFloat("PropMass", BulletData.PropMass)
-	Crate:SetNWFloat("DragCoef", BulletData.DragCoef)
-	Crate:SetNWFloat("MuzzleVel", BulletData.MuzzleVel)
-	Crate:SetNWFloat("Tracer", BulletData.Tracer)
+	Crate:SetNW2String("AmmoType", "AP")
+	Crate:SetNW2String("AmmoID", BulletData.Id)
+	Crate:SetNW2Float("Caliber", BulletData.Caliber)
+	Crate:SetNW2Float("ProjMass", BulletData.ProjMass)
+	Crate:SetNW2Float("PropMass", BulletData.PropMass)
+	Crate:SetNW2Float("DragCoef", BulletData.DragCoef)
+	Crate:SetNW2Float("MuzzleVel", BulletData.MuzzleVel)
+	Crate:SetNW2Float("Tracer", BulletData.Tracer)
 end
 
 function Ammo.GetDisplayData(BulletData)
@@ -207,7 +204,71 @@ function Ammo.UpdateMenu(Panel)
 end
 
 function Ammo.MenuAction(Menu)
-	Menu:AddParagraph("Testing AP menu.")
+	local ToolData = {
+		Weapon = ACF.ReadString("Weapon"),
+		WeaponClass = ACF.ReadString("WeaponClass"),
+		Projectile = ACF.ReadNumber("Projectile"),
+		Propellant = ACF.ReadNumber("Propellant"),
+		Tracer = ACF.ReadBool("Tracer"),
+	}
+
+	local Data = Ammo.ClientConvert(Panel, ToolData)
+
+	Menu:AddParagraph(Ammo.Description)
+
+	local Projectile = Menu:AddSlider("Projectile Length", Data.MinProjLength, Data.MaxProjLength, 2)
+	Projectile:SetDataVar("Projectile")
+	Projectile:TrackDataVar("Propellant")
+	Projectile:TrackDataVar("Tracer")
+
+	local Propellant = Menu:AddSlider("Propellant Length", Data.MinPropLength, Data.MaxPropLength, 2)
+	Propellant:SetDataVar("Propellant")
+	Propellant:TrackDataVar("Projectile")
+	Propellant:TrackDataVar("Tracer")
+
+	local Tracer = Menu:AddCheckBox("Tracer")
+	Tracer:SetDataVar("Tracer")
+
+	--[[
+
+	local Test = Menu:AddComboBox()
+	Test:TrackDataVar("WeaponClass")
+	Test:TrackDataVar("Weapon")
+	Test:SetValueFunction(function()
+		return ACF.ReadString("WeaponClass") .. " - " .. ACF.ReadString("Weapon")
+	end)
+
+	local Test1 = Menu:AddSlider("Projectile", 0, 10, 2)
+	Test1:SetDataVar("Projectile")
+	Test1:TrackDataVar("Propellant")
+	Test1:SetValueFunction(function(Panel)
+		local Min, Max = Panel:GetMin(), Panel:GetMax()
+		local Projectile = math.Clamp(ACF.ReadNumber("Projectile"), Min, Max)
+		local Propellant = ACF.ReadNumber("Propellant")
+		local Difference = Max - Projectile
+
+		ACF.WriteValue("Projectile", Projectile)
+		ACF.WriteValue("Propellant", math.min(Propellant, Difference))
+
+		return Projectile
+	end)
+
+	local Test2 = Menu:AddSlider("Propellant", 0, 10, 2)
+	Test2:SetDataVar("Propellant")
+	Test2:TrackDataVar("Projectile")
+	Test2:SetValueFunction(function(Panel)
+		local Min, Max = Panel:GetMin(), Panel:GetMax()
+		local Projectile = ACF.ReadNumber("Projectile")
+		local Propellant = math.Clamp(ACF.ReadNumber("Propellant"), Min, Max)
+		local Difference = Max - Propellant
+
+		ACF.WriteValue("Propellant", Propellant)
+		ACF.WriteValue("Projectile", math.min(Projectile, Difference))
+
+		return Propellant
+	end)
+
+	]]--
 end
 
 ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")

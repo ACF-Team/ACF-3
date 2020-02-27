@@ -95,6 +95,15 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
+function PANEL:AddCheckBox(Text)
+	local Panel = self:AddPanel("DCheckBoxLabel")
+	Panel:SetText(Text or "Checkbox")
+	Panel:SetFont("ACF_Control")
+	Panel:SetDark(true)
+
+	return Panel
+end
+
 function PANEL:AddTitle(Text)
 	local Panel = self:AddPanel("DLabel")
 	Panel:SetAutoStretchVertical(true)
@@ -147,6 +156,8 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	Panel:SetMinMax(Min, Max)
 	Panel:SetValue(Min)
 	Panel:SetDark(true)
+
+	Panel.Label:SetFont("ACF_Control")
 
 	return Panel
 end

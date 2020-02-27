@@ -1,8 +1,27 @@
 local AmmoTypes = ACF.Classes.AmmoTypes
 local Weapons = ACF.Classes.Weapons
 local Crates = ACF.Classes.Crates
+local AmmoLists = {}
 local Selected = {}
 local Sorted = {}
+
+local function GetAmmoList(Class)
+	if not Class then return {} end
+	if AmmoLists[Class] then return AmmoLists[Class] end
+
+	local Result = {}
+
+	for K, V in pairs(AmmoTypes) do
+		if V.Unlistable then continue end
+		if V.Blacklist[Class] then continue end
+
+		Result[K] = V
+	end
+
+	AmmoLists[Class] = Result
+
+	return Result
+end
 
 local function LoadSortedList(Panel, List, Member)
 	local Choices = Sorted[List]
@@ -61,6 +80,7 @@ local function CreateMenu(Menu)
 		ClassDesc:SetText(Data.Description)
 
 		LoadSortedList(EntList, Data.Items, "Caliber")
+		LoadSortedList(AmmoList, GetAmmoList(Data.ID), "Name")
 	end
 
 	function EntList:OnSelect(Index, _, Data)
@@ -80,6 +100,8 @@ local function CreateMenu(Menu)
 
 		EntName:SetText(Data.Name)
 		EntData:SetText(EntText:format(Data.Mass, math.Round(Firerate, 2), ClassData.Spread * 100, Magazine))
+
+		AmmoList:UpdateMenu()
 	end
 
 	function CrateList:OnSelect(Index, _, Data)
@@ -98,10 +120,18 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
-		local Choices = Sorted[AmmoTypes]
+		local Choices = Sorted[GetAmmoList(ClassList.Selected.ID)]
 		Selected[Choices] = Index
 
 		ACF.WriteValue("Ammo", Data.ID)
+
+		self:UpdateMenu()
+	end
+
+	function AmmoList:UpdateMenu()
+		if not self.Selected then return end
+
+		local Data = self.Selected
 
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
@@ -113,46 +143,8 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(self)
 	end
 
-	local Test = Menu:AddComboBox()
-	Test:TrackDataVar("WeaponClass")
-	Test:TrackDataVar("Weapon")
-	Test:SetValueFunction(function()
-		return ACF.ReadString("WeaponClass") .. " - " .. ACF.ReadString("Weapon")
-	end)
-
-	local Test1 = Menu:AddSlider("Projectile", 0, 10, 2)
-	Test1:SetDataVar("Projectile")
-	Test1:TrackDataVar("Propellant")
-	Test1:SetValueFunction(function(Panel)
-		local Min, Max = Panel:GetMin(), Panel:GetMax()
-		local Projectile = math.Clamp(ACF.ReadNumber("Projectile"), Min, Max)
-		local Propellant = ACF.ReadNumber("Propellant")
-		local Difference = Max - Projectile
-
-		ACF.WriteValue("Projectile", Projectile)
-		ACF.WriteValue("Propellant", math.min(Propellant, Difference))
-
-		return Projectile
-	end)
-
-	local Test2 = Menu:AddSlider("Propellant", 0, 10, 2)
-	Test2:SetDataVar("Propellant")
-	Test2:TrackDataVar("Projectile")
-	Test2:SetValueFunction(function(Panel)
-		local Min, Max = Panel:GetMin(), Panel:GetMax()
-		local Projectile = ACF.ReadNumber("Projectile")
-		local Propellant = math.Clamp(ACF.ReadNumber("Propellant"), Min, Max)
-		local Difference = Max - Propellant
-
-		ACF.WriteValue("Propellant", Propellant)
-		ACF.WriteValue("Projectile", math.min(Projectile, Difference))
-
-		return Propellant
-	end)
-
 	LoadSortedList(ClassList, Weapons, "Name")
 	LoadSortedList(CrateList, Crates, "ID")
-	LoadSortedList(AmmoList, AmmoTypes, "Name")
 end
 
 ACF.AddOptionItem("Entities", "Weapons", "gun", CreateMenu)
