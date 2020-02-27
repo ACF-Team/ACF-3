@@ -294,13 +294,9 @@ do -- Tool data functions
 			-- Then we'll process the panels that just keep track of this value
 			if TrackerPanels then
 				for Panel in pairs(TrackerPanels) do
-					local NewValue = Value
+					if not Panel.ValueFunction then continue end
 
-					if Panel.ValueFunction then
-						NewValue = Panel:ValueFunction()
-					end
-
-					Panel:LegacySetValue(NewValue)
+					Panel:LegacySetValue(Panel:ValueFunction())
 				end
 			end
 		end)
