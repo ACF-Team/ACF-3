@@ -6,7 +6,14 @@ function Ammo:OnLoaded()
 
 	self.Name = "High Explosive Anti-Tank"
 	self.Description = "A shell with a shaped charge. When the round detonates, the explosive energy is focused into driving a small molten metal penetrator into the victim with extreme force, though this results in reduced damage from the explosion itself. Multiple layers of armor will dissipate the penetrator quickly."
-	self.Blacklist = { "MG", "HMG", "RAC", "AC", "SL", "SB" }
+	self.Blacklist = {
+		MG = true,
+		HMG = true,
+		RAC = true,
+		AC = true,
+		SL = true,
+		SB = true,
+	}
 end
 
 function Ammo.ConeCalc(ConeAngle, Radius)

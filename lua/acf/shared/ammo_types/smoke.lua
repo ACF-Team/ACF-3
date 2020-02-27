@@ -3,7 +3,17 @@ local Ammo = ACF.RegisterAmmoType("SM", "AP")
 function Ammo:OnLoaded()
 	self.Name = "Smoke"
 	self.Description = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly."
-	self.Blacklist = { "MG", "C", "GL", "HMG", "AL", "AC", "RAC", "SA", "SC" }
+	self.Blacklist = {
+		MG = true,
+		C = true,
+		GL = true,
+		HMG = true,
+		AL = true,
+		AC = true,
+		RAC = true,
+		SA = true,
+		SC = true,
+	}
 end
 
 function Ammo.Convert(_, PlayerData)

@@ -5,7 +5,10 @@ function Ammo:OnLoaded()
 
 	self.Name = "High Explosive"
 	self.Description = "A shell filled with explosives, detonating on impact."
-	self.Blacklist = { "MG", "RAC" }
+	self.Blacklist = {
+		MG = true,
+		RAC = true,
+	}
 end
 
 function Ammo.Convert(_, PlayerData)

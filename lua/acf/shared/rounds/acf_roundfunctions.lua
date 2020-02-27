@@ -1,28 +1,30 @@
 
 function ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
-	local BulletMax = ACF.Weapons["Guns"][PlayerData["Id"]]["round"]
-	GUIData["MaxTotalLength"] = BulletMax["maxlength"] * (Data["LengthAdj"] or 1)
-	Data["Caliber"] = ACF.Weapons["Guns"][PlayerData["Id"]]["caliber"]
-	Data["FrArea"] = 3.1416 * (Data["Caliber"] / 2) ^ 2
-	Data["Tracer"] = 0
+	local Bullet = ACF.Weapons.Guns[PlayerData.Id]
+	local Round = Bullet.round
 
-	--Check for tracer
-	if PlayerData["Data10"] * 1 > 0 then
-		Data["Tracer"] = math.min(5 / Data["Caliber"], 2.5) --Tracer space calcs
-	end
+	Data.Caliber = Bullet.caliber
+	Data.FrArea = 3.1416 * (Data.Caliber * 0.5) ^ 2
+	Data.Tracer = tonumber(PlayerData.Data10) > 0 and math.min(5 / Data.Caliber, 2.5) or 0
 
-	local PropMax = (BulletMax["propweight"] * 1000 / ACF.PDensity) / Data["FrArea"] --Current casing absolute max propellant capacity
-	local CurLength = (PlayerData["ProjLength"] + math.min(PlayerData["PropLength"], PropMax) + Data["Tracer"])
-	GUIData["MinPropLength"] = 0.01
-	GUIData["MaxPropLength"] = math.max(math.min(GUIData["MaxTotalLength"] - CurLength + PlayerData["PropLength"], PropMax), GUIData["MinPropLength"]) --Check if the desired prop lenght fits in the case and doesn't exceed the gun max
-	GUIData["MinProjLength"] = Data["Caliber"] * 1.5
-	GUIData["MaxProjLength"] = math.max(GUIData["MaxTotalLength"] - CurLength + PlayerData["ProjLength"], GUIData["MinProjLength"]) --Check if the desired proj lenght fits in the case
-	local Ratio = math.min((GUIData["MaxTotalLength"] - Data["Tracer"]) / (PlayerData["ProjLength"] + math.min(PlayerData["PropLength"], PropMax)), 1) --This is to check the current ratio between elements if i need to clamp it
-	Data["ProjLength"] = math.Clamp(PlayerData["ProjLength"] * Ratio, GUIData["MinProjLength"], GUIData["MaxProjLength"])
-	Data["PropLength"] = math.Clamp(PlayerData["PropLength"] * Ratio, GUIData["MinPropLength"], GUIData["MaxPropLength"])
-	Data["PropMass"] = Data["FrArea"] * (Data["PropLength"] * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
-	GUIData["ProjVolume"] = Data["FrArea"] * Data["ProjLength"]
-	Data["RoundVolume"] = Data["FrArea"] * (Data["ProjLength"] + Data["PropLength"])
+	GUIData.MaxTotalLength = Round.maxlength * (Data.LengthAdj or 1)
+
+	local PropMax = Round.propweight * 1000 / ACF.PDensity / Data.FrArea --Current casing absolute max propellant capacity
+	local CurLength = PlayerData.ProjLength + math.min(PlayerData.PropLength, PropMax) + Data.Tracer
+
+	GUIData.MinPropLength = 0.01
+	GUIData.MaxPropLength = math.max(math.min(GUIData.MaxTotalLength - CurLength + PlayerData.PropLength, PropMax), GUIData.MinPropLength) --Check if the desired prop lenght fits in the case and doesn't exceed the gun max
+	GUIData.MinProjLength = Data.Caliber * 1.5
+	GUIData.MaxProjLength = math.max(GUIData.MaxTotalLength - CurLength + PlayerData.ProjLength, GUIData.MinProjLength) --Check if the desired proj lenght fits in the case
+
+	local Ratio = math.min((GUIData.MaxTotalLength - Data.Tracer) / (PlayerData.ProjLength + math.min(PlayerData.PropLength, PropMax)), 1) --This is to check the current ratio between elements if i need to clamp it
+
+	Data.ProjLength = math.Clamp(PlayerData.ProjLength * Ratio, GUIData.MinProjLength, GUIData.MaxProjLength)
+	Data.PropLength = math.Clamp(PlayerData.PropLength * Ratio, GUIData.MinPropLength, GUIData.MaxPropLength)
+	Data.PropMass = Data.FrArea * (Data.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	Data.RoundVolume = Data.FrArea * (Data.ProjLength + Data.PropLength)
+
+	GUIData.ProjVolume = Data.FrArea * Data.ProjLength
 
 	return PlayerData, Data, ServerData, GUIData
 end

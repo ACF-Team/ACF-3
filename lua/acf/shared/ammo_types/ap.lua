@@ -6,7 +6,11 @@ function Ammo:OnLoaded()
 	self.Type = "Ammo"
 	self.Model = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
-	self.Blacklist = { "MO", "SL", "SB" }
+	self.Blacklist = {
+		MO = true,
+		SL = true,
+		SB = true,
+	}
 end
 
 function Ammo.Create(_, BulletData)

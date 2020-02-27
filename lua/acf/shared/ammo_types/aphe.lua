@@ -5,7 +5,12 @@ function Ammo:OnLoaded()
 
 	self.Name = "Armor Piercing High Explosive"
 	self.Description = "An armor piercing round with a cavity for High explosives. Less capable of defeating armor than plain Armor Piercing, but will explode after penetration"
-	self.Blacklist = { "MO", "MG", "SL", "RAC" }
+	self.Blacklist = {
+		MO = true,
+		MG = true,
+		SL = true,
+		RAC = true,
+	}
 end
 
 function Ammo.Convert(_, PlayerData)

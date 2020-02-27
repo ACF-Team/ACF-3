@@ -6,7 +6,14 @@ function Ammo:OnLoaded()
 	self.Name = "Flechette"
 	self.Model = "models/munitions/dart_100mm.mdl"
 	self.Description = "Flechette rounds contain several long thin steel spikes, functioning as a shotgun shell for cannons.  While it seems like the spikes would penetrate well, they tend to tumble in flight and impact at less than ideal angles, causing only minor penetration and structural damage. They are best used against infantry or lightly armored mobile targets such as aircraft or light tanks, since flechettes trade brute damage for a better chance to hit."
-	self.Blacklist = { "AC", "RAC", "MG", "HMG", "GL", "SL" }
+	self.Blacklist = {
+		AC = true,
+		RAC = true,
+		MG = true,
+		HMG = true,
+		GL = true,
+		SL = true,
+	}
 end
 
 function Ammo.Create(Gun, BulletData)
