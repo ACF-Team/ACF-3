@@ -51,8 +51,8 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
-	local EntText = "Mass:     %s kg\nFirerate: %s rpm\nSpread:  %s degrees%s"
-	local MagText = "\nRounds: %s rounds\nReload:   %s seconds"
+	local EntText = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s"
+	local MagText = "\nRounds : %s rounds\nReload : %s seconds"
 
 	local ClassList = Menu:AddComboBox()
 	local EntList = Menu:AddComboBox()
@@ -65,7 +65,8 @@ local function CreateMenu(Menu)
 	local CrateList = Menu:AddComboBox()
 	local AmmoList = Menu:AddComboBox()
 
-	ACF.WriteValue("Class", "acf_gun")
+	ACF.WriteValue("PrimaryClass", "acf_gun")
+	ACF.WriteValue("SecondaryClass", "acf_ammo")
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

@@ -159,50 +159,6 @@ function Ammo.RicochetEffect(_, Bullet)
 	util.Effect("ACF_Ricochet", Effect)
 end
 
-function Ammo.CreateMenu(Panel, Table)
-	acfmenupanel:AmmoSelect(Ammo.Blacklist)
-
-	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "") --Total round length (Name, Desc)
-	acfmenupanel:AmmoSlider("PropLength", 0, 0, 1000, 3, "Propellant Length", "") --Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", 0, 0, 1000, 3, "Projectile Length", "") --Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoCheckbox("Tracer", "Tracer", "") --Tracer checkbox (Name, Title, Desc)
-	acfmenupanel:CPanelText("VelocityDisplay", "") --Proj muzzle velocity (Name, Desc)
-	acfmenupanel:CPanelText("PenetrationDisplay", "") --Proj muzzle penetration (Name, Desc)
-
-	Ammo.UpdateMenu(Panel, Table)
-end
-
-function Ammo.UpdateMenu(Panel)
-	local PlayerData = {
-		Id = acfmenupanel.AmmoData.Data.id, --AmmoSelect GUI
-		Type = "AP", --Hardcoded, match ACFRoundTypes table index
-		PropLength = acfmenupanel.AmmoData.PropLength, --PropLength slider
-		ProjLength = acfmenupanel.AmmoData.ProjLength, --ProjLength slider
-		Data10 = acfmenupanel.AmmoData.Tracer and 1 or 0
-	}
-
-	local Data = Ammo.Convert(Panel, PlayerData)
-
-	RunConsoleCommand("acfmenu_data1", acfmenupanel.AmmoData.Data.id)
-	RunConsoleCommand("acfmenu_data2", PlayerData.Type)
-	RunConsoleCommand("acfmenu_data3", Data.PropLength) --For Gun ammo, Data3 should always be Propellant
-	RunConsoleCommand("acfmenu_data4", Data.ProjLength) --And Data4 total round mass
-	RunConsoleCommand("acfmenu_data10", Data.Tracer)
-
-	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
-	acfmenupanel:CPanelText("Desc", Ammo.Description) --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
-	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.Scale) .. " m/s") --Proj muzzle velocity (Name, Desc)
-
-	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
-	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
-
-	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m/s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m/s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
-end
-
 function Ammo.MenuAction(Menu)
 	local ToolData = {
 		Weapon = ACF.ReadString("Weapon"),
@@ -212,63 +168,111 @@ function Ammo.MenuAction(Menu)
 		Tracer = ACF.ReadBool("Tracer"),
 	}
 
-	local Data = Ammo.ClientConvert(Panel, ToolData)
+	local Data = Ammo.ClientConvert(Menu, ToolData)
 
 	Menu:AddParagraph(Ammo.Description)
 
-	local Projectile = Menu:AddSlider("Projectile Length", Data.MinProjLength, Data.MaxProjLength, 2)
-	Projectile:SetDataVar("Projectile")
+	local RoundLength = Menu:AddParagraph()
+	RoundLength:TrackDataVar("Projectile", "SetText")
+	RoundLength:TrackDataVar("Propellant")
+	RoundLength:TrackDataVar("Tracer")
+	RoundLength:SetValueFunction(function()
+		local Text = "Round Length: %s / %s cm"
+		local CurLength = Data.ProjLength + Data.PropLength + Data.Tracer
+		local MaxLength = Data.MaxRoundLength
+
+		return Text:format(CurLength, MaxLength)
+	end)
+
+	local Projectile = Menu:AddSlider("Projectile Length", 0, Data.MaxRoundLength, 2)
+	Projectile:SetDataVar("Projectile", "OnValueChanged")
 	Projectile:TrackDataVar("Propellant")
 	Projectile:TrackDataVar("Tracer")
+	Projectile:SetValueFunction(function(Panel, IsTracked)
+		ToolData.Projectile = ACF.ReadNumber("Projectile")
 
-	local Propellant = Menu:AddSlider("Propellant Length", Data.MinPropLength, Data.MaxPropLength, 2)
-	Propellant:SetDataVar("Propellant")
+		if not IsTracked then
+			Data.Priority = "Projectile"
+		end
+
+		ACF.UpdateRoundSpecs(ToolData, Data)
+
+		ACF.WriteValue("Projectile", Data.ProjLength)
+		ACF.WriteValue("Propellant", Data.PropLength)
+
+		Panel:SetValue(Data.ProjLength)
+
+		return Data.ProjLength
+	end)
+
+	local Propellant = Menu:AddSlider("Propellant Length", 0, Data.MaxRoundLength, 2)
+	Propellant:SetDataVar("Propellant", "OnValueChanged")
 	Propellant:TrackDataVar("Projectile")
 	Propellant:TrackDataVar("Tracer")
+	Propellant:SetValueFunction(function(Panel, IsTracked)
+		ToolData.Propellant = ACF.ReadNumber("Propellant")
+
+		if not IsTracked then
+			Data.Priority = "Propellant"
+		end
+
+		ACF.UpdateRoundSpecs(ToolData, Data)
+
+		ACF.WriteValue("Propellant", Data.PropLength)
+		ACF.WriteValue("Projectile", Data.ProjLength)
+
+		Panel:SetValue(Data.PropLength)
+
+		return Data.PropLength
+	end)
 
 	local Tracer = Menu:AddCheckBox("Tracer")
-	Tracer:SetDataVar("Tracer")
+	Tracer:SetDataVar("Tracer", "OnChange")
+	Tracer:SetValueFunction(function(Panel)
+		local NewValue = ACF.ReadBool("Tracer")
 
-	--[[
+		ToolData.Tracer = NewValue
 
-	local Test = Menu:AddComboBox()
-	Test:TrackDataVar("WeaponClass")
-	Test:TrackDataVar("Weapon")
-	Test:SetValueFunction(function()
-		return ACF.ReadString("WeaponClass") .. " - " .. ACF.ReadString("Weapon")
+		ACF.UpdateRoundSpecs(ToolData, Data)
+
+		ACF.WriteValue("Projectile", Data.ProjLength)
+		ACF.WriteValue("Propellant", Data.PropLength)
+
+		Panel:SetText("Tracer : " .. (NewValue and Data.Tracer or 0) .. " cm")
+		Panel:SetValue(NewValue)
+
+		return NewValue
 	end)
 
-	local Test1 = Menu:AddSlider("Projectile", 0, 10, 2)
-	Test1:SetDataVar("Projectile")
-	Test1:TrackDataVar("Propellant")
-	Test1:SetValueFunction(function(Panel)
-		local Min, Max = Panel:GetMin(), Panel:GetMax()
-		local Projectile = math.Clamp(ACF.ReadNumber("Projectile"), Min, Max)
-		local Propellant = ACF.ReadNumber("Propellant")
-		local Difference = Max - Projectile
+	local RoundStats = Menu:AddParagraph()
+	RoundStats:TrackDataVar("Projectile", "SetText")
+	RoundStats:TrackDataVar("Propellant")
+	RoundStats:TrackDataVar("Tracer")
+	RoundStats:SetValueFunction(function()
+		Data = Ammo.ClientConvert(_, ToolData)
 
-		ACF.WriteValue("Projectile", Projectile)
-		ACF.WriteValue("Propellant", math.min(Propellant, Difference))
+		local Text = "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+		local MuzzleVel = math.Round(Data.MuzzleVel * ACF.Scale, 2)
+		local ProjMass = ACF.GetProperMass(Data.ProjMass * 1000)
+		local PropMass = ACF.GetProperMass(Data.PropMass * 1000)
 
-		return Projectile
+		return Text:format(MuzzleVel, ProjMass, PropMass)
 	end)
 
-	local Test2 = Menu:AddSlider("Propellant", 0, 10, 2)
-	Test2:SetDataVar("Propellant")
-	Test2:TrackDataVar("Projectile")
-	Test2:SetValueFunction(function(Panel)
-		local Min, Max = Panel:GetMin(), Panel:GetMax()
-		local Projectile = ACF.ReadNumber("Projectile")
-		local Propellant = math.Clamp(ACF.ReadNumber("Propellant"), Min, Max)
-		local Difference = Max - Propellant
+	local PenStats = Menu:AddParagraph()
+	PenStats:TrackDataVar("Projectile", "SetText")
+	PenStats:TrackDataVar("Propellant")
+	PenStats:TrackDataVar("Tracer")
+	PenStats:SetValueFunction(function()
+		Data = Ammo.ClientConvert(_, ToolData)
 
-		ACF.WriteValue("Propellant", Propellant)
-		ACF.WriteValue("Projectile", math.min(Projectile, Difference))
+		local Text = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+		local MaxPen = math.Round(Data.MaxPen, 2)
+		local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
+		local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
 
-		return Propellant
+		return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 	end)
-
-	]]--
 end
 
 ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")
