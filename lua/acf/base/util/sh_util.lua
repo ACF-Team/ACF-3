@@ -101,7 +101,7 @@ do -- Ricochet/Penetration materials
 	end
 end
 
-do -- Time lapse function
+do -- Unit conversion
 	local Units = {
 		{ Unit = "year", Reduction = 1970 },
 		{ Unit = "month", Reduction = 1 },
@@ -130,5 +130,17 @@ do -- Time lapse function
 				return Time .. " " .. Data.Unit .. (Time ~= 1 and "s" or "") .. " ago"
 			end
 		end
+	end
+
+	function ACF.GetProperMass(Grams)
+		local Unit, Mult = "g", 1
+
+		if Grams > 1000000 then
+			Unit, Mult = "t", 0.000001
+		elseif Grams > 1000 then
+			Unit, Mult = "kg", 0.001
+		end
+
+		return math.Round(Grams * Mult, 2) .. " " .. Unit
 	end
 end
