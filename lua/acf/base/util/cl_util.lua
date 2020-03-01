@@ -223,32 +223,42 @@ do -- Tool data functions
 		end
 
 		local function LoadFunctions(Panel)
-			if Panel.LegacyRemove then return end
+			if not Panel.LegacyRemove then
+				Panel.LegacyRemove = Panel.Remove
 
-			Panel.LegacySetValue = Panel.SetValue
-			Panel.LegacyRemove = Panel.Remove
+				function Panel:Remove()
+					ClearVariables(self)
 
-			function Panel:SetValue(Value)
-				if self.DataVar then
-					ACF.WriteValue(self.DataVar, Value)
-					return
+					self:LegacyRemove()
 				end
-
-				self:LegacySetValue(Value)
 			end
 
-			function Panel:Remove()
-				ClearVariables(self)
+			if Panel.Hijack and Panel.Hijack ~= Panel.PrevHijack then
+				if Panel.PrevHijack then
+					Panel[Panel.PrevHijack] = Panel.OldSetFunc
+				end
 
-				self:LegacyRemove()
+				Panel.PrevHijack = Panel.Hijack
+				Panel.OldSetFunc = Panel[Panel.Hijack]
+
+				function Panel:NewSetFunc(Value)
+					if self.DataVar then
+						ACF.WriteValue(self.DataVar, Value)
+						return
+					end
+
+					self:OldSetFunc(Value)
+				end
+
+				Panel[Panel.Hijack] = Panel.NewSetFunc
 			end
 		end
 
-		function PANEL:SetDataVar(Key)
+		function PANEL:SetDataVar(Key, Function)
 			if not Key then return end
-			if not self.SetValue then return end
 
 			self.DataVar = Key
+			self.Hijack = Function or self.Hijack or "SetValue"
 
 			AddSetter(self, Key)
 			LoadFunctions(self)
@@ -258,7 +268,9 @@ do -- Tool data functions
 			end
 		end
 
-		function PANEL:TrackDataVar(Key)
+		function PANEL:TrackDataVar(Key, Function)
+			self.Hijack = Function or self.Hijack or "SetValue"
+
 			AddTracker(self, Key)
 			LoadFunctions(self)
 		end
@@ -270,15 +282,23 @@ do -- Tool data functions
 
 			self.ValueFunction = Function
 
-			self:LegacySetValue(self:ValueFunction())
+			if self.Hijack then
+				self:NewSetFunc(self:ValueFunction())
+			end
 		end
 
 		function PANEL:ClearDataVars()
 			if self.LegacyRemove then
-				self.SetValue = self.LegacySetValue
 				self.Remove = self.LegacyRemove
-				self.LegacySetValue = nil
 				self.LegacyRemove = nil
+			end
+
+			if self.Hijack then
+				self[self.Hijack] = self.OldSetFunc
+				self.OldSetFunc = nil
+				self.NewSetFunc = nil
+				self.PrevHijack = nil
+				self.Hijack = nil
 			end
 
 			self.ValueFunction = nil
@@ -300,7 +320,7 @@ do -- Tool data functions
 						NewValue = Panel:ValueFunction()
 					end
 
-					Panel:LegacySetValue(NewValue)
+					Panel:OldSetFunc(NewValue)
 				end
 			end
 
@@ -309,7 +329,7 @@ do -- Tool data functions
 				for Panel in pairs(TrackerPanels) do
 					if not Panel.ValueFunction then continue end
 
-					Panel:LegacySetValue(Panel:ValueFunction())
+					Panel:OldSetFunc(Panel:ValueFunction(true))
 				end
 			end
 		end)
