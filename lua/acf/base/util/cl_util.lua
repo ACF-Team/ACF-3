@@ -109,6 +109,7 @@ do -- Tool data functions
 	end
 
 	do -- Write function
+		local LastSent = {}
 		local KeyPattern = "^[%w]+"
 		local ValuePattern = "[%w]*[%.]?[%w]+$"
 
@@ -119,7 +120,7 @@ do -- Tool data functions
 		end
 
 		local function IsValidValue(Value)
-			if not Value then return false end
+			if Value == nil then return false end
 
 			return tostring(Value):match(ValuePattern) and true or false
 		end
@@ -131,13 +132,25 @@ do -- Tool data functions
 
 			ToolData[Key] = Value
 
-			net.Start("ACF_ToolData")
-				net.WriteString(Key .. ":" .. Value)
-			net.SendToServer()
-
 			hook.Run("OnToolDataUpdate", Key, Value)
 
-			print("Sent", LocalPlayer(), Key, Value)
+			-- Allowing one network message per key per tick
+			if timer.Exists("ACF WriteValue " .. Key) then return end
+
+			timer.Create("ACF WriteValue " .. Key, 0, 1, function()
+				local NewValue = tostring(ToolData[Key])
+
+				-- Preventing network message spam if value hasn't really changed
+				if LastSent[Key] == NewValue then return end
+
+				LastSent[Key] = NewValue
+
+				net.Start("ACF_ToolData")
+					net.WriteString(Key .. ":" .. NewValue)
+				net.SendToServer()
+
+				print("Sent", LocalPlayer(), Key, NewValue)
+			end)
 		end
 	end
 
