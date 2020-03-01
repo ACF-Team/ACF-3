@@ -1,38 +1,51 @@
 function ACF.RoundBaseGunpowder(ToolData, Data)
 	local ClassData = ACF.Classes.Weapons[ToolData.WeaponClass]
 	local WeaponData = ClassData and ClassData.Lookup[ToolData.Weapon]
+	local GUIData = {}
 
-	if not WeaponData then return Data, {} end
+	if not WeaponData then return Data, GUIData end
 
 	local RoundData = WeaponData.Round
-	local Projectile = ToolData.Projectile
-	local Propellant = ToolData.Propellant
-	local GUIData = {}
 
 	Data.Caliber = WeaponData.Caliber
 	Data.FrArea = 3.1416 * (Data.Caliber * 0.05) ^ 2
-	Data.Tracer = ToolData.Tracer and math.min(50 / Data.Caliber, 2.5) or 0
 
-	GUIData.MaxTotalLength = RoundData.MaxLength * (Data.LengthAdj or 1)
-
-	local PropMax = RoundData.PropMass * 1000 / ACF.PDensity / Data.FrArea --Current casing absolute max propellant capacity
-	local CurLength = Projectile + math.min(Propellant, PropMax) + Data.Tracer
-
+	GUIData.MaxRoundLength = math.Round(RoundData.MaxLength * (Data.LengthAdj or 1), 2)
 	GUIData.MinPropLength = 0.01
-	GUIData.MaxPropLength = math.max(math.min(GUIData.MaxTotalLength - CurLength + Propellant, PropMax), GUIData.MinPropLength) --Check if the desired prop lenght fits in the case and doesn't exceed the gun max
-	GUIData.MinProjLength = Data.Caliber * 0.15
-	GUIData.MaxProjLength = math.max(GUIData.MaxTotalLength - CurLength + Projectile, GUIData.MinProjLength) --Check if the desired proj lenght fits in the case
+	GUIData.MinProjLength = math.Round(Data.Caliber * 0.15, 2)
 
-	local Ratio = math.min((GUIData.MaxTotalLength - Data.Tracer) / (Projectile + math.min(Propellant, PropMax)), 1)
+	local DesiredProp = math.Round(RoundData.PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
+	local AllowedProp = GUIData.MaxRoundLength - GUIData.MinProjLength
 
-	Data.ProjLength = math.Clamp(Projectile * Ratio, GUIData.MinProjLength, GUIData.MaxProjLength)
-	Data.PropLength = math.Clamp(Propellant * Ratio, GUIData.MinPropLength, GUIData.MaxPropLength)
+	GUIData.MaxPropLength = math.min(DesiredProp, AllowedProp) -- GUIData.MaxRoundLength - GUIData.MinProjLength
+	GUIData.MaxProjLength = GUIData.MaxRoundLength - GUIData.MinPropLength
+
+	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+
+	return Data, GUIData
+end
+
+function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+	GUIData = GUIData or Data
+
+	Data.Priority = Data.Priority or "Projectile"
+	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.015, 2) or 0
+
+	local Projectile = math.Clamp(ToolData.Projectile + Data.Tracer, GUIData.MinProjLength, GUIData.MaxProjLength)
+	local Propellant = math.Clamp(ToolData.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
+
+	if Data.Priority == "Projectile" then
+		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile, GUIData.MaxPropLength)
+	elseif Data.Priority == "Propellant" then
+		Projectile = math.min(Projectile, GUIData.MaxRoundLength - Propellant, GUIData.MaxProjLength)
+	end
+
+	Data.ProjLength = math.Round(Projectile, 2) - Data.Tracer
+	Data.PropLength = math.Round(Propellant, 2)
 	Data.PropMass = Data.FrArea * (Data.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
 	Data.RoundVolume = Data.FrArea * (Data.ProjLength + Data.PropLength)
 
 	GUIData.ProjVolume = Data.FrArea * Data.ProjLength
-
-	return Data, GUIData
 end
 
 local Classes = ACF.Classes
@@ -99,5 +112,5 @@ function ACF.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
 	local Vel = (math.sqrt(V0) - ((Range * 39.37) / (2 * K1))) ^ 2
 	local Pen = ACF_Kinetic(Vel, ProjMass, LimitVel).Penetration / PenArea * ACF.KEtoRHA
 
-	return Vel * 0.0254, Pen
+	return math.Round(Vel * 0.0254, 2), math.Round(Pen, 2)
 end
