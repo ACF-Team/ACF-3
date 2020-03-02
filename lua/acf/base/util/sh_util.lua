@@ -132,15 +132,15 @@ do -- Unit conversion
 		end
 	end
 
-	function ACF.GetProperMass(Grams)
-		local Unit, Mult = "g", 1
+	function ACF.GetProperMass(Kilograms)
+		local Unit, Mult = "g", 1000
 
-		if Grams > 1000000 then
-			Unit, Mult = "t", 0.000001
-		elseif Grams > 1000 then
-			Unit, Mult = "kg", 0.001
+		if Kilograms >= 1000 then
+			Unit, Mult = "t", 0.001
+		elseif Kilograms >= 1 then
+			Unit, Mult = "kg", 1
 		end
 
-		return math.Round(Grams * Mult, 2) .. " " .. Unit
+		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
 	end
 end
