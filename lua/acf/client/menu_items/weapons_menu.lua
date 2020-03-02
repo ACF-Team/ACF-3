@@ -132,13 +132,73 @@ local function CreateMenu(Menu)
 	function AmmoList:UpdateMenu()
 		if not self.Selected then return end
 
-		local Data = self.Selected
+		local Ammo = self.Selected
+		local ToolData = Ammo.GetToolData()
+		local Data = Ammo.ClientConvert(Menu, ToolData)
 
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
 
-		if Data.MenuAction then
-			Data.MenuAction(Menu)
+		Menu:AddParagraph(Ammo.Description)
+
+		if not Ammo.SupressDefaultMenu then
+			local RoundLength = Menu:AddParagraph()
+			RoundLength:TrackDataVar("Projectile", "SetText")
+			RoundLength:TrackDataVar("Propellant")
+			RoundLength:TrackDataVar("Tracer")
+			RoundLength:SetValueFunction(function()
+				local Text = "Round Length: %s / %s cm"
+				local CurLength = Data.ProjLength + Data.PropLength + Data.Tracer
+				local MaxLength = Data.MaxRoundLength
+
+				return Text:format(CurLength, MaxLength)
+			end)
+
+			local Projectile = Menu:AddSlider("Projectile Length", 0, Data.MaxRoundLength, 2)
+			Projectile:SetDataVar("Projectile", "OnValueChanged")
+			Projectile:TrackDataVar("Propellant")
+			Projectile:TrackDataVar("Tracer")
+			Projectile:SetValueFunction(function(Panel, IsTracked)
+				ToolData.Projectile = ACF.ReadNumber("Projectile")
+
+				if not IsTracked then
+					Data.Priority = "Projectile"
+				end
+
+				Ammo.UpdateRoundData(ToolData, Data)
+
+				ACF.WriteValue("Projectile", Data.ProjLength)
+				ACF.WriteValue("Propellant", Data.PropLength)
+
+				Panel:SetValue(Data.ProjLength)
+
+				return Data.ProjLength
+			end)
+
+			local Propellant = Menu:AddSlider("Propellant Length", 0, Data.MaxRoundLength, 2)
+			Propellant:SetDataVar("Propellant", "OnValueChanged")
+			Propellant:TrackDataVar("Projectile")
+			Propellant:TrackDataVar("Tracer")
+			Propellant:SetValueFunction(function(Panel, IsTracked)
+				ToolData.Propellant = ACF.ReadNumber("Propellant")
+
+				if not IsTracked then
+					Data.Priority = "Propellant"
+				end
+
+				Ammo.UpdateRoundData(ToolData, Data)
+
+				ACF.WriteValue("Propellant", Data.PropLength)
+				ACF.WriteValue("Projectile", Data.ProjLength)
+
+				Panel:SetValue(Data.PropLength)
+
+				return Data.PropLength
+			end)
+		end
+
+		if Ammo.MenuAction then
+			Ammo.MenuAction(Menu, ToolData, Data)
 		end
 
 		Menu:EndTemporal(self)
