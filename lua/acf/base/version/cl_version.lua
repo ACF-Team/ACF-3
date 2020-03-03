@@ -42,9 +42,9 @@ do -- Server syncronization and status printing
 
 	local function PrintStatus(Server)
 		local Branch = ACF.GetBranch(Server.Name, Server.Head)
-		local Lapse = ACF.GetTimeLapse(Branch.Date)
+		local Lapse = Branch and ACF.GetTimeLapse(Branch.Date)
 
-		local Data = Messages[Server.Status]
+		local Data = Messages[Server.Status or "Unable to check"]
 		local Message = Data.Message
 
 		PrintToChat(Data.Type, Message:format(Server.Name, Server.Code, Lapse))
