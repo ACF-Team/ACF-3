@@ -5,7 +5,7 @@ do -- Class registration function
 	local function CreateInstance(Class)
 		local New = {}
 
-		setmetatable(New, { __index = Class })
+		setmetatable(New, { __index = table.Copy(Class) })
 
 		if New.OnCalled then
 			New:OnCalled()
@@ -22,7 +22,7 @@ do -- Class registration function
 		end
 	end
 
-	local function AttachMetaTable(Class, ID, Base)
+	local function AttachMetaTable(Class, Base)
 		local OldMeta = getmetatable(Class) or {}
 
 		if Base then
@@ -32,7 +32,7 @@ do -- Class registration function
 				Class.BaseClass = BaseClass
 				OldMeta.__index = BaseClass
 			else
-				QueueBaseClass(ID, Base)
+				QueueBaseClass(Class.ID, Base)
 			end
 		end
 
@@ -57,15 +57,11 @@ do -- Class registration function
 		local Class = Classes[ID]
 		Class.ID = ID
 
-		AttachMetaTable(Class, ID, Base)
+		AttachMetaTable(Class, Base)
 
 		if Queued[ID] then
-			local Current
-
 			for K in pairs(Queued[ID]) do
-				Current = Classes[K]
-
-				AttachMetaTable(Current, Current.ID, ID)
+				AttachMetaTable(Classes[K], ID)
 			end
 
 			Queued[ID] = nil
