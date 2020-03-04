@@ -23,6 +23,7 @@ ACF_defineGun("75mmAL", {
 	rofmod = 1,
 	magsize = 8,
 	magreload = 15,
+	Cyclic = 30,
 	round = {
 		maxlength = 78,
 		propweight = 3.8
@@ -40,6 +41,7 @@ ACF_defineGun("100mmAL", {
 	rofmod = 0.85,
 	magsize = 6,
 	magreload = 21,
+	Cyclic = 18,
 	round = {
 		maxlength = 93,
 		propweight = 9.5
@@ -57,6 +59,7 @@ ACF_defineGun("120mmAL", {
 	rofmod = 0.757,
 	magsize = 5,
 	magreload = 27,
+	Cyclic = 11,
 	round = {
 		maxlength = 110,
 		propweight = 18
@@ -74,6 +77,7 @@ ACF_defineGun("140mmAL", {
 	rofmod = 0.743,
 	magsize = 5,
 	magreload = 35,
+	Cyclic = 8,
 	round = {
 		maxlength = 127,
 		propweight = 28

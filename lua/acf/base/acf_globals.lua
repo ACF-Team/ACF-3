@@ -5,6 +5,8 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
+	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
 	ACF.DragDiv 			= 80 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal

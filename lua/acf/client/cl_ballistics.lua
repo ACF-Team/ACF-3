@@ -12,6 +12,7 @@ local function BulletFlight(Bullet)
 		Bullet.Effect:ApplyMovement(Bullet)
 	end
 
+	--debugoverlay.Line(Bullet.SimPosLast, Bullet.SimPos, 15, Color(255, 255, 0))
 	Bullet.LastThink = CurTime()
 end
 

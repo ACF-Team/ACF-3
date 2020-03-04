@@ -21,6 +21,9 @@ ACF_defineGun("40mmSL", {
 	caliber = 4.0,
 	weight = 1,
 	year = 1941,
+	magsize = 1,
+	magreload = 30,
+	Cyclic = 1,
 	round = {
 		maxlength = 17.5,
 		propweight = 0.000075
@@ -40,6 +43,7 @@ ACF_defineGun("40mmCL", {
 	rofmod = 0.015,
 	magsize = 6,
 	magreload = 40,
+	Cyclic = 200,
 	year = 1950,
 	round = {
 		maxlength = 12,

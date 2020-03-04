@@ -11,6 +11,7 @@ ACF_defineGunClass("RAC", {
 	color = {135, 135, 135}
 } )
 
+--[[ What purpose does this serve? These don't even exist.
 ACF_defineGun("14.5mmRAC", { --id
 	name = "14.5mm Rotary Autocannon",
 	desc = "A lightweight rotary autocannon, used primarily against infantry and light vehicles.  It has a lower firerate than its larger brethren, but a significantly quicker cooldown period as well.",
@@ -27,6 +28,7 @@ ACF_defineGun("14.5mmRAC", { --id
 		propweight = 0.06
 	}
 } )
+]]--
 
 ACF_defineGun("20mmRAC", {
 	name = "20mm Rotary Autocannon",
@@ -36,9 +38,10 @@ ACF_defineGun("20mmRAC", {
 	caliber = 2.0,
 	weight = 760,
 	year = 1965,
-	magsize = 40,
-	magreload = 7,
+	magsize = 200,
+	magreload = 25,
 	rofmod = 2.1,
+	Cyclic = 4000,
 	round = {
 		maxlength = 30,
 		propweight = 0.12
@@ -53,47 +56,12 @@ ACF_defineGun("30mmRAC", {
 	caliber = 3.0,
 	weight = 1500,
 	year = 1975,
-	magsize = 40,
-	magreload = 8,
+	magsize = 100,
+	magreload = 35,
 	rofmod = 1,
+	Cyclic = 3000,
 	round = {
 		maxlength = 40,
 		propweight = 0.350
 	}
 } )
-
-
-ACF_defineGun("20mmHRAC", {
-	name = "20mm Heavy Rotary Autocannon",
-	desc = "A reinforced, heavy-duty 20mm rotary autocannon, able to fire heavier rounds with a larger magazine.  Phalanx.",
-	model = "models/rotarycannon/kw/20mmrac.mdl",
-	gunclass = "RAC",
-	caliber = 2.0,
-	weight = 1200,
-	year = 1981,
-	magsize = 60,
-	magreload = 4,
-	rofmod = 2.5,
-	round = {
-		maxlength = 36,
-		propweight = 0.12
-	}
-} )
-
-ACF_defineGun("30mmHRAC", {
-	name = "30mm Heavy Rotary Autocannon",
-	desc = "A reinforced, heavy duty 30mm rotary autocannon, able to fire heavier rounds with a larger magazine.  Keeper of goals.",
-	model = "models/rotarycannon/kw/30mmrac.mdl",
-	gunclass = "RAC",
-	caliber = 3.0,
-	weight = 2850,
-	year = 1985,
-	magsize = 50,
-	magreload = 6,
-	rofmod = 1.2,
-	round = {
-		maxlength = 45,
-		propweight = 0.350
-	}
-} )
-
