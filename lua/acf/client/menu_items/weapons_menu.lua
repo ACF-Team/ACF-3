@@ -133,8 +133,8 @@ local function CreateMenu(Menu)
 		if not self.Selected then return end
 
 		local Ammo = self.Selected
-		local ToolData = Ammo.GetToolData()
-		local Data = Ammo.ClientConvert(Menu, ToolData)
+		local ToolData = Ammo:GetToolData()
+		local Data = Ammo:ClientConvert(Menu, ToolData)
 
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
@@ -156,8 +156,6 @@ local function CreateMenu(Menu)
 
 			local Projectile = Menu:AddSlider("Projectile Length", 0, Data.MaxRoundLength, 2)
 			Projectile:SetDataVar("Projectile", "OnValueChanged")
-			Projectile:TrackDataVar("Propellant")
-			Projectile:TrackDataVar("Tracer")
 			Projectile:SetValueFunction(function(Panel, IsTracked)
 				ToolData.Projectile = ACF.ReadNumber("Projectile")
 
@@ -165,9 +163,8 @@ local function CreateMenu(Menu)
 					Data.Priority = "Projectile"
 				end
 
-				Ammo.UpdateRoundData(ToolData, Data)
+				Ammo:UpdateRoundData(ToolData, Data)
 
-				ACF.WriteValue("Projectile", Data.ProjLength)
 				ACF.WriteValue("Propellant", Data.PropLength)
 
 				Panel:SetValue(Data.ProjLength)
@@ -177,8 +174,6 @@ local function CreateMenu(Menu)
 
 			local Propellant = Menu:AddSlider("Propellant Length", 0, Data.MaxRoundLength, 2)
 			Propellant:SetDataVar("Propellant", "OnValueChanged")
-			Propellant:TrackDataVar("Projectile")
-			Propellant:TrackDataVar("Tracer")
 			Propellant:SetValueFunction(function(Panel, IsTracked)
 				ToolData.Propellant = ACF.ReadNumber("Propellant")
 
@@ -186,9 +181,8 @@ local function CreateMenu(Menu)
 					Data.Priority = "Propellant"
 				end
 
-				Ammo.UpdateRoundData(ToolData, Data)
+				Ammo:UpdateRoundData(ToolData, Data)
 
-				ACF.WriteValue("Propellant", Data.PropLength)
 				ACF.WriteValue("Projectile", Data.ProjLength)
 
 				Panel:SetValue(Data.PropLength)
@@ -198,7 +192,7 @@ local function CreateMenu(Menu)
 		end
 
 		if Ammo.MenuAction then
-			Ammo.MenuAction(Menu, ToolData, Data)
+			Ammo:MenuAction(Menu, ToolData, Data)
 		end
 
 		Menu:EndTemporal(self)

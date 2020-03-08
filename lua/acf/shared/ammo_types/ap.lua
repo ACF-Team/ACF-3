@@ -2,37 +2,36 @@ local Ammo = ACF.RegisterAmmoType("AP")
 local DecalIndex = ACF.GetAmmoDecalIndex
 
 function Ammo:OnLoaded()
-	self.Name = "Armor Piercing"
-	self.Type = "Ammo"
-	self.Model = "models/munitions/round_100mm_shot.mdl"
+	self.Name		 = "Armor Piercing"
+	self.Type		 = "Ammo"
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
 	self.Blacklist = {
 		MO = true,
-		SL = true,
 		SB = true,
+		SL = true,
 	}
 end
 
-function Ammo.Create(_, BulletData)
+function Ammo:Create(_, BulletData)
 	ACF_CreateBullet(BulletData)
 end
 
-function Ammo.UpdateRoundData(ToolData, Data, GUIData)
+function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = Data.FrArea * (Data.ProjLength * 7.9 / 1000) --Volume of the projectile as a cylinder * density of steel
+	Data.ProjMass  = Data.FrArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef  = ((Data.FrArea / 10000) / Data.ProjMass)
-	Data.BoomPower = Data.PropMass
+	Data.DragCoef  = Data.FrArea * 0.0001 / Data.ProjMass
 
-	for K, V in pairs(Ammo.GetDisplayData(Data)) do
+	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
 end
 
-function Ammo.BaseConvert(_, ToolData)
+function Ammo:BaseConvert(_, ToolData)
 	if not ToolData.Projectile then ToolData.Projectile = 0 end
 	if not ToolData.Propellant then ToolData.Propellant = 0 end
 
@@ -44,23 +43,25 @@ function Ammo.BaseConvert(_, ToolData)
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet	 = 60 --Base ricochet angle
 
-	Ammo.UpdateRoundData(ToolData, Data, GUIData)
+	self:UpdateRoundData(ToolData, Data, GUIData)
 
 	return Data, GUIData
 end
 
-function Ammo.ClientConvert(_, ToolData)
-	local Data, GUIData = Ammo.BaseConvert(_, ToolData)
+function Ammo:ClientConvert(_, ToolData)
+	local Data, GUIData = self:BaseConvert(_, ToolData)
 
-	for K, V in pairs(GUIData) do
-		Data[K] = V
+	if GUIData then
+		for K, V in pairs(GUIData) do
+			Data[K] = V
+		end
 	end
 
 	return Data
 end
 
-function Ammo.ServerConvert(_, ToolData)
-	local Data = Ammo.BaseConvert(_, ToolData)
+function Ammo:ServerConvert(_, ToolData)
+	local Data = self:BaseConvert(_, ToolData)
 
 	Data.Id = ToolData.Weapon
 	Data.Type = ToolData.Ammo
@@ -68,7 +69,7 @@ function Ammo.ServerConvert(_, ToolData)
 	return Data
 end
 
-function Ammo.Network(Crate, BulletData)
+function Ammo:Network(Crate, BulletData)
 	Crate:SetNW2String("AmmoType", "AP")
 	Crate:SetNW2String("AmmoID", BulletData.Id)
 	Crate:SetNW2Float("Caliber", BulletData.Caliber)
@@ -79,7 +80,7 @@ function Ammo.Network(Crate, BulletData)
 	Crate:SetNW2Float("Tracer", BulletData.Tracer)
 end
 
-function Ammo.GetDisplayData(BulletData)
+function Ammo:GetDisplayData(BulletData)
 	local Energy = ACF_Kinetic(BulletData.MuzzleVel * 39.37, BulletData.ProjMass, BulletData.LimitVel)
 
 	return {
@@ -87,31 +88,33 @@ function Ammo.GetDisplayData(BulletData)
 	}
 end
 
-function Ammo.GetCrateText(BulletData)
-	local Data = Ammo.GetDisplayData(BulletData)
+function Ammo:GetCrateText(BulletData)
+	local Data = self:GetDisplayData(BulletData)
 	local Text = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm"
 
-	return Text:format(math.Round(BulletData.MuzzleVel, 2), math.floor(Data.MaxPen))
+	return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2))
 end
 
-function Ammo.GetToolData()
+function Ammo:GetToolData()
 	return {
-		Weapon = ACF.ReadString("Weapon"),
-		WeaponClass = ACF.ReadString("WeaponClass"),
-		Projectile = ACF.ReadNumber("Projectile"),
-		Propellant = ACF.ReadNumber("Propellant"),
-		Tracer = ACF.ReadBool("Tracer"),
+		Ammo		= ACF.ReadString("Ammo"),
+		Weapon		= ACF.ReadString("Weapon"),
+		WeaponClass	= ACF.ReadString("WeaponClass"),
+		Projectile	= ACF.ReadNumber("Projectile"),
+		Propellant	= ACF.ReadNumber("Propellant"),
+		Tracer		= ACF.ReadBool("Tracer"),
 	}
 end
 
-function Ammo.PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
+function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 	if ACF_Check(Target) then
-		local Speed = Bullet.Flight:Length() / ACF.Scale
+		local Speed  = Bullet.Flight:Length() / ACF.Scale
 		local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
 		local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
 
 		if HitRes.Overkill > 0 then
 			table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
+
 			Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
 
 			return "Penetrated"
@@ -127,7 +130,7 @@ function Ammo.PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 	end
 end
 
-function Ammo.WorldImpact(_, Bullet, HitPos, HitNormal)
+function Ammo:WorldImpact(_, Bullet, HitPos, HitNormal)
 	local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 	local HitRes = ACF_PenetrateGround(Bullet, Energy, HitPos, HitNormal)
 
@@ -140,11 +143,11 @@ function Ammo.WorldImpact(_, Bullet, HitPos, HitNormal)
 	end
 end
 
-function Ammo.OnFlightEnd(Index)
+function Ammo:OnFlightEnd(Index)
 	ACF_RemoveBullet(Index)
 end
 
-function Ammo.ImpactEffect(_, Bullet)
+function Ammo:ImpactEffect(_, Bullet)
 	local Effect = EffectData()
 	Effect:SetOrigin(Bullet.SimPos)
 	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
@@ -154,7 +157,7 @@ function Ammo.ImpactEffect(_, Bullet)
 	util.Effect("ACF_Impact", Effect)
 end
 
-function Ammo.PenetrationEffect(_, Bullet)
+function Ammo:PenetrationEffect(_, Bullet)
 	local Effect = EffectData()
 	Effect:SetOrigin(Bullet.SimPos)
 	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
@@ -166,7 +169,7 @@ function Ammo.PenetrationEffect(_, Bullet)
 	util.Effect("ACF_Penetration", Effect)
 end
 
-function Ammo.RicochetEffect(_, Bullet)
+function Ammo:RicochetEffect(_, Bullet)
 	local Effect = EffectData()
 	Effect:SetOrigin(Bullet.SimPos)
 	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
@@ -178,54 +181,52 @@ function Ammo.RicochetEffect(_, Bullet)
 	util.Effect("ACF_Ricochet", Effect)
 end
 
-function Ammo.MenuAction(Menu, ToolData, Data)
+function Ammo:MenuAction(Menu, ToolData, Data)
 	local Tracer = Menu:AddCheckBox("Tracer")
 	Tracer:SetDataVar("Tracer", "OnChange")
 	Tracer:SetValueFunction(function(Panel)
-		local NewValue = ACF.ReadBool("Tracer")
+		ToolData.Tracer = ACF.ReadBool("Tracer")
 
-		ToolData.Tracer = NewValue
-
-		Ammo.UpdateRoundData(ToolData, Data)
+		self:UpdateRoundData(ToolData, Data)
 
 		ACF.WriteValue("Projectile", Data.ProjLength)
 		ACF.WriteValue("Propellant", Data.PropLength)
 
-		Panel:SetText("Tracer : " .. (NewValue and Data.Tracer or 0) .. " cm")
-		Panel:SetValue(NewValue)
+		Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
+		Panel:SetValue(ToolData.Tracer)
 
-		return NewValue
+		return ToolData.Tracer
 	end)
 
-	local RoundStats = Menu:AddParagraph()
+	local RoundStats = Menu:AddLabel()
 	RoundStats:TrackDataVar("Projectile", "SetText")
 	RoundStats:TrackDataVar("Propellant")
-	RoundStats:TrackDataVar("Tracer")
 	RoundStats:SetValueFunction(function()
-		Ammo.UpdateRoundData(ToolData, Data)
+		self:UpdateRoundData(ToolData, Data)
 
-		local Text = "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
-		local MuzzleVel = math.Round(Data.MuzzleVel * ACF.Scale, 2)
-		local ProjMass = ACF.GetProperMass(Data.ProjMass)
-		local PropMass = ACF.GetProperMass(Data.PropMass)
+		local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+		local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
+		local ProjMass	= ACF.GetProperMass(Data.ProjMass)
+		local PropMass	= ACF.GetProperMass(Data.PropMass)
 
 		return Text:format(MuzzleVel, ProjMass, PropMass)
 	end)
 
-	local PenStats = Menu:AddParagraph()
+	local PenStats = Menu:AddLabel()
 	PenStats:TrackDataVar("Projectile", "SetText")
 	PenStats:TrackDataVar("Propellant")
-	PenStats:TrackDataVar("Tracer")
 	PenStats:SetValueFunction(function()
-		Ammo.UpdateRoundData(ToolData, Data)
+		self:UpdateRoundData(ToolData, Data)
 
-		local Text = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-		local MaxPen = math.Round(Data.MaxPen, 2)
+		local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+		local MaxPen   = math.Round(Data.MaxPen, 2)
 		local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
 		local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
 
 		return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 	end)
+
+	Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 end
 
 ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")

@@ -100,7 +100,7 @@ ACF_defineGun("140mmSC", {
 } )
 
 ACF.RegisterWeaponClass("SC", {
-	Name		  = "Short-Barrel Cannon",
+	Name		  = "Short-Barrelled Cannon",
 	Description	  = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
 	ROFMod		  = 1.7,

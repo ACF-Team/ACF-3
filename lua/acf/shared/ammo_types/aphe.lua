@@ -3,110 +3,106 @@ local Ammo = ACF.RegisterAmmoType("APHE", "AP")
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
-	self.Name = "Armor Piercing High Explosive"
-	self.Description = "An armor piercing round with a cavity for High explosives. Less capable of defeating armor than plain Armor Piercing, but will explode after penetration"
+	self.Name		 = "Armor Piercing High Explosive"
+	self.Description = "Less capable armor piercing round with an explosive charge inside."
 	self.Blacklist = {
-		MO = true,
 		MG = true,
+		MO = true,
 		SL = true,
 		RAC = true,
 	}
 end
 
-function Ammo.Convert(_, PlayerData)
-	local Data = {}
-	local ServerData = {}
-	local GUIData = {}
+function Ammo:UpdateRoundData(ToolData, Data, GUIData)
+	GUIData = GUIData or Data
 
-	if not PlayerData.PropLength then
-		PlayerData.PropLength = 0
+	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+
+	local HEDensity	= ACF.HEDensity * 0.001
+	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
+	local ProjMass	= math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * HEDensity
+	local MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy	= ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
+	local MaxVol	= ACF.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
+
+	GUIData.MaxFillerVol = math.Round(math.min(GUIData.ProjVolume, MaxVol * 0.9), 2)
+	GUIData.FillerVol	 = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
+
+	Data.FillerMass	= GUIData.FillerVol * HEDensity
+	Data.ProjMass	= math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
+	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
+
+	for K, V in pairs(self:GetDisplayData(Data)) do
+		GUIData[K] = V
 	end
+end
 
-	if not PlayerData.ProjLength then
-		PlayerData.ProjLength = 0
-	end
+function Ammo:BaseConvert(_, ToolData)
+	if not ToolData.Projectile then ToolData.Projectile = 0 end
+	if not ToolData.Propellant then ToolData.Propellant = 0 end
+	if not ToolData.FillerMass then ToolData.FillerMass = 0 end
 
-	PlayerData.Data5 = math.max(PlayerData.Data5 or 0, 0)
+	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
-	if not PlayerData.Data10 then
-		PlayerData.Data10 = 0
-	end
-
-	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
-
-	Data.ProjMass = math.max(GUIData.ProjVolume - PlayerData.Data5, 0) * 7.9 / 1000 + math.min(PlayerData.Data5, GUIData.ProjVolume) * ACF.HEDensity / 1000 --Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
-	local Energy = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
-	local MaxVol = ACF_RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
 	GUIData.MinFillerVol = 0
-	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol * 0.9)
-	GUIData.FillerVol = math.min(PlayerData.Data5, GUIData.MaxFillerVol)
-	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity / 1000
-	Data.ProjMass = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 7.9 / 1000 + Data.FillerMass
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
-	Data.ShovePower = 0.1
-	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
-	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass)
-	Data.LimitVel = 700 --Most efficient penetration speed in m/s
-	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet = 65 --Base ricochet angle
-	Data.BoomPower = Data.PropMass + Data.FillerMass
+	Data.ShovePower		 = 0.1
+	Data.PenArea		 = Data.FrArea ^ ACF.PenAreaMod
+	Data.LimitVel		 = 700 --Most efficient penetration speed in m/s
+	Data.KETransfert	 = 0.1 --Kinetic energy transfert to the target for movement purposes
+	Data.Ricochet		 = 65 --Base ricochet angle
 
-	--Only the crates need this part
-	if SERVER then
-		ServerData.Id = PlayerData.Id
-		ServerData.Type = PlayerData.Type
+	self:UpdateRoundData(ToolData, Data, GUIData)
 
-		return table.Merge(Data, ServerData)
-	end
-
-	--Only the GUI needs this part
-	if CLIENT then
-		GUIData = table.Merge(GUIData, Ammo.GetDisplayData(Data))
-
-		return table.Merge(Data, GUIData)
-	end
+	return Data, GUIData
 end
 
-function Ammo.Networkd(Crate, BulletData)
-	Crate:SetNWString("AmmoType", "APHE")
-	Crate:SetNWString("AmmoID", BulletData.Id)
-	Crate:SetNWFloat("Caliber", BulletData.Caliber)
-	Crate:SetNWFloat("ProjMass", BulletData.ProjMass)
-	Crate:SetNWFloat("FillerMass", BulletData.FillerMass)
-	Crate:SetNWFloat("PropMass", BulletData.PropMass)
-	Crate:SetNWFloat("DragCoef", BulletData.DragCoef)
-	Crate:SetNWFloat("MuzzleVel", BulletData.MuzzleVel)
-	Crate:SetNWFloat("Tracer", BulletData.Tracer)
+function Ammo:Network(Crate, BulletData)
+	Crate:SetNW2String("AmmoType", "APHE")
+	Crate:SetNW2String("AmmoID", BulletData.Id)
+	Crate:SetNW2Float("Caliber", BulletData.Caliber)
+	Crate:SetNW2Float("ProjMass", BulletData.ProjMass)
+	Crate:SetNW2Float("FillerMass", BulletData.FillerMass)
+	Crate:SetNW2Float("PropMass", BulletData.PropMass)
+	Crate:SetNW2Float("DragCoef", BulletData.DragCoef)
+	Crate:SetNW2Float("MuzzleVel", BulletData.MuzzleVel)
+	Crate:SetNW2Float("Tracer", BulletData.Tracer)
 end
 
-function Ammo.GetDisplayData(BulletData)
-	local Data = Ammo.BaseClass.GetDisplayData(BulletData)
+function Ammo:GetDisplayData(BulletData)
+	local Data	   = Ammo.BaseClass.GetDisplayData(self, BulletData)
 	local FragMass = BulletData.ProjMass - BulletData.FillerMass
 
 	Data.BlastRadius = BulletData.FillerMass ^ 0.33 * 8
-	Data.Fragments = math.max(math.floor((BulletData.FillerMass / FragMass) * ACF.HEFrag), 2)
-	Data.FragMass = FragMass / GUIData.Fragments
-	Data.FragVel = (BulletData.FillerMass * ACF.HEPower * 1000 / GUIData.FragMass / GUIData.Fragments) ^ 0.5
+	Data.Fragments	 = math.max(math.floor((BulletData.FillerMass / FragMass) * ACF.HEFrag), 2)
+	Data.FragMass	 = FragMass / Data.Fragments
+	Data.FragVel	 = (BulletData.FillerMass * ACF.HEPower * 1000 / Data.FragMass / Data.Fragments) ^ 0.5
 
 	return Data
 end
 
-function Ammo.GetCrateText(BulletData)
-	local Data = Ammo.GetDisplayData(BulletData)
-	local BaseText = Ammo.BaseClass.GetCrateText(BulletData)
-	local Text = BaseText .. "\nBlast Radius: %s m\nBlast Energy: %s KJ"
+function Ammo:GetCrateText(BulletData)
+	local BaseText = Ammo.BaseClass.GetCrateText(self, BulletData)
+	local Text	   = BaseText .. "\nBlast Radius: %s m\nBlast Energy: %s KJ"
+	local Data	   = self:GetDisplayData(BulletData)
 
-	return Text:format(math.Round(Data.BlastRadius, 2), math.floor(BulletData.FillerMass * ACF.HEPower))
+	return Text:format(math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
 end
 
-function Ammo.OnFlightEnd(Index, Bullet, HitPos)
+function Ammo:GetToolData()
+	local Data		= Ammo.BaseClass.GetToolData(self)
+	Data.FillerMass	= ACF.ReadNumber("FillerMass")
+
+	return Data
+end
+
+function Ammo:OnFlightEnd(Index, Bullet, HitPos)
 	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 
-	Ammo.BaseClass.OnFlightEnd(Index, Bullet, Hitpos)
+	Ammo.BaseClass.OnFlightEnd(self, Index, Bullet, Hitpos)
 end
 
-function Ammo.ImpactEffect(_, Bullet)
+function Ammo:ImpactEffect(_, Bullet)
 	local Effect = EffectData()
 	Effect:SetOrigin(Bullet.SimPos)
 	Effect:SetNormal(Bullet.SimFlight:GetNormalized())
@@ -116,62 +112,82 @@ function Ammo.ImpactEffect(_, Bullet)
 	util.Effect("ACF_Explosion", Effect)
 end
 
-function Ammo.CreateMenu(Panel, Table)
-	acfmenupanel:AmmoSelect(Ammo.Blacklist)
+function Ammo:MenuAction(Menu, ToolData, Data)
+	local FillerMass = Menu:AddSlider("Filler Volume", 0, Data.MaxFillerVol, 2)
+	FillerMass:SetDataVar("FillerMass", "OnValueChanged")
+	FillerMass:TrackDataVar("Projectile")
+	FillerMass:SetValueFunction(function(Panel)
+		ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
 
-	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "") --Total round length (Name, Desc)
-	acfmenupanel:AmmoSlider("PropLength", 0, 0, 1000, 3, "Propellant Length", "") --Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", 0, 0, 1000, 3, "Projectile Length", "") --Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("FillerVol", 0, 0, 1000, 3, "HE Filler", "") --Hollow Point Cavity Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoCheckbox("Tracer", "Tracer", "") --Tracer checkbox (Name, Title, Desc)
-	acfmenupanel:CPanelText("VelocityDisplay", "") --Proj muzzle velocity (Name, Desc)
-	acfmenupanel:CPanelText("PenetrationDisplay", "") --Proj muzzle penetration (Name, Desc)
-	acfmenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
-	acfmenupanel:CPanelText("FragDisplay", "") --HE Fragmentation data (Name, Desc)
-	acfmenupanel:CPanelText("PenetrationRanging", "") --penetration ranging (Name, Desc)
+		self:UpdateRoundData(ToolData, Data)
 
-	Ammo.UpdateMenu(Panel, Table)
-end
+		Panel:SetMax(Data.MaxFillerVol)
+		Panel:SetValue(Data.FillerVol)
 
-function Ammo.UpdateMenu(Panel)
-	local PlayerData = {
-		Id = acfmenupanel.AmmoData.Data.id, --AmmoSelect GUI
-		Type = "APHE", --Hardcoded, match ACFRoundTypes table index
-		PropLength = acfmenupanel.AmmoData.PropLength, --PropLength slider
-		ProjLength = acfmenupanel.AmmoData.ProjLength, --ProjLength slider
-		Data5 = acfmenupanel.AmmoData.FillerVol,
-		Data10 = acfmenupanel.AmmoData.Tracer and 1 or 0,
-	}
+		return Data.FillerVol
+	end)
 
-	local Data = Ammo.Convert(Panel, PlayerData)
+	local Tracer = Menu:AddCheckBox("Tracer")
+	Tracer:SetDataVar("Tracer", "OnChange")
+	Tracer:SetValueFunction(function(Panel)
+		ToolData.Tracer = ACF.ReadBool("Tracer")
 
-	RunConsoleCommand("acfmenu_data1", acfmenupanel.AmmoData.Data.id)
-	RunConsoleCommand("acfmenu_data2", PlayerData.Type)
-	RunConsoleCommand("acfmenu_data3", Data.PropLength) --For Gun ammo, Data3 should always be Propellant
-	RunConsoleCommand("acfmenu_data4", Data.ProjLength) --And Data4 total round mass
-	RunConsoleCommand("acfmenu_data5", Data.FillerVol)
-	RunConsoleCommand("acfmenu_data10", Data.Tracer)
+		self:UpdateRoundData(ToolData, Data)
 
-	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "HE Filler Volume", "HE Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
-	acfmenupanel:CPanelText("Desc", Ammo.Description) --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
-	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.Scale) .. " m/s") --Proj muzzle velocity (Name, Desc)	
-	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA") --Proj muzzle penetration (Name, Desc)
-	acfmenupanel:CPanelText("BlastDisplay", "Blast Radius : " .. (math.floor(Data.BlastRadius * 100) / 100) .. " m") --Proj muzzle velocity (Name, Desc)
-	acfmenupanel:CPanelText("FragDisplay", "Fragments : " .. Data.Fragments .. "\n Average Fragment Weight : " .. (math.floor(Data.FragMass * 10000) / 10) .. " g \n Average Fragment Velocity : " .. math.floor(Data.FragVel) .. " m/s") --Proj muzzle penetration (Name, Desc)
+		ACF.WriteValue("Projectile", Data.ProjLength)
+		ACF.WriteValue("Propellant", Data.PropLength)
 
-	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
-	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+		Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
+		Panel:SetValue(ToolData.Tracer)
 
-	acfmenupanel:CPanelText("PenetrationRanging", "\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m/s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m/s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
-end
+		return ToolData.Tracer
+	end)
 
-function Ammo.MenuAction(Menu)
-	Menu:AddParagraph("Testing APHE menu.")
+	local RoundStats = Menu:AddLabel()
+	RoundStats:TrackDataVar("Projectile", "SetText")
+	RoundStats:TrackDataVar("Propellant")
+	RoundStats:TrackDataVar("FillerMass")
+	RoundStats:SetValueFunction(function()
+		self:UpdateRoundData(ToolData, Data)
+
+		local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+		local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
+		local ProjMass	= ACF.GetProperMass(Data.ProjMass)
+		local PropMass	= ACF.GetProperMass(Data.PropMass)
+		local Filler	= ACF.GetProperMass(Data.FillerMass)
+
+		return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+	end)
+
+	local FillerStats = Menu:AddLabel()
+	FillerStats:TrackDataVar("FillerMass", "SetText")
+	FillerStats:SetValueFunction(function()
+		self:UpdateRoundData(ToolData, Data)
+
+		local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+		local Blast	   = math.Round(Data.BlastRadius, 2)
+		local FragMass = ACF.GetProperMass(Data.FragMass)
+		local FragVel  = math.Round(Data.FragVel, 2)
+
+		return Text:format(Blast, Data.Fragments, FragMass, FragVel)
+	end)
+
+	local PenStats = Menu:AddLabel()
+	PenStats:TrackDataVar("Projectile", "SetText")
+	PenStats:TrackDataVar("Propellant")
+	PenStats:TrackDataVar("FillerMass")
+	PenStats:SetValueFunction(function()
+		self:UpdateRoundData(ToolData, Data)
+
+		local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+		local MaxPen   = math.Round(Data.MaxPen, 2)
+		local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
+		local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+
+		return Text:format(MaxPen, R1P, R1V, R2P, R2V)
+	end)
+
+	Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 end
 
 ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
