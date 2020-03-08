@@ -5,7 +5,7 @@ local Count = 0
 do -- Menu population functions
 	local function DefaultAction(Panel)
 		Panel:AddTitle("There's nothing here.")
-		Panel:AddParagraph("This option is either a work in progress or something isn't working as intended.")
+		Panel:AddLabel("This option is either a work in progress or something isn't working as intended.")
 	end
 
 	function ACF.AddOption(Name, Icon)
@@ -129,12 +129,12 @@ do -- ACF Menu context panel
 		local Menu = ACF.Menu
 
 		if not IsValid(Menu) then
-			ACF.Menu = vgui.Create("ACF_Panel", Panel)
-
-			Menu = ACF.Menu
+			Menu = vgui.Create("ACF_Panel")
 			Menu.Panel = Panel
 
 			Panel:AddItem(Menu)
+
+			ACF.Menu = Menu
 		else
 			Menu:ClearAllTemporal()
 			Menu:ClearAll()
@@ -145,8 +145,6 @@ do -- ACF Menu context panel
 		function Reload:DoClickInternal()
 			ACF.BuildContextPanel(Panel)
 		end
-
-		Menu:AddTitle("Available Options")
 
 		local Tree = Menu:AddPanel("DTree")
 		function Tree:OnNodeSelected(Node)

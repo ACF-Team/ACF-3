@@ -50,17 +50,11 @@ end
 do -- Custom fonts
 	surface.CreateFont("ACF_Title", {
 		font = "Roboto",
-		size = 22,
-		weight = 850,
-	})
-
-	surface.CreateFont("ACF_Subtitle", {
-		font = "Roboto",
 		size = 18,
 		weight = 850,
 	})
 
-	surface.CreateFont("ACF_Paragraph", {
+	surface.CreateFont("ACF_Label", {
 		font = "Roboto",
 		size = 14,
 		weight = 650,

@@ -56,11 +56,11 @@ local function CreateMenu(Menu)
 
 	local ClassList = Menu:AddComboBox()
 	local EntList = Menu:AddComboBox()
-	local EntName = Menu:AddSubtitle()
-	local ClassDesc = Menu:AddParagraph()
-	local EntData = Menu:AddParagraph()
+	local EntName = Menu:AddTitle()
+	local ClassDesc = Menu:AddLabel()
+	local EntData = Menu:AddLabel()
 
-	Menu:AddSubtitle("Ammo Settings")
+	Menu:AddTitle("Ammo Settings")
 
 	local CrateList = Menu:AddComboBox()
 	local AmmoList = Menu:AddComboBox()
@@ -139,10 +139,10 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
 
-		Menu:AddParagraph(Ammo.Description)
+		Menu:AddLabel(Ammo.Description)
 
 		if not Ammo.SupressDefaultMenu then
-			local RoundLength = Menu:AddParagraph()
+			local RoundLength = Menu:AddLabel()
 			RoundLength:TrackDataVar("Projectile", "SetText")
 			RoundLength:TrackDataVar("Propellant")
 			RoundLength:TrackDataVar("Tracer")

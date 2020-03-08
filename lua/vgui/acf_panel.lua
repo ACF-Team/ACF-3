@@ -115,23 +115,16 @@ function PANEL:AddTitle(Text)
 	return Panel
 end
 
-function PANEL:AddSubtitle(Text)
+function PANEL:AddLabel(Text)
 	local Panel = self:AddTitle(Text)
-	Panel:SetFont("ACF_Subtitle")
-
-	return Panel
-end
-
-function PANEL:AddParagraph(Text)
-	local Panel = self:AddTitle(Text)
-	Panel:SetFont("ACF_Paragraph")
+	Panel:SetFont("ACF_Label")
 
 	return Panel
 end
 
 function PANEL:AddHelp(Text)
 	local TextColor = self:GetSkin().Colours.Tree.Hover
-	local Panel = self:AddParagraph(Text)
+	local Panel = self:AddLabel(Text)
 	Panel:DockMargin(32, 0, 32, 10)
 	Panel:SetTextColor(TextColor)
 	Panel:InvalidateLayout()
@@ -151,6 +144,7 @@ end
 
 function PANEL:AddSlider(Title, Min, Max, Decimals)
 	local Panel = self:AddPanel("DNumSlider")
+	Panel:DockMargin(0, 0, 0, 5)
 	Panel:SetDecimals(Decimals or 0)
 	Panel:SetText(Title or "")
 	Panel:SetMinMax(Min, Max)
