@@ -48,8 +48,9 @@ ACF.RegisterWeapon("40mmGL", "GL", {
 	Caliber		= 40,
 	Mass		= 55,
 	Year		= 1970,
-	MagSize		= 6,
+	MagSize		= 30,
 	MagReload	= 7.5,
+	Cyclic		= 200,
 	Round = {
 		MaxLength = 7.5,
 		PropMass  = 0.01,

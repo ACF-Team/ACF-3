@@ -126,6 +126,7 @@ ACF.RegisterWeapon("75mmAL", "AL", {
 	ROFMod		= 1,
 	MagSize		= 8,
 	MagReload	= 15,
+	Cyclic		= 30,
 	Round = {
 		MaxLength = 78,
 		PropMass  = 3.8,
@@ -142,6 +143,7 @@ ACF.RegisterWeapon("100mmAL", "AL", {
 	ROFMod		= 0.85,
 	MagSize		= 6,
 	MagReload	= 21,
+	Cyclic		= 18,
 	Round = {
 		MaxLength = 93,
 		PropMass  = 9.5,
@@ -158,6 +160,7 @@ ACF.RegisterWeapon("120mmAL", "AL", {
 	ROFMod		= 0.757,
 	MagSize		= 5,
 	MagReload	= 27,
+	Cyclic		= 11,
 	Round = {
 		MaxLength = 110,
 		PropMass  = 18,
@@ -174,6 +177,7 @@ ACF.RegisterWeapon("140mmAL", "AL", {
 	ROFMod		= 0.743,
 	MagSize		= 5,
 	MagReload	= 35,
+	Cyclic		= 8,
 	Round = {
 		MaxLength = 127,
 		PropMass  = 28,

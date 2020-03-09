@@ -88,8 +88,9 @@ ACF.RegisterWeapon("20mmRAC", "RAC", {
 	Mass		= 760,
 	Year		= 1965,
 	ROFMod		= 2.1,
-	MagSize		= 40,
-	MagReload	= 7,
+	MagSize		= 200,
+	MagReload	= 25,
+	Cyclic		= 4000,
 	Round = {
 		MaxLength = 30,
 		PropMass  = 0.12,
@@ -104,11 +105,11 @@ ACF.RegisterWeapon("30mmRAC", "RAC", {
 	Mass		= 1500,
 	Year		= 1975,
 	ROFMod		= 1,
-	MagSize		= 40,
+	MagSize		= 100,
+	MagReload	= 35,
+	Cyclic		= 3000,
 	Round = {
-	MagReload	= 8,
 		MaxLength = 40,
 		PropMass  = 0.350,
 	}
-
 })

@@ -89,6 +89,7 @@ ACF.RegisterWeapon("7.62mmMG", "MG", {
 	ROFMod		= 1.59,
 	MagSize		= 250,
 	MagReload	= 6,
+	Cyclic		= 700, -- Rounds per minute
 	Round = {
 		MaxLength = 13,
 		PropMass  = 0.04,
@@ -105,6 +106,7 @@ ACF.RegisterWeapon("12.7mmMG", "MG", {
 	ROFMod		= 1,
 	MagSize		= 150,
 	MagReload	= 6,
+	Cyclic		= 600,
 	Round = {
 		MaxLength = 15.8,
 		PropMass  = 0.03,
@@ -121,6 +123,7 @@ ACF.RegisterWeapon("14.5mmMG", "MG", {
 	ROFMod		= 1,
 	MagSize		= 90,
 	MagReload	= 5,
+	Cyclic		= 500,
 	Round = {
 		MaxLength = 19.5,
 		PropMass  = 0.04,

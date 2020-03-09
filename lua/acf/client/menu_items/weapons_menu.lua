@@ -91,7 +91,7 @@ local function CreateMenu(Menu)
 
 		local ClassData = ClassList.Selected
 		local RoundVolume = 3.1416 * (Data.Caliber * 0.05) ^ 2 * Data.Round.MaxLength
-		local Firerate = 60 / (((RoundVolume * 0.002) ^ 0.6) * ClassData.ROFMod * (Data.ROFMod or 1))
+		local Firerate = Data.Cyclic or 60 / (((RoundVolume * 0.002) ^ 0.6) * ClassData.ROFMod * (Data.ROFMod or 1))
 		local Magazine = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
 
 		local Choices = Sorted[ClassData.Items]

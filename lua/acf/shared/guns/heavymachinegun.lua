@@ -93,7 +93,7 @@ ACF.RegisterWeaponClass("HMG", {
 	Description	  = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
 	ROFMod		  = 0.14,
-	Spread		  = 0.4,
+	Spread		  = 1.3,
 	Sound		  = "weapons/ACF_Gun/mg_fire3.mp3",
 	Caliber	= {
 		Min = 13,
@@ -116,6 +116,7 @@ ACF.RegisterWeapon("13mmHMG", "HMG", {
 	ROFMod		= 3.3,
 	MagSize		= 35,
 	MagReload	= 6,
+	Cyclic		= 550,
 	Round = {
 		MaxLength = 22,
 		PropMass  = 0.09,
@@ -132,6 +133,7 @@ ACF.RegisterWeapon("20mmHMG", "HMG", {
 	ROFMod		= 1.9,
 	MagSize		= 30,
 	MagReload	= 6,
+	Cyclic		= 525,
 	Round = {
 		MaxLength = 30,
 		PropMass  = 0.12,
@@ -148,6 +150,7 @@ ACF.RegisterWeapon("30mmHMG", "HMG", {
 	ROFMod		= 1.1,
 	MagSize		= 25,
 	MagReload	= 6,
+	Cyclic		= 500,
 	Round = {
 		MaxLength = 37,
 		PropMass  = 0.35,
@@ -164,6 +167,7 @@ ACF.RegisterWeapon("40mmHMG", "HMG", {
 	ROFMod		= 0.95,
 	MagSize		= 20,
 	MagReload	= 8,
+	Cyclic		= 475,
 	Round = {
 		MaxLength = 42,
 		PropMass  = 0.9,
