@@ -1,8 +1,8 @@
 --define the class
 ACF_defineGunClass("SA", {
-	spread = 0.1,
+	spread = 1.1,
 	name = "Semiautomatic Cannon",
-	desc = "Semiautomatic cannons offer better payloads than autocannons and less weight at the cost of rate of fire.",
+	desc = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
 	muzzleflash = "semi_muzzleflash_noscale",
 	rofmod = 0.36,
 	sound = "weapons/acf_gun/sa_fire1.mp3",
@@ -18,11 +18,12 @@ ACF_defineGun("25mmSA", {
 	model = "models/autocannon/semiautocannon_25mm.mdl",
 	gunclass = "SA",
 	caliber = 2.5,
-	weight = 200,
+	weight = 250,
 	year = 1935,
 	rofmod = 0.7,
 	magsize = 5,
-	magreload = 2,
+	magreload = 2.5,
+	Cyclic = 300,
 	round = {
 		maxlength = 39,
 		propweight = 0.5
@@ -35,11 +36,12 @@ ACF_defineGun("37mmSA", {
 	model = "models/autocannon/semiautocannon_37mm.mdl",
 	gunclass = "SA",
 	caliber = 3.7,
-	weight = 540,
+	weight = 500,
 	year = 1940,
 	rofmod = 0.7,
 	magsize = 5,
-	magreload = 3.5,
+	magreload = 3.7,
+	Cyclic = 250,
 	round = {
 		maxlength = 42,
 		propweight = 1.125
@@ -52,11 +54,12 @@ ACF_defineGun("45mmSA", {
 	model = "models/autocannon/semiautocannon_45mm.mdl",
 	gunclass = "SA",
 	caliber = 4.5,
-	weight = 870,
+	weight = 750,
 	year = 1965,
 	rofmod = 0.72,
 	magsize = 5,
-	magreload = 4,
+	magreload = 4.5,
+	Cyclic = 225,
 	round = {
 		maxlength = 52,
 		propweight = 1.8
@@ -69,11 +72,12 @@ ACF_defineGun("57mmSA", {
 	model = "models/autocannon/semiautocannon_57mm.mdl",
 	gunclass = "SA",
 	caliber = 5.7,
-	weight = 1560,
+	weight = 1000,
 	year = 1965,
 	rofmod = 0.8,
 	magsize = 5,
-	magreload = 4.5,
+	magreload = 5.7,
+	Cyclic = 200,
 	round = {
 		maxlength = 62,
 		propweight = 2
@@ -86,11 +90,12 @@ ACF_defineGun("76mmSA", {
 	model = "models/autocannon/semiautocannon_76mm.mdl",
 	gunclass = "SA",
 	caliber = 7.62,
-	weight = 2990,
+	weight = 2000,
 	year = 1984,
 	rofmod = 0.85,
 	magsize = 5,
-	magreload = 5,
+	magreload = 7.6,
+	Cyclic = 150,
 	round = {
 		maxlength = 70,
 		propweight = 4.75

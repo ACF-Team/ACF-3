@@ -51,6 +51,7 @@ local function Trace(TraceData, Filter)
 		TraceData.filter = Filter
 	end
 
+	debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
 	return T
 end
 

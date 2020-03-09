@@ -18,9 +18,10 @@ ACF_defineGun("40mmGL", { --id
 	gunclass = "GL",
 	caliber = 4.0,
 	weight = 55,
-	magsize = 6,
+	magsize = 30,
 	magreload = 7.5,
 	year = 1970,
+	Cyclic = 200,
 	round = {
 		maxlength = 7.5,
 		propweight = 0.01

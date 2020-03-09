@@ -5,24 +5,21 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
+	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
 	ACF.DragDiv 			= 80 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 	ACF.Year 				= 1945
 	ACF.Threshold 			= 264.7 --Health Divisor (don"t forget to update cvar function down below)
-	ACF.PartialPenPenalty 	= 5 --Exponent for the damage penalty for partial penetration
 	ACF.PenAreaMod 			= 0.85
 	ACF.KinFudgeFactor 		= 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
 	ACF.KEtoRHA 			= 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
 	ACF.GroundtoRHA 		= 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
-	ACF.KEtoSpall 			= 1
 	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
-	ACF.CrateVolEff 		= 0.1576 -- magic number that adjusts the efficiency of crate model volume to ammo capacity
 	ACF.ArmorMod 			= 1
 	ACF.SlopeEffectFactor 	= 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
-	ACF.Spalling 			= 0
 	ACF.GunfireEnabled 		= true
-	ACF.MeshCalcEnabled 	= false
 	ACF.HEPower 			= 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity 			= 1.65 --HE Filler density (That's TNT density)
 	ACF.HEFrag 				= 1000 --Mean fragment number for equal weight TNT and casing
@@ -124,7 +121,7 @@ do -- ACF Convars/Callbacks ------------------------
 	game.AddParticles("particles/explosion1.pcf")
 	game.AddParticles("particles/rocket_motor.pcf")
 	game.AddDecal("GunShot1", "decals/METAL/shot5")
-end ------------------------------------------------
+end
 
 if SERVER then
 	util.AddNetworkString("ACF_KilledByACF")
@@ -206,15 +203,6 @@ function ACF_CVarChangeCallback(CVar, _, New)
 	elseif CVar == "acf_ammomod" then
 		ACF.AmmoMod = 1 * math.max(New, 0.01)
 		print("Ammo Mod changed to a factor of " .. New)
-	elseif CVar == "acf_spalling" then
-		ACF.Spalling = math.floor(math.Clamp(New, 0, 1))
-		local text = "off"
-
-		if (ACF.Spalling > 0) then
-			text = "on"
-		end
-
-		print("ACF Spalling is now " .. text)
 	elseif CVar == "acf_gunfire" then
 		ACF.GunfireEnabled = tobool(New)
 		local text = "disabled"

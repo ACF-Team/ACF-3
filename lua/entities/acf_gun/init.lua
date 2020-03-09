@@ -17,6 +17,8 @@ local Trace		  = util.TraceLine
 local TimerExists = timer.Exists
 local TimerCreate = timer.Create
 local HookRun	  = hook.Run
+local EMPTY = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+
 
 do -- Spawn Func --------------------------------
 	function MakeACF_Gun(Player, Pos, Angle, Id)
@@ -52,30 +54,31 @@ do -- Spawn Func --------------------------------
 		local Caliber   = Lookup.caliber
 
 		-- ACF Specific vars
-		Gun.ReloadTime   	= 2
 		Gun.BarrelFilter 	= { Gun }
 		Gun.State        	= "Empty"
 		Gun.Crates       	= {}
-		Gun.Name		   = Lookup.name
-		Gun.ShortName	   = Id
-		Gun.EntType		   = ClassData.name
-		Gun.Caliber		   = Caliber
-		Gun.Class		   = Lookup.gunclass
-		Gun.MagReload	   = Lookup.magreload
-		Gun.MagSize		   = Lookup.magsize or 1
-		Gun.CurrentShot	   = 0
-		Gun.Spread		   = ClassData.spread
-		Gun.MinLengthBonus = 0.75 * 3.1416 * (Caliber / 2) ^ 2 * Lookup.round.maxlength
-		Gun.Muzzleflash	   = ClassData.muzzleflash
-		Gun.PGRoFmod	   = math.max(0.01, Lookup.rofmod or 1)
-		Gun.RoFmod		   = ClassData.rofmod
-		Gun.Sound		   = ClassData.sound
-		Gun.BulletData	   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.HitBoxes 	   = ACF.HitBoxes[Lookup.model]
-		Gun.Long		   = ClassData.longbarrel
-		Gun.NormalMuzzle   = Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
-		Gun.LongMuzzle	   = Gun.Long and Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos)).Pos)
-		Gun.Muzzle		   = Gun.NormalMuzzle
+		Gun.Name			= Lookup.name
+		Gun.ShortName		= Id
+		Gun.EntType			= ClassData.name
+		Gun.Caliber			= Caliber
+		Gun.Class			= Lookup.gunclass
+		Gun.MagReload			= Lookup.magreload
+		Gun.MagSize			= Lookup.magsize or 1
+		Gun.Cyclic			= Lookup.Cyclic and 60 / Lookup.Cyclic or nil
+		Gun.ReloadTime		= Gun.Cyclic or 1
+		Gun.CurrentShot		= 0
+		Gun.Spread			= ClassData.spread
+		Gun.MinLengthBonus 	= 0.75 * 3.1416 * (Caliber / 2) ^ 2 * Lookup.round.maxlength
+		Gun.Muzzleflash		= ClassData.muzzleflash
+		Gun.PGRoFmod		= math.max(0.01, Lookup.rofmod or 1)
+		Gun.RoFmod			= ClassData.rofmod
+		Gun.Sound			= ClassData.sound
+		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+		Gun.HitBoxes		= ACF.HitBoxes[Lookup.model]
+		Gun.Long			= ClassData.longbarrel
+		Gun.NormalMuzzle	= Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
+		Gun.LongMuzzle		= Gun.Long and Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos)).Pos)
+		Gun.Muzzle			= Gun.NormalMuzzle
 
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
@@ -100,6 +103,11 @@ do -- Spawn Func --------------------------------
 		WireLib.TriggerOutput(Gun, "Entity", Gun)
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
+
+		if Gun.Cyclic then -- Automatics don't change their rate of fire
+			WireLib.TriggerOutput(Gun, "Reload Time", Gun.Cyclic)
+			WireLib.TriggerOutput(Gun, "Rate of Fire", 60 / Gun.Cyclic)
+		end
 
 		local Mass = Lookup.weight
 		local Phys = Gun:GetPhysicsObject()
@@ -206,7 +214,9 @@ do -- Metamethods --------------------------------
 				if Bool then
 					self.User = self:GetUser(self.Inputs.Fire.Src) or self.Owner
 
-					self:AttemptFire() -- Attempt to fire the gun
+					if self:CanFire() then
+						self:Shoot()
+					end
 				end
 			elseif Input == "Fuze" then
 				self.SetFuze = Bool and math.abs(Value) or nil
@@ -215,8 +225,8 @@ do -- Metamethods --------------------------------
 					self:Unload()
 				end
 			elseif Input == "Reload" then
-				if Bool and self.State ~= "Reloading" then
-					self:Reload(true)
+				if Bool and self.State ~= "Reloading" and self.State ~= "Unloading" then
+					self:Load()
 				end
 			end
 		end
@@ -268,38 +278,33 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:CanFire()
-			if not IsValid(self) then return false end
-			if self.Disabled then return false end
-			if self.State ~= "Loaded" then
-				if self.State == "Empty" then
-					self:Reload()
+			if not IsValid(self) then return false end -- Weapon doesn't exist
+			if not self.Firing then return false end -- Nobody is holding the trigger
+			if self.Disabled then return false end -- Disabled
+			if self.State ~= "Loaded" then -- Weapon is not loaded
+				if self.State == "Empty" and not self.Retry then
+					if not self:Load() then
+						self:EmitSound("weapons/pistol/pistol_empty.wav", 500, 100) -- Click!
+					end
+
+					self.Retry = true
+
+					timer.Simple(1, function() -- Try again after a second
+						if IsValid(self) then
+							self.Retry = nil
+
+							if self:CanFire() then
+								self:Shoot()
+							end
+						end
+					end)
 				end
 
 				return false
 			end
+			if HookRun("ACF_FireShell", self) == false then return false end -- Something hooked into ACF_FireShell said no
 
-			if HookRun("ACF_FireShell", self) == false then return end
-
-			return CheckLegal(self)
-		end
-
-		function ENT:AttemptFire()
-			if self:CanFire() then
-				self:Shoot()
-			elseif not self.Retry and self.State ~= "Reloading" then -- Dont bother trying again when loading/unloading, gun will try again when finished
-				self:EmitSound("weapons/pistol/pistol_empty.wav", 500, 100) -- Click!
-				self.Retry = true
-
-				timer.Simple(1, function()
-					if IsValid(self) then
-						self.Retry = nil
-
-						if self.Firing then
-							self:AttemptFire()
-						end
-					end
-				end)
-			end
+			return true
 		end
 
 		function ENT:GetSpread()
@@ -322,12 +327,21 @@ do -- Metamethods --------------------------------
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 
 			ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData) -- Spawn projectile
-
-			self.CurrentShot = self.CurrentShot - 1
-
 			self:MuzzleEffect()
 			self:Recoil()
-			self:Reload()
+
+			if self.MagSize then -- Mag-fed/Automatically loaded
+				self.CurrentShot = self.CurrentShot - 1
+
+				if self.CurrentShot > 0 then -- Not empty
+					self:Chamber(self.Cyclic)
+				else -- Reload the magazine
+					self:Load()
+				end
+			else -- Single-shot/Manually loaded
+				self.CurrentShot = 0 -- We only have one shot, so shooting means we're at 0
+				self:Chamber()
+			end
 		end
 
 		function ENT:MuzzleEffect()
@@ -339,11 +353,11 @@ do -- Metamethods --------------------------------
 			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
 		end
 
-		function ENT:ReloadEffect()
+		function ENT:ReloadEffect(Time)
 			local Effect = EffectData()
 				Effect:SetEntity(self)
 				Effect:SetScale(0)
-				Effect:SetMagnitude(self.ReloadTime)
+				Effect:SetMagnitude(Time)
 
 			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
 		end
@@ -377,98 +391,109 @@ do -- Metamethods --------------------------------
 			return Select.Load and Select
 		end
 
-		function ENT:Unload()
+		function ENT:Unload(Reload)
 			if self.Disabled then return end
+			if IsValid(self.CurrentCrate) then self.CurrentCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
-			self:SetState("Reloading")
+			local Time = self.MagReload or self.ReloadTime
 
-			self.CurrentShot = 0
-			self.ReloadTime = self.ReloadTime * 0.5
+			self:ReloadEffect(Reload and Time * 2 or Time)
+			self:SetState("Unloading")
 			self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+			self.CurrentShot = 0
+			self.BulletData  = EMPTY
 
-			self:ReloadEffect()
-
-			timer.Simple(self.ReloadTime, function()
+			timer.Simple(Time, function()
 				if IsValid(self) then
-					self:SetState("Empty")
-
-					self.ReloadTime = self.ReloadTime * 2
+					if Reload then
+						self:Load()
+					else
+						self:SetState("Empty")
+					end
 				end
 			end)
 		end
 
-		function ENT:Reload(ForceReload)
+		function ENT:Chamber(TimeOverride)
 			if self.Disabled then return end
 
 			local Crate = FindNextCrate(self)
 
-			if IsValid(Crate) then -- Have a crate, start reloading
-				self:SetState("Reloading")
+			if IsValid(Crate) then -- Have a crate, start loading
+				self:SetState("Loading") -- Set our state to loading
+				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
+
+				local BulletData = Crate.BulletData
+				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime)
 
 				self.CurrentCrate = Crate
+				self.ReloadTime   = Time
+				self.BulletData   = BulletData
+				self.NextFire 	  = CurTime() + Time
 
-				self.BulletData = Crate.BulletData
-				self.ReloadTime = ((math.max(self.BulletData.RoundVolume, self.MinLengthBonus) / 500) ^ 0.60) * self.RoFmod * self.PGRoFmod
-
-				if not ForceReload then
-					self.CurrentCrate:Consume()
-				else
-					self:ReloadEffect()
+				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
+					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
+					WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
 				end
 
-				-- Are we reloading mag or individual rounds? --
-				local Time
-
-				if ForceReload or self.CurrentShot == 0 then -- if ForceReload or (self.MagReload and self.CurrentShot == 0) then
-					Time = self.MagReload or self.ReloadTime
-
-					self.OnReload = true
-
-					WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-				else
-					Time = self.ReloadTime
-				end
-
-				self.NextFire = CurTime() + Time
-
-				------------------------------------------------
-
-				timer.Simple(Time, function() -- Reload timer
+				timer.Simple(Time, function()
 					if IsValid(self) then
 						self:SetState("Loaded")
-
-						if self.OnReload then
-							self.CurrentShot = self.MagSize
-							self.OnReload = nil
-						end
-
-						local Variance 	= math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
-
-						self.Fuze 	  = (self.BulletData.CanFuze and self.SetFuze) and math.max(self.SetFuze, 0.02) + Variance or nil -- Set fuze when done reloading
 						self.NextFire = nil
 
-						WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
-						WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
+						if self.BulletData.CanFuze and self.SetFuze then
+							local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+
+							self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- Set fuze when done loading a round
+						else
+							self.Fuze = nil
+						end
+
+						if self.CurrentShot == 0 then
+							self.CurrentShot = self.MagSize
+						end
+
 						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 						WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
 						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
 
-						if self.Firing then self:AttemptFire() end
+						if self:CanFire() then self:Shoot() end
 					end
 				end)
-			else -- No available crate to pull ammo from, out of ammo!
-				self.CurrentShot = 0
-				self.BulletData = {
-					Type = "Empty",
-					PropMass = 0,
-					ProjMass = 0,
-					Tracer = 0,
-				}
-
+			else -- No available crate to pull ammo from, out of ammo!				
 				self:SetState("Empty")
 
-				WireLib.TriggerOutput(self, "Shots Left", 0)
+				self.CurrentShot = 0
+				self.BulletData  = EMPTY
 			end
+		end
+
+		function ENT:Load()
+			if self.Disabled then return false end
+			if not FindNextCrate(self) then -- Can't load without having ammo being provided
+				self:SetState("Empty")
+
+				self.CurrentShot = 0
+				self.BulletData  = EMPTY
+
+				return false
+			end
+
+			self:SetState("Loading")
+
+			if self.MagReload then -- Mag-fed/Automatically loaded
+				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+
+				timer.Simple(self.MagReload, function() -- Reload timer
+					if IsValid(self) then
+						self:Chamber(self.Cyclic) -- One last timer to chamber the round
+					end
+				end)
+			else -- Single-shot/Manually loaded
+				self:Chamber()
+			end
+
+			return true
 		end
 	end -----------------------------------------
 
