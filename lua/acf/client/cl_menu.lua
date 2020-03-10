@@ -3,9 +3,20 @@ local Lookup = {}
 local Count = 0
 
 do -- Menu population functions
-	local function DefaultAction(Panel)
-		Panel:AddTitle("There's nothing here.")
-		Panel:AddLabel("This option is either a work in progress or something isn't working as intended.")
+	local function DefaultAction(Menu)
+		Menu:AddTitle("There's nothing here.")
+		Menu:AddLabel("This option is either a work in progress or something isn't working as intended.")
+	end
+
+	local function MissilesMenu(Menu)
+		Menu:AddTitle("ACF-3 Missiles is not installed.")
+		Menu:AddLabel("This option requires ACF-3 Missiles to be installed. You can get it here:")
+
+		local Link = Menu:AddButton("ACF-3 Missiles Repository")
+
+		function Link:DoClickInternal()
+			gui.OpenURL("https://github.com/TwistedTail/ACF-3-Missiles")
+		end
 	end
 
 	function ACF.AddOption(Name, Icon)
@@ -57,13 +68,13 @@ do -- Menu population functions
 
 	-- Small workaround to give the correct order to the items
 	ACF.AddOption("About the Addon", "information")
-	ACF.AddOptionItem("About the Addon", "Guidelines", "book_open")
+	ACF.AddOptionItem("About the Addon", "Online Wiki", "book_open")
 	ACF.AddOptionItem("About the Addon", "Updates", "newspaper")
 	ACF.AddOptionItem("About the Addon", "Contact Us", "feed")
 
 	ACF.AddOption("Entities", "brick")
 	ACF.AddOptionItem("Entities", "Weapons", "gun")
-	ACF.AddOptionItem("Entities", "Missiles", "wand")
+	ACF.AddOptionItem("Entities", "Missiles", "wand", MissilesMenu)
 	ACF.AddOptionItem("Entities", "Mobility", "car")
 	ACF.AddOptionItem("Entities", "Sensors", "transmit")
 	ACF.AddOptionItem("Entities", "Components", "cog")
