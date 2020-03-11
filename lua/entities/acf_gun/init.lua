@@ -26,6 +26,8 @@ do -- Spawn Func --------------------------------
 		local EID    = List.Guns[Id] and Id or "50mmC"
 		local Lookup = List.Guns[EID]
 		local Ext  = Lookup.gunclass == "SL" and "_acf_smokelauncher" or "_acf_gun"
+		local ClassData = ACF.Classes.GunClass[Lookup.gunclass]
+		local Caliber   = Lookup.caliber
 
 		if not Player:CheckLimit(Ext) then return false end -- Check gun spawn limits
 
@@ -47,11 +49,13 @@ do -- Spawn Func --------------------------------
 
 		Gun.Id           = Id -- MUST be stored on ent to be duped
 		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Inputs  	 = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
 		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
-		local ClassData = ACF.Classes.GunClass[Lookup.gunclass]
-		local Caliber   = Lookup.caliber
+		if Caliber > ACF.MinFuzeCaliber then
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
+		else
+			Gun.Inputs = WireLib.CreateInputs(Gun, {"Fire", "Unload", "Reload", "Fuze"})
+		end
 
 		-- ACF Specific vars
 		Gun.BarrelFilter 	= { Gun }
