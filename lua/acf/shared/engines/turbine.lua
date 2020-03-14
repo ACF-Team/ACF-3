@@ -255,4 +255,282 @@ ACF_DefineEngine( "Turbine-Large-Ground-Trans", {
 	pitch = 1.35
 } )
 
+ACF.RegisterEngineClass("GT", {
+	Name		= "Gas Turbine",
+	Description	= "These turbines are optimized for aero use due to them being powerful but suffering from poor throttle response and fuel consumption."
+})
 
+do -- Forward-facing Gas Turbines
+	ACF.RegisterEngine("Turbine-Small", "GT", {
+		Name		 = "Gas Turbine, Small",
+		Description	 = "A small gas turbine, high power and a very wide powerband.",
+		Model		 = "models/engines/gasturbine_s.mdl",
+		Sound		 = "acf_engines/turbine_small.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 200,
+		Torque		 = 550,
+		FlywheelMass = 2.9,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 1400,
+			PeakMin	 = 1000,
+			PeakMax	 = 1500,
+			Limit	 = 10000,
+			Override = 4167,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Medium", "GT", {
+		Name		 = "Gas Turbine, Medium",
+		Description	 = "A medium gas turbine, moderate power but a very wide powerband.",
+		Model		 = "models/engines/gasturbine_m.mdl",
+		Sound		 = "acf_engines/turbine_medium.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 400,
+		Torque		 = 813,
+		FlywheelMass = 4.3,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 1800,
+			PeakMin	 = 1200,
+			PeakMax	 = 1800,
+			Limit	 = 12000,
+			Override = 5000,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Large", "GT", {
+		Name		 = "Gas Turbine, Large",
+		Description	 = "A large gas turbine, powerful with a wide powerband.",
+		Model		 = "models/engines/gasturbine_l.mdl",
+		Sound		 = "acf_engines/turbine_large.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 1100,
+		Torque		 = 1990,
+		FlywheelMass = 10.5,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 2000,
+			PeakMin	 = 1350,
+			PeakMax	 = 2025,
+			Limit	 = 13500,
+			Override = 5625,
+		}
+	})
+end
+
+do -- Transaxial Gas Turbines
+	ACF.RegisterEngine("Turbine-Small-Trans", "GT", {
+		Name		 = "Gas Turbine, Small, Transaxial",
+		Description	 = "A small gas turbine, high power and a very wide powerband. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_s.mdl",
+		Sound		 = "acf_engines/turbine_small.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 160,
+		Torque		 = 440,
+		FlywheelMass = 2.3,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		RPM = {
+			Idle	 = 1400,
+			PeakMin	 = 1000,
+			PeakMax	 = 1500,
+			Limit	 = 10000,
+			Override = 4167,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Medium-Trans", "GT", {
+		Name		 = "Gas Turbine, Medium, Transaxial",
+		Description	 = "A medium gas turbine, moderate power but a very wide powerband. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_m.mdl",
+		Sound		 = "acf_engines/turbine_medium.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 320,
+		Torque		 = 650,
+		FlywheelMass = 3.4,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		RPM = {
+			Idle	 = 1800,
+			PeakMin	 = 1200,
+			PeakMax	 = 1800,
+			Limit	 = 12000,
+			Override = 5000,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Large-Trans", "GT", {
+		Name		 = "Gas Turbine, Large, Transaxial",
+		Description	 = "A large gas turbine, powerful with a wide powerband. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_l.mdl",
+		Sound		 = "acf_engines/turbine_large.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Turbine",
+		Mass		 = 880,
+		Torque		 = 1592,
+		FlywheelMass = 8.4,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		RPM = {
+			Idle	 = 2000,
+			PeakMin	 = 1350,
+			PeakMax	 = 2025,
+			Limit	 = 13500,
+			Override = 5625,
+		}
+	})
+end
+
+ACF.RegisterEngineClass("GGT", {
+	Name		= "Ground Gas Turbine",
+	Description	= "Ground-use turbines have excellent low-rev performance and are deceptively powerful. However, they have sluggish throttle response, high gearbox demands, high fuel usage, and low tolerance to damage."
+})
+
+do -- Forward-facing Ground Gas Turbines
+	ACF.RegisterEngine("Turbine-Ground-Small", "GGT", {
+		Name		 = "Ground Gas Turbine, Small",
+		Description	 = "A small gas turbine, fitted with ground-use air filters and tuned for ground use.",
+		Model		 = "models/engines/gasturbine_s.mdl",
+		Sound		 = "acf_engines/turbine_small.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial",
+		Mass		 = 350,
+		Torque		 = 800,
+		FlywheelMass = 14.3,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 700,
+			PeakMin	 = 1000,
+			PeakMax	 = 1350,
+			Limit	 = 3000,
+			Override = 1667,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Ground-Medium", "GGT", {
+		Name		 = "Ground Gas Turbine, Medium",
+		Description	 = "A medium gas turbine, fitted with ground-use air filters and tuned for ground use.",
+		Model		 = "models/engines/gasturbine_m.mdl",
+		Sound		 = "acf_engines/turbine_medium.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial", --This is done to give proper fuel consumption and make the turbines not instant-torque from idle
+		Mass		 = 600,
+		Torque		 = 1200,
+		FlywheelMass = 29.6,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		Pitch		 = 1.15,
+		RPM = {
+			Idle	 = 600,
+			PeakMin	 = 1500,
+			PeakMax	 = 2000,
+			Limit	 = 3000,
+			Override = 1450,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Ground-Large", "GGT", {
+		Name		 = "Ground Gas Turbine, Large",
+		Description	 = "A large gas turbine, fitted with ground-use air filters and tuned for ground use.",
+		Model		 = "models/engines/gasturbine_l.mdl",
+		Sound		 = "acf_engines/turbine_large.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial",
+		Mass		 = 1650,
+		Torque		 = 4000,
+		FlywheelMass = 75,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		Pitch		 = 1.35,
+		RPM = {
+			Idle	 = 500,
+			PeakMin	 = 1000,
+			PeakMax	 = 1250,
+			Limit	 = 3000,
+			Override = 1250,
+		}
+	})
+end
+
+do -- Transaxial Ground Gas Turbines
+	ACF.RegisterEngine("Turbine-Small-Ground-Trans", "GGT", {
+		Name		 = "Ground Gas Turbine, Small, Transaxial",
+		Description	 = "A small gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_s.mdl",
+		Sound		 = "acf_engines/turbine_small.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial",
+		Mass		 = 280,
+		Torque		 = 600,
+		FlywheelMass = 11.4,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		RPM = {
+			Idle	 = 700,
+			PeakMin	 = 1000,
+			PeakMax	 = 1350,
+			Limit	 = 3000,
+			Override = 1667,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Medium-Ground-Trans", "GGT", {
+		Name		 = "Ground Gas Turbine, Medium, Transaxial",
+		Description	 = "A medium gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_m.mdl",
+		Sound		 = "acf_engines/turbine_medium.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial",
+		Mass		 = 480,
+		Torque		 = 900,
+		FlywheelMass = 23.7,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		Pitch		 = 1.15,
+		RPM = {
+			Idle	 = 600,
+			PeakMin	 = 1500,
+			PeakMax	 = 2000,
+			Limit	 = 3000,
+			Override = 1450,
+		}
+	})
+
+	ACF.RegisterEngine("Turbine-Large-Ground-Trans", "GGT", {
+		Name		 = "Ground Gas Turbine, Large, Transaxial",
+		Description	 = "A large gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
+		Model		 = "models/engines/turbine_l.mdl",
+		Sound		 = "acf_engines/turbine_large.wav",
+		Fuel		 = "Multifuel",
+		Type		 = "Radial",
+		Mass		 = 1320,
+		Torque		 = 3000,
+		FlywheelMass = 60,
+		RequiresFuel = true,
+		IsElectric	 = true,
+		IsTrans		 = true,
+		Pitch		 = 1.35,
+		RPM = {
+			Idle	 = 500,
+			PeakMin	 = 1000,
+			PeakMax	 = 1250,
+			Limit	 = 3000,
+			Override = 1250,
+		}
+	})
+end

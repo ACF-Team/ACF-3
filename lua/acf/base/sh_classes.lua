@@ -174,3 +174,58 @@ do -- Ammo type registration function
 		return RegisterClass(ID, Base, Types)
 	end
 end
+
+do -- Engine registration functions
+	ACF.Classes.Engines = ACF.Classes.Engines or {}
+
+	local Engines = ACF.Classes.Engines
+
+	function ACF.RegisterEngineClass(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local Class = Engines[ID]
+
+		if not Class then
+			Class = {
+				ID = ID,
+				Lookup = {},
+				Items = {},
+				Count = 0,
+			}
+
+			Engines[ID] = Class
+		end
+
+		for K, V in pairs(Data) do
+			Class[K] = V
+		end
+	end
+
+	function ACF.RegisterEngine(ID, ClassID, Data)
+		if not ID then return end
+		if not ClassID then return end
+		if not Data then return end
+		if not Engines[ClassID] then return end
+
+		local Class  = Engines[ClassID]
+		local Engine = Class.Lookup[ID]
+
+		if not Engine then
+			Engine = {
+				ID = ID,
+				Class = Class,
+				ClassID = ClassID,
+				EntClass = "acf_engine",
+			}
+
+			Class.Count = Class.Count + 1
+			Class.Items[Class.Count] = Engine
+			Class.Lookup[ID] = Engine
+		end
+
+		for K, V in pairs(Data) do
+			Engine[K] = V
+		end
+	end
+end

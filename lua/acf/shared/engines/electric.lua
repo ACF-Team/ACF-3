@@ -137,3 +137,140 @@ ACF_DefineEngine( "Electric-Large-NoBatt", {
 	iselec = true,
 	flywheeloverride = 6000
 } )
+
+do -- Electric Motors
+	ACF.RegisterEngineClass("EL", {
+		Name		= "Electric Motor",
+		Description	= "Electric motors provide huge amounts of torque, but are very heavy.",
+	})
+
+	ACF.RegisterEngine("Electric-Small", "EL", {
+		Name		 = "Small Electric Motor",
+		Description	 = "A small electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotorsmall.mdl",
+		Sound		 = "acf_engines/electric_small.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 250,
+		Torque		 = 384,
+		FlywheelMass = 0.3,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 10000,
+			Override = 5000,
+		},
+	})
+
+	ACF.RegisterEngine("Electric-Medium", "EL", {
+		Name		 = "Medium Electric Motor",
+		Description	 = "A medium electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotormed.mdl",
+		Sound		 = "acf_engines/electric_medium.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 850,
+		Torque		 = 1152,
+		FlywheelMass = 1.5,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 7000,
+			Override = 8000,
+		}
+	})
+
+	ACF.RegisterEngine("Electric-Large", "EL", {
+		Name		 = "Large Electric Motor",
+		Description	 = "A huge electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotorlarge.mdl",
+		Sound		 = "acf_engines/electric_large.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 1900,
+		Torque		 = 3360,
+		FlywheelMass = 11.2,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 4500,
+			Override = 6000,
+		},
+	})
+end
+
+do -- Electric Standalone Motors
+	ACF.RegisterEngineClass("EL-S", {
+		Name		= "Electric Standalone Motor",
+		Description	= "Electric motors provide huge amounts of torque, but are very heavy. Standalones also require external batteries.",
+	})
+
+	ACF.RegisterEngine("Electric-Small-NoBatt", "EL-S", {
+		Name		 = "Small Electric Standalone Motor",
+		Description	 = "A small standalone electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotor-standalone-sml.mdl",
+		Sound		 = "acf_engines/electric_small.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 125,
+		Torque		 = 384,
+		FlywheelMass = 0.3,
+		iselec		 = true,
+		RequiresFuel = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 10000,
+			Override = 5000,
+		}
+	})
+
+	ACF.RegisterEngine("Electric-Medium-NoBatt", "EL-S", {
+		Name		 = "Medium",
+		Description	 = "A medium standalone electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotor-standalone-mid.mdl",
+		Sound		 = "acf_engines/electric_medium.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 575,
+		Torque		 = 1152,
+		FlywheelMass = 1.5,
+		IsElectric	 = true,
+		RequiresFuel = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 7000,
+			Override = 8000,
+		},
+	})
+
+	ACF.RegisterEngine( "Electric-Large-NoBatt", {
+		Name		 = "Large Electric Standalone Motor",
+		Description	 = "A huge standalone electric motor, loads of torque, but low power.",
+		Model		 = "models/engines/emotor-standalone-big.mdl",
+		Sound		 = "acf_engines/electric_large.wav",
+		Fuel		 = "Electric",
+		Type		 = "Electric",
+		Mass		 = 1500,
+		Torque		 = 3360,
+		FlywheelMass = 11.2,
+		IsElectric	 = true,
+		RequiresFuel = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 4500,
+			Override = 6000,
+		}
+	})
+end

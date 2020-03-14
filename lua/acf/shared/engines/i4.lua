@@ -106,3 +106,119 @@ ACF_DefineEngine( "15.0-I4", {
 	peakmaxrpm = 1800,
 	limitrpm = 2100
 } )
+
+ACF.RegisterEngineClass("I4", {
+	Name = "Inline 4 Engine",
+})
+
+do -- Petrol Engines
+	ACF.RegisterEngine("1.5-I4", "I4", {
+		Name		 = "1.5L I4 Petrol",
+		Description	 = "Small car engine, not a whole lot of git.",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_engines/i4_petrolsmall2.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 50,
+		Torque		 = 90,
+		FlywheelMass = 0.06,
+		RPM = {
+			Idle	= 900,
+			PeakMin	= 4000,
+			PeakMax	= 6500,
+			Limit	= 7500,
+		}
+	})
+
+	ACF.RegisterEngine("3.7-I4", "I4", {
+		Name		 = "3.7L I4 Petrol",
+		Description	 = "Large inline 4, sees most use in light trucks.",
+		Model		 = "models/engines/inline4m.mdl",
+		Sound		 = "acf_engines/i4_petrolmedium2.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 200,
+		Torque		 = 240,
+		FlywheelMass = 0.2,
+		RPM = {
+			Idle	= 900,
+			PeakMin	= 3700,
+			PeakMax	= 6000,
+			Limit	= 6500
+		}
+	})
+
+	ACF.RegisterEngine("16.0-I4", "I4", {
+		Name		 = "16.0L I4 Petrol",
+		Description	 = "Giant, thirsty I4 petrol, most commonly used in boats.",
+		Model		 = "models/engines/inline4l.mdl",
+		Sound		 = "acf_engines/i4_petrollarge.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 600,
+		Torque		 = 850,
+		FlywheelMass = 4,
+		RPM = {
+			Idle	= 500,
+			PeakMin	= 1750,
+			PeakMax	= 3250,
+			Limit	= 3500,
+		}
+	})
+end
+
+do -- Diesel Engines
+	ACF.RegisterEngine("1.6-I4", "I4", {
+		Name		 = "1.6L I4 Diesel",
+		Description	 = "Small and light diesel, for low power applications requiring a wide powerband.",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_engines/i4_diesel2.wav",
+		Fuel		 = "Diesel",
+		Type		 = "GenericDiesel",
+		Mass		 = 90,
+		Torque		 = 150,
+		FlywheelMass = 0.2,
+		RPM = {
+			Idle	= 650,
+			PeakMin	= 1000,
+			PeakMax	= 3000,
+			Limit	= 5000,
+		}
+	})
+
+	ACF.RegisterEngine("3.1-I4", "I4", {
+		Name		 = "3.1L I4 Diesel",
+		Description	 = "Light truck duty diesel, good overall grunt.",
+		Model		 = "models/engines/inline4m.mdl",
+		Sound		 = "acf_engines/i4_dieselmedium.wav",
+		Fuel		 = "Diesel",
+		Type		 = "GenericDiesel",
+		Mass		 = 250,
+		Torque		 = 320,
+		FlywheelMass = 1,
+		RPM = {
+			Idle	= 500,
+			PeakMin	= 1150,
+			PeakMax	= 3500,
+			Limit	= 4000,
+		}
+	})
+
+	ACF.RegisterEngine("15.0-I4", "I4", {
+		Name		 = "15.0L I4 Diesel",
+		Description	 = "Small boat sized diesel, with large amounts of torque.",
+		Model		 = "models/engines/inline4l.mdl",
+		Sound		 = "acf_engines/i4_diesellarge.wav",
+		Fuel		 = "Diesel",
+		Type		 = "GenericDiesel",
+		Mass		 = 800,
+		Torque		 = 1400,
+		FlywheelMass = 5,
+		RPM = {
+			Idle	= 450,
+			PeakMin	= 500,
+			PeakMax	= 1800,
+			Limit	= 2100,
+		}
+	})
+end

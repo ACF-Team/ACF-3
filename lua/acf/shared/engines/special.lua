@@ -201,3 +201,235 @@ ACF_DefineEngine( "3.0-V12", {
 	limitrpm = 12500
 } )
 
+ACF.RegisterEngineClass("SP", {
+	Name = "Special Engine",
+})
+
+do -- Special Rotary Engines
+	ACF.RegisterEngine("2.6L-Wankel", "SP", {
+		Name		 = "2.6L Rotary",
+		Description	 = "4 rotor racing Wankel, high revving and high strung.",
+		Model		 = "models/engines/wankel_4_med.mdl",
+		Sound		 = "acf_engines/wankel_large.wav",
+		Fuel		 = "Petrol",
+		Type		 = "Wankel",
+		Mass		 = 260,
+		Torque		 = 250,
+		FlywheelMass = 0.11,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 1200,
+			PeakMin	= 4500,
+			PeakMax	= 9000,
+			Limit	= 9500,
+		}
+	})
+end
+
+do -- Special I2 Engines
+	ACF.RegisterEngine("0.9L-I2", "SP", {
+		Name		 = "0.9L I2 Petrol",
+		Description	 = "Turbocharged inline twin engine that delivers surprising pep for its size.",
+		Model		 = "models/engines/inline2s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/ponyengine.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 60,
+		Torque		 = 116,
+		FlywheelMass = 0.085,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 750,
+			PeakMin	= 3125,
+			PeakMax	= 5100,
+			Limit	= 6000,
+		}
+	})
+end
+
+do -- Special I4 Engines
+	ACF.RegisterEngine("1.0L-I4", "SP", {
+		Name		 = "1.0L I4 Petrol",
+		Description	 = "Tiny I4 designed for racing bikes. Doesn't pack much torque, but revs ludicrously high.",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/l4/mini_onhigh.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 78,
+		Torque		 = 68,
+		FlywheelMass = 0.031,
+		RequiresFuel = true,
+		Pitch		 = 0.75,
+		RPM = {
+			Idle	= 1200,
+			PeakMin	= 7500,
+			PeakMax	= 11500,
+			Limit	= 12000,
+		}
+	})
+
+	ACF.RegisterEngine("1.9L-I4", "SP", {
+		Name		 = "1.9L I4 Petrol",
+		Description	 = "Supercharged racing 4 cylinder, most of the power in the high revs.",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_engines/i4_special.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 150,
+		Torque		 = 176,
+		FlywheelMass = 0.06,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 950,
+			PeakMin	= 5200,
+			PeakMax	= 8500,
+			Limit	= 9000,
+		}
+	})
+end
+
+do -- Special V4 Engines
+	ACF.RegisterEngine("1.8L-V4", "SP", {
+		Name		 = "1.8L V4 Petrol",
+		Description	 = "Naturally aspirated rally-tuned V4 with enlarged bore and stroke.",
+		Model		 = "models/engines/v4s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/l4/elan_onlow.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 92,
+		Torque		 = 124.8,
+		FlywheelMass = 0.04,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 900,
+			PeakMin	= 4600,
+			PeakMax	= 7000,
+			Limit	= 7500,
+		}
+	})
+end
+
+do -- Special I6 Engines
+	ACF.RegisterEngine("3.8-I6", "SP", {
+		Name		 = "3.8L I6 Petrol",
+		Description	 = "Large racing straight six, powerful and high revving, but lacking in torque.",
+		Model		 = "models/engines/inline6m.mdl",
+		Sound		 = "acf_engines/l6_special.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 180,
+		Torque		 = 224,
+		FlywheelMass = 0.1,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 1100,
+			PeakMin	= 5200,
+			PeakMax	= 8500,
+			Limit	= 9000,
+		}
+	})
+end
+
+do -- Special V6 Engines
+	ACF.RegisterEngine("2.4L-V6", "SP", {
+		Name		 = "2.4L V6 Petrol",
+		Description	 = "Although the cast iron engine block is fairly weighty, this tiny v6 makes up for it with impressive power.  The unique V angle allows uncharacteristically high RPM for a V6.",
+		Model		 = "models/engines/v6small.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/l6/capri_onmid.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 134,
+		Torque		 = 172,
+		FlywheelMass = 0.075,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 950,
+			PeakMin	= 4500,
+			PeakMax	= 7100,
+			Limit	= 8000,
+		}
+	})
+end
+
+do -- Special V8 Engines
+	ACF.RegisterEngine("2.9-V8", "SP", {
+		Name		 = "2.9L V8 Petrol",
+		Description	 = "Racing V8, very high revving and loud",
+		Model		 = "models/engines/v8s.mdl",
+		Sound		 = "acf_engines/v8_special.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 180,
+		Torque		 = 200,
+		FlywheelMass = 0.075,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 1000,
+			PeakMin	= 5500,
+			PeakMax	= 9000,
+			Limit	= 10000,
+		}
+	})
+
+	ACF.RegisterEngine("7.2-V8", "SP", {
+		Name		 = "7.2L V8 Petrol",
+		Description	 = "Very high revving, glorious v8 of ear rapetasticalness.",
+		Model		 = "models/engines/v8m.mdl",
+		Sound		 = "acf_engines/v8_special2.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 400,
+		Torque		 = 340,
+		FlywheelMass = 0.15,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 1000,
+			PeakMin	= 5000,
+			PeakMax	= 8000,
+			Limit	= 8500,
+		}
+	})
+end
+
+do -- Special V10 Engines
+	ACF.RegisterEngine("5.3-V10", "SP", {
+		Name		 = "5.3L V10 Special",
+		Description	 = "Extreme performance v10",
+		Model		 = "models/engines/v10sml.mdl",
+		Sound		 = "acf_engines/v10_special.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 300,
+		Torque		 = 320,
+		FlywheelMass = 0.15,
+		RequiresFuel = true,
+		RPM = {
+			Idle	= 1100,
+			PeakMin	= 5750,
+			PeakMax	= 8000,
+			Limit	= 9000,
+		}
+	})
+end
+
+do -- Special V12 Engines
+	ACF.RegisterEngine("3.0-V12", "SP", {
+		Name		 = "3.0L V12 Petrol",
+		Description	 = "A purpose-built racing v12, not known for longevity.",
+		Model		 = "models/engines/v12s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 175,
+		Torque		 = 248,
+		FlywheelMass = 0.1,
+		RequiresFuel = true,
+		Pitch		 = 0.85,
+		RPM = {
+			Idle	= 1200,
+			PeakMin	= 6875,
+			PeakMax	= 11000,
+			Limit	= 12500,
+		}
+	})
+end

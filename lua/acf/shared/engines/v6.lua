@@ -85,3 +85,102 @@ ACF_DefineEngine( "15.0-V6", {
 	peakmaxrpm = 1950,
 	limitrpm = 3100
 } )
+
+ACF.RegisterEngineClass("V6", {
+	Name		= "V6 Engine",
+	Description	= "V6s are more torquey than the Boxer and Inline 6s but suffer in power."
+})
+
+do -- Petrol Engines
+	ACF.RegisterEngine("3.6-V6", "V6", {
+		Name		 = "3.6L V6 Petrol",
+		Description	 = "Meaty Car sized V6, lots of torque.",
+		Model		 = "models/engines/v6small.mdl",
+		Sound		 = "acf_engines/v6_petrolsmall.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 190,
+		Torque		 = 253,
+		FlywheelMass = 0.25,
+		RPM = {
+			Idle	= 700,
+			PeakMin	= 2200,
+			PeakMax	= 3500,
+			Limit	= 5000,
+		}
+	})
+
+	ACF.RegisterEngine("6.2-V6", "V6", {
+		Name		 = "6.2L V6 Petrol",
+		Description	 = "Heavy duty 6V71 v6, throatier than an LA whore, but loaded with torque.",
+		Model		 = "models/engines/v6med.mdl",
+		Sound		 = "acf_engines/v6_petrolmedium.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 360,
+		Torque		 = 472,
+		FlywheelMass = 0.45,
+		RPM = {
+			Idle	= 800,
+			PeakMin	= 2200,
+			PeakMax	= 3600,
+			Limit	= 5000,
+		}
+	})
+
+	ACF.RegisterEngine("12.0-V6", "V6", {
+		Name		 = "12.0L V6 Petrol",
+		Description	 = "Fuck duty V6, guts ripped from god himself diluted in salt and shaped into an engine.",
+		Model		 = "models/engines/v6large.mdl",
+		Sound		 = "acf_engines/v6_petrollarge.wav",
+		Fuel		 = "Petrol",
+		Type		 = "GenericPetrol",
+		Mass		 = 675,
+		Torque		 = 1445,
+		FlywheelMass = 4,
+		RPM = {
+			Idle	= 600,
+			PeakMin	= 1575,
+			PeakMax	= 2650,
+			Limit	= 3800,
+		}
+	})
+end
+
+do -- Diesel Engines
+	ACF.RegisterEngine("5.2-V6", "V6", {
+		Name		 = "5.2L V6 Diesel",
+		Description	 = "Light AFV-grade two-stroke diesel, high output but heavy.",
+		Model		 = "models/engines/v6med.mdl",
+		Sound		 = "acf_engines/i5_dieselmedium.wav",
+		Fuel		 = "Diesel",
+		Type		 = "GenericDiesel",
+		Mass		 = 520,
+		Torque		 = 485,
+		FlywheelMass = 0.8,
+		RPM = {
+			Idle	= 650,
+			PeakMin	= 1800,
+			PeakMax	= 4200,
+			Limit	= 4300,
+		}
+	})
+
+	ACF.RegisterEngine("15.0-V6", "V6", {
+		Name		 = "15.0L V6 Diesel",
+		Description	 = "Powerful military-grade large V6, with impressive output. Well suited to medium-sized AFVs.",
+		Model		 = "models/engines/v6large.mdl",
+		Sound		 = "acf_engines/v6_diesellarge.wav",
+		Fuel		 = "Diesel",
+		Type		 = "GenericDiesel",
+		Mass		 = 900,
+		Torque		 = 1767,
+		FlywheelMass = 6.4,
+		RPM = {
+			Idle	= 400,
+			PeakMin	= 1150,
+			PeakMax	= 1950,
+			Limit	= 3100,
+		}
+	})
+end
