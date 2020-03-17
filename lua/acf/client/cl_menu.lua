@@ -75,9 +75,10 @@ do -- Menu population functions
 	ACF.AddOption("Entities", "brick")
 	ACF.AddOptionItem("Entities", "Weapons", "gun")
 	ACF.AddOptionItem("Entities", "Missiles", "wand", MissilesMenu)
-	ACF.AddOptionItem("Entities", "Mobility", "car")
+	ACF.AddOptionItem("Entities", "Engines", "car")
+	ACF.AddOptionItem("Entities", "Gearboxes", "cog")
 	ACF.AddOptionItem("Entities", "Sensors", "transmit")
-	ACF.AddOptionItem("Entities", "Components", "cog")
+	ACF.AddOptionItem("Entities", "Components", "drive")
 end
 
 do -- ACF Menu context panel

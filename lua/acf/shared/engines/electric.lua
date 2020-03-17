@@ -233,7 +233,7 @@ do -- Electric Standalone Motors
 	})
 
 	ACF.RegisterEngine("Electric-Medium-NoBatt", "EL-S", {
-		Name		 = "Medium",
+		Name		 = "Medium Electric Standalone Motor",
 		Description	 = "A medium standalone electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotor-standalone-mid.mdl",
 		Sound		 = "acf_engines/electric_medium.wav",
@@ -253,7 +253,7 @@ do -- Electric Standalone Motors
 		},
 	})
 
-	ACF.RegisterEngine( "Electric-Large-NoBatt", {
+	ACF.RegisterEngine("Electric-Large-NoBatt", "EL-S", {
 		Name		 = "Large Electric Standalone Motor",
 		Description	 = "A huge standalone electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotor-standalone-big.mdl",
