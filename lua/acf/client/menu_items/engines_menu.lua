@@ -1,3 +1,4 @@
+local FuelTanks = ACF.Classes.FuelTanks
 local Engines = ACF.Classes.Engines
 local FuelDensity = ACF.FuelDensity
 local Efficiency = ACF.Efficiency
@@ -101,6 +102,8 @@ local function CreateMenu(Menu)
 	local EngineDesc = Menu:AddLabel()
 	local EngineStats = Menu:AddLabel()
 
+	local FuelList = Menu:AddComboBox()
+
 	ACF.WriteValue("PrimaryClass", "acf_engine")
 	ACF.WriteValue("SecondaryClass", "acf_fueltank")
 
@@ -136,6 +139,7 @@ local function CreateMenu(Menu)
 	end
 
 	LoadSortedList(EngineClass, Engines, "ID")
+	LoadSortedList(FuelList, FuelTanks, "ID")
 end
 
 ACF.AddOptionItem("Entities", "Engines", "car", CreateMenu)

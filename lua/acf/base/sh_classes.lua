@@ -229,3 +229,30 @@ do -- Engine registration functions
 		end
 	end
 end
+
+do -- Fuel tank registration function
+	ACF.Classes.FuelTanks = ACF.Classes.FuelTanks or {}
+
+	local FuelTanks = ACF.Classes.FuelTanks
+
+	function ACF.RegisterFuelTank(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local FuelTank = FuelTanks[ID]
+
+		if not FuelTank then
+			FuelTank = {
+				ID = ID,
+				EntClass = "acf_fueltank",
+				IsExplosive = true,
+			}
+
+			FuelTanks[ID] = FuelTank
+		end
+
+		for K, V in pairs(Data) do
+			FuelTank[K] = V
+		end
+	end
+end
