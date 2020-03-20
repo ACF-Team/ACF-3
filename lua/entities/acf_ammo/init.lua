@@ -542,7 +542,9 @@ do -- Metamethods -------------------------------
 				end
 			end
 
-			if timer.Exists("ACF Crate Cookoff " .. self:EntIndex()) then -- If cooking off then detonate immediately
+			if self.Damaged then -- If cooking off then detonate immediately
+				timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
+
 				ACF_ScaledExplosion(self)
 			end
 
