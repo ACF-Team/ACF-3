@@ -5,6 +5,7 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
+	ACF.MinFuzeCaliber		= 2 -- Minimum caliber that can be fuzed (centimeters)
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
 	ACF.DragDiv 			= 80 --Drag fudge factor

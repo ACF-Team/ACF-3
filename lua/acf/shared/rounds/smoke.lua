@@ -56,7 +56,7 @@ function Round.convert(_, PlayerData)
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet = 60 --Base ricochet angle
 	Data.DetonatorAngle = 80
-	Data.CanFuze = Data.Caliber > 2 -- Can fuze on calibers > 20mm
+	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	if PlayerData.Data7 < 0.5 then
 		PlayerData.Data7 = 0

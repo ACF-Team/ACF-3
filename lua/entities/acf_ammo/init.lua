@@ -541,6 +541,10 @@ do -- Metamethods -------------------------------
 				end
 			end
 
+			if timer.Exists("ACF Crate Cookoff " .. self:EntIndex()) then -- If cooking off then detonate immediately
+				ACF_ScaledExplosion(self)
+			end
+
 			for K in pairs(self.Weapons) do
 				self:Unlink(K)
 			end
