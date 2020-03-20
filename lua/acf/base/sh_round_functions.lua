@@ -59,6 +59,7 @@ local Ignore = {
 	Components = true,
 	AmmoTypes = true,
 	FuelTanks = true,
+	FuelTypes = true,
 	Gearboxes = true,
 	Guidances = true,
 	Engines = true,

@@ -310,3 +310,28 @@ do -- Fuel tank registration functions
 		end
 	end
 end
+
+do -- Fuel type registration function
+	ACF.Classes.FuelTypes = ACF.Classes.FuelTypes or {}
+
+	local Types = ACF.Classes.FuelTypes
+
+	function ACF.RegisterFuelType(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local Type = Types[ID]
+
+		if not Type then
+			Type = {
+				ID = ID,
+			}
+
+			Types[ID] = Type
+		end
+
+		for K, V in pairs(Data) do
+			Type[K] = V
+		end
+	end
+end
