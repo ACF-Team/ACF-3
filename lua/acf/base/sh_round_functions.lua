@@ -55,6 +55,7 @@ local Ignore = {
 	Radar = true,
 	Rack = true,
 	-- New/upcoming
+	EngineTypes = true,
 	Components = true,
 	AmmoTypes = true,
 	FuelTanks = true,

@@ -230,7 +230,32 @@ do -- Engine registration functions
 	end
 end
 
-do -- Fuel tank registration function
+do -- Engine type registration function
+	ACF.Classes.EngineTypes = ACF.Classes.EngineTypes or {}
+
+	local Types = ACF.Classes.EngineTypes
+
+	function ACF.RegisterEngineType(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local Type = Types[ID]
+
+		if not Type then
+			Type = {
+				ID = ID,
+			}
+
+			Types[ID] = Type
+		end
+
+		for K, V in pairs(Data) do
+			Type[K] = V
+		end
+	end
+end
+
+do -- Fuel tank registration functions
 	ACF.Classes.FuelTanks = ACF.Classes.FuelTanks or {}
 
 	local FuelTanks = ACF.Classes.FuelTanks
