@@ -235,20 +235,49 @@ do -- Fuel tank registration function
 
 	local FuelTanks = ACF.Classes.FuelTanks
 
-	function ACF.RegisterFuelTank(ID, Data)
+	function ACF.RegisterFuelTankClass(ID, Data)
 		if not ID then return end
 		if not Data then return end
 
-		local FuelTank = FuelTanks[ID]
+		local Class = FuelTanks[ID]
+
+		if not Class then
+			Class = {
+				ID = ID,
+				Lookup = {},
+				Items = {},
+				Count = 0,
+			}
+
+			FuelTanks[ID] = Class
+		end
+
+		for K, V in pairs(Data) do
+			Class[K] = V
+		end
+	end
+
+	function ACF.RegisterFuelTank(ID, ClassID, Data)
+		if not ID then return end
+		if not ClassID then return end
+		if not Data then return end
+		if not FuelTanks[ClassID] then return end
+
+		local Class  = FuelTanks[ClassID]
+		local FuelTank = Class.Lookup[ID]
 
 		if not FuelTank then
 			FuelTank = {
 				ID = ID,
-				EntClass = "acf_fueltank",
+				Class = Class,
+				ClassID = ClassID,
+				EntClass = "acf_engine",
 				IsExplosive = true,
 			}
 
-			FuelTanks[ID] = FuelTank
+			Class.Count = Class.Count + 1
+			Class.Items[Class.Count] = FuelTank
+			Class.Lookup[ID] = FuelTank
 		end
 
 		for K, V in pairs(Data) do
