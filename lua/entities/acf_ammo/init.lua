@@ -98,10 +98,11 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	end
 
 	local GunClass = ACF.Classes.GunClass[GunData.gunclass]
+	local RoundData = ACF.RoundTypes[Data2]
 
 	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
 	Entity.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
-	Entity.RoundType = Data2 --Type of round, IE AP, HE, HEAT ...
+	Entity.RoundType = RoundData and Data2 or "AP" --Type of round, IE AP, HE, HEAT ...
 	Entity.RoundPropellant = Data3 --Lenght of propellant
 	Entity.RoundProjectile = Data4 --Lenght of the projectile
 	Entity.RoundData5 = Data5 or 0
@@ -111,10 +112,10 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.RoundData9 = Data9 or 0
 	Entity.RoundData10 = Data10 or 0
 
-	Entity.Name = Data1 .. " " .. Data2
+	Entity.Name = Data1 .. " " .. Entity.RoundType
 	Entity.ShortName = Data1
-	Entity.EntType = Data2
-	Entity.RoundData = ACF.RoundTypes[Entity.RoundType]
+	Entity.EntType = Entity.RoundType
+	Entity.RoundData = RoundData or ACF.RoundTypes.AP
 
 	local PlayerData = {
 		Id = Entity.RoundId,
@@ -132,7 +133,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.BulletData = Entity.RoundData.convert(Entity, PlayerData)
 	Entity.BulletData.Crate = Entity:EntIndex()
 
-	if Data2 == "Refill" then
+	if Entity.RoundType == "Refill" then
 		Entity.SupplyingTo = {}
 
 		TimerCreate("ACF Refill " .. Entity:EntIndex(), 1, 0, function()
