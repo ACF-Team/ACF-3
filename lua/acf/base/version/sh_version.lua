@@ -25,6 +25,8 @@ do -- ACF.GetVersion function
 	end
 
 	local function SetRealOwner(Path, Version)
+		if not file.Exists(Path .. "/.git/FETCH_HEAD", "GAME") then return end
+
 		local Fetch = file.Read(Path .. "/.git/FETCH_HEAD", "GAME")
 		local Start, End = Fetch:find("github.com[/]?[:]?[%w_-]+/")
 
