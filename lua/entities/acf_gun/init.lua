@@ -66,7 +66,7 @@ do -- Spawn Func --------------------------------
 		Gun.EntType			= ClassData.name
 		Gun.Caliber			= Caliber
 		Gun.Class			= Lookup.gunclass
-		Gun.MagReload			= Lookup.magreload
+		Gun.MagReload		= Lookup.magreload
 		Gun.MagSize			= Lookup.magsize or 1
 		Gun.Cyclic			= Lookup.Cyclic and 60 / Lookup.Cyclic or nil
 		Gun.ReloadTime		= Gun.Cyclic or 1
@@ -81,8 +81,10 @@ do -- Spawn Func --------------------------------
 		Gun.HitBoxes		= ACF.HitBoxes[Lookup.model]
 		Gun.Long			= ClassData.longbarrel
 		Gun.NormalMuzzle	= Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
-		Gun.LongMuzzle		= Gun.Long and Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos)).Pos)
 		Gun.Muzzle			= Gun.NormalMuzzle
+
+		local Attachment	= Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
+		Gun.LongMuzzle		= Gun.Long and Attachment and Gun:WorldToLocal(Attachment.Pos)
 
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
