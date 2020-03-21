@@ -10,7 +10,8 @@ local Baddies 	  = { -- Ignored by ACF
 	gmod_wire_hologram = true,
 	prop_vehicle_crane = true,
 	prop_dynamic = true,
-	npc_strider = true
+	npc_strider = true,
+	npc_dog = true
 }
 -- Local Funcs ----------------------------------
 
