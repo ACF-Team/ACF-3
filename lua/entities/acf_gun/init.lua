@@ -83,9 +83,6 @@ do -- Spawn Func --------------------------------
 		Gun.NormalMuzzle	= Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
 		Gun.Muzzle			= Gun.NormalMuzzle
 
-		local Attachment	= Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
-		Gun.LongMuzzle		= Gun.Long and Attachment and Gun:WorldToLocal(Attachment.Pos)
-
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
 		Gun:SetNWString("WireName", Lookup.name)
@@ -94,6 +91,10 @@ do -- Spawn Func --------------------------------
 
 		-- Adjustable barrel length
 		if Gun.Long then
+			local Attachment = Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
+
+			Gun.LongMuzzle = Gun:WorldToLocal(Attachment.Pos)
+
 			timer.Simple(0, function()
 				if not IsValid(Gun) then return end
 
