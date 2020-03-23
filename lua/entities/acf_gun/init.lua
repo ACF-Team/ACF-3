@@ -232,8 +232,12 @@ do -- Metamethods --------------------------------
 					self:Unload()
 				end
 			elseif Input == "Reload" then
-				if Bool and self.State ~= "Reloading" and self.State ~= "Unloading" then
-					self:Load()
+				if Bool then
+					if self.State == "Loaded" then
+						self:Unload(true) -- Unload, then reload
+					elseif self.State == "Empty" then
+						self:Load()
+					end
 				end
 			end
 		end
