@@ -93,10 +93,11 @@ do -- Spawn Func --------------------------------
 		if Gun.Long then
 			local Attachment = Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
 
-			Gun.LongMuzzle = Gun:WorldToLocal(Attachment.Pos)
+			Gun.LongMuzzle = Attachment and Gun:WorldToLocal(Attachment.Pos)
 
 			timer.Simple(0, function()
 				if not IsValid(Gun) then return end
+				if not Attachment then return end
 
 				local Long = Gun.Long
 
