@@ -93,10 +93,11 @@ do -- Spawn Func --------------------------------
 		if Gun.Long then
 			local Attachment = Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
 
-			Gun.LongMuzzle = Gun:WorldToLocal(Attachment.Pos)
+			Gun.LongMuzzle = Attachment and Gun:WorldToLocal(Attachment.Pos)
 
 			timer.Simple(0, function()
 				if not IsValid(Gun) then return end
+				if not Attachment then return end
 
 				local Long = Gun.Long
 
@@ -232,8 +233,12 @@ do -- Metamethods --------------------------------
 					self:Unload()
 				end
 			elseif Input == "Reload" then
-				if Bool and self.State ~= "Reloading" and self.State ~= "Unloading" then
-					self:Load()
+				if Bool then
+					if self.State == "Loaded" then
+						self:Unload(true) -- Unload, then reload
+					elseif self.State == "Empty" then
+						self:Load()
+					end
 				end
 			end
 		end
