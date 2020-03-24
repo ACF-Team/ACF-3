@@ -305,6 +305,8 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity:SetBodygroup(1, 0)
 	end
 
+	ChangeGear(Entity, 1)
+
 	Entity:SetNWString("WireName", Entity.Name)
 
 	ACF_Activate(Entity)
