@@ -85,3 +85,49 @@ ACF_DefineGearbox( "Clutch-S-L", {
 		[ -1 ] = 1
 	}
 } )
+
+ACF.RegisterGearboxClass("Clutch", {
+	Name	= "Clutch",
+	Gears = {
+		Min	= 1,
+		Max	= 1,
+	}
+})
+
+do -- Straight-through Gearboxes
+	ACF.RegisterGearbox("Clutch-S-T", "Clutch", {
+		Name		= "Clutch, Straight, Tiny",
+		Description	= CDesc,
+		Model		= "models/engines/flywheelclutcht.mdl",
+		Mass		= CTW,
+		Switch		= 0.1,
+		MaxTorque	= CTT,
+	})
+
+	ACF.RegisterGearbox("Clutch-S-S", "Clutch", {
+		Name		= "Clutch, Straight, Small",
+		Description	= CDesc,
+		Model		= "models/engines/flywheelclutchs.mdl",
+		Mass		= CSW,
+		Switch		= 0.15,
+		MaxTorque	= CST,
+	})
+
+	ACF.RegisterGearbox("Clutch-S-M", "Clutch", {
+		Name		= "Clutch, Straight, Medium",
+		Description	= CDesc,
+		Model		= "models/engines/flywheelclutchm.mdl",
+		Mass		= CMW,
+		Switch		= 0.2,
+		MaxTorque	= CMT,
+	})
+
+	ACF.RegisterGearbox("Clutch-S-L", "Clutch", {
+		Name		= "Clutch, Straight, Large",
+		Description	= CDesc,
+		Model		= "models/engines/flywheelclutchb.mdl",
+		Mass		= CLW,
+		Switch		= 0.3,
+		MaxTorque	= CLT,
+	})
+end

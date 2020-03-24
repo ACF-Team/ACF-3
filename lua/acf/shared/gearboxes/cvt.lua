@@ -322,3 +322,177 @@ ACF_DefineGearbox("CVT-ST-L", {
 		[2] = -0.1
 	}
 })
+
+ACF.RegisterGearboxClass("CVT", {
+	Name	= "CVT",
+	Gears = {
+		Min	= 0,
+		Max	= 2,
+	}
+})
+
+do -- Inline Gearboxes
+	ACF.RegisterGearbox("CVT-L-S", "CVT", {
+		Name		= "CVT, Inline, Small",
+		Description	= "A light duty inline CVT.",
+		Model		= "models/engines/linear_s.mdl",
+		Mass		= GearCVTSW,
+		Switch		= 0.15,
+		MaxTorque	= GearCVTST,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-L-M", "CVT", {
+		Name		= "CVT, Inline, Medium",
+		Description	= "A medium inline CVT.",
+		Model		= "models/engines/linear_m.mdl",
+		Mass		= GearCVTMW,
+		Switch		= 0.2,
+		MaxTorque	= GearCVTMT,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-L-L", "CVT", {
+		Name		= "CVT, Inline, Large",
+		Description	= "A massive inline CVT designed for high torque applications.",
+		Model		= "models/engines/linear_l.mdl",
+		Mass		= GearCVTLW,
+		Switch		= 0.3,
+		MaxTorque	= GearCVTLT,
+		CVT			= true,
+	})
+end
+
+do -- Inline Dual Clutch Gearboxes
+	ACF.RegisterGearbox("CVT-LD-S", "CVT", {
+		Name		= "CVT, Inline, Small, Dual Clutch",
+		Description	= "A light duty inline CVT. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/linear_s.mdl",
+		Mass		= GearCVTSW,
+		Switch		= 0.15,
+		MaxTorque	= GearCVTST,
+		DualClutch	= true,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-LD-M", "CVT", {
+		Name		= "CVT, Inline, Medium, Dual Clutch",
+		Description	= "A medium inline CVT. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/linear_m.mdl",
+		Mass		= GearCVTMW,
+		Switch		= 0.2,
+		MaxTorque	= GearCVTMT,
+		DualClutch	= true,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-LD-L", "CVT", {
+		Name		= "CVT, Inline, Large, Dual Clutch",
+		Description	= "A massive inline CVT designed for high torque applications. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/linear_l.mdl",
+		Mass		= GearCVTLW,
+		Switch		= 0.3,
+		MaxTorque	= GearCVTLT,
+		DualClutch	= true,
+		CVT			= true,
+	})
+end
+
+do -- Transaxial Gearboxes
+	ACF.RegisterGearbox("CVT-T-S", "CVT", {
+		Name		= "CVT, Transaxial, Small",
+		Description	= "A light duty CVT.",
+		Model		= "models/engines/transaxial_s.mdl",
+		Mass		= GearCVTSW,
+		Switch		= 0.15,
+		MaxTorque	= GearCVTST,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-T-M", "CVT", {
+		Name		= "CVT, Transaxial, Medium",
+		Description	= "A medium CVT.",
+		Model		= "models/engines/transaxial_m.mdl",
+		Mass		= GearCVTMW,
+		Switch		= 0.2,
+		MaxTorque	= GearCVTMT,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-T-L", "CVT", {
+		Name		= "CVT, Transaxial, Large",
+		Description	= "A massive CVT designed for high torque applications.",
+		Model		= "models/engines/transaxial_l.mdl",
+		Mass		= GearCVTLW,
+		Switch		= 0.3,
+		MaxTorque	= GearCVTLT,
+		CVT			= true,
+	})
+end
+
+do -- Transaxial Dual Clutch Gearboxes
+	ACF.RegisterGearbox("CVT-TD-S", "CVT", {
+		Name		= "CVT, Transaxial, Small, Dual Clutch",
+		Description	= "A light duty CVT. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/transaxial_s.mdl",
+		Mass		= GearCVTSW,
+		Switch		= 0.15,
+		MaxTorque	= GearCVTST,
+		DualClutch	= true,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-TD-M", "CVT", {
+		Name		= "CVT, Transaxial, Medium, Dual Clutch",
+		Description	= "A medium CVT. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/transaxial_m.mdl",
+		Mass		= GearCVTMW,
+		Switch		= 0.2,
+		MaxTorque	= GearCVTMT,
+		DualClutch	= true,
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-TD-L", "CVT", {
+		Name		= "CVT, Transaxial, Large, Dual Clutch",
+		Description	= "A massive CVT designed for high torque applications. The dual clutch allows you to apply power and brake each side independently.",
+		Model		= "models/engines/transaxial_l.mdl",
+		Mass		= GearCVTLW,
+		Switch		= 0.3,
+		MaxTorque	= GearCVTLT,
+		DualClutch	= true,
+		CVT			= true,
+	})
+end
+
+do -- Straight-through Gearboxes
+	ACF.RegisterGearbox("CVT-ST-S", "CVT", {
+		Name		= "CVT, Straight, Small",
+		Description	= "A light duty straight-through CVT.",
+		Model		= "models/engines/t5small.mdl",
+		Mass		= math.floor(GearCVTSW * StWB),
+		Switch		= 0.15,
+		MaxTorque	= math.floor(GearCVTST * StTB),
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-ST-M", "CVT", {
+		Name		= "CVT, Straight, Medium",
+		Description	= "A medium straight-through CVT.",
+		Model		= "models/engines/t5med.mdl",
+		Mass		= math.floor(GearCVTMW * StWB),
+		Switch		= 0.2,
+		MaxTorque	= math.floor(GearCVTMT * StTB),
+		CVT			= true,
+	})
+
+	ACF.RegisterGearbox("CVT-ST-L", "CVT", {
+		Name		= "CVT, Straight, Large",
+		Description	= "A massive straight-through CVT designed for high torque applications.",
+		Model		= "models/engines/t5large.mdl",
+		Mass		= math.floor(GearCVTLW * StWB),
+		Switch		= 0.3,
+		MaxTorque	= math.floor(GearCVTLT * StTB),
+		CVT			= true,
+	})
+end

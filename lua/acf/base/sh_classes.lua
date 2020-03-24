@@ -335,3 +335,59 @@ do -- Fuel type registration function
 		end
 	end
 end
+
+do -- Gearbox registration functions
+	ACF.Classes.Gearboxes = ACF.Classes.Gearboxes or {}
+
+	local Gearboxes = ACF.Classes.Gearboxes
+
+	function ACF.RegisterGearboxClass(ID, Data)
+		if not ID then return end
+		if not Data then return end
+
+		local Class = Gearboxes[ID]
+
+		if not Class then
+			Class = {
+				ID = ID,
+				Lookup = {},
+				Items = {},
+				Count = 0,
+			}
+
+			Gearboxes[ID] = Class
+		end
+
+		for K, V in pairs(Data) do
+			Class[K] = V
+		end
+	end
+
+	function ACF.RegisterGearbox(ID, ClassID, Data)
+		if not ID then return end
+		if not ClassID then return end
+		if not Data then return end
+		if not Gearboxes[ClassID] then return end
+
+		local Class   = Gearboxes[ClassID]
+		local Gearbox = Class.Lookup[ID]
+
+		if not Gearbox then
+			Gearbox = {
+				ID = ID,
+				Class = Class,
+				ClassID = ClassID,
+				EntClass = "acf_gearbox",
+				Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav",
+			}
+
+			Class.Count = Class.Count + 1
+			Class.Items[Class.Count] = Gearbox
+			Class.Lookup[ID] = Gearbox
+		end
+
+		for K, V in pairs(Data) do
+			Gearbox[K] = V
+		end
+	end
+end

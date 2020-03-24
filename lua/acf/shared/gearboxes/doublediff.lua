@@ -67,3 +67,46 @@ ACF_DefineGearbox("DoubleDiff-T-L", {
 		[-1] = 1
 	}
 })
+
+ACF.RegisterGearboxClass("DoubleDiff", {
+	Name	= "Regenerative Steering",
+	Gears = {
+		Min	= 1,
+		Max	= 1,
+	}
+})
+
+do -- Inline Gearboxes
+	ACF.RegisterGearbox("DoubleDiff-T-S", "DoubleDiff", {
+		Name		= "Double Differential, Small",
+		Description	= "A light duty regenerative steering transmission.",
+		Model		= "models/engines/transaxial_s.mdl",
+		Mass		= GearDDSW,
+		Switch		= 0.2,
+		MaxTorque	= GearDDST,
+		DualClutch	= true,
+		DoubleDiff	= true,
+	})
+
+	ACF.RegisterGearbox("DoubleDiff-T-M", "DoubleDiff", {
+		Name		= "Double Differential, Medium",
+		Description	= "A medium regenerative steering transmission.",
+		Model		= "models/engines/transaxial_m.mdl",
+		Mass		= GearDDMW,
+		Switch		= 0.35,
+		MaxTorque	= GearDDMT,
+		DualClutch	= true,
+		DoubleDiff	= true,
+	})
+
+	ACF.RegisterGearbox("DoubleDiff-T-L", "DoubleDiff", {
+		Name		= "Double Differential, Large",
+		Description	= "A heavy regenerative steering transmission.",
+		Model		= "models/engines/transaxial_l.mdl",
+		Mass		= GearDDLW,
+		Switch		= 0.5,
+		MaxTorque	= GearDDLT,
+		DualClutch	= true,
+		DoubleDiff	= true,
+	})
+end
