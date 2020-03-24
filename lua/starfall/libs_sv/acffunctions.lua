@@ -1832,7 +1832,7 @@ function ents_methods:acfAmmoCount ()
 	if not isGun( this ) then return 0 end
 	if restrictInfo( this ) then return 0 end
 	local Ammo = 0
-	for Key, AmmoEnt in pairs( this.AmmoLink ) do
+	for AmmoEnt in pairs( this.Crates ) do
 		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt[ "Load" ] then
 			Ammo = Ammo + ( AmmoEnt.Ammo or 0 )
 		end
@@ -1851,7 +1851,7 @@ function ents_methods:acfTotalAmmoCount ()
 	if not isGun( this ) then return 0 end
 	if restrictInfo( this ) then return 0 end
 	local Ammo = 0
-	for Key, AmmoEnt in pairs( this.AmmoLink ) do
+	for AmmoEnt in pairs( this.Crates ) do
 		if AmmoEnt and AmmoEnt:IsValid() then
 			Ammo = Ammo + ( AmmoEnt.Ammo or 0 )
 		end
