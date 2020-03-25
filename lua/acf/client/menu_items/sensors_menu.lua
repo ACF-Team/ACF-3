@@ -1,4 +1,4 @@
-local Gearboxes = ACF.Classes.Gearboxes
+local Sensors = ACF.Classes.Sensors
 local Selected = {}
 local Sorted = {}
 
@@ -30,40 +30,46 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
-	local GearboxClass = Menu:AddComboBox()
-	local GearboxList = Menu:AddComboBox()
-	local GearboxName = Menu:AddTitle()
-	local GearboxDesc = Menu:AddLabel()
-
-	ACF.WriteValue("PrimaryClass", "acf_gearbox")
+	ACF.WriteValue("PrimaryClass", "N/A")
 	ACF.WriteValue("SecondaryClass", "N/A")
 
-	function GearboxClass:OnSelect(Index, _, Data)
-		if self.Selected == Data then return end
-
-		self.Selected = Data
-
-		local Choices = Sorted[Gearboxes]
-		Selected[Choices] = Index
-
-		ACF.WriteValue("GearboxClass", Data.ID)
-
-		LoadSortedList(GearboxList, Data.Items, "ID")
+	if not next(Sensors) then
+		Menu:AddTitle("No Sensors Registered")
+		Menu:AddLabel("No sensors have been registered. If this is incorrect, check your console for errors and contact the server owner.")
+		return
 	end
 
-	function GearboxList:OnSelect(Index, _, Data)
+	local SensorClass = Menu:AddComboBox()
+	local SensorList = Menu:AddComboBox()
+	local SensorName = Menu:AddTitle()
+	local SensorDesc = Menu:AddLabel()
+
+	function SensorClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
 		self.Selected = Data
 
-		local ClassData = GearboxClass.Selected
+		local Choices = Sorted[Sensors]
+		Selected[Choices] = Index
+
+		ACF.WriteValue("SensorClass", Data.ID)
+
+		LoadSortedList(SensorList, Data.Items, "ID")
+	end
+
+	function SensorList:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
+
+		self.Selected = Data
+
+		local ClassData = SensorClass.Selected
 		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
 
-		ACF.WriteValue("Gearbox", Data.ID)
+		ACF.WriteValue("Sensor", Data.ID)
 
-		GearboxName:SetText(Data.Name)
-		GearboxDesc:SetText(Data.Description)
+		SensorName:SetText(Data.Name)
+		SensorDesc:SetText(Data.Description or "No description provided.")
 
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
@@ -75,7 +81,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(self)
 	end
 
-	LoadSortedList(GearboxClass, Gearboxes, "ID")
+	LoadSortedList(SensorClass, Sensors, "ID")
 end
 
-ACF.AddOptionItem("Entities", "Gearboxes", "cog", CreateMenu)
+ACF.AddOptionItem("Entities", "Sensors", "transmit", CreateMenu)

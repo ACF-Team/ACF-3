@@ -148,7 +148,7 @@ do -- Petrol Engines
 		}
 	})
 
-	ACF.RegisterEngine( "17.2-I6", {
+	ACF.RegisterEngine("17.2-I6", "I6", {
 		Name		 = "17.2L I6 Petrol",
 		Description	 = "Heavy tractor duty petrol I6, decent overall powerband.",
 		Model		 = "models/engines/inline6l.mdl",

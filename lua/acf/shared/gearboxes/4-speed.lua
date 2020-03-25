@@ -325,7 +325,7 @@ ACF.RegisterGearboxClass("4-Speed", {
 })
 
 do -- Inline Gearboxes
-	ACF.RegisterGearbox("4Gear-L-S", "4-Speed", "4-Speed", {
+	ACF.RegisterGearbox("4Gear-L-S", "4-Speed", {
 		Name		= "4-Speed, Inline, Small",
 		Description	= "A small, and light 4 speed inline gearbox, with a somewhat limited max torque rating.",
 		Model		= "models/engines/linear_s.mdl",
