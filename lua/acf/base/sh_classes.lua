@@ -1,3 +1,85 @@
+do -- Basic class registration functions
+	function ACF.AddSimpleClass(ID, Destiny, Data)
+		if not ID then return end
+		if not Data then return end
+		if not Destiny then return end
+
+		local Class = Destiny[ID]
+
+		if not Class then
+			Class = {
+				ID = ID,
+			}
+
+			Destiny[ID] = Class
+		end
+
+		for K, V in pairs(Data) do
+			Class[K] = V
+		end
+
+		return Class
+	end
+
+	function ACF.AddClassGroup(ID, Destiny, Data)
+		if not ID then return end
+		if not Data then return end
+		if not Destiny then return end
+
+		local Group = Destiny[ID]
+
+		if not Group then
+			Group = {
+				ID = ID,
+				Lookup = {},
+				Items = {},
+				Count = 0,
+			}
+
+			Destiny[ID] = Group
+		end
+
+		for K, V in pairs(Data) do
+			Group[K] = V
+		end
+
+		return Group
+	end
+
+	function ACF.AddGroupedClass(ID, GroupID, Destiny, Data)
+		if not ID then return end
+		if not Data then return end
+		if not GroupID then return end
+		if not Destiny then return end
+		if not Destiny[GroupID] then return end
+
+		local Group = Destiny[GroupID]
+		local Class = Group.Lookup[ID]
+
+		if not Class then
+			Class = {
+				ID = ID,
+				Class = Group,
+				ClassID = GroupID,
+			}
+
+			Group.Count = Group.Count + 1
+			Group.Lookup[ID] = Class
+			Group.Items[Group.Count] = Class
+		end
+
+		for K, V in pairs(Data) do
+			Class[K] = V
+		end
+
+		return Class
+	end
+end
+
+local AddSimpleClass  = ACF.AddSimpleClass
+local AddClassGroup   = ACF.AddClassGroup
+local AddGroupedClass = ACF.AddGroupedClass
+
 do -- Class registration function
 	local Classes = {}
 	local Queued = {}
@@ -81,60 +163,27 @@ do -- Weapon registration functions
 	local Weapons = ACF.Classes.Weapons
 
 	function ACF.RegisterWeaponClass(ID, Data)
-		if not ID then return end
-		if not Data then return end
+		local Group = AddClassGroup(ID, Weapons, Data)
 
-		local Class = Weapons[ID]
-
-		if not Class then
-			Class = {
-				ID = ID,
-				Lookup = {},
-				Items = {},
-				Count = 0,
-			}
-
-			Weapons[ID] = Class
+		if Group.MuzzleFlash then
+			PrecacheParticleSystem(Group.MuzzleFlash)
 		end
 
-		for K, V in pairs(Data) do
-			Class[K] = V
+		return Group
+	end
+
+	function ACF.RegisterWeapon(ID, ClassID, Data)
+		local Class = AddGroupedClass(ID, ClassID, Weapons, Data)
+
+		if not Class.EntClass then
+			Class.EntClass = "acf_gun"
 		end
 
 		if Class.MuzzleFlash then
 			PrecacheParticleSystem(Class.MuzzleFlash)
 		end
-	end
 
-	function ACF.RegisterWeapon(ID, ClassID, Data)
-		if not ID then return end
-		if not ClassID then return end
-		if not Data then return end
-		if not Weapons[ClassID] then return end
-
-		local Class  = Weapons[ClassID]
-		local Weapon = Class.Lookup[ID]
-
-		if not Weapon then
-			Weapon = {
-				ID = ID,
-				Class = Class,
-				ClassID = ClassID,
-				EntClass = "acf_gun",
-			}
-
-			Class.Count = Class.Count + 1
-			Class.Items[Class.Count] = Weapon
-			Class.Lookup[ID] = Weapon
-		end
-
-		for K, V in pairs(Data) do
-			Weapon[K] = V
-		end
-
-		if Weapon.MuzzleFlash then
-			PrecacheParticleSystem(Weapon.MuzzleFlash)
-		end
+		return Class
 	end
 end
 
@@ -144,23 +193,13 @@ do -- Ammo crate registration function
 	local Crates = ACF.Classes.Crates
 
 	function ACF.RegisterCrate(ID, Data)
-		if not ID then return end
-		if not Data then return end
+		local Class = AddSimpleClass(ID, Crates, Data)
 
-		local Crate = Crates[ID]
-
-		if not Crate then
-			Crate = {
-				ID = ID,
-				EntClass = "acf_ammo",
-			}
-
-			Crates[ID] = Crate
+		if not Class.EntClass then
+			Class.EntClass = "acf_ammo"
 		end
 
-		for K, V in pairs(Data) do
-			Crate[K] = V
-		end
+		return Class
 	end
 end
 
@@ -181,52 +220,17 @@ do -- Engine registration functions
 	local Engines = ACF.Classes.Engines
 
 	function ACF.RegisterEngineClass(ID, Data)
-		if not ID then return end
-		if not Data then return end
-
-		local Class = Engines[ID]
-
-		if not Class then
-			Class = {
-				ID = ID,
-				Lookup = {},
-				Items = {},
-				Count = 0,
-			}
-
-			Engines[ID] = Class
-		end
-
-		for K, V in pairs(Data) do
-			Class[K] = V
-		end
+		return AddClassGroup(ID, Engines, Data)
 	end
 
 	function ACF.RegisterEngine(ID, ClassID, Data)
-		if not ID then return end
-		if not ClassID then return end
-		if not Data then return end
-		if not Engines[ClassID] then return end
+		local Class = AddGroupedClass(ID, ClassID, Engines, Data)
 
-		local Class  = Engines[ClassID]
-		local Engine = Class.Lookup[ID]
-
-		if not Engine then
-			Engine = {
-				ID = ID,
-				Class = Class,
-				ClassID = ClassID,
-				EntClass = "acf_engine",
-			}
-
-			Class.Count = Class.Count + 1
-			Class.Items[Class.Count] = Engine
-			Class.Lookup[ID] = Engine
+		if not Class.EntClass then
+			Class.EntClass = "acf_engine"
 		end
 
-		for K, V in pairs(Data) do
-			Engine[K] = V
-		end
+		return Class
 	end
 end
 
@@ -236,22 +240,7 @@ do -- Engine type registration function
 	local Types = ACF.Classes.EngineTypes
 
 	function ACF.RegisterEngineType(ID, Data)
-		if not ID then return end
-		if not Data then return end
-
-		local Type = Types[ID]
-
-		if not Type then
-			Type = {
-				ID = ID,
-			}
-
-			Types[ID] = Type
-		end
-
-		for K, V in pairs(Data) do
-			Type[K] = V
-		end
+		return AddSimpleClass(ID, Types, Data)
 	end
 end
 
@@ -261,53 +250,21 @@ do -- Fuel tank registration functions
 	local FuelTanks = ACF.Classes.FuelTanks
 
 	function ACF.RegisterFuelTankClass(ID, Data)
-		if not ID then return end
-		if not Data then return end
-
-		local Class = FuelTanks[ID]
-
-		if not Class then
-			Class = {
-				ID = ID,
-				Lookup = {},
-				Items = {},
-				Count = 0,
-			}
-
-			FuelTanks[ID] = Class
-		end
-
-		for K, V in pairs(Data) do
-			Class[K] = V
-		end
+		return AddClassGroup(ID, FuelTanks, Data)
 	end
 
 	function ACF.RegisterFuelTank(ID, ClassID, Data)
-		if not ID then return end
-		if not ClassID then return end
-		if not Data then return end
-		if not FuelTanks[ClassID] then return end
+		local Class = AddGroupedClass(ID, ClassID, FuelTanks, Data)
 
-		local Class  = FuelTanks[ClassID]
-		local FuelTank = Class.Lookup[ID]
-
-		if not FuelTank then
-			FuelTank = {
-				ID = ID,
-				Class = Class,
-				ClassID = ClassID,
-				EntClass = "acf_engine",
-				IsExplosive = true,
-			}
-
-			Class.Count = Class.Count + 1
-			Class.Items[Class.Count] = FuelTank
-			Class.Lookup[ID] = FuelTank
+		if not Class.EntClass then
+			Class.EntClass = "acf_engine"
 		end
 
-		for K, V in pairs(Data) do
-			FuelTank[K] = V
+		if Class.IsExplosive == nil then
+			Class.IsExplosive = true
 		end
+
+		return Class
 	end
 end
 
@@ -317,22 +274,7 @@ do -- Fuel type registration function
 	local Types = ACF.Classes.FuelTypes
 
 	function ACF.RegisterFuelType(ID, Data)
-		if not ID then return end
-		if not Data then return end
-
-		local Type = Types[ID]
-
-		if not Type then
-			Type = {
-				ID = ID,
-			}
-
-			Types[ID] = Type
-		end
-
-		for K, V in pairs(Data) do
-			Type[K] = V
-		end
+		return AddSimpleClass(ID, Types, Data)
 	end
 end
 
@@ -342,52 +284,48 @@ do -- Gearbox registration functions
 	local Gearboxes = ACF.Classes.Gearboxes
 
 	function ACF.RegisterGearboxClass(ID, Data)
-		if not ID then return end
-		if not Data then return end
-
-		local Class = Gearboxes[ID]
-
-		if not Class then
-			Class = {
-				ID = ID,
-				Lookup = {},
-				Items = {},
-				Count = 0,
-			}
-
-			Gearboxes[ID] = Class
-		end
-
-		for K, V in pairs(Data) do
-			Class[K] = V
-		end
+		return AddClassGroup(ID, Gearboxes, Data)
 	end
 
 	function ACF.RegisterGearbox(ID, ClassID, Data)
-		if not ID then return end
-		if not ClassID then return end
-		if not Data then return end
-		if not Gearboxes[ClassID] then return end
+		local Class = AddGroupedClass(ID, ClassID, Gearboxes, Data)
 
-		local Class   = Gearboxes[ClassID]
-		local Gearbox = Class.Lookup[ID]
-
-		if not Gearbox then
-			Gearbox = {
-				ID = ID,
-				Class = Class,
-				ClassID = ClassID,
-				EntClass = "acf_gearbox",
-				Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav",
-			}
-
-			Class.Count = Class.Count + 1
-			Class.Items[Class.Count] = Gearbox
-			Class.Lookup[ID] = Gearbox
+		if not Class.EntClass then
+			Class.EntClass = "acf_gearbox"
 		end
 
-		for K, V in pairs(Data) do
-			Gearbox[K] = V
+		if not Class.Sound then
+			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 		end
+
+		return Class
+	end
+end
+
+do -- Component registration functions
+	ACF.Classes.Components = ACF.Classes.Components or {}
+
+	local Components = ACF.Classes.Components
+
+	function ACF.RegisterComponentClass(ID, Data)
+		return AddClassGroup(ID, Components, Data)
+	end
+
+	function ACF.RegisterComponent(ID, ClassID, Data)
+		return AddGroupedClass(ID, ClassID, Components, Data)
+	end
+end
+
+do -- Sensor registration functions
+	ACF.Classes.Sensors = ACF.Classes.Sensors or {}
+
+	local Sensors = ACF.Classes.Sensors
+
+	function ACF.RegisterSensorClass(ID, Data)
+		return AddClassGroup(ID, Sensors, Data)
+	end
+
+	function ACF.RegisterSensor(ID, ClassID, Data)
+		return AddGroupedClass(ID, ClassID, Sensors, Data)
 	end
 end
