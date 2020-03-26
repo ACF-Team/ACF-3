@@ -152,9 +152,7 @@ do -- Default Menus
 			Control:SetValueFunction(function(Panel)
 				local Value = math.Round(ACF.ReadNumber(Variable), 2)
 
-				if ValuesData[Variable] then
-					ValuesData[Variable] = Value
-				end
+				ValuesData[Variable] = Value
 
 				Panel:SetValue(Value)
 
@@ -173,9 +171,7 @@ do -- Default Menus
 		FinalDrive:SetValueFunction(function(Panel)
 			local Value = math.Round(ACF.ReadNumber("FinalDrive"), 2)
 
-			if ValuesData.FinalDrive then
-				ValuesData.FinalDrive = Value
-			end
+			ValuesData.FinalDrive = Value
 
 			Panel:SetValue(Value)
 
