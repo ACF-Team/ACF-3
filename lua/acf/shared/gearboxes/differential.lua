@@ -224,7 +224,8 @@ ACF_DefineGearbox( "1Gear-TD-L", {
 } )
 
 ACF.RegisterGearboxClass("Differential", {
-	Name	= "Differential",
+	Name		= "Differential",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 1,
 		Max	= 1,

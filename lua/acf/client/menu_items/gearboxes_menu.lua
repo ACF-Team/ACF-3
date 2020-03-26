@@ -68,8 +68,8 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
 
-		if Data.CreateMenu then
-			Data:CreateMenu(Menu)
+		if ClassData.CreateMenu then
+			ClassData:CreateMenu(Data, Menu)
 		end
 
 		Menu:EndTemporal(self)
@@ -79,3 +79,157 @@ local function CreateMenu(Menu)
 end
 
 ACF.AddOptionItem("Entities", "Gearboxes", "cog", CreateMenu)
+
+do -- Default Menus
+	local Values = {}
+	local CVTData = {
+		{
+			Name = "Gear 2",
+			Variable = "Gear2",
+			Min = -1,
+			Max = 1,
+			Decimals = 2,
+			Default = -0.1,
+		},
+		{
+			Name = "Min Target RPM",
+			Variable = "MinRPM",
+			Min = 1,
+			Max = 10000,
+			Decimals = 0,
+			Default = 3000,
+		},
+		{
+			Name = "Max Target RPM",
+			Variable = "MaxRPM",
+			Min = 1,
+			Max = 10000,
+			Decimals = 0,
+			Default = 5000,
+		},
+		{
+			Name = "Final Drive",
+			Variable = "FinalDrive",
+			Min = -1,
+			Max = 1,
+			Decimals = 2,
+			Default = 1,
+		},
+	}
+
+	function ACF.ManualGearboxMenu(Class, Data, Menu)
+		local Text = "Mass : %s\nDefault Gear : Gear %s\nTorque Rating : %s n/m - %s fl-lb"
+		local Mass = ACF.GetProperMass(Data.Mass)
+		local Gears = Class.Gears
+		local Torque = math.floor(Data.MaxTorque * 0.73)
+
+		Menu:AddLabel(Text:format(Mass, Gears.Default or Gears.Min, Data.MaxTorque, Torque))
+
+		if Data.DualClutch then
+			Menu:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
+		end
+
+		Menu:AddTitle("Gear Settings")
+
+		Values[Class.ID] = Values[Class.ID] or {}
+
+		local ValuesData = Values[Class.ID]
+
+		for I = math.max(1, Gears.Min), Gears.Max do
+			local Variable = "Gear" .. I
+			local Control = Menu:AddSlider("Gear " .. I, -1, 1, 2)
+			Control:SetDataVar(Variable, "OnValueChanged")
+			Control:SetValueFunction(function(Panel)
+				local Value = math.Round(ACF.ReadNumber("Gear" .. I), 2)
+
+				if ValuesData["Gear" .. I] then
+					ValuesData["Gear" .. I] = Value
+				end
+
+				Panel:SetValue(Value)
+
+				return Value
+			end)
+
+			local Default = ValuesData[Variable]
+
+			if not Default then
+				Default = math.Clamp(I * 0.1, -1, 1)
+
+				ValuesData[Variable] = Default
+			end
+
+			ACF.WriteValue(Variable, Default)
+		end
+
+		local FinalDrive = Menu:AddSlider("Final Drive", -1, 1, 2)
+		FinalDrive:SetDataVar("FinalDrive", "OnValueChanged")
+		FinalDrive:SetValueFunction(function(Panel)
+			local Value = math.Round(ACF.ReadNumber("FinalDrive"), 2)
+
+			if ValuesData.FinalDrive then
+				ValuesData.FinalDrive = Value
+			end
+
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		if not ValuesData.FinalDrive then
+			ValuesData.FinalDrive = 1
+		end
+
+		ACF.WriteValue("FinalDrive", ValuesData.FinalDrive)
+	end
+
+	function ACF.CVTGearboxMenu(Class, Data, Menu)
+		local Text = "Mass : %s\nDefault Gear : Gear %s\nTorque Rating : %s n/m - %s fl-lb"
+		local Mass = ACF.GetProperMass(Data.Mass)
+		local Gears = Class.Gears
+		local Torque = math.floor(Data.MaxTorque * 0.73)
+
+		Menu:AddLabel(Text:format(Mass, Gears.Default or Gears.Min, Data.MaxTorque, Torque))
+
+		if Data.DualClutch then
+			Menu:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
+		end
+
+		Values[Class.ID] = Values[Class.ID] or {}
+
+		local ValuesData = Values[Class.ID]
+
+		ACF.WriteValue("Gear1", 0.01)
+
+		for _, GearData in ipairs(CVTData) do
+			local Control = Menu:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
+			Control:SetDataVar(GearData.Variable, "OnValueChanged")
+			Control:SetValueFunction(function(Panel)
+				local Variable = GearData.Variable
+				local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
+
+				if ValuesData[Variable] then
+					ValuesData[Variable] = Value
+				end
+
+				Panel:SetValue(Value)
+
+				return Value
+			end)
+
+			local Default = ValuesData[GearData.Variable]
+
+			if not Default then
+				Default = GearData.Default
+
+				ValuesData[GearData.Variable] = Default
+			end
+
+			ACF.WriteValue(Variable, Default)
+		end
+	end
+
+	--function ACF.AutomaticGearboxMenu(Class, Data, Menu)
+
+	--end
+end

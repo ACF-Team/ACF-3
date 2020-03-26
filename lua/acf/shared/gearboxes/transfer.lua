@@ -124,7 +124,8 @@ ACF_DefineGearbox( "2Gear-T-L", {
 } )
 
 ACF.RegisterGearboxClass("Transfer", {
-	Name	= "Transfer Case",
+	Name		= "Transfer Case",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 1,
 		Max	= 2,

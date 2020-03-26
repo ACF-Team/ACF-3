@@ -69,7 +69,8 @@ ACF_DefineGearbox("DoubleDiff-T-L", {
 })
 
 ACF.RegisterGearboxClass("DoubleDiff", {
-	Name	= "Regenerative Steering",
+	Name		= "Regenerative Steering",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 1,
 		Max	= 1,

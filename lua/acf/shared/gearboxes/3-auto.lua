@@ -19,11 +19,12 @@ local ShiftM = 0.35
 local ShiftL = 0.5
 
 ACF.RegisterGearboxClass("3-Auto", {
-	Name	= "3-Speed Automatic",
+	Name		= "3-Speed Automatic",
+	CreateMenu	= ACF.AutomaticGearboxMenu,
 	Gears = {
 		Min	= 0,
 		Max	= 3,
-	}
+	},
 })
 
 do -- Inline Gearboxes

@@ -375,7 +375,8 @@ ACF_DefineGearbox( "8Gear-ST-L", {
 } )
 
 ACF.RegisterGearboxClass("8-Speed", {
-	Name	= "8-Speed Gearbox",
+	Name		= "8-Speed Gearbox",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 0,
 		Max	= 8,

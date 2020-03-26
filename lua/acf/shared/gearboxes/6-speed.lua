@@ -345,7 +345,8 @@ ACF_DefineGearbox( "6Gear-ST-L", {
 } )
 
 ACF.RegisterGearboxClass("6-Speed", {
-	Name	= "6-Speed Gearbox",
+	Name		= "6-Speed Gearbox",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 0,
 		Max	= 6,

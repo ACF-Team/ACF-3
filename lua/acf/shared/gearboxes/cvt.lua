@@ -324,10 +324,12 @@ ACF_DefineGearbox("CVT-ST-L", {
 })
 
 ACF.RegisterGearboxClass("CVT", {
-	Name	= "CVT",
+	Name		= "CVT",
+	CreateMenu	= ACF.CVTGearboxMenu,
 	Gears = {
-		Min	= 0,
-		Max	= 2,
+		Min		= 0,
+		Max		= 2,
+		Default = 1,
 	}
 })
 

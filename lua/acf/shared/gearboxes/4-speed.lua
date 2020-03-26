@@ -314,10 +314,10 @@ ACF_DefineGearbox( "4Gear-ST-L", {
 	}
 } )
 
---  The dual clutch allows you to apply power and brake each side independently
 
 ACF.RegisterGearboxClass("4-Speed", {
-	Name	= "4-Speed Gearbox",
+	Name		= "4-Speed Gearbox",
+	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
 		Min	= 0,
 		Max	= 4,

@@ -19,7 +19,8 @@ local ShiftM = 0.35
 local ShiftL = 0.5
 
 ACF.RegisterGearboxClass("5-Auto", {
-	Name	= "5-Speed Automatic",
+	Name		= "5-Speed Automatic",
+	CreateMenu	= ACF.AutomaticGearboxMenu,
 	Gears = {
 		Min	= 0,
 		Max	= 5,
