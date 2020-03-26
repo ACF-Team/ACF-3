@@ -137,20 +137,6 @@ do -- Default Menus
 
 		for I = math.max(1, Gears.Min), Gears.Max do
 			local Variable = "Gear" .. I
-			local Control = Menu:AddSlider("Gear " .. I, -1, 1, 2)
-			Control:SetDataVar(Variable, "OnValueChanged")
-			Control:SetValueFunction(function(Panel)
-				local Value = math.Round(ACF.ReadNumber("Gear" .. I), 2)
-
-				if ValuesData["Gear" .. I] then
-					ValuesData["Gear" .. I] = Value
-				end
-
-				Panel:SetValue(Value)
-
-				return Value
-			end)
-
 			local Default = ValuesData[Variable]
 
 			if not Default then
@@ -160,7 +146,27 @@ do -- Default Menus
 			end
 
 			ACF.WriteValue(Variable, Default)
+
+			local Control = Menu:AddSlider("Gear " .. I, -1, 1, 2)
+			Control:SetDataVar(Variable, "OnValueChanged")
+			Control:SetValueFunction(function(Panel)
+				local Value = math.Round(ACF.ReadNumber(Variable), 2)
+
+				if ValuesData[Variable] then
+					ValuesData[Variable] = Value
+				end
+
+				Panel:SetValue(Value)
+
+				return Value
+			end)
 		end
+
+		if not ValuesData.FinalDrive then
+			ValuesData.FinalDrive = 1
+		end
+
+		ACF.WriteValue("FinalDrive", ValuesData.FinalDrive)
 
 		local FinalDrive = Menu:AddSlider("Final Drive", -1, 1, 2)
 		FinalDrive:SetDataVar("FinalDrive", "OnValueChanged")
@@ -175,12 +181,6 @@ do -- Default Menus
 
 			return Value
 		end)
-
-		if not ValuesData.FinalDrive then
-			ValuesData.FinalDrive = 1
-		end
-
-		ACF.WriteValue("FinalDrive", ValuesData.FinalDrive)
 	end
 
 	function ACF.CVTGearboxMenu(Class, Data, Menu)
@@ -202,30 +202,28 @@ do -- Default Menus
 		ACF.WriteValue("Gear1", 0.01)
 
 		for _, GearData in ipairs(CVTData) do
+			local Variable = GearData.Variable
+			local Default = ValuesData[Variable]
+
+			if not Default then
+				Default = GearData.Default
+
+				ValuesData[Variable] = Default
+			end
+
+			ACF.WriteValue(Variable, Default)
+
 			local Control = Menu:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
-			Control:SetDataVar(GearData.Variable, "OnValueChanged")
+			Control:SetDataVar(Variable, "OnValueChanged")
 			Control:SetValueFunction(function(Panel)
-				local Variable = GearData.Variable
 				local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
 
-				if ValuesData[Variable] then
-					ValuesData[Variable] = Value
-				end
+				ValuesData[Variable] = Value
 
 				Panel:SetValue(Value)
 
 				return Value
 			end)
-
-			local Default = ValuesData[GearData.Variable]
-
-			if not Default then
-				Default = GearData.Default
-
-				ValuesData[GearData.Variable] = Default
-			end
-
-			ACF.WriteValue(Variable, Default)
 		end
 	end
 
