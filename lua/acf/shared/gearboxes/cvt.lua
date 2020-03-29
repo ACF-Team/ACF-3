@@ -329,7 +329,6 @@ ACF.RegisterGearboxClass("CVT", {
 	Gears = {
 		Min		= 0,
 		Max		= 2,
-		Default = 1,
 	}
 })
 
