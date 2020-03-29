@@ -308,6 +308,8 @@ do -- Tool data functions
 			-- First we'll process the panels that set the value of this key
 			if SetterPanels then
 				for Panel in pairs(SetterPanels) do
+					if not Panel.OldSetFunc then continue end
+
 					local NewValue = Value
 
 					if Panel.ValueFunction then

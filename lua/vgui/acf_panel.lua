@@ -156,6 +156,24 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
+function PANEL:AddNumberWang(Label, Min, Max, Decimals)
+	local Base = self:AddPanel("ACF_Panel")
+
+	local Wang = Base:Add("DNumberWang")
+	Wang:SetDecimals(Decimals or 0)
+	Wang:SetMinMax(Min, Max)
+	Wang:SetTall(20)
+	Wang:Dock(RIGHT)
+
+	local Text = Base:Add("DLabel")
+	Text:SetText(Label or "Text")
+	Text:SetFont("ACF_Control")
+	Text:SetDark(true)
+	Text:Dock(TOP)
+
+	return Wang, Text
+end
+
 function PANEL:PerformLayout()
 	self:SizeToChildren(true, true)
 end
