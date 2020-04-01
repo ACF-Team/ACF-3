@@ -62,7 +62,9 @@ local Inputs = {
 		Entity:UpdateOverlay()
 	end,
 	["Refuel Duty"] = function(Entity, Value)
-		Entity.SupplyFuel = tobool(Value)
+		local N = math.Clamp(tonumber(Value), 0, 2)
+
+		Entity.SupplyFuel = N == 0 and nil or N
 	end
 }
 
@@ -398,7 +400,7 @@ function ENT:Think()
 
 					if Tank.FuelType == "Electric" then
 						Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
-					else
+					elseif self.SupplyFuel == 1 then
 						Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
 					end
 				end
