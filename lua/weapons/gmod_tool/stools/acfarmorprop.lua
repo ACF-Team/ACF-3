@@ -104,17 +104,16 @@ elseif SERVER then
 
 		if not IsValid(Ent) then return end
 
-		local Power, Fuel, ReqFuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
+		local Power, Fuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
 
 		local Total 		= Ent.acftotal
 		local phystotal 	= Ent.acfphystotal
 		local parenttotal 	= Total - Ent.acfphystotal
 		local physratio 	= 100 * Ent.acfphystotal / Total, 1
-		local Mul			= (ReqFuel and Fuel > 0) and 1.25 or 1
 
-		Ply:ChatPrint("-- ACF Contraption Readout (Owner: " .. Name .. ") --")
+		Ply:ChatPrint("--- ACF Contraption Readout (Owner: " .. Name .. ") ---")
 		Ply:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
-		Ply:ChatPrint("Mobility: " .. math.Round(Power * Mul / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power * Mul) .. " | " .. math.Round(Fuel) .. " liters of fuel")
+		Ply:ChatPrint("Mobility: " .. math.Round(Power / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power) .. " hp | " .. math.Round(Fuel) .. " liters of fuel")
 		Ply:ChatPrint("Entities: " .. PhysNum + ParNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented) | " .. ConNum .. " constraints")
 	end)
 end

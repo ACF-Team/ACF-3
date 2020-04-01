@@ -89,7 +89,6 @@ function ACF_CalcMassRatio(Ent, Tally)
 	local PhysN    = 0
 	local ParN 	   = 0
 	local ConN	   = 0
-	local ReqFuel  = false
 
 	local Physical, Parented = GetEnts(Ent)
 
@@ -98,8 +97,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 			local Class = K:GetClass()
 
 			if Class == "acf_engine" then
-				Power   = Power + (K.peakkw * 1.34)
-				ReqFuel = ReqFuel or K.RequiresFuel
+				Power = ( Power + (K.peakkw * 1.34) ) * (next(K.FuelTanks) and 1.25 or 1)
 			elseif Class == "acf_fueltank" then
 				Fuel = Fuel + K.Capacity
 			end
@@ -136,8 +134,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 			local Class = K:GetClass()
 
 			if Class == "acf_engine" then
-				Power   = Power + (K.peakkw * 1.34)
-				ReqFuel = ReqFuel or K.RequiresFuel
+				Power = ( Power + (K.peakkw * 1.34) ) * (next(K.FuelTanks) and 1.25 or 1)
 			elseif Class == "acf_fueltank" then
 				Fuel = Fuel + K.Capacity
 			end
@@ -171,7 +168,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 
 	if Tally then
-		return Power, Fuel, ReqFuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():Nick()
+		return Power, Fuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():Nick()
 	end
 end
 
