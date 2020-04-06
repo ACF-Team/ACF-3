@@ -203,8 +203,8 @@ do -- Spawn Func --------------------------------
 		Crate.Owner			= Player
 		Crate.Size			= Size
 		Crate.Weapons		= {}
-		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load", "Output [VECTOR]"})
-		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading", "On Fire" })
+		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
+		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading"})
 		Crate.CanUpdate		= true
 		Crate.HitBoxes 		= {
 					Main = {
@@ -488,8 +488,6 @@ do -- Metamethods -------------------------------
 						timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 					end
 				end)
-
-				WireLib.TriggerOutput(self, "On Fire", 1)
 			end
 
 			return HitRes
