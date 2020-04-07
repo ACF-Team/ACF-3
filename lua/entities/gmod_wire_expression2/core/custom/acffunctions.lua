@@ -34,7 +34,10 @@ local function RestrictInfo(Player, Entity)
 end
 
 local function GetReloadTime(Entity)
-	return Entity.OnReload and Entity.MagReload or Entity.ReloadTime or 0
+	local Unloading = Entity.State == "Unloading"
+	local NewLoad = Entity.State ~= "Loaded" and Entity.CurrentShot == 0
+
+	return (Unloading or NewLoad) and Entity.MagReload or Entity.ReloadTime or 0
 end
 
 local function GetMaxPower(Entity)
@@ -833,7 +836,6 @@ __e2setcost(5)
 e2function number entity:acfReady()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.State then return 0 end
 
 	return this.State == "Loaded" and 1 or 0
 end
@@ -850,7 +852,7 @@ end
 e2function number entity:acfReloadTime()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if this.State and this.State == "Loaded" then return 0 end
+	if this.State == "Loaded" then return 0 end
 
 	return GetReloadTime(this)
 end
@@ -859,9 +861,9 @@ end
 e2function number entity:acfReloadProgress()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.NextFire then return 0 end
+	if not this.NextFire then return this.State == "Loaded" and 1 or 0 end
 
-	return math.Clamp(1 - (this.NextFire - CurTime()) / GetReloadTime(this), 0, 1)
+	return math.Clamp(1 - (this.NextFire - ACF.CurTime) / GetReloadTime(this), 0, 1)
 end
 
 -- returns time it takes for an ACF weapon to reload magazine
@@ -898,7 +900,6 @@ end
 e2function number entity:acfIsReloading()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.State then return 0 end
 
 	return this.State == "Reloading" and 1 or 0
 end
