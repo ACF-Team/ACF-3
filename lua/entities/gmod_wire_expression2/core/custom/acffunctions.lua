@@ -1005,7 +1005,7 @@ e2function number entity:acfDragCoef()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.DragCoef then return 0 end
 
-	return Round(this.BulletData.DragCoef / ACF.DragDiv, 2)
+	return Round(this.BulletData.DragCoef / ACF.DragDiv, 10)
 end
 
 -- Returns the number of projectiles in a flechette round
