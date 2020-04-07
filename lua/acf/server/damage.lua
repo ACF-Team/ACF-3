@@ -507,7 +507,7 @@ do
 	end -----------------------------------------
 
 	do -- Remove Props ------------------------------
-		local function ACF_KillChildProps( Entity, BlastPos, Energy )
+		local function KillChildProps( Entity, BlastPos, Energy )
 
 			local Explosives = {}
 			local Children 	 = ACF_GetAllChildren(Entity)
@@ -552,14 +552,16 @@ do
 					if Ent.Exploding then continue end
 
 					Ent.Exploding = true
-					ACF_ScaledExplosion(Ent) -- explode any crates that are getting removed
+					Ent.Inflictor = Entity.Inflictor
+					Ent:Detonate()
 				end
 			end
 		end
+		ACF_KillChildProps = KillChildProps
 
 		function ACF_HEKill(Entity, HitVector, Energy, BlastPos) -- blast pos is an optional world-pos input for flinging away children props more realistically
 			-- if it hasn't been processed yet, check for children
-			if not Entity.ACF_Killed then ACF_KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
+			if not Entity.ACF_Killed then KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
 
 			local Obj  = Entity:GetPhysicsObject()
 			local Mass = IsValid(Obj) and Obj:GetMass() or 50
@@ -592,7 +594,7 @@ do
 
 		function ACF_APKill(Entity, HitVector, Power)
 
-			ACF_KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
+			KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
 			local Obj  = Entity:GetPhysicsObject()
 			local Mass = 25

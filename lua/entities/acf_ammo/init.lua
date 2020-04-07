@@ -394,9 +394,9 @@ do -- Metamethods -------------------------------
 
 	do -- Misc ----------------------------------
 		local function CookoffCrate(Entity)
-			if Entity.Ammo <= 1 or Entity.Damaged < CurTime() then -- immediately detonate if there's 1 or 0 shells
-				ACF_ScaledExplosion(Entity) -- going to let empty crates harmlessly poot still, as an audio cue it died
-			elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then
+			if Entity.Ammo <= 1 or Entity.Damaged < CurTime() then -- Detonate when time is up or crate is out of ammo
+				Entity:Detonate()
+			elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
 				local VolumeRoll = math.Rand(0, 150) > Entity.BulletData.RoundVolume ^ 0.5
 				local AmmoRoll = math.Rand(0, 1) < Entity.Ammo / math.max(Entity.Capacity, 1)
 
@@ -464,14 +464,17 @@ do -- Metamethods -------------------------------
 				end
 
 				if self.Ammo > 1 then
-					ACF_ScaledExplosion(self)
+					self:Detonate()
+
+					return HitRes
 				else
 					ACF_HEKill(self, VectorRand())
 				end
 			end
 
-			-- cookoff chance calculation
-			if self.Damaged then return HitRes end
+
+			-- Cookoff chance
+			if self.Damaged then return HitRes end -- Already cooking off
 
 			local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
@@ -531,8 +534,35 @@ do -- Metamethods -------------------------------
 			return true, Message
 		end
 
+		function ENT:Detonate()
+			debug.Trace()
+			timer.Remove("ACF Crate Cookoff " .. self:EntIndex()) -- Prevent multiple explosions
+			self.Damaged = nil -- Prevent multiple explosions
+
+			local Pos		 = self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
+			local Filler     = self.RoundType == "Refill" and 0.001 or self.BulletData.FillerMass or 0
+			local Propellant = self.RoundType == "Refill" and 0.001 or self.BulletData.PropMass or 0
+
+			local ExplosiveMass = (Filler + Propellant * (ACF.PBase / ACF.HEPower)) * self.Ammo
+			local FragMass		= self.BulletData.ProjMass or ExplosiveMass * 0.5
+
+			ACF_KillChildProps(self, Pos, ExplosiveMass)
+			ACF_HE(Pos, ExplosiveMass, FragMass, self.Inflictor, {self}, self)
+
+			local Effect = EffectData()
+				Effect:SetOrigin(Pos)
+				Effect:SetNormal(Vector(0, 0, -1))
+				Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
+				Effect:SetRadius(0)
+
+			util.Effect("ACF_Explosion", Effect)
+
+			constraint.RemoveAll(self)
+			self:Remove()
+		end
+
 		function ENT:OnRemove()
-			if self.SupplyingTo then
+			if self.SupplyingTo then -- Stop refilling
 				for Crate in pairs(self.SupplyingTo) do
 					Crate:RemoveCallOnRemove("ACF Refill " .. self:EntIndex())
 
@@ -540,13 +570,11 @@ do -- Metamethods -------------------------------
 				end
 			end
 
-			if self.Damaged then -- If cooking off then detonate immediately
-				timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
-
-				ACF_ScaledExplosion(self)
+			if self.Damaged then -- Detonate immediately if cooking off
+				self:Detonate()
 			end
 
-			for K in pairs(self.Weapons) do
+			for K in pairs(self.Weapons) do -- Unlink weapons
 				self:Unlink(K)
 			end
 
