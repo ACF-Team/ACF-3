@@ -62,7 +62,9 @@ local Inputs = {
 		Entity:UpdateOverlay()
 	end,
 	["Refuel Duty"] = function(Entity, Value)
-		Entity.SupplyFuel = tobool(Value)
+		local N = math.Clamp(tonumber(Value), 0, 2)
+
+		Entity.SupplyFuel = N == 0 and nil or N
 	end
 }
 
@@ -185,7 +187,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 			self.Inflictor = Inflictor
 		end
 
-		ACF_ScaledExplosion(self)
+		self:Detonate()
 
 		return HitRes
 	end
@@ -200,7 +202,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 		self.Inflictor = Inflictor
 		self.Exploding = true
 
-		ACF_ScaledExplosion(self)
+		self:Detonate()
 	else --spray some fuel around
 		self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
 
@@ -208,6 +210,27 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	end
 
 	return HitRes
+end
+
+function ENT:Detonate()
+	self.Damaged = nil -- Prevent multiple explosions
+
+	local Pos		 	= self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
+	local ExplosiveMass = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
+
+	ACF_KillChildProps(self, Pos, ExplosiveMass)
+	ACF_HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
+
+	local Effect = EffectData()
+		Effect:SetOrigin(Pos)
+		Effect:SetNormal(Vector(0, 0, -1))
+		Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
+		Effect:SetRadius(0)
+
+	util.Effect("ACF_Explosion", Effect)
+
+	constraint.RemoveAll(self)
+	self:Remove()
 end
 
 function ENT:Update(ArgsTable)
@@ -398,7 +421,7 @@ function ENT:Think()
 
 					if Tank.FuelType == "Electric" then
 						Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
-					else
+					elseif self.SupplyFuel == 1 then
 						Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
 					end
 				end

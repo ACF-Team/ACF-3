@@ -177,7 +177,7 @@ do
 				for Ent, Table in pairs(Damage) do -- Deal damage to the entities we found
 					local Feathering 	= (1 - math.min(1, Table.Dist / Radius)) ^ ACF.HEFeatherExp
 					local AreaFraction 	= Table.Area / MaxSphere
-					local PowerFraction = Power * AreaFraction --How much of the total power goes to that prop
+					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
 					local AreaAdjusted 	= (Ent.ACF.Area / ACF.Threshold) * Feathering
 					local Blast 		= { Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted }
 					local BlastRes 		= ACF_Damage(Ent, Blast, AreaAdjusted, 0, Inflictor, 0, Gun, "HE")
@@ -192,20 +192,22 @@ do
 						Losses 	= Losses + FragRes.Loss * 0.5
 					end
 
-					if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then
-						Ents[Table.Index] = nil
-						local Debris = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin)
+					if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then -- We killed something
+						Filter[#Filter + 1] = Ent -- Filter out the dead prop
+						Ents[Table.Index]   = nil -- Don't bother looking for it in the future
+
+						local Debris = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin) -- Make some debris
 
 						if IsValid(Debris) then
-							Filter[#Filter + 1] = Debris
+							Filter[#Filter + 1] = Debris -- Filter that out too
 						end
 
-						Loop = true -- look for fresh targets since we blew a hole somewhere
-					elseif ACF_HEPUSH:GetBool() then
+						Loop = true -- Check for new targets since something died, maybe we'll find something new
+					elseif ACF_HEPUSH:GetBool() then -- Just damaged, not killed, so push on it some
 						Shove(Ent, Origin, Table.Vec, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
 					end
 
-					PowerSpent = PowerSpent + PowerFraction * Losses --Removing the energy spent killing props
+					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
 					Damaged[Ent] = true -- This entity can no longer recieve damage from this explosion
 				end
 
@@ -505,7 +507,7 @@ do
 	end -----------------------------------------
 
 	do -- Remove Props ------------------------------
-		local function ACF_KillChildProps( Entity, BlastPos, Energy )
+		local function KillChildProps( Entity, BlastPos, Energy )
 
 			local Explosives = {}
 			local Children 	 = ACF_GetAllChildren(Entity)
@@ -550,14 +552,16 @@ do
 					if Ent.Exploding then continue end
 
 					Ent.Exploding = true
-					ACF_ScaledExplosion(Ent) -- explode any crates that are getting removed
+					Ent.Inflictor = Entity.Inflictor
+					Ent:Detonate()
 				end
 			end
 		end
+		ACF_KillChildProps = KillChildProps
 
 		function ACF_HEKill(Entity, HitVector, Energy, BlastPos) -- blast pos is an optional world-pos input for flinging away children props more realistically
 			-- if it hasn't been processed yet, check for children
-			if not Entity.ACF_Killed then ACF_KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
+			if not Entity.ACF_Killed then KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
 
 			local Obj  = Entity:GetPhysicsObject()
 			local Mass = IsValid(Obj) and Obj:GetMass() or 50
@@ -590,7 +594,7 @@ do
 
 		function ACF_APKill(Entity, HitVector, Power)
 
-			ACF_KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
+			KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
 			local Obj  = Entity:GetPhysicsObject()
 			local Mass = 25

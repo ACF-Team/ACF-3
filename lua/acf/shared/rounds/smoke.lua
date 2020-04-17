@@ -25,7 +25,6 @@ function Round.convert(_, PlayerData)
 
 	PlayerData.Data5 = math.max(PlayerData.Data5 or 0, 0)
 	PlayerData.Data6 = math.max(PlayerData.Data6 or 0, 0)
-	PlayerData.Data7 = tonumber(PlayerData.Data7) or 0 --catching some possible errors with string data in legacy dupes
 
 	if not PlayerData.Data10 then
 		PlayerData.Data10 = 0
@@ -57,15 +56,6 @@ function Round.convert(_, PlayerData)
 	Data.Ricochet = 60 --Base ricochet angle
 	Data.DetonatorAngle = 80
 	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
-
-	if PlayerData.Data7 < 0.5 then
-		PlayerData.Data7 = 0
-		Data.FuseLength = PlayerData.Data7
-	else
-		PlayerData.Data7 = math.max(math.Round(PlayerData.Data7, 1), 0.5)
-		Data.FuseLength = PlayerData.Data7
-	end
-
 	Data.BoomPower = Data.PropMass + Data.FillerMass + Data.WPMass
 
 	--Only the crates need this part
@@ -125,14 +115,6 @@ function Round.cratetxt(BulletData)
 
 	if GUIData.SMFiller > 0 then
 		local temp = {"\nSM Radius: ", GUIData.SMRadiusMin, " m to ", GUIData.SMRadiusMax, " m\n", "SM Lifetime: ", GUIData.SMLife, " s"}
-
-		for i = 1, #temp do
-			str[#str + 1] = temp[i]
-		end
-	end
-
-	if BulletData.FuseLength > 0 then
-		local temp = {"\nFuse time: ", BulletData.FuseLength, " s"}
 
 		for i = 1, #temp do
 			str[#str + 1] = temp[i]
@@ -211,7 +193,6 @@ function Round.guicreate(Panel, Table)
 	acfmenupanel:AmmoSlider("ProjLength", 0, 0, 1000, 3, "Projectile Length", "") --Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol", 0, 0, 1000, 3, "Smoke Filler", "") --Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("WPVol", 0, 0, 1000, 3, "WP Filler", "") --Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("FuseLength", 0, 0, 1000, 3, "Timed Fuse", "")
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "") --Proj muzzle velocity (Name, Desc)
 	acfmenupanel:CPanelText("BlastDisplay", "") --HE Blast data (Name, Desc)
@@ -227,7 +208,7 @@ function Round.guiupdate(Panel)
 	PlayerData.ProjLength = acfmenupanel.AmmoData.ProjLength --ProjLength slider
 	PlayerData.Data5 = acfmenupanel.AmmoData.FillerVol
 	PlayerData.Data6 = acfmenupanel.AmmoData.WPVol
-	PlayerData.Data7 = acfmenupanel.AmmoData.FuseLength
+
 	local Tracer = 0
 
 	if acfmenupanel.AmmoData.Tracer then
@@ -242,13 +223,11 @@ function Round.guiupdate(Panel)
 	RunConsoleCommand("acfmenu_data4", Data.ProjLength) --And Data4 total round mass
 	RunConsoleCommand("acfmenu_data5", Data.FillerVol)
 	RunConsoleCommand("acfmenu_data6", Data.WPVol)
-	RunConsoleCommand("acfmenu_data7", Data.FuseLength)
 	RunConsoleCommand("acfmenu_data10", Data.Tracer)
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("FillerVol", Data.FillerVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "Smoke Filler Volume", "Smoke Filler Mass : " .. (math.floor(Data.FillerMass * 1000)) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("WPVol", Data.WPVol, Data.MinFillerVol, Data.MaxFillerVol, 3, "WP Filler Volume", "WP Filler Mass : " .. (math.floor(Data.WPMass * 1000)) .. " g") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("FuseLength", Data.FuseLength, 0, 10, 1, "Fuse Time", Data.FuseLength .. " s")
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
