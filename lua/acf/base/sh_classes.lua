@@ -329,3 +329,37 @@ do -- Sensor registration functions
 		return AddGroupedClass(ID, ClassID, Sensors, Data)
 	end
 end
+
+-- Serverside-only stuff
+if CLIENT then return end
+
+do -- Entity class registration function
+	ACF.Classes.Entities = ACF.Classes.Entities or {}
+
+	local Entities = ACF.Classes.Entities
+
+	function ACF.RegisterEntityClass(Class, Function, Data)
+		if not isstring(Class) then return end
+		if not isfunction(Function) then return end
+
+		local Entity = {
+			Spawn = Function,
+		}
+
+		if istable(Data) then
+			for K, V in pairs(Data) do
+				Entity[K] = V
+			end
+		end
+
+		Entities[Class] = Entity
+
+		duplicator.RegisterEntityClass(Class, Function, "Pos", "Angle", "Data")
+	end
+
+	function ACF.GetEntityClass(Class)
+		if not Class then return end
+
+		return Entities[Class]
+	end
+end
