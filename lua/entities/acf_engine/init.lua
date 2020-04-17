@@ -131,7 +131,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.FlywheelOverride = EngineData.flywheeloverride
 	Entity.IsTrans 			= EngineData.istrans -- driveshaft outputs to the side
 	Entity.FuelType 		= EngineData.fuel or "Petrol"
-	Entity.EngineType 		= EngineType.Name
+	Entity.EngineType 		= Type
 	Entity.Efficiency		= EngineType.Efficiency
 	Entity.TorqueScale 		= EngineType.TorqueScale
 	Entity.RequiresFuel 	= EngineData.requiresfuel
