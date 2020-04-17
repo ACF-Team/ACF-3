@@ -1,6 +1,8 @@
 TOOL.Name	  = "ACF Menu Test"
 TOOL.Category = "Construction"
 
+ACF.LoadToolFunctions(TOOL)
+
 cleanup.Register("acfmenu")
 
 if CLIENT then
@@ -29,14 +31,6 @@ if CLIENT then
 		cam.End3D()
 	end
 
-	function TOOL:LeftClick(Trace)
-		return not Trace.HitSky
-	end
-
-	function TOOL:RightClick(Trace)
-		return not Trace.HitSky
-	end
-
 	TOOL.BuildCPanel = ACF.BuildContextPanel
 
 	concommand.Add("acf_reload_menu", function()
@@ -44,12 +38,4 @@ if CLIENT then
 
 		ACF.BuildContextPanel(ACF.Menu.Panel)
 	end)
-else
-	function TOOL:LeftClick(Trace)
-		return not Trace.HitSky
-	end
-
-	function TOOL:RightClick(Trace)
-		return not Trace.HitSky
-	end
 end
