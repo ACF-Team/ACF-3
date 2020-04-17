@@ -172,6 +172,8 @@ do -- ACF Menu context panel
 			Node.Parent.Selected = Node
 			self.Selected = Node
 
+			ACF.SetToolMode("acf_menu2", "Main", "Idle")
+
 			Menu:ClearTemporal()
 			Menu:StartTemporal()
 

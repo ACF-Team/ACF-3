@@ -110,6 +110,8 @@ local function CreateMenu(Menu)
 	ACF.WriteValue("PrimaryClass", "acf_engine")
 	ACF.WriteValue("SecondaryClass", "acf_fueltank")
 
+	ACF.SetToolMode("acf_menu2", "Main", "Spawner")
+
 	function EngineClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 

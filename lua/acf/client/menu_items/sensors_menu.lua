@@ -33,6 +33,8 @@ local function CreateMenu(Menu)
 	ACF.WriteValue("PrimaryClass", "N/A")
 	ACF.WriteValue("SecondaryClass", "N/A")
 
+	ACF.SetToolMode("acf_menu2", "Main", "Spawner")
+
 	if not next(Sensors) then
 		Menu:AddTitle("No Sensors Registered")
 		Menu:AddLabel("No sensors have been registered. If this is incorrect, check your console for errors and contact the server owner.")
