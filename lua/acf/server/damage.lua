@@ -220,7 +220,7 @@ do
 			local HEWeight
 
 			if ent:GetClass() == "acf_fueltank" then
-				HEWeight = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
+				HEWeight = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ent.FuelDensity) * 0.1
 			else
 				local HE, Propel
 
@@ -270,7 +270,7 @@ do
 						if Occ.Hit and Occ.Entity:EntIndex() == Found.Entity:EntIndex() then
 							local FoundHEWeight
 							if Found:GetClass() == "acf_fueltank" then
-								FoundHEWeight = (math.max(Found.Fuel, Found.Capacity * 0.0025) / ACF.FuelDensity[Found.FuelType]) * 0.1
+								FoundHEWeight = (math.max(Found.Fuel, Found.Capacity * 0.0025) / Found.FuelDensity) * 0.1
 							else
 								local HE, Propel
 

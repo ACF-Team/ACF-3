@@ -100,6 +100,7 @@ end
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local EngineTypes = ACF.Classes.EngineTypes
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round		  = math.Round
 local max		  = math.max
@@ -109,6 +110,9 @@ local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 
 local function UpdateEngineData(Entity, Id, EngineData)
+	local Type = EngineData.enginetype or "GenericPetrol"
+	local EngineType = EngineTypes[Type]
+
 	Entity.Id 				= Id
 	Entity.Name 			= EngineData.name
 	Entity.ShortName 		= Id
@@ -127,9 +131,10 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.FlywheelOverride = EngineData.flywheeloverride
 	Entity.IsTrans 			= EngineData.istrans -- driveshaft outputs to the side
 	Entity.FuelType 		= EngineData.fuel or "Petrol"
-	Entity.EngineType 		= EngineData.enginetype or "GenericPetrol"
+	Entity.EngineType 		= EngineType.Name
+	Entity.Efficiency		= EngineType.Efficiency
+	Entity.TorqueScale 		= EngineType.TorqueScale
 	Entity.RequiresFuel 	= EngineData.requiresfuel
-	Entity.TorqueScale 		= ACF.TorqueScale[Entity.EngineType]
 
 	--calculate boosted peak kw
 	if Entity.EngineType == "Turbine" or Entity.EngineType == "Electric" then
@@ -142,9 +147,9 @@ local function UpdateEngineData(Entity, Id, EngineData)
 
 	--calculate base fuel usage
 	if Entity.EngineType == "Electric" then
-		Entity.FuelUse = ACF.ElecRate / (ACF.Efficiency[Entity.EngineType] * 60 * 60) --elecs use current power output, not max
+		Entity.FuelUse = ACF.ElecRate / (Entity.Efficiency * 60 * 60) --elecs use current power output, not max
 	else
-		Entity.FuelUse = ACF.TorqueBoost * ACF.FuelRate * ACF.Efficiency[Entity.EngineType] * Entity.peakkw / (60 * 60)
+		Entity.FuelUse = ACF.TorqueBoost * ACF.FuelRate * Entity.Efficiency * Entity.peakkw / (60 * 60)
 	end
 
 	local PhysObj = Entity:GetPhysicsObject()

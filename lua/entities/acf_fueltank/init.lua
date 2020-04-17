@@ -12,6 +12,7 @@ local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
+local FuelTypes	  = ACF.Classes.FuelTypes
 
 local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	local Percentage = 1 --how full is the tank?
@@ -32,7 +33,7 @@ local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	Entity.ShortName = Entity.Name
 	Entity.EntType = Data2
 	Entity.Model = FuelData.model
-	Entity.FuelDensity = ACF.FuelDensity[Data2]
+	Entity.FuelDensity = FuelTypes[Data2].Density
 	Entity.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
 	Entity.Capacity = Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 	Entity.EmptyMass = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
@@ -216,7 +217,7 @@ function ENT:Detonate()
 	self.Damaged = nil -- Prevent multiple explosions
 
 	local Pos		 	= self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
-	local ExplosiveMass = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
+	local ExplosiveMass = (math.max(self.Fuel, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
 
 	ACF_KillChildProps(self, Pos, ExplosiveMass)
 	ACF_HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
