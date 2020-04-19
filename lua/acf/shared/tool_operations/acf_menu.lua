@@ -67,6 +67,9 @@ do -- Spawner operation
 			return true
 		end
 
+		-- Couldn't update the entity, aborting spawn
+		if IsValid(Entity) then return false end
+
 		local Class = GetEntityClass(ClassName)
 
 		if not Class then
@@ -121,11 +124,10 @@ do -- Spawner operation
 			local Data = GetToolData(Player)
 			local ClassName = Data.SecondaryClass
 
-			if SpawnEntity(Player, ClassName, Trace, Data) then
+			if not Player:KeyDown(IN_SPEED) and SpawnEntity(Player, ClassName, Trace, Data) then
 				return true
 			end
 
-			if not Player:KeyDown(IN_SPEED) then return false end
 			if not CanTool(Player, Trace.Entity) then return false end
 
 			SelectEntity(Tool, Player, Trace.Entity)
@@ -177,9 +179,13 @@ do -- Linker operation
 		end
 
 		if Done > 0 then
-			SendMessage(Player, "Info", "Successfully linked ", Done, " out of ", Total, " entities to ", tostring(Entity), ".")
+			local Status = (Unlink and "unlinked " or "linked ") .. Done .. " out of " .. Total
+
+			SendMessage(Player, "Info", "Successfully ", Status, " entities to ", tostring(Entity), ".")
 		else
-			SendMessage(Player, "Error", "None of the ", Total, " entities could be linked to ", tostring(Entity), ".")
+			local Status =  Total .. " entities could be " .. (Unlink and "unlinked" or "linked")
+
+			SendMessage(Player, "Error", "None of the ", Status, " to ", tostring(Entity), ".")
 		end
 	end
 
