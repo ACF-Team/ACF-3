@@ -2,18 +2,45 @@ local PANEL = {}
 
 DEFINE_BASECLASS("Panel")
 
+-- Panels don't have a CallOnRemove function
+-- This roughly replicates the same behavior
+local function AddOnRemove(Panel, Parent)
+	local OldRemove = Panel.Remove
+
+	function Panel:Remove()
+		Parent:EndTemporal(self)
+		Parent:ClearTemporal(self)
+
+		Parent.Items[self] = nil
+
+		for TempParent in pairs(self.TempParents) do
+			TempParent.TempItems[self] = nil
+		end
+
+		if self == Parent.LastItem then
+			Parent.LastItem = self.PrevItem
+		end
+
+		if IsValid(self.PrevItem) then
+			self.PrevItem.NextItem = self.NextItem
+		end
+
+		if IsValid(self.NextItem) then
+			self.NextItem.PrevItem = self.PrevItem
+		end
+
+		OldRemove(self)
+	end
+end
+
 function PANEL:Init()
 	self.Items = {}
 	self.TempItems = {}
 end
 
 function PANEL:ClearAll()
-	for K in pairs(self.Items) do
-		if IsValid(K) then
-			K:Remove()
-		end
-
-		self.Items[K] = nil
+	for Item in pairs(self.Items) do
+		Item:Remove()
 	end
 
 	self:Clear()
@@ -25,11 +52,7 @@ function PANEL:ClearTemporal(Panel)
 	if not Target.TempItems then return end
 
 	for K in pairs(Target.TempItems) do
-		if IsValid(K) then
-			K:Remove()
-		end
-
-		Target.TempItems[K] = nil
+		K:Remove()
 	end
 end
 
@@ -53,8 +76,6 @@ end
 
 function PANEL:ClearAllTemporal()
 	for Panel in pairs(TemporalPanels) do
-		if not IsValid(Panel) then continue end
-
 		self:EndTemporal(Panel)
 		self:ClearTemporal(Panel)
 	end
@@ -69,16 +90,34 @@ function PANEL:AddPanel(Name)
 
 	Panel:Dock(TOP)
 	Panel:DockMargin(0, 0, 0, 10)
+	Panel:InvalidateParent()
 	Panel:InvalidateLayout()
+	Panel.TempParents = {}
 
 	self:InvalidateLayout()
 	self.Items[Panel] = true
 
-	if next(TemporalPanels) then
-		for K in pairs(TemporalPanels) do
-			K.TempItems[Panel] = true
+	local LastItem = self.LastItem
+
+	if IsValid(LastItem) then
+		LastItem.NextItem = Panel
+
+		Panel.PrevItem = LastItem
+
+		for Temp in pairs(LastItem.TempParents) do
+			Panel.TempParents[Temp] = true
+			Temp.TempItems[Panel] = true
 		end
 	end
+
+	self.LastItem = Panel
+
+	for Temp in pairs(TemporalPanels) do
+		Panel.TempParents[Temp] = true
+		Temp.TempItems[Panel] = true
+	end
+
+	AddOnRemove(Panel, self)
 
 	return Panel
 end
