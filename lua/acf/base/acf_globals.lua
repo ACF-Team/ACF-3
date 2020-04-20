@@ -95,8 +95,6 @@ do -- ACF global vars
 end
 
 do -- ACF Convars/Callbacks ------------------------
-	CreateConVar("sbox_max_acf_gun", 16)
-	CreateConVar("sbox_max_acf_smokelauncher", 10)
 	CreateConVar("sbox_max_acf_ammo", 32)
 	CreateConVar("sbox_max_acf_misc", 32)
 	CreateConVar("acf_meshvalue", 1)

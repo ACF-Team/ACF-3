@@ -33,8 +33,6 @@ if CLIENT then
 	language.Add( "Undone_acf_engine", "Undone ACF Engine" )
 	language.Add( "Undone_acf_gearbox", "Undone ACF Gearbox" )
 	language.Add( "Undone_acf_ammo", "Undone ACF Ammo" )
-	language.Add( "Undone_acf_gun", "Undone ACF Gun" )
-	language.Add( "SBoxLimit_acf_gun", "You've reached the ACF Guns limit!" )
 	language.Add( "SBoxLimit_acf_rack", "You've reached the ACF Launchers limit!" )
 	language.Add( "SBoxLimit_acf_ammo", "You've reached the ACF Explosives limit!" )
 	language.Add( "SBoxLimit_acf_sensor", "You've reached the ACF Sensors limit!" )

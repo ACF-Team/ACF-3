@@ -58,6 +58,10 @@ ACF.RegisterWeaponClass("SL", {
 	ROFMod		  = 45,
 	Spread		  = 0.32,
 	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
+	LimitConVar = {
+		Name = "_acf_smokelauncher",
+		Amount = 10,
+	},
 	Caliber	= {
 		Min = 40,
 		Max = 81,

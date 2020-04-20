@@ -2,6 +2,10 @@ include("shared.lua")
 
 local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 
+language.Add("Undone_acf_gun", "Undone ACF Weapon")
+language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
+language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
+
 function ENT:Initialize()
 	self.LastFire 	= 0
 	self.Reload 	= 0

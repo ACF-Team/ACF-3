@@ -165,6 +165,19 @@ do -- Weapon registration functions
 	function ACF.RegisterWeaponClass(ID, Data)
 		local Group = AddClassGroup(ID, Weapons, Data)
 
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_gun",
+				Amount = 16,
+			}
+		end
+
+		local Limit = Group.LimitConVar
+
+		if not ConVarExists("sbox_max" .. Limit.Name) then
+			CreateConVar("sbox_max" .. Limit.Name, Limit.Amount, FCVAR_ARCHIVE)
+		end
+
 		if Group.MuzzleFlash then
 			PrecacheParticleSystem(Group.MuzzleFlash)
 		end
