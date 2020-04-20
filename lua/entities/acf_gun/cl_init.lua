@@ -14,9 +14,14 @@ function ENT:Initialize()
 	self.RateScale 	= 0
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
-	self.HitBoxes 	= ACF.HitBoxes[self:GetModel()]
+
+	self:UpdateHitboxes()
 
 	self.BaseClass.Initialize(self)
+end
+
+function ENT:UpdateHitboxes()
+	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
@@ -101,3 +106,14 @@ function ACFGunGUICreate(Table)
 
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
+
+net.Receive("ACF_UpdateHitboxes", function()
+	local Entity = net.ReadEntity()
+
+	timer.Simple(0.1, function()
+		if not IsValid(Entity) then return end
+		if not Entity.UpdateHitboxes then return end
+
+		Entity:UpdateHitboxes()
+	end)
+end)
