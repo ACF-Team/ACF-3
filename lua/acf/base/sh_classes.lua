@@ -46,6 +46,20 @@ do -- Basic class registration functions
 		return Group
 	end
 
+	local Groups = {}
+
+	local function GetDestinyData(Destiny)
+		local Data = Groups[Destiny]
+
+		if not Data then
+			Data = {}
+
+			Groups[Destiny] = Data
+		end
+
+		return Data
+	end
+
 	function ACF.AddGroupedClass(ID, GroupID, Destiny, Data)
 		if not ID then return end
 		if not Data then return end
@@ -66,6 +80,9 @@ do -- Basic class registration functions
 			Group.Count = Group.Count + 1
 			Group.Lookup[ID] = Class
 			Group.Items[Group.Count] = Class
+
+			local DestinyData = GetDestinyData(Destiny)
+			DestinyData[ID] = Group
 		end
 
 		for K, V in pairs(Data) do
@@ -73,6 +90,15 @@ do -- Basic class registration functions
 		end
 
 		return Class
+	end
+
+	function ACF.GetClassGroup(Destiny, Class)
+		if not Destiny then return end
+		if not Class then return end
+
+		local Data = Groups[Destiny]
+
+		return Data and Data[Class]
 	end
 end
 
