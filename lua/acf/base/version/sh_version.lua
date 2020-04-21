@@ -109,6 +109,13 @@ function ACF.GetBranch(Name, Branch)
 	return Version.Branches[Branch] or Version.Branches.master
 end
 
+local function CheckVersionDate(Version, Branch)
+	if not isnumber(Version.Date) then return false end
+	if not isnumber(Branch.Date) then return false end
+
+	return Version.Date >= Branch.Date
+end
+
 function ACF.GetVersionStatus(Name)
 	local Version = Repos[Name]
 
@@ -120,7 +127,7 @@ function ACF.GetVersionStatus(Name)
 
 	if not Branch or Version.Code == "Not Installed" then
 		Status = "Unable to check"
-	elseif Version.Code == Branch.Code or Version.Date >= Branch.Date then
+	elseif Version.Code == Branch.Code or CheckVersionDate(Version, Branch) then
 		Status = "Up to date"
 	else
 		Status = "Out of date"
