@@ -259,7 +259,22 @@ do -- Engine registration functions
 	local Engines = ACF.Classes.Engines
 
 	function ACF.RegisterEngineClass(ID, Data)
-		return AddClassGroup(ID, Engines, Data)
+		local Group = AddClassGroup(ID, Engines, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_engine",
+				Amount = 16,
+			}
+		end
+
+		local Limit = Group.LimitConVar
+
+		if not ConVarExists("sbox_max" .. Limit.Name) then
+			CreateConVar("sbox_max" .. Limit.Name, Limit.Amount, FCVAR_ARCHIVE)
+		end
+
+		return Group
 	end
 
 	function ACF.RegisterEngine(ID, ClassID, Data)
