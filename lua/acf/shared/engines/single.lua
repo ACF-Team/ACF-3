@@ -60,7 +60,7 @@ do
 	ACF.RegisterEngine("0.25-I1", "I1", {
 		Name		 = "250cc Single Cylinder",
 		Description	 = "Tiny bike engine.",
-		model		 = "models/engines/1cylsml.mdl",
+		Model		 = "models/engines/1cylsml.mdl",
 		Sound		 = "acf_engines/i1_small.wav",
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",

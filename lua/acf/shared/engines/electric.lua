@@ -221,7 +221,7 @@ do -- Electric Standalone Motors
 		Mass		 = 125,
 		Torque		 = 384,
 		FlywheelMass = 0.3,
-		iselec		 = true,
+		IsElectric	 = true,
 		RequiresFuel = true,
 		RPM = {
 			Idle	 = 10,
