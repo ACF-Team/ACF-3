@@ -430,4 +430,17 @@ do -- Entity class registration function
 
 		return Entities[Class]
 	end
+
+	function ACF.GetEntClassVars(Class)
+		if not Class then return end
+		if not VarList[Class] then return end
+
+		local List = {}
+
+		for K, V in ipairs(VarList[Class]) do
+			List[K] = V
+		end
+
+		return List
+	end
 end

@@ -34,7 +34,7 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
-	local function UpdateWeapon(Entity, Class, Weapon)
+	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Caliber = Weapon.Caliber * 0.1
 
 		Entity:SetModel(Weapon.Model)
@@ -48,7 +48,11 @@ do -- Spawn and Update functions --------------------------------
 			Entity.Inputs = WireLib.CreateInputs(Entity, { "Fire", "Unload", "Reload" })
 		end
 
-		Entity.Id				= Weapon.ID -- MUST be stored on ent to be duped
+		-- Storing all the relevant information on the entity for duping
+		for _, V in ipairs(Entity.DataStore) do
+			Entity[V] = Data[V]
+		end
+
 		Entity.Name				= Weapon.Name
 		Entity.ShortName		= Entity.Id
 		Entity.EntType			= Class.Name
@@ -126,6 +130,7 @@ do -- Spawn and Update functions --------------------------------
 		Gun.Crates			= {}
 		Gun.CurrentShot		= 0
 		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+		Gun.DataStore		= ACF.GetEntClassVars("acf_gun")
 
 		Gun:SetNWString("Sound", Gun.Sound)
 
@@ -134,7 +139,7 @@ do -- Spawn and Update functions --------------------------------
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
 
-		UpdateWeapon(Gun, Class, Weapon, true)
+		UpdateWeapon(Gun, Data, Class, Weapon)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Gun, Class, Weapon)
@@ -196,7 +201,7 @@ do -- Spawn and Update functions --------------------------------
 		local Constraints = constraint.GetTable(self)
 		local PhysData = SavePhysObj(self)
 
-		UpdateWeapon(self, Class, Weapon)
+		UpdateWeapon(self, Data, Class, Weapon)
 
 		if Class.OnUpdate then
 			Class.OnUpdate(self, Class, Weapon)
