@@ -535,7 +535,6 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:Detonate()
-			debug.Trace()
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex()) -- Prevent multiple explosions
 			self.Damaged = nil -- Prevent multiple explosions
 

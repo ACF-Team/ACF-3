@@ -142,7 +142,7 @@ do -- Spawn and Update functions --------------------------------
 		UpdateWeapon(Gun, Data, Class, Weapon)
 
 		if Class.OnSpawn then
-			Class.OnSpawn(Gun, Class, Weapon)
+			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
 
 		return Gun
@@ -187,24 +187,25 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	function ENT:Update(Data)
+		if self.Firing then return false, "Stop firing before updating the weapon!" end
+
 		VerifyData(Data)
 
-		if self.Id == Data.Id then return end
+		if self.Id == Data.Id then return false, "This weapon is already the one you want it to update to!" end
 
 		local Class = ACF.GetClassGroup(Weapons, Data.Id)
 		local Weapon = Class.Lookup[Data.Id]
+		local Constraints = constraint.GetTable(self)
+		local PhysData = SavePhysObj(self)
 
 		if self.State ~= "Empty" then
 			self:Unload()
 		end
 
-		local Constraints = constraint.GetTable(self)
-		local PhysData = SavePhysObj(self)
-
 		UpdateWeapon(self, Data, Class, Weapon)
 
 		if Class.OnUpdate then
-			Class.OnUpdate(self, Class, Weapon)
+			Class.OnUpdate(self, Data, Class, Weapon)
 		end
 
 		RestorePhysObj(self, PhysData)
@@ -219,6 +220,8 @@ do -- Spawn and Update functions --------------------------------
 		net.Start("ACF_UpdateHitboxes")
 			net.WriteEntity(self)
 		net.Send(self.Owner)
+
+		return true, "Weapon updated successfully!"
 	end
 end ---------------------------------------------
 

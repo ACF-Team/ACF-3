@@ -63,7 +63,9 @@ do -- Spawner operation
 		local Entity = Trace.Entity
 
 		if CanUpdate(Player, Entity, ClassName) then
-			Entity:Update(Data)
+			local Result, Message = Entity:Update(Data)
+
+			SendMessage(Player, Result and "Info" or "Error", Message)
 			return true
 		end
 
