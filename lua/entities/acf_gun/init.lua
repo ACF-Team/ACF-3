@@ -21,6 +21,11 @@ local HookRun	  = hook.Run
 local EMPTY		  = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 do -- Spawn and Update functions --------------------------------
+	local Updated = {
+		["20mmHRAC"] = "20mmRAC",
+		["30mmHRAC"] = "30mmRAC",
+	}
+
 	local function VerifyData(Data)
 		-- Entity was created via menu tool
 		if Data.Weapon then
@@ -30,7 +35,7 @@ do -- Spawn and Update functions --------------------------------
 		local Class = ACF.GetClassGroup(Weapons, Data.Id)
 
 		if not Class then
-			Data.Id = "50mmC"
+			Data.Id = Data.Id and Updated[Data.Id] or "50mmC"
 		end
 	end
 
