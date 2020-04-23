@@ -158,8 +158,6 @@ do -- Spawn and Update functions --------------------------------
 
 	------------------- Updating ---------------------
 
-	util.AddNetworkString("ACF_UpdateHitboxes")
-
 	local function SavePhysObj(Entity)
 		local PhysObj = Entity:GetPhysicsObject()
 

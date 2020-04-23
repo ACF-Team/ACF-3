@@ -123,6 +123,7 @@ do -- ACF Convars/Callbacks ------------------------
 end
 
 if SERVER then
+	util.AddNetworkString("ACF_UpdateHitboxes")
 	util.AddNetworkString("ACF_KilledByACF")
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
@@ -153,6 +154,19 @@ elseif CLIENT then
 			spawnmenu.AddToolCategory("Main", "ACF", "#spawnmenu.tools.acf")
 		end)
 	end
+	---------------------------------------------
+
+	-- Hitbox Updating --------------------------
+	net.Receive("ACF_UpdateHitboxes", function()
+		local Entity = net.ReadEntity()
+
+		timer.Simple(0.1, function()
+			if not IsValid(Entity) then return end
+			if not Entity.UpdateHitboxes then return end
+
+			Entity:UpdateHitboxes()
+		end)
+	end)
 	---------------------------------------------
 end
 
