@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local ACF_GunInfoWhileSeated = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
+local SeatedInfo = CreateClientConVar("ACF_GunInfoWhileSeated", 0, true, false)
 
 language.Add("Undone_acf_gun", "Undone ACF Weapon")
 language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
@@ -27,7 +27,7 @@ end
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 	local Player = LocalPlayer()
-	local HideBubble = IsValid(Player) and Player:InVehicle() and not ACF_GunInfoWhileSeated:GetBool()
+	local HideBubble = IsValid(Player) and Player:InVehicle() and not SeatedInfo:GetBool()
 
 	self.BaseClass.DoNormalDraw(self, false, HideBubble)
 	Wire_Render(self)

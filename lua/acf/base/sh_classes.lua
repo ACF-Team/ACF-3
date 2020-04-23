@@ -106,6 +106,16 @@ local AddSimpleClass  = ACF.AddSimpleClass
 local AddClassGroup   = ACF.AddClassGroup
 local AddGroupedClass = ACF.AddGroupedClass
 
+local function AddSboxLimit(Data)
+	if CLIENT then return end
+	if ConVarExists("sbox_max" .. Data.Name) then return end
+
+	CreateConVar("sbox_max" .. Data.Name,
+				Data.Amount,
+				FCVAR_ARCHIVE + FCVAR_NOTIFY,
+				Data.Text or "")
+end
+
 do -- Class registration function
 	local Classes = {}
 	local Queued = {}
@@ -195,14 +205,11 @@ do -- Weapon registration functions
 			Group.LimitConVar = {
 				Name = "_acf_gun",
 				Amount = 16,
+				Text = "Maximum amount of weapons a player can create."
 			}
 		end
 
-		local Limit = Group.LimitConVar
-
-		if not ConVarExists("sbox_max" .. Limit.Name) then
-			CreateConVar("sbox_max" .. Limit.Name, Limit.Amount, FCVAR_ARCHIVE)
-		end
+		AddSboxLimit(Group.LimitConVar)
 
 		if Group.MuzzleFlash then
 			PrecacheParticleSystem(Group.MuzzleFlash)
@@ -265,14 +272,11 @@ do -- Engine registration functions
 			Group.LimitConVar = {
 				Name = "_acf_engine",
 				Amount = 16,
+				Text = "Maximum amount of engines a player can create."
 			}
 		end
 
-		local Limit = Group.LimitConVar
-
-		if not ConVarExists("sbox_max" .. Limit.Name) then
-			CreateConVar("sbox_max" .. Limit.Name, Limit.Amount, FCVAR_ARCHIVE)
-		end
+		AddSboxLimit(Group.LimitConVar)
 
 		return Group
 	end
