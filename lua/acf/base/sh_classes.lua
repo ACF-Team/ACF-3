@@ -308,7 +308,19 @@ do -- Fuel tank registration functions
 	local FuelTanks = ACF.Classes.FuelTanks
 
 	function ACF.RegisterFuelTankClass(ID, Data)
-		return AddClassGroup(ID, FuelTanks, Data)
+		local Group = AddClassGroup(ID, FuelTanks, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_fueltank",
+				Amount = 24,
+				Text = "Maximum amount of fuel tanks a player can create."
+			}
+		end
+
+		AddSboxLimit(Group.LimitConVar)
+
+		return Group
 	end
 
 	function ACF.RegisterFuelTank(ID, ClassID, Data)

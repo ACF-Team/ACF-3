@@ -10,47 +10,12 @@ include("shared.lua")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local FuelTanks	  = ACF.Classes.FuelTanks
+local FuelTypes	  = ACF.Classes.FuelTypes
+local ActiveTanks = ACF.FuelTanks
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local FuelTypes	  = ACF.Classes.FuelTypes
-
-local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
-	local Percentage = 1 --how full is the tank?
-
-	--if updating existing tank, keep fuel level
-	if Entity.Capacity and Entity.Capacity ~= 0 then
-		Percentage = Entity.Fuel / Entity.Capacity
-	end
-
-	local PhysObj = Entity:GetPhysicsObject()
-	local Area = PhysObj:GetSurfaceArea()
-	local Wall = 0.03937 --wall thickness in inches (1mm)
-
-	Entity.Id = Id
-	Entity.SizeId = Data1
-	Entity.FuelType = Data2
-	Entity.Name = Data2 .. " " .. Data1
-	Entity.ShortName = Entity.Name
-	Entity.EntType = Data2
-	Entity.Model = FuelData.model
-	Entity.FuelDensity = FuelTypes[Data2].Density
-	Entity.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
-	Entity.Capacity = Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
-	Entity.EmptyMass = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
-	Entity.IsExplosive = Entity.FuelType ~= "Electric" and FuelData.explosive
-	Entity.NoLinks = FuelData.nolinks
-
-	if Entity.FuelType == "Electric" then
-		Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume
-		Entity.Capacity = Entity.Capacity * ACF.LiIonED
-	end
-
-	Entity.Fuel = Percentage * Entity.Capacity
-
-	Entity:UpdateMass()
-	Entity:UpdateOverlay()
-	Entity:UpdateOutputs()
-end
+local Wall		  = 0.03937 --wall thickness in inches (1mm)
 
 local Inputs = {
 	Active = function(Entity, Value)
@@ -71,74 +36,214 @@ local Inputs = {
 
 --===============================================================================================--
 
-function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
-	if not Owner:CheckLimit("_acf_misc") then return end
+do -- Spawn and Update functions
+	local function VerifyData(Data)
+		if Data.FuelTank then -- Entity was created via menu tool
+			Data.Id = Data.FuelTank
+		elseif Data.SizeId then -- Backwards compatibility with ACF-2 dupes
+			Data.Id = Data.SizeId
+			Data.SizeId = nil
+		end
 
-	local FuelData = ACF.Weapons.FuelTanks[Data1]
+		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
 
-	if not FuelData then return end
+		if not Class then
+			Data.Id = "Jerry_Can"
+		end
 
-	local Tank = ents.Create("acf_fueltank")
+		-- Making sure to provide a valid fuel type
+		if not (Data.FuelType and FuelTypes[Data.FuelType]) then
+			Data.FuelType = "Petrol"
+		end
+	end
 
-	if not IsValid(Tank) then return end
+	local function UpdateFuelTank(Entity, Data, Class, FuelTank)
+		local FuelData = FuelTypes[Data.FuelType]
+		local Percentage = 1
 
-	Tank:SetModel(FuelData.model)
-	Tank:SetPlayer(Owner)
-	Tank:SetAngles(Angle)
-	Tank:SetPos(Pos)
-	Tank:Spawn()
+		Entity:SetModel(FuelTank.Model)
 
-	Tank:PhysicsInit(SOLID_VPHYSICS)
-	Tank:SetMoveType(MOVETYPE_VPHYSICS)
+		Entity:PhysicsInit(SOLID_VPHYSICS)
+		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-	Owner:AddCount("_acf_misc", Tank)
-	Owner:AddCleanup("acfmenu", Tank)
+		local PhysObj = Entity:GetPhysicsObject()
+		local Area = PhysObj:GetSurfaceArea()
 
-	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
+		-- Storing all the relevant information on the entity for duping
+		for _, V in ipairs(Entity.DataStore) do
+			Entity[V] = Data[V]
+		end
 
-	Tank.Owner     = Owner
-	Tank.Engines   = {}
-	Tank.Active    = true
-	Tank.Leaking   = 0
-	Tank.CanUpdate = true
-	Tank.LastThink = 0
-	Tank.HitBoxes  = {
+		-- If updating, keep the same fuel level
+		if Entity.Capacity then
+			Percentage = Entity.Fuel / Entity.Capacity
+		end
+
+		Entity.Name			= FuelTank.Name
+		Entity.ShortName	= Entity.Id
+		Entity.EntType		= Class.Name
+		Entity.FuelDensity	= FuelData.Density
+		Entity.Volume		= PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
+		Entity.Capacity		= Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
+		Entity.EmptyMass	= (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
+		Entity.IsExplosive	= Entity.FuelType ~= "Electric" and FuelTank.IsExplosive
+		Entity.NoLinks		= FuelTank.Unlinkable
+		Entity.HitBoxes = {
 			Main = {
-				Pos = Tank:OBBCenter(),
-				Scale = (Tank:OBBMaxs() - Tank:OBBMins()) - Vector(0.5, 0.5, 0.5),
+				Pos = Entity:OBBCenter(),
+				Scale = (Entity:OBBMaxs() - Entity:OBBMins()) - Vector(0.5, 0.5, 0.5),
 			}
 		}
 
-	Tank.Inputs = WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
-	Tank.Outputs = WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
+		Entity:SetNWString("WireName", Entity.Name)
 
-	WireLib.TriggerOutput(Tank, "Entity", Tank)
+		if Entity.FuelType == "Electric" then
+			Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume
+			Entity.Capacity = Entity.Capacity * ACF.LiIonED
+		end
 
-	ACF.FuelTanks[Tank] = true
+		Entity.Fuel = Percentage * Entity.Capacity
 
-	local PhysObj = Tank:GetPhysicsObject()
-	local Fuel = Tank.FuelType == "Electric" and Tank.Liters or Tank.Fuel
-	local Mass = math.floor(Tank.EmptyMass + Fuel * Tank.FuelDensity)
+		ACF_Activate(Entity, true)
 
-	if IsValid(PhysObj) then
-		PhysObj:SetMass(Mass)
+		Entity.ACF.Model = FuelTank.Model
 
-		Tank.Mass = Mass
+		Entity:UpdateMass(true)
+		Entity:UpdateOverlay(true)
+
+		CheckLegal(Entity)
 	end
 
-	ACF_Activate(Tank)
+	function MakeACF_FuelTank(Player, Pos, Angle, Data)
+		VerifyData(Data)
 
-	Tank.ACF.LegalMass = Tank.Mass
-	Tank.ACF.Model	   = Tank.Model
+		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
+		local FuelTank = Class.Lookup[Data.Id]
+		local Limit = Class.LimitConVar.Name
 
-	CheckLegal(Tank)
+		if not Player:CheckLimit(Limit) then return end
 
-	return Tank
+		local Tank = ents.Create("acf_fueltank")
+
+		if not IsValid(Tank) then return end
+
+		Tank:SetPlayer(Player)
+		Tank:SetAngles(Angle)
+		Tank:SetPos(Pos)
+		Tank:Spawn()
+
+		Player:AddCleanup("acfmenu", Tank)
+		Player:AddCount(Limit, Tank)
+
+		Tank.Owner		= Player -- MUST be stored on ent for PP
+		Tank.Engines	= {}
+		Tank.Active		= true
+		Tank.Leaking	= 0
+		Tank.CanUpdate	= true
+		Tank.LastThink	= 0
+		Tank.Inputs		= WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
+		Tank.Outputs	= WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
+		Tank.DataStore	= ACF.GetEntClassVars("acf_fueltank")
+
+		WireLib.TriggerOutput(Tank, "Entity", Tank)
+
+		ActiveTanks[Tank] = true
+
+		UpdateFuelTank(Tank, Data, Class, FuelTank)
+
+		if Class.OnSpawn then
+			Class.OnSpawn(Tank, Data, Class, FuelTank)
+		end
+
+		return Tank
+	end
+
+	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Id", "FuelType", "SizeId")
+	ACF.RegisterLinkSource("acf_fueltank", "Engines")
+
+	------------------- Updating ---------------------
+
+	local function SavePhysObj(Entity)
+		local PhysObj = Entity:GetPhysicsObject()
+
+		return {
+			Gravity = PhysObj:IsGravityEnabled(),
+			Motion = PhysObj:IsMotionEnabled(),
+		}
+	end
+
+	local function RestorePhysObj(Entity, PhysData)
+		local PhysObj = Entity:GetPhysicsObject()
+
+		PhysObj:EnableGravity(PhysData.Gravity)
+		PhysObj:EnableMotion(PhysData.Motion)
+	end
+
+	local function RestoreConstraints(List)
+		local Constraints = duplicator.ConstraintType
+
+		for _, Data in ipairs(List) do
+			local Constraint = Constraints[Data.Type]
+			local Args = {}
+
+			for Index, Name in ipairs(Constraint.Args) do
+				Args[Index] = Data[Name]
+			end
+
+			Constraint.Func(unpack(Args))
+		end
+	end
+
+	function ENT:Update(Data)
+		VerifyData(Data)
+
+		if self.Id == Data.Id then return false, "This fuel tank is already the one you want it to update to!" end
+
+		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
+		local FuelTank = Class.Lookup[Data.Id]
+		local Constraints = constraint.GetTable(self)
+		local PhysData = SavePhysObj(self)
+		local Feedback = ""
+
+		UpdateFuelTank(self, Data, Class, FuelTank)
+
+		if Class.OnUpdate then
+			Class.OnUpdate(self, Data, Class, FuelTank)
+		end
+
+		RestorePhysObj(self, PhysData)
+		RestoreConstraints(Constraints)
+
+		if next(self.Engines) then
+			local FuelType = self.FuelType
+			local Count, Total = 0, 0
+
+			for Engine in pairs(self.Engines) do
+				if not Engine.FuelTypes[FuelType] then
+					self:Unlink(Engine)
+
+					Count = Count + 1
+				end
+
+				Total = Total + 1
+			end
+
+			if Count == Total then
+				Feedback = " Unlinked from all engines due to fuel type change."
+			elseif Count > 0 then
+				local Text = " Unlinked from %s out of %s engines due to fuel type change."
+
+				Feedback = Text:format(Count, Total)
+			end
+		end
+
+		net.Start("ACF_UpdateHitboxes")
+			net.WriteEntity(self)
+		net.Send(self.Owner)
+
+		return true, "Fuel tank updated successfully!" .. Feedback
+	end
 end
-
-list.Set("ACFCvars", "acf_fueltank", {"id", "data1", "data2"})
-duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType")
-ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 --===============================================================================================--
 -- Meta Funcs
@@ -167,8 +272,6 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.MaxHealth = Health
 	self.ACF.Armour = Armour * (0.5 + Percent / 2)
 	self.ACF.MaxArmour = Armour
-	self.ACF.Mass = self.Mass
-	self.ACF.Density = (PhysObj:GetMass() * 1000) / self.ACF.Volume
 	self.ACF.Type = "Prop"
 end
 
@@ -234,29 +337,6 @@ function ENT:Detonate()
 	self:Remove()
 end
 
-function ENT:Update(ArgsTable)
-	if ArgsTable[1] ~= self.Owner then return false, "You don't own that fuel tank!" end
-
-	local FuelData = ACF.Weapons.FuelTanks[ArgsTable[5]]
-
-	if not FuelData then return false, "Invalid fuel tank type!" end
-	if FuelData.model ~= self.Model then return false, "The new fuel tank must have the same model!" end
-
-	local Feedback = ""
-
-	if self.FuelType ~= ArgsTable[6] then
-		for Engine in pairs(self.Engines) do
-			self:Unlink(Engine)
-		end
-
-		Feedback = " New fuel type loaded, fuel tank unlinked."
-	end
-
-	UpdateFuelData(self, ArgsTable[4], ArgsTable[5], ArgsTable[6], FuelData)
-
-	return true, "Fuel tank successfully updated." .. Feedback
-end
-
 function ENT:Enable()
 	if self.Inputs.Active.Path then
 		self.Active = tobool(self.Inputs.Active.Value)
@@ -299,77 +379,82 @@ function ENT:Unlink(Target)
 	return false, "Fuel tanks can't be unlinked from '" .. Target:GetClass() .. "'."
 end
 
-function ENT:UpdateMass()
-	if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
+do -- Mass Update
+	local function UpdateMass(Entity)
+		local Fuel = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
+		local Mass = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
+		local PhysObj = Entity.ACF.PhysObj
 
-	TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
-		if not IsValid(self) then return end
-
-		local Fuel = self.FuelType == "Electric" and self.Liters or self.Fuel
-		local PhysObj = self.ACF.PhysObj
-
-		self.Mass = math.floor(self.EmptyMass + Fuel * self.FuelDensity)
-		self.ACF.LegalMass = self.Mass
+		Entity.ACF.LegalMass = Mass
+		Entity.ACF.Density = Mass * 1000 / Entity.ACF.Volume
 
 		if IsValid(PhysObj) then
-			PhysObj:SetMass(self.Mass)
+			PhysObj:SetMass(Mass)
 		end
-	end)
-end
-
-local function Overlay(Ent)
-	local Text
-
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
-	elseif Ent.Leaking > 0 then
-		Text = "Leaking"
-	else
-		Text = Ent.Active and "Providing Fuel" or "Idle"
 	end
 
-	Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
+	function ENT:UpdateMass(Instant)
+		if Instant then
+			return UpdateMass(self)
+		end
 
-	if Ent.FuelType == "Electric" then
-		local KiloWatt = math.Round(Ent.Fuel, 1)
-		local Joules = math.Round(Ent.Fuel * 3.6, 1)
+		if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
-		Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
-	else
-		local Liters = math.Round(Ent.Fuel, 1)
-		local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
-
-		Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
-	end
-
-	Ent:SetOverlayText(Text)
-end
-
-function ENT:UpdateOverlay(Instant)
-	if Instant then
-		Overlay(self)
-		return
-	end
-
-	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-			if IsValid(self) then
-				Overlay(self)
+		TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+			if not IsValid(self) then
+				UpdateMass(self)
 			end
 		end)
 	end
 end
 
-function ENT:UpdateOutputs()
-	if TimerExists("ACF Outputs Buffer" .. self:EntIndex()) then return end
+do -- Overlay Update
+	local function Overlay(Ent)
+		local Text
 
-	TimerCreate("ACF Outputs Buffer" .. self:EntIndex(), 0.1, 1, function()
-		if not IsValid(self) then return end
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		elseif Ent.Leaking > 0 then
+			Text = "Leaking"
+		else
+			Text = Ent.Active and "Providing Fuel" or "Idle"
+		end
 
-		WireLib.TriggerOutput(self, "Fuel", math.Round(self.Fuel, 2))
-		WireLib.TriggerOutput(self, "Capacity", math.Round(self.Capacity, 2))
-		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
-	end)
+		Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
+
+		if Ent.FuelType == "Electric" then
+			local KiloWatt = math.Round(Ent.Fuel, 1)
+			local Joules = math.Round(Ent.Fuel * 3.6, 1)
+
+			Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+		else
+			local Liters = math.Round(Ent.Fuel, 1)
+			local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
+
+			Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
+		end
+
+		WireLib.TriggerOutput(Ent, "Fuel", math.Round(Ent.Fuel, 2))
+		WireLib.TriggerOutput(Ent, "Capacity", math.Round(Ent.Capacity, 2))
+		WireLib.TriggerOutput(Ent, "Leaking", Ent.Leaking > 0 and 1 or 0)
+
+		Ent:SetOverlayText(Text)
+	end
+
+	function ENT:UpdateOverlay(Instant)
+		if Instant then
+			Overlay(self)
+			return
+		end
+
+		if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+				if IsValid(self) then
+					Overlay(self)
+				end
+			end)
+		end
+	end
 end
 
 function ENT:TriggerInput(Input, Value)
@@ -391,7 +476,6 @@ function ENT:Think()
 
 		self:UpdateMass()
 		self:UpdateOverlay()
-		self:UpdateOutputs()
 	end
 
 	--refuelling
@@ -399,7 +483,7 @@ function ENT:Think()
 		local MaxDist = ACF.RefillDistance * ACF.RefillDistance
 		local SelfPos = self:GetPos()
 
-		for Tank in pairs(ACF.FuelTanks) do
+		for Tank in pairs(ActiveTanks) do
 			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel then
 				local Distance = SelfPos:DistToSqr(Tank:GetPos())
 
@@ -418,7 +502,6 @@ function ENT:Think()
 
 					Tank:UpdateMass()
 					Tank:UpdateOverlay()
-					Tank:UpdateOutputs()
 
 					if Tank.FuelType == "Electric" then
 						Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
@@ -431,7 +514,6 @@ function ENT:Think()
 
 		self:UpdateMass()
 		self:UpdateOverlay()
-		self:UpdateOutputs()
 	end
 
 	self.LastThink = CurTime()
@@ -444,7 +526,7 @@ function ENT:OnRemove()
 		self:Unlink(Engine)
 	end
 
-	ACF.FuelTanks[self] = nil
+	ActiveTanks[self] = nil
 
 	WireLib.Remove(self)
 end
