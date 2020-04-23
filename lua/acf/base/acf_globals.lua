@@ -41,9 +41,9 @@ do -- ACF global vars
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
 	ACF.PDensity 			= 1.6 --Gun propellant density (Real powders go from 0.7 to 1.6, i"m using higher densities to simulate case bottlenecking)
 	ACF.TorqueBoost 		= 1.25 --torque multiplier from using fuel
-	ACF.FuelRate 			= 5 --multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
 	ACF.ElecRate 			= 1.5 --multiplier for electrics
-	ACF.TankVolumeMul 		= 0.5 -- multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED 			= 0.458 -- li-ion energy density: kw hours / liter
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
