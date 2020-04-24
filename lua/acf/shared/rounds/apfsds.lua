@@ -1,9 +1,11 @@
-ACF.AmmoBlacklist.AP = {"MO", "SL", "SB"}
+ACF.AmmoBlacklist.APFSDS = { "MO", "SL", "C", "HW", "AC", "SC", "SA", "MG", "AL", "RAC", "GL", "HMG", "AAM", "ARTY", "ASM", "BOMB", "GBU", "POD", "SAM", "UAR", "FFAR", "FGL" }
+
 local Round = {}
+
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
-Round.name = "Armour Piercing (AP)" --Human readable name
-Round.model = "models/munitions/round_100mm_shot.mdl" --Shell flight model
-Round.desc = "A shell made out of a solid piece of steel, meant to penetrate armour"
+Round.name = "AP Fin Stabilized, Discarding Sabot (APFSDS)" --Human readable name
+Round.model = "models/munitions/dart_100mm.mdl" --Shell flight model
+Round.desc = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
 
 function Round.create(_, BulletData)
 	ACF_CreateBullet(BulletData)
@@ -28,28 +30,26 @@ function Round.convert(_, PlayerData)
 	end
 
 	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
-	Data.ProjMass = Data.FrArea * (Data.ProjLength * 7.9 / 1000) --Volume of the projectile as a cylinder * density of steel
+
+	Data.ProjMass = (Data.FrArea / 1.5) * (Data.ProjLength * 7.9 / 1000) --Volume of the projectile as a cylinder * density of steel
 	Data.ShovePower = 0.2
 	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
-	Data.DragCoef = ((Data.FrArea / 10000) / Data.ProjMass)
-	Data.LimitVel = 800 --Most efficient penetration speed in m/s
+	Data.DragCoef = (Data.FrArea / 10000) / Data.ProjMass
+	Data.LimitVel = 1200 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet = 60 --Base ricochet angle
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Caliber)
-	Data.BoomPower = Data.PropMass
+	Data.Ricochet = 80 --Base ricochet angle
+	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.5
 
 	--Only the crates need this part
 	if SERVER then
 		ServerData.Id = PlayerData.Id
 		ServerData.Type = PlayerData.Type
-
 		return table.Merge(Data, ServerData)
 	end
 
 	--Only the GUI needs this part
 	if CLIENT then
 		GUIData = table.Merge(GUIData, Round.getDisplayData(Data))
-
 		return table.Merge(Data, GUIData)
 	end
 end
@@ -58,12 +58,11 @@ function Round.getDisplayData(Data)
 	local GUIData = {}
 	local Energy = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 	GUIData.MaxPen = (Energy.Penetration / Data.PenArea) * ACF.KEtoRHA
-
 	return GUIData
 end
 
 function Round.network(Crate, BulletData)
-	Crate:SetNWString("AmmoType", "AP")
+	Crate:SetNWString("AmmoType", "APFSDS")
 	Crate:SetNWString("AmmoID", BulletData.Id)
 	Crate:SetNWFloat("Caliber", BulletData.Caliber)
 	Crate:SetNWFloat("ProjMass", BulletData.ProjMass)
@@ -74,10 +73,13 @@ function Round.network(Crate, BulletData)
 end
 
 function Round.cratetxt(BulletData)
-	--local FrArea = BulletData.FrArea
 	local DData = Round.getDisplayData(BulletData)
 
-	local str = {"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n", "Max Penetration: ", math.floor(DData.MaxPen), " mm"} --"Cartridge Mass: ", math.Round(TotalMass, 2), MassUnit, "\n", --"Max Pen. Damage: ", math.Round(MaxHP.Damage, 1), " HP\n",
+	local str =
+	{
+		"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n",
+		"Max Penetration: ", math.floor(DData.MaxPen), " mm"
+	}
 
 	return table.concat(str)
 end
@@ -91,18 +93,17 @@ function Round.propimpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 		if HitRes.Overkill > 0 then
 			table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
 			Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
-
 			return "Penetrated"
 		elseif HitRes.Ricochet then
 			return "Ricochet"
 		else
 			return false
 		end
-	else
-		table.insert(Bullet.Filter, Target)
-
-		return "Penetrated"
 	end
+
+	table.insert(Bullet.Filter, Target)
+
+	return "Penetrated"
 end
 
 function Round.worldimpact(_, Bullet, HitPos, HitNormal)
@@ -159,23 +160,23 @@ function Round.ricocheteffect(_, Bullet)
 end
 
 function Round.guicreate(Panel, Table)
-	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.AP)
+	acfmenupanel:AmmoSelect(ACF.AmmoBlacklist.APFSDS)
 
 	acfmenupanel:CPanelText("Desc", "") --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "") --Total round length (Name, Desc)
 	acfmenupanel:AmmoSlider("PropLength", 0, 0, 1000, 3, "Propellant Length", "") --Propellant Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", 0, 0, 1000, 3, "Projectile Length", "") --Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
+	acfmenupanel:AmmoSlider("ProjLength", 0, 0, 1000, 3, "Penetrator Length", "") --Projectile Length Slider (Name, Value, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "") --Proj muzzle velocity (Name, Desc)
-	--acfmenupanel:CPanelText("RicoDisplay", "")	--estimated rico chance
 	acfmenupanel:CPanelText("PenetrationDisplay", "") --Proj muzzle penetration (Name, Desc)
+
 	Round.guiupdate(Panel, Table)
 end
 
 function Round.guiupdate(Panel)
 	local PlayerData = {}
 	PlayerData.Id = acfmenupanel.AmmoData.Data.id --AmmoSelect GUI
-	PlayerData.Type = "AP" --Hardcoded, match ACFRoundTypes table index
+	PlayerData.Type = "APFSDS" --Hardcoded, match ACFRoundTypes table index
 	PlayerData.PropLength = acfmenupanel.AmmoData.PropLength --PropLength slider
 	PlayerData.ProjLength = acfmenupanel.AmmoData.ProjLength --ProjLength slider
 	local Tracer = 0
@@ -185,6 +186,7 @@ function Round.guiupdate(Panel)
 	end
 
 	PlayerData.Data10 = Tracer --Tracer
+
 	local Data = Round.convert(Panel, PlayerData)
 	RunConsoleCommand("acfmenu_data1", acfmenupanel.AmmoData.Data.id)
 	RunConsoleCommand("acfmenu_data2", PlayerData.Type)
@@ -193,18 +195,18 @@ function Round.guiupdate(Panel)
 	RunConsoleCommand("acfmenu_data10", Data.Tracer)
 
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
-	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
+	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Penetrator Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
 	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.Scale) .. " m\\s") --Proj muzzle velocity (Name, Desc)
-	--local RicoAngs = ACF_RicoProbability( Data.Ricochet, Data.MuzzleVel*ACF.Scale )
-	--acfmenupanel:CPanelText("RicoDisplay", "Ricochet probability vs impact angle:\n".."    0% @ "..RicoAngs.Min.." degrees\n  50% @ "..RicoAngs.Mean.." degrees\n100% @ "..RicoAngs.Max.." degrees")
+
 	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
 	local R2V, R2P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
-	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
+
+	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P,0) .. "mm @ " .. math.Round(R1V,0) .. " m\\s\n800m pen: " .. math.Round(R2P,0) .. "mm @ " .. math.Round(R2V,0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
-ACF.RoundTypes.AP = Round --Set the round properties
+ACF.RoundTypes.APFSDS = Round --Set the round properties
 
-ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")
+ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")

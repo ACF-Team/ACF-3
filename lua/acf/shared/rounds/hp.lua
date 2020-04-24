@@ -56,7 +56,7 @@ function Round.convert(_, PlayerData)
 		return table.Merge(Data, ServerData)
 	end
 
-	--Only tthe GUI needs this part
+	--Only the GUI needs this part
 	if CLIENT then
 		GUIData = table.Merge(GUIData, Round.getDisplayData(Data))
 
