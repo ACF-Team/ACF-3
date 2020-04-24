@@ -2044,10 +2044,10 @@ function ents_methods:acfPenetration ()
 	
 	--[[if Type == "AP" or Type == "APHE" then
 		Energy = ACF_Kinetic( this.BulletData[ "MuzzleVel" ] * 39.37, this.BulletData[ "ProjMass" ] - ( this.BulletData[ "FillerMass" ] or 0 ), this.BulletData[ "LimitVel" ] )
-		return math.Round( ( Energy.Penetration / this.BulletData[ "PenAera" ] ) * ACF.KEtoRHA, 3 )
+		return math.Round( ( Energy.Penetration / this.BulletData[ "PenArea" ] ) * ACF.KEtoRHA, 3 )
 	elseif Type == "HEAT" then
 		Energy = ACF_Kinetic( this.BulletData[ "SlugMV" ] * 39.37, this.BulletData[ "SlugMass" ], 9999999 )
-		return math.Round( ( Energy.Penetration / this.BulletData[ "SlugPenAera" ] ) * ACF.KEtoRHA, 3 )
+		return math.Round( ( Energy.Penetration / this.BulletData[ "SlugPenArea" ] ) * ACF.KEtoRHA, 3 )
 	elseif Type == "FL" then
 		Energy = ACF_Kinetic( this.BulletData[ "MuzzleVel" ] * 39.37 , this.BulletData[ "FlechetteMass" ], this.BulletData[ "LimitVel" ] )
 		return math.Round( ( Energy.Penetration / this.BulletData[ "FlechettePenArea" ] ) * ACF.KEtoRHA, 3 )
@@ -2055,12 +2055,12 @@ function ents_methods:acfPenetration ()
 	
 	if Type == "AP" or Type == "APHE" then
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37, this.BulletData["ProjMass"] - (this.BulletData["FillerMass"] or 0), this.BulletData["LimitVel"] )
-		return math.Round((Energy.Penetration/this.BulletData["PenAera"])*ACF.KEtoRHA,3)
+		return math.Round((Energy.Penetration/this.BulletData["PenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "HEAT" then
 		local Crushed, HEATFillerMass, BoomFillerMass = ACF.RoundTypes["HEAT"].CrushCalc(this.BulletData.MuzzleVel, this.BulletData.FillerMass)
 		if Crushed == 1 then return 0 end -- no HEAT jet to fire off, it was all converted to HE
 		Energy = ACF_Kinetic(ACF.RoundTypes["HEAT"].CalcSlugMV( this.BulletData, HEATFillerMass )*39.37, this.BulletData["SlugMass"], 9999999 )
-		return math.Round((Energy.Penetration/this.BulletData["SlugPenAera"])*ACF.KEtoRHA,3)
+		return math.Round((Energy.Penetration/this.BulletData["SlugPenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "FL" then
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37 , this.BulletData["FlechetteMass"], this.BulletData["LimitVel"] )
 		return math.Round((Energy.Penetration/this.BulletData["FlechettePenArea"])*ACF.KEtoRHA, 3)

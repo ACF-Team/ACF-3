@@ -216,7 +216,7 @@ function ENT:Detonate()
 	self.Damaged = nil -- Prevent multiple explosions
 
 	local Pos		 	= self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
-	local ExplosiveMass = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
+	local ExplosiveMass = (math.max(self.Fuel, self.Capacity * 0.0025) / ACF.FuelDensity[self.FuelType]) * 0.1
 
 	ACF_KillChildProps(self, Pos, ExplosiveMass)
 	ACF_HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
