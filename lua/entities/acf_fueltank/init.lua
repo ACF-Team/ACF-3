@@ -216,10 +216,11 @@ do -- Spawn and Update functions
 
 		if next(self.Engines) then
 			local FuelType = self.FuelType
+			local NoLinks = self.NoLinks
 			local Count, Total = 0, 0
 
 			for Engine in pairs(self.Engines) do
-				if not Engine.FuelTypes[FuelType] then
+				if NoLinks or not Engine.FuelTypes[FuelType] then
 					self:Unlink(Engine)
 
 					Count = Count + 1
@@ -229,9 +230,9 @@ do -- Spawn and Update functions
 			end
 
 			if Count == Total then
-				Feedback = " Unlinked from all engines due to fuel type change."
+				Feedback = " Unlinked from all engines due to fuel type or model change."
 			elseif Count > 0 then
-				local Text = " Unlinked from %s out of %s engines due to fuel type change."
+				local Text = " Unlinked from %s out of %s engines due to fuel type or model change."
 
 				Feedback = Text:format(Count, Total)
 			end
