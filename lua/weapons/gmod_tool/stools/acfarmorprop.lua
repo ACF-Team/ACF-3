@@ -97,25 +97,6 @@ if CLIENT then
 		RunConsoleCommand( "acfarmorprop_ductility", math.Clamp( ductility * 100, -80, 80 ) )
 
 	end )
-elseif SERVER then
-	util.AddNetworkString("acf_requestinfo")
-	net.Receive("acf_requestinfo", function(_, Ply)
-		local Ent = net.ReadEntity()
-
-		if not IsValid(Ent) then return end
-
-		local Power, Fuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
-
-		local Total 		= Ent.acftotal
-		local phystotal 	= Ent.acfphystotal
-		local parenttotal 	= Total - Ent.acfphystotal
-		local physratio 	= 100 * Ent.acfphystotal / Total, 1
-
-		Ply:ChatPrint("--- ACF Contraption Readout (Owner: " .. Name .. ") ---")
-		Ply:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
-		Ply:ChatPrint("Mobility: " .. math.Round(Power / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power) .. " hp | " .. math.Round(Fuel) .. " liters of fuel")
-		Ply:ChatPrint("Entities: " .. PhysNum + ParNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented) | " .. ConNum .. " constraints")
-	end)
 end
 
 -- Apply settings to prop and store dupe info
@@ -190,12 +171,20 @@ function TOOL:Reload( trace )
 	local Ent = trace.Entity
 
 	if not IsValid(Ent) or Ent:IsPlayer() then return false end
-	if SERVER then return true end
-	if not IsFirstTimePredicted() then return end
+	if CLIENT then return true end
 
-	net.Start("acf_requestinfo")
-		net.WriteEntity(Ent)
-	net.SendToServer()
+	local Power, Fuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
+
+	local Player		= self:GetOwner()
+	local Total 		= Ent.acftotal
+	local phystotal 	= Ent.acfphystotal
+	local parenttotal 	= Total - Ent.acfphystotal
+	local physratio 	= 100 * Ent.acfphystotal / Total, 1
+
+	Player:ChatPrint("--- ACF Contraption Readout (Owner: " .. Name .. ") ---")
+	Player:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
+	Player:ChatPrint("Mobility: " .. math.Round(Power / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power) .. " hp | " .. math.Round(Fuel) .. " liters of fuel")
+	Player:ChatPrint("Entities: " .. PhysNum + ParNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented) | " .. ConNum .. " constraints")
 
 	return true
 end
