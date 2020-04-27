@@ -93,7 +93,14 @@ end
 
 function Round.cratetxt(BulletData)
 	local DData = Round.getDisplayData(BulletData)
-	local str = {"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n", "Blast Radius: ", math.Round(DData.BlastRadius, 1), " m\n", "Blast Energy: ", math.floor(BulletData.FillerMass * ACF.HEPower), " KJ"}
+	local str = {
+		"Muzzle Velocity: ", math.Round(BulletData.MuzzleVel, 1), " m/s\n",
+		"Blast Radius: ",math.Round(DData.BlastRadius, 1), "m\n",
+		"Blast Energy: ", math.floor(BulletData.FillerMass * ACF.HEPower), "KJ\n",
+		"Filler Mass: ", math.Round(BulletData.FillerMass * 1000, 2), "g\n",
+		"Case Mass: ", math.Round((BulletData.ProjMass - BulletData.FillerMass) * 1000, 2), "g\n",
+		"Frag Mass: ", math.Round(DData.FragMass * 1000, 2),"g"
+	}
 
 	return table.concat(str)
 end
