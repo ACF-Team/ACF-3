@@ -80,6 +80,31 @@ ACF.KEShove = Shove
 
 do
 	do -- Explosions ----------------------------
+		function GetRandomPos(Entity)
+			if Entity:IsPlayer() or Entity:IsNPC() then
+				local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since the character is significantly smaller
+				local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
+
+				return Entity:LocalToWorld(Rand)
+			else
+				local Mesh = Entity:GetPhysicsObject():GetMesh()
+
+				if not Mesh then -- Spherical
+					local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
+					local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
+
+					return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Maxs[1])) -- Hit a random point in the sphere
+				else
+					local Rand = math.random(3, #Mesh / 3) * 3
+					local P    = Vector(0, 0, 0)
+
+					for I = Rand - 2, Rand do P = P + Mesh[I].pos end
+
+					return Entity:LocalToWorld(P / 3)
+				end
+			end
+		end
+
 		function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			debugoverlay.Cross(Origin, 15, 15, Color( 255, 255, 255 ), true)
 			Filter = Filter or {}
@@ -124,10 +149,8 @@ do
 					end
 
 					if Check(Ent) then -- ACF-valid entity
-						local Mul 		 = IsChar and 0.75 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
-						local Mins, Maxs = Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul
-						local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
-						local Target 	 = Ent:LocalToWorld(Rand) -- Try to hit a random spot on the entity
+						local Mul 		 = IsChar and 0.65 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
+						local Target 	 = GetRandomPos(Ent) -- Try to hit a random spot on the entity
 						local Displ		 = Target - Origin
 
 						TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
