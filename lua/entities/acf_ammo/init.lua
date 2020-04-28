@@ -250,23 +250,7 @@ do -- Metamethods -------------------------------
 		function ENT:TriggerInput(Name, Value)
 			if self.Disabled then return end -- Ignore input if disabled
 
-			if Name == "Output" then
-				if not self.Inputs.Output.Path then -- Reset output of unwired
-					self.Output = nil
-
-					return
-				end
-
-				Value = self:WorldToLocal(Value)
-
-				local Mins, Maxs = self:OBBMins(), self:OBBMaxs()
-				local X = math.Clamp(Value[1], Mins[1], Maxs[1])
-				local Y = math.Clamp(Value[2], Mins[2], Maxs[2])
-				local Z = math.Clamp(Value[3], Mins[3], Maxs[3])
-
-				self.Output = Vector(X, Y, Z)
-
-			elseif Name == "Load" then
+			if Name == "Load" then
 				self.Load = self.Ammo ~= 0 and tobool(Value)
 
 				WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
@@ -306,7 +290,7 @@ do -- Metamethods -------------------------------
 	do -- Overlay -------------------------------
 		local function Overlay(Ent)
 			local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-			local Text = "%s\n\nRound type: %s\nRounds remaining: %s / %s%s"
+			local Text = "%s\n\nContents: %s ( %s / %s ) %s"
 			local AmmoData = ""
 			local Status
 
