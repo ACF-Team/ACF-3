@@ -18,6 +18,7 @@ Ammunition is customizable with varying ballistic performance along with armor b
 
 Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf). We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
 
+Wiremod ([Workshop](https://steamcommunity.com/workshop/filedetails/?id=160250458) or [Github](https://github.com/wiremod))
 ### Git Client (Recommended)
 
 Install a Git client, such as the [Github client](https://desktop.github.com/) or [GitKraken](https://www.gitkraken.com/), then clone ACF to your addons folder. With the Github client installed you can click the green button at the top of the ACF repo page and select clone. Updating ACF on your server or client after install simply requires clicking the pull button in your respective Git client.
