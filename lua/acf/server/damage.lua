@@ -93,7 +93,7 @@ do
 					local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
 					local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
 
-					return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Maxs[1])) -- Hit a random point in the sphere
+					return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5)) -- Hit a random point in the sphere
 				else
 					local Rand = math.random(3, #Mesh / 3) * 3
 					local P    = Vector(0, 0, 0)
