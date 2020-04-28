@@ -116,7 +116,6 @@ ACF.RegisterWeaponClass("HW", {
 	Name		  = "Howitzer",
 	Description	  = "Howitzers are limited to rather mediocre muzzle velocities, but can fire extremely heavy projectiles with large useful payload capacities.",
 	MuzzleFlash	  = "howie_muzzleflash_noscale",
-	ROFMod		  = 1.8,
 	Spread		  = 0.12,
 	Sound		  = "weapons/ACF_Gun/howitzer_new2.mp3",
 	Caliber	= {

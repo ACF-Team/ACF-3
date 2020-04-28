@@ -70,8 +70,6 @@ ACF.RegisterWeaponClass("RAC", {
 	Name		  = "Rotary Autocannon",
 	Description	  = "Rotary Autocannons sacrifice weight, bulk and accuracy over classic autocannons to get the highest rate of fire possible.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	ROFMod		  = 0.07,
-
 	Spread		  = 0.4,
 	Sound		  = "weapons/acf_gun/mg_fire3.mp3",
 	Caliber	= {
@@ -87,7 +85,6 @@ ACF.RegisterWeapon("20mmRAC", "RAC", {
 	Caliber		= 20,
 	Mass		= 760,
 	Year		= 1965,
-	ROFMod		= 2.1,
 	MagSize		= 200,
 	MagReload	= 25,
 	Cyclic		= 4000,
@@ -104,7 +101,6 @@ ACF.RegisterWeapon("30mmRAC", "RAC", {
 	Caliber		= 30,
 	Mass		= 1500,
 	Year		= 1975,
-	ROFMod		= 1,
 	MagSize		= 100,
 	MagReload	= 35,
 	Cyclic		= 3000,

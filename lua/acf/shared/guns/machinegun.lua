@@ -70,7 +70,6 @@ ACF.RegisterWeaponClass("MG", {
 	Name		  = "Machinegun",
 	Description	  = "Machineguns are light guns that fire equally light bullets at a fast rate.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	ROFMod		  = 0.9,
 	Spread		  = 0.24,
 	Sound		  = "weapons/ACF_Gun/mg_fire4.mp3",
 	Caliber	= {
@@ -86,7 +85,6 @@ ACF.RegisterWeapon("7.62mmMG", "MG", {
 	Caliber		= 7.62,
 	Mass		= 15,
 	Year		= 1930,
-	ROFMod		= 1.59,
 	MagSize		= 250,
 	MagReload	= 6,
 	Cyclic		= 700, -- Rounds per minute
@@ -103,7 +101,6 @@ ACF.RegisterWeapon("12.7mmMG", "MG", {
 	Caliber		= 12.7,
 	Mass		= 30,
 	Year		= 1910,
-	ROFMod		= 1,
 	MagSize		= 150,
 	MagReload	= 6,
 	Cyclic		= 600,
@@ -120,7 +117,6 @@ ACF.RegisterWeapon("14.5mmMG", "MG", {
 	Caliber		= 14.5,
 	Mass		= 45,
 	Year		= 1932,
-	ROFMod		= 1,
 	MagSize		= 90,
 	MagReload	= 5,
 	Cyclic		= 500,

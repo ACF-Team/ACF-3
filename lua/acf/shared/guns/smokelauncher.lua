@@ -55,7 +55,6 @@ ACF.RegisterWeaponClass("SL", {
 	Name		  = "Smoke Launcher",
 	Description	  = "Smoke launcher to block an attacker's line of sight.",
 	MuzzleFlash	  = "gl_muzzleflash_noscale",
-	ROFMod		  = 45,
 	Spread		  = 0.32,
 	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
 	LimitConVar = {
@@ -91,7 +90,6 @@ ACF.RegisterWeapon("40mmCL", "SL", {
 	Model		= "models/launcher/40mmgl.mdl",
 	Caliber		= 40,
 	Mass		= 20,
-	ROFMod		= 0.015,
 	Year		= 1950,
 	MagSize		= 6,
 	MagReload	= 40,

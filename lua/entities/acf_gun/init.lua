@@ -70,8 +70,6 @@ do -- Spawn and Update functions --------------------------------
 		Entity.ReloadTime		= Entity.Cyclic or 1
 		Entity.Spread			= Class.Spread
 		Entity.MinLengthBonus	= 0.75 * 3.1416 * (Caliber * 0.5) ^ 2 * Weapon.Round.MaxLength
-		Entity.PGRoFmod			= math.max(0.01, Weapon.ROFMod or 1)
-		Entity.RoFmod			= Class.ROFMod
 		Entity.HitBoxes			= ACF.HitBoxes[Weapon.Model]
 		Entity.Long				= Class.LongBarrel
 		Entity.NormalMuzzle		= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
