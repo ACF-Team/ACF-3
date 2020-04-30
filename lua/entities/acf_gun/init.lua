@@ -157,37 +157,6 @@ do -- Spawn and Update functions --------------------------------
 
 	------------------- Updating ---------------------
 
-	local function SavePhysObj(Entity)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		return {
-			Gravity = PhysObj:IsGravityEnabled(),
-			Motion = PhysObj:IsMotionEnabled(),
-		}
-	end
-
-	local function RestorePhysObj(Entity, PhysData)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		PhysObj:EnableGravity(PhysData.Gravity)
-		PhysObj:EnableMotion(PhysData.Motion)
-	end
-
-	local function RestoreConstraints(List)
-		local Constraints = duplicator.ConstraintType
-
-		for _, Data in ipairs(List) do
-			local Constraint = Constraints[Data.Type]
-			local Args = {}
-
-			for Index, Name in ipairs(Constraint.Args) do
-				Args[Index] = Data[Name]
-			end
-
-			Constraint.Func(unpack(Args))
-		end
-	end
-
 	function ENT:Update(Data)
 		if self.Firing then return false, "Stop firing before updating the weapon!" end
 
@@ -197,21 +166,20 @@ do -- Spawn and Update functions --------------------------------
 
 		local Class = ACF.GetClassGroup(Weapons, Data.Id)
 		local Weapon = Class.Lookup[Data.Id]
-		local Constraints = constraint.GetTable(self)
-		local PhysData = SavePhysObj(self)
 
 		if self.State ~= "Empty" then
 			self:Unload()
 		end
 
+		ACF.SaveEntity(self)
+
 		UpdateWeapon(self, Data, Class, Weapon)
+
+		ACF.RestoreEntity(self)
 
 		if Class.OnUpdate then
 			Class.OnUpdate(self, Data, Class, Weapon)
 		end
-
-		RestorePhysObj(self, PhysData)
-		RestoreConstraints(Constraints)
 
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do

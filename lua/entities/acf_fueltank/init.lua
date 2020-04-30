@@ -163,37 +163,6 @@ do -- Spawn and Update functions
 
 	------------------- Updating ---------------------
 
-	local function SavePhysObj(Entity)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		return {
-			Gravity = PhysObj:IsGravityEnabled(),
-			Motion = PhysObj:IsMotionEnabled(),
-		}
-	end
-
-	local function RestorePhysObj(Entity, PhysData)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		PhysObj:EnableGravity(PhysData.Gravity)
-		PhysObj:EnableMotion(PhysData.Motion)
-	end
-
-	local function RestoreConstraints(List)
-		local Constraints = duplicator.ConstraintType
-
-		for _, Data in ipairs(List) do
-			local Constraint = Constraints[Data.Type]
-			local Args = {}
-
-			for Index, Name in ipairs(Constraint.Args) do
-				Args[Index] = Data[Name]
-			end
-
-			Constraint.Func(unpack(Args))
-		end
-	end
-
 	function ENT:Update(Data)
 		VerifyData(Data)
 
@@ -201,18 +170,17 @@ do -- Spawn and Update functions
 
 		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
 		local FuelTank = Class.Lookup[Data.Id]
-		local Constraints = constraint.GetTable(self)
-		local PhysData = SavePhysObj(self)
 		local Feedback = ""
 
+		ACF.SaveEntity(self)
+
 		UpdateFuelTank(self, Data, Class, FuelTank)
+
+		ACF.RestoreEntity(self)
 
 		if Class.OnUpdate then
 			Class.OnUpdate(self, Data, Class, FuelTank)
 		end
-
-		RestorePhysObj(self, PhysData)
-		RestoreConstraints(Constraints)
 
 		if next(self.Engines) then
 			local FuelType = self.FuelType

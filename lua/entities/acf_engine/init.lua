@@ -386,36 +386,7 @@ do -- Spawn and Update functions
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 
-	local function SavePhysObj(Entity)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		return {
-			Gravity = PhysObj:IsGravityEnabled(),
-			Motion = PhysObj:IsMotionEnabled(),
-		}
-	end
-
-	local function RestorePhysObj(Entity, PhysData)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		PhysObj:EnableGravity(PhysData.Gravity)
-		PhysObj:EnableMotion(PhysData.Motion)
-	end
-
-	local function RestoreConstraints(List)
-		local Constraints = duplicator.ConstraintType
-
-		for _, Data in ipairs(List) do
-			local Constraint = Constraints[Data.Type]
-			local Args = {}
-
-			for Index, Name in ipairs(Constraint.Args) do
-				Args[Index] = Data[Name]
-			end
-
-			Constraint.Func(unpack(Args))
-		end
-	end
+	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
 		if self.Active then return false, "Turn off the engine before updating it!" end
@@ -426,18 +397,17 @@ do -- Spawn and Update functions
 
 		local Class = ACF.GetClassGroup(Engines, Data.Id)
 		local EngineData = Class.Lookup[Data.Id]
-		local Constraints = constraint.GetTable(self)
-		local PhysData = SavePhysObj(self)
 		local Feedback = ""
 
+		ACF.SaveEntity(self)
+
 		UpdateEngine(self, Data, Class, EngineData)
+
+		ACF.RestoreEntity(self)
 
 		if Class.OnUpdate then
 			Class.OnUpdate(self, Data, Class, EngineData)
 		end
-
-		RestorePhysObj(self, PhysData)
-		RestoreConstraints(Constraints)
 
 		if next(self.Gearboxes) then
 			local Count, Total = 0, 0
@@ -699,7 +669,6 @@ function ENT:CalcRPM()
 		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
 		FuelTank:UpdateMass()
 		FuelTank:UpdateOverlay()
-		FuelTank:UpdateOutputs()
 
 	elseif self.RequiresFuel then
 		SetActive(self, false) --shut off if no fuel and requires it

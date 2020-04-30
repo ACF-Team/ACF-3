@@ -139,6 +139,53 @@ do -- Tool data functions
 	end
 end
 
+do -- Entity saving and restoring
+	local Constraints = duplicator.ConstraintType
+	local Saved = {}
+
+	function ACF.SaveEntity(Entity)
+		if not IsValid(Entity) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+
+		Saved[Entity] = {
+			Constraints = constraint.GetTable(Entity),
+			Gravity = PhysObj:IsGravityEnabled(),
+			Motion = PhysObj:IsMotionEnabled(),
+		}
+
+		Entity:CallOnRemove("ACF_RestoreEntity", function()
+			Saved[Entity] = nil
+		end)
+	end
+
+	function ACF.RestoreEntity(Entity)
+		if not IsValid(Entity) then return end
+		if not Saved[Entity] then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+		local EntData = Saved[Entity]
+
+		PhysObj:EnableGravity(EntData.Gravity)
+		PhysObj:EnableMotion(EntData.Motion)
+
+		for _, Data in ipairs(EntData.Constraints) do
+			local Constraint = Constraints[Data.Type]
+			local Args = {}
+
+			for Index, Name in ipairs(Constraint.Args) do
+				Args[Index] = Data[Name]
+			end
+
+			Constraint.Func(unpack(Args))
+		end
+
+		Saved[Entity] = nil
+
+		Entity:RemoveCallOnRemove("ACF_RestoreEntity")
+	end
+end
+
 function ACF_GetHitAngle(HitNormal, HitVector)
 	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
 end
