@@ -43,9 +43,9 @@ end
 
 local function CanTool(Player, Entity)
 	if not IsValid(Entity) then return false end
-	if not CPPI then return true end
+	if CPPI then return Entity:CPPICanTool(Player, "acf_menu2") end
 
-	return Entity:CPPICanTool(Player, "#Tool.acf_menu2.name")
+	return hook.Run("CanTool", Player, { Hit = true, Entity = Entity }, "acf_menu2")
 end
 
 do -- Spawner operation
