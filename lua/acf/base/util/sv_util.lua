@@ -65,18 +65,15 @@ do -- Tool data functions
 	do -- Data syncronization
 		util.AddNetworkString("ACF_ToolData")
 
-		local function TranslateData(String)
-			return unpack(string.Explode(":", String))
-		end
-
 		net.Receive("ACF_ToolData", function(_, Player)
 			if not IsValid(Player) then return end
 
-			local Key, Value = TranslateData(net.ReadString())
+			local Key = net.ReadString()
+			local Value = net.ReadType()
 
 			ToolData[Player][Key] = Value
 
-			print("Received", Player, Key, Value)
+			print("Received", Player, Key, Value, type(Value))
 		end)
 
 		hook.Add("PlayerInitialSpawn", "ACF Tool Data", function(Player)

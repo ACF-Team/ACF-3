@@ -72,7 +72,13 @@ do -- Tool data functions
 
 	do -- Read functions
 		function ACF.GetToolData()
-			return ToolData
+			local Result = {}
+
+			for K, V in pairs(ToolData) do
+				Result[K] = V
+			end
+
+			return Result
 		end
 
 		function ACF.ReadBool(Key)
@@ -104,24 +110,9 @@ do -- Tool data functions
 
 	do -- Write function
 		local LastSent = {}
-		local KeyPattern = "^[%w]+"
-		local ValuePattern = "[%w]*[%.]?[%w]+$"
-
-		local function IsValidKey(Key)
-			if not Key then return false end
-
-			return Key:match(KeyPattern) and true or false
-		end
-
-		local function IsValidValue(Value)
-			if Value == nil then return false end
-
-			return tostring(Value):match(ValuePattern) and true or false
-		end
 
 		function ACF.WriteValue(Key, Value)
-			if not IsValidKey(Key) then return end
-			if not IsValidValue(Value) then return end
+			if not isstring(Key) then return end
 			if ToolData[Key] == Value then return end
 
 			ToolData[Key] = Value
@@ -132,7 +123,7 @@ do -- Tool data functions
 			if timer.Exists("ACF WriteValue " .. Key) then return end
 
 			timer.Create("ACF WriteValue " .. Key, 0, 1, function()
-				local NewValue = tostring(ToolData[Key])
+				local NewValue = ToolData[Key]
 
 				-- Preventing network message spam if value hasn't really changed
 				if LastSent[Key] == NewValue then return end
@@ -140,10 +131,11 @@ do -- Tool data functions
 				LastSent[Key] = NewValue
 
 				net.Start("ACF_ToolData")
-					net.WriteString(Key .. ":" .. NewValue)
+					net.WriteString(Key)
+					net.WriteType(NewValue)
 				net.SendToServer()
 
-				print("Sent", LocalPlayer(), Key, NewValue)
+				print("Sent", LocalPlayer(), Key, NewValue, type(NewValue))
 			end)
 		end
 	end
