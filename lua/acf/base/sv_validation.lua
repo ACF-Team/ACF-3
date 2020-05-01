@@ -115,44 +115,48 @@ function ACF_Activate(Entity, Recalc)
 
 	if not IsValid(PhysObj) then return end
 
-	if not Entity.ACF then
-		Entity.ACF = {}
+	Entity.ACF = Entity.ACF or {}
+	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
 
-		if Entity:IsPlayer() or Entity:IsNPC() then
-			Entity.ACF.Type = "Squishy"
-		elseif Entity:IsVehicle() then
-			Entity.ACF.Type = "Vehicle"
-		else
-			Entity.ACF.Type = "Prop"
-		end
-	end
-
-	Entity.ACF.PhysObj = PhysObj -- Update PhysObj
-
-	if Entity.ACF_Activate then -- Use special function if an entity has it
+	if Entity.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
 
-	local Surface 	= PhysObj:GetSurfaceArea() or (4 * 3.14159 * (Entity:BoundingRadius() * 0.5) ^ 2)
-	local Mass		= PhysObj:GetMass()
-	local Area 		= (Surface * 6.45) * 0.52505066107
-	local Ductility = math.Clamp(Entity.ACF.Ductility or 0, -0.8, 0.8)
-	local Armour 	= ACF_CalcArmor(Area, Ductility, Mass) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
-	local Health 	= (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
-	local Percent 	= 1
+	local Count = PhysObj:GetMesh() and #PhysObj:GetMesh() or nil
+
+	if Count and Count > 100 then
+		Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
+	else
+		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
+
+		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45 --^ 1.15
+	end
+
+	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
+	local Area = Entity.ACF.Area
+	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
+	local Armour = ACF_CalcArmor(Area, Ductility, Entity:GetPhysicsObject():GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
+	local Health = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
+	local Percent = 1
 
 	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
 
-	Entity.ACF.Area 	 = Area
-	Entity.ACF.Ductility = Ductility
-	Entity.ACF.Health 	 = Health * Percent
+	Entity.ACF.Health = Health * Percent
 	Entity.ACF.MaxHealth = Health
-	Entity.ACF.Armour 	 = Armour * (0.5 + Percent / 2)
+	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
 	Entity.ACF.MaxArmour = Armour * ACF.ArmorMod
-	Entity.ACF.Mass 	 = Mass
+	Entity.ACF.Mass = PhysObj:GetMass()
+
+	if Entity:IsPlayer() or Entity:IsNPC() then
+		Entity.ACF.Type = "Squishy"
+	elseif Entity:IsVehicle() then
+		Entity.ACF.Type = "Vehicle"
+	else
+		Entity.ACF.Type = "Prop"
+	end
 end
 
 do -- Entity Links ------------------------------
