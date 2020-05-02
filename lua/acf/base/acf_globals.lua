@@ -127,6 +127,12 @@ if SERVER then
 	util.AddNetworkString("ACF_KilledByACF")
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
+
+	local Extras = CreateConVar("acf_enable_workshop_extras", 0, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.")
+
+	if Extras:GetBool() then
+		resource.AddWorkshop("439526795") -- Hide Errors addon
+	end
 elseif CLIENT then
 	CreateConVar("acf_cl_particlemul", 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", "1", true, true)
