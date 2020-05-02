@@ -24,7 +24,13 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	sound.Play("/acf_other/ricochets/0000032" .. math.random(0, 2) .. ".mp3", Origin, math.Clamp(Mass * 200, 65, 500), math.Clamp(Velocity * 0.01, 25, 255), 1)
+	--Sound
+	if Caliber >= 10 then
+		sound.Play("/acf_other/ricochets/large/0" .. math.random(0, 6) .. ".mp3", Origin, math.Clamp(Mass * 200, 65, 500), math.Clamp(Velocity * 0.01, 25, 100), 0.45) -- 100mm and up
+	else
+		sound.Play("/acf_other/ricochets/medium/0" .. math.random(0, 9) .. ".mp3", Origin, math.Clamp(Mass * 200, 65, 500), math.Clamp(Velocity * 0.01, 25, 100), 0.4) --99mm and down
+	end
+
 end
 
 function EFFECT:Think()

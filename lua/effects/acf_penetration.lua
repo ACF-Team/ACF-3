@@ -37,7 +37,13 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, self.Normal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	sound.Play("/acf_other/penetratingshots/0000029" .. math.random(2, 5) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
+	-- Sound
+	if self.Caliber >= 10 then
+		sound.Play("/acf_other/penetratingshots/large/0" .. math.random(0, 8) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 100), 0.4) --100mm and up
+	else
+		sound.Play("/acf_other/penetratingshots/medium/0" .. math.random(0, 9) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 15, 100), 0.35) --99mm and down
+	end
+
 end
 
 function EFFECT:Metal()

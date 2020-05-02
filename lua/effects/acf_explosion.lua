@@ -119,8 +119,8 @@ function EFFECT:Core(Direction)
 		end
 	end
 
-	sound.Play("ambient/explosions/explode_5.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 12, 15, 255))
-	sound.Play("ambient/explosions/explode_4.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 25, 15, 255))
+	sound.Play("/acf_other/explosion/large/0" .. math.random(0, 2) .. ".mp3", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 12, 15, 100)) --kABOOMM
+	sound.Play("/acf_other/explosion/medium/0" .. math.random(0, 4) .. ".mp3", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 25, 15, 100)) --boom
 end
 
 function EFFECT:GroundImpact()
