@@ -154,7 +154,7 @@ do
 						local Displ		 = Target - Origin
 
 						TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-						Trace(TraceData) -- Outputs to TraceRes
+						Trace(TraceData, true) -- Outputs to TraceRes
 
 						if TraceRes.HitNonWorld then
 							if not TraceRes.Entity.Exploding and (TraceRes.Entity == Ent or Check(TraceRes.Entity)) then
