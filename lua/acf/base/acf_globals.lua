@@ -129,7 +129,7 @@ if SERVER then
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
 
-	local Extras = CreateConVar("acf_enable_workshop_extras", 0, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.")
+	local Extras = CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.")
 
 	if Extras:GetBool() then
 		resource.AddWorkshop("439526795") -- Hide Errors addon
