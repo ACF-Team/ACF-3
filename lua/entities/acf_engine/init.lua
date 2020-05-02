@@ -393,8 +393,6 @@ do -- Spawn and Update functions
 
 		VerifyData(Data)
 
-		if self.Id == Data.Id then return false, "This engine is already the one you want it to update to!" end
-
 		local Class = ACF.GetClassGroup(Engines, Data.Id)
 		local EngineData = Class.Lookup[Data.Id]
 		local Feedback = ""
@@ -423,9 +421,9 @@ do -- Spawn and Update functions
 			end
 
 			if Count == Total then
-				Feedback = Feedback .. " Unlinked all gearboxes due to excessive driveshaft angle."
+				Feedback = Feedback .. "\nUnlinked all gearboxes due to excessive driveshaft angle."
 			elseif Count > 0 then
-				local Text = Feedback .. " Unlinked %s out of %s gearboxes due to excessive driveshaft angle."
+				local Text = Feedback .. "\nUnlinked %s out of %s gearboxes due to excessive driveshaft angle."
 
 				Feedback = Text:format(Count, Total)
 			end
@@ -445,9 +443,9 @@ do -- Spawn and Update functions
 			end
 
 			if Count == Total then
-				Feedback = Feedback .. " Unlinked all fuel tanks due to fuel type change."
+				Feedback = Feedback .. "\nUnlinked all fuel tanks due to fuel type change."
 			elseif Count > 0 then
-				local Text = Feedback .. " Unlinked %s out of %s fuel tanks due to fuel type change."
+				local Text = Feedback .. "\nUnlinked %s out of %s fuel tanks due to fuel type change."
 
 				Feedback = Text:format(Count, Total)
 			end

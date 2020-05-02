@@ -162,8 +162,6 @@ do -- Spawn and Update functions --------------------------------
 
 		VerifyData(Data)
 
-		if self.Id == Data.Id then return false, "This weapon is already the one you want it to update to!" end
-
 		local Class = ACF.GetClassGroup(Weapons, Data.Id)
 		local Weapon = Class.Lookup[Data.Id]
 

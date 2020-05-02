@@ -42,7 +42,6 @@ do -- Spawn and Update functions
 			Data.Id = Data.FuelTank
 		elseif Data.SizeId then -- Backwards compatibility with ACF-2 dupes
 			Data.Id = Data.SizeId
-			Data.SizeId = nil
 		end
 
 		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
@@ -158,15 +157,13 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Id", "FuelType", "SizeId")
+	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Id", "FuelType")
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
 		VerifyData(Data)
-
-		if self.Id == Data.Id then return false, "This fuel tank is already the one you want it to update to!" end
 
 		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
 		local FuelTank = Class.Lookup[Data.Id]
@@ -198,9 +195,9 @@ do -- Spawn and Update functions
 			end
 
 			if Count == Total then
-				Feedback = " Unlinked from all engines due to fuel type or model change."
+				Feedback = "\nUnlinked from all engines due to fuel type or model change."
 			elseif Count > 0 then
-				local Text = " Unlinked from %s out of %s engines due to fuel type or model change."
+				local Text = "\nUnlinked from %s out of %s engines due to fuel type or model change."
 
 				Feedback = Text:format(Count, Total)
 			end
