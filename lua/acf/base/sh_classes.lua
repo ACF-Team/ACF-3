@@ -354,7 +354,19 @@ do -- Gearbox registration functions
 	local Gearboxes = ACF.Classes.Gearboxes
 
 	function ACF.RegisterGearboxClass(ID, Data)
-		return AddClassGroup(ID, Gearboxes, Data)
+		local Group = AddClassGroup(ID, Gearboxes, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_gearbox",
+				Amount = 24,
+				Text = "Maximum amount of gearboxes a player can create."
+			}
+		end
+
+		AddSboxLimit(Group.LimitConVar)
+
+		return Group
 	end
 
 	function ACF.RegisterGearbox(ID, ClassID, Data)

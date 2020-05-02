@@ -49,6 +49,7 @@ local function CreateMenu(Menu)
 		Selected[Choices] = Index
 
 		ACF.WriteValue("GearboxClass", Data.ID)
+		ACF.WriteValue("MaxGears", Data.Gears.Max)
 
 		LoadSortedList(GearboxList, Data.Items, "ID")
 	end
@@ -308,6 +309,8 @@ do -- Default Menus
 
 			Menu:AddLabel("Upshift Speed Unit :")
 
+			ACF.WriteValue("ShiftUnit", UnitMult)
+
 			local Unit = Menu:AddComboBox()
 			Unit:AddChoice("KPH", 10.936)
 			Unit:AddChoice("MPH", 17.6)
@@ -324,6 +327,8 @@ do -- Default Menus
 
 					ACF.WriteValue(Var, Old * Delta)
 				end
+
+				ACF.WriteValue("ShiftUnit", Mult)
 
 				UnitMult = Mult
 			end
