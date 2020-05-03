@@ -111,7 +111,7 @@ local function ApplySettings( _, ent, data )
 	end
 
 	if data.Ductility then
-		ent.ACF = ent.ACF or {}
+		ACF_Check(ent)
 		ent.ACF.Ductility = data.Ductility / 100
 
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
