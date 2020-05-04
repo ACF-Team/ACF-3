@@ -153,11 +153,9 @@ do -- Metamethods --------------------------------
 			Target:UpdateOverlay(true)
 
 			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
-				print("Link to empty")
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
 					print(IsValid(Weapon), IsValid(Target), Weapon.State, Target.Active)
 					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target.Load then
-						print("Attempting first load!")
 						Weapon:Load()
 					end
 				end)
