@@ -85,7 +85,7 @@ local function CheckLegal(Entity)
 	return true
 end
 -- Global Funcs ---------------------------------
-function ACF_Check(Entity) -- IsValid but for ACF
+function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
 	local Class = Entity:GetClass()
@@ -102,7 +102,7 @@ function ACF_Check(Entity) -- IsValid but for ACF
 		end
 
 		ACF_Activate(Entity)
-	elseif Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
+	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
 		ACF_Activate(Entity, true)
 	end
 

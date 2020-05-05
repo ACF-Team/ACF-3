@@ -16,9 +16,9 @@ local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, fals
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor( Area, Ductility, Thickness )
 
-	local mass =  Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078
+	local mass = Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078
 	local armor = ACF_CalcArmor( Area, Ductility, mass )
-	local health = ( Area + Area * Ductility ) / ACF.Threshold
+	local health = (Area / ACF.Threshold) * (1 + Ductility)
 
 	return mass, armor, health
 
@@ -51,51 +51,41 @@ if CLIENT then
 	-- clamp thickness if the change in ductility puts mass out of range
 	cvars.AddChangeCallback( "acfarmorprop_ductility", function( _, _, value )
 
-		local area = ArmorProp_Area:GetInt()
+		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
 		local ductility = math.Clamp( ( tonumber( value ) or 0 ) / 100, -0.8, 0.8 )
-		local thickness = math.Clamp( ArmorProp_Thickness:GetInt(), 0.1, 5000 )
+		local thickness = math.Clamp( ArmorProp_Thickness:GetFloat(), 0.1, 5000 )
 		local mass = CalcArmor( area, ductility, thickness )
 
-		if mass > 50000 then
-			mass = 50000
-		elseif mass < 0.1 then
-			mass = 0.1
-		else
-			return
+		if mass > 50000 or mass < 0.1 then
+			mass = math.Clamp(mass, 0.1, 50000)
+
+			thickness = ACF_CalcArmor(area, ductility, mass)
+			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, 0.1, 5000))
 		end
-
-		thickness = mass * 1000 / ( area + area * ductility ) / 0.78
-		RunConsoleCommand( "acfarmorprop_thickness", thickness )
-
 	end )
 
 	-- clamp ductility if the change in thickness puts mass out of range
 	cvars.AddChangeCallback( "acfarmorprop_thickness", function( _, _, value )
 
-		local area = ArmorProp_Area:GetInt()
+		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
 		local thickness = math.Clamp( tonumber( value ) or 0, 0.1, 5000 )
-		local ductility = math.Clamp( ArmorProp_Ductility:GetInt() / 100, -0.8, 0.8 )
+		local ductility = math.Clamp( ArmorProp_Ductility:GetFloat() / 100, -0.8, 0.8 )
 		local mass = CalcArmor( area, ductility, thickness )
 
-		if mass > 50000 then
-			mass = 50000
-		elseif mass < 0.1 then
-			mass = 0.1
-		else
-			return
+		if mass > 50000 or mass < 0.1 then
+			mass = math.Clamp(mass, 0.1, 50000)
+
+			ductility = -( 39 * area * thickness - mass * 50000 ) / ( 39 * area * thickness )
+			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
 		end
-
-		ductility = -( 39 * area * thickness - mass * 50000 ) / ( 39 * area * thickness )
-		RunConsoleCommand( "acfarmorprop_ductility", math.Clamp( ductility * 100, -80, 80 ) )
-
 	end )
 end
 
@@ -103,6 +93,7 @@ end
 local function ApplySettings( _, ent, data )
 
 	if not SERVER then return end
+	if not ent.ACF then ACF_Check(ent) end
 
 	if data.Mass then
 		local phys = ent:GetPhysicsObject()
@@ -111,12 +102,12 @@ local function ApplySettings( _, ent, data )
 	end
 
 	if data.Ductility then
-		ACF_Check(ent)
 		ent.ACF.Ductility = data.Ductility / 100
 
 		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
 	end
 
+	ACF_Check(ent, true) -- Forcing the entity to update its information
 end
 duplicator.RegisterEntityModifier( "acfsettings", ApplySettings )
 duplicator.RegisterEntityModifier( "mass", ApplySettings )
@@ -133,7 +124,7 @@ function TOOL:LeftClick( trace )
 	local ply = self:GetOwner()
 
 	local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
-	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
+	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 5000 )
 	local mass = CalcArmor( ent.ACF.Area, ductility / 100, thickness )
 
 	ApplySettings( ply, ent, { Mass = mass, Ductility = ductility } )
@@ -200,7 +191,8 @@ function TOOL:Think()
 
 	if ACF_Check( ent ) then
 
-		ply:ConCommand( "acfarmorprop_area " .. ent.ACF.Area )
+		ply:ConCommand("acfarmorprop_area " .. ent.ACF.Area)
+		ply:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
 		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
 		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
 		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
@@ -233,9 +225,9 @@ function TOOL:DrawHUD()
 	local curarmor = self.Weapon:GetNWFloat( "MaxArmour" )
 	local curhealth = self.Weapon:GetNWFloat( "MaxHP" )
 
-	local area = ArmorProp_Area:GetInt()
-	local ductility = ArmorProp_Ductility:GetInt()
-	local thickness = ArmorProp_Thickness:GetInt()
+	local area = ArmorProp_Area:GetFloat()
+	local ductility = ArmorProp_Ductility:GetFloat()
+	local thickness = ArmorProp_Thickness:GetFloat()
 
 	local mass, armor, health = CalcArmor( area, ductility / 100, thickness )
 	mass = math.min( mass, 50000 )
