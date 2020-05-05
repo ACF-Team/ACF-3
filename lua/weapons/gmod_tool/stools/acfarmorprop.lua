@@ -113,9 +113,8 @@ duplicator.RegisterEntityModifier( "acfsettings", ApplySettings )
 duplicator.RegisterEntityModifier( "mass", ApplySettings )
 
 -- Apply settings to prop
-function TOOL:LeftClick( trace )
-
-	local ent = trace.Entity
+function TOOL:LeftClick( Trace )
+	local ent = Trace.Entity
 
 	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
@@ -133,34 +132,27 @@ function TOOL:LeftClick( trace )
 	self.AimEntity = nil
 
 	return true
-
 end
 
 -- Suck settings from prop
-function TOOL:RightClick( trace )
+function TOOL:RightClick(Trace)
+	local Ent = Trace.Entity
 
-	local ent = trace.Entity
-
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
+	if not IsValid(Ent) or Ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
+	if not ACF_Check(Ent) then return false end
 
-	local ply = self:GetOwner()
+	local Player = self:GetOwner()
 
-	ply:ConCommand( "acfarmorprop_ductility " .. ent.ACF.Ductility * 100 )
-	ply:ConCommand( "acfarmorprop_thickness " .. ent.ACF.MaxArmour )
-
-	-- this invalidates the entity and forces a refresh of networked armor values
-	self.AimEntity = nil
+	Player:ConCommand("acfarmorprop_thickness " .. Ent.ACF.MaxArmour)
+	Player:ConCommand("acfarmorprop_ductility " .. Ent.ACF.Ductility * 100)
 
 	return true
-
 end
 
 -- Total up mass of constrained ents
-function TOOL:Reload( trace )
-
-	local Ent = trace.Entity
+function TOOL:Reload(Trace)
+	local Ent = Trace.Entity
 
 	if not IsValid(Ent) or Ent:IsPlayer() then return false end
 	if CLIENT then return true end
