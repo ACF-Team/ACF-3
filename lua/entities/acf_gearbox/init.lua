@@ -337,11 +337,15 @@ do -- Spawn and Update functions
 			local Points = { [0] = -1 }
 			local Gears = { [0] = 0 }
 			local Count = 0
+			local Final = tonumber(Data.Gear0) or 1
+			local MinRPM = tonumber(Data.Gear3) or 1
+			local MaxRPM = tonumber(Data.Gear4) or 101
+			local Reverse = tonumber(Data.Gear8) or -1
 
-			Gears.Final = Clamp(Data.Gear0, -1, 1)
-			Gears.MinRPM = Clamp(Data.Gear3, 1, 9900)
-			Gears.MaxRPM = Clamp(Data.Gear4, Gears.MinRPM + 100, 10000)
-			Gears.Reverse = Clamp(Data.Gear8, -1, 1)
+			Gears.Final = Clamp(Final, -1, 1)
+			Gears.MinRPM = Clamp(MinRPM, 1, 9900)
+			Gears.MaxRPM = Clamp(MaxRPM, MinRPM + 100, 10000)
+			Gears.Reverse = Clamp(Reverse, -1, 1)
 
 			for Point in string.gmatch(Data.Gear9, "[^,]+") do
 				local Value = tonumber(Point)
@@ -352,7 +356,11 @@ do -- Spawn and Update functions
 			end
 
 			for I = 1, 8 do
-				Gears[I] = Clamp(Data["Gear" .. I], -1, 1)
+				local Value = tonumber(Data["Gear" .. I])
+
+				if Value then
+					Gears[I] = Clamp(Data["Gear" .. I], -1, 1)
+				end
 			end
 
 			Data.Gears = Gears
