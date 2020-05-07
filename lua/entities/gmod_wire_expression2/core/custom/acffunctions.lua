@@ -901,7 +901,7 @@ e2function number entity:acfIsReloading()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.State == "Reloading" and 1 or 0
+	return this.State == "Loading" and 1 or 0
 end
 
 -- Returns the rate of fire of an acf gun
