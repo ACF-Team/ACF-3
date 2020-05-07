@@ -193,7 +193,7 @@ local function SetActive(Entity, Value)
 
 			Entity:CalcMassRatio()
 
-			Entity.LastThink = CurTime()
+			Entity.LastThink = ACF.CurTime
 			Entity.Torque = Entity.PeakTorque
 			Entity.FlyRPM = Entity.IdleRPM * 1.5
 
@@ -485,18 +485,12 @@ function ENT:UpdateOutputs()
 	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
 		if not IsValid(self) then return end
 
-		local Pitch, Volume = GetPitchVolume(self)
 		local Power = self.Torque * self.FlyRPM / 9548.8
 
 		WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
 		WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
 		WireLib.TriggerOutput(self, "Power", math.floor(Power))
 		WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
-
-		if self.Sound then
-			self.Sound:ChangePitch(Pitch, 0)
-			self.Sound:ChangeVolume(Volume, 0)
-		end
 	end)
 end
 
@@ -649,7 +643,7 @@ end
 function ENT:CalcRPM()
 	if not self.Active then return end
 
-	local DeltaTime = CurTime() - self.LastThink
+	local DeltaTime = ACF.CurTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
 	local Boost 	= 1
 
@@ -712,7 +706,14 @@ function ENT:CalcRPM()
 	end
 
 	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
-	self.LastThink = CurTime()
+	self.LastThink = ACF.CurTime
+
+	if self.Sound then
+		local Pitch, Volume = GetPitchVolume(self)
+
+		self.Sound:ChangePitch(Pitch, 0)
+		self.Sound:ChangeVolume(Volume, 0)
+	end
 
 	self:UpdateOutputs()
 
