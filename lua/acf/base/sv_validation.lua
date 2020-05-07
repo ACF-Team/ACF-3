@@ -1,6 +1,7 @@
 -- Entity validation
 
 -- Local Vars -----------------------------------
+local Gamemode	  = GetConVar("acf_gamemode")
 local StringFind  = string.find
 local TimerSimple = timer.Simple
 local Baddies 	  = { -- Ignored by ACF
@@ -32,6 +33,8 @@ local Baddies 	  = { -- Ignored by ACF
 	end
 ]]--
 local function IsLegal(Entity)
+	if Gamemode:GetInt() == 0 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
+
 	local Phys = Entity:GetPhysicsObject()
 
 	if Entity.ACF.PhysObj ~= Phys then
@@ -85,7 +88,7 @@ local function CheckLegal(Entity)
 	return true
 end
 -- Global Funcs ---------------------------------
-function ACF_Check(Entity) -- IsValid but for ACF
+function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
 	local Class = Entity:GetClass()
@@ -102,7 +105,7 @@ function ACF_Check(Entity) -- IsValid but for ACF
 		end
 
 		ACF_Activate(Entity)
-	elseif Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
+	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
 		ACF_Activate(Entity, true)
 	end
 
@@ -148,7 +151,6 @@ function ACF_Activate(Entity, Recalc)
 	Entity.ACF.MaxHealth = Health
 	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
 	Entity.ACF.MaxArmour = Armour * ACF.ArmorMod
-	Entity.ACF.Type = nil
 	Entity.ACF.Mass = PhysObj:GetMass()
 
 	if Entity:IsPlayer() or Entity:IsNPC() then

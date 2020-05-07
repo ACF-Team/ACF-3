@@ -27,8 +27,8 @@ local function HitClip(Ent, Pos)
 	return false
 end
 
-local function Trace(TraceData, Filter)
-	if not Filter then
+local function Trace(TraceData, Filter) -- Pass true on filter to have Trace make it's own copy of TraceData.filter to modify
+	if Filter == true then
 		Filter = TraceData.filter
 		local NewFilter = {}
 
@@ -47,7 +47,7 @@ local function Trace(TraceData, Filter)
 		return Trace(TraceData, Filter)
 	end
 
-	if Filter and Filter ~= true then
+	if Filter then
 		TraceData.filter = Filter
 	end
 
@@ -169,11 +169,11 @@ function ACF_DoBulletsFlight(Index, Bullet)
 		end
 	end
 
-	FlightTr.mask = Bullet.Mask
+	FlightTr.mask 	= Bullet.Mask
 	FlightTr.filter = Bullet.Filter
-	FlightTr.start = Bullet.StartTrace
+	FlightTr.start 	= Bullet.StartTrace
 	FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
-	Trace(FlightTr, true)
+	Trace(FlightTr)
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete

@@ -8,8 +8,6 @@ include("shared.lua")
 local ACF_RECOIL  = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal  = ACF_CheckLegal
-local ClassLink	  = ACF.GetClassLink
-local ClassUnlink = ACF.GetClassUnlink
 local Shove		  = ACF.KEShove
 local Weapons	  = ACF.Classes.Weapons
 local TraceRes    = {} -- Output for traces
@@ -195,9 +193,13 @@ end ---------------------------------------------
 
 do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
+		local ClassLink	  = ACF.GetClassLink
+		local ClassUnlink = ACF.GetClassUnlink
+
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target) -- Linking guns to ammo cratesf
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
 			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
+			if Target.BulletData.Type == "Refill" then return false, "Refill crates cannot be linked to weapons." end
 			if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
 
 			Weapon.Crates[Target]  = true
@@ -205,6 +207,14 @@ do -- Metamethods --------------------------------
 
 			Weapon:UpdateOverlay(true)
 			Target:UpdateOverlay(true)
+
+			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
+				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
+					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target.Load then
+						Weapon:Load()
+					end
+				end)
+			end
 
 			return true, "Weapon linked successfully."
 		end)
