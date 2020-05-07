@@ -83,7 +83,7 @@ do -- Spawn Func --------------------------------
 
 		-- Set NWvars
 		Gun:SetNWString("Sound", Gun.Sound)
-		Gun:SetNWString("WireName", Lookup.name)
+		Gun:SetNWString("WireName", "ACF " .. Lookup.name)
 		Gun:SetNWString("ID", Id)
 		Gun:SetNWString("Class", Gun.Class)
 

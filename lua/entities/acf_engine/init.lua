@@ -153,7 +153,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 		PhysObj:SetMass(Entity.Mass)
 	end
 
-	Entity:SetNWString("WireName", Entity.Name)
+	Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 	Entity:UpdateOverlay(true)
 end
