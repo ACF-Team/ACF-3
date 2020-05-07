@@ -131,6 +131,8 @@ if SERVER then
 
 	local Extras = CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.")
 
+	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive")
+
 	if Extras:GetBool() then
 		resource.AddWorkshop("439526795") -- Hide Errors addon
 	end

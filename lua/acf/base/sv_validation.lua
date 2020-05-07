@@ -1,6 +1,7 @@
 -- Entity validation
 
 -- Local Vars -----------------------------------
+local Gamemode	  = GetConVar("acf_gamemode")
 local StringFind  = string.find
 local TimerSimple = timer.Simple
 local Baddies 	  = { -- Ignored by ACF
@@ -32,6 +33,8 @@ local Baddies 	  = { -- Ignored by ACF
 	end
 ]]--
 local function IsLegal(Entity)
+	if Gamemode:GetInt() == 0 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
+
 	local Phys = Entity:GetPhysicsObject()
 
 	if Entity.ACF.PhysObj ~= Phys then
