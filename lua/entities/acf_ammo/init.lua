@@ -165,7 +165,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
 	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
 
-	Entity:SetNWString("WireName", GunData.name .. " Ammo")
+	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
 end
@@ -296,7 +296,7 @@ do -- Metamethods -------------------------------
 
 			if Ent.DisableReason then
 				Status = "Disabled: " .. Ent.DisableReason
-			elseif next(Ent.Weapons) then
+			elseif next(Ent.Weapons) or Ent.BulletData.Type == "Refill" then
 				Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
 			else
 				Status = "Not linked to a weapon!"
