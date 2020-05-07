@@ -144,6 +144,7 @@ do -- Metamethods --------------------------------
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target) -- Linking guns to ammo cratesf
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
 			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
+			if Target.BulletData.Type == "Refill" then return false, "Refill crates cannot be linked to weapons." end
 			if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
 
 			Weapon.Crates[Target]  = true
@@ -154,7 +155,6 @@ do -- Metamethods --------------------------------
 
 			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					print(IsValid(Weapon), IsValid(Target), Weapon.State, Target.Active)
 					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target.Load then
 						Weapon:Load()
 					end

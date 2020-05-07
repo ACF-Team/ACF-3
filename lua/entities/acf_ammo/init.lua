@@ -112,7 +112,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.RoundData9 = Data9 or 0
 	Entity.RoundData10 = Data10 or 0
 
-	Entity.Name = Data1 .. " " .. Entity.RoundType
+	Entity.Name = (Entity.RoundType ~= "Refill" and (Data1 .. " ") or "") .. Entity.RoundType
 	Entity.ShortName = Data1
 	Entity.EntType = Entity.RoundType
 	Entity.RoundData = RoundData or ACF.RoundTypes.AP
