@@ -76,8 +76,10 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(self)
 		Menu:StartTemporal(self)
 
-		if Data.CreateMenu then
-			Data:CreateMenu(Menu)
+		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
+
+		if CustomMenu then
+			CustomMenu(Data, Menu)
 		end
 
 		Menu:EndTemporal(self)
