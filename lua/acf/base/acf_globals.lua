@@ -96,7 +96,6 @@ end
 
 do -- ACF Convars/Callbacks ------------------------
 	CreateConVar("sbox_max_acf_ammo", 32)
-	CreateConVar("sbox_max_acf_misc", 32)
 	CreateConVar("acf_meshvalue", 1)
 	CreateConVar("sbox_acf_restrictinfo", 1) -- 0=any, 1=owned
 	-- Cvars for recoil/he push
@@ -108,7 +107,6 @@ do -- ACF Convars/Callbacks ------------------------
 	CreateConVar("acf_ammomod", 1)
 	CreateConVar("acf_spalling", 0)
 	CreateConVar("acf_gunfire", 1)
-	CreateConVar("acf_modelswap_legal", 0)
 
 	cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
@@ -233,9 +231,6 @@ function ACF_CVarChangeCallback(CVar, _, New)
 		end
 
 		print("ACF Gunfire has been " .. text)
-	elseif CVar == "acf_modelswap_legal" then
-		ACF.LegalSettings.CanModelSwap = tobool(New)
-		print("ACF model swapping is set to " .. (ACF.LegalSettings.CanModelSwap and "legal" or "not legal"))
 	end
 end
 

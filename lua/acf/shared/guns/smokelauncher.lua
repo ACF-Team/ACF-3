@@ -60,7 +60,7 @@ ACF.RegisterWeaponClass("SL", {
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
-		Text = "Maximum amount of smoke launchers a player can create."
+		Text = "Maximum amount of ACF smoke launchers a player can create."
 	},
 	Caliber	= {
 		Min = 40,

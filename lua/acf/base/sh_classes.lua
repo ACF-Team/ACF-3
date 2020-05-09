@@ -203,9 +203,9 @@ do -- Weapon registration functions
 
 		if not Group.LimitConVar then
 			Group.LimitConVar = {
-				Name = "_acf_gun",
+				Name = "_acf_weapon",
 				Amount = 16,
-				Text = "Maximum amount of weapons a player can create."
+				Text = "Maximum amount of ACF weapons a player can create."
 			}
 		end
 
@@ -272,7 +272,7 @@ do -- Engine registration functions
 			Group.LimitConVar = {
 				Name = "_acf_engine",
 				Amount = 16,
-				Text = "Maximum amount of engines a player can create."
+				Text = "Maximum amount of ACF engines a player can create."
 			}
 		end
 
@@ -314,7 +314,7 @@ do -- Fuel tank registration functions
 			Group.LimitConVar = {
 				Name = "_acf_fueltank",
 				Amount = 24,
-				Text = "Maximum amount of fuel tanks a player can create."
+				Text = "Maximum amount of ACF fuel tanks a player can create."
 			}
 		end
 
@@ -360,7 +360,7 @@ do -- Gearbox registration functions
 			Group.LimitConVar = {
 				Name = "_acf_gearbox",
 				Amount = 24,
-				Text = "Maximum amount of gearboxes a player can create."
+				Text = "Maximum amount of ACF gearboxes a player can create."
 			}
 		end
 
@@ -390,7 +390,19 @@ do -- Component registration functions
 	local Components = ACF.Classes.Components
 
 	function ACF.RegisterComponentClass(ID, Data)
-		return AddClassGroup(ID, Components, Data)
+		local Group = AddClassGroup(ID, Components, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_misc",
+				Amount = 32,
+				Text = "Maximum amount of ACF components a player can create."
+			}
+		end
+
+		AddSboxLimit(Group.LimitConVar)
+
+		return Group
 	end
 
 	function ACF.RegisterComponent(ID, ClassID, Data)
@@ -404,7 +416,19 @@ do -- Sensor registration functions
 	local Sensors = ACF.Classes.Sensors
 
 	function ACF.RegisterSensorClass(ID, Data)
-		return AddClassGroup(ID, Sensors, Data)
+		local Group = AddClassGroup(ID, Sensors, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_sensor",
+				Amount = 16,
+				Text = "Maximum amount of ACF sensors a player can create."
+			}
+		end
+
+		AddSboxLimit(Group.LimitConVar)
+
+		return Group
 	end
 
 	function ACF.RegisterSensor(ID, ClassID, Data)
