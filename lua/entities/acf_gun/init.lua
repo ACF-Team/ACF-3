@@ -22,7 +22,6 @@ do -- Spawn and Update functions --------------------------------
 	local Updated = {
 		["20mmHRAC"] = "20mmRAC",
 		["30mmHRAC"] = "30mmRAC",
-		["14.5mmRAC"] = "20mmRAC",
 	}
 
 	local function VerifyData(Data)

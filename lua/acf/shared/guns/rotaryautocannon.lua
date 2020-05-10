@@ -77,6 +77,22 @@ ACF.RegisterWeaponClass("RAC", {
 	},
 })
 
+ACF.RegisterWeapon("14.5mmRAC", "RAC", {
+	Name		= "14.5mm Rotary Autocannon",
+	Description	= "A lightweight rotary autocannon, used primarily against infantry and light vehicles.",
+	Model		= "models/rotarycannon/kw/14_5mmrac.mdl",
+	Caliber		= 14.5,
+	Mass		= 400,
+	Year		= 1962,
+	MagSize		= 250,
+	MagReload	= 15,
+	Cyclic		= 2250,
+	Round = {
+		MaxLength = 25,
+		PropMass  = 0.06,
+	}
+})
+
 ACF.RegisterWeapon("20mmRAC", "RAC", {
 	Name		= "20mm Rotary Autocannon",
 	Description	= "The 20mm is able to chew up light armor with decent penetration or put up a big flak screen. Typically mounted on ground attack aircraft, SPAAGs and the ocassional APC. Suffers from a moderate cooldown period between bursts to avoid overheating the barrels.",
@@ -85,8 +101,8 @@ ACF.RegisterWeapon("20mmRAC", "RAC", {
 	Mass		= 760,
 	Year		= 1965,
 	MagSize		= 200,
-	MagReload	= 25,
-	Cyclic		= 4000,
+	MagReload	= 20,
+	Cyclic		= 2000,
 	Round = {
 		MaxLength = 30,
 		PropMass  = 0.12,
@@ -101,8 +117,8 @@ ACF.RegisterWeapon("30mmRAC", "RAC", {
 	Mass		= 1500,
 	Year		= 1975,
 	MagSize		= 100,
-	MagReload	= 35,
-	Cyclic		= 3000,
+	MagReload	= 30,
+	Cyclic		= 1500,
 	Round = {
 		MaxLength = 40,
 		PropMass  = 0.350,
