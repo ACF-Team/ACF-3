@@ -487,8 +487,6 @@ do -- Spawn and Update functions
 		ChangeGear(Entity, 1)
 
 		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 	end
 
 	function MakeACF_Gearbox(Player, Pos, Angle, Data)
@@ -533,6 +531,8 @@ do -- Spawn and Update functions
 		if Class.OnSpawn then
 			Class.OnSpawn(Gearbox, Data, Class, GearboxData)
 		end
+
+		CheckLegal(Gearbox)
 
 		timer.Create("ACF Gearbox Clock " .. Gearbox:EntIndex(), 3, 0, function()
 			if IsValid(Gearbox) then

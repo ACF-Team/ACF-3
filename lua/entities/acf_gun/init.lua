@@ -99,8 +99,6 @@ do -- Spawn and Update functions --------------------------------
 		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
 
 		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 	end
 
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
@@ -146,6 +144,8 @@ do -- Spawn and Update functions --------------------------------
 		if Class.OnSpawn then
 			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
+
+		CheckLegal(Gun)
 
 		return Gun
 	end

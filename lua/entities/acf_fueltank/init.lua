@@ -109,8 +109,6 @@ do -- Spawn and Update functions
 
 		Entity:UpdateMass(true)
 		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 	end
 
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
@@ -153,6 +151,8 @@ do -- Spawn and Update functions
 		if Class.OnSpawn then
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
+
+		CheckLegal(Tank)
 
 		return Tank
 	end

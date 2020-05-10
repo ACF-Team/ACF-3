@@ -332,8 +332,6 @@ do -- Spawn and Update functions
 		if IsValid(Phys) then Phys:SetMass(EngineData.Mass) end
 
 		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 	end
 
 	function MakeACF_Engine(Player, Pos, Angle, Data)
@@ -378,6 +376,8 @@ do -- Spawn and Update functions
 		if Class.OnSpawn then
 			Class.OnSpawn(Engine, Data, Class, EngineData)
 		end
+
+		CheckLegal(Engine)
 
 		return Engine
 	end
