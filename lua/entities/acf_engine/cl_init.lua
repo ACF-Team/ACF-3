@@ -1,16 +1,14 @@
 include("shared.lua")
 
-local SeatedInfo = CreateClientConVar("ACF_EngineInfoWhileSeated", 0, true, false)
+local HideInfo = ACF.HideInfoBubble
 
 language.Add("Undone_acf_engine", "Undone ACF Engine")
 language.Add("SBoxLimit__acf_engine", "You've reached the ACF Engines limit!")
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
-	local Player = LocalPlayer()
-	local HideBubble = IsValid(Player) and Player:InVehicle() and not SeatedInfo:GetBool()
+	self.BaseClass.DoNormalDraw(self, false, HideInfo())
 
-	self.BaseClass.DoNormalDraw(self, false, HideBubble)
 	Wire_Render(self)
 
 	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then

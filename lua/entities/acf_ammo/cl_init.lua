@@ -42,7 +42,7 @@ local function DrawRefillAmmo(Entity)
 	end
 end
 
-CreateClientConVar("ACF_AmmoInfoWhileSeated", 0, true, false)
+local HideInfo = ACF.HideInfoBubble
 
 function ENT:Initialize()
 	self.Crates = {}
@@ -59,9 +59,8 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
-	local lply = LocalPlayer()
-	local hideBubble = not GetConVar("ACF_AmmoInfoWhileSeated"):GetBool() and IsValid(lply) and lply:InVehicle()
-	self.BaseClass.DoNormalDraw(self, false, hideBubble)
+	self.BaseClass.DoNormalDraw(self, false, HideInfo())
+
 	Wire_Render(self)
 
 	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then
