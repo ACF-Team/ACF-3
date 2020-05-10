@@ -129,16 +129,20 @@ if SERVER then
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
 
-	local Extras = CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.")
+	CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
+	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive", 0, 2)
 
-	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive")
+	-- Extra content ----------------------------
+	local Extras = GetConVar("acf_enable_workshop_extras")
 
 	if Extras:GetBool() then
 		resource.AddWorkshop("439526795") -- Hide Errors addon
 	end
+	---------------------------------------------
 elseif CLIENT then
-	CreateConVar("acf_cl_particlemul", 1)
-	CreateClientConVar("ACF_MobilityRopeLinks", "1", true, true)
+	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
+	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
+	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
 
 	-- Sound Caching ----------------------------
 	local IsValidCache = {}
@@ -149,6 +153,19 @@ elseif CLIENT then
 		end
 
 		return IsValidCache[path]
+	end
+	---------------------------------------------
+
+	-- Display Info Bubble ----------------------
+	local ShowInfo = GetConVar("acf_show_entity_info")
+
+	function ACF.HideInfoBubble()
+		local Value = ShowInfo:GetInt()
+
+		if Value == 0 then return true end
+		if Value == 2 then return false end
+
+		return LocalPlayer():InVehicle()
 	end
 	---------------------------------------------
 

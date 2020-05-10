@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local SeatedInfo = CreateClientConVar("ACF_FuelInfoWhileSeated", 0, true, false)
+local HideInfo = ACF.HideInfoBubble
 
 function ENT:Initialize()
 	self.HitBoxes = {
@@ -15,9 +15,8 @@ end
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
-	local lply = LocalPlayer()
-	local hideBubble = not SeatedInfo:GetBool() and IsValid(lply) and lply:InVehicle()
-	self.BaseClass.DoNormalDraw(self, false, hideBubble)
+	self.BaseClass.DoNormalDraw(self, false, HideInfo())
+
 	Wire_Render(self)
 
 	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then
