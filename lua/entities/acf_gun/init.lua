@@ -73,7 +73,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Muzzle			= Entity.NormalMuzzle
 
 		-- Set NWvars
-		Entity:SetNWString("WireName", Weapon.Name)
+		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
 		Entity:SetNWString("Class", Entity.Class)
 		Entity:SetNWString("ID", Entity.Id)
 

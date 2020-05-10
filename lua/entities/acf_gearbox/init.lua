@@ -474,7 +474,7 @@ do -- Spawn and Update functions
 			Entity:SetBodygroup(1, 0)
 		end
 
-		Entity:SetNWString("WireName", Entity.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		ACF_Activate(Entity, true)
 

@@ -94,7 +94,7 @@ do -- Spawn and Update functions
 			}
 		}
 
-		Entity:SetNWString("WireName", Entity.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		if Entity.FuelType == "Electric" then
 			Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume

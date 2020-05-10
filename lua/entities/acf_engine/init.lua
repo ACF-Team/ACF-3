@@ -303,7 +303,7 @@ do -- Spawn and Update functions
 		Entity.HealthMult		= EngineType.HealthMult
 		Entity.Out				= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
 
-		Entity:SetNWString("WireName", Entity.Name)
+		Entity:SetNWString("WireName", "ACF" .. Entity.Name)
 
 		--calculate boosted peak kw
 		if EngineType.CalculatePeakEnergy then
