@@ -96,55 +96,55 @@ end
 -- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
 local function CalcAmmo(BoxSize,RoundCaliber,TotalRoundLength,AddSpacing,AddArmor)
 	-- Instantly invalidate garbage rounds
-	if RoundCaliber==0 then return 0 end
-	if TotalRoundLength==0 then return 0 end
+	if RoundCaliber == 0 then return 0 end
+	if TotalRoundLength == 0 then return 0 end
 
-	local Rounds=0
+	local Rounds = 0
 	-- Converting everything to source units
-	local ConvCaliber=(RoundCaliber/0.75)/2.54
-	local ConvLength=(TotalRoundLength/0.75)/2.54
+	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54
+	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54
 	print(ConvCaliber,ConvLength)
-	local Spacing=math.max(math.abs(AddSpacing)+0.125,0.125)
+	local Spacing = math.max(math.abs(AddSpacing) + 0.125,0.125)
 
-	if AddArmor>0 then
-		local ConvArmor=(AddArmor/0.75)/25.4
+	if AddArmor > 0 then
+		local ConvArmor = (AddArmor / 0.75) / 25.4
 		-- *2 because armor on both sides
-		BoxSize.x=math.max(BoxSize.x-(ConvArmor*2),0)
-		BoxSize.y=math.max(BoxSize.y-(ConvArmor*2),0)
-		BoxSize.z=math.max(BoxSize.z-(ConvArmor*2),0)
+		BoxSize.x = math.max(BoxSize.x-(ConvArmor * 2),0)
+		BoxSize.y = math.max(BoxSize.y-(ConvArmor * 2),0)
+		BoxSize.z = math.max(BoxSize.z-(ConvArmor * 2),0)
 	end
 
-	local D={}
-	D["x"]=BoxSize.x
-	D["y"]=BoxSize.y
-	D["z"]=BoxSize.z
+	local D = {}
+	D["x"] = BoxSize.x
+	D["y"] = BoxSize.y
+	D["z"] = BoxSize.z
 	for K,V in pairs(D) do
-		if ShortestFit==nil then
-			if ConvLength<=V then ShortestFit=K end
+		if ShortestFit == nil then
+			if ConvLength <= V then ShortestFit = K end
 		else
-			if ConvLength<=V and ConvLength>(D[ShortestFit]) then ShortestFit=K end
+			if ConvLength <= V and ConvLength > D[ShortestFit] then ShortestFit = K end
 		end
 	end
 
-	if ShortestFit~="" then -- From here we know the round can sorta fit in the box
-		local X=0
-		local Y=0
+	if ShortestFit ~= "" then -- From here we know the round can sorta fit in the box
+		local X = 0
+		local Y = 0
 		-- Creating the 'plane' to do the basic bitch math with
-		if ShortestFit=="x" then
-			X=D["y"]
-			Y=D["z"]
-		elseif ShortestFit=="y" then
-			X=D["x"]
-			Y=D["z"]
+		if ShortestFit == "x" then
+			X = D["y"]
+			Y = D["z"]
+		elseif ShortestFit == "y" then
+			X = D["x"]
+			Y = D["z"]
 		else -- z
-			X=D["x"]
-			Y=D["y"]
+			X = D["x"]
+			Y = D["y"]
 		end
 
-		local ModifiedRoundSize=ConvCaliber+Spacing
-		local ModifiedRoundLength=ConvLength+Spacing
+		local ModifiedRoundSize = ConvCaliber + Spacing
+		local ModifiedRoundLength = ConvLength + Spacing
 		-- That basic bitch math
-		Rounds=math.floor(D[ShortestFit]/ModifiedRoundLength)*math.floor(X/ModifiedRoundSize)*math.floor(Y/ModifiedRoundSize)
+		Rounds = math.floor(D[ShortestFit] / ModifiedRoundLength) * math.floor(X / ModifiedRoundSize) * math.floor(Y / ModifiedRoundSize)
 	end
 
 	return Rounds
@@ -217,12 +217,12 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	local Efficiency = 0.1576 * ACF.AmmoMod
 	local Volume = math.floor(Entity:GetPhysicsObject():GetVolume())
 	local CapMul = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-	local MassMod = Entity.BulletData.MassMod or 1
+	--local MassMod = Entity.BulletData.MassMod or 1
 
 	Entity.Volume = Volume * Efficiency
 	--Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
 	-- CalcAmmo function is just above
-	if (GunData.ent or "")=="acf_rack" then -- I hate everything that was involved for me to have to do this, because '30000'
+	if (GunData.ent or "") == "acf_rack" then -- I hate everything that was involved for me to have to do this, because '30000'
 		-- IF, AND ONLY THEN, ACF-MISSILES GETS UNFUCKED
 		-- Make sure caliber is in cm, and length is in cm
 		-- When all is said and done, this horrible line can be replaced with the new function
@@ -230,9 +230,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
 	else
 		print(GunData.caliber)
-		Entity.Capacity = CalcAmmo(Entity:OBBMaxs()-Entity:OBBMins(), GunData.caliber or 0,((Entity.BulletData.PropLength or 0) + (Entity.BulletData.ProjLength or 0) + (Entity.BulletData.Tracer or 0)), 0, 0)
+		Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(), GunData.caliber or 0,(Entity.BulletData.PropLength or 0) + (Entity.BulletData.ProjLength or 0) + (Entity.BulletData.Tracer or 0), 0, 0)
 	end
-	if Entity.RoundType == "Refill" then Entity.Capacity=CalcAmmo(Entity:OBBMaxs()-Entity:OBBMins(),8,2,0,0) end
+	if Entity.RoundType == "Refill" then Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(),8,2,0,0) end
 	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass + Entity.BulletData.PropMass) * Entity.Capacity)
 	Entity.Caliber = GunData.caliber
 	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
