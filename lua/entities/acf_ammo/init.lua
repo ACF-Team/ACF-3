@@ -103,7 +103,6 @@ local function CalcAmmo(BoxSize,RoundCaliber,TotalRoundLength,AddSpacing,AddArmo
 	-- Converting everything to source units
 	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54
 	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54
-	print(ConvCaliber,ConvLength)
 	local Spacing = math.max(math.abs(AddSpacing) + 0.125,0.125)
 
 	if AddArmor > 0 then
@@ -229,7 +228,6 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		-- I want the missiles/bombs to be stored like the entire fucking model is in there
 		Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
 	else
-		print(GunData.caliber)
 		Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(), GunData.caliber or 0,(Entity.BulletData.PropLength or 0) + (Entity.BulletData.ProjLength or 0) + (Entity.BulletData.Tracer or 0), 0, 0)
 	end
 	if Entity.RoundType == "Refill" then Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(),8,2,0,0) end
