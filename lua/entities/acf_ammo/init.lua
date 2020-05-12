@@ -90,20 +90,42 @@ local function RefillCrates(Entity)
 end
 
 -- BoxSize is just OBBMaxs-OBBMins
--- RoundCaliber is obvious, but must be in cm (as is stored)
--- TotalRoundLength takes into account the entire projectile, trace and propellant included
+-- Removed caliber and round length inputs, uses GunData and BulletData now
 -- AddSpacing is just extra spacing (directly reduces storage, but can later make it harder to detonate)
 -- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
-local function CalcAmmo(BoxSize,RoundCaliber,TotalRoundLength,AddSpacing,AddArmor)
+local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	-- Instantly invalidate garbage rounds
+	local RoundCaliber = GunData.caliber or 0
+	local TotalRoundLength = (BulletData.PropLength or 0) + (BulletData.ProjLength or 0) + (BulletData.Tracer or 0)
+
+	-- gives a nice number of rounds per refill box
+	if BulletData.Type == "Refill" then return math.ceil((BoxSize.x / 2) * (BoxSize.y / 2) * (BoxSize.z / 2)) end
+
 	if RoundCaliber == 0 then return 0 end
 	if TotalRoundLength == 0 then return 0 end
 
 	local Rounds = 0
 	-- Converting everything to source units
-	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54
-	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54
+	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54 -- cm to u
+	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54 -- cm to u
 	local Spacing = math.max(math.abs(AddSpacing) + 0.125,0.125)
+
+	local MagSize = 0
+	local MagBoxSize = 0
+	local Class = GunData.gunclass
+
+	-- This block alters the stored round size, making it more like a container of the rounds
+	-- This cuts a little bit of ammo storage out
+	-- Anything that may potentially be belt-fed (RACs, ACs despite having the weirdass revolver design) is exempt
+	-- Anything with a sensible magazine is forced to use this
+	-- Autoloading cannons are exempt because of rounds being inserted into the stored drums
+	if (GunData.magsize or 0 > 0) and (RoundCaliber <= 2 or (Class == "SAC" or Class == "SL" or Class == "HMG" or Class == "GL") and (Class ~= "RAC" and Class ~= "AC" and Class ~= "AL")) then
+		MagSize = GunData.magsize
+		local RndsSqrt = math.ceil(math.sqrt(MagSize))
+		MagBoxSize = ConvCaliber * RndsSqrt
+		-- Makes certain automatic ammo stored by boxes
+		ConvCaliber = MagBoxSize
+	end
 
 	if AddArmor > 0 then
 		local ConvArmor = (AddArmor / 0.75) / 25.4
@@ -143,7 +165,11 @@ local function CalcAmmo(BoxSize,RoundCaliber,TotalRoundLength,AddSpacing,AddArmo
 		local ModifiedRoundSize = ConvCaliber + Spacing
 		local ModifiedRoundLength = ConvLength + Spacing
 		-- That basic bitch math
-		Rounds = math.floor(D[ShortestFit] / ModifiedRoundLength) * math.floor(X / ModifiedRoundSize) * math.floor(Y / ModifiedRoundSize)
+		if MagSize > 0 then
+			Rounds = math.floor(D[ShortestFit] / ModifiedRoundLength) * math.floor(X / ModifiedRoundSize) * math.floor(Y / ModifiedRoundSize) * MagSize
+		else
+			Rounds = math.floor(D[ShortestFit] / ModifiedRoundLength) * math.floor(X / ModifiedRoundSize) * math.floor(Y / ModifiedRoundSize)
+		end
 	end
 
 	return Rounds
@@ -221,21 +247,23 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.Volume = Volume * Efficiency
 	--Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
 	-- CalcAmmo function is just above
-	if (GunData.ent or "") == "acf_rack" then -- I hate everything that was involved for me to have to do this, because '30000'
+	local BoundingBox = Entity:OBBMaxs() - Entity:OBBMins()
+
+	if (GunData.ent or "") ~= "acf_rack" then -- I hate everything that was involved for me to have to do this, because '30000' whatever fucking units for a 1000kg bomb makes sense right
+		Entity.Capacity = CalcAmmo(BoundingBox, GunData, Entity.BulletData, 0, 0)
+	else
 		-- IF, AND ONLY THEN, ACF-MISSILES GETS UNFUCKED
 		-- Make sure caliber is in cm, and length is in cm
 		-- When all is said and done, this horrible line can be replaced with the new function
 		-- I want the missiles/bombs to be stored like the entire fucking model is in there
 		Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
-	else
-		Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(), GunData.caliber or 0,(Entity.BulletData.PropLength or 0) + (Entity.BulletData.ProjLength or 0) + (Entity.BulletData.Tracer or 0), 0, 0)
+		-- Seriously, fuck the round soup
 	end
-	if Entity.RoundType == "Refill" then Entity.Capacity = CalcAmmo(Entity:OBBMaxs() - Entity:OBBMins(),8,2,0,0) end
+
 	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass + Entity.BulletData.PropMass) * Entity.Capacity)
 	Entity.Caliber = GunData.caliber
 	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
 	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
-
 	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
@@ -486,7 +514,7 @@ do -- Metamethods -------------------------------
 			end
 
 			local Armour = EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-			local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone 
+			local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone
 			local Percent = 1
 
 			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -552,7 +580,7 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:Update(ArgsTable)
-			-- That table is the player data, as sorted in the ACFCvars above, with player who shot, 
+			-- That table is the player data, as sorted in the ACFCvars above, with player who shot,
 			-- and pos and angle of the tool trace inserted at the start
 			local Message = "Ammo crate updated successfully!"
 
