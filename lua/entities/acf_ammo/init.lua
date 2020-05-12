@@ -109,7 +109,9 @@ local function CalcAmmo(BoxSize,RoundCaliber,TotalRoundLength,AddSpacing,AddArmo
 	if AddArmor>0 then
 		local ConvArmor=(AddArmor/0.75)/25.4
 		-- *2 because armor on both sides
-		BoxSize={x=math.max(BoxSize.x-(ConvArmor*2),0), y=math.max(BoxSize.y-(ConvArmor*2),0), z=math.max(BoxSize.z-(ConvArmor*2),0)}
+		BoxSize.x=math.max(BoxSize.x-(ConvArmor*2),0)
+		BoxSize.y=math.max(BoxSize.y-(ConvArmor*2),0)
+		BoxSize.z=math.max(BoxSize.z-(ConvArmor*2),0)
 	end
 
 	local D={}
