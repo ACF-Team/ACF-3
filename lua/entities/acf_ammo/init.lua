@@ -176,8 +176,7 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 
 	if ((GunData.magsize or 0) > 0) and ((RoundCaliber <= 2) or (Force and (not (ExtraData.isRacked or false)))) and (not ForceSkip) then
 		MagSize = GunData.magsize
-		local RndsSqrt = math.ceil(math.sqrt(MagSize))
-		MagBoxSize = ConvCaliber * RndsSqrt
+		MagBoxSize = ConvCaliber * math.sqrt(MagSize)
 		-- Makes certain automatic ammo stored by boxes
 		ConvCaliber = MagBoxSize
 		ExtraData.MagSize = MagSize
