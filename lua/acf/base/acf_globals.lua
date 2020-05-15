@@ -143,6 +143,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
+	CreateClientConVar("ACF_MaxRoundsDisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 64)
 
 	-- Sound Caching ----------------------------
 	local IsValidCache = {}
@@ -188,6 +189,8 @@ timer.Simple(0, function()
 		PrecacheParticleSystem(Table["muzzleflash"])
 	end
 end)
+
+function switch(cases,arg) return cases[arg] or cases["default"] end
 
 -- changes here will be automatically reflected in the armor properties tool
 function ACF_CalcArmor(Area, Ductility, Mass)
