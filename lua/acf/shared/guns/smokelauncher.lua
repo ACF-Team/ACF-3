@@ -5,7 +5,7 @@ ACF_defineGunClass("SL", {
 	desc = "Smoke launcher to block an attacker's line of sight.",
 	muzzleflash = "gl_muzzleflash_noscale",
 	rofmod = 45,
-	sound = "weapons/acf_gun/smoke_launch.mp3",
+	sound = "acf_base/weapons/smoke_launch.mp3",
 	soundDistance = "Mortar.Fire",
 	soundNormal = " "
 })

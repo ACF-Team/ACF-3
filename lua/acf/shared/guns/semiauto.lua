@@ -5,7 +5,7 @@ ACF_defineGunClass("SA", {
 	desc = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
 	muzzleflash = "semi_muzzleflash_noscale",
 	rofmod = 0.36,
-	sound = "weapons/acf_gun/sa_fire1.mp3",
+	sound = "acf_base/weapons/sa_fire1.mp3",
 	soundDistance = " ",
 	soundNormal = " "
 })

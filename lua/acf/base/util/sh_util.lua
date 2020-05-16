@@ -144,3 +144,168 @@ do -- Unit conversion
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
 	end
 end
+
+do -- Sound aliases
+	local Stored = {}
+	local Lookup = {}
+	local Path = "sound/%s"
+
+	local function CreateData(Name)
+		if not Lookup[Name] then
+			Lookup[Name] = {
+				Name = Name,
+				Children = {}
+			}
+		else
+			Stored[Name] = nil
+		end
+
+		return Lookup[Name]
+	end
+
+	local function RegisterAlias(Old, New)
+		if not isstring(Old) then return end
+		if not isstring(New) then return end
+
+		Old = Old:lower()
+		New = New:lower()
+
+		local OldData = CreateData(Old)
+		local NewData = CreateData(New)
+
+		NewData.Children[OldData] = true
+		OldData.Parent = NewData
+	end
+
+	local function GetParentSound(Name, List, Total)
+		for I = Total, 1, -1 do
+			local Sound = List[I].Name
+
+			if file.Exists(Path:format(Sound), "GAME") then
+				Stored[Name] = Sound
+
+				return Sound
+			end
+		end
+	end
+
+	-- Note: This isn't syncronized between server and client.
+	-- If a sound happens to have multiple children, the result will differ between client and server.
+	local function GetChildSound(Name)
+		local Next = Lookup[Name].Children
+		local Checked = { [Next] = true }
+
+		repeat
+			local New = {}
+
+			for Child in pairs(Next) do
+				if Checked[Child] then continue end
+
+				local Sound = Child.Name
+
+				if file.Exists(Path:format(Sound), "GAME") then
+					Stored[Name] = Sound
+
+					return Sound
+				end
+
+				for K in pairs(Child.Children) do
+					New[K] = true
+				end
+
+				Checked[Child] = true
+			end
+
+			Next = New
+
+		until not Next
+	end
+
+	local function GetAlias(Name)
+		if not isstring(Name) then return end
+
+		Name = Name:lower()
+
+		if not Lookup[Name] then return Name end
+		if Stored[Name] then return Stored[Name] end
+
+		local Checked, List = {}, {}
+		local Next = Lookup[Name]
+		local Count = 0
+
+		repeat
+			if Checked[Next] then break end
+
+			Count = Count + 1
+
+			Checked[Next] = true
+			List[Count] = Next
+
+			Next = Next.Parent
+		until not Next
+
+		local Parent = GetParentSound(Name, List, Count)
+		if Parent then return Parent end
+
+		local Children = GetChildSound(Name)
+		if Children then return Children end
+
+		Stored[Name] = Name
+
+		return Name
+	end
+
+	function ACF.RegisterSoundAliases(Table)
+		if not istable(Table) then return end
+
+		for K, V in pairs(Table) do
+			RegisterAlias(K, V)
+		end
+	end
+
+	ACF.GetSoundAlias = GetAlias
+
+	-- sound.Play hijacking
+	sound.DefaultPlay = sound.DefaultPlay or sound.Play
+
+	function sound.Play(Name, ...)
+		Name = GetAlias(Name)
+
+		return sound.DefaultPlay(Name, ...)
+	end
+
+	-- ENT:EmitSound hijacking
+	local ENT = FindMetaTable("Entity")
+
+	ENT.DefaultEmitSound = ENT.DefaultEmitSound or ENT.EmitSound
+
+	function ENT:EmitSound(Name, ...)
+		Name = GetAlias(Name)
+
+		return self:DefaultEmitSound(Name, ...)
+	end
+
+	-- CreateSound hijacking
+	DefaultCreateSound = DefaultCreateSound or CreateSound
+
+	function CreateSound(Entity, Name, ...)
+		Name = GetAlias(Name)
+
+		return DefaultCreateSound(Entity, Name, ...)
+	end
+
+	-- Valid sound check
+	if CLIENT then
+		local SoundCache = {}
+
+		function ACF.IsValidSound(Name)
+			Name = GetAlias(Name)
+
+			if SoundCache[Name] == nil then
+				SoundCache[Name] = file.Exists(Path:format(Name), "GAME")
+			end
+
+			return SoundCache[Name]
+		end
+	end
+end
