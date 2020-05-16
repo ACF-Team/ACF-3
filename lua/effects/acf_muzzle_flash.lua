@@ -15,7 +15,7 @@ function EFFECT:Init(Data)
 		Attachment = LongBarrel.newpos
 	end
 
-	if not IsValidSound(Sound) then
+	if not ACF.IsValidSound(Sound) then
 		Sound = ClassData.sound
 	end
 

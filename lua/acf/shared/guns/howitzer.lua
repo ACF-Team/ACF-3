@@ -5,7 +5,7 @@ ACF_defineGunClass("HW", {
 	desc = "Howitzers are limited to rather mediocre muzzle velocities, but can fire extremely heavy projectiles with large useful payload capacities.",
 	muzzleflash = "howie_muzzleflash_noscale",
 	rofmod = 1.8,
-	sound = "weapons/ACF_Gun/howitzer_new2.mp3",
+	sound = "acf_base/weapons/howitzer_new2.mp3",
 	soundDistance = "Howitzer.Fire",
 	soundNormal = " "
 })
