@@ -108,7 +108,7 @@ ACF.RegisterWeaponClass("AL", {
 	Description	  = "A cannon with attached autoloading mechanism. While it allows for several quick shots, the mechanism adds considerable bulk, weight, and magazine reload time.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
 	Spread		  = 0.08,
-	Sound		  = "weapons/ACF_Gun/autoloader.mp3",
+	Sound		  = "acf_base/weapons/autoloader.mp3",
 	Caliber	= {
 		Min = 75,
 		Max = 140,

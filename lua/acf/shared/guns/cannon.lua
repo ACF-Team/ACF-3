@@ -120,7 +120,7 @@ ACF.RegisterWeaponClass("C", {
 	Description	  = "High velocity guns that can fire very powerful ammunition, but are rather slow to reload.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
 	Spread		  = 0.08,
-	Sound		  = "weapons/ACF_Gun/cannon_new.mp3",
+	Sound		  = "acf_base/weapons/cannon_new.mp3",
 	Caliber	= {
 		Min = 20,
 		Max = 140,
@@ -134,7 +134,7 @@ ACF.RegisterWeapon("37mmC", "C", {
 	Caliber		= 37,
 	Mass		= 350,
 	Year		= 1919,
-	Sound		= "weapons/ACF_Gun/ac_fire4.mp3",
+	Sound		= "acf_base/weapons/ac_fire4.mp3",
 	Round = {
 		MaxLength = 48,
 		PropMass  = 1.125,
@@ -148,7 +148,7 @@ ACF.RegisterWeapon("50mmC", "C", {
 	Caliber		= 50,
 	Mass		= 665,
 	Year		= 1935,
-	Sound		= "weapons/ACF_Gun/ac_fire4.mp3",
+	Sound		= "acf_base/weapons/ac_fire4.mp3",
 	Round = {
 		MaxLength = 63,
 		PropMass  = 2.1,

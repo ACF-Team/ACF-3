@@ -89,7 +89,7 @@ ACF.RegisterWeaponClass("AC", {
 	Description	  = "Autocannons have a rather high weight and bulk for the ammo they fire, but they can fire it extremely fast.",
 	MuzzleFlash	  = "auto_muzzleflash_noscale",
 	Spread		  = 0.25,
-	Sound		  = "weapons/ACF_Gun/ac_fire4.mp3",
+	Sound		  = "acf_base/weapons/ac_fire4.mp3",
 	Caliber	= {
 		Min = 20,
 		Max = 50,

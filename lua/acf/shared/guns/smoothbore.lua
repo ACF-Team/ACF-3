@@ -76,7 +76,7 @@ ACF.RegisterWeaponClass("SB", {
 	Description	  = "More modern smoothbore cannons that can only fire munitions that do not rely on spinning for accuracy.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
 	Spread		  = 0.08,
-	Sound		  = "weapons/ACF_Gun/cannon_new.mp3",
+	Sound		  = "acf_base/weapons/cannon_new.mp3",
 	Caliber	= {
 		Min = 20,
 		Max = 140,

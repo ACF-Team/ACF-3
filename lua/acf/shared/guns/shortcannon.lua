@@ -104,7 +104,7 @@ ACF.RegisterWeaponClass("SC", {
 	Description	  = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
 	Spread		  = 0.2,
-	Sound		  = "weapons/ACF_Gun/cannon_new.mp3",
+	Sound		  = "acf_base/weapons/cannon_new.mp3",
 	Caliber	= {
 		Min = 37,
 		Max = 140,
@@ -118,7 +118,7 @@ ACF.RegisterWeapon("37mmSC", "SC", {
 	Caliber		= 37,
 	Mass		= 200,
 	Year		= 1915,
-	Sound		= "weapons/ACF_Gun/ac_fire4.mp3",
+	Sound		= "acf_base/weapons/ac_fire4.mp3",
 	Round = {
 		MaxLength = 45,
 		PropMass  = 0.29,
@@ -132,7 +132,7 @@ ACF.RegisterWeapon("50mmSC", "SC", {
 	Caliber		= 50,
 	Mass		= 330,
 	Year		= 1915,
-	Sound		= "weapons/ACF_Gun/ac_fire4.mp3",
+	Sound		= "acf_base/weapons/ac_fire4.mp3",
 	Round = {
 		MaxLength = 63,
 		PropMass  = 0.6,

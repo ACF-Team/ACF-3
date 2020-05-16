@@ -56,7 +56,7 @@ ACF.RegisterWeaponClass("SL", {
 	Description	  = "Smoke launcher to block an attacker's line of sight.",
 	MuzzleFlash	  = "gl_muzzleflash_noscale",
 	Spread		  = 0.32,
-	Sound		  = "weapons/acf_gun/smoke_launch.mp3",
+	Sound		  = "acf_base/weapons/smoke_launch.mp3",
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
