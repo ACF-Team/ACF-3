@@ -180,8 +180,9 @@ do -- Sound aliases
 	-- Note: This isn't syncronized between server and client.
 	-- If a sound happens to have multiple children, the result will differ between client and server.
 	local function GetChildSound(Name)
-		local Next = Lookup[Name].Children
-		local Checked = { [Next] = true }
+		local Data = Lookup[Name]
+		local Next = Data.Children
+		local Checked = { [Data] = true }
 
 		repeat
 			local New = {}
@@ -206,7 +207,7 @@ do -- Sound aliases
 
 			Next = New
 
-		until not Next
+		until not next(Next)
 	end
 
 	local function GetAlias(Name)
