@@ -457,7 +457,7 @@ do -- Metamethods --------------------------------
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
-				self.NextFire 	  = CurTime() + Time
+				self.NextFire 	  = ACF.CurTime + Time
 
 				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
 					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
@@ -511,6 +511,8 @@ do -- Metamethods --------------------------------
 
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+
+				self.NextFire = ACF.CurTime + self.MagReload
 
 				timer.Simple(self.MagReload, function() -- Reload timer
 					if IsValid(self) then
@@ -630,7 +632,7 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			self:NextThink(CurTime() + 1)
+			self:NextThink(ACF.CurTime + 1)
 
 			return true
 		end
