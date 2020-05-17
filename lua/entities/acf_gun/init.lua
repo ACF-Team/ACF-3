@@ -195,11 +195,17 @@ do -- Metamethods --------------------------------
 		local ClassLink	  = ACF.GetClassLink
 		local ClassUnlink = ACF.GetClassUnlink
 
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target) -- Linking guns to ammo cratesf
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
 			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
-			if Target.BulletData.Type == "Refill" then return false, "Refill crates cannot be linked to weapons." end
+			if Target.RoundType == "Refill" then return false, "Refill crates cannot be linked to weapons." end
 			if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
+
+			local Blacklist = ACF.AmmoBlacklist[Target.RoundType]
+
+			if table.HasValue(Blacklist, Weapon.Class) then
+				return false, "That round type can't be used with this weapon."
+			end
 
 			Weapon.Crates[Target]  = true
 			Target.Weapons[Weapon] = true
@@ -504,7 +510,7 @@ do -- Metamethods --------------------------------
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
-				self.NextFire 	  = CurTime() + Time
+				self.NextFire 	  = ACF.CurTime + Time
 
 				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
 					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
@@ -558,6 +564,8 @@ do -- Metamethods --------------------------------
 
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+
+				self.NextFire = ACF.CurTime + self.MagReload
 
 				timer.Simple(self.MagReload, function() -- Reload timer
 					if IsValid(self) then
@@ -677,7 +685,7 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			self:NextThink(CurTime() + 1)
+			self:NextThink(ACF.CurTime + 1)
 
 			return true
 		end
