@@ -134,6 +134,7 @@ if SERVER then
 
 	if Extras:GetBool() then
 		resource.AddWorkshop("439526795") -- Hide Errors addon
+		resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
 	end
 	---------------------------------------------
 elseif CLIENT then
