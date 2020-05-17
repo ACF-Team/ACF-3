@@ -141,11 +141,17 @@ do -- Metamethods --------------------------------
 		local ClassLink	  = ACF.GetClassLink
 		local ClassUnlink = ACF.GetClassUnlink
 
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target) -- Linking guns to ammo cratesf
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
 			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
-			if Target.BulletData.Type == "Refill" then return false, "Refill crates cannot be linked to weapons." end
+			if Target.RoundType == "Refill" then return false, "Refill crates cannot be linked to weapons." end
 			if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
+
+			local Blacklist = ACF.AmmoBlacklist[Target.RoundType]
+
+			if table.HasValue(Blacklist, Weapon.Class) then
+				return false, "That round type can't be used with this weapon."
+			end
 
 			Weapon.Crates[Target]  = true
 			Target.Weapons[Weapon] = true
