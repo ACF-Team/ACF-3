@@ -293,6 +293,55 @@ do -- Entity linking
 	end
 end
 
+do -- Entity inputs
+	local Inputs = {}
+
+	local function GetClass(Class, Add)
+		if Add and not Inputs[Class] then
+			Inputs[Class] = {}
+		end
+
+		return Inputs[Class]
+	end
+
+	function ACF.AddInputAction(Class, Name, Action)
+		if not Class then return end
+		if not Name then return end
+		if not isfunction(Action) then return end
+
+		local Data = GetClass(Class, true)
+
+		Data[Name] = Action
+	end
+
+	function ACF.GetInputAction(Class, Name)
+		if not Class then return end
+		if not Name then return end
+
+		local Data = GetClass(Class)
+
+		if not Data then return end
+
+		return Data[Name]
+	end
+
+	function ACF.GetInputActions(Class)
+		if not Class then return end
+
+		local Data = GetClass(Class)
+
+		if not Data then return end
+
+		local Result = {}
+
+		for K, V in pairs(Data) do
+			Result[K] = V
+		end
+
+		return Result
+	end
+end
+
 function ACF_GetHitAngle(HitNormal, HitVector)
 	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
 end
