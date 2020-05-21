@@ -183,6 +183,116 @@ do -- Entity saving and restoring
 	end
 end
 
+do -- Entity linking
+	local EntityLink = {}
+	local function GetEntityLinks(Entity, VarName, SingleEntry)
+		if not Entity[VarName] then return {} end
+
+		if SingleEntry then
+			return { [Entity[VarName]] = true }
+		end
+
+		local Result = {}
+
+		for K in pairs(Entity[VarName]) do
+			Result[K] = true
+		end
+
+		return Result
+	end
+
+	-- If your entity can link/unlink other entities, you should use this
+	function ACF.RegisterLinkSource(Class, VarName, SingleEntry)
+		local Data = EntityLink[Class]
+
+		if not Data then
+			EntityLink[Class] = {
+				[VarName] = function(Entity)
+					return GetEntityLinks(Entity, VarName, SingleEntry)
+				end
+			}
+		else
+			Data[VarName] = function(Entity)
+				return GetEntityLinks(Entity, VarName, SingleEntry)
+			end
+		end
+	end
+
+	function ACF.GetAllLinkSources(Class)
+		if not EntityLink[Class] then return {} end
+
+		local Result = {}
+
+		for K, V in pairs(EntityLink[Class]) do
+			Result[K] = V
+		end
+
+		return Result
+	end
+
+	function ACF.GetLinkSource(Class, VarName)
+		if not EntityLink[Class] then return end
+
+		return EntityLink[Class][VarName]
+	end
+
+	local ClassLink = { Link = {}, Unlink = {} }
+	local function RegisterNewLink(Action, Class1, Class2, Function)
+		if not isfunction(Function) then return end
+
+		local Target = ClassLink[Action]
+		local Data1 = Target[Class1]
+
+		if not Data1 then
+			Target[Class1] = {
+				[Class2] = function(Ent1, Ent2)
+					return Function(Ent1, Ent2)
+				end
+			}
+		else
+			Data1[Class2] = function(Ent1, Ent2)
+				return Function(Ent1, Ent2)
+			end
+		end
+
+		if Class1 == Class2 then return end
+
+		local Data2 = Target[Class2]
+
+		if not Data2 then
+			Target[Class2] = {
+				[Class1] = function(Ent2, Ent1)
+					return Function(Ent1, Ent2)
+				end
+			}
+		else
+			Data2[Class1] = function(Ent2, Ent1)
+				return Function(Ent1, Ent2)
+			end
+		end
+	end
+
+	function ACF.RegisterClassLink(Class1, Class2, Function)
+		RegisterNewLink("Link", Class1, Class2, Function)
+	end
+
+	function ACF.GetClassLink(Class1, Class2)
+		if not ClassLink.Link[Class1] then return end
+
+		return ClassLink.Link[Class1][Class2]
+	end
+
+	function ACF.RegisterClassUnlink(Class1, Class2, Function)
+		RegisterNewLink("Unlink", Class1, Class2, Function)
+	end
+
+	function ACF.GetClassUnlink(Class1, Class2)
+		if not ClassLink.Unlink[Class1] then return end
+
+		return ClassLink.Unlink[Class1][Class2]
+	end
+end
+
 function ACF_GetHitAngle(HitNormal, HitVector)
 	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
 end
