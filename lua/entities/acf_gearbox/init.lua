@@ -155,6 +155,7 @@ local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local Gearboxes	  = ACF.Classes.Gearboxes
+local Inputs      = ACF.GetInputActions("acf_gearbox")
 local Clamp		  = math.Clamp
 
 local function ChangeGear(Entity, Value)
@@ -231,66 +232,6 @@ local function ActWheel(Link, Wheel, Torque, Brake, DeltaTime)
 
 	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque * 1.5 - BrakeMult) * DeltaTime, -500000, 500000))
 end
-
-local Inputs = {
-	Gear = function(Entity, Value)
-		if Entity.Automatic then
-			ChangeDrive(Entity, Value)
-		else
-			ChangeGear(Entity, Value)
-		end
-	end,
-	["Gear Up"] = function(Entity, Value)
-		if Value == 0 then return end
-
-		if Entity.Automatic then
-			ChangeDrive(Entity, Entity.Drive + 1)
-		else
-			ChangeGear(Entity, Entity.Gear + 1)
-		end
-	end,
-	["Gear Down"] = function(Entity, Value)
-		if Value == 0 then return end
-
-		if Entity.Automatic then
-			ChangeDrive(Entity, Entity.Drive - 1)
-		else
-			ChangeGear(Entity, Entity.Gear - 1)
-		end
-	end,
-	Clutch = function(Entity, Value)
-		Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
-		Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
-	end,
-	Brake = function(Entity, Value)
-		Entity.LBrake = Clamp(Value, 0, 100)
-		Entity.RBrake = Clamp(Value, 0, 100)
-	end,
-	["Left Brake"] = function(Entity, Value)
-		Entity.LBrake = Clamp(Value, 0, 100)
-	end,
-	["Right Brake"] = function(Entity, Value)
-		Entity.RBrake = Clamp(Value, 0, 100)
-	end,
-	["Left Clutch"] = function(Entity, Value)
-		Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
-	end,
-	["Right Clutch"] = function(Entity, Value)
-		Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
-	end,
-	["CVT Ratio"] = function(Entity, Value)
-		Entity.CVTRatio = Clamp(Value, 0, 1)
-	end,
-	["Steer Rate"] = function(Entity, Value)
-		Entity.SteerRate = Clamp(Value, -1, 1)
-	end,
-	["Hold Gear"] = function(Entity, Value)
-		Entity.Hold = tobool(Value)
-	end,
-	["Shift Speed Scale"] = function(Entity, Value)
-		Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
-	end
-}
 
 --===============================================================================================--
 
@@ -732,11 +673,85 @@ function ENT:CanProperty(_, Property)
 	return Property ~= "bodygroups"
 end
 
-function ENT:TriggerInput(Input, Value)
+ACF.AddInputAction("acf_gearbox", "Gear", function(Entity, Value)
+	if Entity.Automatic then
+		ChangeDrive(Entity, Value)
+	else
+		ChangeGear(Entity, Value)
+	end
+end)
+
+ACF.AddInputAction("acf_gearbox", "Gear Up", function(Entity, Value)
+	if Value == 0 then return end
+
+	if Entity.Automatic then
+		ChangeDrive(Entity, Entity.Drive + 1)
+	else
+		ChangeGear(Entity, Entity.Gear + 1)
+	end
+end)
+
+ACF.AddInputAction("acf_gearbox", "Gear Down", function(Entity, Value)
+	if Value == 0 then return end
+
+	if Entity.Automatic then
+		ChangeDrive(Entity, Entity.Drive - 1)
+	else
+		ChangeGear(Entity, Entity.Gear - 1)
+	end
+end)
+
+ACF.AddInputAction("acf_gearbox", "Clutch", function(Entity, Value)
+	Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+	Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+end)
+
+ACF.AddInputAction("acf_gearbox", "Left Clutch", function(Entity, Value)
+	Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+end)
+
+ACF.AddInputAction("acf_gearbox", "Right Clutch", function(Entity, Value)
+	Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+end)
+
+ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
+	Entity.LBrake = Clamp(Value, 0, 100)
+	Entity.RBrake = Clamp(Value, 0, 100)
+end)
+
+ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
+	Entity.LBrake = Clamp(Value, 0, 100)
+end)
+
+ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
+	Entity.RBrake = Clamp(Value, 0, 100)
+end)
+
+ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
+	Entity.CVTRatio = Clamp(Value, 0, 1)
+end)
+
+ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
+	Entity.SteerRate = Clamp(Value, -1, 1)
+end)
+
+ACF.AddInputAction("acf_gearbox", "Hold Gear", function(Entity, Value)
+	Entity.Hold = tobool(Value)
+end)
+
+ACF.AddInputAction("acf_gearbox", "Shift Speed Scale", function(Entity, Value)
+	Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
+end)
+
+function ENT:TriggerInput(Name, Value)
 	if self.Disabled then return end
 
-	if Inputs[Input] then
-		Inputs[Input](self, Value)
+	local Action = Inputs[Name]
+
+	if Action then
+		Action(self, Value)
+
+		self:UpdateOverlay()
 	end
 end
 

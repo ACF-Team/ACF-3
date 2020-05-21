@@ -296,8 +296,8 @@ end
 do -- Entity inputs
 	local Inputs = {}
 
-	local function GetClass(Class, Add)
-		if Add and not Inputs[Class] then
+	local function GetClass(Class)
+		if not Inputs[Class] then
 			Inputs[Class] = {}
 		end
 
@@ -309,7 +309,7 @@ do -- Entity inputs
 		if not Name then return end
 		if not isfunction(Action) then return end
 
-		local Data = GetClass(Class, true)
+		local Data = GetClass(Class)
 
 		Data[Name] = Action
 	end
@@ -320,25 +320,13 @@ do -- Entity inputs
 
 		local Data = GetClass(Class)
 
-		if not Data then return end
-
 		return Data[Name]
 	end
 
 	function ACF.GetInputActions(Class)
 		if not Class then return end
 
-		local Data = GetClass(Class)
-
-		if not Data then return end
-
-		local Result = {}
-
-		for K, V in pairs(Data) do
-			Result[K] = V
-		end
-
-		return Result
+		return GetClass(Class)
 	end
 end
 

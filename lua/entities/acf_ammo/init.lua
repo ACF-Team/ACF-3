@@ -10,6 +10,7 @@ util.AddNetworkString("ACF_StopRefillEffect")
 local CheckLegal  = ACF_CheckLegal
 local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
+local Inputs      = ACF.GetInputActions("acf_ammo")
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
@@ -247,17 +248,22 @@ do -- Metamethods -------------------------------
 	do -- Inputs/Outputs/Linking ----------------
 		WireLib.AddInputAlias("Active", "Load")
 
+		ACF.AddInputAction("acf_ammo", "Load", function(Entity, Value)
+			Entity.Load = Entity.Ammo ~= 0 and tobool(Value)
+
+			WireLib.TriggerOutput(Entity, "Loading", Entity.Load and 1 or 0)
+		end)
+
 		function ENT:TriggerInput(Name, Value)
 			if self.Disabled then return end -- Ignore input if disabled
 
-			if Name == "Load" then
-				self.Load = self.Ammo ~= 0 and tobool(Value)
+			local Action = Inputs[Name]
 
-				WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
+			if Action then
+				Action(self, Value)
+
+				self:UpdateOverlay()
 			end
-
-
-			self:UpdateOverlay()
 		end
 
 		function ENT:Link(Target)

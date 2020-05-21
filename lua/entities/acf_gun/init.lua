@@ -10,6 +10,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal  = ACF_CheckLegal
 local Shove		  = ACF.KEShove
 local Weapons	  = ACF.Classes.Weapons
+local Inputs      = ACF.GetInputActions("acf_gun")
 local TraceRes    = {} -- Output for traces
 local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace		  = util.TraceLine
@@ -280,35 +281,49 @@ do -- Metamethods --------------------------------
 			return FindUser(self, Input)
 		end
 
-		function ENT:TriggerInput(Input, Value)
-			if self.Disabled then return end -- Ignore all input if the gun is disabled
-
+		ACF.AddInputAction("acf_gun", "Fire", function(Entity, Value)
 			local Bool = tobool(Value)
 
-			if Input == "Fire" then
-				self.Firing = Bool
+			Entity.Firing = Bool
 
-				if Bool then
-					self.User = self:GetUser(self.Inputs.Fire.Src) or self.Owner
+			if Bool then
+				Entity.User = Entity:GetUser(Entity.Inputs.Fire.Src) or Entity.Owner
 
-					if self:CanFire() then
-						self:Shoot()
-					end
+				if Entity:CanFire() then
+					Entity:Shoot()
 				end
-			elseif Input == "Fuze" then
-				self.SetFuze = Bool and math.abs(Value) or nil
-			elseif Input == "Unload" then
-				if Bool and self.State == "Loaded" then
-					self:Unload()
+			end
+		end)
+
+		ACF.AddInputAction("acf_gun", "Unload", function(Entity, Value)
+			if tobool(Value) and Entity.State == "Loaded" then
+				Entity:Unload()
+			end
+		end)
+
+		ACF.AddInputAction("acf_gun", "Reload", function(Entity, Value)
+			if tobool(Value) then
+				if Entity.State == "Loaded" then
+					Entity:Unload(true) -- Unload, then reload
+				elseif Entity.State == "Empty" then
+					Entity:Load()
 				end
-			elseif Input == "Reload" then
-				if Bool then
-					if self.State == "Loaded" then
-						self:Unload(true) -- Unload, then reload
-					elseif self.State == "Empty" then
-						self:Load()
-					end
-				end
+			end
+		end)
+
+		ACF.AddInputAction("acf_gun", "Fuze", function(Entity, Value)
+			Entity.SetFuze = tobool(Value) and math.abs(Value)
+		end)
+
+		function ENT:TriggerInput(Name, Value)
+			if self.Disabled then return end
+
+			local Action = Inputs[Name]
+
+			if Action then
+				Action(self, Value)
+
+				self:UpdateOverlay()
 			end
 		end
 

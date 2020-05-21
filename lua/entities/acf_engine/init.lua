@@ -102,6 +102,7 @@ local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local Engines	  = ACF.Classes.Engines
 local EngineTypes = ACF.Classes.EngineTypes
+local Inputs      = ACF.GetInputActions("acf_engine")
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round		  = math.Round
 local max		  = math.max
@@ -240,15 +241,6 @@ local function SetActive(Entity, Value)
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
 end
-
-local Inputs = {
-	Throttle = function(Entity, Value)
-		Entity.Throttle = math.Clamp(Value, 0, 100) / 100
-	end,
-	Active = function(Entity, Value)
-		SetActive(Entity, tobool(Value))
-	end
-}
 
 --===============================================================================================--
 
@@ -530,11 +522,23 @@ function ENT:UpdateOverlay(Instant)
 	end
 end
 
-function ENT:TriggerInput(Input, Value)
+ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
+	Entity.Throttle = math.Clamp(Value, 0, 100) * 0.01
+end)
+
+ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
+	SetActive(Entity, tobool(Value))
+end)
+
+function ENT:TriggerInput(Name, Value)
 	if self.Disabled then return end
 
-	if Inputs[Input] then
-		Inputs[Input](self, Value)
+	local Action = Inputs[Name]
+
+	if Action then
+		Action(self, Value)
+
+		self:UpdateOverlay()
 	end
 end
 

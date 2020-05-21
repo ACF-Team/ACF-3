@@ -13,26 +13,10 @@ local ClassUnlink = ACF.GetClassUnlink
 local FuelTanks	  = ACF.Classes.FuelTanks
 local FuelTypes	  = ACF.Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
+local Inputs      = ACF.GetInputActions("acf_fueltank")
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Wall		  = 0.03937 --wall thickness in inches (1mm)
-
-local Inputs = {
-	Active = function(Entity, Value)
-		if not Entity.Inputs.Active.Path then
-			Value = true
-		end
-
-		Entity.Active = tobool(Value)
-
-		Entity:UpdateOverlay()
-	end,
-	["Refuel Duty"] = function(Entity, Value)
-		local N = math.Clamp(tonumber(Value), 0, 2)
-
-		Entity.SupplyFuel = N == 0 and nil or N
-	end
-}
 
 --===============================================================================================--
 
@@ -423,11 +407,29 @@ do -- Overlay Update
 	end
 end
 
-function ENT:TriggerInput(Input, Value)
+ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
+	if not Entity.Inputs.Active.Path then
+		Value = true
+	end
+
+	Entity.Active = tobool(Value)
+end)
+
+ACF.AddInputAction("acf_fueltank", "Refuel Duty", function(Entity, Value)
+	local N = math.Clamp(tonumber(Value), 0, 2)
+
+	Entity.SupplyFuel = N ~= 0 and N
+end)
+
+function ENT:TriggerInput(Name, Value)
 	if self.Disabled then return end
 
-	if Inputs[Input] then
-		Inputs[Input](self, Value)
+	local Action = Inputs[Name]
+
+	if Action then
+		Action(self, Value)
+
+		self:UpdateOverlay()
 	end
 end
 
