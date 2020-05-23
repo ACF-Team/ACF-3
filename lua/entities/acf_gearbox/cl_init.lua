@@ -4,7 +4,7 @@ local HideInfo = ACF.HideInfoBubble
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
-	self.BaseClass.DoNormalDraw(self, false, HideInfo())
+	self:DoNormalDraw(false, HideInfo())
 
 	Wire_Render(self)
 
