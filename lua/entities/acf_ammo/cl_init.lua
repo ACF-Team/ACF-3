@@ -173,7 +173,7 @@ function ENT:Think()
 end
 
 function ENT:Draw()
-	self.BaseClass.DoNormalDraw(self, false, HideInfo())
+	self:DoNormalDraw(false, HideInfo())
 
 	Wire_Render(self)
 

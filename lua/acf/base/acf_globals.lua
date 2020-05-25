@@ -137,6 +137,7 @@ if SERVER then
 
 	if Extras:GetBool() then
 		resource.AddWorkshop("439526795") -- Hide Errors addon
+		resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
 	end
 	---------------------------------------------
 elseif CLIENT then
@@ -144,18 +145,6 @@ elseif CLIENT then
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
 	CreateClientConVar("ACF_MaxRoundsDisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 64)
-
-	-- Sound Caching ----------------------------
-	local IsValidCache = {}
-
-	function IsValidSound(path)
-		if IsValidCache[path] == nil then
-			IsValidCache[path] = file.Exists(string.format("sound/%s", tostring(path)), "GAME") and true or false
-		end
-
-		return IsValidCache[path]
-	end
-	---------------------------------------------
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")

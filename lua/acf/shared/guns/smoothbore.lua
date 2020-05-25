@@ -5,7 +5,7 @@ ACF_defineGunClass("SB", {
 	desc = "More modern smoothbore cannons that can only fire munitions that do not rely on spinning for accuracy.",
 	muzzleflash = "cannon_muzzleflash_noscale",
 	rofmod = 1.72,
-	sound = "weapons/ACF_Gun/cannon_new.mp3",
+	sound = "acf_base/weapons/cannon_new.mp3",
 	soundDistance = "Cannon.Fire",
 	soundNormal = " "
 } )
@@ -42,7 +42,7 @@ ACF_defineGun("120mmSB", {
 } )
 
 ACF_defineGun("140mmSB", {
-	name = "140mm Smoothbore Cannonn",
+	name = "140mm Smoothbore Cannon",
 	desc = "The 140mm fires a massive shell with enormous penetrative capability, but has a glacial reload speed and a very hefty weight.",
 	model = "models/tankgun_old/tankgun_140mm.mdl",
 	gunclass = "SB",

@@ -127,69 +127,60 @@ function SWEP:PrimaryAttack()
 	end
 end
 
+local Energy = { Kinetic = true, Momentum = 0, Penetration = true }
+
 function SWEP:SecondaryAttack()
 	self:SetNextPrimaryFire(CurTime() + 0.05)
-	local userid = self.Owner
-	local trace = {}
-	trace.start = userid:GetShootPos()
-	trace.endpos = userid:GetShootPos() + (userid:GetAimVector() * 64)
-	trace.filter = userid
-	local tr = util.TraceLine(trace)
-	if (tr.HitWorld) then return end
+
 	if CLIENT then return end
-	local ent = tr.Entity
 
-	if ent:IsValid() then
-		local Valid = ACF_Check(ent)
+	local Trace = self.Owner:GetEyeTrace()
 
-		if Valid then
-			self:SetNWFloat("HP", ent.ACF.Health)
-			self:SetNWFloat("Armour", ent.ACF.Armour)
-			self:SetNWFloat("MaxHP", ent.ACF.MaxHealth)
-			self:SetNWFloat("MaxArmour", ent.ACF.MaxArmour)
-			local HitRes = {}
+	if Trace.HitWorld then return end
 
-			if (ent:IsPlayer()) then
-				--We can use the damage function instead of direct access here since no numbers are negative.
-				HitRes = ACF_Damage(ent, {
-					Kinetic = 0.05,
-					Momentum = 0,
-					Penetration = 0.05
-				}, 2, 0, self.Owner)
-			else
-				if CPPI and not ent:CPPICanTool(self.Owner, "torch") then return false end
+	local ent = Trace.Entity
 
-				--We can use the damage function instead of direct access here since no numbers are negative.
-				HitRes = ACF_Damage(ent, {
-					Kinetic = 5,
-					Momentum = 0,
-					Penetration = 5
-				}, 2, 0, self.Owner)
-			end
+	if ACF_Check(ent) then
+		local HitRes = {}
 
-			if HitRes.Kill then
-				constraint.RemoveAll(ent)
-				ent:SetParent(nil)
-				ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-				local Phys = ent:GetPhysicsObject()
-				Phys:EnableMotion(true)
-				Phys:Wake()
-			else
-				local effectdata = EffectData()
-				effectdata:SetMagnitude(1.0)
-				effectdata:SetRadius(1.0)
-				effectdata:SetScale(1.0)
-				effectdata:SetStart(userid:GetShootPos())
-				effectdata:SetOrigin(tr.HitPos)
-				util.Effect("Sparks", effectdata, true, true)
-				ent:EmitSound("weapons/physcannon/superphys_small_zap" .. tostring(math.random(1, 4)) .. ".wav", true, true) --old annoyinly loud sounds
-			end
+		if ent:IsPlayer() then
+			Energy.Penetration = 0.05
+			Energy.Kinetic = 0.05
+
+			--We can use the damage function instead of direct access here since no numbers are negative.
+			HitRes = ACF_Damage(ent, Energy, 2, 0, self.Owner, 0, self, "Torch")
 		else
-			self:SetNWFloat("HP", 0)
-			self:SetNWFloat("Armour", 0)
-			self:SetNWFloat("MaxHP", 0)
-			self:SetNWFloat("MaxArmour", 0)
+			if CPPI and not ent:CPPICanTool(self.Owner, "torch") then return false end
+
+			Energy.Penetration = 5
+			Energy.Kinetic = 5
+
+			--We can use the damage function instead of direct access here since no numbers are negative.
+			HitRes = ACF_Damage(ent, Energy, 2, 0, self.Owner, 0, self, "Torch")
 		end
+
+		self:SetNWFloat("HP", ent.ACF.Health)
+		self:SetNWFloat("Armour", ent.ACF.Armour)
+		self:SetNWFloat("MaxHP", ent.ACF.MaxHealth)
+		self:SetNWFloat("MaxArmour", ent.ACF.MaxArmour)
+
+		if HitRes.Kill then
+			ACF_APKill(ent, Trace.Normal, 1)
+		else
+			local effectdata = EffectData()
+			effectdata:SetMagnitude(1)
+			effectdata:SetRadius(1)
+			effectdata:SetScale(1)
+			effectdata:SetStart(Trace.HitPos)
+			effectdata:SetOrigin(Trace.HitPos)
+			util.Effect("Sparks", effectdata, true, true)
+			ent:EmitSound("weapons/physcannon/superphys_small_zap" .. math.random(1, 4) .. ".wav") --old annoyinly loud sounds
+		end
+	else
+		self:SetNWFloat("HP", 0)
+		self:SetNWFloat("Armour", 0)
+		self:SetNWFloat("MaxHP", 0)
+		self:SetNWFloat("MaxArmour", 0)
 	end
 end
 
