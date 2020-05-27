@@ -137,11 +137,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		Entity.SupplyingTo = {}
 
 		TimerCreate("ACF Refill " .. Entity:EntIndex(), 1, 0, function()
-			if IsValid(Entity) then
-				RefillCrates(Entity)
-			else
-				timer.Remove("ACF Refill " .. Entity:EntIndex())
-			end
+			if not IsValid(Entity) then return end
+
+			RefillCrates(Entity)
 		end)
 	else
 		if Entity.SupplyingTo then
@@ -470,11 +468,9 @@ do -- Metamethods -------------------------------
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 
 				TimerCreate("ACF Crate Cookoff " .. self:EntIndex(), Interval, 0, function()
-					if IsValid(self) then
-						CookoffCrate(self)
-					else
-						timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
-					end
+					if not IsValid(self) then return end
+
+					CookoffCrate(self)
 				end)
 			end
 
@@ -564,6 +560,9 @@ do -- Metamethods -------------------------------
 			end
 
 			ACF.AmmoCrates[self] = nil
+
+			timer.Remove("ACF Refill " .. self:EntIndex())
+			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 
 			WireLib.Remove(self)
 		end

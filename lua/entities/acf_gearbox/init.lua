@@ -475,13 +475,11 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 
 	CheckLegal(Gearbox)
 
-	timer.Create("ACF Gearbox Clock " .. Gearbox:EntIndex(), 3, 0, function()
-		if IsValid(Gearbox) then
-			CheckRopes(Gearbox, "GearboxOut")
-			CheckRopes(Gearbox, "Wheels")
-		else
-			timer.Remove("ACF Engine Clock " .. Gearbox:EntIndex())
-		end
+	TimerCreate("ACF Gearbox Clock " .. Gearbox:EntIndex(), 3, 0, function()
+		if not IsValid(Gearbox) then return end
+
+		CheckRopes(Gearbox, "GearboxOut")
+		CheckRopes(Gearbox, "Wheels")
 	end)
 
 	return Gearbox
@@ -826,6 +824,8 @@ function ENT:OnRemove()
 	for Gearbox in pairs(self.GearboxOut) do
 		self:Unlink(Gearbox)
 	end
+
+	timer.Remove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end

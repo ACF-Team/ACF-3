@@ -262,14 +262,12 @@ local function SetActive(Entity, Value)
 			Entity:UpdateOutputs()
 
 			TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
-				if IsValid(Entity) then
-					CheckGearboxes(Entity)
-					CheckDistantFuelTanks(Entity)
+				if not IsValid(Entity) then return end
 
-					Entity:CalcMassRatio()
-				else
-					TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
-				end
+				CheckGearboxes(Entity)
+				CheckDistantFuelTanks(Entity)
+
+				Entity:CalcMassRatio()
 			end)
 		end
 	else
@@ -764,6 +762,8 @@ function ENT:OnRemove()
 	for Tank in pairs(self.FuelTanks) do
 		self:Unlink(Tank)
 	end
+
+	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
