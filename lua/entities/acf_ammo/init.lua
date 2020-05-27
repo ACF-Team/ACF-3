@@ -246,6 +246,7 @@ end
 do -- Metamethods -------------------------------
 	do -- Inputs/Outputs/Linking ----------------
 		WireLib.AddInputAlias("Active", "Load")
+		WireLib.AddOutputAlias("Munitions", "Ammo")
 
 		function ENT:TriggerInput(Name, Value)
 			if self.Disabled then return end -- Ignore input if disabled

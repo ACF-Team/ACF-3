@@ -17,6 +17,18 @@ local TimerCreate = timer.Create
 local HookRun	  = hook.Run
 local EMPTY = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
+-- Replace with CFrame as soon as it's available
+local function UpdateTotalAmmo(Entity)
+	local Total = 0
+
+	for Crate in pairs(Entity.Crates) do
+		if Crate.Load and Crate.Ammo > 0 then
+			Total = Total + Crate.Ammo
+		end
+	end
+
+	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
+end
 
 do -- Spawn Func --------------------------------
 	function MakeACF_Gun(Player, Pos, Angle, Id)
@@ -47,12 +59,12 @@ do -- Spawn Func --------------------------------
 
 		Gun.Id           = Id -- MUST be stored on ent to be duped
 		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
 		if Caliber > ACF.MinFuzeCaliber then
-			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" })
 		else
-			Gun.Inputs = WireLib.CreateInputs(Gun, {"Fire", "Unload", "Reload", "Fuze"})
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload" })
 		end
 
 		-- ACF Specific vars
@@ -105,6 +117,12 @@ do -- Spawn Func --------------------------------
 			end)
 		end
 
+		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
+			if not IsValid(Gun) then return end
+
+			UpdateTotalAmmo(Gun)
+		end)
+
 		WireLib.TriggerOutput(Gun, "Status", "Empty")
 		WireLib.TriggerOutput(Gun, "Entity", Gun)
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
@@ -140,6 +158,9 @@ do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
 		local ClassLink	  = ACF.GetClassLink
 		local ClassUnlink = ACF.GetClassUnlink
+
+		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
+		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
@@ -616,6 +637,9 @@ do -- Metamethods --------------------------------
 			self:UpdateOverlay()
 
 			WireLib.TriggerOutput(self, "Status", State)
+			WireLib.TriggerOutput(self, "Ready", State == "Loaded" and 1 or 0)
+
+			UpdateTotalAmmo(self)
 		end
 
 		function ENT:Think()
@@ -667,6 +691,8 @@ do -- Metamethods --------------------------------
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end
+
+			timer.Remove("ACF Ammo Left " .. self:EntIndex())
 
 			WireLib.Remove(self)
 		end
