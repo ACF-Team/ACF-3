@@ -22,7 +22,7 @@ SWEP.ViewModelFlip = false
 SWEP.ViewModelFOV = 55
 SWEP.ViewModel = "models/weapons/v_cuttingtorch.mdl"
 SWEP.WorldModel = "models/weapons/w_cuttingtorch.mdl"
-SWEP.PrintName = "ACF Cutting torch"
+SWEP.PrintName = "ACF Cutting Torch"
 SWEP.Slot = 0
 SWEP.SlotPos = 6
 SWEP.IconLetter = "G"
@@ -75,6 +75,9 @@ function SWEP:Think()
 	local Trace = self.Owner:GetEyeTrace()
 	local Entity = Trace.Entity
 
+	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
+	self.LastTrace = Trace
+
 	if ACF_Check(Entity) and self.LastDistance <= self.MaxDistance then
 		if Entity:IsPlayer() or Entity:IsNPC() then
 			Health = Entity:Health()
@@ -92,18 +95,16 @@ function SWEP:Think()
 		end
 	end
 
-	if Health ~= self.LastHealth or Entity ~= self.LastEntity then
+	if Entity ~= self.LastEntity or Health ~= self.LastHealth or Armor ~= self.LastArmor then
+		self.LastEntity = Entity
 		self.LastHealth = Health
+		self.LastArmor = Armor
 
 		self:SetNWFloat("HP", Health)
 		self:SetNWFloat("MaxHP", MaxHealth)
 		self:SetNWFloat("Armour", Armor)
 		self:SetNWFloat("MaxArmour", MaxArmor)
 	end
-
-	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
-	self.LastEntity = Entity
-	self.LastTrace = Trace
 
 	self:NextThink(ACF.CurTime + 0.05)
 end
@@ -156,7 +157,7 @@ function SWEP:PrimaryAttack()
 			Entity.ACF.Health = Health
 			Entity.ACF.Armour = Armor
 
-			Entity:EmitSound("ambient/energy/NewSpark0" .. tostring(math.random(3, 5)) .. ".wav", true, true)
+			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", true, true)
 			TeslaSpark(Trace.HitPos, 1)
 		end
 	end

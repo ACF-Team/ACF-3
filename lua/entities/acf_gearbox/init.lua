@@ -983,5 +983,7 @@ function ENT:OnRemove()
 		self:Unlink(Gearbox)
 	end
 
+	timer.Remove("ACF Engine Clock " .. self:EntIndex())
+
 	WireLib.Remove(self)
 end

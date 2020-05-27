@@ -132,17 +132,14 @@ do -- Spawn and Update functions --------------------------------
 		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 		Gun.DataStore		= ACF.GetEntClassVars("acf_gun")
 
-		Gun:SetNWString("Sound", Gun.Sound)
+		Gun.Id           = Id -- MUST be stored on ent to be duped
+		Gun.Owner        = Player -- MUST be stored on ent for PP
+		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
-		WireLib.TriggerOutput(Gun, "Status", "Empty")
-		WireLib.TriggerOutput(Gun, "Entity", Gun)
-		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
-		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
-
-		UpdateWeapon(Gun, Data, Class, Weapon)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Gun, Data, Class, Weapon)
+		if Caliber > ACF.MinFuzeCaliber then
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
+		else
+			Gun.Inputs = WireLib.CreateInputs(Gun, {"Fire", "Unload", "Reload", "Fuze"})
 		end
 
 		CheckLegal(Gun)
@@ -167,7 +164,10 @@ do -- Spawn and Update functions --------------------------------
 			self:Unload()
 		end
 
-		ACF.SaveEntity(self)
+		WireLib.TriggerOutput(Gun, "Status", "Empty")
+		WireLib.TriggerOutput(Gun, "Entity", Gun)
+		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
+		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
 
 		UpdateWeapon(self, Data, Class, Weapon)
 
@@ -195,6 +195,9 @@ do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
 		local ClassLink	  = ACF.GetClassLink
 		local ClassUnlink = ACF.GetClassUnlink
+
+		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
+		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
@@ -684,6 +687,9 @@ do -- Metamethods --------------------------------
 			self:UpdateOverlay()
 
 			WireLib.TriggerOutput(self, "Status", State)
+			WireLib.TriggerOutput(self, "Ready", State == "Loaded" and 1 or 0)
+
+			UpdateTotalAmmo(self)
 		end
 
 		function ENT:Think()
@@ -735,6 +741,8 @@ do -- Metamethods --------------------------------
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end
+
+			timer.Remove("ACF Ammo Left " .. self:EntIndex())
 
 			WireLib.Remove(self)
 		end
