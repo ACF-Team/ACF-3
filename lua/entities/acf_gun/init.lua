@@ -19,6 +19,19 @@ local TimerCreate = timer.Create
 local HookRun	  = hook.Run
 local EMPTY		  = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
+-- Replace with CFrame as soon as it's available
+local function UpdateTotalAmmo(Entity)
+	local Total = 0
+
+	for Crate in pairs(Entity.Crates) do
+		if Crate.Load and Crate.Ammo > 0 then
+			Total = Total + Crate.Ammo
+		end
+	end
+
+	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
+end
+
 do -- Spawn and Update functions --------------------------------
 	local Updated = {
 		["20mmHRAC"] = "20mmRAC",
@@ -123,7 +136,7 @@ do -- Spawn and Update functions --------------------------------
 		Gun:Spawn()
 
 		Gun.Owner			= Player -- MUST be stored on ent for PP
-		Gun.Outputs			= WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun.Outputs			= WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 		Gun.Sound			= Class.Sound
 		Gun.BarrelFilter	= { Gun }
 		Gun.State			= "Empty"
@@ -132,15 +145,24 @@ do -- Spawn and Update functions --------------------------------
 		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 		Gun.DataStore		= ACF.GetEntClassVars("acf_gun")
 
-		Gun.Id           = Id -- MUST be stored on ent to be duped
-		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun:SetNWString("Sound", Class.Sound)
 
-		if Caliber > ACF.MinFuzeCaliber then
-			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
-		else
-			Gun.Inputs = WireLib.CreateInputs(Gun, {"Fire", "Unload", "Reload", "Fuze"})
+		WireLib.TriggerOutput(Gun, "Status", "Empty")
+		WireLib.TriggerOutput(Gun, "Entity", Gun)
+		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
+		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
+
+		UpdateWeapon(Gun, Data, Class, Weapon)
+
+		if Class.OnSpawn then
+			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
+
+		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
+			if not IsValid(Gun) then return end
+
+			UpdateTotalAmmo(Gun)
+		end)
 
 		CheckLegal(Gun)
 
@@ -164,10 +186,7 @@ do -- Spawn and Update functions --------------------------------
 			self:Unload()
 		end
 
-		WireLib.TriggerOutput(Gun, "Status", "Empty")
-		WireLib.TriggerOutput(Gun, "Entity", Gun)
-		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
-		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
+		ACF.SaveEntity(self)
 
 		UpdateWeapon(self, Data, Class, Weapon)
 
