@@ -121,7 +121,9 @@ do -- Unit conversion
 		local Time = LocalToUTC() - Date
 		local DateData = os.date("!*t", Time)
 
-		if Time == 0 then return "now" end
+		-- Negative values to os.date will return nil
+		-- LocalToUTC() is most likely flawed, will need testing with people from different timezones.
+		if Time <= 0 then return "now" end
 
 		for _, Data in ipairs(Units) do
 			Time = DateData[Data.Unit] - Data.Reduction
