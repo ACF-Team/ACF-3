@@ -202,7 +202,7 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		net.Start("ACF_UpdateHitboxes")
+		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)
 		net.Send(self.Owner)
 

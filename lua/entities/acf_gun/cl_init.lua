@@ -15,12 +15,12 @@ function ENT:Initialize()
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
 
-	self:UpdateHitboxes()
+	self:Update()
 
 	self.BaseClass.Initialize(self)
 end
 
-function ENT:UpdateHitboxes()
+function ENT:Update()
 	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 

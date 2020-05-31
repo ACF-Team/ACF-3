@@ -121,7 +121,7 @@ do -- ACF Convars/Callbacks ------------------------
 end
 
 if SERVER then
-	util.AddNetworkString("ACF_UpdateHitboxes")
+	util.AddNetworkString("ACF_UpdateEntity")
 	util.AddNetworkString("ACF_KilledByACF")
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
@@ -169,14 +169,14 @@ elseif CLIENT then
 	---------------------------------------------
 
 	-- Hitbox Updating --------------------------
-	net.Receive("ACF_UpdateHitboxes", function()
+	net.Receive("ACF_UpdateEntity", function()
 		local Entity = net.ReadEntity()
 
 		timer.Simple(0.1, function()
 			if not IsValid(Entity) then return end
-			if not Entity.UpdateHitboxes then return end
+			if not isfunction(Entity.Update) then return end
 
-			Entity:UpdateHitboxes()
+			Entity:Update()
 		end)
 	end)
 	---------------------------------------------

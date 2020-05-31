@@ -6,10 +6,10 @@ language.Add("Undone_acf_fueltank", "Undone ACF Fuel Tank")
 language.Add("SBoxLimit__acf_fueltank", "You've reached the ACF Fuel Tanks limit!")
 
 function ENT:Initialize()
-	self:UpdateHitboxes()
+	self:Update()
 end
 
-function ENT:UpdateHitboxes()
+function ENT:Update()
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
