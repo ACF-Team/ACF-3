@@ -189,7 +189,7 @@ do -- Spawn and Update functions
 
 		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)
-		net.Send(self.Owner)
+		net.Broadcast()
 
 		return true, "Fuel tank updated successfully!" .. Feedback
 	end
