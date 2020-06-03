@@ -30,6 +30,8 @@ do -- ACF.GetVersion function
 		local Fetch = file.Read(Path .. "/.git/FETCH_HEAD", "GAME")
 		local Start, End = Fetch:find("github.com[/]?[:]?[%w_-]+/")
 
+		if not Start then return end -- File is empty
+
 		Version.Owner = Fetch:sub(Start + 11, End - 1)
 	end
 
