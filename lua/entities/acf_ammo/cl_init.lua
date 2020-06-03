@@ -1,51 +1,11 @@
 include("shared.lua")
 
---Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
-local function Bezier(a, b, c, d, t)
-	local ab, bc, cd, abbc, bccd
-	ab = LerpVector(t, a, b)
-	bc = LerpVector(t, b, c)
-	cd = LerpVector(t, c, d)
-	abbc = LerpVector(t, ab, bc)
-	bccd = LerpVector(t, bc, cd)
-	dest = LerpVector(t, abbc, bccd)
-
-	return dest
-end
-
-local function BezPoint(perc, Table)
-	return Bezier(Table[1], Table[2], Table[3], Table[4], perc)
-end
-
-local function DrawRefillAmmo(Entity)
-	for Crate, Data in pairs(Entity.Crates) do
-		local St, En = Entity:LocalToWorld(Entity:OBBCenter()), Crate:LocalToWorld(Crate:OBBCenter())
-		local Distance = (En - St):Length()
-		local Amount = math.Clamp(Distance / 50, 2, 100)
-		local Time = CurTime() - Data.Init
-		local En2, St2 = En + Vector(0, 0, 100), St + ((En - St):GetNormalized() * 10)
-		local vectab = {St, St2, En2, En}
-		local center = (St + En) / 2
-
-		for I = 1, Amount do
-			local point = BezPoint((I + Time) % Amount / Amount, vectab)
-			local ang = (point - center):Angle()
-
-			local MdlTbl = {
-				model = Data.Model,
-				pos = point,
-				angle = ang
-			}
-
-			render.Model(MdlTbl)
-		end
-	end
-end
-
 local HideInfo = ACF.HideInfoBubble
+local Refills = {}
 
 function ENT:Initialize()
 	self.Crates = {}
+	self.Refills = {}
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
@@ -67,43 +27,90 @@ function ENT:Draw()
 		-- Every SENT that has GetBeamLength should draw a tracer. Some of them have the GetShowBeam boolean
 		Wire_DrawTracerBeam(self, 1, self.GetBeamHighlight and self:GetBeamHighlight() or false)
 	end
-
-	DrawRefillAmmo(self)
 end
 
 function ENT:OnRemove()
-	for Crate in pairs(self.Crates) do
-		Crate:RemoveCallOnRemove("ACF Refill Effect " .. self:EntIndex())
+	Refills[self] = nil
+
+	for Refill in pairs(self.Refills) do
+		Refill.Crates[self] = nil
+
+		if not next(Refill.Crates) then
+			Refills[Refill] = nil
+		end
 	end
 end
 
-net.Receive("ACF_RefillEffect", function()
-	local Refill = net.ReadEntity()
-	local Target = net.ReadEntity()
+do -- Resupply effect
+	local ModelData = { model = true, pos = true, angle = true }
 
-	if not IsValid(Refill) then return end
-	if not IsValid(Target) then return end
-	if Refill.Crates[Target] then return end
+	--Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
+	local function Bezier(a, b, c, d, t)
+		local ab, bc, cd, abbc, bccd
+		ab = LerpVector(t, a, b)
+		bc = LerpVector(t, b, c)
+		cd = LerpVector(t, c, d)
+		abbc = LerpVector(t, ab, bc)
+		bccd = LerpVector(t, bc, cd)
+		dest = LerpVector(t, abbc, bccd)
 
-	Refill.Crates[Target] = {
-		Model = "models/munitions/round_100mm_shot.mdl",
-		Init = CurTime()
-	}
+		return dest
+	end
 
-	Target:CallOnRemove("ACF Refill Effect " .. Refill:EntIndex(), function()
-		Refill.Crates[Target] = nil
+	local function DrawRefillEffect(Entity)
+		for Crate, Data in pairs(Entity.Crates) do
+			local Start = Entity:LocalToWorld(Data.RefillCenter)
+			local End = Crate:LocalToWorld(Data.CrateCenter)
+			local Delta = End - Start
+			local Amount = math.Clamp(Delta:Length() * 0.02, 2, 25)
+			local Time = ACF.CurTime - Data.Init
+			local En2, St2 = End + Vector(0, 0, 100), Start + (Delta:GetNormalized() * 10)
+			local Center = (Start + End) * 0.5
+
+			for I = 1, Amount do
+				local Point = Bezier(Start, St2, En2, End, (I + Time) % Amount / Amount)
+
+				ModelData.model = Data.Model
+				ModelData.pos = Point
+				ModelData.angle = (Point - Center):Angle()
+
+				render.Model(ModelData)
+			end
+		end
+	end
+
+	net.Receive("ACF_RefillEffect", function()
+		local Refill = net.ReadEntity()
+		local Target = net.ReadEntity()
+
+		if not IsValid(Refill) then return end
+		if not IsValid(Target) then return end
+
+		Refills[Refill] = true
+		Target.Refills[Refill] = true
+		Refill.Crates[Target] = {
+			Model = "models/munitions/round_100mm_shot.mdl",
+			Init = ACF.CurTime,
+			RefillCenter = Refill:OBBCenter(),
+			CrateCenter = Target:OBBCenter()
+		}
 	end)
-end)
 
-net.Receive("ACF_StopRefillEffect", function()
-	local Refill = net.ReadEntity()
-	local Target = net.ReadEntity()
+	net.Receive("ACF_StopRefillEffect", function()
+		local Refill = net.ReadEntity()
+		local Target = net.ReadEntity()
 
-	if not IsValid(Refill) then return end
-	if not IsValid(Target) then return end
-	if not Refill.Crates[Target] then return end
+		if not IsValid(Refill) then return end
+		if not IsValid(Target) then return end
 
-	Refill.Crates[Target] = nil
+		Refills[Refill] = nil
+		Refill.Crates[Target] = nil
+		Target.Refills[Refill] = nil
+	end)
 
-	Target:RemoveCallOnRemove("ACF Refill Effect " .. Refill:EntIndex())
-end)
+	hook.Add("PostDrawOpaqueRenderables", "ACF Draw Refill", function()
+		for Refill in pairs(Refills) do
+			DrawRefillEffect(Refill)
+		end
+	end)
+end

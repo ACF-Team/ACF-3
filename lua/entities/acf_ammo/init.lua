@@ -12,10 +12,13 @@ local ClassLink	  = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local Inputs      = ACF.GetInputActions("acf_ammo")
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
+local ActiveCrates = ACF.AmmoCrates
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 
-local function CanRefillCrate(Target, Distance)
+local function CanRefillCrate(Crate, Target, Distance)
+	if not Crate.Load then return false end
+	if Crate.Damaged then return false end
 	if Target.Damaged then return false end
 	if Target.RoundType == "Refill" then return false end
 	if Target.Ammo == Target.Capacity then return false end
@@ -40,52 +43,45 @@ end
 local function RefillCrates(Entity)
 	local Position = Entity:GetPos()
 
-	if Entity.Load and Entity.Ammo > 0 then
-		for Crate in pairs(ACF.AmmoCrates) do
-			local Distance = Position:DistToSqr(Crate:GetPos())
+	for Crate in pairs(ActiveCrates) do
+		local Distance = Position:DistToSqr(Crate:GetPos())
 
-			if CanRefillCrate(Crate, Distance) then
-				local Supply = math.ceil((50000 / ((Crate.BulletData.ProjMass + Crate.BulletData.PropMass) * 1000)) / Distance ^ 0.5)
-				local Transfer = math.min(Supply, Crate.Capacity - Crate.Ammo)
+		if CanRefillCrate(Entity, Crate, Distance) then
+			local Supply = math.ceil((50000 / ((Crate.BulletData.ProjMass + Crate.BulletData.PropMass) * 1000)) / Distance ^ 0.5)
+			local Transfer = math.min(Supply, Crate.Capacity - Crate.Ammo)
 
-				if not Entity.SupplyingTo[Crate] then
-					Entity.SupplyingTo[Crate] = true
+			if not Entity.SupplyingTo[Crate] then
+				Entity.SupplyingTo[Crate] = true
 
-					Crate:CallOnRemove("ACF Refill " .. Entity:EntIndex(), function()
-						Entity.SupplyingTo[Crate] = nil
+				Crate:CallOnRemove("ACF Refill " .. Entity:EntIndex(), function()
+					Entity.SupplyingTo[Crate] = nil
+				end)
 
-						StopRefillEffect(Entity, Crate)
-					end)
-
-					RefillEffect(Entity, Crate)
-				end
-
-				Crate:Consume(-Transfer)
-				Entity:Consume(Transfer)
-
-				if not Crate.Load then
-					local Enabled =  Crate.Inputs.Load.Path and Crate.Inputs.Load.Value or 1
-
-					Crate:TriggerInput("Load", Enabled)
-				end
-
-				Crate:EmitSound("items/ammo_pickup.wav", 350, 80, 0.30)
+				RefillEffect(Entity, Crate)
 			end
+
+			Crate:Consume(-Transfer)
+			Entity:Consume(Transfer)
+
+			if not Crate.Load then
+				local Enabled = Crate.Inputs.Load.Path and Crate.Inputs.Load.Value or 1
+
+				Crate:TriggerInput("Load", Enabled)
+			end
+
+			Crate:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
 		end
 	end
 
-	-- checks to stop supply
-	if next(Entity.SupplyingTo) then
-		for Crate in pairs(Entity.SupplyingTo) do
-			local Distance = Position:DistToSqr(Crate:GetPos())
+	for Crate in pairs(Entity.SupplyingTo) do
+		local Distance = Position:DistToSqr(Crate:GetPos())
 
-			if not CanRefillCrate(Crate, Distance) then
-				Entity.SupplyingTo[Crate] = nil
+		if not CanRefillCrate(Entity, Crate, Distance) then
+			Entity.SupplyingTo[Crate] = nil
 
-				Crate:RemoveCallOnRemove("ACF Refill " .. Entity:EntIndex())
+			Crate:RemoveCallOnRemove("ACF Refill " .. Entity:EntIndex())
 
-				StopRefillEffect(Entity, Crate)
-			end
+			StopRefillEffect(Entity, Crate)
 		end
 	end
 end
@@ -135,7 +131,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	Entity.BulletData.Crate = Entity:EntIndex()
 
 	if Entity.RoundType == "Refill" then
-		Entity.SupplyingTo = {}
+		Entity.SupplyingTo = Entity.SupplyingTo or {}
 
 		TimerCreate("ACF Refill " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end
@@ -147,6 +143,8 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 			for Crate in pairs(Entity.SupplyingTo) do
 				StopRefillEffect(Entity, Crate)
 			end
+
+			Entity.SupplyingTo = nil
 		end
 
 		timer.Remove("ACF Refill " .. Entity:EntIndex())
@@ -218,7 +216,7 @@ do -- Spawn Func --------------------------------
 		-- Crates should be ready to load by default
 		Crate:TriggerInput("Load", 1)
 
-		ACF.AmmoCrates[Crate] = true
+		ActiveCrates[Crate] = true
 
 		local Mass = Crate.EmptyMass + Crate.AmmoMassMax
 		local Phys = Crate:GetPhysicsObject()
@@ -548,11 +546,13 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:OnRemove()
-			if self.SupplyingTo then -- Stop refilling
+			ActiveCrates[self] = nil
+
+			if self.SupplyingTo then
 				for Crate in pairs(self.SupplyingTo) do
 					Crate:RemoveCallOnRemove("ACF Refill " .. self:EntIndex())
 
-					StopRefillEffect(self, Crate)
+					self.SupplyingTo[Crate] = nil
 				end
 			end
 
@@ -563,8 +563,6 @@ do -- Metamethods -------------------------------
 			for K in pairs(self.Weapons) do -- Unlink weapons
 				self:Unlink(K)
 			end
-
-			ACF.AmmoCrates[self] = nil
 
 			timer.Remove("ACF Refill " .. self:EntIndex())
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
