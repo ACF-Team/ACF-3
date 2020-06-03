@@ -415,8 +415,9 @@ do -- Metamethods --------------------------------
 			if not ACF_RECOIL:GetBool() then return end
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
+			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
 
-			Shove(self, MassCenter, -self:GetForward(), self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37)
+			Shove(self, MassCenter, -self:GetForward(), Energy)
 		end
 	end -----------------------------------------
 
