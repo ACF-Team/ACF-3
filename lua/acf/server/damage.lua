@@ -60,18 +60,21 @@ local function CalcDamage(Entity, Energy, FrArea, Angle)
 	return HitRes
 end
 
-local function Shove(Target, Pos, Vec, KE )
+local function Shove(Target, Pos, Vec, KE)
 	if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
 
-	local Phys = ACF_GetAncestor(Target):GetPhysicsObject()
+	local Ancestor = ACF_GetAncestor(Target)
+	local Phys = Ancestor:GetPhysicsObject()
 
 	if IsValid(Phys) then
-		if not Target.acflastupdatemass or Target.acflastupdatemass + 10 < CurTime() then
-			ACF_CalcMassRatio(Target)
+		if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.CurTime then
+			ACF_CalcMassRatio(Ancestor)
 		end
 
-		local physratio = Target.acfphystotal / Target.acftotal
-		Phys:ApplyForceOffset( Vec:GetNormalized() * KE * physratio, Pos )
+		local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
+		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
+
+		Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
 	end
 end
 
