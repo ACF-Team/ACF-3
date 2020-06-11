@@ -33,6 +33,8 @@ function ENT:OnRemove()
 	Refills[self] = nil
 
 	for Refill in pairs(self.Refills) do
+		if not IsValid(Refill) then continue end
+
 		Refill.Crates[self] = nil
 
 		if not next(Refill.Crates) then
