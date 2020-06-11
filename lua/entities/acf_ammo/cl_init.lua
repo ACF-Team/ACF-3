@@ -45,6 +45,17 @@ end
 
 do -- Resupply effect
 	local ModelData = { model = true, pos = true, angle = true }
+	local Unused = {}
+	local Used = {}
+
+	local function GetClientsideModel()
+		local Entity = next(Unused) or ClientsideModel("models/props_junk/PopCan01a.mdl", RENDERGROUP_OPAQUE)
+
+		Unused[Entity] = nil
+		Used[Entity] = true
+
+		return Entity
+	end
 
 	--Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
 	local function Bezier(a, b, c, d, t)
@@ -71,12 +82,13 @@ do -- Resupply effect
 
 			for I = 1, Amount do
 				local Point = Bezier(Start, St2, En2, End, (I + Time) % Amount / Amount)
+				local Model = GetClientsideModel()
 
 				ModelData.model = Data.Model
 				ModelData.pos = Point
 				ModelData.angle = (Point - Center):Angle()
 
-				render.Model(ModelData)
+				render.Model(ModelData, Model)
 			end
 		end
 	end
@@ -113,6 +125,19 @@ do -- Resupply effect
 	hook.Add("PostDrawOpaqueRenderables", "ACF Draw Refill", function()
 		for Refill in pairs(Refills) do
 			DrawRefillEffect(Refill)
+		end
+
+		-- Cleanup unused clientside models
+		for Model in pairs(Unused) do
+			Unused[Model] = nil
+
+			Model:Remove()
+		end
+
+		-- Moved all the used models to the unused table
+		for Model in pairs(Used) do
+			Unused[Model] = true
+			Used[Model] = nil
 		end
 	end)
 end
