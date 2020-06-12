@@ -16,11 +16,12 @@ local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
 
 local function CanRefillCrate(Crate, Target, Distance)
+	if Crate == Target then return false end
 	if not Crate.Load then return false end
 	if Crate.Damaged then return false end
 	if Target.Damaged then return false end
 	if Target.RoundType == "Refill" then return false end
-	if Target.Ammo == Target.Capacity then return false end
+	if Target.Ammo >= Target.Capacity then return false end
 
 	return Distance <= RefillDist
 end
