@@ -77,14 +77,10 @@ local function IsLegal(Entity)
 	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 
-	-- Must be parented to a wire model if parented
-	if IsValid(Entity:GetParent()) then
-		local Ancestor, Second = ACF_GetAncestor(Entity)
-
-		if Second ~= Entity and IsWireModel(Second) then return true end
-		if IsWireModel(Ancestor) then return true end
-
-		return false, "Bad Parenting", "If parented, the last or second last entity\n in a parent chain must be a Wiremod gate model."
+	-- If parented, must be parented to a wire model
+	local Parent = Entity:GetParent()
+	if IsValid(Parent) and not IsWireModel(Parent) then
+		return false, "Bad Parenting", "ACF entities must be parented to entities that use a Wiremod model."
 	end
 
 	return true
