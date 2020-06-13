@@ -19,7 +19,7 @@ local WireModels = {
 	beer = true,
 	blacknecro = true,
 	bull = true,
-	--cheeze = true, These dont work
+	cheeze = true,
 	cyborgmatt = true,
 	["expression 2"] = true,
 	hammy = true,
@@ -37,6 +37,8 @@ local WireModels = {
 }
 -- Local Funcs ----------------------------------
 local function IsWireModel(Entity)
+	if not IsValid(Entity) then return false end
+
 	return WireModels[string.Explode("/", Entity:GetModel())[2]]
 end
 
