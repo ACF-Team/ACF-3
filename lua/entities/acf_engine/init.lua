@@ -425,24 +425,28 @@ function ENT:UpdateOutputs()
 end
 
 local function Overlay(Ent)
-	local Boost = Ent.RequiresFuel and ACF.TorqueBoost or 1
-	local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
-	local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
-	local Text
-
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 	else
-		Text = Ent.Active and "Active" or "Idle"
+		local Boost = Ent.RequiresFuel and ACF.TorqueBoost or 1
+		local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
+		local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
+		local Text
+
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		else
+			Text = Ent.Active and "Active" or "Idle"
+		end
+
+		Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
+			"Power: " .. Round(Ent.peakkw * Boost) .. " kW / " .. Round(Ent.peakkw * Boost * 1.34) .. " hp\n" ..
+			"Torque: " .. Round(Ent.PeakTorque * Boost) .. " Nm / " .. Round(Ent.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
+			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
+			"Redline: " .. Ent.LimitRPM .. " RPM"
+
+		Ent:SetOverlayText(Text)
 	end
-
-	Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
-		"Power: " .. Round(Ent.peakkw * Boost) .. " kW / " .. Round(Ent.peakkw * Boost * 1.34) .. " hp\n" ..
-		"Torque: " .. Round(Ent.PeakTorque * Boost) .. " Nm / " .. Round(Ent.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
-		"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
-		"Redline: " .. Ent.LimitRPM .. " RPM"
-
-	Ent:SetOverlayText(Text)
 end
 
 function ENT:UpdateOverlay(Instant)

@@ -261,6 +261,7 @@ do -- Metamethods -------------------------------
 		function ENT:Link(Target)
 			if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
 			if self == Target then return false, "Can't link a crate to itself." end
+			if table.HasValue(ACF.AmmoBlacklist[self.BulletData.Type], Target.Class) then return false, "The ammo type in this crate cannot be used for this weapon." end
 
 			local Function = ClassLink(self:GetClass(), Target:GetClass())
 
@@ -287,24 +288,26 @@ do -- Metamethods -------------------------------
 
 	do -- Overlay -------------------------------
 		local function Overlay(Ent)
-			local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-			local Text = "%s\n\nContents: %s ( %s / %s ) %s"
-			local AmmoData = ""
-			local Status
-
-			if Ent.DisableReason then
-				Status = "Disabled: " .. Ent.DisableReason
-			elseif next(Ent.Weapons) or Ent.BulletData.Type == "Refill" then
-				Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
+			if Ent.Disabled then
+				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
-				Status = "Not linked to a weapon!"
-			end
+				local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
+				local Text = "%s\n\nContents: %s ( %s / %s ) %s"
+				local AmmoData = ""
+				local Status
 
-			if Ent.RoundData.cratetxt then
-				AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
-			end
+				if next(Ent.Weapons) or Ent.BulletData.Type == "Refill" then
+					Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
+				else
+					Status = "Not linked to a weapon!"
+				end
 
-			Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
+				if Ent.RoundData.cratetxt then
+					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
+				end
+
+				Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
+			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
@@ -497,7 +500,9 @@ do -- Metamethods -------------------------------
 				for Gun in pairs(self.Weapons) do
 					if table.HasValue(Blacklist, Gun.Class) then
 						self:Unlink(Gun)
-						Message = "New round type cannot be used with linked gun, crate unlinked."
+						Gun:Unload()
+
+						Message = "New round type cannot be used with linked gun, crate unlinked and gun unloaded."
 					end
 				end
 			end

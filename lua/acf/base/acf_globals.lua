@@ -247,6 +247,8 @@ do -- ACF Notify -----------------------------------
 
 			if tobool(net.ReadBit()) then
 				Type = NOTIFY_GENERIC
+			else
+				surface.PlaySound("buttons/button10.wav")
 			end
 
 			GAMEMODE:AddNotify(net.ReadString(), Type, 7)

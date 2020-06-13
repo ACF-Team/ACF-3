@@ -1,4 +1,5 @@
--- Entity validation
+-- Entity validation for ACF
+local LegalHints = CreateConVar("acf_legalhints", 1, FCVAR_ARCHIVE)
 
 -- Local Vars -----------------------------------
 local Gamemode	  = GetConVar("acf_gamemode")
@@ -14,7 +15,30 @@ local Baddies 	  = { -- Ignored by ACF
 	npc_strider = true,
 	npc_dog = true
 }
+local WireModels = {
+	beer = true,
+	blacknecro = true,
+	bull = true,
+	--cheeze = true, These dont work
+	cyborgmatt = true,
+	["expression 2"] = true,
+	hammy = true,
+	holograms = true,
+	jaanus = true,
+	["killa-x"] = true,
+	kobilica = true,
+	venompapa = true,
+	wingf0x = true,
+	led = true,
+	led2 = true,
+	segment = true,
+	segment2 = true,
+	segment3 = true,
+}
 -- Local Funcs ----------------------------------
+local function IsWireModel(Entity)
+	return WireModels[string.Explode("/", Entity:GetModel())[2]]
+end
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -45,30 +69,43 @@ local function IsLegal(Entity)
 			return false, "Invalid physics" -- This shouldn't even run
 		end
 	end
-	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model" end
-	if Entity:GetNoDraw() then return false, "Not drawn" end
-	if Phys:GetMass() < Entity.ACF.LegalMass then return false, "Underweight" end -- You can make it heavier than the legal mass if you want
-	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid" end -- Entities must always be solid
-	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip" end -- No visclip
+	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
+	if Entity:GetNoDraw() then return false, "Not drawn" end -- Tooltip is useless here since clients cannot see the entity.
+	if Phys:GetMass() < Entity.ACF.LegalMass then return false, "Underweight", "ACF entities cannot have their weight reduced from their original." end -- You can make it heavier than the legal mass if you want
+	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
+	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
+
+	-- Must be parented to a wire model if parented
+	if IsValid(Entity:GetParent()) then
+		local Ancestor, Second = ACF_GetAncestor(Entity)
+
+		if Second ~= Entity and IsWireModel(Second) then return true end
+		if IsWireModel(Ancestor) then return true end
+
+		return false, "Bad Parenting", "If parented, the last or second last entity\n in a parent chain must be a Wiremod gate model."
+	end
 
 	return true
 end
 
 local function CheckLegal(Entity)
-	local Legal, Reason = IsLegal(Entity)
+	local Legal, Reason, Description = IsLegal(Entity)
 
 	if not Legal then -- Not legal
 		Entity.Disabled		 = true
 		Entity.DisableReason = Reason
+		Entity.DisableDescription = Description
 
 		Entity:Disable() -- Let the entity know it's disabled
 
 		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
+		if LegalHints:GetBool() then ACF_SendNotify(Entity:CPPIGetOwner(), false, Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "] disabled for: " .. Reason) end -- Notify the owner
 
 		TimerSimple(ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
 			if IsValid(Entity) and CheckLegal(Entity) then
 				Entity.Disabled	   	 = nil
 				Entity.DisableReason = nil
+				Entity.DisableDescription = nil
 
 				Entity:Enable()
 
@@ -79,11 +116,13 @@ local function CheckLegal(Entity)
 		return false
 	end
 
-	TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
-		if IsValid(Entity) then
-			CheckLegal(Entity)
-		end
-	end)
+	if Gamemode:GetInt() ~= 0 then
+		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
+			if IsValid(Entity) then
+				CheckLegal(Entity)
+			end
+		end)
+	end
 
 	return true
 end

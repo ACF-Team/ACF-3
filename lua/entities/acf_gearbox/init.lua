@@ -535,38 +535,42 @@ function ENT:Update(ArgsTable)
 end
 
 local function Overlay(Ent)
-	local Text
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+		else
+		local Text
 
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
-	else
-		Text = "Current Gear: " .. Ent.Gear
-	end
-
-	Text = Text .. "\n\n" .. Ent.Name .. "\n"
-
-	if Ent.CVT then
-		Text = "Reverse Gear: " .. math.Round(Ent.GearTable[2], 2) ..
-				"\nTarget: " .. math.Round(Ent.TargetMinRPM) .. " - " .. math.Round(Ent.TargetMaxRPM) .. " RPM\n"
-	elseif Ent.Auto then
-		for i = 1, Ent.Gears do
-			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) ..
-					", Upshift @ " .. math.Round(Ent.ShiftPoints[i] / 10.936, 1) .. " kph / " ..
-					math.Round(Ent.ShiftPoints[i] / 17.6, 1) .. " mph\n"
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		else
+			Text = "Current Gear: " .. Ent.Gear
 		end
 
-		Text = Text .. "Reverse gear: " .. math.Round(Ent.GearTable[Ent.Reverse], 2) .. "\n"
-	else
-		for i = 1, Ent.Gears do
-			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) .. "\n"
+		Text = Text .. "\n\n" .. Ent.Name .. "\n"
+
+		if Ent.CVT then
+			Text = "Reverse Gear: " .. math.Round(Ent.GearTable[2], 2) ..
+					"\nTarget: " .. math.Round(Ent.TargetMinRPM) .. " - " .. math.Round(Ent.TargetMaxRPM) .. " RPM\n"
+		elseif Ent.Auto then
+			for i = 1, Ent.Gears do
+				Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) ..
+						", Upshift @ " .. math.Round(Ent.ShiftPoints[i] / 10.936, 1) .. " kph / " ..
+						math.Round(Ent.ShiftPoints[i] / 17.6, 1) .. " mph\n"
+			end
+
+			Text = Text .. "Reverse gear: " .. math.Round(Ent.GearTable[Ent.Reverse], 2) .. "\n"
+		else
+			for i = 1, Ent.Gears do
+				Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.GearTable[i], 2) .. "\n"
+			end
 		end
+
+		Text = Text .. "Final Drive: " .. math.Round(Ent.Gear0, 2) .. "\n"
+		Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
+		Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
+
+		Ent:SetOverlayText(Text)
 	end
-
-	Text = Text .. "Final Drive: " .. math.Round(Ent.Gear0, 2) .. "\n"
-	Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
-	Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
-
-	Ent:SetOverlayText(Text)
 end
 
 function ENT:UpdateOverlay(Instant)
