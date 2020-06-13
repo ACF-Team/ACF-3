@@ -94,6 +94,22 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		return
 	end
 
+	if Entity.Weapons and next(Entity.Weapons) then
+		local Unloaded
+
+		for Weapon in pairs(Entity.Weapons) do
+			if Weapon.CurrentCrate == Entity then
+				Unloaded = true
+
+				Weapon:Unload()
+			end
+		end
+
+		if Unloaded then
+			ACF_SendNotify(Entity:CPPIGetOwner(), false, "Crate updated while weapons were loaded with it's ammo. Weapons unloaded.")
+		end
+	end
+
 	local GunClass = ACF.Classes.GunClass[GunData.gunclass]
 	local RoundData = ACF.RoundTypes[Data2]
 
