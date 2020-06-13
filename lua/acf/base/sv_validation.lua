@@ -15,32 +15,6 @@ local Baddies 	  = { -- Ignored by ACF
 	npc_strider = true,
 	npc_dog = true
 }
-local WireModels = {
-	beer = true,
-	blacknecro = true,
-	bull = true,
-	cheeze = true,
-	cyborgmatt = true,
-	["expression 2"] = true,
-	hammy = true,
-	holograms = true,
-	jaanus = true,
-	["killa-x"] = true,
-	kobilica = true,
-	venompapa = true,
-	wingf0x = true,
-	led = true,
-	led2 = true,
-	segment = true,
-	segment2 = true,
-	segment3 = true,
-}
--- Local Funcs ----------------------------------
-local function IsWireModel(Entity)
-	if not IsValid(Entity) then return false end
-
-	return WireModels[string.Explode("/", Entity:GetModel())[2]]
-end
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -79,8 +53,14 @@ local function IsLegal(Entity)
 
 	-- If parented, must be parented to a wire model
 	local Parent = Entity:GetParent()
-	if IsValid(Parent) and not IsWireModel(Parent) then
-		return false, "Bad Parenting", "ACF entities must be parented to entities that use a Wiremod model."
+	if IsValid(Parent) and not ACF.IsWireModel(Parent) then
+		local Owner = Entity:CPPIGetOwner()
+
+		ACF.SendMessage(Owner, "Info", "For more reference about bad parenting, see https://github.com/Stooberton/ACF-3/wiki/Parentable-Wire-Models")
+
+		if tobool(Owner:GetInfo("acf_unparent_disabled_ents")) then Entity:SetParent(nil) end
+
+		return false, "Bad Parenting", "ACF entities must be parented to an entity using a Wiremod model."
 	end
 
 	return true
