@@ -42,14 +42,18 @@ local function IsLegal(Entity)
 			Entity.ACF.PhysObj = Phys -- Updated PhysObj
 		else
 			Entity:Remove() -- Remove spherical trash
-			return false, "Invalid physics" -- This shouldn't even run
+			return false, "Invalid physics", "" -- This shouldn't even run
 		end
 	end
 	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
-	if Entity:GetNoDraw() then return false, "Not drawn" end -- Tooltip is useless here since clients cannot see the entity.
-	if Phys:GetMass() < Entity.ACF.LegalMass then return false, "Underweight", "ACF entities cannot have their weight reduced from their original." end -- You can make it heavier than the legal mass if you want
+	if Entity:GetNoDraw() then return false, "Not drawn", "ACF entities must be drawn at all times." end -- Tooltip is useless here since clients cannot see the entity.
 	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
+	if Phys:GetMass() < Entity.ACF.LegalMass then -- You can make it heavier than the legal mass if you want
+		Phys:SetMass(Entity.ACF.LegalMass)
+
+		return false, "Underweight", "ACF entities cannot have their weight reduced from their original."
+	end
 
 	-- If parented, must be parented to a wire model
 	local Parent = Entity:GetParent()
@@ -77,7 +81,11 @@ local function CheckLegal(Entity)
 		Entity:Disable() -- Let the entity know it's disabled
 
 		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-		if LegalHints:GetBool() then ACF_SendNotify(Entity:CPPIGetOwner(), false, Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "] disabled for: " .. Reason) end -- Notify the owner
+		if LegalHints:GetBool() then -- Notify the owner
+			local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
+
+			ACF_SendNotify(Entity:CPPIGetOwner(), false, Name .. " has been disabled: " .. Description)
+		end
 
 		TimerSimple(ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
 			if IsValid(Entity) and CheckLegal(Entity) then
