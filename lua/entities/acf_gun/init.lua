@@ -245,7 +245,9 @@ do -- Metamethods --------------------------------
 		function ENT:GetUser(Input)
 			if not Input then return end
 
-			return FindUser(self, Input)
+			local User = FindUser(self, Input)
+
+			return IsValid(User) and User or self.Owner
 		end
 
 		function ENT:TriggerInput(Input, Value)
@@ -256,12 +258,8 @@ do -- Metamethods --------------------------------
 			if Input == "Fire" then
 				self.Firing = Bool
 
-				if Bool then
-					self.User = self:GetUser(self.Inputs.Fire.Src) or self.Owner
-
-					if self:CanFire() then
-						self:Shoot()
-					end
+				if Bool and self:CanFire() then
+					self:Shoot()
 				end
 			elseif Input == "Fuze" then
 				self.SetFuze = Bool and math.abs(Value) or nil
@@ -369,7 +367,7 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 
-			self.BulletData.Owner  = self.User -- Must be updated on every shot
+			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck()
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
