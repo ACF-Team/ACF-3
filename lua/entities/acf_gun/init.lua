@@ -243,7 +243,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:GetUser(Input)
-			if not Input then return end
+			if not Input then return self.Owner end
 
 			local User = FindUser(self, Input)
 
