@@ -58,12 +58,6 @@ local function IsLegal(Entity)
 	-- If parented, must be parented to a wire model
 	local Parent = Entity:GetParent()
 	if IsValid(Parent) and not ACF.IsWireModel(Parent) then
-		local Owner = Entity:CPPIGetOwner()
-
-		ACF.SendMessage(Owner, "Info", "For more reference about bad parenting, see https://github.com/Stooberton/ACF-3/wiki/Parentable-Wire-Models")
-
-		if tobool(Owner:GetInfo("acf_unparent_disabled_ents")) then Entity:SetParent(nil) end
-
 		return false, "Bad Parenting", "ACF entities must be parented to an entity using a Wiremod model."
 	end
 
@@ -74,17 +68,27 @@ local function CheckLegal(Entity)
 	local Legal, Reason, Description = IsLegal(Entity)
 
 	if not Legal then -- Not legal
-		Entity.Disabled		 = true
-		Entity.DisableReason = Reason
-		Entity.DisableDescription = Description
+		if Reason ~= Entity.DisableReason then -- Only complain if the reason has changed
+			local Owner = Entity:CPPIGetOwner()
 
-		Entity:Disable() -- Let the entity know it's disabled
+			Entity.Disabled		 = true
+			Entity.DisableReason = Reason
+			Entity.DisableDescription = Description
 
-		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-		if LegalHints:GetBool() then -- Notify the owner
-			local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
+			Entity:Disable() -- Let the entity know it's disabled
 
-			ACF_SendNotify(Entity:CPPIGetOwner(), false, Name .. " has been disabled: " .. Description)
+			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
+			if LegalHints:GetBool() then -- Notify the owner
+				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
+
+				ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+			end
+
+			if Reason == "Bad Parenting" then -- Extra help with stuff related to bad parenting
+				ACF.SendMessage(Owner, "Info", "For more reference about bad parenting, see https://github.com/Stooberton/ACF-3/wiki/Parentable-Wire-Models")
+
+				if tobool(Owner:GetInfo("acf_unparent_disabled_ents")) then Entity:SetParent(nil) end
+			end
 		end
 
 		TimerSimple(ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
