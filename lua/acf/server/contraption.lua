@@ -9,12 +9,14 @@ local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
 	local Parent = Ent
+	local Last
 
 	while IsValid(Parent:GetParent()) do
+		Last   = Parent
 		Parent = Parent:GetParent()
 	end
 
-	return Parent
+	return Parent, Last
 end
 
 local function GetAllPhysicalEntities(Ent, Tab)

@@ -317,31 +317,35 @@ function ENT:UpdateMass()
 end
 
 local function Overlay(Ent)
-	local Text
-
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
-	elseif Ent.Leaking > 0 then
-		Text = "Leaking"
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 	else
-		Text = Ent.Active and "Providing Fuel" or "Idle"
+		local Text
+
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		elseif Ent.Leaking > 0 then
+			Text = "Leaking"
+		else
+			Text = Ent.Active and "Providing Fuel" or "Idle"
+		end
+
+		Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
+
+		if Ent.FuelType == "Electric" then
+			local KiloWatt = math.Round(Ent.Fuel, 1)
+			local Joules = math.Round(Ent.Fuel * 3.6, 1)
+
+			Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+		else
+			local Liters = math.Round(Ent.Fuel, 1)
+			local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
+
+			Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
+		end
+
+		Ent:SetOverlayText(Text)
 	end
-
-	Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
-
-	if Ent.FuelType == "Electric" then
-		local KiloWatt = math.Round(Ent.Fuel, 1)
-		local Joules = math.Round(Ent.Fuel * 3.6, 1)
-
-		Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
-	else
-		local Liters = math.Round(Ent.Fuel, 1)
-		local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
-
-		Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
-	end
-
-	Ent:SetOverlayText(Text)
 end
 
 function ENT:UpdateOverlay(Instant)
