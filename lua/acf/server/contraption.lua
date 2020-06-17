@@ -99,9 +99,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 			local Class = K:GetClass()
 
 			if Class == "acf_engine" then
-				local Mult = (K.RequiresFuel or next(K.FuelTanks)) and ACF.TorqueBoost or 1
-
-				Power = Power + K.peakkw * 1.34 * Mult
+				Power = Power + K.peakkw * 1.34
 			elseif Class == "acf_fueltank" then
 				Fuel = Fuel + K.Capacity
 			end
@@ -138,9 +136,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 			local Class = K:GetClass()
 
 			if Class == "acf_engine" then
-				local Mult = (K.RequiresFuel or next(K.FuelTanks)) and ACF.TorqueBoost or 1
-
-				Power = Power + K.peakkw * 1.34 * Mult
+				Power = Power + K.peakkw * 1.34
 			elseif Class == "acf_fueltank" then
 				Fuel = Fuel + K.Capacity
 			end

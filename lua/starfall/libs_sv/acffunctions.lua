@@ -2186,19 +2186,6 @@ function ents_methods:acfIsFuel ()
 	return isFuel( this ) and not restrictInfo( this )
 end
 
---- Returns true if the current engine requires fuel to run
--- @server
-function ents_methods:acfFuelRequired ()
-	checktype( self, ents_metatable )
-	local this = unwrap( self )
-
-	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
-
-	if not isEngine( this ) then return false end
-	if restrictInfo( this ) then return false end
-	return ( this.RequiresFuel and true ) or false
-end
-
 --- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks
 -- @server
 function ents_methods:acfRefuelDuty ( on )
