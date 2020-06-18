@@ -220,40 +220,38 @@ local function SetActive(Entity, Value)
 	if Entity.Active == tobool(Value) then return end
 
 	if not Entity.Active then -- Was off, turn on
-		if GetNextFuelTank(Entity) then -- Has fuel
-			Entity.Active = true
+		Entity.Active = true
+
+		Entity:CalcMassRatio()
+
+		Entity.LastThink = ACF.CurTime
+		Entity.Torque = Entity.PeakTorque
+		Entity.FlyRPM = Entity.IdleRPM * 1.5
+
+		local Pitch, Volume = GetPitchVolume(Entity)
+
+		if Entity.SoundPath ~= "" then
+			Entity.Sound = CreateSound(Entity, Entity.SoundPath)
+			Entity.Sound:PlayEx(Volume, Pitch)
+		end
+
+		TimerSimple(engine.TickInterval(), function()
+			if not IsValid(Entity) then return end
+
+			Entity:CalcRPM()
+		end)
+
+		Entity:UpdateOverlay()
+		Entity:UpdateOutputs()
+
+		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
+			if not IsValid(Entity) then return end
+
+			CheckGearboxes(Entity)
+			CheckDistantFuelTanks(Entity)
 
 			Entity:CalcMassRatio()
-
-			Entity.LastThink = ACF.CurTime
-			Entity.Torque = Entity.PeakTorque
-			Entity.FlyRPM = Entity.IdleRPM * 1.5
-
-			local Pitch, Volume = GetPitchVolume(Entity)
-
-			if Entity.SoundPath ~= "" then
-				Entity.Sound = CreateSound(Entity, Entity.SoundPath)
-				Entity.Sound:PlayEx(Volume, Pitch)
-			end
-
-			TimerSimple(engine.TickInterval(), function()
-				if not IsValid(Entity) then return end
-
-				Entity:CalcRPM()
-			end)
-
-			Entity:UpdateOverlay()
-			Entity:UpdateOutputs()
-
-			TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
-				if not IsValid(Entity) then return end
-
-				CheckGearboxes(Entity)
-				CheckDistantFuelTanks(Entity)
-
-				Entity:CalcMassRatio()
-			end)
-		end
+		end)
 	else
 		Entity.Active = false
 		Entity.FlyRPM = 0
