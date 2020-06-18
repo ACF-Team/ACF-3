@@ -174,22 +174,7 @@ local function SetActive(Entity, Value)
 	if Entity.Active == tobool(Value) then return end
 
 	if not Entity.Active then -- Was off, turn on
-		-- Check fuel requirement --
-		local ShouldActivate
-
-		if not Entity.RequiresFuel then
-			ShouldActivate = true
-		else
-			for Tank in pairs(Entity.FuelTanks) do
-				if Tank.Active and Tank.Fuel > 0 then
-					ShouldActivate = true
-					break
-				end
-			end
-		end
-		----------------------------
-
-		if ShouldActivate then
+		if GetNextFuelTank(Entity) then -- Has fuel
 			Entity.Active = true
 
 			Entity:CalcMassRatio()
@@ -485,24 +470,27 @@ function ENT:UpdateOutputs()
 end
 
 local function Overlay(Ent)
-	local Boost = Ent.RequiresFuel and ACF.TorqueBoost or 1
-	local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
-	local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
-	local Text
-
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 	else
-		Text = Ent.Active and "Active" or "Idle"
+		local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
+		local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
+		local Text
+
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		else
+			Text = Ent.Active and "Active" or "Idle"
+		end
+
+		Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
+			"Power: " .. Round(Ent.peakkw) .. " kW / " .. Round(Ent.peakkw * 1.34) .. " hp\n" ..
+			"Torque: " .. Round(Ent.PeakTorque) .. " Nm / " .. Round(Ent.PeakTorque * 0.73) .. " ft-lb\n" ..
+			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
+			"Redline: " .. Ent.LimitRPM .. " RPM"
+
+		Ent:SetOverlayText(Text)
 	end
-
-	Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
-		"Power: " .. Round(Ent.peakkw * Boost) .. " kW / " .. Round(Ent.peakkw * Boost * 1.34) .. " hp\n" ..
-		"Torque: " .. Round(Ent.PeakTorque * Boost) .. " Nm / " .. Round(Ent.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
-		"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
-		"Redline: " .. Ent.LimitRPM .. " RPM"
-
-	Ent:SetOverlayText(Text)
 end
 
 function ENT:UpdateOverlay(Instant)
@@ -647,7 +635,6 @@ function ENT:CalcRPM()
 
 	local DeltaTime = ACF.CurTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
-	local Boost 	= 1
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
@@ -658,24 +645,20 @@ function ENT:CalcRPM()
 
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
-		Boost = ACF.TorqueBoost
-
 		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
 		FuelTank:UpdateMass()
 		FuelTank:UpdateOverlay()
-
-	elseif self.RequiresFuel then
-		SetActive(self, false) --shut off if no fuel and requires it
+		FuelTank:UpdateOutputs()
+	else
+		SetActive(self, false)
 
 		self.FuelUsage = 0
 
 		return 0
-	else
-		self.FuelUsage = 0
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
+	self.Torque = self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
 
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
 	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia

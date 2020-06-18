@@ -46,15 +46,8 @@ function ACFEngineGUICreate(Table)
 		pbmax = Table.peakmaxrpm
 	end
 
-	--if fuel required, show max power with fuel at top, no point in doing it twice
-	if Table.requiresfuel then
-		acfmenupanel:CPanelText("Power", "\nPeak Power : " .. math.floor(peakkw * ACF.TorqueBoost) .. " kW / " .. math.Round(peakkw * ACF.TorqueBoost * 1.34) .. " HP @ " .. peakkwrpm .. " RPM")
-		acfmenupanel:CPanelText("Torque", "Peak Torque : " .. (Table.torque * ACF.TorqueBoost) .. " n/m  / " .. math.Round(Table.torque * ACF.TorqueBoost * 0.73) .. " ft-lb")
-	else
-		acfmenupanel:CPanelText("Power", "\nPeak Power : " .. math.floor(peakkw) .. " kW / " .. math.Round(peakkw * 1.34) .. " HP @ " .. peakkwrpm .. " RPM")
-		acfmenupanel:CPanelText("Torque", "Peak Torque : " .. Table.torque .. " n/m  / " .. math.Round(Table.torque * 0.73) .. " ft-lb")
-	end
-
+	acfmenupanel:CPanelText("Power", "\nPeak Power : " .. math.floor(peakkw) .. " kW / " .. math.Round(peakkw * 1.34) .. " HP @ " .. peakkwrpm .. " RPM")
+	acfmenupanel:CPanelText("Torque", "Peak Torque : " .. Table.torque .. " n/m  / " .. math.Round(Table.torque * 0.73) .. " ft-lb")
 	acfmenupanel:CPanelText("RPM", "Idle : " .. Table.idlerpm .. " RPM\nPowerband : " .. pbmin .. "-" .. pbmax .. " RPM\nRedline : " .. Table.limitrpm .. " RPM")
 	acfmenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. " kg")
 	acfmenupanel:CPanelText("FuelType", "\nFuel Type : " .. Table.fuel)
@@ -63,20 +56,13 @@ function ACFEngineGUICreate(Table)
 		local cons = ACF.ElecRate * peakkw / ACF.Efficiency[Table.enginetype]
 		acfmenupanel:CPanelText("FuelCons", "Peak energy use : " .. math.Round(cons, 1) .. " kW / " .. math.Round(0.06 * cons, 1) .. " MJ/min")
 	elseif Table.fuel == "Multifuel" then
-		local petrolcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * ACF.TorqueBoost * peakkw / (60 * ACF.FuelDensity.Petrol)
-		local dieselcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * ACF.TorqueBoost * peakkw / (60 * ACF.FuelDensity.Diesel)
+		local petrolcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Petrol)
+		local dieselcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Diesel)
 		acfmenupanel:CPanelText("FuelConsP", "Petrol Use at " .. peakkwrpm .. " rpm : " .. math.Round(petrolcons, 2) .. " liters/min / " .. math.Round(0.264 * petrolcons, 2) .. " gallons/min")
 		acfmenupanel:CPanelText("FuelConsD", "Diesel Use at " .. peakkwrpm .. " rpm : " .. math.Round(dieselcons, 2) .. " liters/min / " .. math.Round(0.264 * dieselcons, 2) .. " gallons/min")
 	else
-		local fuelcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * ACF.TorqueBoost * peakkw / (60 * ACF.FuelDensity[Table.fuel])
+		local fuelcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity[Table.fuel])
 		acfmenupanel:CPanelText("FuelCons", Table.fuel .. " Use at " .. peakkwrpm .. " rpm : " .. math.Round(fuelcons, 2) .. " liters/min / " .. math.Round(0.264 * fuelcons, 2) .. " gallons/min")
-	end
-
-	if Table.requiresfuel then
-		acfmenupanel:CPanelText("Fuelreq", "REQUIRES FUEL")
-	else
-		acfmenupanel:CPanelText("FueledPower", "\nWhen supplied with fuel:\nPeak Power : " .. math.floor(peakkw * ACF.TorqueBoost) .. " kW / " .. math.Round(peakkw * ACF.TorqueBoost * 1.34) .. " HP @ " .. peakkwrpm .. " RPM")
-		acfmenupanel:CPanelText("FueledTorque", "Peak Torque : " .. (Table.torque * ACF.TorqueBoost) .. " n/m  / " .. math.Round(Table.torque * ACF.TorqueBoost * 0.73) .. " ft-lb")
 	end
 
 	acfmenupanel.CustomDisplay:PerformLayout()

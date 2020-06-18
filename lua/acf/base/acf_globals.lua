@@ -40,7 +40,6 @@ do -- ACF global vars
 	ACF.PScale 				= 1 --Gun Propellant power expotential
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
 	ACF.PDensity 			= 1.6 --Gun propellant density (Real powders go from 0.7 to 1.6, i"m using higher densities to simulate case bottlenecking)
-	ACF.TorqueBoost 		= 1.25 --torque multiplier from using fuel
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
 	ACF.ElecRate 			= 1 --multiplier for electrics
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
@@ -141,6 +140,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
+	CreateClientConVar("acf_unparent_disabled_ents", 0, true, true, "If enabled, all entities disabled for Bad Parenting will be unparented.", 0, 1)
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
@@ -254,6 +254,8 @@ do -- ACF Notify -----------------------------------
 
 			if tobool(net.ReadBit()) then
 				Type = NOTIFY_GENERIC
+			else
+				surface.PlaySound("buttons/button10.wav")
 			end
 
 			GAMEMODE:AddNotify(net.ReadString(), Type, 7)

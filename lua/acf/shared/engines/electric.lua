@@ -66,7 +66,6 @@ ACF_DefineEngine( "Electric-Tiny-NoBatt", {
 	category = "Electric",
 	fuel = "Electric",
 	enginetype = "Electric",
-	requiresfuel = true,
 	weight = 50, --250
 	torque = 40,
 	flywheelmass = 0.025,
@@ -86,7 +85,6 @@ ACF_DefineEngine( "Electric-Small-NoBatt", {
 	category = "Electric",
 	fuel = "Electric",
 	enginetype = "Electric",
-	requiresfuel = true,
 	weight = 125, --250
 	torque = 384,
 	flywheelmass = 0.3,
@@ -106,7 +104,6 @@ ACF_DefineEngine( "Electric-Medium-NoBatt", {
 	category = "Electric",
 	fuel = "Electric",
 	enginetype = "Electric",
-	requiresfuel = true,
 	weight = 575, --800
 	torque = 1152,
 	flywheelmass = 1.5,
@@ -126,7 +123,6 @@ ACF_DefineEngine( "Electric-Large-NoBatt", {
 	category = "Electric",
 	fuel = "Electric",
 	enginetype = "Electric",
-	requiresfuel = true,
 	weight = 1500, --1900
 	torque = 3360,
 	flywheelmass = 11.2,

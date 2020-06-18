@@ -621,13 +621,18 @@ function ENT:Disable()
 end
 
 local function Overlay(Ent)
-	local Text
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+		else
+		local Text
 
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason .. "\n\n"
-	else
-		Text = "Current Gear: " .. Ent.Gear .. "\n\n"
-	end
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		else
+			Text = "Current Gear: " .. Ent.Gear
+		end
+
+		Text = Text .. "\n\n" .. Ent.Name .. "\n"
 
 	if Ent.CVT then
 		Text = Text .. "Reverse Gear: " .. math.Round(Ent.Gears[2], 2) ..
@@ -644,13 +649,13 @@ local function Overlay(Ent)
 		for i = 1, Ent.MaxGear do
 			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.Gears[i], 2) .. "\n"
 		end
-	end
 
 	Text = Text .. "Final Drive: " .. math.Round(Ent.Gears.Final, 2) .. "\n"
 	Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
 	Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
 
-	Ent:SetOverlayText(Text)
+		Ent:SetOverlayText(Text)
+	end
 end
 
 function ENT:UpdateOverlay(Instant)

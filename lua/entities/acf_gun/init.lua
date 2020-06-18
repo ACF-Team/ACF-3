@@ -298,9 +298,11 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:GetUser(Input)
-			if not Input then return end
+			if not Input then return self.Owner end
 
-			return FindUser(self, Input)
+			local User = FindUser(self, Input)
+
+			return IsValid(User) and User or self.Owner
 		end
 
 		ACF.AddInputAction("acf_gun", "Fire", function(Entity, Value)
@@ -308,11 +310,8 @@ do -- Metamethods --------------------------------
 
 			Entity.Firing = Bool
 
-			if Bool then
-				Entity.User = Entity:GetUser(Entity.Inputs.Fire.Src) or Entity.Owner
-
-				if Entity:CanFire() then
-					Entity:Shoot()
+				if Bool and self:CanFire() then
+					self:Shoot()
 				end
 			end
 		end)
@@ -438,7 +437,7 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 
-			self.BulletData.Owner  = self.User -- Must be updated on every shot
+			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck()
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
@@ -662,26 +661,30 @@ do -- Metamethods --------------------------------
 
 	do -- Overlay -------------------------------
 		local function Overlay(Ent)
-			local Status
-			local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
-			local Firerate  = math.floor(60 / Ent.ReloadTime)
-			local CrateAmmo = 0
-
-			if Ent.DisableReason then
-				Status = "Disabled: " .. Ent.DisableReason
-			elseif not next(Ent.Crates) then
-				Status = "Not linked to an ammo crate!"
+			if Ent.Disabled then
+				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
-				Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
-			end
+				local Status
+				local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
+				local Firerate  = math.floor(60 / Ent.ReloadTime)
+				local CrateAmmo = 0
 
-			for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-				if Crate.Load then
-					CrateAmmo = CrateAmmo + Crate.Ammo
+				if Ent.DisableReason then
+					Status = "Disabled: " .. Ent.DisableReason
+				elseif not next(Ent.Crates) then
+					Status = "Not linked to an ammo crate!"
+				else
+					Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
 				end
-			end
 
-			Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
+					if Crate.Load then
+						CrateAmmo = CrateAmmo + Crate.Ammo
+					end
+				end
+
+				Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
