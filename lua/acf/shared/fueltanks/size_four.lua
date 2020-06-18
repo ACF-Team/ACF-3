@@ -1,6 +1,6 @@
 ACF.RegisterFuelTankClass("FTS_4", {
 	Name		= "Size 4 Container",
-	Description	= "Guaranteed to improve engine performance by " .. (ACF.TorqueBoost - 1) * 100 .. "%",
+	Description	= "Size 4 fuel containers, required for engines to work.",
 })
 
 do

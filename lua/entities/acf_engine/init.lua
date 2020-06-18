@@ -271,7 +271,6 @@ do -- Spawn and Update functions
 		Entity.IsTrans 			= EngineData.IsTrans -- driveshaft outputs to the side
 		Entity.FuelTypes		= EngineData.Fuel or { Petrol = true }
 		Entity.FuelType 		= next(EngineData.Fuel)
-		Entity.RequiresFuel 	= EngineData.RequiresFuel
 		Entity.EngineType 		= EngineType.ID
 		Entity.Efficiency		= EngineType.Efficiency
 		Entity.TorqueScale 		= EngineType.TorqueScale
@@ -295,7 +294,7 @@ do -- Spawn and Update functions
 		if EngineType.CalculateFuelUsage then
 			Entity.FuelUse = EngineType.CalculateFuelUsage(Entity)
 		else
-			Entity.FuelUse = ACF.TorqueBoost * ACF.FuelRate * Entity.Efficiency * Entity.peakkw / 3600
+			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * Entity.peakkw / 3600
 		end
 
 		ACF_Activate(Entity, true)
@@ -473,39 +472,30 @@ local function Overlay(Ent)
 	if Ent.Disabled then
 		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 	else
+		local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
+		local State, Name = Ent.Active and "Active" or "Idle", Ent.Name
+		local Power, PowerFt = Round(Ent.peakkw), Round(Ent.peakkw * 1.34)
+		local Torque, TorqueFt = Round(Ent.PeakTorque), Round(Ent.PeakTorque * 0.73)
 		local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
 		local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
-		local Text
+		local Redline = Ent.LimitRPM
 
-		if Ent.DisableReason then
-			Text = "Disabled: " .. Ent.DisableReason
-		else
-			Text = Ent.Active and "Active" or "Idle"
-		end
-
-		Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
-			"Power: " .. Round(Ent.peakkw) .. " kW / " .. Round(Ent.peakkw * 1.34) .. " hp\n" ..
-			"Torque: " .. Round(Ent.PeakTorque) .. " Nm / " .. Round(Ent.PeakTorque * 0.73) .. " ft-lb\n" ..
-			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
-			"Redline: " .. Ent.LimitRPM .. " RPM"
-
-		Ent:SetOverlayText(Text)
+		Ent:SetOverlayText(Text:format(State, Name, Power, PowerFt, Torque, TorqueFt, PowerbandMin, PowerbandMax, Redline))
 	end
 end
 
 function ENT:UpdateOverlay(Instant)
 	if Instant then
-		Overlay(self)
-		return
+		return Overlay(self)
 	end
 
-	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-			if IsValid(self) then
-				Overlay(self)
-			end
-		end)
-	end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
+		if not IsValid(self) then return end
+
+		Overlay(self)
+	end)
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -648,7 +638,6 @@ function ENT:CalcRPM()
 		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
 		FuelTank:UpdateMass()
 		FuelTank:UpdateOverlay()
-		FuelTank:UpdateOutputs()
 	else
 		SetActive(self, false)
 

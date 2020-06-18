@@ -1,6 +1,6 @@
 ACF.RegisterFuelTankClass("FTS_M", {
 	Name		= "Miscellaneous",
-	Description	= "Guaranteed to improve engine performance by " .. (ACF.TorqueBoost - 1) * 100 .. "%",
+	Description	= "Random fuel tank models, some of them can only be used for refueling.",
 })
 
 do

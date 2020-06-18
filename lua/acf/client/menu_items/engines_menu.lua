@@ -55,7 +55,6 @@ local function UpdateEngineStats(Label, Data)
 	local TorqueText = "\nPeak Torque : %s n/m - %s ft-lb"
 	local PowerText = "\nPeak Power : %s kW - %s HP @ %s RPM"
 	local Consumption, Power = "", ""
-	local Boost = Data.RequiresFuel and ACF.TorqueBoost or 1
 
 	for K in pairs(Data.Fuel) do
 		if not FuelTypes[K] then continue end
@@ -68,25 +67,18 @@ local function UpdateEngineStats(Label, Data)
 			AddText = Fuel.ConsumptionText(PeakkW, PeakkWRPM, Type, Fuel)
 		else
 			local Text = "\n\n%s Consumption :\n%s L/min - %s gal/min @ %s RPM"
-			local Rate = ACF.FuelRate * Type.Efficiency * ACF.TorqueBoost * PeakkW / (60 * Fuel.Density)
+			local Rate = ACF.FuelRate * Type.Efficiency * PeakkW / (60 * Fuel.Density)
 
 			AddText = Text:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * 0.264, 2), PeakkWRPM)
 		end
 
-		Consumption = Consumption .. AddText
+		Consumption = Consumption .. AddText .. "\n\nThis engine requires fuel."
 
 		Data.Fuel[K] = Fuel -- Replace once engines use the proper class functions
 	end
 
-	Power = Power .. "\n" .. PowerText:format(math.floor(PeakkW * Boost), math.floor(PeakkW * Boost * 1.34), PeakkWRPM)
-	Power = Power .. TorqueText:format(math.floor(Data.Torque * Boost), math.floor(Data.Torque * Boost * 0.73))
-
-	if Data.RequiresFuel then
-		Consumption = Consumption .. "\n\nThis engine requires fuel."
-	else
-		Power = Power .. "\n\nWhen Fueled :" .. PowerText:format(math.floor(PeakkW * ACF.TorqueBoost), math.floor(PeakkW * ACF.TorqueBoost * 1.34), PeakkWRPM)
-		Power = Power .. TorqueText:format(math.floor(Data.Torque * ACF.TorqueBoost), math.floor(Data.Torque * ACF.TorqueBoost * 0.73))
-	end
+	Power = Power .. "\n" .. PowerText:format(math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
+	Power = Power .. TorqueText:format(math.floor(Data.Torque), math.floor(Data.Torque * 0.73))
 
 	LabelText = LabelText .. Consumption .. Power
 

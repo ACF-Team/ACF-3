@@ -259,7 +259,6 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 200,
 		Torque		 = 550,
 		FlywheelMass = 2.9,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 1400,
@@ -280,7 +279,6 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 400,
 		Torque		 = 813,
 		FlywheelMass = 4.3,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 1800,
@@ -301,7 +299,6 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 1100,
 		Torque		 = 1990,
 		FlywheelMass = 10.5,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 2000,
@@ -324,7 +321,6 @@ do -- Transaxial Gas Turbines
 		Mass		 = 160,
 		Torque		 = 440,
 		FlywheelMass = 2.3,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -346,7 +342,6 @@ do -- Transaxial Gas Turbines
 		Mass		 = 320,
 		Torque		 = 650,
 		FlywheelMass = 3.4,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -368,7 +363,6 @@ do -- Transaxial Gas Turbines
 		Mass		 = 880,
 		Torque		 = 1592,
 		FlywheelMass = 8.4,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -397,7 +391,6 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 350,
 		Torque		 = 800,
 		FlywheelMass = 14.3,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 700,
@@ -418,7 +411,6 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 600,
 		Torque		 = 1200,
 		FlywheelMass = 29.6,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		Pitch		 = 1.15,
 		RPM = {
@@ -440,7 +432,6 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 1650,
 		Torque		 = 4000,
 		FlywheelMass = 75,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		Pitch		 = 1.35,
 		RPM = {
@@ -464,7 +455,6 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 280,
 		Torque		 = 600,
 		FlywheelMass = 11.4,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -486,7 +476,6 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 480,
 		Torque		 = 900,
 		FlywheelMass = 23.7,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		Pitch		 = 1.15,
@@ -509,7 +498,6 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 1320,
 		Torque		 = 3000,
 		FlywheelMass = 60,
-		RequiresFuel = true,
 		IsElectric	 = true,
 		IsTrans		 = true,
 		Pitch		 = 1.35,

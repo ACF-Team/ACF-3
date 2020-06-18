@@ -218,7 +218,6 @@ do -- Electric Standalone Motors
 		Torque		 = 384,
 		FlywheelMass = 0.3,
 		IsElectric	 = true,
-		RequiresFuel = true,
 		RPM = {
 			Idle	 = 10,
 			PeakMin	 = 1,
@@ -239,7 +238,6 @@ do -- Electric Standalone Motors
 		Torque		 = 1152,
 		FlywheelMass = 1.5,
 		IsElectric	 = true,
-		RequiresFuel = true,
 		RPM = {
 			Idle	 = 10,
 			PeakMin	 = 1,
@@ -260,7 +258,6 @@ do -- Electric Standalone Motors
 		Torque		 = 3360,
 		FlywheelMass = 11.2,
 		IsElectric	 = true,
-		RequiresFuel = true,
 		RPM = {
 			Idle	 = 10,
 			PeakMin	 = 1,

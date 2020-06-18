@@ -227,7 +227,7 @@ do -- Metamethods --------------------------------
 			local Blacklist = ACF.AmmoBlacklist[Target.RoundType]
 
 			if table.HasValue(Blacklist, Weapon.Class) then
-				return false, "That round type can't be used with this weapon."
+				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
 			Weapon.Crates[Target]  = true
@@ -310,9 +310,8 @@ do -- Metamethods --------------------------------
 
 			Entity.Firing = Bool
 
-				if Bool and self:CanFire() then
-					self:Shoot()
-				end
+			if Bool and Entity:CanFire() then
+				Entity:Shoot()
 			end
 		end)
 
@@ -664,14 +663,13 @@ do -- Metamethods --------------------------------
 			if Ent.Disabled then
 				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
-				local Status
+				local Text      = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
 				local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
 				local Firerate  = math.floor(60 / Ent.ReloadTime)
 				local CrateAmmo = 0
+				local Status
 
-				if Ent.DisableReason then
-					Status = "Disabled: " .. Ent.DisableReason
-				elseif not next(Ent.Crates) then
+				if not next(Ent.Crates) then
 					Status = "Not linked to an ammo crate!"
 				else
 					Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
@@ -683,23 +681,22 @@ do -- Metamethods --------------------------------
 					end
 				end
 
-				Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+				Ent:SetOverlayText(Text:format(Status, Firerate, Ent.CurrentShot, CrateAmmo))
 			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
 			if Instant then
-				Overlay(self)
-				return
+				return Overlay(self)
 			end
 
-			if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-					if IsValid(self) then
-						Overlay(self)
-					end
-				end)
-			end
+			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+
+			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
+				if not IsValid(self) then return end
+
+				Overlay(self)
+			end)
 		end
 	end -----------------------------------------
 

@@ -283,7 +283,6 @@ do -- Metamethods -------------------------------
 		function ENT:Link(Target)
 			if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
 			if self == Target then return false, "Can't link a crate to itself." end
-			if table.HasValue(ACF.AmmoBlacklist[self.BulletData.Type], Target.Class) then return false, "The ammo type in this crate cannot be used for this weapon." end
 
 			local Function = ClassLink(self:GetClass(), Target:GetClass())
 
@@ -328,23 +327,22 @@ do -- Metamethods -------------------------------
 					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
 				end
 
-				Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
+				Ent:SetOverlayText(Text:format(Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
 			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
 			if Instant then
-				Overlay(self)
-				return
+				return Overlay(self)
 			end
 
-			if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-					if IsValid(self) then
-						Overlay(self)
-					end
-				end)
-			end
+			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+
+			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
+				if not IsValid(self) then return end
+
+				Overlay(self)
+			end)
 		end
 	end
 
@@ -356,14 +354,12 @@ do -- Metamethods -------------------------------
 				self.Load = true
 			end
 
-			self:UpdateOverlay(true)
 			self:UpdateMass()
 		end
 
 		function ENT:Disable()
 			self.Load = false
 
-			self:UpdateOverlay(true)
 			self:UpdateMass()
 		end
 	end
@@ -522,6 +518,7 @@ do -- Metamethods -------------------------------
 				for Gun in pairs(self.Weapons) do
 					if table.HasValue(Blacklist, Gun.Class) then
 						self:Unlink(Gun)
+
 						Gun:Unload()
 
 						Message = "New round type cannot be used with linked gun, crate unlinked and gun unloaded."

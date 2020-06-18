@@ -351,59 +351,60 @@ do -- Mass Update
 		if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
 
 		TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
-			if not IsValid(self) then
-				UpdateMass(self)
-			end
+			if not IsValid(self) then return end
+
+			UpdateMass(self)
 		end)
 	end
 end
 
 do -- Overlay Update
 	local function Overlay(Ent)
-		local Text
-
-		if Ent.DisableReason then
-			Text = "Disabled: " .. Ent.DisableReason
-		elseif Ent.Leaking > 0 then
-			Text = "Leaking"
+		if Ent.Disabled then
+			Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 		else
-			Text = Ent.Active and "Providing Fuel" or "Idle"
+			local Text
+
+			if Ent.Leaking > 0 then
+				Text = "Leaking"
+			else
+				Text = Ent.Active and "Providing Fuel" or "Idle"
+			end
+
+			Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
+
+			if Ent.FuelType == "Electric" then
+				local KiloWatt = math.Round(Ent.Fuel, 1)
+				local Joules = math.Round(Ent.Fuel * 3.6, 1)
+
+				Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+			else
+				local Liters = math.Round(Ent.Fuel, 1)
+				local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
+
+				Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
+			end
+
+			WireLib.TriggerOutput(Ent, "Fuel", math.Round(Ent.Fuel, 2))
+			WireLib.TriggerOutput(Ent, "Capacity", math.Round(Ent.Capacity, 2))
+			WireLib.TriggerOutput(Ent, "Leaking", Ent.Leaking > 0 and 1 or 0)
+
+			Ent:SetOverlayText(Text)
 		end
-
-		Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
-
-		if Ent.FuelType == "Electric" then
-			local KiloWatt = math.Round(Ent.Fuel, 1)
-			local Joules = math.Round(Ent.Fuel * 3.6, 1)
-
-			Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
-		else
-			local Liters = math.Round(Ent.Fuel, 1)
-			local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
-
-			Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
-		end
-
-		WireLib.TriggerOutput(Ent, "Fuel", math.Round(Ent.Fuel, 2))
-		WireLib.TriggerOutput(Ent, "Capacity", math.Round(Ent.Capacity, 2))
-		WireLib.TriggerOutput(Ent, "Leaking", Ent.Leaking > 0 and 1 or 0)
-
-		Ent:SetOverlayText(Text)
 	end
 
 	function ENT:UpdateOverlay(Instant)
 		if Instant then
-			Overlay(self)
-			return
+			return Overlay(self)
 		end
 
-		if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-				if IsValid(self) then
-					Overlay(self)
-				end
-			end)
-		end
+		if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
+			if not IsValid(self) then return end
+
+			Overlay(self)
+		end)
 	end
 end
 
@@ -413,6 +414,8 @@ ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
 	end
 
 	Entity.Active = tobool(Value)
+
+	print(Entity, Entity.Active)
 end)
 
 ACF.AddInputAction("acf_fueltank", "Refuel Duty", function(Entity, Value)

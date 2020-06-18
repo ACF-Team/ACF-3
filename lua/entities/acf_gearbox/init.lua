@@ -623,36 +623,38 @@ end
 local function Overlay(Ent)
 	if Ent.Disabled then
 		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
-		else
-		local Text
-
-		if Ent.DisableReason then
-			Text = "Disabled: " .. Ent.DisableReason
-		else
-			Text = "Current Gear: " .. Ent.Gear
-		end
-
-		Text = Text .. "\n\n" .. Ent.Name .. "\n"
-
-	if Ent.CVT then
-		Text = Text .. "Reverse Gear: " .. math.Round(Ent.Gears[2], 2) ..
-				"\nTarget: " .. math.Round(Ent.Gears.MinRPM) .. " - " .. math.Round(Ent.Gears.MaxRPM) .. " RPM\n"
-	elseif Ent.Automatic then
-		for i = 1, Ent.MaxGear do
-			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.Gears[i], 2) ..
-					", Upshift @ " .. math.Round(Ent.ShiftPoints[i] / 10.936, 1) .. " kph / " ..
-					math.Round(Ent.ShiftPoints[i] / 17.6, 1) .. " mph\n"
-		end
-
-		Text = Text .. "Reverse gear: " .. math.Round(Ent.Gears[Ent.Reverse], 2) .. "\n"
 	else
-		for i = 1, Ent.MaxGear do
-			Text = Text .. "Gear " .. i .. ": " .. math.Round(Ent.Gears[i], 2) .. "\n"
+		local Text = "Current Gear: " .. Ent.Gear .. "\n\n" .. Ent.Name .. "\n"
+		local Gears = Ent.Gears
+
+		if Ent.CVT then
+			local CVT = "Reverse Gear: %s\nTarget: %s - %s RPM\n"
+			local Reverse = math.Round(Gears[2], 2)
+			local Min = math.Round(Gears.MinRPM)
+			local Max = math.Round(Gears.MaxRPM)
+
+			Text = Text .. CVT:format(Reverse, Min, Max)
+		elseif Ent.Automatic then
+			local Gear = "Gear %s: %s, Upshift @ %s kph / %s mph\n"
+
+			for i = 1, Ent.MaxGear do
+				local Ratio = math.Round(Gears[i], 2)
+				local KPH = math.Round(Ent.ShiftPoints[i] / 10.936, 1)
+				local MPH = math.Round(Ent.ShiftPoints[i] / 17.6, 1)
+
+				Text = Text .. Gear:format(i, Ratio, KPH, MPH)
+			end
+
+			Text = Text .. "Reverse gear: " .. math.Round(Gears[Ent.Reverse], 2) .. "\n"
+		else
+			for i = 1, Ent.MaxGear do
+				Text = Text .. "Gear " .. i .. ": " .. math.Round(Gears[i], 2) .. "\n"
+			end
 		end
 
-	Text = Text .. "Final Drive: " .. math.Round(Ent.Gears.Final, 2) .. "\n"
-	Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
-	Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
+		Text = Text .. "Final Drive: " .. math.Round(Gears.Final, 2) .. "\n"
+		Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
+		Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
 
 		Ent:SetOverlayText(Text)
 	end
@@ -660,17 +662,16 @@ end
 
 function ENT:UpdateOverlay(Instant)
 	if Instant then
-		Overlay(self)
-		return
+		return Overlay(self)
 	end
 
-	if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-			if IsValid(self) then
-				Overlay(self)
-			end
-		end)
-	end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
+
+	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
+		if not IsValid(self) then return end
+
+		Overlay(self)
+	end)
 end
 
 -- prevent people from changing bodygroup

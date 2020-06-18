@@ -205,7 +205,6 @@ do -- Special Rotary Engines
 		Mass		 = 260,
 		Torque		 = 250,
 		FlywheelMass = 0.11,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 1200,
 			PeakMin	= 4500,
@@ -226,7 +225,6 @@ do -- Special I2 Engines
 		Mass		 = 60,
 		Torque		 = 116,
 		FlywheelMass = 0.085,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 750,
 			PeakMin	= 3125,
@@ -247,7 +245,6 @@ do -- Special I4 Engines
 		Mass		 = 78,
 		Torque		 = 68,
 		FlywheelMass = 0.031,
-		RequiresFuel = true,
 		Pitch		 = 0.75,
 		RPM = {
 			Idle	= 1200,
@@ -267,7 +264,6 @@ do -- Special I4 Engines
 		Mass		 = 150,
 		Torque		 = 176,
 		FlywheelMass = 0.06,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 950,
 			PeakMin	= 5200,
@@ -288,7 +284,6 @@ do -- Special V4 Engines
 		Mass		 = 92,
 		Torque		 = 124.8,
 		FlywheelMass = 0.04,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 900,
 			PeakMin	= 4600,
@@ -309,7 +304,6 @@ do -- Special I6 Engines
 		Mass		 = 180,
 		Torque		 = 224,
 		FlywheelMass = 0.1,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 1100,
 			PeakMin	= 5200,
@@ -330,7 +324,6 @@ do -- Special V6 Engines
 		Mass		 = 134,
 		Torque		 = 172,
 		FlywheelMass = 0.075,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 950,
 			PeakMin	= 4500,
@@ -351,7 +344,6 @@ do -- Special V8 Engines
 		Mass		 = 180,
 		Torque		 = 200,
 		FlywheelMass = 0.075,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 1000,
 			PeakMin	= 5500,
@@ -370,7 +362,6 @@ do -- Special V8 Engines
 		Mass		 = 400,
 		Torque		 = 340,
 		FlywheelMass = 0.15,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 1000,
 			PeakMin	= 5000,
@@ -391,7 +382,6 @@ do -- Special V10 Engines
 		Mass		 = 300,
 		Torque		 = 320,
 		FlywheelMass = 0.15,
-		RequiresFuel = true,
 		RPM = {
 			Idle	= 1100,
 			PeakMin	= 5750,
@@ -412,7 +402,6 @@ do -- Special V12 Engines
 		Mass		 = 175,
 		Torque		 = 248,
 		FlywheelMass = 0.1,
-		RequiresFuel = true,
 		Pitch		 = 0.85,
 		RPM = {
 			Idle	= 1200,
