@@ -367,6 +367,14 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 
+			if self.BulletData.CanFuze and self.SetFuze then
+				local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+
+				self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
+			else
+				self.Fuze = nil
+			end
+
 			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck()
@@ -488,14 +496,6 @@ do -- Metamethods --------------------------------
 					if IsValid(self) then
 						self:SetState("Loaded")
 						self.NextFire = nil
-
-						if self.BulletData.CanFuze and self.SetFuze then
-							local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
-
-							self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- Set fuze when done loading a round
-						else
-							self.Fuze = nil
-						end
 
 						if self.CurrentShot == 0 then
 							self.CurrentShot = self.MagSize
