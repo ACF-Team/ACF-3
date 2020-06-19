@@ -64,12 +64,12 @@ do -- ACF global vars
 
 	--how efficient various engine types are, higher is worse
 	ACF.Efficiency = {
-		GenericPetrol = 0.304, --kg per kw hr
-		GenericDiesel = 0.243, --up to 0.274
-		Turbine = 0.375, -- previously 0.231
-		Wankel = 0.335,
-		Radial = 0.4, -- 0.38 to 0.53
-		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
+		GenericPetrol = 8.4512, -- kg per kw hr | Roughly 125 liters per minute for the 23L V12
+		GenericDiesel = 6.7554,
+		Turbine = 10.425,
+		Wankel = 9.313,
+		Radial = 11.12, -- 0.38 to 0.53
+		Electric = 23.63 --percent efficiency converting chemical kw into mechanical kw
 	}
 
 	--how fast damage drops torque, lower loses more % torque
