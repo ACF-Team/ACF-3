@@ -395,14 +395,14 @@ e2function number entity:acfMaxTorqueWithFuel()
 	if RestrictInfo(self, this) then return 0 end
 	if not this.PeakTorque then return 0 end
 
-	return this.PeakTorque * ACF.TorqueBoost
+	return this.PeakTorque
 end
 
 e2function number entity:acfMaxPowerWithFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return GetMaxPower(this) * ACF.TorqueBoost
+	return GetMaxPower(this)
 end
 
 -- Returns the idle rpm of an ACF engine
@@ -729,14 +729,6 @@ e2function void entity:acfShiftPointScale(number Scale)
 	if not this.Auto then return end
 
 	this:TriggerInput("Shift Speed Scale", Scale)
-end
-
--- Returns 1 if the current engine requires fuel to run
-e2function number entity:acfFuelRequired()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	return this.RequiresFuel and 1 or 0
 end
 
 -- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks

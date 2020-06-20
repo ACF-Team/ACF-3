@@ -1127,7 +1127,7 @@ function ents_methods:acfMaxTorqueWithFuel ()
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
 	if not isEngine( this ) then return 0 end
-	return (this.PeakTorque or 0) * (ACF.TorqueBoost or 0)
+	return this.PeakTorque or 0
 end
 
 local function getMaxPower( ent )
@@ -1161,7 +1161,7 @@ function ents_methods:acfMaxPowerWithFuel ()
 
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
-	return (isEngine( this ) and getMaxPower( this ) or 0) * (ACF.TorqueBoost or 0)
+	return isEngine( this ) and getMaxPower( this ) or 0
 end
 
 --- Returns the idle rpm of an ACF engine
@@ -2184,19 +2184,6 @@ function ents_methods:acfIsFuel ()
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
 	return isFuel( this ) and not restrictInfo( this )
-end
-
---- Returns true if the current engine requires fuel to run
--- @server
-function ents_methods:acfFuelRequired ()
-	checktype( self, ents_metatable )
-	local this = unwrap( self )
-
-	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
-
-	if not isEngine( this ) then return false end
-	if restrictInfo( this ) then return false end
-	return ( this.RequiresFuel and true ) or false
 end
 
 --- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks

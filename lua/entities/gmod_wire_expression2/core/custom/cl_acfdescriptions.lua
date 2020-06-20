@@ -74,7 +74,6 @@ E2Desc["acfShiftPointScale(e:n)"] = "Sets the shift point scale for an ACF entit
 
 E2Desc["acfFuel(e:)"] = "Returns the remaining liters of fuel or kilowatt hours in an ACF fuel tank, or available to an engine."
 E2Desc["acfFuelLevel(e:)"] = "Returns the percent remaining fuel in an ACF fuel tank, or available to an engine."
-E2Desc["acfFuelRequired(e:)"] = "Returns 1 if an ACF entity requires fuel."
 E2Desc["acfRefuelDuty(e:)"] = "Sets an ACF fuel tank on refuel duty, causing it to supply other fuel tanks with fuel."
 E2Desc["acfFuelUse(e:)"] = "Returns the current fuel consumption of an ACF entity in liters per minute or kilowatts."
 E2Desc["acfPeakFuelUse(e:)"] = "Returns the peak fuel consumption of an ACF entity in liters per minute or kilowatts."

@@ -17,6 +17,18 @@ local TimerCreate = timer.Create
 local HookRun	  = hook.Run
 local EMPTY = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
+-- Replace with CFrame as soon as it's available
+local function UpdateTotalAmmo(Entity)
+	local Total = 0
+
+	for Crate in pairs(Entity.Crates) do
+		if Crate.Load and Crate.Ammo > 0 then
+			Total = Total + Crate.Ammo
+		end
+	end
+
+	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
+end
 
 do -- Spawn Func --------------------------------
 	function MakeACF_Gun(Player, Pos, Angle, Id)
@@ -47,12 +59,12 @@ do -- Spawn Func --------------------------------
 
 		Gun.Id           = Id -- MUST be stored on ent to be duped
 		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Status [STRING]", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 
 		if Caliber > ACF.MinFuzeCaliber then
-			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" } )
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" })
 		else
-			Gun.Inputs = WireLib.CreateInputs(Gun, {"Fire", "Unload", "Reload", "Fuze"})
+			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload" })
 		end
 
 		-- ACF Specific vars
@@ -105,6 +117,12 @@ do -- Spawn Func --------------------------------
 			end)
 		end
 
+		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
+			if not IsValid(Gun) then return end
+
+			UpdateTotalAmmo(Gun)
+		end)
+
 		WireLib.TriggerOutput(Gun, "Status", "Empty")
 		WireLib.TriggerOutput(Gun, "Entity", Gun)
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
@@ -140,6 +158,9 @@ do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
 		local ClassLink	  = ACF.GetClassLink
 		local ClassUnlink = ACF.GetClassUnlink
+
+		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
+		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
@@ -222,9 +243,11 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:GetUser(Input)
-			if not Input then return end
+			if not Input then return self.Owner end
 
-			return FindUser(self, Input)
+			local User = FindUser(self, Input)
+
+			return IsValid(User) and User or self.Owner
 		end
 
 		function ENT:TriggerInput(Input, Value)
@@ -235,12 +258,8 @@ do -- Metamethods --------------------------------
 			if Input == "Fire" then
 				self.Firing = Bool
 
-				if Bool then
-					self.User = self:GetUser(self.Inputs.Fire.Src) or self.Owner
-
-					if self:CanFire() then
-						self:Shoot()
-					end
+				if Bool and self:CanFire() then
+					self:Shoot()
 				end
 			elseif Input == "Fuze" then
 				self.SetFuze = Bool and math.abs(Value) or nil
@@ -348,7 +367,15 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 
-			self.BulletData.Owner  = self.User -- Must be updated on every shot
+			if self.BulletData.CanFuze and self.SetFuze then
+				local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+
+				self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
+			else
+				self.Fuze = nil
+			end
+
+			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck()
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
@@ -394,8 +421,9 @@ do -- Metamethods --------------------------------
 			if not ACF_RECOIL:GetBool() then return end
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
+			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
 
-			Shove(self, MassCenter, -self:GetForward(), self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37)
+			Shove(self, MassCenter, -self:GetForward(), Energy)
 		end
 	end -----------------------------------------
 
@@ -468,14 +496,6 @@ do -- Metamethods --------------------------------
 					if IsValid(self) then
 						self:SetState("Loaded")
 						self.NextFire = nil
-
-						if self.BulletData.CanFuze and self.SetFuze then
-							local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
-
-							self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- Set fuze when done loading a round
-						else
-							self.Fuze = nil
-						end
 
 						if self.CurrentShot == 0 then
 							self.CurrentShot = self.MagSize
@@ -571,26 +591,30 @@ do -- Metamethods --------------------------------
 
 	do -- Overlay -------------------------------
 		local function Overlay(Ent)
-			local Status
-			local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
-			local Firerate  = math.floor(60 / Ent.ReloadTime)
-			local CrateAmmo = 0
-
-			if Ent.DisableReason then
-				Status = "Disabled: " .. Ent.DisableReason
-			elseif not next(Ent.Crates) then
-				Status = "Not linked to an ammo crate!"
+			if Ent.Disabled then
+				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
-				Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
-			end
+				local Status
+				local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
+				local Firerate  = math.floor(60 / Ent.ReloadTime)
+				local CrateAmmo = 0
 
-			for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-				if Crate.Load then
-					CrateAmmo = CrateAmmo + Crate.Ammo
+				if Ent.DisableReason then
+					Status = "Disabled: " .. Ent.DisableReason
+				elseif not next(Ent.Crates) then
+					Status = "Not linked to an ammo crate!"
+				else
+					Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
 				end
-			end
 
-			Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
+					if Crate.Load then
+						CrateAmmo = CrateAmmo + Crate.Ammo
+					end
+				end
+
+				Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
@@ -616,6 +640,9 @@ do -- Metamethods --------------------------------
 			self:UpdateOverlay()
 
 			WireLib.TriggerOutput(self, "Status", State)
+			WireLib.TriggerOutput(self, "Ready", State == "Loaded" and 1 or 0)
+
+			UpdateTotalAmmo(self)
 		end
 
 		function ENT:Think()
@@ -667,6 +694,8 @@ do -- Metamethods --------------------------------
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end
+
+			timer.Remove("ACF Ammo Left " .. self:EntIndex())
 
 			WireLib.Remove(self)
 		end

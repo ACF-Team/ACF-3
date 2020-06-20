@@ -128,7 +128,6 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.IsTrans 			= EngineData.istrans -- driveshaft outputs to the side
 	Entity.FuelType 		= EngineData.fuel or "Petrol"
 	Entity.EngineType 		= EngineData.enginetype or "GenericPetrol"
-	Entity.RequiresFuel 	= EngineData.requiresfuel
 	Entity.TorqueScale 		= ACF.TorqueScale[Entity.EngineType]
 
 	--calculate boosted peak kw
@@ -144,7 +143,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	if Entity.EngineType == "Electric" then
 		Entity.FuelUse = ACF.ElecRate / (ACF.Efficiency[Entity.EngineType] * 60 * 60) --elecs use current power output, not max
 	else
-		Entity.FuelUse = ACF.TorqueBoost * ACF.FuelRate * ACF.Efficiency[Entity.EngineType] * Entity.peakkw / (60 * 60)
+		Entity.FuelUse = ACF.FuelRate * ACF.Efficiency[Entity.EngineType] * Entity.peakkw / (60 * 60)
 	end
 
 	local PhysObj = Entity:GetPhysicsObject()
@@ -221,57 +220,38 @@ local function SetActive(Entity, Value)
 	if Entity.Active == tobool(Value) then return end
 
 	if not Entity.Active then -- Was off, turn on
-		-- Check fuel requirement --
-		local ShouldActivate
+		Entity.Active = true
 
-		if not Entity.RequiresFuel then
-			ShouldActivate = true
-		else
-			for Tank in pairs(Entity.FuelTanks) do
-				if Tank.Active and Tank.Fuel > 0 then
-					ShouldActivate = true
-					break
-				end
-			end
+		Entity:CalcMassRatio()
+
+		Entity.LastThink = ACF.CurTime
+		Entity.Torque = Entity.PeakTorque
+		Entity.FlyRPM = Entity.IdleRPM * 1.5
+
+		local Pitch, Volume = GetPitchVolume(Entity)
+
+		if Entity.SoundPath ~= "" then
+			Entity.Sound = CreateSound(Entity, Entity.SoundPath)
+			Entity.Sound:PlayEx(Volume, Pitch)
 		end
-		----------------------------
 
-		if ShouldActivate then
-			Entity.Active = true
+		TimerSimple(engine.TickInterval(), function()
+			if not IsValid(Entity) then return end
+
+			Entity:CalcRPM()
+		end)
+
+		Entity:UpdateOverlay()
+		Entity:UpdateOutputs()
+
+		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
+			if not IsValid(Entity) then return end
+
+			CheckGearboxes(Entity)
+			CheckDistantFuelTanks(Entity)
 
 			Entity:CalcMassRatio()
-
-			Entity.LastThink = ACF.CurTime
-			Entity.Torque = Entity.PeakTorque
-			Entity.FlyRPM = Entity.IdleRPM * 1.5
-
-			local Pitch, Volume = GetPitchVolume(Entity)
-
-			if Entity.SoundPath ~= "" then
-				Entity.Sound = CreateSound(Entity, Entity.SoundPath)
-				Entity.Sound:PlayEx(Volume, Pitch)
-			end
-
-			TimerSimple(engine.TickInterval(), function()
-				if not IsValid(Entity) then return end
-
-				Entity:CalcRPM()
-			end)
-
-			Entity:UpdateOverlay()
-			Entity:UpdateOutputs()
-
-			TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
-				if IsValid(Entity) then
-					CheckGearboxes(Entity)
-					CheckDistantFuelTanks(Entity)
-
-					Entity:CalcMassRatio()
-				else
-					TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
-				end
-			end)
-		end
+		end)
 	else
 		Entity.Active = false
 		Entity.FlyRPM = 0
@@ -427,24 +407,27 @@ function ENT:UpdateOutputs()
 end
 
 local function Overlay(Ent)
-	local Boost = Ent.RequiresFuel and ACF.TorqueBoost or 1
-	local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
-	local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
-	local Text
-
-	if Ent.DisableReason then
-		Text = "Disabled: " .. Ent.DisableReason
+	if Ent.Disabled then
+		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 	else
-		Text = Ent.Active and "Active" or "Idle"
+		local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
+		local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
+		local Text
+
+		if Ent.DisableReason then
+			Text = "Disabled: " .. Ent.DisableReason
+		else
+			Text = Ent.Active and "Active" or "Idle"
+		end
+
+		Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
+			"Power: " .. Round(Ent.peakkw) .. " kW / " .. Round(Ent.peakkw * 1.34) .. " hp\n" ..
+			"Torque: " .. Round(Ent.PeakTorque) .. " Nm / " .. Round(Ent.PeakTorque * 0.73) .. " ft-lb\n" ..
+			"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
+			"Redline: " .. Ent.LimitRPM .. " RPM"
+
+		Ent:SetOverlayText(Text)
 	end
-
-	Text = Text .. "\n\n" .. Ent.Name .. "\n" ..
-		"Power: " .. Round(Ent.peakkw * Boost) .. " kW / " .. Round(Ent.peakkw * Boost * 1.34) .. " hp\n" ..
-		"Torque: " .. Round(Ent.PeakTorque * Boost) .. " Nm / " .. Round(Ent.PeakTorque * Boost * 0.73) .. " ft-lb\n" ..
-		"Powerband: " .. PowerbandMin .. " - " .. PowerbandMax .. " RPM\n" ..
-		"Redline: " .. Ent.LimitRPM .. " RPM"
-
-	Ent:SetOverlayText(Text)
 end
 
 function ENT:UpdateOverlay(Instant)
@@ -577,7 +560,6 @@ function ENT:CalcRPM()
 
 	local DeltaTime = ACF.CurTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
-	local Boost 	= 1
 
 	--calculate fuel usage
 	if IsValid(FuelTank) then
@@ -587,25 +569,20 @@ function ENT:CalcRPM()
 
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
-		Boost = ACF.TorqueBoost
-
 		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
 		FuelTank:UpdateMass()
 		FuelTank:UpdateOverlay()
 		FuelTank:UpdateOutputs()
-
-	elseif self.RequiresFuel then
-		SetActive(self, false) --shut off if no fuel and requires it
+	else
+		SetActive(self, false)
 
 		self.FuelUsage = 0
 
 		return 0
-	else
-		self.FuelUsage = 0
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	self.Torque = Boost * self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
+	self.Torque = self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
 
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
 	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
@@ -764,6 +741,8 @@ function ENT:OnRemove()
 	for Tank in pairs(self.FuelTanks) do
 		self:Unlink(Tank)
 	end
+
+	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end

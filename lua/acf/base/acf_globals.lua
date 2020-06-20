@@ -40,7 +40,6 @@ do -- ACF global vars
 	ACF.PScale 				= 1 --Gun Propellant power expotential
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
 	ACF.PDensity 			= 1.6 --Gun propellant density (Real powders go from 0.7 to 1.6, i"m using higher densities to simulate case bottlenecking)
-	ACF.TorqueBoost 		= 1.25 --torque multiplier from using fuel
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
 	ACF.ElecRate 			= 1 --multiplier for electrics
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
@@ -65,12 +64,12 @@ do -- ACF global vars
 
 	--how efficient various engine types are, higher is worse
 	ACF.Efficiency = {
-		GenericPetrol = 0.304, --kg per kw hr
-		GenericDiesel = 0.243, --up to 0.274
-		Turbine = 0.375, -- previously 0.231
-		Wankel = 0.335,
-		Radial = 0.4, -- 0.38 to 0.53
-		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
+		GenericPetrol = 8.4512, -- kg per kw hr | Roughly 125 liters per minute for the 23L V12
+		GenericDiesel = 6.7554,
+		Turbine = 10.425,
+		Wankel = 9.313,
+		Radial = 11.12, -- 0.38 to 0.53
+		Electric = 23.63 --percent efficiency converting chemical kw into mechanical kw
 	}
 
 	--how fast damage drops torque, lower loses more % torque
@@ -145,6 +144,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
 	CreateClientConVar("ACF_MaxRoundsDisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 64)
+	CreateClientConVar("acf_unparent_disabled_ents", 0, true, true, "If enabled, all entities disabled for Bad Parenting will be unparented.", 0, 1)
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
@@ -250,6 +250,8 @@ do -- ACF Notify -----------------------------------
 
 			if tobool(net.ReadBit()) then
 				Type = NOTIFY_GENERIC
+			else
+				surface.PlaySound("buttons/button10.wav")
 			end
 
 			GAMEMODE:AddNotify(net.ReadString(), Type, 7)

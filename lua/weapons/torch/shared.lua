@@ -22,172 +22,15 @@ SWEP.ViewModelFlip = false
 SWEP.ViewModelFOV = 55
 SWEP.ViewModel = "models/weapons/v_cuttingtorch.mdl"
 SWEP.WorldModel = "models/weapons/w_cuttingtorch.mdl"
-SWEP.PrintName = "ACF Cutting torch"
+SWEP.PrintName = "ACF Cutting Torch"
 SWEP.Slot = 0
 SWEP.SlotPos = 6
 SWEP.IconLetter = "G"
 SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = true
+SWEP.MaxDistance = 64 * 64 -- Squared distance
 
-function SWEP:Initialize()
-	if (SERVER) then
-		self:SetWeaponHoldType("pistol") --"357 hold type doesnt exist, it's the generic pistol one" Kaf
-	end
-
-	util.PrecacheSound("ambient/energy/NewSpark03.wav")
-	util.PrecacheSound("ambient/energy/NewSpark04.wav")
-	util.PrecacheSound("ambient/energy/NewSpark05.wav")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap1.wav")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap2.wav")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap3.wav")
-	util.PrecacheSound("weapons/physcannon/superphys_small_zap4.wav")
-	util.PrecacheSound("items/medshot4.wav")
-	self.LastSend = 0
-end
-
-function SWEP:Think()
-	if SERVER then
-		local userid = self.Owner
-		local trace = {}
-		trace.start = userid:GetShootPos()
-		trace.endpos = userid:GetShootPos() + (userid:GetAimVector() * 64)
-		trace.filter = userid --Not hitting the owner's feet when aiming down
-		local tr = util.TraceLine(trace)
-		local ent = tr.Entity
-
-		if ent:IsValid() and self.LastSend < CurTime() and not ent:IsPlayer() and not ent:IsNPC() then
-			self.LastSend = CurTime() + 1
-			local Valid = ACF_Check(ent)
-
-			if Valid then
-				self:SetNWFloat("HP", ent.ACF.Health)
-				self:SetNWFloat("Armour", ent.ACF.Armour)
-				self:SetNWFloat("MaxHP", ent.ACF.MaxHealth)
-				self:SetNWFloat("MaxArmour", ent.ACF.MaxArmour)
-			end
-		end
-
-		self:NextThink(CurTime() + 0.2)
-	end
-end
-
-function SWEP:PrimaryAttack()
-	self:SetNextPrimaryFire(CurTime() + 0.05)
-	local userid = self.Owner
-	local trace = {}
-	trace.start = userid:GetShootPos()
-	trace.endpos = userid:GetShootPos() + (userid:GetAimVector() * 64)
-	trace.filter = userid --Not hitting the owner's feet when aiming down
-	local tr = util.TraceLine(trace)
-	if (tr.HitWorld) then return end
-	if CLIENT then return end
-	local ent = tr.Entity
-
-	if ent:IsValid() then
-		if ent:IsPlayer() or ent:IsNPC() then
-			local PlayerHealth = ent:Health() --get the health
-			local PlayerMaxHealth = ent:GetMaxHealth() --and max health too
-			local PlayerArmour = ent:Armor()
-			local PlayerMaxArmour = 100
-			if (PlayerHealth >= PlayerMaxHealth) then return end --if the player is healthy or somehow dead, move right along.
-			PlayerHealth = PlayerHealth + 1 --otherwise add 1 HP
-			ent:SetHealth(PlayerHealth) --and boost the player's HP to that.
-			self:SetNWFloat("HP", PlayerHealth) --Output to the HUD bar
-			self:SetNWFloat("Armour", PlayerArmour)
-			self:SetNWFloat("MaxHP", PlayerMaxHealth)
-			self:SetNWFloat("MaxArmour", PlayerMaxArmour)
-			local effect = EffectData() --then make some pretty effects :D ("Fixed that up a bit so it looks like it's actually emanating from the healing player, well mostly" Kaf)
-			local AngPos = userid:GetAttachment(4)
-			effect:SetOrigin(AngPos.Pos + userid:GetAimVector() * 10)
-			effect:SetNormal(userid:GetAimVector())
-			effect:SetEntity(self)
-			util.Effect("thruster_ring", effect, true, true) --("The 2 booleans control clientside override, by default it doesn't display it since it'll lag a bit behind inputs in MP, same for sounds" Kaf)
-			ent:EmitSound("items/medshot4.wav", true, true) --and play a sound.
-		else
-			if CPPI and not ent:CPPICanTool(self.Owner, "torch") then return false end
-			local Valid = ACF_Check(ent)
-
-			if (Valid and ent.ACF.Health < ent.ACF.MaxHealth) then
-				ent.ACF.Health = math.min(ent.ACF.Health + (30 / ent.ACF.MaxArmour), ent.ACF.MaxHealth)
-				ent.ACF.Armour = ent.ACF.MaxArmour * (0.5 + ent.ACF.Health / ent.ACF.MaxHealth / 2)
-				ent:EmitSound("ambient/energy/NewSpark0" .. tostring(math.random(3, 5)) .. ".wav", true, true) --Welding noise here, gotte figure out how to do a looped sound.
-				TeslaSpark(tr.HitPos, 1)
-			end
-
-			self:SetNWFloat("HP", ent.ACF.Health)
-			self:SetNWFloat("Armour", ent.ACF.Armour)
-			self:SetNWFloat("MaxHP", ent.ACF.MaxHealth)
-			self:SetNWFloat("MaxArmour", ent.ACF.MaxArmour)
-		end
-	else
-		self:SetNWFloat("HP", 0)
-		self:SetNWFloat("Armour", 0)
-		self:SetNWFloat("MaxHP", 0)
-		self:SetNWFloat("MaxArmour", 0)
-	end
-end
-
-local Energy = { Kinetic = true, Momentum = 0, Penetration = true }
-
-function SWEP:SecondaryAttack()
-	self:SetNextPrimaryFire(CurTime() + 0.05)
-
-	if CLIENT then return end
-
-	local Trace = self.Owner:GetEyeTrace()
-
-	if Trace.HitWorld then return end
-
-	local ent = Trace.Entity
-
-	if ACF_Check(ent) then
-		local HitRes = {}
-
-		if ent:IsPlayer() then
-			Energy.Penetration = 0.05
-			Energy.Kinetic = 0.05
-
-			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF_Damage(ent, Energy, 2, 0, self.Owner, 0, self, "Torch")
-		else
-			if CPPI and not ent:CPPICanTool(self.Owner, "torch") then return false end
-
-			Energy.Penetration = 5
-			Energy.Kinetic = 5
-
-			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF_Damage(ent, Energy, 2, 0, self.Owner, 0, self, "Torch")
-		end
-
-		self:SetNWFloat("HP", ent.ACF.Health)
-		self:SetNWFloat("Armour", ent.ACF.Armour)
-		self:SetNWFloat("MaxHP", ent.ACF.MaxHealth)
-		self:SetNWFloat("MaxArmour", ent.ACF.MaxArmour)
-
-		if HitRes.Kill then
-			ACF_APKill(ent, Trace.Normal, 1)
-		else
-			local effectdata = EffectData()
-			effectdata:SetMagnitude(1)
-			effectdata:SetRadius(1)
-			effectdata:SetScale(1)
-			effectdata:SetStart(Trace.HitPos)
-			effectdata:SetOrigin(Trace.HitPos)
-			util.Effect("Sparks", effectdata, true, true)
-			ent:EmitSound("weapons/physcannon/superphys_small_zap" .. math.random(1, 4) .. ".wav") --old annoyinly loud sounds
-		end
-	else
-		self:SetNWFloat("HP", 0)
-		self:SetNWFloat("Armour", 0)
-		self:SetNWFloat("MaxHP", 0)
-		self:SetNWFloat("MaxArmour", 0)
-	end
-end
-
-function SWEP:Reload()
-end
-
-function TeslaSpark(pos, magnitude)
+local function TeslaSpark(pos, magnitude)
 	zap = ents.Create("point_tesla")
 	zap:SetKeyValue("targetname", "teslab")
 	zap:SetKeyValue("m_SoundName", "null")
@@ -206,4 +49,161 @@ function TeslaSpark(pos, magnitude)
 	zap:Spawn()
 	zap:Fire("DoSpark", "", 0)
 	zap:Fire("kill", "", 0.1)
+end
+
+function SWEP:Initialize()
+	if SERVER then
+		self:SetWeaponHoldType("pistol") --"357 hold type doesnt exist, it's the generic pistol one" Kaf
+		self.LastDistance = 0
+		self.LastTrace = {}
+	end
+
+	util.PrecacheSound("ambient/energy/NewSpark03.wav")
+	util.PrecacheSound("ambient/energy/NewSpark04.wav")
+	util.PrecacheSound("ambient/energy/NewSpark05.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap1.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap2.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap3.wav")
+	util.PrecacheSound("weapons/physcannon/superphys_small_zap4.wav")
+	util.PrecacheSound("items/medshot4.wav")
+end
+
+function SWEP:Think()
+	if CLIENT then return end
+
+	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
+	local Trace = self.Owner:GetEyeTrace()
+	local Entity = Trace.Entity
+
+	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
+	self.LastTrace = Trace
+
+	if ACF_Check(Entity) and self.LastDistance <= self.MaxDistance then
+		if Entity:IsPlayer() or Entity:IsNPC() then
+			Health = Entity:Health()
+			MaxHealth = Entity:GetMaxHealth()
+
+			if isfunction(Entity.Armor) then
+				Armor = Entity:Armor()
+				MaxArmor = 100
+			end
+		else
+			Health = Entity.ACF.Health
+			MaxHealth = Entity.ACF.MaxHealth
+			Armor = Entity.ACF.Armour
+			MaxArmor = Entity.ACF.MaxArmour
+		end
+	end
+
+	if Entity ~= self.LastEntity or Health ~= self.LastHealth or Armor ~= self.LastArmor then
+		self.LastEntity = Entity
+		self.LastHealth = Health
+		self.LastArmor = Armor
+
+		self:SetNWFloat("HP", Health)
+		self:SetNWFloat("MaxHP", MaxHealth)
+		self:SetNWFloat("Armour", Armor)
+		self:SetNWFloat("MaxArmour", MaxArmor)
+	end
+
+	self:NextThink(ACF.CurTime + 0.05)
+end
+
+function SWEP:PrimaryAttack()
+	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+
+	if CLIENT then return end
+
+	if self.LastDistance > self.MaxDistance then return end
+
+	local Entity = self.LastEntity
+	local Trace = self.LastTrace
+	local Owner = self.Owner
+
+	if ACF_Check(Entity) then
+		if Entity:IsPlayer() or Entity:IsNPC() then
+			local Health = Entity:Health()
+			local MaxHealth = Entity:GetMaxHealth()
+
+			if Health <= 0 then return end
+			if Health >= MaxHealth then return end
+
+			Health = math.min(Health + 1, MaxHealth)
+
+			Entity:SetHealth(Health)
+
+			local AngPos = Owner:GetAttachment(4)
+			local Effect = EffectData()
+				Effect:SetOrigin(AngPos.Pos + Trace.Normal * 10)
+				Effect:SetNormal(Trace.Normal)
+				Effect:SetEntity(self)
+			util.Effect("thruster_ring", Effect, true, true)
+
+			Entity:EmitSound("items/medshot4.wav", true, true)
+		else
+			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
+
+			local Health = Entity.ACF.Health
+			local MaxHealth = Entity.ACF.MaxHealth
+
+			if Health >= MaxHealth then return end
+
+			local Armor = Entity.ACF.Armour
+			local MaxArmor = Entity.ACF.MaxArmour
+
+			Health = math.min(Health + (30 / MaxArmor), MaxHealth)
+			Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
+
+			Entity.ACF.Health = Health
+			Entity.ACF.Armour = Armor
+
+			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", true, true)
+			TeslaSpark(Trace.HitPos, 1)
+		end
+	end
+end
+
+local Energy = { Kinetic = 5, Momentum = 0, Penetration = 5 }
+
+function SWEP:SecondaryAttack()
+	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+
+	if CLIENT then return end
+
+	if self.LastDistance > self.MaxDistance then return end
+
+	local Entity = self.LastEntity
+	local Trace = self.LastTrace
+	local Owner = self.Owner
+
+	if ACF_Check(Entity) then
+		local HitRes = {}
+
+		if Entity:IsPlayer() or Entity:IsNPC() then
+			--We can use the damage function instead of direct access here since no numbers are negative.
+			HitRes = ACF_Damage(Entity, Energy, 2, 0, Owner, 0, self, "Torch")
+		else
+			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
+
+			--We can use the damage function instead of direct access here since no numbers are negative.
+			HitRes = ACF_Damage(Entity, Energy, 2, 0, Owner, 0, self, "Torch")
+		end
+
+		if HitRes.Kill then
+			ACF_APKill(Entity, Trace.Normal, 1)
+		else
+			local Effect = EffectData()
+				Effect:SetMagnitude(1)
+				Effect:SetRadius(1)
+				Effect:SetScale(1)
+				Effect:SetStart(Trace.HitPos)
+				Effect:SetOrigin(Trace.HitPos)
+			util.Effect("Sparks", Effect, true, true)
+
+			Entity:EmitSound("weapons/physcannon/superphys_small_zap" .. math.random(1, 4) .. ".wav")
+		end
+	end
+end
+
+function SWEP:Reload()
 end

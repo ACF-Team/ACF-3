@@ -60,18 +60,21 @@ local function CalcDamage(Entity, Energy, FrArea, Angle)
 	return HitRes
 end
 
-local function Shove(Target, Pos, Vec, KE )
+local function Shove(Target, Pos, Vec, KE)
 	if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
 
-	local Phys = ACF_GetAncestor(Target):GetPhysicsObject()
+	local Ancestor = ACF_GetAncestor(Target)
+	local Phys = Ancestor:GetPhysicsObject()
 
 	if IsValid(Phys) then
-		if not Target.acflastupdatemass or Target.acflastupdatemass + 10 < CurTime() then
-			ACF_CalcMassRatio(Target)
+		if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.CurTime then
+			ACF_CalcMassRatio(Ancestor)
 		end
 
-		local physratio = Target.acfphystotal / Target.acftotal
-		Phys:ApplyForceOffset( Vec:GetNormalized() * KE * physratio, Pos )
+		local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
+		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
+
+		Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
 	end
 end
 
@@ -236,120 +239,6 @@ do
 
 				Power = math.max(Power - PowerSpent, 0)
 			end
-		end
-
-		function ACF_ScaledExplosion( ent ) -- Converts what would be multiple simultaneous cache detonations into one large explosion
-			local Inflictor = IsValid(ent.Inflictor) and ent.Inflictor or nil
-			local HEWeight
-
-			if ent:GetClass() == "acf_fueltank" then
-				HEWeight = (math.max(ent.Fuel, ent.Capacity * 0.0025) / ACF.FuelDensity[ent.FuelType]) * 0.1
-			else
-				local HE, Propel
-
-				if ent.RoundType == "Refill" then
-					HE = 0.001
-					Propel = 0.001
-				else
-					HE = ent.BulletData.FillerMass or 0
-					Propel = ent.BulletData.PropMass or 0
-				end
-
-				HEWeight = (HE + Propel * (ACF.PBase / ACF.HEPower)) * ent.Ammo
-			end
-
-			local Radius = HEWeight ^ 0.33 * 8 * 39.37
-			local Pos = ent:LocalToWorld(ent:OBBCenter())
-			local ExplodePos = { Pos }
-			local LastHE = 0
-
-			local Search = true
-			local Filter = { ent }
-			while Search do
-				for _, Found in pairs(ents.FindInSphere(Pos, Radius)) do
-					if Found.IsExplosive and not Found.Exploding then
-						local Hitat = Found:NearestPoint(Pos)
-
-						local Occlusion = {
-							start = Pos,
-							endpos = Hitat,
-							filter = Filter
-						}
-
-						local Occ = util.TraceLine(Occlusion)
-
-						if Occ.Fraction == 0 then
-							table.insert(Filter, Occ.Entity)
-
-							Occlusion = {
-								start = Pos,
-								endpos = Hitat,
-								filter = Filter
-							}
-
-							Occ = util.TraceLine(Occlusion)
-						end
-
-						if Occ.Hit and Occ.Entity:EntIndex() == Found.Entity:EntIndex() then
-							local FoundHEWeight
-							if Found:GetClass() == "acf_fueltank" then
-								FoundHEWeight = (math.max(Found.Fuel, Found.Capacity * 0.0025) / ACF.FuelDensity[Found.FuelType]) * 0.1
-							else
-								local HE, Propel
-
-								if Found.RoundType == "Refill" then
-									HE = 0.001
-									Propel = 0.001
-								else
-									HE = Found.BulletData.FillerMass or 0
-									Propel = Found.BulletData.PropMass or 0
-								end
-
-								FoundHEWeight = (HE + Propel * (ACF.PBase / ACF.HEPower)) * Found.Ammo
-							end
-
-							table.insert(ExplodePos, Found:LocalToWorld(Found:OBBCenter()))
-							HEWeight = HEWeight + FoundHEWeight
-							Found.IsExplosive = false
-							Found.DamageAction = false
-							Found.KillAction = false
-							Found.Exploding = true
-							table.insert(Filter, Found)
-							Found:Remove()
-						end
-					end
-				end
-
-				if HEWeight > LastHE then
-					Search = true
-					LastHE = HEWeight
-					Radius = HEWeight ^ 0.33 * 8 * 39.37
-				else
-					Search = false
-				end
-			end
-
-			local totalpos = Vector()
-			local countpos = 0
-
-			for _, cratepos in pairs(ExplodePos) do
-				totalpos = totalpos + cratepos
-				countpos = countpos + 1
-			end
-
-			local AvgPos = totalpos / countpos
-
-			ACF_HE(AvgPos, HEWeight, HEWeight * 0.5, Inflictor, { ent }, ent)
-
-			ent:Remove()
-
-			local Effect = EffectData()
-			Effect:SetOrigin(AvgPos)
-			Effect:SetNormal(Vector(0, 0, -1))
-			Effect:SetScale(math.max(Radius, 1))
-			Effect:SetRadius(0)
-
-			util.Effect("ACF_Explosion", Effect)
 		end
 	end
 
