@@ -5,6 +5,7 @@ include("shared.lua")
 
 util.AddNetworkString("ACF_RefillEffect")
 util.AddNetworkString("ACF_StopRefillEffect")
+util.AddNetworkString("ACF_UpdateAmmoBox")
 
 -- Local Vars -----------------------------------
 local CheckLegal   = ACF_CheckLegal
@@ -37,6 +38,13 @@ local function StopRefillEffect(Entity, Target)
 	net.Start("ACF_StopRefillEffect")
 		net.WriteEntity(Entity)
 		net.WriteEntity(Target)
+	net.Broadcast()
+end
+
+local function UpdateClientAmmobox(Entity, Data)
+	net.Start("ACF_UpdateAmmoBox")
+		net.WriteEntity(Entity)
+		net.WriteTable(Data)
 	net.Broadcast()
 end
 
@@ -86,6 +94,200 @@ local function RefillCrates(Entity)
 	end
 end
 
+-- Split this off from the original function,
+-- All this does is compare a distance against a table of distances with string indexes for the shortest fitting size
+-- It returns the string index of the dimension, or nil if it fails to fit
+local function ShortestSize(Length,DimTable)
+	local ReturnDimension = nil
+
+	for K,V in pairs(DimTable) do
+		if ReturnDimension == nil then
+			if Length <= V then ReturnDimension = K end -- It fits, it sits
+		else
+			if Length <= V and Length < DimTable[ReturnDimension] then ReturnDimension = K end -- It fits, it sits in an even small spot
+		end
+	end
+
+	return ReturnDimension
+end
+
+-- BoxSize is just OBBMaxs-OBBMins
+-- Removed caliber and round length inputs, uses GunData and BulletData now
+-- AddSpacing is just extra spacing (directly reduces storage, but can later make it harder to detonate)
+-- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
+-- For missiles/bombs, they MUST have ActualLength and ActualWidth (of the model in cm, and in the round table) to use this, otherwise it will fall back to the original calculations
+-- Made by LiddulBOFH :)
+local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
+	local RoundCaliber = GunData.caliber or 0
+	local TotalRoundLength = (BulletData.PropLength or 0) + (BulletData.ProjLength or 0) + (BulletData.Tracer or 0)
+	local ExtraData = {}
+
+	-- gives a nice number of rounds per refill box
+	if BulletData.Type == "Refill" then return math.ceil((BoxSize.x / 2) * (BoxSize.y / 2) * (BoxSize.z / 2)) end
+
+	-- Filters for missiles, and sets up data
+	if (GunData.round.ActualWidth or nil) ~= nil then
+		RoundCaliber = GunData.round.ActualWidth
+		TotalRoundLength = GunData.round.ActualLength
+		ExtraData.isRacked = true
+	elseif GunData.ent == "acf_rack" then return -1 end -- Fallback to old capacity
+	-- Instantly invalidate garbage rounds
+	if RoundCaliber == 0 then return 0 end
+	if TotalRoundLength == 0 then return 0 end
+
+	local Rounds = 0
+	-- Converting everything to source units
+	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54 -- cm to u
+	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54 -- cm to u
+	local Spacing = math.max(math.abs(AddSpacing) + 0.125,0.125)
+	ExtraData.Spacing = Spacing
+
+	local MagSize = 0
+	local MagBoxSize = 0
+	local Class = GunData.gunclass
+
+	-- This block alters the stored round size, making it more like a container of the rounds
+	-- This cuts a little bit of ammo storage out
+	-- Anything that may potentially be belt-fed (RACs, ACs despite having the weirdass revolver design) is exempt
+	-- Anything with a sensible magazine is forced to use this
+	-- Autoloading cannons are exempt because of rounds being inserted into the stored drums
+
+	-- a much needed enmasse comparing function
+	-- through some light digging, I couldn't find one, so I made one
+	local Force = switch({
+		["SAC"] = true,
+		["SL"] = true,
+		["HMG"] = true,
+		["GL"] = true,
+		["default"] = false
+	},
+	Class)
+
+	local ForceSkip = switch({
+		["RAC"] = true,
+		["AC"] = true,
+		["AL"] = true,
+		["default"] = false
+	},
+	Class)
+
+	if ((GunData.magsize or 0) > 0) and ((RoundCaliber <= 2) or (Force and (not (ExtraData.isRacked or false)))) and (not ForceSkip) then
+		MagSize = GunData.magsize
+		MagBoxSize = ConvCaliber * math.sqrt(MagSize)
+		-- Makes certain automatic ammo stored by boxes
+		ConvCaliber = MagBoxSize
+		ExtraData.MagSize = MagSize
+		ExtraData.isBoxed = true
+	end
+
+	if AddArmor > 0 then
+		local ConvArmor = (AddArmor / 0.75) / 25.4
+		-- *2 because armor on both sides
+		BoxSize = {
+			x = math.max(BoxSize.x-(ConvArmor * 2),0),
+			y = math.max(BoxSize.y-(ConvArmor * 2),0),
+			z = math.max(BoxSize.z-(ConvArmor * 2),0)
+		}
+	end
+
+	local D = {["x"] = BoxSize.x, ["y"] = BoxSize.y, ["z"] = BoxSize.z}
+	local ShortestFit = ShortestSize(ConvLength,D)
+
+	if ShortestFit ~= nil then -- From here we know the round can sorta fit in the box
+		local X = 0
+		local Y = 0
+		-- Creating the 'plane' to do the basic bitch math with
+		if ShortestFit == "x" then
+			X = D["y"]
+			Y = D["z"]
+			ExtraData.LocalAng = Angle(0,0,0)
+		elseif ShortestFit == "y" then
+			X = D["x"]
+			Y = D["z"]
+			ExtraData.LocalAng = Angle(0,90,0)
+		else -- z
+			X = D["x"]
+			Y = D["y"]
+			ExtraData.LocalAng = Angle(90,90,0)
+		end
+
+		local ModifiedRoundSize = ConvCaliber + Spacing
+		local ModifiedRoundLength = ConvLength + Spacing
+		-- That basic bitch math
+		ExtraData.RoundSize = Vector(ConvLength,ConvCaliber,ConvCaliber)
+		local RoundsX = math.floor(D[ShortestFit] / ModifiedRoundLength)
+		local RoundsY = math.floor(X / ModifiedRoundSize)
+		local RoundsZ = math.floor(Y / ModifiedRoundSize)
+		ExtraData.FitPerAxis = Vector(RoundsX,RoundsY,RoundsZ)
+		if MagSize > 0 then
+			Rounds = RoundsX * RoundsY * RoundsZ * MagSize
+		else
+			Rounds = RoundsX * RoundsY * RoundsZ
+		end
+	elseif ShortestFit == nil and ((ConvCaliber >= ((10 / 0.75) / 2.54)) or ((ExtraData.isRacked or false) == true)) and not (ExtraData.isBoxed or false) then
+		-- If ShortestFit is nil, that means the round isn't able to fit at all in the box
+		-- If its a racked munition that doesn't fit, it will go ahead and try to fit 2-pice
+		-- Otherwise, checks if the caliber is over 100mm before trying 2-piece ammunition
+		-- It will flatout not do anything if its boxed and not fitting
+
+		-- Not exactly accurate, but cuts the round in two
+		ConvLength = ConvLength / 2
+		-- Then makes a shape made of the now two pieces of ammunition
+		local RoundWidth = ConvCaliber * 2 -- two pieces wide
+		local RoundHeight = ConvCaliber -- one piece tall
+
+		ShortestFit = ShortestSize(ConvLength, D)
+
+		-- Retrying the length fit
+		if ShortestFit ~= nil then
+				local X = 0
+				local Y = 0
+				-- Creating the 'plane' to do the basic bitch math with
+				if ShortestFit == "x" then
+					X = D["y"]
+					Y = D["z"]
+					ExtraData.LocalAng = Angle(0,0,0)
+				elseif ShortestFit == "y" then
+					X = D["x"]
+					Y = D["z"]
+					ExtraData.LocalAng = Angle(0,90,0)
+				else -- z
+					X = D["x"]
+					Y = D["y"]
+					ExtraData.LocalAng = Angle(90,90,0)
+				end
+
+				-- Now we have to check which side will fit the new width of the round, in the shortest space possible
+				local D2 = {["x"] = X, ["y"] = Y}
+				ShortestWidth = ShortestSize(RoundWidth, D2)
+
+				local FreeSpace = 0
+				if ShortestWidth ~= nil then
+				if ShortestWidth == "x" then
+					FreeSpace = D2["y"]
+					ExtraData.LocalAng = ExtraData.LocalAng + Angle(0,0,0)
+				else -- y
+					FreeSpace = D2["x"]
+					ExtraData.LocalAng = ExtraData.LocalAng + Angle(0,0,90)
+				end
+
+				local ModifiedRoundLength = ConvLength + Spacing
+				ExtraData.RoundSize = Vector(ConvLength,RoundWidth,RoundHeight)
+				local RoundsX = math.floor(D[ShortestFit] / ModifiedRoundLength)
+				local RoundsY = math.floor(D2[ShortestWidth] / (RoundWidth + Spacing))
+				local RoundsZ = math.floor(FreeSpace / (RoundHeight + Spacing))
+				ExtraData.FitPerAxis = Vector(RoundsX,RoundsY,RoundsZ)
+				Rounds = RoundsX * RoundsY * RoundsZ
+			end
+		end
+		-- If it still doesn't fit the box, then the box is just too small
+
+		ExtraData.isTwoPiece = true
+	end
+
+	return Rounds,ExtraData
+end
+
 local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
 	local GunData = ACF.Weapons.Guns[Data1]
 
@@ -116,8 +318,8 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
 	Entity.RoundId = Data1 --Weapon this round loads into, ie 140mmC, 105mmH ...
 	Entity.RoundType = RoundData and Data2 or "AP" --Type of round, IE AP, HE, HEAT ...
-	Entity.RoundPropellant = Data3 --Lenght of propellant
-	Entity.RoundProjectile = Data4 --Lenght of the projectile
+	Entity.RoundPropellant = Data3 --Length of propellant
+	Entity.RoundProjectile = Data4 --Length of the projectile
 	Entity.RoundData5 = Data5 or 0
 	Entity.RoundData6 = Data6 or 0
 	Entity.RoundData7 = Data7 or 0
@@ -168,16 +370,46 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 	local Efficiency = 0.1576 * ACF.AmmoMod
 	local Volume = math.floor(Entity:GetPhysicsObject():GetVolume())
-	local CapMul = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-	local MassMod = Entity.BulletData.MassMod or 1
+	--local MassMod = Entity.BulletData.MassMod or 1
 
 	Entity.Volume = Volume * Efficiency
-	Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
-	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass * MassMod + Entity.BulletData.PropMass) * Entity.Capacity * 2) -- why *2 ?
-	Entity.Caliber = GunData.caliber
-	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1 --*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
-	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
+	--Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
+	-- CalcAmmo function is just above
+	local BoundingBox = Entity:OBBMaxs() - Entity:OBBMins()
 
+	local Rounds,ExtraData = CalcAmmo(BoundingBox, GunData, Entity.BulletData, 0, 0)
+	if Rounds ~= -1 then
+		Entity.Capacity = Rounds
+	else
+		print("Fallback (Rackable munition missing ActualLength/ActualWidth)")
+		local CapMul = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
+		Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
+	end
+
+	--*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
+	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1
+
+	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass + Entity.BulletData.PropMass) * Entity.Capacity)
+	Entity.Caliber = GunData.caliber
+	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
+	if ExtraData ~= nil then
+		local MGS = 0
+		if ((GunData.magsize or 0) > 0) and (ExtraData.isBoxed or false) then MGS = (GunData.magsize or 0) end
+		ExtraData.MGS = MGS
+		ExtraData.IsRound = not ((ExtraData.isBoxed or false) or (ExtraData.isTwoPiece or false) or (ExtraData.isRacked or false))
+		Entity.ExtraData = ExtraData
+
+		-- for future use in reloading
+		--if (ExtraData.isBoxed or false) then Entity.isBoxed = true end -- Ammunition is boxed
+		--if (ExtraData.isTwoPiece or false) then Entity.isTwoPiece = true end -- Ammunition is broken down to two pieces
+
+		local NWTable = {}
+		table.Merge(NWTable,ExtraData)
+		NWTable.Capacity = Entity.Capacity
+		timer.Simple(0.1,function()
+			UpdateClientAmmobox(Entity,NWTable)
+		end)
+	end
 	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
@@ -231,8 +463,9 @@ do -- Spawn Func --------------------------------
 
 		-- Crates should be ready to load by default
 		Crate:TriggerInput("Load", 1)
+		Crate:SetNWInt("Ammo",Crate.Ammo)
 
-		ActiveCrates[Crate] = true
+		ACF.AmmoCrates[Crate] = true
 
 		local Mass = Crate.EmptyMass + Crate.AmmoMassMax
 		local Phys = Crate:GetPhysicsObject()
@@ -323,7 +556,7 @@ do -- Metamethods -------------------------------
 				end
 
 				Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
-			end
+			  Ent:SetNWInt("Ammo",Ent.Ammo)
 		end
 
 		function ENT:UpdateOverlay(Instant)
@@ -381,7 +614,7 @@ do -- Metamethods -------------------------------
 
 			TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 5, 1, function()
 				if IsValid(self) then
-					self.ACF.LegalMass = math.floor(self.EmptyMass + self.AmmoMassMax * (self.Ammo / math.max(self.Capacity, 1)))
+					self.ACF.LegalMass = math.floor(self.EmptyMass + (self.AmmoMassMax * (self.Ammo / math.max(self.Capacity, 0))))
 
 					local Phys = self:GetPhysicsObject()
 
@@ -390,6 +623,10 @@ do -- Metamethods -------------------------------
 					end
 				end
 			end)
+		end
+
+		function UpdateHitBox(ent)
+			print(ent)
 		end
 	end
 
@@ -432,7 +669,7 @@ do -- Metamethods -------------------------------
 			end
 
 			local Armour = EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-			local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone 
+			local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone
 			local Percent = 1
 
 			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -449,9 +686,9 @@ do -- Metamethods -------------------------------
 			self.ACF.Type = "Prop"
 		end
 
-		function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
+		function ENT:ACF_OnDamage(Entity, Energy, FrArea, Ang, Inflictor, _, Type)
 			local Mul = (Type == "HEAT" and ACF.HEATMulAmmo) or 1 --Heat penetrators deal bonus damage to ammo
-			local HitRes = ACF.PropDamage(Entity, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
+			local HitRes = ACF.PropDamage(Entity, Energy, FrArea * Mul, Ang, Inflictor) --Calling the standard damage prop function
 
 			if self.Exploding or not self.IsExplosive then return HitRes end
 
@@ -496,7 +733,7 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:Update(ArgsTable)
-			-- That table is the player data, as sorted in the ACFCvars above, with player who shot, 
+			-- That table is the player data, as sorted in the ACFCvars above, with player who shot,
 			-- and pos and angle of the tool trace inserted at the start
 			local Message = "Ammo crate updated successfully!"
 
