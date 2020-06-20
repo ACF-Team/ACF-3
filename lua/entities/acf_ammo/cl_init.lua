@@ -1,47 +1,6 @@
 include("shared.lua")
 local RoundsDisplayCVar = GetConVar("ACF_MaxRoundsDisplay")
 
-local function Bezier(a, b, c, d, t)
-	local ab, bc, cd, abbc, bccd
-	ab = LerpVector(t, a, b)
-	bc = LerpVector(t, b, c)
-	cd = LerpVector(t, c, d)
-	abbc = LerpVector(t, ab, bc)
-	bccd = LerpVector(t, bc, cd)
-	dest = LerpVector(t, abbc, bccd)
-
-	return dest
-end
-
-local function BezPoint(perc, Table)
-	return Bezier(Table[1], Table[2], Table[3], Table[4], perc)
-end
-
-local function DrawRefillAmmo(Entity)
-	for Crate, Data in pairs(Entity.Crates) do
-		local St, En = Entity:LocalToWorld(Entity:OBBCenter()), Crate:LocalToWorld(Crate:OBBCenter())
-		local Distance = (En - St):Length()
-		local Amount = math.Clamp(Distance / 50, 2, 100)
-		local Time = CurTime() - Data.Init
-		local En2, St2 = En + Vector(0, 0, 100), St + ((En - St):GetNormalized() * 10)
-		local vectab = {St, St2, En2, En}
-		local center = (St + En) / 2
-
-		for I = 1, Amount do
-			local point = BezPoint((I + Time) % Amount / Amount, vectab)
-			local ang = (point - center):Angle()
-
-			local MdlTbl = {
-				model = Data.Model,
-				pos = point,
-				angle = ang
-			}
-
-			render.Model(MdlTbl)
-		end
-	end
-end
-
 local function UpdateBulkDisplay(ent)
 	local MaxDisplayRounds = RoundsDisplayCVar:GetInt()
 	local FinalAmmo = 0
@@ -277,6 +236,8 @@ do -- Resupply effect
 		Refills[Refill] = nil
 		Refill.Crates[Target] = nil
 		Target.Refills[Refill] = nil
+
+		Target:RemoveCallOnRemove("ACF Refill Effect " .. Refill:EntIndex())
 	end)
 
 	hook.Add("PostDrawOpaqueRenderables", "ACF Draw Refill", function()
@@ -290,6 +251,5 @@ do -- Resupply effect
 
 			Model:Remove()
 		end
-
-    Target:RemoveCallOnRemove("ACF Refill Effect " .. Refill:EntIndex())
-end)
+	end)
+end
