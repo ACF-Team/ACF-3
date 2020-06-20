@@ -556,7 +556,8 @@ do -- Metamethods -------------------------------
 				end
 
 				Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
-			  Ent:SetNWInt("Ammo",Ent.Ammo)
+				Ent:SetNWInt("Ammo", Ent.Ammo)
+			end
 		end
 
 		function ENT:UpdateOverlay(Instant)
@@ -623,10 +624,6 @@ do -- Metamethods -------------------------------
 					end
 				end
 			end)
-		end
-
-		function UpdateHitBox(ent)
-			print(ent)
 		end
 	end
 
@@ -773,7 +770,6 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:Detonate()
-			debug.Trace()
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex()) -- Prevent multiple explosions
 			self.Damaged = nil -- Prevent multiple explosions
 
