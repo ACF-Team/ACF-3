@@ -17,7 +17,10 @@ do -- ACF global vars
 	ACF.KinFudgeFactor 		= 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
 	ACF.KEtoRHA 			= 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
 	ACF.GroundtoRHA 		= 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
+	ACF.CrateArmor			= 5 -- How many millimeters of armor ammo crates have
+	ACF.AmmoPadding         = 2 -- Millimeters of wasted space between rounds
 	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
+	ACF.AmmoCaseScale		= 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
 	ACF.ArmorMod 			= 1
 	ACF.SlopeEffectFactor 	= 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
 	ACF.GunfireEnabled 		= true
@@ -39,7 +42,7 @@ do -- ACF global vars
 	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
 	ACF.PScale 				= 1 --Gun Propellant power expotential
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
-	ACF.PDensity 			= 1.6 --Gun propellant density (Real powders go from 0.7 to 1.6, i"m using higher densities to simulate case bottlenecking)
+	ACF.PDensity 			= 1.25 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
 	ACF.ElecRate 			= 1 --multiplier for electrics
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world

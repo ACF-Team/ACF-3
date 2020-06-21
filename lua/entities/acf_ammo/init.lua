@@ -118,7 +118,7 @@ end
 -- For missiles/bombs, they MUST have ActualLength and ActualWidth (of the model in cm, and in the round table) to use this, otherwise it will fall back to the original calculations
 -- Made by LiddulBOFH :)
 local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
-	local RoundCaliber = GunData.caliber or 0
+	local RoundCaliber = GunData.caliber * ACF.AmmoCaseScale or 0
 	local TotalRoundLength = (BulletData.PropLength or 0) + (BulletData.ProjLength or 0) + (BulletData.Tracer or 0)
 	local ExtraData = {}
 
