@@ -180,13 +180,12 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 		ExtraData.isBoxed = true
 	end
 
-	if AddArmor > 0 then
-		local ConvArmor = (AddArmor / 0.75) / 25.4
-		-- *2 because armor on both sides
+	if AddArmor then
+		local ConvArmor = AddArmor * 0.039 * 2 -- Converting millimeters to inches then multiplying by two since the armor is on both sides
 		BoxSize = {
-			x = math.max(BoxSize.x-(ConvArmor * 2),0),
-			y = math.max(BoxSize.y-(ConvArmor * 2),0),
-			z = math.max(BoxSize.z-(ConvArmor * 2),0)
+			x = math.max(BoxSize.x-ConvArmor, 0),
+			y = math.max(BoxSize.y-ConvArmor, 0),
+			z = math.max(BoxSize.z-ConvArmor, 0)
 		}
 	end
 
@@ -312,7 +311,6 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		end
 	end
 
-	local GunClass = ACF.Classes.GunClass[GunData.gunclass]
 	local RoundData = ACF.RoundTypes[Data2]
 
 	--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
@@ -368,31 +366,25 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		timer.Remove("ACF Refill " .. Entity:EntIndex())
 	end
 
-	local Efficiency = 0.1576 * ACF.AmmoMod
-	local Volume = math.floor(Entity:GetPhysicsObject():GetVolume())
-	--local MassMod = Entity.BulletData.MassMod or 1
-
-	Entity.Volume = Volume * Efficiency
-	--Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
 	-- CalcAmmo function is just above
-	local BoundingBox = Entity:OBBMaxs() - Entity:OBBMins()
+	local Rounds, ExtraData = CalcAmmo(Entity.Size, GunData, Entity.BulletData, ACF.AmmoPadding * 0.039, ACF.CrateArmor)
 
-	local Rounds,ExtraData = CalcAmmo(BoundingBox, GunData, Entity.BulletData, 0, 0)
 	if Rounds ~= -1 then
 		Entity.Capacity = Rounds
 	else
-		print("Fallback (Rackable munition missing ActualLength/ActualWidth)")
-		local CapMul = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-		Entity.Capacity = math.floor(CapMul * Entity.Volume * 16.38 / Entity.BulletData.RoundVolume)
-	end
+		--print("Fallback (Rackable munition missing ActualLength/ActualWidth)")
 
-	--*0.0625 for 25% @ 4x8x8, 0.025 10%, 0.0375 15%, 0.05 20% --0.23 karb edit for cannon rof 2. changed to start from 2x3x4 instead of 2x4x4
-	Entity.RoFMul = (Volume > 27000) and (1 - (math.log(Volume * 0.00066) / math.log(2) - 4) * 0.2) or 1
+		local Efficiency = 0.1576 * ACF.AmmoMod
+		local Volume 	 = math.floor(Entity:GetPhysicsObject():GetVolume()) * Efficiency
+		local CapMul 	 = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
+
+		Entity.Capacity = math.floor(CapMul * Volume * 16.38 / Entity.BulletData.RoundVolume)
+	end
 
 	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass + Entity.BulletData.PropMass) * Entity.Capacity)
 	Entity.Caliber = GunData.caliber
-	Entity.Spread = GunClass.spread * ACF.GunInaccuracyScale
-	if ExtraData ~= nil then
+
+	if ExtraData then
 		local MGS = 0
 		if ((GunData.magsize or 0) > 0) and (ExtraData.isBoxed or false) then MGS = (GunData.magsize or 0) end
 		ExtraData.MGS = MGS
@@ -439,14 +431,14 @@ do -- Spawn Func --------------------------------
 		Crate:PhysicsInit(SOLID_VPHYSICS)
 		Crate:SetMoveType(MOVETYPE_VPHYSICS)
 
-		UpdateAmmoData(Crate, ...)
+		Crate.Size			= Size or (Crate:OBBMaxs() - Crate:OBBMins())
+
+		UpdateAmmoData(Crate, ...) -- This breaks if i put it after the rest of the vars and i dont are to figure out why
 
 		Crate.IsExplosive   = true
 		Crate.Ammo			= Crate.Capacity
-		Crate.EmptyMass		= math.floor(CrateData.weight)
 		Crate.Id			= Id
 		Crate.Owner			= Player
-		Crate.Size			= Size
 		Crate.Weapons		= {}
 		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
 		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading"})
@@ -454,16 +446,28 @@ do -- Spawn Func --------------------------------
 		Crate.HitBoxes 		= {
 					Main = {
 						Pos = Crate:OBBCenter(),
-						Scale = (Crate:OBBMaxs() - Crate:OBBMins()) - Vector(0.5, 0.5, 0.5),
+						Scale = Crate.Size,
 					}
 				}
+
+		do -- Calculate empty mass
+			local A = ACF.CrateArmor * 0.039 -- Millimeters to inches
+			local ExteriorVolume = Crate.Size[1] * Crate.Size[2] * Crate.Size[3]
+			local InteriorVolume = (Crate.Size[1] - A) * (Crate.Size[2] - A) * (Crate.Size[3] - A) -- Math degree
+
+			local Volume = ExteriorVolume - InteriorVolume
+			local Mass   = Volume * 0.13 -- Kg of steel per inch
+
+			Crate.EmptyMass = Mass
+		end
+
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
 		WireLib.TriggerOutput(Crate, "Ammo", Crate.Ammo)
 
 		-- Crates should be ready to load by default
 		Crate:TriggerInput("Load", 1)
-		Crate:SetNWInt("Ammo",Crate.Ammo)
+		Crate:SetNWInt("Ammo", Crate.Ammo)
 
 		ACF.AmmoCrates[Crate] = true
 
@@ -654,19 +658,16 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:ACF_Activate(Recalc)
-			local PhysObj   = self.ACF.PhysObj
-			local EmptyMass = math.max(self.EmptyMass, PhysObj:GetMass() - self.AmmoMassMax)
+			local PhysObj = self.ACF.PhysObj
 
 			if not self.ACF.Area then
 				self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
 			end
 
-			if not self.ACF.Volume then
-				self.ACF.Volume = PhysObj:GetVolume() * 16.38
-			end
+			local Volume = PhysObj:GetVolume()
 
-			local Armour = EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-			local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+			local Armour = ACF.CrateArmor
+			local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
 			local Percent = 1
 
 			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -677,9 +678,6 @@ do -- Metamethods -------------------------------
 			self.ACF.MaxHealth = Health
 			self.ACF.Armour = Armour * (0.5 + Percent / 2)
 			self.ACF.MaxArmour = Armour
-			self.ACF.Type = nil
-			self.ACF.Mass = self.Mass
-			self.ACF.Density = (PhysObj:GetMass() * 1000) / self.ACF.Volume
 			self.ACF.Type = "Prop"
 		end
 
