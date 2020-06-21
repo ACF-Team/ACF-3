@@ -1,6 +1,8 @@
 # Armored Combat Framework
 > A standardized combat and damage addon for Garry's Mod
 
+[![Discord Invite](https://img.shields.io/discord/654142834030542878?label=Chat&style=flat-square)](https://discordapp.com/invite/shk5sc5)
+[![Steam Group](https://img.shields.io/badge/ACF%20Official-Join%20Now!-informational?style=flat-square)](https://steamcommunity.com/groups/officialacf)
 [![Linting Status](https://img.shields.io/github/workflow/status/Stooberton/ACF-3/GLuaFixer?label=Linter%20Status&style=flat-square)](https://github.com/Stooberton/ACF-3/actions?query=workflow%3AGLuaFixer)
 [![Repository Size](https://img.shields.io/github/repo-size/Stooberton/ACF-3?label=Repository%20Size&style=flat-square)](https://github.com/Stooberton/ACF-3)
 [![Commit Activity](https://img.shields.io/github/commit-activity/m/Stooberton/ACF-3?label=Commit%20Activity&style=flat-square)](https://github.com/Stooberton/ACF-3/graphs/commit-activity)
@@ -30,9 +32,3 @@ Click the green button at the top of the ACF repo and select zip. Extract and mo
 ## Contributing
 
 Found an annoying bug in the addon? Want to suggest a brand new feature? Think something should be changed? Make sure to check out [Contributing to ACF](CONTRIBUTING.md), where we have a full guide on how to properly contribute to this project.
-
-## Links
-
-Steam Group: [![Steam Group](https://img.shields.io/badge/ACF%20Official-Join%20Now!-informational?style=flat-square)](https://steamcommunity.com/groups/officialacf)
-
-Discord: [![Discord Invite](https://img.shields.io/discord/654142834030542878?label=Chat&style=flat-square)](https://discordapp.com/invite/shk5sc5)
