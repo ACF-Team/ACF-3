@@ -159,18 +159,26 @@ function ENT:OnRemove()
 	hook.Remove("PostDrawOpaqueRenderables",self.DrawAmmoHookIndex)
 end
 
+-- TODO: Resupply effect library, should apply for both ammo and fuel
 do -- Resupply effect
 	local ModelData = { model = true, pos = true, angle = true }
 	local Unused = {}
 	local Used = {}
 
 	local function GetClientsideModel()
-		local Entity = next(Unused) or ClientsideModel("models/props_junk/PopCan01a.mdl", RENDERGROUP_OPAQUE)
+		local Model
 
-		Unused[Entity] = nil
-		Used[Entity] = true
+		if next(Unused) then
+			Model = next(Unused)
 
-		return Entity
+			Unused[Model] = nil
+		else
+			Model = ClientsideModel("models/props_junk/PopCan01a.mdl", RENDERGROUP_OPAQUE)
+		end
+
+		Used[Model] = true
+
+		return Model
 	end
 
 	--Shamefully stolen from lua rollercoaster. I'M SO SORRY. I HAD TO.
@@ -250,6 +258,12 @@ do -- Resupply effect
 			Unused[Model] = nil
 
 			Model:Remove()
+		end
+
+		-- Move all the used models to the unused table
+		for Model in pairs(Used) do
+			Unused[Model] = true
+			Used[Model] = nil
 		end
 	end)
 end
