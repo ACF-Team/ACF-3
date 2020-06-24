@@ -211,8 +211,10 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 			ExtraData.LocalAng = Angle(90,90,0)
 		end
 
-		local ModifiedRoundSize = ConvCaliber + Spacing
 		local ModifiedRoundLength = ConvLength + Spacing
+		local ModifiedRoundSize = ConvCaliber + Spacing
+		-- Doesn't use round spacing for length wise if its just 1, because edge cases are fun
+		if (math.floor(D[ShortestFit] / ConvLength) == 1) then ModifiedRoundLength = ConvLength end
 		-- That basic bitch math
 		ExtraData.RoundSize = Vector(ConvLength,ConvCaliber,ConvCaliber)
 		local RoundsX = math.floor(D[ShortestFit] / ModifiedRoundLength)
@@ -272,6 +274,8 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 				end
 
 				local ModifiedRoundLength = ConvLength + Spacing
+				-- Doesn't use round spacing for length wise if its just 1, because edge cases are fun
+				if (math.floor(D[ShortestFit] / ConvLength) == 1) then ModifiedRoundLength = ConvLength end
 				ExtraData.RoundSize = Vector(ConvLength,RoundWidth,RoundHeight)
 				local RoundsX = math.floor(D[ShortestFit] / ModifiedRoundLength)
 				local RoundsY = math.floor(D2[ShortestWidth] / (RoundWidth + Spacing))
