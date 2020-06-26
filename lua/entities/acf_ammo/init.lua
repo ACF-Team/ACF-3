@@ -41,12 +41,27 @@ local function StopRefillEffect(Entity, Target)
 	net.Broadcast()
 end
 
-local function UpdateClientAmmobox(Entity, Data)
+local function UpdateClientAmmobox(Entity, Player)
 	net.Start("ACF_UpdateAmmoBox")
 		net.WriteEntity(Entity)
-		net.WriteTable(Data)
-	net.Broadcast()
+		net.WriteString(util.TableToJSON(Entity.CrateData))
+
+	if IsValid(Player) then
+		net.Send(Player)
+	else
+		net.Broadcast()
+	end
 end
+
+hook.Add("PlayerInitialSpawn", "ACF Network Crates", function(Player)
+	timer.Simple(10, function()
+		if not IsValid(Player) then return end
+
+		for Crate in pairs(ActiveCrates) do
+			UpdateClientAmmobox(Crate, Player)
+		end
+	end)
+end)
 
 local function RefillCrates(Entity)
 	local Position = Entity:GetPos()
@@ -430,18 +445,18 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		local MGS = 0
 		if ((GunData.magsize or 0) > 0) and (ExtraData.isBoxed or false) then MGS = (GunData.magsize or 0) end
 		ExtraData.MGS = MGS
-		ExtraData.IsRound = not ((ExtraData.isBoxed or false) or (ExtraData.isTwoPiece or false) or (ExtraData.isRacked or false))
-		Entity.ExtraData = ExtraData
+		ExtraData.IsRound = not (ExtraData.isBoxed or ExtraData.isTwoPiece or ExtraData.isRacked)
 
 		-- for future use in reloading
 		--if (ExtraData.isBoxed or false) then Entity.isBoxed = true end -- Ammunition is boxed
 		--if (ExtraData.isTwoPiece or false) then Entity.isTwoPiece = true end -- Ammunition is broken down to two pieces
 
-		local NWTable = {}
-		table.Merge(NWTable,ExtraData)
-		NWTable.Capacity = Entity.Capacity
-		timer.Simple(0.1,function()
-			UpdateClientAmmobox(Entity,NWTable)
+		ExtraData.Capacity = Entity.Capacity
+
+		Entity.CrateData = ExtraData
+
+		timer.Simple(0.1, function()
+			UpdateClientAmmobox(Entity)
 		end)
 	end
 	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))

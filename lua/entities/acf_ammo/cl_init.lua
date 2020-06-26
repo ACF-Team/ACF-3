@@ -1,24 +1,53 @@
 include("shared.lua")
+
 local RoundsDisplayCVar = GetConVar("ACF_MaxRoundsDisplay")
+local HideInfo = ACF.HideInfoBubble
+local Refills = {}
 
 local function UpdateBulkDisplay(ent)
 	local MaxDisplayRounds = RoundsDisplayCVar:GetInt()
 	local FinalAmmo = 0
-	if (ent.HasBoxedAmmo or false) then FinalAmmo = math.floor((ent.Ammo or 0) / ent.MagSize) else FinalAmmo = (ent.Ammo or 0) end
+
+	if ent.HasBoxedAmmo then
+		FinalAmmo = math.floor((ent.Ammo or 0) / ent.MagSize)
+	else
+		FinalAmmo = ent.Ammo or 0
+	end
 
 	if FinalAmmo > MaxDisplayRounds then
 		ent.BulkDisplay = true
-	else ent.BulkDisplay = false end
+	else
+		ent.BulkDisplay = false
+	end
 end
 
 local function UpdateClAmmo(ent)
 	ent.Ammo = ent:GetNWInt("Ammo",0)
+
 	if ent.Ammo > (ent.MaxAmmo or 0) then ent.MaxAmmo = ent.Ammo end
+
 	UpdateBulkDisplay(ent)
 end
 
-local HideInfo = ACF.HideInfoBubble
-local Refills = {}
+net.Receive("ACF_UpdateAmmoBox", function()
+	local Entity = net.ReadEntity()
+	local Data = util.JSONToTable(net.ReadString())
+
+	Entity.Capacity = Data.Capacity
+	Entity.IsRound = Data.IsRound
+	Entity.RoundSize = Data.RoundSize
+	Entity.LocalAng = Data.LocalAng
+	Entity.FitPerAxis = Data.FitPerAxis
+	Entity.Spacing = Data.Spacing
+	Entity.MagSize = Data.MGS
+	Entity.HasBoxedAmmo = Entity.MagSize > 0
+
+	UpdateClAmmo(Entity)
+
+	Entity.MaxAmmo = Entity.Ammo
+
+	UpdateBulkDisplay(Entity)
+end)
 
 function ENT:Initialize()
 	self.Crates = {}
@@ -46,26 +75,6 @@ function ENT:OnResized()
 		}
 	}
 end
-
-net.Receive("ACF_UpdateAmmoBox",function()
-	local SVAmmoBox = net.ReadEntity()
-	local SVAmmoTable = net.ReadTable()
-	local ent = ents.GetByIndex(SVAmmoBox:EntIndex())
-	ent.Capacity = SVAmmoTable.Capacity
-	ent.IsRound = SVAmmoTable.IsRound
-	ent.RoundSize = SVAmmoTable.RoundSize
-	ent.LocalAng = SVAmmoTable.LocalAng
-	ent.FitPerAxis = SVAmmoTable.FitPerAxis
-	ent.Spacing = SVAmmoTable.Spacing
-	ent.MagSize = SVAmmoTable.MGS
-	ent.HasBoxedAmmo = ent.MagSize > 0
-
-	UpdateClAmmo(ent)
-	ent.MaxAmmo = ent.Ammo
-	UpdateBulkDisplay(ent)
-
-	ent.HasData = true
-end)
 
 function ENT:Draw()
 	self:DoNormalDraw(false, HideInfo())
