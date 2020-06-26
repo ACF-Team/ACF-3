@@ -147,7 +147,7 @@ function TOOL:LeftClick(Trace)
 	local ArgList = list.Get("ACFCvars")
 	local ArgTable = {
 		Player,
-		Trace.HitPos + Trace.HitNormal * 32,
+		Trace.HitPos + Trace.HitNormal * 96,
 		Trace.HitNormal:Angle():Up():Angle(),
 	}
 
