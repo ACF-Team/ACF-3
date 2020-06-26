@@ -98,15 +98,22 @@ end
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink	  = ACF.GetClassLink
+local ClassLink   = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local Round		  = math.Round
-local max		  = math.max
+local Round       = math.Round
+local max         = math.max
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
+local Gamemode    = GetConVar("acf_gamemode")
+
+local function GetEfficiency(Entity)
+	local CompetitiveMult = Gamemode:GetInt() == 2 and ACF.CompFuelRate or 1
+
+	return ACF.Efficiency[Entity.EngineType] * CompetitiveMult
+end
 
 local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.Id 				= Id
@@ -141,9 +148,9 @@ local function UpdateEngineData(Entity, Id, EngineData)
 
 	--calculate base fuel usage
 	if Entity.EngineType == "Electric" then
-		Entity.FuelUse = ACF.ElecRate / (ACF.Efficiency[Entity.EngineType] * 60 * 60) --elecs use current power output, not max
+		Entity.FuelUse = ACF.FuelRate / GetEfficiency(Entity) * 3600 --elecs use current power output, not max
 	else
-		Entity.FuelUse = ACF.FuelRate * ACF.Efficiency[Entity.EngineType] * Entity.peakkw / (60 * 60)
+		Entity.FuelUse = ACF.FuelRate * GetEfficiency(Entity) * Entity.peakkw / 3600
 	end
 
 	local PhysObj = Entity:GetPhysicsObject()
@@ -573,7 +580,7 @@ function ENT:CalcRPM()
 		FuelTank:UpdateMass()
 		FuelTank:UpdateOverlay()
 		FuelTank:UpdateOutputs()
-	else
+	elseif Gamemode:GetInt() ~= 0 then -- Sandbox gamemode servers will require no fuel
 		SetActive(self, false)
 
 		self.FuelUsage = 0

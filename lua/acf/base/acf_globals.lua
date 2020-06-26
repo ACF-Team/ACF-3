@@ -44,7 +44,7 @@ do -- ACF global vars
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
 	ACF.PDensity 			= 1.15 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
-	ACF.ElecRate 			= 1 --multiplier for electrics
+	ACF.CompFuelRate		= 27.8 --Extra multiplier for fuel consumption on servers with acf_gamemode set to 2 (Competitive)
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED 			= 0.458 -- li-ion energy density: kw hours / liter
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
@@ -67,12 +67,12 @@ do -- ACF global vars
 
 	--how efficient various engine types are, higher is worse
 	ACF.Efficiency = {
-		GenericPetrol = 8.4512, -- kg per kw hr | Roughly 125 liters per minute for the 23L V12
-		GenericDiesel = 6.7554,
-		Turbine = 10.425,
-		Wankel = 9.313,
-		Radial = 11.12, -- 0.38 to 0.53
-		Electric = 23.63 --percent efficiency converting chemical kw into mechanical kw
+		GenericPetrol = 0.304, -- kg per kw hr
+		GenericDiesel = 0.243,
+		Turbine = 0.375,
+		Wankel = 0.335,
+		Radial = 0.4, -- 0.38 to 0.53
+		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
 	}
 
 	--how fast damage drops torque, lower loses more % torque
@@ -110,13 +110,14 @@ do -- ACF Convars/Callbacks ------------------------
 	CreateConVar("acf_healthmod", 1)
 	CreateConVar("acf_armormod", 1)
 	CreateConVar("acf_ammomod", 1)
+	CreateConVar("acf_fuelrate", 1)
 	CreateConVar("acf_spalling", 0)
 	CreateConVar("acf_gunfire", 1)
-	CreateConVar("acf_modelswap_legal", 0)
 
 	cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_ammomod", ACF_CVarChangeCallback)
+	cvars.AddChangeCallback("acf_fuelrate", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_spalling", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
 
@@ -224,6 +225,12 @@ function ACF_CVarChangeCallback(CVar, _, New)
 	elseif CVar == "acf_ammomod" then
 		ACF.AmmoMod = 1 * math.max(New, 0.01)
 		print("Ammo Mod changed to a factor of " .. New)
+	elseif CVar == "acf_fuelrate" then
+		local Value = tonumber(New) or 1
+
+		ACF.FuelRate = math.max(Value, 0.01)
+
+		print("Fuel Rate changed to a factor of " .. Value)
 	elseif CVar == "acf_gunfire" then
 		ACF.GunfireEnabled = tobool(New)
 		local text = "disabled"
@@ -233,9 +240,6 @@ function ACF_CVarChangeCallback(CVar, _, New)
 		end
 
 		print("ACF Gunfire has been " .. text)
-	elseif CVar == "acf_modelswap_legal" then
-		ACF.LegalSettings.CanModelSwap = tobool(New)
-		print("ACF model swapping is set to " .. (ACF.LegalSettings.CanModelSwap and "legal" or "not legal"))
 	end
 end
 
