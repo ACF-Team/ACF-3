@@ -132,13 +132,7 @@ function TOOL:LeftClick(Trace)
 	local Player = self:GetOwner()
 	local Type = self:GetClientInfo("type")
 	local Id = self:GetClientInfo("id")
-	local TypeId
-
-	if Type == "Ammo" then -- I am hackerman
-		TypeId = { ent = "acf_ammo" }
-	else
-		TypeId = ACF.Weapons[Type][Id]
-	end
+	local TypeId = ACF.Weapons[Type][Id]
 
 	if not TypeId then return false end
 

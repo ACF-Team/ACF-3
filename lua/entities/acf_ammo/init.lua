@@ -306,7 +306,7 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	return Rounds,ExtraData
 end
 
-local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13)
+local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Id)
 	local GunData = ACF.Weapons.Guns[Data1]
 
 	do -- Sanity checks
@@ -333,6 +333,18 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	end
 
 	local RoundData = ACF.RoundTypes[Data2]
+
+	do -- Backwards compatibility
+		local AmmoData = Id and ACF.Weapons.Ammo[Id]
+
+		if AmmoData and not (Data11 or Data12 or Data13) then
+			Entity:SetPos(Entity:LocalToWorld(AmmoData.Offset))
+
+			Data11 = AmmoData.Size[1]
+			Data12 = AmmoData.Size[2]
+			Data13 = AmmoData.Size[3]
+		end
+	end
 
 	do -- Update RoundData
 		--Data 1 to 4 are should always be Round ID, Round Type, Propellant lenght, Projectile lenght
@@ -465,7 +477,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 end
 
 do -- Spawn Func --------------------------------
-	function MakeACF_Ammo(Player, Pos, Ang, Id, ...) print("Spawn crate")
+	function MakeACF_Ammo(Player, Pos, Ang, ...)
 		if not Player:CheckLimit("_acf_ammo") then return end
 
 		local Crate = ents.Create("acf_ammo")
@@ -492,7 +504,6 @@ do -- Spawn Func --------------------------------
 		Crate.ACF.LegalMass = math.floor(Crate.EmptyMass + Crate.AmmoMassMax)
 		Crate.IsExplosive   = true
 		Crate.Ammo			= Crate.Capacity
-		Crate.Id			= Id
 		Crate.Owner			= Player
 		Crate.Weapons		= {}
 		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
@@ -519,8 +530,8 @@ do -- Spawn Func --------------------------------
 		return Crate
 	end
 
-	list.Set("ACFCvars", "acf_ammo", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13"})
-	duplicator.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Pos", "Angle", "Id", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "RoundData11", "RoundData12", "RoundData13")
+	list.Set("ACFCvars", "acf_ammo", { "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "id" })
+	duplicator.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Pos", "Angle", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "RoundData11", "RoundData12", "RoundData13", "Id")
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end
 
@@ -772,17 +783,17 @@ do -- Metamethods -------------------------------
 			local Message = "Ammo crate updated successfully!"
 
 			if ArgsTable[1] ~= self.Owner then return false, "You don't own that ammo crate!" end -- Argtable[1] is the player that shot the tool
-			if ArgsTable[6] == "Refill" then return false, "Refill ammo type is only avaliable for new crates!" end -- Argtable[6] is the round type. If it's refill it shouldn't be loaded into guns, so we refuse to change to it
+			if ArgsTable[5] == "Refill" then return false, "Refill ammo type is only avaliable for new crates!" end -- Argtable[5] is the round type. If it's refill it shouldn't be loaded into guns, so we refuse to change to it
 
-			-- Argtable[5] is the weapon ID the new ammo loads into
-			if ArgsTable[5] ~= self.RoundId then
+			-- Argtable[4] is the weapon ID the new ammo loads into
+			if ArgsTable[4] ~= self.RoundId then
 				for Gun in pairs(self.Weapons) do
 					self:Unlink(Gun)
 				end
 
 				Message = "New ammo type loaded, crate unlinked."
 			else -- ammotype wasn't changed, but let's check if new roundtype is blacklisted
-				local Blacklist = ACF.AmmoBlacklist[ArgsTable[6]]
+				local Blacklist = ACF.AmmoBlacklist[ArgsTable[5]]
 
 				for Gun in pairs(self.Weapons) do
 					if table.HasValue(Blacklist, Gun.Class) then
@@ -796,7 +807,7 @@ do -- Metamethods -------------------------------
 
 			local AmmoPercent = self.Ammo / math.max(self.Capacity, 1)
 
-			UpdateAmmoData(self, unpack(ArgsTable, 5, 17))
+			UpdateAmmoData(self, unpack(ArgsTable, 4))
 
 			self.Ammo = math.floor(self.Capacity * AmmoPercent)
 

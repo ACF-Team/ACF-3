@@ -292,7 +292,7 @@ function PANEL:AmmoSelect(Blacklist)
 
 	if not AmmoData then
 		AmmoData = {
-			--Id = "Ammo2x4x4",
+			Id = "Ammo2x4x4",
 			Type = "Ammo",
 			Data = acfmenupanel.WeaponData.Guns["12.7mmMG"].round
 		}

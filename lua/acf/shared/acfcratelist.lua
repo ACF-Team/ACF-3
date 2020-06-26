@@ -1,327 +1,399 @@
 local AmmoTable = {}  --Start ammo containers listing
 
-local AmmoSmall = {}
-	AmmoSmall.id = "AmmoSmall"
-	AmmoSmall.ent = "acf_ammo"
-	AmmoSmall.type = "Ammo"
-	AmmoSmall.name = "Small Ammo Crate"
-	AmmoSmall.desc = "Small ammo crate\n"
-	AmmoSmall.model = "models/ammocrate_small.mdl"
-AmmoTable["AmmoSmall"] = AmmoSmall
+AmmoTable["AmmoSmall"] = {
+	id = "AmmoSmall",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Small Ammo Crate",
+	desc = "Small ammo crate\n",
+	model = "models/ammocrate_small.mdl",
+	Size = Vector(22.96, 8.37, 14.52),
+	Offset = Vector(-0.36, -0.01, 7.01)
+}
 
-local AmmoMedCube = {}
-	AmmoMedCube.id = "AmmoMedCube"
-	AmmoMedCube.ent = "acf_ammo"
-	AmmoMedCube.type = "Ammo"
-	AmmoMedCube.name = "Medium cubic ammo crate"
-	AmmoMedCube.desc = "Medium cubic ammo crate\n"
-	AmmoMedCube.model = "models/ammocrate_medium_small.mdl"
-AmmoTable["AmmoMedCube"] = AmmoMedCube
+AmmoTable["AmmoMedCube"] = {
+	id = "AmmoMedCube",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Medium cubic ammo crate",
+	desc = "Medium cubic ammo crate\n",
+	model = "models/ammocrate_medium_small.mdl",
+	Size = Vector(26.91, 28.77, 26.71),
+	Offset = Vector(-0.03, 0.42, 13.1)
+}
 
-local AmmoMedium = {}
-	AmmoMedium.id = "AmmoMedium"
-	AmmoMedium.ent = "acf_ammo"
-	AmmoMedium.type = "Ammo"
-	AmmoMedium.name = "Medium Ammo Crate"
-	AmmoMedium.desc = "Medium ammo crate\n"
-	AmmoMedium.model = "models/ammocrate_medium.mdl"
-AmmoTable["AmmoMedium"] = AmmoMedium
+AmmoTable["AmmoMedium"] = {
+	id = "AmmoMedium",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Medium Ammo Crate",
+	desc = "Medium ammo crate\n",
+	model = "models/ammocrate_medium.mdl",
+	Size = Vector(52.34, 28.77, 26.71),
+	Offset = Vector(-0.12, 0.42, 13.1)
+}
 
-local AmmoLarge = {}
-	AmmoLarge.id = "AmmoLarge"
-	AmmoLarge.ent = "acf_ammo"
-	AmmoLarge.type = "Ammo"
-	AmmoLarge.name = "Large Ammo Crate"
-	AmmoLarge.desc = "Large ammo crate\n"
-	AmmoLarge.model = "models/ammocrate_large.mdl"
-AmmoTable["AmmoLarge"] = AmmoLarge
+AmmoTable["AmmoLarge"] = {
+	id = "AmmoLarge",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Large Ammo Crate",
+	desc = "Large ammo crate\n",
+	model = "models/ammocrate_large.mdl",
+	Size = Vector(53.15, 55.97, 52.61),
+	Offset = Vector(-0.05, -0.38, 26.06)
+}
 
-local Ammo1x1x8 = {}
-	Ammo1x1x8.id = "Ammo1x1x8"
-	Ammo1x1x8.ent = "acf_ammo"
-	Ammo1x1x8.type = "Ammo"
-	Ammo1x1x8.name = "Modular Ammo Crate"
-	Ammo1x1x8.desc = "Modular Ammo Crate 1x1x8 Size\n"
-	Ammo1x1x8.model = "models/ammocrates/ammo_1x1x8.mdl"
-AmmoTable["Ammo1x1x8"] = Ammo1x1x8
+AmmoTable["Ammo1x1x8"] = {
+	id = "Ammo1x1x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 1x1x8 Size\n",
+	model = "models/ammocrates/ammo_1x1x8.mdl",
+	Size = Vector(14.42, 89.58, 12.14),
+	Offset = Vector(0, -0.02, -0.12)
+}
 
-local Ammo1x1x6 = {}
-	Ammo1x1x6.id = "Ammo1x1x6"
-	Ammo1x1x6.ent = "acf_ammo"
-	Ammo1x1x6.type = "Ammo"
-	Ammo1x1x6.name = "Modular Ammo Crate"
-	Ammo1x1x6.desc = "Modular Ammo Crate 1x1x6 Size\n"
-	Ammo1x1x6.model = "models/ammocrates/ammo_1x1x6.mdl"
-AmmoTable["Ammo1x1x6"] = Ammo1x1x6
+AmmoTable["Ammo1x1x6"] = {
+	id = "Ammo1x1x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 1x1x6 Size\n",
+	model = "models/ammocrates/ammo_1x1x6.mdl",
+	Size = Vector(14.42, 66.94, 12.18),
+	Offset = Vector(0, 0.02, -0.14)
+}
 
-local Ammo1x1x4 = {}
-	Ammo1x1x4.id = "Ammo1x1x4"
-	Ammo1x1x4.ent = "acf_ammo"
-	Ammo1x1x4.type = "Ammo"
-	Ammo1x1x4.name = "Modular Ammo Crate"
-	Ammo1x1x4.desc = "Modular Ammo Crate 1x1x4 Size\n"
-	Ammo1x1x4.model = "models/ammocrates/ammo_1x1x4.mdl"
-AmmoTable["Ammo1x1x4"] = Ammo1x1x4
+AmmoTable["Ammo1x1x4"] = {
+	id = "Ammo1x1x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 1x1x4 Size\n",
+	model = "models/ammocrates/ammo_1x1x4.mdl",
+	Size = Vector(14.42, 45.5, 12.23),
+	Offset = Vector(0, 0.16, -0.17)
+}
 
-local Ammo1x1x2 = {}
-	Ammo1x1x2.id = "Ammo1x1x2"
-	Ammo1x1x2.ent = "acf_ammo"
-	Ammo1x1x2.type = "Ammo"
-	Ammo1x1x2.name = "Modular Ammo Crate"
-	Ammo1x1x2.desc = "Modular Ammo Crate 1x1x2 Size\n"
-	Ammo1x1x2.model = "models/ammocrates/ammo_1x1x2.mdl"
-AmmoTable["Ammo1x1x2"] = Ammo1x1x2
+AmmoTable["Ammo1x1x2"] = {
+	id = "Ammo1x1x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 1x1x2 Size\n",
+	model = "models/ammocrates/ammo_1x1x2.mdl",
+	Size = Vector(14.42, 22.87, 12.23),
+	Offset = Vector(0, 0.05, -0.17)
+}
 
-local Ammo2x2x1 = {}
-	Ammo2x2x1.id = "Ammo2x2x1"
-	Ammo2x2x1.ent = "acf_ammo"
-	Ammo2x2x1.type = "Ammo"
-	Ammo2x2x1.name = "Modular Ammo Crate"
-	Ammo2x2x1.desc = "Modular Ammo Crate 2x2x1 Size\n"
-	Ammo2x2x1.model = "models/ammocrates/ammocrate_2x2x1.mdl"
-AmmoTable["Ammo2x2x1"] = Ammo2x2x1
+AmmoTable["Ammo2x2x1"] = {
+	id = "Ammo2x2x1",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x2x1 Size\n",
+	model = "models/ammocrates/ammocrate_2x2x1.mdl",
+	Size = Vector(22.96, 8.5, 20.89),
+	Offset = Vector(-0.52, 0, 10.19)
+}
 
-local Ammo2x2x2 = {}
-	Ammo2x2x2.id = "Ammo2x2x2"
-	Ammo2x2x2.ent = "acf_ammo"
-	Ammo2x2x2.type = "Ammo"
-	Ammo2x2x2.name = "Modular Ammo Crate"
-	Ammo2x2x2.desc = "Modular Ammo Crate 2x2x2 Size\n"
-	Ammo2x2x2.model = "models/ammocrates/ammocrate_2x2x2.mdl"
-AmmoTable["Ammo2x2x2"] = Ammo2x2x2
+AmmoTable["Ammo2x2x2"] = {
+	id = "Ammo2x2x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x2x2 Size\n",
+	model = "models/ammocrates/ammocrate_2x2x2.mdl",
+	Size = Vector(20.5, 24.78, 21.53),
+	Offset = Vector(-0.09, 0.51, 10.51)
+}
 
-local Ammo2x2x4 = {}
-	Ammo2x2x4.id = "Ammo2x2x4"
-	Ammo2x2x4.ent = "acf_ammo"
-	Ammo2x2x4.type = "Ammo"
-	Ammo2x2x4.name = "Modular Ammo Crate"
-	Ammo2x2x4.desc = "Modular Ammo Crate 2x2x4 Size\n"
-	Ammo2x2x4.model = "models/ammocrates/ammocrate_2x2x4.mdl"
-AmmoTable["Ammo2x2x4"] = Ammo2x2x4
+AmmoTable["Ammo2x2x4"] = {
+	id = "Ammo2x2x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x2x4 Size\n",
+	model = "models/ammocrates/ammocrate_2x2x4.mdl",
+	Size = Vector(23.38, 45.5, 20.86),
+	Offset = Vector(-0.71, 0, 10.18)
+}
 
-local Ammo2x2x6 = {}
-	Ammo2x2x6.id = "Ammo2x2x6"
-	Ammo2x2x6.ent = "acf_ammo"
-	Ammo2x2x6.type = "Ammo"
-	Ammo2x2x6.name = "Modular Ammo Crate"
-	Ammo2x2x6.desc = "Modular Ammo Crate 2x2x6 Size\n"
-	Ammo2x2x6.model = "models/ammocrates/ammo_2x2x6.mdl"
-AmmoTable["Ammo2x2x6"] = Ammo2x2x6
+AmmoTable["Ammo2x2x6"] = {
+	id = "Ammo2x2x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x2x6 Size\n",
+	model = "models/ammocrates/ammo_2x2x6.mdl",
+	Size = Vector(25.91, 68.29, 22.77),
+	Offset = Vector(0, 0, -0.1)
+}
 
-local Ammo2x2x8 = {}
-	Ammo2x2x8.id = "Ammo2x2x8"
-	Ammo2x2x8.ent = "acf_ammo"
-	Ammo2x2x8.type = "Ammo"
-	Ammo2x2x8.name = "Modular Ammo Crate"
-	Ammo2x2x8.desc = "Modular Ammo Crate 2x2x8 Size\n"
-	Ammo2x2x8.model = "models/ammocrates/ammo_2x2x8.mdl"
-AmmoTable["Ammo2x2x8"] = Ammo2x2x8
+AmmoTable["Ammo2x2x8"] = {
+	id = "Ammo2x2x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x2x8 Size\n",
+	model = "models/ammocrates/ammo_2x2x8.mdl",
+	Size = Vector(25.91, 91.32, 22.9),
+	Offset = Vector(0, 0, -0.14)
+}
 
-local Ammo2x3x1 = {}
-	Ammo2x3x1.id = "Ammo2x3x1"
-	Ammo2x3x1.ent = "acf_ammo"
-	Ammo2x3x1.type = "Ammo"
-	Ammo2x3x1.name = "Modular Ammo Crate"
-	Ammo2x3x1.desc = "Modular Ammo Crate 2x3x1 Size\n"
-	Ammo2x3x1.model = "models/ammocrates/ammocrate_2x3x1.mdl"
-AmmoTable["Ammo2x3x1"] = Ammo2x3x1
+AmmoTable["Ammo2x3x1"] = {
+	id = "Ammo2x3x1",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x3x1 Size\n",
+	model = "models/ammocrates/ammocrate_2x3x1.mdl",
+	Size = Vector(34.88, 8.5, 20.89),
+	Offset = Vector(-0.64, 0, 10.19)
+}
 
-local Ammo2x3x2 = {}
-	Ammo2x3x2.id = "Ammo2x3x2"
-	Ammo2x3x2.ent = "acf_ammo"
-	Ammo2x3x2.type = "Ammo"
-	Ammo2x3x2.name = "Modular Ammo Crate"
-	Ammo2x3x2.desc = "Modular Ammo Crate 2x3x2 Size\n"
-	Ammo2x3x2.model = "models/ammocrates/ammocrate_2x3x2.mdl"
-AmmoTable["Ammo2x3x2"] = Ammo2x3x2
+AmmoTable["Ammo2x3x2"] = {
+	id = "Ammo2x3x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x3x2 Size\n",
+	model = "models/ammocrates/ammocrate_2x3x2.mdl",
+	Size = Vector(34.88, 20.5, 20.89),
+	Offset = Vector(-0.64, 0, 10.19)
+}
 
-local Ammo2x3x4 = {}
-	Ammo2x3x4.id = "Ammo2x3x4"
-	Ammo2x3x4.ent = "acf_ammo"
-	Ammo2x3x4.type = "Ammo"
-	Ammo2x3x4.name = "Modular Ammo Crate"
-	Ammo2x3x4.desc = "Modular Ammo Crate 2x3x4 Size\n"
-	Ammo2x3x4.model = "models/ammocrates/ammocrate_2x3x4.mdl"
-AmmoTable["Ammo2x3x4"] = Ammo2x3x4
+AmmoTable["Ammo2x3x4"] = {
+	id = "Ammo2x3x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x3x4 Size\n",
+	model = "models/ammocrates/ammocrate_2x3x4.mdl",
+	Size = Vector(35.23, 46.71, 20.5),
+	Offset = Vector(-0.79, 0, 10)
+}
 
-local Ammo2x3x6 = {}
-	Ammo2x3x6.id = "Ammo2x3x6"
-	Ammo2x3x6.ent = "acf_ammo"
-	Ammo2x3x6.type = "Ammo"
-	Ammo2x3x6.name = "Modular Ammo Crate"
-	Ammo2x3x6.desc = "Modular Ammo Crate 2x3x6 Size\n"
-	Ammo2x3x6.model = "models/ammocrates/ammocrate_2x3x6.mdl"
-AmmoTable["Ammo2x3x6"] = Ammo2x3x6
+AmmoTable["Ammo2x3x6"] = {
+	id = "Ammo2x3x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x3x6 Size\n",
+	model = "models/ammocrates/ammocrate_2x3x6.mdl",
+	Size = Vector(35.23, 69.48, 20.54),
+	Offset = Vector(-0.79, -0.04, 10.02)
+}
 
-local Ammo2x3x8 = {}
-	Ammo2x3x8.id = "Ammo2x3x8"
-	Ammo2x3x8.ent = "acf_ammo"
-	Ammo2x3x8.type = "Ammo"
-	Ammo2x3x8.name = "Modular Ammo Crate"
-	Ammo2x3x8.desc = "Modular Ammo Crate 2x3x8 Size\n"
-	Ammo2x3x8.model = "models/ammocrates/ammocrate_2x3x8.mdl"
-AmmoTable["Ammo2x3x8"] = Ammo2x3x8
+AmmoTable["Ammo2x3x8"] = {
+	id = "Ammo2x3x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x3x8 Size\n",
+	model = "models/ammocrates/ammocrate_2x3x8.mdl",
+	Size = Vector(35.23, 91.38, 20.54),
+	Offset = Vector(-0.79, 0, 10.02)
+}
 
-local Ammo2x4x1 = {}
-	Ammo2x4x1.id = "Ammo2x4x1"
-	Ammo2x4x1.ent = "acf_ammo"
-	Ammo2x4x1.type = "Ammo"
-	Ammo2x4x1.name = "Modular Ammo Crate"
-	Ammo2x4x1.desc = "Modular Ammo Crate 2x4x1 Size\n"
-	Ammo2x4x1.model = "models/ammocrates/ammocrate_2x4x1.mdl"
-AmmoTable["Ammo2x4x1"] = Ammo2x4x1
+AmmoTable["Ammo2x4x1"] = {
+	id = "Ammo2x4x1",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x4x1 Size\n",
+	model = "models/ammocrates/ammocrate_2x4x1.mdl",
+	Size = Vector(47.99, 8.5, 20.89),
+	Offset = Vector(-0.64, 0, 10.19)
+}
 
-local Ammo2x4x2 = {}
-	Ammo2x4x2.id = "Ammo2x4x2"
-	Ammo2x4x2.ent = "acf_ammo"
-	Ammo2x4x2.type = "Ammo"
-	Ammo2x4x2.name = "Modular Ammo Crate"
-	Ammo2x4x2.desc = "Modular Ammo Crate 2x4x2 Size\n"
-	Ammo2x4x2.model = "models/ammocrates/ammocrate_2x4x2.mdl"
-AmmoTable["Ammo2x4x2"] = Ammo2x4x2
+AmmoTable["Ammo2x4x2"] = {
+	id = "Ammo2x4x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x4x2 Size\n",
+	model = "models/ammocrates/ammocrate_2x4x2.mdl",
+	Size = Vector(45.5, 23.38, 20.86),
+	Offset = Vector(-0.2, 0.71, 10.18)
+}
 
-local Ammo2x4x4 = {}
-	Ammo2x4x4.id = "Ammo2x4x4"
-	Ammo2x4x4.ent = "acf_ammo"
-	Ammo2x4x4.type = "Ammo"
-	Ammo2x4x4.name = "Modular Ammo Crate"
-	Ammo2x4x4.desc = "Modular Ammo Crate 2x4x4 Size\n"
-	Ammo2x4x4.model = "models/ammocrates/ammocrate_2x4x4.mdl"
-AmmoTable["Ammo2x4x4"] = Ammo2x4x4
+AmmoTable["Ammo2x4x4"] = {
+	id = "Ammo2x4x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x4x4 Size\n",
+	model = "models/ammocrates/ammocrate_2x4x4.mdl",
+	Size = Vector(48.34, 46.71, 20.5),
+	Offset = Vector(-0.79, 0, 10)
+}
 
-local Ammo2x4x6 = {}
-	Ammo2x4x6.id = "Ammo2x4x6"
-	Ammo2x4x6.ent = "acf_ammo"
-	Ammo2x4x6.type = "Ammo"
-	Ammo2x4x6.name = "Modular Ammo Crate"
-	Ammo2x4x6.desc = "Modular Ammo Crate 2x4x6 Size\n"
-	Ammo2x4x6.model = "models/ammocrates/ammocrate_2x4x6.mdl"
-AmmoTable["Ammo2x4x6"] = Ammo2x4x6
+AmmoTable["Ammo2x4x6"] = {
+	id = "Ammo2x4x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x4x6 Size\n",
+	model = "models/ammocrates/ammocrate_2x4x6.mdl",
+	Size = Vector(48.34, 69.38, 20.5),
+	Offset = Vector(-0.79, 0, 10)
+}
 
-local Ammo2x4x8 = {}
-	Ammo2x4x8.id = "Ammo2x4x8"
-	Ammo2x4x8.ent = "acf_ammo"
-	Ammo2x4x8.type = "Ammo"
-	Ammo2x4x8.name = "Modular Ammo Crate"
-	Ammo2x4x8.desc = "Modular Ammo Crate 2x4x8 Size\n"
-	Ammo2x4x8.model = "models/ammocrates/ammocrate_2x4x8.mdl"
-AmmoTable["Ammo2x4x8"] = Ammo2x4x8
+AmmoTable["Ammo2x4x8"] = {
+	id = "Ammo2x4x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 2x4x8 Size\n",
+	model = "models/ammocrates/ammocrate_2x4x8.mdl",
+	Size = Vector(48.34, 91.38, 20.5),
+	Offset = Vector(-0.79, 0, 10)
+}
 
-local Ammo3x4x1 = {}
-	Ammo3x4x1.id = "Ammo3x4x1"
-	Ammo3x4x1.ent = "acf_ammo"
-	Ammo3x4x1.type = "Ammo"
-	Ammo3x4x1.name = "Modular Ammo Crate"
-	Ammo3x4x1.desc = "Modular Ammo Crate 3x4x1 Size\n"
-	Ammo3x4x1.model = "models/ammocrates/ammocrate_3x4x1.mdl"
-AmmoTable["Ammo3x4x1"] = Ammo3x4x1
+AmmoTable["Ammo3x4x1"] = {
+	id = "Ammo3x4x1",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 3x4x1 Size\n",
+	model = "models/ammocrates/ammocrate_3x4x1.mdl",
+	Size = Vector(47.99, 8.5, 33),
+	Offset = Vector(-0.64, 0, 16.25)
+}
 
-local Ammo3x4x2 = {}
-	Ammo3x4x2.id = "Ammo3x4x2"
-	Ammo3x4x2.ent = "acf_ammo"
-	Ammo3x4x2.type = "Ammo"
-	Ammo3x4x2.name = "Modular Ammo Crate"
-	Ammo3x4x2.desc = "Modular Ammo Crate 3x4x2 Size\n"
-	Ammo3x4x2.model = "models/ammocrates/ammocrate_3x4x2.mdl"
-AmmoTable["Ammo3x4x2"] = Ammo3x4x2
+AmmoTable["Ammo3x4x2"] = {
+	id = "Ammo3x4x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 3x4x2 Size\n",
+	model = "models/ammocrates/ammocrate_3x4x2.mdl",
+	Size = Vector(45.5, 23.38, 33.01),
+	Offset = Vector(-0.2, 0.71, 16.26)
+}
 
-local Ammo3x4x4 = {}
-	Ammo3x4x4.id = "Ammo3x4x4"
-	Ammo3x4x4.ent = "acf_ammo"
-	Ammo3x4x4.type = "Ammo"
-	Ammo3x4x4.name = "Modular Ammo Crate"
-	Ammo3x4x4.desc = "Modular Ammo Crate 3x4x4 Size\n"
-	Ammo3x4x4.model = "models/ammocrates/ammocrate_3x4x4.mdl"
-AmmoTable["Ammo3x4x4"] = Ammo3x4x4
+AmmoTable["Ammo3x4x4"] = {
+	id = "Ammo3x4x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 3x4x4 Size\n",
+	model = "models/ammocrates/ammocrate_3x4x4.mdl",
+	Size = Vector(48.34, 46.71, 32.5),
+	Offset = Vector(-0.79, 0, 16)
+}
 
-local Ammo3x4x6 = {}
-	Ammo3x4x6.id = "Ammo3x4x6"
-	Ammo3x4x6.ent = "acf_ammo"
-	Ammo3x4x6.type = "Ammo"
-	Ammo3x4x6.name = "Modular Ammo Crate"
-	Ammo3x4x6.desc = "Modular Ammo Crate 3x4x6 Size\n"
-	Ammo3x4x6.model = "models/ammocrates/ammocrate_3x4x6.mdl"
-AmmoTable["Ammo3x4x6"] = Ammo3x4x6
+AmmoTable["Ammo3x4x6"] = {
+	id = "Ammo3x4x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 3x4x6 Size\n",
+	model = "models/ammocrates/ammocrate_3x4x6.mdl",
+	Size = Vector(48.34, 69.38, 32.5),
+	Offset = Vector(-0.79, 0, 16)
+}
 
-local Ammo3x4x8 = {}
-	Ammo3x4x8.id = "Ammo3x4x8"
-	Ammo3x4x8.ent = "acf_ammo"
-	Ammo3x4x8.type = "Ammo"
-	Ammo3x4x8.name = "Modular Ammo Crate"
-	Ammo3x4x8.desc = "Modular Ammo Crate 3x4x8 Size\n"
-	Ammo3x4x8.model = "models/ammocrates/ammocrate_3x4x8.mdl"
-AmmoTable["Ammo3x4x8"] = Ammo3x4x8
+AmmoTable["Ammo3x4x8"] = {
+	id = "Ammo3x4x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 3x4x8 Size\n",
+	model = "models/ammocrates/ammocrate_3x4x8.mdl",
+	Size = Vector(50.2, 91.38, 32.5),
+	Offset = Vector(0.15, 0, 16)
+}
 
-local Ammo4x4x1 = {}
-	Ammo4x4x1.id = "Ammo4x4x1"
-	Ammo4x4x1.ent = "acf_ammo"
-	Ammo4x4x1.type = "Ammo"
-	Ammo4x4x1.name = "Modular Ammo Crate"
-	Ammo4x4x1.desc = "Modular Ammo Crate 4x4x1 Size\n"
-	Ammo4x4x1.model = "models/ammocrates/ammo_4x4x1.mdl"
-AmmoTable["Ammo4x4x1"] = Ammo4x4x1
+AmmoTable["Ammo4x4x1"] = {
+	id = "Ammo4x4x1",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x4x1 Size\n",
+	model = "models/ammocrates/ammo_4x4x1.mdl",
+	Size = Vector(48.33, 46.24, 11.95),
+	Offset = Vector(0, 0, -0.06)
+}
 
-local Ammo4x4x2 = {}
-	Ammo4x4x2.id = "Ammo4x4x2"
-	Ammo4x4x2.ent = "acf_ammo"
-	Ammo4x4x2.type = "Ammo"
-	Ammo4x4x2.name = "Modular Ammo Crate"
-	Ammo4x4x2.desc = "Modular Ammo Crate 4x4x2 Size\n"
-	Ammo4x4x2.model = "models/ammocrates/ammocrate_4x4x2.mdl"
-AmmoTable["Ammo4x4x2"] = Ammo4x4x2
+AmmoTable["Ammo4x4x2"] = {
+	id = "Ammo4x4x2",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x4x2 Size\n",
+	model = "models/ammocrates/ammocrate_4x4x2.mdl",
+	Size = Vector(46.3, 23.38, 45.5),
+	Offset = Vector(-0.14, 0.71, 22.5)
+}
 
-local Ammo4x4x4 = {}
-	Ammo4x4x4.id = "Ammo4x4x4"
-	Ammo4x4x4.ent = "acf_ammo"
-	Ammo4x4x4.type = "Ammo"
-	Ammo4x4x4.name = "Modular Ammo Crate"
-	Ammo4x4x4.desc = "Modular Ammo Crate 4x4x4 Size\n"
-	Ammo4x4x4.model = "models/ammocrates/ammocrate_4x4x4.mdl"
-AmmoTable["Ammo4x4x4"] = Ammo4x4x4
+AmmoTable["Ammo4x4x4"] = {
+	id = "Ammo4x4x4",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x4x4 Size\n",
+	model = "models/ammocrates/ammocrate_4x4x4.mdl",
+	Size = Vector(50.2, 46.71, 45.5),
+	Offset = Vector(0.15, 0, 22.5)
+}
 
-local Ammo4x4x6 = {}
-	Ammo4x4x6.id = "Ammo4x4x6"
-	Ammo4x4x6.ent = "acf_ammo"
-	Ammo4x4x6.type = "Ammo"
-	Ammo4x4x6.name = "Modular Ammo Crate"
-	Ammo4x4x6.desc = "Modular Ammo Crate 4x4x6 Size\n"
-	Ammo4x4x6.model = "models/ammocrates/ammocrate_4x4x6.mdl"
-AmmoTable["Ammo4x4x6"] = Ammo4x4x6
+AmmoTable["Ammo4x4x6"] = {
+	id = "Ammo4x4x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x4x6 Size\n",
+	model = "models/ammocrates/ammocrate_4x4x6.mdl",
+	Size = Vector(50.2, 69.49, 45.5),
+	Offset = Vector(0.15, 0.06, 22.5)
+}
 
-local Ammo4x4x8 = {}
-	Ammo4x4x8.id = "Ammo4x4x8"
-	Ammo4x4x8.ent = "acf_ammo"
-	Ammo4x4x8.type = "Ammo"
-	Ammo4x4x8.name = "Modular Ammo Crate"
-	Ammo4x4x8.desc = "Modular Ammo Crate 4x4x8 Size\n"
-	Ammo4x4x8.model = "models/ammocrates/ammocrate_4x4x8.mdl"
-AmmoTable["Ammo4x4x8"] = Ammo4x4x8
+AmmoTable["Ammo4x4x8"] = {
+	id = "Ammo4x4x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x4x8 Size\n",
+	model = "models/ammocrates/ammocrate_4x4x8.mdl",
+	Size = Vector(50.2, 91.36, 45.5),
+	Offset = Vector(0.15, -0.01, 22.5)
+}
 
-local Ammo4x6x8 = {}
-	Ammo4x6x8.id = "Ammo4x6x8"
-	Ammo4x6x8.ent = "acf_ammo"
-	Ammo4x6x8.type = "Ammo"
-	Ammo4x6x8.name = "Modular Ammo Crate"
-	Ammo4x6x8.desc = "Modular Ammo Crate 4x6x8 Size\n"
-	Ammo4x6x8.model = "models/ammocrates/ammo_4x6x8.mdl"
-AmmoTable["Ammo4x6x8"] = Ammo4x6x8
+AmmoTable["Ammo4x6x8"] = {
+	id = "Ammo4x6x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x6x8 Size\n",
+	model = "models/ammocrates/ammo_4x6x8.mdl",
+	Size = Vector(73.27, 91.36, 45.42),
+	Offset = Vector(0, 0, -0.07)
+}
 
-local Ammo4x6x6 = {}
-	Ammo4x6x6.id = "Ammo4x6x6"
-	Ammo4x6x6.ent = "acf_ammo"
-	Ammo4x6x6.type = "Ammo"
-	Ammo4x6x6.name = "Modular Ammo Crate"
-	Ammo4x6x6.desc = "Modular Ammo Crate 4x6x6 Size\n"
-	Ammo4x6x6.model = "models/ammocrates/ammo_4x6x6.mdl"
-AmmoTable["Ammo4x6x6"] = Ammo4x6x6
+AmmoTable["Ammo4x6x6"] = {
+	id = "Ammo4x6x6",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x6x6 Size\n",
+	model = "models/ammocrates/ammo_4x6x6.mdl",
+	Size = Vector(73.27, 69.36, 45.44),
+	Offset = Vector(0, 0, -0.02)
+}
 
-local Ammo4x8x8 = {}
-	Ammo4x8x8.id = "Ammo4x8x8"
-	Ammo4x8x8.ent = "acf_ammo"
-	Ammo4x8x8.type = "Ammo"
-	Ammo4x8x8.name = "Modular Ammo Crate"
-	Ammo4x8x8.desc = "Modular Ammo Crate 4x8x8 Size\n"
-	Ammo4x8x8.model = "models/ammocrates/ammo_4x8x8.mdl"
-AmmoTable["Ammo4x8x8"] = Ammo4x8x8
+AmmoTable["Ammo4x8x8"] = {
+	id = "Ammo4x8x8",
+	ent = "acf_ammo",
+	type = "Ammo",
+	name = "Modular Ammo Crate",
+	desc = "Modular Ammo Crate 4x8x8 Size\n",
+	model = "models/ammocrates/ammo_4x8x8.mdl",
+	Size = Vector(95.19, 91.36, 45.63),
+	Offset = Vector(0, 0, -0.15)
+}
 
 ACF.Weapons.Ammo = AmmoTable	--end ammo containers listing
