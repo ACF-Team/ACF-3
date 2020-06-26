@@ -345,9 +345,9 @@ function PANEL:AmmoSelect(Blacklist)
 	local Y = AmmoData["Ammo Scale Y"] or 24
 	local Z = AmmoData["Ammo Scale Z"] or 24
 
-	acfmenupanel:AmmoSlider("Ammo Scale X", X, 6, 96, 3, "Crate X scale", "")
-	acfmenupanel:AmmoSlider("Ammo Scale Y", Y, 6, 96, 3, "Crate Y scale", "")
-	acfmenupanel:AmmoSlider("Ammo Scale Z", Z, 6, 96, 3, "Crate Z scale", "")
+	acfmenupanel:AmmoSlider("Ammo Scale X", X, 6, 96, 3, "Crate X scale")
+	acfmenupanel:AmmoSlider("Ammo Scale Y", Y, 6, 96, 3, "Crate Y scale")
+	acfmenupanel:AmmoSlider("Ammo Scale Z", Z, 6, 96, 3, "Crate Z scale")
 
 	acfmenupanel["CData"]["Ammo Scale X"].OnValueChanged = function(_, val)
 		if AmmoData["Ammo Scale X"] ~= val then
@@ -384,9 +384,9 @@ end
 function PANEL:AmmoUpdate()
 	local AmmoData = acfmenupanel.AmmoData
 
-	acfmenupanel:AmmoSlider("Ammo Scale X", AmmoData["Ammo Scale X"], 6, 96, 3, "Crate X scale", "")
-	acfmenupanel:AmmoSlider("Ammo Scale Y", AmmoData["Ammo Scale Y"], 6, 96, 3, "Crate Y scale", "")
-	acfmenupanel:AmmoSlider("Ammo Scale Z", AmmoData["Ammo Scale Z"], 6, 96, 3, "Crate Z scale", "")
+	acfmenupanel:AmmoSlider("Ammo Scale X", AmmoData["Ammo Scale X"], 6, 96, 3, "Crate X scale")
+	acfmenupanel:AmmoSlider("Ammo Scale Y", AmmoData["Ammo Scale Y"], 6, 96, 3, "Crate Y scale")
+	acfmenupanel:AmmoSlider("Ammo Scale Z", AmmoData["Ammo Scale Z"], 6, 96, 3, "Crate Z scale")
 end
 
 --Variable name in the table, Value, Min value, Max Value, slider text title, slider decimals, description text below slider
@@ -426,17 +426,19 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc)
 	Panels[Name]:SetMax(Max)
 	Panels[Name]:SetValue(Value)
 
-	if not Panels[Name .. "_text"] and Desc then
-		Panels[Name .. "_text"] = vgui.Create("DLabel")
-		Panels[Name .. "_text"]:SetText(Desc or "")
-		Panels[Name .. "_text"]:SetDark(true)
-		Panels[Name .. "_text"]:SetTall(20)
-		acfmenupanel.CustomDisplay:AddItem(Panels[Name .. "_text"])
-	end
+	if Desc then
+		if not Panels[Name .. "_text"] then
+			Panels[Name .. "_text"] = vgui.Create("DLabel")
+			Panels[Name .. "_text"]:SetText(Desc)
+			Panels[Name .. "_text"]:SetDark(true)
+			Panels[Name .. "_text"]:SetTall(20)
+			acfmenupanel.CustomDisplay:AddItem(Panels[Name .. "_text"])
+		end
 
-	Panels[Name .. "_text"]:SetText(Desc)
-	Panels[Name .. "_text"]:SetSize(acfmenupanel.CustomDisplay:GetWide(), 10)
-	Panels[Name .. "_text"]:SizeToContentsX()
+		Panels[Name .. "_text"]:SetText(Desc)
+		Panels[Name .. "_text"]:SetSize(acfmenupanel.CustomDisplay:GetWide(), 10)
+		Panels[Name .. "_text"]:SizeToContentsX()
+	end
 end
 
 --Variable name in the table, slider text title, slider decimeals, description text below slider
