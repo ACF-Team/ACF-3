@@ -42,7 +42,7 @@ if CLIENT then
 	language.Add( "SBoxLimit_acf_ammo", "You've reached the ACF Explosives limit!" )
 	language.Add( "SBoxLimit_acf_sensor", "You've reached the ACF Sensors limit!" )
 
-	local DrawBoxes = CreateConVar("acf_drawboxes", 0, FCVAR_ARCHIVE, "Whether or not to draw hitboxes on ACF entities", 0, 1)
+	local DrawBoxes = CreateConVar("acf_drawboxes", 1, FCVAR_ARCHIVE, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 
 	function TOOL.BuildCPanel( CPanel )
 
