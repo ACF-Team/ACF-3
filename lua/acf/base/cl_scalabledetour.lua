@@ -8,12 +8,13 @@ hook.Add("Initialize", "Scalable Entities", function()
 
 				-- Thank you, Garry. Very cool.
 				local O 	 = Ent.OriginalSize
-				local C 	 = Ent.CurrentSize
+				local C 	 = Ent.Size
 				local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
 
 				Pos = Ent:GetPos() + Offset * Scaler
 
-				local Max = math.Max(Scaler[1], Scaler[2], Scaler[3])
+				-- TODO: Consider every face of the box will have a different scale
+				local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
 
 				W = W * Max
 				H = H * Max
