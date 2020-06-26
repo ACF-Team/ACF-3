@@ -412,6 +412,8 @@ function ENT:Think()
 					local CurrentFuel = Tank.Capacity - Tank.Fuel
 					local Exchange = math.min(DeltaTime * ACF.RefillSpeed * RefillRate / 1750, self.Fuel, CurrentFuel)
 
+					if hook.Run("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+
 					self.Fuel = self.Fuel - Exchange
 					Tank.Fuel = Tank.Fuel + Exchange
 

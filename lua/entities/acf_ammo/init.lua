@@ -73,6 +73,8 @@ local function RefillCrates(Entity)
 			local Supply = math.ceil((50000 / ((Crate.BulletData.ProjMass + Crate.BulletData.PropMass) * 1000)) / Distance ^ 0.5)
 			local Transfer = math.min(Supply, Crate.Capacity - Crate.Ammo)
 
+			if hook.Run("ACF_CanRefill", Entity, Crate, Transfer) == false then continue end
+
 			if not Entity.SupplyingTo[Crate] then
 				Entity.SupplyingTo[Crate] = true
 
