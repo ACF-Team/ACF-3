@@ -382,6 +382,7 @@ function Round.guiupdate(Panel)
 	RunConsoleCommand("acfmenu_data6", Data.ConeAng)
 	RunConsoleCommand("acfmenu_data10", Data.Tracer)
 
+	acfmenupanel:AmmoUpdate()
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength + (Data.Caliber * 3.75), Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Projectile Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ConeAng", Data.ConeAng, Data.MinConeAng, Data.MaxConeAng, 0, "Crush Cone Angle", "") --HE Filler Slider (Name, Min, Max, Decimals, Title, Desc)

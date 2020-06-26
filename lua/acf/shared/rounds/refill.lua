@@ -51,6 +51,8 @@ end
 function Round.guiupdate()
 	RunConsoleCommand("acfmenu_data1", acfmenupanel.CData.AmmoId or "12.7mmMG")
 	RunConsoleCommand("acfmenu_data2", "Refill")
+
+	acfmenupanel:AmmoUpdate()
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 

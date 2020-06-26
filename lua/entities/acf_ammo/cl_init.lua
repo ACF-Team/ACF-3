@@ -23,14 +23,6 @@ local Refills = {}
 function ENT:Initialize()
 	self.Crates = {}
 	self.Refills = {}
-	self.HitBoxes = {
-		Main = {
-			Pos = self:OBBCenter(),
-			Scale = (self:OBBMaxs() - self:OBBMins()) - Vector(2, 2, 2),
-			Angle = Angle(0, 0, 0),
-			Sensitive = false
-		}
-	}
 
 	self:SetNWVarProxy("Ammo",function()
 		UpdateClAmmo(self)
@@ -42,6 +34,17 @@ function ENT:Initialize()
 
 	self.DrawAmmoHookIndex = "draw_ammo_" .. self:EntIndex()
 	self.BaseClass.Initialize(self)
+end
+
+function ENT:OnResized()
+	self.HitBoxes = {
+		Main = {
+			Pos = self:OBBCenter(),
+			Scale = self:GetPhysicsObject():GetAABB() * 2,
+			Angle = Angle(0, 0, 0),
+			Sensitive = false
+		}
+	}
 end
 
 net.Receive("ACF_UpdateAmmoBox",function()

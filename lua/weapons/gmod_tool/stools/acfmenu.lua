@@ -19,6 +19,9 @@ TOOL.ClientConVar[ "data7" ] = 0
 TOOL.ClientConVar[ "data8" ] = 0
 TOOL.ClientConVar[ "data9" ] = 0
 TOOL.ClientConVar[ "data10" ] = 0
+TOOL.ClientConVar[ "data11" ] = 24
+TOOL.ClientConVar[ "data12" ] = 24
+TOOL.ClientConVar[ "data13" ] = 24
 
 cleanup.Register( "acfmenu" )
 
@@ -52,8 +55,8 @@ if CLIENT then
 	end
 
 	-- "Hitbox" colors
-	local Sensitive      = Color(214, 160, 190, 50)
-	local NotSoSensitive = Color(160, 190, 215, 50)
+	local Sensitive      = Color(255, 0, 0, 50)
+	local NotSoSensitive = Color(255, 255, 0, 50)
 
 	-- Ammo overlay colors
 	local Blue   = Color(0, 127, 255, 65)
@@ -71,7 +74,7 @@ if CLIENT then
 
 					if Ent.HitBoxes then -- Draw "hitboxes"
 						for _, Tab in pairs(Ent.HitBoxes) do
-							render.DrawBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
+							render.DrawWireframeBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
 						end
 					end
 
@@ -98,7 +101,7 @@ if CLIENT then
 										if RoundsDisplay < FinalAmmo then
 											local C = Ent.IsRound and Blue or Ent.HasBoxedAmmo and Green or Orange
 
-											render.DrawBox(Ent:LocalToWorld(Ent:OBBCenter()) + (StartPos / 2) + LocalPos, RoundAngle, -Ent.RoundSize / 2, Ent.RoundSize / 2, C)
+											render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (StartPos / 2) + LocalPos, RoundAngle, -Ent.RoundSize / 2, Ent.RoundSize / 2, C)
 											RoundsDisplay = RoundsDisplay + 1
 										end
 
@@ -110,7 +113,7 @@ if CLIENT then
 							local AmmoPerc = (Ent.Ammo or 1) / (Ent.MaxAmmo or 1)
 							local SizeAdd = Vector(Ent.Spacing,Ent.Spacing,Ent.Spacing) * Ent.FitPerAxis
 							local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * (Vector(1,AmmoPerc,1))) + SizeAdd
-							render.DrawBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
+							render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
 						end
 					end
 				cam.End3D()
@@ -127,7 +130,13 @@ function TOOL:LeftClick(Trace)
 	local Player = self:GetOwner()
 	local Type = self:GetClientInfo("type")
 	local Id = self:GetClientInfo("id")
-	local TypeId = ACF.Weapons[Type][Id]
+	local TypeId
+
+	if Type == "Ammo" then -- I am hackerman
+		TypeId = { ent = "acf_ammo" }
+	else
+		TypeId = ACF.Weapons[Type][Id]
+	end
 
 	if not TypeId then return false end
 
