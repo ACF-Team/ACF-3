@@ -61,7 +61,7 @@ function ENT:SetSize(NewSize)
 	local Obj = self:GetPhysicsObject()
 
 	if IsValid(Obj) then
-		Obj:SetMass(Obj:GetVolume() / 1000)
+		Obj:EnableMotion(false)
 
 		if self.OnResized then self:OnResized() end
 
