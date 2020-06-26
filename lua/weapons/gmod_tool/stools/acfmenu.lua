@@ -65,60 +65,62 @@ if CLIENT then
 	local Red    = Color(255,0,0,65)
 
 	function TOOL:DrawHUD()
-		if DrawBoxes:GetBool() then
-			local Ent = LocalPlayer():GetEyeTrace().Entity
+		if not DrawBoxes:GetBool() then return end
 
-			if IsValid(Ent) then
-				cam.Start3D()
-					render.SetColorMaterial()
+		local Ent = LocalPlayer():GetEyeTrace().Entity
 
-					if Ent.HitBoxes then -- Draw "hitboxes"
-						for _, Tab in pairs(Ent.HitBoxes) do
-							render.DrawWireframeBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
-						end
-					end
+		if not IsValid(Ent) then return end
 
-					local FinalAmmo = 0
+		cam.Start3D()
+		render.SetColorMaterial()
 
-					if Ent.HasBoxedAmmo then FinalAmmo = math.floor((Ent.Ammo or 0) / Ent.MagSize) else FinalAmmo = (Ent.Ammo or 0) end
-
-					local RoundsDisplay = 0
-					if FinalAmmo > 0 and Ent.FitPerAxis then
-						local RoundAngle = Ent:LocalToWorldAngles(Ent.LocalAng or Angle())
-
-						local StartPos = ((Ent.FitPerAxis.x - 1) * (Ent.RoundSize.x + Ent.Spacing) * RoundAngle:Forward()) +
-						((Ent.FitPerAxis.y - 1) * (Ent.RoundSize.y + Ent.Spacing) * RoundAngle:Right()) +
-						((Ent.FitPerAxis.z - 1) * (Ent.RoundSize.z + Ent.Spacing) * RoundAngle:Up())
-
-						if not Ent.BulkDisplay then
-							for RX = 1, Ent.FitPerAxis.x do
-								for RY = 1, Ent.FitPerAxis.y do
-									for RZ = 1, Ent.FitPerAxis.z do
-										local LocalPos = ((RX - 1) * (Ent.RoundSize.x + Ent.Spacing) * -RoundAngle:Forward()) +
-										((RY - 1) * (Ent.RoundSize.y + Ent.Spacing) * -RoundAngle:Right()) +
-										((RZ - 1) * (Ent.RoundSize.Z + Ent.Spacing) * -RoundAngle:Up())
-
-										if RoundsDisplay < FinalAmmo then
-											local C = Ent.IsRound and Blue or Ent.HasBoxedAmmo and Green or Orange
-
-											render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (StartPos / 2) + LocalPos, RoundAngle, -Ent.RoundSize / 2, Ent.RoundSize / 2, C)
-											RoundsDisplay = RoundsDisplay + 1
-										end
-
-										if RoundsDisplay == FinalAmmo then break end
-									end
-								end
-							end
-						else -- Basic bitch box that scales according to ammo, only for bulk display
-							local AmmoPerc = (Ent.Ammo or 1) / (Ent.MaxAmmo or 1)
-							local SizeAdd = Vector(Ent.Spacing,Ent.Spacing,Ent.Spacing) * Ent.FitPerAxis
-							local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * (Vector(1,AmmoPerc,1))) + SizeAdd
-							render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
-						end
-					end
-				cam.End3D()
+		if Ent.HitBoxes then -- Draw "hitboxes"
+			for _, Tab in pairs(Ent.HitBoxes) do
+				render.DrawWireframeBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
 			end
 		end
+
+		local FinalAmmo = 0
+		local RoundsDisplay = 0
+
+		if Ent.HasBoxedAmmo then FinalAmmo = math.floor((Ent.Ammo or 0) / Ent.MagSize) else FinalAmmo = (Ent.Ammo or 0) end
+
+		if FinalAmmo > 0 and Ent.FitPerAxis then
+			local RoundAngle = Ent:LocalToWorldAngles(Ent.LocalAng or Angle())
+			local StartPos = ((Ent.FitPerAxis.x - 1) * (Ent.RoundSize.x + Ent.Spacing) * RoundAngle:Forward()) +
+				((Ent.FitPerAxis.y - 1) * (Ent.RoundSize.y + Ent.Spacing) * RoundAngle:Right()) +
+				((Ent.FitPerAxis.z - 1) * (Ent.RoundSize.z + Ent.Spacing) * RoundAngle:Up())
+
+			if not Ent.BulkDisplay then
+				for RX = 1, Ent.FitPerAxis.x do
+					for RY = 1, Ent.FitPerAxis.y do
+						for RZ = 1, Ent.FitPerAxis.z do
+							local LocalPos = ((RX - 1) * (Ent.RoundSize.x + Ent.Spacing) * -RoundAngle:Forward()) +
+								((RY - 1) * (Ent.RoundSize.y + Ent.Spacing) * -RoundAngle:Right()) +
+								((RZ - 1) * (Ent.RoundSize.Z + Ent.Spacing) * -RoundAngle:Up())
+
+							if RoundsDisplay < FinalAmmo then
+								local C = Ent.IsRound and Blue or Ent.HasBoxedAmmo and Green or Orange
+
+								RoundsDisplay = RoundsDisplay + 1
+
+								render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (StartPos / 2) + LocalPos, RoundAngle, -Ent.RoundSize / 2, Ent.RoundSize / 2, C)
+							end
+
+							if RoundsDisplay == FinalAmmo then break end
+						end
+					end
+				end
+			else -- Basic bitch box that scales according to ammo, only for bulk display
+				local AmmoPerc = (Ent.Ammo or 1) / (Ent.MaxAmmo or 1)
+				local SizeAdd = Vector(Ent.Spacing,Ent.Spacing,Ent.Spacing) * Ent.FitPerAxis
+				local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * (Vector(1,AmmoPerc,1))) + SizeAdd
+
+				render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
+			end
+		end
+
+		cam.End3D()
 	end
 end
 
