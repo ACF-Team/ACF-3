@@ -3,10 +3,7 @@ include("shared.lua")
 local Queued = {}
 local NWVars = { -- Funcs called over the network
 	Size = function(Entity, Value)
-		-- Updating the clientside size one tick later to prevent problems on spawn
-		timer.Simple(engine.TickInterval(), function()
-			Entity:SetSize(Value)
-		end)
+		Entity:SetSize(Value)
 	end,
 	OriginalSize = function(Entity, Value)
 		Entity.OriginalSize = Value
@@ -82,17 +79,23 @@ end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
 	local Phys = self:GetPhysicsObject()
+	local Position = self:GetPos()
+	local Angles = self:GetAngles()
 
 	if IsValid(Phys) then
-		Phys:SetPos(self:GetPos())
-		Phys:SetAngles(self:GetAngles())
-
+		Phys:SetPos(Position)
+		Phys:SetAngles(Angles)
 		Phys:EnableMotion(false) -- Disable prediction
+		Phys:Sleep()
 	end
+
+	return Position, Angles
 end
 
 hook.Add("EntityNetworkedVarChanged", "Scalable Box NWChange", function(Entity, Name, _, New)
-	if NWVars[Name] then
-		NWVars[Name](Entity, New)
+	local NWAction = NWVars[Name]
+
+	if Entity.IsScalable and NWAction then
+		NWAction(Entity, New)
 	end
 end)

@@ -55,13 +55,17 @@ function ENT:SetSize(NewSize)
 	self:PhysicsInitMultiConvex(Mesh) -- Apply new mesh
 	self:EnableCustomCollisions(true)
 
-	self:SetNW2Vector("Size", NewSize)
 	self.Size = NewSize
+
+	timer.Simple(0.1, function()
+		self:SetNW2Vector("Size", NewSize)
+	end)
 
 	local Obj = self:GetPhysicsObject()
 
 	if IsValid(Obj) then
 		Obj:EnableMotion(false)
+		Obj:Sleep()
 
 		if self.OnResized then self:OnResized() end
 

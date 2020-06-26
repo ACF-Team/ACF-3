@@ -8,6 +8,7 @@ function CreateWireScalable(Player, Pos, Angle, Size)
 	if not IsValid(Ent) then return end
 
 	Ent:SetModel("models/hunter/blocks/cube1x1x1.mdl")
+	Ent:SetPlayer(Player)
 	Ent:SetAngles(Angle)
 	Ent:SetPos(Pos)
 	Ent:Spawn()
@@ -55,13 +56,17 @@ function ENT:SetSize(NewSize)
 	self:PhysicsInitMultiConvex(Mesh) -- Apply new mesh
 	self:EnableCustomCollisions(true)
 
-	self:SetNW2Vector("Size", NewSize)
 	self.Size = NewSize
+
+	timer.Simple(0.1, function()
+		self:SetNW2Vector("Size", NewSize)
+	end)
 
 	local Obj = self:GetPhysicsObject()
 
 	if IsValid(Obj) then
 		Obj:EnableMotion(false)
+		Obj:Sleep()
 
 		if self.OnResized then self:OnResized() end
 
