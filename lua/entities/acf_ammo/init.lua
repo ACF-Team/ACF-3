@@ -172,10 +172,11 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	-- a much needed enmasse comparing function
 	-- through some light digging, I couldn't find one, so I made one
 	local Force = switch({
-		["SAC"] = true,
+		["SA"] = true,
 		["SL"] = true,
 		["HMG"] = true,
 		["GL"] = true,
+		["MG"] = true,
 		["default"] = false
 	},
 	Class)
@@ -188,7 +189,7 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	},
 	Class)
 
-	if ((GunData.magsize or 0) > 0) and ((RoundCaliber <= 2) or (Force and (not (ExtraData.isRacked or false)))) and (not ForceSkip) then
+	if ((GunData.magsize or 0) > 0) and ((GunData.caliber <= 2) or (Force and (not (ExtraData.isRacked or false)))) and (not ForceSkip) then
 		MagSize = GunData.magsize
 		MagBoxSize = ConvCaliber * math.sqrt(MagSize)
 		-- Makes certain automatic ammo stored by boxes
