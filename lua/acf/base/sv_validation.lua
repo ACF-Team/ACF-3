@@ -47,7 +47,7 @@ local function IsLegal(Entity)
 	end
 	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
 	if Entity:GetNoDraw() then return false, "Not drawn", "ACF entities must be drawn at all times." end -- Tooltip is useless here since clients cannot see the entity.
-	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
+	if not Entity:IsSolid() then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 	if Phys:GetMass() < Entity.ACF.LegalMass then -- You can make it heavier than the legal mass if you want
 		Phys:SetMass(Entity.ACF.LegalMass)
