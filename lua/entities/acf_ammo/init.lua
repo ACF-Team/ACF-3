@@ -416,24 +416,6 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 		if Size ~= Entity.Size then -- On resize
 			Entity:SetSize(Size)
-
-			do -- Calculate new empty mass
-				local A = ACF.AmmoArmor * 0.039 -- Millimeters to inches
-				local ExteriorVolume = Entity.Size[1] * Entity.Size[2] * Entity.Size[3]
-				local InteriorVolume = (Entity.Size[1] - A) * (Entity.Size[2] - A) * (Entity.Size[3] - A) -- Math degree
-
-				local Volume = ExteriorVolume - InteriorVolume
-				local Mass   = Volume * 0.13 -- Kg of steel per inch
-
-				Entity.EmptyMass = Mass
-			end
-
-			Entity.HitBoxes = {
-				Main = {
-					Pos = Entity:OBBCenter(),
-					Scale = Entity.Size,
-				}
-			}
 		end
 	end
 
@@ -817,6 +799,26 @@ do -- Metamethods -------------------------------
 			self:UpdateOverlay(true)
 
 			return true, Message
+		end
+
+		function ENT:OnResized()
+			do -- Calculate new empty mass
+				local A = ACF.AmmoArmor * 0.039 -- Millimeters to inches
+				local ExteriorVolume = self.Size[1] * self.Size[2] * self.Size[3]
+				local InteriorVolume = (self.Size[1] - A) * (self.Size[2] - A) * (self.Size[3] - A) -- Math degree
+
+				local Volume = ExteriorVolume - InteriorVolume
+				local Mass   = Volume * 0.13 -- Kg of steel per inch
+
+				self.EmptyMass = Mass
+			end
+
+			self.HitBoxes = {
+				Main = {
+					Pos = self:OBBCenter(),
+					Scale = self.Size,
+				}
+			}
 		end
 
 		function ENT:Detonate()
