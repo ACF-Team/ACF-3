@@ -407,10 +407,9 @@ function ENT:Think()
 				local Distance = SelfPos:DistToSqr(Tank:GetPos())
 
 				if Distance <= MaxDist and Tank.Capacity - Tank.Fuel > 0.1 then
-					local RefillRate = self.FuelType == "Electric" and ACF.ElecRate or ACF.FuelRate
 					local DeltaTime = CurTime() - self.LastThink
 					local CurrentFuel = Tank.Capacity - Tank.Fuel
-					local Exchange = math.min(DeltaTime * ACF.RefillSpeed * RefillRate / 1750, self.Fuel, CurrentFuel)
+					local Exchange = math.min(DeltaTime * ACF.RefillSpeed * ACF.FuelRate / 1750, self.Fuel, CurrentFuel)
 
 					if hook.Run("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
 

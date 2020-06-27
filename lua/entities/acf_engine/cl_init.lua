@@ -50,7 +50,7 @@ function ACFEngineGUICreate(Table)
 	acfmenupanel:CPanelText("FuelType", "\nFuel Type : " .. Table.fuel)
 
 	if Table.fuel == "Electric" then
-		local cons = ACF.ElecRate * peakkw / ACF.Efficiency[Table.enginetype]
+		local cons = ACF.FuelRate * peakkw / ACF.Efficiency[Table.enginetype]
 		acfmenupanel:CPanelText("FuelCons", "Peak energy use : " .. math.Round(cons, 1) .. " kW / " .. math.Round(0.06 * cons, 1) .. " MJ/min")
 	elseif Table.fuel == "Multifuel" then
 		local petrolcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Petrol)
