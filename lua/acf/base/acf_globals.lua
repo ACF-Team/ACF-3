@@ -52,7 +52,7 @@ do -- ACF global vars
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
 	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance 	= 0.25
-	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
+	ACF.DebrisScale 		= 20 -- Ignore debris that is less than this bounding radius.
 	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
 	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
