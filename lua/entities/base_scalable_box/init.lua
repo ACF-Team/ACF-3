@@ -27,7 +27,6 @@ function ENT:ApplyNewSize(NewSize)
 
 	self:PhysicsInitBox(-Bounds, Bounds)
 	self:EnableCustomCollisions(true)
-	self:SetMoveType(MOVETYPE_CUSTOM)
 	self:SetSolid(SOLID_VPHYSICS)
 
 	local PhysObj = self:GetPhysicsObject()
