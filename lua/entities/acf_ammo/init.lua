@@ -415,7 +415,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 		Size = Vector(X, Y, Z)
 
-		if Size ~= Entity.Size then -- On resize
+		if Size ~= Entity:GetSize() then
 			Entity:SetSize(Size)
 		end
 	end
@@ -475,9 +475,9 @@ do -- Spawn Func --------------------------------
 		Crate:SetPos(Pos)
 		Crate:SetAngles(Ang)
 		Crate:SetPlayer(Player)
-		Crate:SetModel("models/xqm/polex1.mdl")
+		Crate:SetModel("models/holograms/rcube_thin.mdl")
+		Crate:SetMaterial("hunter/myplastic")
 		Crate:Spawn()
-		Crate:SetColor(Color(61, 82, 61))
 
 		Crate:PhysicsInit(SOLID_VPHYSICS)
 		Crate:SetMoveType(MOVETYPE_VPHYSICS)
@@ -803,10 +803,12 @@ do -- Metamethods -------------------------------
 		end
 
 		function ENT:OnResized()
+			local Size = self:GetSize()
+
 			do -- Calculate new empty mass
 				local A = ACF.AmmoArmor * 0.039 -- Millimeters to inches
-				local ExteriorVolume = self.Size[1] * self.Size[2] * self.Size[3]
-				local InteriorVolume = (self.Size[1] - A) * (self.Size[2] - A) * (self.Size[3] - A) -- Math degree
+				local ExteriorVolume = Size[1] * Size[2] * Size[3]
+				local InteriorVolume = (Size[1] - A) * (Size[2] - A) * (Size[3] - A) -- Math degree
 
 				local Volume = ExteriorVolume - InteriorVolume
 				local Mass   = Volume * 0.13 -- Kg of steel per inch
@@ -817,7 +819,7 @@ do -- Metamethods -------------------------------
 			self.HitBoxes = {
 				Main = {
 					Pos = self:OBBCenter(),
-					Scale = self.Size,
+					Scale = Size,
 				}
 			}
 		end

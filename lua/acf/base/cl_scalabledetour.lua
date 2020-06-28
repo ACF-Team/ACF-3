@@ -3,12 +3,12 @@ hook.Add("Initialize", "Scalable Entities", function()
 		local DecalEx = util.DecalEx
 
 		util.DecalEx = function(Mat, Ent, Pos, Normal, Color, W, H)
-			if Ent.Size and Ent.OriginalSize then -- If entity is scaled, offset decal pos
+			if Ent.IsScalable and Ent:GetOriginalSize() then -- If entity is scaled, offset decal pos
 				local Offset = Pos - Ent:GetPos()
 
 				-- Thank you, Garry. Very cool.
-				local O 	 = Ent.OriginalSize
-				local C 	 = Ent.Size
+				local O 	 = Ent:GetOriginalSize()
+				local C 	 = Ent:GetSize()
 				local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
 
 				Pos = Ent:GetPos() + Offset * Scaler
@@ -30,11 +30,11 @@ hook.Add("Initialize", "Scalable Entities", function()
 		local DisMatr = Meta.DisableMatrix
 
 		function Meta:EnableMatrix(Str, NewScale)
-			if self.Size and self.OriginalSize and Str == "RenderMultiply" then
-				local Size  = self.OriginalSize
-				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self.Size
+			if self.IsScalable and self:GetOriginalSize() and Str == "RenderMultiply" then
+				local Size  = self:GetOriginalSize()
+				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self:GetSize()
 
-				if NewScale:GetScale() ~= Scale then
+				if NewScale:GetScale() == Scale then
 					return
 				end
 			end
@@ -43,11 +43,11 @@ hook.Add("Initialize", "Scalable Entities", function()
 		end
 
 		function Meta:DisableMatrix(Str)
-			if self.Size and self.OriginalSize and Str == "RenderMultiply" then
+			if self.IsScalable and self:GetOriginalSize() and Str == "RenderMultiply" then
 				local Mat = Matrix()
 
-				local Size  = self.OriginalSize
-				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self.Size
+				local Size  = self:GetOriginalSize()
+				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self:GetSize()
 
 				Mat:Scale(Scale)
 

@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("base_scalable_wire")
+DEFINE_BASECLASS("base_scalable_box")
 
 ENT.PrintName     = "ACF Ammo Crate"
 ENT.WireDebugName = "ACF Ammo Crate"

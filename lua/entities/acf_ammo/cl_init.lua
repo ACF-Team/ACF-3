@@ -69,11 +69,13 @@ function ENT:OnResized()
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
-			Scale = self:GetPhysicsObject():GetAABB() * 2,
+			Scale = self:GetSize(),
 			Angle = Angle(0, 0, 0),
 			Sensitive = false
 		}
 	}
+
+	UpdateClAmmo(self)
 end
 
 function ENT:Draw()
