@@ -5,7 +5,7 @@ include("shared.lua")
 
 util.AddNetworkString("ACF_RefillEffect")
 util.AddNetworkString("ACF_StopRefillEffect")
-util.AddNetworkString("ACF_UpdateAmmoBox")
+util.AddNetworkString("ACF_RequestAmmoData")
 
 -- Local Vars -----------------------------------
 local CheckLegal   = ACF_CheckLegal
@@ -41,26 +41,16 @@ local function StopRefillEffect(Entity, Target)
 	net.Broadcast()
 end
 
-local function UpdateClientAmmobox(Entity, Player)
-	net.Start("ACF_UpdateAmmoBox")
-		net.WriteEntity(Entity)
-		net.WriteString(util.TableToJSON(Entity.CrateData))
+-- Whenever a player requests ammo data, we'll send it to them
+net.Receive("ACF_RequestAmmoData", function(_, Player)
+	local Entity = net.ReadEntity()
 
-	if IsValid(Player) then
+	if IsValid(Entity) and Entity.CrateData then
+		net.Start("ACF_RequestAmmoData")
+			net.WriteEntity(Entity)
+			net.WriteString(Entity.CrateData)
 		net.Send(Player)
-	else
-		net.Broadcast()
 	end
-end
-
-hook.Add("PlayerInitialSpawn", "ACF Network Crates", function(Player)
-	timer.Simple(10, function()
-		if not IsValid(Player) then return end
-
-		for Crate in pairs(ActiveCrates) do
-			UpdateClientAmmobox(Crate, Player)
-		end
-	end)
 end)
 
 local function RefillCrates(Entity)
@@ -309,8 +299,9 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	return Rounds,ExtraData
 end
 
-local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Id)
+local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, Data)
 	local GunData = ACF.Weapons.Guns[Data1]
+	local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
 
 	do -- Sanity checks
 		if not GunData then
@@ -338,10 +329,17 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 	local RoundData = ACF.RoundTypes[Data2]
 
 	do -- Backwards compatibility
-		local AmmoData = Id and ACF.Weapons.Ammo[Id]
+		local AmmoData = Data and Data.Id and ACF.Weapons.Ammo[Data.Id]
 
 		if AmmoData and not (Data11 or Data12 or Data13) then
-			Entity:SetPos(Entity:LocalToWorld(AmmoData.Offset))
+			local NewPos = Entity:LocalToWorld(AmmoData.Offset)
+
+			Entity:SetPos(NewPos)
+
+			-- Updating the dupe position
+			if Data.BuildDupeInfo then
+				Data.BuildDupeInfo.PosReset = NewPos
+			end
 
 			Data11 = AmmoData.Size[1]
 			Data12 = AmmoData.Size[2]
@@ -437,6 +435,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 	Entity.AmmoMassMax = math.floor((Entity.BulletData.ProjMass + Entity.BulletData.PropMass) * Entity.Capacity)
 	Entity.Caliber = GunData.caliber
+	Entity.Ammo = math.floor(Entity.Capacity * Percentage)
+
+	Entity:SetNWInt("Ammo", Entity.Ammo)
 
 	if ExtraData then
 		local MGS = 0
@@ -450,12 +451,17 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 		ExtraData.Capacity = Entity.Capacity
 
-		Entity.CrateData = ExtraData
+		Entity.CrateData = util.TableToJSON(ExtraData)
 
+		-- TODO: Figure out a way to not rely on this delay.
 		timer.Simple(0.1, function()
-			UpdateClientAmmobox(Entity)
+			net.Start("ACF_RequestAmmoData")
+				net.WriteEntity(Entity)
+				net.WriteString(Entity.CrateData)
+			net.Broadcast()
 		end)
 	end
+
 	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
@@ -476,23 +482,16 @@ do -- Spawn Func --------------------------------
 		Crate:SetAngles(Ang)
 		Crate:SetPlayer(Player)
 		Crate:SetModel("models/holograms/rcube_thin.mdl")
-		Crate:SetMaterial("hunter/myplastic")
+		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:Spawn()
 
-		Crate:PhysicsInit(SOLID_VPHYSICS)
-		Crate:SetMoveType(MOVETYPE_VPHYSICS)
-
-		ACF_Activate(Crate) -- Makes Crate.ACF table
 		UpdateAmmoData(Crate, ...) -- This breaks if i put it after the rest of the vars and i dont care to figure out why
 
-		Crate.ACF.Model 	= Crate:GetModel()
-		Crate.ACF.LegalMass = math.floor(Crate.EmptyMass + Crate.AmmoMassMax)
 		Crate.IsExplosive   = true
-		Crate.Ammo			= Crate.Capacity
 		Crate.Owner			= Player
 		Crate.Weapons		= {}
 		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
-		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading"})
+		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading" })
 		Crate.CanUpdate		= true
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
@@ -503,6 +502,11 @@ do -- Spawn Func --------------------------------
 		Crate:SetNWInt("Ammo", Crate.Ammo)
 
 		ACF.AmmoCrates[Crate] = true
+
+		ACF_Activate(Crate) -- Makes Crate.ACF table
+
+		Crate.ACF.Model 	= Crate:GetModel()
+		Crate.ACF.LegalMass = math.floor(Crate.EmptyMass + Crate.AmmoMassMax)
 
 		local Phys = Crate:GetPhysicsObject()
 		if IsValid(Phys) then
@@ -515,8 +519,8 @@ do -- Spawn Func --------------------------------
 		return Crate
 	end
 
-	list.Set("ACFCvars", "acf_ammo", { "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "id" })
-	duplicator.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Pos", "Angle", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "RoundData11", "RoundData12", "RoundData13", "Id")
+	list.Set("ACFCvars", "acf_ammo", { "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13" })
+	duplicator.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Pos", "Angle", "RoundId", "RoundType", "RoundPropellant", "RoundProjectile", "RoundData5", "RoundData6", "RoundData7", "RoundData8", "RoundData9", "RoundData10", "RoundData11", "RoundData12", "RoundData13", "Data")
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end
 
@@ -533,7 +537,6 @@ do -- Metamethods -------------------------------
 
 				WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
 			end
-
 
 			self:UpdateOverlay()
 		end
@@ -572,7 +575,8 @@ do -- Metamethods -------------------------------
 				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
 				local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-				local Text = "%s\n\nContents: %s ( %s / %s ) %s"
+				local Text = "%s\n\nSize: %sm X %sm X %sm\n\nContents: %s ( %s / %s )%s"
+				local X, Y, Z = Ent:GetSize():Unpack()
 				local AmmoData = ""
 				local Status
 
@@ -582,12 +586,15 @@ do -- Metamethods -------------------------------
 					Status = "Not linked to a weapon!"
 				end
 
+				X = math.Round(X * 0.0254, 2)
+				Y = math.Round(Y * 0.0254, 2)
+				Z = math.Round(Z * 0.0254, 2)
+
 				if Ent.RoundData.cratetxt then
 					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
 				end
 
-				Ent:SetOverlayText(string.format(Text, Status, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
-				Ent:SetNWInt("Ammo", Ent.Ammo)
+				Ent:SetOverlayText(Text:format(Status, X, Y, Z, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
 			end
 		end
 
@@ -639,6 +646,14 @@ do -- Metamethods -------------------------------
 			end
 
 			WireLib.TriggerOutput(self, "Ammo", self.Ammo)
+
+			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
+
+			TimerCreate("ACF Network Ammo " .. self:EntIndex(), 1, 1, function()
+				if not IsValid(self) then return end
+
+				self:SetNWInt("Ammo", self.Ammo)
+			end)
 		end
 
 		local function UpdateMass(Ent)
@@ -790,11 +805,7 @@ do -- Metamethods -------------------------------
 				end
 			end
 
-			local AmmoPercent = self.Ammo / math.max(self.Capacity, 1)
-
 			UpdateAmmoData(self, unpack(ArgsTable, 4))
-
-			self.Ammo = math.floor(self.Capacity * AmmoPercent)
 
 			self:UpdateMass(true)
 			self:UpdateOverlay(true)
@@ -822,6 +833,8 @@ do -- Metamethods -------------------------------
 					Scale = Size,
 				}
 			}
+
+			self:UpdateOverlay()
 		end
 
 		function ENT:Detonate()

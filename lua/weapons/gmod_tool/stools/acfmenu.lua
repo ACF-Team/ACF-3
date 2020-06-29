@@ -67,9 +67,12 @@ if CLIENT then
 	function TOOL:DrawHUD()
 		if not DrawBoxes:GetBool() then return end
 
-		local Ent = LocalPlayer():GetEyeTrace().Entity
+		local Trace = LocalPlayer():GetEyeTrace()
+		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
+		local Ent = Trace.Entity
 
 		if not IsValid(Ent) then return end
+		if Distance > 65536 then return end
 
 		cam.Start3D()
 		render.SetColorMaterial()
@@ -80,13 +83,19 @@ if CLIENT then
 			end
 		end
 
-		local FinalAmmo = 0
-		local RoundsDisplay = 0
+		if not Ent.IsScalable then cam.End3D() return end
+		if not Ent.HasData then
+			if Ent.RequestAmmoData then Ent:RequestAmmoData() end
 
-		if Ent.HasBoxedAmmo then FinalAmmo = math.floor((Ent.Ammo or 0) / Ent.MagSize) else FinalAmmo = (Ent.Ammo or 0) end
+			cam.End3D()
+			return
+		end
+
+		local FinalAmmo = Ent.HasBoxedAmmo and math.floor(Ent.Ammo / Ent.MagSize) or Ent.Ammo
 
 		if FinalAmmo > 0 and Ent.FitPerAxis then
-			local RoundAngle = Ent:LocalToWorldAngles(Ent.LocalAng or Angle())
+			local RoundsDisplay = 0
+			local RoundAngle = Ent:LocalToWorldAngles(Ent.LocalAng)
 			local StartPos = ((Ent.FitPerAxis.x - 1) * (Ent.RoundSize.x + Ent.Spacing) * RoundAngle:Forward()) +
 				((Ent.FitPerAxis.y - 1) * (Ent.RoundSize.y + Ent.Spacing) * RoundAngle:Right()) +
 				((Ent.FitPerAxis.z - 1) * (Ent.RoundSize.z + Ent.Spacing) * RoundAngle:Up())
@@ -112,9 +121,9 @@ if CLIENT then
 					end
 				end
 			else -- Basic bitch box that scales according to ammo, only for bulk display
-				local AmmoPerc = (Ent.Ammo or 1) / (Ent.MaxAmmo or 1)
-				local SizeAdd = Vector(Ent.Spacing,Ent.Spacing,Ent.Spacing) * Ent.FitPerAxis
-				local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * (Vector(1,AmmoPerc,1))) + SizeAdd
+				local AmmoPerc = Ent.Ammo / Ent.Capacity
+				local SizeAdd = Vector(Ent.Spacing, Ent.Spacing, Ent.Spacing) * Ent.FitPerAxis
+				local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * Vector(1, AmmoPerc, 1)) + SizeAdd
 
 				render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
 			end
@@ -153,7 +162,9 @@ function TOOL:LeftClick(Trace)
 
 	-- Reading the list packaged with the ent to see what client CVar it needs
 	for K, V in ipairs(ArgList[Class]) do
-		ArgTable[K + 3] = self:GetClientInfo(V)
+		local Info = self:GetClientInfo(V)
+
+		ArgTable[K + 3] = Info ~= "" and Info or false
 	end
 
 	if Trace.Entity:GetClass() == Class and Trace.Entity.CanUpdate then

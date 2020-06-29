@@ -3,35 +3,28 @@ include("shared.lua")
 local RoundsDisplayCVar = GetConVar("ACF_MaxRoundsDisplay")
 local HideInfo = ACF.HideInfoBubble
 local Refills = {}
+local Queued = {}
 
-local function UpdateBulkDisplay(ent)
+local function UpdateClAmmo(Entity)
+	if not IsValid(Entity) then return end
+	if not Entity.HasData then
+		return Entity:RequestAmmoData()
+	end
+
 	local MaxDisplayRounds = RoundsDisplayCVar:GetInt()
-	local FinalAmmo = 0
 
-	if ent.HasBoxedAmmo then
-		FinalAmmo = math.floor((ent.Ammo or 0) / ent.MagSize)
-	else
-		FinalAmmo = ent.Ammo or 0
-	end
+	Entity.Ammo = math.Clamp(Entity:GetNWInt("Ammo", 0), 0, Entity.Capacity)
 
-	if FinalAmmo > MaxDisplayRounds then
-		ent.BulkDisplay = true
-	else
-		ent.BulkDisplay = false
-	end
+	local FinalAmmo = Entity.HasBoxedAmmo and math.floor(Entity.Ammo / Entity.MagSize) or Entity.Ammo
+
+	Entity.BulkDisplay = FinalAmmo > MaxDisplayRounds
 end
 
-local function UpdateClAmmo(ent)
-	ent.Ammo = ent:GetNWInt("Ammo",0)
-
-	if ent.Ammo > (ent.MaxAmmo or 0) then ent.MaxAmmo = ent.Ammo end
-
-	UpdateBulkDisplay(ent)
-end
-
-net.Receive("ACF_UpdateAmmoBox", function()
+net.Receive("ACF_RequestAmmoData", function()
 	local Entity = net.ReadEntity()
 	local Data = util.JSONToTable(net.ReadString())
+
+	if not IsValid(Entity) then return end
 
 	Entity.Capacity = Data.Capacity
 	Entity.IsRound = Data.IsRound
@@ -40,29 +33,40 @@ net.Receive("ACF_UpdateAmmoBox", function()
 	Entity.FitPerAxis = Data.FitPerAxis
 	Entity.Spacing = Data.Spacing
 	Entity.MagSize = Data.MGS
-	Entity.HasBoxedAmmo = Entity.MagSize > 0
+	Entity.HasBoxedAmmo = Data.MGS > 0
+	Entity.HasData = true
+
+	if Queued[Entity] then
+		Queued[Entity] = nil
+	end
 
 	UpdateClAmmo(Entity)
-
-	Entity.MaxAmmo = Entity.Ammo
-
-	UpdateBulkDisplay(Entity)
 end)
 
 function ENT:Initialize()
 	self.Crates = {}
 	self.Refills = {}
 
-	self:SetNWVarProxy("Ammo",function()
+	self:SetNWVarProxy("Ammo", function()
 		UpdateClAmmo(self)
 	end)
 
-	cvars.AddChangeCallback("ACF_MaxRoundsDisplay",function()
-		UpdateBulkDisplay(self)
+	cvars.AddChangeCallback("ACF_MaxRoundsDisplay", function()
+		UpdateClAmmo(self)
 	end)
 
 	self.DrawAmmoHookIndex = "draw_ammo_" .. self:EntIndex()
 	self.BaseClass.Initialize(self)
+end
+
+function ENT:RequestAmmoData()
+	if Queued[self] then return end
+
+	Queued[self] = true
+
+	net.Start("ACF_RequestAmmoData")
+		net.WriteEntity(self)
+	net.SendToServer()
 end
 
 function ENT:OnResized()
@@ -75,7 +79,7 @@ function ENT:OnResized()
 		}
 	}
 
-	UpdateClAmmo(self)
+	self.HasData = nil
 end
 
 function ENT:Draw()
@@ -101,7 +105,7 @@ function ENT:OnRemove()
 			Refills[Refill] = nil
 		end
 	end
-	self:SetNoDraw(false)
+
 	hook.Remove("PostDrawOpaqueRenderables",self.DrawAmmoHookIndex)
 end
 
