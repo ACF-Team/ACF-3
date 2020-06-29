@@ -35,19 +35,17 @@ function ENT:SetSize(NewSize)
 
 	local PhysObj = self:GetPhysicsObject()
 
+	net.Start("RequestSize")
+		net.WriteEntity(self)
+		net.WriteVector(self:GetOriginalSize())
+		net.WriteVector(self:GetSize())
+	net.Broadcast()
+
 	if IsValid(PhysObj) then
 		if self.OnResized then self:OnResized() end
 
 		hook.Run("OnEntityResized", self, PhysObj, NewSize)
 	end
-
-	timer.Simple(0.1, function()
-		net.Start("RequestSize")
-			net.WriteEntity(self)
-			net.WriteVector(self:GetOriginalSize())
-			net.WriteVector(self:GetSize())
-		net.Broadcast()
-	end)
 end
 
 util.AddNetworkString("RequestOriginalSize")

@@ -7,7 +7,7 @@ function CreateScalableBox(Player, Pos, Angle, Size)
 
 	if not IsValid(Ent) then return end
 
-	Ent:SetModel("models/props_dev/test_lightingbox.mdl")
+	Ent:SetModel("models/holograms/cube.mdl")
 	Ent:SetPlayer(Player)
 	Ent:SetAngles(Angle)
 	Ent:SetPos(Pos)

@@ -18,16 +18,31 @@ net.Receive("RequestSize", function()
 	if Queued[E] then Queued[E] = nil end
 end)
 
+hook.Add("OnEntityCreated", "Scalable Ent Startup", function(Entity)
+	timer.Simple(0, function()
+		if not IsValid(Entity) then return end
+		if not Entity.IsScalable then return end
+
+		Queued[Entity] = true
+
+		net.Start("RequestOriginalSize")
+			net.WriteEntity(Entity)
+		net.SendToServer()
+	end)
+end)
+
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
 		local Size = Sizes[self:GetModel()]
 
-		if not Size then
-			Queued[self] = true
+		if not Size then -- This should never ever be called
+			if not Queued[self] then
+				Queued[self] = true
 
-			net.Start("RequestOriginalSize")
-				net.WriteEntity(self)
-			net.SendToServer()
+				net.Start("RequestOriginalSize")
+					net.WriteEntity(self)
+				net.SendToServer()
+			end
 
 			return
 		end
