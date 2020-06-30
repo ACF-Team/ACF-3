@@ -104,18 +104,63 @@ end
 -- Split this off from the original function,
 -- All this does is compare a distance against a table of distances with string indexes for the shortest fitting size
 -- It returns the string index of the dimension, or nil if it fails to fit
-local function ShortestSize(Length,DimTable)
+local function ShortestSize(Size,Spacing,DimTable,ExtraData,IsIrregular)
 	local ReturnDimension = nil
+	local X = 0
+	local Y = 0
+	local TestRoundCount = 0
+	local BestCount = 0
 
-	for K,V in pairs(DimTable) do
-		if ReturnDimension == nil then
-			if Length <= V then ReturnDimension = K end -- It fits, it sits
+	--local FullSize = {x = Size.x + Spacing, y = Size.y + Spacing, z = Size.z + Spacing} -- size of the round with the padding
+	local ConvLength = Size.x
+
+	for K,_ in pairs(DimTable) do
+		if K == "x" then
+			X = DimTable["y"]
+			Y = DimTable["z"]
+		elseif K == "y" then
+			X = DimTable["x"]
+			Y = DimTable["z"]
+		else -- z
+			X = DimTable["x"]
+			Y = DimTable["y"]
+		end
+
+		if not IsIrregular then
+			local ModifiedRoundLength = ConvLength + Spacing
+			local ModifiedRoundSize = Size.y + Spacing
+			if (math.floor(DimTable[K] / ConvLength) == 1) then ModifiedRoundLength = ConvLength end
+
+			local RoundsX = math.floor(DimTable[K] / ModifiedRoundLength)
+			local RoundsY = math.floor(X / ModifiedRoundSize)
+			local RoundsZ = math.floor(Y / ModifiedRoundSize)
+
+			if ExtraData.MagSize or 0 > 0 then
+				TestRoundCount = RoundsX * RoundsY * RoundsZ * ExtraData.MagSize
+			else
+				TestRoundCount = RoundsX * RoundsY * RoundsZ
+			end
 		else
-			if Length <= V and Length < DimTable[ReturnDimension] then ReturnDimension = K end -- It fits, it sits in an even small spot
+			local ModifiedRoundLength = ConvLength + Spacing
+			local RoundWidth = Size.y + Spacing
+			local RoundHeight = Size.z + Spacing
+			-- Doesn't use round spacing for length wise if its just 1, because edge cases are fun
+			if (math.floor(DimTable[K] / ConvLength) == 1) then ModifiedRoundLength = ConvLength end
+
+			local RoundsX = math.floor(DimTable[K] / ModifiedRoundLength)
+			local RoundsY = math.floor(X / (RoundWidth + Spacing))
+			local RoundsZ = math.floor(Y / (RoundHeight + Spacing))
+
+			TestRoundCount = RoundsX * RoundsY * RoundsZ
+		end
+
+		if ReturnDimension == nil then
+			if TestRoundCount > BestCount then ReturnDimension = K BestCount = TestRoundCount end -- It fits, it sits
+		else
+			if TestRoundCount > BestCount then ReturnDimension = K BestCount = TestRoundCount end -- It fits, it sits in an even small spot
 		end
 	end
-
-	return ReturnDimension
+	return ReturnDimension, BestCount
 end
 
 -- BoxSize is just OBBMaxs-OBBMins
@@ -198,7 +243,7 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 	end
 
 	local D = {["x"] = BoxSize.x, ["y"] = BoxSize.y, ["z"] = BoxSize.z}
-	local ShortestFit = ShortestSize(ConvLength,D)
+	local ShortestFit = ShortestSize({x = ConvLength,y = ConvCaliber,z = ConvCaliber},Spacing,D,ExtraData,false)
 
 	if ShortestFit ~= nil then -- From here we know the round can sorta fit in the box
 		local X = 0
@@ -245,7 +290,11 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 		local RoundWidth = ConvCaliber * 2 -- two pieces wide
 		local RoundHeight = ConvCaliber -- one piece tall
 
-		ShortestFit = ShortestSize(ConvLength, D)
+		local ShortestFit1, ShortestFit2
+		local Count1, Count2
+		ShortestFit1,Count1 = ShortestSize({x = ConvLength,y = RoundWidth,z = RoundHeight},Spacing,D,ExtraData,true)
+		ShortestFit2,Count2 = ShortestSize({x = ConvLength,y = RoundHeight,z = RoundWidth},Spacing,D,ExtraData,true)
+		if Count1 > Count2 then ShortestFit = ShortestFit1 ShortestWidth = "x" else ShortestFit = ShortestFit2 ShortestWidth = "y" end
 
 		-- Retrying the length fit
 		if ShortestFit ~= nil then
@@ -268,7 +317,6 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 
 				-- Now we have to check which side will fit the new width of the round, in the shortest space possible
 				local D2 = {["x"] = X, ["y"] = Y}
-				ShortestWidth = ShortestSize(RoundWidth, D2)
 
 				local FreeSpace = 0
 				if ShortestWidth ~= nil then
