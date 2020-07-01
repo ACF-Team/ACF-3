@@ -794,15 +794,14 @@ do -- Metamethods -------------------------------
 					self.Inflictor = Inflictor
 				end
 
-				if self.Ammo > 1 then
+				if self.Ammo > 0 then
 					self:Detonate()
-
-					return HitRes
 				else
-					ACF_HEKill(self, VectorRand())
+					ACF_APKill(self, VectorRand(), Energy.Kinetic)
 				end
-			end
 
+				return HitRes
+			end
 
 			-- Cookoff chance
 			if self.Damaged then return HitRes end -- Already cooking off
