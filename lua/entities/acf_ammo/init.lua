@@ -873,6 +873,13 @@ do -- Metamethods -------------------------------
 				}
 			}
 
+			-- TODO: Remove as soon as racks are improved, this is only being readded because of them
+			local PhysObj = self:GetPhysicsObject()
+
+			if IsValid(PhysObj) then
+				self.Volume = PhysObj:GetVolume() * 0.1576 * ACF.AmmoMod
+			end
+
 			self:UpdateOverlay()
 		end
 
