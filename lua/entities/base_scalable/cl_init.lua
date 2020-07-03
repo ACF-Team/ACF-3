@@ -1,33 +1,46 @@
 include("shared.lua")
 
+local Unexistant = {}
 local Queued = {}
 local Sizes = {}
 
 net.Receive("RequestSize", function()
-	local E = net.ReadEntity()
-	local Original = net.ReadVector()
-	local Current  = net.ReadVector()
+	local Entities = util.JSONToTable(net.ReadString())
 
-	if not IsValid(E) then return end
+	for ID, Data in pairs(Entities) do
+		local Ent = Entity(ID)
 
-	Sizes[E:GetModel()] = Original
+		if IsValid(Ent) then
+			Sizes[Ent:GetModel()] = Data.Original
 
-	E.OriginalSize = Original
-	E:SetSize(Current)
+			Ent.OriginalSize = Data.Original
+			Ent:SetSize(Data.Size)
 
-	if Queued[E] then Queued[E] = nil end
+			if Queued[Ent] then Queued[Ent] = nil end
+		else
+			Unexistant[ID] = Data
+		end
+	end
 end)
 
-hook.Add("OnEntityCreated", "Scalable Ent Startup", function(Entity)
-	timer.Simple(0, function()
-		if not IsValid(Entity) then return end
-		if not Entity.IsScalable then return end
+hook.Add("OnEntityCreated", "Scalable Ent Startup", function(Ent)
+	timer.Simple(0.1, function()
+		if not IsValid(Ent) then return end
+		if not Ent.IsScalable then return end
 
-		Queued[Entity] = true
+		local Data = Unexistant[Ent:EntIndex()]
 
-		net.Start("RequestOriginalSize")
-			net.WriteEntity(Entity)
-		net.SendToServer()
+		if Data then
+			Sizes[Ent:GetModel()] = Data.Original
+			Unexistant[Ent:EntIndex()] = nil
+
+			Ent.OriginalSize = Data.Original
+			Ent:SetSize(Data.Size)
+
+			if Queued[Ent] then Queued[Ent] = nil end
+		else
+			Ent:GetOriginalSize()
+		end
 	end)
 end)
 
@@ -35,11 +48,11 @@ function ENT:GetOriginalSize()
 	if not self.OriginalSize then
 		local Size = Sizes[self:GetModel()]
 
-		if not Size then -- This should never ever be called
+		if not Size then
 			if not Queued[self] then
 				Queued[self] = true
 
-				net.Start("RequestOriginalSize")
+				net.Start("RequestSize")
 					net.WriteEntity(self)
 				net.SendToServer()
 			end

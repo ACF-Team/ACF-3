@@ -407,9 +407,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		Entity.RoundData8 = Data8 or 0
 		Entity.RoundData9 = Data9 or 0
 		Entity.RoundData10 = Data10 or 0
-		Entity.RoundData11 = Data11 or 24 -- Scale X
-		Entity.RoundData12 = Data12 or 24 -- Scale Y
-		Entity.RoundData13 = Data13 or 24 -- Scale Z
+		Entity.RoundData11 = Data11 or Entity.RoundData11 or 24 -- Scale X
+		Entity.RoundData12 = Data12 or Entity.RoundData12 or 24 -- Scale Y
+		Entity.RoundData13 = Data13 or Entity.RoundData13 or 24 -- Scale Z
 
 		Entity.Name = (Entity.RoundType ~= "Refill" and (Data1 .. " ") or "") .. Entity.RoundType
 		Entity.ShortName = Data1
@@ -455,9 +455,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 	local Size
 	do -- Resizing
-		local X = math.Clamp(Data11 or 24, 6, 96)
-		local Y = math.Clamp(Data12 or 24, 6, 96)
-		local Z = math.Clamp(Data13 or 24, 6, 96)
+		local X = math.Clamp(Entity.RoundData11, 6, 96)
+		local Y = math.Clamp(Entity.RoundData12, 6, 96)
+		local Z = math.Clamp(Entity.RoundData13, 6, 96)
 
 		Size = Vector(X, Y, Z)
 
@@ -623,7 +623,7 @@ do -- Metamethods -------------------------------
 				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
 				local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-				local Text = "%s\n\nSize: %sm X %sm X %sm\n\nContents: %s ( %s / %s )%s"
+				local Text = "%s\n\nSize: %s X %s X %s\n\nContents: %s ( %s / %s )%s"
 				local X, Y, Z = Ent:GetSize():Unpack()
 				local AmmoData = ""
 				local Status
@@ -634,9 +634,9 @@ do -- Metamethods -------------------------------
 					Status = "Not linked to a weapon!"
 				end
 
-				X = math.Round(X * 0.0254, 2)
-				Y = math.Round(Y * 0.0254, 2)
-				Z = math.Round(Z * 0.0254, 2)
+				X = math.Round(X, 2)
+				Y = math.Round(Y, 2)
+				Z = math.Round(Z, 2)
 
 				if Ent.RoundData.cratetxt then
 					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
@@ -796,8 +796,6 @@ do -- Metamethods -------------------------------
 
 				if self.Ammo > 0 then
 					self:Detonate()
-				else
-					ACF_APKill(self, VectorRand(), Energy.Kinetic)
 				end
 
 				return HitRes
