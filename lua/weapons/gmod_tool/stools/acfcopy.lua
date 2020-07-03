@@ -83,10 +83,6 @@ function TOOL:RightClick(trace)
 			ent.RoundData8,
 			ent.RoundData9,
 			ent.RoundData10,
-			ent.RoundData11,
-			ent.RoundData12,
-			ent.RoundData13,
-			0,
 		}
 
 		ACF_SendNotify(pl, true, "Ammo copied successfully!")
