@@ -27,17 +27,15 @@ local function CanRefillCrate(Crate, Target, Distance)
 	return Distance <= RefillDist
 end
 
-local function RefillEffect(Entity, Target)
+local function RefillEffect(Entity)
 	net.Start("ACF_RefillEffect")
 		net.WriteEntity(Entity)
-		net.WriteEntity(Target)
 	net.Broadcast()
 end
 
-local function StopRefillEffect(Entity, Target)
+local function StopRefillEffect(Entity)
 	net.Start("ACF_StopRefillEffect")
 		net.WriteEntity(Entity)
-		net.WriteEntity(Target)
 	net.Broadcast()
 end
 
@@ -65,14 +63,16 @@ local function RefillCrates(Entity)
 
 			if hook.Run("ACF_CanRefill", Entity, Crate, Transfer) == false then continue end
 
+			if not next(Entity.SupplyingTo) then
+				RefillEffect(Entity)
+			end
+
 			if not Entity.SupplyingTo[Crate] then
 				Entity.SupplyingTo[Crate] = true
 
 				Crate:CallOnRemove("ACF Refill " .. Entity:EntIndex(), function()
 					Entity.SupplyingTo[Crate] = nil
 				end)
-
-				RefillEffect(Entity, Crate)
 			end
 
 			Crate:Consume(-Transfer)
@@ -85,18 +85,14 @@ local function RefillCrates(Entity)
 			end
 
 			Crate:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
-		end
-	end
-
-	for Crate in pairs(Entity.SupplyingTo) do
-		local Distance = Position:DistToSqr(Crate:GetPos())
-
-		if not CanRefillCrate(Entity, Crate, Distance) then
+		elseif Entity.SupplyingTo[Crate] then
 			Entity.SupplyingTo[Crate] = nil
 
 			Crate:RemoveCallOnRemove("ACF Refill " .. Entity:EntIndex())
 
-			StopRefillEffect(Entity, Crate)
+			if not next(Entity.SupplyingTo) then
+				StopRefillEffect(Entity)
+			end
 		end
 	end
 end
@@ -442,9 +438,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 			end)
 		else
 			if Entity.SupplyingTo then
-				for Crate in pairs(Entity.SupplyingTo) do
-					StopRefillEffect(Entity, Crate)
-				end
+				StopRefillEffect(Entity)
 
 				Entity.SupplyingTo = nil
 			end
