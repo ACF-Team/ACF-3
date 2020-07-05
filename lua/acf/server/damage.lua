@@ -493,8 +493,8 @@ do
 
 			local Phys = Debris:GetPhysicsObject()
 			if IsValid(Phys) then
-				Phys:SetMass(Mass)
-				Phys:ApplyForceOffset(HitVector:GetNormalized() * Energy * 10, Debris:GetPos() + VectorRand() * 10) -- previously energy*350
+				Phys:SetMass(math.Clamp(Mass,5,50000))
+				Phys:ApplyForceOffset(HitVector:GetNormalized() * Energy * 15, Debris:GetPos() + VectorRand() * 10) -- previously energy*350
 			end
 
 			if math.random() < ACF.DebrisIgniteChance then
@@ -529,7 +529,7 @@ do
 
 			local Phys = Debris:GetPhysicsObject()
 			if IsValid(Phys) then
-				Phys:SetMass(Mass)
+				Phys:SetMass(math.Clamp(Mass,5,50000))
 				Phys:ApplyForceOffset(HitVector:GetNormalized() * Power * 350, Debris:GetPos() + VectorRand() * 20)
 			end
 

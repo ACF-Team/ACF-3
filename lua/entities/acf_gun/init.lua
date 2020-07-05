@@ -375,11 +375,11 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
-		function ENT:BarrelCheck()
+		function ENT:BarrelCheck(Offset)
 			if not CPPI then return self:LocalToWorld(self.Muzzle) end
 
-			TraceData.start	 = self:LocalToWorld(Vector())
-			TraceData.endpos = self:LocalToWorld(self.Muzzle)
+			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
+			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
 			TraceData.filter = self.BarrelFilter
 
 			Trace(TraceData)
@@ -387,7 +387,7 @@ do -- Metamethods --------------------------------
 			if TraceRes.Hit and TraceRes.Entity:CPPIGetOwner() == self.Owner then
 				self.BarrelFilter[#self.BarrelFilter + 1] = TraceRes.Entity
 
-				return self:BarrelCheck()
+				return self:BarrelCheck(Offset)
 			end
 
 			return TraceRes.HitPos
@@ -435,6 +435,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
+			local Velocity = ACF_GetAncestor(self):GetVelocity()
 
 			if self.BulletData.CanFuze and self.SetFuze then
 				local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
@@ -446,11 +447,13 @@ do -- Metamethods --------------------------------
 
 			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			self.BulletData.Gun	   = self      -- because other guns share this table
-			self.BulletData.Pos    = self:BarrelCheck()
-			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + ACF_GetAncestor(self):GetVelocity()
+			self.BulletData.Pos    = self:BarrelCheck(Velocity * engine.TickInterval())
+			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
+			self.BulletData.Filter = self.BarrelFilter
 
 			ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData) -- Spawn projectile
+
 			self:MuzzleEffect()
 			self:Recoil()
 
