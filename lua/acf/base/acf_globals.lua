@@ -54,6 +54,19 @@ do -- ACF global vars
 	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
+	
+	--entities that will be ignored by ACF
+	ACF.GlobalFilter = {
+		gmod_ghost = true,
+		acf_debris = true,
+		prop_ragdoll = true,
+		gmod_wire_hologram = true,
+		starfall_hologram = true,
+		prop_vehicle_crane = true,
+		prop_dynamic = true,
+		npc_strider = true,
+		npc_dog = true
+	}
 
 	--kg/liter
 	ACF.FuelDensity = {
