@@ -70,6 +70,7 @@ do -- Menu population functions
 	ACF.AddOption("About the Addon", "information")
 	ACF.AddOptionItem("About the Addon", "Online Wiki", "book_open")
 	ACF.AddOptionItem("About the Addon", "Updates", "newspaper")
+	ACF.AddOptionItem("About the Addon", "Settings", "wrench")
 	ACF.AddOptionItem("About the Addon", "Contact Us", "feed")
 
 	ACF.AddOption("Entities", "brick")
