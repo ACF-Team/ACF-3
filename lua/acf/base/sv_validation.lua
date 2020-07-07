@@ -1,5 +1,4 @@
 -- Entity validation for ACF
-local LegalHints = CreateConVar("acf_legalhints", 1, FCVAR_ARCHIVE)
 
 -- Local Vars -----------------------------------
 local Gamemode	  = GetConVar("acf_gamemode")
@@ -78,7 +77,7 @@ local function CheckLegal(Entity)
 			Entity:Disable() -- Let the entity know it's disabled
 
 			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-			if LegalHints:GetBool() then -- Notify the owner
+			if tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
 				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
 
 				if Reason == "Not drawn" then -- Thank you garry, very cool

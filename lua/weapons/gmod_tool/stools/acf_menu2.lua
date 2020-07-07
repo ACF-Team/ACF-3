@@ -6,7 +6,7 @@ ACF.LoadToolFunctions(TOOL)
 cleanup.Register("acfmenu")
 
 if CLIENT then
-	local DrawBoxes = CreateConVar("acf_drawboxes", 0, FCVAR_ARCHIVE, "Whether or not to draw hitboxes on ACF entities", 0, 1)
+	local DrawBoxes = GetConVar("acf_drawboxes")
 
 	language.Add("Tool.acf_menu2.name", "Armored Combat Framework")
 	language.Add("Tool.acf_menu2.desc", "Testing the new menu tool")
