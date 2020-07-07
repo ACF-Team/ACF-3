@@ -164,7 +164,7 @@ end
 function PANEL:AddHelp(Text)
 	local TextColor = self:GetSkin().Colours.Tree.Hover
 	local Panel = self:AddLabel(Text)
-	Panel:DockMargin(32, 0, 32, 10)
+	Panel:DockMargin(10, 0, 10, 10)
 	Panel:SetTextColor(TextColor)
 	Panel:InvalidateLayout()
 
@@ -211,6 +211,33 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	Text:Dock(TOP)
 
 	return Wang, Text
+end
+
+function PANEL:AddCollapsible(Text, State)
+	if State == nil then State = true end
+
+	local Base = vgui.Create("ACF_Panel")
+	Base:DockMargin(5, 5, 5, 10)
+
+	local Category = self:AddPanel("DCollapsibleCategory")
+	Category:SetLabel(Text or "Title")
+	Category:DoExpansion(State)
+	Category:SetContents(Base)
+
+	return Base, Category
+end
+
+function PANEL:AddModelPreview(Model)
+	local Panel = self:AddPanel("DModelPanel")
+	Panel:SetModel(Model or "models/props_junk/PopCan01a.mdl")
+	Panel:SetLookAt(Vector())
+	Panel:SetCamPos(Vector(45, 60, 45))
+	Panel:SetHeight(80)
+	Panel:SetFOV(75)
+
+	Panel.LayoutEntity = function() end
+
+	return Panel
 end
 
 function PANEL:PerformLayout()
