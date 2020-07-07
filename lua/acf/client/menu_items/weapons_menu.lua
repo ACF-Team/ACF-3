@@ -51,25 +51,48 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
-	local EntText = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s"
+	local EntText = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
 	local MagText = "\nRounds : %s rounds\nReload : %s seconds"
 	local AmmoData
 
+	Menu:AddTitle("Weapon Settings")
+
 	local ClassList = Menu:AddComboBox()
 	local EntList = Menu:AddComboBox()
-	local EntName = Menu:AddTitle()
-	local ClassDesc = Menu:AddLabel()
-	local EntData = Menu:AddLabel()
+
+	local WeaponBase = Menu:AddCollapsible("Weapon Information")
+	local EntName = WeaponBase:AddTitle()
+	local ClassDesc = WeaponBase:AddLabel()
+	local EntPreview = WeaponBase:AddModelPreview()
+	local EntData = WeaponBase:AddLabel()
 
 	Menu:AddTitle("Ammo Settings")
 
 	local CrateList = Menu:AddComboBox()
 	local AmmoList = Menu:AddComboBox()
 
+	local AmmoBase = Menu:AddCollapsible("Ammo Information")
+	local AmmoDesc = AmmoBase:AddLabel()
+	local AmmoPreview = AmmoBase:AddModelPreview()
+
 	ACF.WriteValue("PrimaryClass", "acf_gun")
 	ACF.WriteValue("SecondaryClass", "acf_ammo")
 
 	ACF.SetToolMode("acf_menu2", "Main", "Spawner")
+
+	local function UpdateEntityData()
+		local Class = ClassList.Selected
+		local Data = EntList.Selected
+
+		if not Class then return "" end
+		if not Data then return "" end
+
+		local ReloadTime = AmmoData and (ACF.BaseReload + (AmmoData.ProjMass + AmmoData.PropMass) * ACF.MassToTime) or 60
+		local Firerate = Data.Cyclic or 60 / ReloadTime
+		local Magazine = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
+
+		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread * 100, Magazine)
+	end
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -92,6 +115,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = ClassList.Selected
 		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
@@ -99,6 +123,13 @@ local function CreateMenu(Menu)
 		ACF.WriteValue("Weapon", Data.ID)
 
 		EntName:SetText(Data.Name)
+		EntData:SetText(UpdateEntityData())
+
+		EntPreview:SetModel(Data.Model)
+		EntPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		EntPreview:SetLookAt(Preview and Preview.Position or Vector())
+		EntPreview:SetHeight(Preview and Preview.Height or 80)
+		EntPreview:SetFOV(Preview and Preview.FOV or 75)
 
 		AmmoList:UpdateMenu()
 	end
@@ -106,29 +137,24 @@ local function CreateMenu(Menu)
 	EntData:TrackDataVar("Projectile", "SetText")
 	EntData:TrackDataVar("Propellant")
 	EntData:TrackDataVar("Tracer")
-	EntData:SetValueFunction(function()
-		local Class = ClassList.Selected
-		local Data = EntList.Selected
-
-		if not Class then return "" end
-		if not Data then return "" end
-
-		local ReloadTime = AmmoData and (ACF.BaseReload + (AmmoData.ProjMass + AmmoData.PropMass) * ACF.MassToTime) or 60
-		local Firerate = Data.Cyclic or 60 / ReloadTime
-		local Magazine = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
-
-		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread * 100, Magazine)
-	end)
+	EntData:SetValueFunction(UpdateEntityData)
 
 	function CrateList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local Choices = Sorted[Crates]
 		Selected[Choices] = Index
 
 		ACF.WriteValue("Crate", Data.ID)
+
+		AmmoPreview:SetModel(Data.Model)
+		AmmoPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		AmmoPreview:SetLookAt(Preview and Preview.Position or Vector())
+		AmmoPreview:SetHeight(Preview and Preview.Height or 80)
+		AmmoPreview:SetFOV(Preview and Preview.FOV or 75)
 	end
 
 	function AmmoList:OnSelect(Index, _, Data)
@@ -141,6 +167,8 @@ local function CreateMenu(Menu)
 
 		ACF.WriteValue("Ammo", Data.ID)
 
+		AmmoDesc:SetText(Data.Description .. "\n\nThis entity can be fully parented.")
+
 		self:UpdateMenu()
 	end
 
@@ -152,13 +180,11 @@ local function CreateMenu(Menu)
 
 		AmmoData = Ammo:ClientConvert(Menu, ToolData)
 
-		Menu:ClearTemporal(self)
-		Menu:StartTemporal(self)
-
-		Menu:AddLabel(Ammo.Description)
+		Menu:ClearTemporal(AmmoBase)
+		Menu:StartTemporal(AmmoBase)
 
 		if not Ammo.SupressDefaultMenu then
-			local RoundLength = Menu:AddLabel()
+			local RoundLength = AmmoBase:AddLabel()
 			RoundLength:TrackDataVar("Projectile", "SetText")
 			RoundLength:TrackDataVar("Propellant")
 			RoundLength:TrackDataVar("Tracer")
@@ -170,7 +196,7 @@ local function CreateMenu(Menu)
 				return Text:format(CurLength, MaxLength)
 			end)
 
-			local Projectile = Menu:AddSlider("Projectile Length", 0, AmmoData.MaxRoundLength, 2)
+			local Projectile = AmmoBase:AddSlider("Projectile Length", 0, AmmoData.MaxRoundLength, 2)
 			Projectile:SetDataVar("Projectile", "OnValueChanged")
 			Projectile:SetValueFunction(function(Panel, IsTracked)
 				ToolData.Projectile = ACF.ReadNumber("Projectile")
@@ -188,7 +214,7 @@ local function CreateMenu(Menu)
 				return AmmoData.ProjLength
 			end)
 
-			local Propellant = Menu:AddSlider("Propellant Length", 0, AmmoData.MaxRoundLength, 2)
+			local Propellant = AmmoBase:AddSlider("Propellant Length", 0, AmmoData.MaxRoundLength, 2)
 			Propellant:SetDataVar("Propellant", "OnValueChanged")
 			Propellant:SetValueFunction(function(Panel, IsTracked)
 				ToolData.Propellant = ACF.ReadNumber("Propellant")
@@ -208,10 +234,10 @@ local function CreateMenu(Menu)
 		end
 
 		if Ammo.MenuAction then
-			Ammo:MenuAction(Menu, ToolData, AmmoData)
+			Ammo:MenuAction(AmmoBase, ToolData, AmmoData)
 		end
 
-		Menu:EndTemporal(self)
+		Menu:EndTemporal(AmmoBase)
 	end
 
 	LoadSortedList(ClassList, Weapons, "Name")

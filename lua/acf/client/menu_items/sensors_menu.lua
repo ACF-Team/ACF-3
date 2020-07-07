@@ -41,10 +41,15 @@ local function CreateMenu(Menu)
 		return
 	end
 
+	Menu:AddTitle("Sensor Settings")
+
 	local SensorClass = Menu:AddComboBox()
 	local SensorList = Menu:AddComboBox()
-	local SensorName = Menu:AddTitle()
-	local SensorDesc = Menu:AddLabel()
+
+	local Base = Menu:AddCollapsible("Sensor Information")
+	local SensorName = Base:AddTitle()
+	local SensorDesc = Base:AddLabel()
+	local SensorPreview = Base:AddModelPreview()
 
 	function SensorClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -64,6 +69,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = SensorClass.Selected
 		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
@@ -73,16 +79,22 @@ local function CreateMenu(Menu)
 		SensorName:SetText(Data.Name)
 		SensorDesc:SetText(Data.Description or "No description provided.")
 
-		Menu:ClearTemporal(self)
-		Menu:StartTemporal(self)
+		SensorPreview:SetModel(Data.Model)
+		SensorPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		SensorPreview:SetLookAt(Preview and Preview.Position or Vector())
+		SensorPreview:SetHeight(Preview and Preview.Height or 80)
+		SensorPreview:SetFOV(Preview and Preview.FOV or 75)
+
+		Menu:ClearTemporal(Base)
+		Menu:StartTemporal(Base)
 
 		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
 
 		if CustomMenu then
-			CustomMenu(Data, Menu)
+			CustomMenu(Data, Base)
 		end
 
-		Menu:EndTemporal(self)
+		Menu:EndTemporal(Base)
 	end
 
 	LoadSortedList(SensorClass, Sensors, "ID")

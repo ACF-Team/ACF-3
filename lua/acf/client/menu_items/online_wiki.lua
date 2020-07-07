@@ -9,7 +9,7 @@ local function CreateMenu(Menu)
 		gui.OpenURL("https://github.com/Stooberton/ACF-3/wiki")
 	end
 
-	Menu:AddLabel("Note: The wiki is still a work in progress, it'll get populated as time passes.")
+	Menu:AddHelp("The wiki is still a work in progress, it'll get populated as time passes.")
 end
 
 ACF.AddOptionItem("About the Addon", "Online Wiki", "book_open", CreateMenu)

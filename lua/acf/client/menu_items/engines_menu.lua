@@ -39,7 +39,7 @@ local function UpdateEngineStats(Label, Data)
 	local MinPower = RPM.PeakMin
 	local MaxPower = RPM.PeakMax
 
-	local RPMText = "Idle RPM : %s RPM\nPowerband : %s-%s RPM\nRedline : %s RPM\nMass : %s"
+	local RPMText = "Idle RPM : %s RPM\nPowerband : %s-%s RPM\nRedline : %s RPM\nMass : %s\n\nThis entity can be fully parented."
 	local LabelText = ""
 
 	-- Electric motors and turbines get peak power in middle of rpm range
@@ -72,9 +72,9 @@ local function UpdateEngineStats(Label, Data)
 			AddText = Text:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * 0.264, 2), PeakkWRPM)
 		end
 
-		Consumption = Consumption .. AddText .. "\n\nThis engine requires fuel."
+		Consumption = Consumption .. AddText
 
-		Data.Fuel[K] = Fuel -- Replace once engines use the proper class functions
+		Data.Fuel[K] = Fuel -- TODO: Replace once engines use the proper class functions
 	end
 
 	Power = Power .. "\n" .. PowerText:format(math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
@@ -86,18 +86,26 @@ local function UpdateEngineStats(Label, Data)
 end
 
 local function CreateMenu(Menu)
+	Menu:AddTitle("Engine Settings")
+
 	local EngineClass = Menu:AddComboBox()
 	local EngineList = Menu:AddComboBox()
-	local EngineName = Menu:AddTitle()
-	local EngineDesc = Menu:AddLabel()
-	local EngineStats = Menu:AddLabel()
 
-	Menu:AddTitle("Fuel Settings")
+	local EngineBase = Menu:AddCollapsible("Engine Information")
+	local EngineName = EngineBase:AddTitle()
+	local EngineDesc = EngineBase:AddLabel()
+	local EnginePreview = EngineBase:AddModelPreview()
+	local EngineStats = EngineBase:AddLabel()
+
+	Menu:AddTitle("Fuel Tank Settings")
 
 	local FuelClass = Menu:AddComboBox()
 	local FuelList = Menu:AddComboBox()
 	local FuelType = Menu:AddComboBox()
-	local FuelDesc = Menu:AddLabel()
+	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
+	local FuelDesc = FuelBase:AddLabel()
+	local FuelPreview = FuelBase:AddModelPreview()
+	local FuelInfo = FuelBase:AddLabel()
 
 	ACF.WriteValue("PrimaryClass", "acf_engine")
 	ACF.WriteValue("SecondaryClass", "acf_fueltank")
@@ -122,6 +130,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 		local Choices = Sorted[ClassData.Items]
@@ -131,6 +140,12 @@ local function CreateMenu(Menu)
 
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description)
+
+		EnginePreview:SetModel(Data.Model)
+		EnginePreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		EnginePreview:SetLookAt(Preview and Preview.Position or Vector())
+		EnginePreview:SetHeight(Preview and Preview.Height or 80)
+		EnginePreview:SetFOV(Preview and Preview.FOV or 75)
 
 		UpdateEngineStats(EngineStats, Data)
 
@@ -153,6 +168,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 		local Choices = Sorted[ClassData.Items]
@@ -161,6 +177,12 @@ local function CreateMenu(Menu)
 		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description
 
 		ACF.WriteValue("FuelTank", Data.ID)
+
+		FuelPreview:SetModel(Data.Model)
+		FuelPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		FuelPreview:SetLookAt(Preview and Preview.Position or Vector())
+		FuelPreview:SetHeight(Preview and Preview.Height or 80)
+		FuelPreview:SetFOV(Preview and Preview.FOV or 75)
 
 		FuelType:UpdateFuelText()
 	end
@@ -184,8 +206,8 @@ local function CreateMenu(Menu)
 		if not FuelList.Selected then return end
 
 		local FuelTank = FuelList.Selected
-		local FuelText = FuelList.Description
 		local TextFunc = self.Selected.FuelTankText
+		local FuelText = ""
 
 		local Wall		= 0.03937 --wall thickness in inches (1mm)
 		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- total volume of tank (cu in), reduced by wall thickness
@@ -196,7 +218,7 @@ local function CreateMenu(Menu)
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
 		else
-			local Text = "\n\nCapacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s"
+			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n\nThis entity can be fully parented."
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * 0.264172, 2)
 
@@ -211,7 +233,8 @@ local function CreateMenu(Menu)
 			FuelText = FuelText .. "\n\nThis fuel tank cannot be linked to other ACF entities."
 		end
 
-		FuelDesc:SetText(FuelText)
+		FuelDesc:SetText(FuelList.Description)
+		FuelInfo:SetText(FuelText)
 	end
 
 	LoadSortedList(EngineClass, Engines, "ID")

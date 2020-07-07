@@ -41,10 +41,15 @@ local function CreateMenu(Menu)
 		return
 	end
 
+	Menu:AddTitle("Component Settings")
+
 	local ComponentClass = Menu:AddComboBox()
 	local ComponentList = Menu:AddComboBox()
-	local ComponentName = Menu:AddTitle()
-	local ComponentDesc = Menu:AddLabel()
+
+	local Base = Menu:AddCollapsible("Component Information")
+	local ComponentName = Base:AddTitle()
+	local ComponentDesc = Base:AddLabel()
+	local ComponentPreview = Base:AddModelPreview()
 
 	function ComponentClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -64,6 +69,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = ComponentClass.Selected
 		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
@@ -73,16 +79,22 @@ local function CreateMenu(Menu)
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "No description provided.")
 
-		Menu:ClearTemporal(self)
-		Menu:StartTemporal(self)
+		ComponentPreview:SetModel(Data.Model)
+		ComponentPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		ComponentPreview:SetLookAt(Preview and Preview.Position or Vector())
+		ComponentPreview:SetHeight(Preview and Preview.Height or 80)
+		ComponentPreview:SetFOV(Preview and Preview.FOV or 75)
+
+		Menu:ClearTemporal(Base)
+		Menu:StartTemporal(Base)
 
 		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
 
 		if CustomMenu then
-			CustomMenu(Data, Menu)
+			CustomMenu(Data, Base)
 		end
 
-		Menu:EndTemporal(self)
+		Menu:EndTemporal(Base)
 	end
 
 	LoadSortedList(ComponentClass, Components, "ID")

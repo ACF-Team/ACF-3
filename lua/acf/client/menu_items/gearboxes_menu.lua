@@ -30,10 +30,15 @@ local function LoadSortedList(Panel, List, Member)
 end
 
 local function CreateMenu(Menu)
+	Menu:AddTitle("Gearbox Settings")
+
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()
-	local GearboxName = Menu:AddTitle()
-	local GearboxDesc = Menu:AddLabel()
+
+	local Base = Menu:AddCollapsible("Gearbox Information")
+	local GearboxName = Base:AddTitle()
+	local GearboxDesc = Base:AddLabel()
+	local GearboxPreview = Base:AddModelPreview()
 
 	ACF.WriteValue("PrimaryClass", "acf_gearbox")
 	ACF.WriteValue("SecondaryClass", "N/A")
@@ -59,6 +64,7 @@ local function CreateMenu(Menu)
 
 		self.Selected = Data
 
+		local Preview = Data.Preview
 		local ClassData = GearboxClass.Selected
 		local Choices = Sorted[ClassData.Items]
 		Selected[Choices] = Index
@@ -68,14 +74,20 @@ local function CreateMenu(Menu)
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
 
-		Menu:ClearTemporal(self)
-		Menu:StartTemporal(self)
+		GearboxPreview:SetModel(Data.Model)
+		GearboxPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
+		GearboxPreview:SetLookAt(Preview and Preview.Position or Vector())
+		GearboxPreview:SetHeight(Preview and Preview.Height or 80)
+		GearboxPreview:SetFOV(Preview and Preview.FOV or 75)
+
+		Menu:ClearTemporal(Base)
+		Menu:StartTemporal(Base)
 
 		if ClassData.CreateMenu then
-			ClassData:CreateMenu(Data, Menu)
+			ClassData:CreateMenu(Data, Menu, Base)
 		end
 
-		Menu:EndTemporal(self)
+		Menu:EndTemporal(Base)
 	end
 
 	LoadSortedList(GearboxClass, Gearboxes, "ID")
@@ -87,21 +99,21 @@ do -- Default Menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, Data, Menu)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb"
+		function ACF.ManualGearboxMenu(Class, Data, Menu, Base)
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Gears = Class.Gears
 			local Torque = math.floor(Data.MaxTorque * 0.73)
 
-			Menu:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
+			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
 
 			if Data.DualClutch then
-				Menu:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
+				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
 			-----------------------------------
 
-			Menu:AddTitle("Gear Settings")
+			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -119,7 +131,7 @@ do -- Default Menus
 
 				ACF.WriteValue(Variable, Default)
 
-				local Control = Menu:AddSlider("Gear " .. I, -1, 1, 2)
+				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
 					local Value = math.Round(ACF.ReadNumber(Variable), 2)
@@ -138,7 +150,7 @@ do -- Default Menus
 
 			ACF.WriteValue("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = Menu:AddSlider("Final Drive", -1, 1, 2)
+			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
 			FinalDrive:SetDataVar("FinalDrive", "OnValueChanged")
 			FinalDrive:SetValueFunction(function(Panel)
 				local Value = math.Round(ACF.ReadNumber("FinalDrive"), 2)
@@ -188,20 +200,20 @@ do -- Default Menus
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, Data, Menu)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb"
+		function ACF.CVTGearboxMenu(Class, Data, Menu, Base)
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Torque = math.floor(Data.MaxTorque * 0.73)
 
-			Menu:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
+			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
 
 			if Data.DualClutch then
-				Menu:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
+				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
 			-----------------------------------
 
-			Menu:AddTitle("Gear Settings")
+			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -221,7 +233,7 @@ do -- Default Menus
 
 				ACF.WriteValue(Variable, Default)
 
-				local Control = Menu:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
+				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
 					local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
@@ -287,31 +299,31 @@ do -- Default Menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, Data, Menu)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb"
+		function ACF.AutomaticGearboxMenu(Class, Data, Menu, Base)
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Gears = Class.Gears
 			local Torque = math.floor(Data.MaxTorque * 0.73)
 
-			Menu:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
+			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
 
 			if Data.DualClutch then
-				Menu:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
+				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
 			-----------------------------------
 
-			Menu:AddTitle("Gear Settings")
+			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			Menu:AddLabel("Upshift Speed Unit :")
+			GearBase:AddLabel("Upshift Speed Unit :")
 
 			ACF.WriteValue("ShiftUnit", UnitMult)
 
-			local Unit = Menu:AddComboBox()
+			local Unit = GearBase:AddComboBox()
 			Unit:AddChoice("KPH", 10.936)
 			Unit:AddChoice("MPH", 17.6)
 			Unit:AddChoice("GMU", 1)
@@ -345,7 +357,7 @@ do -- Default Menus
 
 				ACF.WriteValue(GearVar, DefGear)
 
-				local Gear = Menu:AddSlider("Gear " .. I, -1, 1, 2)
+				local Gear = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
 				Gear:SetDataVar(GearVar, "OnValueChanged")
 				Gear:SetValueFunction(function(Panel)
 					local Value = math.Round(ACF.ReadNumber(GearVar), 2)
@@ -368,7 +380,7 @@ do -- Default Menus
 
 				ACF.WriteValue(ShiftVar, DefShift)
 
-				local Shift = Menu:AddNumberWang("Gear " .. I .. " Upshift Speed", 0, 9999, 2)
+				local Shift = GearBase:AddNumberWang("Gear " .. I .. " Upshift Speed", 0, 9999, 2)
 				Shift:HideWang()
 				Shift:SetDataVar(ShiftVar, "OnValueChanged")
 				Shift:SetValueFunction(function(Panel)
@@ -394,7 +406,7 @@ do -- Default Menus
 
 				ACF.WriteValue(Variable, Default)
 
-				local Control = Menu:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
+				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
 					local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
@@ -411,7 +423,7 @@ do -- Default Menus
 
 			-----------------------------------
 
-			Menu:AddTitle("Shift Point Generator")
+			local GenBase = Menu:AddCollapsible("Shift Point Generator")
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
@@ -425,7 +437,7 @@ do -- Default Menus
 
 				ACF.WriteValue(Variable, Default)
 
-				local Panel = Menu:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
+				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
 				Panel:HideWang()
 				Panel:SetDataVar(Variable, "OnValueChanged")
 				Panel:SetValueFunction(function()
@@ -443,7 +455,7 @@ do -- Default Menus
 				end
 			end
 
-			local Button = Menu:AddButton("Calculate")
+			local Button = GenBase:AddButton("Calculate")
 
 			function Button:DoClickInternal()
 				local UpshiftRPM = ValuesData.UpshiftRPM
