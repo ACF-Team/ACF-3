@@ -531,6 +531,8 @@ do -- Metamethods --------------------------------
 			self.CurrentShot = 0
 			self.BulletData  = EMPTY
 
+			WireLib.TriggerOutput(self, "Shots Left", 0)
+
 			timer.Simple(Time, function()
 				if IsValid(self) then
 					if Reload then
@@ -564,6 +566,8 @@ do -- Metamethods --------------------------------
 					WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
 				end
 
+				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+
 				timer.Simple(Time, function()
 					if IsValid(self) then
 						self:SetState("Loaded")
@@ -585,6 +589,8 @@ do -- Metamethods --------------------------------
 
 				self.CurrentShot = 0
 				self.BulletData  = EMPTY
+
+				WireLib.TriggerOutput(self, "Shots Left", 0)
 			end
 		end
 
@@ -596,6 +602,8 @@ do -- Metamethods --------------------------------
 				self.CurrentShot = 0
 				self.BulletData  = EMPTY
 
+				WireLib.TriggerOutput(self, "Shots Left", 0)
+
 				return false
 			end
 
@@ -605,6 +613,8 @@ do -- Metamethods --------------------------------
 				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
 
 				self.NextFire = ACF.CurTime + self.MagReload
+
+				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
 				timer.Simple(self.MagReload, function() -- Reload timer
 					if IsValid(self) then

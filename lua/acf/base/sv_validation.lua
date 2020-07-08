@@ -4,16 +4,7 @@
 local Gamemode	  = GetConVar("acf_gamemode")
 local StringFind  = string.find
 local TimerSimple = timer.Simple
-local Baddies 	  = { -- Ignored by ACF
-	gmod_ghost = true,
-	acf_debris = true,
-	prop_ragdoll = true,
-	gmod_wire_hologram = true,
-	prop_vehicle_crane = true,
-	prop_dynamic = true,
-	npc_strider = true,
-	npc_dog = true
-}
+local Baddies	  = ACF.GlobalFilter
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -199,6 +190,5 @@ function ACF_Activate(Entity, Recalc)
 end
 
 -- Globalize ------------------------------------
-ACF.GlobalFilter = Baddies
 ACF_IsLegal 	 = IsLegal
 ACF_CheckLegal 	 = CheckLegal
