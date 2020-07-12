@@ -152,6 +152,30 @@ do -- Spawn Func --------------------------------
 	list.Set("ACFCvars", "acf_gun", {"id"} )
 	duplicator.RegisterEntityClass("acf_gun", MakeACF_Gun, "Pos", "Angle", "Id")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
+
+	function ENT:ACF_Activate(Recalc)
+		local PhysObj = self.ACF.PhysObj
+
+		if not self.ACF.Area then
+			self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+		end
+
+		local Volume = PhysObj:GetVolume() * 2
+
+		local Armour = self.Caliber * 10
+		local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+		local Percent = 1
+
+		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
+			Percent = self.ACF.Health / self.ACF.MaxHealth
+		end
+
+		self.ACF.Health = Health * Percent
+		self.ACF.MaxHealth = Health
+		self.ACF.Armour = Armour * (0.5 + Percent / 2)
+		self.ACF.MaxArmour = Armour
+		self.ACF.Type = "Prop"
+	end
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
