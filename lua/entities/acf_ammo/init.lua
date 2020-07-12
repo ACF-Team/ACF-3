@@ -185,8 +185,8 @@ local function CalcAmmo(BoxSize,GunData,BulletData,AddSpacing,AddArmor)
 
 	local Rounds = 0
 	-- Converting everything to source units
-	local ConvCaliber = ( RoundCaliber / 0.75 ) / 2.54 -- cm to u
-	local ConvLength = ( TotalRoundLength / 0.75 ) / 2.54 -- cm to u
+	local ConvCaliber = RoundCaliber * 0.3937 -- cm to inches
+	local ConvLength = TotalRoundLength * 0.3937
 	local Spacing = math.max(math.abs(AddSpacing) + 0.125,0.125)
 	ExtraData.Spacing = Spacing
 
