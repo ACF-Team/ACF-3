@@ -3,7 +3,7 @@
 -- Local Funcs ----------------------------------
 -- These functions are used within this file and made global at the end
 
-local ColGroupFilter = {COLLISION_GROUP_DEBRIS = true, COLLISION_GROUP_DEBRIS_TRIGGER = true}
+local ColGroupFilter = {[1] = true, [2] = true}
 
 local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
