@@ -1,9 +1,9 @@
 
 --definition for the fuel tank that shows on menu
 ACF_DefineFuelTank( "Basic_FuelTank", {
-	name = "High Grade Fuel Tank",
-	desc = "A fuel tank containing high grade fuel.",
-	category = "High Grade"
+	name = "Fuel Tank",
+	desc = "A steel box containing fuel.",
+	--category = "Fuel"
 } )
 
 --definitions for the possible tank sizes selectable from the basic tank.
