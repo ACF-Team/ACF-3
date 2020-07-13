@@ -36,7 +36,7 @@ local function UpdateFuelData(Entity, Id, Data1, Data2, FuelData)
 	Entity.Volume = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
 	Entity.Capacity = Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 	Entity.EmptyMass = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
-	Entity.IsExplosive = Entity.FuelType ~= "Electric" and FuelData.explosive
+	Entity.IsExplosive = FuelData.explosive
 	Entity.NoLinks = FuelData.nolinks
 
 	if Entity.FuelType == "Electric" then
