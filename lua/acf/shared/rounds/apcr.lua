@@ -31,14 +31,14 @@ function Round.convert(_, PlayerData)
 
 	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
 
-	Data.ProjMass = (Data.FrArea / 0.9) * (Data.ProjLength * 7.9 / 1000) --Volume of the projectile as a cylinder * density of steel
+	Data.ProjMass = (Data.FrArea / 0.9) * (Data.ProjLength * 7.9 / 1000) * 0.75 --Volume of the projectile as a cylinder * density of steel
 	Data.ShovePower = 0.2
-	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
-	Data.DragCoef = (Data.FrArea / 10000) / Data.ProjMass
-	Data.LimitVel = 1000 --Most efficient penetration speed in m/s
+	Data.PenArea = (Data.FrArea * 0.7) ^ ACF.PenAreaMod -- APCR has a smaller penetrator
+	Data.DragCoef = (Data.FrArea * 1.25 / 10000) / Data.ProjMass -- But worse drag (Manually fudged to make a meaningful difference)
+	Data.LimitVel = 900 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet = 55 --Base ricochet angle
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.2
+	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 
 	--Only the crates need this part
 	if SERVER then

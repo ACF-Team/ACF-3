@@ -31,14 +31,23 @@ function Round.convert(_, PlayerData)
 
 	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
 
-	Data.ProjMass = Data.FrArea * (Data.ProjLength * 7.9 / 1000)  --Volume of the projectile as a cylinder * density of steel
-	Data.ShovePower = 0.2
-	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
-	Data.DragCoef = (Data.FrArea / 10000) / Data.ProjMass
-	Data.LimitVel = 1000 --Most efficient penetration speed in m/s
+	local SubCaliberRatio = 0.375 -- Ratio of projectile to gun caliber
+	local Area = 3.1416 * (Data.Caliber * 0.5 * SubCaliberRatio) ^ 2
+
+	local DartMass  = (Area / 1.5) * (Data.ProjLength * 7.9 / 1000) -- Volume of the projectile as a cylinder * density of steel
+
+	local Cylinder  = (3.1416 * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
+	local Hole		= Area * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
+	local SabotMass = (Cylinder - Hole) * 2.7 * 0.65 * 0.001 -- Aluminum sabot
+
+	Data.ProjMass 	 = DartMass
+	Data.ShovePower  = 0.2
+	Data.PenArea 	 = Area ^ ACF.PenAreaMod
+	Data.DragCoef 	 = (Area / 10000) / Data.ProjMass
+	Data.LimitVel 	 = 950 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet = 65 --Base ricochet angle
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
+	Data.Ricochet 	 = 80 --Base ricochet angle
+	Data.MuzzleVel 	 = ACF_MuzzleVelocity(Data.PropMass, DartMass + SabotMass)
 
 	--Only the crates need this part
 	if SERVER then
