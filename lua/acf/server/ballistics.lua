@@ -27,36 +27,35 @@ local function HitClip(Ent, Pos)
 	return false
 end
 
-local function Trace(TraceData, Filter) -- Pass true on filter to have Trace make it's own copy of TraceData.filter to modify
-	if Filter == true then
-		Filter = TraceData.filter
-		local NewFilter = {}
-
-		for I = 1, #Filter do
-			NewFilter[I] = Filter[I]
-		end
-
-		TraceData.filter = NewFilter
-	end
-
+local function Trace(TraceData)
 	local T = TraceLine(TraceData)
 
 	if T.HitNonWorld and HitClip(T.Entity, T.HitPos) then
 		TraceData.filter[#TraceData.filter + 1] = T.Entity
 
-		return Trace(TraceData, Filter)
-	end
-
-	if Filter then
-		TraceData.filter = Filter
+		return Trace(TraceData)
 	end
 
 	debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
 	return T
 end
 
-ACF.Trace = Trace
-ACF_CheckClips = HitClip
+local function TraceFilterInit(TraceData) -- Generates a copy of and uses it's own filter instead of using the existing one
+	local Filter = {}; for K, V in pairs(TraceData.filter) do Filter[K] = V end -- Quick copy
+	local Original = TraceData.filter
+
+	TraceData.filter = Filter -- Temporarily replace filter
+
+	local T = Trace(TraceData)
+
+	TraceData.filter = Original -- Replace filter
+
+	return T, Filter
+end
+
+ACF.Trace 		= Trace
+ACF.TraceF 		= TraceFilterInit
+ACF_CheckClips 	= HitClip
 
 function ACF_CreateBullet(BulletData)
 	ACF.CurBulletIndex = ACF.CurBulletIndex + 1
