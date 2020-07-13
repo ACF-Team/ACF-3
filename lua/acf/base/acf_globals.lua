@@ -47,7 +47,7 @@ do -- ACF global vars
 	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
 	ACF.PScale 				= 1 --Gun Propellant power expotential
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
-	ACF.PDensity 			= 1.15 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.PDensity 			= 0.82 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 	-- HE
 	ACF.HEPower 			= 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity 			= 1.65 --HE Filler density (That's TNT density)
