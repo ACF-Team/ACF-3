@@ -83,7 +83,7 @@ ACF.KEShove = Shove
 
 do
 	do -- Explosions ----------------------------
-		function GetRandomPos(Entity)
+		local function GetRandomPos(Entity)
 			if Entity:IsPlayer() or Entity:IsNPC() then
 				local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since the character is significantly smaller
 				local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
