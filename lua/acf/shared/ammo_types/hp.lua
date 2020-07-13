@@ -82,13 +82,6 @@ function Ammo:GetCrateText(BulletData)
 	return Text:format(math.Round(BulletData.ExpCaliber * 10, 2), math.Round(Data.MaxKETransfert, 2))
 end
 
-function Ammo:GetToolData()
-	local Data		  = Ammo.BaseClass.GetToolData(self)
-	Data.HollowCavity = ACF.ReadNumber("HollowCavity")
-
-	return Data
-end
-
 function Ammo:MenuAction(Menu, ToolData, Data)
 	local HollowCavity = Menu:AddSlider("Cavity Volume", Data.MinCavVol, Data.MaxCavVol, 2)
 	HollowCavity:SetDataVar("HollowCavity", "OnValueChanged")

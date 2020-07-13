@@ -161,14 +161,6 @@ function Ammo:GetCrateText(BulletData)
 	return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(BulletData.FlechetteSpread + Spread, 2))
 end
 
-function Ammo:GetToolData()
-	local Data		= Ammo.BaseClass.GetToolData(self)
-	Data.Flechettes	= ACF.ReadNumber("Flechettes")
-	Data.Spread		= ACF.ReadNumber("Spread")
-
-	return Data
-end
-
 function Ammo:MenuAction(Menu, ToolData, Data)
 	local Flechettes = Menu:AddSlider("Flechette Amount", Data.MinFlechettes, Data.MaxFlechettes)
 	Flechettes:SetDataVar("Flechettes", "OnValueChanged")

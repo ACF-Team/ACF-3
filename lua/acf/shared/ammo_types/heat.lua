@@ -156,14 +156,6 @@ function Ammo:GetCrateText(BulletData)
 	return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), math.Round(Data.BoomFillerMass * ACF.HEPower, 2))
 end
 
-function Ammo:GetToolData()
-	local Data		= Ammo.BaseClass.GetToolData(self)
-	Data.FillerMass	= ACF.ReadNumber("FillerMass")
-	Data.LinerAngle	= ACF.ReadNumber("LinerAngle")
-
-	return Data
-end
-
 function Ammo:Detonate(Bullet, HitPos)
 	local Crushed, HEATFillerMass, BoomFillerMass = self:CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
 

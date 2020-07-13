@@ -45,13 +45,5 @@ function Ammo:GetCrateText()
 	return ""
 end
 
-function Ammo:GetToolData()
-	return {
-		Ammo		= ACF.ReadString("Ammo"),
-		Weapon		= ACF.ReadString("Weapon"),
-		WeaponClass	= ACF.ReadString("WeaponClass"),
-	}
-end
-
 function Ammo:MenuAction()
 end

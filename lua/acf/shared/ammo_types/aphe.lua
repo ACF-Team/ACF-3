@@ -89,13 +89,6 @@ function Ammo:GetCrateText(BulletData)
 	return Text:format(math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
 end
 
-function Ammo:GetToolData()
-	local Data		= Ammo.BaseClass.GetToolData(self)
-	Data.FillerMass	= ACF.ReadNumber("FillerMass")
-
-	return Data
-end
-
 function Ammo:OnFlightEnd(Index, Bullet, HitPos)
 	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 

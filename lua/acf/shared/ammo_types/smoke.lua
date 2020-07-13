@@ -130,15 +130,6 @@ function Ammo:GetCrateText(BulletData)
 	return Text:format(math.Round(BulletData.MuzzleVel, 2), WPText, SMText)
 end
 
-function Ammo:GetToolData()
-	local Data		= Ammo.BaseClass.GetToolData(self)
-	Data.SmokeFiller	= ACF.ReadNumber("SmokeFiller")
-	Data.WPFiller		= ACF.ReadNumber("WPFiller")
-	Data.FuzeLength	= ACF.ReadNumber("FuzeLength")
-
-	return Data
-end
-
 function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
 	if ACF_Check(Target) then
 		local Speed  = Bullet.Flight:Length() / ACF.Scale
