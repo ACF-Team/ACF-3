@@ -6,7 +6,7 @@ local TraceRes 		= {}
 local TraceData 	= { output = TraceRes, mask = MASK_SOLID, filter = false }
 local Check			= ACF_Check
 local HookRun		= hook.Run
-local Trace 		= ACF.Trace
+local Trace 		= ACF.TraceF
 local ValidDebris 	= { -- Whitelist for things that can be turned into debris
 	acf_ammo = true,
 	acf_gun = true,
@@ -157,7 +157,7 @@ do
 						local Displ		 = Target - Origin
 
 						TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-						Trace(TraceData, true) -- Outputs to TraceRes
+						Trace(TraceData) -- Outputs to TraceRes
 
 						if TraceRes.HitNonWorld then
 							if not TraceRes.Entity.Exploding and (TraceRes.Entity == Ent or Check(TraceRes.Entity)) then
