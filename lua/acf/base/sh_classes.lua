@@ -164,6 +164,8 @@ do -- Class registration function
 			if Class.OnLoaded then
 				Class:OnLoaded()
 			end
+
+			hook.Run("OnClassLoaded", Class.ID, Class)
 		end)
 	end
 
