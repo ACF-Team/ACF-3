@@ -82,6 +82,21 @@ ACF.KEShove = Shove
 -------------------------------------------------
 
 do
+	do -- Squishy tracking
+		ACF.Squishies = {}
+		hook.Add("PlayerSpawnedNPC", "ACF Squishies", function(_, Ent)
+			ACF.Squishies[Ent] = true
+		end)
+
+		hook.Add("OnNPCKilled", "ACF Squishies", function(Ent)
+			ACF.Squishies[Ent] = nil
+		end)
+
+		hook.Add("PlayerSpawn", "ACF Squishies", function(Ent)
+			ACF.Squishies[Ent] = true
+		end)
+	end
+
 	do -- Explosions ----------------------------
 		local function GetRandomPos(Entity)
 			if Entity:IsPlayer() or Entity:IsNPC() then
@@ -238,6 +253,72 @@ do
 				end
 
 				Power = math.max(Power - PowerSpent, 0)
+			end
+		end
+
+		local function CanSee(Target, Data)
+			local R = ACF.Trace(Data)
+
+			return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
+		end
+
+		function ACF_Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
+			local Radius = Energy ^ 0.33 * 0.025 * 39.37 -- Radius in meters (Completely arbitrary stuff, scaled to have 120s have a radius of about 20m)
+			local Data = {start = Origin, endpos = true, mask = MASK_SHOT}
+				if Source then -- Filter out guns
+					if Source.BarrelFilter then
+						Data.filter = {}; for K, V in pairs(Source.BarrelFilter) do Data.filter[K] = V end -- Quick copy of gun barrel filter
+					else
+						Data.filter = {Source}
+					end
+				end
+
+			Angle = math.rad(Angle) -- Convert deg to rads
+
+			util.ScreenShake(Origin, Energy, 1, 0.25, Radius * 3 * 39.37 )
+
+			if Forward and Angle then -- Blast direction and angle are specified
+				for V in pairs(ACF.Squishies) do
+					if IsValid(V) then
+						if V:Health() > 0 and math.acos(Forward:Dot((V:GetShootPos() - Origin):GetNormalized())) < Angle then
+							local D = V:GetShootPos():Distance(Origin)
+
+							if D / 39.37 <= Radius then
+
+								Data.endpos = V:GetShootPos() + VectorRand() * 5
+
+								if CanSee(V, Data) then
+									local Damage = Energy * 175000 * (1 / D^3)
+
+									V:TakeDamage(Damage, Inflictor, Source)
+								end
+							end
+						end
+					else
+						ACF.Squishies[V] = nil
+					end
+				end
+			else -- Spherical blast
+				for V in pairs(ACF.Squishies) do
+					if IsValid(V) then
+						if V:Health() > 0 and CanSee(Origin, V) then
+							local D = V:GetShootPos():Distance(Origin)
+
+							if D / 39.37 <= Radius then
+
+								Data.endpos = V:GetShootPos() + VectorRand() * 5
+
+								if CanSee(V, Data) then
+									local Damage = Energy * 150000 * (1 / D^3)
+
+									V:TakeDamage(Damage, Inflictor, Source)
+								end
+							end
+						end
+					else
+						ACF.Squishies[V] = nil
+					end
+				end
 			end
 		end
 	end
