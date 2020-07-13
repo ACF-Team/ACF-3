@@ -5,25 +5,50 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
+
+	-- Misc
+	ACF.Year 				= 1945
+	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
+	ACF.GunfireEnabled 		= true
+	ACF.PhysMaxVel 			= 4000
+	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
+	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
+	-- Fuzes
 	ACF.MinFuzeCaliber		= 2 -- Minimum caliber that can be fuzed (centimeters)
+	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
+	-- External and Terminal Ballistics
 	ACF.DragDiv 			= 80 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world
-	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
-	ACF.Year 				= 1945
 	ACF.Threshold 			= 264.7 --Health Divisor (don"t forget to update cvar function down below)
 	ACF.PenAreaMod 			= 0.85
 	ACF.KinFudgeFactor 		= 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
 	ACF.KEtoRHA 			= 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
 	ACF.GroundtoRHA 		= 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
+	ACF.ArmorMod 			= 1
+	ACF.SlopeEffectFactor 	= 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
+	ACF.GlobalFilter = { -- Global ACF filter
+		gmod_ghost = true,
+		acf_debris = true,
+		prop_ragdoll = true,
+		gmod_wire_hologram = true,
+		starfall_hologram = true,
+		prop_vehicle_crane = true,
+		prop_dynamic = true,
+		npc_strider = true,
+		npc_dog = true
+	}
+	-- Ammo
 	ACF.AmmoArmor			= 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding         = 2 -- Millimeters of wasted space between rounds
 	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
 	ACF.AmmoCaseScale		= 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
-	ACF.ArmorMod 			= 1
-	ACF.SlopeEffectFactor 	= 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
-	ACF.GunfireEnabled 		= true
+	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
+	ACF.PScale 				= 1 --Gun Propellant power expotential
+	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
+	ACF.PDensity 			= 1.15 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	-- HE
 	ACF.HEPower 			= 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity 			= 1.65 --HE Filler density (That's TNT density)
 	ACF.HEFrag 				= 1000 --Mean fragment number for equal weight TNT and casing
@@ -37,12 +62,15 @@ do -- ACF global vars
 	ACF.HEATBoomConvert 	= 1 / 3 -- percentage of filler that creates HE damage at detonation
 	ACF.HEATMinCrush 		= 800 -- vel where crush starts, progressively converting round to raw HE
 	ACF.HEATMaxCrush 		= 1200 -- vel where fully crushed
-	ACF.PhysMaxVel 			= 4000
-	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
-	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
-	ACF.PScale 				= 1 --Gun Propellant power expotential
-	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
-	ACF.PDensity 			= 1.15 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	-- Debris
+	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
+	ACF.DebrisIgniteChance 	= 0.25
+	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
+	-- Weapon Accuracy
+	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
+	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
+	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
+	-- Fuel
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
 	ACF.CompFuelRate		= 27.8 --Extra multiplier for fuel consumption on servers with acf_gamemode set to 2 (Competitive)
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
@@ -50,26 +78,6 @@ do -- ACF global vars
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
-	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
-	ACF.DebrisIgniteChance 	= 0.25
-	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
-	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
-	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
-	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
-	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
-
-	--entities that will be ignored by ACF
-	ACF.GlobalFilter = {
-		gmod_ghost = true,
-		acf_debris = true,
-		prop_ragdoll = true,
-		gmod_wire_hologram = true,
-		starfall_hologram = true,
-		prop_vehicle_crane = true,
-		prop_dynamic = true,
-		npc_strider = true,
-		npc_dog = true
-	}
 
 	--kg/liter
 	ACF.FuelDensity = {
