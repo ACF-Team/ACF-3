@@ -121,6 +121,7 @@ local function CreateMenu(Menu)
 		Selected[Choices] = Index
 
 		ACF.WriteValue("Weapon", Data.ID)
+		ACF.WriteValue("Destiny", Data.Destiny)
 
 		EntName:SetText(Data.Name)
 		EntData:SetText(UpdateEntityData())
@@ -176,7 +177,7 @@ local function CreateMenu(Menu)
 		if not self.Selected then return end
 
 		local Ammo = self.Selected
-		local ToolData = Ammo:GetToolData()
+		local ToolData = ACF.GetToolData()
 
 		AmmoData = Ammo:ClientConvert(Menu, ToolData)
 

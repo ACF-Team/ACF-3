@@ -223,6 +223,8 @@ do -- Weapon registration functions
 	function ACF.RegisterWeapon(ID, ClassID, Data)
 		local Class = AddGroupedClass(ID, ClassID, Weapons, Data)
 
+		Class.Destiny = "Weapons"
+
 		if not Class.EntClass then
 			Class.EntClass = "acf_gun"
 		end

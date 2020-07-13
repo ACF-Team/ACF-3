@@ -1,5 +1,6 @@
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local ClassData = ACF.Classes.Weapons[ToolData.WeaponClass]
+	local Class = ACF.Classes[ToolData.Destiny]
+	local ClassData = Class and Class[ToolData.WeaponClass]
 	local WeaponData = ClassData and ClassData.Lookup[ToolData.Weapon]
 	local GUIData = {}
 
@@ -17,7 +18,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	local DesiredProp = math.Round(RoundData.PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
 	local AllowedProp = GUIData.MaxRoundLength - GUIData.MinProjLength
 
-	GUIData.MaxPropLength = math.min(DesiredProp, AllowedProp) -- GUIData.MaxRoundLength - GUIData.MinProjLength
+	GUIData.MaxPropLength = math.min(DesiredProp, AllowedProp)
 	GUIData.MaxProjLength = GUIData.MaxRoundLength - GUIData.MinPropLength
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
