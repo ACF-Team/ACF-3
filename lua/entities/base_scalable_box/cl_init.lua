@@ -13,13 +13,11 @@ function ENT:ApplyNewSize(NewSize)
 	self:PhysicsInitBox(-Bounds, Bounds)
 	self:SetRenderBounds(-Bounds, Bounds)
 	self:EnableCustomCollisions(true)
-	self:SetMoveType(MOVETYPE_NONE) -- TODO: Fix clientside desync when using other move types and punting the entity
 	self:DrawShadow(false)
 
 	local PhysObj = self:GetPhysicsObject()
 
 	if IsValid(PhysObj) then
 		PhysObj:EnableMotion(false)
-		PhysObj:Sleep()
 	end
 end
