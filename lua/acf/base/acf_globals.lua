@@ -66,6 +66,15 @@ do -- ACF global vars
 	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance 	= 0.25
 	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
+	ACF.ValidDebris			= { -- Whitelist for things that can be turned into debris
+		acf_ammo = true,
+		acf_gun = true,
+		acf_gearbox = true,
+		acf_fueltank = true,
+		acf_engine = true,
+		prop_physics = true,
+		prop_vehicle_prisoner_pod = true
+	}
 	-- Weapon Accuracy
 	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
 	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
@@ -155,6 +164,8 @@ if SERVER then
 
 	CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
 	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive", 0, 2)
+	CreateConVar("acf_hepush", 1, FCVAR_ARCHIVE, "Whether or not HE pushes on entities", 0, 1)
+	CreateConVar("acf_kepush", 1, FCVAR_ARCHIVE, "Whether or not kinetic force pushes on entities", 0, 1)
 
 	-- Extra content ----------------------------
 	local Extras = GetConVar("acf_enable_workshop_extras")

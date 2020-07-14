@@ -1,21 +1,13 @@
 -- Local Vars -----------------------------------
-local ACF_HEPUSH 	= CreateConVar("acf_hepush", 1, FCVAR_NONE, "Whether or not HE pushes on entities", 0, 1)
-local ACF_KEPUSH 	= CreateConVar("acf_kepush", 1, FCVAR_NONE, "Whether or not kinetic force pushes on entities", 0, 1)
+local ACF_HEPUSH 	= GetConVar("acf_hepush")
+local ACF_KEPUSH 	= GetConVar("acf_kepush")
 local TimerCreate 	= timer.Create
 local TraceRes 		= {}
 local TraceData 	= { output = TraceRes, mask = MASK_SOLID, filter = false }
 local Check			= ACF_Check
 local HookRun		= hook.Run
 local Trace 		= ACF.TraceF
-local ValidDebris 	= { -- Whitelist for things that can be turned into debris
-	acf_ammo = true,
-	acf_gun = true,
-	acf_gearbox = true,
-	acf_fueltank = true,
-	acf_engine = true,
-	prop_physics = true,
-	prop_vehicle_prisoner_pod = true
-}
+local ValidDebris 	= ACF.ValidDebris
 local ChildDebris 	= ACF.ChildDebris
 local DragDiv		= ACF.DragDiv
 -- Local Funcs ----------------------------------
