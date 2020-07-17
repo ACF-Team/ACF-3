@@ -5,17 +5,18 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF_RECOIL  = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local CheckLegal  = ACF_CheckLegal
-local Shove		  = ACF.KEShove
-local TraceRes    = {} -- Output for traces
-local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
-local Trace		  = util.TraceLine
-local TimerExists = timer.Exists
-local TimerCreate = timer.Create
-local HookRun	  = hook.Run
-local EMPTY = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local ACF_RECOIL   = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
+local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local CheckLegal   = ACF_CheckLegal
+local Shove        = ACF.KEShove
+local Overpressure = ACF.Overpressure
+local TraceRes     = {} -- Output for traces
+local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
+local Trace        = util.TraceLine
+local TimerExists  = timer.Exists
+local TimerCreate  = timer.Create
+local HookRun      = hook.Run
+local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- Replace with CFrame as soon as it's available
 local function UpdateTotalAmmo(Entity)
@@ -415,7 +416,7 @@ do -- Metamethods --------------------------------
 			local Energy = ACF_Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
-				ACF_Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
+				Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
 			end
 
 			if self.MagSize then -- Mag-fed/Automatically loaded

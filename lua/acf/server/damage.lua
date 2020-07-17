@@ -95,7 +95,7 @@ do
 			Squishies[Ent] = nil
 		end)
 
-		hook.Add("PlayerDisconnected", "ACF Squishies", function(Ent)
+		hook.Add("EntityRemoved", "ACF Squishies", function(Ent)
 			Squishies[Ent] = nil
 		end)
 	end
@@ -265,7 +265,7 @@ do
 			return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
 		end
 
-		function ACF_Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
+		function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 			local Radius = Energy ^ 0.33 * 0.025 * 39.37 -- Radius in meters (Completely arbitrary stuff, scaled to have 120s have a radius of about 20m)
 			local Data = { start = Origin, endpos = true, mask = MASK_SHOT }
 
