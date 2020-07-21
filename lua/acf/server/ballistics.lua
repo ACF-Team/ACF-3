@@ -6,6 +6,8 @@ ACF.SkyboxGraceZone  = 100
 local TraceLine 	= util.TraceLine
 local FlightRes 	= {}
 local FlightTr  	= { output = FlightRes }
+local BackRes 		= {}
+local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, output = BackRes }
 local GlobalFilter 	= ACF.GlobalFilter
 
 local function HitClip(Ent, Pos)
@@ -78,7 +80,8 @@ function ACF_CreateBullet(BulletData)
 	Bullet.FlightTime 	 = 0
 	Bullet.TraceBackComp = 0
 	Bullet.Fuze			 = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask			 = Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
+	Bullet.Mask			 = MASK_SOLID --Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
+	Bullet.LastPos		 = Bullet.Pos
 
 	ACF.Bullet[ACF.CurBulletIndex] = Bullet
 
@@ -148,21 +151,20 @@ function ACF_DoBulletsFlight(Index, Bullet)
 		end
 
 		if Bullet.NextPos.z + ACF.SkyboxGraceZone > Bullet.SkyLvL then
-			if Bullet.Fuze and Bullet.Fuze <= CurTime() then -- Fuze detonated outside map
-				ACF_RemoveBullet(Index)
-
-				return
+			if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then -- Fuze detonated outside map
+				return ACF_RemoveBullet(Index)
 			end
 
+			Bullet.LastPos = Bullet.Pos
 			Bullet.Pos = Bullet.NextPos
-			return
-		elseif not util.IsInWorld(Bullet.NextPos) then
-			ACF_RemoveBullet(Index)
 
 			return
+		elseif not util.IsInWorld(Bullet.NextPos) then
+			return ACF_RemoveBullet(Index)
 		else
 			Bullet.SkyLvL = nil
 			Bullet.LifeTime = nil
+			Bullet.LastPos = Bullet.Pos
 			Bullet.Pos = Bullet.NextPos
 			Bullet.SkipNextHit = true
 
@@ -174,7 +176,32 @@ function ACF_DoBulletsFlight(Index, Bullet)
 	FlightTr.filter = Bullet.Filter
 	FlightTr.start 	= Bullet.StartTrace
 	FlightTr.endpos = Bullet.NextPos + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
+
 	Trace(FlightTr)
+
+	if FlightRes.HitNonWorld and Bullet.LastPos and IsValid(FlightRes.Entity) and not GlobalFilter[FlightRes.Entity:GetClass()] then
+		BackTrace.start  = Bullet.Pos
+		BackTrace.endpos = Bullet.LastPos
+		BackTrace.mask   = Bullet.Mask
+		BackTrace.filter = Bullet.Filter
+
+		TraceFilterInit(BackTrace) -- Does not modify the bullet's original filter
+
+		-- There's an entity behind the projectile that it has not yet hit, must have phased through
+		-- Move the projectile back one step
+		if IsValid(BackRes.Entity) and not GlobalFilter[BackRes.Entity:GetClass()] then
+			--print("Thank you Garry", Bullet.Index, BackRes.Entity)
+
+			--Bullet.NextPos = Bullet.Pos
+			Bullet.Pos = Bullet.LastPos
+			Bullet.LastPos = nil
+
+			FlightTr.start 	= Bullet.Pos
+			FlightTr.endpos = Bullet.NextPos
+
+			Trace(FlightTr)
+		end
+	end
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -206,7 +233,9 @@ function ACF_DoBulletsFlight(Index, Bullet)
 			Bullet.SkipNextHit = nil
 		end
 
+		Bullet.LastPos = Bullet.Pos
 		Bullet.Pos = Bullet.NextPos
+
 	elseif FlightRes.HitNonWorld and not GlobalFilter[FlightRes.Entity:GetClass()] then
 		ACF_BulletPropImpact = ACF.RoundTypes[Bullet.Type].propimpact
 		local Retry = ACF_BulletPropImpact(Index, Bullet, FlightRes.Entity, FlightRes.HitNormal, FlightRes.HitPos, FlightRes.HitGroup)
@@ -266,12 +295,14 @@ function ACF_DoBulletsFlight(Index, Bullet)
 			if FlightRes.HitNormal == Vector(0, 0, -1) then
 				Bullet.SkyLvL = FlightRes.HitPos.z
 				Bullet.LifeTime = ACF.CurTime
+				Bullet.LastPos = Bullet.Pos
 				Bullet.Pos = Bullet.NextPos
 			else
 				ACF_RemoveBullet(Index)
 			end
 		end
 	else
+		Bullet.LastPos = Bullet.Pos
 		Bullet.Pos = Bullet.NextPos
 	end
 end
