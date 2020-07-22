@@ -154,17 +154,9 @@ function ACF_Activate(Entity, Recalc)
 		return
 	end
 
-	local Count = PhysObj:GetMesh() and #PhysObj:GetMesh() or nil
-
-	if Count and Count > 100 then
-		Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
-	else
-		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
-
-		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45 --^ 1.15
-	end
-
+	Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
 	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
+
 	local Area = Entity.ACF.Area
 	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
 	local Armour = ACF_CalcArmor(Area, Ductility, Entity:GetPhysicsObject():GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
