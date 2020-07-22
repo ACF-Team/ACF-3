@@ -80,7 +80,7 @@ function ACF_CreateBullet(BulletData)
 	Bullet.FlightTime 	 = 0
 	Bullet.TraceBackComp = 0
 	Bullet.Fuze			 = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask			 = MASK_SOLID --Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
+	Bullet.Mask			 = Bullet.Caliber <= 0.3 and MASK_SHOT or MASK_SOLID
 	Bullet.LastPos		 = Bullet.Pos
 
 	ACF.Bullet[ACF.CurBulletIndex] = Bullet
