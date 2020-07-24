@@ -233,8 +233,8 @@ do
 
 						Ent = TraceRes.Entity
 
-						if Check(TraceRes.Entity) then
-							if not TraceRes.Entity.Exploding and not Damage[TraceRes.Entity] and not not Damaged[Ent] then  -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
+						if Check(Ent) then
+							if not Ent.Exploding and not Damage[Ent] and not Damaged[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
 								local Mul = IsChar and 0.65 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
 
 								debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 255, 0), true) -- Green line for a hit trace
