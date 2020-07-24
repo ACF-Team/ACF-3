@@ -147,19 +147,33 @@ function ACF_Activate(Entity, Recalc)
 	if not IsValid(PhysObj) then return end
 
 	Entity.ACF = Entity.ACF or {}
-	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
+	Entity.ACF.PhysObj = PhysObj
 
 	if Entity.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
 
-	Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
+	-- TODO: Figure out what are the 6.45 and 0.52505066107 multipliers for
+	local SurfaceArea = PhysObj:GetSurfaceArea()
+
+	if SurfaceArea then -- Normal collisions
+		Entity.ACF.Area = SurfaceArea * 6.45 * 0.52505066107
+	elseif PhysObj:GetMesh() then -- Box collisions
+		local Size = Entity:OBBMaxs() - Entity:OBBMins()
+
+		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+	else -- Spherical collisions
+		local Radius = Entity:BoundingRadius()
+
+		Entity.ACF.Area = 4 * 3.1415 * Radius * Radius * 6.45
+	end
+
 	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
 
 	local Area = Entity.ACF.Area
 	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
-	local Armour = ACF_CalcArmor(Area, Ductility, Entity:GetPhysicsObject():GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
+	local Armour = ACF_CalcArmor(Area, Ductility, PhysObj:GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
 	local Health = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
 	local Percent = 1
 
