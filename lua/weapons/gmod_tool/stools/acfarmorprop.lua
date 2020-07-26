@@ -157,7 +157,7 @@ function TOOL:Reload(Trace)
 	if not IsValid(Ent) or Ent:IsPlayer() then return false end
 	if CLIENT then return true end
 
-	local Power, Fuel, PhysNum, ParNum, ConNum, Name = ACF_CalcMassRatio(Ent, true)
+	local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF_CalcMassRatio(Ent, true)
 
 	local Player		= self:GetOwner()
 	local Total 		= Ent.acftotal
@@ -168,7 +168,7 @@ function TOOL:Reload(Trace)
 	Player:ChatPrint("--- ACF Contraption Readout (Owner: " .. Name .. ") ---")
 	Player:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
 	Player:ChatPrint("Mobility: " .. math.Round(Power / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power) .. " hp | " .. math.Round(Fuel) .. " liters of fuel")
-	Player:ChatPrint("Entities: " .. PhysNum + ParNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented) | " .. ConNum .. " constraints")
+	Player:ChatPrint("Entities: " .. PhysNum + ParNum + OtherNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented, " .. OtherNum .. " other entities) | " .. ConNum .. " constraints")
 
 	return true
 end
