@@ -248,9 +248,6 @@ local function SetActive(Entity, Value)
 			Entity:CalcRPM()
 		end)
 
-		Entity:UpdateOverlay()
-		Entity:UpdateOutputs()
-
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
 			if not IsValid(Entity) then return end
 
@@ -269,11 +266,11 @@ local function SetActive(Entity, Value)
 			Entity.Sound = nil
 		end
 
-		Entity:UpdateOverlay()
-		Entity:UpdateOutputs()
-
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
+
+	Entity:UpdateOverlay()
+	Entity:UpdateOutputs()
 end
 
 local Inputs = {
@@ -399,18 +396,14 @@ function ENT:Update(ArgsTable)
 end
 
 function ENT:UpdateOutputs()
-	if TimerExists("ACF Output Buffer" .. self:EntIndex()) then return end
+	if not IsValid(self) then return end
 
-	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
-		if not IsValid(self) then return end
+	local Power = self.Torque * self.FlyRPM / 9548.8
 
-		local Power = self.Torque * self.FlyRPM / 9548.8
-
-		WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
-		WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
-		WireLib.TriggerOutput(self, "Power", math.floor(Power))
-		WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
-	end)
+	WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
+	WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
+	WireLib.TriggerOutput(self, "Power", math.floor(Power))
+	WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
 end
 
 local function Overlay(Ent)
