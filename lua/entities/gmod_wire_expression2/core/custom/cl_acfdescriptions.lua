@@ -83,7 +83,7 @@ E2Desc["acfGetLinkedWheels(e:)"] = "Returns an array of all the wheels linked to
 -- Weaponry Functions
 E2Desc["acfIsReloading(e:)"] = "Returns 1 if an ACF entity is reloading."
 E2Desc["acfReady(e:)"] = "Returns 1 if an ACF entity is ready to fire."
-E2Desc["acfStatus(e:)"] = "Returns the current status of an ACF entity."
+E2Desc["acfState(e:)"] = "Returns the current status of an ACF entity."
 E2Desc["acfMagSize(e:)"] = "Returns the magazine capacity of an ACF entity."
 E2Desc["acfMagReloadTime(e:)"] = "Returns time it takes for an ACF entity to reload a magazine."
 E2Desc["acfReloadTime(e:)"] = "Returns time to next shot of an ACF entity."
