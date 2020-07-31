@@ -552,7 +552,7 @@ function ENT:GetConsumption(Throttle, RPM)
 		Consumption = Load * self.FuelUse * (RPM / self.PeakKwRPM) / self.FuelTank.FuelDensity
 	end
 
-	return Round(Consumption, 2)
+	return Consumption
 end
 
 function ENT:CalcRPM()
