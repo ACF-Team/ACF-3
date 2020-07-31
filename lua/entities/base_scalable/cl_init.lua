@@ -1,6 +1,7 @@
+DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
+
 include("shared.lua")
 
-local Unexistant = {}
 local Queued = {}
 local Sizes = {}
 
@@ -17,37 +18,22 @@ net.Receive("RequestSize", function()
 			Ent:SetSize(Data.Size)
 
 			if Queued[Ent] then Queued[Ent] = nil end
-		else
-			Unexistant[ID] = Data
 		end
 	end
-end)
-
-hook.Add("OnEntityCreated", "Scalable Ent Startup", function(Ent)
-	timer.Simple(0.1, function()
-		if not IsValid(Ent) then return end
-		if not Ent.IsScalable then return end
-
-		local Data = Unexistant[Ent:EntIndex()]
-
-		if Data then
-			Sizes[Ent:GetModel()] = Data.Original
-			Unexistant[Ent:EntIndex()] = nil
-
-			Ent.OriginalSize = Data.Original
-			Ent:SetSize(Data.Size)
-
-			if Queued[Ent] then Queued[Ent] = nil end
-		else
-			Ent:GetOriginalSize()
-		end
-	end)
 end)
 
 -- Commented out for the moment, something's causing crashes
 --hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
 	--if Ent.IsScalable then return false end
 --end)
+
+function ENT:Initialize()
+	BaseClass.Initialize(self)
+
+	self.Initialized = true
+
+	self:GetOriginalSize() -- Getting the original and current size
+end
 
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
@@ -105,4 +91,12 @@ function ENT:CalcAbsolutePosition() -- Faking sync
 	end
 
 	return Position, Angles
+end
+
+function ENT:Think()
+	if not self.Initialized then
+		self:Initialize()
+	end
+
+	BaseClass.Think(self)
 end
