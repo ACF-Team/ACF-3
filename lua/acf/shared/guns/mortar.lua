@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("MO", {
-	spread = 0.64,
+	spread = 0.72,
 	name = "Mortar",
 	desc = "Mortars are able to fire shells with usefull payloads from a light weight gun, at the price of limited velocities.",
 	muzzleflash = "mortar_muzzleflash_noscale",

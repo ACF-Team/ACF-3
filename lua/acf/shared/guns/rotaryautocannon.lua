@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("RAC", {
-	spread = 0.4,
+	spread = 0.48,
 	name = "Rotary Autocannon",
 	desc = "Rotary Autocannons sacrifice weight, bulk and accuracy over classic Autocannons to get the highest rate of fire possible.",
 	muzzleflash = "mg_muzzleflash_noscale",
