@@ -89,6 +89,15 @@ if CLIENT then
 	end )
 end
 
+-- Allowing everyone to check contraptions
+if SERVER then
+	hook.Add("CanTool", "ACF Armor Prop Allow", function(Player, _, Tool)
+		if Tool == "acfarmorprop" and Player:KeyDown(IN_RELOAD) then
+			return true
+		end
+	end)
+end
+
 -- Apply settings to prop and store dupe info
 local function ApplySettings( _, ent, data )
 
