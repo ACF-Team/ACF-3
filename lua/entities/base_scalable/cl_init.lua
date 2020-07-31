@@ -44,9 +44,10 @@ hook.Add("OnEntityCreated", "Scalable Ent Startup", function(Ent)
 	end)
 end)
 
-hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
-	if Ent.IsScalable then return false end
-end)
+-- Commented out for the moment, something's causing crashes
+--hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
+	--if Ent.IsScalable then return false end
+--end)
 
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
@@ -100,6 +101,7 @@ function ENT:CalcAbsolutePosition() -- Faking sync
 		PhysObj:SetPos(Position)
 		PhysObj:SetAngles(Angles)
 		PhysObj:EnableMotion(false) -- Disable prediction
+		PhysObj:Sleep()
 	end
 
 	return Position, Angles
