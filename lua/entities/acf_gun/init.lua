@@ -661,18 +661,18 @@ do -- Metamethods --------------------------------
 			end
 		end
 
-		function ENT:UpdateOverlay(Instant)
-			if Instant then
-				Overlay(self)
-				return
-			end
-
-			if not TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then
+		function ENT:UpdateOverlay()
+			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+				self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+			else
 				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-					if IsValid(self) then
-						Overlay(self)
+					if IsValid(self) and self.OverlayBuffer then
+						self.OverlayBuffer = nil
+						self:UpdateOverlay()
 					end
 				end)
+
+				Overlay(self)
 			end
 		end
 	end -----------------------------------------
