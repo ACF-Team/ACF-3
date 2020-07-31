@@ -2,6 +2,10 @@ include("shared.lua")
 
 local HideInfo = ACF.HideInfoBubble
 
+function ENT:Initialize()
+	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
+end
+
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 	self:DoNormalDraw(false, HideInfo())
