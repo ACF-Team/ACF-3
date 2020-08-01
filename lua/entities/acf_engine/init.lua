@@ -136,6 +136,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 	Entity.FuelType 		= EngineData.fuel or "Petrol"
 	Entity.EngineType 		= EngineData.enginetype or "GenericPetrol"
 	Entity.TorqueScale 		= ACF.TorqueScale[Entity.EngineType]
+	Entity.HitBoxes 		= ACF.HitBoxes[EngineData.model]
 
 	--calculate boosted peak kw
 	if Entity.EngineType == "Turbine" or Entity.EngineType == "Electric" then

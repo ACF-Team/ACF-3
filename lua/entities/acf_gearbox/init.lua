@@ -239,6 +239,8 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.LClutch = Entity.MaxTorque
 		Entity.RClutch = Entity.MaxTorque
 
+		Entity.HitBoxes = ACF.HitBoxes[GearboxData.model]
+
 		CreateInputsOutputs(Entity)
 
 		local PhysObj = Entity:GetPhysicsObject()
