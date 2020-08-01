@@ -59,6 +59,26 @@ ACF.Trace 		= Trace
 ACF.TraceF 		= TraceFilterInit
 ACF_CheckClips 	= HitClip
 
+-- This will check a vector against all of the hitboxes stored on an entity
+-- If the vector is inside a box, it will return true, the box name (organization I guess, can do an E2 function with all of this), and the hitbox itself
+-- If the entity in question does not have hitboxes, it returns false
+-- Finally, if it never hits a hitbox in its check, it also returns false
+function ACF_CheckHitbox(Ent, Vec)
+	if Ent.HitBoxes == nil then return false end -- If theres no hitboxes, then don't worry about them
+
+	for k,v in pairs(Ent.HitBoxes) do
+		-- v is the box table
+
+		-- Need to make sure the vector is local and LEVEL with the box, otherwise WithinAABox will be wildly wrong
+		local LocalPos = WorldToLocal(Vec,Angle(0,0,0),Ent:LocalToWorld(v.Pos),Ent:LocalToWorldAngles(v.Angle))
+		local CheckHitbox = LocalPos:WithinAABox(-v.Scale / 2,v.Scale / 2)
+
+		if CheckHitbox == true then return Check,k,v end
+	end
+
+	return false
+end
+
 function ACF_CreateBullet(BulletData)
 	ACF.CurBulletIndex = ACF.CurBulletIndex + 1
 	if ACF.CurBulletIndex > ACF.BulletIndexLimit then ACF.CurBulletIndex = 1 end
