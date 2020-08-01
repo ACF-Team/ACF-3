@@ -202,11 +202,1272 @@ end
 
 -- All of the manually made hitboxes for various models
 -- Current issues: smoothbores are using the same hitboxes as the new cannons
--- TODO: Engines, racks, fix smoothbores
+-- TODO: Racks, fix smoothbores
 
 ACF.HitBoxes = {}
 
 local Box = ACF.HitBoxes
+
+-- why do none of these fucking engines follow a common size
+do -- Engines, oh god so many engines
+	do -- I2s
+		Box["models/engines/inline2s.mdl"] = {
+			Shaft = {
+				Pos = Vector(-1.25, 0, 4.75),
+				Scale = Vector(15.5,8,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(-0.5,0,13.25),
+				Scale = Vector(10,5,8),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline2m.mdl"] = { -- theres no engine definition that uses this model, so an educated guess for sizing, comparing to the other similarly named sizes of S-M-B
+			Shaft = {
+				Pos = Vector(-1.25, 0, 4.75) * 1.5,
+				Scale = Vector(15.5,8,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(-0.5,0,13.25) * 1.5,
+				Scale = Vector(10,5,8) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline2b.mdl"] = {
+			Shaft = {
+				Pos = Vector(-1.25, 0, 4.75) * 2.5,
+				Scale = Vector(15.5,8,9) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(-0.5,0,13.25) * 2.5,
+				Scale = Vector(10,5,8) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- I3s
+		Box["models/engines/inline3s.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75),
+				Scale = Vector(18.5,8,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1,0.25,13.25),
+				Scale = Vector(14,5.5,8),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline3m.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 1.5,
+				Scale = Vector(18.5,8,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1,0.25,13.25) * 1.5,
+				Scale = Vector(14,5.5,8) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline3b.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 2.5,
+				Scale = Vector(18.5,8,9) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1,0.25,13.25) * 2.5,
+				Scale = Vector(14,5.5,8) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- I4s
+		Box["models/engines/inline4s.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75),
+				Scale = Vector(23,7.5,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.25),
+				Scale = Vector(18.25,5.25,8),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline4m.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 1.5,
+				Scale = Vector(23,7.5,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.25) * 1.5,
+				Scale = Vector(18.25,5.25,8) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline4l.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 2.5,
+				Scale = Vector(23,7.5,9) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.25) * 2.5,
+				Scale = Vector(18.25,5.25,8) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- I5s
+		Box["models/engines/inline5s.mdl"] = {
+			Shaft = {
+				Pos = Vector(-0.75, 0, 4.75),
+				Scale = Vector(28,7.5,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(0.25,0,13.5),
+				Scale = Vector(23,5.25,8.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline5m.mdl"] = {
+			Shaft = {
+				Pos = Vector(-0.75, 0, 4.75) * 1.5,
+				Scale = Vector(28,7.5,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(0.25,0,13.5) * 1.5,
+				Scale = Vector(23,5.25,8.5) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline5b.mdl"] = {
+			Shaft = {
+				Pos = Vector(-0.75, 0, 4.75) * 2.5,
+				Scale = Vector(28,7.5,9) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(0.25,0,13.5) * 2.5,
+				Scale = Vector(23,5.25,8.5) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- I6s
+		Box["models/engines/inline6s.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75),
+				Scale = Vector(32,7.5,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.5),
+				Scale = Vector(27,5.25,8.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline6m.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 1.5,
+				Scale = Vector(32,7.5,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.5) * 1.5,
+				Scale = Vector(27,5.25,8.5) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/inline6l.mdl"] = {
+			Shaft = {
+				Pos = Vector(0.5, 0, 4.75) * 2.5,
+				Scale = Vector(32,7.5,9) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Pistons = {
+				Pos = Vector(1.25,0,13.5) * 2.5,
+				Scale = Vector(27,5.25,8.5) * 2.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- Singles
+		Box["models/engines/1cylsml.mdl"] = {
+			Shaft = {
+				Pos = Vector(4,0,0),
+				Scale = Vector(16,8,8),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(7.5,0,9.5),
+				Scale = Vector(9,8,11),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/1cylmed.mdl"] = {
+			Shaft = {
+				Pos = Vector(4,0,0) * 1.35,
+				Scale = Vector(16,8,8) * 1.35,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(7.5,0,9.5) * 1.35,
+				Scale = Vector(9,8,11) * 1.35,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/1cylbig.mdl"] = {
+			Shaft = {
+				Pos = Vector(4,0,0) * 1.69,
+				Scale = Vector(16,8,8) * 1.69,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(7.5,0,9.5) * 1.69,
+				Scale = Vector(9,8,11) * 1.69,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V-Twins (V2s)
+		Box["models/engines/v-twins2.mdl"] = {
+			Shaft = {
+				Pos = Vector(4.25,0,0),
+				Scale = Vector(9,8,8),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(5,-4,8.5),
+				Scale = Vector(6,6,12),
+				Angle = Angle(0, 0, 25),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = Vector(5,4,8.5),
+				Scale = Vector(6,6,12),
+				Angle = Angle(0, 0, -25),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v-twinm2.mdl"] = {
+			Shaft = {
+				Pos = Vector(4.25,0,0) * 1.33,
+				Scale = Vector(9,8,8) * 1.33,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(5,-4,8.5) * 1.33,
+				Scale = Vector(6,6,12) * 1.33,
+				Angle = Angle(0, 0, 25),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = Vector(5,4,8.5) * 1.33,
+				Scale = Vector(6,6,12) * 1.33,
+				Angle = Angle(0, 0, -25),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v-twinl2.mdl"] = {
+			Shaft = {
+				Pos = Vector(4.25,0,0) * 1.67,
+				Scale = Vector(9,8,8) * 1.67,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(5,-4,8.5) * 1.67,
+				Scale = Vector(6,6,12) * 1.67,
+				Angle = Angle(0, 0, 25),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = Vector(5,4,8.5) * 1.67,
+				Scale = Vector(6,6,12) * 1.67,
+				Angle = Angle(0, 0, -25),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V4s
+		Box["models/engines/v4s.mdl"] = {
+			Main = {
+				Pos = Vector(3.25,0,7.75),
+				Scale = Vector(18,11.5,16),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(4.25,-6.75,11.25),
+				Scale = Vector(15.75,6.5,10),
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(4.25,6.75,11.25),
+				Scale = Vector(15.75,6.5,10),
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v4m.mdl"] = {
+			Main = {
+				Pos = Vector(3.25,0,7.75) * 1.25,
+				Scale = Vector(18,11.5,16) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(4.25,-6.75,11.25) * 1.25,
+				Scale = Vector(15.75,6.5,10) * 1.25,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(4.25,6.75,11.25) * 1.25,
+				Scale = Vector(15.75,6.5,10) * 1.25,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v4l.mdl"] = {
+			Main = {
+				Pos = Vector(3.25,0,7.75) * 1.5,
+				Scale = Vector(18,11.5,16) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(4.25,-6.75,11.25) * 1.5,
+				Scale = Vector(15.75,6.5,10) * 1.5,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(4.25,6.75,11.25) * 1.5,
+				Scale = Vector(15.75,6.5,10) * 1.5,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V6s
+		Box["models/engines/v6small.mdl"] = {
+			Main = {
+				Pos = Vector(10.5,0,3.75),
+				Scale = Vector(22,11.5,16.25),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(11.5,-6.5,7),
+				Scale = Vector(20,8,11),
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(11.5,6.5,7),
+				Scale = Vector(20,8,11),
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v6med.mdl"] = {
+			Main = {
+				Pos = Vector(10.5,0,3.75) * 1.25,
+				Scale = Vector(22,11.5,16.25) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(11.5,-6.5,7) * 1.25,
+				Scale = Vector(20,8,11) * 1.25,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(11.5,6.5,7) * 1.25,
+				Scale = Vector(20,8,11) * 1.25,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v6large.mdl"] = {
+			Main = {
+				Pos = Vector(10.5,0,3.75) * 1.85,
+				Scale = Vector(22,11.5,16.25) * 1.85,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(11.5,-6.5,7) * 1.85,
+				Scale = Vector(20,8,11) * 1.85,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(11.5,6.5,7) * 1.85,
+				Scale = Vector(20,8,11) * 1.85,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V8s
+		Box["models/engines/v8s.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5),
+				Scale = Vector(27.5,11.5,16.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(0,-6.5,11),
+				Scale = Vector(25,8,11.25),
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(0,6.5,11),
+				Scale = Vector(25,8,11.25),
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v8m.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5) * 1.25,
+				Scale = Vector(27.5,11.5,16.5) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(0,-6.5,11) * 1.25,
+				Scale = Vector(25,8,11.25) * 1.25,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(0,6.5,11) * 1.25,
+				Scale = Vector(25,8,11.25) * 1.25,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v8l.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5) * 1.85,
+				Scale = Vector(27.5,11.5,16.5) * 1.85,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(0,-6.5,11) * 1.85,
+				Scale = Vector(25,8,11.25) * 1.85,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(0,6.5,11) * 1.85,
+				Scale = Vector(25,8,11.25) * 1.85,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V10s
+		Box["models/engines/v10sml.mdl"] = {
+			Main = {
+				Pos = Vector(-3.5,0,7.5),
+				Scale = Vector(31,11.5,16.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-2.5,-6.5,11),
+				Scale = Vector(28,8,11.25),
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-2.5,6.5,11),
+				Scale = Vector(28,8,11.25),
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v10med.mdl"] = {
+			Main = {
+				Pos = Vector(-3.5,0,7.5) * 1.25,
+				Scale = Vector(31,11.5,16.5) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-2.5,-6.5,11) * 1.25,
+				Scale = Vector(28,8,11.25) * 1.25,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-2.5,6.5,11) * 1.25,
+				Scale = Vector(28,8,11.25) * 1.25,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v10big.mdl"] = {
+			Main = {
+				Pos = Vector(-3.5,0,7.5) * 1.85,
+				Scale = Vector(31,11.5,16.5) * 1.85,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-2.5,-6.5,11) * 1.85,
+				Scale = Vector(28,8,11.25) * 1.85,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-2.5,6.5,11) * 1.85,
+				Scale = Vector(28,8,11.25) * 1.85,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- V12s
+		Box["models/engines/v12s.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5),
+				Scale = Vector(36,11.5,16.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-0.25,-6.5,11),
+				Scale = Vector(34,8,11.25),
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-0.25,6.5,11),
+				Scale = Vector(34,8,11.25),
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v12m.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5) * 1.25,
+				Scale = Vector(36,11.5,16.5) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-0.25,-6.5,11) * 1.25,
+				Scale = Vector(34,8,11.25) * 1.25,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-0.25,6.5,11) * 1.25,
+				Scale = Vector(34,8,11.25) * 1.25,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/v12l.mdl"] = {
+			Main = {
+				Pos = Vector(-1.25,0,7.5) * 1.85,
+				Scale = Vector(36,11.5,16.5) * 1.85,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			LeftBank = {
+				Pos = Vector(-0.25,-6.5,11) * 1.85,
+				Scale = Vector(34,8,11.25) * 1.85,
+				Angle = Angle(0, 0, 45),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(-0.25,6.5,11) * 1.85,
+				Scale = Vector(34,8,11.25) * 1.85,
+				Angle = Angle(0, 0, -45),
+				Sensitive = false
+			}
+		}
+	end
+
+	-- People hate this really simple trick!
+	-- Lets decide NOT to make Rotate return anything!
+	-- AKA how to piss off people
+	local function RealRotate(Vec,Ang)
+		local GottaSaveThisStupidFuckingVectorBecauseItDoesntReturnOtherwise = Vec
+		GottaSaveThisStupidFuckingVectorBecauseItDoesntReturnOtherwise:Rotate(Ang)
+		return GottaSaveThisStupidFuckingVectorBecauseItDoesntReturnOtherwise
+	end
+	do -- Radials
+		Box["models/engines/radial7s.mdl"] = {
+			Shaft = {
+				Pos = Vector(-0.5,0,0),
+				Scale = Vector(10,8.5,8.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(0,0,-9),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42), -- 360/7 = 51.4285
+				Sensitive = false
+			},
+			Piston3 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 2)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42 * 2),
+				Sensitive = false
+			},
+			Piston4 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 3)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42 * 3),
+				Sensitive = false
+			},
+			Piston5 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 4)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42 * 4),
+				Sensitive = false
+			},
+			Piston6 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 5)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42 * 5),
+				Sensitive = false
+			},
+			Piston7 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 6)),
+				Scale = Vector(6,6,10),
+				Angle = Angle(0, 0, 51.42 * 6),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/radial7m.mdl"] = { -- AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA get fucked
+			Shaft = {
+				Pos = Vector(-0.5,0,0) * 1.33,
+				Scale = Vector(10,8.5,8.5) * 1.33,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(0,0,-9) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42), -- 360/7 = 51.4285
+				Sensitive = false
+			},
+			Piston3 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 2)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42 * 2),
+				Sensitive = false
+			},
+			Piston4 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 3)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42 * 3),
+				Sensitive = false
+			},
+			Piston5 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 4)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42 * 4),
+				Sensitive = false
+			},
+			Piston6 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 5)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42 * 5),
+				Sensitive = false
+			},
+			Piston7 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 6)) * 1.33,
+				Scale = Vector(6,6,10) * 1.33,
+				Angle = Angle(0, 0, 51.42 * 6),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/radial7l.mdl"] = {
+			Shaft = {
+				Pos = Vector(-0.5,0,0) * 1.67,
+				Scale = Vector(10,8.5,8.5) * 1.67,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Piston1 = {
+				Pos = Vector(0,0,-9) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Piston2 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42), -- 360/7 = 51.4285
+				Sensitive = false
+			},
+			Piston3 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 2)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42 * 2),
+				Sensitive = false
+			},
+			Piston4 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 3)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42 * 3),
+				Sensitive = false
+			},
+			Piston5 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 4)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42 * 4),
+				Sensitive = false
+			},
+			Piston6 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 5)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42 * 5),
+				Sensitive = false
+			},
+			Piston7 = {
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 6)) * 1.67,
+				Scale = Vector(6,6,10) * 1.67,
+				Angle = Angle(0, 0, 51.42 * 6),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- B4s
+		Box["models/engines/b4small.mdl"] = {
+			Main = {
+				Pos = Vector(8.5,0,0.5),
+				Scale = Vector(18,16,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			UpperSection = {
+				Pos = Vector(7,0,7),
+				Scale = Vector(11,23,4),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftBank = {
+				Pos = Vector(9,-10,2),
+				Scale = Vector(16,4,6),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(9,10,2),
+				Scale = Vector(16,4,6),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/b4med.mdl"] = {
+			Main = {
+				Pos = Vector(8.5,0,0.5) * 1.25,
+				Scale = Vector(18,16,9) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			UpperSection = {
+				Pos = Vector(7,0,7) * 1.25,
+				Scale = Vector(11,23,4) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftBank = {
+				Pos = Vector(9,-10,2) * 1.25,
+				Scale = Vector(16,4,6) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(9,10,2) * 1.25,
+				Scale = Vector(16,4,6) * 1.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- B6s
+		Box["models/engines/b6small.mdl"] = {
+			Main = {
+				Pos = Vector(11,0,0.5),
+				Scale = Vector(22,16,9),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			UpperSection = {
+				Pos = Vector(9,0,7),
+				Scale = Vector(15,23,4),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftBank = {
+				Pos = Vector(12,-10,2),
+				Scale = Vector(20,4,6),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(12,10,2),
+				Scale = Vector(20,4,6),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/b6med.mdl"] = { -- yes a medium B6 is overall larger than a medium B4 in more than length because ??????
+			Main = {
+				Pos = Vector(11,0,0.5) * 1.5,
+				Scale = Vector(22,16,9) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			UpperSection = {
+				Pos = Vector(9,0,7) * 1.5,
+				Scale = Vector(15,23,4) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftBank = {
+				Pos = Vector(12,-10,2) * 1.5,
+				Scale = Vector(20,4,6) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(12,10,2) * 1.5,
+				Scale = Vector(20,4,6) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/b6large.mdl"] = {
+			Main = {
+				Pos = Vector(11,0,0.5) * 2.25,
+				Scale = Vector(22,16,9) * 2.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			UpperSection = {
+				Pos = Vector(9,0,7) * 2.25,
+				Scale = Vector(15,23,4) * 2.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftBank = {
+				Pos = Vector(12,-10,2) * 2.25,
+				Scale = Vector(20,4,6) * 2.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightBank = {
+				Pos = Vector(12,10,2) * 2.25,
+				Scale = Vector(20,4,6) * 2.25,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- Rotaries (wankels)
+		Box["models/engines/wankel_2_small.mdl"] = { -- SHAWTY
+			Main = {
+				Pos = Vector(6,0,0),
+				Scale = Vector(13,10,14),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/wankel_2_med.mdl"] = {
+			Main = {
+				Pos = Vector(7.5,0,0),
+				Scale = Vector(16,13,17),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/wankel_3_med.mdl"] = {
+			Main = {
+				Pos = Vector(10.25,0,0),
+				Scale = Vector(22,13,17),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/wankel_4_med.mdl"] = {
+			Main = {
+				Pos = Vector(13,0,0),
+				Scale = Vector(26.5,13,17),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+	end
+
+	do -- Turbines
+		-- Straight turbines
+		Box["models/engines/gasturbine_s.mdl"] = {
+			Main = {
+				Pos = Vector(2,0,0),
+				Scale = Vector(26,11,11),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(20,0,0),
+				Scale = Vector(10,15,15),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(-16,0,4),
+				Scale = Vector(10,15,24),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/gasturbine_m.mdl"] = {
+			Main = {
+				Pos = Vector(2,0,0) * 1.5,
+				Scale = Vector(26,11,11) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(20,0,0) * 1.5,
+				Scale = Vector(10,15,15) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(-16,0,4) * 1.5,
+				Scale = Vector(10,15,24) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/gasturbine_l.mdl"] = {
+			Main = {
+				Pos = Vector(2,0,0) * 2,
+				Scale = Vector(26,11,11) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(20,0,0) * 2,
+				Scale = Vector(10,15,15) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(-16,0,4) * 2,
+				Scale = Vector(10,15,24) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+
+		-- Transaxial turbines
+		Box["models/engines/turbine_s.mdl"] = {
+			Main = {
+				Pos = Vector(6,0,0),
+				Scale = Vector(22,10,10),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(19.5,0,0),
+				Scale = Vector(5,12,12),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Chamber = {
+				Pos = Vector(-9.5,0,0),
+				Scale = Vector(9,13,13),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(0,-6.5,0),
+				Scale = Vector(7,3,7),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Exhaust = {
+				Pos = Vector(-19,0,0),
+				Scale = Vector(10,10,10),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/turbine_m.mdl"] = {
+			Main = {
+				Pos = Vector(6,0,0) * 1.5,
+				Scale = Vector(22,10,10) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(19.5,0,0) * 1.5,
+				Scale = Vector(5,12,12) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Chamber = {
+				Pos = Vector(-9.5,0,0) * 1.5,
+				Scale = Vector(9,13,13) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(0,-6.5,0) * 1.5,
+				Scale = Vector(7,3,7) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Exhaust = {
+				Pos = Vector(-19,0,0) * 1.5,
+				Scale = Vector(10,10,10) * 1.5,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/turbine_l.mdl"] = {
+			Main = {
+				Pos = Vector(6,0,0) * 2,
+				Scale = Vector(22,10,10) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			Intake = {
+				Pos = Vector(19.5,0,0) * 2,
+				Scale = Vector(5,12,12) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Chamber = {
+				Pos = Vector(-9.5,0,0) * 2,
+				Scale = Vector(9,13,13) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Output = {
+				Pos = Vector(0,-6.5,0) * 2,
+				Scale = Vector(7,3,7) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			Exhaust = {
+				Pos = Vector(-19,0,0) * 2,
+				Scale = Vector(10,10,10) * 2,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+	end
+
+	do -- Electrics
+		-- Full size
+		Box["models/engines/emotorsmall.mdl"] = {
+			Main = {
+				Pos = Vector(13,0,0.5),
+				Scale = Vector(26,14,14),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			CableBullshit = {
+				Pos = Vector(31,0,0.5),
+				Scale = Vector(10,14,14),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftPack = {
+				Pos = Vector(18.75,-13.5,0.5),
+				Scale = Vector(37,10,14.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightPack = {
+				Pos = Vector(18.75,13.5,0.5),
+				Scale = Vector(37,10,14.5),
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/emotormed.mdl"] = {
+			Main = {
+				Pos = Vector(13,0,0.5) * 1.37,
+				Scale = Vector(26,14,14) * 1.37,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			CableBullshit = {
+				Pos = Vector(31,0,0.5) * 1.37,
+				Scale = Vector(10,14,14) * 1.37,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftPack = {
+				Pos = Vector(18.75,-13.5,0.5) * 1.37,
+				Scale = Vector(37,10,14.5) * 1.37,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightPack = {
+				Pos = Vector(18.75,13.5,0.5) * 1.37,
+				Scale = Vector(37,10,14.5) * 1.37,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+		Box["models/engines/emotorlarge.mdl"] = {
+			Main = {
+				Pos = Vector(13,0,0.5) * 1.92,
+				Scale = Vector(26,14,14) * 1.92,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			},
+			CableBullshit = {
+				Pos = Vector(31,0,0.5) * 1.92,
+				Scale = Vector(10,14,14) * 1.92,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			LeftPack = {
+				Pos = Vector(18.75,-13.5,0.5) * 1.92,
+				Scale = Vector(37,10,14.5) * 1.92,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			},
+			RightPack = {
+				Pos = Vector(18.75,13.5,0.5) * 1.92,
+				Scale = Vector(37,10,14.5) * 1.92,
+				Angle = Angle(0, 0, 0),
+				Sensitive = false
+			}
+		}
+
+		-- Standalones
+		Box["models/engines/emotor-standalone-tiny.mdl"] = {
+			Main = {
+				Pos = Vector(-0.5,0,0),
+				Scale = Vector(14,10,10),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/emotor-standalone-sml.mdl"] = {
+			Main = {
+				Pos = Vector(9,0,0),
+				Scale = Vector(20,16,16),
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/emotor-standalone-mid.mdl"] = { --world is a fuck
+			Main = {
+				Pos = Vector(9,0,0) * 1.33,
+				Scale = Vector(20,16,16) * 1.33,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+		Box["models/engines/emotor-standalone-big.mdl"] = {
+			Main = {
+				Pos = Vector(9,0,0) * 1.67,
+				Scale = Vector(20,16,16) * 1.67,
+				Angle = Angle(0, 0, 0),
+				Sensitive = true
+			}
+		}
+	end
+end
 
 do -- Transmissions
 	do -- Transaxials
@@ -215,7 +1476,7 @@ do -- Transmissions
 				Pos = Vector(0, 0, 3.25),
 				Scale = Vector(6.5,16,6.5),
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(5.5, 0, 3.25),
@@ -229,7 +1490,7 @@ do -- Transmissions
 				Pos = Vector(0, 0, 3.25) * 1.5,
 				Scale = Vector(6.5,16,6.5) * 1.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(5.5, 0, 3.25) * 1.5,
@@ -243,7 +1504,7 @@ do -- Transmissions
 				Pos = Vector(0, 0, 3.25) * 2.5,
 				Scale = Vector(6.5,16,6.5) * 2.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(5.5, 0, 3.25) * 2.5,
@@ -260,7 +1521,7 @@ do -- Transmissions
 				Pos = Vector(0, -0.5, 3.25),
 				Scale = Vector(6.5,18,6.5),
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(0, 4.75, 11),
@@ -274,7 +1535,7 @@ do -- Transmissions
 				Pos = Vector(0, -0.5, 3.25) * 1.5,
 				Scale = Vector(6.5,18,6.5) * 1.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(0, 4.75, 11) * 1.5,
@@ -288,7 +1549,7 @@ do -- Transmissions
 				Pos = Vector(0, -0.5, 3.25) * 2.5,
 				Scale = Vector(6.5,18,6.5) * 2.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			In = {
 				Pos = Vector(0, 4.75, 11) * 2.5,
@@ -305,7 +1566,7 @@ do -- Transmissions
 				Pos = Vector(0, 12.5, -0.75),
 				Scale = Vector(6.5,15,8),
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			Clutch = {
 				Pos = Vector(0, 2.5, 0),
@@ -319,7 +1580,7 @@ do -- Transmissions
 				Pos = Vector(0, 12.5, -0.75) * 1.5,
 				Scale = Vector(6.5,15,8) * 1.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			Clutch = {
 				Pos = Vector(0, 2.5, 0) * 1.5,
@@ -333,7 +1594,7 @@ do -- Transmissions
 				Pos = Vector(0, 12.5, -0.75) * 2,
 				Scale = Vector(6.5,15,8) * 2,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			},
 			Clutch = {
 				Pos = Vector(0, 2.5, 0) * 2,
@@ -350,7 +1611,7 @@ do -- Transmissions
 				Pos = Vector(0,0.25,0),
 				Scale = Vector(8, 4, 8),
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			}
 		}
 		Box["models/engines/flywheelclutchs.mdl"] = {
@@ -358,7 +1619,7 @@ do -- Transmissions
 				Pos = Vector(0,0.25,0) * 1.5,
 				Scale = Vector(8, 4, 8) * 1.5,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			}
 		}
 		Box["models/engines/flywheelclutchm.mdl"] = {
@@ -366,7 +1627,7 @@ do -- Transmissions
 				Pos = Vector(0,0.25,0) * 2,
 				Scale = Vector(8, 4, 8) * 2,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			}
 		}
 		Box["models/engines/flywheelclutchb.mdl"] = {
@@ -374,7 +1635,7 @@ do -- Transmissions
 				Pos = Vector(0,0.25,0) * 3,
 				Scale = Vector(8, 4, 8) * 3,
 				Angle = Angle(0, 0, 0),
-				Sensitive = false
+				Sensitive = true
 			}
 		}
 	end
