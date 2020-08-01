@@ -93,8 +93,6 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	Owner:AddCount("_acf_misc", Tank)
 	Owner:AddCleanup("acfmenu", Tank)
 
-	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
-
 	Tank.Owner     = Owner
 	Tank.Engines   = {}
 	Tank.Active    = true
@@ -108,10 +106,13 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 			}
 		}
 
+
 	Tank.Inputs = WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
 	Tank.Outputs = WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
 
 	WireLib.TriggerOutput(Tank, "Entity", Tank)
+
+	UpdateFuelData(Tank, Id, Data1, Data2, FuelData)
 
 	ACF.FuelTanks[Tank] = true
 
