@@ -676,6 +676,26 @@ do
 			return Vec - ( 2 * Vec:Dot(HitNormal) ) * HitNormal
 		end
 
+		-- This will check a vector against all of the hitboxes stored on an entity
+		-- If the vector is inside a box, it will return true, the box name (organization I guess, can do an E2 function with all of this), and the hitbox itself
+		-- If the entity in question does not have hitboxes, it returns false
+		-- Finally, if it never hits a hitbox in its check, it also returns false
+		function ACF_CheckHitbox(Ent, Vec)
+			if Ent.HitBoxes == nil then return false end -- If theres no hitboxes, then don't worry about them
+
+			for k,v in pairs(Ent.HitBoxes) do
+				-- v is the box table
+
+				-- Need to make sure the vector is local and LEVEL with the box, otherwise WithinAABox will be wildly wrong
+				local LocalPos = WorldToLocal(Vec,Angle(),Ent:LocalToWorld(v.Pos),Ent:LocalToWorldAngles(v.Angle))
+				local CheckHitbox = LocalPos:WithinAABox(-v.Scale / 2,v.Scale / 2)
+
+				if CheckHitbox == true then return Check,k,v end
+			end
+
+			return false
+		end
+
 		function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
 			Bullet.Ricochets = Bullet.Ricochets or 0
 			local Angle = ACF_GetHitAngle( HitNormal , Bullet.Flight )
@@ -696,7 +716,7 @@ do
 				-- Ricochet distribution center
 				local sigmoidCenter = Bullet.DetonatorAngle or ( Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100 )
 
-				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm 
+				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
 				local ricoProb = math.Clamp( 1 / (1 + math.exp( (Angle - sigmoidCenter) / -4) ), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1 )
 
 				-- Checking for ricochet
@@ -774,4 +794,3 @@ do
 		end
 	end
 end
-
