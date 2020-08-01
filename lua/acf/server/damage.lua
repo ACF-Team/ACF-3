@@ -427,7 +427,7 @@ do
 					--This means we hit a backpack or something
 					Target.ACF.Armour = Size * 0.1 * 0.02 --Arbitrary size, most of the gear carried is pretty small
 					HitRes = CalcDamage(Target, Energy, FrArea, 0) --This is random junk, angle doesn't matter
-					Damage = HitRes.Damage * 2 --Damage is going to be fright and shrapnel, nothing much		
+					Damage = HitRes.Damage * 2 --Damage is going to be fright and shrapnel, nothing much
 				else --Just in case we hit something not standard
 					Target.ACF.Armour = Size * 0.2 * 0.02
 					HitRes = CalcDamage(Target, Energy, FrArea, 0)
@@ -696,7 +696,7 @@ do
 				-- Ricochet distribution center
 				local sigmoidCenter = Bullet.DetonatorAngle or ( Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100 )
 
-				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm 
+				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
 				local ricoProb = math.Clamp( 1 / (1 + math.exp( (Angle - sigmoidCenter) / -4) ), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1 )
 
 				-- Checking for ricochet
@@ -774,4 +774,3 @@ do
 		end
 	end
 end
-
