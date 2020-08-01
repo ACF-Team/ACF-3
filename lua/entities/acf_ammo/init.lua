@@ -556,7 +556,12 @@ do -- Spawn Func --------------------------------
 		end
 
 		CheckLegal(Crate)
-		Crate:UpdateOverlay(true)
+
+		timer.Simple(1.01, function()
+			if IsValid(Crate) then
+				Crate:UpdateOverlay()
+			end
+		end)
 
 		return Crate
 	end
