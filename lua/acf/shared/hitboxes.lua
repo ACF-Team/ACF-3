@@ -969,50 +969,50 @@ do -- Engines, oh god so many engines
 		}
 		Box["models/engines/radial7l.mdl"] = {
 			Shaft = {
-				Pos = Vector(-0.5,0,0) * 1.67,
-				Scale = Vector(10,8.5,8.5) * 1.67,
+				Pos = Vector(-0.5,0,0) * 2,
+				Scale = Vector(10,8.5,8.5) * 2,
 				Angle = Angle(0, 0, 0),
 				Sensitive = true
 			},
 			Piston1 = {
-				Pos = Vector(0,0,-9) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = Vector(0,0,-9) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 0),
 				Sensitive = false
 			},
 			Piston2 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42), -- 360/7 = 51.4285
 				Sensitive = false
 			},
 			Piston3 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 2)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 2)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42 * 2),
 				Sensitive = false
 			},
 			Piston4 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 3)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 3)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42 * 3),
 				Sensitive = false
 			},
 			Piston5 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 4)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 4)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42 * 4),
 				Sensitive = false
 			},
 			Piston6 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 5)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 5)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42 * 5),
 				Sensitive = false
 			},
 			Piston7 = {
-				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 6)) * 1.67,
-				Scale = Vector(6,6,10) * 1.67,
+				Pos = RealRotate(Vector(0,0,-9),Angle(0,0,51.42 * 6)) * 2,
+				Scale = Vector(6,6,10) * 2,
 				Angle = Angle(0, 0, 51.42 * 6),
 				Sensitive = false
 			}

@@ -63,7 +63,7 @@ ACF_CheckClips 	= HitClip
 -- If the vector is inside a box, it will return true, the box name (organization I guess, can do an E2 function with all of this), and the hitbox itself
 -- If the entity in question does not have hitboxes, it returns false
 -- Finally, if it never hits a hitbox in its check, it also returns false
-function ACF_CheckHitbox(Ent, Vec)
+function ACF_CheckInsideHitbox(Ent, Vec)
 	if Ent.HitBoxes == nil then return false end -- If theres no hitboxes, then don't worry about them
 
 	for k,v in pairs(Ent.HitBoxes) do
@@ -77,6 +77,25 @@ function ACF_CheckHitbox(Ent, Vec)
 	end
 
 	return false
+end
+
+-- This performs ray-OBB intersection with all of the hitboxes on an entity
+-- Ray is the TOTAL ray to check with, so vec(500,0,0) to check all 500u forward
+-- It will return false if there are no hitboxes or it didn't hit anything
+-- If it hits any hitboxes, it will put them all together and return (true,HitBoxes)
+function ACF_CheckHitbox(Ent,RayStart,Ray)
+	if Ent.HitBoxes == nil then return false end -- Once again, cancel if there are no hitboxes
+	local AllHit = {}
+	for k,v in pairs(Ent.HitBoxes) do
+
+		local _,_,Frac = util.IntersectRayWithOBB(RayStart, Ray, Ent:LocalToWorld(v.Pos), Ent:LocalToWorldAngles(v.Angle), -v.Scale / 2, v.Scale / 2)
+
+		if Frac ~= nil then
+			AllHit[k] = v
+		end
+	end
+
+	if AllHit ~= {} then return true,AllHit else return false end
 end
 
 function ACF_CreateBullet(BulletData)
