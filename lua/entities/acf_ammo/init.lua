@@ -527,14 +527,14 @@ do -- Spawn Func --------------------------------
 		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:Spawn()
 
-		UpdateAmmoData(Crate, ...) -- This breaks if i put it after the rest of the vars and i dont care to figure out why
-
 		Crate.IsExplosive   = true
 		Crate.Owner			= Player
 		Crate.Weapons		= {}
 		Crate.Inputs		= WireLib.CreateInputs(Crate, { "Load" })
 		Crate.Outputs		= WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading" })
 		Crate.CanUpdate		= true
+
+		UpdateAmmoData(Crate, ...)
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
 		WireLib.TriggerOutput(Crate, "Ammo", Crate.Ammo)
