@@ -187,9 +187,11 @@ end)
 if CLIENT then
 	net.Receive("ACF_SeatHitboxes",function()
 		local Seat = net.ReadEntity()
+		if not IsValid(Seat) then return end -- out of PVS?
 		local Type = net.ReadString()
 		HitBox = table.Copy(HitboxStorage[Type].HitBoxes)
 		local ply = Seat:GetDriver()
+		if not IsValid(ply) then return end -- eeeee someone got out
 
 		for k,v in pairs(HitBox) do
 			HitBox[k].Pos = Seat:WorldToLocal(ply:LocalToWorld(v.Pos))
