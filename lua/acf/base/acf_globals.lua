@@ -45,10 +45,10 @@ do -- ACF global vars
 	ACF.AmmoPadding         = 2 -- Millimeters of wasted space between rounds
 	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
 	ACF.AmmoCaseScale		= 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
-	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
+	ACF.PBase 				= 875 --1KG of propellant produces this much KE at the muzzle, in kj
 	ACF.PScale 				= 1 --Gun Propellant power expotential
 	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
-	ACF.PDensity 			= 0.82 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.PDensity 			= 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 	-- HE
 	ACF.HEPower 			= 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity 			= 1.65 --HE Filler density (That's TNT density)
