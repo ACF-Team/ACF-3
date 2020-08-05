@@ -1,3 +1,5 @@
+--[[
+	-- Commented out for now until this gets implemented to reduce confusion
 -- This is an automated system for pod hitboxes
 if SERVER then util.AddNetworkString("ACF_SeatHitboxes") end
 
@@ -201,7 +203,7 @@ if CLIENT then
 		Seat.HitBoxes = HitBox
 	end)
 end
-
+]]--
 -- All of the manually made hitboxes for various models
 -- Current issues: smoothbores are using the same hitboxes as the new cannons
 -- TODO: Racks, fix smoothbores
