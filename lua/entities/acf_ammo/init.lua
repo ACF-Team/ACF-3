@@ -622,8 +622,11 @@ do -- Metamethods -------------------------------
 				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
 				local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-				local Text = "%s\n\nSize: %s X %s X %s\n\nContents: %s ( %s / %s )%s"
+				local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\n%s"
 				local X, Y, Z = Ent:GetSize():Unpack()
+				local ProjectileMass = math.Round(Ent.BulletData.ProjMass, 2)
+				local PropellantMass = math.Round(Ent.BulletData.PropMass, 2)
+				local CartridgeMass = math.Round(Ent.BulletData.CartMass, 2)
 				local AmmoData = ""
 				local Status
 
@@ -641,7 +644,7 @@ do -- Metamethods -------------------------------
 					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
 				end
 
-				Ent:SetOverlayText(Text:format(Status, X, Y, Z, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, AmmoData))
+				Ent:SetOverlayText(Text:format(Status, X, Y, Z, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, CartridgeMass, ProjectileMass, PropellantMass, AmmoData))
 			end
 		end
 
