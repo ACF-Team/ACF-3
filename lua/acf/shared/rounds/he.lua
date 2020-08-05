@@ -49,8 +49,8 @@ function Round.convert(_, PlayerData)
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet = 60 --Base ricochet angle
 	Data.DetonatorAngle = 80
-	Data.BoomPower = Data.PropMass + Data.FillerMass
 	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.CartMass = Data.PropMass + Data.ProjMass
 
 	--Only the crates need this part
 	if SERVER then

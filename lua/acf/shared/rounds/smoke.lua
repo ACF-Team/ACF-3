@@ -56,7 +56,7 @@ function Round.convert(_, PlayerData)
 	Data.Ricochet = 60 --Base ricochet angle
 	Data.DetonatorAngle = 80
 	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
-	Data.BoomPower = Data.PropMass + Data.FillerMass + Data.WPMass
+	Data.CartMass = Data.PropMass + Data.ProjMass
 
 	--Only the crates need this part
 	if SERVER then

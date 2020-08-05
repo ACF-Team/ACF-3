@@ -516,7 +516,7 @@ do -- Metamethods --------------------------------
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
 				local BulletData = Crate.BulletData
-				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime)
+				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime * 0.666) + (BulletData.ProjLength * ACF.LengthToTime * 0.333)) -- Mass contributes 2/3 of the reload time with length contributing 1/3
 
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time

@@ -18,6 +18,7 @@ do -- ACF global vars
 	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime		= 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 	-- External and Terminal Ballistics
 	ACF.DragDiv 			= 80 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world

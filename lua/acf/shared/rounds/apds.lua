@@ -48,6 +48,7 @@ function Round.convert(_, PlayerData)
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet 	 = 80 --Base ricochet angle
 	Data.MuzzleVel 	 = ACF_MuzzleVelocity(Data.PropMass, DartMass + SabotMass)
+	Data.CartMass 	 = Data.PropMass + DartMass + SabotMass
 
 	--Only the crates need this part
 	if SERVER then

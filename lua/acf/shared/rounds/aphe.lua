@@ -48,7 +48,7 @@ function Round.convert(_, PlayerData)
 	Data.LimitVel = 700 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet = 65 --Base ricochet angle
-	Data.BoomPower = Data.PropMass + Data.FillerMass
+	Data.CartMass = Data.PropMass + Data.ProjMass
 
 	--Only the crates need this part
 	if SERVER then
