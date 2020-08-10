@@ -18,7 +18,7 @@ function Round.convert(_, PlayerData)
 		MuzzleVel = 0,
 		RoundVolume = 35,
 	}
-
+	BulletData.CartMass = BulletData.PropMass + BulletData.ProjMass
 	return BulletData
 end
 
