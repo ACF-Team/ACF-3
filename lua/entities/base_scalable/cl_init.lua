@@ -70,7 +70,7 @@ function ENT:GetOriginalSize()
 end
 
 function ENT:GetSize()
-	return self.Size or self:GetOriginalSize()
+	return self.Size
 end
 
 function ENT:SetSize(NewSize)

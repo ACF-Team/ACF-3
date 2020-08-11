@@ -3,7 +3,7 @@ hook.Add("Initialize", "Scalable Entities", function()
 		local DecalEx = util.DecalEx
 
 		util.DecalEx = function(Mat, Ent, Pos, Normal, Color, W, H)
-			if Ent.IsScalable and Ent:GetOriginalSize() then -- If entity is scaled, offset decal pos
+			if Ent.IsScalable and Ent:GetSize() then -- If entity is scaled, offset decal pos
 				local Offset = Pos - Ent:GetPos()
 
 				-- Thank you, Garry. Very cool.
@@ -30,7 +30,7 @@ hook.Add("Initialize", "Scalable Entities", function()
 		local DisMatr = Meta.DisableMatrix
 
 		function Meta:EnableMatrix(Str, NewScale)
-			if self.IsScalable and self:GetOriginalSize() and Str == "RenderMultiply" then
+			if self.IsScalable and self:GetSize() and Str == "RenderMultiply" then
 				local Size  = self:GetOriginalSize()
 				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self:GetSize()
 
@@ -43,7 +43,7 @@ hook.Add("Initialize", "Scalable Entities", function()
 		end
 
 		function Meta:DisableMatrix(Str)
-			if self.IsScalable and self:GetOriginalSize() and Str == "RenderMultiply" then
+			if self.IsScalable and self:GetSize() and Str == "RenderMultiply" then
 				local Mat = Matrix()
 
 				local Size  = self:GetOriginalSize()
