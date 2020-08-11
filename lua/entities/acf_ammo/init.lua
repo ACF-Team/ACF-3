@@ -617,17 +617,17 @@ do -- Metamethods -------------------------------
 	end
 
 	do -- Overlay -------------------------------
+		local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s"
+		local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg"
+
 		local function Overlay(Ent)
 			if Ent.Disabled then
 				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
 			else
 				local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-				local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\n%s"
 				local X, Y, Z = Ent:GetSize():Unpack()
-				local ProjectileMass = math.Round(Ent.BulletData.ProjMass, 2)
-				local PropellantMass = math.Round(Ent.BulletData.PropMass, 2)
-				local CartridgeMass = math.Round(Ent.BulletData.CartMass, 2)
-				local AmmoData = ""
+				local AmmoInfo = Ent.RoundData.cratetxt and Ent.RoundData.cratetxt(Ent.BulletData)
+				local BulletInfo = ""
 				local Status
 
 				if next(Ent.Weapons) or Ent.BulletData.Type == "Refill" then
@@ -640,11 +640,19 @@ do -- Metamethods -------------------------------
 				Y = math.Round(Y, 2)
 				Z = math.Round(Z, 2)
 
-				if Ent.RoundData.cratetxt then
-					AmmoData = "\n" .. Ent.RoundData.cratetxt(Ent.BulletData)
+				if Ent.BulletData.Type ~= "Refill" then
+					local ProjectileMass = math.Round(Ent.BulletData.ProjMass, 2)
+					local PropellantMass = math.Round(Ent.BulletData.PropMass, 2)
+					local CartridgeMass = math.Round(Ent.BulletData.CartMass, 2)
+
+					BulletInfo = BulletText:format(CartridgeMass, ProjectileMass, PropellantMass)
 				end
 
-				Ent:SetOverlayText(Text:format(Status, X, Y, Z, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, CartridgeMass, ProjectileMass, PropellantMass, AmmoData))
+				if AmmoInfo and AmmoInfo ~= "" then
+					AmmoInfo = "\n\n" .. AmmoInfo
+				end
+
+				Ent:SetOverlayText(Text:format(Status, X, Y, Z, Ent.BulletData.Type .. Tracer, Ent.Ammo, Ent.Capacity, BulletInfo, AmmoInfo))
 			end
 		end
 
