@@ -27,6 +27,18 @@ end)
 	--if Ent.IsScalable then return false end
 --end)
 
+hook.Add("NetworkEntityCreated", "Scalable Ent Full Update", function(Ent)
+	if Ent.IsScalable then
+		local Size = Ent:GetSize()
+
+		Ent.Size = nil -- Forcing the entity to "forget" its current size
+
+		Ent:SetSize(Size)
+
+		if Ent.OnFullUpdate then Ent:OnFullUpdate() end
+	end
+end)
+
 function ENT:Initialize()
 	BaseClass.Initialize(self)
 

@@ -27,15 +27,18 @@ net.Receive("ACF_RequestAmmoData", function()
 
 	if not IsValid(Entity) then return end
 
-	Entity.Capacity = Data.Capacity
-	Entity.IsRound = Data.IsRound
-	Entity.RoundSize = Data.RoundSize
-	Entity.LocalAng = Data.LocalAng
-	Entity.FitPerAxis = Data.FitPerAxis
-	Entity.Spacing = Data.Spacing
-	Entity.MagSize = Data.MGS
-	Entity.HasBoxedAmmo = Data.MGS > 0
-	Entity.HasData = true
+	Entity.HasData = Data.Enabled
+
+	if Data.Enabled then
+		Entity.Capacity = Data.Capacity
+		Entity.IsRound = Data.IsRound
+		Entity.RoundSize = Data.RoundSize
+		Entity.LocalAng = Data.LocalAng
+		Entity.FitPerAxis = Data.FitPerAxis
+		Entity.Spacing = Data.Spacing
+		Entity.MagSize = Data.MGS
+		Entity.HasBoxedAmmo = Data.MGS > 0
+	end
 
 	if Queued[Entity] then
 		Queued[Entity] = nil
@@ -78,6 +81,12 @@ function ENT:OnResized()
 	}
 
 	self.HasData = nil
+end
+
+function ENT:OnFullUpdate()
+	net.Start("ACF_RequestAmmoData")
+		net.WriteEntity(self)
+	net.SendToServer()
 end
 
 function ENT:Draw()

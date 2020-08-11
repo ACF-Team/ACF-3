@@ -481,6 +481,8 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 	Entity:SetNWInt("Ammo", Entity.Ammo)
 
+	WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
+
 	if ExtraData then
 		local MGS = 0
 		if ((GunData.magsize or 0) > 0) and (ExtraData.isBoxed or false) then MGS = (GunData.magsize or 0) end
@@ -492,21 +494,31 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		--if (ExtraData.isTwoPiece or false) then Entity.isTwoPiece = true end -- Ammunition is broken down to two pieces
 
 		ExtraData.Capacity = Entity.Capacity
-
-		Entity.CrateData = util.TableToJSON(ExtraData)
-
-		-- TODO: Figure out a way to not rely on this delay.
-		timer.Simple(0.1, function()
-			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
-				net.WriteString(Entity.CrateData)
-			net.Broadcast()
-		end)
+		ExtraData.Enabled = true
+	else
+		ExtraData = { Enabled = false }
 	end
+
+	Entity.CrateData = util.TableToJSON(ExtraData)
+
+	-- TODO: Figure out a way to not rely on this delay.
+	timer.Simple(0.1, function()
+		net.Start("ACF_RequestAmmoData")
+			net.WriteEntity(Entity)
+			net.WriteString(Entity.CrateData)
+		net.Broadcast()
+	end)
 
 	Entity:SetNWString("WireName", "ACF " .. (Entity.RoundType == "Refill" and "Ammo Refill Crate" or GunData.name .. " Ammo"))
 
 	Entity.RoundData.network(Entity, Entity.BulletData)
+
+	ACF_Activate(Entity, true) -- Makes Crate.ACF table
+
+	Entity.ACF.Model = Entity:GetModel()
+
+	Entity:UpdateMass(true)
+	Entity:UpdateOverlay(true)
 end
 
 do -- Spawn Func --------------------------------
@@ -537,31 +549,13 @@ do -- Spawn Func --------------------------------
 		UpdateAmmoData(Crate, ...)
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
-		WireLib.TriggerOutput(Crate, "Ammo", Crate.Ammo)
 
 		-- Crates should be ready to load by default
 		Crate:TriggerInput("Load", 1)
-		Crate:SetNWInt("Ammo", Crate.Ammo)
 
 		ACF.AmmoCrates[Crate] = true
 
-		ACF_Activate(Crate) -- Makes Crate.ACF table
-
-		Crate.ACF.Model 	= Crate:GetModel()
-		Crate.ACF.LegalMass = math.floor(Crate.EmptyMass + Crate.AmmoMassMax)
-
-		local Phys = Crate:GetPhysicsObject()
-		if IsValid(Phys) then
-			Phys:SetMass(Crate.ACF.LegalMass)
-		end
-
 		CheckLegal(Crate)
-
-		timer.Simple(1.01, function()
-			if IsValid(Crate) then
-				Crate:UpdateOverlay()
-			end
-		end)
 
 		return Crate
 	end
@@ -656,14 +650,19 @@ do -- Metamethods -------------------------------
 			end
 		end
 
-		function ENT:UpdateOverlay()
+		function ENT:UpdateOverlay(Instant)
+			if Instant then
+				return Overlay(self)
+			end
+
 			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
 				self.OverlayBuffer = true -- Mark it to update when buffer time has expired
 			else
 				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
 					if IsValid(self) and self.OverlayBuffer then
 						self.OverlayBuffer = nil
-						self:UpdateOverlay()
+
+						Overlay(self)
 					end
 				end)
 
@@ -861,9 +860,6 @@ do -- Metamethods -------------------------------
 			end
 
 			UpdateAmmoData(self, unpack(ArgsTable, 4))
-
-			self:UpdateMass(true)
-			self:UpdateOverlay(true)
 
 			return true, Message
 		end
