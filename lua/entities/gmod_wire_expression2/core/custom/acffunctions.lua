@@ -978,7 +978,7 @@ e2function number entity:acfMuzzleVel()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.MuzzleVel then return 0 end
 
-	return Round(this.BulletData.MuzzleVel * ACF.Scale, 2)
+	return this.BulletData.MuzzleVel * ACF.Scale
 end
 
 -- Returns the mass of the projectile in a crate or gun
@@ -988,7 +988,7 @@ e2function number entity:acfProjectileMass()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.ProjMass then return 0 end
 
-	return Round(this.BulletData.ProjMass, 2)
+	return this.BulletData.ProjMass
 end
 
 e2function number entity:acfDragCoef()
@@ -997,7 +997,7 @@ e2function number entity:acfDragCoef()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.DragCoef then return 0 end
 
-	return Round(this.BulletData.DragCoef / ACF.DragDiv, 10)
+	return this.BulletData.DragCoef / ACF.DragDiv
 end
 
 -- Returns the number of projectiles in a flechette round
@@ -1016,7 +1016,7 @@ e2function number entity:acfFLSpikeMass()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.FlechetteMass then return 0 end
 
-	return Round(this.BulletData.FlechetteMass, 2)
+	return this.BulletData.FlechetteMass
 end
 
 -- Returns the radius of the spikes in a flechette round in mm
