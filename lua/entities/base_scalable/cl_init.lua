@@ -74,6 +74,7 @@ function ENT:GetSize()
 end
 
 function ENT:SetSize(NewSize)
+	if not isvector(NewSize) then return end
 	if self:GetSize() == NewSize then return end
 	if not self:GetOriginalSize() then return end
 

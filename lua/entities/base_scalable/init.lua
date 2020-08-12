@@ -61,6 +61,12 @@ local function NetworkSize(Entity, Player)
 	timer.Create("ACF Network Sizes", 0.5, 1, SendQueued)
 end
 
+function ENT:Initialize()
+	BaseClass.Initialize(self)
+
+	self:GetOriginalSize() -- Instantly saving the original size
+end
+
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
 		local Size = Sizes[self:GetModel()]
@@ -84,6 +90,7 @@ function ENT:GetSize()
 end
 
 function ENT:SetSize(NewSize)
+	if not isvector(NewSize) then return end
 	if self:GetSize() == NewSize then return end
 
 	if self.ApplyNewSize then self:ApplyNewSize(NewSize) end
