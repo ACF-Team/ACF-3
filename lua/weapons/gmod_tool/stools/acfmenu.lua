@@ -85,7 +85,9 @@ if CLIENT then
 
 		if not Ent.IsScalable then cam.End3D() return end
 		if not Ent.HasData then
-			if Ent.RequestAmmoData then Ent:RequestAmmoData() end
+			if Ent.HasData == nil and Ent.RequestAmmoData then
+				Ent:RequestAmmoData()
+			end
 
 			cam.End3D()
 			return

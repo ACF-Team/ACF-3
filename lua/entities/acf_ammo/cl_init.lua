@@ -9,7 +9,11 @@ local Queued = {}
 local function UpdateClAmmo(Entity)
 	if not IsValid(Entity) then return end
 	if not Entity.HasData then
-		return Entity:RequestAmmoData()
+		if Entity.HasData == nil then
+			Entity:RequestAmmoData()
+		end
+
+		return
 	end
 
 	local MaxDisplayRounds = RoundsDisplayCVar:GetInt()
