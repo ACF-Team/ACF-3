@@ -297,7 +297,6 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.ShiftPoints[0] = -1
 		Entity.Reverse = Entity.Gears + 1
 		Entity.GearTable[Entity.Reverse] = Data8
-		Entity.Drive = 1
 		Entity.ShiftScale = 1
 	end
 
@@ -307,7 +306,15 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity:SetBodygroup(1, 0)
 	end
 
-	ChangeGear(Entity, 1)
+	-- Force gearboxes to forget their gear and drive
+	Entity.Drive = nil
+	Entity.Gear = nil
+
+	if Entity.Auto then
+		ChangeDrive(Entity, 1)
+	else
+		ChangeGear(Entity, 1)
+	end
 
 	Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
@@ -316,7 +323,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 	Entity.ACF.LegalMass = Entity.Mass
 	Entity.ACF.Model     = Entity.Model
 
-	Entity:UpdateOverlay()
+	Entity:UpdateOverlay(true)
 end
 
 local function CheckRopes(Entity, Target)
@@ -462,7 +469,6 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.LBrake = 0
 	Gearbox.RBrake = 0
 	Gearbox.SteerRate = 0
-	Gearbox.Gear = 0
 	Gearbox.ChangeFinished = 0
 	Gearbox.InGear = false
 	Gearbox.CanUpdate = true
@@ -473,7 +479,6 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.OutR = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("driveshaftR")).Pos)
 
 	UpdateGearboxData(Gearbox, GearboxData, Id, ...)
-	Gearbox:UpdateOverlay(true)
 
 	CheckLegal(Gearbox)
 
