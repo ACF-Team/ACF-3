@@ -221,7 +221,7 @@ local function ChangeDrive(Entity, Value)
 	ChangeGear(Entity, Entity.Drive == 2 and Entity.Reverse or Entity.Drive)
 end
 
-local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10)
+local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data)
 	if Entity.Id ~= Id then
 		Entity.Id = Id
 		Entity.Name = GearboxData.name
@@ -318,10 +318,18 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 
 	Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-	ACF_Activate(Entity)
+	ACF_Activate(Entity, true)
 
 	Entity.ACF.LegalMass = Entity.Mass
 	Entity.ACF.Model     = Entity.Model
+
+	do -- Mass entity mod removal
+		local EntMods = Data and Data.EntityMods
+
+		if EntMods and EntMods.mass then
+			EntMods.mass = nil
+		end
+	end
 
 	Entity:UpdateOverlay(true)
 end
@@ -493,7 +501,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 end
 
 list.Set("ACFCvars", "acf_gearbox", {"id", "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10"})
-duplicator.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0")
+duplicator.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Pos", "Angle", "Id", "Gear1", "Gear2", "Gear3", "Gear4", "Gear5", "Gear6", "Gear7", "Gear8", "Gear9", "Gear0", "Data")
 ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
 ACF.RegisterLinkSource("acf_gearbox", "Engines")

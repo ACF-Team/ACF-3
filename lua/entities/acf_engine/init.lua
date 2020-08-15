@@ -285,7 +285,7 @@ local Inputs = {
 
 --===============================================================================================--
 
-function MakeACF_Engine(Owner, Pos, Angle, Id)
+function MakeACF_Engine(Owner, Pos, Angle, Id, Data)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
 	local EngineData = ACF.Weapons.Mobility[Id]
@@ -333,13 +333,21 @@ function MakeACF_Engine(Owner, Pos, Angle, Id)
 	Engine.ACF.LegalMass = Engine.Mass
 	Engine.ACF.Model     = Engine.Model
 
+	do -- Mass entity mod removal
+		local EntMods = Data and Data.EntityMods
+
+		if EntMods and EntMods.mass then
+			EntMods.mass = nil
+		end
+	end
+
 	CheckLegal(Engine)
 
 	return Engine
 end
 
 list.Set("ACFCvars", "acf_engine", { "id" })
-duplicator.RegisterEntityClass("acf_engine", MakeACF_Engine, "Pos", "Angle", "Id")
+duplicator.RegisterEntityClass("acf_engine", MakeACF_Engine, "Pos", "Angle", "Id", "Data")
 ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 

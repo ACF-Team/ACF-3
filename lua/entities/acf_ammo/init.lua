@@ -370,6 +370,14 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 		end
 	end
 
+	do -- Mass entity mod removal
+		local EntMods = Data and Data.EntityMods
+
+		if EntMods and EntMods.mass then
+			EntMods.mass = nil
+		end
+	end
+
 	local RoundData = ACF.RoundTypes[Data2]
 
 	do -- Backwards compatibility
@@ -381,6 +389,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 			Entity:SetPos(NewPos)
 
 			-- Updating the dupe position
+			-- TODO: Update constraints on the entity if it gets moved
 			if Data.BuildDupeInfo then
 				Data.BuildDupeInfo.PosReset = NewPos
 			end

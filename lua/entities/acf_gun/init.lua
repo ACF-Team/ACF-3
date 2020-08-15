@@ -32,7 +32,7 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn Func --------------------------------
-	function MakeACF_Gun(Player, Pos, Angle, Id)
+	function MakeACF_Gun(Player, Pos, Angle, Id, Data)
 		local List   = ACF.Weapons
 		local EID    = List.Guns[Id] and Id or "50mmC"
 		local Lookup = List.Guns[EID]
@@ -145,13 +145,21 @@ do -- Spawn Func --------------------------------
 
 		Gun:UpdateOverlay(true)
 
+		do -- Mass entity mod removal
+			local EntMods = Data and Data.EntityMods
+
+			if EntMods and EntMods.mass then
+				EntMods.mass = nil
+			end
+		end
+
 		CheckLegal(Gun)
 
 		return Gun
 	end
 
 	list.Set("ACFCvars", "acf_gun", {"id"} )
-	duplicator.RegisterEntityClass("acf_gun", MakeACF_Gun, "Pos", "Angle", "Id")
+	duplicator.RegisterEntityClass("acf_gun", MakeACF_Gun, "Pos", "Angle", "Id", "Data")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	function ENT:ACF_Activate(Recalc)

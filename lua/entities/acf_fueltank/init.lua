@@ -70,7 +70,7 @@ local Inputs = {
 
 --===============================================================================================--
 
-function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
+function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2, Data)
 	if not Owner:CheckLimit("_acf_misc") then return end
 
 	local FuelData = ACF.Weapons.FuelTanks[Data1]
@@ -131,13 +131,21 @@ function MakeACF_FuelTank(Owner, Pos, Angle, Id, Data1, Data2)
 	Tank.ACF.LegalMass = Tank.Mass
 	Tank.ACF.Model	   = Tank.Model
 
+	do -- Mass entity mod removal
+		local EntMods = Data and Data.EntityMods
+
+		if EntMods and EntMods.mass then
+			EntMods.mass = nil
+		end
+	end
+
 	CheckLegal(Tank)
 
 	return Tank
 end
 
 list.Set("ACFCvars", "acf_fueltank", {"id", "data1", "data2"})
-duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType")
+duplicator.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Pos", "Angle", "Id", "SizeId", "FuelType", "Data")
 ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 --===============================================================================================--
