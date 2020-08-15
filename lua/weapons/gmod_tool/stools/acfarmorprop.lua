@@ -102,27 +102,32 @@ do -- Allowing everyone to read contraptions
 end
 
 -- Apply settings to prop and store dupe info
-local function ApplySettings( _, ent, data )
+local function ApplySettings(_, Entity, Data)
+	if CLIENT then return end
+	if not Data then return end
+	if not ACF_Check(Entity) then return end
 
-	if not SERVER then return end
-	if not ent.ACF then ACF_Check(ent) end
+	if Data.Mass then
+		local PhysObj = Entity.ACF.PhysObj -- If it passed ACF_Check, then the PhysObj will always be valid
+		local Mass = math.Clamp(Data.Mass, 0.1, 5000)
 
-	if data.Mass then
-		local phys = ent:GetPhysicsObject()
-		if IsValid( phys ) then phys:SetMass( data.Mass ) end
-		duplicator.StoreEntityModifier( ent, "mass", { Mass = data.Mass } )
+		PhysObj:SetMass(Mass)
+
+		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
 	end
 
-	if data.Ductility then
-		ent.ACF.Ductility = data.Ductility / 100
+	if Data.Ductility then
+		local Ductility = math.Clamp(Data.Ductility * 0.01, -0.8, 0.8)
 
-		duplicator.StoreEntityModifier( ent, "acfsettings", { Ductility = data.Ductility } )
+		Entity.ACF.Ductility = Ductility
+
+		duplicator.StoreEntityModifier(Entity, "acfsettings", { Ductility = Ductility })
 	end
 
-	ACF_Check(ent, true) -- Forcing the entity to update its information
+	ACF_Check(Entity, true) -- Forcing the entity to update its information
 end
-duplicator.RegisterEntityModifier( "acfsettings", ApplySettings )
-duplicator.RegisterEntityModifier( "mass", ApplySettings )
+duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
+duplicator.RegisterEntityModifier("mass", ApplySettings)
 
 -- Apply settings to prop
 function TOOL:LeftClick( Trace )
