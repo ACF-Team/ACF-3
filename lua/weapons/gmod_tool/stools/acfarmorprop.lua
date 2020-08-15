@@ -89,13 +89,16 @@ if CLIENT then
 	end )
 end
 
--- Allowing everyone to check contraptions
-if SERVER then
-	hook.Add("CanTool", "ACF Armor Prop Allow", function(Player, _, Tool)
-		if Tool == "acfarmorprop" and Player:KeyDown(IN_RELOAD) then
+do -- Allowing everyone to read contraptions
+	local HookCall = hook.Call
+
+	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
+		if Name == "CanTool" and Tool == "acfarmorprop" and Player:KeyPressed(IN_RELOAD) then
 			return true
 		end
-	end)
+
+		return HookCall(Name, Gamemode, Player, Entity, Tool, ...)
+	end
 end
 
 -- Apply settings to prop and store dupe info
@@ -123,19 +126,20 @@ duplicator.RegisterEntityModifier( "mass", ApplySettings )
 
 -- Apply settings to prop
 function TOOL:LeftClick( Trace )
-	local ent = Trace.Entity
+	local Ent = Trace.Entity
 
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
+	if not IsValid(Ent) then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
+	if not ACF_Check( Ent ) then return false end
 
 	local ply = self:GetOwner()
 
 	local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
 	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 5000 )
-	local mass = CalcArmor( ent.ACF.Area, ductility / 100, thickness )
+	local mass = CalcArmor( Ent.ACF.Area, ductility / 100, thickness )
 
-	ApplySettings( ply, ent, { Mass = mass, Ductility = ductility } )
+	ApplySettings( ply, Ent, { Mass = mass, Ductility = ductility } )
 
 	-- this invalidates the entity and forces a refresh of networked armor values
 	self.AimEntity = nil
@@ -147,7 +151,8 @@ end
 function TOOL:RightClick(Trace)
 	local Ent = Trace.Entity
 
-	if not IsValid(Ent) or Ent:IsPlayer() then return false end
+	if not IsValid(Ent) then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
 	if not ACF_Check(Ent) then return false end
 
@@ -163,7 +168,8 @@ end
 function TOOL:Reload(Trace)
 	local Ent = Trace.Entity
 
-	if not IsValid(Ent) or Ent:IsPlayer() then return false end
+	if not IsValid(Ent) then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
 
 	local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF_CalcMassRatio(Ent, true)
@@ -187,18 +193,18 @@ function TOOL:Think()
 	if not SERVER then return end
 
 	local ply = self:GetOwner()
-	local ent = ply:GetEyeTrace().Entity
-	if ent == self.AimEntity then return end
+	local Ent = ply:GetEyeTrace().Entity
+	if Ent == self.AimEntity then return end
 
-	if ACF_Check( ent ) then
+	if ACF_Check( Ent ) then
 
-		ply:ConCommand("acfarmorprop_area " .. ent.ACF.Area)
+		ply:ConCommand("acfarmorprop_area " .. Ent.ACF.Area)
 		ply:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
-		self.Weapon:SetNWFloat( "WeightMass", ent:GetPhysicsObject():GetMass() )
-		self.Weapon:SetNWFloat( "HP", ent.ACF.Health )
-		self.Weapon:SetNWFloat( "Armour", ent.ACF.Armour )
-		self.Weapon:SetNWFloat( "MaxHP", ent.ACF.MaxHealth )
-		self.Weapon:SetNWFloat( "MaxArmour", ent.ACF.MaxArmour )
+		self.Weapon:SetNWFloat( "WeightMass", Ent:GetPhysicsObject():GetMass() )
+		self.Weapon:SetNWFloat( "HP", Ent.ACF.Health )
+		self.Weapon:SetNWFloat( "Armour", Ent.ACF.Armour )
+		self.Weapon:SetNWFloat( "MaxHP", Ent.ACF.MaxHealth )
+		self.Weapon:SetNWFloat( "MaxArmour", Ent.ACF.MaxArmour )
 
 	else
 
@@ -211,7 +217,7 @@ function TOOL:Think()
 
 	end
 
-	self.AimEntity = ent
+	self.AimEntity = Ent
 
 end
 
@@ -219,8 +225,10 @@ function TOOL:DrawHUD()
 
 	if not CLIENT then return end
 
-	local ent = self:GetOwner():GetEyeTrace().Entity
-	if not IsValid( ent ) or ent:IsPlayer() then return end
+	local Ent = self:GetOwner():GetEyeTrace().Entity
+
+	if not IsValid(Ent) then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 
 	local curmass = self.Weapon:GetNWFloat( "WeightMass" )
 	local curarmor = self.Weapon:GetNWFloat( "MaxArmour" )
@@ -240,7 +248,7 @@ function TOOL:DrawHUD()
 	text = text .. "\nArmor: " .. math.Round( armor, 2 )
 	text = text .. "\nHealth: " .. math.Round( health, 2 )
 
-	local pos = ent:GetPos()
+	local pos = Ent:GetPos()
 	AddWorldTip( nil, text, nil, pos, nil )
 
 end
