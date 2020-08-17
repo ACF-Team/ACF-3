@@ -117,9 +117,9 @@ local function ApplySettings(_, Entity, Data)
 	end
 
 	if Data.Ductility then
-		local Ductility = math.Clamp(Data.Ductility * 0.01, -0.8, 0.8)
+		local Ductility = math.Clamp(Data.Ductility, -80, 80)
 
-		Entity.ACF.Ductility = Ductility
+		Entity.ACF.Ductility = Ductility * 0.01
 
 		duplicator.StoreEntityModifier(Entity, "acfsettings", { Ductility = Ductility })
 	end
