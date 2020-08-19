@@ -16,13 +16,13 @@ local ActiveCrates = ACF.AmmoCrates
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
 
-local function CanRefillCrate(Crate, Target, Distance)
-	if Crate == Target then return false end
-	if not Crate.Load then return false end
+local function CanRefillCrate(Refill, Crate, Distance)
+	if Refill == Crate then return false end
+	if not Refill:CanConsume() then return false end
+	if Crate.Ammo >= Crate.Capacity then return false end
+	if Crate.RoundType == "Refill" then return false end
+	if Crate.Disabled then return false end
 	if Crate.Damaged then return false end
-	if Target.Damaged then return false end
-	if Target.RoundType == "Refill" then return false end
-	if Target.Ammo >= Target.Capacity then return false end
 
 	return Distance <= RefillDist
 end
@@ -51,47 +51,43 @@ net.Receive("ACF_RequestAmmoData", function(_, Player)
 	end
 end)
 
-local function RefillCrates(Entity)
-	local Position = Entity:GetPos()
+local function RefillCrates(Refill)
+	local Position = Refill:GetPos()
 
 	for Crate in pairs(ActiveCrates) do
 		local Distance = Position:DistToSqr(Crate:GetPos())
 
-		if CanRefillCrate(Entity, Crate, Distance) then
+		if CanRefillCrate(Refill, Crate, Distance) then
 			local Supply = math.ceil((50000 / ((Crate.BulletData.ProjMass + Crate.BulletData.PropMass) * 1000)) / Distance ^ 0.5)
-			local Transfer = math.min(Supply, Crate.Capacity - Crate.Ammo)
+			local Transfer = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
 
-			if hook.Run("ACF_CanRefill", Entity, Crate, Transfer) == false then continue end
+			if hook.Run("ACF_CanRefill", Refill, Crate, Transfer) == false then continue end
 
-			if not next(Entity.SupplyingTo) then
-				RefillEffect(Entity)
+			if not next(Refill.SupplyingTo) then
+				RefillEffect(Refill)
 			end
 
-			if not Entity.SupplyingTo[Crate] then
-				Entity.SupplyingTo[Crate] = true
+			if not Refill.SupplyingTo[Crate] then
+				Refill.SupplyingTo[Crate] = true
 
-				Crate:CallOnRemove("ACF Refill " .. Entity:EntIndex(), function()
-					Entity.SupplyingTo[Crate] = nil
+				Crate:CallOnRemove("ACF Refill " .. Refill:EntIndex(), function()
+					Refill.SupplyingTo[Crate] = nil
 				end)
 			end
 
 			Crate:Consume(-Transfer)
-			Entity:Consume(Transfer)
-
-			if not Crate.Load then
-				local Enabled = Crate.Inputs.Load.Path and Crate.Inputs.Load.Value or 1
-
-				Crate:TriggerInput("Load", Enabled)
-			end
+			Refill:Consume(Transfer)
 
 			Crate:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
-		elseif Entity.SupplyingTo[Crate] then
-			Entity.SupplyingTo[Crate] = nil
+			Refill:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
 
-			Crate:RemoveCallOnRemove("ACF Refill " .. Entity:EntIndex())
+		elseif Refill.SupplyingTo[Crate] then
+			Refill.SupplyingTo[Crate] = nil
 
-			if not next(Entity.SupplyingTo) then
-				StopRefillEffect(Entity)
+			Crate:RemoveCallOnRemove("ACF Refill " .. Refill:EntIndex())
+
+			if not next(Refill.SupplyingTo) then
+				StopRefillEffect(Refill)
 			end
 		end
 	end
@@ -353,7 +349,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 			return
 		end
 
-		if Entity.Weapons and next(Entity.Weapons) then
+		if next(Entity.Weapons) then
 			local Unloaded
 
 			for Weapon in pairs(Entity.Weapons) do
@@ -365,7 +361,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 			end
 
 			if Unloaded then
-				ACF_SendNotify(Entity:CPPIGetOwner(), false, "Crate updated while weapons were loaded with it's ammo. Weapons unloaded.")
+				ACF_SendNotify(Entity.Owner, false, "Crate updated while weapons were loaded with it's ammo. Weapons unloaded.")
 			end
 		end
 	end
@@ -583,9 +579,9 @@ do -- Metamethods -------------------------------
 			if self.Disabled then return end -- Ignore input if disabled
 
 			if Name == "Load" then
-				self.Load = self.Ammo ~= 0 and tobool(Value)
+				self.Load = tobool(Value)
 
-				WireLib.TriggerOutput(self, "Loading", self.Load and 1 or 0)
+				WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 			end
 
 			self:UpdateOverlay()
@@ -634,7 +630,7 @@ do -- Metamethods -------------------------------
 				local Status
 
 				if next(Ent.Weapons) or Ent.BulletData.Type == "Refill" then
-					Status = Ent.Load and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
+					Status = Ent:CanConsume() and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
 				else
 					Status = "Not linked to a weapon!"
 				end
@@ -682,18 +678,14 @@ do -- Metamethods -------------------------------
 
 	do -- Legal Checks --------------------------
 		function ENT:Enable()
-			if self.Inputs.Load.Path then
-				self.Load = tobool(self.Inputs.Load.Value)
-			else
-				self.Load = true
-			end
+			WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 
 			self:UpdateOverlay(true)
 			self:UpdateMass(true)
 		end
 
 		function ENT:Disable()
-			self.Load = false
+			WireLib.TriggerOutput(self, "Loading", 0)
 
 			self:UpdateOverlay(true)
 			self:UpdateMass(true)
@@ -701,17 +693,22 @@ do -- Metamethods -------------------------------
 	end
 
 	do -- Consuming ammo, updating mass --------
+		function ENT:CanConsume()
+			if self.Disabled then return false end
+			if not self.Load then return false end
+			if self.Damaged then return false end
+
+			return self.Ammo > 0
+		end
+
 		function ENT:Consume(Num)
-			self.Ammo = self.Ammo - (Num or 1)
+			self.Ammo = math.Clamp(self.Ammo - (Num or 1), 0, self.Capacity)
 
 			self:UpdateOverlay()
 			self:UpdateMass()
 
-			if self.Ammo == 0 then
-				self:TriggerInput("Load", 0)
-			end
-
 			WireLib.TriggerOutput(self, "Ammo", self.Ammo)
+			WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 
 			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
 
@@ -749,7 +746,7 @@ do -- Metamethods -------------------------------
 
 	do -- Misc ----------------------------------
 		local function CookoffCrate(Entity)
-			if Entity.Ammo <= 1 or Entity.Damaged < CurTime() then -- Detonate when time is up or crate is out of ammo
+			if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
 				Entity:Detonate()
 			elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
 				local VolumeRoll = math.Rand(0, 150) > Entity.BulletData.RoundVolume ^ 0.5
@@ -761,7 +758,7 @@ do -- Metamethods -------------------------------
 					Entity:EmitSound("ambient/explosions/explode_4.wav", 350, math.max(255 - Entity.BulletData.PropMass * 100,60))
 
 					Entity.BulletData.Pos = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * (Entity:OBBMaxs() - Entity:OBBMins()) / 2)
-					Entity.BulletData.Flight = (VectorRand()):GetNormalized() * Speed * 39.37 + Entity:GetVelocity()
+					Entity.BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
 					Entity.BulletData.Owner = Entity.Inflictor or Entity.Owner
 					Entity.BulletData.Gun = Entity
 					Entity.BulletData.Crate = Entity:EntIndex()
@@ -826,7 +823,7 @@ do -- Metamethods -------------------------------
 
 			if (Ratio * self.Capacity / self.Ammo) > math.Rand(0, 1) then
 				self.Inflictor = Inflictor
-				self.Damaged = CurTime() + (5 - Ratio * 3)
+				self.Damaged = ACF.CurTime + (5 - Ratio * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 

@@ -23,7 +23,7 @@ local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
 	for Crate in pairs(Entity.Crates) do
-		if Crate.Load and Crate.Ammo > 0 then
+		if Crate:CanConsume() then
 			Total = Total + Crate.Ammo
 		end
 	end
@@ -215,7 +215,7 @@ do -- Metamethods --------------------------------
 
 			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target.Load then
+					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target:CanConsume() then
 						Weapon:Load()
 					end
 				end)
@@ -480,13 +480,13 @@ do -- Metamethods --------------------------------
 			local Start  = Select
 
 			repeat
-				if Select.Load then return Select end -- Return select
+				if Select:CanConsume() then return Select end -- Return select
 
 				Select = next(Gun.Crates, Select) or next(Gun.Crates)
 			until
 				Select == Start
 
-			return Select.Load and Select
+			return Select:CanConsume() and Select or nil
 		end
 
 		function ENT:Unload(Reload)
@@ -660,7 +660,7 @@ do -- Metamethods --------------------------------
 				end
 
 				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-					if Crate.Load then
+					if Crate:CanConsume() then
 						CrateAmmo = CrateAmmo + Crate.Ammo
 					end
 				end

@@ -191,6 +191,7 @@ end
 e2function number entity:acfActive()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if this.CanConsume then return this:CanConsume() and 1 or 0 end
 
 	return (this.Active or this.Load) and 1 or 0
 end
@@ -1080,7 +1081,7 @@ e2function number entity:acfAmmoCount()
 	if not Source then return 0 end
 
 	for Crate in pairs(Source(this)) do
-		if Crate.Load then
+		if Crate:CanConsume() then
 			Count = Count + Crate.Ammo
 		end
 	end

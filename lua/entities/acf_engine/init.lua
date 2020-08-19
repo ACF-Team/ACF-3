@@ -182,14 +182,12 @@ local function GetNextFuelTank(Engine)
 	local Start = Select
 
 	repeat
-		if Select.Active and Select.Fuel > 0 then
-			return Select
-		end
+		if Select:CanConsume() then return Select end
 
 		Select = next(Engine.FuelTanks, Select) or next(Engine.FuelTanks)
 	until Select == Start
 
-	return (Select.Active and Select.Fuel > 0) and Select or nil
+	return Select:CanConsume() and Select or nil
 end
 
 local function CheckDistantFuelTanks(Engine)
@@ -578,10 +576,7 @@ function ENT:CalcRPM()
 
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
-		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
-		FuelTank:UpdateMass()
-		FuelTank:UpdateOverlay()
-		FuelTank:UpdateOutputs()
+		FuelTank:Consume(Consumption)
 	elseif Gamemode:GetInt() ~= 0 then -- Sandbox gamemode servers will require no fuel
 		SetActive(self, false)
 
