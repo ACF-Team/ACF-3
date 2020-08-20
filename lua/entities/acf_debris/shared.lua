@@ -1,3 +1,4 @@
 DEFINE_BASECLASS("base_anim")
 
-ENT.PrintName = "Debris"
+ENT.PrintName = "Fireball"
+ENT.RenderGroup = RENDERGROUP_OTHER
