@@ -605,7 +605,7 @@ do
 		-- Debris --
 
 		local CVarDisableDebris = CreateConVar(
-			"acf_debris_sv", 1, 0, -- Default 1, No flags
+			"acf_debris", 1, 0, -- Default 1, No flags
 			"Setting this to 0 disables debris from being sent to clients. Reduces server network overhead."
 		)
 
