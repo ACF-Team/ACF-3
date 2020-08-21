@@ -603,21 +603,21 @@ do
 		ACF_KillChildProps = KillChildProps
 
 		-- Debris --
-		
+
 		local CVarDisableDebris = CreateConVar(
 			"acf_debris_sv", 1, 0, -- Default 1, No flags
 			"Setting this to 0 disables debris from being sent to clients. Reduces server network overhead."
 		)
 
 		local function DebrisNetter(Entity, HitVector, Power, Gib, Ignite)
-			
+
 			if CVarDisableDebris:GetInt() < 1 then return end
 
 			local Mdl = Entity:GetModel()
 			local Mat = Entity:GetMaterial()
 			local Col = Entity:GetColor()
 			local ColR, ColG, ColB, ColA = Col.r, Col.g, Col.b, Col.a -- https://github.com/Facepunch/garrysmod-issues/issues/2407
-			local ColN = Color(ColR *0.5, ColG *0.5, ColB *0.5, ColA) -- how bout i do anyway
+			local ColN = Color(ColR * 0.5, ColG * 0.5, ColB * 0.5, ColA) -- how bout i do anyway
 			local Pos = Entity:GetPos()
 			local Ang = Entity:GetAngles()
 			local Mass = Entity:GetPhysicsObject():GetMass() or 1
@@ -671,7 +671,7 @@ do
 					local Ang = Entity:GetAngles()
 					local Min, Max = Entity:OBBMins(), Entity:OBBMaxs()
 
-					local FireballCount = math.Clamp(Radius*0.01, 1, math.max(10 * FireballMultiplier:GetFloat(), 1))
+					local FireballCount = math.Clamp(Radius * 0.01, 1, math.max(10 * FireballMultiplier:GetFloat(), 1))
 					for _ = 1, FireballCount do -- should we base this on prop volume?
 
 						local Fireball = ents.Create("acf_debris")
