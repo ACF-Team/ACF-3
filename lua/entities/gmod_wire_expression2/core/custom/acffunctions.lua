@@ -1001,6 +1001,21 @@ e2function number entity:acfDragCoef()
 	return this.BulletData.DragCoef / ACF.DragDiv
 end
 
+-- Returns the fin multiplier of the missile/bomb
+e2function number entity:acfFinMul()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+	if not GunData.round then return 0 end
+
+	return GunData.round.finmul or 0
+end
+
 -- Returns the number of projectiles in a flechette round
 e2function number entity:acfFLSpikes()
 	if not IsACFEntity(this) then return 0 end
