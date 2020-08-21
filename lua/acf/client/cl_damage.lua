@@ -75,7 +75,6 @@ end)
 
 -- Debris & Burning Debris Effects --
 
-local CreateFireballs = GetConVar("acf_fireballs")
 game.AddParticles("particles/fire_01.pcf")
 PrecacheParticleSystem("burning_gib_01")
 PrecacheParticleSystem("env_fire_small_smoke")
@@ -88,12 +87,6 @@ local function Particle(Entity, pEffect)
 	return CreateParticleSystem(Entity, pEffect, PATTACH_ABSORIGIN_FOLLOW)
 end
 
-local CollisionTable = { -- No longer used! Doesn't seem to have an effect on anything.
-	COLLISION_GROUP_WORLD, -- in case 0
-	COLLISION_GROUP_WORLD,
-	COLLISION_GROUP_DEBRIS,
-	COLLISION_GROUP_PUSHAWAY
-}
 local DebrisMasterCVar = CreateClientConVar("acf_debris", "1", true, false,
 	"Toggles ACF Debris."
 )
@@ -149,7 +142,9 @@ local function IgniteCL( Ent, Lifetime, Gib ) -- Lifetime describes fire life, s
 	end
 end
 
-net.Receive("ACF_Debris", function()
+net.Receive("ACF_Debris", function(len)
+
+	print(len)
 
 	if DebrisMasterCVar:GetInt() < 1 then return end
 
@@ -162,8 +157,8 @@ net.Receive("ACF_Debris", function()
 	local Pos = net.ReadVector()
 	local Ang = net.ReadAngle()
 	local Radius = net.ReadUInt(8)
-	local WillGib = net.ReadBool()
-	local WillIgnite = net.ReadBool()
+	local WillGib = net.ReadFloat()
+	local WillIgnite = net.ReadFloat()
 
 	local Min, Max = Vector(), Vector()
 
@@ -182,7 +177,7 @@ net.Receive("ACF_Debris", function()
 		Min, Max = Debris:OBBMins(), Debris:OBBMaxs() --for gibs
 
 		Debris.ACFEmberParticle = Particle(Debris, "embers_medium_01")
-		if WillIgnite and RandFloat(0, 1) * 0.2 < ACF.DebrisIgniteChance then
+		if WillIgnite > 0 and RandFloat(0, 1) * 0.2 < ACF.DebrisIgniteChance then
 			IgniteCL(Debris, DebrisLifetime, false)
 		else
 			Debris.ACFSmokeParticle = Particle(Debris, "smoke_exhaust_01a")
@@ -191,13 +186,13 @@ net.Receive("ACF_Debris", function()
 
 		local Phys = Debris:GetPhysicsObject()
 		if IsValid(Phys) then
-			Phys:SetMass(Mass*0.1)
+			Phys:SetMass(Mass * 0.1)
 			Phys:ApplyForceOffset(HitVec:GetNormalized() * Power * 70, Debris:GetPos() + VectorRand() * 20)
 		end
 
 	end
 
-	if WillGib and GibCVar:GetFloat() > 0 then
+	if WillGib > 0 and GibCVar:GetFloat() > 0 then
 		local GibCount = Clamp(Radius * 0.05, 1, MathMax(20 * GibCVar:GetFloat(), 1))
 		for _ = 1, GibCount do -- should we base this on prop volume?
 
