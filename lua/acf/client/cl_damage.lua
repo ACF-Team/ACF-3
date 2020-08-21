@@ -142,9 +142,7 @@ local function IgniteCL( Ent, Lifetime, Gib ) -- Lifetime describes fire life, s
 	end
 end
 
-net.Receive("ACF_Debris", function(len)
-
-	print(len)
+net.Receive("ACF_Debris", function()
 
 	if DebrisMasterCVar:GetInt() < 1 then return end
 
