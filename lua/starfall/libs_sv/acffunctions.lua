@@ -2117,7 +2117,13 @@ function ents_methods:acfFinMul()
 	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
-	return ( ACF.Weapons.Guns[this.BulletData.Id].round.finmul or 0 )
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+	if not GunData.round then return 0 end
+
+	return ( GunData.round.finmul or 0 )
 end
 
 -- [ Armor Functions ] --

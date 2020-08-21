@@ -1007,7 +1007,12 @@ e2function number entity:acfFinMul()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	return ACF.Weapons.Guns[this.BulletData.Id].round.finmul
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+	if not GunData.round then return 0 end
+
+	return GunData.round.finmul or 0
 end
 
 -- Returns the number of projectiles in a flechette round
