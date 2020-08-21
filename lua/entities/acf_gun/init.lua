@@ -245,7 +245,7 @@ do -- Metamethods --------------------------------
 			gmod_wire_expression2 = true,
 			gmod_wire_joystick_multi = true,
 			gmod_wire_pod = function(_, Input)
-				if Input.Pod then
+				if IsValid(Input.Pod) then
 					return Input.Pod:GetDriver()
 				end
 			end,
@@ -267,7 +267,7 @@ do -- Metamethods --------------------------------
 		WireTable.gmod_wire_joystick_multi	= WireTable.gmod_wire_pod
 		WireTable.gmod_wire_expression2		= function(This, Input, Checked)
 			for _, V in pairs(Input.Inputs) do
-				if V.Src and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
+				if IsValid(V.Src) and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
 					Checked[V.Src] = true -- We don't want to start an infinite loop
 
 					return FindUser(This, V.Src, Checked)
@@ -276,7 +276,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:GetUser(Input)
-			if not Input then return self.Owner end
+			if not IsValid(Input) then return self.Owner end
 
 			local User = FindUser(self, Input)
 
