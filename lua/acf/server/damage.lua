@@ -293,7 +293,7 @@ do
 
 						local Debris = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin) -- Make some debris
 
-						for k,v in ipairs(Debris) do
+						for _,v in ipairs(Debris) do
 							if IsValid(v) then Filter[#Filter + 1] = v end -- Filter that out too
 						end
 
@@ -603,14 +603,21 @@ do
 		ACF_KillChildProps = KillChildProps
 
 		-- Debris --
+		
+		local CVarDisableDebris = CreateConVar(
+			"acf_debris_sv", 1, 0, -- Default 1, No flags
+			"Setting this to 0 disables debris from being sent to clients. Reduces server network overhead."
+		)
 
 		local function DebrisNetter(Entity, HitVector, Power, Gib, Ignite)
+			
+			if CVarDisableDebris:GetInt() < 1 then return end
 
 			local Mdl = Entity:GetModel()
 			local Mat = Entity:GetMaterial()
 			local Col = Entity:GetColor()
 			local ColR, ColG, ColB, ColA = Col.r, Col.g, Col.b, Col.a -- https://github.com/Facepunch/garrysmod-issues/issues/2407
-			local Col = Color(ColR*0.5, ColG*0.5, ColB*0.5, ColA) -- how bout i do anyway
+			local ColN = Color(ColR *0.5, ColG *0.5, ColB *0.5, ColA) -- how bout i do anyway
 			local Pos = Entity:GetPos()
 			local Ang = Entity:GetAngles()
 			local Mass = Entity:GetPhysicsObject():GetMass() or 1
@@ -621,11 +628,11 @@ do
 				net.WriteFloat(Mass)
 				net.WriteString(Mdl)
 				net.WriteString(Mat)
-				net.WriteColor(Col)
+				net.WriteColor(ColN)
 				net.WriteVector(Pos)
 				net.WriteAngle(Ang)
-				net.WriteBool(Gib)
-				net.WriteBool(Ignite)
+				net.WriteFloat(Gib)
+				net.WriteFloat(Ignite)
 			net.SendPVS(Pos)
 		end
 
@@ -635,7 +642,7 @@ do
 		)
 
 		local FireballMultiplier = CreateConVar(
-			"acf_fireballmult", 1, 0, -- Default 0, No flags
+			"acf_fireballmult", 1, 0, -- Default 1, No flags
 			"When fireballs are enabled, multiplies the amount created from a prop."
 		)
 
@@ -656,7 +663,7 @@ do
 			--if Radius < ACF.DebrisScale then constraint.RemoveAll(Entity) Entity:Remove() else -- undersize? just delete it and move on.
 
 				local Power = Energy
-				DebrisNetter(Entity, HitVector, Power, false, true)
+				DebrisNetter(Entity, HitVector, Power, 0, 1)
 
 				if CreateFireballs:GetInt() > 0 then
 
@@ -664,9 +671,8 @@ do
 					local Ang = Entity:GetAngles()
 					local Min, Max = Entity:OBBMins(), Entity:OBBMaxs()
 
-					local FireballCount = math.Clamp(Radius*0.1, 1, math.max(FireballMultiplier:GetFloat(), 1))
-					print(FireballCount)
-					for i = 1, FireballCount do -- should we base this on prop volume?
+					local FireballCount = math.Clamp(Radius*0.01, 1, math.max(10 * FireballMultiplier:GetFloat(), 1))
+					for _ = 1, FireballCount do -- should we base this on prop volume?
 
 						local Fireball = ents.Create("acf_debris")
 							if IsValid(Fireball) then -- we probably hit edict limit, stop looping
@@ -700,11 +706,9 @@ do
 		function ACF_APKill(Entity, HitVector, Power)
 			KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
-			local Radius = Entity:BoundingRadius()
-
 			--if Radius > ACF.DebrisScale then DebrisNetter(Entity, HitVector, Power, true, false) end
 			-- Entity, HitNormal, Number, ShouldGib, ShouldIgnite
-			DebrisNetter(Entity, HitVector, Power, true, false)
+			DebrisNetter(Entity, HitVector, Power, 1, 0)
 			-- Entity, HitNormal, Number, ShouldGib, ShouldIgnite
 
 			constraint.RemoveAll(Entity)
