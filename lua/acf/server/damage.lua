@@ -11,6 +11,8 @@ local ValidDebris 	= ACF.ValidDebris
 local ChildDebris 	= ACF.ChildDebris
 local DragDiv		= ACF.DragDiv
 local GlobalFilter 	= ACF.GlobalFilter
+-- Net Messages ---------------------------------
+util.AddNetworkString("ACF_Debris")
 -- Local Funcs ----------------------------------
 
 local function CalcDamage(Entity, Energy, FrArea, Angle)
@@ -72,6 +74,7 @@ local function Shove(Target, Pos, Vec, KE)
 end
 
 ACF.KEShove = Shove
+
 -------------------------------------------------
 
 do
@@ -290,8 +293,8 @@ do
 
 						local Debris = ACF_HEKill(Ent, Table.Vec, PowerFraction, Origin) -- Make some debris
 
-						if IsValid(Debris) then
-							Filter[#Filter + 1] = Debris -- Filter that out too
+						for k,v in ipairs(Debris) do
+							if IsValid(v) then Filter[#Filter + 1] = v end -- Filter that out too
 						end
 
 						Loop = true -- Check for new targets since something died, maybe we'll find something new
@@ -596,77 +599,119 @@ do
 				end
 			end
 		end
+
 		ACF_KillChildProps = KillChildProps
+
+		-- Debris --
+
+		local function DebrisNetter(Entity, HitVector, Power, Gib, Ignite)
+
+			local Mdl = Entity:GetModel()
+			local Mat = Entity:GetMaterial()
+			local Col = Entity:GetColor()
+			local ColR, ColG, ColB, ColA = Col.r, Col.g, Col.b, Col.a -- https://github.com/Facepunch/garrysmod-issues/issues/2407
+			local Col = Color(ColR*0.5, ColG*0.5, ColB*0.5, ColA) -- how bout i do anyway
+			local Pos = Entity:GetPos()
+			local Ang = Entity:GetAngles()
+			local Mass = Entity:GetPhysicsObject():GetMass() or 1
+
+			net.Start("ACF_Debris")
+				net.WriteVector(HitVector)
+				net.WriteFloat(Power)
+				net.WriteFloat(Mass)
+				net.WriteString(Mdl)
+				net.WriteString(Mat)
+				net.WriteColor(Col)
+				net.WriteVector(Pos)
+				net.WriteAngle(Ang)
+				net.WriteBool(Gib)
+				net.WriteBool(Ignite)
+			net.SendPVS(Pos)
+		end
+
+		local CreateFireballs = CreateConVar(
+			"acf_fireballs", 0, 0, -- Default 0, No flags
+			"Create serverside fireballs. Allows compatibility with mods like vFire, but is more taxing on server resources."
+		)
+
+		local FireballMultiplier = CreateConVar(
+			"acf_fireballmult", 1, 0, -- Default 0, No flags
+			"When fireballs are enabled, multiplies the amount created from a prop."
+		)
+
+		local function RandomPos( vecMin, vecMax )
+			randomX = math.Rand(vecMin.x, vecMax.x)
+			randomY = math.Rand(vecMin.y, vecMax.y)
+			randomZ = math.Rand(vecMin.z, vecMax.z)
+			return Vector(randomX, randomY, randomZ)
+		end
 
 		function ACF_HEKill(Entity, HitVector, Energy, BlastPos) -- blast pos is an optional world-pos input for flinging away children props more realistically
 			-- if it hasn't been processed yet, check for children
 			if not Entity.ACF_Killed then KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy) end
 
-			local Obj  = Entity:GetPhysicsObject()
-			local Mass = IsValid(Obj) and Obj:GetMass() or 50
+			local DebrisTable = {}
+			local Radius = Entity:BoundingRadius()
 
-			constraint.RemoveAll(Entity)
-			Entity:Remove()
+			--if Radius < ACF.DebrisScale then constraint.RemoveAll(Entity) Entity:Remove() else -- undersize? just delete it and move on.
 
-			if Entity:BoundingRadius() < ACF.DebrisScale then return nil end
+				local Power = Energy
+				DebrisNetter(Entity, HitVector, Power, false, true)
 
-			local Debris = ents.Create("acf_debris")
-				Debris:SetModel(Entity:GetModel())
-				Debris:SetAngles(Entity:GetAngles())
-				Debris:SetPos(Entity:GetPos())
-				Debris:SetMaterial("models/props_wasteland/metal_tram001a")
-				Debris:Spawn()
-			Debris:Activate()
+				if CreateFireballs:GetInt() > 0 then
 
-			local Phys = Debris:GetPhysicsObject()
-			if IsValid(Phys) then
-				Phys:SetMass(math.Clamp(Mass,5,50000))
-				Phys:ApplyForceOffset(HitVector:GetNormalized() * Energy * 15, Debris:GetPos() + VectorRand() * 10) -- previously energy*350
-			end
+					local Pos = Entity:GetPos()
+					local Ang = Entity:GetAngles()
+					local Min, Max = Entity:OBBMins(), Entity:OBBMaxs()
 
-			if math.random() < ACF.DebrisIgniteChance then
-				Debris:Ignite(math.Rand(5, 45), 0)
-			end
+					local FireballCount = math.Clamp(Radius*0.1, 1, math.max(FireballMultiplier:GetFloat(), 1))
+					print(FireballCount)
+					for i = 1, FireballCount do -- should we base this on prop volume?
 
-			return Debris
+						local Fireball = ents.Create("acf_debris")
+							if IsValid(Fireball) then -- we probably hit edict limit, stop looping
+								local RandomBox = RandomPos(Min, Max)
+								RandomBox:Rotate(Ang)
+								Fireball:SetPos(Pos + RandomBox)
+							Fireball:Spawn()
+
+						local FireLifetime = math.Rand(5,15) -- fireball lifetime
+						Fireball:Ignite(FireLifetime)
+						timer.Simple(FireLifetime, function() if IsValid(Fireball) then Fireball:Remove() end end) -- check validity on last
+
+						local Phys = Fireball:GetPhysicsObject()
+						if IsValid(Phys) then Phys:ApplyForceOffset(HitVector:GetNormalized() * Power * 15, Fireball:GetPos() + VectorRand() * 10) end
+
+						table.insert(DebrisTable,Fireball)
+						end
+
+					end
+
+				end
+
+				constraint.RemoveAll(Entity)
+				Entity:Remove()
+
+			--end
+			return DebrisTable
+
 		end
 
 		function ACF_APKill(Entity, HitVector, Power)
-
 			KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
-			local Obj  = Entity:GetPhysicsObject()
-			local Mass = 25
+			local Radius = Entity:BoundingRadius()
 
-			if IsValid(Obj) then Mass = Obj:GetMass() end
+			--if Radius > ACF.DebrisScale then DebrisNetter(Entity, HitVector, Power, true, false) end
+			-- Entity, HitNormal, Number, ShouldGib, ShouldIgnite
+			DebrisNetter(Entity, HitVector, Power, true, false)
+			-- Entity, HitNormal, Number, ShouldGib, ShouldIgnite
 
 			constraint.RemoveAll(Entity)
 			Entity:Remove()
 
-			if Entity:BoundingRadius() < ACF.DebrisScale then return end
-
-			local Debris = ents.Create("acf_debris")
-				Debris:SetModel(Entity:GetModel())
-				Debris:SetAngles(Entity:GetAngles())
-				Debris:SetPos(Entity:GetPos())
-				Debris:SetMaterial(Entity:GetMaterial())
-				Debris:SetColor(Color(120, 120, 120, 255))
-				Debris:Spawn()
-			Debris:Activate()
-
-			local Phys = Debris:GetPhysicsObject()
-			if IsValid(Phys) then
-				Phys:SetMass(math.Clamp(Mass,5,50000))
-				Phys:ApplyForceOffset(HitVector:GetNormalized() * Power * 350, Debris:GetPos() + VectorRand() * 20)
-			end
-
-			local BreakEffect = EffectData()
-				BreakEffect:SetOrigin(Entity:GetPos())
-				BreakEffect:SetScale(20)
-			util.Effect("WheelDust", BreakEffect)
-
-			return Debris
 		end
+
 	end
 
 	do -- Round Impact --------------------------
@@ -717,8 +762,8 @@ do
 			end
 
 			if HitRes.Kill then
-				local Debris = ACF_APKill( Target , (Bullet.Flight):GetNormalized() , Energy.Kinetic )
-				table.insert( Bullet.Filter , Debris )
+				ACF_APKill( Target , (Bullet.Flight):GetNormalized() , Energy.Kinetic )
+				--table.insert( Bullet.Filter , Debris )
 			end
 
 			HitRes.Ricochet = false
