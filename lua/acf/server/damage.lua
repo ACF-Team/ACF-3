@@ -617,7 +617,7 @@ do
 			local Mat = Entity:GetMaterial()
 			local Col = Entity:GetColor()
 			local ColR, ColG, ColB, ColA = Col.r, Col.g, Col.b, Col.a -- https://github.com/Facepunch/garrysmod-issues/issues/2407
-			local ColN = Color(ColR * 0.5, ColG * 0.5, ColB * 0.5, ColA) -- how bout i do anyway
+			Col = Color(ColR * 0.5, ColG * 0.5, ColB * 0.5, ColA) -- how bout i do anyway
 			local Pos = Entity:GetPos()
 			local Ang = Entity:GetAngles()
 			local Mass = Entity:GetPhysicsObject():GetMass() or 1
@@ -628,7 +628,7 @@ do
 				net.WriteFloat(Mass)
 				net.WriteString(Mdl)
 				net.WriteString(Mat)
-				net.WriteColor(ColN)
+				net.WriteColor(Col)
 				net.WriteVector(Pos)
 				net.WriteAngle(Ang)
 				net.WriteFloat(Gib)
