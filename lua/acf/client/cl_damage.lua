@@ -154,11 +154,11 @@ net.Receive("ACF_Debris", function()
 	local Col = net.ReadColor()
 	local Pos = net.ReadVector()
 	local Ang = net.ReadAngle()
-	local Radius = net.ReadUInt(8)
 	local WillGib = net.ReadFloat()
 	local WillIgnite = net.ReadFloat()
 
 	local Min, Max = Vector(), Vector()
+	local Radius = 1
 
 	local Debris = ents.CreateClientProp(Mdl)
 		Debris:SetPos(Pos)
@@ -173,6 +173,7 @@ net.Receive("ACF_Debris", function()
 	if IsValid(Debris) then
 
 		Min, Max = Debris:OBBMins(), Debris:OBBMaxs() --for gibs
+		Radius = Debris:BoundingRadius()
 
 		Debris.ACFEmberParticle = Particle(Debris, "embers_medium_01")
 		if WillIgnite > 0 and RandFloat(0, 1) * 0.2 < ACF.DebrisIgniteChance then
