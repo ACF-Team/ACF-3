@@ -963,11 +963,20 @@ e2function string entity:acfAmmoType()
 	return this.BulletData.Type or ""
 end
 
--- Returns the caliber of an ammo or gun
+-- Returns the caliber of an ammo, gun or rack
 e2function number entity:acfCaliber()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Caliber then return 0 end
+	if not this.Caliber then 		-- If not a gun or ammo crate
+		if not this.BulletData then return 0 end	-- If not a a rack
+		if not this.BulletData.Id then return 0 end
+
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+		if not GunData then return 0 end
+
+		return GunData.caliber * 10 or 0
+	end
 
 	return this.Caliber * 10
 end
@@ -1014,6 +1023,34 @@ e2function number entity:acfFinMul()
 	if not GunData.round then return 0 end
 
 	return GunData.round.finmul or 0
+end
+
+-- Returns the weight of the missile
+e2function number entity:acfMissileWeight()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.weight or 0
+end
+
+-- Returns the length of the missile
+e2function number entity:acfMissileLength()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.length or 0
 end
 
 -- Returns the number of projectiles in a flechette round
