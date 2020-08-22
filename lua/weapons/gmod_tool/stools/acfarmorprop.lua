@@ -109,7 +109,7 @@ local function ApplySettings(_, Entity, Data)
 
 	if Data.Mass then
 		local PhysObj = Entity.ACF.PhysObj -- If it passed ACF_Check, then the PhysObj will always be valid
-		local Mass = math.Clamp(Data.Mass, 0.1, 5000)
+		local Mass = math.Clamp(Data.Mass, 0.1, 50000)
 
 		PhysObj:SetMass(Mass)
 
