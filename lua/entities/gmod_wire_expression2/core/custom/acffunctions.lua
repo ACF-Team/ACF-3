@@ -1016,6 +1016,34 @@ e2function number entity:acfFinMul()
 	return GunData.round.finmul or 0
 end
 
+-- Returns the weight of the missile
+e2function number entity:acfMissileWeight()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.weight or 0
+end
+
+-- Returns the length of the missile
+e2function number entity:acfMissileLength()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.length or 0
+end
+
 -- Returns the number of projectiles in a flechette round
 e2function number entity:acfFLSpikes()
 	if not IsACFEntity(this) then return 0 end

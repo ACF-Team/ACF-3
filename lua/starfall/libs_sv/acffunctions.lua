@@ -2126,6 +2126,42 @@ function ents_methods:acfFinMul()
 	return ( GunData.round.finmul or 0 )
 end
 
+-- Returns the weight of the missile in a crate or rack
+-- @server
+function ents_methods:acfMissileWeight()
+	checktype( self, ents_metatable )
+	local this = unwrap( self )
+
+	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
+
+	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
+	if restrictInfo( this ) then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	if not GunData then return 0 end
+
+	return ( GunData.weight or 0 )
+end
+
+-- Returns the weight of the missile in a crate or rack
+-- @server
+function ents_methods:acfMissileLength()
+	checktype( self, ents_metatable )
+	local this = unwrap( self )
+
+	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
+
+	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
+	if restrictInfo( this ) then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	if not GunData then return 0 end
+
+	return ( GunData.length or 0 )
+end
+
 -- [ Armor Functions ] --
 
 --- Returns the current health of an entity
