@@ -56,9 +56,10 @@ local function NetworkSize(Entity, Player)
 		Destiny[Entity] = true
 	end
 
+	-- Avoiding net message spam by sending all the events of a tick at once
 	if timer.Exists("ACF Network Sizes") then return end
 
-	timer.Create("ACF Network Sizes", 0.5, 1, SendQueued)
+	timer.Create("ACF Network Sizes", 0, 1, SendQueued)
 end
 
 function ENT:Initialize()
@@ -91,13 +92,15 @@ end
 
 function ENT:SetSize(NewSize)
 	if not isvector(NewSize) then return end
-	if self:GetSize() == NewSize then return end
+	if self.Size == NewSize then return end
 
 	if self.ApplyNewSize then self:ApplyNewSize(NewSize) end
 
-	self.Size = NewSize
+	-- If it's not a new entity, then network the new size
+	-- Otherwise, the entity will request its size by itself
+	if self.Size then NetworkSize(self) end
 
-	NetworkSize(self)
+	self.Size = NewSize
 
 	local PhysObj = self:GetPhysicsObject()
 
@@ -109,6 +112,10 @@ function ENT:SetSize(NewSize)
 end
 
 do -- AdvDupe2 duped parented ammo workaround
+	-- Duped parented scalable entities were uncapable of spawning on the correct position
+	-- That's why they're parented AFTER the dupe is done pasting
+	-- Only applies for Advanced Duplicator 2
+
 	function ENT:OnDuplicated(EntTable)
 		local DupeInfo = EntTable.BuildDupeInfo
 

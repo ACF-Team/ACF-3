@@ -29,31 +29,26 @@ hook.Add("Initialize", "Scalable Entities", function()
 		local EnableMatrix = Meta.EnableMatrix
 		local DisableMatrix = Meta.DisableMatrix
 
-		function Meta:EnableMatrix(Str, NewScale, ...)
-			if self.IsScalable and self:GetSize() and Str == "RenderMultiply" then
-				local Size  = self:GetOriginalSize()
-				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self:GetSize()
+		function Meta:EnableMatrix(Str, Matrix, ...)
+			if self.IsScalable and self.Matrix and Str == "RenderMultiply" then
+				local RealScale = self.Matrix:GetScale()
+				local Scale = Matrix:GetScale()
 
 				-- Visual clip provides a scale of 0, 0, 0
 				-- So we just update it with our actual scale
-				if NewScale:GetScale() ~= Scale then
-					NewScale:SetScale(Scale)
+				if RealScale ~= Scale then
+					Matrix:SetScale(RealScale)
 				end
 			end
 
-			EnableMatrix(self, Str, NewScale, ...)
+			EnableMatrix(self, Str, Matrix, ...)
 		end
 
 		function Meta:DisableMatrix(Str, ...)
-			if self.IsScalable and self:GetSize() and Str == "RenderMultiply" then
-				local Mat = Matrix()
-
-				local Size  = self:GetOriginalSize()
-				local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * self:GetSize()
-
-				Mat:Scale(Scale)
-
-				self:EnableMatrix("RenderMultiply", Mat)
+			if self.IsScalable and self.Matrix and Str == "RenderMultiply" then
+				-- Visual clip will attempt to disable the matrix
+				-- We don't want that to happen with scalable entities
+				self:EnableMatrix("RenderMultiply", self.Matrix)
 
 				return
 			end
