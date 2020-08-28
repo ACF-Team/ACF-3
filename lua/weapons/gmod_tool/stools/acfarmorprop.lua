@@ -1,5 +1,5 @@
 
-local cat = ((ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction");
+local cat = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 
 TOOL.Category	= cat
 TOOL.Name		= "#tool.acfarmorprop.name"
@@ -9,96 +9,13 @@ TOOL.ConfigName	= ""
 TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
 
-local ArmorProp_Area = CreateClientConVar( "acfarmorprop_area", 0, false, true ) -- we don't want this one to save
-local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true)
-local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true)
-
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
-local function CalcArmor( Area, Ductility, Thickness )
-
-	local mass = Area * ( 1 + Ductility ) ^ 0.5 * Thickness * 0.00078
-	local armor = ACF_CalcArmor( Area, Ductility, mass )
+local function CalcArmor(Area, Ductility, Thickness)
+	local mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
+	local armor = ACF_CalcArmor(Area, Ductility, mass)
 	local health = (Area / ACF.Threshold) * (1 + Ductility)
 
 	return mass, armor, health
-
-end
-
-if CLIENT then
-
-	language.Add( "tool.acfarmorprop.name", "ACF Armor Properties" )
-	language.Add( "tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility." )
-	language.Add( "tool.acfarmorprop.0", "Left click to apply settings.  Right click to copy settings.  Reload to get the total mass of an object and all constrained objects." )
-
-	function TOOL.BuildCPanel( panel )
-
-		local Presets = vgui.Create( "ControlPresets" )
-			Presets:AddConVar( "acfarmorprop_thickness" )
-			Presets:AddConVar( "acfarmorprop_ductility" )
-			Presets:SetPreset( "acfarmorprop" )
-		panel:AddItem( Presets )
-
-		panel:NumSlider( "Thickness", "acfarmorprop_thickness", 1, 5000 )
-		panel:ControlHelp( "Set the desired armor thickness (in mm) and the mass will be adjusted accordingly." )
-
-		panel:NumSlider( "Ductility", "acfarmorprop_ductility", -80, 80 )
-		panel:ControlHelp( "Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0).  A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0)." )
-
-	end
-
-	surface.CreateFont( "Torchfont", { size = 40, weight = 1000, font = "arial" } )
-
-	-- clamp thickness if the change in ductility puts mass out of range
-	cvars.AddChangeCallback( "acfarmorprop_ductility", function( _, _, value )
-
-		local area = ArmorProp_Area:GetFloat()
-
-		-- don't bother recalculating if we don't have a valid ent
-		if area == 0 then return end
-
-		local ductility = math.Clamp( ( tonumber( value ) or 0 ) / 100, -0.8, 0.8 )
-		local thickness = math.Clamp( ArmorProp_Thickness:GetFloat(), 0.1, 5000 )
-		local mass = CalcArmor( area, ductility, thickness )
-
-		if mass > 50000 or mass < 0.1 then
-			mass = math.Clamp(mass, 0.1, 50000)
-
-			thickness = ACF_CalcArmor(area, ductility, mass)
-			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, 0.1, 5000))
-		end
-	end )
-
-	-- clamp ductility if the change in thickness puts mass out of range
-	cvars.AddChangeCallback( "acfarmorprop_thickness", function( _, _, value )
-
-		local area = ArmorProp_Area:GetFloat()
-
-		-- don't bother recalculating if we don't have a valid ent
-		if area == 0 then return end
-
-		local thickness = math.Clamp( tonumber( value ) or 0, 0.1, 5000 )
-		local ductility = math.Clamp( ArmorProp_Ductility:GetFloat() / 100, -0.8, 0.8 )
-		local mass = CalcArmor( area, ductility, thickness )
-
-		if mass > 50000 or mass < 0.1 then
-			mass = math.Clamp(mass, 0.1, 50000)
-
-			ductility = -( 39 * area * thickness - mass * 50000 ) / ( 39 * area * thickness )
-			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
-		end
-	end )
-end
-
-do -- Allowing everyone to read contraptions
-	local HookCall = hook.Call
-
-	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
-		if Name == "CanTool" and Tool == "acfarmorprop" and Player:KeyPressed(IN_RELOAD) then
-			return true
-		end
-
-		return HookCall(Name, Gamemode, Player, Entity, Tool, ...)
-	end
 end
 
 -- Apply settings to prop and store dupe info
@@ -126,25 +43,245 @@ local function ApplySettings(_, Entity, Data)
 
 	ACF_Check(Entity, true) -- Forcing the entity to update its information
 end
-duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
-duplicator.RegisterEntityModifier("mass", ApplySettings)
+
+if CLIENT then
+	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
+	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility.")
+	language.Add("tool.acfarmorprop.0", "Left click to apply settings.  Right click to copy settings.  Reload to get the total mass of an object and all constrained objects.")
+
+	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
+
+	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
+	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true)
+	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true)
+
+	local Sphere = CreateClientConVar("acfarmorprop_sphere_search", 0, false, true, "", 0, 1)
+	local Radius = CreateClientConVar("acfarmorprop_sphere_radius", 0, false, true, "", 0, 10000)
+
+	function TOOL.BuildCPanel(Panel)
+		local Presets = vgui.Create("ControlPresets")
+			Presets:AddConVar("acfarmorprop_thickness")
+			Presets:AddConVar("acfarmorprop_ductility")
+			Presets:SetPreset("acfarmorprop")
+		Panel:AddItem(Presets)
+
+		Panel:NumSlider("Thickness", "acfarmorprop_thickness", 1, 5000)
+		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
+
+		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
+		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0).  A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
+
+		local SphereCheck = Panel:CheckBox("Use sphere search for armor readout", "acfarmorprop_sphere_search")
+		Panel:ControlHelp("If checked, the tool will find all the props in a sphere around the hit position instead of getting all the entities connected to a prop.")
+
+		local SphereRadius = Panel:NumSlider("Sphere search radius", "acfarmorprop_sphere_radius", 0, 2000, 0)
+		Panel:ControlHelp("Defines the radius of the search sphere, only applies if the checkbox above is checked.")
+
+		function SphereCheck:OnChange(Bool)
+			SphereRadius:SetEnabled(Bool)
+		end
+
+		SphereRadius:SetEnabled(SphereCheck:GetChecked())
+	end
+
+	local BubbleText = "Current:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp\n\nAfter:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp"
+
+	function TOOL:DrawHUD()
+		local Trace = self:GetOwner():GetEyeTrace()
+		local Ent = Trace.Entity
+
+		if not IsValid(Ent) then return false end
+		if Ent:IsPlayer() or Ent:IsNPC() then return false end
+
+		local Weapon = self.Weapon
+		local Mass = math.Round(Weapon:GetNWFloat("WeightMass"), 2)
+		local Armor = math.Round(Weapon:GetNWFloat("MaxArmour"), 2)
+		local Health = math.Round(Weapon:GetNWFloat("MaxHP"), 2)
+
+		local Area = ArmorProp_Area:GetFloat()
+		local Ductility = ArmorProp_Ductility:GetFloat()
+		local Thickness = ArmorProp_Thickness:GetFloat()
+
+		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility / 100, Thickness)
+		NewMass = math.Round(math.min(NewMass, 50000), 2)
+
+		local Text = BubbleText:format(Mass, Armor, Health, NewMass, math.Round(NewArmor, 2), math.Round(NewHealth, 2))
+
+		AddWorldTip(nil, Text, nil, Trace.HitPos)
+	end
+
+	local DisplayMat = Material("models/props_combine/combine_interface_disp")
+	local TextGray = Color(224, 224, 255)
+	local BGGray = Color(200, 200, 200)
+	local Blue = Color(0, 0, 200)
+	local Red = Color(200, 0, 0)
+
+	function TOOL:DrawToolScreen()
+		local Weapon = self.Weapon
+		local Health = math.Round(Weapon:GetNWFloat("HP", 0), 2)
+		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0), 2)
+		local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
+		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
+
+		local HealthTxt = Health .. "/" .. MaxHealth
+		local ArmourTxt = Armour .. "/" .. MaxArmour
+
+		cam.Start2D()
+			render.Clear(0, 0, 0, 0)
+
+			surface.SetMaterial(DisplayMat)
+			surface.SetDrawColor(color_white)
+			surface.DrawTexturedRect(0, 0, 256, 256)
+			surface.SetFont("Torchfont")
+
+			-- header
+			draw.SimpleTextOutlined("ACF Stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+			-- armor bar
+			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
+			if Armour ~= 0 and MaxArmour ~= 0 then
+				draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
+			end
+
+			draw.SimpleTextOutlined("Armour", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+			-- health bar
+			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
+			if Health ~= 0 and MaxHealth ~= 0 then
+				draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
+			end
+
+			draw.SimpleTextOutlined("Health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+		cam.End2D()
+	end
+
+	-- clamp thickness if the change in ductility puts mass out of range
+	cvars.AddChangeCallback("acfarmorprop_ductility", function(_, _, value)
+
+		local area = ArmorProp_Area:GetFloat()
+
+		-- don't bother recalculating if we don't have a valid ent
+		if area == 0 then return end
+
+		local ductility = math.Clamp((tonumber(value) or 0) / 100, -0.8, 0.8)
+		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), 0.1, 5000)
+		local mass = CalcArmor(area, ductility, thickness)
+
+		if mass > 50000 or mass < 0.1 then
+			mass = math.Clamp(mass, 0.1, 50000)
+
+			thickness = ACF_CalcArmor(area, ductility, mass)
+			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, 0.1, 5000))
+		end
+	end)
+
+	-- clamp ductility if the change in thickness puts mass out of range
+	cvars.AddChangeCallback("acfarmorprop_thickness", function(_, _, value)
+
+		local area = ArmorProp_Area:GetFloat()
+
+		-- don't bother recalculating if we don't have a valid ent
+		if area == 0 then return end
+
+		local thickness = math.Clamp(tonumber(value) or 0, 0.1, 5000)
+		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() / 100, -0.8, 0.8)
+		local mass = CalcArmor(area, ductility, thickness)
+
+		if mass > 50000 or mass < 0.1 then
+			mass = math.Clamp(mass, 0.1, 50000)
+
+			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
+			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
+		end
+	end)
+
+	local GreenSphere = Color(0, 200, 0, 50)
+	local GreenFrame = Color(0, 200, 0, 100)
+
+	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function()
+		local Player = LocalPlayer()
+		local Tool = Player:GetTool()
+
+		if not Tool then return end -- Player has no toolgun
+		if Tool ~= Player:GetTool("acfarmorprop") then return end -- Current tool is not the armor tool
+		if Tool.Weapon ~= Player:GetActiveWeapon() then return end -- Player is not holding the toolgun
+		if not Sphere:GetBool() then return end
+
+		local Value = Radius:GetFloat()
+
+		if Value <= 0 then return end
+
+		local Pos = Player:GetEyeTrace().HitPos
+
+		render.SetColorMaterial()
+		render.DrawSphere(Pos, Value, 20, 20, GreenSphere)
+		render.DrawWireframeSphere(Pos, Value, 20, 20, GreenFrame, true)
+	end)
+else -- Serverside-only stuff
+	function TOOL:Think()
+		local Player = self:GetOwner()
+		local Ent = Player:GetEyeTrace().Entity
+
+		if Ent == self.AimEntity then return end
+
+		local Weapon = self.Weapon
+
+		if ACF_Check(Ent) then
+			Player:ConCommand("acfarmorprop_area " .. Ent.ACF.Area)
+			Player:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
+
+			Weapon:SetNWFloat("WeightMass", Ent:GetPhysicsObject():GetMass())
+			Weapon:SetNWFloat("HP", Ent.ACF.Health)
+			Weapon:SetNWFloat("Armour", Ent.ACF.Armour)
+			Weapon:SetNWFloat("MaxHP", Ent.ACF.MaxHealth)
+			Weapon:SetNWFloat("MaxArmour", Ent.ACF.MaxArmour)
+		else
+			Player:ConCommand("acfarmorprop_area 0")
+
+			Weapon:SetNWFloat("WeightMass", 0)
+			Weapon:SetNWFloat("HP", 0)
+			Weapon:SetNWFloat("Armour", 0)
+			Weapon:SetNWFloat("MaxHP", 0)
+			Weapon:SetNWFloat("MaxArmour", 0)
+		end
+
+		self.AimEntity = Ent
+	end
+
+	duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
+	duplicator.RegisterEntityModifier("mass", ApplySettings)
+end
+
+do -- Allowing everyone to read contraptions
+	local HookCall = hook.Call
+
+	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
+		if Name == "CanTool" and Tool == "acfarmorprop" and Player:KeyPressed(IN_RELOAD) then
+			return true
+		end
+
+		return HookCall(Name, Gamemode, Player, Entity, Tool, ...)
+	end
+end
 
 -- Apply settings to prop
-function TOOL:LeftClick( Trace )
+function TOOL:LeftClick(Trace)
 	local Ent = Trace.Entity
 
 	if not IsValid(Ent) then return false end
 	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( Ent ) then return false end
+	if not ACF_Check(Ent) then return false end
 
-	local ply = self:GetOwner()
+	local Player = self:GetOwner()
 
-	local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
-	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 5000 )
-	local mass = CalcArmor( Ent.ACF.Area, ductility / 100, thickness )
+	local ductility = math.Clamp(self:GetClientNumber("ductility"), -80, 80)
+	local thickness = math.Clamp(self:GetClientNumber("thickness"), 0.1, 5000)
+	local mass = CalcArmor(Ent.ACF.Area, ductility / 100, thickness)
 
-	ApplySettings( ply, Ent, { Mass = mass, Ductility = ductility } )
+	ApplySettings(Player, Ent, { Mass = mass, Ductility = ductility })
 
 	-- this invalidates the entity and forces a refresh of networked armor values
 	self.AimEntity = nil
@@ -169,135 +306,146 @@ function TOOL:RightClick(Trace)
 	return true
 end
 
--- Total up mass of constrained ents
-function TOOL:Reload(Trace)
-	local Ent = Trace.Entity
+do -- Armor readout
+	local SendMessage = ACF.SendMessage
 
-	if not IsValid(Ent) then return false end
-	if Ent:IsPlayer() or Ent:IsNPC() then return false end
-	if CLIENT then return true end
+	local Text1 = "--- Contraption Readout (Owner: %s) ---"
+	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
+	local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
+	local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
 
-	local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF_CalcMassRatio(Ent, true)
+	-- Emulates the stuff done by ACF_CalcMassRatio except with a given set of entities
+	local function ProcessList(Entities)
+		local Constraints = {}
 
-	local Player		= self:GetOwner()
-	local Total 		= Ent.acftotal
-	local phystotal 	= Ent.acfphystotal
-	local parenttotal 	= Total - Ent.acfphystotal
-	local physratio 	= 100 * Ent.acfphystotal / Total, 1
+		local Owners = {}
+		local Lookup = {}
+		local Count  = 0
 
-	Player:ChatPrint("--- ACF Contraption Readout (Owner: " .. Name .. ") ---")
-	Player:ChatPrint("Mass: " .. math.Round(Total, 1) .. " kg total | " ..  math.Round(phystotal, 1) .. " kg physical (" .. math.Round(physratio) .. "%) | " .. math.Round(parenttotal, 1) .. " kg parented")
-	Player:ChatPrint("Mobility: " .. math.Round(Power / (Total / 1000), 1) .. " hp/ton @ " .. math.Round(Power) .. " hp | " .. math.Round(Fuel) .. " liters of fuel")
-	Player:ChatPrint("Entities: " .. PhysNum + ParNum + OtherNum .. " (" .. PhysNum .. " physical, " .. ParNum .. " parented, " .. OtherNum .. " other entities) | " .. ConNum .. " constraints")
+		local Power     = 0
+		local Fuel      = 0
+		local PhysNum   = 0
+		local ParNum    = 0
+		local ConNum    = 0
+		local OtherNum  = 0
+		local Total     = 0
+		local PhysTotal = 0
 
-	return true
-end
+		for _, Ent in ipairs(Entities) do
+			if not ACF_Check(Ent) then
+				if not Ent:IsWeapon() then -- We don't want to count weapon entities
+					OtherNum = OtherNum + 1
+				end
+			elseif not (Ent:IsPlayer() or Ent:IsNPC()) then -- These will pass the ACF check, but we don't want them either
+				local Owner = Ent:CPPIGetOwner()
+				local PhysObj = Ent.ACF.PhysObj
+				local Class = Ent:GetClass()
+				local Mass = PhysObj:GetMass()
+				local IsPhys = false
 
-function TOOL:Think()
+				if (IsValid(Owner) or Owner:IsWorld()) and not Lookup[Owner] then
+					local Name = Owner:GetName()
 
-	if not SERVER then return end
+					Count = Count + 1
 
-	local ply = self:GetOwner()
-	local Ent = ply:GetEyeTrace().Entity
-	if Ent == self.AimEntity then return end
+					Owners[Count] = Name ~= "" and Name or "World"
+					Lookup[Owner] = true
+				end
 
-	if ACF_Check( Ent ) then
+				if Class == "acf_engine" then
+					Power = Power + Ent.peakkw * 1.34
+				elseif Class == "acf_fueltank" then
+					Fuel = Fuel + Ent.Capacity
+				end
 
-		ply:ConCommand("acfarmorprop_area " .. Ent.ACF.Area)
-		ply:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
-		self.Weapon:SetNWFloat( "WeightMass", Ent:GetPhysicsObject():GetMass() )
-		self.Weapon:SetNWFloat( "HP", Ent.ACF.Health )
-		self.Weapon:SetNWFloat( "Armour", Ent.ACF.Armour )
-		self.Weapon:SetNWFloat( "MaxHP", Ent.ACF.MaxHealth )
-		self.Weapon:SetNWFloat( "MaxArmour", Ent.ACF.MaxArmour )
+				-- If it has any valid constraint then it's a physical entity
+				if Ent.Constraints and next(Ent.Constraints) then
+					for _, Con in pairs(Ent.Constraints) do
+						if IsValid(Con) and Con.Type ~= "NoCollide" then -- Nocollides don't count
+							IsPhys = true
 
-	else
+							if not Constraints[Con] then
+								Constraints[Con] = true
+								ConNum = ConNum + 1
+							end
+						end
+					end
+				end
 
-		ply:ConCommand( "acfarmorprop_area 0" )
-		self.Weapon:SetNWFloat( "WeightMass", 0 )
-		self.Weapon:SetNWFloat( "HP", 0 )
-		self.Weapon:SetNWFloat( "Armour", 0 )
-		self.Weapon:SetNWFloat( "MaxHP", 0 )
-		self.Weapon:SetNWFloat( "MaxArmour", 0 )
+				-- If it has no valid constraints but also no valid parent, then it's a physical entity
+				if not (IsPhys or IsValid(Ent:GetParent())) then
+					IsPhys = true
+				end
 
+				if IsPhys then
+					PhysTotal = PhysTotal + Mass
+					PhysNum = PhysNum + 1
+				else
+					ParNum = ParNum + 1
+				end
+
+				Total = Total + Mass
+			end
+		end
+
+		local Name = next(Owners) and table.concat(Owners, ", ") or "None"
+
+		return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal
 	end
 
-	self.AimEntity = Ent
+	local Modes = {
+		Default = {
+			CanCheck = function(_, Trace)
+				local Ent = Trace.Entity
 
-end
+				if not IsValid(Ent) then return false end
+				if Ent:IsPlayer() or Ent:IsNPC() then return false end
 
-function TOOL:DrawHUD()
+				return true
+			end,
+			GetResult = function(_, Trace)
+				local Ent = Trace.Entity
+				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF_CalcMassRatio(Ent, true)
 
-	if not CLIENT then return end
+				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
+			end
+		},
+		Sphere = {
+			CanCheck = function(Tool)
+				return Tool:GetClientNumber("sphere_radius") > 0
+			end,
+			GetResult = function(Tool, Trace)
+				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
 
-	local Ent = self:GetOwner():GetEyeTrace().Entity
+				return ProcessList(Ents)
+			end
+		}
+	}
 
-	if not IsValid(Ent) then return false end
-	if Ent:IsPlayer() or Ent:IsNPC() then return false end
+	local function GetReadoutMode(Tool)
+		if tobool(Tool:GetClientInfo("sphere_search")) then return Modes.Sphere end
 
-	local curmass = self.Weapon:GetNWFloat( "WeightMass" )
-	local curarmor = self.Weapon:GetNWFloat( "MaxArmour" )
-	local curhealth = self.Weapon:GetNWFloat( "MaxHP" )
+		return Modes.Default
+	end
 
-	local area = ArmorProp_Area:GetFloat()
-	local ductility = ArmorProp_Ductility:GetFloat()
-	local thickness = ArmorProp_Thickness:GetFloat()
+	-- Total up mass of constrained ents
+	function TOOL:Reload(Trace)
+		local Mode = GetReadoutMode(self)
 
-	local mass, armor, health = CalcArmor( area, ductility / 100, thickness )
-	mass = math.min( mass, 50000 )
+		if not Mode.CanCheck(self, Trace) then return false end
+		if CLIENT then return true end
 
-	local text = "Current:\nMass: " .. math.Round( curmass, 2 )
-	text = text .. "\nArmor: " .. math.Round( curarmor, 2 )
-	text = text .. "\nHealth: " .. math.Round( curhealth, 2 )
-	text = text .. "\nAfter:\nMass: " .. math.Round( mass, 2 )
-	text = text .. "\nArmor: " .. math.Round( armor, 2 )
-	text = text .. "\nHealth: " .. math.Round( health, 2 )
+		local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
+		local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
+		local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
+		local ParentTotal = Total - PhysTotal
+		local Player = self:GetOwner()
 
-	local pos = Ent:GetPos()
-	AddWorldTip( nil, text, nil, pos, nil )
+		SendMessage(Player, nil, Text1:format(Name))
+		SendMessage(Player, nil, Text2:format(math.Round(Total, 1), math.Round(PhysTotal, 1), PhysRatio, math.Round(ParentTotal, 1)))
+		SendMessage(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
+		SendMessage(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 
-end
-
-function TOOL:DrawToolScreen()
-
-	if not CLIENT then return end
-
-	local Health = math.Round( self.Weapon:GetNWFloat( "HP", 0 ), 2 )
-	local MaxHealth = math.Round( self.Weapon:GetNWFloat( "MaxHP", 0 ), 2 )
-	local Armour = math.Round( self.Weapon:GetNWFloat( "Armour", 0 ), 2 )
-	local MaxArmour = math.Round( self.Weapon:GetNWFloat( "MaxArmour", 0 ), 2 )
-
-	local HealthTxt = Health .. "/" .. MaxHealth
-	local ArmourTxt = Armour .. "/" .. MaxArmour
-
-	cam.Start2D()
-		render.Clear( 0, 0, 0, 0 )
-
-		surface.SetMaterial( Material( "models/props_combine/combine_interface_disp" ) )
-		surface.SetDrawColor( color_white )
-		surface.DrawTexturedRect( 0, 0, 256, 256 )
-		surface.SetFont( "Torchfont" )
-
-		-- header
-		draw.SimpleTextOutlined( "ACF Stats", "Torchfont", 128, 30, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
-
-		-- armor bar
-		draw.RoundedBox( 6, 10, 83, 236, 64, Color( 200, 200, 200, 255 ) )
-		if Armour ~= 0 and MaxArmour ~= 0 then
-			draw.RoundedBox( 6, 15, 88, Armour / MaxArmour * 226, 54, Color( 0, 0, 200, 255 ) )
-		end
-
-		draw.SimpleTextOutlined( "Armour", "Torchfont", 128, 100, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
-		draw.SimpleTextOutlined( ArmourTxt, "Torchfont", 128, 130, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
-
-		-- health bar
-		draw.RoundedBox( 6, 10, 183, 236, 64, Color( 200, 200, 200, 255 ) )
-		if Health ~= 0 and MaxHealth ~= 0 then
-			draw.RoundedBox( 6, 15, 188, Health / MaxHealth * 226, 54, Color( 200, 0, 0, 255 ) )
-		end
-
-		draw.SimpleTextOutlined( "Health", "Torchfont", 128, 200, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
-		draw.SimpleTextOutlined( HealthTxt, "Torchfont", 128, 230, Color( 224, 224, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black )
-	cam.End2D()
-
+		return true
+	end
 end
