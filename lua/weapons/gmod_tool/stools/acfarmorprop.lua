@@ -107,7 +107,7 @@ if CLIENT then
 
 		local Text = BubbleText:format(Mass, Armor, Health, NewMass, math.Round(NewArmor, 2), math.Round(NewHealth, 2))
 
-		AddWorldTip(nil, Text, nil, nil, Ent)
+		AddWorldTip(nil, Text, nil, Ent:GetPos())
 	end
 
 	local DisplayMat = Material("models/props_combine/combine_interface_disp")
