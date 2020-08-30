@@ -56,5 +56,11 @@ function ACF.PrintLog(Type, ...)
 end
 
 function ACF_GetHitAngle(HitNormal, HitVector)
-	return math.min(math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))), 89.999)
+	local Ang = math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))) -- Can output nan sometimes on extremely small angles
+
+	if Ang ~= Ang then -- nan is the only value that does not equal itself
+		return 0 -- return 0 instead of nan
+	else
+		return Ang
+	end
 end
