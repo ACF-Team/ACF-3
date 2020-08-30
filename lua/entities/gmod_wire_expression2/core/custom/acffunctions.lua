@@ -107,12 +107,22 @@ end
 
 __e2setcost(5)
 
--- Returns the full name of an ACF entity
+-- Returns the full name of an ACF entity, or the next projectile on a rack
 e2function string entity:acfName()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	return this.Name or ""
+	if not this.Name then
+		if not this.BulletData then return "" end	-- If not a a rack
+		if not this.BulletData.Id then return "" end
+
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+		if not GunData then return "" end
+
+		return GunData.name or ""
+	end
+
+	return this.Name
 end
 
 -- Returns the short name of an ACF entity
