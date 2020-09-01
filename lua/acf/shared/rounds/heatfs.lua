@@ -43,7 +43,7 @@ function Round.convert(_, PlayerData)
 	local GUIData = {}
 
 	if not PlayerData.PropLength then
-		PlayerData.PropLength = Data.Caliber * 3.75
+		PlayerData.PropLength = 0
 	end
 
 	if not PlayerData.ProjLength then
