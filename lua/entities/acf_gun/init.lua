@@ -159,6 +159,14 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
 
+		do -- Mass entity mod removal
+			local EntMods = Data and Data.EntityMods
+
+			if EntMods and EntMods.mass then
+				EntMods.mass = nil
+			end
+		end
+
 		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
 			if not IsValid(Gun) then return end
 
@@ -250,6 +258,10 @@ do -- Metamethods --------------------------------
 
 		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
 			if Weapon.Crates[Target] or Target.Weapons[Weapon] then
+				if Weapon.CurrentCrate == Target then
+					Weapon.CurrentCrate = next(Weapon.Crates, Target)
+				end
+
 				Weapon.Crates[Target]  = nil
 				Target.Weapons[Weapon] = nil
 
@@ -511,9 +523,7 @@ do -- Metamethods --------------------------------
 			if not next(Gun.Crates) then return end
 
 			-- Find the next available crate to pull ammo from --
-			local Current = Gun.CurrentCrate
-			local NextKey = (IsValid(Current) and Gun.Crates[Current]) and Current or nil
-			local Select = next(Gun.Crates, NextKey) or next(Gun.Crates)
+			local Select = next(Gun.Crates, Gun.CurrentCrate) or next(Gun.Crates)
 			local Start  = Select
 
 			repeat
@@ -726,6 +736,30 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Misc ----------------------------------
+		function ENT:ACF_Activate(Recalc)
+			local PhysObj = self.ACF.PhysObj
+
+			if not self.ACF.Area then
+				self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+			end
+
+			local Volume = PhysObj:GetVolume() * 2
+
+			local Armour = self.Caliber * 10
+			local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+			local Percent = 1
+
+			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
+				Percent = self.ACF.Health / self.ACF.MaxHealth
+			end
+
+			self.ACF.Health = Health * Percent
+			self.ACF.MaxHealth = Health
+			self.ACF.Armour = Armour * (0.5 + Percent * 0.5)
+			self.ACF.MaxArmour = Armour
+			self.ACF.Type = "Prop"
+		end
+
 		function ENT:SetState(State)
 			self.State = State
 

@@ -106,7 +106,7 @@ ACF.RegisterWeaponClass("SA", {
 	Name		  = "Semiautomatic Cannon",
 	Description	  = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
 	MuzzleFlash	  = "semi_muzzleflash_noscale",
-	Spread		  = 1.1,
+	Spread		  = 0.12,
 	Sound		  = "acf_base/weapons/sa_fire1.mp3",
 	Caliber	= {
 		Min = 20,

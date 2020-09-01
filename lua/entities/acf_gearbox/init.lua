@@ -375,6 +375,7 @@ do -- Spawn and Update functions
 		Entity.In			= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
 		Entity.OutL			= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
 		Entity.OutR			= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
+		Entity.HitBoxes		= ACF.HitBoxes[Gearbox.Model]
 
 		CreateInputs(Entity)
 		CreateOutputs(Entity)
@@ -425,7 +426,15 @@ do -- Spawn and Update functions
 		local Phys = Entity:GetPhysicsObject()
 		if IsValid(Phys) then Phys:SetMass(Gearbox.Mass) end
 
-		ChangeGear(Entity, 1)
+		-- Force gearbox to forget its gear and drive
+		Entity.Drive = nil
+		Entity.Gear = nil
+
+		if Entity.Auto then
+			ChangeDrive(Entity, 1)
+		else
+			ChangeGear(Entity, 1)
+		end
 
 		Entity:UpdateOverlay(true)
 	end
@@ -461,7 +470,6 @@ do -- Spawn and Update functions
 		Gearbox.LBrake			= 0
 		Gearbox.RBrake			= 0
 		Gearbox.SteerRate		= 0
-		Gearbox.Gear			= 0
 		Gearbox.ChangeFinished	= 0
 		Gearbox.InGear			= false
 		Gearbox.LastActive		= 0
@@ -471,6 +479,14 @@ do -- Spawn and Update functions
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Gearbox, Data, Class, GearboxData)
+		end
+
+		do -- Mass entity mod removal
+			local EntMods = Data and Data.EntityMods
+
+			if EntMods and EntMods.mass then
+				EntMods.mass = nil
+			end
 		end
 
 		CheckLegal(Gearbox)

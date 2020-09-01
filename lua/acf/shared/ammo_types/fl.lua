@@ -87,6 +87,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.ProjMass		   = Data.Flechettes * Data.FlechetteMass -- total mass of all flechettes
 	Data.DragCoef		   = Data.FrArea * 0.0001 / Data.ProjMass
 	Data.MuzzleVel		   = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

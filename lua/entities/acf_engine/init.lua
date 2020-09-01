@@ -24,6 +24,10 @@ do
 
 	ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
 		if Engine.FuelTanks[Target] or Target.Engines[Engine] then
+			if Engine.FuelTank == Target then
+				Engine.FuelTank = next(Engine.FuelTanks, Target)
+			end
+
 			Engine.FuelTanks[Target] = nil
 			Target.Engines[Engine]	 = nil
 
@@ -112,10 +116,9 @@ local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local Gamemode    = GetConVar("acf_gamemode")
 
-local function GetEfficiency(Entity)
-	local CompetitiveMult = Gamemode:GetInt() == 2 and ACF.CompFuelRate or 1
-
-	return ACF.Efficiency[Entity.EngineType] * CompetitiveMult
+-- Fuel consumption is increased on competitive servers
+local function GetEfficiencyMult()
+	return Gamemode:GetInt() == 2 and ACF.CompFuelRate or 1
 end
 
 local function GetPitchVolume(Engine)
@@ -129,9 +132,7 @@ end
 local function GetNextFuelTank(Engine)
 	if not next(Engine.FuelTanks) then return end
 
-	local Current = Engine.FuelTank
-	local NextKey = (IsValid(Current) and Engine.FuelTanks[Current]) and Current or nil
-	local Select = next(Engine.FuelTanks, NextKey) or next(Engine.FuelTanks)
+	local Select = next(Engine.FuelTanks, Engine.FuelTank) or next(Engine.FuelTanks)
 	local Start = Select
 
 	repeat
@@ -272,9 +273,10 @@ do -- Spawn and Update functions
 		Entity.FuelTypes		= EngineData.Fuel or { Petrol = true }
 		Entity.FuelType 		= next(EngineData.Fuel)
 		Entity.EngineType 		= EngineType.ID
-		Entity.Efficiency		= EngineType.Efficiency
+		Entity.Efficiency		= EngineType.Efficiency * GetEfficiencyMult()
 		Entity.TorqueScale 		= EngineType.TorqueScale
 		Entity.HealthMult		= EngineType.HealthMult
+		Entity.HitBoxes			= ACF.HitBoxes[EngineData.Model]
 		Entity.Out				= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
@@ -349,6 +351,14 @@ do -- Spawn and Update functions
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Engine, Data, Class, EngineData)
+		end
+
+		do -- Mass entity mod removal
+			local EntMods = Data and Data.EntityMods
+
+			if EntMods and EntMods.mass then
+				EntMods.mass = nil
+			end
 		end
 
 		CheckLegal(Engine)

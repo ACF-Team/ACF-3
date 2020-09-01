@@ -103,7 +103,7 @@ ACF.RegisterWeaponClass("SC", {
 	Name		  = "Short-Barrelled Cannon",
 	Description	  = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
 	MuzzleFlash	  = "cannon_muzzleflash_noscale",
-	Spread		  = 0.2,
+	Spread		  = 0.16,
 	Sound		  = "acf_base/weapons/cannon_new.mp3",
 	Caliber	= {
 		Min = 37,

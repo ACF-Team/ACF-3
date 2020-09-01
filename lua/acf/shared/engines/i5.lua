@@ -86,7 +86,7 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 100,
-		Torque		 = 125,
+		Torque		 = 156,
 		FlywheelMass = 0.12,
 		RPM = {
 			Idle	= 900,
@@ -104,7 +104,7 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 250,
-		Torque		 = 275,
+		Torque		 = 343,
 		FlywheelMass = 0.25,
 		RPM = {
 			Idle	= 700,
@@ -124,7 +124,7 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 130,
-		Torque		 = 180,
+		Torque		 = 225,
 		FlywheelMass = 0.5,
 		RPM = {
 			Idle	= 500,
@@ -142,7 +142,7 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 400,
-		Torque		 = 440,
+		Torque		 = 550,
 		FlywheelMass = 1.5,
 		RPM = {
 			Idle	= 650,

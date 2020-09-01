@@ -66,7 +66,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Wankel",
 		Mass		 = 50,
-		Torque		 = 78,
+		Torque		 = 97,
 		FlywheelMass = 0.06,
 		RPM = {
 			Idle	= 950,
@@ -84,7 +84,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Wankel",
 		Mass		 = 140,
-		Torque		 = 124,
+		Torque		 = 155,
 		FlywheelMass = 0.06,
 		RPM = {
 			Idle	= 950,
@@ -102,7 +102,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Wankel",
 		Mass		 = 200,
-		Torque		 = 188,
+		Torque		 = 235,
 		FlywheelMass = 0.1,
 		RPM = {
 			Idle	= 950,

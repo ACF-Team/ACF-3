@@ -577,9 +577,9 @@ do -- Metamethods -------------------------------
 		WireLib.AddOutputAlias("Munitions", "Ammo")
 
 		ACF.AddInputAction("acf_ammo", "Load", function(Entity, Value)
-			Entity.Load = Entity.Ammo ~= 0 and tobool(Value)
+			Entity.Load = tobool(Value)
 
-			WireLib.TriggerOutput(Entity, "Loading", Entity.Load and 1 or 0)
+			WireLib.TriggerOutput(Entity, "Loading", Entity:CanConsume() and 1 or 0)
 		end)
 
 		function ENT:TriggerInput(Name, Value)

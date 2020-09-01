@@ -70,7 +70,7 @@ ACF.RegisterWeaponClass("MG", {
 	Name		  = "Machinegun",
 	Description	  = "Machineguns are light guns that fire equally light bullets at a fast rate.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 0.24,
+	Spread		  = 0.16,
 	Sound		  = "acf_base/weapons/mg_fire4.mp3",
 	Caliber	= {
 		Min = 5.56,

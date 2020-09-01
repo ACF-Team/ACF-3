@@ -50,7 +50,7 @@ do
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 45,
-		Torque		 = 105,
+		Torque		 = 131,
 		FlywheelMass = 0.12,
 		RPM = {
 			Idle	= 500,
@@ -68,7 +68,7 @@ do
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 800,
-		Torque		 = 2000,
+		Torque		 = 2500,
 		FlywheelMass = 7,
 		RPM = {
 			Idle	= 350,

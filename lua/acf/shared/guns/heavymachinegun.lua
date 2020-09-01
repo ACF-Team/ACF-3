@@ -92,7 +92,7 @@ ACF.RegisterWeaponClass("HMG", {
 	Name		  = "Heavy Machinegun",
 	Description	  = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 1.3,
+	Spread		  = 0.24,
 	Sound		  = "acf_base/weapons/mg_fire3.mp3",
 	Caliber	= {
 		Min = 13,

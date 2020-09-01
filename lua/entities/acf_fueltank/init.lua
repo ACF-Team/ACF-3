@@ -19,6 +19,15 @@ local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Wall		  = 0.03937 --wall thickness in inches (1mm)
 
+local function CanRefuel(Refill, Tank, Distance)
+	if Refill.FuelType ~= Tank.FuelType then return false end
+	if Tank.Disabled then return false end
+	if Tank.SupplyFuel then return false end
+	if Tank.Fuel >= Tank.Capacity then return false end
+
+	return Distance <= RefillDist
+end
+
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -70,7 +79,7 @@ do -- Spawn and Update functions
 		Entity.Volume		= PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
 		Entity.Capacity		= Entity.Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 		Entity.EmptyMass	= (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
-		Entity.IsExplosive	= Entity.FuelType ~= "Electric" and FuelTank.IsExplosive
+		Entity.IsExplosive	= FuelTank.IsExplosive
 		Entity.NoLinks		= FuelTank.Unlinkable
 		Entity.HitBoxes = {
 			Main = {
@@ -94,6 +103,9 @@ do -- Spawn and Update functions
 
 		Entity:UpdateMass(true)
 		Entity:UpdateOverlay(true)
+
+		WireLib.TriggerOutput(Entity, "Fuel", Entity.Fuel)
+		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
@@ -119,12 +131,11 @@ do -- Spawn and Update functions
 
 		Tank.Owner		= Player -- MUST be stored on ent for PP
 		Tank.Engines	= {}
-		Tank.Active		= true
 		Tank.Leaking	= 0
 		Tank.CanUpdate	= true
 		Tank.LastThink	= 0
 		Tank.Inputs		= WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
-		Tank.Outputs	= WireLib.CreateOutputs(Tank, { "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
+		Tank.Outputs	= WireLib.CreateOutputs(Tank, { "Activated", "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
 		Tank.DataStore	= ACF.GetEntClassVars("acf_fueltank")
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
@@ -136,6 +147,17 @@ do -- Spawn and Update functions
 		if Class.OnSpawn then
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
+
+		do -- Mass entity mod removal
+			local EntMods = Data and Data.EntityMods
+
+			if EntMods and EntMods.mass then
+				EntMods.mass = nil
+			end
+		end
+
+		-- Fuel tanks should be active by default
+		Tank:TriggerInput("Active", 1)
 
 		CheckLegal(Tank)
 
@@ -363,7 +385,7 @@ do -- Overlay Update
 			if Ent.Leaking > 0 then
 				Text = "Leaking"
 			else
-				Text = Ent.Active and "Providing Fuel" or "Idle"
+				Text = Ent:CanConsume() and "Providing Fuel" or "Idle"
 			end
 
 			Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
@@ -393,34 +415,29 @@ do -- Overlay Update
 			return Overlay(self)
 		end
 
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-	else
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-			if IsValid(self) and self.OverlayBuffer then
-				self.OverlayBuffer = nil
-				self:UpdateOverlay()
-			end
-		end)
+		if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+			self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+		else
+			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+				if IsValid(self) and self.OverlayBuffer then
+					self.OverlayBuffer = nil
+					self:UpdateOverlay()
+				end
+			end)
 
-		Overlay(self)
+			Overlay(self)
+		end
 	end
 end
 
 ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
-	if not Entity.Inputs.Active.Path then
-		Value = true
-	end
-
 	Entity.Active = tobool(Value)
 
-	print(Entity, Entity.Active)
+	WireLib.TriggerOutput(Entity, "Activated", Entity:CanConsume() and 1 or 0)
 end)
 
 ACF.AddInputAction("acf_fueltank", "Refuel Duty", function(Entity, Value)
-	local N = math.Clamp(tonumber(Value), 0, 2)
-
-	Entity.SupplyFuel = N ~= 0 and N
+	Entity.SupplyFuel = tobool(Value) or nil
 end)
 
 function ENT:TriggerInput(Name, Value)

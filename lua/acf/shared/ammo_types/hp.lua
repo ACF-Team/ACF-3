@@ -29,6 +29,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.ExpCaliber	= Data.Caliber * 0.1 + ExpRatio * Data.ProjLength
 	Data.PenArea	= (3.1416 * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
 	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
+	Data.CartMass	= Data.PropMass + Data.ProjMass
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

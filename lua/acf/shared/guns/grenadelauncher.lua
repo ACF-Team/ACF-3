@@ -32,7 +32,7 @@ ACF.RegisterWeaponClass("GL", {
 	Name		  = "Grenade Launcher",
 	Description	  = "Grenade Launchers can fire shells with relatively large payloads at a fast rate, but with very limited velocities and poor accuracy.",
 	MuzzleFlash	  = "gl_muzzleflash_noscale",
-	Spread		  = 0.32,
+	Spread		  = 0.28,
 	Sound		  = "acf_base/weapons/grenadelauncher.mp3",
 	Caliber	= {
 		Min = 25,

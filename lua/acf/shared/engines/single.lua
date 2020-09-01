@@ -65,7 +65,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 15,
-		Torque		 = 20,
+		Torque		 = 25,
 		FlywheelMass = 0.005,
 		RPM = {
 			Idle	= 1200,
@@ -83,7 +83,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 20,
-		Torque		 = 40,
+		Torque		 = 50,
 		FlywheelMass = 0.005,
 		RPM = {
 			Idle	= 900,
@@ -101,7 +101,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 50,
-		Torque		 = 90,
+		Torque		 = 112,
 		FlywheelMass = 0.1,
 		RPM = {
 			Idle	= 600,

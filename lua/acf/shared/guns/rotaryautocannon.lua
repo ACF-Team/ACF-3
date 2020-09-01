@@ -69,7 +69,7 @@ ACF.RegisterWeaponClass("RAC", {
 	Name		  = "Rotary Autocannon",
 	Description	  = "Rotary Autocannons sacrifice weight, bulk and accuracy over classic autocannons to get the highest rate of fire possible.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 0.4,
+	Spread		  = 0.48,
 	Sound		  = "acf_base/weapons/mg_fire3.mp3",
 	Caliber	= {
 		Min = 7.62,

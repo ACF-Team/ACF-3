@@ -103,7 +103,7 @@ ACF.RegisterWeaponClass("MO", {
 	Name		  = "Mortar",
 	Description	  = "Mortars are able to fire shells with usefull payloads from a light weight gun, at the price of limited velocities.",
 	MuzzleFlash	  = "mortar_muzzleflash_noscale",
-	Spread		  = 0.64,
+	Spread		  = 0.72,
 	Sound		  = "acf_base/weapons/mortar_new.mp3",
 	Caliber	= {
 		Min = 37,

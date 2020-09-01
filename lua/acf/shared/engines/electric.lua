@@ -148,7 +148,7 @@ do -- Electric Motors
 		Fuel		 = { Electric = true },
 		Type		 = "Electric",
 		Mass		 = 250,
-		Torque		 = 384,
+		Torque		 = 480,
 		FlywheelMass = 0.3,
 		IsElectric	 = true,
 		RPM = {
@@ -168,7 +168,7 @@ do -- Electric Motors
 		Fuel		 = { Electric = true },
 		Type		 = "Electric",
 		Mass		 = 850,
-		Torque		 = 1152,
+		Torque		 = 1440,
 		FlywheelMass = 1.5,
 		IsElectric	 = true,
 		RPM = {
@@ -188,7 +188,7 @@ do -- Electric Motors
 		Fuel		 = { Electric = true },
 		Type		 = "Electric",
 		Mass		 = 1900,
-		Torque		 = 3360,
+		Torque		 = 4200,
 		FlywheelMass = 11.2,
 		IsElectric	 = true,
 		RPM = {

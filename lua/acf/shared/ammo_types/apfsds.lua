@@ -16,9 +16,14 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = Data.FrArea * Data.ProjLength * 0.0079 * 0.6666 --Volume of the projectile as a cylinder * density of steel
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.5
+	local Cylinder  = (3.1416 * (Data.Caliber * 0.05) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
+	local Hole		= Data.RoundArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
+	local SabotMass = (Cylinder - Hole) * 2.7 * 0.25 * 0.001 -- A cylinder with a hole the size of the dart in it and im no math wizard so we're just going to take off 3/4 of the mass for the cutout since sabots are shaped like this: ][
+
+	Data.ProjMass  = (Data.RoundArea * 0.6666) * (Data.ProjLength * 0.0079) -- Volume of the projectile as a cylinder * density of steel
+	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass)
 	Data.DragCoef  = Data.FrArea * 0.0001 / Data.ProjMass
+	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -30,12 +35,15 @@ function Ammo:BaseConvert(_, ToolData)
 	if not ToolData.Propellant then ToolData.Propellant = 0 end
 
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	local SubCaliberRatio = 0.29 -- Ratio of projectile to gun caliber
+	local Area = 3.1416 * (Data.Caliber * 0.05 * SubCaliberRatio) ^ 2
 
+	Data.RoundArea	 = Area
 	Data.ShovePower	 = 0.2
-	Data.PenArea	 = Data.FrArea ^ ACF.PenAreaMod
-	Data.LimitVel	 = 1200 --Most efficient penetration speed in m/s
+	Data.PenArea	 = Area ^ ACF.PenAreaMod
+	Data.LimitVel	 = 1000 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet	 = 75 --Base ricochet angle
+	Data.Ricochet	 = 80 --Base ricochet angle
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
 

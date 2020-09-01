@@ -43,8 +43,8 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	Data.ProjLength = math.Round(Projectile, 2) - Data.Tracer
 	Data.PropLength = math.Round(Propellant, 2)
-	Data.PropMass = Data.FrArea * (Data.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
-	Data.RoundVolume = Data.FrArea * (Data.ProjLength + Data.PropLength)
+	Data.PropMass = Data.FrArea * ACF.AmmoCaseScale ^ 2 * (Data.PropLength * ACF.PDensity * 0.001) --Volume of the case as a cylinder * Powder density converted from g to kg
+	Data.RoundVolume = Data.FrArea * ACF.AmmoCaseScale ^ 2 * (Data.ProjLength + Data.PropLength)
 
 	GUIData.ProjVolume = Data.FrArea * Data.ProjLength
 end

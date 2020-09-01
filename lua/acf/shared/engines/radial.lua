@@ -83,7 +83,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Radial",
 		Mass		 = 210,
-		Torque		 = 310,
+		Torque		 = 387,
 		FlywheelMass = 0.22,
 		RPM = {
 			Idle	= 700,
@@ -101,7 +101,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Radial",
 		Mass		 = 385,
-		Torque		 = 560,
+		Torque		 = 700,
 		FlywheelMass = 0.45,
 		RPM = {
 			Idle	= 600,
@@ -119,7 +119,7 @@ do
 		Fuel		 = { Petrol = true, Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 450,
-		Torque		 = 800,
+		Torque		 = 1000,
 		FlywheelMass = 1,
 		RPM = {
 			Idle	= 400,
@@ -137,7 +137,7 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Radial",
 		Mass		 = 952,
-		Torque		 = 1615,
+		Torque		 = 2018,
 		FlywheelMass = 3.4,
 		RPM = {
 			Idle	= 750,

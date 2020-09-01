@@ -15,13 +15,13 @@ function Ammo:BaseConvert(_, ToolData)
 		Id			= ToolData.Weapon,
 		Type		= ToolData.Ammo,
 		Caliber		= Weapon and Weapon.Caliber or 12.7,
-		ProjMass	= 6 * 0.079, --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
-		PropMass	= 6 * ACF.PDensity * 0.001, --Volume of the case as a cylinder * Powder density converted from g to kg
+		ProjMass	= 5.5 * 0.079, --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
+		PropMass	= 5.5 * ACF.PDensity * 0.001, --Volume of the case as a cylinder * Powder density converted from g to kg
 		FillerMass	= 0,
 		DragCoef	= 0,
 		Tracer		= 0,
 		MuzzleVel	= 0,
-		RoundVolume	= 36,
+		RoundVolume	= 35,
 	}
 end
 

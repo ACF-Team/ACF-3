@@ -25,6 +25,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.ProjMass  = Data.FrArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef  = Data.FrArea * 0.0001 / Data.ProjMass
+	Data.CartMass  = Data.PropMass + Data.ProjMass
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
