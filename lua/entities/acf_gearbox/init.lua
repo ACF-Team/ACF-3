@@ -194,7 +194,7 @@ local function CreateInputsOutputs(Gearbox)
 end
 
 local function ChangeGear(Entity, Value)
-	Value = Clamp(math.floor(Value), 0, Entity.Gears)
+	Value = Clamp(math.floor(Value), 0, Entity.Reverse or Entity.Gears)
 
 	if Entity.Gear == Value then return end
 
