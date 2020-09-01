@@ -107,12 +107,22 @@ end
 
 __e2setcost(5)
 
--- Returns the full name of an ACF entity
+-- Returns the full name of an ACF entity, or the next projectile on a rack
 e2function string entity:acfName()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	return this.Name or ""
+	if not this.Name then
+		if not this.BulletData then return "" end	-- If not a a rack
+		if not this.BulletData.Id then return "" end
+
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+		if not GunData then return "" end
+
+		return GunData.name or ""
+	end
+
+	return this.Name
 end
 
 -- Returns the short name of an ACF entity
@@ -191,6 +201,7 @@ end
 e2function number entity:acfActive()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if this.CanConsume then return this:CanConsume() and 1 or 0 end
 
 	return (this.Active or this.Load) and 1 or 0
 end
@@ -962,11 +973,20 @@ e2function string entity:acfAmmoType()
 	return this.BulletData.Type or ""
 end
 
--- Returns the caliber of an ammo or gun
+-- Returns the caliber of an ammo, gun or rack
 e2function number entity:acfCaliber()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Caliber then return 0 end
+	if not this.Caliber then 		-- If not a gun or ammo crate
+		if not this.BulletData then return 0 end	-- If not a a rack
+		if not this.BulletData.Id then return 0 end
+
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+		if not GunData then return 0 end
+
+		return GunData.caliber * 10 or 0
+	end
 
 	return this.Caliber * 10
 end
@@ -978,7 +998,7 @@ e2function number entity:acfMuzzleVel()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.MuzzleVel then return 0 end
 
-	return Round(this.BulletData.MuzzleVel * ACF.Scale, 2)
+	return this.BulletData.MuzzleVel * ACF.Scale
 end
 
 -- Returns the mass of the projectile in a crate or gun
@@ -988,7 +1008,7 @@ e2function number entity:acfProjectileMass()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.ProjMass then return 0 end
 
-	return Round(this.BulletData.ProjMass, 2)
+	return this.BulletData.ProjMass
 end
 
 e2function number entity:acfDragCoef()
@@ -997,7 +1017,50 @@ e2function number entity:acfDragCoef()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.DragCoef then return 0 end
 
-	return Round(this.BulletData.DragCoef / ACF.DragDiv, 10)
+	return this.BulletData.DragCoef / ACF.DragDiv
+end
+
+-- Returns the fin multiplier of the missile/bomb
+e2function number entity:acfFinMul()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+	if not GunData.round then return 0 end
+
+	return GunData.round.finmul or 0
+end
+
+-- Returns the weight of the missile
+e2function number entity:acfMissileWeight()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.weight or 0
+end
+
+-- Returns the length of the missile
+e2function number entity:acfMissileLength()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.BulletData then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+
+	return GunData.length or 0
 end
 
 -- Returns the number of projectiles in a flechette round
@@ -1016,7 +1079,7 @@ e2function number entity:acfFLSpikeMass()
 	if not this.BulletData then return 0 end
 	if not this.BulletData.FlechetteMass then return 0 end
 
-	return Round(this.BulletData.FlechetteMass, 2)
+	return this.BulletData.FlechetteMass
 end
 
 -- Returns the radius of the spikes in a flechette round in mm
@@ -1080,7 +1143,7 @@ e2function number entity:acfAmmoCount()
 	if not Source then return 0 end
 
 	for Crate in pairs(Source(this)) do
-		if Crate.Load then
+		if Crate:CanConsume() then
 			Count = Count + Crate.Ammo
 		end
 	end

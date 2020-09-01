@@ -5,22 +5,51 @@ do -- ACF global vars
 	ACF.MenuFunc 			= ACF.MenuFunc or {}
 	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
+
+	-- Misc
+	ACF.Year 				= 1945
+	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
+	ACF.GunfireEnabled 		= true
+	ACF.PhysMaxVel 			= 4000
+	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
+	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
+	-- Fuzes
 	ACF.MinFuzeCaliber		= 2 -- Minimum caliber that can be fuzed (centimeters)
+	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime		= 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	-- External and Terminal Ballistics
 	ACF.DragDiv 			= 80 --Drag fudge factor
 	ACF.Scale 				= 1 --Scale factor for ACF in the game world
-	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
-	ACF.Year 				= 1945
 	ACF.Threshold 			= 264.7 --Health Divisor (don"t forget to update cvar function down below)
 	ACF.PenAreaMod 			= 0.85
 	ACF.KinFudgeFactor 		= 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
 	ACF.KEtoRHA 			= 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
 	ACF.GroundtoRHA 		= 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
-	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
 	ACF.ArmorMod 			= 1
 	ACF.SlopeEffectFactor 	= 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
-	ACF.GunfireEnabled 		= true
+	ACF.GlobalFilter = { -- Global ACF filter
+		gmod_ghost = true,
+		acf_debris = true,
+		prop_ragdoll = true,
+		gmod_wire_hologram = true,
+		starfall_hologram = true,
+		prop_vehicle_crane = true,
+		prop_dynamic = true,
+		npc_strider = true,
+		npc_dog = true
+	}
+	-- Ammo
+	ACF.AmmoArmor			= 5 -- How many millimeters of armor ammo crates have
+	ACF.AmmoPadding         = 2 -- Millimeters of wasted space between rounds
+	ACF.AmmoMod 			= 1.05 -- Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
+	ACF.AmmoCaseScale		= 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
+	ACF.PBase 				= 875 --1KG of propellant produces this much KE at the muzzle, in kj
+	ACF.PScale 				= 1 --Gun Propellant power expotential
+	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
+	ACF.PDensity 			= 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	-- HE
 	ACF.HEPower 			= 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity 			= 1.65 --HE Filler density (That's TNT density)
 	ACF.HEFrag 				= 1000 --Mean fragment number for equal weight TNT and casing
@@ -34,39 +63,31 @@ do -- ACF global vars
 	ACF.HEATBoomConvert 	= 1 / 3 -- percentage of filler that creates HE damage at detonation
 	ACF.HEATMinCrush 		= 800 -- vel where crush starts, progressively converting round to raw HE
 	ACF.HEATMaxCrush 		= 1200 -- vel where fully crushed
-	ACF.PhysMaxVel 			= 4000
-	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
-	ACF.PBase 				= 1050 --1KG of propellant produces this much KE at the muzzle, in kj
-	ACF.PScale 				= 1 --Gun Propellant power expotential
-	ACF.MVScale 			= 0.5 --Propellant to MV convertion expotential
-	ACF.PDensity 			= 1.6 --Gun propellant density (Real powders go from 0.7 to 1.6, i"m using higher densities to simulate case bottlenecking)
+	-- Debris
+	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
+	ACF.DebrisIgniteChance 	= 0.25
+	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
+	ACF.ValidDebris			= { -- Whitelist for things that can be turned into debris
+		acf_ammo = true,
+		acf_gun = true,
+		acf_gearbox = true,
+		acf_fueltank = true,
+		acf_engine = true,
+		prop_physics = true,
+		prop_vehicle_prisoner_pod = true
+	}
+	-- Weapon Accuracy
+	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
+	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
+	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
+	-- Fuel
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world
-	ACF.ElecRate 			= 1 --multiplier for electrics
+	ACF.CompFuelRate		= 27.8 --Extra multiplier for fuel consumption on servers with acf_gamemode set to 2 (Competitive)
 	ACF.TankVolumeMul 		= 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED 			= 0.458 -- li-ion energy density: kw hours / liter
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
-	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
-	ACF.DebrisIgniteChance 	= 0.25
-	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
-	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
-	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
-	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
-	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
-
-	--entities that will be ignored by ACF
-	ACF.GlobalFilter = {
-		gmod_ghost = true,
-		acf_debris = true,
-		prop_ragdoll = true,
-		gmod_wire_hologram = true,
-		starfall_hologram = true,
-		prop_vehicle_crane = true,
-		prop_dynamic = true,
-		npc_strider = true,
-		npc_dog = true
-	}
 
 	--kg/liter
 	ACF.FuelDensity = {
@@ -77,9 +98,9 @@ do -- ACF global vars
 
 	--how efficient various engine types are, higher is worse
 	ACF.Efficiency = {
-		GenericPetrol = 0.304, --kg per kw hr
-		GenericDiesel = 0.243, --up to 0.274
-		Turbine = 0.375, -- previously 0.231
+		GenericPetrol = 0.304, -- kg per kw hr
+		GenericDiesel = 0.243,
+		Turbine = 0.375,
 		Wankel = 0.335,
 		Radial = 0.4, -- 0.38 to 0.53
 		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
@@ -117,12 +138,14 @@ do -- ACF Convars/Callbacks ------------------------
 	CreateConVar("acf_healthmod", 1)
 	CreateConVar("acf_armormod", 1)
 	CreateConVar("acf_ammomod", 1)
+	CreateConVar("acf_fuelrate", 1)
 	CreateConVar("acf_spalling", 0)
 	CreateConVar("acf_gunfire", 1)
 
 	cvars.AddChangeCallback("acf_healthmod", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_armormod", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_ammomod", ACF_CVarChangeCallback)
+	cvars.AddChangeCallback("acf_fuelrate", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_spalling", ACF_CVarChangeCallback)
 	cvars.AddChangeCallback("acf_gunfire", ACF_CVarChangeCallback)
 
@@ -140,6 +163,8 @@ if SERVER then
 
 	CreateConVar("acf_enable_workshop_extras", 1, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
 	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive", 0, 2)
+	CreateConVar("acf_hepush", 1, FCVAR_ARCHIVE, "Whether or not HE pushes on entities", 0, 1)
+	CreateConVar("acf_kepush", 1, FCVAR_ARCHIVE, "Whether or not kinetic force pushes on entities", 0, 1)
 
 	-- Extra content ----------------------------
 	local Extras = GetConVar("acf_enable_workshop_extras")
@@ -152,7 +177,8 @@ if SERVER then
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
-	CreateClientConVar("ACF_MobilityRopeLinks", 1, true, true)
+	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
+	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_unparent_disabled_ents", 0, true, true, "If enabled, all entities disabled for Bad Parenting will be unparented.", 0, 1)
 	CreateClientConVar("acf_drawboxes", 0, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
@@ -203,6 +229,8 @@ timer.Simple(0, function()
 	end
 end)
 
+function switch(cases,arg) local Var = (cases[arg] or cases["default"]) return Var end
+
 -- changes here will be automatically reflected in the armor properties tool
 function ACF_CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
@@ -243,6 +271,12 @@ function ACF_CVarChangeCallback(CVar, _, New)
 	elseif CVar == "acf_ammomod" then
 		ACF.AmmoMod = 1 * math.max(New, 0.01)
 		print("Ammo Mod changed to a factor of " .. New)
+	elseif CVar == "acf_fuelrate" then
+		local Value = tonumber(New) or 1
+
+		ACF.FuelRate = math.max(Value, 0.01)
+
+		print("Fuel Rate changed to a factor of " .. Value)
 	elseif CVar == "acf_gunfire" then
 		ACF.GunfireEnabled = tobool(New)
 		local text = "disabled"

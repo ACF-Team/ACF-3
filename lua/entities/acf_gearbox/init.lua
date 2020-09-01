@@ -665,13 +665,18 @@ function ENT:UpdateOverlay(Instant)
 		return Overlay(self)
 	end
 
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
-
-	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
-		if not IsValid(self) then return end
-
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+	else
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+				self.OverlayBuffer = nil
+			if IsValid(self) and self.OverlayBuffer then
+				self:UpdateOverlay()
+			end
+		end)
 		Overlay(self)
-	end)
+
+	end
 end
 
 -- prevent people from changing bodygroup

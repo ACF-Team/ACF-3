@@ -1,23 +1,16 @@
 -- Local Vars -----------------------------------
-local ACF_HEPUSH 	= CreateConVar("acf_hepush", 1, FCVAR_NONE, "Whether or not HE pushes on entities", 0, 1)
-local ACF_KEPUSH 	= CreateConVar("acf_kepush", 1, FCVAR_NONE, "Whether or not kinetic force pushes on entities", 0, 1)
+local ACF_HEPUSH 	= GetConVar("acf_hepush")
+local ACF_KEPUSH 	= GetConVar("acf_kepush")
 local TimerCreate 	= timer.Create
 local TraceRes 		= {}
 local TraceData 	= { output = TraceRes, mask = MASK_SOLID, filter = false }
 local Check			= ACF_Check
 local HookRun		= hook.Run
-local Trace 		= ACF.Trace
-local ValidDebris 	= { -- Whitelist for things that can be turned into debris
-	acf_ammo = true,
-	acf_gun = true,
-	acf_gearbox = true,
-	acf_fueltank = true,
-	acf_engine = true,
-	prop_physics = true,
-	prop_vehicle_prisoner_pod = true
-}
+local Trace 		= ACF.TraceF
+local ValidDebris 	= ACF.ValidDebris
 local ChildDebris 	= ACF.ChildDebris
 local DragDiv		= ACF.DragDiv
+local GlobalFilter 	= ACF.GlobalFilter
 -- Local Funcs ----------------------------------
 
 local function CalcDamage(Entity, Energy, FrArea, Angle)
@@ -82,30 +75,95 @@ ACF.KEShove = Shove
 -------------------------------------------------
 
 do
+	do -- Squishy tracking
+		ACF.Squishies = ACF.Squishies or {}
+
+		local Squishies = ACF.Squishies
+
+		hook.Add("PlayerSpawnedNPC", "ACF Squishies", function(_, Ent)
+			Squishies[Ent] = true
+		end)
+
+		hook.Add("OnNPCKilled", "ACF Squishies", function(Ent)
+			Squishies[Ent] = nil
+		end)
+
+		hook.Add("PlayerSpawn", "ACF Squishies", function(Ent)
+			Squishies[Ent] = true
+		end)
+
+		hook.Add("PostPlayerDeath", "ACF Squishies", function(Ent)
+			Squishies[Ent] = nil
+		end)
+
+		hook.Add("EntityRemoved", "ACF Squishies", function(Ent)
+			Squishies[Ent] = nil
+		end)
+	end
+
 	do -- Explosions ----------------------------
-		function GetRandomPos(Entity)
-			if Entity:IsPlayer() or Entity:IsNPC() then
-				local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since the character is significantly smaller
+		local function GetRandomPos(Entity, IsChar)
+			if IsChar then
+				local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since most of the character is in the middle
 				local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
 
 				return Entity:LocalToWorld(Rand)
 			else
 				local Mesh = Entity:GetPhysicsObject():GetMesh()
 
-				if not Mesh then -- Spherical
+				if not Mesh then -- Is Make-Sphericaled
 					local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
 					local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
 
-					return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5)) -- Hit a random point in the sphere
+					return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5)) -- Attempt to a random point in the sphere
 				else
 					local Rand = math.random(3, #Mesh / 3) * 3
 					local P    = Vector(0, 0, 0)
 
 					for I = Rand - 2, Rand do P = P + Mesh[I].pos end
 
-					return Entity:LocalToWorld(P / 3)
+					return Entity:LocalToWorld(P / 3) -- Attempt to hit a point on a face of the mesh
 				end
 			end
+		end
+
+		local function BackCheck( MaxD, Last) -- Return the last entity hit
+			Trace(TraceData)
+
+			-- Hit an entity going backwards thats between the origin and the original hitpos (phased through)
+			if TraceRes.HitNonWorld and IsValid(TraceRes.Entity) and not GlobalFilter[TraceRes.Entity:GetClass()] and TraceRes.HitPos:DistToSqr(TraceData.start) < MaxD then
+				Last = TraceRes.Entity
+
+				TraceData.filter[#TraceData.filter + 1] = Last
+
+				BackCheck(MaxD, Last)
+			end
+
+			return Last
+		end
+
+		local function BackCheckInit()
+
+			local OStart  = TraceData.start
+			local OEnd	  = TraceData.endpos
+			local OEnt 	  = TraceRes.Entity
+			local OFilter = {}; for K, V in pairs(TraceData.filter) do OFilter[K] = V end
+
+			TraceData.start  = TraceRes.HitPos
+			TraceData.endpos = TraceRes.HitPos + (OStart - TraceRes.HitPos):GetNormalized() * 1000
+
+			local R = BackCheck(TraceRes.HitPos:DistToSqr(OStart))
+
+			if IsValid(R) then
+				TraceRes.Entity = R
+				--print("THANK YOU GARRY VERY COOL", OEnt, TraceRes.Entity)
+			else
+				TraceRes.Entity = OEnt
+			end
+
+			TraceData.start  = OStart
+			TraceData.endpos = OEnd
+			TraceData.filter = OFilter
 		end
 
 		function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
@@ -136,10 +194,22 @@ do
 				local Damage 	 = {}
 
 				for K, Ent in ipairs(Ents) do -- Find entities to deal damage to
-					if Ent.Exploding then -- Filter out exploding crates
+					if not Check(Ent) then -- Entity is not valid to ACF
+
+						Ents[K] = nil -- Remove from list
+						Filter[#Filter + 1] = Ent -- Filter from traces
+
+						continue
+					end
+
+					if Damage[Ent] then continue end -- A trace sent towards another prop already hit this one instead, no need to check if we can see it
+
+					if Ent.Exploding then -- Detonate explody things immediately if they're already cooking off
+
 						Ents[K] = nil
 						Filter[#Filter + 1] = Ent
 
+						--Ent:Detonate()
 						continue
 					end
 
@@ -151,52 +221,48 @@ do
 						continue
 					end
 
-					if Check(Ent) then -- ACF-valid entity
-						local Mul 		 = IsChar and 0.65 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
-						local Target 	 = GetRandomPos(Ent) -- Try to hit a random spot on the entity
-						local Displ		 = Target - Origin
+					local Target = GetRandomPos(Ent, IsChar) -- Try to hit a random spot on the entity
+					local Displ	 = Target - Origin
 
-						TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-						Trace(TraceData, true) -- Outputs to TraceRes
+					TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
+					Trace(TraceData) -- Outputs to TraceRes
 
-						if TraceRes.HitNonWorld then
-							if not TraceRes.Entity.Exploding and (TraceRes.Entity == Ent or Check(TraceRes.Entity)) then
-								Ent = TraceRes.Entity
+					if TraceRes.HitNonWorld then
 
-								if not Damaged[Ent] and not Damage[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
-									debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 255, 0), true) -- Green line for a hit trace
-									debugoverlay.BoxAngles(Ent:GetPos(), Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul, Ent:GetAngles(), 30, Color(255, 0, 0, 1))
+						BackCheckInit()
 
-									local Pos		= Ent:GetPos()
-									local Distance	= Origin:Distance(Pos)
-									local Sphere 	= math.max(4 * 3.1415 * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
-									local Area 		= math.min(Ent.ACF.Area / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
+						Ent = TraceRes.Entity
 
-									Damage[Ent] = {
-										Dist = Distance,
-										Vec  = (Pos - Origin):GetNormalized(),
-										Area = Area,
-										Index = K
-									}
+						if Check(Ent) then
+							if not Ent.Exploding and not Damage[Ent] and not Damaged[Ent] then -- Hit an entity that we haven't already damaged yet (Note: Damaged != Damage)
+								local Mul = IsChar and 0.65 or 1 -- Scale down boxes for players/NPCs because the bounding box is way bigger than they actually are
 
-									Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
-								else
-									debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(150, 150, 0)) -- Yellow line for a hit on an already damaged entity
-								end
-							else -- If check on new ent fails
-								--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(255, 0, 0)) -- Red line for a invalid ent
+								debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 255, 0), true) -- Green line for a hit trace
+								debugoverlay.BoxAngles(Ent:GetPos(), Ent:OBBMins() * Mul, Ent:OBBMaxs() * Mul, Ent:GetAngles(), 30, Color(255, 0, 0, 1))
 
-								Ents[K] = nil -- Remove from list
-								Filter[#Filter + 1] = Ent -- Filter from traces
+								local Pos		= Ent:GetPos()
+								local Distance	= Origin:Distance(Pos)
+								local Sphere 	= math.max(4 * 3.1415 * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
+								local Area 		= math.min(Ent.ACF.Area / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
+
+								Damage[Ent] = {
+									Dist = Distance,
+									Vec  = (Pos - Origin):GetNormalized(),
+									Area = Area,
+									Index = K
+								}
+
+								Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
 							end
-						else
-							-- Not removed from future damage sweeps so as to provide multiple chances to be hit
-							debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 0, 255)) -- Blue line for a miss
-						end
-					else -- Target was invalid
+						else -- If check on new ent fails
+							--debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(255, 0, 0)) -- Red line for a invalid ent
 
-						Ents[K] = nil -- Remove from list
-						Filter[#Filter + 1] = Ent -- Filter from traces
+							Ents[K] = nil -- Remove from list
+							Filter[#Filter + 1] = Ent -- Filter from traces
+						end
+					else
+						-- Not removed from future damage sweeps so as to provide multiple chances to be hit
+						debugoverlay.Line(Origin, TraceRes.HitPos, 30, Color(0, 0, 255)) -- Blue line for a miss
 					end
 				end
 
@@ -238,6 +304,67 @@ do
 				end
 
 				Power = math.max(Power - PowerSpent, 0)
+			end
+		end
+
+		local function CanSee(Target, Data)
+			local R = ACF.Trace(Data)
+
+			return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
+		end
+
+		function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
+			local Radius = Energy ^ 0.33 * 0.025 * 39.37 -- Radius in meters (Completely arbitrary stuff, scaled to have 120s have a radius of about 20m)
+			local Data = { start = Origin, endpos = true, mask = MASK_SHOT }
+
+			if Source then -- Filter out guns
+				if Source.BarrelFilter then
+					Data.filter = {}
+
+					for K, V in pairs(Source.BarrelFilter) do Data.filter[K] = V end -- Quick copy of gun barrel filter
+				else
+					Data.filter = { Source }
+				end
+			end
+
+			util.ScreenShake(Origin, Energy, 1, 0.25, Radius * 3 * 39.37 )
+
+			if Forward and Angle then -- Blast direction and angle are specified
+				Angle = math.rad(Angle * 0.5) -- Convert deg to rads
+
+				for V in pairs(ACF.Squishies) do
+					if math.acos(Forward:Dot((V:GetShootPos() - Origin):GetNormalized())) < Angle then
+						local D = V:GetShootPos():Distance(Origin)
+
+						if D / 39.37 <= Radius then
+
+							Data.endpos = V:GetShootPos() + VectorRand() * 5
+
+							if CanSee(V, Data) then
+								local Damage = Energy * 175000 * (1 / D^3)
+
+								V:TakeDamage(Damage, Inflictor, Source)
+							end
+						end
+					end
+				end
+			else -- Spherical blast
+				for V in pairs(ACF.Squishies) do
+					if CanSee(Origin, V) then
+						local D = V:GetShootPos():Distance(Origin)
+
+						if D / 39.37 <= Radius then
+
+							Data.endpos = V:GetShootPos() + VectorRand() * 5
+
+							if CanSee(V, Data) then
+								local Damage = Energy * 150000 * (1 / D^3)
+
+								V:TakeDamage(Damage, Inflictor, Source)
+							end
+						end
+					end
+				end
 			end
 		end
 	end
@@ -300,7 +427,7 @@ do
 					--This means we hit a backpack or something
 					Target.ACF.Armour = Size * 0.1 * 0.02 --Arbitrary size, most of the gear carried is pretty small
 					HitRes = CalcDamage(Target, Energy, FrArea, 0) --This is random junk, angle doesn't matter
-					Damage = HitRes.Damage * 2 --Damage is going to be fright and shrapnel, nothing much		
+					Damage = HitRes.Damage * 2 --Damage is going to be fright and shrapnel, nothing much
 				else --Just in case we hit something not standard
 					Target.ACF.Armour = Size * 0.2 * 0.02
 					HitRes = CalcDamage(Target, Energy, FrArea, 0)
@@ -569,7 +696,7 @@ do
 				-- Ricochet distribution center
 				local sigmoidCenter = Bullet.DetonatorAngle or ( Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100 )
 
-				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm 
+				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
 				local ricoProb = math.Clamp( 1 / (1 + math.exp( (Angle - sigmoidCenter) / -4) ), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1 )
 
 				-- Checking for ricochet
@@ -647,4 +774,3 @@ do
 		end
 	end
 end
-

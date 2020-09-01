@@ -3,7 +3,7 @@
 -- Local Funcs ----------------------------------
 -- These functions are used within this file and made global at the end
 
-local ColGroupFilter = {COLLISION_GROUP_DEBRIS = true, COLLISION_GROUP_DEBRIS_TRIGGER = true}
+local ColGroupFilter = {[1] = true, [2] = true}
 
 local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
@@ -65,6 +65,12 @@ local function GetEnts(Ent)
 		GetAllChildren(K, Pare)
 	end
 
+	for K in pairs(Phys) do -- Go through the all physical ents (There's probably less of those than the parented ones)
+		if Pare[K] then -- Remove them from parented table
+			Pare[K] = nil
+		end
+	end
+
 	return Phys, Pare
 end
 -------------------------------------------------
@@ -86,38 +92,46 @@ function ACF_CalcMassRatio(Ent, Tally)
 	local Time     = CurTime()
 
 	-- Tally Vars
-	local Power    = 0
-	local Fuel     = 0
-	local PhysN    = 0
-	local ParN 	   = 0
-	local ConN	   = 0
+	local Power = 0
+	local Fuel  = 0
+	local PhysN = 0
+	local ParN 	= 0
+	local OthN  = 0
+	local ConN	= 0
 
 	local Physical, Parented = GetEnts(Ent)
+	local Constraints = {}
 
 	for K in pairs(Physical) do
-		if Tally then
-			local Class = K:GetClass()
+		local Phys = K:GetPhysicsObject()
 
-			if Class == "acf_engine" then
-				Power = Power + K.peakkw * 1.34
-			elseif Class == "acf_fueltank" then
-				Fuel = Fuel + K.Capacity
-			end
+		if not IsValid(Phys) then
+			Physical[K] = nil
 
-			if K.Constraints then
-				for _, Con in pairs(K.Constraints) do
-					if IsValid(Con) and Con.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
-						ConN = ConN + 1
+			OthN = OthN + 1
+		else
+			if Tally then
+				local Class = K:GetClass()
+
+				if Class == "acf_engine" then
+					Power = Power + K.peakkw * 1.34
+				elseif Class == "acf_fueltank" then
+					Fuel = Fuel + K.Capacity
+				end
+
+				if K.Constraints then -- Tally up constraints
+					for _, Con in pairs(K.Constraints) do
+						if IsValid(Con) and Con.Type ~= "NoCollide" and not Constraints[Con] then -- NoCollides aren't a real constraint
+							Constraints[Con] = true
+							ConN = ConN + 1
+						end
 					end
 				end
+
+				PhysN = PhysN + 1
 			end
 
-			PhysN = PhysN + 1
-		end
 
-		local Phys = K:GetPhysicsObject() -- This should always exist, but just in case
-
-		if IsValid(Phys) then
 			local Mass = Phys:GetMass()
 
 			TotMass  = TotMass + Mass
@@ -130,23 +144,25 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 
 	for K in pairs(Parented) do
-		if Physical[K] then continue end -- Skip overlaps
-
-		if Tally then
-			local Class = K:GetClass()
-
-			if Class == "acf_engine" then
-				Power = Power + K.peakkw * 1.34
-			elseif Class == "acf_fueltank" then
-				Fuel = Fuel + K.Capacity
-			end
-
-			ParN = ParN + 1
-		end
-
 		local Phys = K:GetPhysicsObject()
 
-		if IsValid(Phys) then
+		if not IsValid(Phys) then
+			Physical[K] = nil
+
+			OthN = OthN + 1
+		else
+			if Tally then
+				local Class = K:GetClass()
+
+				if Class == "acf_engine" then
+					Power = Power + K.peakkw * 1.34
+				elseif Class == "acf_fueltank" then
+					Fuel = Fuel + K.Capacity
+				end
+
+				ParN = ParN + 1
+			end
+
 			TotMass = TotMass + Phys:GetMass()
 
 			if ColGroupFilter[K:GetCollisionGroup()] then
@@ -162,15 +178,13 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 
 	for K in pairs(Parented) do
-		if Physical[K] then continue end -- Skip overlaps
-
 		K.acfphystotal      = PhysMass
 		K.acftotal          = TotMass
 		K.acflastupdatemass = Time
 	end
 
 	if Tally then
-		return Power, Fuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():Nick()
+		return Power, Fuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():GetName(), OthN
 	end
 end
 

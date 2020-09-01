@@ -31,14 +31,24 @@ function Round.convert(_, PlayerData)
 
 	PlayerData, Data, ServerData, GUIData = ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
 
-	Data.ProjMass = Data.FrArea * (Data.ProjLength * 7.9 / 1000)  --Volume of the projectile as a cylinder * density of steel
-	Data.ShovePower = 0.2
-	Data.PenArea = Data.FrArea ^ ACF.PenAreaMod
-	Data.DragCoef = (Data.FrArea / 10000) / Data.ProjMass
-	Data.LimitVel = 1000 --Most efficient penetration speed in m/s
+	local SubCaliberRatio = 0.375 -- Ratio of projectile to gun caliber
+	local Area = 3.1416 * (Data.Caliber * 0.5 * SubCaliberRatio) ^ 2
+
+	local DartMass  = (Area / 1.5) * (Data.ProjLength * 7.9 / 1000) -- Volume of the projectile as a cylinder * density of steel
+
+	local Cylinder  = (3.1416 * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
+	local Hole		= Area * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
+	local SabotMass = (Cylinder - Hole) * 2.7 * 0.65 * 0.001 -- Aluminum sabot
+
+	Data.ProjMass 	 = DartMass
+	Data.ShovePower  = 0.2
+	Data.PenArea 	 = Area ^ ACF.PenAreaMod
+	Data.DragCoef 	 = (Area / 10000) / Data.ProjMass
+	Data.LimitVel 	 = 950 --Most efficient penetration speed in m/s
 	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet = 65 --Base ricochet angle
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
+	Data.Ricochet 	 = 80 --Base ricochet angle
+	Data.MuzzleVel 	 = ACF_MuzzleVelocity(Data.PropMass, DartMass + SabotMass)
+	Data.CartMass 	 = Data.PropMass + DartMass + SabotMass
 
 	--Only the crates need this part
 	if SERVER then
@@ -194,11 +204,12 @@ function Round.guiupdate(Panel)
 	RunConsoleCommand("acfmenu_data4", Data.ProjLength) --And Data4 total round mass
 	RunConsoleCommand("acfmenu_data10", Data.Tracer)
 
+	acfmenupanel:AmmoUpdate()
 	acfmenupanel:AmmoSlider("PropLength", Data.PropLength, Data.MinPropLength, Data.MaxTotalLength, 3, "Propellant Length", "Propellant Mass : " .. (math.floor(Data.PropMass * 1000)) .. " g") --Propellant Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoSlider("ProjLength", Data.ProjLength, Data.MinProjLength, Data.MaxTotalLength, 3, "Penetrator Length", "Projectile Mass : " .. (math.floor(Data.ProjMass * 1000)) .. " g") --Projectile Length Slider (Name, Min, Max, Decimals, Title, Desc)
 	acfmenupanel:AmmoCheckbox("Tracer", "Tracer : " .. (math.floor(Data.Tracer * 10) / 10) .. "cm\n", "") --Tracer checkbox (Name, Title, Desc)
 	acfmenupanel:CPanelText("Desc", ACF.RoundTypes[PlayerData.Type].desc) --Description (Name, Desc)
-	acfmenupanel:CPanelText("LengthDisplay", "Round Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
+	acfmenupanel:CPanelText("LengthDisplay", "Cartridge Length : " .. (math.floor((Data.PropLength + Data.ProjLength + Data.Tracer) * 100) / 100) .. "/" .. Data.MaxTotalLength .. " cm") --Total round length (Name, Desc)
 	acfmenupanel:CPanelText("VelocityDisplay", "Muzzle Velocity : " .. math.floor(Data.MuzzleVel * ACF.Scale) .. " m\\s") --Proj muzzle velocity (Name, Desc)
 
 	local R1V, R1P = ACF_PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)

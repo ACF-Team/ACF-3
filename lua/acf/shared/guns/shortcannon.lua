@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("SC", {
-	spread = 0.2,
+	spread = 0.16,
 	name = "Short-Barrel Cannon",
 	desc = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
 	muzzleflash = "cannon_muzzleflash_noscale",

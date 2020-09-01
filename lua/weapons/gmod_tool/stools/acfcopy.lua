@@ -67,24 +67,24 @@ function TOOL:RightClick(trace)
 	end
 
 	if (ent:GetClass() == "acf_ammo") then
-		local ArgsTable = {}
 		-- zero out the un-needed tool trace information
-		ArgsTable[1] = pl
-		ArgsTable[2] = 0
-		ArgsTable[3] = 0
-		ArgsTable[4] = 0 -- ArgsTable[4] isnt actually used anywhere within acf_ammo ENT:Update() and ENT:CreateAmmo(), just passed around?
-		-- build gear data
-		ArgsTable[5] = ent.RoundId
-		ArgsTable[6] = ent.RoundType
-		ArgsTable[7] = ent.RoundPropellant
-		ArgsTable[8] = ent.RoundProjectile
-		ArgsTable[9] = ent.RoundData5
-		ArgsTable[10] = ent.RoundData6
-		ArgsTable[11] = ent.RoundData7
-		ArgsTable[12] = ent.RoundData8
-		ArgsTable[13] = ent.RoundData9
-		ArgsTable[14] = ent.RoundData10
-		self.AmmoCopyData = ArgsTable
+		self.AmmoCopyData = {
+			pl,
+			0,
+			0,
+			-- build ammo data
+			ent.RoundId,
+			ent.RoundType,
+			ent.RoundPropellant,
+			ent.RoundProjectile,
+			ent.RoundData5,
+			ent.RoundData6,
+			ent.RoundData7,
+			ent.RoundData8,
+			ent.RoundData9,
+			ent.RoundData10,
+		}
+
 		ACF_SendNotify(pl, true, "Ammo copied successfully!")
 	end
 

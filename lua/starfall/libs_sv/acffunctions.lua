@@ -48,6 +48,11 @@ local function isGun ( ent )
 	if ( ent:GetClass() == "acf_gun" ) then return true else return false end
 end
 
+local function isRack ( ent )
+	if not validPhysics( ent ) then return false end
+	if ( ent:GetClass() == "acf_rack" ) then return true else return false end
+end
+
 local function isAmmo ( ent )
 	if not validPhysics( ent ) then return false end
 	if ( ent:GetClass() == "acf_ammo" ) then return true else return false end
@@ -1956,9 +1961,21 @@ function ents_methods:acfCaliber ()
 
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
-	if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
+	if not ( isAmmo( this ) or isGun( this ) or isRack( this )) then return 0 end
 	if restrictInfo( this ) then return 0 end
-	return ( this.Caliber or 0 ) * 10
+
+	if not this.Caliber then 		-- If not a gun or ammo crate
+		if not this.BulletData then return 0 end	-- If not a a rack
+		if not this.BulletData.Id then return 0 end
+
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+		if not GunData then return 0 end
+
+		return GunData.caliber * 10 or 0
+	end
+
+	return this.Caliber * 10 or 0
 end
 
 --- Returns the muzzle velocity of the ammo in a crate or gun
@@ -2099,6 +2116,62 @@ function ents_methods:acfDragCoef()
 	if not ( isAmmo( this ) or isGun( this ) ) then return 0 end
 	if restrictInfo( this ) then return 0 end
 	return ( this.BulletData[ "DragCoef" ] or 0 ) / ACF.DragDiv
+end
+
+--- Returns the fin multiplier of the ammo in a crate or launcher
+-- @server
+function ents_methods:acfFinMul()
+	checktype( self, ents_metatable )
+	local this = unwrap( self )
+
+	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
+
+	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
+	if restrictInfo( this ) then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+
+	if not GunData then return 0 end
+	if not GunData.round then return 0 end
+
+	return ( GunData.round.finmul or 0 )
+end
+
+-- Returns the weight of the missile in a crate or rack
+-- @server
+function ents_methods:acfMissileWeight()
+	checktype( self, ents_metatable )
+	local this = unwrap( self )
+
+	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
+
+	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
+	if restrictInfo( this ) then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	if not GunData then return 0 end
+
+	return ( GunData.weight or 0 )
+end
+
+-- Returns the weight of the missile in a crate or rack
+-- @server
+function ents_methods:acfMissileLength()
+	checktype( self, ents_metatable )
+	local this = unwrap( self )
+
+	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
+
+	if not ( isAmmo( this ) or isRack( this ) ) then return 0 end
+	if restrictInfo( this ) then return 0 end
+	if not this.BulletData.Id then return 0 end
+
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	if not GunData then return 0 end
+
+	return ( GunData.length or 0 )
 end
 
 -- [ Armor Functions ] --

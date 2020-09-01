@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("HW", {
-	spread = 0.12,
+	spread = 0.1,
 	name = "Howitzer",
 	desc = "Howitzers are limited to rather mediocre muzzle velocities, but can fire extremely heavy projectiles with large useful payload capacities.",
 	muzzleflash = "howie_muzzleflash_noscale",

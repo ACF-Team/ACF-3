@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("SA", {
-	spread = 1.1,
+	spread = 0.12,
 	name = "Semiautomatic Cannon",
 	desc = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
 	muzzleflash = "semi_muzzleflash_noscale",

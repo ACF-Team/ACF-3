@@ -19,6 +19,9 @@ TOOL.ClientConVar[ "data7" ] = 0
 TOOL.ClientConVar[ "data8" ] = 0
 TOOL.ClientConVar[ "data9" ] = 0
 TOOL.ClientConVar[ "data10" ] = 0
+TOOL.ClientConVar[ "data11" ] = 24
+TOOL.ClientConVar[ "data12" ] = 24
+TOOL.ClientConVar[ "data13" ] = 24
 
 cleanup.Register( "acfmenu" )
 
@@ -48,19 +51,84 @@ if CLIENT then
 
 	end
 
-	function TOOL:DrawHUD()
-		if DrawBoxes:GetBool() then
-			local Ent = LocalPlayer():GetEyeTrace().Entity
+	-- "Hitbox" colors
+	local Sensitive      = Color(255, 0, 0, 50)
+	local NotSoSensitive = Color(255, 255, 0, 50)
 
-			if IsValid(Ent) and Ent.HitBoxes then
-				cam.Start3D()
-				render.SetColorMaterial()
-				for _, Tab in pairs(Ent.HitBoxes) do
-					render.DrawBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Color(214, 160, 190, 50) or Color(160, 190, 215, 50))
-				end
-				cam.End3D()
+	-- Ammo overlay colors
+	local Blue   = Color(0, 127, 255, 65)
+	local Orange = Color(255, 127, 0, 65)
+	local Green  = Color(0, 255, 0, 65)
+	local Red    = Color(255,0,0,65)
+
+	function TOOL:DrawHUD()
+		if not DrawBoxes:GetBool() then return end
+
+		local Trace = LocalPlayer():GetEyeTrace()
+		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
+		local Ent = Trace.Entity
+
+		if not IsValid(Ent) then return end
+		if Distance > 65536 then return end
+
+		cam.Start3D()
+		render.SetColorMaterial()
+
+		if Ent.HitBoxes then -- Draw "hitboxes"
+			for _, Tab in pairs(Ent.HitBoxes) do
+				render.DrawWireframeBox(Ent:LocalToWorld(Tab.Pos), Ent:LocalToWorldAngles(Tab.Angle), Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
 			end
 		end
+
+		if not Ent.IsScalable then cam.End3D() return end
+		if not Ent.HasData then
+			if Ent.HasData == nil and Ent.RequestAmmoData then
+				Ent:RequestAmmoData()
+			end
+
+			cam.End3D()
+			return
+		end
+
+		local FinalAmmo = Ent.HasBoxedAmmo and math.floor(Ent.Ammo / Ent.MagSize) or Ent.Ammo
+
+		if FinalAmmo > 0 and Ent.FitPerAxis then
+			local RoundsDisplay = 0
+			local RoundAngle = Ent:LocalToWorldAngles(Ent.LocalAng)
+			local StartPos = ((Ent.FitPerAxis.x - 1) * (Ent.RoundSize.x + Ent.Spacing) * RoundAngle:Forward()) +
+				((Ent.FitPerAxis.y - 1) * (Ent.RoundSize.y + Ent.Spacing) * RoundAngle:Right()) +
+				((Ent.FitPerAxis.z - 1) * (Ent.RoundSize.z + Ent.Spacing) * RoundAngle:Up())
+
+			if not Ent.BulkDisplay then
+				for RX = 1, Ent.FitPerAxis.x do
+					for RY = 1, Ent.FitPerAxis.y do
+						for RZ = 1, Ent.FitPerAxis.z do
+							local LocalPos = ((RX - 1) * (Ent.RoundSize.x + Ent.Spacing) * -RoundAngle:Forward()) +
+								((RY - 1) * (Ent.RoundSize.y + Ent.Spacing) * -RoundAngle:Right()) +
+								((RZ - 1) * (Ent.RoundSize.Z + Ent.Spacing) * -RoundAngle:Up())
+
+							if RoundsDisplay < FinalAmmo then
+								local C = Ent.IsRound and Blue or Ent.HasBoxedAmmo and Green or Orange
+
+								RoundsDisplay = RoundsDisplay + 1
+
+								render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (StartPos / 2) + LocalPos, RoundAngle, -Ent.RoundSize / 2, Ent.RoundSize / 2, C)
+							end
+
+							if RoundsDisplay == FinalAmmo then break end
+						end
+					end
+				end
+			else -- Basic bitch box that scales according to ammo, only for bulk display
+				local AmmoPerc = Ent.Ammo / Ent.Capacity
+				local SizeAdd = Vector(Ent.Spacing, Ent.Spacing, Ent.Spacing) * Ent.FitPerAxis
+				local BulkSize = (Ent.FitPerAxis * Ent.RoundSize * Vector(1, AmmoPerc, 1)) + SizeAdd
+
+				render.DrawWireframeBox(Ent:LocalToWorld(Ent:OBBCenter()) + (RoundAngle:Right() * (Ent.FitPerAxis.y * Ent.RoundSize.y) * 0.5 * (1 - AmmoPerc)),RoundAngle,-BulkSize / 2, BulkSize / 2, Red)
+			end
+		end
+
+		cam.End3D()
 	end
 end
 
@@ -87,13 +155,15 @@ function TOOL:LeftClick(Trace)
 	local ArgList = list.Get("ACFCvars")
 	local ArgTable = {
 		Player,
-		Trace.HitPos + Trace.HitNormal * 32,
+		Trace.HitPos + Trace.HitNormal * 96,
 		Trace.HitNormal:Angle():Up():Angle(),
 	}
 
 	-- Reading the list packaged with the ent to see what client CVar it needs
 	for K, V in ipairs(ArgList[Class]) do
-		ArgTable[K + 3] = self:GetClientInfo(V)
+		local Info = self:GetClientInfo(V)
+
+		ArgTable[K + 3] = Info ~= "" and Info or false
 	end
 
 	if Trace.Entity:GetClass() == Class and Trace.Entity.CanUpdate then

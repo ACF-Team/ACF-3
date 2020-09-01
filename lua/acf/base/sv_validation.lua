@@ -37,7 +37,7 @@ local function IsLegal(Entity)
 	end
 	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
 	if Entity:GetNoDraw() then return false, "Not drawn", "ACF entities must be drawn at all times." end -- Tooltip is useless here since clients cannot see the entity.
-	if Entity:GetSolid() ~= SOLID_VPHYSICS then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
+	if not Entity:IsSolid() then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 	if Phys:GetMass() < Entity.ACF.LegalMass then -- You can make it heavier than the legal mass if you want
 		Phys:SetMass(Entity.ACF.LegalMass)
@@ -146,27 +146,33 @@ function ACF_Activate(Entity, Recalc)
 	if not IsValid(PhysObj) then return end
 
 	Entity.ACF = Entity.ACF or {}
-	Entity.ACF.PhysObj = Entity:GetPhysicsObject()
+	Entity.ACF.PhysObj = PhysObj
 
 	if Entity.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
 
-	local Count = PhysObj:GetMesh() and #PhysObj:GetMesh() or nil
+	-- TODO: Figure out what are the 6.45 and 0.52505066107 multipliers for
+	local SurfaceArea = PhysObj:GetSurfaceArea()
 
-	if Count and Count > 100 then
-		Entity.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
-	else
-		local Size = Entity.OBBMaxs(Entity) - Entity.OBBMins(Entity)
+	if SurfaceArea then -- Normal collisions
+		Entity.ACF.Area = SurfaceArea * 6.45 * 0.52505066107
+	elseif PhysObj:GetMesh() then -- Box collisions
+		local Size = Entity:OBBMaxs() - Entity:OBBMins()
 
-		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45 --^ 1.15
+		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+	else -- Spherical collisions
+		local Radius = Entity:BoundingRadius()
+
+		Entity.ACF.Area = 4 * 3.1415 * Radius * Radius * 6.45
 	end
 
 	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
+
 	local Area = Entity.ACF.Area
 	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
-	local Armour = ACF_CalcArmor(Area, Ductility, Entity:GetPhysicsObject():GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
+	local Armour = ACF_CalcArmor(Area, Ductility, PhysObj:GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
 	local Health = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
 	local Percent = 1
 

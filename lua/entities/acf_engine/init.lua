@@ -98,18 +98,25 @@ end
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink	  = ACF.GetClassLink
+local ClassLink   = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local Engines	  = ACF.Classes.Engines
 local EngineTypes = ACF.Classes.EngineTypes
 local Inputs      = ACF.GetInputActions("acf_engine")
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local Round		  = math.Round
-local max		  = math.max
+local Round       = math.Round
+local max         = math.max
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
+local Gamemode    = GetConVar("acf_gamemode")
+
+local function GetEfficiency(Entity)
+	local CompetitiveMult = Gamemode:GetInt() == 2 and ACF.CompFuelRate or 1
+
+	return ACF.Efficiency[Entity.EngineType] * CompetitiveMult
+end
 
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
@@ -128,14 +135,12 @@ local function GetNextFuelTank(Engine)
 	local Start = Select
 
 	repeat
-		if Select.Active and Select.Fuel > 0 then
-			return Select
-		end
+		if Select:CanConsume() then return Select end
 
 		Select = next(Engine.FuelTanks, Select) or next(Engine.FuelTanks)
 	until Select == Start
 
-	return (Select.Active and Select.Fuel > 0) and Select or nil
+	return Select:CanConsume() and Select or nil
 end
 
 local function CheckDistantFuelTanks(Engine)
@@ -195,9 +200,6 @@ local function SetActive(Entity, Value)
 			Entity:CalcRPM()
 		end)
 
-		Entity:UpdateOverlay()
-		Entity:UpdateOutputs()
-
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
 			if not IsValid(Entity) then return end
 
@@ -216,11 +218,11 @@ local function SetActive(Entity, Value)
 			Entity.Sound = nil
 		end
 
-		Entity:UpdateOverlay()
-		Entity:UpdateOutputs()
-
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
+
+	Entity:UpdateOverlay()
+	Entity:UpdateOutputs()
 end
 
 --===============================================================================================--
@@ -452,18 +454,14 @@ function ENT:Disable()
 end
 
 function ENT:UpdateOutputs()
-	if TimerExists("ACF Output Buffer" .. self:EntIndex()) then return end
+	if not IsValid(self) then return end
 
-	TimerCreate("ACF Output Buffer" .. self:EntIndex(), 0.1, 1, function()
-		if not IsValid(self) then return end
+	local Power = self.Torque * self.FlyRPM / 9548.8
 
-		local Power = self.Torque * self.FlyRPM / 9548.8
-
-		WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
-		WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
-		WireLib.TriggerOutput(self, "Power", math.floor(Power))
-		WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
-	end)
+	WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
+	WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
+	WireLib.TriggerOutput(self, "Power", math.floor(Power))
+	WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
 end
 
 local function Overlay(Ent)
@@ -487,13 +485,18 @@ function ENT:UpdateOverlay(Instant)
 		return Overlay(self)
 	end
 
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
-
-	TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
-		if not IsValid(self) then return end
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+	else
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) and self.OverlayBuffer then
+				self.OverlayBuffer = nil
+				self:UpdateOverlay()
+			end
+		end)
 
 		Overlay(self)
-	end)
+	end
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -615,7 +618,7 @@ function ENT:GetConsumption(Throttle, RPM)
 		Consumption = Load * self.FuelUse * (RPM / self.PeakKwRPM) / self.FuelTank.FuelDensity
 	end
 
-	return Round(Consumption, 2)
+	return Consumption
 end
 
 function ENT:CalcRPM()
@@ -633,10 +636,8 @@ function ENT:CalcRPM()
 
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
-		FuelTank.Fuel = max(FuelTank.Fuel - Consumption, 0)
-		FuelTank:UpdateMass()
-		FuelTank:UpdateOverlay()
-	else
+		FuelTank:Consume(Consumption)
+	elseif Gamemode:GetInt() ~= 0 then -- Sandbox gamemode servers will require no fuel
 		SetActive(self, false)
 
 		self.FuelUsage = 0

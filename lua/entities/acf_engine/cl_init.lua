@@ -5,6 +5,10 @@ local HideInfo = ACF.HideInfoBubble
 language.Add("Undone_acf_engine", "Undone ACF Engine")
 language.Add("SBoxLimit__acf_engine", "You've reached the ACF Engines limit!")
 
+function ENT:Initialize()
+	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
+end
+
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 	self:DoNormalDraw(false, HideInfo())
@@ -53,7 +57,7 @@ function ACFEngineGUICreate(Table)
 	acfmenupanel:CPanelText("FuelType", "\nFuel Type : " .. Table.fuel)
 
 	if Table.fuel == "Electric" then
-		local cons = ACF.ElecRate * peakkw / ACF.Efficiency[Table.enginetype]
+		local cons = ACF.FuelRate * peakkw / ACF.Efficiency[Table.enginetype]
 		acfmenupanel:CPanelText("FuelCons", "Peak energy use : " .. math.Round(cons, 1) .. " kW / " .. math.Round(0.06 * cons, 1) .. " MJ/min")
 	elseif Table.fuel == "Multifuel" then
 		local petrolcons = ACF.FuelRate * ACF.Efficiency[Table.enginetype] * peakkw / (60 * ACF.FuelDensity.Petrol)

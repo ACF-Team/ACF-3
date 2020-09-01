@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("MG", {
-	spread = 0.24,
+	spread = 0.16,
 	name = "Machinegun",
 	desc = "Machineguns are light guns that fire equally light bullets at a fast rate.",
 	muzzleflash = "mg_muzzleflash_noscale",

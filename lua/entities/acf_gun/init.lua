@@ -5,26 +5,27 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF_RECOIL  = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local CheckLegal  = ACF_CheckLegal
-local Shove		  = ACF.KEShove
+local ACF_RECOIL   = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
+local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local CheckLegal   = ACF_CheckLegal
+local Shove        = ACF.KEShove
+local Overpressure = ACF.Overpressure
 local Weapons	  = ACF.Classes.Weapons
 local Inputs      = ACF.GetInputActions("acf_gun")
-local TraceRes    = {} -- Output for traces
-local TraceData	  = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
-local Trace		  = util.TraceLine
-local TimerExists = timer.Exists
-local TimerCreate = timer.Create
-local HookRun	  = hook.Run
-local EMPTY		  = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local TraceRes     = {} -- Output for traces
+local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
+local Trace        = util.TraceLine
+local TimerExists  = timer.Exists
+local TimerCreate  = timer.Create
+local HookRun      = hook.Run
+local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- Replace with CFrame as soon as it's available
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
 	for Crate in pairs(Entity.Crates) do
-		if Crate.Load and Crate.Ammo > 0 then
+		if Crate:CanConsume() then
 			Total = Total + Crate.Ammo
 		end
 	end
@@ -238,7 +239,7 @@ do -- Metamethods --------------------------------
 
 			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target.Load then
+					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target:CanConsume() then
 						Weapon:Load()
 					end
 				end)
@@ -267,7 +268,7 @@ do -- Metamethods --------------------------------
 			gmod_wire_expression2 = true,
 			gmod_wire_joystick_multi = true,
 			gmod_wire_pod = function(_, Input)
-				if Input.Pod then
+				if IsValid(Input.Pod) then
 					return Input.Pod:GetDriver()
 				end
 			end,
@@ -289,7 +290,7 @@ do -- Metamethods --------------------------------
 		WireTable.gmod_wire_joystick_multi	= WireTable.gmod_wire_pod
 		WireTable.gmod_wire_expression2		= function(This, Input, Checked)
 			for _, V in pairs(Input.Inputs) do
-				if V.Src and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
+				if IsValid(V.Src) and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
 					Checked[V.Src] = true -- We don't want to start an infinite loop
 
 					return FindUser(This, V.Src, Checked)
@@ -298,7 +299,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:GetUser(Input)
-			if not Input then return self.Owner end
+			if not IsValid(Input) then return self.Owner end
 
 			local User = FindUser(self, Input)
 
@@ -376,7 +377,7 @@ do -- Metamethods --------------------------------
 
 	do -- Shooting ------------------------------
 		function ENT:BarrelCheck(Offset)
-			if not CPPI then return self:LocalToWorld(self.Muzzle) end
+			if not CPPI then return self:LocalToWorld(self.Muzzle) + Offset end
 
 			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
@@ -457,6 +458,12 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
+			local Energy = ACF_Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
+
+			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
+				Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
+			end
+
 			if self.MagSize then -- Mag-fed/Automatically loaded
 				self.CurrentShot = self.CurrentShot - 1
 
@@ -510,13 +517,13 @@ do -- Metamethods --------------------------------
 			local Start  = Select
 
 			repeat
-				if Select.Load then return Select end -- Return select
+				if Select:CanConsume() then return Select end -- Return select
 
 				Select = next(Gun.Crates, Select) or next(Gun.Crates)
 			until
 				Select == Start
 
-			return Select.Load and Select
+			return Select:CanConsume() and Select or nil
 		end
 
 		function ENT:Unload(Reload)
@@ -554,7 +561,7 @@ do -- Metamethods --------------------------------
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
 				local BulletData = Crate.BulletData
-				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime)
+				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime * 0.666) + (BulletData.ProjLength * ACF.LengthToTime * 0.333)) -- Mass contributes 2/3 of the reload time with length contributing 1/3
 
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time
@@ -689,7 +696,7 @@ do -- Metamethods --------------------------------
 				end
 
 				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-					if Crate.Load then
+					if Crate:CanConsume() then
 						CrateAmmo = CrateAmmo + Crate.Ammo
 					end
 				end
@@ -703,13 +710,18 @@ do -- Metamethods --------------------------------
 				return Overlay(self)
 			end
 
-			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
-
-			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
-				if not IsValid(self) then return end
+			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+				self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+			else
+				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+					if IsValid(self) and self.OverlayBuffer then
+						self.OverlayBuffer = nil
+						self:UpdateOverlay()
+					end
+				end)
 
 				Overlay(self)
-			end)
+			end
 		end
 	end -----------------------------------------
 

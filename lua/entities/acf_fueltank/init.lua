@@ -8,12 +8,13 @@ include("shared.lua")
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink	  = ACF.GetClassLink
+local ClassLink   = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
 local FuelTanks	  = ACF.Classes.FuelTanks
 local FuelTypes	  = ACF.Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
 local Inputs      = ACF.GetInputActions("acf_fueltank")
+local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Wall		  = 0.03937 --wall thickness in inches (1mm)
@@ -250,7 +251,7 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	local ExplodeChance = (1 - (self.Fuel / self.Capacity)) ^ 0.75 --chance to explode from fumes in tank, less fuel = more explodey
 
 	--it's gonna blow
-	if math.Rand(0, 1) < (ExplodeChance + Ratio) then
+	if math.random() < (ExplodeChance + Ratio) then
 		if hook.Run("ACF_FuelExplode", self) == false then return HitRes end
 
 		self.Inflictor = Inflictor
@@ -260,7 +261,9 @@ function ENT:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Type)
 	else --spray some fuel around
 		self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
 
-		self:NextThink(CurTime() + 0.1)
+		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
+
+		self:NextThink(ACF.CurTime + 0.1)
 	end
 
 	return HitRes
@@ -288,19 +291,11 @@ function ENT:Detonate()
 end
 
 function ENT:Enable()
-	if self.Inputs.Active.Path then
-		self.Active = tobool(self.Inputs.Active.Value)
-	else
-		self.Active = true
-	end
-
-	self:UpdateOverlay()
+	WireLib.TriggerOutput(self, "Activated", self:CanConsume() and 1 or 0)
 end
 
 function ENT:Disable()
-	self.Active = false
-
-	self:UpdateOverlay()
+	WireLib.TriggerOutput(self, "Activated", 0)
 end
 
 function ENT:Link(Target)
@@ -380,8 +375,8 @@ do -- Overlay Update
 				Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
 			else
 				local Liters = math.Round(Ent.Fuel, 1)
-				local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
 
+				local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
 				Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 			end
 
@@ -398,13 +393,17 @@ do -- Overlay Update
 			return Overlay(self)
 		end
 
-		if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then return end
-
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 0.5, 1, function()
-			if not IsValid(self) then return end
-
-			Overlay(self)
+	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
+		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+	else
+		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
+			if IsValid(self) and self.OverlayBuffer then
+				self.OverlayBuffer = nil
+				self:UpdateOverlay()
+			end
 		end)
+
+		Overlay(self)
 	end
 end
 
@@ -436,58 +435,62 @@ function ENT:TriggerInput(Name, Value)
 	end
 end
 
+function ENT:CanConsume()
+	if self.Disabled then return false end
+	if not self.Active then return false end
+
+	return self.Fuel > 0
+end
+
+function ENT:Consume(Amount)
+	self.Fuel = math.Clamp(self.Fuel - Amount, 0, self.Capacity)
+
+	self:UpdateOverlay()
+	self:UpdateMass()
+
+	WireLib.TriggerOutput(self, "Fuel", self.Fuel)
+	WireLib.TriggerOutput(self, "Activated", self:CanConsume() and 1 or 0)
+end
+
 function ENT:Think()
-	self:NextThink(CurTime() + 1)
+	self:NextThink(ACF.CurTime + 1)
 
 	if self.Leaking > 0 then
-		self.Fuel = math.max(self.Fuel - self.Leaking, 0)
+		self:Consume(self.Leaking)
+
 		self.Leaking = math.Clamp(self.Leaking - (1 / math.max(self.Fuel, 1)) ^ 0.5, 0, self.Fuel) --fuel tanks are self healing
 
-		self:NextThink(CurTime() + 0.25)
+		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
-		self:UpdateMass()
-		self:UpdateOverlay()
+		self:NextThink(ACF.CurTime + 0.25)
 	end
 
 	--refuelling
-	if self.Active and self.SupplyFuel and self.Fuel > 0 then
-		local MaxDist = ACF.RefillDistance * ACF.RefillDistance
-		local SelfPos = self:GetPos()
+	if self.SupplyFuel and self:CanConsume() then
+		local DeltaTime = ACF.CurTime - self.LastThink
+		local Position = self:GetPos()
 
-		for Tank in pairs(ActiveTanks) do
-			if self.FuelType == Tank.FuelType and not Tank.SupplyFuel then
-				local Distance = SelfPos:DistToSqr(Tank:GetPos())
+		for Tank in pairs(ACF.FuelTanks) do
+			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
+				local Exchange = math.min(DeltaTime * ACF.RefillSpeed * ACF.FuelRate / 1750, self.Fuel, Tank.Capacity - Tank.Fuel)
 
-				if Distance <= MaxDist and Tank.Capacity - Tank.Fuel > 0.1 then
-					local RefillRate = self.FuelType == "Electric" and ACF.ElecRate or ACF.FuelRate
-					local DeltaTime = CurTime() - self.LastThink
-					local CurrentFuel = Tank.Capacity - Tank.Fuel
-					local Exchange = math.min(DeltaTime * ACF.RefillSpeed * RefillRate / 1750, self.Fuel, CurrentFuel)
+				if hook.Run("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
 
-					self.Fuel = self.Fuel - Exchange
-					Tank.Fuel = Tank.Fuel + Exchange
+				self:Consume(Exchange)
+				Tank:Consume(-Exchange)
 
-					if not Tank.Active then
-						Tank:TriggerInput("Active", Tank.Inputs.Active.Value or 1)
-					end
-
-					Tank:UpdateMass()
-					Tank:UpdateOverlay()
-
-					if Tank.FuelType == "Electric" then
-						Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
-					elseif self.SupplyFuel == 1 then
-						Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
-					end
+				if self.FuelType == "Electric" then
+					self:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
+					Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
+				else
+					self:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
+					Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
 				end
 			end
 		end
-
-		self:UpdateMass()
-		self:UpdateOverlay()
 	end
 
-	self.LastThink = CurTime()
+	self.LastThink = ACF.CurTime
 
 	return true
 end

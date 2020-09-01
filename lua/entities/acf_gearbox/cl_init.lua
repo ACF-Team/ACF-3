@@ -5,6 +5,10 @@ local HideInfo = ACF.HideInfoBubble
 language.Add("Undone_acf_gearbox", "Undone ACF Gearbox")
 language.Add("SBoxLimit__acf_gearbox", "You've reached the ACF Gearboxes limit!")
 
+function ENT:Initialize()
+	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
+end
+
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
 	self:DoNormalDraw(false, HideInfo())

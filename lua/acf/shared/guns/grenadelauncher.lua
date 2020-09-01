@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("GL", {
-	spread = 0.32,
+	spread = 0.28,
 	name = "Grenade Launcher",
 	desc = "Grenade Launchers can fire shells with relatively large payloads at a fast rate, but with very limited velocities and poor accuracy.",
 	muzzleflash = "gl_muzzleflash_noscale",

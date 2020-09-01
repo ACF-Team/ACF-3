@@ -92,7 +92,7 @@ function ACFGunGUICreate(Table)
 
 	if not Table.rack then
 		local RoundVolume = 3.1416 * (Table.caliber / 2) ^ 2 * Table.round.maxlength
-		local RoF = 60 / (((RoundVolume / 500) ^ 0.60) * GunClass.rofmod * (Table.rofmod or 1)) --class and per-gun use same var name
+		local RoF = 60 / (((RoundVolume / 500) ^ 0.60) * GunClass.rofmod * (Table.rofmod or 1)) -- TODO: FIX THIS (USING OLD RELOAD CALC)
 		acfmenupanel:CPanelText("Firerate", "RoF : " .. math.Round(RoF, 1) .. " rounds/min")
 
 		if Table.magsize then
