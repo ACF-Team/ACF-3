@@ -3,7 +3,7 @@ ACF.RegisterFuelType("Electric", {
 	Density			=  3.89,
 	ConsumptionText	= function(PeakkW, _, TypeData)
 		local Text = "\n\nPeak Energy Consumption :\n%s kW - %s MJ/min"
-		local Rate = ACF.ElecRate * PeakkW / TypeData.Efficiency
+		local Rate = ACF.FuelRate * PeakkW / TypeData.Efficiency
 
 		return Text:format(math.Round(Rate, 2), math.Round(Rate * 0.06, 2))
 	end,

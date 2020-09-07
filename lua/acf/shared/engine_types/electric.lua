@@ -12,6 +12,6 @@ ACF.RegisterEngineType("Electric", {
 	end,
 	CalculateFuelUsage = function(Entity)
 		-- Electric engines use current power output, not max
-		return ACF.ElecRate / Entity.Efficiency * 3600
+		return ACF.FuelRate / Entity.Efficiency * 3600
 	end
 })
