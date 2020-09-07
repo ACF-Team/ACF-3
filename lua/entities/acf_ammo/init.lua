@@ -59,7 +59,7 @@ local function RefillCrates(Refill)
 		local Distance = Position:DistToSqr(Crate:GetPos())
 
 		if CanRefillCrate(Refill, Crate, Distance) then
-			local Supply = math.ceil((50000 / ((Crate.BulletData.ProjMass + Crate.BulletData.PropMass) * 1000)) / Distance ^ 0.5)
+			local Supply = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
 			local Transfer = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
 
 			if hook.Run("ACF_CanRefill", Refill, Crate, Transfer) == false then continue end
