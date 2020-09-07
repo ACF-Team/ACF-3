@@ -74,12 +74,12 @@ function ENT:RequestAmmoData()
 	net.SendToServer()
 end
 
-function ENT:OnResized()
+function ENT:OnResized(Size)
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
-			Scale = self:GetSize(),
-			Angle = Angle(0, 0, 0),
+			Scale = Size,
+			Angle = Angle(),
 			Sensitive = false
 		}
 	}

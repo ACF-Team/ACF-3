@@ -382,6 +382,7 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 
 		if AmmoData and not (Data11 or Data12 or Data13) then
 			local NewPos = Entity:LocalToWorld(AmmoData.Offset)
+			local Size = AmmoData.Size
 
 			Entity:SetPos(NewPos)
 
@@ -391,9 +392,9 @@ local function UpdateAmmoData(Entity, Data1, Data2, Data3, Data4, Data5, Data6, 
 				Data.BuildDupeInfo.PosReset = NewPos
 			end
 
-			Data11 = AmmoData.Size[1]
-			Data12 = AmmoData.Size[2]
-			Data13 = AmmoData.Size[3]
+			Data11 = Size.x
+			Data12 = Size.y
+			Data13 = Size.z
 		end
 	end
 
@@ -877,13 +878,11 @@ do -- Metamethods -------------------------------
 			return true, Message
 		end
 
-		function ENT:OnResized()
-			local Size = self:GetSize()
-
+		function ENT:OnResized(Size)
 			do -- Calculate new empty mass
 				local A = ACF.AmmoArmor * 0.039 -- Millimeters to inches
-				local ExteriorVolume = Size[1] * Size[2] * Size[3]
-				local InteriorVolume = (Size[1] - A) * (Size[2] - A) * (Size[3] - A) -- Math degree
+				local ExteriorVolume = Size.x * Size.y * Size.z
+				local InteriorVolume = (Size.x - A) * (Size.y - A) * (Size.z - A) -- Math degree
 
 				local Volume = ExteriorVolume - InteriorVolume
 				local Mass   = Volume * 0.13 -- Kg of steel per inch
@@ -897,13 +896,6 @@ do -- Metamethods -------------------------------
 					Scale = Size,
 				}
 			}
-
-			-- TODO: Remove as soon as racks are improved, this is only being readded because of them
-			local PhysObj = self:GetPhysicsObject()
-
-			if IsValid(PhysObj) then
-				self.Volume = PhysObj:GetVolume() * 0.1576 * ACF.AmmoMod
-			end
 
 			self:UpdateOverlay()
 		end

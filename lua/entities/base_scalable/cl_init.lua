@@ -44,7 +44,7 @@ function ENT:SetSize(NewSize)
 	local PhysObj = self:GetPhysicsObject()
 
 	if IsValid(PhysObj) then
-		if self.OnResized then self:OnResized() end
+		if self.OnResized then self:OnResized(NewSize) end
 
 		hook.Run("OnEntityResized", self, PhysObj, NewSize)
 	end
