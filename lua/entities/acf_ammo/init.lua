@@ -719,7 +719,7 @@ do -- Metamethods -------------------------------
 
 			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
 
-			TimerCreate("ACF Network Ammo " .. self:EntIndex(), 1, 1, function()
+			TimerCreate("ACF Network Ammo " .. self:EntIndex(), 0.5, 1, function()
 				if not IsValid(self) then return end
 
 				self:SetNWInt("Ammo", self.Ammo)
