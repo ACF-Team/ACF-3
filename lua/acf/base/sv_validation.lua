@@ -37,19 +37,19 @@ local function IsLegal(Entity)
 		end
 	end
 	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
-	if Entity:GetNoDraw() then return false, "Not drawn", "ACF entities must be drawn at all times." end -- Tooltip is useless here since clients cannot see the entity.
 	if not Entity:IsSolid() then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
+
 	if Phys:GetMass() < Entity.ACF.LegalMass then -- You can make it heavier than the legal mass if you want
 		Phys:SetMass(Entity.ACF.LegalMass)
 
 		return false, "Underweight", "ACF entities cannot have their weight reduced from their original."
 	end
 
-	-- If parented, must be parented to a wire model
-	local Parent = Entity:GetParent()
-	if IsValid(Parent) and not ACF.IsWireModel(Parent) then
-		return false, "Bad Parenting", "ACF entities must be parented to an entity using a Wiremod model."
+	if Entity:GetNoDraw() then
+		Entity:SetNoDraw(false)
+
+		return false, "Not drawn", "ACF entities must be drawn at all times."
 	end
 
 	return true
@@ -74,19 +74,13 @@ local function CheckLegal(Entity)
 
 				if Reason == "Not drawn" then -- Thank you garry, very cool
 					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
-						if IsValid(Entity) then
-							ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
-						end
+						if not IsValid(Entity) then return end
+
+						ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 					end)
 				else
 					ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 				end
-			end
-
-			if Reason == "Bad Parenting" then -- Extra help with stuff related to bad parenting
-				ACF.SendMessage(Owner, "Info", "For more reference about bad parenting, see https://github.com/Stooberton/ACF-3/wiki/Parentable-Wire-Models")
-
-				if tobool(Owner:GetInfo("acf_unparent_disabled_ents")) then Entity:SetParent(nil) end
 			end
 		end
 

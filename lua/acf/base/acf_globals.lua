@@ -181,7 +181,6 @@ elseif CLIENT then
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
-	CreateClientConVar("acf_unparent_disabled_ents", 0, true, true, "If enabled, all entities disabled for Bad Parenting will be unparented.", 0, 1)
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
