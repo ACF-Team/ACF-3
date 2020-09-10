@@ -14,7 +14,7 @@ do -- ACF global vars
 	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
 	-- Fuzes
-	ACF.MinFuzeCaliber		= 2 -- Minimum caliber that can be fuzed (centimeters)
+	ACF.MinFuzeCaliber		= 20 -- Minimum caliber in millimeters that can be fuzed
 	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime			= 0.2 -- Conversion of projectile mass to time be moved around

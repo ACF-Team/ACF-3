@@ -123,7 +123,7 @@ function Round.convert(_, PlayerData)
 
 	Data.Detonated = false
 	Data.NotFirstPen = false
-	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.CanFuze = Data.Caliber > ACF.MinFuzeCaliber * 0.1 -- Can fuze on calibers > 20mm
 	Data.CartMass = Data.PropMass + Data.ProjMass
 
 	--Only the crates need this part
