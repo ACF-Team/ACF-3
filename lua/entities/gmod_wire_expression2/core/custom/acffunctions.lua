@@ -11,7 +11,7 @@ E2Lib.RegisterExtension("acf", true)
 -- Local Variables and Helper Functions
 --===============================================================================================--
 
-local RestrictInfoConVar = GetConVar("sbox_acf_restrictinfo")
+local RestrictInfoConVar = GetConVar("acf_restrict_info")
 local AllLinkSources = ACF.GetAllLinkSources
 local LinkSource = ACF.GetLinkSource
 local RoundTypes = ACF.RoundTypes

@@ -5,7 +5,7 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF_RECOIL   = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
+local ACF_RECOIL   = GetConVar("acf_recoilpush")
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal   = ACF_CheckLegal
 local Shove        = ACF.KEShove

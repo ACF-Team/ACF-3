@@ -59,7 +59,7 @@ local function CreateMenu(Menu)
 		local Base = Menu:AddCollapsible("Aesthetic Settings")
 
 		local Ropes = Base:AddCheckBox("Create mobility rope links.")
-		Ropes:SetConVar("ACF_MobilityRopeLinks")
+		Ropes:SetConVar("acf_mobilityropelinks")
 
 		local Particles = Base:AddSlider("Particle Mult.", 0.1, 1, 2)
 		Particles:SetConVar("acf_cl_particlemul")
