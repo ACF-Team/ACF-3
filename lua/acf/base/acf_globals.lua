@@ -339,7 +339,6 @@ end ------------------------------------------------
 --Stupid workaround red added to precache timescaling.
 hook.Add("Think", "Update ACF Internal Clock", function()
 	ACF.CurTime = CurTime()
-	ACF.SysTime = SysTime()
 end)
 
 do -- Smoke/Wind -----------------------------------

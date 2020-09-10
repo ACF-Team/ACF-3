@@ -115,7 +115,7 @@ function ACF_CreateBullet(BulletData)
 
 	Bullet.Index  		 = ACF.CurBulletIndex
 	Bullet.Accel 		 = Vector(0, 0, GetConVar("sv_gravity"):GetInt() * -1)
-	Bullet.LastThink 	 = ACF.SysTime
+	Bullet.LastThink 	 = ACF.CurTime
 	Bullet.FlightTime 	 = 0
 	Bullet.TraceBackComp = 0
 	Bullet.Fuze			 = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
@@ -162,13 +162,13 @@ function ACF_CalcBulletFlight(Index, Bullet, BackTraceOverride)
 		Bullet.FlightTime = 0
 	end
 
-	local DeltaTime = ACF.SysTime - Bullet.LastThink
+	local DeltaTime = ACF.CurTime - Bullet.LastThink
 	local Drag = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
 
 	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
 	Bullet.Flight = Bullet.Flight + (Bullet.Accel - Drag) * DeltaTime
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * (math.min(ACF.PhysMaxVel * 0.025, Bullet.FlightTime * Bullet.Flight:Length() - Bullet.TraceBackComp * DeltaTime))
-	Bullet.LastThink = ACF.SysTime
+	Bullet.LastThink = ACF.CurTime
 	Bullet.FlightTime = Bullet.FlightTime + DeltaTime
 	Bullet.DeltaTime = DeltaTime
 
