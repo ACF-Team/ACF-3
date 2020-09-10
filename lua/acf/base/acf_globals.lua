@@ -200,7 +200,6 @@ elseif CLIENT then
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
-	local LocalPly = LocalPlayer()
 
 	function ACF.HideInfoBubble()
 		local Value = ShowInfo:GetInt()
@@ -208,7 +207,7 @@ elseif CLIENT then
 		if Value == 0 then return true end
 		if Value == 2 then return false end
 
-		return LocalPly:InVehicle()
+		return LocalPlayer():InVehicle()
 	end
 	---------------------------------------------
 
