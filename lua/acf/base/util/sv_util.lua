@@ -99,40 +99,34 @@ do -- Tool data functions
 			return Result
 		end
 
-		function ACF.ReadBool(Player, Key)
-			if not IsValid(Player) then return false end
-			if not Key then return false end
+		local function ReadData(Player, Key, Default)
+			if not IsValid(Player) then return end
+			if not ToolData[Player] then return end
+			if Key == nil then return end
 
-			local Data = ToolData[Player]
+			local Value = ToolData[Key]
 
-			if not Data then return false end
-
-			return tobool(Data[Key])
+			return Value ~= nil and Value or Default
 		end
 
-		function ACF.ReadNumber(Player, Key)
-			if not IsValid(Player) then return 0 end
-			if not Key then return 0 end
-
-			local Data = ToolData[Player]
-
-			if not Data then return 0 end
-			if not Data[Key] then return 0 end
-
-			return tonumber(Data[Key])
+		function ACF.ReadBool(Player, Key, Default)
+			return tobool(ReadData(Player, Key, Default))
 		end
 
-		function ACF.ReadString(Player, Key)
-			if not IsValid(Player) then return "" end
-			if not Key then return "" end
+		function ACF.ReadNumber(Player, Key, Default)
+			local Value = ReadData(Player, Key, Default)
 
-			local Data = ToolData[Player]
-
-			if not Data then return "" end
-			if not Data[Key] then return "" end
-
-			return tostring(Data[Key])
+			return Value ~= nil and tonumber(Value) or 0 -- tonumber can't handle nil values
 		end
+
+		function ACF.ReadString(Player, Key, Default)
+			local Value = ReadData(Player, Key, Default)
+
+			return Value ~= nil and tostring(Value) or "" -- tostring can't handle nil values
+		end
+
+		ACF.ReadData = ReadData
+		ACF.ReadRaw = ReadData
 	end
 end
 

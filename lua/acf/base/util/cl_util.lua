@@ -81,31 +81,32 @@ do -- Tool data functions
 			return Result
 		end
 
-		function ACF.ReadBool(Key)
-			if not Key then return false end
+		local function ReadData(Key, Default)
+			if Key == nil then return end
 
-			return tobool(ToolData[Key])
+			local Value = ToolData[Key]
+
+			return Value ~= nil and Value or Default
 		end
 
-		function ACF.ReadNumber(Key)
-			if not Key then return 0 end
+		function ACF.ReadBool(Key, Default)
+			return tobool(ReadData(Key, Default))
+		end
 
-			local Data = ToolData[Key]
+		function ACF.ReadNumber(Key, Default)
+			local Value = ReadData(Key, Default)
 
-			if Data == nil then return 0 end
-
-			return tonumber(Data)
+			return Value ~= nil and tonumber(Value) or 0 -- tonumber can't handle nil values
 		end
 
 		function ACF.ReadString(Key)
-			if not Key then return "" end
+			local Value = ReadData(Key, Default)
 
-			local Data = ToolData[Key]
-
-			if Data == nil then return "" end
-
-			return tostring(Data)
+			return Value ~= nil and tostring(Value) or "" -- tostring can't handle nil values
 		end
+
+		ACF.ReadData = ReadData
+		ACF.ReadRaw = ReadData
 	end
 
 	do -- Write function
@@ -119,6 +120,7 @@ do -- Tool data functions
 
 			hook.Run("OnToolDataUpdate", Key, Value)
 
+			-- TODO: Replace with a queue system similar to the one used by the scalable base
 			-- Allowing one network message per key per tick
 			if timer.Exists("ACF WriteValue " .. Key) then return end
 
