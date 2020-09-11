@@ -199,7 +199,7 @@ function Round.detonate(_, Bullet, HitPos)
 	if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
 	Bullet.Detonated = true
-	Bullet.InitTime = SysTime()
+	Bullet.InitTime = ACF.CurTime
 	Bullet.Flight = Bullet.Flight + Bullet.Flight:GetNormalized() * Round.CalcSlugMV(Bullet, HEATFillerMass) * 39.37
 	Bullet.FuseLength = 0.005 + 40 / (Bullet.Flight:Length() * 0.0254)
 	Bullet.Pos = HitPos
@@ -209,7 +209,7 @@ function Round.detonate(_, Bullet, HitPos)
 	Bullet.PenArea = Bullet.SlugPenArea
 	Bullet.Ricochet = Bullet.SlugRicochet
 
-	local DeltaTime = SysTime() - Bullet.LastThink
+	local DeltaTime = ACF.CurTime - Bullet.LastThink
 	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
 	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
 
