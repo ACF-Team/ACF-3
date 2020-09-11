@@ -72,7 +72,7 @@ local function CheckLegal(Entity)
 			if LegalHints:GetBool() then -- Notify the owner
 				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
 
-				if Reason == "Not drawn" then -- Thank you garry, very cool
+				if Reason == "Not drawn" or Reason == "Not solid" then -- Thank you garry, very cool
 					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 						if not IsValid(Entity) then return end
 
