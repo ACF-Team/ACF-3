@@ -182,15 +182,12 @@ function Round.detonate(_, Bullet, HitPos)
 	Bullet.InitTime = ACF.CurTime
 	Bullet.Flight = Bullet.Flight + Bullet.Flight:GetNormalized() * Round.CalcSlugMV(Bullet, HEATFillerMass) * 39.37
 	Bullet.FuseLength = 0.005 + 40 / (Bullet.Flight:Length() * 0.0254)
-	Bullet.Pos = HitPos
+	Bullet.NextPos = HitPos
 	Bullet.DragCoef = Bullet.SlugDragCoef
 	Bullet.ProjMass = Bullet.SlugMass * (1 - Crushed)
 	Bullet.Caliber = Bullet.SlugCaliber
 	Bullet.PenArea = Bullet.SlugPenArea
 	Bullet.Ricochet = Bullet.SlugRicochet
-	local DeltaTime = ACF.CurTime - Bullet.LastThink
-	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
-	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
 
 	return true
 end

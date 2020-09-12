@@ -10,7 +10,6 @@ do -- ACF global vars
 	ACF.Year 				= 1945
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 	ACF.GunfireEnabled 		= true
-	ACF.PhysMaxVel 			= 4000
 	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
 	-- Fuzes

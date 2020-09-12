@@ -1,6 +1,7 @@
-ACF.Bullet 			 = ACF.Bullet or {}
-ACF.CurBulletIndex   = ACF.CurBulletIndex or 0
-ACF.BulletIndexLimit = 1000
+ACF.Bullets          = ACF.Bullets or {}
+ACF.UnusedIndexes    = ACF.UnusedIndexes or {}
+ACF.HighestIndex     = ACF.HighestIndex or 0
+ACF.IndexLimit       = 2000
 ACF.SkyboxGraceZone  = 100
 
 local TraceLine 	= util.TraceLine
@@ -8,6 +9,11 @@ local FlightTr  	= { start = true, endpos = true, filter = true, mask = true }
 local BackRes 		= {}
 local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, output = BackRes }
 local GlobalFilter 	= ACF.GlobalFilter
+local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
+
+cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
+	Gravity.z = -Value
+end, "ACF Bullet Gravity")
 
 local function HitClip(Ent, Pos)
 	if not IsValid(Ent) then return false end
@@ -96,10 +102,13 @@ function ACF_CheckHitbox(Ent,RayStart,Ray)
 end
 
 local DoBulletsFlight
-local Bullets = ACF.Bullet
+local Bullets = ACF.Bullets
+local Unused = ACF.UnusedIndexes
 
 -- This will create, or update, the tracer effect on the clientside
 local function BulletClient(Index, Bullet, Type, Hit, HitPos)
+	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
+
 	local Effect = EffectData()
 	Effect:SetAttachment(Index)
 	Effect:SetStart(Bullet.Flight * 0.1)
@@ -125,32 +134,31 @@ local function RemoveBullet(Index)
 	local Bullet = Bullets[Index]
 
 	Bullets[Index] = nil
+	Unused[Index] = true
 
 	if Bullet and Bullet.OnRemoved then
 		Bullet:OnRemoved()
 	end
+
+	if not next(Bullets) then
+		hook.Remove("Tick", "IterateBullets")
+	end
 end
 
-function CalcBulletFlight(Index, Bullet, BackTraceOverride)
+local function CalcBulletFlight(Index, Bullet)
+	if not Bullet.LastThink then return RemoveBullet(Index) end
+
 	if Bullet.PreCalcFlight then
 		Bullet:PreCalcFlight()
 	end
 
-	if not Bullet.LastThink then
-		RemoveBullet(Index)
-	end
-
-	if BackTraceOverride then
-		Bullet.FlightTime = 0
-	end
-
 	local DeltaTime = ACF.CurTime - Bullet.LastThink
 	local Drag = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
+	local Accel = Bullet.Accel or Gravity
 
-	Bullet.Flight = Bullet.Flight + (Bullet.Accel - Drag) * DeltaTime
+	Bullet.Flight = Bullet.Flight + (Accel - Drag) * DeltaTime
 	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
 	Bullet.LastThink = ACF.CurTime
-	Bullet.FlightTime = Bullet.FlightTime + DeltaTime
 	Bullet.DeltaTime = DeltaTime
 
 	DoBulletsFlight(Index, Bullet)
@@ -161,6 +169,62 @@ function CalcBulletFlight(Index, Bullet, BackTraceOverride)
 
 	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
+end
+
+local function GetBulletIndex()
+	if next(Unused) then
+		local Index = next(Unused)
+
+		Unused[Index] = nil
+
+		return Index
+	end
+
+	local Index = ACF.HighestIndex + 1
+
+	if Index > ACF.IndexLimit then return end
+
+	ACF.HighestIndex = Index
+
+	return Index
+end
+
+local function IterateBullets()
+	for Index, Bullet in pairs(Bullets) do
+		if not Bullet.HandlesOwnIteration then
+			CalcBulletFlight(Index, Bullet)
+		end
+	end
+end
+
+local function CreateBullet(BulletData)
+	local Index = GetBulletIndex()
+
+	if not Index then return end -- Too many bullets in the air
+
+	local Bullet = table.Copy(BulletData)
+
+	if not Bullet.Filter then
+		Bullet.Filter = IsValid(Bullet.Gun) and { Bullet.Gun } or {}
+	end
+
+	Bullet.Index       = Index
+	Bullet.LastThink   = ACF.CurTime
+	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
+	Bullet.Mask        = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
+	Bullet.Ricochets   = 0
+	Bullet.GroundRicos = 0
+
+	if not next(Bullets) then
+		hook.Add("Tick", "IterateBullets", IterateBullets)
+	end
+
+	Bullets[Index] = Bullet
+
+	BulletClient(Index, Bullet, "Init", 0)
+	CalcBulletFlight(Index, Bullet)
+
+	return Bullet
 end
 
 DoBulletsFlight =  function(Index, Bullet)
@@ -190,11 +254,12 @@ DoBulletsFlight =  function(Index, Bullet)
 
 	FlightTr.mask 	= Bullet.Mask
 	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos --Bullet.StartTrace
-	FlightTr.endpos = Bullet.NextPos -- + Bullet.Flight:GetNormalized() * (ACF.PhysMaxVel * 0.025)
+	FlightTr.start 	= Bullet.Pos
+	FlightTr.endpos = Bullet.NextPos
 
 	local FlightRes, Filter = TraceFilterInit(FlightTr) -- Does not modify the bullet's original filter
 
+	-- Something was hit, let's make sure we're not phasing through armor
 	if Bullet.LastPos and IsValid(FlightRes.Entity) and not GlobalFilter[FlightRes.Entity:GetClass()] then
 		BackTrace.start  = Bullet.LastPos
 		BackTrace.endpos = Bullet.Pos
@@ -203,9 +268,8 @@ DoBulletsFlight =  function(Index, Bullet)
 
 		TraceFilterInit(BackTrace) -- Does not modify the bullet's original filter
 
+		-- There's something behind our trace, go back one tick
 		if IsValid(BackRes.Entity) and not GlobalFilter[BackRes.Entity:GetClass()] then
-			--print("Thank you Garry", Bullet.Index, BackRes.Entity)
-
 			Bullet.NextPos = Bullet.Pos
 			Bullet.Pos = Bullet.LastPos
 			Bullet.LastPos = nil
@@ -225,7 +289,7 @@ DoBulletsFlight =  function(Index, Bullet)
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
-			RemoveBullet(Index)
+			return RemoveBullet(Index)
 		else
 			if Bullet.OnEndFlight then
 				Bullet.OnEndFlight(Index, Bullet, nil)
@@ -267,7 +331,7 @@ DoBulletsFlight =  function(Index, Bullet)
 			end
 
 			BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-			CalcBulletFlight(Index, Bullet, true)
+			CalcBulletFlight(Index, Bullet)
 		else
 			if Bullet.OnEndFlight then
 				Bullet.OnEndFlight(Index, Bullet, FlightRes)
@@ -287,14 +351,14 @@ DoBulletsFlight =  function(Index, Bullet)
 				end
 
 				BulletClient(Index, Bullet, "Update", 2, FlightRes.HitPos)
-				CalcBulletFlight(Index, Bullet, true)
+				CalcBulletFlight(Index, Bullet)
 			elseif Retry == "Ricochet" then
 				if Bullet.OnRicocheted then
 					Bullet.OnRicocheted(Index, Bullet, FlightRes)
 				end
 
 				BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-				CalcBulletFlight(Index, Bullet, true)
+				CalcBulletFlight(Index, Bullet)
 			else
 				if Bullet.OnEndFlight then
 					Bullet.OnEndFlight(Index, Bullet, FlightRes)
@@ -315,44 +379,12 @@ DoBulletsFlight =  function(Index, Bullet)
 	end
 end
 
-function ACF_CreateBullet(BulletData)
-	ACF.CurBulletIndex = ACF.CurBulletIndex + 1
-	if ACF.CurBulletIndex > ACF.BulletIndexLimit then ACF.CurBulletIndex = 1 end
-
-	local Bullet = table.Copy(BulletData)
-
-	if not Bullet.Filter then
-		Bullet.Filter = IsValid(Bullet.Gun) and { Bullet.Gun } or {}
-	end
-
-	Bullet.Index  		 = ACF.CurBulletIndex
-	Bullet.Accel 		 = Vector(0, 0, GetConVar("sv_gravity"):GetInt() * -1)
-	Bullet.LastThink 	 = ACF.CurTime
-	Bullet.FlightTime 	 = 0
-	Bullet.Fuze			 = Bullet.Fuze and Bullet.Fuze + ACF.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask			 = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
-
-	Bullets[ACF.CurBulletIndex] = Bullet
-
-	BulletClient(ACF.CurBulletIndex, Bullet, "Init", 0)
-	CalcBulletFlight(ACF.CurBulletIndex, Bullet)
-
-	return Bullet
-end
-
-hook.Add("Tick", "ACF_ManageBullets", function()
-	for Index, Bullet in pairs(Bullets) do
-		if not Bullet.HandlesOwnIteration then
-			CalcBulletFlight(Index, Bullet)
-		end
-	end
-end)
-
 -- Globalizing the functions
 ACF_BulletClient = BulletClient
 ACF_CalcBulletFlight = CalcBulletFlight
 ACF_DoBulletsFlight = DoBulletsFlight
 ACF_RemoveBullet = RemoveBullet
+ACF_CreateBullet = CreateBullet
 
 ACF.Trace 		= Trace
 ACF.TraceF 		= TraceFilterInit
