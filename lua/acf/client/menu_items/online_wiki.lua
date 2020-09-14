@@ -12,4 +12,4 @@ local function CreateMenu(Menu)
 	Menu:AddHelp("The wiki is still a work in progress, it'll get populated as time passes.")
 end
 
-ACF.AddOptionItem("About the Addon", "Online Wiki", "book_open", CreateMenu)
+ACF.AddMenuItem(1, "About the Addon", "Online Wiki", "book_open", CreateMenu)

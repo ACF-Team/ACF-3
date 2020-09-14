@@ -48,11 +48,6 @@ local function CreateMenu(Menu)
 
 		local Hints = Base:AddCheckBox("Enable hints on entity disabling.")
 		Hints:SetConVar("acf_legalhints")
-
-		local Parent = Base:AddCheckBox("Unparent disabled entities.")
-		Parent:SetConVar("acf_unparent_disabled_ents")
-
-		Base:AddHelp("This option will only apply for entities that were disabled for 'Bad Parenting'.")
 	end
 
 	do -- Aesthetic Settings
@@ -77,4 +72,4 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddOptionItem("About the Addon", "Settings", "wrench", CreateMenu)
+ACF.AddMenuItem(201, "About the Addon", "Settings", "wrench", CreateMenu)

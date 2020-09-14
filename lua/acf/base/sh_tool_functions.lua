@@ -233,6 +233,7 @@ do -- Tool Functions Loader
 				return not Trace.HitSky
 			end
 		else
+			-- Helper function, allows you to set both stage and op at the same time with their names
 			function Tool:SetMode(StageName, OpName)
 				if not StageName then return end
 				if not OpName then return end
@@ -282,8 +283,13 @@ do -- Tool Functions Loader
 			function Tool:Deploy()
 				local OnDeploy = self.OpData.OnDeploy
 
-				self:SetStage(self.LastStage)
-				self:SetOperation(self.LastOp)
+				if self.LastStage then
+					self:SetStage(self.LastStage)
+					self:SetOperation(self.LastOp)
+
+					self.LastStage = nil
+					self.LastOp = nil
+				end
 
 				if OnDeploy then
 					OnDeploy(self)
@@ -297,8 +303,10 @@ do -- Tool Functions Loader
 					OnHolster(self)
 				end
 
-				self.LastStage = self.Stage
-				self.LastOp = self.Operation
+				if not self.LastStage then
+					self.LastStage = self.Stage
+					self.LastOp = self.Operation
+				end
 			end
 
 			function Tool:Think()

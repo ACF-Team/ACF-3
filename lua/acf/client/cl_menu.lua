@@ -1,6 +1,9 @@
-local Options = {}
-local Lookup = {}
-local Count = 0
+ACF.MenuOptions = ACF.MenuOptions or {}
+ACF.MenuLookup = ACF.MenuLookup or {}
+ACF.MenuCount = ACF.MenuCount or 0
+
+local Options = ACF.MenuOptions
+local Lookup = ACF.MenuLookup
 
 do -- Menu population functions
 	local function DefaultAction(Menu)
@@ -8,43 +11,42 @@ do -- Menu population functions
 		Menu:AddLabel("This option is either a work in progress or something isn't working as intended.")
 	end
 
-	local function MissilesMenu(Menu)
-		Menu:AddTitle("ACF-3 Missiles is not installed.")
-		Menu:AddLabel("This option requires ACF-3 Missiles to be installed. You can get it here:")
-
-		local Link = Menu:AddButton("ACF-3 Missiles Repository")
-
-		function Link:DoClickInternal()
-			gui.OpenURL("https://github.com/TwistedTail/ACF-3-Missiles")
-		end
-	end
-
-	function ACF.AddOption(Name, Icon)
+	function ACF.AddMenuOption(Index, Name, Icon, Enabled)
+		if not Index then return end
 		if not Name then return end
+		if not isfunction(Enabled) then Enabled = nil end
 
 		if not Lookup[Name] then
-			Count = Count + 1
+			local Count = ACF.MenuCount + 1
 
 			Options[Count] = {
-				Name = Name,
 				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
+				IsEnabled = Enabled,
+				Index = Index,
+				Name = Name,
 				Lookup = {},
 				List = {},
 				Count = 0,
 			}
 
 			Lookup[Name] = Options[Count]
+
+			ACF.MenuCount = Count
 		else
 			local Option = Lookup[Name]
 
 			Option.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
+			Option.IsEnabled = Enabled
+			Option.Index = Index
 		end
 	end
 
-	function ACF.AddOptionItem(Option, Name, Icon, Action)
+	function ACF.AddMenuItem(Index, Option, Name, Icon, Action, Enabled)
+		if not Index then return end
 		if not Option then return end
 		if not Name then return end
 		if not Lookup[Option] then return end
+		if not isfunction(Enabled) then Enabled = nil end
 
 		local Items = Lookup[Option]
 		local Item = Items.Lookup[Name]
@@ -55,6 +57,8 @@ do -- Menu population functions
 			Items.List[Items.Count] = {
 				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
 				Action = Action or DefaultAction,
+				IsEnabled = Enabled,
+				Index = Index,
 				Name = Name,
 			}
 
@@ -62,39 +66,58 @@ do -- Menu population functions
 		else
 			Item.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
 			Item.Action = Action or DefaultAction
+			Item.IsEnabled = Enabled
+			Item.Index = Index
 			Item.Name = Name
 		end
 	end
 
-	-- Small workaround to give the correct order to the items
-	ACF.AddOption("About the Addon", "information")
-	ACF.AddOptionItem("About the Addon", "Online Wiki", "book_open")
-	ACF.AddOptionItem("About the Addon", "Updates", "newspaper")
-	ACF.AddOptionItem("About the Addon", "Settings", "wrench")
-	ACF.AddOptionItem("About the Addon", "Contact Us", "feed")
+	ACF.AddMenuOption(1, "About the Addon", "information")
+	ACF.AddMenuItem(101, "About the Addon", "Updates", "newspaper") -- TODO: Add Updates item
 
-	ACF.AddOption("Entities", "brick")
-	ACF.AddOptionItem("Entities", "Weapons", "gun")
-	ACF.AddOptionItem("Entities", "Missiles", "wand", MissilesMenu)
-	ACF.AddOptionItem("Entities", "Engines", "car")
-	ACF.AddOptionItem("Entities", "Gearboxes", "cog")
-	ACF.AddOptionItem("Entities", "Sensors", "transmit")
-	ACF.AddOptionItem("Entities", "Components", "drive")
+	ACF.AddMenuOption(101, "Entities", "brick")
 end
 
 do -- ACF Menu context panel
+	local function GetSortedList(List)
+		local Result = {}
+
+		for K, V in ipairs(List) do
+			Result[K] = V
+		end
+
+		table.SortByMember(Result, "Index", true)
+
+		return Result
+	end
+
+	local function AllowOption(Option)
+		if Option.IsEnabled and not Option:IsEnabled() then return false end
+
+		return hook.Run("ACF_AllowMenuOption", Option) ~= false
+	end
+
+	local function AllowItem(Item)
+		if Item.IsEnabled and not Item:IsEnabled() then return false end
+
+		return hook.Run("ACF_AllowMenuItem", Item) ~= false
+	end
+
 	local function PopulateTree(Tree)
+		local OptionList = GetSortedList(Options)
 		local First
 
-		Tree.BaseHeight = Count + 0.5
+		Tree.BaseHeight = 0.5
 
-		for _, Option in ipairs(Options) do
+		for _, Option in ipairs(OptionList) do
+			if not AllowOption(Option) then continue end
+
 			local Parent = Tree:AddNode(Option.Name, Option.Icon)
 			local SetExpanded = Parent.SetExpanded
 
 			Parent.Action = Option.Action
 			Parent.Master = true
-			Parent.Count = Option.Count
+			Parent.Count = 0
 			Parent.SetExpanded = function(Panel, Bool)
 				if not Panel.AllowExpand then return end
 
@@ -103,22 +126,29 @@ do -- ACF Menu context panel
 				Panel.AllowExpand = nil
 			end
 
-			for _, Data in ipairs(Option.List) do
-				local Child = Parent:AddNode(Data.Name, Data.Icon)
+			Tree.BaseHeight = Tree.BaseHeight + 1
 
-				Child.Action = Data.Action
+			local ItemList = GetSortedList(Option.List)
+			for _, Item in ipairs(ItemList) do
+				if not AllowItem(Item) then continue end
+
+				local Child = Parent:AddNode(Item.Name, Item.Icon)
+				Child.Action = Item.Action
 				Child.Parent = Parent
+
+				Parent.Count = Parent.Count + 1
 
 				if not Parent.Selected then
 					Parent.Selected = Child
 
 					if not First then
-						Tree:SetSelectedItem(Child)
-						First = true
+						First = Child
 					end
 				end
 			end
 		end
+
+		Tree:SetSelectedItem(First)
 	end
 
 	local function UpdateTree(Tree, Old, New)

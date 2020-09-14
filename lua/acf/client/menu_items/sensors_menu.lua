@@ -100,4 +100,4 @@ local function CreateMenu(Menu)
 	LoadSortedList(SensorClass, Sensors, "ID")
 end
 
-ACF.AddOptionItem("Entities", "Sensors", "transmit", CreateMenu)
+ACF.AddMenuItem(401, "Entities", "Sensors", "transmit", CreateMenu)

@@ -241,4 +241,4 @@ local function CreateMenu(Menu)
 	LoadSortedList(FuelClass, FuelTanks, "ID")
 end
 
-ACF.AddOptionItem("Entities", "Engines", "car", CreateMenu)
+ACF.AddMenuItem(201, "Entities", "Engines", "car", CreateMenu)

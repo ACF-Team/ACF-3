@@ -100,4 +100,4 @@ local function CreateMenu(Menu)
 	LoadSortedList(ComponentClass, Components, "ID")
 end
 
-ACF.AddOptionItem("Entities", "Components", "drive", CreateMenu)
+ACF.AddMenuItem(501, "Entities", "Components", "drive", CreateMenu)

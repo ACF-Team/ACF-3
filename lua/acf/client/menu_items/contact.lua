@@ -52,4 +52,4 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddOptionItem("About the Addon", "Contact Us", "feed", CreateMenu)
+ACF.AddMenuItem(301, "About the Addon", "Contact Us", "feed", CreateMenu)

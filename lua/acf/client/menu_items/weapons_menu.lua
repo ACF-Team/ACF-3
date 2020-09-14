@@ -245,4 +245,4 @@ local function CreateMenu(Menu)
 	LoadSortedList(CrateList, Crates, "ID")
 end
 
-ACF.AddOptionItem("Entities", "Weapons", "gun", CreateMenu)
+ACF.AddMenuItem(1, "Entities", "Weapons", "gun", CreateMenu)
