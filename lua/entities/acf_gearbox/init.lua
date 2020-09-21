@@ -675,22 +675,22 @@ function ENT:Calc(InputRPM, InputInertia)
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
-
-		if self.GearRatio ~= 0 and ((InputRPM > 0 and RPM < InputRPM) or (InputRPM < 0 and RPM > InputRPM)) then
+		if self.GearRatio ~= 0 and (math.abs(RPM) < math.abs(InputRPM)) then
 			if self.DoubleDiff then
-				local NTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
-				local Sign = self.SteerRate ~= 0 and self.SteerRate / math.abs(self.SteerRate) or 0
-				local DTq, Mult
+				if self.SteerRate ~= 0 then -- this is where the magic happens :)
+					-- This splits the steering rate into 2 "sections", under 0.5 it will cut power until none is applied, over 0.5 it will provide power in reverse up to full speed at 1
+					-- this works both postive and negative
+					local TrueSteer = (self.SteerRate / 0.5)
 
-				if Link.Side == 0 then
-					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) - (RPM * Sign))
-					Mult = 1
-				else
-					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) + (RPM * Sign))
-					Mult = -1
+					-- this actually controls the RPM of the wheels, so the steering rate is correct
+					if Link.Side == 0 and (math.abs(RPM) < math.abs(InputRPM)) then
+						Link.ReqTq = math.min(Clutch, ((InputRPM * (-(math.abs(math.max(TrueSteer,0)) - 1))) - RPM) * InputInertia)
+					elseif Link.Side == 1 and (math.abs(RPM) < math.abs(InputRPM)) then
+						Link.ReqTq = math.min(Clutch, ((InputRPM * (-(math.abs(math.min(TrueSteer,0)) - 1))) - RPM) * InputInertia)
+					end
+				else -- if steering rate is 0, then just apply power like normal
+					Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
 				end
-
-				Link.ReqTq = NTq + Clamp(DTq * InputInertia, -self.MaxTorque, self.MaxTorque) * Mult
 			else
 				Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
 			end
