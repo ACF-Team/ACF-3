@@ -236,8 +236,9 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.CVT = GearboxData.cvt
 		Entity.DoubleDiff = GearboxData.doublediff
 		Entity.Auto = GearboxData.auto
-		Entity.LClutch = Entity.MaxTorque
-		Entity.RClutch = Entity.MaxTorque
+		Entity.LClutch = 1
+		Entity.RClutch = 1
+		Entity.MainClutch = 1
 
 		Entity.HitBoxes = ACF.HitBoxes[GearboxData.model]
 
@@ -408,8 +409,7 @@ local Inputs = {
 		end
 	end,
 	Clutch = function(Entity, Value)
-		Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
-		Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+		Entity.MainClutch = Clamp(1 - Value, 0, 1)
 	end,
 	Brake = function(Entity, Value)
 		Entity.LBrake = Clamp(Value, 0, 100)
@@ -422,10 +422,10 @@ local Inputs = {
 		Entity.RBrake = Clamp(Value, 0, 100)
 	end,
 	["Left Clutch"] = function(Entity, Value)
-		Entity.LClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+		Entity.LClutch = Clamp(1 - Value, 0, 1)
 	end,
 	["Right Clutch"] = function(Entity, Value)
-		Entity.RClutch = Clamp(1 - Value, 0, 1) * Entity.MaxTorque
+		Entity.RClutch = Clamp(1 - Value, 0, 1)
 	end,
 	["CVT Ratio"] = function(Entity, Value)
 		Entity.CVTRatio = Clamp(Value, 0, 1)
@@ -653,7 +653,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	self.TorqueOutput = 0
 
 	for Ent, Link in pairs(self.GearboxOut) do
-		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
+		local Clutch = self.MainClutch
 
 		Link.ReqTq = 0
 
@@ -664,14 +664,13 @@ function ENT:Calc(InputRPM, InputInertia)
 				Inertia = InputInertia / self.GearRatio
 			end
 
-			Link.ReqTq = math.min(Clutch, math.abs(Ent:Calc(InputRPM * self.GearRatio, Inertia) * self.GearRatio))
-
+			Link.ReqTq = math.abs(Ent:Calc(InputRPM * self.GearRatio, Inertia) * self.GearRatio) * Clutch
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
 
 	for Wheel, Link in pairs(self.Wheels) do
-		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
+		local Clutch = (self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch)) or self.MainClutch
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
@@ -684,17 +683,18 @@ function ENT:Calc(InputRPM, InputInertia)
 
 					-- this actually controls the RPM of the wheels, so the steering rate is correct
 					if Link.Side == 0 and (math.abs(RPM) < math.abs(InputRPM)) then
-						Link.ReqTq = math.min(Clutch, ((InputRPM * (-(math.abs(math.max(TrueSteer,0)) - 1))) - RPM) * InputInertia)
+						Link.ReqTq = ((InputRPM * (-(math.abs(math.max(TrueSteer,0)) - 1))) - RPM) * InputInertia
 					elseif Link.Side == 1 and (math.abs(RPM) < math.abs(InputRPM)) then
-						Link.ReqTq = math.min(Clutch, ((InputRPM * (-(math.abs(math.min(TrueSteer,0)) - 1))) - RPM) * InputInertia)
+						Link.ReqTq = ((InputRPM * (-(math.abs(math.min(TrueSteer,0)) - 1))) - RPM) * InputInertia
 					end
 				else -- if steering rate is 0, then just apply power like normal
-					Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
+					Link.ReqTq = (InputRPM - RPM) * InputInertia
 				end
 			else
-				Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
+				Link.ReqTq = (InputRPM - RPM) * InputInertia
 			end
 
+			Link.ReqTq = Link.ReqTq * Clutch
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
