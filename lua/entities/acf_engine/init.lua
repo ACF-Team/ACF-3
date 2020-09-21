@@ -149,7 +149,7 @@ local function UpdateEngineData(Entity, Id, EngineData)
 
 	--calculate base fuel usage
 	if Entity.EngineType == "Electric" then
-		Entity.FuelUse = ACF.FuelRate / (GetEfficiency(Entity) * 3600) --elecs use current power output, not max
+		Entity.FuelUse = ACF.FuelRate * (GetEfficiency(Entity) / 3600) --elecs use current power output, not max
 	else
 		Entity.FuelUse = ACF.FuelRate * GetEfficiency(Entity) * Entity.peakkw / 3600
 	end
