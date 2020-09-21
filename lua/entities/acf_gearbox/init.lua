@@ -665,7 +665,6 @@ function ENT:Calc(InputRPM, InputInertia)
 			end
 
 			Link.ReqTq = math.abs(Ent:Calc(InputRPM * self.GearRatio, Inertia) * self.GearRatio) * Clutch
-			debugoverlay.Text(Ent:GetPos(),"Tq " .. Link.ReqTq .. " C " .. Clutch, 0.05, false)
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
@@ -696,7 +695,6 @@ function ENT:Calc(InputRPM, InputInertia)
 			end
 
 			Link.ReqTq = Link.ReqTq * Clutch
-			debugoverlay.Text(Wheel:GetPos(),"Tq " .. Link.ReqTq .. " C " .. Clutch, 0.05, false)
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
