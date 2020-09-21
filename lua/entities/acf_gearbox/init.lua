@@ -670,7 +670,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	end
 
 	for Wheel, Link in pairs(self.Wheels) do
-		local Clutch = (((Link.Side == 0 and self.LClutch) or self.RClutch) and self.Dual) or self.MainClutch
+		local Clutch = (self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch)) or self.MainClutch
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
