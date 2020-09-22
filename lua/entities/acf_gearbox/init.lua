@@ -9,6 +9,7 @@ include("shared.lua")
 
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
+local TimerSimple = timer.Simple
 
 local function CheckLoopedGearbox(This, Target)
 	local Queued = { [Target] = true }
@@ -158,6 +159,7 @@ local Clamp		  = math.Clamp
 
 local function CreateInputsOutputs(Gearbox)
 	local Inputs = { "Gear", "Gear Up", "Gear Down" }
+	if not (Gearbox.Gears > 1) and (not Gearbox.Auto) then Inputs = {} end
 
 	if Gearbox.CVT then
 		Inputs[#Inputs + 1] = "CVT Ratio"
@@ -239,6 +241,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.LClutch = 1
 		Entity.RClutch = 1
 		Entity.MainClutch = 1
+		Entity.LastBrakeThink = 0
 
 		Entity.HitBoxes = ACF.HitBoxes[GearboxData.model]
 
@@ -370,16 +373,19 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	return BaseRPM / Entity.GearRatio / -6
 end
 
-local function ActWheel(Link, Wheel, Torque, Brake, DeltaTime)
+local function ActWheel(Link, Wheel, Torque, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-	local BrakeMult = 0
 
-	if Brake > 0 then
-		BrakeMult = Link.Vel * Link.Inertia * Brake / 5
-	end
+	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque) * DeltaTime, -500000, 500000))
+end
 
-	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque * 1.5 - BrakeMult) * DeltaTime, -500000, 500000))
+local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
+	local Phys = Wheel:GetPhysicsObject()
+	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+
+	BrakeMult = Link.Vel * Link.Inertia * Brake / 5
+	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
 end
 
 local Inputs = {
@@ -495,6 +501,8 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 
 		CheckRopes(Gearbox, "GearboxOut")
 		CheckRopes(Gearbox, "Wheels")
+
+		Gearbox:ApplyBrakes()
 	end)
 
 	return Gearbox
@@ -517,6 +525,8 @@ function ENT:Enable()
 	else
 		ChangeGear(self, self.OldGear)
 	end
+
+	self:ApplyBrakes()
 
 	self.OldGear = nil
 
@@ -706,6 +716,33 @@ function ENT:Calc(InputRPM, InputInertia)
 	return self.TorqueOutput
 end
 
+function ENT:ApplyBrakes() -- This is just for brakes
+	if self.Disabled then return end
+	if not next(self.Wheels) then return end
+
+	local DeltaTime = ACF.CurTime - self.LastBrakeThink
+
+	local BoxPhys = self:GetPhysicsObject()
+	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
+
+	for Wheel, Link in pairs(self.Wheels) do
+		CalcWheel(self, Link, Wheel, SelfWorld)
+		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
+
+		if Brake > 0 then -- regular ol braking
+			BrakeWheel(Link, Wheel, Brake, DeltaTime)
+		end
+	end
+
+	self.LastBrakeThink = ACF.CurTime
+
+	TimerSimple(engine.TickInterval(), function()
+		if not IsValid(self) then return end
+
+		self:ApplyBrakes()
+	end)
+end
+
 function ENT:Act(Torque, DeltaTime, MassRatio)
 	if self.Disabled then return end
 
@@ -724,10 +761,9 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 	end
 
 	for Ent, Link in pairs(self.Wheels) do
-		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 		local WheelTorque = Link.ReqTq * AvailTq
 
-		ActWheel(Link, Ent, WheelTorque, Brake, DeltaTime)
+		ActWheel(Link, Ent, WheelTorque, DeltaTime)
 
 		ReactTq = ReactTq + WheelTorque
 	end
@@ -844,7 +880,7 @@ function ENT:OnRemove()
 		self:Unlink(Gearbox)
 	end
 
-	timer.Remove("ACF Engine Clock " .. self:EntIndex())
+	timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
