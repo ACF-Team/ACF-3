@@ -85,6 +85,8 @@ local function LinkWheel(Gearbox, Wheel)
 
 	Gearbox.Wheels[Wheel] = Link
 
+	Gearbox:ApplyBrakes()
+
 	Wheel:CallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex(), function()
 		if IsValid(Gearbox) then
 			Gearbox:Unlink(Wheel)
