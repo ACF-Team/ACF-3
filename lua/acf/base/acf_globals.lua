@@ -102,7 +102,7 @@ do -- ACF global vars
 		Turbine = 0.375,
 		Wankel = 0.335,
 		Radial = 0.4, -- 0.38 to 0.53
-		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
+		Electric = 0.2125 --percent efficiency converting chemical kw into mechanical kw
 	}
 
 	--how fast damage drops torque, lower loses more % torque
