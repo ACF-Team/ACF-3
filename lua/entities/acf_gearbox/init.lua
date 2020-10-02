@@ -85,8 +85,6 @@ local function LinkWheel(Gearbox, Wheel)
 
 	Gearbox.Wheels[Wheel] = Link
 
-	Gearbox:ApplyBrakes()
-
 	Wheel:CallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex(), function()
 		if IsValid(Gearbox) then
 			Gearbox:Unlink(Wheel)
@@ -244,6 +242,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.RClutch = 1
 		Entity.MainClutch = 1
 		Entity.LastBrakeThink = 0
+		Entity.BrakesCanApply = false
 
 		Entity.HitBoxes = ACF.HitBoxes[GearboxData.model]
 
@@ -384,10 +383,20 @@ end
 
 local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
+	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 
 	BrakeMult = Link.Vel * Link.Inertia * Brake / 5
 	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
+end
+
+local function SetCanApplyBrakes(Gearbox)
+	if Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0 then
+		if Gearbox.BrakesCanApply then Gearbox:ApplyBrakes() end -- if it was off before, run it!
+		Gearbox.BrakesCanApply = true
+		return
+	end
+	Gearbox.BrakesCanApply = false
 end
 
 local Inputs = {
@@ -422,12 +431,15 @@ local Inputs = {
 	Brake = function(Entity, Value)
 		Entity.LBrake = Clamp(Value, 0, 100)
 		Entity.RBrake = Clamp(Value, 0, 100)
+		SetCanApplyBrakes(Entity)
 	end,
 	["Left Brake"] = function(Entity, Value)
 		Entity.LBrake = Clamp(Value, 0, 100)
+		SetCanApplyBrakes(Entity)
 	end,
 	["Right Brake"] = function(Entity, Value)
 		Entity.RBrake = Clamp(Value, 0, 100)
+		SetCanApplyBrakes(Entity)
 	end,
 	["Left Clutch"] = function(Entity, Value)
 		Entity.LClutch = Clamp(1 - Value, 0, 1)
@@ -489,6 +501,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.InGear = false
 	Gearbox.CanUpdate = true
 	Gearbox.LastActive = 0
+	Gearbox.BrakesCanApply = false
 
 	Gearbox.In = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("input")).Pos)
 	Gearbox.OutL = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("driveshaftL")).Pos)
@@ -503,8 +516,6 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 
 		CheckRopes(Gearbox, "GearboxOut")
 		CheckRopes(Gearbox, "Wheels")
-
-		Gearbox:ApplyBrakes()
 	end)
 
 	return Gearbox
@@ -527,8 +538,6 @@ function ENT:Enable()
 	else
 		ChangeGear(self, self.OldGear)
 	end
-
-	self:ApplyBrakes()
 
 	self.OldGear = nil
 
@@ -719,10 +728,11 @@ function ENT:Calc(InputRPM, InputInertia)
 end
 
 function ENT:ApplyBrakes() -- This is just for brakes
-	if self.Disabled then return end
-	if not next(self.Wheels) then return end
+	if self.Disabled then return end -- Illegal brakes man
+	if not self.BrakesCanApply then return end -- Kills the whole thing if its not supposed to be running
+	if not next(self.Wheels) then return end -- No brakes for the non-wheel users
 
-	local DeltaTime = ACF.CurTime - self.LastBrakeThink
+	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval() * 2) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 	local BoxPhys = self:GetPhysicsObject()
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
@@ -738,7 +748,7 @@ function ENT:ApplyBrakes() -- This is just for brakes
 
 	self.LastBrakeThink = ACF.CurTime
 
-	TimerSimple(engine.TickInterval(), function()
+	TimerSimple(engine.TickInterval(), function() -- Keeps this block running
 		if not IsValid(self) then return end
 
 		self:ApplyBrakes()
