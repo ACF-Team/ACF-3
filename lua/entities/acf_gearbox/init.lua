@@ -392,7 +392,7 @@ end
 
 local function SetCanApplyBrakes(Gearbox)
 	if Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0 then
-		if Gearbox.BrakesCanApply then Gearbox:ApplyBrakes() end -- if it was off before, run it!
+		if Gearbox.BrakesCanApply then timer.Start("ACF Gearbox Brake Clock " .. Gearbox:EntIndex()) end -- If this timer somehow stops, this will restart it
 		Gearbox.BrakesCanApply = true
 		return
 	end
@@ -516,6 +516,11 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 
 		CheckRopes(Gearbox, "GearboxOut")
 		CheckRopes(Gearbox, "Wheels")
+	end)
+
+	TimerCreate("ACF Gearbox Brake Clock " .. Gearbox:EntIndex(), engine.TickInterval(), 0, function()
+		if not IsValid(Gearbox) then return end
+		Gearbox:ApplyBrakes()
 	end)
 
 	return Gearbox
@@ -748,9 +753,9 @@ function ENT:ApplyBrakes() -- This is just for brakes
 
 	self.LastBrakeThink = ACF.CurTime
 
-	TimerSimple(engine.TickInterval(), function() -- Keeps this block running
+	-- Since this is no longer a simple timer thats being re-run every interval, needs to be adjusted for engine.TickInterval()
+	timer.Adjust("ACF Gearbox Brake Clock", engine.TickInterval(), 0, function()
 		if not IsValid(self) then return end
-
 		self:ApplyBrakes()
 	end)
 end
@@ -893,6 +898,7 @@ function ENT:OnRemove()
 	end
 
 	timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
+	timer.Remove("ACF Gearbox Brake Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
