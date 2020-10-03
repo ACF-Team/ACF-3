@@ -9,7 +9,6 @@ include("shared.lua")
 
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local TimerSimple = timer.Simple
 
 local function CheckLoopedGearbox(This, Target)
 	local Queued = { [Target] = true }
