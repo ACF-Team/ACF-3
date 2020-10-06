@@ -1,4 +1,4 @@
-
+local ACF = ACF
 local Types = {
 	Normal = {
 		Prefix = "",
@@ -69,3 +69,35 @@ surface.CreateFont("ACF_Control", {
 	size = 14,
 	weight = 550,
 })
+
+do -- Clientside visclip check
+	-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
+	-- They save the clip distance on a slightly different way so we have to do some minor changes
+	local function GetDistance(Entity, Clip)
+		if not ProperClipping then return Clip.d or Clip[2] end
+
+		return Clip.norm:Dot(Clip.norm * Clip.d - Entity:OBBCenter())
+	end
+
+	local function CheckClip(Entity, Clip, Center, Pos)
+		local Distance = GetDistance(Entity, Clip)
+		local Normal = Entity:LocalToWorldAngles(Clip.n or Clip[1]):Forward()
+		local Origin = Center + Normal * Distance
+
+		return Normal:Dot((Origin - Pos):GetNormalized()) > 0
+	end
+
+	function ACF.CheckClips(Ent, Pos)
+		if not IsValid(Ent) then return false end
+		if not Ent.ClipData then return false end -- Doesn't have clips
+		if Ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
+
+		local Center = Ent:LocalToWorld(Ent:OBBCenter())
+
+		for _, Clip in ipairs(Ent.ClipData) do
+			if CheckClip(Ent, Clip, Center, Pos) then return true end
+		end
+
+		return false
+	end
+end

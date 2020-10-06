@@ -1,3 +1,5 @@
+local ACF = ACF
+
 do -- Ricochet/Penetration materials
 	local Materials = {}
 	local MatCache = {}
@@ -135,6 +137,38 @@ do -- Time lapse function
 	end
 end
 
+do -- Trace functions
+	local TraceLine = util.TraceLine
+
+	function ACF.Trace(TraceData)
+		local T = TraceLine(TraceData)
+
+		if T.HitNonWorld and ACF.CheckClips(T.Entity, T.HitPos) then
+			TraceData.filter[#TraceData.filter + 1] = T.Entity
+
+			return ACF.Trace(TraceData)
+		end
+
+		debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
+
+		return T
+	end
+
+	-- Generates a copy of and uses it's own filter instead of using the existing one
+	function ACF.TraceF(TraceData)
+		local Filter = {}; for K, V in pairs(TraceData.filter) do Filter[K] = V end -- Quick copy
+		local Original = TraceData.filter
+
+		TraceData.filter = Filter -- Temporarily replace filter
+
+		local T = ACF.Trace(TraceData)
+
+		TraceData.filter = Original -- Replace filter
+
+		return T, Filter
+	end
+end
+
 do -- Sound aliases
 	local Stored = {}
 	local Lookup = {}
@@ -257,6 +291,7 @@ do -- Sound aliases
 	ACF.GetSoundAlias = GetAlias
 
 	-- sound.Play hijacking
+	-- TODO: BURN THIS TO THE GROUND
 	sound.DefaultPlay = sound.DefaultPlay or sound.Play
 
 	function sound.Play(Name, ...)
