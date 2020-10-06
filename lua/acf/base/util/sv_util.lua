@@ -75,7 +75,7 @@ do -- Serverside visclip check
 	end
 
 	local function CheckClip(Entity, Clip, Center, Pos)
-		if Clip.physical then return false end -- Physical clips will be ignored, we can't hit them anyway
+		if Clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway
 
 		local Distance = GetDistance(Entity, Clip)
 		local Normal = Entity:LocalToWorldAngles(Clip.n):Forward()
