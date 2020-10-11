@@ -201,7 +201,7 @@ local function ChangeGear(Entity, Value)
 
 	Entity.Gear = Value
 	Entity.GearRatio = Entity.GearTable[Value] * Entity.GearTable.Final
-	Entity.ChangeFinished = CurTime() + Entity.SwitchTime
+	Entity.ChangeFinished = ACF.CurTime + Entity.SwitchTime
 	Entity.InGear = false
 
 	Entity:EmitSound("buttons/lever7.wav", 250, 100)
@@ -241,7 +241,7 @@ local function UpdateGearboxData(Entity, GearboxData, Id, Data1, Data2, Data3, D
 		Entity.RClutch = 1
 		Entity.MainClutch = 1
 		Entity.LastBrakeThink = 0
-		Entity.BrakesCanApply = false
+		Entity.Braking = false
 
 		Entity.HitBoxes = ACF.HitBoxes[GearboxData.model]
 
@@ -384,18 +384,20 @@ local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
 	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+	local BrakeMult = Link.Vel * Link.Inertia * Brake
 
-	BrakeMult = Link.Vel * Link.Inertia * Brake / 5
 	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
 end
 
 local function SetCanApplyBrakes(Gearbox)
-	if Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0 then
-		if Gearbox.BrakesCanApply then timer.Start("ACF Gearbox Brake Clock " .. Gearbox:EntIndex()) end -- If this timer somehow stops, this will restart it
-		Gearbox.BrakesCanApply = true
-		return
+	local CanApply = Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0
+
+	if CanApply ~= Gearbox.Braking then
+		Gearbox.Braking = CanApply
+
+		Gearbox:ApplyBrakes()
 	end
-	Gearbox.BrakesCanApply = false
+
 end
 
 local Inputs = {
@@ -500,7 +502,7 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 	Gearbox.InGear = false
 	Gearbox.CanUpdate = true
 	Gearbox.LastActive = 0
-	Gearbox.BrakesCanApply = false
+	Gearbox.Braking = false
 
 	Gearbox.In = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("input")).Pos)
 	Gearbox.OutL = Gearbox:WorldToLocal(Gearbox:GetAttachment(Gearbox:LookupAttachment("driveshaftL")).Pos)
@@ -515,11 +517,6 @@ function MakeACF_Gearbox(Owner, Pos, Angle, Id, ...)
 
 		CheckRopes(Gearbox, "GearboxOut")
 		CheckRopes(Gearbox, "Wheels")
-	end)
-
-	TimerCreate("ACF Gearbox Brake Clock " .. Gearbox:EntIndex(), engine.TickInterval(), 0, function()
-		if not IsValid(Gearbox) then return end
-		Gearbox:ApplyBrakes()
 	end)
 
 	return Gearbox
@@ -643,9 +640,9 @@ end
 
 function ENT:Calc(InputRPM, InputInertia)
 	if self.Disabled then return 0 end
-	if self.LastActive == CurTime() then return self.TorqueOutput end
+	if self.LastActive == ACF.CurTime then return self.TorqueOutput end
 
-	if self.ChangeFinished < CurTime() then
+	if self.ChangeFinished < ACF.CurTime then
 		self.InGear = true
 	end
 
@@ -695,31 +692,27 @@ function ENT:Calc(InputRPM, InputInertia)
 	end
 
 	for Wheel, Link in pairs(self.Wheels) do
-		local Clutch = (self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch)) or self.MainClutch
+		local Clutch = self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch) or self.MainClutch
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
-		if self.GearRatio ~= 0 and (math.abs(RPM) < math.abs(InputRPM)) then
-			if self.DoubleDiff then
-				if self.SteerRate ~= 0 then -- this is where the magic happens :)
-					-- This splits the steering rate into 2 "sections", under 0.5 it will cut power until none is applied, over 0.5 it will provide power in reverse up to full speed at 1
-					-- this works both postive and negative
-					local TrueSteer = (self.SteerRate / 0.5)
 
-					-- this actually controls the RPM of the wheels, so the steering rate is correct
-					if Link.Side == 0 and (math.abs(RPM) < math.abs(InputRPM)) then
-						Link.ReqTq = ((InputRPM * (-(math.abs(math.max(TrueSteer,0)) - 1))) - RPM) * InputInertia
-					elseif Link.Side == 1 and (math.abs(RPM) < math.abs(InputRPM)) then
-						Link.ReqTq = ((InputRPM * (-(math.abs(math.min(TrueSteer,0)) - 1))) - RPM) * InputInertia
-					end
-				else -- if steering rate is 0, then just apply power like normal
-					Link.ReqTq = (InputRPM - RPM) * InputInertia
+		if self.GearRatio ~= 0 and Clutch > 0 and RPM < InputRPM then
+			local Multiplier = 1
+
+			if self.DoubleDiff and self.SteerRate ~= 0 then
+				local Rate = self.SteerRate
+
+				-- this actually controls the RPM of the wheels, so the steering rate is correct
+				if Link.Side == 0 then
+					Multiplier = -math.abs(math.max(Rate, 0)) - 1
+				else
+					Multiplier = -math.abs(math.min(Rate, 0)) - 1
 				end
-			else
-				Link.ReqTq = (InputRPM - RPM) * InputInertia
 			end
 
-			Link.ReqTq = Link.ReqTq * Clutch
+			Link.ReqTq = (InputRPM * Multiplier - RPM) * InputInertia * Clutch
+
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
@@ -733,13 +726,12 @@ end
 
 function ENT:ApplyBrakes() -- This is just for brakes
 	if self.Disabled then return end -- Illegal brakes man
-	if not self.BrakesCanApply then return end -- Kills the whole thing if its not supposed to be running
+	if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
 	if not next(self.Wheels) then return end -- No brakes for the non-wheel users
-
-	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval() * 2) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 	local BoxPhys = self:GetPhysicsObject()
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
+	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 	for Wheel, Link in pairs(self.Wheels) do
 		CalcWheel(self, Link, Wheel, SelfWorld)
@@ -752,9 +744,9 @@ function ENT:ApplyBrakes() -- This is just for brakes
 
 	self.LastBrakeThink = ACF.CurTime
 
-	-- Since this is no longer a simple timer thats being re-run every interval, needs to be adjusted for engine.TickInterval()
-	timer.Adjust("ACF Gearbox Brake Clock", engine.TickInterval(), 0, function()
+	timer.Simple(engine.TickInterval(), function()
 		if not IsValid(self) then return end
+
 		self:ApplyBrakes()
 	end)
 end
@@ -792,7 +784,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 		end
 	end
 
-	self.LastActive = CurTime()
+	self.LastActive = ACF.CurTime
 end
 
 function ENT:Link(Target)
@@ -897,7 +889,6 @@ function ENT:OnRemove()
 	end
 
 	timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
-	timer.Remove("ACF Gearbox Brake Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
