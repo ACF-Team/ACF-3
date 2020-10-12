@@ -692,28 +692,32 @@ function ENT:Calc(InputRPM, InputInertia)
 	end
 
 	for Wheel, Link in pairs(self.Wheels) do
-		local Clutch = self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch) or self.MainClutch
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
 
-		if self.GearRatio ~= 0 and Clutch > 0 and RPM < InputRPM then
-			local Multiplier = 1
+		if self.GearRatio ~= 0 then
+			local Clutch = self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch) or self.MainClutch
+			local OnRPM = ((InputRPM > 0 and RPM < InputRPM) or (InputRPM < 0 and RPM > InputRPM))
 
-			if self.DoubleDiff and self.SteerRate ~= 0 then
-				local Rate = self.SteerRate
+			if Clutch > 0 and OnRPM then
+				local Multiplier = 1
 
-				-- this actually controls the RPM of the wheels, so the steering rate is correct
-				if Link.Side == 0 then
-					Multiplier = -math.abs(math.max(Rate, 0)) - 1
-				else
-					Multiplier = -math.abs(math.min(Rate, 0)) - 1
+				if self.DoubleDiff and self.SteerRate ~= 0 then
+					local Rate = self.SteerRate * 2
+
+					-- this actually controls the RPM of the wheels, so the steering rate is correct
+					if Link.Side == 0 then
+						Multiplier = math.min(0, Rate) + 1
+					else
+						Multiplier = -math.max(0, Rate) + 1
+					end
 				end
+
+				Link.ReqTq = (InputRPM * Multiplier - RPM) * InputInertia * Clutch
+
+				self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 			end
-
-			Link.ReqTq = (InputRPM * Multiplier - RPM) * InputInertia * Clutch
-
-			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
 
