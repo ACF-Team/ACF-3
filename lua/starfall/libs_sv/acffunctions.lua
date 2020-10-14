@@ -699,7 +699,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 		local type_id = list_entries[id]
 		if not type_id then SF.Throw("Invalid id", 2) end
 		
-		pos = pos + LocalToWorld(Vector(), ang, type_id.Offset, Angle())
+		pos = pos + LocalToWorld(type_id.Offset, Angle(), Vector(), ang)
 		size = type_id.Size
 	else
 		size = vunwrap(id)
