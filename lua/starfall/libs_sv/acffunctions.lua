@@ -620,7 +620,7 @@ ammo_properties.Refill.create_data = {}
 -- Possible values for ammo_data corresponding to ammo_id:
 -- @param pos Position of created ammo box
 -- @param ang Angle of created ammo box
--- @param id id of the ammo box to create
+-- @param id id of the ammo box to create or size vector
 -- @param gun_id id of the gun
 -- @param ammo_id id of the ammo
 -- @param frozen True to spawn frozen
@@ -685,7 +685,6 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	
 	checktype(pos, vec_meta)
 	checktype(ang, ang_meta)
-	checkluatype(id, TYPE_STRING)
 	checkluatype(ammo_id, TYPE_STRING)
 	checkluatype(gun_id, TYPE_STRING)
 	frozen = frozen and true or false
@@ -693,10 +692,18 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	
 	local pos = vunwrap(pos)
 	local ang = aunwrap(ang)
+	local size
 	
-	local list_entries = ACF.Weapons.Ammo
-	local type_id = list_entries[id]
-	if not type_id then SF.Throw("Invalid id", 2) end
+	if type(id) == "string" then
+		local list_entries = ACF.Weapons.Ammo
+		local type_id = list_entries[id]
+		if not type_id then SF.Throw("Invalid id", 2) end
+		
+		pos = pos + LocalToWorld(Vector(), ang, type_id.Offset, Angle())
+		size = type_id.Size
+	else
+		size = vunwrap(id)
+	end
 	
 	local ammo = ammo_properties[ammo_id]
 	if not ammo then SF.Throw("Invalid ammo id", 2) end
@@ -710,7 +717,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 		end
 	end
 	
-	local dupe_class = duplicator.FindEntityClass(type_id.ent) 
+	local dupe_class = duplicator.FindEntityClass("acf_ammo") 
 	if not dupe_class then SF.Throw("Didn't find entity duplicator records", 2) end
 	
 	plyBurst:use(ply, 1)
@@ -719,7 +726,6 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	local args_table = {
 		SF.clampPos(pos),
 		ang,
-		id,
 		gun_id,
 		ammo_id,
 		0,
@@ -745,6 +751,10 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 			args_table[3 + v.data] = v.convert(v.default)
 		end
 	end
+	
+	args_table[13] = size.x
+	args_table[14] = size.y
+	args_table[15] = size.z
 	
 	local ent = dupe_class.Func(ply, unpack(args_table))
 	ent:Activate()
