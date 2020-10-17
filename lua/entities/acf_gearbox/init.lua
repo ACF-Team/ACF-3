@@ -377,7 +377,7 @@ local function ActWheel(Link, Wheel, Torque, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 
-	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque) * DeltaTime, -500000, 500000))
+	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
 end
 
 local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
