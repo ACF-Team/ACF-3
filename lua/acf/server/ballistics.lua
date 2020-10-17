@@ -64,7 +64,7 @@ function ACF.BulletClient(Index, Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
 
 	local Effect = EffectData()
-	Effect:SetAttachment(Index)
+	Effect:SetHitBox(Index)
 	Effect:SetStart(Bullet.Flight * 0.1)
 
 	if Type == "Update" then
