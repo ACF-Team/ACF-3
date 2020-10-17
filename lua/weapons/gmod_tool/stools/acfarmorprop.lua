@@ -220,6 +220,25 @@ if CLIENT then
 		render.DrawWireframeSphere(Pos, Value, 20, 20, GreenFrame, true)
 	end)
 else -- Serverside-only stuff
+	local function UpdateMass(Entity)
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if not IsValid(PhysObj) then return end
+
+		local Ductility = Entity.ACF.Ductility
+		local Thickness = Entity.ACF.MaxArmour
+
+		ACF_Check(Entity) -- We need to update again to get the Area
+
+		local Area = Entity.ACF.Area
+		local Mass = CalcArmor(Area, Ductility, Thickness)
+
+		ApplySettings(_, Entity, {
+			Mass = Mass,
+			Ductility = Ductility * 100,
+		})
+	end
+
 	function TOOL:Think()
 		local Player = self:GetOwner()
 		local Ent = Player:GetEyeTrace().Entity
@@ -249,6 +268,14 @@ else -- Serverside-only stuff
 
 		self.AimEntity = Ent
 	end
+
+	-- Proper Clipping tool compatibility
+	-- Whenever a physical clip is created, we'll attempt to keep the same armor on the entity
+	hook.Add("ProperClippingPhysicsClipped", "ACF Physclip Armor", UpdateMass)
+	hook.Add("ProperClippingPhysicsReset", "ACF Physclip Armor", UpdateMass)
+	hook.Add("ProperClippingCanPhysicsClip", "ACF PhysClip Armor", function(Entity)
+		ACF_Check(Entity, true) -- Just creating the ACF table on the entity
+	end)
 
 	duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
 	duplicator.RegisterEntityModifier("mass", ApplySettings)
