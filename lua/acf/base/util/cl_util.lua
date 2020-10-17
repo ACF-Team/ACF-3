@@ -71,18 +71,11 @@ surface.CreateFont("ACF_Control", {
 })
 
 do -- Clientside visclip check
-	-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
-	-- They save the clip distance on a slightly different way so we have to do some minor changes
-	local function GetDistance(Entity, Clip)
-		if not ProperClipping then return Clip.d or Clip[2] end
-
-		return Clip.norm:Dot(Clip.norm * Clip.d - Entity:OBBCenter())
-	end
-
 	local function CheckClip(Entity, Clip, Center, Pos)
-		local Distance = GetDistance(Entity, Clip)
+		if Clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway
+
 		local Normal = Entity:LocalToWorldAngles(Clip.n or Clip[1]):Forward()
-		local Origin = Center + Normal * Distance
+		local Origin = Center + Normal * (Clip.d or Clip[2])
 
 		return Normal:Dot((Origin - Pos):GetNormalized()) > 0
 	end
@@ -92,7 +85,10 @@ do -- Clientside visclip check
 		if not Ent.ClipData then return false end -- Doesn't have clips
 		if Ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
 
-		local Center = Ent:LocalToWorld(Ent:OBBCenter())
+		-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
+		-- The bounding box center will change if the entity is physically clipped
+		-- That's why we'll use the original OBBCenter that was stored on the entity
+		local Center = Ent:LocalToWorld(Ent.OBBCenterOrg or Ent:OBBCenter())
 
 		for _, Clip in ipairs(Ent.ClipData) do
 			if CheckClip(Ent, Clip, Center, Pos) then return true end
