@@ -61,12 +61,10 @@ local function GenerateLinkTable(Entity, Target)
 
 	local Phys = Target:GetPhysicsObject()
 	local Axis = Phys:WorldToLocalVector(Entity:GetRight())
-	local Inertia = (Axis * Phys:GetInertia()):Length()
 
 	return {
 		Side = Side,
 		Axis = Axis,
-		Inertia = Inertia,
 		Rope = Rope,
 		RopeLen = (OutPosWorld - InPosWorld):Length(),
 		Output = OutPos,
@@ -373,8 +371,12 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	return BaseRPM / Entity.GearRatio / -6
 end
 
+-- TODO: Mix ActWheel and BrakeWheel into a single function again, gearboxes should think by themselves
 local function ActWheel(Link, Wheel, Torque, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
+
+	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 
 	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
@@ -382,9 +384,17 @@ end
 
 local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
+
 	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-	local BrakeMult = Link.Vel * Link.Inertia * Brake
+	local Velocity = Phys:GetVelocity():Length()
+	local BrakeMult = Link.Vel * Brake
+
+	-- TODO: Add a proper method to deal with parking brakes
+	if Velocity < 1 then
+		BrakeMult = BrakeMult * (1 - Velocity)
+	end
 
 	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
 end
@@ -738,10 +748,10 @@ function ENT:ApplyBrakes() -- This is just for brakes
 	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 	for Wheel, Link in pairs(self.Wheels) do
-		CalcWheel(self, Link, Wheel, SelfWorld)
 		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 
 		if Brake > 0 then -- regular ol braking
+			CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
 			BrakeWheel(Link, Wheel, Brake, DeltaTime)
 		end
 	end
