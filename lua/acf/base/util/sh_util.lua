@@ -156,14 +156,22 @@ do -- Trace functions
 
 	-- Generates a copy of and uses it's own filter instead of using the existing one
 	function ACF.TraceF(TraceData)
-		local Filter = {}; for K, V in pairs(TraceData.filter) do Filter[K] = V end -- Quick copy
 		local Original = TraceData.filter
+		local Filter = {}
+
+		if istable(Original) then
+			for K, V in pairs(Original) do Filter[K] = V end -- Quick copy
+		elseif isentity(Original) then
+			Filter[1] = Original
+		else
+			Filter = Original
+		end
 
 		TraceData.filter = Filter -- Temporarily replace filter
 
 		local T = ACF.Trace(TraceData)
 
-		TraceData.filter = Original -- Replace filter
+		TraceData.filter = Original -- Restore filter
 
 		return T, Filter
 	end
