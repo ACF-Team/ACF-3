@@ -50,6 +50,14 @@ do -- Spawn and Update functions --------------------------------
 		if not Class then
 			Data.Id = Data.Id and Updated[Data.Id] or "50mmC"
 		end
+
+		do -- External verifications
+			if Class.VerifyData then
+				Class.VerifyData(Data, Class)
+			end
+
+			HookRun("ACF_VerifyData", "acf_gun", Data, Class)
+		end
 	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
@@ -71,21 +79,22 @@ do -- Spawn and Update functions --------------------------------
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name				= Weapon.Name
-		Entity.ShortName		= Entity.Id
-		Entity.EntType			= Class.Name
-		Entity.Caliber			= Caliber
-		Entity.Class			= Weapon.ClassID
-		Entity.MagReload		= Weapon.MagReload
-		Entity.MagSize			= Weapon.MagSize or 1
-		Entity.Cyclic			= Weapon.Cyclic and 60 / Weapon.Cyclic
-		Entity.ReloadTime		= Entity.Cyclic or 1
-		Entity.Spread			= Class.Spread
-		Entity.MinLengthBonus	= 0.75 * 3.1416 * (Caliber * 0.5) ^ 2 * Weapon.Round.MaxLength
-		Entity.HitBoxes			= ACF.HitBoxes[Weapon.Model]
-		Entity.Long				= Class.LongBarrel
-		Entity.NormalMuzzle		= Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
-		Entity.Muzzle			= Entity.NormalMuzzle
+		Entity.Name           = Weapon.Name
+		Entity.ShortName      = Entity.Id
+		Entity.EntType        = Class.Name
+		Entity.ClassData      = Class
+		Entity.Caliber        = Caliber
+		Entity.Class          = Class.ID -- Needed for custom killicons
+		Entity.MagReload      = Weapon.MagReload
+		Entity.MagSize        = Weapon.MagSize or 1
+		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
+		Entity.ReloadTime     = Entity.Cyclic or 1
+		Entity.Spread         = Class.Spread
+		Entity.MinLengthBonus = 0.75 * 3.1416 * (Caliber * 0.5) ^ 2 * Weapon.Round.MaxLength
+		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
+		Entity.Long           = Class.LongBarrel
+		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
+		Entity.Muzzle         = Entity.NormalMuzzle
 
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
@@ -111,8 +120,6 @@ do -- Spawn and Update functions --------------------------------
 
 		local Phys = Entity:GetPhysicsObject()
 		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
-
-		Entity:UpdateOverlay(true)
 	end
 
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
@@ -144,7 +151,7 @@ do -- Spawn and Update functions --------------------------------
 		Gun.Crates			= {}
 		Gun.CurrentShot		= 0
 		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.DataStore		= ACF.GetEntClassVars("acf_gun")
+		Gun.DataStore		= ACF.GetEntityArguments("acf_gun")
 
 		Gun:SetNWString("Sound", Class.Sound)
 
@@ -158,6 +165,10 @@ do -- Spawn and Update functions --------------------------------
 		if Class.OnSpawn then
 			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
+
+		HookRun("ACF_OnEntitySpawn", "acf_gun", Gun, Data, Class, Weapon)
+
+		Gun:UpdateOverlay(true)
 
 		do -- Mass entity mod removal
 			local EntMods = Data and Data.EntityMods
@@ -188,12 +199,19 @@ do -- Spawn and Update functions --------------------------------
 
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Id)
-		local Weapon = Class.Lookup[Data.Id]
+		local Class    = ACF.GetClassGroup(Weapons, Data.Id)
+		local Weapon   = Class.Lookup[Data.Id]
+		local OldClass = self.ClassData
 
 		if self.State ~= "Empty" then
 			self:Unload()
 		end
+
+		if OldClass.OnLast then
+			OldClass.OnLast(self, OldClass)
+		end
+
+		HookRun("ACF_OnEntityLast", "acf_gun", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -205,11 +223,15 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnUpdate(self, Data, Class, Weapon)
 		end
 
+		HookRun("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end
 		end
+
+		self:UpdateOverlay(true)
 
 		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)
@@ -817,6 +839,14 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:OnRemove()
+			local Class = self.ClassData
+
+			if Class.OnLast then
+				Class.OnLast(self, Class)
+			end
+
+			HookRun("ACF_OnEntityLast", "acf_gun", self, Class)
+
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end

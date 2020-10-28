@@ -54,7 +54,6 @@ local function CreateMenu(Menu)
 		Selected[Choices] = Index
 
 		ACF.WriteValue("GearboxClass", Data.ID)
-		ACF.WriteValue("MaxGears", Data.Gears.Max)
 
 		LoadSortedList(GearboxList, Data.Items, "ID")
 	end
@@ -119,7 +118,7 @@ do -- Default Menus
 
 			local ValuesData = Values[Class.ID]
 
-			for I = math.max(1, Gears.Min), Gears.Max do
+			for I = 1, Gears.Max do
 				local Variable = "Gear" .. I
 				local Default = ValuesData[Variable]
 
@@ -333,7 +332,7 @@ do -- Default Menus
 
 				local Delta = UnitMult / Mult
 
-				for I = math.max(1, Gears.Min), Gears.Max do
+				for I = 1, Gears.Max do
 					local Var = "Shift" .. I
 					local Old = ACF.ReadNumber(Var)
 
@@ -345,7 +344,7 @@ do -- Default Menus
 				UnitMult = Mult
 			end
 
-			for I = math.max(1, Gears.Min), Gears.Max do
+			for I = 1, Gears.Max do
 				local GearVar = "Gear" .. I
 				local DefGear = ValuesData[GearVar]
 
@@ -464,7 +463,7 @@ do -- Default Menus
 				local WheelDiameter = ValuesData.WheelDiameter
 				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
 
-				for I = math.max(1, Gears.Min), Gears.Max do
+				for I = 1, Gears.Max do
 					local Gear = ValuesData["Gear" .. I]
 
 					ACF.WriteValue("Shift" .. I, Gear * Multiplier)

@@ -90,7 +90,7 @@ ACF.RegisterGearboxClass("Clutch", {
 	Name		= "Clutch",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
-		Min	= 1,
+		Min	= 0,
 		Max	= 1,
 	}
 })

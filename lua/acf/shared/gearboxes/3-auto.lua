@@ -18,6 +18,26 @@ local ShiftS = 0.25
 local ShiftM = 0.35
 local ShiftL = 0.5
 
+local function CheckNumber(Value)
+	if not Value then return end -- nil or false, both are not numbers
+
+	return tonumber(Value)
+end
+
+local function InitGearbox(Gearbox)
+	local Gears = Gearbox.Gears
+
+	Gearbox.Automatic  = true
+	Gearbox.ShiftScale = 1
+	Gearbox.Hold       = false
+	Gearbox.Drive      = 0
+	Gearbox.GearCount  = Gearbox.MaxGear + 1
+
+	Gears[Gearbox.GearCount] = Gearbox.Reverse
+
+	Gearbox:ChangeDrive(1)
+end
+
 ACF.RegisterGearboxClass("3-Auto", {
 	Name		= "3-Speed Automatic",
 	CreateMenu	= ACF.AutomaticGearboxMenu,
@@ -25,6 +45,90 @@ ACF.RegisterGearboxClass("3-Auto", {
 		Min	= 0,
 		Max	= 3,
 	},
+	OnSpawn = InitGearbox,
+	OnUpdate = InitGearbox,
+	VerifyData = function(Data, Class)
+		do -- Shift point table verification
+			local Points = Data.ShiftPoints
+			local Mult = Data.ShiftUnit or 1
+			local Max = Class.Gears.Max
+
+			if not istable(Points) then
+				local Encoded = Data.Gear9 and tostring(Data.Gear9)
+
+				Points = { [0] = -1 }
+
+				if Encoded then
+					local Count = 0
+
+					for Point in string.gmatch(Encoded, "[^,]+") do
+						Count = Count + 1
+
+						if Count > Max then break end
+
+						Points[Count] = CheckNumber(Point) or Count * 100
+					end
+				end
+
+				Data.ShiftPoints = Points
+			else
+				Points[0] = -1
+			end
+
+			for I = 1, Max do
+				local Point = CheckNumber(Points[I])
+
+				if not Point then
+					Point = (CheckNumber(Data["Shift" .. I]) or I * 100) * Mult
+
+					Data["Shift" .. I] = nil
+				end
+
+				Points[I] = math.Clamp(Point, 0, 9999)
+			end
+		end
+
+		do -- Reverse gear verification
+			local Reverse = CheckNumber(Data.Reverse)
+
+			if not Reverse then
+				Reverse = CheckNumber(Data.Gear8) or -1
+
+				Data.Gear8 = nil
+			end
+
+			Data.Reverse = math.Clamp(Reverse, -1, 1)
+		end
+	end,
+	SetupInputs = function(List)
+		local Count = #List
+
+		List[Count + 1] = "Hold Gear"
+		List[Count + 2] = "Shift Speed Scale"
+	end,
+	OnLast = function(Gearbox)
+		Gearbox.Automatic  = nil
+		Gearbox.ShiftScale = nil
+		Gearbox.Drive      = nil
+		Gearbox.Hold       = nil
+	end,
+	GetGearsText = function(Gearbox)
+		local GearText  = "Gear %s: %s, Upshift @ %s kph / %s mph\n"
+		local Text      = "%sReverse gear: %s\n"
+		local Points    = Gearbox.ShiftPoints
+		local Gears     = Gearbox.Gears
+		local GearsText = ""
+
+		for I = 1, Gearbox.MaxGear do
+			local Ratio = math.Round(Gears[I], 2)
+			local KPH = math.Round(Points[I] / 10.936, 1)
+			local MPH = math.Round(Points[I] / 17.6, 1)
+
+			GearsText = GearsText .. GearText:format(I, Ratio, KPH, MPH)
+		end
+
+		return Text:format(GearsText, math.Round(Gearbox.Reverse, 2))
+	end,
 })
 
 do -- Inline Gearboxes
@@ -35,7 +139,6 @@ do -- Inline Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-L-M", "3-Auto", {
@@ -45,7 +148,6 @@ do -- Inline Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-L-L", "3-Auto", {
@@ -55,7 +157,6 @@ do -- Inline Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
-		Automatic	= true,
 	})
 end
 
@@ -67,7 +168,6 @@ do -- Inline Dual Clutch Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 
@@ -78,7 +178,6 @@ do -- Inline Dual Clutch Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 
@@ -89,7 +188,6 @@ do -- Inline Dual Clutch Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 end
@@ -102,7 +200,6 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-T-M", "3-Auto", {
@@ -112,7 +209,6 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-T-L", "3-Auto", {
@@ -122,7 +218,6 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
-		Automatic	= true,
 	})
 end
 
@@ -134,7 +229,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 
@@ -145,7 +239,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 
@@ -156,7 +249,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
-		Automatic	= true,
 		DualClutch	= true,
 	})
 end
@@ -169,7 +261,6 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3SW * StWB),
 		Switch		= ShiftS,
 		MaxTorque	= math.floor(Gear3ST * StTB),
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-ST-M", "3-Auto", {
@@ -179,7 +270,6 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3MW * StWB),
 		Switch		= ShiftM,
 		MaxTorque	= math.floor(Gear3MT * StTB),
-		Automatic	= true,
 	})
 
 	ACF.RegisterGearbox("3Gear-A-ST-L", "3-Auto", {
@@ -189,6 +279,5 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3LW * StWB),
 		Switch		= ShiftL,
 		MaxTorque	= math.floor(Gear3LT * StTB),
-		Automatic	= true,
 	})
 end

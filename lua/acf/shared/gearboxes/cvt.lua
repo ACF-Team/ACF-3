@@ -323,13 +323,73 @@ ACF_DefineGearbox("CVT-ST-L", {
 	}
 })
 
+local function CheckNumber(Value)
+	if not Value then return end -- nil or false, both are not numbers
+
+	return tonumber(Value)
+end
+
+local function InitGearbox(Gearbox)
+	local Gears = Gearbox.Gears
+
+	Gearbox.CVT      = true
+	Gearbox.CVTRatio = 0
+
+	WireLib.TriggerOutput(Gearbox, "Min Target RPM", Gears.MinRPM)
+	WireLib.TriggerOutput(Gearbox, "Max Target RPM", Gears.MaxRPM)
+end
+
 ACF.RegisterGearboxClass("CVT", {
 	Name		= "CVT",
 	CreateMenu	= ACF.CVTGearboxMenu,
 	Gears = {
 		Min		= 0,
 		Max		= 2,
-	}
+	},
+	OnSpawn = InitGearbox,
+	OnUpdate = InitGearbox,
+	VerifyData = function(Data)
+		local Min, Max = Data.MinRPM, Data.MaxRPM
+
+		Data.Gears[1] = 0.01
+
+		if not Min then
+			Min = CheckNumber(Data.Gear3) or 3000
+
+			Data.Gear3 = nil
+		end
+
+		if not Max then
+			Max = CheckNumber(Data.Gear4) or 5000
+
+			Data.Gear4 = nil
+		end
+
+		Data.MinRPM = math.Clamp(Min, 1, 9900)
+		Data.MaxRPM = math.Clamp(Max, Data.MinRPM + 100, 10000)
+	end,
+	SetupInputs = function(List)
+		List[#List + 1] = "CVT Ratio"
+	end,
+	SetupOutputs = function(List)
+		local Count = #List
+
+		List[Count + 1] = "Min Target RPM"
+		List[Count + 2] = "Max Target RPM"
+	end,
+	OnLast = function(Gearbox)
+		Gearbox.CVT      = nil
+		Gearbox.CVTRatio = nil
+	end,
+	GetGearsText = function(Gearbox)
+		local Text    = "Reverse Gear: %s\nTarget: %s - %s RPM"
+		local Gears   = Gearbox.Gears
+		local Reverse = math.Round(Gears[2], 2)
+		local Min     = math.Round(Gearbox.MinRPM, 0)
+		local Max     = math.Round(Gearbox.MaxRPM, 0)
+
+		return Text:format(Reverse, Min, Max)
+	end,
 })
 
 do -- Inline Gearboxes
@@ -340,7 +400,6 @@ do -- Inline Gearboxes
 		Mass		= GearCVTSW,
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-L-M", "CVT", {
@@ -350,7 +409,6 @@ do -- Inline Gearboxes
 		Mass		= GearCVTMW,
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-L-L", "CVT", {
@@ -360,7 +418,6 @@ do -- Inline Gearboxes
 		Mass		= GearCVTLW,
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
-		CVT			= true,
 	})
 end
 
@@ -373,7 +430,6 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
 		DualClutch	= true,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-LD-M", "CVT", {
@@ -384,7 +440,6 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
 		DualClutch	= true,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-LD-L", "CVT", {
@@ -395,7 +450,6 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
 		DualClutch	= true,
-		CVT			= true,
 	})
 end
 
@@ -407,7 +461,6 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTSW,
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-T-M", "CVT", {
@@ -417,7 +470,6 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTMW,
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-T-L", "CVT", {
@@ -427,7 +479,6 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTLW,
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
-		CVT			= true,
 	})
 end
 
@@ -440,7 +491,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
 		DualClutch	= true,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-TD-M", "CVT", {
@@ -451,7 +501,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
 		DualClutch	= true,
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-TD-L", "CVT", {
@@ -462,7 +511,6 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
 		DualClutch	= true,
-		CVT			= true,
 	})
 end
 
@@ -474,7 +522,6 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTSW * StWB),
 		Switch		= 0.15,
 		MaxTorque	= math.floor(GearCVTST * StTB),
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-ST-M", "CVT", {
@@ -484,7 +531,6 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTMW * StWB),
 		Switch		= 0.2,
 		MaxTorque	= math.floor(GearCVTMT * StTB),
-		CVT			= true,
 	})
 
 	ACF.RegisterGearbox("CVT-ST-L", "CVT", {
@@ -494,6 +540,5 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTLW * StWB),
 		Switch		= 0.3,
 		MaxTorque	= math.floor(GearCVTLT * StTB),
-		CVT			= true,
 	})
 end

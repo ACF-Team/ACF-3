@@ -68,16 +68,34 @@ ACF_DefineGearbox("DoubleDiff-T-L", {
 	}
 })
 
+local function InitGearbox(Gearbox)
+	Gearbox.DoubleDiff = true
+	Gearbox.SteerRate  = 0
+
+	Gearbox:SetBodygroup(1, 1)
+end
+
 ACF.RegisterGearboxClass("DoubleDiff", {
-	Name		= "Regenerative Steering",
+	Name		= "Double Differential",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
-		Min	= 1,
+		Min	= 0,
 		Max	= 1,
-	}
+	},
+	OnSpawn = InitGearbox,
+	OnUpdate = InitGearbox,
+	SetupInputs = function(List)
+		List[#List + 1] = "Steer Rate"
+	end,
+	OnLast = function(Gearbox)
+		Gearbox.DoubleDiff = nil
+		Gearbox.SteerRate  = nil
+
+		Gearbox:SetBodygroup(1, 0)
+	end,
 })
 
-do -- Inline Gearboxes
+do -- Transaxial Gearboxes
 	ACF.RegisterGearbox("DoubleDiff-T-S", "DoubleDiff", {
 		Name		= "Double Differential, Small",
 		Description	= "A light duty regenerative steering transmission.",
@@ -86,7 +104,6 @@ do -- Inline Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearDDST,
 		DualClutch	= true,
-		DoubleDiff	= true,
 	})
 
 	ACF.RegisterGearbox("DoubleDiff-T-M", "DoubleDiff", {
@@ -97,7 +114,6 @@ do -- Inline Gearboxes
 		Switch		= 0.35,
 		MaxTorque	= GearDDMT,
 		DualClutch	= true,
-		DoubleDiff	= true,
 	})
 
 	ACF.RegisterGearbox("DoubleDiff-T-L", "DoubleDiff", {
@@ -108,6 +124,5 @@ do -- Inline Gearboxes
 		Switch		= 0.5,
 		MaxTorque	= GearDDLT,
 		DualClutch	= true,
-		DoubleDiff	= true,
 	})
 end
