@@ -30,12 +30,12 @@ if CLIENT then
 		cam.End3D()
 	end
 
-	TOOL.BuildCPanel = ACF.BuildContextPanel
+	TOOL.BuildCPanel = ACF.CreateSpawnMenu
 
-	concommand.Add("acf_reload_menu", function()
-		if not IsValid(ACF.Menu) then return end
+	concommand.Add("acf_reload_spawn_menu", function()
+		if not IsValid(ACF.SpawnMenu) then return end
 
-		ACF.BuildContextPanel(ACF.Menu.Panel)
+		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
 	end)
 
 	hook.Add("ACF_DrawBoxes", "ACF Draw Hitboxes", function(Entity)

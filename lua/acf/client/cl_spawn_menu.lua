@@ -168,8 +168,8 @@ do -- ACF Menu context panel
 		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
 	end
 
-	function ACF.BuildContextPanel(Panel)
-		local Menu = ACF.Menu
+	function ACF.CreateSpawnMenu(Panel)
+		local Menu = ACF.SpawnMenu
 
 		if not IsValid(Menu) then
 			Menu = vgui.Create("ACF_Panel")
@@ -177,16 +177,16 @@ do -- ACF Menu context panel
 
 			Panel:AddItem(Menu)
 
-			ACF.Menu = Menu
+			ACF.SpawnMenu = Menu
 		else
 			Menu:ClearAllTemporal()
 			Menu:ClearAll()
 		end
 
 		local Reload = Menu:AddButton("Reload Menu")
-		Reload:SetTooltip("You can also type 'acf_reload_menu' in console.")
+		Reload:SetTooltip("You can also type 'acf_reload_spawn_menu' in console.")
 		function Reload:DoClickInternal()
-			ACF.BuildContextPanel(Panel)
+			ACF.CreateSpawnMenu(Panel)
 		end
 
 		local Tree = Menu:AddPanel("DTree")

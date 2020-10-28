@@ -32,11 +32,7 @@ if CLIENT then
 	language.Add( "Tool.acfmenu.0", "Left click to spawn the entity of your choice, Right click to link an entity to another (+Use to unlink)" )
 	language.Add( "Tool.acfmenu.1", "Right click to link the selected sensor to a pod" )
 
-	language.Add( "Undone_ACF Entity", "Undone ACF Entity" )
-	language.Add( "Undone_acf_gearbox", "Undone ACF Gearbox" )
-	language.Add( "Undone_acf_ammo", "Undone ACF Ammo" )
 	language.Add( "SBoxLimit_acf_rack", "You've reached the ACF Launchers limit!" )
-	language.Add( "SBoxLimit_acf_ammo", "You've reached the ACF Explosives limit!" )
 	language.Add( "SBoxLimit_acf_sensor", "You've reached the ACF Sensors limit!" )
 
 	local DrawBoxes = GetConVar("acf_drawboxes")
