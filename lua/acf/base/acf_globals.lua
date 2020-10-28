@@ -244,7 +244,11 @@ timer.Simple(0, function()
 	end
 end)
 
-function switch(cases,arg) local Var = (cases[arg] or cases["default"]) return Var end
+function switch(cases, arg)
+	local Var = cases[arg]
+
+	return Var ~= nil and Var or cases.default
+end
 
 -- changes here will be automatically reflected in the armor properties tool
 function ACF_CalcArmor(Area, Ductility, Mass)

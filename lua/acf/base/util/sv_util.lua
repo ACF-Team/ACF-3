@@ -139,10 +139,14 @@ do -- Entity saving and restoring
 
 		local PhysObj = Entity:GetPhysicsObject()
 
+		if not IsValid(PhysObj) then return end
+
 		Saved[Entity] = {
 			Constraints = constraint.GetTable(Entity),
 			Gravity = PhysObj:IsGravityEnabled(),
 			Motion = PhysObj:IsMotionEnabled(),
+			Contents = PhysObj:GetContents(),
+			Material = PhysObj:GetMaterial(),
 		}
 
 		Entity:CallOnRemove("ACF_RestoreEntity", function()
@@ -159,6 +163,8 @@ do -- Entity saving and restoring
 
 		PhysObj:EnableGravity(EntData.Gravity)
 		PhysObj:EnableMotion(EntData.Motion)
+		PhysObj:SetContents(EntData.Contents)
+		PhysObj:SetMaterial(EntData.Material)
 
 		for _, Data in ipairs(EntData.Constraints) do
 			local Constraint = Constraints[Data.Type]
@@ -321,6 +327,55 @@ do -- Entity inputs
 		if not Class then return end
 
 		return GetClass(Class)
+	end
+end
+
+do -- Extra overlay text
+	local Classes = {}
+
+	function ACF.RegisterOverlayText(ClassName, Identifier, Function)
+		if not isstring(ClassName) then return end
+		if Identifier == nil then return end
+		if not isfunction(Function) then return end
+
+		local Class = Classes[ClassName]
+
+		if not Class then
+			Classes[ClassName] = {
+				[Identifier] = Function
+			}
+		else
+			Class[Identifier] = Function
+		end
+	end
+
+	function ACF.RemoveOverlayText(ClassName, Identifier)
+		if not isstring(ClassName) then return end
+		if Identifier == nil then return end
+
+		local Class = Classes[ClassName]
+
+		if not Class then return end
+
+		Class[Identifier] = nil
+	end
+
+	function ACF.GetOverlayText(Entity)
+		local Class = Classes[Entity:GetClass()]
+
+		if not Class then return "" end
+
+		local Result = ""
+
+		for _, Function in pairs(Class) do
+			local Text = Function(Entity)
+
+			if Text and Text ~= "" then
+				Result = Result .. "\n\n" .. Text
+			end
+		end
+
+		return Result
 	end
 end
 
