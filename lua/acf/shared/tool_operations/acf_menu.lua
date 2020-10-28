@@ -79,6 +79,11 @@ do -- Spawner operation
 			return false
 		end
 
+		if not Class.Spawn then
+			SendMessage(Player, "Error", ClassName, " doesn't have a spawn function assigned to it.")
+			return false
+		end
+
 		local Position = Trace.HitPos + Trace.HitNormal * 128
 		local Angles = Trace.HitNormal:Angle():Up():Angle()
 
