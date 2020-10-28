@@ -126,9 +126,10 @@ do -- Tool Information Registration function
 		end
 
 		for K, V in pairs(Info) do
-			New[K] = K == "name" and Name or V
+			New[K] = V
 		end
 
+		New.name = Name
 		New.stage = StageIdx
 		New.op = OpIdx
 
@@ -332,7 +333,6 @@ do -- Clientside Tool interaction
 
 			if not Tool then return end
 			if not Tool.SetMode then return end
-			if Player:GetTool() ~= Tool then return end
 
 			Tool:SetMode(StageName, OpName)
 		end)
@@ -342,11 +342,13 @@ do -- Clientside Tool interaction
 			if not isstring(Stage) then return end
 			if not isstring(Op) then return end
 
-			net.Start("ACF_ToolMode")
-				net.WriteString(Tool)
-				net.WriteString(Stage)
-				net.WriteString(Op)
-			net.SendToServer()
+			timer.Simple(0, function() -- Yeah.
+				net.Start("ACF_ToolMode")
+					net.WriteString(Tool)
+					net.WriteString(Stage)
+					net.WriteString(Op)
+				net.SendToServer()
+			end)
 		end
 	end
 end
