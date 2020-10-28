@@ -440,51 +440,31 @@ do -- Sensor registration functions
 	end
 end
 
--- Serverside-only stuff
-if CLIENT then return end
-
 do -- Entity class registration function
 	ACF.Classes.Entities = ACF.Classes.Entities or {}
 
 	local Entities = ACF.Classes.Entities
-	local VarLookup = {}
-	local VarList = {}
 
-	function ACF.RegisterEntityClass(Class, Function, ...)
-		if not isstring(Class) then return end
-		if not isfunction(Function) then return end
+	local function GetEntityTable(Class)
+		if Entities[Class] then return Entities[Class] end
 
-		Entities[Class] = {
-			Spawn = Function,
+		local Table = {
+			Lookup = {},
+			Count = 0,
+			List = {},
 		}
 
-		local Vars = istable(...) and ... or { ... }
-		local Lookup, List = {}, {}
-		local Count = 0
+		Entities[Class] = Table
 
-		for _, V in pairs(Vars) do
-			Count = Count + 1
-
-			Lookup[V] = true
-			List[Count] = V
-		end
-
-		VarLookup[Class] = Lookup
-		VarList[Class] = List
-
-		duplicator.RegisterEntityClass(Class, Function, "Pos", "Angle", "Data", unpack(List))
+		return Table
 	end
 
-	function ACF.AddEntClassVars(Class, ...)
-		if not isstring(Class) then return end
-		if not Entities[Class] then return end
+	local function AddArguments(Entity, Arguments)
+		local Lookup = Entity.Lookup
+		local Count = Entity.Count
+		local List = Entity.List
 
-		local Vars = istable(...) and ... or { ... }
-		local Lookup = VarLookup[Class]
-		local List = VarList[Class]
-		local Count = #List
-
-		for _, V in pairs(Vars) do
+		for _, V in ipairs(Arguments) do
 			if not Lookup[V] then
 				Count = Count + 1
 
@@ -493,7 +473,34 @@ do -- Entity class registration function
 			end
 		end
 
+		Entity.Count = Count
+
+		return List
+	end
+
+	function ACF.RegisterEntityClass(Class, Function, ...)
+		if not isstring(Class) then return end
+		if not isfunction(Function) then return end
+
+		local Entity = GetEntityTable(Class)
+		local Arguments = istable(...) and ... or { ... }
+		local List = AddArguments(Entity, Arguments)
+
+		Entity.Spawn = Function
+
 		duplicator.RegisterEntityClass(Class, Function, "Pos", "Angle", "Data", unpack(List))
+	end
+
+	function ACF.AddEntityArguments(Class, ...)
+		if not isstring(Class) then return end
+
+		local Entity = GetEntityTable(Class)
+		local Arguments = istable(...) and ... or { ... }
+		local List = AddArguments(Entity, Arguments)
+
+		if Entity.Spawn then
+			duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(List))
+		end
 	end
 
 	function ACF.GetEntityClass(Class)
@@ -502,13 +509,13 @@ do -- Entity class registration function
 		return Entities[Class]
 	end
 
-	function ACF.GetEntClassVars(Class)
-		if not Class then return end
-		if not VarList[Class] then return end
+	function ACF.GetEntityArguments(Class)
+		if not isstring(Class) then return end
 
+		local Entity = GetEntityTable(Class)
 		local List = {}
 
-		for K, V in ipairs(VarList[Class]) do
+		for K, V in ipairs(Entity.List) do
 			List[K] = V
 		end
 
