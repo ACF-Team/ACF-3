@@ -156,7 +156,6 @@ local Clamp		  = math.Clamp
 
 local function CreateInputsOutputs(Gearbox)
 	local Inputs = { "Gear", "Gear Up", "Gear Down" }
-	if not (Gearbox.Gears > 1) and (not Gearbox.Auto) then Inputs = {} end
 
 	if Gearbox.CVT then
 		Inputs[#Inputs + 1] = "CVT Ratio"
