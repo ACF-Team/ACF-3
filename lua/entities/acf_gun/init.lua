@@ -340,18 +340,20 @@ do -- Metamethods --------------------------------
 
 	do -- Shooting ------------------------------
 		function ENT:BarrelCheck(Offset)
-			if not CPPI then return self:LocalToWorld(self.Muzzle) + Offset end
-
 			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
 			TraceData.filter = self.BarrelFilter
 
 			Trace(TraceData)
 
-			if TraceRes.Hit and TraceRes.Entity:CPPIGetOwner() == self.Owner then
-				self.BarrelFilter[#self.BarrelFilter + 1] = TraceRes.Entity
+			if TraceRes.Hit then
+				local Entity = TraceRes.Entity
 
-				return self:BarrelCheck(Offset)
+				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self.Owner then
+					self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+
+					return self:BarrelCheck(Offset)
+				end
 			end
 
 			return TraceRes.HitPos
@@ -409,7 +411,9 @@ do -- Metamethods --------------------------------
 				self.Fuze = nil
 			end
 
-			self.BulletData.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
+			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
+
+			self.BulletData.Owner  = self.CurrentUser
 			self.BulletData.Gun	   = self      -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck(Velocity * engine.TickInterval())
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
