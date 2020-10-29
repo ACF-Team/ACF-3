@@ -6,6 +6,7 @@ function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing Discarging Sabot"
 	self.Description = "A subcaliber munition designed to trade damage for penetration. Loses energy quickly over distance."
 	self.Blacklist = ACF.GetWeaponBlacklist({
+		RAC = true,
 		AL = true,
 		AC = true,
 		SA = true,
@@ -18,7 +19,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local Cylinder  = (3.1416 * (Data.Caliber * 0.05) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
+	local Cylinder  = (3.1416 * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
 	local Hole		= Data.RoundArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
 	local SabotMass = (Cylinder - Hole) * 2.7 * 0.65 * 0.001 -- Aluminum sabot
 
@@ -32,13 +33,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 end
 
-function Ammo:BaseConvert(_, ToolData)
-	if not ToolData.Projectile then ToolData.Projectile = 0 end
-	if not ToolData.Propellant then ToolData.Propellant = 0 end
-
+function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 	local SubCaliberRatio = 0.375 -- Ratio of projectile to gun caliber
-	local Area = 3.1416 * (Data.Caliber * 0.05 * SubCaliberRatio) ^ 2
+	local Area = 3.1416 * (Data.Caliber * 0.5 * SubCaliberRatio) ^ 2
 
 	Data.RoundArea	 = Area
 	Data.ShovePower	 = 0.2
@@ -52,10 +50,12 @@ function Ammo:BaseConvert(_, ToolData)
 	return Data, GUIData
 end
 
-function Ammo:Network(Crate, BulletData)
-	Ammo.BaseClass.Network(self, Crate, BulletData)
+if SERVER then
+	function Ammo:Network(Entity, BulletData)
+		Ammo.BaseClass.Network(self, Entity, BulletData)
 
-	Crate:SetNW2String("AmmoType", "APDS")
+		Entity:SetNW2String("AmmoType", "APDS")
+	end
+else
+	ACF.RegisterAmmoDecal("APDS", "damage/apcr_pen", "damage/apcr_rico")
 end
-
-ACF.RegisterAmmoDecal("APDS", "damage/apcr_pen", "damage/apcr_rico")

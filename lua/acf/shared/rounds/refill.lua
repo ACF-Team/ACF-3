@@ -19,6 +19,8 @@ function Round.convert(_, PlayerData)
 		RoundVolume = 35,
 	}
 
+	BulletData.CartMass = BulletData.ProjMass + BulletData.PropMass
+
 	return BulletData
 end
 
@@ -40,6 +42,30 @@ end
 
 function Round.cratetxt()
 	return ""
+end
+
+function Round.OnFirst(Entity)
+	if not Entity.SupplyingTo then
+		Entity.SupplyingTo = {}
+	end
+
+	timer.Create("ACF Refill " .. Entity:EntIndex(), 1, 0, function()
+		if not IsValid(Entity) then return end
+
+		RefillCrates(Entity)
+	end)
+end
+
+function Round.OnLast(Entity)
+	local CallName = "ACF Refill " .. Entity:EntIndex()
+
+	for Crate in pairs(Entity.SupplyingTo) do
+		Crate:RemoveCallOnRemove(CallName)
+	end
+
+	Entity.SupplyingTo = nil
+
+	timer.Remove(CallName)
 end
 
 function Round.guicreate(Panel, Table)

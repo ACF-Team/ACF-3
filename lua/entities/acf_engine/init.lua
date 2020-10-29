@@ -104,7 +104,7 @@ end
 local CheckLegal  = ACF_CheckLegal
 local ClassLink   = ACF.GetClassLink
 local ClassUnlink = ACF.GetClassUnlink
-local Engines	  = ACF.Classes.Engines
+local Engines     = ACF.Classes.Engines
 local EngineTypes = ACF.Classes.EngineTypes
 local Inputs      = ACF.GetInputActions("acf_engine")
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
@@ -114,6 +114,7 @@ local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
+local HookRun     = hook.Run
 local Gamemode    = GetConVar("acf_gamemode")
 
 -- Fuel consumption is increased on competitive servers
@@ -229,8 +230,6 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
-	local HookRun = hook.Run
-
 	local function VerifyData(Data)
 		-- Entity was created via menu tool
 		if Data.Engine then

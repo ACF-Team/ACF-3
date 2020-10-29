@@ -24,6 +24,7 @@ ACF_defineGun("7.62mmMG", {
 	magsize = 250,
 	magreload = 6, -- Time to reload in seconds
 	Cyclic = 700, -- Rounds per minute
+	IsBoxed = true,
 	round = {
 		maxlength = 13,
 		propweight = 0.04
@@ -42,6 +43,7 @@ ACF_defineGun("12.7mmMG", {
 	magsize = 150,
 	magreload = 6,
 	Cyclic = 600,
+	IsBoxed = true,
 	round = {
 		maxlength = 15.8,
 		propweight = 0.03
@@ -60,6 +62,7 @@ ACF_defineGun("14.5mmMG", {
 	magsize = 90,
 	magreload = 5,
 	Cyclic = 500,
+	IsBoxed = true,
 	round = {
 		maxlength = 19.5,
 		propweight = 0.04
@@ -72,6 +75,7 @@ ACF.RegisterWeaponClass("MG", {
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
 	Spread		  = 0.16,
 	Sound		  = "acf_base/weapons/mg_fire4.mp3",
+	IsBoxed		  = true,
 	Caliber	= {
 		Min = 5.56,
 		Max = 14.5,

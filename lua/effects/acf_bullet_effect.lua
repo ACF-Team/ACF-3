@@ -11,7 +11,7 @@ function EFFECT:Init(Data)
 		return
 	end
 
-	self.CreateTime = CurTime()
+	self.CreateTime = ACF.CurTime
 
 	local Bullet = Bullets[self.Index]
 	local Flight = Data:GetStart() * 10
@@ -51,22 +51,22 @@ function EFFECT:Init(Data)
 			return
 		end
 
-		local Tracer = Crate:GetNWFloat("Tracer") > 0
+		local Tracer = Crate:GetNW2Float("Tracer") > 0
 		local BulletData = {
 			Crate = Crate,
 			SimFlight = Flight,
 			SimPos = Origin,
 			SimPosLast = Origin,
-			Caliber = Crate:GetNWFloat("Caliber", 10),
-			RoundMass = Crate:GetNWFloat("ProjMass", 10),
-			FillerMass = Crate:GetNWFloat("FillerMass"),
-			WPMass = Crate:GetNWFloat("WPMass"),
-			DragCoef = Crate:GetNWFloat("DragCoef", 1),
-			AmmoType = Crate:GetNWString("AmmoType", "AP"),
+			Caliber = Crate:GetNW2Float("Caliber", 10),
+			RoundMass = Crate:GetNW2Float("ProjMass", 10),
+			FillerMass = Crate:GetNW2Float("FillerMass"),
+			WPMass = Crate:GetNW2Float("WPMass"),
+			DragCoef = Crate:GetNW2Float("DragCoef", 1),
+			AmmoType = Crate:GetNW2String("AmmoType", "AP"),
 			Tracer = Tracer and ParticleEmitter(Origin) or nil,
 			TracerColour = Tracer and Crate:GetColor() or nil,
-			Accel = Crate:GetNWVector("Accel", Vector(0, 0, -600)),
-			LastThink = CurTime(),
+			Accel = Crate:GetNW2Vector("Accel", Vector(0, 0, -600)),
+			LastThink = ACF.CurTime,
 			Effect = self,
 		}
 
@@ -88,7 +88,7 @@ end
 function EFFECT:Think()
 	local Bullet = Bullets[self.Index]
 
-	if Bullet and not self.Kill and self.CreateTime > CurTime() - 30 then return true end
+	if Bullet and not self.Kill and self.CreateTime > ACF.CurTime - 30 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then

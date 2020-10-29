@@ -1,5 +1,8 @@
 include("shared.lua")
 
+language.Add("Undone_acf_ammo", "Undone ACF Ammo Crate")
+language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
+
 local MaxRounds = GetConVar("acf_maxroundsdisplay")
 local HideInfo = ACF.HideInfoBubble
 local Refills = {}
@@ -37,8 +40,8 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.LocalAng = Data.LocalAng
 		Entity.FitPerAxis = Data.FitPerAxis
 		Entity.Spacing = Data.Spacing
-		Entity.MagSize = Data.MGS
-		Entity.HasBoxedAmmo = Data.MGS > 0
+		Entity.MagSize = Data.MagSize
+		Entity.HasBoxedAmmo = Data.MagSize > 0
 	end
 
 	if Queued[Entity] then

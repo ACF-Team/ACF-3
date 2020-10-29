@@ -1,19 +1,22 @@
+local Classes = ACF.Classes
+local GetClassGroup = ACF.GetClassGroup
+
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Class = ACF.Classes[ToolData.Destiny]
-	local ClassData = Class and Class[ToolData.WeaponClass]
-	local WeaponData = ClassData and ClassData.Lookup[ToolData.Weapon]
+	local Source = Classes[ToolData.Destiny]
+	local Class = Source and GetClassGroup(Source, ToolData.Weapon)
+	local Weapon = Class and Class.Lookup[ToolData.Weapon]
 	local GUIData = {}
 
-	if not WeaponData then return Data, GUIData end
+	if not Weapon then return Data, GUIData end
 
-	local RoundData = WeaponData.Round
+	local RoundData = Weapon.Round
 
-	Data.Caliber = WeaponData.Caliber
-	Data.FrArea = 3.1416 * (Data.Caliber * 0.05) ^ 2
+	Data.Caliber = Weapon.Caliber * 0.1 -- Bullet caliber will have to stay in cm
+	Data.FrArea = 3.1416 * (Data.Caliber * 0.5) ^ 2
 
 	GUIData.MaxRoundLength = math.Round(RoundData.MaxLength * (Data.LengthAdj or 1), 2)
 	GUIData.MinPropLength = 0.01
-	GUIData.MinProjLength = math.Round(Data.Caliber * 0.15, 2)
+	GUIData.MinProjLength = math.Round(Data.Caliber * 1.5, 2)
 
 	local DesiredProp = math.Round(RoundData.PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
 	local AllowedProp = GUIData.MaxRoundLength - GUIData.MinProjLength
@@ -30,7 +33,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
 	Data.Priority = Data.Priority or "Projectile"
-	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.015, 2) or 0
+	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 
 	local Projectile = math.Clamp(ToolData.Projectile + Data.Tracer, GUIData.MinProjLength, GUIData.MaxProjLength)
 	local Propellant = math.Clamp(ToolData.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
@@ -49,38 +52,47 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	GUIData.ProjVolume = Data.FrArea * Data.ProjLength
 end
 
-local Classes = ACF.Classes
-local Ignore = {
-	-- Old
-	GunClass = true,
-	Radar = true,
-	Rack = true,
-	-- New/upcoming
-	EngineTypes = true,
-	Components = true,
-	AmmoTypes = true,
-	FuelTanks = true,
-	FuelTypes = true,
-	Gearboxes = true,
-	Guidances = true,
-	Entities = true,
-	Engines = true,
-	Sensors = true,
-	Crates = true,
-	Racks = true,
-	Fuzes = true,
+local Weaponry = {
+	Missiles = Classes.Missiles,
+	Weapons = Classes.Weapons,
 }
+
+-- In case you might want to add more
+function ACF.AddWeaponrySource(Class)
+	if not Class then return end
+	if not Classes[Class] then return end
+
+	Weaponry[Class] = Classes[Class]
+end
+
+function ACF.GetWeaponrySources()
+	local Result = {}
+
+	for K, V in pairs(Weaponry) do
+		Result[K] = V
+	end
+
+	return Result
+end
+
+function ACF.FindWeaponrySource(ID)
+	if not ID then return end
+
+	for Key, Source in pairs(Weaponry) do
+		if ACF.GetClassGroup(Source, ID) then
+			return Key, Source
+		end
+	end
+end
 
 function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 
-	for K, V in pairs(Classes) do
-		if Ignore[K] then continue end
-
-		for ID in pairs(V) do
-			if Whitelist[ID] then continue end
-
-			Result[ID] = true
+	for _, Source in pairs(Weaponry) do
+		for ID in pairs(Source) do
+			if not Whitelist[ID] then
+				Result[ID] = true
+			end
 		end
 	end
 
@@ -90,7 +102,7 @@ end
 function ACF.RoundShellCapacity(Momentum, FrArea, Caliber, ProjLength)
 	local MinWall = 0.2 + ((Momentum / FrArea) ^ 0.7) * 0.02 --The minimal shell wall thickness required to survive firing at the current energy level	
 	local Length = math.max(ProjLength - MinWall, 0)
-	local Radius = math.max((Caliber * 0.05) - MinWall, 0)
+	local Radius = math.max((Caliber * 0.5) - MinWall, 0)
 	local Volume = 3.1416 * Radius ^ 2 * Length
 
 	return Volume, Length, Radius --Returning the cavity volume and the minimum wall thickness

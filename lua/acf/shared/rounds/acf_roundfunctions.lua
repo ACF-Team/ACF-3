@@ -21,8 +21,8 @@ function ACF_RoundBaseGunpowder(PlayerData, Data, ServerData, GUIData)
 
 	Data.ProjLength = math.Clamp(PlayerData.ProjLength * Ratio, GUIData.MinProjLength, GUIData.MaxProjLength)
 	Data.PropLength = math.Clamp(PlayerData.PropLength * Ratio, GUIData.MinPropLength, GUIData.MaxPropLength)
-	Data.PropMass = Data.FrArea * (Data.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
-	Data.RoundVolume = Data.FrArea * (Data.ProjLength + Data.PropLength)
+	Data.PropMass = Data.FrArea * (ACF.AmmoCaseScale ^ 2) * (Data.PropLength * ACF.PDensity / 1000) --Volume of the case as a cylinder * Powder density converted from g to kg
+	Data.RoundVolume = Data.FrArea * ACF.AmmoCaseScale ^ 2 * (Data.ProjLength + Data.PropLength)
 
 	GUIData.ProjVolume = Data.FrArea * Data.ProjLength
 

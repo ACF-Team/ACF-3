@@ -11,6 +11,18 @@ function Ammo:OnLoaded()
 	}
 end
 
+function Ammo:GetDisplayData(Data)
+	local FragMass	= Data.ProjMass - Data.FillerMass
+	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
+
+	return {
+		BlastRadius	= Data.FillerMass ^ 0.33 * 8,
+		Fragments	= Fragments,
+		FragMass	= FragMass / Fragments,
+		FragVel		= (Data.FillerMass * ACF.HEPower * 1000 / FragMass / Fragments / Fragments) ^ 0.5,
+	}
+end
+
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -37,11 +49,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 end
 
-function Ammo:BaseConvert(_, ToolData)
-	if not ToolData.Projectile then ToolData.Projectile = 0 end
-	if not ToolData.Propellant then ToolData.Propellant = 0 end
-	if not ToolData.FillerMass then ToolData.FillerMass = 0 end
-
+function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
 	GUIData.MinFillerVol = 0
@@ -59,112 +67,96 @@ function Ammo:BaseConvert(_, ToolData)
 	return Data, GUIData
 end
 
-function Ammo:Network(Crate, BulletData)
-	Crate:SetNW2String("AmmoType", "HE")
-	Crate:SetNW2String("AmmoID", BulletData.Id)
-	Crate:SetNW2Float("Caliber", BulletData.Caliber)
-	Crate:SetNW2Float("ProjMass", BulletData.ProjMass)
-	Crate:SetNW2Float("FillerMass", BulletData.FillerMass)
-	Crate:SetNW2Float("PropMass", BulletData.PropMass)
-	Crate:SetNW2Float("DragCoef", BulletData.DragCoef)
-	Crate:SetNW2Float("MuzzleVel", BulletData.MuzzleVel)
-	Crate:SetNW2Float("Tracer", BulletData.Tracer)
-end
+if SERVER then
+	function Ammo:Network(Entity, BulletData)
+		Ammo.BaseClass.Network(self, Entity, BulletData)
 
-function Ammo:GetDisplayData(Data)
-	local FragMass	= Data.ProjMass - Data.FillerMass
-	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
-
-	return {
-		BlastRadius	= Data.FillerMass ^ 0.33 * 8,
-		Fragments	= Fragments,
-		FragMass	= FragMass / Fragments,
-		FragVel		= (Data.FillerMass * ACF.HEPower * 1000 / FragMass / Fragments / Fragments) ^ 0.5,
-	}
-end
-
-function Ammo:GetCrateText(BulletData)
-	local Text = "Muzzle Velocity: %s m/s\nBlast Radius: %s m\nBlast Energy: %s KJ"
-	local Data = self:GetDisplayData(BulletData)
-
-	return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
-end
-
-function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
-	if ACF_Check(Target) then
-		local Speed	 = Bullet.Flight:Length() / ACF.Scale
-		local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
-		local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
-
-		if HitRes.Ricochet then return "Ricochet" end
+		Entity:SetNW2String("AmmoType", "HE")
 	end
 
-	return false
+	function Ammo:GetCrateText(BulletData)
+		local Text = "Muzzle Velocity: %s m/s\nBlast Radius: %s m\nBlast Energy: %s KJ"
+		local Data = self:GetDisplayData(BulletData)
+
+		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
+	end
+
+	function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
+		if ACF_Check(Target) then
+			local Speed	 = Bullet.Flight:Length() / ACF.Scale
+			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
+			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+
+			if HitRes.Ricochet then return "Ricochet" end
+		end
+
+		return false
+	end
+
+	function Ammo:WorldImpact()
+		return false
+	end
+else
+	ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")
+
+	function Ammo:MenuAction(Menu, ToolData, Data)
+		local FillerMass = Menu:AddSlider("Filler Volume", 0, Data.MaxFillerVol, 2)
+		FillerMass:SetDataVar("FillerMass", "OnValueChanged")
+		FillerMass:TrackDataVar("Projectile")
+		FillerMass:SetValueFunction(function(Panel)
+			ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
+
+			self:UpdateRoundData(ToolData, Data)
+
+			Panel:SetMax(Data.MaxFillerVol)
+			Panel:SetValue(Data.FillerVol)
+
+			return Data.FillerVol
+		end)
+
+		local Tracer = Menu:AddCheckBox("Tracer")
+		Tracer:SetDataVar("Tracer", "OnChange")
+		Tracer:SetValueFunction(function(Panel)
+			ToolData.Tracer = ACF.ReadBool("Tracer")
+
+			self:UpdateRoundData(ToolData, Data)
+
+			ACF.WriteValue("Projectile", Data.ProjLength)
+			ACF.WriteValue("Propellant", Data.PropLength)
+
+			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
+			Panel:SetValue(ToolData.Tracer)
+
+			return ToolData.Tracer
+		end)
+
+		local RoundStats = Menu:AddLabel()
+		RoundStats:TrackDataVar("Projectile", "SetText")
+		RoundStats:TrackDataVar("Propellant")
+		RoundStats:TrackDataVar("FillerMass")
+		RoundStats:SetValueFunction(function()
+			self:UpdateRoundData(ToolData, Data)
+
+			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
+			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
+			local PropMass	= ACF.GetProperMass(Data.PropMass)
+			local Filler	= ACF.GetProperMass(Data.FillerMass)
+
+			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+		end)
+
+		local FillerStats = Menu:AddLabel()
+		FillerStats:TrackDataVar("FillerMass", "SetText")
+		FillerStats:SetValueFunction(function()
+			self:UpdateRoundData(ToolData, Data)
+
+			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Blast	   = math.Round(Data.BlastRadius, 2)
+			local FragMass = ACF.GetProperMass(Data.FragMass)
+			local FragVel  = math.Round(Data.FragVel, 2)
+
+			return Text:format(Blast, Data.Fragments, FragMass, FragVel)
+		end)
+	end
 end
-
-function Ammo:WorldImpact()
-	return false
-end
-
-function Ammo:MenuAction(Menu, ToolData, Data)
-	local FillerMass = Menu:AddSlider("Filler Volume", 0, Data.MaxFillerVol, 2)
-	FillerMass:SetDataVar("FillerMass", "OnValueChanged")
-	FillerMass:TrackDataVar("Projectile")
-	FillerMass:SetValueFunction(function(Panel)
-		ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
-
-		self:UpdateRoundData(ToolData, Data)
-
-		Panel:SetMax(Data.MaxFillerVol)
-		Panel:SetValue(Data.FillerVol)
-
-		return Data.FillerVol
-	end)
-
-	local Tracer = Menu:AddCheckBox("Tracer")
-	Tracer:SetDataVar("Tracer", "OnChange")
-	Tracer:SetValueFunction(function(Panel)
-		ToolData.Tracer = ACF.ReadBool("Tracer")
-
-		self:UpdateRoundData(ToolData, Data)
-
-		ACF.WriteValue("Projectile", Data.ProjLength)
-		ACF.WriteValue("Propellant", Data.PropLength)
-
-		Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-		Panel:SetValue(ToolData.Tracer)
-
-		return ToolData.Tracer
-	end)
-
-	local RoundStats = Menu:AddLabel()
-	RoundStats:TrackDataVar("Projectile", "SetText")
-	RoundStats:TrackDataVar("Propellant")
-	RoundStats:TrackDataVar("FillerMass")
-	RoundStats:SetValueFunction(function()
-		self:UpdateRoundData(ToolData, Data)
-
-		local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
-		local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-		local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-		local PropMass	= ACF.GetProperMass(Data.PropMass)
-		local Filler	= ACF.GetProperMass(Data.FillerMass)
-
-		return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
-	end)
-
-	local FillerStats = Menu:AddLabel()
-	FillerStats:TrackDataVar("FillerMass", "SetText")
-	FillerStats:SetValueFunction(function()
-		self:UpdateRoundData(ToolData, Data)
-
-		local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
-		local Blast	   = math.Round(Data.BlastRadius, 2)
-		local FragMass = ACF.GetProperMass(Data.FragMass)
-		local FragVel  = math.Round(Data.FragVel, 2)
-
-		return Text:format(Blast, Data.Fragments, FragMass, FragVel)
-	end)
-end
-
-ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")

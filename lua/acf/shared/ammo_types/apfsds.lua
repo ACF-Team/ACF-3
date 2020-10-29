@@ -16,7 +16,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local Cylinder  = (3.1416 * (Data.Caliber * 0.05) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
+	local Cylinder  = (3.1416 * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
 	local Hole		= Data.RoundArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
 	local SabotMass = (Cylinder - Hole) * 2.7 * 0.25 * 0.001 -- A cylinder with a hole the size of the dart in it and im no math wizard so we're just going to take off 3/4 of the mass for the cutout since sabots are shaped like this: ][
 
@@ -30,13 +30,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 end
 
-function Ammo:BaseConvert(_, ToolData)
-	if not ToolData.Projectile then ToolData.Projectile = 0 end
-	if not ToolData.Propellant then ToolData.Propellant = 0 end
-
+function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 	local SubCaliberRatio = 0.29 -- Ratio of projectile to gun caliber
-	local Area = 3.1416 * (Data.Caliber * 0.05 * SubCaliberRatio) ^ 2
+	local Area = 3.1416 * (Data.Caliber * 0.5 * SubCaliberRatio) ^ 2
 
 	Data.RoundArea	 = Area
 	Data.ShovePower	 = 0.2
@@ -50,10 +47,12 @@ function Ammo:BaseConvert(_, ToolData)
 	return Data, GUIData
 end
 
-function Ammo:Network(Crate, BulletData)
-	Ammo.BaseClass.Network(self, Crate, BulletData)
+if SERVER then
+	function Ammo:Network(Entity, BulletData)
+		Ammo.BaseClass.Network(self, Entity, BulletData)
 
-	Crate:SetNW2String("AmmoType", "APFSDS")
+		Entity:SetNW2String("AmmoType", "APFSDS")
+	end
+else
+	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
 end
-
-ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")

@@ -24,6 +24,7 @@ ACF_defineGun("40mmSL", {
 	magsize = 1,
 	magreload = 30,
 	Cyclic = 1,
+	IsBoxed = true,
 	round = {
 		maxlength = 17.5,
 		propweight = 0.000075
@@ -45,6 +46,7 @@ ACF_defineGun("40mmCL", {
 	magreload = 40,
 	Cyclic = 200,
 	year = 1950,
+	IsBoxed = true,
 	round = {
 		maxlength = 12,
 		propweight = 0.001
@@ -57,6 +59,7 @@ ACF.RegisterWeaponClass("SL", {
 	MuzzleFlash	  = "gl_muzzleflash_noscale",
 	Spread		  = 0.32,
 	Sound		  = "acf_base/weapons/smoke_launch.mp3",
+	IsBoxed		  = true,
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,

@@ -22,6 +22,7 @@ ACF_defineGun("40mmGL", { --id
 	magreload = 7.5,
 	year = 1970,
 	Cyclic = 200,
+	IsBoxed = true,
 	round = {
 		maxlength = 7.5,
 		propweight = 0.01
@@ -34,6 +35,7 @@ ACF.RegisterWeaponClass("GL", {
 	MuzzleFlash	  = "gl_muzzleflash_noscale",
 	Spread		  = 0.28,
 	Sound		  = "acf_base/weapons/grenadelauncher.mp3",
+	IsBoxed		  = true,
 	Caliber	= {
 		Min = 25,
 		Max = 40,

@@ -853,9 +853,9 @@ function ents_methods:acfNameShort ()
 	if isEngine( this ) then return this.Id or "" end
 	if isGearbox( this ) then return this.Id or "" end
 	if isGun( this ) then return this.Id or "" end
-	if isAmmo( this ) then return this.RoundId or "" end
+	if isAmmo( this ) then return this.Weapon or "" end
 	if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
-	
+
 	return ""
 end
 
@@ -985,7 +985,7 @@ function ents_methods:acfName ()
 
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
-	if isAmmo( this ) then return ( this.RoundId .. " " .. this.RoundType) end
+	if isAmmo( this ) then return this.Weapon .. " " .. this.AmmoType end
 	if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
 
 	local acftype = ""
@@ -1013,7 +1013,7 @@ function ents_methods:acfType ()
 		local Classes = list.Get( "ACFClasses" )
 		return Classes[ "GunClass" ][ this.Class ][ "name" ] or ""
 	end
-	if isAmmo( this ) then return this.RoundType or "" end
+	if isAmmo( this ) then return this.AmmoType or "" end
 	if isFuel( this ) then return this.FuelType or "" end
 	return ""
 end
@@ -1936,8 +1936,8 @@ function ents_methods:acfRoundType () --cartridge?
 
 	if not isAmmo( this ) then return "" end
 	if restrictInfo( this ) then return "" end
-	--return this.RoundId or ""
-	return this.RoundType or "" -- E2 uses this one now
+
+	return this.AmmoType or "" -- E2 uses this one now
 end
 
 --- Returns the type of ammo in a crate or gun

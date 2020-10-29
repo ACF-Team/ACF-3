@@ -107,7 +107,7 @@ ACF.RegisterWeaponClass("MO", {
 	Sound		  = "acf_base/weapons/mortar_new.mp3",
 	Caliber	= {
 		Min = 37,
-		Max = 150,
+		Max = 280,
 	},
 })
 

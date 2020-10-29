@@ -961,7 +961,7 @@ e2function string entity:acfRoundType()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	return this.RoundType or ""
+	return this.AmmoType or ""
 end
 
 -- Returns the type of ammo in a crate or gun

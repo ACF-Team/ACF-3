@@ -6,6 +6,7 @@ function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing Composite Rigid"
 	self.Description = "A hardened core munition designed for weapons in the 1940s."
 	self.Blacklist = ACF.GetWeaponBlacklist({
+		RAC = true,
 		AL = true,
 		AC = true,
 		SA = true,
@@ -29,10 +30,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 end
 
-function Ammo:BaseConvert(_, ToolData)
-	if not ToolData.Projectile then ToolData.Projectile = 0 end
-	if not ToolData.Propellant then ToolData.Propellant = 0 end
-
+function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
 	Data.ShovePower	 = 0.2
@@ -46,10 +44,12 @@ function Ammo:BaseConvert(_, ToolData)
 	return Data, GUIData
 end
 
-function Ammo:Network(Crate, BulletData)
-	Ammo.BaseClass.Network(self, Crate, BulletData)
+if SERVER then
+	function Ammo:Network(Entity, BulletData)
+		Ammo.BaseClass.Network(self, Entity, BulletData)
 
-	Crate:SetNW2String("AmmoType", "APCR")
+		Entity:SetNW2String("AmmoType", "APCR")
+	end
+else
+	ACF.RegisterAmmoDecal("APCR", "damage/apcr_pen", "damage/apcr_rico")
 end
-
-ACF.RegisterAmmoDecal("APCR", "damage/apcr_pen", "damage/apcr_rico")

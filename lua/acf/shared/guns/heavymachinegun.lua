@@ -28,6 +28,7 @@ ACF_defineGun("13mmHMG", {
 	magsize = 35,
 	magreload = 6,
 	Cyclic = 550,
+	IsBoxed = true,
 	round = {
 		maxlength = 22,
 		propweight = 0.09
@@ -46,6 +47,7 @@ ACF_defineGun("20mmHMG", {
 	magsize = 30,
 	magreload = 6,
 	Cyclic = 525,
+	IsBoxed = true,
 	round = {
 		maxlength = 30,
 		propweight = 0.12
@@ -64,6 +66,7 @@ ACF_defineGun("30mmHMG", {
 	magsize = 25,
 	magreload = 6,
 	Cyclic = 500,
+	IsBoxed = true,
 	round = {
 		maxlength = 37,
 		propweight = 0.35
@@ -82,6 +85,7 @@ ACF_defineGun("40mmHMG", {
 	magsize = 20,
 	magreload = 8,
 	Cyclic = 475,
+	IsBoxed = true,
 	round = {
 		maxlength = 42,
 		propweight = 0.9

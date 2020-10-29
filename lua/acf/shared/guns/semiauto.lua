@@ -24,6 +24,7 @@ ACF_defineGun("25mmSA", {
 	magsize = 5,
 	magreload = 2.5,
 	Cyclic = 300,
+	IsBoxed = true,
 	round = {
 		maxlength = 39,
 		propweight = 0.5
@@ -42,6 +43,7 @@ ACF_defineGun("37mmSA", {
 	magsize = 5,
 	magreload = 3.7,
 	Cyclic = 250,
+	IsBoxed = true,
 	round = {
 		maxlength = 42,
 		propweight = 1.125
@@ -60,6 +62,7 @@ ACF_defineGun("45mmSA", {
 	magsize = 5,
 	magreload = 4.5,
 	Cyclic = 225,
+	IsBoxed = true,
 	round = {
 		maxlength = 52,
 		propweight = 1.8
@@ -78,6 +81,7 @@ ACF_defineGun("57mmSA", {
 	magsize = 5,
 	magreload = 5.7,
 	Cyclic = 200,
+	IsBoxed = true,
 	round = {
 		maxlength = 62,
 		propweight = 2
@@ -96,6 +100,7 @@ ACF_defineGun("76mmSA", {
 	magsize = 5,
 	magreload = 7.6,
 	Cyclic = 150,
+	IsBoxed = true,
 	round = {
 		maxlength = 70,
 		propweight = 4.75
@@ -108,6 +113,7 @@ ACF.RegisterWeaponClass("SA", {
 	MuzzleFlash	  = "semi_muzzleflash_noscale",
 	Spread		  = 0.12,
 	Sound		  = "acf_base/weapons/sa_fire1.mp3",
+	IsBoxed		  = true,
 	Caliber	= {
 		Min = 20,
 		Max = 76,

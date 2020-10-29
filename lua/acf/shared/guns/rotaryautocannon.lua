@@ -73,7 +73,7 @@ ACF.RegisterWeaponClass("RAC", {
 	Sound		  = "acf_base/weapons/mg_fire3.mp3",
 	Caliber	= {
 		Min = 7.62,
-		Max = 30,
+		Max = 37,
 	},
 })
 
