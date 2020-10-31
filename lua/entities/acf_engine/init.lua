@@ -10,8 +10,15 @@ do
 	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
 		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-		if Engine.FuelType ~= Target.FuelType or Engine.FuelType == "Multifuel" and Target.FuelType == "Electric" then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+
+		if Engine.FuelType == "Multifuel" then
+			if Target.FuelType == "Electric" then
+				return false, "Cannot link because fuel type is incompatible."
+			end
+		elseif Engine.FuelType ~= Target.FuelType then
+			return false, "Cannot link because fuel type is incompatible."
+		end
 
 		Engine.FuelTanks[Target] = true
 		Target.Engines[Engine] = true
