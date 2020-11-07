@@ -106,6 +106,8 @@ if SERVER then
 	end
 
 	function Ammo:OnFirst(Entity)
+		if not Entity.IsAmmoCrate then return end
+
 		if not Entity.SupplyingTo then
 			Entity.SupplyingTo = {}
 		end
@@ -120,6 +122,8 @@ if SERVER then
 	end
 
 	function Ammo:OnLast(Entity)
+		if not Entity.IsRefill then return end
+
 		local CallName = "ACF Refill " .. Entity:EntIndex()
 
 		for Crate in pairs(Entity.SupplyingTo) do

@@ -7,13 +7,15 @@ function Ammo:OnLoaded()
 	self.Description = "A round with a hollow cavity, meant to flatten against surfaces on impact."
 end
 
-function Ammo:GetDisplayData(BulletData)
-	local Data	 = Ammo.BaseClass.GetDisplayData(self, BulletData)
-	local Energy = ACF_Kinetic(BulletData.MuzzleVel * 39.37, BulletData.ProjMass, BulletData.LimitVel)
+function Ammo:GetDisplayData(Data)
+	local Display = Ammo.BaseClass.GetDisplayData(self, Data)
+	local Energy  = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 
-	Data.MaxKETransfert = Energy.Kinetic * BulletData.ShovePower
+	Display.MaxKETransfert = Energy.Kinetic * Data.ShovePower
 
-	return Data
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -39,6 +41,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.PenArea	= (3.1416 * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
 	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

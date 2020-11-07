@@ -13,16 +13,18 @@ function Ammo:OnLoaded()
 	}
 end
 
-function Ammo:GetDisplayData(BulletData)
-	local Data	   = Ammo.BaseClass.GetDisplayData(self, BulletData)
-	local FragMass = BulletData.ProjMass - BulletData.FillerMass
+function Ammo:GetDisplayData(Data)
+	local Display  = Ammo.BaseClass.GetDisplayData(self, Data)
+	local FragMass = Data.ProjMass - Data.FillerMass
 
-	Data.BlastRadius = BulletData.FillerMass ^ 0.33 * 8
-	Data.Fragments	 = math.max(math.floor((BulletData.FillerMass / FragMass) * ACF.HEFrag), 2)
-	Data.FragMass	 = FragMass / Data.Fragments
-	Data.FragVel	 = (BulletData.FillerMass * ACF.HEPower * 1000 / Data.FragMass / Data.Fragments) ^ 0.5
+	Display.BlastRadius = Data.FillerMass ^ 0.33 * 8
+	Display.Fragments   = math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
+	Display.FragMass    = FragMass / Display.Fragments
+	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-	return Data
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -45,6 +47,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

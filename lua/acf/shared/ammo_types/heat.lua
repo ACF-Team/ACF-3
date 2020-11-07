@@ -47,20 +47,23 @@ function Ammo:GetDisplayData(Data)
 	local Energy	= ACF_Kinetic(Data.MuzzleVel * 39.37 + SlugMV * 39.37, MassUsed, 999999)
 	local FragMass	= Data.CasingMass + Data.SlugMass * Crushed
 	local Fragments	= math.max(math.floor((BoomFiller / FragMass) * ACF.HEFrag), 2)
-
-	return {
-		Crushed		   = Crushed,
+	local Display   = {
+		Crushed        = Crushed,
 		HEATFillerMass = HEATFiller,
 		BoomFillerMass = BoomFiller,
-		SlugMV		   = SlugMV,
+		SlugMV         = SlugMV,
 		SlugMassUsed   = MassUsed,
-		MaxPen		   = (Energy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA,
+		MaxPen         = (Energy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA,
 		TotalFragMass  = FragMass,
-		BlastRadius	   = BoomFiller ^ 0.33 * 8,
-		Fragments	   = Fragments,
-		FragMass	   = FragMass / Fragments,
-		FragVel		   = (BoomFiller * ACF.HEPower * 1000 / FragMass) ^ 0.5,
+		BlastRadius    = BoomFiller ^ 0.33 * 8,
+		Fragments      = Fragments,
+		FragMass       = FragMass / Fragments,
+		FragVel        = (BoomFiller * ACF.HEPower * 1000 / FragMass) ^ 0.5,
 	}
+
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -101,6 +104,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CasingMass		= Data.ProjMass - Data.FillerMass - ConeVol * 0.0079
 	Data.DragCoef		= Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

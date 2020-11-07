@@ -14,13 +14,16 @@ end
 function Ammo:GetDisplayData(Data)
 	local FragMass	= Data.ProjMass - Data.FillerMass
 	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
-
-	return {
-		BlastRadius	= Data.FillerMass ^ 0.33 * 8,
-		Fragments	= Fragments,
-		FragMass	= FragMass / Fragments,
-		FragVel		= (Data.FillerMass * ACF.HEPower * 1000 / FragMass / Fragments / Fragments) ^ 0.5,
+	local Display   = {
+		BlastRadius = Data.FillerMass ^ 0.33 * 8,
+		Fragments   = Fragments,
+		FragMass    = FragMass / Fragments,
+		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / FragMass / Fragments / Fragments) ^ 0.5,
 	}
+
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -43,6 +46,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

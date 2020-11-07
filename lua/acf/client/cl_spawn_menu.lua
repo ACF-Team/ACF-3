@@ -204,6 +204,7 @@ do -- ACF Menu context panel
 			self.Selected = Node
 
 			ACF.SetToolMode("acf_menu2", "Main", "Idle")
+			ACF.WriteValue("Destiny")
 
 			Menu:ClearTemporal()
 			Menu:StartTemporal()

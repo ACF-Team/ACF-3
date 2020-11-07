@@ -19,17 +19,20 @@ end
 function Ammo:GetDisplayData(Data)
 	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * 39.37) * 43.4216, 350)
 	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * 39.37) * 43.4216, 350)
-
-	return {
-		SMFiller	= SMFiller,
-		SMLife		= math.Round(20 + SMFiller * 0.25, 2),
-		SMRadiusMin	= math.Round(SMFiller * 1.25 * 0.15 * 0.0254, 2),
-		SMRadiusMax	= math.Round(SMFiller * 1.25 * 2 * 0.0254, 2),
-		WPFiller	= WPFiller,
-		WPLife		= math.Round(6 + WPFiller * 0.1, 2),
-		WPRadiusMin	= math.Round(WPFiller * 1.25 * 0.0254, 2),
-		WPRadiusMax	= math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
+	local Display  = {
+		SMFiller    = SMFiller,
+		SMLife      = math.Round(20 + SMFiller * 0.25, 2),
+		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * 0.0254, 2),
+		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * 0.0254, 2),
+		WPFiller    = WPFiller,
+		WPLife      = math.Round(6 + WPFiller * 0.1, 2),
+		WPRadiusMin = math.Round(WPFiller * 1.25 * 0.0254, 2),
+		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
 	}
+
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -64,6 +67,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

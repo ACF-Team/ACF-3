@@ -25,6 +25,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef  = Data.FrArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end

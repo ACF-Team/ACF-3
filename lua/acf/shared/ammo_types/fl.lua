@@ -16,12 +16,15 @@ function Ammo:OnLoaded()
 	}
 end
 
-function Ammo:GetDisplayData(BulletData)
-	local Energy = ACF_Kinetic(BulletData.MuzzleVel * 39.37, BulletData.FlechetteMass, BulletData.LimitVel)
-
-	return {
-		MaxPen = (Energy.Penetration / BulletData.FlechettePenArea) * ACF.KEtoRHA
+function Ammo:GetDisplayData(Data)
+	local Energy  = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.FlechetteMass, Data.LimitVel)
+	local Display = {
+		MaxPen = (Energy.Penetration / Data.FlechettePenArea) * ACF.KEtoRHA
 	}
+
+	hook.Run("ACF_GetDisplayData", self, Data, Display)
+
+	return Display
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
@@ -45,6 +48,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef		   = Data.FrArea * 0.0001 / Data.ProjMass
 	Data.MuzzleVel		   = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
+
+	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
