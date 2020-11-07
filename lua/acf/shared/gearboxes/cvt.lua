@@ -323,12 +323,6 @@ ACF_DefineGearbox("CVT-ST-L", {
 	}
 })
 
-local function CheckNumber(Value)
-	if not Value then return end -- nil or false, both are not numbers
-
-	return tonumber(Value)
-end
-
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
 
@@ -354,13 +348,13 @@ ACF.RegisterGearboxClass("CVT", {
 		Data.Gears[1] = 0.01
 
 		if not Min then
-			Min = CheckNumber(Data.Gear3) or 3000
+			Min = ACF.CheckNumber(Data.Gear3) or 3000
 
 			Data.Gear3 = nil
 		end
 
 		if not Max then
-			Max = CheckNumber(Data.Gear4) or 5000
+			Max = ACF.CheckNumber(Data.Gear4) or 5000
 
 			Data.Gear4 = nil
 		end

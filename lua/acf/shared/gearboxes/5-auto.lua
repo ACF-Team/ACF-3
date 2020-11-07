@@ -18,12 +18,6 @@ local ShiftS = 0.25
 local ShiftM = 0.35
 local ShiftL = 0.5
 
-local function CheckNumber(Value)
-	if not Value then return end -- nil or false, both are not numbers
-
-	return tonumber(Value)
-end
-
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
 
@@ -65,7 +59,7 @@ ACF.RegisterGearboxClass("5-Auto", {
 
 						if Count > Max then break end
 
-						Points[Count] = CheckNumber(Point) or Count * 100
+						Points[Count] = ACF.CheckNumber(Point) or Count * 100
 					end
 				end
 
@@ -75,7 +69,7 @@ ACF.RegisterGearboxClass("5-Auto", {
 			end
 
 			for I = 1, Max do
-				local Point = CheckNumber(Points[I])
+				local Point = ACF.CheckNumber(Points[I])
 
 				if not Point then
 					Point = (CheckNumber(Data["Shift" .. I]) or I * 100) * Mult
@@ -88,10 +82,10 @@ ACF.RegisterGearboxClass("5-Auto", {
 		end
 
 		do -- Reverse gear verification
-			local Reverse = CheckNumber(Data.Reverse)
+			local Reverse = ACF.CheckNumber(Data.Reverse)
 
 			if not Reverse then
-				Reverse = CheckNumber(Data.Gear8) or -1
+				Reverse = ACF.CheckNumber(Data.Gear8) or -1
 
 				Data.Gear8 = nil
 			end

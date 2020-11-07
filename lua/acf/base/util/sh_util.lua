@@ -313,6 +313,12 @@ do -- Sound aliases
 	end
 end
 
+function ACF.CheckNumber(Value)
+	if not Value then return end
+
+	return tonumber(Value)
+end
+
 do -- Parentable Wire model list
 	local WireModels = {
 		["models/blacknecro/ledboard60.mdl"] = true,

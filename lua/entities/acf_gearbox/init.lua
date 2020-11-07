@@ -209,12 +209,6 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
-	local function CheckNumber(Value)
-		if not Value then return end -- nil or false, both are not numbers
-
-		return tonumber(Value)
-	end
-
 	local function VerifyData(Data)
 		if not Data.Gearbox then
 			Data.Gearbox = Data.Id or "2Gear-T-S"
@@ -240,10 +234,10 @@ do -- Spawn and Update functions
 			end
 
 			for I = 1, Class.Gears.Max do
-				local Gear = CheckNumber(Gears[I])
+				local Gear = ACF.CheckNumber(Gears[I])
 
 				if not Gear then
-					Gear = CheckNumber(Data["Gear" .. I]) or I * 0.1
+					Gear = ACF.CheckNumber(Data["Gear" .. I]) or I * 0.1
 
 					Data["Gear" .. I] = nil
 				end
@@ -253,10 +247,10 @@ do -- Spawn and Update functions
 		end
 
 		do -- Final drive verification
-			local Final = CheckNumber(Data.FinalDrive)
+			local Final = ACF.CheckNumber(Data.FinalDrive)
 
 			if not Final then
-				Final = CheckNumber(Data.Gear0) or 1
+				Final = ACF.CheckNumber(Data.Gear0) or 1
 
 				Data.Gear0 = nil
 			end
