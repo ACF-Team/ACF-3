@@ -5,13 +5,15 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
+local ACF          = ACF
 local ACF_RECOIL   = GetConVar("acf_recoilpush")
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal   = ACF_CheckLegal
 local Shove        = ACF.KEShove
 local Overpressure = ACF.Overpressure
-local Weapons	  = ACF.Classes.Weapons
-local Inputs      = ACF.GetInputActions("acf_gun")
+local Weapons	   = ACF.Classes.Weapons
+local AmmoTypes    = ACF.Classes.AmmoTypes
+local Inputs       = ACF.GetInputActions("acf_gun")
 local TraceRes     = {} -- Output for traces
 local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace        = util.TraceLine
@@ -80,11 +82,12 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		Entity.Name           = Weapon.Name
-		Entity.ShortName      = Entity.Id
+		Entity.ShortName      = Weapon.ID
 		Entity.EntType        = Class.Name
 		Entity.ClassData      = Class
-		Entity.Caliber        = Caliber
+		Entity.WeaponData     = Weapon
 		Entity.Class          = Class.ID -- Needed for custom killicons
+		Entity.Caliber        = Caliber
 		Entity.MagReload      = Weapon.MagReload
 		Entity.MagSize        = Weapon.MagSize or 1
 		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
@@ -487,7 +490,7 @@ do -- Metamethods --------------------------------
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			self.BulletData.Filter = self.BarrelFilter
 
-			ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData) -- Spawn projectile
+			AmmoTypes[self.BulletData.Type]:Create(self, self.BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
 			self:Recoil()

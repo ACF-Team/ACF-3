@@ -258,12 +258,13 @@ do -- Spawning and Updating --------------------
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
 
-		Entity.Name      = Name or Weapon.Name .. " " .. Ammo.Name
-		Entity.ShortName = ShortName or Weapon.ID .. " " .. Ammo.ID
-		Entity.EntType   = "Ammo Crate"
-		Entity.ClassData = Class
-		Entity.Caliber   = Weapon.Caliber
-		Entity.Class     = Class.ID
+		Entity.Name       = Name or Weapon.Name .. " " .. Ammo.Name
+		Entity.ShortName  = ShortName or Weapon.ID .. " " .. Ammo.ID
+		Entity.EntType    = "Ammo Crate"
+		Entity.ClassData  = Class
+		Entity.WeaponData = Weapon
+		Entity.Caliber    = Weapon.Caliber
+		Entity.Class      = Class.ID
 
 		Entity:SetNWString("WireName", "ACF " .. (WireName or Weapon.Name .. " Ammo Crate"))
 		Entity:SetSize(Data.Size)
@@ -276,7 +277,7 @@ do -- Spawning and Updating --------------------
 					OldAmmo:OnLast(Entity)
 				end
 
-				HookRun("ACF_OnAmmoLast", Entity, OldAmmo)
+				HookRun("ACF_OnAmmoLast", OldAmmo, Entity)
 			end
 
 			Entity.RoundData  = Ammo
@@ -287,7 +288,7 @@ do -- Spawning and Updating --------------------
 				Ammo:OnFirst(Entity)
 			end
 
-			HookRun("ACF_OnAmmoFirst", Entity, Ammo, Class, Weapon)
+			HookRun("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
 
 			Ammo:Network(Entity, Entity.BulletData)
 		end
