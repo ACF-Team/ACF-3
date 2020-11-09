@@ -1,7 +1,7 @@
 local Bullets = ACF.BulletEffect
 
 function EFFECT:Init(Data)
-	self.Index = Data:GetAttachment()
+	self.Index = Data:GetHitBox()
 
 	self:SetModel("models/munitions/round_100mm_shot.mdl")
 

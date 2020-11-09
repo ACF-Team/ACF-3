@@ -13,6 +13,14 @@ do
 		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
 
+		if Engine.FuelType == "Multifuel" then
+			if Target.FuelType == "Electric" then
+				return false, "Cannot link because fuel type is incompatible."
+			end
+		elseif Engine.FuelType ~= Target.FuelType then
+			return false, "Cannot link because fuel type is incompatible."
+		end
+
 		Engine.FuelTanks[Target] = true
 		Target.Engines[Engine] = true
 

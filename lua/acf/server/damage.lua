@@ -677,7 +677,6 @@ do
 		end
 
 		function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
-			Bullet.Ricochets = Bullet.Ricochets or 0
 			local Angle = ACF_GetHitAngle( HitNormal , Bullet.Flight )
 
 			local HitRes = ACF_Damage ( --DAMAGE !!
@@ -722,12 +721,12 @@ do
 			end
 
 			HitRes.Ricochet = false
+
 			if Ricochet > 0 and Bullet.Ricochets < 3 then
 				Bullet.Ricochets = Bullet.Ricochets + 1
-				Bullet.Pos = HitPos + HitNormal * 0.75
-				Bullet.FlightTime = 0
+				Bullet.NextPos = HitPos
 				Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
-				Bullet.TraceBackComp = math.max(ACF_GetAncestor(Target):GetPhysicsObject():GetVelocity():Dot(Bullet.Flight:GetNormalized()),0)
+
 				HitRes.Ricochet = true
 			end
 
@@ -735,7 +734,6 @@ do
 		end
 
 		function ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
-			Bullet.GroundRicos = Bullet.GroundRicos or 0
 			local MaxDig = ((Energy.Penetration / Bullet.PenArea) * ACF.KEtoRHA / ACF.GroundtoRHA) / 25.4
 			local HitRes = {Penetrated = false, Ricochet = false}
 
@@ -760,13 +758,13 @@ do
 
 				if Ricochet > 0 and Bullet.GroundRicos < 2 then
 					Bullet.GroundRicos = Bullet.GroundRicos + 1
-					Bullet.Pos = HitPos + HitNormal * 1
+					Bullet.NextPos = HitPos
 					Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
 					HitRes.Ricochet = true
 				end
 			else --penetrated
 				Bullet.Flight = Bullet.Flight * (1 - loss)
-				Bullet.Pos = DigRes.StartPos + Bullet.Flight:GetNormalized() * 0.25 --this is actually where trace left brush
+				Bullet.NextPos = DigRes.StartPos + Bullet.Flight:GetNormalized() * 0.25 --this is actually where trace left brush
 				HitRes.Penetrated = true
 			end
 

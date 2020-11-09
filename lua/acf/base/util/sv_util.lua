@@ -388,3 +388,35 @@ function ACF_GetHitAngle(HitNormal, HitVector)
 		return Ang
 	end
 end
+
+do -- Serverside visclip check
+	local function CheckClip(Entity, Clip, Center, Pos)
+		if Clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway
+
+		local Normal = Entity:LocalToWorldAngles(Clip.n):Forward()
+		local Origin = Center + Normal * Clip.d
+
+		return Normal:Dot((Origin - Pos):GetNormalized()) > 0
+	end
+
+	function ACF.CheckClips(Ent, Pos)
+		if not IsValid(Ent) then return false end
+		if not Ent.ClipData then return false end -- Doesn't have clips
+		if Ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
+		if not Ent:GetPhysicsObject():GetVolume() then return false end -- Spherical collisions applied to it
+
+		-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
+		-- The bounding box center will change if the entity is physically clipped
+		-- That's why we'll use the original OBBCenter that was stored on the entity
+		local Center = Ent:LocalToWorld(Ent.OBBCenterOrg or Ent:OBBCenter())
+
+		for _, Clip in ipairs(Ent.ClipData) do
+			if CheckClip(Ent, Clip, Center, Pos) then return true end
+		end
+
+		return false
+	end
+
+	-- Backwards compatibility
+	ACF_CheckClips = ACF.CheckClips
+end

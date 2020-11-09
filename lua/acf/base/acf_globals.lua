@@ -10,7 +10,6 @@ do -- ACF global vars
 	ACF.Year 				= 1945
 	ACF.IllegalDisableTime 	= 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 	ACF.GunfireEnabled 		= true
-	ACF.PhysMaxVel 			= 4000
 	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
 
@@ -111,7 +110,7 @@ do -- ACF global vars
 		Turbine = 0.375,
 		Wankel = 0.335,
 		Radial = 0.4, -- 0.38 to 0.53
-		Electric = 0.85 --percent efficiency converting chemical kw into mechanical kw
+		Electric = 0.2125 --percent efficiency converting chemical kw into mechanical kw
 	}
 
 	--how fast damage drops torque, lower loses more % torque
@@ -194,7 +193,6 @@ elseif CLIENT then
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
-	CreateClientConVar("acf_unparent_disabled_ents", 0, true, true, "If enabled, all entities disabled for Bad Parenting will be unparented.", 0, 1)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
 

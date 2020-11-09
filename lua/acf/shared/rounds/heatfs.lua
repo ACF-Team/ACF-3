@@ -194,23 +194,19 @@ end
 function Round.detonate(_, Bullet, HitPos)
 	local Crushed, HEATFillerMass, BoomFillerMass = Round.CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
 
-	ACF_HE(HitPos - Bullet.Flight:GetNormalized() * 3, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
+	ACF_HE(HitPos, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, nil, Bullet.Gun)
 
 	if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
 	Bullet.Detonated = true
-	Bullet.InitTime = SysTime()
+	Bullet.InitTime = ACF.CurTime
 	Bullet.Flight = Bullet.Flight + Bullet.Flight:GetNormalized() * Round.CalcSlugMV(Bullet, HEATFillerMass) * 39.37
-	Bullet.Pos = HitPos
+	Bullet.NextPos = HitPos
 	Bullet.DragCoef = Bullet.SlugDragCoef
 	Bullet.ProjMass = Bullet.SlugMass * (1 - Crushed)
 	Bullet.Caliber = Bullet.SlugCaliber
 	Bullet.PenArea = Bullet.SlugPenArea
 	Bullet.Ricochet = Bullet.SlugRicochet
-
-	local DeltaTime = SysTime() - Bullet.LastThink
-	Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
-	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
 
 	return true
 end

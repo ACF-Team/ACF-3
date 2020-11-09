@@ -1,6 +1,6 @@
 --define the class
 ACF_defineGunClass("HMG", {
-	spread = 0.24,
+	spread = 1.2,
 	name = "Heavy Machinegun",
 	desc = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.  They excel at strafing and dogfighting.\nBecause of their long reload times and high rate of fire, it is best to aim BEFORE pushing the almighty fire switch.",
 	muzzleflash = "mg_muzzleflash_noscale",

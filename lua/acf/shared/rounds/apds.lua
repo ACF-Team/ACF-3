@@ -1,4 +1,4 @@
-ACF.AmmoBlacklist.APDS = { "MO", "SL", "HW", "SC", "MG", "SB", "RAC", "GL", "HMG", "AAM", "ARTY", "ASM", "BOMB", "GBU", "POD", "SAM", "UAR", "FFAR", "FGL" }
+ACF.AmmoBlacklist.APDS = { "MO", "SL", "HW", "SC", "MG", "SB", "GL", "HMG", "AAM", "ARTY", "ASM", "BOMB", "GBU", "POD", "SAM", "UAR", "FFAR", "FGL" }
 
 local Round = {}
 

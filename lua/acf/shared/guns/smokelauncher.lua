@@ -4,7 +4,7 @@ ACF_defineGunClass("SL", {
 	name = "Smoke Launcher",
 	desc = "Smoke launcher to block an attacker's line of sight.",
 	muzzleflash = "gl_muzzleflash_noscale",
-	rofmod = 45,
+	rofmod = 22.5,
 	sound = "acf_base/weapons/smoke_launch.mp3",
 	soundDistance = "Mortar.Fire",
 	soundNormal = " "
@@ -23,7 +23,7 @@ ACF_defineGun("40mmSL", {
 	year = 1941,
 	magsize = 1,
 	magreload = 30,
-	Cyclic = 1,
+	Cyclic = 600,
 	IsBoxed = true,
 	round = {
 		maxlength = 17.5,
@@ -43,12 +43,12 @@ ACF_defineGun("40mmCL", {
 	weight = 20,
 	rofmod = 0.015,
 	magsize = 6,
-	magreload = 40,
+	magreload = 15,
 	Cyclic = 200,
 	year = 1950,
 	IsBoxed = true,
 	round = {
-		maxlength = 12,
+		maxlength = 17.5,
 		propweight = 0.001
 	}
 })

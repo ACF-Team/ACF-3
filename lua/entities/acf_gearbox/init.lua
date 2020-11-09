@@ -61,12 +61,10 @@ local function GenerateLinkTable(Entity, Target)
 
 	local Phys = Target:GetPhysicsObject()
 	local Axis = Phys:WorldToLocalVector(Entity:GetRight())
-	local Inertia = (Axis * Phys:GetInertia()):Length()
 
 	return {
 		Side = Side,
 		Axis = Axis,
-		Inertia = Inertia,
 		Rope = Rope,
 		RopeLen = (OutPosWorld - InPosWorld):Length(),
 		Output = OutPos,
@@ -797,7 +795,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	self.TorqueOutput = 0
 
 	for Ent, Link in pairs(self.GearboxOut) do
-		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
+		local Clutch = self.MainClutch
 
 		Link.ReqTq = 0
 
@@ -808,38 +806,38 @@ function ENT:Calc(InputRPM, InputInertia)
 				Inertia = InputInertia / self.GearRatio
 			end
 
-			Link.ReqTq = math.min(Clutch, math.abs(Ent:Calc(InputRPM * self.GearRatio, Inertia) * self.GearRatio))
-
+			Link.ReqTq = math.abs(Ent:Calc(InputRPM * self.GearRatio, Inertia) * self.GearRatio) * Clutch
 			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
 		end
 	end
 
 	for Wheel, Link in pairs(self.Wheels) do
-		local Clutch = Link.Side == 0 and self.LClutch or self.RClutch
 		local RPM = CalcWheel(self, Link, Wheel, SelfWorld)
 
 		Link.ReqTq = 0
 
-		if self.GearRatio ~= 0 and ((InputRPM > 0 and RPM < InputRPM) or (InputRPM < 0 and RPM > InputRPM)) then
-			if self.DoubleDiff then
-				local NTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
-				local Sign = self.SteerRate ~= 0 and self.SteerRate / math.abs(self.SteerRate) or 0
-				local DTq, Mult
+		if self.GearRatio ~= 0 then
+			local Clutch = self.Dual and ((Link.Side == 0 and self.LClutch) or self.RClutch) or self.MainClutch
+			local OnRPM = ((InputRPM > 0 and RPM < InputRPM) or (InputRPM < 0 and RPM > InputRPM))
 
-				if Link.Side == 0 then
-					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) - (RPM * Sign))
-					Mult = 1
-				else
-					DTq = self.SteerRate * ((InputRPM * (math.abs(self.SteerRate) + 1)) + (RPM * Sign))
-					Mult = -1
+			if Clutch > 0 and OnRPM then
+				local Multiplier = 1
+
+				if self.DoubleDiff and self.SteerRate ~= 0 then
+					local Rate = self.SteerRate * 2
+
+					-- this actually controls the RPM of the wheels, so the steering rate is correct
+					if Link.Side == 0 then
+						Multiplier = math.min(0, Rate) + 1
+					else
+						Multiplier = -math.max(0, Rate) + 1
+					end
 				end
 
-				Link.ReqTq = NTq + Clamp(DTq * InputInertia, -self.MaxTorque, self.MaxTorque) * Mult
-			else
-				Link.ReqTq = math.min(Clutch, (InputRPM - RPM) * InputInertia)
-			end
+				Link.ReqTq = (InputRPM * Multiplier - RPM) * InputInertia * Clutch
 
-			self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
+				self.TotalReqTq = self.TotalReqTq + math.abs(Link.ReqTq)
+			end
 		end
 	end
 
@@ -848,6 +846,33 @@ function ENT:Calc(InputRPM, InputInertia)
 	self:UpdateOverlay()
 
 	return self.TorqueOutput
+end
+
+function ENT:ApplyBrakes() -- This is just for brakes
+	if self.Disabled then return end -- Illegal brakes man
+	if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
+	if not next(self.Wheels) then return end -- No brakes for the non-wheel users
+
+	local BoxPhys = self:GetPhysicsObject()
+	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
+	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
+
+	for Wheel, Link in pairs(self.Wheels) do
+		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
+
+		if Brake > 0 then -- regular ol braking
+			CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
+			BrakeWheel(Link, Wheel, Brake, DeltaTime)
+		end
+	end
+
+	self.LastBrakeThink = ACF.CurTime
+
+	timer.Simple(engine.TickInterval(), function()
+		if not IsValid(self) then return end
+
+		self:ApplyBrakes()
+	end)
 end
 
 function ENT:Act(Torque, DeltaTime, MassRatio)
@@ -868,10 +893,9 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 	end
 
 	for Ent, Link in pairs(self.Wheels) do
-		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 		local WheelTorque = Link.ReqTq * AvailTq
 
-		ActWheel(Link, Ent, WheelTorque, Brake, DeltaTime)
+		ActWheel(Link, Ent, WheelTorque, DeltaTime)
 
 		ReactTq = ReactTq + WheelTorque
 	end
@@ -996,7 +1020,7 @@ function ENT:OnRemove()
 		self:Unlink(Gearbox)
 	end
 
-	timer.Remove("ACF Engine Clock " .. self:EntIndex())
+	timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
