@@ -1,4 +1,4 @@
-ACF.AmmoBlacklist.AP = {"MO", "SL", "SB"}
+ACF.AmmoBlacklist.AP = {"MO", "SL", "SB"} -- DELETE
 local Round = {}
 Round.type = "Ammo" --Tells the spawn menu what entity to spawn
 Round.name = "Armour Piercing (AP)" --Human readable name
@@ -206,6 +206,6 @@ function Round.guiupdate(Panel)
 	acfmenupanel:CPanelText("PenetrationDisplay", "Maximum Penetration : " .. math.floor(Data.MaxPen) .. " mm RHA\n\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
-ACF.RoundTypes.AP = Round --Set the round properties
+ACF.RoundTypes.AP = Round -- DELETE
 
 ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")

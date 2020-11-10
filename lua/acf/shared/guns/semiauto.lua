@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("SA", {
 	spread = 0.12,
 	name = "Semiautomatic Cannon",
@@ -10,8 +10,7 @@ ACF_defineGunClass("SA", {
 	soundNormal = " "
 })
 
---add a gun to the class
---id
+-- DELETE
 ACF_defineGun("25mmSA", {
 	name = "25mm Semiautomatic Cannon",
 	desc = "The 25mm semiauto can quickly put five rounds downrange, being lethal, yet light.",
@@ -31,6 +30,7 @@ ACF_defineGun("25mmSA", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("37mmSA", {
 	name = "37mm Semiautomatic Cannon",
 	desc = "The 37mm is surprisingly powerful, its five-round clips boasting a respectable payload and a high muzzle velocity.",
@@ -50,6 +50,7 @@ ACF_defineGun("37mmSA", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("45mmSA", {
 	name = "45mm Semiautomatic Cannon",
 	desc = "The 45mm can easily shred light armor, with a respectable rate of fire, but its armor penetration pales in comparison to regular cannons.",
@@ -69,6 +70,7 @@ ACF_defineGun("45mmSA", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("57mmSA", {
 	name = "57mm Semiautomatic Cannon",
 	desc = "The 57mm is a respectable light armament, offering considerable penetration and moderate fire rate.",
@@ -88,6 +90,7 @@ ACF_defineGun("57mmSA", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("76mmSA", {
 	name = "76mm Semiautomatic Cannon",
 	desc = "The 76mm semiauto is a fearsome weapon, able to put 5 76mm rounds downrange in 8 seconds.",

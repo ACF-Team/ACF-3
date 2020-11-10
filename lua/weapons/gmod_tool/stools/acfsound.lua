@@ -27,7 +27,7 @@ ACF.SoundToolSupport = {
 			local Classes = ACF.Classes
 
 			local soundData = {
-				Sound = Classes["GunClass"][Class]["sound"]
+				Sound = Classes["GunClass"][Class]["sound"] -- REPLACE
 			}
 
 			local setSound = ACF.SoundToolSupport["acf_gun"].SetSound

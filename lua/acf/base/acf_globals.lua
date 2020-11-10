@@ -96,14 +96,14 @@ do -- ACF global vars
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
 
-	--kg/liter
+	-- DELETE
 	ACF.FuelDensity = {
 		Diesel = 0.832,
 		Petrol = 0.745,
 		Electric = 3.89 -- li-ion
 	}
 
-	--how efficient various engine types are, higher is worse
+	-- DELETE
 	ACF.Efficiency = {
 		GenericPetrol = 0.304, -- kg per kw hr
 		GenericDiesel = 0.243,
@@ -113,7 +113,7 @@ do -- ACF global vars
 		Electric = 0.2125 --percent efficiency converting chemical kw into mechanical kw
 	}
 
-	--how fast damage drops torque, lower loses more % torque
+	-- DELETE
 	ACF.TorqueScale = {
 		GenericPetrol = 0.25,
 		GenericDiesel = 0.35,
@@ -123,7 +123,7 @@ do -- ACF global vars
 		Electric = 0.5
 	}
 
-	--health multiplier for engines
+	-- DELETE
 	ACF.EngineHPMult = {
 		GenericPetrol = 0.2,
 		GenericDiesel = 0.5,
@@ -236,6 +236,7 @@ elseif CLIENT then
 	---------------------------------------------
 end
 
+-- REPLACE or REMOVE?
 timer.Simple(0, function()
 	for _, Table in pairs(ACF.Classes.GunClass) do
 		PrecacheParticleSystem(Table["muzzleflash"])

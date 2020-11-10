@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("MG", {
 	spread = 0.16,
 	name = "Machinegun",
@@ -10,8 +10,7 @@ ACF_defineGunClass("MG", {
 	soundDistance = ""
 })
 
---add a gun to the class
---id
+-- DELETE
 ACF_defineGun("7.62mmMG", {
 	name = "7.62mm Machinegun",
 	desc = "The 7.62mm is effective against infantry, but its usefulness against armor is laughable at best.",
@@ -31,6 +30,7 @@ ACF_defineGun("7.62mmMG", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("12.7mmMG", {
 	name = "12.7mm Machinegun",
 	desc = "The 12.7mm MG is still light, finding its way into a lot of mountings, including on top of tanks.",
@@ -50,6 +50,7 @@ ACF_defineGun("12.7mmMG", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("14.5mmMG", {
 	name = "14.5mm Machinegun",
 	desc = "The 14.5mm MG trades its smaller stablemates' rate of fire for more armor penetration and damage.",
@@ -78,7 +79,7 @@ ACF.RegisterWeaponClass("MG", {
 	IsBoxed		  = true,
 	Caliber	= {
 		Min = 5.56,
-		Max = 14.5,
+		Max = 20,
 	},
 })
 
@@ -90,7 +91,7 @@ ACF.RegisterWeapon("7.62mmMG", "MG", {
 	Mass		= 15,
 	Year		= 1930,
 	MagSize		= 250,
-	MagReload	= 6,
+	MagReload	= 5,
 	Cyclic		= 700, -- Rounds per minute
 	Round = {
 		MaxLength = 13,
@@ -122,10 +123,26 @@ ACF.RegisterWeapon("14.5mmMG", "MG", {
 	Mass		= 45,
 	Year		= 1932,
 	MagSize		= 90,
-	MagReload	= 5,
+	MagReload	= 7,
 	Cyclic		= 500,
 	Round = {
 		MaxLength = 19.5,
 		PropMass  = 0.04,
+	}
+})
+
+ACF.RegisterWeapon("20mmMG", "MG", {
+	Name		= "20mm Machinegun",
+	Description	= "The 20mm MG is practically a cannon in its own right; the weight and recoil made it difficult to mount on light land vehicles, though it was adapted for use on both aircraft and ships.",
+	Model		= "models/machinegun/machinegun_20mm.mdl",
+	Caliber		= 20,
+	Mass		= 95,
+	Year		= 1935,
+	MagSize		= 200,
+	MagReload	= 8,
+	Cyclic		= 400,
+	Round = {
+		MaxLength = 22,
+		PropMass  = 0.09,
 	}
 })

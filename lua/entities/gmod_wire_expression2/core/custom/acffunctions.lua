@@ -14,7 +14,7 @@ E2Lib.RegisterExtension("acf", true)
 local RestrictInfoConVar = GetConVar("acf_restrict_info")
 local AllLinkSources = ACF.GetAllLinkSources
 local LinkSource = ACF.GetLinkSource
-local RoundTypes = ACF.RoundTypes
+local RoundTypes = ACF.RoundTypes -- REPLACE
 local match = string.match
 local floor = math.floor
 local Round = math.Round

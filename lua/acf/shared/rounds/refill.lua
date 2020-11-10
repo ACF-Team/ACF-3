@@ -82,4 +82,4 @@ function Round.guiupdate()
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 
-ACF.RoundTypes.Refill = Round --Set the round properties
+ACF.RoundTypes.Refill = Round -- DELETE

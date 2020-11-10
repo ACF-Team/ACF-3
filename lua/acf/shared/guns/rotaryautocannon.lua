@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("RAC", {
 	spread = 0.48,
 	name = "Rotary Autocannon",
@@ -11,6 +11,7 @@ ACF_defineGunClass("RAC", {
 	color = {135, 135, 135}
 } )
 
+-- DELETE
 ACF_defineGun("14.5mmRAC", { --id
 	name = "14.5mm Rotary Autocannon",
 	desc = "A lightweight rotary autocannon, used primarily against infantry and light vehicles.",
@@ -29,6 +30,7 @@ ACF_defineGun("14.5mmRAC", { --id
 	}
 } )
 
+-- DELETE
 ACF_defineGun("20mmRAC", {
 	name = "20mm Rotary Autocannon",
 	desc = "The 20mm is able to chew up light armor with decent penetration or put up a big flak screen.",
@@ -47,6 +49,7 @@ ACF_defineGun("20mmRAC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("30mmRAC", {
 	name = "30mm Rotary Autocannon",
 	desc = "The 30mm is the bane of ground-attack aircraft, able to tear up light armor without giving one single fuck. Also seen in the skies above dead T-72s.",

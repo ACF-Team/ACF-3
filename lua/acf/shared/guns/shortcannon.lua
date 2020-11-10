@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("SC", {
 	spread = 0.16,
 	name = "Short-Barrel Cannon",
@@ -10,7 +10,7 @@ ACF_defineGunClass("SC", {
 	soundNormal = " "
 } )
 
---add a gun to the class
+-- DELETE
 ACF_defineGun("37mmSC", {
 	name = "37mm Short Cannon",
 	desc = "Quick-firing and light, but penetration is laughable.  You're better off throwing rocks.",
@@ -27,6 +27,7 @@ ACF_defineGun("37mmSC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("50mmSC", {
 	name = "50mm Short Cannon",
 	desc = "The 50mm is a quick-firing pea-shooter, good for scouts, and common on old interwar tanks.",
@@ -43,6 +44,7 @@ ACF_defineGun("50mmSC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("75mmSC", {
 	name = "75mm Short Cannon",
 	desc = "The 75mm is common WW2 medium tank armament, and still useful in many other applications.",
@@ -57,6 +59,7 @@ ACF_defineGun("75mmSC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("100mmSC", {
 	name = "100mm Short Cannon",
 	desc = "The 100mm is an effective infantry-support or antitank weapon, with a lot of uses and surprising lethality.",
@@ -71,6 +74,7 @@ ACF_defineGun("100mmSC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("120mmSC", {
 	name = "120mm Short Cannon",
 	desc = "The 120mm is a formidable yet lightweight weapon, with excellent performance against larger vehicles.",
@@ -85,6 +89,7 @@ ACF_defineGun("120mmSC", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("140mmSC", {
 	name = "140mm Short Cannon",
 	desc = "A specialized weapon, developed from dark magic and anti-heavy tank hatred.  Deal with it.",

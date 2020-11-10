@@ -15,48 +15,49 @@
 ]]--
 MsgN("\n===========[ Loading ACF ]============\n|")
 
-local GunClasses 	= {}
-local GunTable 		= {}
-local MobilityTable = {}
-local FuelTankTable = {}
+local GunClasses 	= {} -- DELETE
+local GunTable 		= {} -- DELETE
+local MobilityTable = {} -- DELETE
+local FuelTankTable = {} -- DELETE
 
 if not ACF then ACF = {} end
 
-ACF.RoundTypes = ACF.RoundTypes or {}
+ACF.RoundTypes = ACF.RoundTypes or {} -- DELETE
 
-ACF.Classes = ACF.Classes or {
+ACF.Classes = ACF.Classes or { -- DELETE
 	GunClass = GunClasses
 }
 
-ACF.Weapons = ACF.Weapons or {
+ACF.Weapons = ACF.Weapons or { -- DELETE
 	Guns = GunTable,
 	Mobility = MobilityTable,
 	FuelTanks = FuelTankTable
 }
 
-local gun_base = {
+local gun_base = { -- DELETE
 	ent = "acf_gun",
 	type = "Guns"
 }
 
-local engine_base = {
+local engine_base = { -- DELETE
 	ent = "acf_engine",
 	type = "Mobility"
 }
 
-local gearbox_base = {
+local gearbox_base = { -- DELETE
 	ent = "acf_gearbox",
 	type = "Mobility",
 	sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 }
 
-local fueltank_base = {
+local fueltank_base = { -- DELETE
 	ent = "acf_fueltank",
 	type = "Mobility",
 	explosive = true
 }
 
 do
+	-- REPLACE
 	function ACF_defineGunClass( id, data )
 		data.id = id
 		GunClasses[ id ] = data
@@ -64,6 +65,7 @@ do
 		PrecacheParticleSystem(data["muzzleflash"])
 	end
 
+	-- REPLACE
 	function ACF_defineGun( id, data )
 		data.id = id
 		data.round.id = id
@@ -71,24 +73,28 @@ do
 		GunTable[ id ] = data
 	end
 
+	-- REPLACE
 	function ACF_DefineEngine( id, data )
 		data.id = id
 		table.Inherit( data, engine_base )
 		MobilityTable[ id ] = data
 	end
 
+	-- REPLACE
 	function ACF_DefineGearbox( id, data )
 		data.id = id
 		table.Inherit( data, gearbox_base )
 		MobilityTable[ id ] = data
 	end
 
+	-- REPLACE
 	function ACF_DefineFuelTank( id, data )
 		data.id = id
 		table.Inherit( data, fueltank_base )
 		MobilityTable[ id ] = data
 	end
 
+	-- REPLACE
 	function ACF_DefineFuelTankSize( id, data )
 		data.id = id
 		table.Inherit( data, fueltank_base )

@@ -241,6 +241,6 @@ function Round.guiupdate(Panel)
 	acfmenupanel:CPanelText("PenetrationRanging", "\n300m pen: " .. math.Round(R1P, 0) .. "mm @ " .. math.Round(R1V, 0) .. " m\\s\n800m pen: " .. math.Round(R2P, 0) .. "mm @ " .. math.Round(R2V, 0) .. " m\\s\n\nThe range data is an approximation and may not be entirely accurate.") --Proj muzzle penetration (Name, Desc)
 end
 
-ACF.RoundTypes.APHE = Round --Set the round properties
+ACF.RoundTypes.APHE = Round -- DELETE
 
 ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")

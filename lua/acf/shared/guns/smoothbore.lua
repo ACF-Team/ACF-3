@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("SB", {
 	spread = 0.08,
 	name = "Smoothbore Cannon",
@@ -10,9 +10,7 @@ ACF_defineGunClass("SB", {
 	soundNormal = " "
 } )
 
---add a gun to the class
-
-
+-- DELETE
 ACF_defineGun("105mmSB", {
 	name = "105mm Smoothbore Cannon",
 	desc = "The 105mm was a benchmark for the early cold war period, and has great muzzle velocity and hitting power, while still boasting a respectable, if small, payload.",
@@ -27,6 +25,7 @@ ACF_defineGun("105mmSB", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("120mmSB", {
 	name = "120mm Smoothbore Cannon",
 	desc = "Often found in MBTs, the 120mm shreds lighter armor with utter impunity, and is formidable against even the big boys.",
@@ -41,6 +40,7 @@ ACF_defineGun("120mmSB", {
 	}
 } )
 
+-- DELETE
 ACF_defineGun("140mmSB", {
 	name = "140mm Smoothbore Cannon",
 	desc = "The 140mm fires a massive shell with enormous penetrative capability, but has a glacial reload speed and a very hefty weight.",

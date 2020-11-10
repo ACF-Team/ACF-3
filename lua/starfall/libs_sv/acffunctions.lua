@@ -489,7 +489,7 @@ end
 -- Set ammo properties
 local ammo_properties = {}
 
-for id, data in pairs(ACF.RoundTypes) do
+for id, data in pairs(ACF.RoundTypes) do -- REPLACE
 	ammo_properties[id] = {
 		name = data.name,
 		desc = data.desc,
@@ -1004,7 +1004,7 @@ function ents_methods:acfName ()
 	if isGun( this ) then acftype = "Guns" end
 	if ( acftype == "" ) then return "" end
 	local List = list.Get( "ACFEnts" )
-	return List[ acftype ][ this.Id ][ "name" ] or ""
+	return List[ acftype ][ this.Id ][ "name" ] or "" -- REPLACE
 end
 
 --- Returns the type of ACF entity
@@ -1017,11 +1017,11 @@ function ents_methods:acfType ()
 
 	if isEngine( this ) or isGearbox( this ) then
 		local List = list.Get( "ACFEnts" )
-		return List[ "Mobility" ][ this.Id ][ "category" ] or ""
+		return List[ "Mobility" ][ this.Id ][ "category" ] or "" -- REPLACE
 	end
 	if isGun( this ) then
 		local Classes = list.Get( "ACFClasses" )
-		return Classes[ "GunClass" ][ this.Class ][ "name" ] or ""
+		return Classes[ "GunClass" ][ this.Class ][ "name" ] or "" -- REPLACE
 	end
 	if isAmmo( this ) then return this.AmmoType or "" end
 	if isFuel( this ) then return this.FuelType or "" end
@@ -2084,9 +2084,9 @@ function ents_methods:acfPenetration ()
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37, this.BulletData["ProjMass"] - (this.BulletData["FillerMass"] or 0), this.BulletData["LimitVel"] )
 		return math.Round((Energy.Penetration/this.BulletData["PenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "HEAT" then
-		local Crushed, HEATFillerMass, BoomFillerMass = ACF.RoundTypes["HEAT"].CrushCalc(this.BulletData.MuzzleVel, this.BulletData.FillerMass)
+		local Crushed, HEATFillerMass, BoomFillerMass = ACF.RoundTypes["HEAT"].CrushCalc(this.BulletData.MuzzleVel, this.BulletData.FillerMass) -- REPLACE
 		if Crushed == 1 then return 0 end -- no HEAT jet to fire off, it was all converted to HE
-		Energy = ACF_Kinetic(ACF.RoundTypes["HEAT"].CalcSlugMV( this.BulletData, HEATFillerMass )*39.37, this.BulletData["SlugMass"], 9999999 )
+		Energy = ACF_Kinetic(ACF.RoundTypes["HEAT"].CalcSlugMV( this.BulletData, HEATFillerMass )*39.37, this.BulletData["SlugMass"], 9999999 ) -- REPLACE
 		return math.Round((Energy.Penetration/this.BulletData["SlugPenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "FL" then
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37 , this.BulletData["FlechetteMass"], this.BulletData["LimitVel"] )
@@ -2365,7 +2365,7 @@ function ents_methods:acfFuelUse ()
 		Consumption = 60 * ( this.Torque * this.FlyRPM / 9548.8 ) * this.FuelUse
 	else
 		local Load = 0.3 + this.Throttle * 0.7
-		Consumption = 60 * Load * this.FuelUse * ( this.FlyRPM / this.PeakKwRPM ) / ACF.FuelDensity[ tank.FuelType ]
+		Consumption = 60 * Load * this.FuelUse * ( this.FlyRPM / this.PeakKwRPM ) / ACF.FuelDensity[ tank.FuelType ] -- REPLACE
 	end
 	return math.Round( Consumption, 3 )
 end
@@ -2394,7 +2394,7 @@ function ents_methods:acfPeakFuelUse ()
 		Consumption = 60 * ( this.PeakTorque * this.LimitRPM / ( 4 * 9548.8 ) ) * this.FuelUse
 	else
 		local Load = 0.3 + this.Throttle * 0.7
-		Consumption = 60 * this.FuelUse / ACF.FuelDensity[ fuel ]
+		Consumption = 60 * this.FuelUse / ACF.FuelDensity[ fuel ] -- REPLACE
 	end
 	return math.Round( Consumption, 3 )
 end

@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("AC", {
 	spread = 0.2,
 	name = "Autocannon",
@@ -10,8 +10,7 @@ ACF_defineGunClass("AC", {
 	soundNormal = " "
 })
 
---add a gun to the class
---id
+-- DELETE
 ACF_defineGun("20mmAC", {
 	name = "20mm Autocannon",
 	desc = "The 20mm AC is the smallest of the family; having a good rate of fire but a tiny shell.",
@@ -30,6 +29,7 @@ ACF_defineGun("20mmAC", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("30mmAC", {
 	name = "30mm Autocannon",
 	desc = "The 30mm AC can fire shells with sufficient space for a small payload, and has modest anti-armor capability",
@@ -48,6 +48,7 @@ ACF_defineGun("30mmAC", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("40mmAC", {
 	name = "40mm Autocannon",
 	desc = "The 40mm AC can fire shells with sufficient space for a useful payload, and can get decent penetration with proper rounds.",
@@ -66,6 +67,7 @@ ACF_defineGun("40mmAC", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("50mmAC", {
 	name = "50mm Autocannon",
 	desc = "The 50mm AC fires shells comparable with the 50mm Cannon, making it capable of destroying light armour quite quickly.",

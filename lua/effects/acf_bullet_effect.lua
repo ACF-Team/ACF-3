@@ -20,7 +20,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and Hit > 0 then
-		local RoundData = ACF.RoundTypes[Bullet.AmmoType]
+		local RoundData = ACF.RoundTypes[Bullet.AmmoType] -- REPLACE
 
 		-- Updating old effect with new values
 		Bullet.SimFlight = Flight

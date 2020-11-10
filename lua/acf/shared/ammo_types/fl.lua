@@ -181,7 +181,7 @@ if SERVER then
 		local Spread = 0
 
 		if Gun then
-			local GunClass = ACF.Classes.GunClass[Gun.gunclass]
+			local GunClass = ACF.Classes.GunClass[Gun.gunclass] -- REPLACE
 
 			Spread = GunClass and (GunClass.spread * ACF.GunInaccuracyScale) or 0
 		end

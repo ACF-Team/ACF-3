@@ -1,3 +1,4 @@
+-- DELETE
 function PANEL:Init()
 	acfmenupanel = self.Panel
 	-- height
@@ -191,12 +192,11 @@ function PANEL:Init()
 	-- end
 end
 
---[[------------------------------------
-	Think
-------------------------------------]]
+-- DELETE
 function PANEL:Think()
 end
 
+-- DELETE
 function PANEL:UpdateDisplay(Table)
 	RunConsoleCommand("acfmenu_id", Table.id or 0)
 
@@ -225,6 +225,7 @@ function PANEL:UpdateDisplay(Table)
 	acfmenupanel:PerformLayout()
 end
 
+-- DELETE
 function PANEL:PerformLayout()
 	--Starting positions
 	local vspacing = 10
@@ -242,6 +243,7 @@ function PANEL:PerformLayout()
 	end
 end
 
+-- DELETE
 function ACFHomeGUICreate()
 	if not acfmenupanel.CustomDisplay then return end
 
@@ -281,6 +283,7 @@ function ACFHomeGUICreate()
 	Display:AddItem(CData.ClientStatus)
 end
 
+-- DELETE
 function PANEL:AmmoSelect(Blacklist)
 	if not acfmenupanel.CustomDisplay then return end
 
@@ -380,7 +383,7 @@ function PANEL:AmmoSelect(Blacklist)
 	end
 end
 
--- If it works don't fix it man, btw just add this function to every single ammo type
+-- DELETE
 function PANEL:AmmoUpdate()
 	local AmmoData = acfmenupanel.AmmoData
 
@@ -389,7 +392,7 @@ function PANEL:AmmoUpdate()
 	acfmenupanel:AmmoSlider("Ammo Scale Z", AmmoData["Ammo Scale Z"], 6, 96, 3, "Crate Z scale")
 end
 
---Variable name in the table, Value, Min value, Max Value, slider text title, slider decimals, description text below slider
+-- DELETE
 function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc)
 	local Panels = acfmenupanel.CData
 
@@ -441,7 +444,7 @@ function PANEL:AmmoSlider(Name, Value, Min, Max, Decimals, Title, Desc)
 	end
 end
 
---Variable name in the table, slider text title, slider decimeals, description text below slider
+-- DELETE
 function PANEL:AmmoCheckbox(Name, Title, Desc)
 	if not acfmenupanel["CData"][Name] then
 		acfmenupanel["CData"][Name] = vgui.Create("DCheckBoxLabel")
@@ -477,6 +480,7 @@ function PANEL:AmmoCheckbox(Name, Title, Desc)
 	acfmenupanel["CData"][Name .. "_text"]:SizeToContentsX()
 end
 
+-- DELETE
 function PANEL:CPanelText(Name, Desc)
 	if not acfmenupanel["CData"][Name .. "_text"] then
 		acfmenupanel["CData"][Name .. "_text"] = vgui.Create("DLabel")

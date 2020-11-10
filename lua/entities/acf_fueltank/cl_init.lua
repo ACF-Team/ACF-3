@@ -32,6 +32,7 @@ function ENT:Draw()
 	end
 end
 
+-- DELETE
 function ACFFuelTankGUICreate(Table)
 	if not acfmenupanel.CustomDisplay then return end
 
@@ -89,6 +90,7 @@ function ACFFuelTankGUICreate(Table)
 	acfmenupanel.CustomDisplay:PerformLayout()
 end
 
+-- DELETE
 function ACFFuelTankGUIUpdate()
 	if not acfmenupanel.CustomDisplay then return end
 	local Tanks = ACF.Weapons.FuelTanks

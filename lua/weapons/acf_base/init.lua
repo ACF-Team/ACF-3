@@ -6,9 +6,9 @@ SWEP.AutoSwitchFrom = false
 
 function SWEP:Initialize()
 	self.Primary.BulletData = {}
-	self.ConvertData = ACF.RoundTypes[self.Primary.UserData["Type"]]["convert"] --Call the correct function for this round type to convert user input data into ballistics data
+	self.ConvertData = ACF.RoundTypes[self.Primary.UserData["Type"]]["convert"] -- REPLACE
 	self.Primary.BulletData = self:ConvertData(self.Primary.UserData) --Put the results into the BulletData table
-	self.NetworkData = ACF.RoundTypes[self.Primary.UserData["Type"]]["network"]
+	self.NetworkData = ACF.RoundTypes[self.Primary.UserData["Type"]]["network"] -- REPLACE
 	self:NetworkData(self.Primary.BulletData)
 
 	if (SERVER) then
@@ -57,7 +57,7 @@ function SWEP:CrateReload()
 			AmmoEnt.Ammo = AmmoEnt.Ammo - Transfert
 			self.Owner:GiveAmmo(Transfert, self.Primary.Ammo)
 			self.Primary.BulletData = AmmoEnt.BulletData
-			self.NetworkData = ACF.RoundTypes[AmmoEnt.RoundType]["network"]
+			self.NetworkData = ACF.RoundTypes[AmmoEnt.RoundType]["network"] -- REPLACE
 			self:NetworkData(self.Primary.BulletData)
 
 			return true

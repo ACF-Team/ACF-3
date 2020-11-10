@@ -238,6 +238,6 @@ function Round.guiupdate(Panel)
 	---acfmenupanel:CPanelText("FragDisplay", "Fragments : "..(Data.Fragments).."\n Average Fragment Weight : "..(math.floor(Data.FragMass*10000)/10).." ---g \n Average Fragment Velocity : "..math.floor(Data.FragVel).." m/s")	--Proj muzzle penetration (Name, Desc)
 end
 
-ACF.RoundTypes.SM = Round --Set the round properties
+ACF.RoundTypes.SM = Round -- DELETE
 
 ACF.RegisterAmmoDecal("SM", "damage/he_pen", "damage/he_rico")

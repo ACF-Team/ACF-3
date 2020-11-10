@@ -21,6 +21,7 @@ function ENT:Draw()
 	end
 end
 
+-- DELETE
 function ACFEngineGUICreate(Table)
 	acfmenupanel:CPanelText("Name", Table.name)
 	acfmenupanel.CData.DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)

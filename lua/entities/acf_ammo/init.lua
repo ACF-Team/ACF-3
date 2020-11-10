@@ -188,6 +188,7 @@ do -- Spawning and Updating --------------------
 	local Updated = {
 		["20mmHRAC"] = "20mmRAC",
 		["30mmHRAC"] = "30mmRAC",
+		["40mmCL"] = "40mmGL",
 	}
 
 	local function VerifyData(Data)

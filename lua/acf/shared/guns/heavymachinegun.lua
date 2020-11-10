@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("HMG", {
 	spread = 1.2,
 	name = "Heavy Machinegun",
@@ -15,7 +15,7 @@ ACF_defineGunClass("HMG", {
 	}
 })
 
---add a gun to the class
+-- DELETE
 ACF_defineGun("13mmHMG", {
 	name = "13mm Heavy Machinegun",
 	desc = "The lightest of the HMGs, the 13mm has a rapid fire rate but suffers from poor payload size.  Often used to strafe ground troops or annoy low-flying aircraft.",
@@ -35,6 +35,7 @@ ACF_defineGun("13mmHMG", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("20mmHMG", {
 	name = "20mm Heavy Machinegun",
 	desc = "The 20mm has a rapid fire rate but suffers from poor payload size.  Often used to strafe ground troops or annoy low-flying aircraft.",
@@ -54,6 +55,7 @@ ACF_defineGun("20mmHMG", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("30mmHMG", {
 	name = "30mm Heavy Machinegun",
 	desc = "30mm shell chucker, light and compact. Your average cold war dogfight go-to.",
@@ -73,6 +75,7 @@ ACF_defineGun("30mmHMG", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("40mmHMG", {
 	name = "40mm Heavy Machinegun",
 	desc = "The heaviest of the heavy machineguns.  Massively powerful with a killer reload and hefty ammunition requirements, it can pop even relatively heavy targets with ease.",
@@ -96,7 +99,7 @@ ACF.RegisterWeaponClass("HMG", {
 	Name		  = "Heavy Machinegun",
 	Description	  = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
 	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 0.24,
+	Spread		  = 1.2,
 	Sound		  = "acf_base/weapons/mg_fire3.mp3",
 	Caliber	= {
 		Min = 13,

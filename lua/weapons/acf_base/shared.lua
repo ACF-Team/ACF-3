@@ -77,7 +77,7 @@ function SWEP:PrimaryAttack()
 			self.Primary.BulletData["Owner"] = self.Owner
 			self.Primary.BulletData["Gun"] = self.Owner
 			self.Primary.BulletData["Crate"] = self:EntIndex()
-			self.CreateShell = ACF.RoundTypes[self.Primary.BulletData["Type"]]["create"]
+			self.CreateShell = ACF.RoundTypes[self.Primary.BulletData["Type"]]["create"] -- REPLACE
 			self:CreateShell( self.Primary.BulletData )
 
 			self:TakePrimaryAmmo(1)

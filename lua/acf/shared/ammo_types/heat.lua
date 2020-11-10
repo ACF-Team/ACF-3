@@ -187,19 +187,15 @@ if SERVER then
 
 		if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
-		local DeltaTime = ACF.CurTime - Bullet.LastThink
-
-		Bullet.Detonated  = true
-		Bullet.InitTime	  = ACF.CurTime
-		Bullet.Flight	  = Bullet.Flight + Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
-		Bullet.Pos		  = HitPos
-		Bullet.DragCoef	  = Bullet.SlugDragCoef
-		Bullet.ProjMass	  = Bullet.SlugMass * (1 - Crushed)
-		Bullet.Caliber	  = Bullet.SlugCaliber
-		Bullet.PenArea	  = Bullet.SlugPenArea
-		Bullet.Ricochet	  = Bullet.SlugRicochet
-		Bullet.StartTrace = Bullet.Pos - Bullet.Flight:GetNormalized() * math.min(ACF.PhysMaxVel * DeltaTime, Bullet.FlightTime * Bullet.Flight:Length())
-		Bullet.NextPos	  = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime) --Calculates the next shell position
+		Bullet.Detonated = true
+		Bullet.InitTime  = ACF.CurTime
+		Bullet.Flight    = Bullet.Flight + Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
+		Bullet.NextPos	 = HitPos
+		Bullet.DragCoef  = Bullet.SlugDragCoef
+		Bullet.ProjMass  = Bullet.SlugMass * (1 - Crushed)
+		Bullet.Caliber   = Bullet.SlugCaliber
+		Bullet.PenArea   = Bullet.SlugPenArea
+		Bullet.Ricochet  = Bullet.SlugRicochet
 
 		return true
 	end

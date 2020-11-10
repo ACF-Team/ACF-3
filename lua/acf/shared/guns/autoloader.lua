@@ -1,4 +1,4 @@
---define the class
+-- DELETE
 ACF_defineGunClass("AL", {
 	spread = 0.08,
 	name = "Autoloader",
@@ -10,8 +10,7 @@ ACF_defineGunClass("AL", {
 	soundNormal = " "
 })
 
---add a gun to the class
---id
+-- DELETE
 ACF_defineGun("75mmAL", {
 	name = "75mm Autoloading Cannon",
 	desc = "A quick-firing 75mm gun, pops off a number of rounds in relatively short order.",
@@ -30,6 +29,7 @@ ACF_defineGun("75mmAL", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("100mmAL", {
 	name = "100mm Autoloading Cannon",
 	desc = "The 100mm is good for rapidly hitting medium armor, then running like your ass is on fire to reload.",
@@ -48,6 +48,7 @@ ACF_defineGun("100mmAL", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("120mmAL", {
 	name = "120mm Autoloading Cannon",
 	desc = "The 120mm autoloader can do serious damage before reloading, but the reload time is killer.",
@@ -66,6 +67,7 @@ ACF_defineGun("120mmAL", {
 	}
 })
 
+-- DELETE
 ACF_defineGun("140mmAL", {
 	name = "140mm Autoloading Cannon",
 	desc = "The 140mm can shred a medium tank's armor with one magazine, and even function as shoot & scoot artillery, with its useful HE payload.",

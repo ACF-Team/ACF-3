@@ -6,7 +6,6 @@ function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing Discarging Sabot"
 	self.Description = "A subcaliber munition designed to trade damage for penetration. Loses energy quickly over distance."
 	self.Blacklist = ACF.GetWeaponBlacklist({
-		RAC = true,
 		AL = true,
 		AC = true,
 		SA = true,

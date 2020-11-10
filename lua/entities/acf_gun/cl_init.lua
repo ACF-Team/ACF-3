@@ -74,6 +74,7 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	self.Reload = ReloadTime
 end
 
+-- DELETE
 function ACFGunGUICreate(Table)
 	acfmenupanel:CPanelText("Name", Table.name)
 	acfmenupanel.CData.DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
