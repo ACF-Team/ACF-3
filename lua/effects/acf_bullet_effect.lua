@@ -1,3 +1,6 @@
+
+local ACF = ACF
+local AmmoTypes = ACF.Classes.AmmoTypes
 local Bullets = ACF.BulletEffect
 
 function EFFECT:Init(Data)
@@ -20,7 +23,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and Hit > 0 then
-		local RoundData = ACF.RoundTypes[Bullet.AmmoType] -- REPLACE
+		local RoundData = AmmoTypes[Bullet.AmmoType]
 
 		-- Updating old effect with new values
 		Bullet.SimFlight = Flight
@@ -28,15 +31,15 @@ function EFFECT:Init(Data)
 
 		if Hit == 1 then
 			-- Bullet has reached end of flight, remove old effect
-			RoundData.endeffect(Bullet.Effect, Bullet)
+			RoundData:ImpactEffect(Bullet.Effect, Bullet)
 
 			Bullet.Effect.Kill = true
 		elseif Hit == 2 then
 			-- Bullet penetrated, don't remove old effect
-			RoundData.pierceeffect(Bullet.Effect, Bullet)
+			RoundData:PenetrationEffect(Bullet.Effect, Bullet)
 		elseif Hit == 3 then
 			-- Bullet ricocheted, don't remove old effect
-			RoundData.ricocheteffect(Bullet.Effect, Bullet)
+			RoundData:RicochetEffect(Bullet.Effect, Bullet)
 		end
 
 		-- We don't need this new effect, so we just remove it

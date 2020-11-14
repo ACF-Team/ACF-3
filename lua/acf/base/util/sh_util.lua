@@ -161,8 +161,6 @@ do -- Trace functions
 			return ACF.Trace(TraceData)
 		end
 
-		debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
-
 		return T
 	end
 

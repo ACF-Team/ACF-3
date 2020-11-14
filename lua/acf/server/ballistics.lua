@@ -12,6 +12,7 @@ local FlightTr  	= { start = true, endpos = true, filter = true, mask = true }
 local BackRes 		= {}
 local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, output = BackRes }
 local GlobalFilter 	= ACF.GlobalFilter
+local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
@@ -239,7 +240,7 @@ function ACF.DoBulletsFlight(Index, Bullet)
 		Bullet.Filter = Filter
 	end
 
-	local RoundData = ACF.RoundTypes[Bullet.Type]
+	local RoundData = AmmoTypes[Bullet.Type]
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -260,7 +261,7 @@ function ACF.DoBulletsFlight(Index, Bullet)
 
 				ACF.BulletClient(Index, Bullet, "Update", 1, Pos)
 
-				RoundData.endflight(Index, Bullet, Pos, Bullet.Flight:GetNormalized())
+				RoundData:OnFlightEnd(Index, Bullet, Pos, Bullet.Flight:GetNormalized())
 			end
 		end
 	end
@@ -270,7 +271,7 @@ function ACF.DoBulletsFlight(Index, Bullet)
 			Bullet.SkipNextHit = nil
 		end
 	elseif FlightRes.HitNonWorld and not GlobalFilter[FlightRes.Entity:GetClass()] then
-		local Retry = RoundData.propimpact(Index, Bullet, FlightRes.Entity, FlightRes.HitNormal, FlightRes.HitPos, FlightRes.HitGroup)
+		local Retry = RoundData:PropImpact(Index, Bullet, FlightRes.Entity, FlightRes.HitNormal, FlightRes.HitPos, FlightRes.HitGroup)
 
 		if Retry == "Penetrated" then
 			if Bullet.OnPenetrated then
@@ -293,11 +294,12 @@ function ACF.DoBulletsFlight(Index, Bullet)
 
 			ACF.BulletClient(Index, Bullet, "Update", 1, FlightRes.HitPos)
 
-			RoundData.endflight(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
+			--RoundData.endflight(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
+			RoundData:OnFlightEnd(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
 		end
 	elseif FlightRes.HitWorld then
 		if not FlightRes.HitSky then
-			local Retry = RoundData.worldimpact(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
+			local Retry = RoundData:WorldImpact(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
 
 			if Retry == "Penetrated" then
 				if Bullet.OnPenetrated then
@@ -320,7 +322,7 @@ function ACF.DoBulletsFlight(Index, Bullet)
 
 				ACF.BulletClient(Index, Bullet, "Update", 1, FlightRes.HitPos)
 
-				RoundData.endflight(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
+				RoundData:OnFlightEnd(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
 			end
 		else
 			if FlightRes.HitNormal == Vector(0, 0, -1) then

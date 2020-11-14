@@ -189,8 +189,8 @@ if SERVER then
 
 		Bullet.Detonated = true
 		Bullet.InitTime  = ACF.CurTime
-		Bullet.Flight    = Bullet.Flight + Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
-		Bullet.NextPos	 = HitPos
+		Bullet.Flight    = Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
+		Bullet.NextPos   = HitPos
 		Bullet.DragCoef  = Bullet.SlugDragCoef
 		Bullet.ProjMass  = Bullet.SlugMass * (1 - Crushed)
 		Bullet.Caliber   = Bullet.SlugCaliber
