@@ -84,7 +84,7 @@ do -- ACF global vars
 
 	-- Weapon Accuracy
 	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
-	ACF.GunInaccuracyScale 	= 1 -- A multiplier for gun accuracy. Must be between 0.5 and 4
+	ACF.GunInaccuracyScale 	= 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
