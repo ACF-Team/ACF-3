@@ -1,4 +1,5 @@
 local ACF = ACF
+
 do -- Clientside chat messages
 	local Types = {
 		Normal = {
@@ -352,5 +353,43 @@ do -- Clientside visclip check
 		end
 
 		return false
+	end
+end
+
+do -- Panel helpers
+	local Sorted = {}
+
+	function ACF.LoadSortedList(Panel, List, Member)
+		local Data = Sorted[List]
+
+		if not Data then
+			local Choices = {}
+			local Count = 0
+
+			for _, Value in pairs(List) do
+				Count = Count + 1
+
+				Choices[Count] = Value
+			end
+
+			table.SortByMember(Choices, Member, true)
+
+			Data = {
+				Choices = Choices,
+				Index = 1,
+			}
+
+			Sorted[List] = Data
+		end
+
+		local Current = Data.Index
+
+		Panel.ListData = Data
+
+		Panel:Clear()
+
+		for Index, Value in ipairs(Data.Choices) do
+			Panel:AddChoice(Value.Name, Value, Index == Current)
+		end
 	end
 end

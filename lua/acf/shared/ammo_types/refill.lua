@@ -2,6 +2,7 @@ local Ammo = ACF.RegisterAmmoType("Refill", "AP")
 
 function Ammo:OnLoaded()
 	self.Name				= "Refill"
+	self.Model              = "models/Items/BoxSRounds.mdl"
 	self.Description		= "Provides supplies to other ammo crates."
 	self.Blacklist			= {}
 	self.SupressDefaultMenu	= true
@@ -12,8 +13,8 @@ function Ammo:GetDisplayData()
 end
 
 function Ammo:BaseConvert(ToolData)
-	local ProjMass = 5.5 * 0.079 --Volume of the projectile as a cylinder * streamline factor (Data5) * density of steel
-	local PropMass = 0.001 --Volume of the case as a cylinder * Powder density converted from g to kg
+	local ProjMass = 5.5 * 0.079
+	local PropMass = 0.001
 
 	return {
 		Id			= "12.7mmMG",

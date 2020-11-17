@@ -1,36 +1,8 @@
+local ACF = ACF
 local EngineTypes = ACF.Classes.EngineTypes
 local FuelTypes = ACF.Classes.FuelTypes
 local FuelTanks = ACF.Classes.FuelTanks
 local Engines = ACF.Classes.Engines
-local Selected = {}
-local Sorted = {}
-
-local function LoadSortedList(Panel, List, Member)
-	local Choices = Sorted[List]
-
-	if not Choices then
-		Choices = {}
-
-		local Count = 0
-		for _, V in pairs(List) do
-			Count = Count + 1
-			Choices[Count] = V
-		end
-
-		table.SortByMember(Choices, Member, true)
-
-		Sorted[List] = Choices
-		Selected[Choices] = 1
-	end
-
-	Panel:Clear()
-
-	for _, V in pairs(Choices) do
-		Panel:AddChoice(V.Name, V)
-	end
-
-	Panel:ChooseOptionID(Selected[Choices])
-end
 
 local function UpdateEngineStats(Label, Data)
 	local RPM = Data.RPM
@@ -115,26 +87,23 @@ local function CreateMenu(Menu)
 	function EngineClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
-
-		local Choices = Sorted[Engines]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("EngineClass", Data.ID)
 
-		LoadSortedList(EngineList, Data.Items, "Mass")
+		ACF.LoadSortedList(EngineList, Data.Items, "Mass")
 	end
 
 	function EngineList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
 		local Preview = Data.Preview
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
-		local Choices = Sorted[ClassData.Items]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("Engine", Data.ID)
 
@@ -149,30 +118,27 @@ local function CreateMenu(Menu)
 
 		UpdateEngineStats(EngineStats, Data)
 
-		LoadSortedList(FuelType, Data.Fuel, "ID")
+		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
 	end
 
 	function FuelClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Choices = Sorted[FuelTanks]
-		Selected[Choices] = Index
-
-		LoadSortedList(FuelList, Data.Items, "ID")
+		ACF.LoadSortedList(FuelList, Data.Items, "ID")
 	end
 
 	function FuelList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
 		local Preview = Data.Preview
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
-		local Choices = Sorted[ClassData.Items]
-		Selected[Choices] = Index
 
 		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description
 
@@ -190,11 +156,8 @@ local function CreateMenu(Menu)
 	function FuelType:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
-
-		local ClassData = EngineList.Selected
-		local Choices = Sorted[ClassData.Fuel]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("FuelType", Data.ID)
 
@@ -237,8 +200,8 @@ local function CreateMenu(Menu)
 		FuelInfo:SetText(FuelText)
 	end
 
-	LoadSortedList(EngineClass, Engines, "ID")
-	LoadSortedList(FuelClass, FuelTanks, "ID")
+	ACF.LoadSortedList(EngineClass, Engines, "ID")
+	ACF.LoadSortedList(FuelClass, FuelTanks, "ID")
 end
 
 ACF.AddMenuItem(201, "Entities", "Engines", "car", CreateMenu)

@@ -1,33 +1,5 @@
+local ACF = ACF
 local Components = ACF.Classes.Components
-local Selected = {}
-local Sorted = {}
-
-local function LoadSortedList(Panel, List, Member)
-	local Choices = Sorted[List]
-
-	if not Choices then
-		Choices = {}
-
-		local Count = 0
-		for _, V in pairs(List) do
-			Count = Count + 1
-			Choices[Count] = V
-		end
-
-		table.SortByMember(Choices, Member, true)
-
-		Sorted[List] = Choices
-		Selected[Choices] = 1
-	end
-
-	Panel:Clear()
-
-	for _, V in pairs(Choices) do
-		Panel:AddChoice(V.Name, V)
-	end
-
-	Panel:ChooseOptionID(Selected[Choices])
-end
 
 local function CreateMenu(Menu)
 	ACF.WriteValue("PrimaryClass", "N/A")
@@ -54,25 +26,22 @@ local function CreateMenu(Menu)
 	function ComponentClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
-
-		local Choices = Sorted[Components]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("ComponentClass", Data.ID)
 
-		LoadSortedList(ComponentList, Data.Items, "ID")
+		ACF.LoadSortedList(ComponentList, Data.Items, "ID")
 	end
 
 	function ComponentList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
 		local Preview = Data.Preview
 		local ClassData = ComponentClass.Selected
-		local Choices = Sorted[ClassData.Items]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("Component", Data.ID)
 
@@ -97,7 +66,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	LoadSortedList(ComponentClass, Components, "ID")
+	ACF.LoadSortedList(ComponentClass, Components, "ID")
 end
 
 ACF.AddMenuItem(501, "Entities", "Components", "drive", CreateMenu)

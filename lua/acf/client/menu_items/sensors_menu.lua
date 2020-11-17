@@ -1,33 +1,5 @@
+local ACF = ACF
 local Sensors = ACF.Classes.Sensors
-local Selected = {}
-local Sorted = {}
-
-local function LoadSortedList(Panel, List, Member)
-	local Choices = Sorted[List]
-
-	if not Choices then
-		Choices = {}
-
-		local Count = 0
-		for _, V in pairs(List) do
-			Count = Count + 1
-			Choices[Count] = V
-		end
-
-		table.SortByMember(Choices, Member, true)
-
-		Sorted[List] = Choices
-		Selected[Choices] = 1
-	end
-
-	Panel:Clear()
-
-	for _, V in pairs(Choices) do
-		Panel:AddChoice(V.Name, V)
-	end
-
-	Panel:ChooseOptionID(Selected[Choices])
-end
 
 local function CreateMenu(Menu)
 	ACF.WriteValue("PrimaryClass", "N/A")
@@ -54,25 +26,22 @@ local function CreateMenu(Menu)
 	function SensorClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
-
-		local Choices = Sorted[Sensors]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("SensorClass", Data.ID)
 
-		LoadSortedList(SensorList, Data.Items, "ID")
+		ACF.LoadSortedList(SensorList, Data.Items, "ID")
 	end
 
 	function SensorList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
 		local Preview = Data.Preview
 		local ClassData = SensorClass.Selected
-		local Choices = Sorted[ClassData.Items]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("Sensor", Data.ID)
 
@@ -97,7 +66,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	LoadSortedList(SensorClass, Sensors, "ID")
+	ACF.LoadSortedList(SensorClass, Sensors, "ID")
 end
 
 ACF.AddMenuItem(401, "Entities", "Sensors", "transmit", CreateMenu)

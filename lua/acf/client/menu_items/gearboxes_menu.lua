@@ -1,33 +1,5 @@
+local ACF = ACF
 local Gearboxes = ACF.Classes.Gearboxes
-local Selected = {}
-local Sorted = {}
-
-local function LoadSortedList(Panel, List, Member)
-	local Choices = Sorted[List]
-
-	if not Choices then
-		Choices = {}
-
-		local Count = 0
-		for _, V in pairs(List) do
-			Count = Count + 1
-			Choices[Count] = V
-		end
-
-		table.SortByMember(Choices, Member, true)
-
-		Sorted[List] = Choices
-		Selected[Choices] = 1
-	end
-
-	Panel:Clear()
-
-	for _, V in pairs(Choices) do
-		Panel:AddChoice(V.Name, V)
-	end
-
-	Panel:ChooseOptionID(Selected[Choices])
-end
 
 local function CreateMenu(Menu)
 	Menu:AddTitle("Gearbox Settings")
@@ -48,25 +20,22 @@ local function CreateMenu(Menu)
 	function GearboxClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
-
-		local Choices = Sorted[Gearboxes]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("GearboxClass", Data.ID)
 
-		LoadSortedList(GearboxList, Data.Items, "ID")
+		ACF.LoadSortedList(GearboxList, Data.Items, "ID")
 	end
 
 	function GearboxList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
+		self.ListData.Index = Index
 		self.Selected = Data
 
 		local Preview = Data.Preview
 		local ClassData = GearboxClass.Selected
-		local Choices = Sorted[ClassData.Items]
-		Selected[Choices] = Index
 
 		ACF.WriteValue("Gearbox", Data.ID)
 
@@ -89,7 +58,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	LoadSortedList(GearboxClass, Gearboxes, "ID")
+	ACF.LoadSortedList(GearboxClass, Gearboxes, "ID")
 end
 
 ACF.AddMenuItem(301, "Entities", "Gearboxes", "cog", CreateMenu)

@@ -88,7 +88,7 @@ ACF.RegisterWeapon("14.5mmRAC", "RAC", {
 	Mass		= 400,
 	Year		= 1962,
 	MagSize		= 250,
-	MagReload	= 15,
+	MagReload	= 10,
 	Cyclic		= 2250,
 	Round = {
 		MaxLength = 25,
@@ -104,7 +104,7 @@ ACF.RegisterWeapon("20mmRAC", "RAC", {
 	Mass		= 760,
 	Year		= 1965,
 	MagSize		= 200,
-	MagReload	= 20,
+	MagReload	= 15,
 	Cyclic		= 2000,
 	Round = {
 		MaxLength = 30,
@@ -120,7 +120,7 @@ ACF.RegisterWeapon("30mmRAC", "RAC", {
 	Mass		= 1500,
 	Year		= 1975,
 	MagSize		= 100,
-	MagReload	= 30,
+	MagReload	= 20,
 	Cyclic		= 1500,
 	Round = {
 		MaxLength = 40,

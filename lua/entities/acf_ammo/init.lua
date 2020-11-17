@@ -213,13 +213,15 @@ do -- Spawning and Updating --------------------
 		do -- Clamping size
 			local Size = Data.Size
 
-			if isvector(Size) then
-				Size.x = math.Clamp(Size.x, 6, 96)
-				Size.y = math.Clamp(Size.y, 6, 96)
-				Size.z = math.Clamp(Size.z, 6, 96)
-			else
-				Data.Size = Vector(24, 24, 24)
+			if not isvector(Size) then
+				Size = Vector(Data.CrateSizeX or 24, Data.CrateSizeY or 24, Data.CrateSizeZ or 24)
+
+				Data.Size = Size
 			end
+
+			Size.x = math.Clamp(Size.x, 6, 96)
+			Size.y = math.Clamp(Size.y, 6, 96)
+			Size.z = math.Clamp(Size.z, 6, 96)
 		end
 
 		if not Data.Destiny then
