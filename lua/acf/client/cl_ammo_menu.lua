@@ -17,7 +17,7 @@ local function GetAmmoList(Class)
 end
 
 local function AddPreview(Base, Settings, ToolData)
-	if Settings.SupressPreview then return end
+	if Settings.SuppressPreview then return end
 
 	local Preview = Base:AddModelPreview()
 	Preview:SetCamPos(Vector(45, 45, 30))
@@ -32,7 +32,7 @@ local function AddPreview(Base, Settings, ToolData)
 end
 
 local function AddControls(Base, Settings, ToolData)
-	if Settings.SupressControls then return end
+	if Settings.SuppressControls then return end
 
 	local RoundLength = Base:AddLabel()
 	RoundLength:TrackDataVar("Projectile", "SetText")

@@ -156,7 +156,7 @@ if SERVER then
 	end
 else
 	function Ammo:SetupAmmoMenuSettings(Settings)
-		Settings.SupressControls     = true
+		Settings.SuppressControls    = true
 		Settings.SuppressInformation = true
 	end
 end
