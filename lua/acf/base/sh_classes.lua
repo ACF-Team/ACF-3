@@ -18,6 +18,8 @@ do -- Basic class registration functions
 			Class[K] = V
 		end
 
+		hook.Run("ACF_OnNewSimpleClass", ID, Class)
+
 		return Class
 	end
 
@@ -42,6 +44,8 @@ do -- Basic class registration functions
 		for K, V in pairs(Data) do
 			Group[K] = V
 		end
+
+		hook.Run("ACF_OnNewClassGroup", ID, Group)
 
 		return Group
 	end
@@ -88,6 +92,8 @@ do -- Basic class registration functions
 		for K, V in pairs(Data) do
 			Class[K] = V
 		end
+
+		hook.Run("ACF_OnNewGroupedClass", ID, Group, Class)
 
 		return Class
 	end
@@ -165,7 +171,9 @@ do -- Class registration function
 				Class:OnLoaded()
 			end
 
-			hook.Run("OnClassLoaded", Class.ID, Class)
+			hook.Run("ACF_OnClassLoaded", Class.ID, Class)
+
+			Class.Loaded = true
 		end)
 	end
 

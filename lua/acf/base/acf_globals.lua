@@ -135,6 +135,34 @@ do -- ACF global vars
 end
 
 do -- ACF Convars/Callbacks ------------------------
+	function ACF_CVarChangeCallback(CVar, _, New)
+		if CVar == "acf_healthmod" then
+			ACF.Threshold = 264.7 / math.max(New, 0.01)
+			print("Health Mod changed to a factor of " .. New)
+		elseif CVar == "acf_armormod" then
+			ACF.ArmorMod = 1 * math.max(New, 0)
+			print("Armor Mod changed to a factor of " .. New)
+		elseif CVar == "acf_ammomod" then
+			ACF.AmmoMod = 1 * math.max(New, 0.01)
+			print("Ammo Mod changed to a factor of " .. New)
+		elseif CVar == "acf_fuelrate" then
+			local Value = tonumber(New) or 1
+
+			ACF.FuelRate = math.max(Value, 0.01)
+
+			print("Fuel Rate changed to a factor of " .. Value)
+		elseif CVar == "acf_gunfire" then
+			ACF.GunfireEnabled = tobool(New)
+			local text = "disabled"
+
+			if ACF.GunfireEnabled then
+				text = "enabled"
+			end
+
+			print("ACF Gunfire has been " .. text)
+		end
+	end
+
 	CreateConVar("sbox_max_acf_ammo", 32)
 	-- New healthmod/armormod/ammomod cvars
 	CreateConVar("acf_healthmod", 1)
@@ -222,21 +250,19 @@ elseif CLIENT then
 	end
 	---------------------------------------------
 
-	-- Hitbox Updating --------------------------
+	-- Clientside Updating --------------------------
 	net.Receive("ACF_UpdateEntity", function()
 		local Entity = net.ReadEntity()
 
-		timer.Simple(0.1, function()
-			if not IsValid(Entity) then return end
-			if not isfunction(Entity.Update) then return end
+		if not IsValid(Entity) then return end
+		if not isfunction(Entity.Update) then return end
 
-			Entity:Update()
-		end)
+		Entity:Update()
 	end)
 	---------------------------------------------
 end
 
--- REPLACE or REMOVE?
+-- DELETE
 timer.Simple(0, function()
 	for _, Table in pairs(ACF.Classes.GunClass) do
 		PrecacheParticleSystem(Table["muzzleflash"])
@@ -277,34 +303,6 @@ function ACF_Kinetic(Speed, Mass, LimitVel)
 	--Energy.Penetration = math.max(Energy.Momentum^ACF.KinFudgeFactor - math.max(Speed-LimitVel,0)/(LimitVel*5) * Energy.Momentum , Energy.Momentum*0.1)
 
 	return Energy
-end
-
-function ACF_CVarChangeCallback(CVar, _, New)
-	if CVar == "acf_healthmod" then
-		ACF.Threshold = 264.7 / math.max(New, 0.01)
-		print("Health Mod changed to a factor of " .. New)
-	elseif CVar == "acf_armormod" then
-		ACF.ArmorMod = 1 * math.max(New, 0)
-		print("Armor Mod changed to a factor of " .. New)
-	elseif CVar == "acf_ammomod" then
-		ACF.AmmoMod = 1 * math.max(New, 0.01)
-		print("Ammo Mod changed to a factor of " .. New)
-	elseif CVar == "acf_fuelrate" then
-		local Value = tonumber(New) or 1
-
-		ACF.FuelRate = math.max(Value, 0.01)
-
-		print("Fuel Rate changed to a factor of " .. Value)
-	elseif CVar == "acf_gunfire" then
-		ACF.GunfireEnabled = tobool(New)
-		local text = "disabled"
-
-		if ACF.GunfireEnabled then
-			text = "enabled"
-		end
-
-		print("ACF Gunfire has been " .. text)
-	end
 end
 
 do -- ACF Notify -----------------------------------
