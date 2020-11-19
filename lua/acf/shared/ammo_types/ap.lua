@@ -5,6 +5,7 @@ function Ammo:OnLoaded()
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
 	self.Blacklist = {
+		GL = true,
 		MO = true,
 		SB = true,
 		SL = true,
@@ -181,6 +182,9 @@ else
 		return Data
 	end
 
+	function Ammo:AddAmmoPreview(Preview)
+		Preview:SetModel(self.Model)
+	end
 
 	function Ammo:ImpactEffect(_, Bullet)
 		local Effect = EffectData()
@@ -216,51 +220,35 @@ else
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
-	function Ammo:MenuAction(Menu, ToolData, Data)
-		local Tracer = Menu:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
-
-			self:UpdateRoundData(ToolData, Data)
-
-			ACF.WriteValue("Projectile", Data.ProjLength)
-			ACF.WriteValue("Propellant", Data.PropLength)
-
-			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-
-		local RoundStats = Menu:AddLabel()
+	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+		local RoundStats = Base:AddLabel()
 		RoundStats:TrackDataVar("Projectile", "SetText")
 		RoundStats:TrackDataVar("Propellant")
 		RoundStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
-			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
+			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
+			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass)
 		end)
 
-		local PenStats = Menu:AddLabel()
+		local PenStats = Base:AddLabel()
 		PenStats:TrackDataVar("Projectile", "SetText")
 		PenStats:TrackDataVar("Propellant")
 		PenStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen   = math.Round(Data.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+			local MaxPen   = math.Round(BulletData.MaxPen, 2)
+			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
+			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 	end
 end

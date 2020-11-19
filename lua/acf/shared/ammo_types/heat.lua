@@ -8,6 +8,7 @@ function Ammo:OnLoaded()
 	self.Blacklist = {
 		AC = true,
 		MG = true,
+		MO = true,
 		SB = true,
 		SL = true,
 		HMG = true,
@@ -304,118 +305,104 @@ else
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
-	function Ammo:MenuAction(Menu, ToolData, Data)
-		local LinerAngle = Menu:AddSlider("Liner Angle", Data.MinConeAng, Data.MaxConeAng, 2)
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, BulletData.MaxConeAng, 2)
 		LinerAngle:SetDataVar("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackDataVar("Projectile")
 		LinerAngle:SetValueFunction(function(Panel)
 			ToolData.LinerAngle = math.Round(ACF.ReadNumber("LinerAngle"), 2)
 
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(Data.MaxConeAng)
-			Panel:SetValue(Data.ConeAng)
+			Panel:SetMax(BulletData.MaxConeAng)
+			Panel:SetValue(BulletData.ConeAng)
 
-			return Data.ConeAng
+			return BulletData.ConeAng
 		end)
 
-		local FillerMass = Menu:AddSlider("Filler Volume", 0, Data.MaxFillerVol, 2)
+		local FillerMass = Base:AddSlider("Filler Volume", 0, BulletData.MaxFillerVol, 2)
 		FillerMass:SetDataVar("FillerMass", "OnValueChanged")
 		FillerMass:TrackDataVar("Projectile")
 		FillerMass:TrackDataVar("LinerAngle")
 		FillerMass:SetValueFunction(function(Panel)
 			ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
 
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(Data.MaxFillerVol)
-			Panel:SetValue(Data.FillerVol)
+			Panel:SetMax(BulletData.MaxFillerVol)
+			Panel:SetValue(BulletData.FillerVol)
 
-			return Data.FillerVol
+			return BulletData.FillerVol
 		end)
+	end
 
-		local Tracer = Menu:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
-
-			self:UpdateRoundData(ToolData, Data)
-
-			ACF.WriteValue("Projectile", Data.ProjLength)
-			ACF.WriteValue("Propellant", Data.PropLength)
-
-			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-
-		local RoundStats = Menu:AddLabel()
+	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+		local RoundStats = Base:AddLabel()
 		RoundStats:TrackDataVar("Projectile", "SetText")
 		RoundStats:TrackDataVar("Propellant")
 		RoundStats:TrackDataVar("FillerMass")
 		RoundStats:TrackDataVar("LinerAngle")
 		RoundStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
-			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
-			local Filler	= ACF.GetProperMass(Data.FillerMass)
+			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
+			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
+			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
 		end)
 
-		local FillerStats = Menu:AddLabel()
+		local FillerStats = Base:AddLabel()
 		FillerStats:TrackDataVar("FillerMass", "SetText")
 		FillerStats:TrackDataVar("LinerAngle")
 		FillerStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
-			local Blast	   = math.Round(Data.BlastRadius, 2)
-			local FragMass = ACF.GetProperMass(Data.FragMass)
-			local FragVel  = math.Round(Data.FragVel, 2)
+			local Blast	   = math.Round(BulletData.BlastRadius, 2)
+			local FragMass = ACF.GetProperMass(BulletData.FragMass)
+			local FragVel  = math.Round(BulletData.FragVel, 2)
 
-			return Text:format(Blast, Data.Fragments, FragMass, FragVel)
+			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
 		end)
 
-		local Penetrator = Menu:AddLabel()
+		local Penetrator = Base:AddLabel()
 		Penetrator:TrackDataVar("Projectile", "SetText")
 		Penetrator:TrackDataVar("Propellant")
 		Penetrator:TrackDataVar("FillerMass")
 		Penetrator:TrackDataVar("LinerAngle")
 		Penetrator:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetrator Caliber : %s mm\nPenetrator Mass : %s\nPenetrator Velocity : %s m/s"
-			local Caliber  = math.Round(Data.SlugCaliber * 10, 2)
-			local Mass	   = ACF.GetProperMass(Data.SlugMassUsed)
-			local Velocity = math.Round(Data.MuzzleVel + Data.SlugMV, 2)
+			local Caliber  = math.Round(BulletData.SlugCaliber * 10, 2)
+			local Mass	   = ACF.GetProperMass(BulletData.SlugMassUsed)
+			local Velocity = math.Round(BulletData.MuzzleVel + BulletData.SlugMV, 2)
 
 			return Text:format(Caliber, Mass, Velocity)
 		end)
 
-		local PenStats = Menu:AddLabel()
+		local PenStats = Base:AddLabel()
 		PenStats:TrackDataVar("Projectile", "SetText")
 		PenStats:TrackDataVar("Propellant")
 		PenStats:TrackDataVar("FillerMass")
 		PenStats:TrackDataVar("LinerAngle")
 		PenStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen   = math.Round(Data.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+			local MaxPen   = math.Round(BulletData.MaxPen, 2)
+			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
+			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
 
-			R1P = math.Round((ACF_Kinetic((R1V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA, 2)
-			R2P = math.Round((ACF_Kinetic((R2V + Data.SlugMV) * 39.37, Data.SlugMassUsed, 999999).Penetration / Data.SlugPenArea) * ACF.KEtoRHA, 2)
+			R1P = math.Round((ACF_Kinetic((R1V + BulletData.SlugMV) * 39.37, BulletData.SlugMassUsed, 999999).Penetration / BulletData.SlugPenArea) * ACF.KEtoRHA, 2)
+			R2P = math.Round((ACF_Kinetic((R2V + BulletData.SlugMV) * 39.37, BulletData.SlugMassUsed, 999999).Penetration / BulletData.SlugPenArea) * ACF.KEtoRHA, 2)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 	end
 end

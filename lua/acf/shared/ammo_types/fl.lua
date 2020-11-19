@@ -10,6 +10,9 @@ function Ammo:OnLoaded()
 		AC = true,
 		GL = true,
 		MG = true,
+		MO = true,
+		SA = true,
+		SB = true,
 		SL = true,
 		HMG = true,
 		RAC = true,
@@ -191,59 +194,45 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
 
-	function Ammo:MenuAction(Menu, ToolData, Data)
-		local Flechettes = Menu:AddSlider("Flechette Amount", Data.MinFlechettes, Data.MaxFlechettes)
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 		Flechettes:SetDataVar("Flechettes", "OnValueChanged")
 		Flechettes:SetValueFunction(function(Panel)
 			ToolData.Flechettes = math.floor(ACF.ReadNumber("Flechettes"))
 
-			Ammo:UpdateRoundData(ToolData, Data)
+			Ammo:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetValue(Data.Flechettes)
+			Panel:SetValue(BulletData.Flechettes)
 
-			return Data.Flechettes
+			return BulletData.Flechettes
 		end)
 
-		local Spread = Menu:AddSlider("Flechette Spread", Data.MinSpread, Data.MaxSpread, 2)
+		local Spread = Base:AddSlider("Flechette Spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
 		Spread:SetDataVar("Spread", "OnValueChanged")
 		Spread:SetValueFunction(function(Panel)
 			ToolData.Spread = ACF.ReadNumber("Spread")
 
-			Ammo:UpdateRoundData(ToolData, Data)
+			Ammo:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetValue(Data.FlechetteSpread)
+			Panel:SetValue(BulletData.FlechetteSpread)
 
-			return Data.FlechetteSpread
+			return BulletData.FlechetteSpread
 		end)
+	end
 
-		local Tracer = Menu:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
-
-			self:UpdateRoundData(ToolData, Data)
-
-			ACF.WriteValue("Projectile", Data.ProjLength)
-			ACF.WriteValue("Propellant", Data.PropLength)
-
-			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-
+	function Ammo:AddAmmoInformation(Menu, ToolData, BulletData)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackDataVar("Projectile", "SetText")
 		RoundStats:TrackDataVar("Propellant")
 		RoundStats:TrackDataVar("Flechettes")
 		RoundStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlechette Mass : %s"
-			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
-			local FLMass	= ACF.GetProperMass(Data.FlechetteMass)
+			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
+			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
+			local FLMass	= ACF.GetProperMass(BulletData.FlechetteMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, FLMass)
 		end)
@@ -253,12 +242,12 @@ else
 		PenStats:TrackDataVar("Propellant")
 		PenStats:TrackDataVar("Flechettes")
 		PenStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen   = math.Round(Data.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.FlechetteDragCoef, Data.FlechetteMass, Data.FlechettePenArea, Data.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.FlechetteDragCoef, Data.FlechetteMass, Data.FlechettePenArea, Data.LimitVel, 800)
+			local MaxPen   = math.Round(BulletData.MaxPen, 2)
+			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.FlechetteDragCoef, BulletData.FlechetteMass, BulletData.FlechettePenArea, BulletData.LimitVel, 300)
+			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.FlechetteDragCoef, BulletData.FlechetteMass, BulletData.FlechettePenArea, BulletData.LimitVel, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)

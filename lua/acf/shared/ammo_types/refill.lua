@@ -1,11 +1,10 @@
 local Ammo = ACF.RegisterAmmoType("Refill", "AP")
 
 function Ammo:OnLoaded()
-	self.Name				= "Refill"
-	self.Model              = "models/Items/BoxSRounds.mdl"
-	self.Description		= "Provides supplies to other ammo crates."
-	self.Blacklist			= {}
-	self.SupressDefaultMenu	= true
+	self.Name        = "Refill"
+	self.Model       = "models/Items/BoxSRounds.mdl"
+	self.Description = "Provides supplies to other ammo crates."
+	self.Blacklist   = {}
 end
 
 function Ammo:GetDisplayData()
@@ -156,6 +155,8 @@ if SERVER then
 		return ""
 	end
 else
-	function Ammo:MenuAction()
+	function Ammo:SetupAmmoMenuSettings(Settings)
+		Settings.SupressControls     = true
+		Settings.SuppressInformation = true
 	end
 end

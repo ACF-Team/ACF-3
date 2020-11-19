@@ -5,6 +5,9 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "Hollow Point"
 	self.Description = "A round with a hollow cavity, meant to flatten against surfaces on impact."
+	self.Blacklist = ACF.GetWeaponBlacklist({
+		MG = true,
+	})
 end
 
 function Ammo:GetDisplayData(Data)
@@ -101,81 +104,67 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
-	function Ammo:MenuAction(Menu, ToolData, Data)
-		local HollowCavity = Menu:AddSlider("Cavity Volume", Data.MinCavVol, Data.MaxCavVol, 2)
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local HollowCavity = Base:AddSlider("Cavity Volume", BulletData.MinCavVol, BulletData.MaxCavVol, 2)
 		HollowCavity:SetDataVar("HollowCavity", "OnValueChanged")
 		HollowCavity:TrackDataVar("Projectile")
 		HollowCavity:SetValueFunction(function(Panel)
 			ToolData.HollowCavity = math.Round(ACF.ReadNumber("HollowCavity"), 2)
 
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(Data.MaxCavVol)
-			Panel:SetValue(Data.CavVol)
+			Panel:SetMax(BulletData.MaxCavVol)
+			Panel:SetValue(BulletData.CavVol)
 
-			return Data.CavVol
+			return BulletData.CavVol
 		end)
+	end
 
-		local Tracer = Menu:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
-
-			self:UpdateRoundData(ToolData, Data)
-
-			ACF.WriteValue("Projectile", Data.ProjLength)
-			ACF.WriteValue("Propellant", Data.PropLength)
-
-			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-
-		local RoundStats = Menu:AddLabel()
+	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+		local RoundStats = Base:AddLabel()
 		RoundStats:TrackDataVar("Projectile", "SetText")
 		RoundStats:TrackDataVar("Propellant")
 		RoundStats:TrackDataVar("HollowCavity")
 		RoundStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
-			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
+			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
+			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass)
 		end)
 
-		local HollowStats = Menu:AddLabel()
+		local HollowStats = Base:AddLabel()
 		HollowStats:TrackDataVar("Projectile", "SetText")
 		HollowStats:TrackDataVar("Propellant")
 		HollowStats:TrackDataVar("HollowCavity")
 		HollowStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	  = "Expanded Caliber : %s mm\nTransfered Energy : %s KJ"
-			local Caliber = math.Round(Data.ExpCaliber * 10, 2)
-			local Energy  = math.Round(Data.MaxKETransfert, 2)
+			local Caliber = math.Round(BulletData.ExpCaliber * 10, 2)
+			local Energy  = math.Round(BulletData.MaxKETransfert, 2)
 
 			return Text:format(Caliber, Energy)
 		end)
 
-		local PenStats = Menu:AddLabel()
+		local PenStats = Base:AddLabel()
 		PenStats:TrackDataVar("Projectile", "SetText")
 		PenStats:TrackDataVar("Propellant")
 		PenStats:TrackDataVar("HollowCavity")
 		PenStats:SetValueFunction(function()
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen   = math.Round(Data.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(Data.MuzzleVel, Data.DragCoef, Data.ProjMass, Data.PenArea, Data.LimitVel, 800)
+			local MaxPen   = math.Round(BulletData.MaxPen, 2)
+			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
+			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 	end
 end

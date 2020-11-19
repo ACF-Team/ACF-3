@@ -188,8 +188,8 @@ else
 		util.Effect("ACF_Smoke", Effect)
 	end
 
-	function Ammo:MenuAction(Menu, ToolData, Data)
-		local SmokeFiller = Menu:AddSlider("Smoke Filler", Data.MinFillerVol, Data.MaxFillerVol, 2)
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local SmokeFiller = Base:AddSlider("Smoke Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
 		SmokeFiller:SetDataVar("SmokeFiller", "OnValueChanged")
 		SmokeFiller:TrackDataVar("Projectile")
 		SmokeFiller:TrackDataVar("WPFiller")
@@ -197,18 +197,18 @@ else
 			ToolData.SmokeFiller = math.Round(ACF.ReadNumber("SmokeFiller"), 2)
 
 			if not IsTracked then
-				Data.FillerPriority = "Smoke"
+				BulletData.FillerPriority = "Smoke"
 			end
 
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(Data.MaxFillerVol)
-			Panel:SetValue(Data.FillerVol)
+			Panel:SetMax(BulletData.MaxFillerVol)
+			Panel:SetValue(BulletData.FillerVol)
 
-			return Data.FillerVol
+			return BulletData.FillerVol
 		end)
 
-		local WPFiller = Menu:AddSlider("WP Filler", Data.MinFillerVol, Data.MaxFillerVol, 2)
+		local WPFiller = Base:AddSlider("WP Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
 		WPFiller:SetDataVar("WPFiller", "OnValueChanged")
 		WPFiller:TrackDataVar("SmokeFiller")
 		WPFiller:TrackDataVar("Projectile")
@@ -216,33 +216,19 @@ else
 			ToolData.WPFiller = math.Round(ACF.ReadNumber("WPFiller"), 2)
 
 			if not IsTracked then
-				Data.FillerPriority = "WP"
+				BulletData.FillerPriority = "WP"
 			end
 
-			self:UpdateRoundData(ToolData, Data)
+			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(Data.MaxFillerVol)
-			Panel:SetValue(Data.WPVol)
+			Panel:SetMax(BulletData.MaxFillerVol)
+			Panel:SetValue(BulletData.WPVol)
 
-			return Data.WPVol
+			return BulletData.WPVol
 		end)
+	end
 
-		local Tracer = Menu:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
-
-			self:UpdateRoundData(ToolData, Data)
-
-			ACF.WriteValue("Projectile", Data.ProjLength)
-			ACF.WriteValue("Propellant", Data.PropLength)
-
-			Panel:SetText("Tracer : " .. Data.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-
+	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackDataVar("Projectile", "SetText")
 		RoundStats:TrackDataVar("Propellant")

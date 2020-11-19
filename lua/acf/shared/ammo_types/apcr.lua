@@ -6,11 +6,12 @@ function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing Composite Rigid"
 	self.Description = "A hardened core munition designed for weapons in the 1940s."
 	self.Blacklist = ACF.GetWeaponBlacklist({
+		C = true,
 		AL = true,
 		AC = true,
 		SA = true,
 		SC = true,
-		C = true,
+		RAC = true,
 	})
 end
 
