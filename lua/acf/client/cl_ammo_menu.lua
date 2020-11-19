@@ -3,6 +3,18 @@ local ACF = ACF
 local AmmoTypes = ACF.Classes.AmmoTypes
 local Ammo, BulletData
 
+local function CopySettings(Settings)
+	local Copy = {}
+
+	if Settings then
+		for K, V in pairs(Settings) do
+			Copy[K] = V
+		end
+	end
+
+	return Copy
+end
+
 local function GetAmmoList(Class)
 	local Result = {}
 
@@ -131,7 +143,7 @@ function ACF.UpdateAmmoMenu(Menu, Settings)
 	local Base = Menu.AmmoBase
 
 	BulletData = Ammo:ClientConvert(ToolData)
-	Settings = Settings or {}
+	Settings   = CopySettings(Settings)
 
 	if Ammo.SetupAmmoMenuSettings then
 		Ammo:SetupAmmoMenuSettings(Settings, ToolData, BulletData)
