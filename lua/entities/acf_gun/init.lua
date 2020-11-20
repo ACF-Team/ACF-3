@@ -147,15 +147,16 @@ do -- Spawn and Update functions --------------------------------
 		Gun:SetPos(Pos)
 		Gun:Spawn()
 
-		Gun.Owner			= Player -- MUST be stored on ent for PP
-		Gun.Outputs			= WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
-		Gun.Sound			= Class.Sound
-		Gun.BarrelFilter	= { Gun }
-		Gun.State			= "Empty"
-		Gun.Crates			= {}
-		Gun.CurrentShot		= 0
-		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.DataStore		= ACF.GetEntityArguments("acf_gun")
+		Gun.Owner        = Player -- MUST be stored on ent for PP
+		Gun.Outputs      = WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun.SoundPath    = Class.Sound
+		Gun.DefaultSound = Class.Sound
+		Gun.BarrelFilter = { Gun }
+		Gun.State        = "Empty"
+		Gun.Crates       = {}
+		Gun.CurrentShot  = 0
+		Gun.BulletData   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+		Gun.DataStore    = ACF.GetEntityArguments("acf_gun")
 
 		Gun:SetNWString("Sound", Class.Sound)
 

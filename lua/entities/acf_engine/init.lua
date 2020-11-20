@@ -279,6 +279,7 @@ do -- Spawn and Update functions
 		Entity.PeakMaxRPM       = EngineData.RPM.PeakMax
 		Entity.LimitRPM         = EngineData.RPM.Limit
 		Entity.FlywheelOverride = EngineData.RPM.Override
+		Entity.FlywheelMass     = EngineData.FlywheelMass
 		Entity.Inertia          = EngineData.FlywheelMass * 3.1416 ^ 2
 		Entity.IsElectric       = EngineData.IsElectric
 		Entity.IsTrans          = EngineData.IsTrans -- driveshaft outputs to the side
@@ -341,19 +342,20 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acfmenu", Engine)
 		Player:AddCount(Limit, Engine)
 
-		Engine.Owner		= Player -- MUST be stored on ent for PP
-		Engine.Active		= false
-		Engine.Gearboxes	= {}
-		Engine.FuelTanks	= {}
-		Engine.LastThink	= 0
-		Engine.MassRatio	= 1
-		Engine.FuelUsage	= 0
-		Engine.Throttle		= 0
-		Engine.FlyRPM		= 0
-		Engine.SoundPath	= EngineData.Sound
-		Engine.Inputs		= WireLib.CreateInputs(Engine, { "Active", "Throttle" })
-		Engine.Outputs		= WireLib.CreateOutputs(Engine, { "RPM", "Torque", "Power", "Fuel Use", "Entity [ENTITY]", "Mass", "Physical Mass" })
-		Engine.DataStore	= ACF.GetEntityArguments("acf_engine")
+		Engine.Owner        = Player -- MUST be stored on ent for PP
+		Engine.Active       = false
+		Engine.Gearboxes    = {}
+		Engine.FuelTanks    = {}
+		Engine.LastThink    = 0
+		Engine.MassRatio    = 1
+		Engine.FuelUsage    = 0
+		Engine.Throttle     = 0
+		Engine.FlyRPM       = 0
+		Engine.SoundPath    = EngineData.Sound
+		Engine.DefaultSound = EngineData.Sound
+		Engine.Inputs       = WireLib.CreateInputs(Engine, { "Active", "Throttle" })
+		Engine.Outputs      = WireLib.CreateOutputs(Engine, { "RPM", "Torque", "Power", "Fuel Use", "Entity [ENTITY]", "Mass", "Physical Mass" })
+		Engine.DataStore    = ACF.GetEntityArguments("acf_engine")
 
 		WireLib.TriggerOutput(Engine, "Entity", Engine)
 
