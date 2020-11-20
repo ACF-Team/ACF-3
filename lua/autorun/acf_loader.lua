@@ -15,86 +15,7 @@
 ]]--
 MsgN("\n===========[ Loading ACF ]============\n|")
 
-local GunClasses 	= {}
-local GunTable 		= {}
-local MobilityTable = {}
-local FuelTankTable = {}
-
 if not ACF then ACF = {} end
-
-ACF.RoundTypes = ACF.RoundTypes or {}
-
-ACF.Classes = ACF.Classes or {
-	GunClass = GunClasses
-}
-
-ACF.Weapons = ACF.Weapons or {
-	Guns = GunTable,
-	Mobility = MobilityTable,
-	FuelTanks = FuelTankTable
-}
-
-local gun_base = {
-	ent = "acf_gun",
-	type = "Guns"
-}
-
-local engine_base = {
-	ent = "acf_engine",
-	type = "Mobility"
-}
-
-local gearbox_base = {
-	ent = "acf_gearbox",
-	type = "Mobility",
-	sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
-}
-
-local fueltank_base = {
-	ent = "acf_fueltank",
-	type = "Mobility",
-	explosive = true
-}
-
-do
-	function ACF_defineGunClass( id, data )
-		data.id = id
-		GunClasses[ id ] = data
-
-		PrecacheParticleSystem(data["muzzleflash"])
-	end
-
-	function ACF_defineGun( id, data )
-		data.id = id
-		data.round.id = id
-		table.Inherit( data, gun_base )
-		GunTable[ id ] = data
-	end
-
-	function ACF_DefineEngine( id, data )
-		data.id = id
-		table.Inherit( data, engine_base )
-		MobilityTable[ id ] = data
-	end
-
-	function ACF_DefineGearbox( id, data )
-		data.id = id
-		table.Inherit( data, gearbox_base )
-		MobilityTable[ id ] = data
-	end
-
-	function ACF_DefineFuelTank( id, data )
-		data.id = id
-		table.Inherit( data, fueltank_base )
-		MobilityTable[ id ] = data
-	end
-
-	function ACF_DefineFuelTankSize( id, data )
-		data.id = id
-		table.Inherit( data, fueltank_base )
-		FuelTankTable[ id ] = data
-	end
-end
 
 if SERVER then
 	local Realms = {client = "client", server = "server", shared = "shared"}
@@ -160,16 +81,6 @@ if SERVER then
 	MsgN(Text:format(ServerCount, SharedCount, ClientCount))
 
 elseif CLIENT then
-
-	gun_base.guicreate 		= function( _, tbl ) ACFGunGUICreate( tbl ) end or nil
-	gun_base.guiupdate 		= function() return end
-	engine_base.guicreate 	= function( _, tbl ) ACFEngineGUICreate( tbl ) end or nil
-	engine_base.guiupdate 	= function() return end
-	gearbox_base.guicreate 	= function( _, tbl ) ACFGearboxGUICreate( tbl ) end or nil
-	gearbox_base.guiupdate 	= function() return end
-	fueltank_base.guicreate = function( _, tbl ) ACFFuelTankGUICreate( tbl ) end or nil
-	fueltank_base.guiupdate = function( _, tbl ) ACFFuelTankGUIUpdate( tbl ) end or nil
-
 	local Text = "| > Loaded %s clientside file(s).\n| > Skipped %s clientside file(s)."
 	local FileCount, SkipCount = 0, 0
 

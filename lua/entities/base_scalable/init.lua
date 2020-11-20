@@ -62,6 +62,32 @@ local function NetworkSize(Entity, Player)
 	timer.Create("ACF Network Sizes", 0, 1, SendQueued)
 end
 
+local function ChangeSize(Entity, Size)
+	if Entity.Size == Size then return false end
+
+	local Original = Entity:GetOriginalSize()
+	local Scale = Vector(Size.x / Original.x, Size.y / Original.y, Size.z / Original.z)
+
+	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
+
+	-- If it's not a new entity, then network the new size
+	-- Otherwise, the entity will request its size by itself
+	if Entity.Size then NetworkSize(Entity) end
+
+	Entity.Size = Size
+	Entity.Scale = Scale
+
+	local PhysObj = Entity:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		if Entity.OnResized then Entity:OnResized(Size, Scale) end
+
+		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
+	end
+
+	return true, Size, Scale
+end
+
 function ENT:Initialize()
 	BaseClass.Initialize(self)
 
@@ -86,29 +112,20 @@ function ENT:GetOriginalSize()
 	return self.OriginalSize
 end
 
-function ENT:GetSize()
-	return self.Size
+function ENT:SetSize(Size)
+	if not isvector(Size) then return false end
+
+	return ChangeSize(self, Size)
 end
 
-function ENT:SetSize(NewSize)
-	if not isvector(NewSize) then return end
-	if self.Size == NewSize then return end
+function ENT:SetScale(Scale)
+	if isnumber(Scale) then Scale = Vector(Scale, Scale, Scale) end
+	if not isvector(Scale) then return false end
 
-	if self.ApplyNewSize then self:ApplyNewSize(NewSize) end
+	local Original = self:GetOriginalSize()
+	local Size = Vector(Original.x, Original.y, Original.z) * Scale
 
-	-- If it's not a new entity, then network the new size
-	-- Otherwise, the entity will request its size by itself
-	if self.Size then NetworkSize(self) end
-
-	self.Size = NewSize
-
-	local PhysObj = self:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		if self.OnResized then self:OnResized() end
-
-		hook.Run("OnEntityResized", self, PhysObj, NewSize)
-	end
+	return ChangeSize(self, Size)
 end
 
 do -- AdvDupe2 duped parented ammo workaround

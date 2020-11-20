@@ -9,12 +9,20 @@
 -- Note from Dakota: Check impacts on wedge joints, especially if they are visclipped. Hitnormal might be fucked in some cases.
 -- Note from the wiki: This function may not always give desired results clientside due to certain physics mechanisms not existing on the client.
 
+-- Known issues:
+-- MASK_SHOT ignores all entities.
+
 local Hull = util.TraceHull
 local Zero = Vector()
 
+-- Available for use, just in case
+if not util.LegacyTraceLine then
+	util.LegacyTraceLine = util.TraceLine
+end
+
 function util.TraceLine(TraceData, ...)
-	if TraceData then
-		TraceData.mins = -Zero -- I wonder if negating it is necessary at all.
+	if istable(TraceData) then
+		TraceData.mins = Zero
 		TraceData.maxs = Zero
 	end
 

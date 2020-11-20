@@ -1,12 +1,14 @@
 include("shared.lua")
 
-local RoundsDisplayCVar = GetConVar("ACF_MaxRoundsDisplay")
+language.Add("Undone_acf_ammo", "Undone ACF Ammo Crate")
+language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
+
+local MaxRounds = GetConVar("acf_maxroundsdisplay")
 local HideInfo = ACF.HideInfoBubble
-local Distance = ACF.RefillDistance
 local Refills = {}
 local Queued = {}
 
-local function UpdateClAmmo(Entity)
+local function UpdateAmmoCount(Entity, Ammo)
 	if not IsValid(Entity) then return end
 	if not Entity.HasData then
 		if Entity.HasData == nil then
@@ -16,13 +18,11 @@ local function UpdateClAmmo(Entity)
 		return
 	end
 
-	local MaxDisplayRounds = RoundsDisplayCVar:GetInt()
+	local MaxDisplayRounds = MaxRounds:GetInt()
 
-	Entity.Ammo = math.Clamp(Entity:GetNWInt("Ammo", 0), 0, Entity.Capacity)
-
-	local FinalAmmo = Entity.HasBoxedAmmo and math.floor(Entity.Ammo / Entity.MagSize) or Entity.Ammo
-
-	Entity.BulkDisplay = FinalAmmo > MaxDisplayRounds
+	Entity.Ammo = Ammo or Entity:GetNWInt("Ammo", 0)
+	Entity.FinalAmmo = Entity.HasBoxedAmmo and math.floor(Entity.Ammo / Entity.MagSize) or Entity.Ammo
+	Entity.BulkDisplay = Entity.FinalAmmo > MaxDisplayRounds
 end
 
 net.Receive("ACF_RequestAmmoData", function()
@@ -40,27 +40,26 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.LocalAng = Data.LocalAng
 		Entity.FitPerAxis = Data.FitPerAxis
 		Entity.Spacing = Data.Spacing
-		Entity.MagSize = Data.MGS
-		Entity.HasBoxedAmmo = Data.MGS > 0
+		Entity.MagSize = Data.MagSize
+		Entity.HasBoxedAmmo = Data.MagSize > 0
 	end
 
 	if Queued[Entity] then
 		Queued[Entity] = nil
 	end
 
-	UpdateClAmmo(Entity)
+	UpdateAmmoCount(Entity)
 end)
 
 function ENT:Initialize()
-	self:SetNWVarProxy("Ammo", function()
-		UpdateClAmmo(self)
+	self:SetNWVarProxy("Ammo", function(_, _, _, Ammo)
+		UpdateAmmoCount(self, Ammo)
 	end)
 
-	cvars.AddChangeCallback("ACF_MaxRoundsDisplay", function()
-		UpdateClAmmo(self)
-	end)
+	cvars.AddChangeCallback("acf_maxroundsdisplay", function()
+		UpdateAmmoCount(self)
+	end, "Ammo Crate " .. self:EntIndex())
 
-	self.DrawAmmoHookIndex = "draw_ammo_" .. self:EntIndex()
 	self.BaseClass.Initialize(self)
 end
 
@@ -74,12 +73,12 @@ function ENT:RequestAmmoData()
 	net.SendToServer()
 end
 
-function ENT:OnResized()
+function ENT:OnResized(Size)
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
-			Scale = self:GetSize(),
-			Angle = Angle(0, 0, 0),
+			Scale = Size,
+			Angle = Angle(),
 			Sensitive = false
 		}
 	}
@@ -107,11 +106,14 @@ end
 function ENT:OnRemove()
 	Refills[self] = nil
 
-	hook.Remove("PostDrawOpaqueRenderables",self.DrawAmmoHookIndex)
+	cvars.RemoveChangeCallback("acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex())
 end
 
 -- TODO: Resupply effect library, should apply for both ammo and fuel
 do -- Resupply effect
+	local Yellow = Color(255, 255, 0, 10)
+	local Distance = ACF.RefillDistance
+
 	net.Receive("ACF_RefillEffect", function()
 		local Refill = net.ReadEntity()
 
@@ -132,8 +134,76 @@ do -- Resupply effect
 		render.SetColorMaterial()
 
 		for Refill in pairs(Refills) do
-			render.DrawSphere(Refill:GetPos(), Distance, 50, 50, Color(255, 255, 0, 10))
-			render.DrawSphere(Refill:GetPos(), -Distance, 50, 50, Color(255, 255, 0, 10))
+			local Pos = Refill:GetPos()
+
+			render.DrawSphere(Pos, Distance, 50, 50, Yellow)
+			render.DrawSphere(Pos, -Distance, 50, 50, Yellow)
+		end
+	end)
+end
+
+do -- Ammo overlay
+	-- Ammo overlay colors
+	local Blue   = Color(0, 127, 255, 65)
+	local Orange = Color(255, 127, 0, 65)
+	local Green  = Color(0, 255, 0, 65)
+	local Red    = Color(255, 0, 0, 65)
+
+	local function GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, Direction)
+		local SizeX = (X - 1) * (RoundSize.x + Spacing) * RoundAngle:Forward() * Direction
+		local SizeY = (Y - 1) * (RoundSize.y + Spacing) * RoundAngle:Right() * Direction
+		local SizeZ = (Z - 1) * (RoundSize.z + Spacing) * RoundAngle:Up() * Direction
+
+		return SizeX + SizeY + SizeZ
+	end
+
+	local function DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Total)
+		local Count = 0
+
+		local StartPos = GetPosition(Fits.x, Fits.y, Fits.z, RoundSize, Spacing, RoundAngle, 1) * 0.5
+
+		for X = 1, Fits.x do
+			for Y = 1, Fits.y do
+				for Z = 1, Fits.z do
+					local LocalPos = GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, -1)
+					local C = Entity.IsRound and Blue or Entity.HasBoxedAmmo and Green or Orange
+
+					render.DrawWireframeBox(Center + StartPos + LocalPos, RoundAngle, -RoundSize * 0.5, RoundSize * 0.5, C)
+
+					Count = Count + 1
+
+					if Count == Total then return end
+				end
+			end
+		end
+	end
+
+	hook.Add("ACF_DrawBoxes", "ACF Draw Ammo", function(Entity)
+		if not Entity.IsScalable then return end
+		if not Entity.HasData then
+			if Entity.HasData == nil and Entity.RequestAmmoData then
+				Entity:RequestAmmoData()
+			end
+
+			return
+		end
+		if Entity.FinalAmmo <= 0 then return end
+
+		local RoundAngle = Entity:LocalToWorldAngles(Entity.LocalAng)
+		local Center = Entity:LocalToWorld(Entity:OBBCenter())
+		local RoundSize = Entity.RoundSize
+		local Spacing = Entity.Spacing
+		local Fits = Entity.FitPerAxis
+
+		if not Entity.BulkDisplay then
+			DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Entity.FinalAmmo)
+		else -- Basic bitch box that scales according to ammo, only for bulk display
+			local AmmoPerc = Entity.Ammo / Entity.Capacity
+			local SizeAdd = Vector(Spacing, Spacing, Spacing) * Fits
+			local BulkSize = ((Fits * RoundSize * Vector(1, AmmoPerc, 1)) + SizeAdd) * 0.5
+			local Offset = RoundAngle:Right() * (Fits.y * RoundSize.y) * 0.5 * (1 - AmmoPerc)
+
+			render.DrawWireframeBox(Center + Offset, RoundAngle, -BulkSize, BulkSize, Red)
 		end
 	end)
 end

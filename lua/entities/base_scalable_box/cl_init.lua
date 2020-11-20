@@ -13,7 +13,6 @@ function ENT:ApplyNewSize(NewSize)
 	self:PhysicsInitBox(-Bounds, Bounds)
 	self:SetRenderBounds(-Bounds, Bounds)
 	self:EnableCustomCollisions(true)
-	self:SetMoveType(MOVETYPE_NONE)
 	self:DrawShadow(false)
 
 	local PhysObj = self:GetPhysicsObject()

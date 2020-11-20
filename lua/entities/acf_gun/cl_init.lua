@@ -2,6 +2,10 @@ include("shared.lua")
 
 local HideInfo = ACF.HideInfoBubble
 
+language.Add("Undone_acf_gun", "Undone ACF Weapon")
+language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
+language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
+
 function ENT:Initialize()
 	self.LastFire 	= 0
 	self.Reload 	= 0
@@ -10,9 +14,14 @@ function ENT:Initialize()
 	self.RateScale 	= 0
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
-	self.HitBoxes 	= ACF.HitBoxes[self:GetModel()]
+
+	self:Update()
 
 	self.BaseClass.Initialize(self)
+end
+
+function ENT:Update()
+	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 
 -- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
@@ -63,35 +72,4 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	self:SetPlaybackRate(self.Rate)
 	self.LastFire = CurTime()
 	self.Reload = ReloadTime
-end
-
-function ACFGunGUICreate(Table)
-	acfmenupanel:CPanelText("Name", Table.name)
-	acfmenupanel.CData.DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
-	acfmenupanel.CData.DisplayModel:SetModel(Table.model)
-	acfmenupanel.CData.DisplayModel:SetCamPos(Vector(250, 500, 250))
-	acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 0))
-	acfmenupanel.CData.DisplayModel:SetFOV(20)
-	acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide())
-	acfmenupanel.CData.DisplayModel.LayoutEntity = function() end
-	acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.DisplayModel)
-	local GunClass = ACF.Classes.GunClass[Table.gunclass]
-	acfmenupanel:CPanelText("ClassDesc", GunClass.desc)
-	acfmenupanel:CPanelText("GunDesc", Table.desc)
-	acfmenupanel:CPanelText("Caliber", "Caliber : " .. (Table.caliber * 10) .. "mm")
-	acfmenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. "kg")
-
-	if not Table.rack then
-		local RoundVolume = 3.1416 * (Table.caliber / 2) ^ 2 * Table.round.maxlength
-		local RoF = 60 / (((RoundVolume / 500) ^ 0.60) * GunClass.rofmod * (Table.rofmod or 1)) -- TODO: FIX THIS (USING OLD RELOAD CALC)
-		acfmenupanel:CPanelText("Firerate", "RoF : " .. math.Round(RoF, 1) .. " rounds/min")
-
-		if Table.magsize then
-			acfmenupanel:CPanelText("Magazine", "Magazine : " .. Table.magsize .. " rounds\nReload :   " .. Table.magreload .. " s")
-		end
-
-		acfmenupanel:CPanelText("Spread", "Spread : " .. GunClass.spread .. " degrees")
-	end
-
-	acfmenupanel.CustomDisplay:PerformLayout()
 end

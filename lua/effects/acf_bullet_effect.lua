@@ -1,3 +1,6 @@
+
+local ACF = ACF
+local AmmoTypes = ACF.Classes.AmmoTypes
 local Bullets = ACF.BulletEffect
 
 function EFFECT:Init(Data)
@@ -11,7 +14,7 @@ function EFFECT:Init(Data)
 		return
 	end
 
-	self.CreateTime = CurTime()
+	self.CreateTime = ACF.CurTime
 
 	local Bullet = Bullets[self.Index]
 	local Flight = Data:GetStart() * 10
@@ -20,7 +23,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and Hit > 0 then
-		local RoundData = ACF.RoundTypes[Bullet.AmmoType]
+		local RoundData = AmmoTypes[Bullet.AmmoType]
 
 		-- Updating old effect with new values
 		Bullet.SimFlight = Flight
@@ -28,15 +31,15 @@ function EFFECT:Init(Data)
 
 		if Hit == 1 then
 			-- Bullet has reached end of flight, remove old effect
-			RoundData.endeffect(Bullet.Effect, Bullet)
+			RoundData:ImpactEffect(Bullet.Effect, Bullet)
 
 			Bullet.Effect.Kill = true
 		elseif Hit == 2 then
 			-- Bullet penetrated, don't remove old effect
-			RoundData.pierceeffect(Bullet.Effect, Bullet)
+			RoundData:PenetrationEffect(Bullet.Effect, Bullet)
 		elseif Hit == 3 then
 			-- Bullet ricocheted, don't remove old effect
-			RoundData.ricocheteffect(Bullet.Effect, Bullet)
+			RoundData:RicochetEffect(Bullet.Effect, Bullet)
 		end
 
 		-- We don't need this new effect, so we just remove it
@@ -51,22 +54,23 @@ function EFFECT:Init(Data)
 			return
 		end
 
-		local Tracer = Crate:GetNWFloat("Tracer") > 0
+		-- TODO: Force crates to network and store this information on the client when they're created
+		local Tracer = Crate:GetNW2Float("Tracer") > 0
 		local BulletData = {
 			Crate = Crate,
 			SimFlight = Flight,
 			SimPos = Origin,
 			SimPosLast = Origin,
-			Caliber = Crate:GetNWFloat("Caliber", 10),
-			RoundMass = Crate:GetNWFloat("ProjMass", 10),
-			FillerMass = Crate:GetNWFloat("FillerMass"),
-			WPMass = Crate:GetNWFloat("WPMass"),
-			DragCoef = Crate:GetNWFloat("DragCoef", 1),
-			AmmoType = Crate:GetNWString("AmmoType", "AP"),
+			Caliber = Crate:GetNW2Float("Caliber", 10),
+			RoundMass = Crate:GetNW2Float("ProjMass", 10),
+			FillerMass = Crate:GetNW2Float("FillerMass"),
+			WPMass = Crate:GetNW2Float("WPMass"),
+			DragCoef = Crate:GetNW2Float("DragCoef", 1),
+			AmmoType = Crate:GetNW2String("AmmoType", "AP"),
 			Tracer = Tracer and ParticleEmitter(Origin) or nil,
 			TracerColour = Tracer and Crate:GetColor() or nil,
-			Accel = Crate:GetNWVector("Accel", Vector(0, 0, -600)),
-			LastThink = CurTime(),
+			Accel = Crate:GetNW2Vector("Accel", Vector(0, 0, -600)),
+			LastThink = ACF.CurTime,
 			Effect = self,
 		}
 
@@ -88,7 +92,7 @@ end
 function EFFECT:Think()
 	local Bullet = Bullets[self.Index]
 
-	if Bullet and not self.Kill and self.CreateTime > CurTime() - 30 then return true end
+	if Bullet and not self.Kill and self.CreateTime > ACF.CurTime - 30 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then

@@ -103,7 +103,7 @@ do -- Ricochet/Penetration materials
 	end
 end
 
-do -- Time lapse function
+do -- Unit conversion
 	local Units = {
 		{ Unit = "year", Reduction = 1970 },
 		{ Unit = "month", Reduction = 1 },
@@ -135,6 +135,18 @@ do -- Time lapse function
 			end
 		end
 	end
+
+	function ACF.GetProperMass(Kilograms)
+		local Unit, Mult = "g", 1000
+
+		if Kilograms >= 1000 then
+			Unit, Mult = "t", 0.001
+		elseif Kilograms >= 1 then
+			Unit, Mult = "kg", 1
+		end
+
+		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
+	end
 end
 
 do -- Trace functions
@@ -148,8 +160,6 @@ do -- Trace functions
 
 			return ACF.Trace(TraceData)
 		end
-
-		debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
 
 		return T
 	end
@@ -342,4 +352,10 @@ do -- Sound aliases
 			return SoundCache[Name]
 		end
 	end
+end
+
+function ACF.CheckNumber(Value)
+	if not Value then return end
+
+	return tonumber(Value)
 end

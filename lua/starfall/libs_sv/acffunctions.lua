@@ -91,7 +91,7 @@ local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wr
 
 local function restrictInfo ( ent )
 	if not propProtectionInstalled then return false end
-	if GetConVar("sbox_acf_restrictinfo"):GetInt() ~= 0 then
+	if GetConVar("acf_restrict_info"):GetInt() ~= 0 then
 		if ent:CPPIGetOwner() ~= instance.player then return true else return false end
 	end
 	return false
@@ -114,7 +114,7 @@ end
 -- @server
 -- @return True if restriced, False if not
 function acf_library.infoRestricted()
-	return GetConVar("sbox_acf_restrictinfo"):GetInt() ~= 0
+	return GetConVar("acf_restrict_info"):GetInt() ~= 0
 end
 
 --- Returns current ACF drag divisor
@@ -174,7 +174,7 @@ function acf_library.createMobility(pos, ang, id, frozen, gear_ratio)
 	local pos = vunwrap(pos)
 	local ang = aunwrap(ang)
 	
-	local list_entries = ACF.Weapons.Mobility
+	local list_entries = ACF.Weapons.Mobility -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -236,7 +236,7 @@ end
 function acf_library.getMobilitySpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.Mobility
+	local list_entries = ACF.Weapons.Mobility -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -324,7 +324,7 @@ function acf_library.createFuelTank(pos, ang, id, fueltype, frozen)
 	
 	if fueltype ~= "Diesel" and fueltype ~= "Electric" and fueltype ~= "Petrol" then SF.Throw("Invalid fuel type") end
 	
-	local list_entries = ACF.Weapons.FuelTanks
+	local list_entries = ACF.Weapons.FuelTanks -- REPLACE
 	if not list_entries[id] then SF.Throw("Invalid id", 2) end
 	
 	local type_id = list_entries[id]
@@ -363,7 +363,7 @@ end
 function acf_library.getFuelTankSpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.FuelTanks
+	local list_entries = ACF.Weapons.FuelTanks -- REPLACE
 	if not list_entries[id] then SF.Throw("Invalid id", 2) end
 	
 	local specs = table.Copy(list_entries[id])
@@ -407,7 +407,7 @@ function acf_library.createGun(pos, ang, id, frozen)
 	local pos = vunwrap(pos)
 	local ang = aunwrap(ang)
 	
-	local list_entries = ACF.Weapons.Guns
+	local list_entries = ACF.Weapons.Guns -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -455,7 +455,7 @@ end
 function acf_library.getGunSpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.Guns
+	local list_entries = ACF.Weapons.Guns -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -489,12 +489,12 @@ end
 -- Set ammo properties
 local ammo_properties = {}
 
-for id, data in pairs(ACF.RoundTypes) do
+for id, data in pairs(ACF.RoundTypes) do -- REPLACE
 	ammo_properties[id] = {
 		name = data.name,
 		desc = data.desc,
 		model = data.model,
-		gun_blacklist = ACF.AmmoBlacklist[id],
+		gun_blacklist = ACF.AmmoBlacklist[id], -- REPLACE
 		create_data = {}
 	}
 end
@@ -695,7 +695,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	local size
 	
 	if type(id) == "string" then
-		local list_entries = ACF.Weapons.Ammo
+		local list_entries = ACF.Weapons.Ammo -- REPLACE
 		local type_id = list_entries[id]
 		if not type_id then SF.Throw("Invalid id", 2) end
 		
@@ -708,7 +708,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	local ammo = ammo_properties[ammo_id]
 	if not ammo then SF.Throw("Invalid ammo id", 2) end
 	
-	local gun_list_entries = ACF.Weapons.Guns
+	local gun_list_entries = ACF.Weapons.Guns -- REPLACE
 	if not gun_list_entries[gun_id] then
 		gun_id = idFromName(gun_list_entries, gun_id)
 		
@@ -838,7 +838,7 @@ end
 -- Moved to acf lib
 -- Returns true if functions returning sensitive info are restricted to owned props
 --[[function ents_methods:acfInfoRestricted ()
-	return GetConVar( "sbox_acf_restrictinfo" ):GetInt() ~= 0
+	return GetConVar( "acf_restrict_info" ):GetInt() ~= 0
 end]]
 
 --- Returns true if this entity contains sensitive info and is not accessable to us
@@ -863,9 +863,9 @@ function ents_methods:acfNameShort ()
 	if isEngine( this ) then return this.Id or "" end
 	if isGearbox( this ) then return this.Id or "" end
 	if isGun( this ) then return this.Id or "" end
-	if isAmmo( this ) then return this.RoundId or "" end
+	if isAmmo( this ) then return this.Weapon or "" end
 	if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
-	
+
 	return ""
 end
 
@@ -995,7 +995,7 @@ function ents_methods:acfName ()
 
 	if not ( this and this:IsValid() ) then SF.Throw( "Entity is not valid", 2 ) end
 
-	if isAmmo( this ) then return ( this.RoundId .. " " .. this.RoundType) end
+	if isAmmo( this ) then return this.Weapon .. " " .. this.AmmoType end
 	if isFuel( this ) then return this.FuelType .. " " .. this.SizeId end
 
 	local acftype = ""
@@ -1004,7 +1004,7 @@ function ents_methods:acfName ()
 	if isGun( this ) then acftype = "Guns" end
 	if ( acftype == "" ) then return "" end
 	local List = list.Get( "ACFEnts" )
-	return List[ acftype ][ this.Id ][ "name" ] or ""
+	return List[ acftype ][ this.Id ][ "name" ] or "" -- REPLACE
 end
 
 --- Returns the type of ACF entity
@@ -1017,13 +1017,13 @@ function ents_methods:acfType ()
 
 	if isEngine( this ) or isGearbox( this ) then
 		local List = list.Get( "ACFEnts" )
-		return List[ "Mobility" ][ this.Id ][ "category" ] or ""
+		return List[ "Mobility" ][ this.Id ][ "category" ] or "" -- REPLACE
 	end
 	if isGun( this ) then
 		local Classes = list.Get( "ACFClasses" )
-		return Classes[ "GunClass" ][ this.Class ][ "name" ] or ""
+		return Classes[ "GunClass" ][ this.Class ][ "name" ] or "" -- REPLACE
 	end
-	if isAmmo( this ) then return this.RoundType or "" end
+	if isAmmo( this ) then return this.AmmoType or "" end
 	if isFuel( this ) then return this.FuelType or "" end
 	return ""
 end
@@ -1946,8 +1946,8 @@ function ents_methods:acfRoundType () --cartridge?
 
 	if not isAmmo( this ) then return "" end
 	if restrictInfo( this ) then return "" end
-	--return this.RoundId or ""
-	return this.RoundType or "" -- E2 uses this one now
+
+	return this.AmmoType or "" -- E2 uses this one now
 end
 
 --- Returns the type of ammo in a crate or gun
@@ -1978,7 +1978,7 @@ function ents_methods:acfCaliber ()
 		if not this.BulletData then return 0 end	-- If not a a rack
 		if not this.BulletData.Id then return 0 end
 
-		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 
 		if not GunData then return 0 end
 
@@ -2084,9 +2084,9 @@ function ents_methods:acfPenetration ()
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37, this.BulletData["ProjMass"] - (this.BulletData["FillerMass"] or 0), this.BulletData["LimitVel"] )
 		return math.Round((Energy.Penetration/this.BulletData["PenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "HEAT" then
-		local Crushed, HEATFillerMass, BoomFillerMass = ACF.RoundTypes["HEAT"].CrushCalc(this.BulletData.MuzzleVel, this.BulletData.FillerMass)
+		local Crushed, HEATFillerMass, BoomFillerMass = ACF.RoundTypes["HEAT"].CrushCalc(this.BulletData.MuzzleVel, this.BulletData.FillerMass) -- REPLACE
 		if Crushed == 1 then return 0 end -- no HEAT jet to fire off, it was all converted to HE
-		Energy = ACF_Kinetic(ACF.RoundTypes["HEAT"].CalcSlugMV( this.BulletData, HEATFillerMass )*39.37, this.BulletData["SlugMass"], 9999999 )
+		Energy = ACF_Kinetic(ACF.RoundTypes["HEAT"].CalcSlugMV( this.BulletData, HEATFillerMass )*39.37, this.BulletData["SlugMass"], 9999999 ) -- REPLACE
 		return math.Round((Energy.Penetration/this.BulletData["SlugPenArea"])*ACF.KEtoRHA,3)
 	elseif Type == "FL" then
 		Energy = ACF_Kinetic(this.BulletData["MuzzleVel"]*39.37 , this.BulletData["FlechetteMass"], this.BulletData["LimitVel"] )
@@ -2140,7 +2140,7 @@ function ents_methods:acfFinMul()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 
 	if not GunData then return 0 end
 	if not GunData.round then return 0 end
@@ -2160,7 +2160,7 @@ function ents_methods:acfMissileWeight()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 	if not GunData then return 0 end
 
 	return ( GunData.weight or 0 )
@@ -2178,7 +2178,7 @@ function ents_methods:acfMissileLength()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 	if not GunData then return 0 end
 
 	return ( GunData.length or 0 )
@@ -2365,7 +2365,7 @@ function ents_methods:acfFuelUse ()
 		Consumption = 60 * ( this.Torque * this.FlyRPM / 9548.8 ) * this.FuelUse
 	else
 		local Load = 0.3 + this.Throttle * 0.7
-		Consumption = 60 * Load * this.FuelUse * ( this.FlyRPM / this.PeakKwRPM ) / ACF.FuelDensity[ tank.FuelType ]
+		Consumption = 60 * Load * this.FuelUse * ( this.FlyRPM / this.PeakKwRPM ) / ACF.FuelDensity[ tank.FuelType ] -- REPLACE
 	end
 	return math.Round( Consumption, 3 )
 end
@@ -2394,7 +2394,7 @@ function ents_methods:acfPeakFuelUse ()
 		Consumption = 60 * ( this.PeakTorque * this.LimitRPM / ( 4 * 9548.8 ) ) * this.FuelUse
 	else
 		local Load = 0.3 + this.Throttle * 0.7
-		Consumption = 60 * this.FuelUse / ACF.FuelDensity[ fuel ]
+		Consumption = 60 * this.FuelUse / ACF.FuelDensity[ fuel ] -- REPLACE
 	end
 	return math.Round( Consumption, 3 )
 end

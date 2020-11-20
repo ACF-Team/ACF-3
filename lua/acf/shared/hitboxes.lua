@@ -151,7 +151,6 @@ local AnimLookup = { -- defaults to Passenger, catchall for any wierd fucking an
 	["default"] = "Passenger"
 }
 
-local function switch(cases,arg) local Var = (cases[arg] or cases["default"]) return Var end
 hook.Add("PlayerEnteredVehicle","ACF_HitboxUpdate",function(ply,ent)
 	timer.Simple(3,function() -- 3 seconds is a safe amount of time for all of the seats (including those stupid fucking PHX ones that take 3 years to move the camera) to get the camera into position
 		if IsValid(ply) and IsValid(ent) and ply:GetVehicle() == ent then

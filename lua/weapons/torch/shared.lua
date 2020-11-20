@@ -143,19 +143,23 @@ function SWEP:PrimaryAttack()
 		else
 			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
 
-			local Health = Entity.ACF.Health
+			local OldHealth = Entity.ACF.Health
 			local MaxHealth = Entity.ACF.MaxHealth
 
-			if Health >= MaxHealth then return end
+			if OldHealth >= MaxHealth then return end
 
-			local Armor = Entity.ACF.Armour
+			local OldArmor = Entity.ACF.Armour
 			local MaxArmor = Entity.ACF.MaxArmour
 
-			Health = math.min(Health + (30 / MaxArmor), MaxHealth)
-			Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
+			local Health = math.min(OldHealth + (30 / MaxArmor), MaxHealth)
+			local Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
 
 			Entity.ACF.Health = Health
 			Entity.ACF.Armour = Armor
+
+			if Entity.ACF_OnRepaired then
+				Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
+			end
 
 			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", true, true)
 			TeslaSpark(Trace.HitPos, 1)

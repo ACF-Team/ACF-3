@@ -11,54 +11,43 @@ if CLIENT then
 	language.Add("Tool.acfsound.0", "Left click to apply sound. Right click to copy sound. Reload to set default sound. Use an empty sound path to disable sound.")
 end
 
-ACF.SoundToolSupport = {
-	acf_gun = {
-		GetSound = function(ent)
-			return {
-				Sound = ent.Sound
-			}
-		end,
-		SetSound = function(ent, soundData)
-			ent.Sound = soundData.Sound
-			ent:SetNWString("Sound", soundData.Sound)
-		end,
-		ResetSound = function(ent)
-			local Class = ent.Class
-			local Classes = ACF.Classes
+ACF.SoundToolSupport = ACF.SoundToolSupport or {}
 
-			local soundData = {
-				Sound = Classes["GunClass"][Class]["sound"]
-			}
+local Sounds = ACF.SoundToolSupport
 
-			local setSound = ACF.SoundToolSupport["acf_gun"].SetSound
-			setSound(ent, soundData)
-		end
-	},
-	acf_engine = {
-		GetSound = function(ent)
-			return {
-				Sound = ent.SoundPath,
-				Pitch = ent.SoundPitch
-			}
-		end,
-		SetSound = function(ent, soundData)
-			ent.SoundPath = soundData.Sound
-			ent.SoundPitch = soundData.Pitch
-		end,
-		ResetSound = function(ent)
-			local Id = ent.Id
-			local List = ACF.Weapons
-			local pitch = List["Mobility"][Id]["pitch"] or 1
+Sounds.acf_gun = {
+	GetSound = function(ent)
+		return {
+			Sound = ent.SoundPath
+		}
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+		ent:SetNWString("Sound", soundData.Sound)
+	end,
+	ResetSound = function(ent)
+		local setSound = Sounds.acf_gun.SetSound
 
-			local soundData = {
-				Sound = List["Mobility"][Id]["sound"],
-				Pitch = pitch
-			}
+		setSound(ent, { Sound = ent.DefaultSound })
+	end
+}
 
-			local setSound = ACF.SoundToolSupport["acf_engine"].SetSound
-			setSound(ent, soundData)
-		end
-	}
+Sounds.acf_engine = {
+	GetSound = function(ent)
+		return {
+			Sound = ent.SoundPath,
+			Pitch = ent.SoundPitch
+		}
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+		ent.SoundPitch = soundData.Pitch
+	end,
+	ResetSound = function(ent)
+		local setSound = Sounds.acf_engine.SetSound
+
+		setSound(ent, { Sound = ent.DefaultSound })
+	end
 }
 
 local function ReplaceSound(_, Entity, data)
