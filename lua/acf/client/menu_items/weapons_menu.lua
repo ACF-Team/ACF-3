@@ -21,7 +21,7 @@ local function CreateMenu(Menu)
 	ACF.WriteValue("PrimaryClass", "acf_gun")
 	ACF.WriteValue("SecondaryClass", "acf_ammo")
 
-	ACF.SetToolMode("acf_menu2", "Main", "Spawner")
+	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
 	local function UpdateEntityData()
 		local Class = ClassList.Selected

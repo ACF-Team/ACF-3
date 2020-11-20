@@ -12,8 +12,8 @@ if CLIENT then
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
-	language.Add("Tool.acf_menu2.name", "Armored Combat Framework")
-	language.Add("Tool.acf_menu2.desc", "Testing the new menu tool")
+	language.Add("Tool.acf_menu.name", "Armored Combat Framework")
+	language.Add("Tool.acf_menu.desc", "Main menu tool for the ACF addon")
 
 	function TOOL:DrawHUD()
 		local Trace = LocalPlayer():GetEyeTrace()

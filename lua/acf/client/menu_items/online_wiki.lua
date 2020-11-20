@@ -1,7 +1,8 @@
 local function CreateMenu(Menu)
-	Menu:AddTitle("A Reference Guide")
-	Menu:AddLabel("The new ACF wiki will have a greater focus on references about the addon's multiple mechanics.")
-	Menu:AddLabel("There's also gonna be more content aimed towards extension developers, allowing them to take advantage of all the features ACF has to offer.")
+	Menu:AddTitle("Online Wiki")
+
+	Menu:AddLabel("The new ACF wiki will have a greater focus on providing content aimed towards the average builder.")
+	Menu:AddLabel("There's also gonna be a section where we'll document anything that could be useful for extension developers.")
 
 	local Wiki = Menu:AddButton("Open the Wiki")
 

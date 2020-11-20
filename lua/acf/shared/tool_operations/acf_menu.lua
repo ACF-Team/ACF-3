@@ -43,9 +43,9 @@ end
 
 local function CanTool(Player, Entity)
 	if not IsValid(Entity) then return false end
-	if CPPI then return Entity:CPPICanTool(Player, "acf_menu2") end
+	if CPPI then return Entity:CPPICanTool(Player, "acf_menu") end
 
-	return hook.Run("CanTool", Player, { Hit = true, Entity = Entity }, "acf_menu2")
+	return hook.Run("CanTool", Player, { Hit = true, Entity = Entity }, "acf_menu")
 end
 
 do -- Spawner operation
@@ -116,7 +116,7 @@ do -- Spawner operation
 		return true
 	end
 
-	ACF.RegisterOperation("acf_menu2", "Main", "Spawner", {
+	ACF.RegisterOperation("acf_menu", "Main", "Spawner", {
 		OnLeftClick = function(Tool, Trace)
 			if Trace.HitSky then return false end
 
@@ -143,17 +143,17 @@ do -- Spawner operation
 		end,
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Spawner", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Spawner", {
 		name = "left",
 		text = "Spawn or update the selected primary entity.",
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Spawner", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Spawner", {
 		name = "right",
 		text = "If valid, spawn or update the selected secondary entity.",
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Spawner", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Spawner", {
 		name = "right_shift",
 		text = "(Hold Shift) Select the entity you want to link or unlink.",
 		icon2 = "gui/info",
@@ -197,7 +197,7 @@ do -- Linker operation
 		end
 	end
 
-	ACF.RegisterOperation("acf_menu2", "Main", "Linker", {
+	ACF.RegisterOperation("acf_menu", "Main", "Linker", {
 		OnRightClick = function(Tool, Trace)
 			local Player = Tool:GetOwner()
 			local Entity = Trace.Entity
@@ -232,24 +232,24 @@ do -- Linker operation
 		end,
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Linker", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Linker", {
 		name = "right",
 		text = "Link all the selected entities to an entity.",
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Linker", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Linker", {
 		name = "right_r",
 		text = "Unlink all the selected entities from an entity.",
 		icon2 = "gui/r.png",
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Linker", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Linker", {
 		name = "right_shift",
 		text = "Select another entity to link.",
 		icon2 = "gui/info",
 	})
 
-	ACF.RegisterToolInfo("acf_menu2", "Main", "Linker", {
+	ACF.RegisterToolInfo("acf_menu", "Main", "Linker", {
 		name = "right_world",
 		text = "(Hit the World) Unselected all selected entities.",
 		icon2 = "gui/info",
