@@ -169,6 +169,7 @@ function ACF.CreateBullet(BulletData)
 	Bullet.Mask        = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
 	Bullet.Ricochets   = 0
 	Bullet.GroundRicos = 0
+	Bullet.Color       = ColorRand(100, 255)
 
 	if not next(Bullets) then
 		hook.Add("Tick", "IterateBullets", IterateBullets)
@@ -214,6 +215,7 @@ function ACF.DoBulletsFlight(Index, Bullet)
 
 	local FlightRes, Filter = ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
 
+	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
 	-- Something was hit, let's make sure we're not phasing through armor
 	if Bullet.LastPos and IsValid(FlightRes.Entity) and not GlobalFilter[FlightRes.Entity:GetClass()] then
 		BackTrace.start  = Bullet.LastPos
@@ -286,7 +288,6 @@ function ACF.DoBulletsFlight(Index, Bullet)
 			end
 
 			ACF.BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-			ACF.CalcBulletFlight(Index, Bullet)
 		else
 			if Bullet.OnEndFlight then
 				Bullet.OnEndFlight(Index, Bullet, FlightRes)
@@ -313,7 +314,6 @@ function ACF.DoBulletsFlight(Index, Bullet)
 				end
 
 				ACF.BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-				ACF.CalcBulletFlight(Index, Bullet)
 			else
 				if Bullet.OnEndFlight then
 					Bullet.OnEndFlight(Index, Bullet, FlightRes)
