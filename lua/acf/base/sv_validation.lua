@@ -148,6 +148,7 @@ function ACF_Activate(Entity, Recalc)
 	end
 
 	-- TODO: Figure out what are the 6.45 and 0.52505066107 multipliers for
+	-- NOTE: Why are we applying multipliers to the stored surface area?
 	local SurfaceArea = PhysObj:GetSurfaceArea()
 
 	if SurfaceArea then -- Normal collisions

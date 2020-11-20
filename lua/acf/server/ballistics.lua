@@ -294,7 +294,6 @@ function ACF.DoBulletsFlight(Index, Bullet)
 
 			ACF.BulletClient(Index, Bullet, "Update", 1, FlightRes.HitPos)
 
-			--RoundData.endflight(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
 			RoundData:OnFlightEnd(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
 		end
 	elseif FlightRes.HitWorld then

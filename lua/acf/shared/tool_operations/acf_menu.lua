@@ -185,6 +185,7 @@ do -- Linker operation
 			UnselectEntity(Tool, Player, K)
 		end
 
+		-- TODO: Add list of reasons for failed links
 		if Done > 0 then
 			local Status = (Unlink and "unlinked " or "linked ") .. Done .. " out of " .. Total
 

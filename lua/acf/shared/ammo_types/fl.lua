@@ -61,18 +61,8 @@ end
 
 function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { LengthAdj = 0.5 })
-	local GunClass = ToolData.WeaponClass
 
-	if GunClass == "SA" then
-		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 3 - 4.5), 1, 32)
-	elseif GunClass == "MO" then
-		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4) - 12, 1, 32)
-	elseif GunClass == "HW" then
-		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4) - 10, 1, 32)
-	else
-		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4) - 8, 1, 32)
-	end
-
+	Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4) - 8, 1, 32)
 	Data.MinFlechettes = math.min(6, Data.MaxFlechettes) --force bigger guns to have higher min count
 	Data.MinSpread	   = 0.25
 	Data.MaxSpread	   = 30
@@ -178,16 +168,11 @@ if SERVER then
 	end
 
 	function Ammo:GetCrateText(BulletData)
-		local Text	 = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm\nMax Spread: %s degrees"
-		local Data	 = self:GetDisplayData(BulletData)
-		local Gun	 = ACF.Weapons.Guns[BulletData.Id]
-		local Spread = 0
-
-		if Gun then
-			local GunClass = ACF.Classes.GunClass[Gun.gunclass] -- REPLACE
-
-			Spread = GunClass and (GunClass.spread * ACF.GunInaccuracyScale) or 0
-		end
+		local Text	  = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm\nMax Spread: %s degrees"
+		local Data	  = self:GetDisplayData(BulletData)
+		local Destiny = ACF.FindWeaponrySource(BulletData.Id)
+		local Class   = ACF.GetClassGroup(Destiny, BulletData.Id)
+		local Spread  = Class.Spread * ACF.GunInaccuracyScale
 
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(BulletData.FlechetteSpread + Spread, 2))
 	end

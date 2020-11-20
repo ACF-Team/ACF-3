@@ -13,7 +13,7 @@ function CreateScalableBox(Player, Pos, Angle, Size)
 	Ent:SetPos(Pos)
 	Ent:Spawn()
 
-	Ent:SetSize(Size)
+	Ent:SetSize(Size or VectorRand(3, 96))
 
 	Ent.Owner = Player
 

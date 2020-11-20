@@ -73,7 +73,7 @@ ACF.RegisterGearboxClass("3-Auto", {
 				local Point = ACF.CheckNumber(Points[I])
 
 				if not Point then
-					Point = (CheckNumber(Data["Shift" .. I]) or I * 100) * Mult
+					Point = (ACF.CheckNumber(Data["Shift" .. I]) or I * 100) * Mult
 
 					Data["Shift" .. I] = nil
 				end

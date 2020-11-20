@@ -1,20 +1,31 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+
 include("shared.lua")
+
+local AmmoTypes = ACF.Classes.AmmoTypes
+
 SWEP.AutoSwitchTo = false
 SWEP.AutoSwitchFrom = false
 
 function SWEP:Initialize()
-	self.Primary.BulletData = {}
-	self.ConvertData = ACF.RoundTypes[self.Primary.UserData["Type"]]["convert"] -- REPLACE
-	self.Primary.BulletData = self:ConvertData(self.Primary.UserData) --Put the results into the BulletData table
-	self.NetworkData = ACF.RoundTypes[self.Primary.UserData["Type"]]["network"] -- REPLACE
-	self:NetworkData(self.Primary.BulletData)
+	local UserData = self.Primary.UserData
+	local AmmoType = AmmoTypes[UserData.Type]
+	local BulletData
 
-	if (SERVER) then
+	if SERVER then
+		BulletData = AmmoType:ServerConvert(UserData)
+
+		AmmoType:Network(self, BulletData)
+
 		self:SetWeaponHoldType("ar2")
-		--self.Owner:GiveAmmo( self.Primary.DefaultClip, self.Primary.Ammo )	
+		--self.Owner:GiveAmmo( self.Primary.DefaultClip, self.Primary.Ammo )
+	else
+		BulletData = AmmoType:ClientConvert(UserData)
 	end
+
+	self.Primary.BulletData = BulletData
+	self.Primary.RoundData = AmmoType
 end
 
 function SWEP:Reload()
@@ -46,19 +57,24 @@ function SWEP:CrateReload()
 	ViewTr.start = self.Owner:GetShootPos()
 	ViewTr.endpos = self.Owner:GetShootPos() + self.Owner:GetAimVector() * 128
 	ViewTr.filter = {self.Owner, self}
+
 	local ViewRes = util.TraceLine(ViewTr) --Trace to see if it will hit anything
 
 	if SERVER then
 		local AmmoEnt = ViewRes.Entity
 
-		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0 and AmmoEnt.RoundId == self.Primary.UserData["Id"] then
+		if IsValid(AmmoEnt) and AmmoEnt.Ammo > 0 and AmmoEnt.RoundId == self.Primary.UserData["Id"] then
 			local CurAmmo = self.Owner:GetAmmoCount(self.Primary.Ammo)
 			local Transfert = math.min(AmmoEnt.Ammo, self.Primary.DefaultClip - CurAmmo)
+			local AmmoType = AmmoTypes[AmmoEnt.AmmoType]
+
 			AmmoEnt.Ammo = AmmoEnt.Ammo - Transfert
+
 			self.Owner:GiveAmmo(Transfert, self.Primary.Ammo)
 			self.Primary.BulletData = AmmoEnt.BulletData
-			self.NetworkData = ACF.RoundTypes[AmmoEnt.RoundType]["network"] -- REPLACE
-			self:NetworkData(self.Primary.BulletData)
+			self.Primary.RoundData = AmmoType
+
+			AmmoType:Network(self, self.Primary.BulletData)
 
 			return true
 		end

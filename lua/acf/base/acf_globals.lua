@@ -1,9 +1,8 @@
 do -- ACF global vars
 	ACF.AmmoTypes 			= ACF.AmmoTypes or {}
 	ACF.AmmoCrates 			= ACF.AmmoCrates or {}
+	ACF.Classes				= ACF.Classes or {}
 	ACF.FuelTanks 			= ACF.FuelTanks or {}
-	ACF.MenuFunc 			= ACF.MenuFunc or {}
-	ACF.AmmoBlacklist 		= ACF.AmmoBlacklist or {}
 	ACF.Repositories		= ACF.Repositories or {}
 
 	-- Misc
@@ -95,43 +94,6 @@ do -- ACF global vars
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
-
-	-- DELETE
-	ACF.FuelDensity = {
-		Diesel = 0.832,
-		Petrol = 0.745,
-		Electric = 3.89 -- li-ion
-	}
-
-	-- DELETE
-	ACF.Efficiency = {
-		GenericPetrol = 0.304, -- kg per kw hr
-		GenericDiesel = 0.243,
-		Turbine = 0.375,
-		Wankel = 0.335,
-		Radial = 0.4, -- 0.38 to 0.53
-		Electric = 0.2125 --percent efficiency converting chemical kw into mechanical kw
-	}
-
-	-- DELETE
-	ACF.TorqueScale = {
-		GenericPetrol = 0.25,
-		GenericDiesel = 0.35,
-		Turbine = 0.2,
-		Wankel = 0.2,
-		Radial = 0.3,
-		Electric = 0.5
-	}
-
-	-- DELETE
-	ACF.EngineHPMult = {
-		GenericPetrol = 0.2,
-		GenericDiesel = 0.5,
-		Turbine = 0.125,
-		Wankel = 0.125,
-		Radial = 0.3,
-		Electric = 0.75
-	}
 end
 
 do -- ACF Convars/Callbacks ------------------------
@@ -182,7 +144,6 @@ do -- ACF Convars/Callbacks ------------------------
 	game.AddParticles("particles/acf_muzzleflashes.pcf")
 	game.AddParticles("particles/explosion1.pcf")
 	game.AddParticles("particles/rocket_motor.pcf")
-	game.AddDecal("GunShot1", "decals/METAL/shot5")
 end
 
 if SERVER then
@@ -195,7 +156,6 @@ if SERVER then
 	CreateConVar("acf_enable_workshop_extras", 0, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
 	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive", 0, 2)
 	CreateConVar("acf_restrict_info", 1, FCVAR_ARCHIVE, "If enabled, players will be only allowed to get info from entities they're allowed to mess with.", 0, 1)
-
 	CreateConVar("acf_hepush", 1, FCVAR_ARCHIVE, "Whether or not HE pushes on entities", 0, 1)
 	CreateConVar("acf_kepush", 1, FCVAR_ARCHIVE, "Whether or not kinetic force pushes on entities", 0, 1)
 	CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
@@ -261,13 +221,6 @@ elseif CLIENT then
 	end)
 	---------------------------------------------
 end
-
--- DELETE
-timer.Simple(0, function()
-	for _, Table in pairs(ACF.Classes.GunClass) do
-		PrecacheParticleSystem(Table["muzzleflash"])
-	end
-end)
 
 function switch(cases, arg)
 	local Var = cases[arg]

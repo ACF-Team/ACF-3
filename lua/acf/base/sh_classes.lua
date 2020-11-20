@@ -233,10 +233,6 @@ do -- Weapon registration functions
 
 		Class.Destiny = "Weapons"
 
-		if not Class.EntClass then
-			Class.EntClass = "acf_gun"
-		end
-
 		if Class.MuzzleFlash then
 			PrecacheParticleSystem(Class.MuzzleFlash)
 		end
@@ -251,13 +247,7 @@ do -- Ammo crate registration function
 	local Crates = ACF.Classes.Crates
 
 	function ACF.RegisterCrate(ID, Data)
-		local Class = AddSimpleClass(ID, Crates, Data)
-
-		if not Class.EntClass then
-			Class.EntClass = "acf_ammo"
-		end
-
-		return Class
+		return AddSimpleClass(ID, Crates, Data)
 	end
 end
 
@@ -294,13 +284,7 @@ do -- Engine registration functions
 	end
 
 	function ACF.RegisterEngine(ID, ClassID, Data)
-		local Class = AddGroupedClass(ID, ClassID, Engines, Data)
-
-		if not Class.EntClass then
-			Class.EntClass = "acf_engine"
-		end
-
-		return Class
+		return AddGroupedClass(ID, ClassID, Engines, Data)
 	end
 end
 
@@ -337,10 +321,6 @@ do -- Fuel tank registration functions
 
 	function ACF.RegisterFuelTank(ID, ClassID, Data)
 		local Class = AddGroupedClass(ID, ClassID, FuelTanks, Data)
-
-		if not Class.EntClass then
-			Class.EntClass = "acf_engine"
-		end
 
 		if Class.IsExplosive == nil then
 			Class.IsExplosive = true
@@ -383,10 +363,6 @@ do -- Gearbox registration functions
 
 	function ACF.RegisterGearbox(ID, ClassID, Data)
 		local Class = AddGroupedClass(ID, ClassID, Gearboxes, Data)
-
-		if not Class.EntClass then
-			Class.EntClass = "acf_gearbox"
-		end
 
 		if not Class.Sound then
 			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
@@ -528,5 +504,31 @@ do -- Entity class registration function
 		end
 
 		return List
+	end
+end
+
+do -- Discontinued functions
+	function ACF_defineGunClass(ID)
+		print("Attempted to register weapon class " .. ID .. " with a discontinued function. Use ACF.RegisterWeaponClass instead.")
+	end
+
+	function ACF_defineGun(ID)
+		print("Attempted to register weapon " .. ID .. " with a discontinued function. Use ACF.RegisterWeapon instead.")
+	end
+
+	function ACF_DefineEngine(ID)
+		print("Attempted to register engine " .. ID .. " with a discontinued function. Use ACF.RegisterEngine instead.")
+	end
+
+	function ACF_DefineGearbox(ID)
+		print("Attempted to register gearbox " .. ID .. " with a discontinued function. Use ACF.RegisterGearbox instead.")
+	end
+
+	function ACF_DefineFuelTank(ID)
+		print("Attempted to register fuel tank type " .. ID .. " with a discontinued function. Use ACF.RegisterFuelTankClass instead.")
+	end
+
+	function ACF_DefineFuelTankSize(ID)
+		print("Attempted to register fuel tank " .. ID .. " with a discontinued function. Use ACF.RegisterFuelTank instead.")
 	end
 end

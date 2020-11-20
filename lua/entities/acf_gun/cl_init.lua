@@ -73,35 +73,3 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	self.LastFire = CurTime()
 	self.Reload = ReloadTime
 end
-
--- DELETE
-function ACFGunGUICreate(Table)
-	acfmenupanel:CPanelText("Name", Table.name)
-	acfmenupanel.CData.DisplayModel = vgui.Create("DModelPanel", acfmenupanel.CustomDisplay)
-	acfmenupanel.CData.DisplayModel:SetModel(Table.model)
-	acfmenupanel.CData.DisplayModel:SetCamPos(Vector(250, 500, 250))
-	acfmenupanel.CData.DisplayModel:SetLookAt(Vector(0, 0, 0))
-	acfmenupanel.CData.DisplayModel:SetFOV(20)
-	acfmenupanel.CData.DisplayModel:SetSize(acfmenupanel:GetWide(), acfmenupanel:GetWide())
-	acfmenupanel.CData.DisplayModel.LayoutEntity = function() end
-	acfmenupanel.CustomDisplay:AddItem(acfmenupanel.CData.DisplayModel)
-	local GunClass = ACF.Classes.GunClass[Table.gunclass]
-	acfmenupanel:CPanelText("ClassDesc", GunClass.desc)
-	acfmenupanel:CPanelText("GunDesc", Table.desc)
-	acfmenupanel:CPanelText("Caliber", "Caliber : " .. (Table.caliber * 10) .. "mm")
-	acfmenupanel:CPanelText("Weight", "Weight : " .. Table.weight .. "kg")
-
-	if not Table.rack then
-		local RoundVolume = 3.1416 * (Table.caliber / 2) ^ 2 * Table.round.maxlength
-		local RoF = 60 / (((RoundVolume / 500) ^ 0.60) * GunClass.rofmod * (Table.rofmod or 1)) -- TODO: FIX THIS (USING OLD RELOAD CALC)
-		acfmenupanel:CPanelText("Firerate", "RoF : " .. math.Round(RoF, 1) .. " rounds/min")
-
-		if Table.magsize then
-			acfmenupanel:CPanelText("Magazine", "Magazine : " .. Table.magsize .. " rounds\nReload :   " .. Table.magreload .. " s")
-		end
-
-		acfmenupanel:CPanelText("Spread", "Spread : " .. GunClass.spread .. " degrees")
-	end
-
-	acfmenupanel.CustomDisplay:PerformLayout()
-end

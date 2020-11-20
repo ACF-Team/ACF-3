@@ -174,7 +174,7 @@ function acf_library.createMobility(pos, ang, id, frozen, gear_ratio)
 	local pos = vunwrap(pos)
 	local ang = aunwrap(ang)
 	
-	local list_entries = ACF.Weapons.Mobility
+	local list_entries = ACF.Weapons.Mobility -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -236,7 +236,7 @@ end
 function acf_library.getMobilitySpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.Mobility
+	local list_entries = ACF.Weapons.Mobility -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -324,7 +324,7 @@ function acf_library.createFuelTank(pos, ang, id, fueltype, frozen)
 	
 	if fueltype ~= "Diesel" and fueltype ~= "Electric" and fueltype ~= "Petrol" then SF.Throw("Invalid fuel type") end
 	
-	local list_entries = ACF.Weapons.FuelTanks
+	local list_entries = ACF.Weapons.FuelTanks -- REPLACE
 	if not list_entries[id] then SF.Throw("Invalid id", 2) end
 	
 	local type_id = list_entries[id]
@@ -363,7 +363,7 @@ end
 function acf_library.getFuelTankSpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.FuelTanks
+	local list_entries = ACF.Weapons.FuelTanks -- REPLACE
 	if not list_entries[id] then SF.Throw("Invalid id", 2) end
 	
 	local specs = table.Copy(list_entries[id])
@@ -407,7 +407,7 @@ function acf_library.createGun(pos, ang, id, frozen)
 	local pos = vunwrap(pos)
 	local ang = aunwrap(ang)
 	
-	local list_entries = ACF.Weapons.Guns
+	local list_entries = ACF.Weapons.Guns -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -455,7 +455,7 @@ end
 function acf_library.getGunSpecs(id)
 	checkluatype(id, TYPE_STRING)
 	
-	local list_entries = ACF.Weapons.Guns
+	local list_entries = ACF.Weapons.Guns -- REPLACE
 	
 	-- Not a valid id, try name
 	if not list_entries[id] then
@@ -494,7 +494,7 @@ for id, data in pairs(ACF.RoundTypes) do -- REPLACE
 		name = data.name,
 		desc = data.desc,
 		model = data.model,
-		gun_blacklist = ACF.AmmoBlacklist[id],
+		gun_blacklist = ACF.AmmoBlacklist[id], -- REPLACE
 		create_data = {}
 	}
 end
@@ -695,7 +695,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	local size
 	
 	if type(id) == "string" then
-		local list_entries = ACF.Weapons.Ammo
+		local list_entries = ACF.Weapons.Ammo -- REPLACE
 		local type_id = list_entries[id]
 		if not type_id then SF.Throw("Invalid id", 2) end
 		
@@ -708,7 +708,7 @@ function acf_library.createAmmo(pos, ang, id, gun_id, ammo_id, frozen, ammo_data
 	local ammo = ammo_properties[ammo_id]
 	if not ammo then SF.Throw("Invalid ammo id", 2) end
 	
-	local gun_list_entries = ACF.Weapons.Guns
+	local gun_list_entries = ACF.Weapons.Guns -- REPLACE
 	if not gun_list_entries[gun_id] then
 		gun_id = idFromName(gun_list_entries, gun_id)
 		
@@ -1978,7 +1978,7 @@ function ents_methods:acfCaliber ()
 		if not this.BulletData then return 0 end	-- If not a a rack
 		if not this.BulletData.Id then return 0 end
 
-		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+		local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 
 		if not GunData then return 0 end
 
@@ -2140,7 +2140,7 @@ function ents_methods:acfFinMul()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 
 	if not GunData then return 0 end
 	if not GunData.round then return 0 end
@@ -2160,7 +2160,7 @@ function ents_methods:acfMissileWeight()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 	if not GunData then return 0 end
 
 	return ( GunData.weight or 0 )
@@ -2178,7 +2178,7 @@ function ents_methods:acfMissileLength()
 	if restrictInfo( this ) then return 0 end
 	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
+	local GunData = ACF.Weapons.Guns[this.BulletData.Id] -- REPLACE
 	if not GunData then return 0 end
 
 	return ( GunData.length or 0 )

@@ -12,19 +12,19 @@
 -- Known issues:
 -- MASK_SHOT ignores all entities.
 
+local Hull = util.TraceHull
+local Zero = Vector()
+
+-- Available for use, just in case
 if not util.LegacyTraceLine then
-	local Hull = util.TraceHull
-	local Zero = Vector()
-
-	-- Available for use, just in case
 	util.LegacyTraceLine = util.TraceLine
+end
 
-	function util.TraceLine(TraceData, ...)
-		if istable(TraceData) then
-			TraceData.mins = Zero
-			TraceData.maxs = Zero
-		end
-
-		return Hull(TraceData, ...)
+function util.TraceLine(TraceData, ...)
+	if istable(TraceData) then
+		TraceData.mins = Zero
+		TraceData.maxs = Zero
 	end
+
+	return Hull(TraceData, ...)
 end

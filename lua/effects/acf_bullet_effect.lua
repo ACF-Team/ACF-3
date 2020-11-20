@@ -54,6 +54,7 @@ function EFFECT:Init(Data)
 			return
 		end
 
+		-- TODO: Force crates to network and store this information on the client when they're created
 		local Tracer = Crate:GetNW2Float("Tracer") > 0
 		local BulletData = {
 			Crate = Crate,
