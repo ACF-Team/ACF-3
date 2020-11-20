@@ -776,7 +776,7 @@ end ---------------------------------------------
 
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
-		Ent.ACF.LegalMass = math.floor(Ent.EmptyMass + (Ent.AmmoMassMax * (Ent.Ammo / math.max(Ent.Capacity, 0))))
+		Ent.ACF.LegalMass = math.floor(Ent.EmptyMass + (Ent.AmmoMassMax * (Ent.Ammo / math.max(Ent.Capacity, 1))))
 
 		local Phys = Ent:GetPhysicsObject()
 
