@@ -78,8 +78,8 @@ local function RefillCrates(Refill)
 			Crate:Consume(-Transfer)
 			Refill:Consume(Transfer)
 
-			Crate:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5*ACF.SoundVolume)
-			Refill:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5*ACF.SoundVolume)
+			Crate:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.SoundVolume)
+			Refill:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.SoundVolume)
 
 		elseif Refill.SupplyingTo[Crate] then
 			Refill.SupplyingTo[Crate] = nil
