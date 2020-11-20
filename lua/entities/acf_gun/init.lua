@@ -366,7 +366,7 @@ do -- Metamethods --------------------------------
 			if self.State ~= "Loaded" then -- Weapon is not loaded
 				if self.State == "Empty" and not self.Retry then
 					if not self:Load() then
-						self:EmitSound("weapons/pistol/pistol_empty.wav", 500, 100) -- Click!
+						self:EmitSound("weapons/pistol/pistol_empty.wav", 70, 100, ACF.SoundVolume) -- Click!
 					end
 
 					self.Retry = true
@@ -501,7 +501,7 @@ do -- Metamethods --------------------------------
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
-			self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+			self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.SoundVolume)
 			self.CurrentShot = 0
 			self.BulletData  = EMPTY
 
@@ -709,8 +709,8 @@ do -- Metamethods --------------------------------
 					if Crate:GetPos():DistToSqr(Pos) > 62500 then -- 250 unit radius
 						self:Unlink(Crate)
 
-						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 500, 100)
-						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 500, 100)
+						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.SoundVolume)
+						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.SoundVolume)
 					end
 				end
 			end

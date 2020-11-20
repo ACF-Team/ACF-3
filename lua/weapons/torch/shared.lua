@@ -139,7 +139,7 @@ function SWEP:PrimaryAttack()
 				Effect:SetEntity(self)
 			util.Effect("thruster_ring", Effect, true, true)
 
-			Entity:EmitSound("items/medshot4.wav", true, true)
+			Entity:EmitSound("items/medshot4.wav", nil, nil, ACF.SoundVolume)
 		else
 			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
 
@@ -157,7 +157,7 @@ function SWEP:PrimaryAttack()
 			Entity.ACF.Health = Health
 			Entity.ACF.Armour = Armor
 
-			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", true, true)
+			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", nil, nil, ACF.SoundVolume)
 			TeslaSpark(Trace.HitPos, 1)
 		end
 	end
@@ -200,7 +200,7 @@ function SWEP:SecondaryAttack()
 				Effect:SetOrigin(Trace.HitPos)
 			util.Effect("Sparks", Effect, true, true)
 
-			Entity:EmitSound("weapons/physcannon/superphys_small_zap" .. math.random(1, 4) .. ".wav")
+			Entity:EmitSound("weapons/physcannon/superphys_small_zap" .. math.random(1, 4) .. ".wav", nil, nil, ACF.SoundVolume)
 		end
 	end
 end
