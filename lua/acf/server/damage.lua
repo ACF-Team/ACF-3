@@ -1,21 +1,23 @@
 -- Local Vars -----------------------------------
-local ACF_HEPUSH 	= GetConVar("acf_hepush")
-local ACF_KEPUSH 	= GetConVar("acf_kepush")
-local TimerCreate 	= timer.Create
-local TraceRes 		= {}
-local TraceData 	= { output = TraceRes, mask = MASK_SOLID, filter = false }
-local Check			= ACF_Check
-local HookRun		= hook.Run
-local Trace 		= ACF.TraceF
-local ValidDebris 	= ACF.ValidDebris
-local ChildDebris 	= ACF.ChildDebris
-local DragDiv		= ACF.DragDiv
-local GlobalFilter 	= ACF.GlobalFilter
+local ACF         = ACF
+local ACF_HEPUSH  = GetConVar("acf_hepush")
+local ACF_KEPUSH  = GetConVar("acf_kepush")
+local TimerCreate = timer.Create
+local TraceRes    = {}
+local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
+local Check       = ACF_Check
+local HookRun     = hook.Run
+local Trace       = ACF.TraceF
+local ValidDebris = ACF.ValidDebris
+local ChildDebris = ACF.ChildDebris
+local DragDiv     = ACF.DragDiv
+
 -- Local Funcs ----------------------------------
 
 local function CalcDamage(Entity, Energy, FrArea, Angle)
+	local FinalAngle = math.Clamp(Angle, -90, 90) -- TODO: Why are we getting impact angles outside these bounds?
 	local armor = Entity.ACF.Armour -- Armor
-	local losArmor = armor / math.abs(math.cos(math.rad(Angle)) ^ ACF.SlopeEffectFactor) -- LOS Armor
+	local losArmor = armor / math.abs(math.cos(math.rad(FinalAngle)) ^ ACF.SlopeEffectFactor) -- LOS Armor
 	local maxPenetration = (Energy.Penetration / FrArea) * ACF.KEtoRHA --RHA Penetration
 	local HitRes = {}
 
@@ -39,7 +41,7 @@ local function CalcDamage(Entity, Energy, FrArea, Angle)
 		local Penetration = math.min(maxPenetration, losArmor)
 		HitRes.Damage = (Penetration / losArmor) ^ 2 * FrArea
 		HitRes.Overkill = (maxPenetration - Penetration)
-		HitRes.Loss = Penetration / maxPenetration
+		HitRes.Loss = Penetration / math.max(0.001, maxPenetration)
 
 		return HitRes
 	end
@@ -127,45 +129,6 @@ do
 			end
 		end
 
-		local function BackCheck( MaxD, Last) -- Return the last entity hit
-			Trace(TraceData)
-
-			-- Hit an entity going backwards thats between the origin and the original hitpos (phased through)
-			if TraceRes.HitNonWorld and IsValid(TraceRes.Entity) and not GlobalFilter[TraceRes.Entity:GetClass()] and TraceRes.HitPos:DistToSqr(TraceData.start) < MaxD then
-				Last = TraceRes.Entity
-
-				TraceData.filter[#TraceData.filter + 1] = Last
-
-				BackCheck(MaxD, Last)
-			end
-
-			return Last
-		end
-
-		local function BackCheckInit()
-
-			local OStart  = TraceData.start
-			local OEnd	  = TraceData.endpos
-			local OEnt 	  = TraceRes.Entity
-			local OFilter = {}; for K, V in pairs(TraceData.filter) do OFilter[K] = V end
-
-			TraceData.start  = TraceRes.HitPos
-			TraceData.endpos = TraceRes.HitPos + (OStart - TraceRes.HitPos):GetNormalized() * 1000
-
-			local R = BackCheck(TraceRes.HitPos:DistToSqr(OStart))
-
-			if IsValid(R) then
-				TraceRes.Entity = R
-				--print("THANK YOU GARRY VERY COOL", OEnt, TraceRes.Entity)
-			else
-				TraceRes.Entity = OEnt
-			end
-
-			TraceData.start  = OStart
-			TraceData.endpos = OEnd
-			TraceData.filter = OFilter
-		end
-
 		function ACF_HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 			debugoverlay.Cross(Origin, 15, 15, Color( 255, 255, 255 ), true)
 			Filter = Filter or {}
@@ -228,9 +191,6 @@ do
 					Trace(TraceData) -- Outputs to TraceRes
 
 					if TraceRes.HitNonWorld then
-
-						BackCheckInit()
-
 						Ent = TraceRes.Entity
 
 						if Check(Ent) then
