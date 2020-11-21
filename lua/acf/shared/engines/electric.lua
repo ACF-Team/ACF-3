@@ -74,6 +74,26 @@ do -- Electric Standalone Motors
 		Description	= "Electric motors provide huge amounts of torque, but are very heavy. Standalones also require external batteries.",
 	})
 
+	ACF.RegisterEngine("Electric-Tiny-NoBatt", "EL-S", {
+		Name		 = "Tiny Electric Standalone Motor",
+		Description	 = "A pint-size electric motor, for the lightest of light utility work. Can power electric razors, desk fans, or your hopes and dreams.",
+		Model		 = "models/engines/emotor-standalone-tiny.mdl",
+		Sound		 = "acf_base/engines/electric_small.wav",
+		Fuel		 = { Electric = true },
+		Type		 = "Electric",
+		Mass		 = 50,
+		Torque		 = 40,
+		FlywheelMass = 0.025,
+		IsElectric	 = true,
+		RPM = {
+			Idle	 = 10,
+			PeakMin	 = 1,
+			PeakMax	 = 1,
+			Limit	 = 10000,
+			Override = 500,
+		},
+	})
+
 	ACF.RegisterEngine("Electric-Small-NoBatt", "EL-S", {
 		Name		 = "Small Electric Standalone Motor",
 		Description	 = "A small standalone electric motor, loads of torque, but low power.",
