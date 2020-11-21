@@ -352,8 +352,6 @@ do -- Spawn and Update functions
 		CreateInputs(Entity, Data, Class, Gearbox)
 		CreateOutputs(Entity, Data, Class, Gearbox)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		ACF_Activate(Entity, true)
@@ -451,6 +449,8 @@ do -- Spawn and Update functions
 		Gearbox.DataStore      = ACF.GetEntityArguments("acf_gearbox")
 
 		UpdateGearbox(Gearbox, Data, Class, GearboxData)
+
+		WireLib.TriggerOutput(Gearbox, "Entity", Gearbox)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Gearbox, Data, Class, GearboxData)

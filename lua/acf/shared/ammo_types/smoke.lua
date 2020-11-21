@@ -4,13 +4,11 @@ function Ammo:OnLoaded()
 	self.Name		 = "Smoke"
 	self.Description = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly."
 	self.Blacklist = {
-		C = true,
 		AC = true,
 		AL = true,
 		GL = true,
 		MG = true,
 		SA = true,
-		SC = true,
 		HMG = true,
 		RAC = true,
 	}

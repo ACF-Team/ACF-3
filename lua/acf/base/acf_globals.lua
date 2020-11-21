@@ -13,7 +13,7 @@ do -- ACF global vars
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
 
 	-- Fuzes
-	ACF.MinFuzeCaliber		= 20 -- Minimum caliber in millimeters that can be fuzed
+	ACF.MinFuzeCaliber		= 2 -- Minimum caliber in centimeters that can be fuzed
 
 	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile
@@ -214,10 +214,12 @@ elseif CLIENT then
 	net.Receive("ACF_UpdateEntity", function()
 		local Entity = net.ReadEntity()
 
-		if not IsValid(Entity) then return end
-		if not isfunction(Entity.Update) then return end
+		timer.Simple(0.5, function()
+			if not IsValid(Entity) then return end
+			if not isfunction(Entity.Update) then return end
 
-		Entity:Update()
+			Entity:Update()
+		end)
 	end)
 	---------------------------------------------
 end

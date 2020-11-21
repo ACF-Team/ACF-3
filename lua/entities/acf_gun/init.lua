@@ -63,6 +63,38 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
+	local function CreateInputs(Entity, Data, Class, Weapon)
+		local List = { "Fire", "Unload", "Reload" }
+
+		if Class.SetupInputs then
+			Class.SetupInputs(List, Entity, Data, Class, Weapon)
+		end
+
+		HookRun("ACF_OnSetupInputs", "acf_gun", List, Entity, Data, Class, Weapon)
+
+		if Entity.Inputs then
+			Entity.Inputs = WireLib.AdjustInputs(Entity, List)
+		else
+			Entity.Inputs = WireLib.CreateInputs(Entity, List)
+		end
+	end
+
+	local function CreateOutputs(Entity, Data, Class, Weapon)
+		local List = { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" }
+
+		if Class.SetupOutputs then
+			Class.SetupOutputs(List, Entity, Data, Class, Weapon)
+		end
+
+		HookRun("ACF_OnSetupOutputs", "acf_gun", List, Entity, Data, Class, Weapon)
+
+		if Entity.Outputs then
+			Entity.Outputs = WireLib.AdjustOutputs(Entity, List)
+		else
+			Entity.Outputs = WireLib.CreateOutputs(Entity, List)
+		end
+	end
+
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Caliber = Weapon.Caliber * 0.1
 
@@ -70,12 +102,6 @@ do -- Spawn and Update functions --------------------------------
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		if Caliber > ACF.MinFuzeCaliber then
-			Entity.Inputs = WireLib.CreateInputs(Entity, { "Fire", "Unload", "Reload", "Fuze" })
-		else
-			Entity.Inputs = WireLib.CreateInputs(Entity, { "Fire", "Unload", "Reload" })
-		end
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -99,6 +125,9 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long           = Class.LongBarrel
 		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle         = Entity.NormalMuzzle
+
+		CreateInputs(Entity, Data, Class, Weapon)
+		CreateOutputs(Entity, Data, Class, Weapon)
 
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
@@ -126,6 +155,15 @@ do -- Spawn and Update functions --------------------------------
 		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
 	end
 
+	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Class, List, Entity)
+		if Class ~= "acf_gun" then return end
+		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
+
+		List[#List + 1] = "Fuze"
+	end)
+
+	-------------------------------------------------------------------------------
+
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
@@ -148,7 +186,6 @@ do -- Spawn and Update functions --------------------------------
 		Gun:Spawn()
 
 		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Outputs      = WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
 		Gun.SoundPath    = Class.Sound
 		Gun.DefaultSound = Class.Sound
 		Gun.BarrelFilter = { Gun }
@@ -160,12 +197,12 @@ do -- Spawn and Update functions --------------------------------
 
 		Gun:SetNWString("Sound", Class.Sound)
 
+		UpdateWeapon(Gun, Data, Class, Weapon)
+
 		WireLib.TriggerOutput(Gun, "Status", "Empty")
 		WireLib.TriggerOutput(Gun, "Entity", Gun)
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
-
-		UpdateWeapon(Gun, Data, Class, Weapon)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Gun, Data, Class, Weapon)
