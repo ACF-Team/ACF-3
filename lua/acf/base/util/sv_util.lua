@@ -68,12 +68,10 @@ do -- Tool data functions
 		net.Receive("ACF_ToolData", function(_, Player)
 			if not IsValid(Player) then return end
 
-			local Key = net.ReadString()
+			local Key   = net.ReadString()
 			local Value = net.ReadType()
 
 			ToolData[Player][Key] = Value
-
-			print("Received", Player, Key, Value, type(Value))
 		end)
 
 		hook.Add("PlayerInitialSpawn", "ACF Tool Data", function(Player)

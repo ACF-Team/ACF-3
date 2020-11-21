@@ -138,8 +138,6 @@ do -- Tool data functions
 					net.WriteString(Key)
 					net.WriteType(NewValue)
 				net.SendToServer()
-
-				print("Sent", LocalPlayer(), Key, NewValue, type(NewValue))
 			end)
 		end
 	end
