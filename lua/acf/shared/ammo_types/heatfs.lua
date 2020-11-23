@@ -38,7 +38,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
 	Data.SlugMass	  = ConeVol * 0.0079
 	Data.SlugCaliber  = SlugCaliber
-	Data.SlugPenArea  = (SlugFrArea ^ ACF.PenAreaMod) -- * 0.6666
+	Data.SlugPenArea  = (SlugFrArea ^ ACF.PenAreaMod) * 0.6666
 	Data.SlugDragCoef = SlugFrArea * 0.0001 / Data.SlugMass
 
 	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
