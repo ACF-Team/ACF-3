@@ -17,7 +17,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	local MaxConeAng = math.deg(math.atan((Data.ProjLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
 	local LinerAngle = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
-	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.05)
+	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 
 	local LinerRad	  = math.rad(LinerAngle * 0.5)
 	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
@@ -38,7 +38,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
 	Data.SlugMass	  = ConeVol * 0.0079
 	Data.SlugCaliber  = SlugCaliber
-	Data.SlugPenArea  = (SlugFrArea ^ ACF.PenAreaMod) * 0.6666
+	Data.SlugPenArea  = (SlugFrArea ^ ACF.PenAreaMod) -- * 0.6666
 	Data.SlugDragCoef = SlugFrArea * 0.0001 / Data.SlugMass
 
 	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
