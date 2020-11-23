@@ -108,11 +108,11 @@ function ACF.CalcBulletFlight(Index, Bullet)
 	end
 
 	local DeltaTime = ACF.CurTime - Bullet.LastThink
-	local Drag = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
-	local Accel = Bullet.Accel or Gravity
+	local Drag      = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
+	local Accel     = Bullet.Accel or Gravity
 
-	Bullet.Flight = Bullet.Flight + (Accel - Drag) * DeltaTime
-	Bullet.NextPos = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
+	Bullet.NextPos   = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
+	Bullet.Flight    = Bullet.Flight + (Accel - Drag) * DeltaTime
 	Bullet.LastThink = ACF.CurTime
 	Bullet.DeltaTime = DeltaTime
 

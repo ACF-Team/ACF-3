@@ -189,7 +189,6 @@ if SERVER then
 		if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
 		Bullet.Detonated = true
-		Bullet.InitTime  = ACF.CurTime
 		Bullet.Flight    = Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
 		Bullet.NextPos   = HitPos
 		Bullet.DragCoef  = Bullet.SlugDragCoef
@@ -227,7 +226,7 @@ if SERVER then
 				if HitRes.Ricochet then
 					return "Ricochet"
 				else
-					if self:Detonate(Bullet, HitPos, HitNormal) then
+					if self:Detonate(Bullet, HitPos) then
 						return "Penetrated"
 					else
 						return false
@@ -245,7 +244,7 @@ if SERVER then
 
 	function Ammo:WorldImpact(_, Bullet, HitPos, HitNormal)
 		if not Bullet.Detonated then
-			if self:Detonate(Bullet, HitPos, HitNormal) then
+			if self:Detonate(Bullet, HitPos) then
 				return "Penetrated"
 			else
 				return false
