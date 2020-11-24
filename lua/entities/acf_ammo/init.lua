@@ -78,8 +78,8 @@ local function RefillCrates(Refill)
 			Crate:Consume(-Transfer)
 			Refill:Consume(Transfer)
 
-			Crate:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
-			Refill:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
+			Crate:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.SoundVolume)
+			Refill:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.SoundVolume)
 
 		elseif Refill.SupplyingTo[Crate] then
 			Refill.SupplyingTo[Crate] = nil
@@ -755,7 +755,7 @@ do -- Metamethods -------------------------------
 				if VolumeRoll and AmmoRoll then
 					local Speed = ACF_MuzzleVelocity(Entity.BulletData.PropMass, Entity.BulletData.ProjMass / 2, Entity.Caliber)
 
-					Entity:EmitSound("ambient/explosions/explode_4.wav", 350, math.max(255 - Entity.BulletData.PropMass * 100,60))
+					Entity:EmitSound("ambient/explosions/explode_4.wav", 140, math.max(255 - Entity.BulletData.PropMass * 100,60), ACF.SoundVolume)
 
 					Entity.BulletData.Pos = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * (Entity:OBBMaxs() - Entity:OBBMins()) / 2)
 					Entity.BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()

@@ -201,7 +201,7 @@ local function ChangeGear(Entity, Value)
 	Entity.ChangeFinished = ACF.CurTime + Entity.SwitchTime
 	Entity.InGear = false
 
-	Entity:EmitSound("buttons/lever7.wav", 250, 100)
+	Entity:EmitSound("buttons/lever7.wav", 70, 100, ACF.SoundVolume)
 	Entity:UpdateOverlay()
 
 	WireLib.TriggerOutput(Entity, "Current Gear", Value)

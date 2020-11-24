@@ -37,7 +37,7 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, self.Normal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	sound.Play("acf_base/fx/penetration" .. math.random(1, 6) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
+	sound.Play("acf_base/fx/penetration" .. math.random(1, 6) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), ACF.SoundVolume)
 end
 
 function EFFECT:Metal()

@@ -12,6 +12,7 @@ do -- ACF global vars
 	ACF.GunfireEnabled 		= true
 	ACF.SmokeWind 			= 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
+	ACF.SoundVolume 		= 1 --Scales sound volume
 	-- Fuzes
 	ACF.MinFuzeCaliber		= 2 -- Minimum caliber that can be fuzed (centimeters)
 	-- Reload Mechanics
