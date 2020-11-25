@@ -266,7 +266,7 @@ do -- Spawning and Updating --------------------
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
 		Entity.WeaponData = Weapon
-		Entity.Caliber    = Weapon.Caliber
+		Entity.Caliber    = Weapon.Caliber * 0.1
 		Entity.Class      = Class.ID
 
 		Entity:SetNWString("WireName", "ACF " .. (WireName or Weapon.Name .. " Ammo Crate"))
