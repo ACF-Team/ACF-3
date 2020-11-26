@@ -172,7 +172,7 @@ if SERVER then
 		local Data	  = self:GetDisplayData(BulletData)
 		local Destiny = ACF.FindWeaponrySource(BulletData.Id)
 		local Class   = ACF.GetClassGroup(Destiny, BulletData.Id)
-		local Spread  = Class.Spread * ACF.GunInaccuracyScale
+		local Spread  = Class and Class.Spread * ACF.GunInaccuracyScale or 0
 
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(BulletData.FlechetteSpread + Spread, 2))
 	end
