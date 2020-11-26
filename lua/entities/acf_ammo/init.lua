@@ -471,13 +471,32 @@ do -- Spawning and Updating --------------------
 
 		local Source    = Classes[Data.Destiny]
 		local Class     = GetClassGroup(Source, Data.Weapon)
+		local OldClass  = self.ClassData
 		local Weapon    = Class.Lookup[Data.Weapon]
+		local OldWeapon = self.Weapon
 		local Ammo      = AmmoTypes[Data.AmmoType]
 		local Blacklist = Ammo.Blacklist
-		local OldClass  = self.ClassData
 		local Extra     = ""
 
-		if Data.Weapon ~= self.Weapon then
+		if OldClass.OnLast then
+			OldClass.OnLast(self, OldClass)
+		end
+
+		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
+
+		ACF.SaveEntity(self)
+
+		UpdateCrate(self, Data, Class, Weapon, Ammo)
+
+		ACF.RestoreEntity(self)
+
+		if Class.OnUpdate then
+			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
+		end
+
+		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+
+		if Data.Weapon ~= OldWeapon or self.Unlinkable then
 			for Entity in pairs(self.Weapons) do
 				self:Unlink(Entity)
 			end
@@ -501,24 +520,6 @@ do -- Spawning and Updating --------------------
 				Extra = " Unlinked " .. Count .. " weapons from this crate."
 			end
 		end
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
-
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateCrate(self, Data, Class, Weapon, Ammo)
-
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
-		end
-
-		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
 		self:UpdateOverlay(true)
 

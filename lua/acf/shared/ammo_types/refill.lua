@@ -112,7 +112,8 @@ if SERVER then
 			Entity.SupplyingTo = {}
 		end
 
-		Entity.IsRefill = true
+		Entity.IsRefill   = true
+		Entity.Unlinkable = true
 
 		timer.Create("ACF Refill " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end
@@ -131,13 +132,18 @@ if SERVER then
 		end
 
 		Entity.SupplyingTo = nil
-		Entity.IsRefill = nil
+		Entity.IsRefill    = nil
+		Entity.Unlinkable  = nil
 
 		Entity:SetNW2Float("FillerMass", 0)
 
 		StopRefillEffect(Refill)
 
 		timer.Remove(CallName)
+	end
+
+	function Ammo:Create()
+		print("Someone is trying to fire Refill bullets")
 	end
 
 	function Ammo:Network(Entity, BulletData)
