@@ -248,22 +248,24 @@ function ACF.DoBulletsFlight(Index, Bullet)
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
 			return ACF.RemoveBullet(Index)
 		else
-			if Bullet.OnEndFlight then
-				Bullet.OnEndFlight(Index, Bullet, nil)
-			end
-
 			local DeltaTime = Bullet.DeltaTime
 			local DeltaFuze = ACF.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
-			--print(DeltaTime, DeltaFuze, Lerp)
-			if FlightRes.Hit and Lerp < FlightRes.Fraction or true then -- Fuze went off before running into something
+
+			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
 				local Pos = LerpVector(DeltaFuze / DeltaTime, Bullet.Pos, Bullet.NextPos)
 
 				debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Color( 0, 255, 0 ))
 
+				if Bullet.OnEndFlight then
+					Bullet.OnEndFlight(Index, Bullet, FlightRes)
+				end
+
 				ACF.BulletClient(Index, Bullet, "Update", 1, Pos)
 
 				RoundData:OnFlightEnd(Index, Bullet, Pos, Bullet.Flight:GetNormalized())
+
+				return
 			end
 		end
 	end
