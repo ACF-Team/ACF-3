@@ -105,7 +105,6 @@ if SERVER then
 
 	function Ammo:Network(Entity, BulletData)
 		Entity:SetNW2String("AmmoType", "AP")
-		Entity:SetNW2String("AmmoID", BulletData.Id)
 		Entity:SetNW2Float("Caliber", BulletData.Caliber)
 		Entity:SetNW2Float("ProjMass", BulletData.ProjMass)
 		Entity:SetNW2Float("PropMass", BulletData.PropMass)

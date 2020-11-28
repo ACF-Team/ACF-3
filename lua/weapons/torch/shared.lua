@@ -161,7 +161,7 @@ function SWEP:PrimaryAttack()
 				Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
 			end
 
-			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav", true, true)
+			Entity:EmitSound("ambient/energy/NewSpark0" .. math.random(3, 5) .. ".wav")
 			TeslaSpark(Trace.HitPos, 1)
 		end
 	end
