@@ -139,7 +139,7 @@ function SWEP:PrimaryAttack()
 				Effect:SetEntity(self)
 			util.Effect("thruster_ring", Effect, true, true)
 
-			Entity:EmitSound("items/medshot4.wav", true, true)
+			Entity:EmitSound("items/medshot4.wav")
 		else
 			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
 
