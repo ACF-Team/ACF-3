@@ -6,6 +6,10 @@ language.Add("Undone_acf_gearbox", "Undone ACF Gearbox")
 language.Add("SBoxLimit__acf_gearbox", "You've reached the ACF Gearboxes limit!")
 
 function ENT:Initialize()
+	self:Update()
+end
+
+function ENT:Update()
 	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 

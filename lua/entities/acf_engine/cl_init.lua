@@ -6,6 +6,10 @@ language.Add("Undone_acf_engine", "Undone ACF Engine")
 language.Add("SBoxLimit__acf_engine", "You've reached the ACF Engines limit!")
 
 function ENT:Initialize()
+	self:Update()
+end
+
+function ENT:Update()
 	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 
