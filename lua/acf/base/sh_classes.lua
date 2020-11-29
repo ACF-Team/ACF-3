@@ -309,7 +309,7 @@ do -- Fuel tank registration functions
 		if not Group.LimitConVar then
 			Group.LimitConVar = {
 				Name = "_acf_fueltank",
-				Amount = 24,
+				Amount = 32,
 				Text = "Maximum amount of ACF fuel tanks a player can create."
 			}
 		end

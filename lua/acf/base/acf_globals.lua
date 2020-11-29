@@ -98,6 +98,8 @@ do -- ACF global vars
 end
 
 do -- ACF Convars/Callbacks ------------------------
+	CreateConVar("sbox_max_acf_ammo", 32, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Maximum amount of ACF ammo crates a player can create.")
+
 	function ACF_CVarChangeCallback(CVar, _, New)
 		if CVar == "acf_healthmod" then
 			ACF.Threshold = 264.7 / math.max(New, 0.01)
@@ -126,7 +128,6 @@ do -- ACF Convars/Callbacks ------------------------
 		end
 	end
 
-	CreateConVar("sbox_max_acf_ammo", 32)
 	-- New healthmod/armormod/ammomod cvars
 	CreateConVar("acf_healthmod", 1)
 	CreateConVar("acf_armormod", 1)
