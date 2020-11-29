@@ -94,6 +94,7 @@ do -- ACF global vars
 	ACF.CuIToLiter 			= 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance 		= 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed 		= 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
+	ACF.RefuelSpeed			= 20 -- Liters per second * ACF.FuelRate
 end
 
 do -- ACF Convars/Callbacks ------------------------

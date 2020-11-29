@@ -21,6 +21,7 @@ local HookRun     = hook.Run
 local Wall		  = 0.03937 --wall thickness in inches (1mm)
 
 local function CanRefuel(Refill, Tank, Distance)
+	if Refill == Tank then return false end
 	if Refill.FuelType ~= Tank.FuelType then return false end
 	if Tank.Disabled then return false end
 	if Tank.SupplyFuel then return false end
@@ -513,7 +514,7 @@ function ENT:Think()
 
 		for Tank in pairs(ACF.FuelTanks) do
 			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
-				local Exchange = math.min(DeltaTime * ACF.RefillSpeed * ACF.FuelRate / 1750, self.Fuel, Tank.Capacity - Tank.Fuel)
+				local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
 
 				if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
 
