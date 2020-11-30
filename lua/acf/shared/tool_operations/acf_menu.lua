@@ -1,5 +1,4 @@
 local GetToolData = ACF.GetToolData
-local GetEntityClass = ACF.GetEntityClass
 local SendMessage = ACF.SendMessage
 local Entities = {}
 
@@ -72,48 +71,10 @@ do -- Spawner operation
 		-- Couldn't update the entity, aborting spawn
 		if IsValid(Entity) then return false end
 
-		local Class = GetEntityClass(ClassName)
-
-		if not Class then
-			SendMessage(Player, "Error", ClassName, " is not a registered ACF entity class.")
-			return false
-		end
-
-		if not Class.Spawn then
-			SendMessage(Player, "Error", ClassName, " doesn't have a spawn function assigned to it.")
-			return false
-		end
-
 		local Position = Trace.HitPos + Trace.HitNormal * 128
 		local Angles = Trace.HitNormal:Angle():Up():Angle()
 
-		Entity = Class.Spawn(Player, Position, Angles, Data)
-
-		if not IsValid(Entity) then
-			SendMessage(Player, "Error", ClassName, " entity couldn't be created.")
-			return false
-		end
-
-		Entity:Activate()
-		Entity:DropToFloor()
-
-		if CPPI then
-			Entity:CPPISetOwner(Player)
-		end
-
-		undo.Create(ClassName)
-			undo.AddEntity(Entity)
-			undo.SetPlayer(Player)
-		undo.Finish()
-
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			PhysObj:EnableMotion(false)
-			PhysObj:Sleep()
-		end
-
-		return true
+		return ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
 	end
 
 	ACF.RegisterOperation("acf_menu", "Main", "Spawner", {

@@ -505,6 +505,51 @@ do -- Entity class registration function
 
 		return List
 	end
+
+	function ACF.CreateEntity(Class, Player, Position, Angles, Data, NoUndo)
+		if not isstring(Class) then return false end
+
+		local ClassData = ACF.GetEntityClass(Class)
+
+		if not ClassData then
+			SendMessage(Player, "Error", Class, " is not a registered ACF entity class.")
+			return false
+		end
+
+		if not ClassData.Spawn then
+			SendMessage(Player, "Error", Class, " doesn't have a spawn function assigned to it.")
+			return false
+		end
+
+		local Entity  = ClassData.Spawn(Player, Position, Angles, Data)
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if not IsValid(Entity) then
+			SendMessage(Player, "Error", Class, " entity couldn't be created.")
+			return false
+		end
+
+		Entity:Activate()
+		Entity:DropToFloor()
+
+		if CPPI then
+			Entity:CPPISetOwner(Player)
+		end
+
+		if IsValid(PhysObj) then
+			PhysObj:EnableMotion(false)
+			PhysObj:Sleep()
+		end
+
+		if not NoUndo then
+			undo.Create(Entity.EntType or Class)
+				undo.AddEntity(Entity)
+				undo.SetPlayer(Player)
+			undo.Finish()
+		end
+
+		return true, Entity
+	end
 end
 
 do -- Discontinued functions
