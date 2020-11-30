@@ -1,5 +1,6 @@
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
+
 include("shared.lua")
 
 function CreateScalableBox(Player, Pos, Angle, Size)

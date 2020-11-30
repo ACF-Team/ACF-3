@@ -97,19 +97,23 @@ function ENT:Initialize()
 	self:GetOriginalSize() -- Instantly saving the original size
 end
 
+function ENT:FindOriginalSize(SizeTable)
+	local Key = self:GetModel()
+	local Stored = SizeTable[Key]
+
+	if Stored then return Stored end
+
+	local Min, Max = self:GetPhysicsObject():GetAABB()
+	local Size = -Min + Max
+
+	SizeTable[Key] = Size
+
+	return Size
+end
+
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
-		local Size = Sizes[self:GetModel()]
-
-		if not Size then
-			local Min, Max = self:GetPhysicsObject():GetAABB()
-
-			Size = -Min + Max
-
-			Sizes[self:GetModel()] = Size
-		end
-
-		self.OriginalSize = Size
+		self.OriginalSize = self:FindOriginalSize(Sizes)
 	end
 
 	return self.OriginalSize
