@@ -103,13 +103,17 @@ net.Receive("RequestSize", function()
 		if Data.Size ~= Ent.Size or Data.Original ~= Ent.OriginalSize then
 			Ent.OriginalSize = Data.Original
 			Ent:SetSize(Data.Size)
+
+			if Ent.SetExtraInfo then
+				Ent:SetExtraInfo(Data.Extra)
+			end
 		end
 
 		if Queued[Ent] then Queued[Ent] = nil end
 	end
 end)
 
--- Commented out for the moment, something's causing crashes
+-- NOTE: Someone reported this could maybe be causing crashes. Please confirm.
 hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
 	if Ent.IsScalable then return false end
 end)

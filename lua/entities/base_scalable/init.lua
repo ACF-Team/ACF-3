@@ -15,7 +15,8 @@ local function GenerateJSON(Table)
 
 		Data[Entity:EntIndex()] = {
 			Original = Entity:GetOriginalSize(),
-			Size = Entity:GetSize()
+			Size = Entity:GetSize(),
+			Extra = Entity.GetExtraInfo and Entity:GetExtraInfo(),
 		}
 	end
 
@@ -84,6 +85,8 @@ local function ChangeSize(Entity, Size)
 
 		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
 	end
+
+	if Entity.UpdateExtraInfo then Entity:UpdateExtraInfo() end
 
 	return true, Size, Scale
 end
