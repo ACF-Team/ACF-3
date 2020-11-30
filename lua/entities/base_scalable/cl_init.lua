@@ -101,12 +101,12 @@ net.Receive("RequestSize", function()
 		if not Ent.Initialized then continue end
 
 		if Data.Size ~= Ent.Size or Data.Original ~= Ent.OriginalSize then
-			Ent.OriginalSize = Data.Original
-			Ent:SetSize(Data.Size)
-
 			if Ent.SetExtraInfo then
 				Ent:SetExtraInfo(Data.Extra)
 			end
+
+			Ent.OriginalSize = Data.Original
+			Ent:SetSize(Data.Size)
 		end
 
 		if Queued[Ent] then Queued[Ent] = nil end
