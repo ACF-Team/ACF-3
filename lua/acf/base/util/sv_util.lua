@@ -165,7 +165,10 @@ do -- Entity saving and restoring
 		PhysObj:SetMaterial(EntData.Material)
 
 		for _, Data in ipairs(EntData.Constraints) do
-			local Constraint = Constraints[Data.Type]
+			local Constraint = Data.Type and Constraints[Data.Type]
+
+			if not Constraint then continue end
+
 			local Args = {}
 
 			for Index, Name in ipairs(Constraint.Args) do
