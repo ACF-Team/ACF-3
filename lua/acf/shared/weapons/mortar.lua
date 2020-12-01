@@ -74,3 +74,9 @@ ACF.RegisterWeapon("200mmM", "MO", {
 		PropMass  = 0.330,
 	}
 })
+
+ACF.SetCustomAttachment("models/mortar/mortar_60mm.mdl", "muzzle", Vector(12.01), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/mortar/mortar_80mm.mdl", "muzzle", Vector(16.02), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/mortar/mortar_150mm.mdl", "muzzle", Vector(30.03), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/mortar/mortar_200mm.mdl", "muzzle", Vector(40.04), Angle(0, 0, 90))

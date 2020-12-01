@@ -354,8 +354,205 @@ do -- Sound aliases
 	end
 end
 
-function ACF.CheckNumber(Value)
-	if not Value then return end
+do -- Native type verification functions
+	function ACF.CheckNumber(Value, Default)
+		if not Value then return Default end
 
-	return tonumber(Value)
+		return tonumber(Value) or Default
+	end
+
+	function ACF.CheckString(Value)
+		if not Value then return Default end
+
+		return tostring(Value) or Default
+	end
+end
+
+do -- Attachment storage
+	local IsUseless = IsUselessModel
+	local EntTable = FindMetaTable("Entity")
+	local Models = {}
+
+	local function GetModelData(Model, NoCreate)
+		local Table = Models[Model]
+
+		if not (Table or NoCreate) then
+			Table = {}
+
+			Models[Model] = Table
+		end
+
+		return Table
+	end
+
+	local function SaveAttachments(Model, Attachments, Clear)
+		if IsUseless(Model) then return end
+
+		local Data  = GetModelData(Model)
+		local Count = Clear and 0 or #Data
+
+		if Clear then
+			for K in pairs(Data) do Data[K] = nil end
+		end
+
+		for I, Attach in ipairs(Attachments) do
+			local Index = Count + I
+			local Name  = ACF.CheckString(Attach.Name, "Unnamed" .. Index)
+
+			Data[Index] = {
+				Index = Index,
+				Name  = Name,
+				Pos   = Attach.Pos or Vector(),
+				Ang   = Attach.Ang or Angle(),
+				Bone  = Attach.Bone,
+			}
+		end
+
+		if not next(Data) then
+			Models[Model] = nil
+		end
+	end
+
+	local function GetAttachData(Entity)
+		if not Entity.AttachData then
+			Entity.AttachData = GetModelData(Entity:GetModel(), true)
+		end
+
+		return Entity.AttachData
+	end
+
+	-------------------------------------------------------------------
+
+	function ACF.AddCustomAttachment(Model, Name, Pos, Ang, Bone)
+		if not ACF.CheckString(Model) then return end
+
+		SaveAttachments(Model, {{
+			Name = Name,
+			Pos  = Pos,
+			Ang  = Ang,
+			Bone = Bone,
+		}})
+	end
+
+	function ACF.AddCustomAttachments(Model, Attachments)
+		if not ACF.CheckString(Model) then return end
+		if not istable(Attachments) then return end
+
+		SaveAttachments(Model, Attachments)
+	end
+
+	function ACF.SetCustomAttachment(Model, Name, Pos, Ang, Bone)
+		if not ACF.CheckString(Model) then return end
+
+		SaveAttachments(Model, {{
+			Name = Name,
+			Pos  = Pos,
+			Ang  = Ang,
+			Bone = Bone,
+		}}, true)
+	end
+
+	function ACF.SetCustomAttachments(Model, Attachments)
+		if not ACF.CheckString(Model) then return end
+		if not istable(Attachments) then return end
+
+		SaveAttachments(Model, Attachments, true)
+	end
+
+	function ACF.RemoveCustomAttachment(Model, Index)
+		if not ACF.CheckString(Model) then return end
+
+		local Data = GetModelData(Model, true)
+
+		if not Data then return end
+
+		table.remove(Data, Index)
+
+		if not next(Data) then
+			Models[Model] = nil
+		end
+	end
+
+	function ACF.RemoveCustomAttachments(Model)
+		if not ACF.CheckString(Model) then return end
+
+		local Data = GetModelData(Model, true)
+
+		if not Data then return end
+
+		for K in pairs(Data) do
+			Data[K] = nil
+		end
+
+		Models[Model] = nil
+	end
+
+	EntTable.LegacySetModel = EntTable.LegacySetModel or EntTable.SetModel
+	EntTable.LegacyGetAttachment = EntTable.LegacyGetAttachment or EntTable.GetAttachment
+	EntTable.LegacyGetAttachments = EntTable.LegacyGetAttachments or EntTable.GetAttachments
+	EntTable.LegacyLookupAttachment = EntTable.LegacyLookupAttachment or EntTable.LookupAttachment
+
+	function EntTable:SetModel(Path, ...)
+		self:LegacySetModel(Path, ...)
+
+		self.AttachData = GetModelData(Path, true)
+	end
+
+	function EntTable:GetAttachment(Index, ...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyGetAttachment(Index, ...)
+		end
+
+		local Attachment = Data[Index]
+
+		if not Attachment then return end
+
+		local Pos = Attachment.Pos
+
+		if self.Scale then
+			Pos = Pos * self.Scale
+		end
+
+		return {
+			Pos = self:LocalToWorld(Pos),
+			Ang = self:LocalToWorldAngles(Attachment.Ang),
+		}
+	end
+
+	function EntTable:GetAttachments(...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyGetAttachments(...)
+		end
+
+		local Result = {}
+
+		for Index, Info in ipairs(Data) do
+			Result[Index] = {
+				id   = Index,
+				name = Info.Name,
+			}
+		end
+
+		return Result
+	end
+
+	function EntTable:LookupAttachment(Name, ...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyLookupAttachment(Name, ...)
+		end
+
+		for Index, Info in ipairs(Data) do
+			if Info.Name == Name then
+				return Index
+			end
+		end
+
+		return 0
+	end
 end

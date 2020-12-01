@@ -78,3 +78,18 @@ ACF.RegisterWeapon("40mmHMG", "HMG", {
 		PropMass  = 0.9,
 	}
 })
+
+ACF.SetCustomAttachments("models/machinegun/machinegun_20mm_compact.mdl", {
+	{ Name = "muzzle", Pos = Vector(30.93, -0.02, 0), Ang = Angle(0, 0, 90) },
+	{ Name = "muzzle2", Pos = Vector(69.93, -0.15, 0), Ang = Angle(0, 0, 90) },
+})
+
+ACF.SetCustomAttachments("models/machinegun/machinegun_30mm_compact.mdl", {
+	{ Name = "muzzle", Pos = Vector(41.76, -0.03, 0), Ang = Angle(0, 0, 90) },
+	{ Name = "muzzle2", Pos = Vector(94.41, -0.2, 0), Ang = Angle(0, 0, 90) },
+})
+
+ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {
+	{ Name = "muzzle", Pos = Vector(51.04, -0.03, 0), Ang = Angle(0, 0, 90) },
+	{ Name = "muzzle2", Pos = Vector(115.39, -0.25, 0), Ang = Angle(0, 0, 90) },
+})

@@ -31,3 +31,5 @@ ACF.RegisterWeapon("40mmSL", "SL", {
 		PropMass  = 0.000075,
 	}
 })
+
+ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))

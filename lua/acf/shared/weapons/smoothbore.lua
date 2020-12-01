@@ -48,3 +48,7 @@ ACF.RegisterWeapon("140mmSB", "SB", {
 		PropMass  = 28,
 	}
 })
+
+ACF.SetCustomAttachment("models/tankgun_old/tankgun_100mm.mdl", "muzzle", Vector(135), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/tankgun_old/tankgun_120mm.mdl", "muzzle", Vector(162), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/tankgun_old/tankgun_140mm.mdl", "muzzle", Vector(189), Angle(0, 0, 90))

@@ -57,3 +57,7 @@ ACF.RegisterWeapon("30mmRAC", "RAC", {
 		PropMass  = 0.350,
 	}
 })
+
+ACF.SetCustomAttachment("models/rotarycannon/kw/14_5mmrac.mdl", "muzzle", Vector(43.21, 0, 1.26))
+ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))
+ACF.SetCustomAttachment("models/rotarycannon/kw/30mmrac.mdl", "muzzle", Vector(89.4, 0, 2.61))

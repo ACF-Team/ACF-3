@@ -73,3 +73,8 @@ ACF.RegisterWeapon("50mmAC", "AC", {
 		PropMass  = 1.2,
 	}
 })
+
+ACF.SetCustomAttachment("models/autocannon/autocannon_20mm.mdl", "muzzle", Vector(66), Angle(0, 0, 180))
+ACF.SetCustomAttachment("models/autocannon/autocannon_30mm.mdl", "muzzle", Vector(84), Angle(0, 0, 180))
+ACF.SetCustomAttachment("models/autocannon/autocannon_40mm.mdl", "muzzle", Vector(96), Angle(0, 0, 180))
+ACF.SetCustomAttachment("models/autocannon/autocannon_50mm.mdl", "muzzle", Vector(120), Angle(0, 0, 180))
