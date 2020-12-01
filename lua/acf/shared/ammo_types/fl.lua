@@ -109,22 +109,23 @@ if SERVER then
 
 	function Ammo:Create(Gun, BulletData)
 		local FlechetteData = {
-			Caliber		= math.Round(BulletData.FlechetteRadius * 0.2, 2),
-			Id			= BulletData.Id,
-			Type		= "AP",
-			Owner		= BulletData.Owner,
-			Entity		= BulletData.Entity,
-			Gun			= BulletData.Gun,
-			Pos			= BulletData.Pos,
-			FrArea		= BulletData.FlechetteArea,
-			ProjMass	= BulletData.FlechetteMass,
-			DragCoef	= BulletData.FlechetteDragCoef,
-			Tracer		= BulletData.Tracer,
-			LimitVel	= BulletData.LimitVel,
-			Ricochet	= BulletData.Ricochet,
-			PenArea		= BulletData.FlechettePenArea,
-			ShovePower	= BulletData.ShovePower,
-			KETransfert	= BulletData.KETransfert,
+			Caliber     = math.Round(BulletData.FlechetteRadius * 0.2, 2),
+			Id          = BulletData.Id,
+			Type        = "AP",
+			Owner       = BulletData.Owner,
+			Entity      = BulletData.Entity,
+			Crate       = BulletData.Crate,
+			Gun         = BulletData.Gun,
+			Pos         = BulletData.Pos,
+			FrArea      = BulletData.FlechetteArea,
+			ProjMass    = BulletData.FlechetteMass,
+			DragCoef    = BulletData.FlechetteDragCoef,
+			Tracer      = BulletData.Tracer,
+			LimitVel    = BulletData.LimitVel,
+			Ricochet    = BulletData.Ricochet,
+			PenArea     = BulletData.FlechettePenArea,
+			ShovePower  = BulletData.ShovePower,
+			KETransfert = BulletData.KETransfert,
 		}
 
 		--if ammo is cooking off, shoot in random direction
@@ -136,7 +137,7 @@ if SERVER then
 
 				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
 
-				ACF_CreateBullet(FlechetteData)
+				ACF.CreateBullet(FlechetteData)
 			end
 		else
 			local BaseInaccuracy = math.tan(math.rad(Gun:GetSpread()))
@@ -153,7 +154,7 @@ if SERVER then
 
 				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
 
-				ACF_CreateBullet(FlechetteData)
+				ACF.CreateBullet(FlechetteData)
 			end
 		end
 	end

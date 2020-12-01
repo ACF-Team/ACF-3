@@ -89,7 +89,7 @@ if SERVER then
 	end
 
 	function Ammo:Create(_, BulletData)
-		ACF_CreateBullet(BulletData)
+		ACF.CreateBullet(BulletData)
 	end
 
 	function Ammo:ServerConvert(ToolData)
