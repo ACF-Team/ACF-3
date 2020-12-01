@@ -67,7 +67,7 @@ local function ChangeSize(Entity, Size)
 	if Entity.Size == Size then return false end
 
 	local Original = Entity:GetOriginalSize()
-	local Scale = Vector(Size.x / Original.x, Size.y / Original.y, Size.z / Original.z)
+	local Scale = Vector(1 / Original.x, 1 / Original.y, 1 / Original.z) * Size
 
 	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
 

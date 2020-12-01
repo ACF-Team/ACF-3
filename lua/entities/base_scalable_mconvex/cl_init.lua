@@ -4,19 +4,17 @@ function ENT:SetExtraInfo(Extra)
 	self.Mesh = Extra.Mesh
 end
 
-function ENT:ApplyNewSize(NewSize)
-	local Size  = self:GetOriginalSize()
-	local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * NewSize
-	local Mesh  = self.Mesh
+function ENT:ApplyNewSize(_, NewScale)
+	local Mesh = self.Mesh
 
 	self.Matrix = Matrix()
-	self.Matrix:Scale(Scale)
+	self.Matrix:Scale(NewScale)
 
 	self:EnableMatrix("RenderMultiply", self.Matrix)
 
 	for I, Hull in ipairs(Mesh) do
 		for J, Vertex in ipairs(Hull) do
-			Mesh[I][J] = (Vertex.pos or Vertex) * Scale
+			Mesh[I][J] = (Vertex.pos or Vertex) * NewScale
 		end
 	end
 

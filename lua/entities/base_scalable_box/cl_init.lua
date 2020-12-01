@@ -1,12 +1,10 @@
 include("shared.lua")
 
-function ENT:ApplyNewSize(NewSize)
-	local Size = self:GetOriginalSize()
-	local Scale = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * NewSize
+function ENT:ApplyNewSize(NewSize, NewScale)
 	local Bounds = NewSize * 0.5
 
 	self.Matrix = Matrix()
-	self.Matrix:Scale(Scale)
+	self.Matrix:Scale(NewScale)
 
 	self:EnableMatrix("RenderMultiply", self.Matrix)
 

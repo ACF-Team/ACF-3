@@ -538,7 +538,6 @@ do -- Entity class registration function
 
 		if IsValid(PhysObj) then
 			PhysObj:EnableMotion(false)
-			PhysObj:Sleep()
 		end
 
 		if not NoUndo then
