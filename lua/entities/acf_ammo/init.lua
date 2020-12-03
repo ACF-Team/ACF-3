@@ -583,9 +583,9 @@ do -- ACF Activation and Damage -----------------
 		self.ACF.Type = "Prop"
 	end
 
-	function ENT:ACF_OnDamage(Entity, Energy, FrArea, Ang, Inflictor, _, Type)
+	function ENT:ACF_OnDamage(Energy, FrArea, Ang, Inflictor, _, Type)
 		local Mul = (Type == "HEAT" and ACF.HEATMulAmmo) or 1 --Heat penetrators deal bonus damage to ammo
-		local HitRes = ACF.PropDamage(Entity, Energy, FrArea * Mul, Ang, Inflictor) --Calling the standard damage prop function
+		local HitRes = ACF.PropDamage(self, Energy, FrArea * Mul, Ang, Inflictor) --Calling the standard damage prop function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 

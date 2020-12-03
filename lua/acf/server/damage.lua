@@ -494,7 +494,7 @@ do
 			end
 
 			if Entity.ACF_OnDamage then -- Use special damage function if target entity has one
-				return Entity:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
+				return Entity:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, Bone, Type)
 			elseif Activated == "Prop" then
 				return PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
 			elseif Activated == "Vehicle" then
