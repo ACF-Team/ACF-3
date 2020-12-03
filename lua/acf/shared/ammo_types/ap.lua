@@ -89,7 +89,7 @@ if SERVER then
 	end
 
 	function Ammo:Create(_, BulletData)
-		ACF.CreateBullet(BulletData)
+		ACF_CreateBullet(BulletData)
 	end
 
 	function Ammo:ServerConvert(ToolData)
@@ -105,6 +105,7 @@ if SERVER then
 
 	function Ammo:Network(Entity, BulletData)
 		Entity:SetNW2String("AmmoType", "AP")
+		Entity:SetNW2String("AmmoID", BulletData.Id)
 		Entity:SetNW2Float("Caliber", BulletData.Caliber)
 		Entity:SetNW2Float("ProjMass", BulletData.ProjMass)
 		Entity:SetNW2Float("PropMass", BulletData.PropMass)
@@ -122,7 +123,7 @@ if SERVER then
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2))
 	end
 
-	function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
+	function Ammo:PropImpact(Bullet, Target, HitNormal, HitPos, Bone)
 		if ACF_Check(Target) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
@@ -146,21 +147,12 @@ if SERVER then
 		end
 	end
 
-	function Ammo:WorldImpact(_, Bullet, HitPos, HitNormal)
-		local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-		local HitRes = ACF_PenetrateGround(Bullet, Energy, HitPos, HitNormal)
-
-		if HitRes.Penetrated then
-			return "Penetrated"
-		elseif HitRes.Ricochet then
-			return "Ricochet"
-		else
-			return false
-		end
+	function Ammo:WorldImpact(Bullet,  Trace)
+		return Trace.Entity and ACF_PenetrateMapEntity(Bullet, Trace) or ACF_PenetrateGround(Bullet, Trace)
 	end
 
-	function Ammo:OnFlightEnd(Index)
-		ACF_RemoveBullet(Index)
+	function Ammo:OnFlightEnd(Bullet)
+		ACF_RemoveBullet(Bullet)
 	end
 else
 	ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")

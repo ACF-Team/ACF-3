@@ -494,7 +494,7 @@ do
 			end
 
 			if Entity.ACF_OnDamage then -- Use special damage function if target entity has one
-				return Entity:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, Bone, Type)
+				return Entity:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
 			elseif Activated == "Prop" then
 				return PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
 			elseif Activated == "Vehicle" then
@@ -693,6 +693,7 @@ do
 			return HitRes
 		end
 
+		--[[
 		function ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
 			local MaxDig = ((Energy.Penetration / Bullet.PenArea) * ACF.KEtoRHA / ACF.GroundtoRHA) / 25.4
 			local HitRes = {Penetrated = false, Ricochet = false}
@@ -729,6 +730,201 @@ do
 			end
 
 			return HitRes
+		end]]--
+
+		function ACF_Ricochet(Bullet, Trace)
+			local Ricochet = 0
+			local Speed = Bullet.Flight:Length() / ACF.Scale
+			local Angle = ACF_GetHitAngle( Trace.HitNormal, Bullet.Flight )
+			local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
+
+			if Angle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
+				Ricochet = Angle / 90 * 0.75
+			end
+
+			if Ricochet > 0 and Bullet.GroundRicos < 2 then
+				Bullet.GroundRicos = Bullet.GroundRicos + 1
+				Bullet.NextPos = Trace.HitPos
+				Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
+
+				print("Ricochet")
+				return "Ricochet"
+			end
+
+			print("Splat")
+			return false
+		end
+
+		local function DigTrace(From, To, Filter)
+			local Dig = util.TraceHull({
+				start  = From,
+				endpos = To,
+				mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
+				mins   = Vector(),
+				maxs   = Vector()
+			})
+
+			debugoverlay.Line(From, Dig.HitPos, 30, ColorRand(100, 255), true)
+
+			if Dig.StartSolid then -- Started inside solid map volume
+				if Dig.FractionLeftSolid == 0 then -- Trace could not move inside
+					local Displacement = To - From
+					local Normal       = Displacement:GetNormalized()
+					local Length       = Displacement:Length()
+
+					local C = math.Round(Length / 12)
+					local N = Length / C
+
+					for I = 1, C do
+						local P = From + Normal * I * N
+
+						debugoverlay.Cross(P, 1, 15, Color(255, 255, 0), true)
+
+						local Back = util.TraceHull({ -- Send a trace backwards to hit the other side
+							start  = P,
+							endpos = From, -- Countering the initial offset position of the dig trace to handle things <1 inch thick
+							mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
+							mins   = Vector(),
+							maxs   = Vector()
+						})
+
+						if Back.StartSolid or Back.HitNoDraw then continue end
+
+						debugoverlay.Line(P, Back.HitPos, 30, Color(255, 0, 255), true)
+						return true, Back.HitPos
+					end
+
+					return false
+				elseif Dig.FractionLeftSolid == 1 then -- Non-penetration: too thick
+					return false
+				else -- Penetrated
+					if Dig.HitNoDraw then -- Hit a layer inside
+						return DigTrace(Dig.HitPos + (To - From):GetNormalized() * 0.1, To, Filter) -- Try again
+					else -- Complete penetration
+						local Back = util.TraceHull({
+							start  = Dig.StartPos,
+							endpos = From,
+							mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
+							mins   = Vector(),
+							maxs   = Vector()
+						})
+
+						-- False positive, still inside the world
+						-- Typically occurs when two brushes meet
+						if Back.StartSolid or Back.HitNoDraw then
+							return DigTrace(Dig.StartPos + (To - From):GetNormalized() * 0.1, To, Filter)
+						end
+
+						debugoverlay.Cross(Dig.StartPos, 5, 30, Color(255, 0, 0), true) -- Red cross: Exit point
+
+						return true, Dig.StartPos
+					end
+				end
+			else -- Started inside a brush
+				local Back = util.TraceHull({ -- Send a trace backwards to hit the other side
+					start  = Dig.HitPos,
+					endpos = From + (From - Dig.HitPos):GetNormalized(), -- Countering the initial offset position of the dig trace to handle things <1 inch thick
+					mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
+					mins   = Vector(),
+					maxs   = Vector()
+				})
+
+				local Up = (Dig.HitPos - Back.HitPos):Angle():Up()
+				debugoverlay.Line(Dig.HitPos + Up, Back.HitPos + Up, 30, Color(255, 0, 160), true)
+
+				if Back.StartSolid then -- object is too thick
+					return false
+				elseif not Back.Hit or Back.HitNoDraw then
+					-- Hit nothing on the way back
+					-- Map edge, going into the ground, whatever...
+					-- Effectively infinitely thick
+
+					return false
+				else -- Penetration
+					debugoverlay.Cross(Back.HitPos, 5, Color(255, 0, 0), true) -- Red cross: Exit point
+
+					return true, Back.HitPos
+				end
+			end
+		end
+
+		function ACF_PenetrateGround(Bullet, Trace)
+			print("ACF_PenetrateGroundx")
+			local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
+			local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
+			local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
+			local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
+
+			local Enter   = Trace.HitPos -- Impact point
+			local Fwd     = Bullet.Flight:GetNormalized()
+
+			debugoverlay.Cross(Enter, 5, 30, Color(0, 255, 0), true) -- Green cross: entrance point
+
+			local Penetrated, Exit = DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
+
+			if Penetrated then
+				print("Penetrated")
+				local Thicc = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
+
+				print("Pass-through RHAe: " .. math.Round(Thicc))
+				debugoverlay.Cross(Exit, 5, 30, Color(255, 0, 0), true) -- Red cross: exit point
+
+				Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
+				Bullet.Pos     = Exit + Fwd * 0.25
+				--Bullet.NextPos = Exit + Fwd * 0.25
+
+				return "Penetrated" --, Exit, Thicc
+			else -- Ricochet
+				return ACF_Ricochet(Bullet, Trace)
+			end
+
+			function ACF_PenetrateMapEntity(Bullet, Trace)
+				print("PenetrateMapEntity")
+				local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
+				local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
+				local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
+				local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
+
+				local Enter   = Trace.HitPos -- Impact point
+				local Fwd     = Bullet.Flight:GetNormalized()
+
+				local PassThrough = util.TraceHull({
+					start  = Enter,
+					endpos = Enter + Fwd * RHAe / 25.4,
+					filter = {Trace.Entity},
+					mask   = MASK_SOLID_BRUSHONLY
+				})
+
+				debugoverlay.Line(PassThrough.StartPos, PassThrough.HitPos, 30, Color(255, 0, 160), true)
+
+				local Filt = {}
+				local Back
+
+				repeat
+					Back = util.TraceHull({
+						start  = PassThrough.HitPos,
+						endpos = Origin,
+						filter = Filt
+					})
+
+					if Back.Entity ~= Trace.Entity then
+						Filt[#Filt + 1] = Back.Entity
+						continue
+					end
+
+					if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
+				until Back.Entity == Trace.Entity
+
+				local Thicc = (Back.HitPos - Entrance):Length() * Density * 25.4 -- Obstacle thickness in RHA
+
+				Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
+				Bullet.Pos     = Exit + Fwd * 0.25
+
+				debugoverlay.Cross(Back.HitPos, 5, 30, Color(255, 0, 0), true)
+
+				return "Penetrated"
+				--return true, Back.HitPos, Thickness
+			end
 		end
 	end
 end

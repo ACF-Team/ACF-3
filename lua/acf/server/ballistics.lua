@@ -14,6 +14,8 @@ local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, ou
 local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
+local WORLD			= game.GetWorld()
+local HookRun		= hook.Run
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	Gravity.z = -Value
@@ -61,11 +63,11 @@ function ACF_CheckHitbox(Ent,RayStart,Ray)
 end
 
 -- This will create, or update, the tracer effect on the clientside
-function ACF.BulletClient(Index, Bullet, Type, Hit, HitPos)
+function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
 
 	local Effect = EffectData()
-	Effect:SetHitBox(Index)
+	Effect:SetHitBox(Bullet.Index)
 	Effect:SetStart(Bullet.Flight * 0.1)
 
 	if Type == "Update" then
@@ -85,8 +87,8 @@ function ACF.BulletClient(Index, Bullet, Type, Hit, HitPos)
 	util.Effect("ACF_Bullet_Effect", Effect, true, true)
 end
 
-function ACF.RemoveBullet(Index)
-	local Bullet = Bullets[Index]
+function ACF.RemoveBullet(Bullet)
+	local Index  = Bullet.Index
 
 	Bullets[Index] = nil
 	Unused[Index] = true
@@ -100,8 +102,8 @@ function ACF.RemoveBullet(Index)
 	end
 end
 
-function ACF.CalcBulletFlight(Index, Bullet)
-	if not Bullet.LastThink then return ACF.RemoveBullet(Index) end
+function ACF.CalcBulletFlight(Bullet)
+	if not Bullet.LastThink then return ACF.RemoveBullet(Bullet) end
 
 	if Bullet.PreCalcFlight then
 		Bullet:PreCalcFlight()
@@ -116,7 +118,7 @@ function ACF.CalcBulletFlight(Index, Bullet)
 	Bullet.LastThink = ACF.CurTime
 	Bullet.DeltaTime = DeltaTime
 
-	ACF.DoBulletsFlight(Index, Bullet)
+	ACF.DoBulletsFlight(Bullet)
 
 	if Bullet.PostCalcFlight then
 		Bullet:PostCalcFlight()
@@ -144,10 +146,11 @@ local function GetBulletIndex()
 	return Index
 end
 
+local CalcFlight = ACF.CalcBulletFlight
 local function IterateBullets()
-	for Index, Bullet in pairs(Bullets) do
+	for _, Bullet in pairs(Bullets) do
 		if not Bullet.HandlesOwnIteration then
-			ACF.CalcBulletFlight(Index, Bullet)
+			CalcFlight(Bullet)
 		end
 	end
 end
@@ -177,32 +180,60 @@ function ACF.CreateBullet(BulletData)
 
 	Bullets[Index] = Bullet
 
-	ACF.BulletClient(Index, Bullet, "Init", 0)
-	ACF.CalcBulletFlight(Index, Bullet)
+	ACF.BulletClient(Bullet, "Init", 0)
+	ACF.CalcBulletFlight(Bullet)
 
 	return Bullet
 end
 
-function ACF.DoBulletsFlight(Index, Bullet)
-	if hook.Run("ACF_BulletsFlight", Index, Bullet) == false then return end
+local function OnImpact(Bullet, Trace, Type)
+	local Data  = AmmoTypes[Bullet.Type]
+	local Func  = Type == "World" and Data.WorldImpact or Data.PropImpact
+	local Retry = Func(Data, Bullet, Trace)
+
+	if Retry == "Penetrated" then
+		if Bullet.OnPenetrated then
+			Bullet.OnPenetrated(Bullet, Trace)
+		end
+
+		ACF.BulletClient(Bullet, "Update", 2, Trace.HitPos)
+		ACF.DoBulletsFlight(Bullet)
+	elseif Retry == "Ricochet" then
+		if Bullet.OnRicocheted then
+			Bullet.OnRicocheted(Bullet, Trace)
+		end
+
+		ACF.BulletClient(Bullet, "Update", 3, Trace.HitPos)
+	else
+		if Bullet.OnEndFlight then
+			Bullet.OnEndFlight(Bullet, Trace)
+		end
+
+		ACF.BulletClient(Bullet, "Update", 1, Trace.HitPos)
+
+		Data:OnFlightEnd(Bullet, Trace)
+	end
+end
+
+function ACF.DoBulletsFlight(Bullet)
+	if HookRun("ACF Bullet Flight", Bullet) == false then return end
 
 	if Bullet.SkyLvL then
 		if ACF.CurTime - Bullet.LifeTime > 30 then
-			return ACF.RemoveBullet(Index)
+			return ACF.RemoveBullet(Bullet)
 		end
 
 		if Bullet.NextPos.z + ACF.SkyboxGraceZone > Bullet.SkyLvL then
 			if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then -- Fuze detonated outside map
-				ACF.RemoveBullet(Index)
+				ACF.RemoveBullet(Bullet)
 			end
 
 			return
 		elseif not util.IsInWorld(Bullet.NextPos) then
-			return ACF.RemoveBullet(Index)
+			return ACF.RemoveBullet(Bullet)
 		else
 			Bullet.SkyLvL = nil
 			Bullet.LifeTime = nil
-			Bullet.SkipNextHit = true
 
 			return
 		end
@@ -242,96 +273,42 @@ function ACF.DoBulletsFlight(Index, Bullet)
 		Bullet.Filter = Filter
 	end
 
-	local RoundData = AmmoTypes[Bullet.Type]
-
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
-			return ACF.RemoveBullet(Index)
+			return ACF.RemoveBullet(Bullet.Index)
 		else
+			if Bullet.OnEndFlight then
+				Bullet.OnEndFlight(Bullet, nil)
+			end
+
 			local DeltaTime = Bullet.DeltaTime
 			local DeltaFuze = ACF.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
-
-			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
+			--print(DeltaTime, DeltaFuze, Lerp)
+			if FlightRes.Hit and Lerp < FlightRes.Fraction or true then -- Fuze went off before running into something
 				local Pos = LerpVector(DeltaFuze / DeltaTime, Bullet.Pos, Bullet.NextPos)
 
 				debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Color( 0, 255, 0 ))
 
-				if Bullet.OnEndFlight then
-					Bullet.OnEndFlight(Index, Bullet, FlightRes)
-				end
+				ACF.BulletClient(Bullet, "Update", 1, Pos)
 
-				ACF.BulletClient(Index, Bullet, "Update", 1, Pos)
-
-				RoundData:OnFlightEnd(Index, Bullet, Pos, Bullet.Flight:GetNormalized())
-
-				return
+				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, Pos, Bullet.Flight:GetNormalized())
 			end
 		end
 	end
 
-	if Bullet.SkipNextHit then
-		if not FlightRes.StartSolid and not FlightRes.HitNoDraw then
-			Bullet.SkipNextHit = nil
-		end
-	elseif FlightRes.HitNonWorld and not GlobalFilter[FlightRes.Entity:GetClass()] then
-		local Retry = RoundData:PropImpact(Index, Bullet, FlightRes.Entity, FlightRes.HitNormal, FlightRes.HitPos, FlightRes.HitGroup)
-
-		if Retry == "Penetrated" then
-			if Bullet.OnPenetrated then
-				Bullet.OnPenetrated(Index, Bullet, FlightRes)
-			end
-
-			ACF.BulletClient(Index, Bullet, "Update", 2, FlightRes.HitPos)
-			ACF.DoBulletsFlight(Index, Bullet)
-		elseif Retry == "Ricochet" then
-			if Bullet.OnRicocheted then
-				Bullet.OnRicocheted(Index, Bullet, FlightRes)
-			end
-
-			ACF.BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-		else
-			if Bullet.OnEndFlight then
-				Bullet.OnEndFlight(Index, Bullet, FlightRes)
-			end
-
-			ACF.BulletClient(Index, Bullet, "Update", 1, FlightRes.HitPos)
-
-			RoundData:OnFlightEnd(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
-		end
-	elseif FlightRes.HitWorld then
-		if not FlightRes.HitSky then
-			local Retry = RoundData:WorldImpact(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
-
-			if Retry == "Penetrated" then
-				if Bullet.OnPenetrated then
-					Bullet.OnPenetrated(Index, Bullet, FlightRes)
-				end
-
-				ACF.BulletClient(Index, Bullet, "Update", 2, FlightRes.HitPos)
-				ACF.CalcBulletFlight(Index, Bullet)
-			elseif Retry == "Ricochet" then
-				if Bullet.OnRicocheted then
-					Bullet.OnRicocheted(Index, Bullet, FlightRes)
-				end
-
-				ACF.BulletClient(Index, Bullet, "Update", 3, FlightRes.HitPos)
-			else
-				if Bullet.OnEndFlight then
-					Bullet.OnEndFlight(Index, Bullet, FlightRes)
-				end
-
-				ACF.BulletClient(Index, Bullet, "Update", 1, FlightRes.HitPos)
-
-				RoundData:OnFlightEnd(Index, Bullet, FlightRes.HitPos, FlightRes.HitNormal)
-			end
-		else
+	if FlightRes.Hit then
+		if FlightRes.HitSky then
 			if FlightRes.HitNormal == Vector(0, 0, -1) then
 				Bullet.SkyLvL = FlightRes.HitPos.z
 				Bullet.LifeTime = ACF.CurTime
 			else
-				ACF.RemoveBullet(Index)
+				ACF.RemoveBullet(Bullet)
 			end
+		else
+			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == WORLD) and "World" or "Prop"
+
+			OnImpact(Bullet, FlightRes, Type)
 		end
 	end
 end
