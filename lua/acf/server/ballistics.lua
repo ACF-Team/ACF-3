@@ -14,7 +14,6 @@ local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, ou
 local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
-local WORLD			= game.GetWorld()
 local HookRun		= hook.Run
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
@@ -306,7 +305,7 @@ function ACF.DoBulletsFlight(Bullet)
 				ACF.RemoveBullet(Bullet)
 			end
 		else
-			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == WORLD) and "World" or "Prop"
+			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == game.GetWorld()) and "World" or "Prop"
 
 			OnImpact(Bullet, FlightRes, Type)
 		end
