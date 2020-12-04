@@ -148,7 +148,11 @@ if SERVER then
 	end
 
 	function Ammo:WorldImpact(Bullet,  Trace)
-		return Trace.Entity and ACF_PenetrateMapEntity(Bullet, Trace) or ACF_PenetrateGround(Bullet, Trace)
+		if Trace.Entity then
+			return ACF_PenetrateMapEntity(Bullet, Trace)
+		else
+			return ACF_PenetrateGround(Bullet, Trace)
+		end
 	end
 
 	function Ammo:OnFlightEnd(Bullet)
