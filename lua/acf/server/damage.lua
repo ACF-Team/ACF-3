@@ -848,6 +848,54 @@ do
 			end
 		end
 
+		function ACF_PenetrateMapEntity(Bullet, Trace)
+			print("PenetrateMapEntity")
+			local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
+			local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
+			local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
+			local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
+
+			local Enter   = Trace.HitPos -- Impact point
+			local Fwd     = Bullet.Flight:GetNormalized()
+
+			local PassThrough = util.TraceHull({
+				start  = Enter,
+				endpos = Enter + Fwd * RHAe / 25.4,
+				filter = {Trace.Entity},
+				mask   = MASK_SOLID_BRUSHONLY
+			})
+
+			debugoverlay.Line(PassThrough.StartPos, PassThrough.HitPos, 30, Color(255, 0, 160), true)
+
+			local Filt = {}
+			local Back
+
+			repeat
+				Back = util.TraceHull({
+					start  = PassThrough.HitPos,
+					endpos = Origin,
+					filter = Filt
+				})
+
+				if Back.Entity ~= Trace.Entity then
+					Filt[#Filt + 1] = Back.Entity
+					continue
+				end
+
+				if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
+			until Back.Entity == Trace.Entity
+
+			local Thicc = (Back.HitPos - Entrance):Length() * Density * 25.4 -- Obstacle thickness in RHA
+
+			Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
+			Bullet.Pos     = Exit + Fwd * 0.25
+
+			debugoverlay.Cross(Back.HitPos, 5, 30, Color(255, 0, 0), true)
+
+			return "Penetrated"
+			--return true, Back.HitPos, Thickness
+		end
+
 		function ACF_PenetrateGround(Bullet, Trace)
 			print("ACF_PenetrateGroundx")
 			local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
@@ -876,54 +924,6 @@ do
 				return "Penetrated" --, Exit, Thicc
 			else -- Ricochet
 				return ACF_Ricochet(Bullet, Trace)
-			end
-
-			function ACF_PenetrateMapEntity(Bullet, Trace)
-				print("PenetrateMapEntity")
-				local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-				local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
-				local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-				local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
-
-				local Enter   = Trace.HitPos -- Impact point
-				local Fwd     = Bullet.Flight:GetNormalized()
-
-				local PassThrough = util.TraceHull({
-					start  = Enter,
-					endpos = Enter + Fwd * RHAe / 25.4,
-					filter = {Trace.Entity},
-					mask   = MASK_SOLID_BRUSHONLY
-				})
-
-				debugoverlay.Line(PassThrough.StartPos, PassThrough.HitPos, 30, Color(255, 0, 160), true)
-
-				local Filt = {}
-				local Back
-
-				repeat
-					Back = util.TraceHull({
-						start  = PassThrough.HitPos,
-						endpos = Origin,
-						filter = Filt
-					})
-
-					if Back.Entity ~= Trace.Entity then
-						Filt[#Filt + 1] = Back.Entity
-						continue
-					end
-
-					if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
-				until Back.Entity == Trace.Entity
-
-				local Thicc = (Back.HitPos - Entrance):Length() * Density * 25.4 -- Obstacle thickness in RHA
-
-				Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
-				Bullet.Pos     = Exit + Fwd * 0.25
-
-				debugoverlay.Cross(Back.HitPos, 5, 30, Color(255, 0, 0), true)
-
-				return "Penetrated"
-				--return true, Back.HitPos, Thickness
 			end
 		end
 	end
