@@ -1,7 +1,6 @@
 -- Local Vars -----------------------------------
 local ACF         = ACF
 local ACF_HEPUSH  = GetConVar("acf_hepush")
-local ACF_KEPUSH  = GetConVar("acf_kepush")
 local TimerCreate = timer.Create
 local TraceRes    = {}
 local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }

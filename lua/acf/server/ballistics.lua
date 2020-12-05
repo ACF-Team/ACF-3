@@ -15,6 +15,7 @@ local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 local HookRun		= hook.Run
+local ACF_KEPUSH    = GetConVar("acf_kepush")
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	Gravity.z = -Value
@@ -495,9 +496,9 @@ do -- Terminal ballistics --------------------------
 		print("PenetrateMapEntity")
 
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-		local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
+		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
+		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
 
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
@@ -544,9 +545,9 @@ do -- Terminal ballistics --------------------------
 		print("ACF_PenetrateGround")
 
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-		local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
+		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = Pen / Density -- RHA equivalent thickness of the target material
+		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
 
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
