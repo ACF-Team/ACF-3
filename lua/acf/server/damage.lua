@@ -873,11 +873,11 @@ do
 			repeat
 				Back = util.TraceHull({
 					start  = PassThrough.HitPos,
-					endpos = Origin,
+					endpos = Enter,
 					filter = Filt
 				})
 
-				if Back.Entity ~= Trace.Entity then
+				if Back.HitNonWorld and Back.Entity ~= Trace.Entity then
 					Filt[#Filt + 1] = Back.Entity
 					continue
 				end
