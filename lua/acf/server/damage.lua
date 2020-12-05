@@ -693,45 +693,6 @@ do
 			return HitRes
 		end
 
-		--[[
-		function ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
-			local MaxDig = ((Energy.Penetration / Bullet.PenArea) * ACF.KEtoRHA / ACF.GroundtoRHA) / 25.4
-			local HitRes = {Penetrated = false, Ricochet = false}
-
-			local DigTr = { }
-				DigTr.start = HitPos + Bullet.Flight:GetNormalized() * 0.1
-				DigTr.endpos = HitPos + Bullet.Flight:GetNormalized() * (MaxDig + 0.1)
-				DigTr.filter = Bullet.Filter
-				DigTr.mask = MASK_SOLID_BRUSHONLY
-			local DigRes = util.TraceLine(DigTr)
-			--print(util.GetSurfacePropName(DigRes.SurfaceProps))
-
-			local loss = DigRes.FractionLeftSolid
-
-			if loss == 1 or loss == 0 then --couldn't penetrate
-				local Ricochet = 0
-				local Speed = Bullet.Flight:Length() / ACF.Scale
-				local Angle = ACF_GetHitAngle( HitNormal, Bullet.Flight )
-				local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
-				if Angle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
-					Ricochet = Angle / 90 * 0.75
-				end
-
-				if Ricochet > 0 and Bullet.GroundRicos < 2 then
-					Bullet.GroundRicos = Bullet.GroundRicos + 1
-					Bullet.NextPos = HitPos
-					Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
-					HitRes.Ricochet = true
-				end
-			else --penetrated
-				Bullet.Flight = Bullet.Flight * (1 - loss)
-				Bullet.NextPos = DigRes.StartPos + Bullet.Flight:GetNormalized() * 0.25 --this is actually where trace left brush
-				HitRes.Penetrated = true
-			end
-
-			return HitRes
-		end]]--
-
 		function ACF_Ricochet(Bullet, Trace)
 			local Ricochet = 0
 			local Speed = Bullet.Flight:Length() / ACF.Scale
