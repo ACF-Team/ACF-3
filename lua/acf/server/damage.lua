@@ -268,7 +268,7 @@ do
 		end
 
 		local function CanSee(Target, Data)
-			local R = ACF.Trace(Data)
+			local R = Trace(Data)
 
 			return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
 		end
@@ -712,7 +712,6 @@ do
 				return "Ricochet"
 			end
 
-			print("Splat")
 			return false
 		end
 
@@ -811,6 +810,7 @@ do
 
 		function ACF_PenetrateMapEntity(Bullet, Trace)
 			print("PenetrateMapEntity")
+
 			local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 			local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
 			local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
@@ -846,10 +846,10 @@ do
 				if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
 			until Back.Entity == Trace.Entity
 
-			local Thicc = (Back.HitPos - Entrance):Length() * Density * 25.4 -- Obstacle thickness in RHA
+			local Thicc = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
 
 			Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
-			Bullet.Pos     = Exit + Fwd * 0.25
+			Bullet.Pos     = Back.HitPos + Fwd * 0.25
 
 			debugoverlay.Cross(Back.HitPos, 5, 30, Color(255, 0, 0), true)
 
@@ -858,7 +858,8 @@ do
 		end
 
 		function ACF_PenetrateGround(Bullet, Trace)
-			print("ACF_PenetrateGroundx")
+			print("ACF_PenetrateGround")
+
 			local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 			local Density = util.GetSurfaceData(Trace.SurfaceProps).density / 10000
 			local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile

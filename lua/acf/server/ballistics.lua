@@ -87,10 +87,10 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 end
 
 function ACF.RemoveBullet(Bullet)
-	local Index  = Bullet.Index
+	local Index = Bullet.Index
 
 	Bullets[Index] = nil
-	Unused[Index] = true
+	Unused[Index]  = true
 
 	if Bullet and Bullet.OnRemoved then
 		Bullet:OnRemoved()
