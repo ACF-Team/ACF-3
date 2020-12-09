@@ -521,16 +521,16 @@ do -- Entity class registration function
 			return false
 		end
 
-		local Entity  = ClassData.Spawn(Player, Position, Angles, Data)
-		local PhysObj = Entity:GetPhysicsObject()
+		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
 		if not IsValid(Entity) then
 			SendMessage(Player, "Error", Class, " entity couldn't be created.")
 			return false
 		end
 
+		local PhysObj = Entity:GetPhysicsObject()
+
 		Entity:Activate()
-		Entity:DropToFloor()
 
 		if CPPI then
 			Entity:CPPISetOwner(Player)
@@ -541,7 +541,7 @@ do -- Entity class registration function
 		end
 
 		if not NoUndo then
-			undo.Create(Entity.EntType or Class)
+			undo.Create(Entity.Name or Class)
 				undo.AddEntity(Entity)
 				undo.SetPlayer(Player)
 			undo.Finish()

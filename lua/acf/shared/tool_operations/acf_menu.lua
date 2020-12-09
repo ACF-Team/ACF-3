@@ -72,9 +72,14 @@ do -- Spawner operation
 		if IsValid(Entity) then return false end
 
 		local Position = Trace.HitPos + Trace.HitNormal * 128
-		local Angles = Trace.HitNormal:Angle():Up():Angle()
+		local Angles   = Trace.HitNormal:Angle():Up():Angle()
+		local Success, NewEntity = ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
 
-		return ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
+		if Success then
+			NewEntity:DropToFloor()
+		end
+
+		return Success
 	end
 
 	ACF.RegisterOperation("acf_menu", "Main", "Spawner", {
