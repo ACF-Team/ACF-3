@@ -288,8 +288,6 @@ function ACF.DoBulletsFlight(Bullet)
 			if FlightRes.Hit and Lerp < FlightRes.Fraction or true then -- Fuze went off before running into something
 				local Pos = LerpVector(DeltaFuze / DeltaTime, Bullet.Pos, Bullet.NextPos)
 
-				debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Color( 0, 255, 0 ))
-
 				ACF.BulletClient(Bullet, "Update", 1, Pos)
 
 				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, Pos, Bullet.Flight:GetNormalized())
@@ -392,7 +390,6 @@ do -- Terminal ballistics --------------------------
 			Bullet.NextPos = Trace.HitPos
 			Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
 
-			print("Ricochet")
 			return "Ricochet"
 		end
 
@@ -408,7 +405,7 @@ do -- Terminal ballistics --------------------------
 			maxs   = Vector()
 		})
 
-		debugoverlay.Line(From, Dig.HitPos, 30, ColorRand(100, 255), true)
+		debugoverlay.Line(From, Dig.StartPos, 30, ColorRand(100, 255), true)
 
 		if Dig.StartSolid then -- Started inside solid map volume
 			if Dig.FractionLeftSolid == 0 then -- Trace could not move inside
@@ -422,8 +419,6 @@ do -- Terminal ballistics --------------------------
 				for I = 1, C do
 					local P = From + Normal * I * N
 
-					debugoverlay.Cross(P, 1, 15, Color(255, 255, 0), true)
-
 					local Back = util.TraceHull({ -- Send a trace backwards to hit the other side
 						start  = P,
 						endpos = From, -- Countering the initial offset position of the dig trace to handle things <1 inch thick
@@ -434,7 +429,6 @@ do -- Terminal ballistics --------------------------
 
 					if Back.StartSolid or Back.HitNoDraw then continue end
 
-					debugoverlay.Line(P, Back.HitPos, 30, Color(255, 0, 255), true)
 					return true, Back.HitPos
 				end
 
@@ -459,8 +453,6 @@ do -- Terminal ballistics --------------------------
 						return DigTrace(Dig.StartPos + (To - From):GetNormalized() * 0.1, To, Filter)
 					end
 
-					debugoverlay.Cross(Dig.StartPos, 5, 30, Color(255, 0, 0), true) -- Red cross: Exit point
-
 					return true, Dig.StartPos
 				end
 			end
@@ -473,9 +465,6 @@ do -- Terminal ballistics --------------------------
 				maxs   = Vector()
 			})
 
-			local Up = (Dig.HitPos - Back.HitPos):Angle():Up()
-			debugoverlay.Line(Dig.HitPos + Up, Back.HitPos + Up, 30, Color(255, 0, 160), true)
-
 			if Back.StartSolid then -- object is too thick
 				return false
 			elseif not Back.Hit or Back.HitNoDraw then
@@ -485,16 +474,12 @@ do -- Terminal ballistics --------------------------
 
 				return false
 			else -- Penetration
-				debugoverlay.Cross(Back.HitPos, 5, Color(255, 0, 0), true) -- Red cross: Exit point
-
 				return true, Back.HitPos
 			end
 		end
 	end
 
 	function ACF_PenetrateMapEntity(Bullet, Trace)
-		print("PenetrateMapEntity")
-
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
@@ -509,8 +494,6 @@ do -- Terminal ballistics --------------------------
 			filter = {Trace.Entity},
 			mask   = MASK_SOLID_BRUSHONLY
 		})
-
-		debugoverlay.Line(PassThrough.StartPos, PassThrough.HitPos, 30, Color(255, 0, 160), true)
 
 		local Filt = {}
 		local Back
@@ -535,15 +518,10 @@ do -- Terminal ballistics --------------------------
 		Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
 		Bullet.Pos     = Back.HitPos + Fwd * 0.25
 
-		debugoverlay.Cross(Back.HitPos, 5, 30, Color(255, 0, 0), true)
-
 		return "Penetrated"
-		--return true, Back.HitPos, Thickness
 	end
 
 	function ACF_PenetrateGround(Bullet, Trace)
-		print("ACF_PenetrateGround")
-
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
@@ -552,22 +530,17 @@ do -- Terminal ballistics --------------------------
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
 
-		debugoverlay.Cross(Enter, 5, 30, Color(0, 255, 0), true) -- Green cross: entrance point
-
 		local Penetrated, Exit = DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
 
 		if Penetrated then
 			local Thicc     = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
 			local DeltaTime = engine.TickInterval()
 
-			print("Pass-through RHAe: " .. math.Round(Thicc))
-			debugoverlay.Cross(Exit, 5, 30, Color(255, 0, 0), true) -- Red cross: exit point
-
 			Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
 			Bullet.Pos     = Exit + Fwd * 0.25
 			Bullet.NextPos = Exit + Bullet.Flight * ACF.Scale * DeltaTime
 
-			return "Penetrated" --, Exit, Thicc
+			return "Penetrated"
 		else -- Ricochet
 			return ACF_Ricochet(Bullet, Trace)
 		end
