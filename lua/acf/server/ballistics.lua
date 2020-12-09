@@ -557,15 +557,15 @@ do -- Terminal ballistics --------------------------
 		local Penetrated, Exit = DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
 
 		if Penetrated then
-			print("Penetrated")
-			local Thicc = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
+			local Thicc     = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
+			local DeltaTime = engine.TickInterval()
 
 			print("Pass-through RHAe: " .. math.Round(Thicc))
 			debugoverlay.Cross(Exit, 5, 30, Color(255, 0, 0), true) -- Red cross: exit point
 
 			Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
 			Bullet.Pos     = Exit + Fwd * 0.25
-			--Bullet.NextPos = Exit + Fwd * 0.25
+			Bullet.NextPos = Exit + Bullet.Flight * ACF.Scale * DeltaTime
 
 			return "Penetrated" --, Exit, Thicc
 		else -- Ricochet
