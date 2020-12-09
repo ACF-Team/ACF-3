@@ -5,6 +5,7 @@ ACF.RegisterWeaponClass("SL", {
 	Spread		  = 0.32,
 	Sound		  = "acf_base/weapons/smoke_launch.mp3",
 	IsBoxed		  = true,
+	Cleanup       = "acf_smokelauncher",
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,

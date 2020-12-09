@@ -177,7 +177,7 @@ do -- Spawn and Update functions --------------------------------
 
 		if not IsValid(Gun) then return end
 
-		Player:AddCleanup("acfmenu", Gun)
+		Player:AddCleanup(Class.Cleanup, Gun)
 		Player:AddCount(Limit, Gun)
 
 		Gun:SetPlayer(Player)

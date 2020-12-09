@@ -219,6 +219,10 @@ do -- Weapon registration functions
 			}
 		end
 
+		if not Group.Cleanup then
+			Group.Cleanup = "acf_gun"
+		end
+
 		AddSboxLimit(Group.LimitConVar)
 
 		if Group.MuzzleFlash then

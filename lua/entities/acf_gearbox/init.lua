@@ -427,7 +427,7 @@ do -- Spawn and Update functions
 		Gearbox:SetPos(Pos)
 		Gearbox:Spawn()
 
-		Player:AddCleanup("acfmenu", Gearbox)
+		Player:AddCleanup("acf_gearbox", Gearbox)
 		Player:AddCount(Limit, Gearbox)
 
 		Gearbox.Owner          = Player -- MUST be stored on ent for PP

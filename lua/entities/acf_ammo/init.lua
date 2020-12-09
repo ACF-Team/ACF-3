@@ -402,7 +402,7 @@ do -- Spawning and Updating --------------------
 		if not IsValid(Crate) then return end
 
 		Player:AddCount("_acf_ammo", Crate)
-		Player:AddCleanup("acfmenu", Crate)
+		Player:AddCleanup("acf_ammo", Crate)
 
 		Crate:SetModel("models/holograms/rcube_thin.mdl")
 		Crate:SetMaterial("phoenix_storms/Future_vents")

@@ -138,7 +138,7 @@ do -- Spawn and Update functions
 		Tank:SetPos(Pos)
 		Tank:Spawn()
 
-		Player:AddCleanup("acfmenu", Tank)
+		Player:AddCleanup("acf_fueltank", Tank)
 		Player:AddCount(Limit, Tank)
 
 		Tank.Owner		= Player -- MUST be stored on ent for PP

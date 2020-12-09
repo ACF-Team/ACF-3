@@ -339,7 +339,7 @@ do -- Spawn and Update functions
 		Engine:SetPos(Pos)
 		Engine:Spawn()
 
-		Player:AddCleanup("acfmenu", Engine)
+		Player:AddCleanup("acf_engine", Engine)
 		Player:AddCount(Limit, Engine)
 
 		Engine.Owner        = Player -- MUST be stored on ent for PP
