@@ -59,7 +59,7 @@ ACF.RegisterGearboxClass("5-Auto", {
 
 						if Count > Max then break end
 
-						Points[Count] = ACF.CheckNumber(Point) or Count * 100
+						Points[Count] = ACF.CheckNumber(Point, Count * 100)
 					end
 				end
 
@@ -72,7 +72,7 @@ ACF.RegisterGearboxClass("5-Auto", {
 				local Point = ACF.CheckNumber(Points[I])
 
 				if not Point then
-					Point = (CheckNumber(Data["Shift" .. I]) or I * 100) * Mult
+					Point = ACF.CheckNumber(Data["Shift" .. I], I * 100) * Mult
 
 					Data["Shift" .. I] = nil
 				end
@@ -85,7 +85,7 @@ ACF.RegisterGearboxClass("5-Auto", {
 			local Reverse = ACF.CheckNumber(Data.Reverse)
 
 			if not Reverse then
-				Reverse = ACF.CheckNumber(Data.Gear8) or -1
+				Reverse = ACF.CheckNumber(Data.Gear8, -1)
 
 				Data.Gear8 = nil
 			end

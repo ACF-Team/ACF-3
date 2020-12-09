@@ -261,7 +261,7 @@ do -- Spawn and Update functions
 				local Gear = ACF.CheckNumber(Gears[I])
 
 				if not Gear then
-					Gear = ACF.CheckNumber(Data["Gear" .. I]) or I * 0.1
+					Gear = ACF.CheckNumber(Data["Gear" .. I], I * 0.1)
 
 					Data["Gear" .. I] = nil
 				end
@@ -274,7 +274,7 @@ do -- Spawn and Update functions
 			local Final = ACF.CheckNumber(Data.FinalDrive)
 
 			if not Final then
-				Final = ACF.CheckNumber(Data.Gear0) or 1
+				Final = ACF.CheckNumber(Data.Gear0, 1)
 
 				Data.Gear0 = nil
 			end

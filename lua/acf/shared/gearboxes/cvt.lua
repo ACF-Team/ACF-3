@@ -35,13 +35,13 @@ ACF.RegisterGearboxClass("CVT", {
 		Data.Gears[1] = 0.01
 
 		if not Min then
-			Min = ACF.CheckNumber(Data.Gear3) or 3000
+			Min = ACF.CheckNumber(Data.Gear3, 3000)
 
 			Data.Gear3 = nil
 		end
 
 		if not Max then
-			Max = ACF.CheckNumber(Data.Gear4) or 5000
+			Max = ACF.CheckNumber(Data.Gear4, 5000)
 
 			Data.Gear4 = nil
 		end
