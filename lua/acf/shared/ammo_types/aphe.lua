@@ -110,10 +110,10 @@ if SERVER then
 		return Text:format(math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
 	end
 
-	function Ammo:OnFlightEnd(Index, Bullet, HitPos)
-		ACF_HE(HitPos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
+	function Ammo:OnFlightEnd( Bullet, Trace)
+		ACF_HE(Trace.HitPos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 
-		Ammo.BaseClass.OnFlightEnd(self, Index, Bullet, Hitpos)
+		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
 	end
 else
 	ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")

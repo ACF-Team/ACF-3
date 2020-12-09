@@ -1,7 +1,6 @@
 -- Local Vars -----------------------------------
 local ACF         = ACF
 local ACF_HEPUSH  = GetConVar("acf_hepush")
-local ACF_KEPUSH  = GetConVar("acf_kepush")
 local TimerCreate = timer.Create
 local TraceRes    = {}
 local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
@@ -268,7 +267,7 @@ do
 		end
 
 		local function CanSee(Target, Data)
-			local R = ACF.Trace(Data)
+			local R = Trace(Data)
 
 			return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
 		end
@@ -494,7 +493,7 @@ do
 			end
 
 			if Entity.ACF_OnDamage then -- Use special damage function if target entity has one
-				return Entity:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, Bone, Type)
+				return Entity:ACF_OnDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Type)
 			elseif Activated == "Prop" then
 				return PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
 			elseif Activated == "Vehicle" then
@@ -626,109 +625,6 @@ do
 			util.Effect("WheelDust", BreakEffect)
 
 			return Debris
-		end
-	end
-
-	do -- Round Impact --------------------------
-		local function RicochetVector(Flight, HitNormal)
-			local Vec = Flight:GetNormalized()
-
-			return Vec - ( 2 * Vec:Dot(HitNormal) ) * HitNormal
-		end
-
-		function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
-			local Angle = ACF_GetHitAngle( HitNormal , Bullet.Flight )
-
-			local HitRes = ACF_Damage ( --DAMAGE !!
-				Target,
-				Energy,
-				Bullet.PenArea,
-				Angle,
-				Bullet.Owner,
-				Bone,
-				Bullet.Gun,
-				Bullet.Type
-			)
-
-			local Ricochet = 0
-			if HitRes.Loss == 1 then
-				-- Ricochet distribution center
-				local sigmoidCenter = Bullet.DetonatorAngle or ( Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100 )
-
-				-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
-				local ricoProb = math.Clamp( 1 / (1 + math.exp( (Angle - sigmoidCenter) / -4) ), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1 )
-
-				-- Checking for ricochet
-				if ricoProb > math.random() and Angle < 90 then
-					Ricochet       = math.Clamp(Angle / 90, 0.05, 1) -- atleast 5% of energy is kept
-					HitRes.Loss    = 0.25 - Ricochet
-					Energy.Kinetic = Energy.Kinetic * HitRes.Loss
-				end
-			end
-
-			if ACF_KEPUSH:GetBool() then
-				Shove(
-					Target,
-					HitPos,
-					Bullet.Flight:GetNormalized(),
-					Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
-				)
-			end
-
-			if HitRes.Kill then
-				local Debris = ACF_APKill( Target , (Bullet.Flight):GetNormalized() , Energy.Kinetic )
-				table.insert( Bullet.Filter , Debris )
-			end
-
-			HitRes.Ricochet = false
-
-			if Ricochet > 0 and Bullet.Ricochets < 3 then
-				Bullet.Ricochets = Bullet.Ricochets + 1
-				Bullet.NextPos = HitPos
-				Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
-
-				HitRes.Ricochet = true
-			end
-
-			return HitRes
-		end
-
-		function ACF_PenetrateGround( Bullet, Energy, HitPos, HitNormal )
-			local MaxDig = ((Energy.Penetration / Bullet.PenArea) * ACF.KEtoRHA / ACF.GroundtoRHA) / 25.4
-			local HitRes = {Penetrated = false, Ricochet = false}
-
-			local DigTr = { }
-				DigTr.start = HitPos + Bullet.Flight:GetNormalized() * 0.1
-				DigTr.endpos = HitPos + Bullet.Flight:GetNormalized() * (MaxDig + 0.1)
-				DigTr.filter = Bullet.Filter
-				DigTr.mask = MASK_SOLID_BRUSHONLY
-			local DigRes = util.TraceLine(DigTr)
-			--print(util.GetSurfacePropName(DigRes.SurfaceProps))
-
-			local loss = DigRes.FractionLeftSolid
-
-			if loss == 1 or loss == 0 then --couldn't penetrate
-				local Ricochet = 0
-				local Speed = Bullet.Flight:Length() / ACF.Scale
-				local Angle = ACF_GetHitAngle( HitNormal, Bullet.Flight )
-				local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
-				if Angle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
-					Ricochet = Angle / 90 * 0.75
-				end
-
-				if Ricochet > 0 and Bullet.GroundRicos < 2 then
-					Bullet.GroundRicos = Bullet.GroundRicos + 1
-					Bullet.NextPos = HitPos
-					Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
-					HitRes.Ricochet = true
-				end
-			else --penetrated
-				Bullet.Flight = Bullet.Flight * (1 - loss)
-				Bullet.NextPos = DigRes.StartPos + Bullet.Flight:GetNormalized() * 0.25 --this is actually where trace left brush
-				HitRes.Penetrated = true
-			end
-
-			return HitRes
 		end
 	end
 end
