@@ -88,14 +88,18 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 end
 
 function ACF.RemoveBullet(Bullet)
+	if Bullet.Removed then return end
+
 	local Index = Bullet.Index
 
 	Bullets[Index] = nil
 	Unused[Index]  = true
 
-	if Bullet and Bullet.OnRemoved then
+	if Bullet.OnRemoved then
 		Bullet:OnRemoved()
 	end
+
+	Bullet.Removed = true
 
 	if not next(Bullets) then
 		hook.Remove("Tick", "IterateBullets")
@@ -186,10 +190,9 @@ function ACF.CreateBullet(BulletData)
 	return Bullet
 end
 
-local function OnImpact(Bullet, Trace, Type)
-	local Data  = AmmoTypes[Bullet.Type]
-	local Func  = Type == "World" and Data.WorldImpact or Data.PropImpact
-	local Retry = Func(Data, Bullet, Trace)
+local function OnImpact(Bullet, Trace, Ammo, Type)
+	local Func  = Type == "World" and Ammo.WorldImpact or Ammo.PropImpact
+	local Retry = Func(Ammo, Bullet, Trace)
 
 	if Retry == "Penetrated" then
 		if Bullet.OnPenetrated then
@@ -211,7 +214,7 @@ local function OnImpact(Bullet, Trace, Type)
 
 		ACF.BulletClient(Bullet, "Update", 1, Trace.HitPos)
 
-		Data:OnFlightEnd(Bullet, Trace)
+		Ammo:OnFlightEnd(Bullet, Trace)
 	end
 end
 
@@ -273,24 +276,28 @@ function ACF.DoBulletsFlight(Bullet)
 		Bullet.Filter = Filter
 	end
 
+	local Ammo = AmmoTypes[Bullet.Type]
+
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
-			return ACF.RemoveBullet(Bullet.Index)
+			return ACF.RemoveBullet(Bullet)
 		else
-			if Bullet.OnEndFlight then
-				Bullet.OnEndFlight(Bullet, nil)
-			end
-
 			local DeltaTime = Bullet.DeltaTime
 			local DeltaFuze = ACF.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
-			--print(DeltaTime, DeltaFuze, Lerp)
-			if FlightRes.Hit and Lerp < FlightRes.Fraction or true then -- Fuze went off before running into something
-				local Pos = LerpVector(DeltaFuze / DeltaTime, Bullet.Pos, Bullet.NextPos)
+
+			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
+				local Pos = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
+
+				if Bullet.OnEndFlight then
+					Bullet.OnEndFlight(Bullet, FlightRes)
+				end
 
 				ACF.BulletClient(Bullet, "Update", 1, Pos)
 
-				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, Pos, Bullet.Flight:GetNormalized())
+				Ammo:OnFlightEnd(Bullet, FlightRes)
+
+				return
 			end
 		end
 	end
@@ -306,7 +313,7 @@ function ACF.DoBulletsFlight(Bullet)
 		else
 			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == game.GetWorld()) and "World" or "Prop"
 
-			OnImpact(Bullet, FlightRes, Type)
+			OnImpact(Bullet, FlightRes, Ammo, Type)
 		end
 	end
 end
@@ -315,17 +322,17 @@ do -- Terminal ballistics --------------------------
 	local function RicochetVector(Flight, HitNormal)
 		local Vec = Flight:GetNormalized()
 
-		return Vec - ( 2 * Vec:Dot(HitNormal) ) * HitNormal
+		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
 	end
 
-	function ACF_RoundImpact( Bullet, Speed, Energy, Target, HitPos, HitNormal , Bone  )
-		local Angle = ACF_GetHitAngle( HitNormal , Bullet.Flight )
+	function ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+		local HitAngle = ACF_GetHitAngle(HitNormal , Bullet.Flight)
 
 		local HitRes = ACF_Damage ( --DAMAGE !!
 			Target,
 			Energy,
 			Bullet.PenArea,
-			Angle,
+			HitAngle,
 			Bullet.Owner,
 			Bone,
 			Bullet.Gun,
@@ -335,10 +342,10 @@ do -- Terminal ballistics --------------------------
 		local Ricochet = 0
 		if HitRes.Loss == 1 then
 			-- Ricochet distribution center
-			local sigmoidCenter = Bullet.DetonatorAngle or ( Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100 )
+			local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100)
 
 			-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
-			local ricoProb = math.Clamp( 1 / (1 + math.exp( (Angle - sigmoidCenter) / -4) ), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1 )
+			local ricoProb = math.Clamp(1 / (1 + math.exp((Angle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
 
 			-- Checking for ricochet
 			if ricoProb > math.random() and Angle < 90 then
@@ -358,8 +365,9 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if HitRes.Kill then
-			local Debris = ACF_APKill( Target , (Bullet.Flight):GetNormalized() , Energy.Kinetic )
-			table.insert( Bullet.Filter , Debris )
+			local Debris = ACF_APKill(Target, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+
+			table.insert(Bullet.Filter , Debris)
 		end
 
 		HitRes.Ricochet = false
@@ -378,11 +386,11 @@ do -- Terminal ballistics --------------------------
 	function ACF_Ricochet(Bullet, Trace)
 		local Ricochet = 0
 		local Speed = Bullet.Flight:Length() / ACF.Scale
-		local Angle = ACF_GetHitAngle( Trace.HitNormal, Bullet.Flight )
+		local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
 		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
 
-		if Angle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
-			Ricochet = Angle / 90 * 0.75
+		if HitAngle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
+			Ricochet = HitAngle / 90 * 0.75
 		end
 
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then

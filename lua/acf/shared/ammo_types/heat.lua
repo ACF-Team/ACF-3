@@ -200,9 +200,14 @@ if SERVER then
 		return true
 	end
 
-	function Ammo:PropImpact(_, Bullet, Target, HitNormal, HitPos, Bone)
+	function Ammo:PropImpact(Bullet, Trace)
+		local Target = Trace.Target
+
 		if ACF_Check(Target) then
 			local Speed = Bullet.Flight:Length() / ACF.Scale
+			local HitPos = Trace.HitPos
+			local HitNormal = Trace.HitNormal
+			local Bone = Trace.HitGroup
 
 			if Bullet.Detonated then
 				Bullet.NotFirstPen = true
@@ -242,17 +247,17 @@ if SERVER then
 		return false
 	end
 
-	function Ammo:WorldImpact(_, Bullet, HitPos, HitNormal)
+	function Ammo:WorldImpact(Bullet, Trace)
 		if not Bullet.Detonated then
-			if self:Detonate(Bullet, HitPos) then
+			if self:Detonate(Bullet, Trace.HitPos) then
 				return "Penetrated"
 			else
 				return false
 			end
 		end
 
-		local Energy = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, 999999)
-		local HitRes = ACF_PenetrateGround(Bullet, Energy, HitPos, HitNormal)
+		local Function = IsValid(Trace.Entity) and ACF_PenetrateMapEntity or ACF_PenetrateGround
+		local HitRes   = Function(Bullet, Trace)
 
 		if HitRes.Penetrated then
 			return "Penetrated"
@@ -286,6 +291,7 @@ else
 			util.Effect("ACF_HEAT_Explosion", Data)
 
 			Bullet.Detonated = true
+			Bullet.LimitVel  = 999999
 
 			Effect:SetModel("models/Gibs/wood_gib01e.mdl")
 		end

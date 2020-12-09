@@ -89,7 +89,7 @@ if SERVER then
 	end
 
 	function Ammo:Create(_, BulletData)
-		ACF_CreateBullet(BulletData)
+		ACF.CreateBullet(BulletData)
 	end
 
 	function Ammo:ServerConvert(ToolData)
@@ -105,7 +105,6 @@ if SERVER then
 
 	function Ammo:Network(Entity, BulletData)
 		Entity:SetNW2String("AmmoType", "AP")
-		Entity:SetNW2String("AmmoID", BulletData.Id)
 		Entity:SetNW2Float("Caliber", BulletData.Caliber)
 		Entity:SetNW2Float("ProjMass", BulletData.ProjMass)
 		Entity:SetNW2Float("PropMass", BulletData.PropMass)
@@ -123,11 +122,13 @@ if SERVER then
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2))
 	end
 
-	function Ammo:PropImpact(Bullet, Target, HitNormal, HitPos, Bone)
+	function Ammo:PropImpact(Bullet, Trace)
+		local Target = Trace.Entity
+
 		if ACF_Check(Target) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
-			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, Trace.HitPos, Trace.HitNormal, Trace.HitGroup)
 
 			if HitRes.Overkill > 0 then
 				table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
@@ -147,7 +148,7 @@ if SERVER then
 		end
 	end
 
-	function Ammo:WorldImpact(Bullet,  Trace)
+	function Ammo:WorldImpact(Bullet, Trace)
 		if IsValid(Trace.Entity) then
 			return ACF_PenetrateMapEntity(Bullet, Trace)
 		else
