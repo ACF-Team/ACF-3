@@ -389,7 +389,7 @@ do -- Terminal ballistics --------------------------
 		local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
 		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
 
-		if HitAngle > math.random(MinAngle,90) and Angle < 89.9 then	--Checking for ricochet
+		if HitAngle > math.random(MinAngle,90) and HitAngle < 89.9 then	--Checking for ricochet
 			Ricochet = HitAngle / 90 * 0.75
 		end
 

@@ -257,13 +257,8 @@ if SERVER then
 		end
 
 		local Function = IsValid(Trace.Entity) and ACF_PenetrateMapEntity or ACF_PenetrateGround
-		local HitRes   = Function(Bullet, Trace)
 
-		if HitRes.Penetrated then
-			return "Penetrated"
-		else
-			return false
-		end
+		return Function(Bullet, Trace)
 	end
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
