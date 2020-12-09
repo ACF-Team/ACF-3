@@ -2,7 +2,9 @@ include("shared.lua")
 
 local HideInfo = ACF.HideInfoBubble
 
+language.Add("Cleanup_acf_engine", "ACF Engines")
 language.Add("Undone_acf_engine", "Undone ACF Engine")
+language.Add("Cleaned_acf_engine", "Cleaned up all ACF Engines")
 language.Add("SBoxLimit__acf_engine", "You've reached the ACF Engines limit!")
 
 function ENT:Initialize()
