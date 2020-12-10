@@ -345,18 +345,18 @@ do -- Terminal ballistics --------------------------
 			local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100)
 
 			-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
-			local ricoProb = math.Clamp(1 / (1 + math.exp((Angle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
+			local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
 
 			-- Checking for ricochet
-			if ricoProb > math.random() and Angle < 90 then
-				Ricochet       = math.Clamp(Angle / 90, 0.05, 1) -- atleast 5% of energy is kept
+			if ricoProb > math.random() and HitAngle < 90 then
+				Ricochet       = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
 				HitRes.Loss    = 0.25 - Ricochet
 				Energy.Kinetic = Energy.Kinetic * HitRes.Loss
 			end
 		end
 
 		if ACF_KEPUSH:GetBool() then
-			Shove(
+			ACF.KEShove(
 				Target,
 				HitPos,
 				Bullet.Flight:GetNormalized(),
