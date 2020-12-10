@@ -201,7 +201,7 @@ if SERVER then
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)
-		local Target = Trace.Target
+		local Target = Trace.Entity
 
 		if ACF_Check(Target) then
 			local Speed = Bullet.Flight:Length() / ACF.Scale
