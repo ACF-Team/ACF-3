@@ -110,7 +110,7 @@ do -- Spawn and Update functions
 
 		Entity.Fuel = Percentage * Entity.Capacity
 
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 
 		Entity.ACF.Model = FuelTank.Model
 

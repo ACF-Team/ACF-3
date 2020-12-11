@@ -4,7 +4,7 @@ local ACF_HEPUSH  = GetConVar("acf_hepush")
 local TimerCreate = timer.Create
 local TraceRes    = {}
 local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
-local Check       = ACF_Check
+local Check       = ACF.Check
 local HookRun     = hook.Run
 local Trace       = ACF.TraceF
 local ValidDebris = ACF.ValidDebris

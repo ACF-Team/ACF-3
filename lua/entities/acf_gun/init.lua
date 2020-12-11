@@ -146,7 +146,7 @@ do -- Spawn and Update functions --------------------------------
 			WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)
 		end
 
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 
 		Entity.ACF.LegalMass	= Weapon.Mass
 		Entity.ACF.Model		= Weapon.Model

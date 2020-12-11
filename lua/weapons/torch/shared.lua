@@ -78,7 +78,7 @@ function SWEP:Think()
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
 	self.LastTrace = Trace
 
-	if ACF_Check(Entity) and self.LastDistance <= self.MaxDistance then
+	if ACF.Check(Entity) and self.LastDistance <= self.MaxDistance then
 		if Entity:IsPlayer() or Entity:IsNPC() then
 			Health = Entity:Health()
 			MaxHealth = Entity:GetMaxHealth()
@@ -120,7 +120,7 @@ function SWEP:PrimaryAttack()
 	local Trace = self.LastTrace
 	local Owner = self.Owner
 
-	if ACF_Check(Entity) then
+	if ACF.Check(Entity) then
 		if Entity:IsPlayer() or Entity:IsNPC() then
 			local Health = Entity:Health()
 			local MaxHealth = Entity:GetMaxHealth()
@@ -180,7 +180,7 @@ function SWEP:SecondaryAttack()
 	local Trace = self.LastTrace
 	local Owner = self.Owner
 
-	if ACF_Check(Entity) then
+	if ACF.Check(Entity) then
 		local HitRes = {}
 
 		if Entity:IsPlayer() or Entity:IsNPC() then

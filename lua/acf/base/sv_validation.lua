@@ -1,6 +1,7 @@
 -- Entity validation for ACF
 
 -- Local Vars -----------------------------------
+local ACF         = ACF
 local Gamemode	  = GetConVar("acf_gamemode")
 local StringFind  = string.find
 local TimerSimple = timer.Simple
@@ -109,7 +110,7 @@ local function CheckLegal(Entity)
 	return true
 end
 -- Global Funcs ---------------------------------
-function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
+function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
 	local Class = Entity:GetClass()
@@ -125,15 +126,15 @@ function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
 			return false
 		end
 
-		ACF_Activate(Entity)
+		ACF.Activate(Entity)
 	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 	end
 
 	return Entity.ACF.Type
 end
 
-function ACF_Activate(Entity, Recalc)
+function ACF.Activate(Entity, Recalc)
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = Entity:GetPhysicsObject()
 
@@ -191,5 +192,7 @@ function ACF_Activate(Entity, Recalc)
 end
 
 -- Globalize ------------------------------------
-ACF_IsLegal 	 = IsLegal
-ACF_CheckLegal 	 = CheckLegal
+ACF_IsLegal    = IsLegal
+ACF_CheckLegal = CheckLegal
+ACF_Check      = ACF.Check
+ACF_Activate   = ACF.Activate

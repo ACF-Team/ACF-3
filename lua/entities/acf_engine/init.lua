@@ -312,7 +312,7 @@ do -- Spawn and Update functions
 			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * Entity.peakkw / 3600
 		end
 
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 
 		Entity.ACF.LegalMass	= EngineData.Mass
 		Entity.ACF.Model		= EngineData.Model

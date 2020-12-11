@@ -354,7 +354,7 @@ do -- Spawn and Update functions
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 
 		Entity.ACF.LegalMass = Gearbox.Mass
 		Entity.ACF.Model     = Gearbox.Model

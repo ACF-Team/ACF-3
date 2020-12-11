@@ -211,7 +211,7 @@ end
 e2function number entity:acfPropHealth()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
 	local Health = this.ACF.Health
 
@@ -222,7 +222,7 @@ end
 e2function number entity:acfPropArmor()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
 	local Armor = this.ACF.Armour
 
@@ -233,7 +233,7 @@ end
 e2function number entity:acfPropHealthMax()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
 	local MaxHealth = this.ACF.MaxHealth
 
@@ -244,7 +244,7 @@ end
 e2function number entity:acfPropArmorMax()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
 	local MaxArmor = this.ACF.MaxArmour
 
@@ -255,7 +255,7 @@ end
 e2function number entity:acfPropDuctility()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
 	local Ductility = this.ACF.Ductility
 
@@ -273,7 +273,7 @@ end
 e2function number ranger:acfEffectiveArmor()
 	if not (this and validPhysics(this.Entity)) then return 0 end
 	if RestrictInfo(self, this.Entity) then return 0 end
-	if not ACF_Check(this.Entity) then return 0 end
+	if not ACF.Check(this.Entity) then return 0 end
 
 	local Armor    = this.Entity.ACF.Armour
 	local HitAngle = ACF_GetHitAngle(this.HitNormal , this.HitPos - this.StartPos)

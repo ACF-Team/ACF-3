@@ -364,7 +364,7 @@ do -- Spawning and Updating --------------------
 			end
 		end
 
-		ACF_Activate(Entity, true) -- Makes Crate.ACF table
+		ACF.Activate(Entity, true) -- Makes Crate.ACF table
 
 		Entity.ACF.Model = Entity:GetModel()
 
