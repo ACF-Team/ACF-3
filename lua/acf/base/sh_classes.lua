@@ -288,7 +288,13 @@ do -- Engine registration functions
 	end
 
 	function ACF.RegisterEngine(ID, ClassID, Data)
-		return AddGroupedClass(ID, ClassID, Engines, Data)
+		local Class = AddGroupedClass(ID, ClassID, Engines, Data)
+
+		if not Class.Sound then
+			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
+		end
+
+		return Class
 	end
 end
 
@@ -366,13 +372,7 @@ do -- Gearbox registration functions
 	end
 
 	function ACF.RegisterGearbox(ID, ClassID, Data)
-		local Class = AddGroupedClass(ID, ClassID, Gearboxes, Data)
-
-		if not Class.Sound then
-			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
-		end
-
-		return Class
+		return AddGroupedClass(ID, ClassID, Gearboxes, Data)
 	end
 end
 
