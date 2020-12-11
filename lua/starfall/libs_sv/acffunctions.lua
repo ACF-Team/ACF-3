@@ -226,7 +226,7 @@ end
 
 --- Creates an ACF ammo crate using the information from the data table argument
 -- @server
-function acf_library.createAmmo(pos, ang, data, frozen)
+function acf_library.createAmmo(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createAmmo")
 
 	local Player = instance.player
@@ -259,7 +259,7 @@ end
 
 --- Creates an ACF engine using the information from the data table argument
 -- @server
-function acf_library.createEngine(pos, ang, data, frozen)
+function acf_library.createEngine(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createEngine")
 
 	local Player = instance.player
@@ -276,9 +276,8 @@ function acf_library.createEngine(pos, ang, data, frozen)
 	local Angles   = aunwrap(ang)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
-	local Frozen   = not tobool(frozen)
 
-	local Success, Entity = ACF.CreateEntity("acf_engine", Player, Position, Angles, Data, Undo, Frozen)
+	local Success, Entity = ACF.CreateEntity("acf_engine", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Engine", 2) end
 
@@ -292,7 +291,7 @@ end
 
 --- Creates an ACF fuel tank using the information from the data table argument
 -- @server
-function acf_library.createFuelTank(pos, ang, data, frozen)
+function acf_library.createFuelTank(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createFuelTank")
 
 	local Player = instance.player
@@ -309,9 +308,8 @@ function acf_library.createFuelTank(pos, ang, data, frozen)
 	local Angles   = aunwrap(ang)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
-	local Frozen   = not tobool(frozen)
 
-	local Success, Entity = ACF.CreateEntity("acf_fueltank", Player, Position, Angles, Data, Undo, Frozen)
+	local Success, Entity = ACF.CreateEntity("acf_fueltank", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Fuel Tank", 2) end
 
@@ -325,7 +323,7 @@ end
 
 --- Creates an ACF gearbox using the information from the data table argument
 -- @server
-function acf_library.createGearbox(pos, ang, data, frozen)
+function acf_library.createGearbox(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createGearbox")
 
 	local Player = instance.player
@@ -342,9 +340,8 @@ function acf_library.createGearbox(pos, ang, data, frozen)
 	local Angles   = aunwrap(ang)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
-	local Frozen   = not tobool(frozen)
 
-	local Success, Entity = ACF.CreateEntity("acf_gearbox", Player, Position, Angles, Data, Undo, Frozen)
+	local Success, Entity = ACF.CreateEntity("acf_gearbox", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Gearbox", 2) end
 
@@ -358,7 +355,7 @@ end
 
 --- Creates an ACF weapon using the information from the data table argument
 -- @server
-function acf_library.createWeapon(pos, ang, data, frozen)
+function acf_library.createWeapon(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createWeapon")
 
 	local Player = instance.player
@@ -375,9 +372,8 @@ function acf_library.createWeapon(pos, ang, data, frozen)
 	local Angles   = aunwrap(ang)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
-	local Frozen   = not tobool(frozen)
 
-	local Success, Entity = ACF.CreateEntity("acf_gun", Player, Position, Angles, Data, Undo, Frozen)
+	local Success, Entity = ACF.CreateEntity("acf_gun", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Weapon", 2) end
 
