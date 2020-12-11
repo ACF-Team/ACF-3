@@ -516,19 +516,19 @@ do -- Entity class registration function
 		local ClassData = ACF.GetEntityClass(Class)
 
 		if not ClassData then
-			SendMessage(Player, "Error", Class, " is not a registered ACF entity class.")
+			ACF.SendMessage(Player, "Error", Class, " is not a registered ACF entity class.")
 			return false
 		end
 
 		if not ClassData.Spawn then
-			SendMessage(Player, "Error", Class, " doesn't have a spawn function assigned to it.")
+			ACF.SendMessage(Player, "Error", Class, " doesn't have a spawn function assigned to it.")
 			return false
 		end
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
 		if not IsValid(Entity) then
-			SendMessage(Player, "Error", Class, " entity couldn't be created.")
+			ACF.SendMessage(Player, "Error", Class, " entity couldn't be created.")
 			return false
 		end
 
