@@ -243,9 +243,8 @@ function acf_library.createAmmo(pos, ang, data)
 	local Angles   = aunwrap(ang)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
-	local Frozen   = not tobool(frozen)
 
-	local Success, Entity = ACF.CreateEntity("acf_ammo", Player, Position, Angles, Data, Undo, Frozen)
+	local Success, Entity = ACF.CreateEntity("acf_ammo", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Ammo Crate", 2) end
 
