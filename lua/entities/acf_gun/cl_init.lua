@@ -3,7 +3,6 @@ include("shared.lua")
 local HideInfo = ACF.HideInfoBubble
 
 language.Add("Cleanup_acf_gun", "ACF Weapons")
-language.Add("Undone_acf_gun", "Undone ACF Weapon")
 language.Add("Cleaned_acf_gun", "Cleaned up all ACF Weapons")
 language.Add("Cleanup_acf_smokelauncher", "ACF Smoke Launchers")
 language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")

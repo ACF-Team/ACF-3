@@ -1,7 +1,6 @@
 include("shared.lua")
 
 language.Add("Cleanup_acf_ammo", "ACF Ammo Crates")
-language.Add("Undone_acf_ammo", "Undone ACF Ammo Crate")
 language.Add("Cleaned_acf_ammo", "Cleaned up all ACF Ammo Crates")
 language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
 

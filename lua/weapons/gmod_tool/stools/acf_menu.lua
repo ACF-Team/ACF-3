@@ -3,8 +3,6 @@ TOOL.Category = "Construction"
 
 ACF.LoadToolFunctions(TOOL)
 
-cleanup.Register("acfmenu")
-
 if CLIENT then
 	local DrawBoxes = GetConVar("acf_drawboxes")
 
