@@ -108,7 +108,7 @@ end
 
 __e2setcost(5)
 
--- Returns the full name of an ACF entity, or the next projectile on a rack
+-- Returns the full name of an ACF entity
 e2function string entity:acfName()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
@@ -137,7 +137,7 @@ e2function number entity:acfIsEngine()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_engine" and 1 or 0
+	return this.IsEngine and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF gearbox
@@ -145,7 +145,7 @@ e2function number entity:acfIsGearbox()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_gearbox" and 1 or 0
+	return this.IsGearbox and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF gun
@@ -153,7 +153,7 @@ e2function number entity:acfIsGun()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_gun" and 1 or 0
+	return this.IsWeapon and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF ammo crate
@@ -161,7 +161,7 @@ e2function number entity:acfIsAmmo()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_ammo" and 1 or 0
+	return this.IsAmmoCrate and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF fuel tank
@@ -169,7 +169,7 @@ e2function number entity:acfIsFuel()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_fueltank" and 1 or 0
+	return this.IsFuelTank and 1 or 0
 end
 
 -- Returns the capacity of an acf ammo crate or fuel tank
@@ -296,15 +296,13 @@ e2function array entity:acfLinks()
 	if not IsACFEntity(this) then return {} end
 	if RestrictInfo(self, this) then return {} end
 
-	local Sources = AllLinkSources(this:GetClass())
 	local Result = {}
 	local Count = 0
 
-	for _, Function in pairs(Sources) do
-		for Entity in pairs(Function(this)) do
-			Count = Count + 1
-			Result[Count] = Entity
-		end
+	for Entity in pairs(ACF.GetLinkedEntities(this)) do
+		Count = Count + 1
+
+		Result[Count] = Entity
 	end
 
 	return Result
@@ -615,9 +613,7 @@ e2function number entity:acfGearRatio(number Gear)
 	if RestrictInfo(self, this) then return 0 end
 	if not this.Gears then return 0 end
 
-	local Index = math.Clamp(floor(Gear), 0, this.GearCount)
-
-	return this.Gears[Index]
+	return this.Gears[floor(Gear)] or 0
 end
 
 -- Returns the current torque output for an ACF gearbox
@@ -632,7 +628,6 @@ end
 e2function void entity:acfCVTRatio(number Ratio)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.CVT then return end
 
 	this:TriggerInput("CVT Ratio", math.Clamp(Ratio, 0, 1))
 end
@@ -673,7 +668,6 @@ end
 e2function void entity:acfBrakeLeft(number Brake)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DualClutch then return end
 
 	this:TriggerInput("Left Brake", Brake)
 end
@@ -682,7 +676,6 @@ end
 e2function void entity:acfBrakeRight(number Brake)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DualClutch then return end
 
 	this:TriggerInput("Right Brake", Brake)
 end
@@ -699,7 +692,6 @@ end
 e2function void entity:acfClutchLeft(number Clutch)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DualClutch then return end
 
 	this:TriggerInput("Left Clutch", Clutch)
 end
@@ -708,7 +700,6 @@ end
 e2function void entity:acfClutchRight(number Clutch)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DualClutch then return end
 
 	this:TriggerInput("Right Clutch", Clutch)
 end
@@ -717,7 +708,6 @@ end
 e2function void entity:acfSteerRate(number Rate)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DoubleDiff then return end
 
 	this:TriggerInput("Steer Rate", Rate)
 end
@@ -726,7 +716,6 @@ end
 e2function void entity:acfHoldGear(number Hold)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Automatic then return end
 
 	this:TriggerInput("Hold Gear", Hold)
 end
@@ -735,7 +724,6 @@ end
 e2function void entity:acfShiftPointScale(number Scale)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Automatic then return end
 
 	this:TriggerInput("Shift Speed Scale", Scale)
 end
@@ -909,9 +897,10 @@ end
 e2function number entity:acfFireRate()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.ReloadTime then return 0 end
 
-	return Round(60 / this.ReloadTime, 2)
+	local Time = this.ReloadTime
+
+	return Time and Round(60 / Time, 2) or 0
 end
 
 -- Returns the number of rounds left in a magazine for an ACF gun
@@ -1009,7 +998,7 @@ e2function number entity:acfDragCoef()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	local BulletData = BulletData
+	local BulletData = this.BulletData
 	local DragCoef   = BulletData and BulletData.DragCoef
 
 	return DragCoef and DragCoef / ACF.DragDiv or 0
@@ -1064,7 +1053,8 @@ e2function number entity:acfFLSpikeRadius()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	local Radius = this.BulletData and this.BulletData.FlechetteRadius
+	local BulletData = this.BulletData
+	local Radius     = BulletData and BulletData.FlechetteRadius
 
 	return Radius and Round(Radius * 10, 2) or 0
 end
@@ -1098,7 +1088,7 @@ e2function number entity:acfBlastRadius()
 	if not AmmoType then return 0 end
 
 	local DisplayData = AmmoType:GetDisplayData(BulletData)
-	local Radius = DisplayData and DisplayData.BlastRadius
+	local Radius      = DisplayData and DisplayData.BlastRadius
 
 	return Radius and Round(Radius, 2) or 0
 end

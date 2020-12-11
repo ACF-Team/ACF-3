@@ -231,17 +231,16 @@ end
 
 do -- Spawn and Update functions
 	local function VerifyData(Data)
-		-- Entity was created via menu tool
-		if Data.Engine then
-			Data.Id = Data.Engine
+		if not Data.Engine then
+			Data.Engine = Data.Id or "5.7-V8"
 		end
 
-		local Class = ACF.GetClassGroup(Engines, Data.Id)
+		local Class = ACF.GetClassGroup(Engines, Data.Engine)
 
 		if not Class then
-			Data.Id = "5.7-V8"
+			Data.Engine = "5.7-V8"
 
-			Class = ACF.GetClassGroup(Engines, Data.Id)
+			Class = ACF.GetClassGroup(Engines, "5.7-V8")
 		end
 
 		do -- External verifications
@@ -324,8 +323,8 @@ do -- Spawn and Update functions
 	function MakeACF_Engine(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Engines, Data.Id)
-		local EngineData = Class.Lookup[Data.Id]
+		local Class = ACF.GetClassGroup(Engines, Data.Engine)
+		local EngineData = Class.Lookup[Data.Engine]
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end
@@ -382,7 +381,7 @@ do -- Spawn and Update functions
 		return Engine
 	end
 
-	ACF.RegisterEntityClass("acf_engine", MakeACF_Engine, "Id")
+	ACF.RegisterEntityClass("acf_engine", MakeACF_Engine, "Engine")
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 
@@ -393,8 +392,8 @@ do -- Spawn and Update functions
 
 		VerifyData(Data)
 
-		local Class      = ACF.GetClassGroup(Engines, Data.Id)
-		local EngineData = Class.Lookup[Data.Id]
+		local Class      = ACF.GetClassGroup(Engines, Data.Engine)
+		local EngineData = Class.Lookup[Data.Engine]
 		local OldClass   = self.ClassData
 		local Feedback   = ""
 

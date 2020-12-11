@@ -43,15 +43,14 @@ do -- Spawn and Update functions --------------------------------
 	}
 
 	local function VerifyData(Data)
-		-- Entity was created via menu tool
-		if Data.Weapon then
-			Data.Id = Data.Weapon
+		if not Data.Weapon then
+			Data.Weapon = Data.Id or "50mmC"
 		end
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Id)
+		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
 
 		if not Class then
-			Data.Id = Data.Id and Updated[Data.Id] or "50mmC"
+			Data.Weapon = Data.Weapon and Updated[Data.Weapon] or "50mmC"
 		end
 
 		do -- External verifications
@@ -132,7 +131,7 @@ do -- Spawn and Update functions --------------------------------
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
 		Entity:SetNWString("Class", Entity.Class)
-		Entity:SetNWString("ID", Entity.Id)
+		Entity:SetNWString("ID", Entity.Weapon)
 
 		-- Adjustable barrel length
 		if Entity.Long then
@@ -167,8 +166,8 @@ do -- Spawn and Update functions --------------------------------
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Id)
-		local Weapon = Class.Lookup[Data.Id]
+		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Weapon = Class.Lookup[Data.Weapon]
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
@@ -231,7 +230,7 @@ do -- Spawn and Update functions --------------------------------
 		return Gun
 	end
 
-	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Id")
+	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	------------------- Updating ---------------------
@@ -241,8 +240,8 @@ do -- Spawn and Update functions --------------------------------
 
 		VerifyData(Data)
 
-		local Class    = ACF.GetClassGroup(Weapons, Data.Id)
-		local Weapon   = Class.Lookup[Data.Id]
+		local Class    = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Weapon   = Class.Lookup[Data.Weapon]
 		local OldClass = self.ClassData
 
 		if self.State ~= "Empty" then
@@ -291,28 +290,28 @@ do -- Metamethods --------------------------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
-			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
-			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
-			if Target.IsRefill then return false, "Refill crates cannot be linked to weapons." end
-			if Weapon.Id ~= Target.Weapon then return false, "Wrong ammo type for this weapon." end
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
+			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
+			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
+			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
+			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 
-			local Blacklist = Target.RoundData.Blacklist
+			local Blacklist = Crate.RoundData.Blacklist
 
-			if Blacklist[Weapon.Class] then
+			if Blacklist[This.Class] then
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
-			Weapon.Crates[Target]  = true
-			Target.Weapons[Weapon] = true
+			This.Crates[Crate]  = true
+			Crate.Weapons[This] = true
 
-			Weapon:UpdateOverlay(true)
-			Target:UpdateOverlay(true)
+			This:UpdateOverlay(true)
+			Crate:UpdateOverlay(true)
 
-			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
+			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target:CanConsume() then
-						Weapon:Load()
+					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate:CanConsume() then
+						This:Load()
 					end
 				end)
 			end
@@ -320,17 +319,17 @@ do -- Metamethods --------------------------------
 			return true, "Weapon linked successfully."
 		end)
 
-		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
-			if Weapon.Crates[Target] or Target.Weapons[Weapon] then
-				if Weapon.CurrentCrate == Target then
-					Weapon.CurrentCrate = next(Weapon.Crates, Target)
+		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(This, Crate)
+			if This.Crates[Crate] or Crate.Weapons[This] then
+				if This.CurrentCrate == Crate then
+					This.CurrentCrate = next(This.Crates, Crate)
 				end
 
-				Weapon.Crates[Target]  = nil
-				Target.Weapons[Weapon] = nil
+				This.Crates[Crate]  = nil
+				Crate.Weapons[This] = nil
 
-				Weapon:UpdateOverlay(true)
-				Target:UpdateOverlay(true)
+				This:UpdateOverlay(true)
+				Crate:UpdateOverlay(true)
 
 				return true, "Weapon unlinked successfully."
 			end

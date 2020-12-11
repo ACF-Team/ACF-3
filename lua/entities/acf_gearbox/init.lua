@@ -687,7 +687,7 @@ ACF.AddInputAction("acf_gearbox", "Gear", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Gear Up", function(Entity, Value)
-	if Value == 0 then return end
+	if not tobool(Value) then return end
 
 	if Entity.Automatic then
 		Entity:ChangeDrive(Entity.Drive + 1)
@@ -697,7 +697,7 @@ ACF.AddInputAction("acf_gearbox", "Gear Up", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Gear Down", function(Entity, Value)
-	if Value == 0 then return end
+	if not tobool(Value) then return end
 
 	if Entity.Automatic then
 		Entity:ChangeDrive(Entity.Drive - 1)
@@ -712,10 +712,14 @@ ACF.AddInputAction("acf_gearbox", "Clutch", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Left Clutch", function(Entity, Value)
+	if not Entity.DualClutch then return end
+
 	Entity.LClutch = Clamp(1 - Value, 0, 1)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Right Clutch", function(Entity, Value)
+	if not Entity.DualClutch then return end
+
 	Entity.RClutch = Clamp(1 - Value, 0, 1)
 end)
 
@@ -727,30 +731,42 @@ ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
+	if not Entity.DualClutch then return end
+
 	Entity.LBrake = Clamp(Value, 0, 100)
 
 	SetCanApplyBrakes(Entity)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
+	if not Entity.DualClutch then return end
+
 	Entity.RBrake = Clamp(Value, 0, 100)
 
 	SetCanApplyBrakes(Entity)
 end)
 
 ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
+	if not Entity.CVT then return end
+
 	Entity.CVTRatio = Clamp(Value, 0, 1)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
+	if not Entity.DoubleDiff then return end
+
 	Entity.SteerRate = Clamp(Value, -1, 1)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Hold Gear", function(Entity, Value)
+	if not Entity.Automatic then return end
+
 	Entity.Hold = tobool(Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Shift Speed Scale", function(Entity, Value)
+	if not Entity.Automatic then return end
+
 	Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
 end)
 

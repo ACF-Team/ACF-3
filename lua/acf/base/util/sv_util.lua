@@ -237,6 +237,24 @@ do -- Entity linking
 		return EntityLink[Class][VarName]
 	end
 
+	function ACF.GetLinkedEntities(Entity)
+		if not IsValid(Entity) then return {} end
+
+		local Links = EntityLink[Entity:GetClass()]
+
+		if not Links then return {} end
+
+		local Result = {}
+
+		for _, Function in pairs(Links) do
+			for Ent in pairs(Function(Entity)) do
+				Result[Ent] = true
+			end
+		end
+
+		return Result
+	end
+
 	local ClassLink = { Link = {}, Unlink = {} }
 	local function RegisterNewLink(Action, Class1, Class2, Function)
 		if not isfunction(Function) then return end

@@ -34,18 +34,16 @@ end
 
 do -- Spawn and Update functions
 	local function VerifyData(Data)
-		if Data.FuelTank then -- Entity was created via menu tool
-			Data.Id = Data.FuelTank
-		elseif Data.SizeId then -- Backwards compatibility with ACF-2 dupes
-			Data.Id = Data.SizeId
+		if not Data.FuelTank then
+			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
 		end
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
+		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
-			Data.Id = "Jerry_Can"
+			Data.FuelTank = "Jerry_Can"
 
-			Class = ACF.GetClassGroup(FuelTanks, Data.Id)
+			Class = ACF.GetClassGroup(FuelTanks, "Jerry_Can")
 		end
 
 		-- Making sure to provide a valid fuel type
@@ -85,7 +83,7 @@ do -- Spawn and Update functions
 		end
 
 		Entity.Name        = FuelTank.Name
-		Entity.ShortName   = Entity.Id
+		Entity.ShortName   = Entity.FuelTank
 		Entity.EntType     = Class.Name
 		Entity.ClassData   = Class
 		Entity.FuelDensity = FuelData.Density
@@ -123,8 +121,8 @@ do -- Spawn and Update functions
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
-		local FuelTank = Class.Lookup[Data.Id]
+		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
+		local FuelTank = Class.Lookup[Data.FuelTank]
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
@@ -179,7 +177,7 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "Id", "FuelType")
+	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 	------------------- Updating ---------------------
@@ -187,8 +185,8 @@ do -- Spawn and Update functions
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.Id)
-		local FuelTank = Class.Lookup[Data.Id]
+		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
+		local FuelTank = Class.Lookup[Data.FuelTank]
 		local OldClass = self.ClassData
 		local Feedback = ""
 
