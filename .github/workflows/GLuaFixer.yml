@@ -5,12 +5,10 @@ on:
     paths:
     - 'lua/**'
     - '!lua/entities/gmod_wire_expression2/**'
-    - '!lua/starfall/**'
   pull_request:
     paths:
     - 'lua/**'
     - '!lua/entities/gmod_wire_expression2/**'
-    - '!lua/starfall/**'
 
 jobs:
   build:
@@ -22,6 +20,6 @@ jobs:
     - name: Extract glualint.zip
       run: unzip glualint.zip
     - name: Remove blacklisted folders
-      run: rm -r lua/entities/gmod_wire_expression2/ lua/starfall/
+      run: rm -r lua/entities/gmod_wire_expression2/
     - name: Initiate linting
       run: ./glualint lua
