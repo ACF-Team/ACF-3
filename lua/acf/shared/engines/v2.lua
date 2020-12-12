@@ -60,3 +60,7 @@ do -- Petrol Engines
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/v-twinl2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))
+ACF.SetCustomAttachment("models/engines/v-twinm2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))
+ACF.SetCustomAttachment("models/engines/v-twins2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))

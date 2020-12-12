@@ -61,3 +61,7 @@ do
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/wankel_3_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/engines/wankel_2_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/engines/wankel_2_small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))

@@ -154,3 +154,11 @@ do -- Electric Standalone Motors
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/emotorlarge.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/engines/emotormed.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/engines/emotorsmall.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/engines/emotor-standalone-big.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+ACF.SetCustomAttachment("models/engines/emotor-standalone-mid.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+ACF.SetCustomAttachment("models/engines/emotor-standalone-sml.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+ACF.SetCustomAttachment("models/engines/emotor-standalone-tiny.mdl", "driveshaft", Vector(), Angle(0, -90, 90))

@@ -42,3 +42,6 @@ do
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/inline2b.mdl", "driveshaft", Vector(), Angle(0, 180, 90))
+ACF.SetCustomAttachment("models/engines/inline2s.mdl", "driveshaft", Vector(-6, 0, 4), Angle(0, 180, 90))

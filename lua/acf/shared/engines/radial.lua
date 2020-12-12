@@ -78,3 +78,7 @@ do
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/radial7l.mdl", "driveshaft", Vector(-12), Angle(0, 180, 90))
+ACF.SetCustomAttachment("models/engines/radial7m.mdl", "driveshaft", Vector(-8), Angle(0, 180, 90))
+ACF.SetCustomAttachment("models/engines/radial7s.mdl", "driveshaft", Vector(-6), Angle(0, 180, 90))

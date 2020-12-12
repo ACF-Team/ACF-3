@@ -116,3 +116,7 @@ do -- Diesel Engines
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/inline3b.mdl", "driveshaft", Vector(-15, 0, 11), Angle(0, 180, 90))
+ACF.SetCustomAttachment("models/engines/inline3m.mdl", "driveshaft", Vector(-9, 0, 6.6), Angle(0, 180, 90))
+ACF.SetCustomAttachment("models/engines/inline3s.mdl", "driveshaft", Vector(-6, 0, 4.4), Angle(0, 180, 90))

@@ -60,3 +60,7 @@ do
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/1cylbig.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+ACF.SetCustomAttachment("models/engines/1cylmed.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+ACF.SetCustomAttachment("models/engines/1cylsml.mdl", "driveshaft", Vector(), Angle(0, -90, 90))

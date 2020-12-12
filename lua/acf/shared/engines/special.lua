@@ -222,3 +222,5 @@ do -- Special V12 Engines
 		}
 	})
 end
+
+ACF.SetCustomAttachment("models/engines/wankel_4_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
