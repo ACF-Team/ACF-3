@@ -157,7 +157,7 @@ do -- Linker operation
 
 			SendMessage(Player, "Info", "Successfully ", Status, " entities to ", tostring(Entity), ".")
 		else
-			local Status =  Total .. " entities could be " .. (Unlink and "unlinked" or "linked")
+			local Status = Total .. " entities could be " .. (Unlink and "unlinked" or "linked")
 
 			SendMessage(Player, "Error", "None of the ", Status, " to ", tostring(Entity), ".")
 		end

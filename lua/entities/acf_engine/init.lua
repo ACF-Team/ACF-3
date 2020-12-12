@@ -789,7 +789,7 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-	local EntMods =  Ent.EntityMods
+	local EntMods = Ent.EntityMods
 
 	-- Backwards compatibility
 	if EntMods.GearLink then

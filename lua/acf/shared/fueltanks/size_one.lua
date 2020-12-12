@@ -94,7 +94,7 @@ do
 
 	ACF.RegisterFuelTank("Tank_1x6x4","FTS_1", {
 		Name		= "1x6x4 Container",
-		Description	= "Fuel.  Will keep you going for awhile.",
+		Description	= "Fuel. Will keep you going for awhile.",
 		Model		= "models/fueltank/fueltank_1x6x4.mdl",
 		SurfaceArea	= 6743.3,
 		Volume		= 24109.4,
@@ -110,7 +110,7 @@ do
 
 	ACF.RegisterFuelTank("Tank_1x8x2","FTS_1", {
 		Name		= "1x8x2 Container",
-		Description	= "Gas stations?  We don't need no stinking gas stations!",
+		Description	= "Gas stations? We don't need no stinking gas stations!",
 		Model		= "models/fueltank/fueltank_1x8x2.mdl",
 		SurfaceArea	= 5113.7,
 		Volume		= 16026.2,

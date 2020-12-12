@@ -526,7 +526,7 @@ do -- Metamethods --------------------------------
 			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 
 			self.BulletData.Owner  = self.CurrentUser
-			self.BulletData.Gun	   = self      -- because other guns share this table
+			self.BulletData.Gun	   = self -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck(Velocity * engine.TickInterval())
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared

@@ -189,7 +189,7 @@ end
 
 local cat = Menu.Category
 local item = Menu.Name
-local var  =  Menu.Command
+local var  = Menu.Command
 local open = Menu.OnSpawnmenuOpen
 local panel = Menu.MakePanel
 local hookname = string.Replace(item," ","_")

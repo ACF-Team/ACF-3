@@ -127,7 +127,7 @@ end
 do -- Special V6 Engines
 	ACF.RegisterEngine("2.4L-V6", "SP", {
 		Name		 = "2.4L V6 Petrol",
-		Description	 = "Although the cast iron engine block is fairly weighty, this tiny v6 makes up for it with impressive power.  The unique V angle allows uncharacteristically high RPM for a V6.",
+		Description	 = "Although the cast iron engine block is fairly weighty, this tiny v6 makes up for it with impressive power. The unique V angle allows uncharacteristically high RPM for a V6.",
 		Model		 = "models/engines/v6small.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/l6/capri_onmid.wav",
 		Fuel		 = { Petrol = true },

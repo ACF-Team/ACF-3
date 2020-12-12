@@ -51,7 +51,7 @@ ACF.RegisterWeapon("122mmHW", "HW", {
 
 ACF.RegisterWeapon("155mmHW", "HW", {
 	Name		= "155mm Howitzer",
-	Description	= "The 155 is a classic heavy artillery round, with good reason.  A versatile weapon, it's found on most modern SPGs.",
+	Description	= "The 155 is a classic heavy artillery round, with good reason. A versatile weapon, it's found on most modern SPGs.",
 	Model		= "models/howitzer/howitzer_155mm.mdl",
 	Caliber		= 155,
 	Mass		= 5340,

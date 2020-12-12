@@ -329,7 +329,7 @@ do -- Spawning and Updating --------------------
 
 				-- for future use in reloading
 				--Entity.isBoxed = ExtraData.isBoxed -- Ammunition is boxed
-				--Entity.isTwoPiece =  ExtraData.isTwoPiece -- Ammunition is broken down to two pieces
+				--Entity.isTwoPiece = ExtraData.isTwoPiece -- Ammunition is broken down to two pieces
 
 				ExtraData.MagSize = ExtraData.isBoxed and MagSize or 0
 				ExtraData.IsRound = not (ExtraData.isBoxed or ExtraData.isTwoPiece or ExtraData.isRacked)

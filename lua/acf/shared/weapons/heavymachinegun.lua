@@ -65,7 +65,7 @@ ACF.RegisterWeapon("30mmHMG", "HMG", {
 
 ACF.RegisterWeapon("40mmHMG", "HMG", {
 	Name		= "40mm Heavy Machinegun",
-	Description	= "The heaviest of the heavy machineguns.  Massively powerful with a killer reload and hefty ammunition requirements, it can pop even relatively heavy targets with ease.",
+	Description	= "The heaviest of the heavy machineguns. Massively powerful with a killer reload and hefty ammunition requirements, it can pop even relatively heavy targets with ease.",
 	Model		= "models/machinegun/machinegun_40mm_compact.mdl",
 	Caliber		= 40,
 	Mass		= 780,

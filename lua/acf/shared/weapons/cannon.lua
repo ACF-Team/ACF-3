@@ -40,7 +40,7 @@ ACF.RegisterWeapon("50mmC", "C", {
 
 ACF.RegisterWeapon("75mmC", "C", {
 	Name		= "75mm Cannon",
-	Description	= "The 75mm is still rather respectable in rate of fire, but has only modest payload.  Often found on the Eastern Front, and on cold war light tanks.",
+	Description	= "The 75mm is still rather respectable in rate of fire, but has only modest payload. Often found on the Eastern Front, and on cold war light tanks.",
 	Model		= "models/tankgun/tankgun_75mm.mdl",
 	Caliber		= 75,
 	Mass		= 1420,

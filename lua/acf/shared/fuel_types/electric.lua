@@ -1,6 +1,6 @@
 ACF.RegisterFuelType("Electric", {
 	Name			= "Lit-Ion Battery",
-	Density			=  3.89,
+	Density			= 3.89,
 	ConsumptionText	= function(PeakkW, _, TypeData)
 		local Text = "\n\nPeak Energy Consumption :\n%s kW - %s MJ/min"
 		local Rate = ACF.FuelRate * PeakkW / TypeData.Efficiency

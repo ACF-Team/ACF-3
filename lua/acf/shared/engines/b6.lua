@@ -44,7 +44,7 @@ do
 
 	ACF.RegisterEngine("8.3-B6", "B6", {
 		Name		 = "8.3L Flat 6 Multifuel",
-		Description	 = "Military-grade multifuel boxer engine.  Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
+		Description	 = "Military-grade multifuel boxer engine. Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
 		Model		 = "models/engines/b6med.mdl",
 		Sound		 = "acf_base/engines/v8_diesel.wav",
 		Fuel		 = { Petrol = true, Diesel = true },

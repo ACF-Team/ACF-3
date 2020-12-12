@@ -47,7 +47,7 @@ end
 if CLIENT then
 	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
 	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility.")
-	language.Add("tool.acfarmorprop.0", "Left click to apply settings.  Right click to copy settings.  Reload to get the total mass of an object and all constrained objects.")
+	language.Add("tool.acfarmorprop.0", "Left click to apply settings. Right click to copy settings. Reload to get the total mass of an object and all constrained objects.")
 
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
@@ -69,7 +69,7 @@ if CLIENT then
 		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
 
 		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
-		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0).  A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
+		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0). A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
 
 		local SphereCheck = Panel:CheckBox("Use sphere search for armor readout", "acfarmorprop_sphere_search")
 		Panel:ControlHelp("If checked, the tool will find all the props in a sphere around the hit position instead of getting all the entities connected to a prop.")

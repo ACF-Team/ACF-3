@@ -68,7 +68,7 @@ do -- ACF global vars
 	ACF.HEATMaxCrush 		= 1200 -- vel where fully crushed
 
 	-- Debris
-	ACF.ChildDebris 		= 50 -- higher is more debris props;  Chance =  ACF.ChildDebris / num_children;  Only applies to children of acf-killed parent props
+	ACF.ChildDebris 		= 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance 	= 0.25
 	ACF.DebrisScale 		= 999999 -- Ignore debris that is less than this bounding radius.
 	ACF.ValidDebris			= { -- Whitelist for things that can be turned into debris
@@ -82,9 +82,9 @@ do -- ACF global vars
 	}
 
 	-- Weapon Accuracy
-	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy.  Default 4x
+	ACF.SpreadScale 		= 4 -- The maximum amount that damage can decrease a gun"s accuracy. Default 4x
 	ACF.GunInaccuracyScale 	= 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
-	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate.  Choose between 0.5 to 4. Default is 2 (unbiased).
+	ACF.GunInaccuracyBias 	= 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
 	ACF.FuelRate 			= 1 --multiplier for fuel usage, 1.0 is approx real world

@@ -65,7 +65,7 @@ do -- Github data conversion
 		Message = Message:Replace("\n\n", "\n"):gsub("[\r]*[\n]+[%s]+", "\n- ")
 
 		local Title = Start and Message:sub(1, Start - 1) or Message
-		local Body =  Start and Message:sub(Start + 1, #Message) or "No Commit Message"
+		local Body  = Start and Message:sub(Start + 1, #Message) or "No Commit Message"
 
 		return Title, Body
 	end

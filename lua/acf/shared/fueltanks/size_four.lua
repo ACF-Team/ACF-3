@@ -70,7 +70,7 @@ do
 
 	ACF.RegisterFuelTank("Tank_4x8x4","FTS_4", {
 		Name		= "4x8x4 Container",
-		Description	= "\'MURRICA  FUCKYEAH!",
+		Description	= "\'MURRICA FUCKYEAH!",
 		Model		= "models/fueltank/fueltank_4x8x4.mdl",
 		SurfaceArea	= 14993.3,
 		Volume		= 123693.2,

@@ -132,7 +132,7 @@ do
 			debugoverlay.Cross(Origin, 15, 15, Color( 255, 255, 255 ), true)
 			Filter = Filter or {}
 
-			local Power 	 = FillerMass * ACF.HEPower --Power in KiloJoules of the filler mass of  TNT
+			local Power 	 = FillerMass * ACF.HEPower --Power in KiloJoules of the filler mass of TNT
 			local Radius 	 = FillerMass ^ 0.33 * 8 * 39.37 -- Scaling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m
 			local MaxSphere  = 4 * 3.1415 * (Radius * 2.54) ^ 2 --Surface Area of the sphere at maximum radius
 			local Amp 		 = math.min(Power / 2000, 50)
@@ -513,7 +513,7 @@ do
 
 			-- do an initial processing pass on children, separating out explodey things to handle last
 			for Ent in pairs( Children ) do
-				Ent.ACF_Killed = true  -- mark that it's already processed
+				Ent.ACF_Killed = true -- mark that it's already processed
 
 				if not ValidDebris[Ent:GetClass()] then
 					Children[Ent] = nil -- ignoring stuff like holos, wiremod components, etc.
