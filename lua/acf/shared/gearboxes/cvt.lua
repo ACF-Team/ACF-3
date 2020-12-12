@@ -66,8 +66,8 @@ ACF.RegisterGearboxClass("CVT", {
 		local Text    = "Reverse Gear: %s\nTarget: %s - %s RPM"
 		local Gears   = Gearbox.Gears
 		local Reverse = math.Round(Gears[2], 2)
-		local Min     = math.Round(Gearbox.MinRPM, 0)
-		local Max     = math.Round(Gearbox.MaxRPM, 0)
+		local Min     = math.Round(Gearbox.MinRPM)
+		local Max     = math.Round(Gearbox.MaxRPM)
 
 		return Text:format(Reverse, Min, Max)
 	end,
@@ -223,3 +223,19 @@ do -- Straight-through Gearboxes
 		MaxTorque	= math.floor(GearCVTLT * StTB),
 	})
 end
+
+ACF.SetCustomAttachments("models/engines/t5large.mdl", {
+	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
+	{ Name = "driveshaftR", Pos = Vector(0, 30), Ang = Angle(0, -180, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, 30), Ang = Angle(0, -180, 90) },
+})
+ACF.SetCustomAttachments("models/engines/t5med.mdl", {
+	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
+	{ Name = "driveshaftR", Pos = Vector(0, 25), Ang = Angle(0, -180, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, 25), Ang = Angle(0, -180, 90) },
+})
+ACF.SetCustomAttachments("models/engines/t5small.mdl", {
+	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
+	{ Name = "driveshaftR", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
+})

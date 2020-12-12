@@ -135,3 +135,34 @@ do -- Transaxial Dual Clutch Gearboxes
 		DualClutch	= true,
 	})
 end
+
+ACF.SetCustomAttachments("models/engines/transaxial_l.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 20, 8), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -20, 8), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(20, 0, 8), Ang = Angle(0, 0, 90) },
+})
+ACF.SetCustomAttachments("models/engines/transaxial_m.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 12, 4.8), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -12, 4.8), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(12, 0, 4.8), Ang = Angle(0, 0, 90) },
+})
+ACF.SetCustomAttachments("models/engines/transaxial_s.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 8, 3.2), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -8, 3.2), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(8, 0, 3.2), Ang = Angle(0, 0, 90) },
+})
+ACF.SetCustomAttachments("models/engines/linear_l.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 20, 8), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -24, 8), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(0, 4, 29), Ang = Angle(0, -90, 90) },
+})
+ACF.SetCustomAttachments("models/engines/linear_m.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 12, 4.8), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -14.4, 4.8), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(0, 2.4, 17.4), Ang = Angle(0, -90, 90) },
+})
+ACF.SetCustomAttachments("models/engines/linear_s.mdl", {
+	{ Name = "driveshaftR", Pos = Vector(0, 8, 3.2), Ang = Angle(0, 90, 90) },
+	{ Name = "driveshaftL", Pos = Vector(0, -9.6, 3.2), Ang = Angle(0, -90, 90) },
+	{ Name = "input", Pos = Vector(0, 1.6, 11.6), Ang = Angle(0, -90, 90) },
+})
