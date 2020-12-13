@@ -150,10 +150,7 @@ ACF.RegisterClassUnlink("acf_gearbox", "acf_gearbox", UnlinkGearbox)
 ACF.RegisterClassUnlink("acf_gearbox", "tire", UnlinkWheel)
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink   = ACF.GetClassLink
-local ClassUnlink = ACF.GetClassUnlink
 local Gearboxes   = ACF.Classes.Gearboxes
-local Inputs      = ACF.GetInputActions("acf_gearbox")
 local Clamp       = math.Clamp
 local HookRun     = hook.Run
 
@@ -770,18 +767,6 @@ ACF.AddInputAction("acf_gearbox", "Shift Speed Scale", function(Entity, Value)
 	Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
 end)
 
-function ENT:TriggerInput(Name, Value)
-	if self.Disabled then return end
-
-	local Action = Inputs[Name]
-
-	if Action then
-		Action(self, Value)
-
-		self:UpdateOverlay()
-	end
-end
-
 -- Handles gearing for automatic gearboxes. 0 = Neutral, 1 = Drive, 2 = Reverse
 function ENT:ChangeDrive(Value)
 	Value = Clamp(math.floor(Value), 0, 2)
@@ -960,32 +945,6 @@ function ENT:Act(Torque, DeltaTime, MassRatio)
 	end
 
 	self.LastActive = ACF.CurTime
-end
-
-function ENT:Link(Target)
-	if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-	if self == Target then return false, "Can't link a gearbox to itself." end
-
-	local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Gearboxes can't be linked to '" .. Target:GetClass() .. "'."
-end
-
-function ENT:Unlink(Target)
-	if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-	if self == Target then return false, "Can't unlink a gearbox from itself." end
-
-	local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Gearboxes can't be unlinked from '" .. Target:GetClass() .. "'."
 end
 
 function ENT:PreEntityCopy()

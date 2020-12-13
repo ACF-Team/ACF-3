@@ -8,12 +8,9 @@ include("shared.lua")
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink   = ACF.GetClassLink
-local ClassUnlink = ACF.GetClassUnlink
 local FuelTanks	  = ACF.Classes.FuelTanks
 local FuelTypes	  = ACF.Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
-local Inputs      = ACF.GetInputActions("acf_fueltank")
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
@@ -343,32 +340,6 @@ function ENT:Disable()
 	WireLib.TriggerOutput(self, "Activated", 0)
 end
 
-function ENT:Link(Target)
-	if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-	if self == Target then return false, "Can't link a fuel tank to itself." end
-
-	local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Fuel tanks can't be linked to '" .. Target:GetClass() .. "'."
-end
-
-function ENT:Unlink(Target)
-	if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-	if self == Target then return false, "Can't unlink a fuel tank from itself." end
-
-	local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Fuel tanks can't be unlinked from '" .. Target:GetClass() .. "'."
-end
-
 do -- Mass Update
 	local function UpdateMass(Entity)
 		local Fuel = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
@@ -462,18 +433,6 @@ end)
 ACF.AddInputAction("acf_fueltank", "Refuel Duty", function(Entity, Value)
 	Entity.SupplyFuel = tobool(Value) or nil
 end)
-
-function ENT:TriggerInput(Name, Value)
-	if self.Disabled then return end
-
-	local Action = Inputs[Name]
-
-	if Action then
-		Action(self, Value)
-
-		self:UpdateOverlay()
-	end
-end
 
 function ENT:CanConsume()
 	if self.Disabled then return false end

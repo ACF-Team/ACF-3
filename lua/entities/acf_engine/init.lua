@@ -102,11 +102,8 @@ end
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local ClassLink   = ACF.GetClassLink
-local ClassUnlink = ACF.GetClassUnlink
 local Engines     = ACF.Classes.Engines
 local EngineTypes = ACF.Classes.EngineTypes
-local Inputs      = ACF.GetInputActions("acf_engine")
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
 local max         = math.max
@@ -547,18 +544,6 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value))
 end)
 
-function ENT:TriggerInput(Name, Value)
-	if self.Disabled then return end
-
-	local Action = Inputs[Name]
-
-	if Action then
-		Action(self, Value)
-
-		self:UpdateOverlay()
-	end
-end
-
 function ENT:ACF_Activate()
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = self.ACF.PhysObj
@@ -735,32 +720,6 @@ function ENT:CalcRPM()
 
 		self:CalcRPM()
 	end)
-end
-
-function ENT:Link(Target)
-	if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-	if self == Target then return false, "Can't link an engine to itself." end
-
-	local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Engines can't be linked to '" .. Target:GetClass() .. "'."
-end
-
-function ENT:Unlink(Target)
-	if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-	if self == Target then return false, "Can't unlink an engine from itself." end
-
-	local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-	if Function then
-		return Function(self, Target)
-	end
-
-	return false, "Engines can't be unlinked from '" .. Target:GetClass() .. "'."
 end
 
 function ENT:PreEntityCopy()

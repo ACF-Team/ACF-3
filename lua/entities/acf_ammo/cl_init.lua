@@ -1,3 +1,5 @@
+DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
+
 include("shared.lua")
 
 language.Add("Cleanup_acf_ammo", "ACF Ammo Crates")
@@ -5,7 +7,6 @@ language.Add("Cleaned_acf_ammo", "Cleaned up all ACF Ammo Crates")
 language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
 
 local MaxRounds = GetConVar("acf_maxroundsdisplay")
-local HideInfo = ACF.HideInfoBubble
 local Refills = {}
 local Queued = {}
 
@@ -61,7 +62,7 @@ function ENT:Initialize()
 		UpdateAmmoCount(self)
 	end, "Ammo Crate " .. self:EntIndex())
 
-	self.BaseClass.Initialize(self)
+	BaseClass.Initialize(self)
 end
 
 function ENT:RequestAmmoData()
@@ -91,17 +92,6 @@ function ENT:OnFullUpdate()
 	net.Start("ACF_RequestAmmoData")
 		net.WriteEntity(self)
 	net.SendToServer()
-end
-
-function ENT:Draw()
-	self:DoNormalDraw(false, HideInfo())
-
-	Wire_Render(self)
-
-	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then
-		-- Every SENT that has GetBeamLength should draw a tracer. Some of them have the GetShowBeam boolean
-		Wire_DrawTracerBeam(self, 1, self.GetBeamHighlight and self:GetBeamHighlight() or false)
-	end
 end
 
 function ENT:OnRemove()

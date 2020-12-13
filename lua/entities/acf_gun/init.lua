@@ -13,7 +13,6 @@ local Shove        = ACF.KEShove
 local Overpressure = ACF.Overpressure
 local Weapons	   = ACF.Classes.Weapons
 local AmmoTypes    = ACF.Classes.AmmoTypes
-local Inputs       = ACF.GetInputActions("acf_gun")
 local TraceRes     = {} -- Output for traces
 local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace        = util.TraceLine
@@ -284,9 +283,6 @@ end ---------------------------------------------
 
 do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
-		local ClassLink	  = ACF.GetClassLink
-		local ClassUnlink = ACF.GetClassUnlink
-
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
@@ -337,50 +333,6 @@ do -- Metamethods --------------------------------
 			return false, "This weapon is not linked to this crate."
 		end)
 
-		local WireTable	  = {
-			gmod_wire_adv_pod = true,
-			gmod_wire_joystick = true,
-			gmod_wire_expression2 = true,
-			gmod_wire_joystick_multi = true,
-			gmod_wire_pod = function(_, Input)
-				if IsValid(Input.Pod) then
-					return Input.Pod:GetDriver()
-				end
-			end,
-			gmod_wire_keyboard = function(_, Input)
-				if Input.ply then
-					return Input.ply
-				end
-			end,
-		}
-
-		local function FindUser(Entity, Input, Checked)
-			local Function = WireTable[Input:GetClass()]
-
-			return Function and Function(Entity, Input, Checked or {})
-		end
-
-		WireTable.gmod_wire_adv_pod			= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_joystick		= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_joystick_multi	= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_expression2		= function(This, Input, Checked)
-			for _, V in pairs(Input.Inputs) do
-				if IsValid(V.Src) and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
-					Checked[V.Src] = true -- We don't want to start an infinite loop
-
-					return FindUser(This, V.Src, Checked)
-				end
-			end
-		end
-
-		function ENT:GetUser(Input)
-			if not IsValid(Input) then return self.Owner end
-
-			local User = FindUser(self, Input)
-
-			return IsValid(User) and User or self.Owner
-		end
-
 		ACF.AddInputAction("acf_gun", "Fire", function(Entity, Value)
 			local Bool = tobool(Value)
 
@@ -410,44 +362,6 @@ do -- Metamethods --------------------------------
 		ACF.AddInputAction("acf_gun", "Fuze", function(Entity, Value)
 			Entity.SetFuze = tobool(Value) and math.abs(Value)
 		end)
-
-		function ENT:TriggerInput(Name, Value)
-			if self.Disabled then return end
-
-			local Action = Inputs[Name]
-
-			if Action then
-				Action(self, Value)
-
-				self:UpdateOverlay()
-			end
-		end
-
-		function ENT:Link(Target)
-			if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-			if self == Target then return false, "Can't link a weapon to itself." end
-
-			local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-			if Function then
-				return Function(self, Target)
-			end
-
-			return false, "Guns can't be linked to '" .. Target:GetClass() .. "'."
-		end
-
-		function ENT:Unlink(Target)
-			if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-			if self == Target then return false, "Can't unlink a weapon from itself." end
-
-			local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-			if Function then
-				return Function(self, Target)
-			end
-
-			return false, "Guns can't be unlinked from '" .. Target:GetClass() .. "'."
-		end
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------

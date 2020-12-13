@@ -1,6 +1,6 @@
-include("shared.lua")
+DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
 
-local HideInfo = ACF.HideInfoBubble
+include("shared.lua")
 
 language.Add("Cleanup_acf_gun", "ACF Weapons")
 language.Add("Cleaned_acf_gun", "Cleaned up all ACF Weapons")
@@ -9,7 +9,7 @@ language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
 language.Add("Cleaned_acf_smokelauncher", "Cleaned up all ACF Smoke Launchers")
 language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
 
-function ENT:Initialize()
+function ENT:Initialize(...)
 	self.LastFire 	= 0
 	self.Reload 	= 0
 	self.CloseTime 	= 0
@@ -18,35 +18,21 @@ function ENT:Initialize()
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
 
-	self:Update()
-
-	self.BaseClass.Initialize(self)
+	BaseClass.Initialize(self, ...)
 end
 
 function ENT:Update()
 	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
 end
 
--- copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
-function ENT:Draw()
-	self:DoNormalDraw(false, HideInfo())
-
-	Wire_Render(self)
-
-	if self.GetBeamLength and (not self.GetShowBeam or self:GetShowBeam()) then
-		-- Every SENT that has GetBeamLength should draw a tracer. Some of them have the GetShowBeam boolean
-		Wire_DrawTracerBeam(self, 1, self.GetBeamHighlight and self:GetBeamHighlight() or false)
-	end
-end
-
 function ENT:Think()
-	self.BaseClass.Think(self)
+	BaseClass.Think(self)
 
-	local SinceFire = CurTime() - self.LastFire
+	local SinceFire = ACF.CurTime - self.LastFire
 
 	self:SetCycle(SinceFire * self.Rate / self.RateScale)
 
-	if CurTime() > self.LastFire + self.CloseTime and self.CloseAnim then
+	if ACF.CurTime > self.LastFire + self.CloseTime and self.CloseAnim then
 		self:ResetSequence(self.CloseAnim)
 		self:SetCycle((SinceFire - self.CloseTime) * self.Rate / self.RateScale)
 		self.Rate = 1 / (self.Reload - self.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
@@ -73,6 +59,6 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	end
 
 	self:SetPlaybackRate(self.Rate)
-	self.LastFire = CurTime()
+	self.LastFire = ACF.CurTime
 	self.Reload = ReloadTime
 end

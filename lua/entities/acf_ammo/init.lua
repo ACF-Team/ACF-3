@@ -654,40 +654,7 @@ do -- ACF Activation and Damage -----------------
 	end
 end ---------------------------------------------
 
-do -- Entity Link/Unlink ------------------------
-	local ClassLink   = ACF.GetClassLink
-	local ClassUnlink = ACF.GetClassUnlink
-
-	function ENT:Link(Target)
-		if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-		if self == Target then return false, "Can't link a crate to itself." end
-
-		local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-		if Function then
-			return Function(self, Target)
-		end
-
-		return false, "Crates can't be linked to '" .. Target:GetClass() .. "'."
-	end
-
-	function ENT:Unlink(Target)
-		if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-		if self == Target then return false, "Can't unlink a crate from itself." end
-
-		local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-		if Function then
-			return Function(self, Target)
-		end
-
-		return false, "Crates can't be unlinked from '" .. Target:GetClass() .. "'."
-	end
-end ---------------------------------------------
-
 do -- Entity Inputs -----------------------------
-	local Inputs = ACF.GetInputActions("acf_ammo")
-
 	WireLib.AddInputAlias("Active", "Load")
 	WireLib.AddOutputAlias("Munitions", "Ammo")
 
@@ -696,18 +663,6 @@ do -- Entity Inputs -----------------------------
 
 		WireLib.TriggerOutput(Entity, "Loading", Entity:CanConsume() and 1 or 0)
 	end)
-
-	function ENT:TriggerInput(Name, Value)
-		if self.Disabled then return end -- Ignore input if disabled
-
-		local Action = Inputs[Name]
-
-		if Action then
-			Action(self, Value)
-
-			self:UpdateOverlay()
-		end
-	end
 end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
