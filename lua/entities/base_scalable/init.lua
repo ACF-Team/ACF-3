@@ -164,11 +164,12 @@ do -- AdvDupe2 duped parented ammo workaround
 	hook.Add("AdvDupe_FinishPasting", "ACF Parented Scalable Ent Fix", function(DupeInfo)
 		DupeInfo = unpack(DupeInfo)
 
-		local Entities = DupeInfo.CreatedEntities
+		local CanParent = tobool(DupeInfo.Player:GetInfo("advdupe2_paste_parents"))
+		local Entities  = DupeInfo.CreatedEntities
 
 		for _, Entity in pairs(Entities) do
 			if Entity.IsScalable and Entity.ParentEnt then
-				Entity:SetParent(Entity.ParentEnt)
+				if CanParent then Entity:SetParent(Entity.ParentEnt) end
 
 				Entity.ParentEnt = nil
 			end
