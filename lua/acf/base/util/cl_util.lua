@@ -88,7 +88,9 @@ do -- Tool data functions
 
 			local Value = ToolData[Key]
 
-			return Value ~= nil and Value or Default
+			if Value ~= nil then return Value end
+
+			return Default
 		end
 
 		function ACF.ReadBool(Key, Default)
@@ -98,13 +100,13 @@ do -- Tool data functions
 		function ACF.ReadNumber(Key, Default)
 			local Value = ReadData(Key, Default)
 
-			return Value ~= nil and tonumber(Value) or 0 -- tonumber can't handle nil values
+			return ACF.CheckNumber(Value, 0)
 		end
 
 		function ACF.ReadString(Key)
 			local Value = ReadData(Key, Default)
 
-			return Value ~= nil and tostring(Value) or "" -- tostring can't handle nil values
+			return ACF.CheckString(Value, "")
 		end
 
 		ACF.ReadData = ReadData

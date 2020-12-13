@@ -72,6 +72,8 @@ do -- Tool data functions
 			local Value = net.ReadType()
 
 			ToolData[Player][Key] = Value
+
+			hook.Run("OnToolDataUpdate", Player, Key, Value)
 		end)
 
 		hook.Add("PlayerInitialSpawn", "ACF Tool Data", function(Player)
@@ -102,9 +104,11 @@ do -- Tool data functions
 			if not ToolData[Player] then return end
 			if Key == nil then return end
 
-			local Value = ToolData[Key]
+			local Value = ToolData[Player][Key]
 
-			return Value ~= nil and Value or Default
+			if Value ~= nil then return Value end
+
+			return Default
 		end
 
 		function ACF.ReadBool(Player, Key, Default)
@@ -114,13 +118,13 @@ do -- Tool data functions
 		function ACF.ReadNumber(Player, Key, Default)
 			local Value = ReadData(Player, Key, Default)
 
-			return Value ~= nil and tonumber(Value) or 0 -- tonumber can't handle nil values
+			return ACF.CheckNumber(Value, 0)
 		end
 
 		function ACF.ReadString(Player, Key, Default)
 			local Value = ReadData(Player, Key, Default)
 
-			return Value ~= nil and tostring(Value) or "" -- tostring can't handle nil values
+			return ACF.CheckString(Value, "")
 		end
 
 		ACF.ReadData = ReadData
