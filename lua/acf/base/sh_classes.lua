@@ -98,13 +98,20 @@ do -- Basic class registration functions
 		return Class
 	end
 
-	function ACF.GetClassGroup(Destiny, Class)
-		if not Destiny then return end
-		if not Class then return end
+	function ACF.GetClassGroup(Destiny, Name)
+		if not istable(Destiny) then return end
+		if not Name then return end
 
-		local Data = Groups[Destiny]
+		local Data  = Groups[Destiny]
+		local Class = Data and Data[Name]
 
-		return Data and Data[Class]
+		if Class then return Class end
+
+		local Group = Destiny[Name]
+
+		if not Group then return end
+
+		return Group.IsScalable and Group
 	end
 end
 

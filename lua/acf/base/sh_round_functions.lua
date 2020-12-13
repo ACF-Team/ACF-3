@@ -1,24 +1,43 @@
+local ACF     = ACF
 local Classes = ACF.Classes
-local GetClassGroup = ACF.GetClassGroup
+
+local function GetWeaponSpecs(ToolData)
+	local Source = Classes[ToolData.Destiny]
+	local Class = Source and ACF.GetClassGroup(Source, ToolData.Weapon)
+
+	if not Class then return end
+
+	if not Class.IsScalable then
+		local Weapon = Class.Lookup[ToolData.Weapon]
+
+		if not Weapon then return end
+
+		local RoundData = Weapon.Round
+
+		return Weapon.Caliber, RoundData.MaxLength, RoundData.PropMass
+	end
+
+	local Bounds  = Class.Caliber
+	local Caliber = math.Clamp(ToolData.Caliber or 0, Bounds.Min, Bounds.Max)
+	local Scale   = Caliber / Class.BaseCaliber
+
+	return Caliber, Class.BaseLength * Scale, Class.BaseProp * Scale
+end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Source = Classes[ToolData.Destiny]
-	local Class = Source and GetClassGroup(Source, ToolData.Weapon)
-	local Weapon = Class and Class.Lookup[ToolData.Weapon]
+	local Caliber, MaxLength, PropMass = GetWeaponSpecs(ToolData)
 	local GUIData = {}
 
-	if not Weapon then return Data, GUIData end
+	if not Caliber then return Data, GUIData end
 
-	local RoundData = Weapon.Round
-
-	Data.Caliber = Weapon.Caliber * 0.1 -- Bullet caliber will have to stay in cm
+	Data.Caliber = Caliber * 0.1 -- Bullet caliber will have to stay in cm
 	Data.FrArea = 3.1416 * (Data.Caliber * 0.5) ^ 2
 
-	GUIData.MaxRoundLength = math.Round(RoundData.MaxLength * (Data.LengthAdj or 1), 2)
+	GUIData.MaxRoundLength = math.Round(MaxLength * (Data.LengthAdj or 1), 2)
 	GUIData.MinPropLength = 0.01
 	GUIData.MinProjLength = math.Round(Data.Caliber * 1.5, 2)
 
-	local DesiredProp = math.Round(RoundData.PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
+	local DesiredProp = math.Round(PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
 	local AllowedProp = GUIData.MaxRoundLength - GUIData.MinProjLength
 
 	GUIData.MaxPropLength = math.min(DesiredProp, AllowedProp)
