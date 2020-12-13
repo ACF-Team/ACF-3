@@ -200,7 +200,7 @@ elseif CLIENT then
 	---------------------------------------------
 
 	-- Custom Tool Category ---------------------
-	ACF.CustomToolCategory = CreateClientConVar("acf_tool_category", 0, true, false)
+	ACF.CustomToolCategory = CreateClientConVar("acf_tool_category", 0, true, false, "If enabled, ACF tools will be put inside their own category.", 0, 1)
 
 	if ACF.CustomToolCategory:GetBool() then
 		language.Add("spawnmenu.tools.acf", "ACF")

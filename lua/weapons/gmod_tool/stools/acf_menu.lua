@@ -1,7 +1,6 @@
-TOOL.Name	  = "ACF Menu Test"
-TOOL.Category = "Construction"
-
 ACF.LoadToolFunctions(TOOL)
+
+TOOL.Name = "ACF Menu"
 
 if CLIENT then
 	local DrawBoxes = GetConVar("acf_drawboxes")

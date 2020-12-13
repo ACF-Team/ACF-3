@@ -1,7 +1,6 @@
-TOOL.Name	  = "ACF Copy Tool"
-TOOL.Category = "Construction"
-
 ACF.LoadToolFunctions(TOOL)
+
+TOOL.Name = "ACF Copy Tool"
 
 if CLIENT then
 	language.Add("Tool.acfcopy.name", "Armored Combat Framework")

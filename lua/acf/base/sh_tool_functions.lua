@@ -138,8 +138,22 @@ do -- Tool Information Registration function
 end
 
 do -- Tool Functions Loader
+	local Category = GetConVar("acf_tool_category")
+
 	if SERVER then
 		util.AddNetworkString("ACF_ToolNetVars")
+
+		hook.Add("PlayerCanPickupWeapon", "ACF Tools", function(Player, Weapon)
+			if Weapon:GetClass() ~= "gmod_tool" then return end
+
+			for Name in pairs(Tools) do
+				local Tool = Player:GetTool(Name)
+
+				if Tool then
+					Tool:RestoreMode()
+				end
+			end
+		end)
 	else
 		net.Receive("ACF_ToolNetVars", function()
 			local ToolName = net.ReadString()
@@ -212,6 +226,8 @@ do -- Tool Functions Loader
 		end
 
 		if CLIENT then
+			Tool.Category = Category:GetBool() and "ACF" or "Construction"
+
 			if Data.Information then
 				Tool.Information = {}
 
@@ -251,70 +267,81 @@ do -- Tool Functions Loader
 				self:SetOperation(Op.Index)
 			end
 
-			function Tool:LeftClick(Trace)
-				local OnLeftClick = self.OpData.OnLeftClick
+			function Tool:RestoreMode()
+				local ToolMode = ACF.ReadString(self:GetOwner(), "ToolMode:" .. self.Mode)
 
-				if OnLeftClick then
-					return OnLeftClick(self, Trace)
+				if ToolMode then
+					local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
+
+					self:SetMode(Stage, Op)
+				end
+			end
+
+			function Tool:LeftClick(Trace)
+				if self.OpData then
+					local OnLeftClick = self.OpData.OnLeftClick
+
+					if OnLeftClick then
+						return OnLeftClick(self, Trace)
+					end
 				end
 
 				return false
 			end
 
 			function Tool:RightClick(Trace)
-				local OnRightClick = self.OpData.OnRightClick
+				if self.OpData then
+					local OnRightClick = self.OpData.OnRightClick
 
-				if OnRightClick then
-					return OnRightClick(self, Trace)
+					if OnRightClick then
+						return OnRightClick(self, Trace)
+					end
 				end
 
 				return false
 			end
 
 			function Tool:Reload(Trace)
-				local OnReload = self.OpData.OnReload
+				if self.OpData then
+					local OnReload = self.OpData.OnReload
 
-				if OnReload then
-					return OnReload(self, Trace)
+					if OnReload then
+						return OnReload(self, Trace)
+					end
 				end
 
 				return false
 			end
 
 			function Tool:Deploy()
-				local OnDeploy = self.OpData.OnDeploy
+				self:RestoreMode()
 
-				if self.LastStage then
-					self:SetStage(self.LastStage)
-					self:SetOperation(self.LastOp)
+				if self.OpData then
+					local OnDeploy = self.OpData.OnDeploy
 
-					self.LastStage = nil
-					self.LastOp = nil
-				end
-
-				if OnDeploy then
-					OnDeploy(self)
+					if OnDeploy then
+						OnDeploy(self)
+					end
 				end
 			end
 
 			function Tool:Holster()
-				local OnHolster = self.OpData.OnHolster
+				if self.OpData then
+					local OnHolster = self.OpData.OnHolster
 
-				if OnHolster then
-					OnHolster(self)
-				end
-
-				if not self.LastStage then
-					self.LastStage = self.Stage
-					self.LastOp = self.Operation
+					if OnHolster then
+						OnHolster(self)
+					end
 				end
 			end
 
 			function Tool:Think()
-				local OnThink = self.OpData.OnThink
+				if self.OpData then
+					local OnThink = self.OpData.OnThink
 
-				if OnThink then
-					OnThink(self)
+					if OnThink then
+						OnThink(self)
+					end
 				end
 			end
 		end
@@ -323,32 +350,30 @@ end
 
 do -- Clientside Tool interaction
 	if SERVER then
-		util.AddNetworkString("ACF_ToolMode")
+		hook.Add("OnToolDataUpdate", "ACF ToolMode", function(Player, Key, Value)
+			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
 
-		net.Receive("ACF_ToolMode", function(_, Player)
-			local ToolName = net.ReadString()
-			local StageName = net.ReadString()
-			local OpName = net.ReadString()
-			local Tool = Player:GetTool(ToolName)
+			if Header ~= "ToolMode" then return end
+
+			local Tool = Player:GetTool(Name)
 
 			if not Tool then return end
 			if not Tool.SetMode then return end
 
-			Tool:SetMode(StageName, OpName)
+			local Stage, Op = unpack(string.Explode(":", Value), 1, 2)
+
+			Tool:SetMode(Stage, Op)
 		end)
 	else
+		local Key = "ToolMode:%s"
+		local Value = "%s:%s"
+
 		function ACF.SetToolMode(Tool, Stage, Op)
 			if not isstring(Tool) then return end
 			if not isstring(Stage) then return end
 			if not isstring(Op) then return end
 
-			timer.Simple(0, function() -- Yeah.
-				net.Start("ACF_ToolMode")
-					net.WriteString(Tool)
-					net.WriteString(Stage)
-					net.WriteString(Op)
-				net.SendToServer()
-			end)
+			ACF.WriteValue(Key:format(Tool), Value:format(Stage, Op))
 		end
 	end
 end
