@@ -202,8 +202,6 @@ e2function void entity:acfActive(number On)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
 
-	-- Both have the same function on different entities
-	this:TriggerInput("Load", On)
 	this:TriggerInput("Active", On)
 end
 

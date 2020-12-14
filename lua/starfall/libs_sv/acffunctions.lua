@@ -854,8 +854,6 @@ function ents_methods:acfSetActive(on)
 
 	CheckPerms(instance, This, "entities.acf")
 
-	-- Both have the same function on different entities
-	This:TriggerInput("Load", on)
 	This:TriggerInput("Active", on)
 end
 
