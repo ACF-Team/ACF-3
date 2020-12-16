@@ -54,7 +54,41 @@ local function NetworkData(Key, IsServer)
 	timer.Create("ACF Network Data Vars", 0, 1, SendQueued)
 end
 
-do -- Client data retrieval functions
+do -- Server data var syncronization
+	local function ProcessData(Values, Received)
+		if not Received then return end
+
+		for K, V in pairs(Received) do
+			if Values[K] ~= V then
+				Values[K] = V
+
+				hook.Run("ACF_OnServerDataUpdate", nil, K, V)
+			end
+
+			Received[K] = nil
+		end
+	end
+
+	net.Receive("ACF_DataVarNetwork", function(_, Player)
+		local Received = util.JSONToTable(net.ReadString())
+
+		if IsValid(Player) then return end -- NOTE: Can this even happen?
+
+		ProcessData(Server, Received)
+	end)
+
+	-- We'll request the server data vars as soon as the player starts moving
+	hook.Add("CreateMove", "ACF Request Data Vars", function(Move)
+		if Move:GetButtons() == 0 then return end
+
+		net.Start("ACF_RequestDataVars")
+		net.SendToServer()
+
+		hook.Remove("CreateMove", "ACF Request Data Vars")
+	end)
+end
+
+do -- Client data getter functions
 	local function GetData(Key, Default)
 		if Key == nil then return Default end
 
@@ -97,7 +131,7 @@ do -- Client data retrieval functions
 	ACF.GetClientRaw = GetData
 end
 
-do -- Write function
+do -- Client data setter function
 	function ACF.SetClientData(Key, Value)
 		if not isstring(Key) then return end
 
@@ -109,6 +143,26 @@ do -- Write function
 			hook.Run("ACF_OnClientDataUpdate", LocalPlayer(), Key, Value)
 
 			NetworkData(Key)
+		end
+	end
+end
+
+do -- Server data setter function
+	function ACF.SetServerData(Key, Value)
+		if not isstring(Key) then return end
+
+		local Player = LocalPlayer()
+
+		if not ACF.CanSetServerData(Player) then return end
+
+		Value = Value or false
+
+		if Server[Key] ~= Value then
+			Server[Key] = Value
+
+			hook.Run("ACF_OnServerDataUpdate", Player, Key, Value)
+
+			NetworkData(Key, true)
 		end
 	end
 end
