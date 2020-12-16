@@ -12,8 +12,8 @@ local function CreateMenu(Menu)
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview()
 
-	ACF.WriteValue("PrimaryClass", "acf_gearbox")
-	ACF.WriteValue("SecondaryClass", "N/A")
+	ACF.SetClientData("PrimaryClass", "acf_gearbox")
+	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("GearboxClass", Data.ID)
+		ACF.SetClientData("GearboxClass", Data.ID)
 
 		ACF.LoadSortedList(GearboxList, Data.Items, "ID")
 	end
@@ -37,7 +37,7 @@ local function CreateMenu(Menu)
 		local Preview = Data.Preview
 		local ClassData = GearboxClass.Selected
 
-		ACF.WriteValue("Gearbox", Data.ID)
+		ACF.SetClientData("Gearbox", Data.ID)
 
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
@@ -97,12 +97,12 @@ do -- Default Menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.WriteValue(Variable, Default)
+				ACF.SetClientData(Variable, Default)
 
 				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
-					local Value = math.Round(ACF.ReadNumber(Variable), 2)
+					local Value = math.Round(ACF.GetClientNumber(Variable), 2)
 
 					ValuesData[Variable] = Value
 
@@ -116,12 +116,12 @@ do -- Default Menus
 				ValuesData.FinalDrive = 1
 			end
 
-			ACF.WriteValue("FinalDrive", ValuesData.FinalDrive)
+			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
 			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
 			FinalDrive:SetDataVar("FinalDrive", "OnValueChanged")
 			FinalDrive:SetValueFunction(function(Panel)
-				local Value = math.Round(ACF.ReadNumber("FinalDrive"), 2)
+				local Value = math.Round(ACF.GetClientNumber("FinalDrive"), 2)
 
 				ValuesData.FinalDrive = Value
 
@@ -187,7 +187,7 @@ do -- Default Menus
 
 			local ValuesData = Values[Class.ID]
 
-			ACF.WriteValue("Gear1", 0.01)
+			ACF.SetClientData("Gear1", 0.01)
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
@@ -199,12 +199,12 @@ do -- Default Menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.WriteValue(Variable, Default)
+				ACF.SetClientData(Variable, Default)
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
-					local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
+					local Value = math.Round(ACF.GetClientNumber(Variable), GearData.Decimals)
 
 					ValuesData[Variable] = Value
 
@@ -289,7 +289,7 @@ do -- Default Menus
 
 			GearBase:AddLabel("Upshift Speed Unit :")
 
-			ACF.WriteValue("ShiftUnit", UnitMult)
+			ACF.SetClientData("ShiftUnit", UnitMult)
 
 			local Unit = GearBase:AddComboBox()
 			Unit:AddChoice("KPH", 10.936)
@@ -303,12 +303,12 @@ do -- Default Menus
 
 				for I = 1, Gears.Max do
 					local Var = "Shift" .. I
-					local Old = ACF.ReadNumber(Var)
+					local Old = ACF.GetClientNumber(Var)
 
-					ACF.WriteValue(Var, Old * Delta)
+					ACF.SetClientData(Var, Old * Delta)
 				end
 
-				ACF.WriteValue("ShiftUnit", Mult)
+				ACF.SetClientData("ShiftUnit", Mult)
 
 				UnitMult = Mult
 			end
@@ -323,12 +323,12 @@ do -- Default Menus
 					ValuesData[GearVar] = DefGear
 				end
 
-				ACF.WriteValue(GearVar, DefGear)
+				ACF.SetClientData(GearVar, DefGear)
 
 				local Gear = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
 				Gear:SetDataVar(GearVar, "OnValueChanged")
 				Gear:SetValueFunction(function(Panel)
-					local Value = math.Round(ACF.ReadNumber(GearVar), 2)
+					local Value = math.Round(ACF.GetClientNumber(GearVar), 2)
 
 					ValuesData[GearVar] = Value
 
@@ -346,13 +346,13 @@ do -- Default Menus
 					ValuesData[ShiftVar] = DefShift
 				end
 
-				ACF.WriteValue(ShiftVar, DefShift)
+				ACF.SetClientData(ShiftVar, DefShift)
 
 				local Shift = GearBase:AddNumberWang("Gear " .. I .. " Upshift Speed", 0, 9999, 2)
 				Shift:HideWang()
 				Shift:SetDataVar(ShiftVar, "OnValueChanged")
 				Shift:SetValueFunction(function(Panel)
-					local Value = math.Round(ACF.ReadNumber(ShiftVar), 2)
+					local Value = math.Round(ACF.GetClientNumber(ShiftVar), 2)
 
 					ValuesData[ShiftVar] = Value
 
@@ -372,12 +372,12 @@ do -- Default Menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.WriteValue(Variable, Default)
+				ACF.SetClientData(Variable, Default)
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
 				Control:SetDataVar(Variable, "OnValueChanged")
 				Control:SetValueFunction(function(Panel)
-					local Value = math.Round(ACF.ReadNumber(Variable), GearData.Decimals)
+					local Value = math.Round(ACF.GetClientNumber(Variable), GearData.Decimals)
 
 					ValuesData[Variable] = Value
 
@@ -403,13 +403,13 @@ do -- Default Menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.WriteValue(Variable, Default)
+				ACF.SetClientData(Variable, Default)
 
 				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
 				Panel:HideWang()
 				Panel:SetDataVar(Variable, "OnValueChanged")
 				Panel:SetValueFunction(function()
-					local Value = math.Round(ACF.ReadNumber(Variable), PanelData.Decimals)
+					local Value = math.Round(ACF.GetClientNumber(Variable), PanelData.Decimals)
 
 					ValuesData[Variable] = Value
 
@@ -435,7 +435,7 @@ do -- Default Menus
 				for I = 1, Gears.Max do
 					local Gear = ValuesData["Gear" .. I]
 
-					ACF.WriteValue("Shift" .. I, Gear * Multiplier)
+					ACF.SetClientData("Shift" .. I, Gear * Multiplier)
 				end
 			end
 		end

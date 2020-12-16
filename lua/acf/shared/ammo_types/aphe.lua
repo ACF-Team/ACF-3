@@ -133,7 +133,7 @@ else
 		FillerMass:SetDataVar("FillerMass", "OnValueChanged")
 		FillerMass:TrackDataVar("Projectile")
 		FillerMass:SetValueFunction(function(Panel)
-			ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
+			ToolData.FillerMass = math.Round(ACF.GetClientNumber("FillerMass"), 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

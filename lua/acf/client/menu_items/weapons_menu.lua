@@ -18,8 +18,8 @@ local function CreateMenu(Menu)
 
 	local AmmoList = ACF.CreateAmmoMenu(Menu)
 
-	ACF.WriteValue("PrimaryClass", "acf_gun")
-	ACF.WriteValue("SecondaryClass", "acf_ammo")
+	ACF.SetClientData("PrimaryClass", "acf_gun")
+	ACF.SetClientData("SecondaryClass", "acf_ammo")
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
@@ -44,7 +44,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("WeaponClass", Data.ID)
+		ACF.SetClientData("WeaponClass", Data.ID)
 
 		ClassDesc:SetText(Data.Description)
 
@@ -61,8 +61,8 @@ local function CreateMenu(Menu)
 
 		local Preview = Data.Preview
 
-		ACF.WriteValue("Weapon", Data.ID)
-		ACF.WriteValue("Destiny", Data.Destiny or "Weapons")
+		ACF.SetClientData("Weapon", Data.ID)
+		ACF.SetClientData("Destiny", Data.Destiny or "Weapons")
 
 		EntName:SetText(Data.Name)
 		EntData:SetText(UpdateEntityData())

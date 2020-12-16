@@ -2,8 +2,8 @@ local ACF = ACF
 local Components = ACF.Classes.Components
 
 local function CreateMenu(Menu)
-	ACF.WriteValue("PrimaryClass", "N/A")
-	ACF.WriteValue("SecondaryClass", "N/A")
+	ACF.SetClientData("PrimaryClass", "N/A")
+	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
@@ -29,7 +29,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("ComponentClass", Data.ID)
+		ACF.SetClientData("ComponentClass", Data.ID)
 
 		ACF.LoadSortedList(ComponentList, Data.Items, "ID")
 	end
@@ -43,7 +43,7 @@ local function CreateMenu(Menu)
 		local Preview = Data.Preview
 		local ClassData = ComponentClass.Selected
 
-		ACF.WriteValue("Component", Data.ID)
+		ACF.SetClientData("Component", Data.ID)
 
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "No description provided.")

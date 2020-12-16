@@ -184,7 +184,7 @@ else
 		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 		Flechettes:SetDataVar("Flechettes", "OnValueChanged")
 		Flechettes:SetValueFunction(function(Panel)
-			ToolData.Flechettes = math.floor(ACF.ReadNumber("Flechettes"))
+			ToolData.Flechettes = math.floor(ACF.GetClientNumber("Flechettes"))
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
@@ -196,7 +196,7 @@ else
 		local Spread = Base:AddSlider("Flechette Spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
 		Spread:SetDataVar("Spread", "OnValueChanged")
 		Spread:SetValueFunction(function(Panel)
-			ToolData.Spread = ACF.ReadNumber("Spread")
+			ToolData.Spread = ACF.GetClientNumber("Spread")
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 

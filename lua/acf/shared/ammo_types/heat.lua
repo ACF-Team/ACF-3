@@ -310,7 +310,7 @@ else
 		LinerAngle:SetDataVar("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackDataVar("Projectile")
 		LinerAngle:SetValueFunction(function(Panel)
-			ToolData.LinerAngle = math.Round(ACF.ReadNumber("LinerAngle"), 2)
+			ToolData.LinerAngle = math.Round(ACF.GetClientNumber("LinerAngle"), 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -325,7 +325,7 @@ else
 		FillerMass:TrackDataVar("Projectile")
 		FillerMass:TrackDataVar("LinerAngle")
 		FillerMass:SetValueFunction(function(Panel)
-			ToolData.FillerMass = math.Round(ACF.ReadNumber("FillerMass"), 2)
+			ToolData.FillerMass = math.Round(ACF.GetClientNumber("FillerMass"), 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

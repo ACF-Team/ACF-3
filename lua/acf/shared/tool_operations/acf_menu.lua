@@ -1,5 +1,4 @@
-local GetToolData = ACF.GetToolData
-local SendMessage = ACF.SendMessage
+local ACF      = ACF
 local Entities = {}
 
 local function GetPlayerEnts(Player)
@@ -64,7 +63,7 @@ do -- Spawner operation
 		if CanUpdate(Player, Entity, ClassName) then
 			local Result, Message = Entity:Update(Data)
 
-			SendMessage(Player, Result and "Info" or "Error", Message)
+			ACF.SendMessage(Player, Result and "Info" or "Error", Message)
 			return true
 		end
 
@@ -87,14 +86,14 @@ do -- Spawner operation
 			if Trace.HitSky then return false end
 
 			local Player = Tool:GetOwner()
-			local Data = GetToolData(Player)
+			local Data = ACF.GetAllClientData(Player)
 			local ClassName = Data.PrimaryClass
 
 			return SpawnEntity(Player, ClassName, Trace, Data)
 		end,
 		OnRightClick = function(Tool, Trace)
 			local Player = Tool:GetOwner()
-			local Data = GetToolData(Player)
+			local Data = ACF.GetAllClientData(Player)
 			local ClassName = Data.SecondaryClass
 
 			if not Player:KeyDown(IN_SPEED) and SpawnEntity(Player, ClassName, Trace, Data) then
@@ -155,11 +154,11 @@ do -- Linker operation
 		if Done > 0 then
 			local Status = (Unlink and "unlinked " or "linked ") .. Done .. " out of " .. Total
 
-			SendMessage(Player, "Info", "Successfully ", Status, " entities to ", tostring(Entity), ".")
+			ACF.SendMessage(Player, "Info", "Successfully ", Status, " entities to ", tostring(Entity), ".")
 		else
 			local Status = Total .. " entities could be " .. (Unlink and "unlinked" or "linked")
 
-			SendMessage(Player, "Error", "None of the ", Status, " to ", tostring(Entity), ".")
+			ACF.SendMessage(Player, "Error", "None of the ", Status, " to ", tostring(Entity), ".")
 		end
 	end
 

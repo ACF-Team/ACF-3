@@ -2,8 +2,8 @@ local ACF = ACF
 local Sensors = ACF.Classes.Sensors
 
 local function CreateMenu(Menu)
-	ACF.WriteValue("PrimaryClass", "N/A")
-	ACF.WriteValue("SecondaryClass", "N/A")
+	ACF.SetClientData("PrimaryClass", "N/A")
+	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
@@ -29,7 +29,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("SensorClass", Data.ID)
+		ACF.SetClientData("SensorClass", Data.ID)
 
 		ACF.LoadSortedList(SensorList, Data.Items, "ID")
 	end
@@ -43,7 +43,7 @@ local function CreateMenu(Menu)
 		local Preview = Data.Preview
 		local ClassData = SensorClass.Selected
 
-		ACF.WriteValue("Sensor", Data.ID)
+		ACF.SetClientData("Sensor", Data.ID)
 
 		SensorName:SetText(Data.Name)
 		SensorDesc:SetText(Data.Description or "No description provided.")

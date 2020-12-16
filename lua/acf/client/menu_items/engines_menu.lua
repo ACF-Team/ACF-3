@@ -79,8 +79,8 @@ local function CreateMenu(Menu)
 	local FuelPreview = FuelBase:AddModelPreview()
 	local FuelInfo = FuelBase:AddLabel()
 
-	ACF.WriteValue("PrimaryClass", "acf_engine")
-	ACF.WriteValue("SecondaryClass", "acf_fueltank")
+	ACF.SetClientData("PrimaryClass", "acf_engine")
+	ACF.SetClientData("SecondaryClass", "acf_fueltank")
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
@@ -90,7 +90,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("EngineClass", Data.ID)
+		ACF.SetClientData("EngineClass", Data.ID)
 
 		ACF.LoadSortedList(EngineList, Data.Items, "Mass")
 	end
@@ -105,7 +105,7 @@ local function CreateMenu(Menu)
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 
-		ACF.WriteValue("Engine", Data.ID)
+		ACF.SetClientData("Engine", Data.ID)
 
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description)
@@ -142,7 +142,7 @@ local function CreateMenu(Menu)
 
 		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description
 
-		ACF.WriteValue("FuelTank", Data.ID)
+		ACF.SetClientData("FuelTank", Data.ID)
 
 		FuelPreview:SetModel(Data.Model)
 		FuelPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
@@ -159,7 +159,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.WriteValue("FuelType", Data.ID)
+		ACF.SetClientData("FuelType", Data.ID)
 
 		self:UpdateFuelText()
 	end

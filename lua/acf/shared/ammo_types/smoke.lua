@@ -194,7 +194,7 @@ else
 		SmokeFiller:TrackDataVar("Projectile")
 		SmokeFiller:TrackDataVar("WPFiller")
 		SmokeFiller:SetValueFunction(function(Panel, IsTracked)
-			ToolData.SmokeFiller = math.Round(ACF.ReadNumber("SmokeFiller"), 2)
+			ToolData.SmokeFiller = math.Round(ACF.GetClientNumber("SmokeFiller"), 2)
 
 			if not IsTracked then
 				BulletData.FillerPriority = "Smoke"
@@ -213,7 +213,7 @@ else
 		WPFiller:TrackDataVar("SmokeFiller")
 		WPFiller:TrackDataVar("Projectile")
 		WPFiller:SetValueFunction(function(Panel, IsTracked)
-			ToolData.WPFiller = math.Round(ACF.ReadNumber("WPFiller"), 2)
+			ToolData.WPFiller = math.Round(ACF.GetClientNumber("WPFiller"), 2)
 
 			if not IsTracked then
 				BulletData.FillerPriority = "WP"

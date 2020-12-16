@@ -1,9 +1,10 @@
 do -- ACF global vars
-	ACF.AmmoTypes 			= ACF.AmmoTypes or {}
 	ACF.AmmoCrates 			= ACF.AmmoCrates or {}
 	ACF.Classes				= ACF.Classes or {}
 	ACF.FuelTanks 			= ACF.FuelTanks or {}
 	ACF.Repositories		= ACF.Repositories or {}
+	ACF.ClientData			= ACF.ClientData or {}
+	ACF.ServerData			= ACF.ServerData or {}
 
 	-- Misc
 	ACF.Year 				= 1945

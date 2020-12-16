@@ -109,7 +109,7 @@ else
 		HollowCavity:SetDataVar("HollowCavity", "OnValueChanged")
 		HollowCavity:TrackDataVar("Projectile")
 		HollowCavity:SetValueFunction(function(Panel)
-			ToolData.HollowCavity = math.Round(ACF.ReadNumber("HollowCavity"), 2)
+			ToolData.HollowCavity = math.Round(ACF.GetClientNumber("HollowCavity"), 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

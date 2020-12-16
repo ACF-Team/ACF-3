@@ -268,7 +268,7 @@ do -- Tool Functions Loader
 			end
 
 			function Tool:RestoreMode()
-				local ToolMode = ACF.ReadString(self:GetOwner(), "ToolMode:" .. self.Mode)
+				local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
 
 				if ToolMode then
 					local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
@@ -350,7 +350,7 @@ end
 
 do -- Clientside Tool interaction
 	if SERVER then
-		hook.Add("OnToolDataUpdate", "ACF ToolMode", function(Player, Key, Value)
+		hook.Add("ACF_OnClientDataUpdate", "ACF ToolMode", function(Player, Key, Value)
 			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
 
 			if Header ~= "ToolMode" then return end
@@ -373,7 +373,7 @@ do -- Clientside Tool interaction
 			if not isstring(Stage) then return end
 			if not isstring(Op) then return end
 
-			ACF.WriteValue(Key:format(Tool), Value:format(Stage, Op))
+			ACF.SetClientData(Key:format(Tool), Value:format(Stage, Op))
 		end
 	end
 end

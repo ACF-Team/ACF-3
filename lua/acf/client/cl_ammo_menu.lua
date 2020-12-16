@@ -61,7 +61,7 @@ local function AddControls(Base, Settings, ToolData)
 	local Projectile = Base:AddSlider("Projectile Length", 0, BulletData.MaxRoundLength, 2)
 	Projectile:SetDataVar("Projectile", "OnValueChanged")
 	Projectile:SetValueFunction(function(Panel, IsTracked)
-		ToolData.Projectile = ACF.ReadNumber("Projectile")
+		ToolData.Projectile = ACF.GetClientNumber("Projectile")
 
 		if not IsTracked then
 			BulletData.Priority = "Projectile"
@@ -69,7 +69,7 @@ local function AddControls(Base, Settings, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.WriteValue("Propellant", BulletData.PropLength)
+		ACF.SetClientData("Propellant", BulletData.PropLength)
 
 		Panel:SetValue(BulletData.ProjLength)
 
@@ -79,7 +79,7 @@ local function AddControls(Base, Settings, ToolData)
 	local Propellant = Base:AddSlider("Propellant Length", 0, BulletData.MaxRoundLength, 2)
 	Propellant:SetDataVar("Propellant", "OnValueChanged")
 	Propellant:SetValueFunction(function(Panel, IsTracked)
-		ToolData.Propellant = ACF.ReadNumber("Propellant")
+		ToolData.Propellant = ACF.GetClientNumber("Propellant")
 
 		if not IsTracked then
 			BulletData.Priority = "Propellant"
@@ -87,7 +87,7 @@ local function AddControls(Base, Settings, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.WriteValue("Projectile", BulletData.ProjLength)
+		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
 		Panel:SetValue(BulletData.PropLength)
 
@@ -105,12 +105,12 @@ local function AddControls(Base, Settings, ToolData)
 		local Tracer = Base:AddCheckBox("Tracer")
 		Tracer:SetDataVar("Tracer", "OnChange")
 		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.ReadBool("Tracer")
+			ToolData.Tracer = ACF.GetClientBool("Tracer")
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
-			ACF.WriteValue("Projectile", BulletData.ProjLength)
-			ACF.WriteValue("Propellant", BulletData.PropLength)
+			ACF.SetClientData("Projectile", BulletData.ProjLength)
+			ACF.SetClientData("Propellant", BulletData.PropLength)
 
 			Panel:SetText("Tracer : " .. BulletData.Tracer .. " cm")
 			Panel:SetValue(ToolData.Tracer)
@@ -118,7 +118,7 @@ local function AddControls(Base, Settings, ToolData)
 			return ToolData.Tracer
 		end)
 	else
-		ACF.WriteValue("Tracer", false) -- Disabling the tracer, as it takes up spaces on ammo.
+		ACF.SetClientData("Tracer", false) -- Disabling the tracer, as it takes up spaces on ammo.
 	end
 end
 
@@ -139,7 +139,7 @@ end
 function ACF.UpdateAmmoMenu(Menu, Settings)
 	if not Ammo then return end
 
-	local ToolData = ACF.GetToolData()
+	local ToolData = ACF.GetAllClientData()
 	local Base = Menu.AmmoBase
 
 	BulletData = Ammo:ClientConvert(ToolData)
@@ -173,7 +173,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local SizeX = Menu:AddSlider("Crate Width", 6, 96, 2)
 	SizeX:SetDataVar("CrateSizeX", "OnValueChanged")
 	SizeX:SetValueFunction(function(Panel)
-		local Value = ACF.ReadNumber("CrateSizeX")
+		local Value = ACF.GetClientNumber("CrateSizeX")
 
 		Panel:SetValue(Value)
 
@@ -183,7 +183,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local SizeY = Menu:AddSlider("Crate Height", 6, 96, 2)
 	SizeY:SetDataVar("CrateSizeY", "OnValueChanged")
 	SizeY:SetValueFunction(function(Panel)
-		local Value = ACF.ReadNumber("CrateSizeY")
+		local Value = ACF.GetClientNumber("CrateSizeY")
 
 		Panel:SetValue(Value)
 
@@ -193,7 +193,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local SizeZ = Menu:AddSlider("Crate Depth", 6, 96, 2)
 	SizeZ:SetDataVar("CrateSizeZ", "OnValueChanged")
 	SizeZ:SetValueFunction(function(Panel)
-		local Value = ACF.ReadNumber("CrateSizeZ")
+		local Value = ACF.GetClientNumber("CrateSizeZ")
 
 		Panel:SetValue(Value)
 
@@ -215,7 +215,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 
 		Ammo = Data
 
-		ACF.WriteValue("AmmoType", Data.ID)
+		ACF.SetClientData("AmmoType", Data.ID)
 
 		Desc:SetText(Data.Description)
 
