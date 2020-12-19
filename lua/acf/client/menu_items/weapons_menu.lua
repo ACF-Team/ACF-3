@@ -23,21 +23,6 @@ local function CreateMenu(Menu)
 
 	ACF.SetToolMode("acf_menu", "Main", "Spawner")
 
-	local function UpdateEntityData()
-		local Class = ClassList.Selected
-		local Data  = EntList.Selected
-
-		if not Class then return "" end
-		if not Data then return "" end
-
-		local AmmoData   = ACF.GetCurrentAmmoData()
-		local ReloadTime = AmmoData and (ACF.BaseReload + (AmmoData.ProjMass + AmmoData.PropMass) * ACF.MassToTime) or 60
-		local Firerate   = Data.Cyclic or 60 / ReloadTime
-		local Magazine   = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
-
-		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread * 100, Magazine)
-	end
-
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
@@ -65,7 +50,6 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("Destiny", Data.Destiny or "Weapons")
 
 		EntName:SetText(Data.Name)
-		EntData:SetText(UpdateEntityData())
 
 		EntPreview:SetModel(Data.Model)
 		EntPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
@@ -76,10 +60,23 @@ local function CreateMenu(Menu)
 		ACF.UpdateAmmoMenu(Menu)
 	end
 
-	EntData:TrackDataVar("Projectile", "SetText")
-	EntData:TrackDataVar("Propellant")
-	EntData:TrackDataVar("Tracer")
-	EntData:SetValueFunction(UpdateEntityData)
+	EntData:TrackClientData("Projectile", "SetText")
+	EntData:TrackClientData("Propellant")
+	EntData:TrackClientData("Tracer")
+	EntData:DefineSetter(function()
+		local Class = ClassList.Selected
+		local Data  = EntList.Selected
+
+		if not Class then return "" end
+		if not Data then return "" end
+
+		local AmmoData   = ACF.GetCurrentAmmoData()
+		local ReloadTime = AmmoData and (ACF.BaseReload + (AmmoData.ProjMass + AmmoData.PropMass) * ACF.MassToTime) or 60
+		local Firerate   = Data.Cyclic or 60 / ReloadTime
+		local Magazine   = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
+
+		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread * 100, Magazine)
+	end)
 
 	ACF.LoadSortedList(ClassList, Weapons, "Name")
 end

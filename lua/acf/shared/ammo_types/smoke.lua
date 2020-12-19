@@ -190,14 +190,16 @@ else
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local SmokeFiller = Base:AddSlider("Smoke Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
-		SmokeFiller:SetDataVar("SmokeFiller", "OnValueChanged")
-		SmokeFiller:TrackDataVar("Projectile")
-		SmokeFiller:TrackDataVar("WPFiller")
-		SmokeFiller:SetValueFunction(function(Panel, IsTracked)
-			ToolData.SmokeFiller = math.Round(ACF.GetClientNumber("SmokeFiller"), 2)
+		SmokeFiller:SetClientData("SmokeFiller", "OnValueChanged")
+		SmokeFiller:TrackClientData("Projectile")
+		SmokeFiller:TrackClientData("WPFiller")
+		SmokeFiller:DefineSetter(function(Panel, _, Key, Value, IsTracked)
+			if Key == "SmokeFiller" then
+				ToolData.SmokeFiller = math.Round(Value, 2)
 
-			if not IsTracked then
-				BulletData.FillerPriority = "Smoke"
+				if not IsTracked then
+					BulletData.FillerPriority = "Smoke"
+				end
 			end
 
 			self:UpdateRoundData(ToolData, BulletData)
@@ -209,14 +211,16 @@ else
 		end)
 
 		local WPFiller = Base:AddSlider("WP Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
-		WPFiller:SetDataVar("WPFiller", "OnValueChanged")
-		WPFiller:TrackDataVar("SmokeFiller")
-		WPFiller:TrackDataVar("Projectile")
-		WPFiller:SetValueFunction(function(Panel, IsTracked)
-			ToolData.WPFiller = math.Round(ACF.GetClientNumber("WPFiller"), 2)
+		WPFiller:SetClientData("WPFiller", "OnValueChanged")
+		WPFiller:TrackClientData("SmokeFiller")
+		WPFiller:TrackClientData("Projectile")
+		WPFiller:DefineSetter(function(Panel, _, Key, Value, IsTracked)
+			if Key == "WPFiller" then
+				ToolData.WPFiller = math.Round(Value, 2)
 
-			if not IsTracked then
-				BulletData.FillerPriority = "WP"
+				if not IsTracked then
+					BulletData.FillerPriority = "WP"
+				end
 			end
 
 			self:UpdateRoundData(ToolData, BulletData)
@@ -230,11 +234,11 @@ else
 
 	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
-		RoundStats:TrackDataVar("Projectile", "SetText")
-		RoundStats:TrackDataVar("Propellant")
-		RoundStats:TrackDataVar("SmokeFiller")
-		RoundStats:TrackDataVar("WPFiller")
-		RoundStats:SetValueFunction(function()
+		RoundStats:TrackClientData("Projectile", "SetText")
+		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("SmokeFiller")
+		RoundStats:TrackClientData("WPFiller")
+		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
@@ -246,9 +250,9 @@ else
 		end)
 
 		local SmokeStats = Menu:AddLabel()
-		SmokeStats:TrackDataVar("SmokeFiller", "SetText")
-		SmokeStats:TrackDataVar("WPFiller")
-		SmokeStats:SetValueFunction(function()
+		SmokeStats:TrackClientData("SmokeFiller", "SetText")
+		SmokeStats:TrackClientData("WPFiller")
+		SmokeStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 
 			local SMText, WPText = "", ""

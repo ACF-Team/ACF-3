@@ -132,12 +132,12 @@ do -- Client data getter functions
 end
 
 do -- Client data setter function
-	function ACF.SetClientData(Key, Value)
+	function ACF.SetClientData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
 		Value = Value or false
 
-		if Client[Key] ~= Value then
+		if Forced or Client[Key] ~= Value then
 			Client[Key] = Value
 
 			hook.Run("ACF_OnClientDataUpdate", LocalPlayer(), Key, Value)
@@ -148,7 +148,7 @@ do -- Client data setter function
 end
 
 do -- Server data setter function
-	function ACF.SetServerData(Key, Value)
+	function ACF.SetServerData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
 		local Player = LocalPlayer()
@@ -157,7 +157,7 @@ do -- Server data setter function
 
 		Value = Value or false
 
-		if Server[Key] ~= Value then
+		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
 			hook.Run("ACF_OnServerDataUpdate", Player, Key, Value)
@@ -168,163 +168,227 @@ do -- Server data setter function
 end
 
 do -- Panel functions
-	local PANEL = FindMetaTable("Panel")
-	local Trackers = {}
-	local Setters = {}
-	local Variables = {
-		Trackers = {},
-		Setters = {},
+	ACF.DataPanels = ACF.DataPanels or {
+		Server = {},
+		Client = {},
+		Panels = {},
 	}
 
-	local function AddVariable(Panel, Key, Target)
-		local Data = Target[Key]
+	local PanelMeta  = FindMetaTable("Panel")
+	local DataPanels = ACF.DataPanels
 
-		if not Data then
-			Target[Key] = {
-				[Panel] = true
-			}
-		else
-			Data[Panel] = true
+	local function GetSubtable(Table, Key)
+		local Result = Table[Key]
+
+		if not Result then
+			Result     = {}
+			Table[Key] = Result
+		end
+
+		return Result
+	end
+
+	local function StoreData(Destiny, Key, Type, Value, Store)
+		local BaseData = GetSubtable(DataPanels[Destiny], Key)
+		local TypeData = GetSubtable(BaseData, Type)
+
+		TypeData[Value] = Store or true
+	end
+
+	local function ClearFromType(Data, Type, Panel)
+		local Saved = Data[Type]
+
+		if not Saved then return end
+
+		for Name, Mode in pairs(Saved) do
+			DataPanels[Type][Name][Mode][Panel] = nil -- Weed lmao
 		end
 	end
 
-	local function AddTracker(Panel, Key)
-		local Data = Trackers[Panel]
+	local function ClearData(Panel)
+		local Panels = DataPanels.Panels
+		local Data   = Panels[Panel]
 
-		if not Data then
-			Trackers[Panel] = {
-				[Key] = true
-			}
-		else
-			Data[Key] = true
+		-- Apparently this can be called twice
+		if Data then
+			ClearFromType(Data, "Server", Panel)
+			ClearFromType(Data, "Client", Panel)
 		end
 
-		AddVariable(Panel, Key, Variables.Trackers)
+		Panels[Panel] = nil
 	end
 
-	local function AddSetter(Panel, Key)
-		local Data = Setters[Panel]
+	local function HijackThink(Panel)
+		local OldThink = Panel.Think
+		local Player   = LocalPlayer()
 
-		if not Data then
-			Setters[Panel] = {
-				[Key] = true
-			}
-		else
-			Data[Key] = true
-		end
+		Panel.Enabled = Panel:IsEnabled()
 
-		AddVariable(Panel, Key, Variables.Setters)
-	end
+		function Panel:Think(...)
+			if self.ServerVar then
+				local Enabled = ACF.CanSetServerData(Player)
 
-	local function ClearVariables(Panel)
-		if Trackers[Panel] then
-			for K in pairs(Trackers[Panel]) do
-				Variables.Trackers[K][Panel] = nil
+				if self.Enabled ~= Enabled then
+					self.Enabled = Enabled
+
+					self:SetEnabled(Enabled)
+				end
 			end
 
-			Trackers[Panel] = nil
-		end
-
-		if Setters[Panel] then
-			for K in pairs(Setters[Panel]) do
-				Variables.Setters[K][Panel] = nil
+			if OldThink then
+				return OldThink(self, ...)
 			end
-
-			Setters[Panel] = nil
 		end
 	end
 
-	local function LoadFunctions(Panel)
-		if not Panel.LegacyRemove then
-			Panel.LegacyRemove = Panel.Remove
+	local function HijackRemove(Panel)
+		local OldRemove = Panel.Remove
 
-			function Panel:Remove()
-				ClearVariables(self)
+		function Panel:Remove(...)
+			ClearData(self)
 
-				self:LegacyRemove()
-			end
+			return OldRemove(self, ...)
 		end
+	end
 
-		if Panel.Hijack and Panel.Hijack ~= Panel.PrevHijack then
-			if Panel.PrevHijack then
-				Panel[Panel.PrevHijack] = Panel.OldSetFunc
-			end
+	local function HijackFunctions(Panel, SetFunction)
+		if Panel.Hijacked then return end
 
-			Panel.PrevHijack = Panel.Hijack
-			Panel.OldSetFunc = Panel[Panel.Hijack]
+		local Setter = Panel[SetFunction] and SetFunction or "SetValue"
 
-			function Panel:NewSetFunc(Value)
-				if self.DataVar then
-					ACF.SetClientData(self.DataVar, Value)
-					return
+		Panel.OldSet   = Panel[Setter]
+		Panel.Hijacked = true
+
+		Panel[Setter] = function(This, Value, Forced)
+			local ServerVar = This.ServerVar
+			local ClientVar = This.ClientVar
+
+			if not (ServerVar or ClientVar) then
+				if This.SetCustomValue then
+					Value = This:SetCustomValue(nil, nil, Value) or Value
 				end
 
-				self:OldSetFunc(Value)
+				return This:OldSet(Value)
 			end
 
-			Panel[Panel.Hijack] = Panel.NewSetFunc
+			if ServerVar then
+				ACF.SetServerData(ServerVar, Value, Forced)
+			end
+
+			if ClientVar then
+				ACF.SetClientData(ClientVar, Value, Forced)
+			end
+		end
+
+		Panel.Setter = Panel[Setter]
+
+		-- We'll give a basic GetCustomValue function by default
+		-- I'll only work with setter panels though
+		if not Panel.GetCustomValue then
+			function Panel:GetCustomValue(Value)
+				if self.ClientVar then
+					return ACF.GetClientData(self.ClientVar, Value)
+				end
+
+				if self.ServerVar then
+					return ACF.GetServerData(self.ServerVar, Value)
+				end
+
+				return Value
+			end
+		end
+
+		HijackThink(Panel)
+		HijackRemove(Panel)
+	end
+
+	local function UpdatePanels(Panels, Type, Key, Value, IsTracked)
+		if not Panels then return end
+
+		for Panel in pairs(Panels) do
+			local Result = Value
+
+			if Panel.SetCustomValue then
+				Result = Panel:SetCustomValue(Type, Key, Value, IsTracked)
+			end
+
+			if Result ~= nil then
+				Panel:OldSet(Result)
+			end
 		end
 	end
 
-	function PANEL:SetDataVar(Key, Function)
-		if not Key then return end
-
-		self.DataVar = Key
-		self.Hijack = Function or self.Hijack or "SetValue"
-
-		AddSetter(self, Key)
-		LoadFunctions(self)
-
-		if not Client[Key] then
-			ACF.SetClientData(Key, self:GetValue())
-		end
-	end
-
-	function PANEL:TrackDataVar(Key, Function)
-		self.Hijack = Function or self.Hijack or "SetValue"
-
-		AddTracker(self, Key)
-		LoadFunctions(self)
-	end
-
-	function PANEL:SetValueFunction(Function)
+	function PanelMeta:DefineSetter(Function)
 		if not isfunction(Function) then return end
 
-		LoadFunctions(self)
+		self.SetCustomValue = Function
 
-		self.ValueFunction = Function
+		self:RefreshValue()
+	end
 
-		if self.Hijack then
-			self:NewSetFunc(self:ValueFunction())
+	function PanelMeta:DefineGetter(Function)
+		if not isfunction(Function) then return end
+
+		self.GetCustomValue = Function
+
+		self:RefreshValue()
+	end
+
+	function PanelMeta:RefreshValue(Value)
+		if self.GetCustomValue then
+			Value = self:GetCustomValue(Value)
+		end
+
+		if Value ~= nil then
+			self:Setter(Value, true)
 		end
 	end
 
-	hook.Add("ACF_OnClientDataUpdate", "ACF Update Panel Values", function(_, Key, Value)
-		local TrackerPanels = Variables.Trackers[Key]
-		local SetterPanels = Variables.Setters[Key]
+	--- Generates the following functions:
+	-- Panel:SetClientData(Key, Setter)
+	-- Panel:TrackClientData(Key, Setter)
+	-- Panel:SetServerData(Key, Setter)
+	-- Panel:TrackServerData(Key, Setter)
 
-		-- First we'll process the panels that set the value of this key
-		if SetterPanels then
-			for Panel in pairs(SetterPanels) do
-				if not Panel.OldSetFunc then continue end
+	for Type in pairs(Queued) do
+		PanelMeta["Set" .. Type .. "Data"] = function(Panel, Key, Setter)
+			if not ACF.CheckString(Key) then return end
 
-				local NewValue = Value
+			local Variables   = ACF[Type .. "Data"]
+			local SetFunction = ACF["Set" .. Type .. "Data"]
 
-				if Panel.ValueFunction then
-					NewValue = Panel:ValueFunction()
-				end
+			StoreData("Panels", Panel, Type, Key, "Setter")
+			StoreData(Type, Key, "Setter", Panel)
 
-				Panel:OldSetFunc(NewValue)
+			HijackFunctions(Panel, Setter or "SetValue")
+
+			Panel[Type .. "Var"] = Key
+
+			if Variables[Key] == nil then
+				SetFunction(Key, Panel:GetValue())
 			end
+
+			Panel:RefreshValue()
 		end
 
-		-- Then we'll process the panels that just keep track of this value
-		if TrackerPanels then
-			for Panel in pairs(TrackerPanels) do
-				if not Panel.ValueFunction then continue end
+		PanelMeta["Track" .. Type .. "Data"] = function(Panel, Key, Setter)
+			if not ACF.CheckString(Key) then return end
 
-				Panel:OldSetFunc(Panel:ValueFunction(true))
-			end
+			StoreData("Panels", Panel, Type, Key, "Tracker")
+			StoreData(Type, Key, "Tracker", Panel)
+
+			HijackFunctions(Panel, Setter or "SetValue")
+
+			Panel:RefreshValue()
 		end
-	end)
+
+		hook.Add("ACF_On" .. Type .. "DataUpdate", "ACF Update Panel Values", function(_, Key, Value)
+			local Data = DataPanels[Type][Key]
+
+			if not Data then return end -- This variable is not being set or tracked by panels
+
+			UpdatePanels(Data.Setter, Type, Key, Value, IsTracked)
+			UpdatePanels(Data.Tracker, Type, Key, Value, IsTracked)
+		end)
+	end
 end

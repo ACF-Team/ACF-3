@@ -182,9 +182,9 @@ else
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
-		Flechettes:SetDataVar("Flechettes", "OnValueChanged")
-		Flechettes:SetValueFunction(function(Panel)
-			ToolData.Flechettes = math.floor(ACF.GetClientNumber("Flechettes"))
+		Flechettes:SetClientData("Flechettes", "OnValueChanged")
+		Flechettes:DefineSetter(function(Panel, _, _, Value)
+			ToolData.Flechettes = math.floor(Value)
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
@@ -194,9 +194,9 @@ else
 		end)
 
 		local Spread = Base:AddSlider("Flechette Spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
-		Spread:SetDataVar("Spread", "OnValueChanged")
-		Spread:SetValueFunction(function(Panel)
-			ToolData.Spread = ACF.GetClientNumber("Spread")
+		Spread:SetClientData("Spread", "OnValueChanged")
+		Spread:DefineSetter(function(Panel, _, _, Value)
+			ToolData.Spread = Value
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
@@ -208,10 +208,10 @@ else
 
 	function Ammo:AddAmmoInformation(Menu, ToolData, BulletData)
 		local RoundStats = Menu:AddLabel()
-		RoundStats:TrackDataVar("Projectile", "SetText")
-		RoundStats:TrackDataVar("Propellant")
-		RoundStats:TrackDataVar("Flechettes")
-		RoundStats:SetValueFunction(function()
+		RoundStats:TrackClientData("Projectile", "SetText")
+		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("Flechettes")
+		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlechette Mass : %s"
@@ -224,10 +224,10 @@ else
 		end)
 
 		local PenStats = Menu:AddLabel()
-		PenStats:TrackDataVar("Projectile", "SetText")
-		PenStats:TrackDataVar("Propellant")
-		PenStats:TrackDataVar("Flechettes")
-		PenStats:SetValueFunction(function()
+		PenStats:TrackClientData("Projectile", "SetText")
+		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("Flechettes")
+		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"

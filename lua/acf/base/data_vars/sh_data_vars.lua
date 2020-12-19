@@ -1,5 +1,4 @@
-local ACF    = ACF
-local Server = ACF.ServerData
+local ACF = ACF
 
 function ACF.CanSetServerData(Player)
 	if not IsValid(Player) then return true end -- No player, probably the server
@@ -11,6 +10,8 @@ function ACF.CanSetServerData(Player)
 end
 
 do -- Server data getter functions
+	local Server = ACF.ServerData
+
 	local function GetData(Key, Default)
 		if Key == nil then return Default end
 

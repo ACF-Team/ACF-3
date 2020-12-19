@@ -47,10 +47,10 @@ local function AddControls(Base, Settings, ToolData)
 	if Settings.SuppressControls then return end
 
 	local RoundLength = Base:AddLabel()
-	RoundLength:TrackDataVar("Projectile", "SetText")
-	RoundLength:TrackDataVar("Propellant")
-	RoundLength:TrackDataVar("Tracer")
-	RoundLength:SetValueFunction(function()
+	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
+	RoundLength:TrackClientData("Propellant")
+	RoundLength:TrackClientData("Tracer")
+	RoundLength:DefineSetter(function()
 		local Text = "Round Length: %s / %s cm"
 		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
 		local MaxLength = BulletData.MaxRoundLength
@@ -59,9 +59,9 @@ local function AddControls(Base, Settings, ToolData)
 	end)
 
 	local Projectile = Base:AddSlider("Projectile Length", 0, BulletData.MaxRoundLength, 2)
-	Projectile:SetDataVar("Projectile", "OnValueChanged")
-	Projectile:SetValueFunction(function(Panel, IsTracked)
-		ToolData.Projectile = ACF.GetClientNumber("Projectile")
+	Projectile:SetClientData("Projectile", "OnValueChanged")
+	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
+		ToolData.Projectile = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Projectile"
@@ -77,9 +77,9 @@ local function AddControls(Base, Settings, ToolData)
 	end)
 
 	local Propellant = Base:AddSlider("Propellant Length", 0, BulletData.MaxRoundLength, 2)
-	Propellant:SetDataVar("Propellant", "OnValueChanged")
-	Propellant:SetValueFunction(function(Panel, IsTracked)
-		ToolData.Propellant = ACF.GetClientNumber("Propellant")
+	Propellant:SetClientData("Propellant", "OnValueChanged")
+	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
+		ToolData.Propellant = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Propellant"
@@ -103,9 +103,9 @@ local function AddControls(Base, Settings, ToolData)
 	-- We'll create the tracer checkbox after all the other controls
 	if not Settings.SuppressTracer then
 		local Tracer = Base:AddCheckBox("Tracer")
-		Tracer:SetDataVar("Tracer", "OnChange")
-		Tracer:SetValueFunction(function(Panel)
-			ToolData.Tracer = ACF.GetClientBool("Tracer")
+		Tracer:SetClientData("Tracer", "OnChange")
+		Tracer:DefineSetter(function(Panel, _, _, Value)
+			ToolData.Tracer = Value
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
@@ -171,30 +171,24 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local List = Menu:AddComboBox()
 
 	local SizeX = Menu:AddSlider("Crate Width", 6, 96, 2)
-	SizeX:SetDataVar("CrateSizeX", "OnValueChanged")
-	SizeX:SetValueFunction(function(Panel)
-		local Value = ACF.GetClientNumber("CrateSizeX")
-
+	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
+	SizeX:DefineSetter(function(Panel, _, _, Value)
 		Panel:SetValue(Value)
 
 		return Value
 	end)
 
 	local SizeY = Menu:AddSlider("Crate Height", 6, 96, 2)
-	SizeY:SetDataVar("CrateSizeY", "OnValueChanged")
-	SizeY:SetValueFunction(function(Panel)
-		local Value = ACF.GetClientNumber("CrateSizeY")
-
+	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
+	SizeY:DefineSetter(function(Panel, _, _, Value)
 		Panel:SetValue(Value)
 
 		return Value
 	end)
 
 	local SizeZ = Menu:AddSlider("Crate Depth", 6, 96, 2)
-	SizeZ:SetDataVar("CrateSizeZ", "OnValueChanged")
-	SizeZ:SetValueFunction(function(Panel)
-		local Value = ACF.GetClientNumber("CrateSizeZ")
-
+	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
+	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		Panel:SetValue(Value)
 
 		return Value

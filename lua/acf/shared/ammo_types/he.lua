@@ -110,10 +110,10 @@ else
 
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackDataVar("Projectile", "SetText")
-		RoundStats:TrackDataVar("Propellant")
-		RoundStats:TrackDataVar("FillerMass")
-		RoundStats:SetValueFunction(function()
+		RoundStats:TrackClientData("Projectile", "SetText")
+		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("FillerMass")
+		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
@@ -126,8 +126,8 @@ else
 		end)
 
 		local FillerStats = Base:AddLabel()
-		FillerStats:TrackDataVar("FillerMass", "SetText")
-		FillerStats:SetValueFunction(function()
+		FillerStats:TrackClientData("FillerMass", "SetText")
+		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"

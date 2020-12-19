@@ -179,12 +179,12 @@ do -- Client data getter functions
 end
 
 do -- Server data setter function
-	function ACF.SetServerData(Key, Value)
+	function ACF.SetServerData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
 		Value = Value or false
 
-		if Server[Key] ~= Value then
+		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
 			hook.Run("ACF_OnServerDataUpdate", nil, Key, Value)

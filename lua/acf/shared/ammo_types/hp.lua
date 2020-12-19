@@ -106,10 +106,12 @@ else
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local HollowCavity = Base:AddSlider("Cavity Volume", BulletData.MinCavVol, BulletData.MaxCavVol, 2)
-		HollowCavity:SetDataVar("HollowCavity", "OnValueChanged")
-		HollowCavity:TrackDataVar("Projectile")
-		HollowCavity:SetValueFunction(function(Panel)
-			ToolData.HollowCavity = math.Round(ACF.GetClientNumber("HollowCavity"), 2)
+		HollowCavity:SetClientData("HollowCavity", "OnValueChanged")
+		HollowCavity:TrackClientData("Projectile")
+		HollowCavity:DefineSetter(function(Panel, _, Key, Value)
+			if Key == "HollowCavity" then
+				ToolData.HollowCavity = math.Round(Value, 2)
+			end
 
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -122,10 +124,10 @@ else
 
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackDataVar("Projectile", "SetText")
-		RoundStats:TrackDataVar("Propellant")
-		RoundStats:TrackDataVar("HollowCavity")
-		RoundStats:SetValueFunction(function()
+		RoundStats:TrackClientData("Projectile", "SetText")
+		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("HollowCavity")
+		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
@@ -137,10 +139,10 @@ else
 		end)
 
 		local HollowStats = Base:AddLabel()
-		HollowStats:TrackDataVar("Projectile", "SetText")
-		HollowStats:TrackDataVar("Propellant")
-		HollowStats:TrackDataVar("HollowCavity")
-		HollowStats:SetValueFunction(function()
+		HollowStats:TrackClientData("Projectile", "SetText")
+		HollowStats:TrackClientData("Propellant")
+		HollowStats:TrackClientData("HollowCavity")
+		HollowStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	  = "Expanded Caliber : %s mm\nTransfered Energy : %s KJ"
@@ -151,10 +153,10 @@ else
 		end)
 
 		local PenStats = Base:AddLabel()
-		PenStats:TrackDataVar("Projectile", "SetText")
-		PenStats:TrackDataVar("Propellant")
-		PenStats:TrackDataVar("HollowCavity")
-		PenStats:SetValueFunction(function()
+		PenStats:TrackClientData("Projectile", "SetText")
+		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("HollowCavity")
+		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
