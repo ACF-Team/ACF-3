@@ -556,3 +556,42 @@ do -- Attachment storage
 		return 0
 	end
 end
+
+do -- File creation
+	function ACF.FolderExists(Path, Create)
+		if not ACF.CheckString(Path) then return end
+
+		local Exists = file.Exists(Path, "DATA")
+
+		if not Exists and Create then
+			file.CreateDir(Path)
+
+			return true
+		end
+
+		return Exists
+	end
+
+	function ACF.SaveToJSON(Path, Name, Table, GoodFormat)
+		if not ACF.CheckString(Path) then return end
+		if not ACF.CheckString(Name) then return end
+		if not istable(Table) then return end
+
+		ACF.FolderExists(Path, true) -- Creating the folder if it doesn't exist
+
+		local FullPath = Path .. "/" .. Name
+
+		file.Write(FullPath, util.TableToJSON(Table, GoodFormat))
+	end
+
+	function ACF.LoadFromFile(Path, Name)
+		if not ACF.CheckString(Path) then return end
+		if not ACF.CheckString(Name) then return end
+
+		local FullPath = Path .. "/" .. Name
+
+		if not file.Exists(FullPath, "DATA") then return end
+
+		return util.JSONToTable(file.Read(FullPath, "DATA"))
+	end
+end
