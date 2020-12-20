@@ -58,12 +58,13 @@ do -- Data persisting
 	ACF.PersistedKeys = ACF.PersistedKeys or {}
 	ACF.PersistedData = ACF.PersistedData or {}
 
-	local Data   = ACF.PersistedData
-	local Keys   = ACF.PersistedKeys
-	local Realm  = SERVER and "Server" or "Client"
-	local Values = ACF[Realm .. "Data"]
-	local Folder = "acf/data_vars"
-	local File   = "persisted.json"
+	local Persist = ACF.PersistedData
+	local Keys    = ACF.PersistedKeys
+	local Realm   = SERVER and "Server" or "Client"
+	local Values  = ACF[Realm .. "Data"]
+	local Folder  = "acf/data_vars"
+	local File    = "stored.json"
+	local Loaded  = false
 
 	local function LoadData()
 		local Saved = ACF.LoadFromFile(Folder, File)
@@ -71,14 +72,18 @@ do -- Data persisting
 		if Saved then
 			local SetFunction = ACF["Set" .. Realm .. "Data"]
 
-			for Key, Value in pairs(Saved) do
-				Keys[Key] = true
+			for Key, Stored in pairs(Saved) do
+				if Keys[Key] == nil then
+					Keys[Key] = Stored.Default
+				end
 
-				if Value ~= "nil" then
-					SetFunction(Key, Value)
+				if Stored.Value ~= "nil" then
+					SetFunction(Key, Stored.Value)
 				end
 			end
 		end
+
+		Loaded = true
 
 		hook.Remove("Initialize", "ACF Load Persisted Data")
 	end
@@ -86,35 +91,42 @@ do -- Data persisting
 	local function StoreData()
 		local Result = {}
 
-		for Key in pairs(Keys) do
-			local Value = Data[Key]
+		for Key, Default in pairs(Keys) do
+			local Value = Persist[Key]
 
-			Result[Key] = Either(Value ~= nil, Value, "nil")
+			Result[Key] = {
+				Value   = Value,
+				Default = Default,
+			}
 		end
 
 		ACF.SaveToJSON(Folder, File, Result, true)
 	end
 
 	local function UpdateData(Key)
-		if not Keys[Key] then return end
-		if Values[Key] == nil then return end
+		if Keys[Key] == nil then return end
 
-		local Value = Values[Key]
+		local Default = Keys[Key]
+		local Value   = Either(Values[Key] ~= nil, Values[Key], Default)
 
-		if Data[Key] ~= Value then
-			Data[Key] = Value
+		if Persist[Key] ~= Value then
+			Persist[Key] = Value
 
-			if timer.Exists("ACF Store Persisted") then return end
+			if not Loaded or timer.Exists("ACF Store Persisted") then return end
 
 			timer.Create("ACF Store Persisted", 1, 1, StoreData)
 		end
 	end
 
-	ACF["Persist" .. Realm .. "Data"] = function(Key)
-		if not ACF.CheckString(Key) then return end
-		if Keys[Key] then return end -- Already stored
+	--- Generates the following functions:
+	-- ACF.PersistServerData(Key, Default) - Serverside only
+	-- ACF.PersistClientData(Key, Default) - Clientside only
 
-		Keys[Key] = true
+	ACF["Persist" .. Realm .. "Data"] = function(Key, Default)
+		if not ACF.CheckString(Key) then return end
+		if Default == nil then Default = "nil" end
+
+		Keys[Key] = Default
 
 		UpdateData(Key)
 	end
