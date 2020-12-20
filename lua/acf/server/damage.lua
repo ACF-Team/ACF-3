@@ -20,7 +20,6 @@ local function CalcDamage(Entity, Energy, FrArea, Angle)
 	local maxPenetration = (Energy.Penetration / FrArea) * ACF.KEtoRHA --RHA Penetration
 	local HitRes = {}
 
-
 	-- Projectile caliber. Messy, function signature
 	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
 	-- Breach probability

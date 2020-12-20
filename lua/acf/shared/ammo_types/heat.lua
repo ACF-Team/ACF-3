@@ -38,14 +38,14 @@ end
 -- coneang now required for slug recalculation at detonation, defaults to 55 if not present
 function Ammo:CalcSlugMV(Data, HEATFillerMass)
 	--keep fillermass/2 so that penetrator stays the same.
-	return (HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + (Data.ConeAng or 55)) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
+	return (HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + Data.ConeAng) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
 end
 
 function Ammo:GetDisplayData(Data)
 	local Crushed, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
 	local SlugMV	= self:CalcSlugMV(Data, HEATFiller) * (Data.SlugPenMul or 1)
 	local MassUsed	= Data.SlugMass * (1 - Crushed)
-	local Energy	= ACF_Kinetic(Data.MuzzleVel * 39.37 + SlugMV * 39.37, MassUsed, 999999)
+	local Energy	= ACF_Kinetic(SlugMV * 39.37, MassUsed, 999999)
 	local FragMass	= Data.CasingMass + Data.SlugMass * Crushed
 	local Fragments	= math.max(math.floor((BoomFiller / FragMass) * ACF.HEFrag), 2)
 	local Display   = {
@@ -188,14 +188,17 @@ if SERVER then
 
 		if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
 
+		local SlugMV = self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37 * (Bullet.SlugPenMul or 1)
+
 		Bullet.Detonated = true
-		Bullet.Flight    = Bullet.Flight:GetNormalized() * self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37
+		Bullet.Flight    = Bullet.Flight:GetNormalized() * SlugMV
 		Bullet.NextPos   = HitPos
 		Bullet.DragCoef  = Bullet.SlugDragCoef
 		Bullet.ProjMass  = Bullet.SlugMass * (1 - Crushed)
 		Bullet.Caliber   = Bullet.SlugCaliber
 		Bullet.PenArea   = Bullet.SlugPenArea
 		Bullet.Ricochet  = Bullet.SlugRicochet
+		Bullet.LimitVel  = 999999
 
 		return true
 	end
@@ -209,16 +212,18 @@ if SERVER then
 			local HitNormal = Trace.HitNormal
 			local Bone = Trace.HitGroup
 
+			-- TODO: Figure out why bullets are missing 10% of their penetration
 			if Bullet.Detonated then
-				Bullet.NotFirstPen = true
+				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
+				local Energy     = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+				local HitRes     = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
 
-				local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, 999999)
-				local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+				Bullet.NotFirstPen = true
 
 				if HitRes.Overkill > 0 then
 					table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
 
-					Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(Energy.Kinetic * (1 - HitRes.Loss) * ((Bullet.NotFirstPen and ACF.HEATPenLayerMul) or 1) * 2000 / Bullet.ProjMass) * 39.37
+					Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(Energy.Kinetic * (1 - HitRes.Loss) * Multiplier * 2000 / Bullet.ProjMass) * 39.37
 
 					return "Penetrated"
 				else
@@ -383,7 +388,7 @@ else
 			local Text	   = "Penetrator Caliber : %s mm\nPenetrator Mass : %s\nPenetrator Velocity : %s m/s"
 			local Caliber  = math.Round(BulletData.SlugCaliber * 10, 2)
 			local Mass	   = ACF.GetProperMass(BulletData.SlugMassUsed)
-			local Velocity = math.Round(BulletData.MuzzleVel + BulletData.SlugMV, 2)
+			local Velocity = math.Round(BulletData.SlugMV, 2)
 
 			return Text:format(Caliber, Mass, Velocity)
 		end)
@@ -396,15 +401,12 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
+			local Text	 = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local MaxPen = math.Round(BulletData.MaxPen, 2)
+			local R1V    = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
+			local R2V    = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
 
-			R1P = math.Round((ACF_Kinetic((R1V + BulletData.SlugMV) * 39.37, BulletData.SlugMassUsed, 999999).Penetration / BulletData.SlugPenArea) * ACF.KEtoRHA, 2)
-			R2P = math.Round((ACF_Kinetic((R2V + BulletData.SlugMV) * 39.37, BulletData.SlugMassUsed, 999999).Penetration / BulletData.SlugPenArea) * ACF.KEtoRHA, 2)
-
-			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
+			return Text:format(MaxPen, MaxPen, R1V, MaxPen, R2V)
 		end)
 
 		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")

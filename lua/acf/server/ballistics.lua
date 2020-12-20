@@ -326,9 +326,9 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
-		local HitAngle = ACF_GetHitAngle(HitNormal , Bullet.Flight)
+		local HitAngle = ACF_GetHitAngle(HitNormal, Bullet.Flight)
 
-		local HitRes = ACF_Damage ( --DAMAGE !!
+		local HitRes = ACF_Damage( -- DAMAGE!!
 			Target,
 			Energy,
 			Bullet.PenArea,
