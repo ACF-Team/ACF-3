@@ -1,3 +1,5 @@
+local ACF = ACF
+
 ACF.Tools = ACF.Tools or {}
 
 local Tools = ACF.Tools
@@ -369,9 +371,9 @@ do -- Clientside Tool interaction
 		local Value = "%s:%s"
 
 		function ACF.SetToolMode(Tool, Stage, Op)
-			if not isstring(Tool) then return end
-			if not isstring(Stage) then return end
-			if not isstring(Op) then return end
+			if not ACF.CheckString(Tool) then return end
+			if not ACF.CheckString(Stage) then return end
+			if not ACF.CheckString(Op) then return end
 
 			ACF.SetClientData(Key:format(Tool), Value:format(Stage, Op))
 		end

@@ -180,7 +180,7 @@ end
 
 do -- Server data setter function
 	function ACF.SetServerData(Key, Value, Forced)
-		if not isstring(Key) then return end
+		if not ACF.CheckString(Key) then return end
 
 		Value = Value or false
 

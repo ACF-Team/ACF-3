@@ -1,3 +1,5 @@
+local ACF = ACF
+
 do -- Serverside console log messages
 	local Types = {
 		Normal = {
@@ -284,7 +286,7 @@ do -- Extra overlay text
 	local Classes = {}
 
 	function ACF.RegisterOverlayText(ClassName, Identifier, Function)
-		if not isstring(ClassName) then return end
+		if not ACF.CheckString(ClassName) then return end
 		if Identifier == nil then return end
 		if not isfunction(Function) then return end
 
@@ -300,7 +302,7 @@ do -- Extra overlay text
 	end
 
 	function ACF.RemoveOverlayText(ClassName, Identifier)
-		if not isstring(ClassName) then return end
+		if not ACF.CheckString(ClassName) then return end
 		if Identifier == nil then return end
 
 		local Class = Classes[ClassName]
