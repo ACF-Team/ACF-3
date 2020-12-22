@@ -39,18 +39,10 @@ local function SelectEntity(Tool, Player, Entity)
 	end)
 end
 
-local function CanTool(Player, Entity)
-	if not IsValid(Entity) then return false end
-	if CPPI then return Entity:CPPICanTool(Player, "acf_menu") end
-
-	return hook.Run("CanTool", Player, { Hit = true, Entity = Entity }, "acf_menu")
-end
-
 do -- Spawner operation
-	local function CanUpdate(Player, Entity, ClassName)
-		if not CanTool(Player, Entity) then return false end
+	local function CanUpdate(Entity, ClassName)
+		if not IsValid(Entity) then return false end
 		if Entity:GetClass() ~= ClassName then return false end
-		if not isfunction(Entity.Update) then return false end
 
 		return true
 	end
@@ -60,10 +52,11 @@ do -- Spawner operation
 
 		local Entity = Trace.Entity
 
-		if CanUpdate(Player, Entity, ClassName) then
-			local Result, Message = Entity:Update(Data)
+		if CanUpdate(Entity, ClassName) then
+			local Result, Message = ACF.UpdateEntity(Entity, Data)
 
 			ACF.SendMessage(Player, Result and "Info" or "Error", Message)
+
 			return true
 		end
 
@@ -72,10 +65,19 @@ do -- Spawner operation
 
 		local Position = Trace.HitPos + Trace.HitNormal * 128
 		local Angles   = Trace.HitNormal:Angle():Up():Angle()
-		local Success, NewEntity = ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
+
+		local Success, Result = ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
 
 		if Success then
-			NewEntity:DropToFloor()
+			local PhysObj = Result:GetPhysicsObject()
+
+			Result:DropToFloor()
+
+			if IsValid(PhysObj) then
+				PhysObj:EnableMotion(false)
+			end
+		else
+			ACF.SendMessage(Player, "Error", "Couldn't create entity: " .. Result)
 		end
 
 		return Success
@@ -100,7 +102,7 @@ do -- Spawner operation
 				return true
 			end
 
-			if not CanTool(Player, Trace.Entity) then return false end
+			if not IsValid(Trace.Entity) then return false end
 
 			SelectEntity(Tool, Player, Trace.Entity)
 
@@ -168,7 +170,7 @@ do -- Linker operation
 			local Entity = Trace.Entity
 
 			if Trace.HitWorld then Tool:Holster() return true end
-			if not CanTool(Player, Entity) then return false end
+			if not IsValid(Entity) then return false end
 
 			local Ents = GetPlayerEnts(Player)
 

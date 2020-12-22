@@ -108,7 +108,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 			Data[K] = Value
 		end
 
-		local Result, Message = Entity:Update(Data)
+		local Result, Message = ACF.UpdateEntity(Entity, Data)
 
 		if not Result then
 			Message = "Couldn't update entity: " .. Message

@@ -524,33 +524,21 @@ do -- Entity class registration function
 
 		local ClassData = ACF.GetEntityClass(Class)
 
-		if not ClassData then
-			ACF.SendMessage(Player, "Error", Class, " is not a registered ACF entity class.")
-			return false
-		end
+		if not ClassData then return false, Class .. " is not a registered ACF entity class." end
+		if not ClassData.Spawn then return false, Class .. " doesn't have a spawn function assigned to it." end
 
-		if not ClassData.Spawn then
-			ACF.SendMessage(Player, "Error", Class, " doesn't have a spawn function assigned to it.")
-			return false
-		end
+		local HookResult, HookMessage = hook.Run("ACF_CanCreateEntity", Class, Player, Position, Angles, Data)
+
+		if HookResult == false then return false, HookMessage end
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
-		if not IsValid(Entity) then
-			ACF.SendMessage(Player, "Error", Class, " entity couldn't be created.")
-			return false
-		end
-
-		local PhysObj = Entity:GetPhysicsObject()
+		if not IsValid(Entity) then return false, "The spawn function for" .. Class .. " didn't return a value entity." end
 
 		Entity:Activate()
 
 		if CPPI then
 			Entity:CPPISetOwner(Player)
-		end
-
-		if IsValid(PhysObj) then
-			PhysObj:EnableMotion(false)
 		end
 
 		if not NoUndo then
@@ -561,6 +549,23 @@ do -- Entity class registration function
 		end
 
 		return true, Entity
+	end
+
+	function ACF.UpdateEntity(Entity, Data)
+		if not IsValid(Entity) then return false, "Can't update invalid entities." end
+		if not isfunction(Entity.Update) then return false, "This entity does not support updating." end
+
+		Data = istable(Data) and Data or {}
+
+		local HookResult, HookMessage = hook.Run("ACF_CanUpdateEntity", Entity, Data)
+
+		if HookResult == false then return false, "Couldn't update entity: " .. HookMessage end
+
+		local Result, Message = Entity:Update(Data)
+
+		if not Result then Message = "Couldn't update entity: " .. Message end
+
+		return Result, Message
 	end
 end
 
