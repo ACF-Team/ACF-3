@@ -74,6 +74,56 @@ local function SaveCopyData(Player, Entity)
 	return util.TableToJSON(List)
 end
 
+local function GetSpawnData(Player, Entity, Class)
+	local Saved = GetCopyData(Player, Class)
+
+	if not Saved then return end
+
+	local Ignored = GetDisabledData(Player, Class)
+	local Data    = {}
+
+	for K, V in pairs(Saved) do
+		if Ignored[K] then
+			Data[K] = Entity and Entity[K]
+		else
+			Data[K] = V
+		end
+	end
+
+	return Data
+end
+
+local function CreateNewEntity(Player, Trace)
+	local Class = ACF.GetClientData(Player, "CopyClass")
+
+	if not Class then return false end
+
+	local Data     = GetSpawnData(Player, nil, Class)
+	local Position = Trace.HitPos + Trace.HitNormal * 128
+	local Angles   = Trace.HitNormal:Angle():Up():Angle()
+	local Message  = ""
+
+	local Success, Result = ACF.CreateEntity(Class, Player, Position, Angles, Data)
+
+	if not Success then
+		Message = "Couldn't create entity: " .. Result
+	else
+		local PhysObj = Result:GetPhysicsObject()
+
+		Result:DropToFloor()
+
+		if IsValid(PhysObj) then
+			PhysObj:EnableMotion(false)
+		end
+
+		Message = "Entity created successfully."
+	end
+
+	ACF.SendMessage(Player, Result and "Info" or "Error", Message)
+
+	return true
+end
+
 ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 	OnLeftClick = function(Tool, Trace)
 		if Trace.HitSky then return false end
@@ -81,31 +131,18 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 		local Entity = Trace.Entity
 		local Player = Tool:GetOwner()
 
-		if not IsValid(Entity) then return false end
+		if not IsValid(Entity) then return CreateNewEntity(Player, Trace) end
 		if not isfunction(Entity.Update) then
 			ACF.SendMessage(Player, "Error", "This entity doesn't support updating!")
 			return false
 		end
 
 		local Class = Entity:GetClass()
-		local Saved = GetCopyData(Player, Class)
+		local Data  = GetSpawnData(Player, Entity, Class)
 
-		if not Saved then
+		if not Data then
 			ACF.SendMessage(Player, "Error", "No information has been copied for '", Class, "' entities!")
 			return false
-		end
-
-		local DisabledData = GetDisabledData(Player, Class)
-		local Data = {}
-
-		for K, V in pairs(Saved) do
-			local Value = V
-
-			if DisabledData[K] then
-				Value = Entity[K]
-			end
-
-			Data[K] = Value
 		end
 
 		local Result, Message = ACF.UpdateEntity(Entity, Data)
@@ -141,6 +178,12 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 ACF.RegisterToolInfo("acfcopy", "Main", "CopyPaste", {
 	name = "left",
 	text = "Update the ACF entity with the copied information for its class.",
+})
+
+ACF.RegisterToolInfo("acfcopy", "Main", "CopyPaste", {
+	name = "left_spawn",
+	text = "If no entity is hit, a new entity will be created with the copied information.",
+	icon2 = "gui/info",
 })
 
 ACF.RegisterToolInfo("acfcopy", "Main", "CopyPaste", {

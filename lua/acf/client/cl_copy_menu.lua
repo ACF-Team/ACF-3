@@ -115,6 +115,8 @@ function ACF.CreateCopyMenu(Panel)
 	function ClassList:OnSelect(_, Class, Data)
 		Selected = Class
 
+		ACF.SetClientData("CopyClass", Class)
+
 		PopulateTree(TreeList, Data)
 	end
 
