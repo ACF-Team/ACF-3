@@ -21,7 +21,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("PrimaryClass", "acf_gun")
 	ACF.SetClientData("SecondaryClass", "acf_ammo")
 
-	ACF.SetToolMode("acf_menu", "Main", "Spawner")
+	ACF.SetToolMode("acf_menu", "Spawner", "Weapon")
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

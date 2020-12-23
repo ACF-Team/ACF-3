@@ -15,7 +15,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
-	ACF.SetToolMode("acf_menu", "Main", "Spawner")
+	ACF.SetToolMode("acf_menu", "Spawner", "Gearbox")
 
 	function GearboxClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

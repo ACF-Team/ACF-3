@@ -5,7 +5,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
-	ACF.SetToolMode("acf_menu", "Main", "Spawner")
+	ACF.SetToolMode("acf_menu", "Spawner", "Sensor")
 
 	if not next(Sensors) then
 		Menu:AddTitle("No Sensors Registered")
