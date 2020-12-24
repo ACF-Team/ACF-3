@@ -669,64 +669,38 @@ do -- Entity Overlay ----------------------------
 	local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg"
 
-	local function Overlay(Ent)
-		if Ent.Disabled then
-			Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+	function ENT:UpdateOverlayText()
+		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
+		local AmmoType = self.BulletData.Type .. Tracer
+		local X, Y, Z = self:GetSize():Unpack()
+		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
+		local ExtraInfo = ACF.GetOverlayText(self)
+		local BulletInfo = ""
+		local Status
+
+		if next(self.Weapons) or self.IsRefill then
+			Status = self:CanConsume() and "Providing Ammo" or (self.Ammo ~= 0 and "Idle" or "Empty")
 		else
-			local Tracer = Ent.BulletData.Tracer ~= 0 and "-T" or ""
-			local AmmoType = Ent.BulletData.Type .. Tracer
-			local X, Y, Z = Ent:GetSize():Unpack()
-			local AmmoInfo = Ent.RoundData:GetCrateText(Ent.BulletData)
-			local ExtraInfo = ACF.GetOverlayText(Ent)
-			local BulletInfo = ""
-			local Status
-
-			if next(Ent.Weapons) or Ent.IsRefill then
-				Status = Ent:CanConsume() and "Providing Ammo" or (Ent.Ammo ~= 0 and "Idle" or "Empty")
-			else
-				Status = "Not linked to a weapon!"
-			end
-
-			X = math.Round(X, 2)
-			Y = math.Round(Y, 2)
-			Z = math.Round(Z, 2)
-
-			if Ent.BulletData.Type ~= "Refill" then
-				local ProjectileMass = math.Round(Ent.BulletData.ProjMass, 2)
-				local PropellantMass = math.Round(Ent.BulletData.PropMass, 2)
-				local CartridgeMass = math.Round(Ent.BulletData.CartMass, 2)
-
-				BulletInfo = BulletText:format(CartridgeMass, ProjectileMass, PropellantMass)
-			end
-
-			if AmmoInfo and AmmoInfo ~= "" then
-				AmmoInfo = "\n\n" .. AmmoInfo
-			end
-
-			Ent:SetOverlayText(Text:format(Status, X, Y, Z, AmmoType, Ent.Ammo, Ent.Capacity, BulletInfo, AmmoInfo, ExtraInfo))
-		end
-	end
-
-	-------------------------------------------------------------------------------
-
-	function ENT:UpdateOverlay(Instant)
-		if Instant then
-			return Overlay(self)
+			Status = "Not linked to a weapon!"
 		end
 
-		if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-			self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-		else
-			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-				if IsValid(self) and self.OverlayBuffer then
-					self.OverlayBuffer = nil
+		X = math.Round(X, 2)
+		Y = math.Round(Y, 2)
+		Z = math.Round(Z, 2)
 
-					Overlay(self)
-				end
-			end)
+		if self.BulletData.Type ~= "Refill" then
+			local Projectile = math.Round(self.BulletData.ProjMass, 2)
+			local Propellant = math.Round(self.BulletData.PropMass, 2)
+			local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 
-			Overlay(self)
+			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant)
 		end
+
+		if AmmoInfo and AmmoInfo ~= "" then
+			AmmoInfo = "\n\n" .. AmmoInfo
+		end
+
+		return Text:format(Status, X, Y, Z, AmmoType, self.Ammo, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
 	end
 end ---------------------------------------------
 

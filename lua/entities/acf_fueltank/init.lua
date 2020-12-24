@@ -370,57 +370,30 @@ do -- Mass Update
 end
 
 do -- Overlay Update
-	local function Overlay(Ent)
-		if Ent.Disabled then
-			Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+	local Text = "%s\n\nFuel Type: %s\n%s"
+
+	function ENT:UpdateOverlayText()
+		local Status, Content
+
+		if self.Leaking > 0 then
+			Status = "Leaking"
 		else
-			local Text
-
-			if Ent.Leaking > 0 then
-				Text = "Leaking"
-			else
-				Text = Ent:CanConsume() and "Providing Fuel" or "Idle"
-			end
-
-			Text = Text .. "\n\nFuel Type: " .. Ent.FuelType
-
-			if Ent.FuelType == "Electric" then
-				local KiloWatt = math.Round(Ent.Fuel, 1)
-				local Joules = math.Round(Ent.Fuel * 3.6, 1)
-
-				Text = Text .. "\nCharge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
-			else
-				local Liters = math.Round(Ent.Fuel, 1)
-
-				local Gallons = math.Round(Ent.Fuel * 0.264172, 1)
-				Text = Text .. "\nFuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
-			end
-
-			WireLib.TriggerOutput(Ent, "Fuel", math.Round(Ent.Fuel, 2))
-			WireLib.TriggerOutput(Ent, "Capacity", math.Round(Ent.Capacity, 2))
-			WireLib.TriggerOutput(Ent, "Leaking", Ent.Leaking > 0 and 1 or 0)
-
-			Ent:SetOverlayText(Text)
-		end
-	end
-
-	function ENT:UpdateOverlay(Instant)
-		if Instant then
-			return Overlay(self)
+			Status = self:CanConsume() and "Providing Fuel" or "Idle"
 		end
 
-		if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-			self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+		if self.FuelType == "Electric" then -- TODO: Replace hardcoded stuff
+			local KiloWatt = math.Round(self.Fuel, 1)
+			local Joules = math.Round(self.Fuel * 3.6, 1)
+
+			Content = "Charge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
 		else
-			TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-				if IsValid(self) and self.OverlayBuffer then
-					self.OverlayBuffer = nil
-					self:UpdateOverlay()
-				end
-			end)
+			local Liters = math.Round(self.Fuel, 1)
+			local Gallons = math.Round(self.Fuel * 0.264172, 1)
 
-			Overlay(self)
+			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
+
+		return Text:format(Status, self.FuelType, Content)
 	end
 end
 

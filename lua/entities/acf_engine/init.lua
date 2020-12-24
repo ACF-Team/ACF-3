@@ -108,7 +108,6 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
 local max         = math.max
 local TimerCreate = timer.Create
-local TimerExists = timer.Exists
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
@@ -501,39 +500,17 @@ function ENT:UpdateOutputs()
 	WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
 end
 
-local function Overlay(Ent)
-	if Ent.Disabled then
-		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
-	else
-		local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
-		local State, Name = Ent.Active and "Active" or "Idle", Ent.Name
-		local Power, PowerFt = Round(Ent.peakkw), Round(Ent.peakkw * 1.34)
-		local Torque, TorqueFt = Round(Ent.PeakTorque), Round(Ent.PeakTorque * 0.73)
-		local PowerbandMin = Ent.IsElectric and Ent.IdleRPM or Ent.PeakMinRPM
-		local PowerbandMax = Ent.IsElectric and math.floor(Ent.LimitRPM / 2) or Ent.PeakMaxRPM
-		local Redline = Ent.LimitRPM
+local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
 
-		Ent:SetOverlayText(Text:format(State, Name, Power, PowerFt, Torque, TorqueFt, PowerbandMin, PowerbandMax, Redline))
-	end
-end
+function ENT:UpdateOverlayText()
+	local State, Name = self.Active and "Active" or "Idle", self.Name
+	local Power, PowerFt = Round(self.peakkw), Round(self.peakkw * 1.34)
+	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
+	local PowerbandMin = self.IsElectric and self.IdleRPM or self.PeakMinRPM
+	local PowerbandMax = self.IsElectric and math.floor(self.LimitRPM / 2) or self.PeakMaxRPM
+	local Redline = self.LimitRPM
 
-function ENT:UpdateOverlay(Instant)
-	if Instant then
-		return Overlay(self)
-	end
-
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-	else
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-			if IsValid(self) and self.OverlayBuffer then
-				self.OverlayBuffer = nil
-				self:UpdateOverlay()
-			end
-		end)
-
-		Overlay(self)
-	end
+	return Text:format(State, Name, Power, PowerFt, Torque, TorqueFt, PowerbandMin, PowerbandMax, Redline)
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)

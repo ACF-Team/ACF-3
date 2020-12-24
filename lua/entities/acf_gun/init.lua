@@ -16,7 +16,6 @@ local AmmoTypes    = ACF.Classes.AmmoTypes
 local TraceRes     = {} -- Output for traces
 local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace        = util.TraceLine
-local TimerExists  = timer.Exists
 local TimerCreate  = timer.Create
 local HookRun      = hook.Run
 local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -670,49 +669,27 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local function Overlay(Ent)
-			if Ent.Disabled then
-				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
+
+		function ENT:UpdateOverlayText()
+			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
+			local Firerate  = math.floor(60 / self.ReloadTime)
+			local CrateAmmo = 0
+			local Status
+
+			if not next(self.Crates) then
+				Status = "Not linked to an ammo crate!"
 			else
-				local Text      = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
-				local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
-				local Firerate  = math.floor(60 / Ent.ReloadTime)
-				local CrateAmmo = 0
-				local Status
+				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
+			end
 
-				if not next(Ent.Crates) then
-					Status = "Not linked to an ammo crate!"
-				else
-					Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
+			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates
+				if Crate:CanConsume() then
+					CrateAmmo = CrateAmmo + Crate.Ammo
 				end
-
-				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-					if Crate:CanConsume() then
-						CrateAmmo = CrateAmmo + Crate.Ammo
-					end
-				end
-
-				Ent:SetOverlayText(Text:format(Status, Firerate, Ent.CurrentShot, CrateAmmo))
-			end
-		end
-
-		function ENT:UpdateOverlay(Instant)
-			if Instant then
-				return Overlay(self)
 			end
 
-			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-				self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-			else
-				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-					if IsValid(self) and self.OverlayBuffer then
-						self.OverlayBuffer = nil
-						self:UpdateOverlay()
-					end
-				end)
-
-				Overlay(self)
-			end
+			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo)
 		end
 	end -----------------------------------------
 

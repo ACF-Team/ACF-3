@@ -5,10 +5,48 @@ include("shared.lua")
 
 local ACF = ACF
 
+ENT.OverlayDelay = 1 -- Time in seconds between each overlay update
+
 -- You should overwrite these
 function ENT:Enable() end
 function ENT:Disable() end
-function ENT:UpdateOverlay() end
+function ENT:UpdateOverlayText() end
+
+do -- Entity Overlay ----------------------------
+	local Disable   = "Disabled: %s\n%s"
+	local TimerName = "ACF Overlay Buffer %s"
+	local timer     = timer
+
+	function ENT:GetDisableText()
+		return Disable:format(self.DisableReason, self.DisableDescription)
+	end
+
+	function ENT:UpdateOverlay(Instant)
+		if Instant then
+			local Text = Either(self.Disabled, self:GetDisableText(), self:UpdateOverlayText())
+
+			return self:SetOverlayText(Text)
+		end
+
+		local Name = TimerName:format(self:EntIndex())
+
+		if timer.Exists(Name) then -- This entity has been updated too recently
+			self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+		else
+			timer.Create(Name, self.OverlayDelay, 1, function()
+				if not IsValid(self) then return end
+				if not self.OverlayBuffer then return end
+
+				self.OverlayBuffer = nil
+				self:UpdateOverlay()
+			end)
+
+			local Text = Either(self.Disabled, self:GetDisableText(), self:UpdateOverlayText())
+
+			self:SetOverlayText(Text)
+		end
+	end
+end ---------------------------------------------
 
 do -- Entity linking and unlinking --------------
 	local LinkText   = "%s can't be linked to %s."

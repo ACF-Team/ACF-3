@@ -7,9 +7,6 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local TimerCreate = timer.Create
-local TimerExists = timer.Exists
-
 local function CheckLoopedGearbox(This, Target)
 	local Queued = { [Target] = true }
 	local Checked = {}
@@ -627,47 +624,25 @@ function ENT:Disable()
 	self:UpdateOverlay()
 end
 
-local function Overlay(Ent)
-	if Ent.Disabled then
-		Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
-	else
-		local Text = "Current Gear: " .. Ent.Gear .. "\n\n" .. Ent.Name .. "\n"
-		local GearsText = Ent.ClassData.GetGearsText and Ent.ClassData.GetGearsText(Ent)
-		local Gears = Ent.Gears
+local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Driver: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
 
-		if GearsText and GearsText ~= "" then
-			Text = Text .. GearsText .. "\n"
-		else
-			for i = 1, Ent.MaxGear do
-				Text = Text .. "Gear " .. i .. ": " .. math.Round(Gears[i], 2) .. "\n"
-			end
+function ENT:UpdateOverlayText()
+	local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
+	local Final     = math.Round(self.FinalDrive, 2)
+	local Torque    = math.Round(self.MaxTorque * 0.73)
+	local Output    = math.Round(self.TorqueOutput * 0.73)
+
+	if not GearsText or GearsText == "" then
+		local Gears = self.Gears
+
+		GearsText = ""
+
+		for I = 1, self.MaxGear do
+			GearsText = GearsText .. "Gear " .. I .. ": " .. math.Round(Gears[I], 2) .. "\n"
 		end
-
-		Text = Text .. "Final Drive: " .. math.Round(Ent.FinalDrive, 2) .. "\n"
-		Text = Text .. "Torque Rating: " .. Ent.MaxTorque .. " Nm / " .. math.Round(Ent.MaxTorque * 0.73) .. " ft-lb\n"
-		Text = Text .. "Torque Output: " .. math.floor(Ent.TorqueOutput) .. " Nm / " .. math.Round(Ent.TorqueOutput * 0.73) .. " ft-lb"
-
-		Ent:SetOverlayText(Text)
-	end
-end
-
-function ENT:UpdateOverlay(Instant)
-	if Instant then
-		return Overlay(self)
 	end
 
-	if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-		self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-	else
-		TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-				self.OverlayBuffer = nil
-			if IsValid(self) and self.OverlayBuffer then
-				self:UpdateOverlay()
-			end
-		end)
-		Overlay(self)
-
-	end
+	return Text:format(self.Name, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
 end
 
 -- prevent people from changing bodygroup
