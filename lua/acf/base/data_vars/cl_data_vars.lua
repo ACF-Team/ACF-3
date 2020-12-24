@@ -78,13 +78,11 @@ do -- Server data var syncronization
 	end)
 
 	-- We'll request the server data vars as soon as the player starts moving
-	hook.Add("CreateMove", "ACF Request Data Vars", function(Move)
-		if Move:GetButtons() == 0 then return end
-
+	hook.Add("InitPostEntity", "ACF Request Data Vars", function()
 		net.Start("ACF_RequestDataVars")
 		net.SendToServer()
 
-		hook.Remove("CreateMove", "ACF Request Data Vars")
+		hook.Remove("InitPostEntity", "ACF Request Data Vars")
 	end)
 end
 
