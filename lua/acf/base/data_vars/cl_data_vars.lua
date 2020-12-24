@@ -304,6 +304,11 @@ do -- Panel functions
 		if not Panels then return end
 
 		for Panel in pairs(Panels) do
+			if not IsValid(Panel) then
+				ClearData(Panel) -- Somehow Panel:Remove is not being called
+				continue
+			end
+
 			local Result = Value
 
 			if Panel.SetCustomValue then
