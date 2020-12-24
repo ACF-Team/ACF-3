@@ -49,6 +49,8 @@ do -- Spawn and Update functions --------------------------------
 
 		if not Class then
 			Data.Weapon = Data.Weapon and Updated[Data.Weapon] or "50mmC"
+
+			Class = ACF.GetClassGroup(Weapons, Data.Weapon)
 		end
 
 		do -- External verifications
