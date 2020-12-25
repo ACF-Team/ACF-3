@@ -58,6 +58,7 @@ do -- Menu population functions
 				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
 				Action = Action or DefaultAction,
 				IsEnabled = Enabled,
+				Option = Option,
 				Index = Index,
 				Name = Name,
 			}
@@ -67,6 +68,7 @@ do -- Menu population functions
 			Item.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
 			Item.Action = Action or DefaultAction
 			Item.IsEnabled = Enabled
+			Item.Option = Option
 			Item.Index = Index
 			Item.Name = Name
 		end
@@ -94,13 +96,13 @@ do -- ACF Menu context panel
 	local function AllowOption(Option)
 		if Option.IsEnabled and not Option:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuOption", Option) ~= false
+		return hook.Run("ACF_AllowMenuOption", Option.Index, Option.Name) ~= false
 	end
 
 	local function AllowItem(Item)
 		if Item.IsEnabled and not Item:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuItem", Item) ~= false
+		return hook.Run("ACF_AllowMenuItem", Item.Index, Item.Option, Item.Name) ~= false
 	end
 
 	local function PopulateTree(Tree)
