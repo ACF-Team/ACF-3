@@ -84,7 +84,7 @@ function Ammo:BaseConvert(ToolData)
 	Data.KETransfert	= 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet		= 60 --Base ricochet angle
 	Data.DetonatorAngle	= 80
-	Data.CanFuze		= Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.CanFuze		= Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
 

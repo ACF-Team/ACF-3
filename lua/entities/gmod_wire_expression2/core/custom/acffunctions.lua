@@ -966,9 +966,7 @@ e2function number entity:acfCaliber()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	local Caliber = this.Caliber
-
-	return Caliber and Caliber * 10 or 0
+	return this.Caliber or 0
 end
 
 -- Returns the muzzle velocity of the ammo in a crate or gun

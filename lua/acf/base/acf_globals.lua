@@ -14,7 +14,7 @@ do -- ACF global vars
 	ACF.EnableKillicons 	= true -- Enable killicons overwriting.
 
 	-- Fuzes
-	ACF.MinFuzeCaliber		= 2 -- Minimum caliber in centimeters that can be fuzed
+	ACF.MinFuzeCaliber		= 20 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
 	ACF.BaseReload			= 1 -- Minimum reload time. Time it takes to move around a weightless projectile

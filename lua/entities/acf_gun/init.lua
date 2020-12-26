@@ -95,8 +95,6 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
-		local Caliber = Weapon.Caliber * 0.1
-
 		Entity:SetModel(Weapon.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
@@ -113,13 +111,12 @@ do -- Spawn and Update functions --------------------------------
 		Entity.ClassData      = Class
 		Entity.WeaponData     = Weapon
 		Entity.Class          = Class.ID -- Needed for custom killicons
-		Entity.Caliber        = Caliber
+		Entity.Caliber        = Weapon.Caliber
 		Entity.MagReload      = Weapon.MagReload
 		Entity.MagSize        = Weapon.MagSize or 1
 		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
 		Entity.ReloadTime     = Entity.Cyclic or 1
 		Entity.Spread         = Class.Spread
-		Entity.MinLengthBonus = 0.75 * 3.1416 * (Caliber * 0.5) ^ 2 * Weapon.Round.MaxLength
 		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
 		Entity.Long           = Class.LongBarrel
 		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
@@ -431,7 +428,7 @@ do -- Metamethods --------------------------------
 			local Velocity = ACF_GetAncestor(self):GetVelocity()
 
 			if self.BulletData.CanFuze and self.SetFuze then
-				local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - self.Caliber) * 0.01
 
 				self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
 			else
@@ -705,7 +702,7 @@ do -- Metamethods --------------------------------
 
 			local Volume = PhysObj:GetVolume() * 2
 
-			local Armour = self.Caliber * 10
+			local Armour = self.Caliber
 			local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
 			local Percent = 1
 

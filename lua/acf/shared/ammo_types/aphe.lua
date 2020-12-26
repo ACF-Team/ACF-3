@@ -66,7 +66,7 @@ function Ammo:BaseConvert(ToolData)
 	Data.LimitVel		 = 700 --Most efficient penetration speed in m/s
 	Data.KETransfert	 = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet		 = 65 --Base ricochet angle
-	Data.CanFuze		 = Data.Caliber > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.CanFuze		 = Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
 

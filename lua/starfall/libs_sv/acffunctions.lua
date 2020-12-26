@@ -1002,7 +1002,7 @@ function ents_methods:acfLinkTo(target, notify)
 	return Success, Message
 end
 
---- TODO: Perform ACF unlinks
+--- Perform ACF unlinks
 -- @server
 function ents_methods:acfUnlinkFrom(target, notify)
 	CheckType(self, ents_metatable)
@@ -1994,9 +1994,7 @@ function ents_methods:acfCaliber()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return 0 end
 
-	local Caliber = This.Caliber
-
-	return Caliber and Caliber * 10 or 0
+	return This.Caliber or 0
 end
 
 --- Returns the muzzle velocity of the ammo in a crate or gun
