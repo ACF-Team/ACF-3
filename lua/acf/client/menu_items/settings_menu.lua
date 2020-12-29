@@ -72,4 +72,38 @@ end
 
 do -- Serverside settings
 	ACF.AddMenuItem(101, "Settings", "Serverside Settings", "server", ACF.GenerateServerSettings)
+
+	ACF.AddServerSettings("Fun Entities and Menu", function(Base)
+		local Entities = Base:AddCheckBox("Allow use of Fun Entities.")
+		Entities:SetServerData("AllowFunEnts", "OnChange")
+		Entities:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Entities can be still spawned if this option is disabled.")
+
+		local Menu = Base:AddCheckBox("Show Fun Entities menu option.")
+		Menu:SetServerData("ShowFunMenu", "OnChange")
+		Menu:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Changes on this option will only take effect once the players reload their menu.")
+	end)
+
+	ACF.AddServerSettings("Custom Killicons", function(Base)
+		local Icons = Base:AddCheckBox("Use custom killicons for ACF entities.")
+		Icons:SetServerData("UseKillicons", "OnChange")
+		Icons:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Changing this option will require a server restart.")
+	end)
 end

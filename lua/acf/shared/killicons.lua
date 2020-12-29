@@ -25,87 +25,77 @@
 
 ------------------------------------------------------------------------------]]
 
-if SERVER and ACF.EnableKillicons then
-	util.AddNetworkString( "ACF_PlayerKilledNPC" )
-	util.AddNetworkString( "ACF_NPCKilledNPC" )
+local function ServerSideActions(Enabled)
+	if not SERVER then return end
+	if not Enabled then return end
 
-	local function ACF_OnNPCKilled( ent, attacker, inflictor )
+	util.AddNetworkString("ACF_PlayerKilledNPC")
+	util.AddNetworkString("ACF_NPCKilledNPC")
+	util.AddNetworkString("ACF_PlayerKilled")
+	util.AddNetworkString("ACF_PlayerKilledSelf")
+	util.AddNetworkString("ACF_PlayerKilledByPlayer")
+
+	hook.Add("OnNPCKilled", "ACF_OnNPCKilled", function(ent, attacker, inflictor)
 		-- Don't spam the killfeed with scripted stuff
-		if ( ent:GetClass() == "npc_bullseye" or ent:GetClass() == "npc_launcher" ) then return end
+		if ent:GetClass() == "npc_bullseye" or ent:GetClass() == "npc_launcher" then return end
+		if IsValid(attacker) and attacker:GetClass() == "trigger_hurt" then attacker = ent end
 
-		if ( IsValid( attacker ) and attacker:GetClass() == "trigger_hurt" ) then attacker = ent end
-
-		if ( IsValid( attacker ) and attacker:IsVehicle() and IsValid( attacker:GetDriver() ) ) then
+		if IsValid(attacker) and attacker:IsVehicle() and IsValid(attacker:GetDriver()) then
 			attacker = attacker:GetDriver()
 		end
 
-		if ( !IsValid( inflictor ) and IsValid( attacker ) ) then
+		if not IsValid(inflictor) and IsValid(attacker) then
 			inflictor = attacker
 		end
 
 		-- Convert the inflictor to the weapon that they're holding if we can.
-		if ( IsValid( inflictor ) and attacker == inflictor and ( inflictor:IsPlayer() or inflictor:IsNPC() ) ) then
-
+		if IsValid(inflictor) and attacker == inflictor and (inflictor:IsPlayer() or inflictor:IsNPC()) then
 			inflictor = inflictor:GetActiveWeapon()
-			if ( !IsValid( attacker ) ) then inflictor = attacker end
 
+			if not IsValid(attacker) then inflictor = attacker end
 		end
 
 		local InflictorClass = "worldspawn"
-		local AttackerClass = "worldspawn"
+		local AttackerClass  = "worldspawn"
 
-		if ( IsValid( inflictor ) ) then
-			if inflictor.ACF and inflictor.Class and inflictor:GetClass() != "acf_ammo" then
+		if IsValid(inflictor) then
+			if inflictor.ACF and inflictor.Class and inflictor:GetClass() ~= "acf_ammo" then
 				InflictorClass = "acf_" .. inflictor.Class
 			else
 				InflictorClass = inflictor:GetClass()
 			end
 		end
 
-		if ( IsValid( attacker ) ) then
-
+		if IsValid(attacker) then
 			AttackerClass = attacker:GetClass()
 
-			if ( attacker:IsPlayer() ) then
-
-				net.Start( "ACF_PlayerKilledNPC" )
-
-					net.WriteString( ent:GetClass() )
-					net.WriteString( InflictorClass )
-					net.WriteEntity( attacker )
-
+			if attacker:IsPlayer() then
+				net.Start("ACF_PlayerKilledNPC")
+					net.WriteString(ent:GetClass())
+					net.WriteString(InflictorClass)
+					net.WriteEntity(attacker)
 				net.Broadcast()
 
 				return
 			end
-
 		end
 
-		if ( ent:GetClass() == "npc_turret_floor" ) then AttackerClass = ent:GetClass() end
+		if ent:GetClass() == "npc_turret_floor" then AttackerClass = ent:GetClass() end
 
-		net.Start( "ACF_NPCKilledNPC" )
-
-			net.WriteString( ent:GetClass() )
-			net.WriteString( InflictorClass )
-			net.WriteString( AttackerClass )
-
+		net.Start("ACF_NPCKilledNPC")
+			net.WriteString(ent:GetClass())
+			net.WriteString(InflictorClass)
+			net.WriteString(AttackerClass)
 		net.Broadcast()
-	end
-	hook.Add( "OnNPCKilled", "ACF_OnNPCKilled", ACF_OnNPCKilled )
+	end)
 
-	util.AddNetworkString( "ACF_PlayerKilled" )
-	util.AddNetworkString( "ACF_PlayerKilledSelf" )
-	util.AddNetworkString( "ACF_PlayerKilledByPlayer" )
-
-	local function ACF_PlayerDeath( ply, inflictor, attacker )
-
-		if ( IsValid( attacker ) and attacker:GetClass() == "trigger_hurt" ) then attacker = ply end
-
-		if ( IsValid( attacker ) and attacker:IsVehicle() and IsValid( attacker:GetDriver() ) ) then
+	hook.Add("PlayerDeath", "ACF_PlayerDeath", function(ply, inflictor, attacker)
+		if IsValid(attacker) and attacker:GetClass() == "trigger_hurt" then attacker = ply end
+		if IsValid(attacker) and attacker:IsVehicle() and IsValid(attacker:GetDriver()) then
 			attacker = attacker:GetDriver()
 		end
 
-		if ( !IsValid( inflictor ) and IsValid( attacker ) ) then
+		if not IsValid(inflictor) and IsValid(attacker) then
 			inflictor = attacker
 		end
 
@@ -114,151 +104,143 @@ if SERVER and ACF.EnableKillicons then
 		-- pistol but kill you by hitting you with their arm.
 		local InflictorClass = "worldspawn"
 
-		if ( IsValid( inflictor ) and inflictor == attacker and ( inflictor:IsPlayer() or inflictor:IsNPC() ) ) then
-
+		if IsValid(inflictor) and inflictor == attacker and (inflictor:IsPlayer() or inflictor:IsNPC()) then
 			inflictor = inflictor:GetActiveWeapon()
-			if ( !IsValid( inflictor ) ) then inflictor = attacker end
+
+			if not IsValid(inflictor) then inflictor = attacker end
 		end
 
-		if inflictor.ACF and inflictor.Class and inflictor:GetClass() != "acf_ammo" then
+		if inflictor.ACF and inflictor.Class and inflictor:GetClass() ~= "acf_ammo" then
 			InflictorClass = "acf_" .. inflictor.Class
 		else
 			InflictorClass = inflictor:GetClass()
 		end
 
-		if ( attacker == ply ) then return end
+		if attacker == ply then return end
 
-		if ( attacker:IsPlayer() ) then
-
-			net.Start( "ACF_PlayerKilledByPlayer" )
-
-				net.WriteEntity( ply )
-				net.WriteString( InflictorClass )
-				net.WriteEntity( attacker )
-
+		if attacker:IsPlayer() then
+			net.Start("ACF_PlayerKilledByPlayer")
+				net.WriteEntity(ply)
+				net.WriteString(InflictorClass)
+				net.WriteEntity(attacker)
 			net.Broadcast()
 
 			return
 		end
 
-		net.Start( "ACF_PlayerKilled" )
-
-			net.WriteEntity( ply )
-			net.WriteString( InflictorClass )
-			net.WriteString( attacker:GetClass() )
-
+		net.Start("ACF_PlayerKilled")
+			net.WriteEntity(ply)
+			net.WriteString(InflictorClass)
+			net.WriteString(attacker:GetClass())
 		net.Broadcast()
-	end
-	hook.Add( "PlayerDeath", "ACF_PlayerDeath", ACF_PlayerDeath )
+	end)
 end
 
-if CLIENT then
-	local IconColor = Color( 200, 200, 48, 255 )
+local function ClientSideActions(Enabled)
+	if not CLIENT then return end
 
-	killicon.Add( "acf_gun", "HUD/killicons/acf_gun", IconColor )
-	killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", IconColor )
-	killicon.Add( "torch", "HUD/killicons/torch", IconColor )
+	local IconColor = Color(200, 200, 48)
 
-	if ACF.EnableKillicons then
-		killicon.Add( "acf_AC", "HUD/killicons/acf_AC", IconColor )
-		killicon.Add( "acf_AL", "HUD/killicons/acf_AL", IconColor )
-		killicon.Add( "acf_C", "HUD/killicons/acf_C", IconColor )
-		killicon.Add( "acf_GL", "HUD/killicons/acf_GL", IconColor )
-		killicon.Add( "acf_HMG", "HUD/killicons/acf_HMG", IconColor )
-		killicon.Add( "acf_HW", "HUD/killicons/acf_HW", IconColor )
-		killicon.Add( "acf_MG", "HUD/killicons/acf_MG", IconColor )
-		killicon.Add( "acf_MO", "HUD/killicons/acf_MO", IconColor )
-		killicon.Add( "acf_RAC", "HUD/killicons/acf_RAC", IconColor )
-		killicon.Add( "acf_SA", "HUD/killicons/acf_SA", IconColor )
+	killicon.Add("acf_ammo", "HUD/killicons/acf_ammo", IconColor)
+	killicon.Add("acf_gun", "HUD/killicons/acf_gun", IconColor)
+	killicon.Add("torch", "HUD/killicons/torch", IconColor)
 
-		local function doNothing()
-			return false
-		end
+	if not Enabled then return end
 
-		net.Receive( "PlayerKilledByPlayer", doNothing )
-		net.Receive( "PlayerKilled", doNothing )
+	killicon.Add("acf_AC", "HUD/killicons/acf_AC", IconColor)
+	killicon.Add("acf_AL", "HUD/killicons/acf_AL", IconColor)
+	killicon.Add("acf_C", "HUD/killicons/acf_C", IconColor)
+	killicon.Add("acf_GL", "HUD/killicons/acf_GL", IconColor)
+	killicon.Add("acf_HMG", "HUD/killicons/acf_HMG", IconColor)
+	killicon.Add("acf_HW", "HUD/killicons/acf_HW", IconColor)
+	killicon.Add("acf_MG", "HUD/killicons/acf_MG", IconColor)
+	killicon.Add("acf_MO", "HUD/killicons/acf_MO", IconColor)
+	killicon.Add("acf_RAC", "HUD/killicons/acf_RAC", IconColor)
+	killicon.Add("acf_SA", "HUD/killicons/acf_SA", IconColor)
 
-		net.Receive( "PlayerKilledNPC", doNothing )
-		net.Receive( "NPCKilledNPC", doNothing )
-
-		local function RecvPlayerKilledByPlayer()
-
-			local victim	= net.ReadEntity()
-			local inflictor	= net.ReadString()
-			local attacker	= net.ReadEntity()
-
-			if ( !IsValid( attacker ) ) then return end
-			if ( !IsValid( victim ) ) then return end
-
-			GAMEMODE:AddDeathNotice( attacker:Name(), attacker:Team(), inflictor, victim:Name(), victim:Team() )
-
-		end
-		net.Receive( "ACF_PlayerKilledByPlayer", RecvPlayerKilledByPlayer )
-
-		local function RecvPlayerKilledSelf()
-
-			local victim = net.ReadEntity()
-			if ( !IsValid( victim ) ) then return end
-			GAMEMODE:AddDeathNotice( nil, 0, "suicide", victim:Name(), victim:Team() )
-
-		end
-		net.Receive( "ACF_PlayerKilledSelf", RecvPlayerKilledSelf )
-
-		local function RecvPlayerKilled()
-
-			local victim	= net.ReadEntity()
-			if ( !IsValid( victim ) ) then return end
-			local inflictor	= net.ReadString()
-			local attacker	= "#" .. net.ReadString()
-
-			GAMEMODE:AddDeathNotice( attacker, -1, inflictor, victim:Name(), victim:Team() )
-
-		end
-		net.Receive( "ACF_PlayerKilled", RecvPlayerKilled )
-
-		local function RecvPlayerKilledNPC()
-
-			local victimtype = net.ReadString()
-			local victim	= "#" .. victimtype
-			local inflictor	= net.ReadString()
-			local attacker	= net.ReadEntity()
-
-			--
-			-- For some reason the killer isn't known to us, so don't proceed.
-			--
-			if ( !IsValid( attacker ) ) then return end
-
-			GAMEMODE:AddDeathNotice( attacker:Name(), attacker:Team(), inflictor, victim, -1 )
-
-			local bIsLocalPlayer = ( IsValid(attacker) and attacker == LocalPlayer() )
-
-			local bIsEnemy = IsEnemyEntityName( victimtype )
-			local bIsFriend = IsFriendEntityName( victimtype )
-
-			if ( bIsLocalPlayer and bIsEnemy ) then
-				achievements.IncBaddies()
-			end
-
-			if ( bIsLocalPlayer and bIsFriend ) then
-				achievements.IncGoodies()
-			end
-
-			if ( bIsLocalPlayer and ( !bIsFriend and !bIsEnemy ) ) then
-				achievements.IncBystander()
-			end
-
-		end
-		net.Receive( "ACF_PlayerKilledNPC", RecvPlayerKilledNPC )
-
-		local function RecvNPCKilledNPC()
-
-			local victim	= "#" .. net.ReadString()
-			local inflictor	= net.ReadString()
-			local attacker	= "#" .. net.ReadString()
-
-			GAMEMODE:AddDeathNotice( attacker, -1, inflictor, victim, -1 )
-
-		end
-		net.Receive( "ACF_NPCKilledNPC", RecvNPCKilledNPC )
+	local function doNothing()
+		return false
 	end
+
+	-- TODO: Overwrite these instead of creating new net messages.
+	net.Receive("PlayerKilledByPlayer", doNothing)
+	net.Receive("PlayerKilledNPC", doNothing)
+	net.Receive("PlayerKilled", doNothing)
+	net.Receive("NPCKilledNPC", doNothing)
+
+	net.Receive("ACF_PlayerKilledByPlayer", function()
+		local victim    = net.ReadEntity()
+		local inflictor = net.ReadString()
+		local attacker  = net.ReadEntity()
+
+		if not IsValid(attacker) then return end
+		if not IsValid(victim) then return end
+
+		GAMEMODE:AddDeathNotice(attacker:Name(), attacker:Team(), inflictor, victim:Name(), victim:Team())
+	end)
+
+	net.Receive("ACF_PlayerKilledSelf", function()
+		local victim = net.ReadEntity()
+
+		if not IsValid(victim) then return end
+
+		GAMEMODE:AddDeathNotice(nil, 0, "suicide", victim:Name(), victim:Team())
+	end)
+
+	net.Receive("ACF_PlayerKilled", function()
+		local victim    = net.ReadEntity()
+		local inflictor = net.ReadString()
+		local attacker  = "#" .. net.ReadString()
+
+		if not IsValid(victim) then return end
+
+		GAMEMODE:AddDeathNotice(attacker, -1, inflictor, victim:Name(), victim:Team())
+	end)
+
+	net.Receive("ACF_PlayerKilledNPC", function()
+		local victimtype = net.ReadString()
+		local victim     = "#" .. victimtype
+		local inflictor  = net.ReadString()
+		local attacker   = net.ReadEntity()
+
+		-- For some reason the killer isn't known to us, so don't proceed.
+		if not IsValid(attacker) then return end
+
+		GAMEMODE:AddDeathNotice(attacker:Name(), attacker:Team(), inflictor, victim, -1)
+
+		local bIsLocalPlayer = IsValid(attacker) and attacker == LocalPlayer()
+		local bIsEnemy       = IsEnemyEntityName(victimtype)
+		local bIsFriend      = IsFriendEntityName(victimtype)
+
+		if bIsLocalPlayer and bIsEnemy then
+			achievements.IncBaddies()
+		end
+
+		if bIsLocalPlayer and bIsFriend then
+			achievements.IncGoodies()
+		end
+
+		if bIsLocalPlayer and not (bIsFriend or bIsEnemy) then
+			achievements.IncBystander()
+		end
+	end)
+
+	net.Receive("ACF_NPCKilledNPC", function()
+		local victim    = "#" .. net.ReadString()
+		local inflictor = net.ReadString()
+		local attacker  = "#" .. net.ReadString()
+
+		GAMEMODE:AddDeathNotice(attacker, -1, inflictor, victim, -1)
+	end)
 end
+
+hook.Add("InitPostEntity", "ACF Custom Killicons", function()
+	local Enabled = ACF.GetServerBool("UseKillicons")
+
+	print("peepee poopoo", Enabled)
+
+	ClientSideActions(Enabled)
+	ServerSideActions(Enabled)
+
+	hook.Remove("InitPostEntity", "ACF Custom Killicons")
+end)

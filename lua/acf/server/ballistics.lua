@@ -101,6 +101,8 @@ function ACF.RemoveBullet(Bullet)
 
 	Bullet.Removed = true
 
+	ACF.BulletClient(Bullet, "Update", 1, Bullet.Pos) -- Kills the bullet on the clientside
+
 	if not next(Bullets) then
 		hook.Remove("Tick", "IterateBullets")
 	end
