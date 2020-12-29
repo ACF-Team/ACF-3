@@ -1,14 +1,27 @@
-local Ent_Info = GetConVar("acf_show_entity_info")
-local InfoHelp = {
-	[0] = "ACF entities will never display their information bubble when the player looks at them.",
-	[1] = "ACF entities will only display their information bubble when the player looks at them while they're not seated.",
-	[2] = "ACF entities will always display their information bubble when a player looks at them."
-}
+local ACF = ACF
 
-local function CreateMenu(Menu)
-	do -- Entity Information Settings
+do -- Clientside settings
+	local Ent_Info = GetConVar("acf_show_entity_info")
+	local InfoHelp = {
+		[0] = "ACF entities will never display their information bubble when the player looks at them.",
+		[1] = "ACF entities will only display their information bubble when the player looks at them while they're not seated.",
+		[2] = "ACF entities will always display their information bubble when a player looks at them."
+	}
+
+	ACF.AddMenuItem(1, "Settings", "Clientside Settings", "user", ACF.GenerateClientSettings)
+
+	ACF.AddClientSettings("Effects and Visual Elements", function(Base)
+		local Ropes = Base:AddCheckBox("Create mobility rope links.")
+		Ropes:SetConVar("acf_mobilityropelinks")
+
+		local Particles = Base:AddSlider("Particle Mult.", 0.1, 1, 2)
+		Particles:SetConVar("acf_cl_particlemul")
+
+		Base:AddHelp("Defines the clientside particle multiplier, reduce it if you're experiencing lag when ACF effects are created.")
+	end)
+
+	ACF.AddClientSettings("Entity Information", function(Base)
 		local InfoValue = InfoHelp[Ent_Info:GetInt()] and Ent_Info:GetInt() or 1
-		local Base = Menu:AddCollapsible("Entity Information")
 
 		Base:AddLabel("Display ACF entity information:")
 
@@ -40,36 +53,23 @@ local function CreateMenu(Menu)
 		local Rounds = Base:AddSlider("Max Rounds", 0, 64, 0)
 		Rounds:SetConVar("ACF_MaxRoundsDisplay")
 
-		Base:AddHelp("Requires hitboxes to be enabled. Defines the maximum amount of rounds an ammo crate needs to have before using bulk display.")
-	end
+		Base:AddHelp("Defines the maximum amount of rounds an ammo crate needs to have before using bulk display.")
+		Base:AddHelp("Requires hitboxes to be enabled.")
+	end)
 
-	do -- Legal Check Settings
-		local Base = Menu:AddCollapsible("Legal Checks")
-
+	ACF.AddClientSettings("Legal Checks", function(Base)
 		local Hints = Base:AddCheckBox("Enable hints on entity disabling.")
 		Hints:SetConVar("acf_legalhints")
-	end
+	end)
 
-	do -- Aesthetic Settings
-		local Base = Menu:AddCollapsible("Aesthetic Settings")
-
-		local Ropes = Base:AddCheckBox("Create mobility rope links.")
-		Ropes:SetConVar("acf_mobilityropelinks")
-
-		local Particles = Base:AddSlider("Particle Mult.", 0.1, 1, 2)
-		Particles:SetConVar("acf_cl_particlemul")
-
-		Base:AddHelp("Defines the clientside particle multiplier, reduce it if you're experiencing lag when ACF effects are created.")
-	end
-
-	do -- Tool Settings
-		local Base = Menu:AddCollapsible("Tool Settings")
-
+	ACF.AddClientSettings("Tool Category", function(Base)
 		local Category = Base:AddCheckBox("Use custom category for ACF tools.")
 		Category:SetConVar("acf_tool_category")
 
 		Base:AddHelp("You will need to rejoin the server for this option to apply.")
-	end
+	end)
 end
 
-ACF.AddMenuItem(201, "About the Addon", "Settings", "wrench", CreateMenu)
+do -- Serverside settings
+	ACF.AddMenuItem(101, "Settings", "Serverside Settings", "server", ACF.GenerateServerSettings)
+end

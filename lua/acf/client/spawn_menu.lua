@@ -77,7 +77,8 @@ do -- Menu population functions
 	ACF.AddMenuOption(1, "About the Addon", "information")
 	ACF.AddMenuItem(101, "About the Addon", "Updates", "newspaper") -- TODO: Add Updates item
 
-	ACF.AddMenuOption(101, "Entities", "brick")
+	ACF.AddMenuOption(101, "Settings", "wrench")
+	ACF.AddMenuOption(201, "Entities", "brick")
 end
 
 do -- ACF Menu context panel
@@ -217,5 +218,59 @@ do -- ACF Menu context panel
 		end
 
 		PopulateTree(Tree)
+	end
+end
+
+do -- Client and server settings
+	ACF.SettingsPanels = ACF.SettingsPanels or {
+		Client = {},
+		Server = {},
+	}
+
+	local Settings = ACF.SettingsPanels
+
+	--- Generates the following functions:
+	-- ACF.AddClientSettings(Name, Function)
+	-- ACF.RemoveClientSettings(Name)
+	-- ACF.GenerateClientSettings(MenuPanel)
+	-- ACF.AddServerSettings(Name, Function)
+	-- ACF.RemoveServerSettings(Name)
+	-- ACF.GenerateServerSettings(MenuPanel)
+
+	for Realm in pairs(Settings) do
+		local Destiny = Settings[Realm]
+		local Hook    = "ACF_On" .. Realm .. "SettingsLoaded"
+		local Message = "No %sside settings have been registered."
+
+		ACF["Add" .. Realm .. "Settings"] = function(Name, Function)
+			if not isstring(Name) then return end
+			if not isfunction(Function) then return end
+
+			Destiny[Name] = Function
+		end
+
+		ACF["Remove" .. Realm .. "Settings"] = function(Name)
+			if not isstring(Name) then return end
+
+			Destiny[Name] = nil
+		end
+
+		ACF["Generate" .. Realm .. "Settings"] = function(Menu)
+			if not ispanel(Menu) then return end
+
+			if not next(Destiny) then
+				Menu:AddTitle("Nothing to see here.")
+				Menu:AddLabel(Message:format(Realm))
+				return
+			end
+
+			for Name, Function in SortedPairs(Destiny) do
+				local Base = Menu:AddCollapsible(Name)
+
+				Function(Base)
+
+				hook.Run(Hook, Name, Base)
+			end
+		end
 	end
 end
