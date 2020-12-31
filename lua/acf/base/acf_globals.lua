@@ -225,42 +225,6 @@ elseif CLIENT then
 	---------------------------------------------
 end
 
-function switch(cases, arg)
-	local Var = cases[arg]
-
-	return Var ~= nil and Var or cases.default
-end
-
--- changes here will be automatically reflected in the armor properties tool
-function ACF_CalcArmor(Area, Ductility, Mass)
-	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
-end
-
-function ACF_MuzzleVelocity(Propellant, Mass)
-	local PEnergy = ACF.PBase * ((1 + Propellant) ^ ACF.PScale - 1)
-	local Speed = ((PEnergy * 2000 / Mass) ^ ACF.MVScale)
-	local Final = Speed -- - Speed * math.Clamp(Speed/2000,0,0.5)
-
-	return Final
-end
-
-function ACF_Kinetic(Speed, Mass, LimitVel)
-	LimitVel = LimitVel or 99999
-	Speed    = Speed / 39.37
-
-	local Energy = {
-		Kinetic = (Mass * (Speed ^ 2)) / 2000, --Energy in KiloJoules
-		Momentum = Speed * Mass,
-	}
-	local KE = (Mass * (Speed ^ ACF.KinFudgeFactor)) / 2000 + Energy.Momentum
-
-	Energy.Penetration = math.max(KE - (math.max(Speed - LimitVel, 0) ^ 2) / (LimitVel * 5) * (KE / 200) ^ 0.95, KE * 0.1)
-	--Energy.Penetration = math.max( KE - (math.max(Speed-LimitVel,0)^2)/(LimitVel*5) * (KE/200)^0.95 , KE*0.1 )
-	--Energy.Penetration = math.max(Energy.Momentum^ACF.KinFudgeFactor - math.max(Speed-LimitVel,0)/(LimitVel*5) * Energy.Momentum , Energy.Momentum*0.1)
-
-	return Energy
-end
-
 do -- ACF Notify -----------------------------------
 	if SERVER then
 		function ACF_SendNotify(ply, success, msg)
