@@ -437,6 +437,32 @@ do -- Sensor registration functions
 	end
 end
 
+do -- Piledriver registration functions
+	ACF.Classes.Piledrivers = ACF.Classes.Piledrivers or {}
+
+	local Piledrivers = ACF.Classes.Piledrivers
+
+	function ACF.RegisterPiledriverClass(ID, Data)
+		local Group = AddClassGroup(ID, Piledrivers, Data)
+
+		if not Group.LimitConVar then
+			Group.LimitConVar = {
+				Name = "_acf_piledriver",
+				Amount = 4,
+				Text = "Maximum amount of ACF piledrivers a player can create."
+			}
+		end
+
+		AddSboxLimit(Group.LimitConVar)
+
+		return Group
+	end
+
+	function ACF.RegisterPiledriver(ID, ClassID, Data)
+		return AddGroupedClass(ID, ClassID, Piledrivers, Data)
+	end
+end
+
 do -- Entity class registration function
 	ACF.Classes.Entities = ACF.Classes.Entities or {}
 

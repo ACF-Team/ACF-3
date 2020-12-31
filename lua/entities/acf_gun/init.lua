@@ -384,7 +384,6 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:CanFire()
-			if not IsValid(self) then return false end -- Weapon doesn't exist
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
 			if self.State ~= "Loaded" then -- Weapon is not loaded

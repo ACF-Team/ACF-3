@@ -70,6 +70,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 end
 
 local Weaponry = {
+	Piledrivers = Classes.Piledrivers,
 	Missiles = Classes.Missiles,
 	Weapons = Classes.Weapons,
 }
