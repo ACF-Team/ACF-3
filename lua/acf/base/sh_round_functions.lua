@@ -9,19 +9,17 @@ local function GetWeaponSpecs(ToolData)
 
 	if not Class.IsScalable then
 		local Weapon = Class.Lookup[ToolData.Weapon]
+		local Round  = Weapon.Round
 
-		if not Weapon then return end
-
-		local RoundData = Weapon.Round
-
-		return Weapon.Caliber, RoundData.MaxLength, RoundData.PropMass
+		return Weapon.Caliber, Round.MaxLength, Round.PropMass
 	end
 
 	local Bounds  = Class.Caliber
-	local Caliber = math.Clamp(ToolData.Caliber or 0, Bounds.Min, Bounds.Max)
-	local Scale   = Caliber / Class.BaseCaliber
+	local Round   = Weapon.Round
+	local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
+	local Scale   = Caliber / Bounds.Base
 
-	return Caliber, Class.BaseLength * Scale, Class.BaseProp * Scale
+	return Caliber, Round.MaxLength * Scale, Round.PropMass * Scale
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)

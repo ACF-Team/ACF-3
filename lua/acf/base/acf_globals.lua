@@ -150,7 +150,6 @@ end
 
 if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
-	util.AddNetworkString("ACF_KilledByACF")
 	util.AddNetworkString("ACF_RenderDamage")
 	util.AddNetworkString("ACF_Notify")
 
