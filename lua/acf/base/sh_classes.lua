@@ -502,7 +502,7 @@ do -- Entity class registration function
 	end
 
 	function ACF.RegisterEntityClass(Class, Function, ...)
-		if not ACF.CheckString(Class) then return end
+		if not isstring(Class) then return end
 		if not isfunction(Function) then return end
 
 		local Entity = GetEntityTable(Class)
@@ -515,7 +515,7 @@ do -- Entity class registration function
 	end
 
 	function ACF.AddEntityArguments(Class, ...)
-		if not ACF.CheckString(Class) then return end
+		if not isstring(Class) then return end
 
 		local Entity = GetEntityTable(Class)
 		local Arguments = istable(...) and ... or { ... }
@@ -533,7 +533,7 @@ do -- Entity class registration function
 	end
 
 	function ACF.GetEntityArguments(Class)
-		if not ACF.CheckString(Class) then return end
+		if not isstring(Class) then return end
 
 		local Entity = GetEntityTable(Class)
 		local List = {}
@@ -546,7 +546,7 @@ do -- Entity class registration function
 	end
 
 	function ACF.CreateEntity(Class, Player, Position, Angles, Data, NoUndo)
-		if not ACF.CheckString(Class) then return false end
+		if not isstring(Class) then return false end
 
 		local ClassData = ACF.GetEntityClass(Class)
 

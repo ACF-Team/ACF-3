@@ -100,7 +100,7 @@ do -- Data persisting
 	-- ACF.PersistClientData(Key, Default) - Clientside only
 
 	ACF["Persist" .. Realm .. "Data"] = function(Key, Default)
-		if not ACF.CheckString(Key) then return end
+		if not isstring(Key) then return end
 		if Default == nil then Default = "nil" end
 
 		Keys[Key] = Default

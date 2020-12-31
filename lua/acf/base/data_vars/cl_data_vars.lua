@@ -131,7 +131,7 @@ end
 
 do -- Client data setter function
 	function ACF.SetClientData(Key, Value, Forced)
-		if not ACF.CheckString(Key) then return end
+		if not isstring(Key) then return end
 
 		Value = Value or false
 
@@ -147,7 +147,7 @@ end
 
 do -- Server data setter function
 	function ACF.SetServerData(Key, Value, Forced)
-		if not ACF.CheckString(Key) then return end
+		if not isstring(Key) then return end
 
 		local Player = LocalPlayer()
 
@@ -355,7 +355,7 @@ do -- Panel functions
 
 	for Type in pairs(Queued) do
 		PanelMeta["Set" .. Type .. "Data"] = function(Panel, Key, Setter)
-			if not ACF.CheckString(Key) then return end
+			if not isstring(Key) then return end
 
 			local Variables   = ACF[Type .. "Data"]
 			local SetFunction = ACF["Set" .. Type .. "Data"]
@@ -375,7 +375,7 @@ do -- Panel functions
 		end
 
 		PanelMeta["Track" .. Type .. "Data"] = function(Panel, Key, Setter)
-			if not ACF.CheckString(Key) then return end
+			if not isstring(Key) then return end
 
 			StoreData("Panels", Panel, Type, Key, "Tracker")
 			StoreData(Type, Key, "Tracker", Panel)

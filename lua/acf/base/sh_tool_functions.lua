@@ -371,9 +371,9 @@ do -- Clientside Tool interaction
 		local Value = "%s:%s"
 
 		function ACF.SetToolMode(Tool, Stage, Op)
-			if not ACF.CheckString(Tool) then return end
-			if not ACF.CheckString(Stage) then return end
-			if not ACF.CheckString(Op) then return end
+			if not isstring(Tool) then return end
+			if not isstring(Stage) then return end
+			if not isstring(Op) then return end
 
 			ACF.SetClientData(Key:format(Tool), Value:format(Stage, Op))
 		end
@@ -435,8 +435,8 @@ do -- Generic Spawner/Linker operation creator
 	end
 
 	function ACF.CreateMenuOperation(Name, Primary, Secondary)
-		if not ACF.CheckString(Name) then return end
-		if not ACF.CheckString(Primary) then return end
+		if not isstring(Name) then return end
+		if not isstring(Primary) then return end
 
 		Secondary = ACF.CheckString(Secondary)
 

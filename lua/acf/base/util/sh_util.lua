@@ -203,8 +203,8 @@ do -- Native type verification functions
 		return tonumber(Value) or Default
 	end
 
-	function ACF.CheckString(Value)
-		if not Value then return Default end
+	function ACF.CheckString(Value, Default)
+		if Value == nil then return Default end
 
 		return tostring(Value) or Default
 	end
@@ -266,7 +266,7 @@ do -- Attachment storage
 	-------------------------------------------------------------------
 
 	function ACF.AddCustomAttachment(Model, Name, Pos, Ang, Bone)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 
 		SaveAttachments(Model, {{
 			Name = Name,
@@ -277,14 +277,14 @@ do -- Attachment storage
 	end
 
 	function ACF.AddCustomAttachments(Model, Attachments)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 		if not istable(Attachments) then return end
 
 		SaveAttachments(Model, Attachments)
 	end
 
 	function ACF.SetCustomAttachment(Model, Name, Pos, Ang, Bone)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 
 		SaveAttachments(Model, {{
 			Name = Name,
@@ -295,14 +295,14 @@ do -- Attachment storage
 	end
 
 	function ACF.SetCustomAttachments(Model, Attachments)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 		if not istable(Attachments) then return end
 
 		SaveAttachments(Model, Attachments, true)
 	end
 
 	function ACF.RemoveCustomAttachment(Model, Index)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 
 		local Data = GetModelData(Model, true)
 
@@ -316,7 +316,7 @@ do -- Attachment storage
 	end
 
 	function ACF.RemoveCustomAttachments(Model)
-		if not ACF.CheckString(Model) then return end
+		if not isstring(Model) then return end
 
 		local Data = GetModelData(Model, true)
 
@@ -401,7 +401,7 @@ end
 
 do -- File creation
 	function ACF.FolderExists(Path, Create)
-		if not ACF.CheckString(Path) then return end
+		if not isstring(Path) then return end
 
 		local Exists = file.Exists(Path, "DATA")
 
@@ -415,8 +415,8 @@ do -- File creation
 	end
 
 	function ACF.SaveToJSON(Path, Name, Table, GoodFormat)
-		if not ACF.CheckString(Path) then return end
-		if not ACF.CheckString(Name) then return end
+		if not isstring(Path) then return end
+		if not isstring(Name) then return end
 		if not istable(Table) then return end
 
 		ACF.FolderExists(Path, true) -- Creating the folder if it doesn't exist
@@ -427,8 +427,8 @@ do -- File creation
 	end
 
 	function ACF.LoadFromFile(Path, Name)
-		if not ACF.CheckString(Path) then return end
-		if not ACF.CheckString(Name) then return end
+		if not isstring(Path) then return end
+		if not isstring(Name) then return end
 
 		local FullPath = Path .. "/" .. Name
 
