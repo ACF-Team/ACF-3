@@ -237,8 +237,6 @@ end
 hook.Add("InitPostEntity", "ACF Custom Killicons", function()
 	local Enabled = ACF.GetServerBool("UseKillicons")
 
-	print("peepee poopoo", Enabled)
-
 	ClientSideActions(Enabled)
 	ServerSideActions(Enabled)
 

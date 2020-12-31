@@ -225,6 +225,26 @@ elseif CLIENT then
 	---------------------------------------------
 end
 
+do -- Player loaded hook
+	-- PlayerInitialSpawn isn't reliable when it comes to network messages
+	-- So we'll ask the clientside to tell us when it's actually ready to send and receive net messages
+	-- For more info, see: https://wiki.facepunch.com/gmod/GM:PlayerInitialSpawn
+	if SERVER then
+		util.AddNetworkString("ACF_PlayerLoaded")
+
+		net.Receive("ACF_PlayerLoaded", function(_, Player)
+			hook.Run("ACF_OnPlayerLoaded", Player)
+		end)
+	else
+		hook.Add("InitPostEntity", "ACF Player Loaded", function()
+			net.Start("ACF_PlayerLoaded")
+			net.SendToServer()
+
+			hook.Remove("InitPostEntity", "ACF Player Loaded")
+		end)
+	end
+end
+
 do -- ACF Notify -----------------------------------
 	if SERVER then
 		function ACF_SendNotify(ply, success, msg)
@@ -251,7 +271,7 @@ do -- ACF Notify -----------------------------------
 end ------------------------------------------------
 
 do -- Render Damage --------------------------------
-	hook.Add("PlayerInitialSpawn", "renderdamage", function(ply)
+	hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(ply)
 		local Table = {}
 
 		for _, v in pairs(ents.GetAll()) do
@@ -321,18 +341,14 @@ do -- Smoke/Wind -----------------------------------
 			end
 		end)
 
-		local function sendSmokeWind(ply)
+		hook.Add("ACF_OnPlayerLoaded", "ACF Send Smoke Wind", function(Player)
 			net.Start("acf_smokewind")
 				net.WriteFloat(ACF.SmokeWind)
-			net.Send(ply)
-		end
-
-		hook.Add("PlayerInitialSpawn", "ACF_SendSmokeWind", sendSmokeWind)
+			net.Send(Player)
+		end)
 	else
-		local function recvSmokeWind()
+		net.Receive("acf_smokewind", function()
 			ACF.SmokeWind = net.ReadFloat()
-		end
-
-		net.Receive("acf_smokewind", recvSmokeWind)
+		end)
 	end
 end ------------------------------------------------

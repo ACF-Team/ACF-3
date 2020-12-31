@@ -171,17 +171,9 @@ end
 do -- Client syncronization
 	util.AddNetworkString("ACF_VersionSync")
 
-	local function SyncInformation(Player)
-		if not IsValid(Player) then return end
-
+	hook.Add("ACF_OnPlayerLoaded", "ACF_VersionSync", function(Player)
 		net.Start("ACF_VersionSync")
 			net.WriteTable(Repos)
 		net.Send(Player)
-	end
-
-	hook.Add("PlayerInitialSpawn", "ACF_VersionSync", function(Player)
-		timer.Simple(7.5, function()
-			SyncInformation(Player)
-		end)
 	end)
 end
