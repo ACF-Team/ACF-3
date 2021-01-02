@@ -13,9 +13,17 @@ function ENT:Disable() end
 function ENT:UpdateOverlayText() end
 
 do -- Entity Overlay ----------------------------
-	local Disable   = "Disabled: %s\n%s"
-	local TimerName = "ACF Overlay Buffer %s"
-	local timer     = timer
+	local Disable = "Disabled: %s\n%s"
+	local Name    = "ACF Overlay Buffer %s"
+	local timer   = timer
+
+	local function GetText(Entity)
+		if Entity.Disabled then
+			return Entity:GetDisableText()
+		end
+
+		return Entity:UpdateOverlayText()
+	end
 
 	function ENT:GetDisableText()
 		return Disable:format(self.DisableReason, self.DisableDescription)
@@ -23,27 +31,27 @@ do -- Entity Overlay ----------------------------
 
 	function ENT:UpdateOverlay(Instant)
 		if Instant then
-			local Text = Either(self.Disabled, self:GetDisableText(), self:UpdateOverlayText())
-
-			return self:SetOverlayText(Text)
+			return self:SetOverlayText(GetText(self))
 		end
 
-		local Name = TimerName:format(self:EntIndex())
-
-		if timer.Exists(Name) then -- This entity has been updated too recently
-			self.OverlayBuffer = true -- Mark it to update when buffer time has expired
+		if self.OverlayCooldown then -- This entity has been updated too recently
+			self.QueueOverlay = true -- Mark it to update when buffer time has expired
 		else
-			timer.Create(Name, self.OverlayDelay, 1, function()
+			self:SetOverlayText(GetText(self))
+
+			self.OverlayCooldown = true
+
+			timer.Create(Name:format(self:EntIndex()), self.OverlayDelay, 1, function()
 				if not IsValid(self) then return end
-				if not self.OverlayBuffer then return end
 
-				self.OverlayBuffer = nil
-				self:UpdateOverlay()
+				self.OverlayCooldown = nil
+
+				if self.QueueOverlay then
+					self.QueueOverlay = nil
+
+					self:UpdateOverlay()
+				end
 			end)
-
-			local Text = Either(self.Disabled, self:GetDisableText(), self:UpdateOverlayText())
-
-			self:SetOverlayText(Text)
 		end
 	end
 end ---------------------------------------------
