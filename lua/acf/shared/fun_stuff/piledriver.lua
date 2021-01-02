@@ -3,6 +3,8 @@ ACF.RegisterPiledriverClass("PD", {
 	Description = "Formerly a piece of construction equipment, it was modified to be used in close-quarters combat. Doesn't actually drive piles.",
 	Model       = "models/piledriver/piledriver_100mm.mdl",
 	IsScalable  = true,
+	MagSize     = 15,
+	ChargeRate  = 0.5,
 	Caliber = {
 		Base = 100,
 		Min  = 50,

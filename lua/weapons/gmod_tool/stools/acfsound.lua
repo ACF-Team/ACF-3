@@ -50,6 +50,18 @@ Sounds.acf_engine = {
 	end
 }
 
+Sounds.acf_piledriver = {
+	GetSound = function(ent)
+		return { Sound = ent.SoundPath or "" }
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+	end,
+	ResetSound = function(ent)
+		ent.SoundPath = nil
+	end
+}
+
 local function ReplaceSound(_, Entity, data)
 	if not IsValid(Entity) then return end
 	local sound = data[1]
