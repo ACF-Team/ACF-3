@@ -15,7 +15,7 @@ local function GetWeaponSpecs(ToolData)
 	end
 
 	local Bounds  = Class.Caliber
-	local Round   = Weapon.Round
+	local Round   = Class.Round
 	local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
 	local Scale   = Caliber / Bounds.Base
 
