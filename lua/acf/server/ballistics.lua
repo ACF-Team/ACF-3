@@ -67,8 +67,9 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
 
 	local Effect = EffectData()
-	Effect:SetHitBox(Bullet.Index)
+	Effect:SetDamageType(Bullet.Index)
 	Effect:SetStart(Bullet.Flight * 0.1)
+	Effect:SetAttachment(Bullet.HideEffect and 0 or 1)
 
 	if Type == "Update" then
 		if Hit > 0 then
@@ -80,7 +81,7 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 		Effect:SetScale(Hit)
 	else
 		Effect:SetOrigin(Bullet.Pos)
-		Effect:SetEntity(Entity(Bullet.Crate))
+		Effect:SetEntIndex(Bullet.Crate)
 		Effect:SetScale(0)
 	end
 
@@ -109,7 +110,9 @@ function ACF.RemoveBullet(Bullet)
 end
 
 function ACF.CalcBulletFlight(Bullet)
-	if not Bullet.LastThink then return ACF.RemoveBullet(Bullet) end
+	if Bullet.KillTime and ACF.CurTime > Bullet.KillTime then
+		return ACF.RemoveBullet(Bullet)
+	end
 
 	if Bullet.PreCalcFlight then
 		Bullet:PreCalcFlight()
