@@ -27,3 +27,8 @@ ACF.RegisterPiledriver("100mmPD", "PD", {
 ACF.RegisterPiledriver("150mmPD", "PD", {
 	Caliber = 150
 })
+
+ACF.SetCustomAttachments("models/piledriver/piledriver_100mm.mdl", {
+	{ Name = "muzzle", Pos = Vector(20), Ang = Angle() },
+	{ Name = "tip", Pos = Vector(65), Ang = Angle() },
+})

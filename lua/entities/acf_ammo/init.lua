@@ -224,7 +224,7 @@ do -- Spawning and Updating --------------------
 			Size.z = math.Clamp(Size.z, 6, 96)
 		end
 
-		if not Data.Destiny then
+		if not isstring(Data.Destiny) then
 			Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
 		end
 
