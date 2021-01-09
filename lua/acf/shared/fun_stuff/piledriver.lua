@@ -3,7 +3,9 @@ ACF.RegisterPiledriverClass("PD", {
 	Description = "Formerly a piece of construction equipment, it was modified to be used in close-quarters combat. Doesn't actually drive piles.",
 	Model       = "models/piledriver/piledriver_100mm.mdl",
 	IsScalable  = true,
+	Mass        = 1200, -- Relative to the Base caliber
 	MagSize     = 15,
+	Cyclic      = 60,
 	ChargeRate  = 0.5,
 	Caliber = {
 		Base = 100,
@@ -11,9 +13,14 @@ ACF.RegisterPiledriverClass("PD", {
 		Max  = 300,
 	},
 	Round = {
-		MaxLength = 45,
+		MaxLength = 45, -- Relative to the Base caliber
 		PropMass  = 0,
-	}
+	},
+	Preview = {
+		Position = Vector(0, 0, -5),
+		Offset = Vector(45, 45, 20),
+		Height = 120,
+	},
 })
 
 ACF.RegisterPiledriver("75mmPD", "PD", {

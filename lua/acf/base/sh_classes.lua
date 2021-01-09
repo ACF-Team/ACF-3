@@ -445,6 +445,8 @@ do -- Piledriver registration functions
 	function ACF.RegisterPiledriverClass(ID, Data)
 		local Group = AddClassGroup(ID, Piledrivers, Data)
 
+		Group.Cyclic = math.min(120, Group.Cyclic or 60)
+
 		if not Group.LimitConVar then
 			Group.LimitConVar = {
 				Name = "_acf_piledriver",
