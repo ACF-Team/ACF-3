@@ -69,7 +69,7 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 	local Effect = EffectData()
 	Effect:SetDamageType(Bullet.Index)
 	Effect:SetStart(Bullet.Flight * 0.1)
-	Effect:SetAttachment(Bullet.HideEffect and 0 or 1)
+	Effect:SetAttachment(Bullet.Hide and 0 or 1)
 
 	if Type == "Update" then
 		if Hit > 0 then

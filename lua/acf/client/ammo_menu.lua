@@ -214,6 +214,9 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		Desc:SetText(Data.Description)
 
 		ACF.UpdateAmmoMenu(Menu, Settings)
+
+		-- Best patch 2021
+		ACF.SetClientData("Projectile", ACF.GetClientNumber("Projectile"), true)
 	end
 
 	Menu.AmmoBase = Base
