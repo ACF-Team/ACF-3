@@ -383,6 +383,14 @@ do -- Firing ------------------------------------
 end ---------------------------------------------
 
 do -- Misc --------------------------------------
+	function ENT:Disable()
+		self.Charge       = 0
+		self.SingleCharge = 0
+		self.CurrentShot  = 0
+
+		self:SetState("Loading")
+	end
+
 	function ENT:SetState(State)
 		self.State = State
 
