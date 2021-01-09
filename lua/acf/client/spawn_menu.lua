@@ -79,6 +79,7 @@ do -- Menu population functions
 
 	ACF.AddMenuOption(101, "Settings", "wrench")
 	ACF.AddMenuOption(201, "Entities", "brick")
+	ACF.AddMenuOption(9999, "Fun Stuff", "bricks")
 end
 
 do -- ACF Menu context panel
