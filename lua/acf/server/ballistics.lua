@@ -494,7 +494,8 @@ do -- Terminal ballistics --------------------------
 
 	function ACF_PenetrateMapEntity(Bullet, Trace)
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
+		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
+		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
 		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
 
@@ -536,7 +537,8 @@ do -- Terminal ballistics --------------------------
 
 	function ACF_PenetrateGround(Bullet, Trace)
 		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
-		local Density = (util.GetSurfaceData(Trace.SurfaceProps).density * 0.5 * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
+		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
+		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
 		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
 		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
 
