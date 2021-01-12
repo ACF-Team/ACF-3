@@ -10,6 +10,7 @@ do -- Spawning and Updating --------------------
 	local Piledrivers = ACF.Classes.Piledrivers
 	local AmmoTypes   = ACF.Classes.AmmoTypes
 	local CheckLegal  = ACF_CheckLegal
+	local ACF_RECOIL  = GetConVar("acf_recoilpush")
 
 	local function VerifyData(Data)
 		if isstring(Data.Id) then
@@ -125,6 +126,19 @@ do -- Spawning and Updating --------------------
 				if self.LastThink == ACF.CurTime then return end
 
 				self.KillTime = ACF.CurTime
+			end
+
+			function BulletData:OnEndFlight(Trace)
+				if not ACF_RECOIL:GetBool() then return end
+				if not IsValid(Entity) then return end
+				if not Trace.HitWorld then return end
+				if Trace.Fraction == 0 then return end
+
+				local Fraction   = 1 - Trace.Fraction
+				local MassCenter = Entity:LocalToWorld(Entity:GetPhysicsObject():GetMassCenter())
+				local Energy     = self.ProjMass * self.MuzzleVel * 39.37 * Fraction
+
+				ACF.KEShove(Entity, MassCenter, -Entity:GetForward(), Energy)
 			end
 
 			Entity.BulletData = BulletData
