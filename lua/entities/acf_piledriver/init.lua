@@ -122,6 +122,7 @@ do -- Spawning and Updating --------------------
 			function BulletData:PreCalcFlight()
 				if self.KillTime then return end
 				if not self.DeltaTime then return end
+				if self.LastThink == ACF.CurTime then return end
 
 				self.KillTime = ACF.CurTime
 			end
