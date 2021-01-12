@@ -13,7 +13,7 @@ ACF.RegisterPiledriverClass("PD", {
 		Max  = 300,
 	},
 	Round = {
-		MaxLength = 45, -- Relative to the Base caliber
+		MaxLength = 114.3, -- Relative to the Base caliber, in cm
 		PropMass  = 0,
 	},
 	Preview = {

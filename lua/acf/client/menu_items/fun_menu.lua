@@ -25,7 +25,7 @@ do -- Piledrivers menu
 		ACF.SetClientData("PrimaryClass", "acf_piledriver")
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")
-		ACF.SetClientData("AmmoType", "AP")
+		ACF.SetClientData("AmmoType", "HP")
 		ACF.SetClientData("Propellant", 0)
 		ACF.SetClientData("Tracer", false)
 
@@ -42,7 +42,7 @@ do -- Piledrivers menu
 			local Min, Max = Bounds.Min, Bounds.Max
 			local Current  = math.Clamp(ACF.GetClientNumber("Caliber", Min), Min, Max)
 
-			Ammo = AmmoTypes.AP()
+			Ammo = AmmoTypes.HP()
 
 			Caliber:SetMinMax(Min, Max)
 

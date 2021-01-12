@@ -107,7 +107,7 @@ do -- Spawning and Updating --------------------
 		do -- Updating bulletdata
 			local Ammo = Entity.RoundData
 
-			Data.AmmoType   = "AP"
+			Data.AmmoType   = "HP"
 			Data.Projectile = Entity.SpikeLength
 
 			Ammo.SpikeLength = Entity.SpikeLength
@@ -177,7 +177,7 @@ do -- Spawning and Updating --------------------
 		Entity:Spawn()
 
 		Entity.Owner        = Player -- MUST be stored on ent for PP
-		Entity.RoundData    = AmmoTypes.AP()
+		Entity.RoundData    = AmmoTypes.HP()
 		Entity.LastThink    = ACF.CurTime
 		Entity.State        = "Loading"
 		Entity.Firing       = false
