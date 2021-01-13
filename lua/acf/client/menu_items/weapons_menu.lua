@@ -75,7 +75,7 @@ local function CreateMenu(Menu)
 		local Firerate   = Data.Cyclic or 60 / ReloadTime
 		local Magazine   = Data.MagSize and MagText:format(Data.MagSize, Data.MagReload) or ""
 
-		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread * 100, Magazine)
+		return EntText:format(Data.Mass, math.Round(Firerate, 2), Class.Spread, Magazine)
 	end)
 
 	ACF.LoadSortedList(ClassList, Weapons, "Name")
