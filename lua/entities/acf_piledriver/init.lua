@@ -180,10 +180,17 @@ do -- Spawning and Updating --------------------
 	function MakeACF_Piledriver(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class  = Piledrivers[Data.Weapon]
+		local Class = Piledrivers[Data.Weapon]
+		local Limit = Class.LimitConVar.Name
+
+		if not Player:CheckLimit(Limit) then return end
+
 		local Entity = ents.Create("acf_piledriver")
 
 		if not IsValid(Entity) then return end
+
+		Player:AddCleanup(Class.Cleanup, Entity)
+		Player:AddCount(Limit, Entity)
 
 		Entity:SetModel(Class.Model) -- NOTE: ENT:SetScale didn't work properly without this
 		Entity:SetPlayer(Player)

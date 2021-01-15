@@ -455,6 +455,10 @@ do -- Piledriver registration functions
 			}
 		end
 
+		if not Group.Cleanup then
+			Group.Cleanup = "acf_piledriver"
+		end
+
 		AddSboxLimit(Group.LimitConVar)
 
 		return Group
