@@ -75,8 +75,6 @@ do -- Menu population functions
 	end
 
 	ACF.AddMenuOption(1, "About the Addon", "information")
-	ACF.AddMenuItem(101, "About the Addon", "Updates", "newspaper") -- TODO: Add Updates item
-
 	ACF.AddMenuOption(101, "Settings", "wrench")
 	ACF.AddMenuOption(201, "Entities", "brick")
 	ACF.AddMenuOption(9999, "Fun Stuff", "bricks")
