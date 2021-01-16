@@ -68,6 +68,31 @@ do -- Clientside settings
 
 		Base:AddHelp("You will need to rejoin the server for this option to apply.")
 	end)
+
+	ACF.AddClientSettings("Debris", function(Base)
+		local Debris = Base:AddCheckBox("Allow creation of clientside debris.")
+		Debris:SetConVar("acf_debris")
+
+		local Collisions = Base:AddCheckBox("Allow debris to collide with entities.")
+		Collisions:SetConVar("acf_debris_collision")
+
+		Base:AddHelp("Disabling this can prevent certain types of spam-induced lag and crashes.")
+
+		local Lifetime = Base:AddSlider("Debris Lifetime", 1, 300)
+		Lifetime:SetConVar("acf_debris_lifetime")
+
+		Base:AddHelp("Defines how long each debris will live before fading out.")
+
+		local Multiplier = Base:AddSlider("Debris Gib Amount", 0.01, 1, 2)
+		Multiplier:SetConVar("acf_debris_gibmultiplier")
+
+		Base:AddHelp("Multiplier for the amount of clientside debris gibs to be created.")
+
+		local GibLifetime = Base:AddSlider("Debris Gib Lifetime", 1, 300)
+		GibLifetime:SetConVar("acf_debris_giblifetime")
+
+		Base:AddHelp("Defines how long each debris gib will live before fading out.")
+	end)
 end
 
 do -- Serverside settings
@@ -106,4 +131,42 @@ do -- Serverside settings
 
 		Base:AddHelp("Changing this option will require a server restart.")
 	end)
+
+	ACF.AddServerSettings("Debris", function(Base)
+		local Debris = Base:AddCheckBox("Allow networking of debris to clients.")
+		Debris:SetServerData("CreateDebris", "OnChange")
+		Debris:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local Fireballs = Base:AddCheckBox("Allow creation of serverside debris fireballs.")
+		Fireballs:SetServerData("CreateFireballs", "OnChange")
+		Fireballs:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Allows compatibility with addons such as vFire, but is more taxing on server resources.")
+
+		local Multiplier = Base:AddSlider("Fireball Amount", 0.01, 1, 2)
+		Multiplier:SetServerData("FireballMult", "OnValueChanged")
+		Multiplier:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Multiplier for the amount of serverside fireballs to be created.")
+	end)
 end
+
+-- TODO
+-- Replace acf_healthmod and ACF.Threshold
+-- Replace acf_armormod and ACF.ArmorMod
+-- Replace or deprecate acf_ammomod and ACF.AmmoMod
+-- Replace acf_fuelrate and ACF.FuelRate
+-- Replace acf_spalling
+-- Replace acf_gunfire and ACF.GunfireEnabled
