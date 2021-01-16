@@ -184,6 +184,11 @@ elseif CLIENT then
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
+	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
+	CreateClientConVar("acf_debris_collision", 0, true, false, "Toggles debris collisions with other entities.", 0, 1)
+	CreateClientConVar("acf_debris_gibmultiplier", 1, true, false, "The amount of gibs spawned when created by ACF debris.", 0, 1)
+	CreateClientConVar("acf_debris_giblifetime", 60, true, false, "Defines lifetime in seconds of each debris gib.", 1, 300)
+	CreateClientConVar("acf_debris_lifetime", 60, true, false, "Defines lifetime in seconds of each debris entity.", 1, 300)
 
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
@@ -249,7 +254,7 @@ do -- ACF Notify -----------------------------------
 	if SERVER then
 		function ACF.SendNotify(Player, Success, Message)
 			net.Start("ACF_Notify")
-				net.WriteBool(Success or true)
+				net.WriteBool(Success or false)
 				net.WriteString(Message or "")
 			net.Send(Player)
 		end

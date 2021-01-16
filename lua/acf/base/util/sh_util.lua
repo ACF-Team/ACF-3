@@ -196,6 +196,14 @@ function switch(cases, arg)
 	return cases.default
 end
 
+function ACF.RandomVector(Min, Max)
+	local X = math.Rand(Min.x, Max.x)
+	local Y = math.Rand(Min.y, Max.y)
+	local Z = math.Rand(Min.z, Max.z)
+
+	return Vector(X, Y, Z)
+end
+
 do -- Native type verification functions
 	function ACF.CheckNumber(Value, Default)
 		if not Value then return Default end
