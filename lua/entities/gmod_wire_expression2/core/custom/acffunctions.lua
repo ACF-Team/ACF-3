@@ -312,7 +312,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "Must be called on entities you own.")
+			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -320,7 +320,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 
 	if not this.Link then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "This entity is not linkable.")
+			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
 		end
 
 		return 0
@@ -329,7 +329,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	local Sucess, Message = this:Link(Target)
 
 	if Notify ~= 0 then
-		ACF_SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Sucess, Message)
 	end
 
 	return Sucess and 1 or 0
@@ -341,7 +341,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "Must be called on entities you own.")
+			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -349,7 +349,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	if not this.Unlink then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "This entity is not linkable.")
+			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
 		end
 
 		return 0
@@ -358,7 +358,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	local Sucess, Message = this:Unlink(Target)
 
 	if Notify > 0 then
-		ACF_SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Sucess, Message)
 	end
 
 	return Sucess and 1 or 0

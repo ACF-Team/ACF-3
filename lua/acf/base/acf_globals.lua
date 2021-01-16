@@ -247,26 +247,28 @@ end
 
 do -- ACF Notify -----------------------------------
 	if SERVER then
-		function ACF_SendNotify(ply, success, msg)
+		function ACF.SendNotify(Player, Success, Message)
 			net.Start("ACF_Notify")
-				net.WriteBit(success)
-				net.WriteString(msg or "")
-			net.Send(ply)
+				net.WriteBool(Success or true)
+				net.WriteString(Message or "")
+			net.Send(Player)
 		end
+
+		ACF_SendNotify = ACF.SendNotify -- Backwards compatibility
 	else
-		local function ACF_Notify()
+		local notification = notification
+
+		net.Receive("ACF_Notify", function()
 			local Type = NOTIFY_ERROR
 
-			if tobool(net.ReadBit()) then
+			if net.ReadBool() then
 				Type = NOTIFY_GENERIC
 			else
 				surface.PlaySound("buttons/button10.wav")
 			end
 
-			GAMEMODE:AddNotify(net.ReadString(), Type, 7)
-		end
-
-		net.Receive("ACF_Notify", ACF_Notify)
+			notification.AddLegacy(net.ReadString(), Type, 7)
+		end)
 	end
 end ------------------------------------------------
 

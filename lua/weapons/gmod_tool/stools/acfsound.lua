@@ -91,9 +91,9 @@ local function IsReallyValid(trace, ply)
 
 	if not ACF.SoundToolSupport[class] then
 		if string.StartWith(class, "acf_") then
-			ACF_SendNotify(ply, false, class .. " is not supported by the sound tool!")
+			ACF.SendNotify(ply, false, class .. " is not supported by the sound tool!")
 		else
-			ACF_SendNotify(ply, false, "Only ACF entities are supported by the ACF sound tool!")
+			ACF.SendNotify(ply, false, "Only ACF entities are supported by the ACF sound tool!")
 		end
 
 		return false

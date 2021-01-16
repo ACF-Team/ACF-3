@@ -996,7 +996,7 @@ function ents_methods:acfLinkTo(target, notify)
 	local Success, Message = This:Link(Target)
 
 	if notify then
-		ACF_SendNotify(instance.player, Success, Message)
+		ACF.SendNotify(instance.player, Success, Message)
 	end
 
 	return Success, Message
@@ -1023,7 +1023,7 @@ function ents_methods:acfUnlinkFrom(target, notify)
 	local Success, Message = This:Unlink(Target)
 
 	if notify then
-		ACF_SendNotify(instance.player, Success, Message)
+		ACF.SendNotify(instance.player, Success, Message)
 	end
 
 	return Success, Message

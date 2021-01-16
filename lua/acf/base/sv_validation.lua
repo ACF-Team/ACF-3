@@ -76,10 +76,10 @@ local function CheckLegal(Entity)
 					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 						if not IsValid(Entity) then return end
 
-						ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 					end)
 				else
-					ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 				end
 			end
 		end

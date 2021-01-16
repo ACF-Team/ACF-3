@@ -360,7 +360,7 @@ do -- Spawning and Updating --------------------
 			end
 
 			if Unloaded then
-				ACF_SendNotify(Entity.Owner, false, "Crate updated while weapons were loaded with it's ammo. Weapons unloaded.")
+				ACF.SendNotify(Entity.Owner, false, "Crate updated while weapons were loaded with it's ammo. Weapons unloaded.")
 			end
 		end
 
