@@ -1,30 +1,29 @@
+local ACF   = ACF
 local Repos = ACF.Repositories
+local Realm = SERVER and "Server" or "Client"
 
-do -- Repository tracking
-	function ACF.AddRepository(Owner, Name, Path)
-		if not Owner then return end
-		if not Name then return end
-		if not Path then return end
-		if Repos[Name] then return end
 
-		Repos[Name] = {
-			Owner = Owner,
-			Name = Name,
-			Path = "addons/%s/" .. Path,
-			Code = false,
-			Date = false,
-		}
-	end
+do -- Local repository version checking
+	local file = file
+	local os   = os
 
-	ACF.AddRepository("Stooberton", "ACF-3", "lua/autorun/acf_loader.lua")
-end
-
-do -- ACF.GetVersion function
 	local function LocalToUTC(Time)
 		return os.time(os.date("!*t", Time))
 	end
 
-	local function SetRealOwner(Path, Version)
+	local function GetPath(Data)
+		local _, Folders = file.Find("addons/*", "GAME")
+		local Pattern    = Data.Pattern
+
+		for _, Folder in ipairs(Folders) do
+			if file.Exists(Pattern:format(Folder), "GAME") then
+				return "addons/" .. Folder
+			end
+		end
+	end
+
+	-- Makes sure the owner of the repo is correct, deals with forks
+	local function UpdateOwner(Path, Data)
 		if not file.Exists(Path .. "/.git/FETCH_HEAD", "GAME") then return end
 
 		local Fetch = file.Read(Path .. "/.git/FETCH_HEAD", "GAME")
@@ -32,21 +31,19 @@ do -- ACF.GetVersion function
 
 		if not Start then return end -- File is empty
 
-		Version.Owner = Fetch:sub(Start + 11, End - 1)
+		Data.Owner = Fetch:sub(Start + 11, End - 1)
 	end
 
-	local function GetGitData(Path, Version)
+	local function GetGitData(Path, Data)
 		local _, _, Head = file.Read(Path .. "/.git/HEAD", "GAME"):find("heads/(.+)$")
 		local Heads = Path .. "/.git/refs/heads/"
 		local Files = file.Find(Heads .. "*", "GAME")
 		local Code, Date
 
-		SetRealOwner(Path, Version)
-
-		Version.Head = Head:Trim()
+		Data.Head = Head:Trim()
 
 		for _, Name in ipairs(Files) do
-			if Name == Version.Head then
+			if Name == Data.Head then
 				local SHA = file.Read(Heads .. Name, "GAME"):Trim()
 
 				Code = Name .. "-" .. SHA:sub(1, 7)
@@ -59,83 +56,126 @@ do -- ACF.GetVersion function
 		return Code, Date
 	end
 
-	function ACF.GetVersion(Name)
-		local Version = Repos[Name]
+	-------------------------------------------------------------------
 
-		if not Version then return end
-		if Version.Code then return Version end
+	function ACF.CheckLocalVersion(Name)
+		if not isstring(Name) then return end
 
-		local _, Folders = file.Find("addons/*", "GAME")
-		local Pattern = Version.Path
-		local Path, Code, Date
+		local Data = ACF.GetLocalRepo(Name)
 
-		for _, Folder in ipairs(Folders) do
-			if file.Exists(Pattern:format(Folder), "GAME") then
-				Path = "addons/" .. Folder
-				break
-			end
-		end
+		if not Data then return end
+
+		local Path = GetPath(Data)
 
 		if not Path then
-			Version.Code = "Not Installed"
-			Version.Date = 0
+			Data.Code    = "Not Installed"
+			Data.Date    = 0
+			Data.NoFiles = true
 		elseif file.Exists(Path .. "/.git/HEAD", "GAME") then
-			Code, Date = GetGitData(Path, Version)
+			local Code, Date = GetGitData(Path, Data)
 
-			Version.Code = "Git-" .. Code
-			Version.Date = LocalToUTC(Date)
+			UpdateOwner(Path, Data)
+
+			Data.Code = "Git-" .. Code
+			Data.Date = LocalToUTC(Date)
 		elseif file.Exists(Path .. "/LICENSE", "GAME") then
-			Date = file.Time(Path .. "/LICENSE", "GAME")
+			local Date = file.Time(Path .. "/LICENSE", "GAME")
 
-			Version.Code = "ZIP-Unknown"
-			Version.Date = LocalToUTC(Date)
+			Data.Code = "ZIP-Unknown"
+			Data.Date = LocalToUTC(Date)
 		end
 
-		if not Version.Head then
-			Version.Head = "master"
+		if not Data.Head then
+			Data.Head = "master"
 		end
-
-		return Version
 	end
 end
 
-function ACF.GetBranch(Name, Branch)
-	local Version = Repos[Name]
+do -- Local repository status checking
+	local function IsUpdated(Data, Branch)
+		if not isnumber(Data.Date) then return false end
 
-	if not Version then return end
-	if not Version.Branches then return end
-
-	Branch = Branch or Version.Head
-
-	-- Just in case both server and client are using different forks with different branches
-	return Version.Branches[Branch] or Version.Branches.master
-end
-
-local function CheckVersionDate(Version, Branch)
-	if not isnumber(Version.Date) then return false end
-	if not isnumber(Branch.Date) then return false end
-
-	return Version.Date >= Branch.Date
-end
-
-function ACF.GetVersionStatus(Name)
-	local Version = Repos[Name]
-
-	if not Version then return end
-	if Version.Status then return Version.Status end
-
-	local Branch = ACF.GetBranch(Name)
-	local Status
-
-	if not Branch or Version.Code == "Not Installed" then
-		Status = "Unable to check"
-	elseif Version.Code == Branch.Code or CheckVersionDate(Version, Branch) then
-		Status = "Up to date"
-	else
-		Status = "Out of date"
+		return Data.Date >= Branch.Date
 	end
 
-	Version.Status = Status
+	function ACF.CheckLocalStatus(Name)
+		if not isstring(Name) then return end
 
-	return Status
+		local Repo = ACF.GetRepository(Name)
+
+		if not Repo then return end
+
+		local Data     = Repo[Realm]
+		local Branches = Repo.Branches
+		local Branch   = Branches[Data.Head] or Branches.master
+
+		if not (Branch and Branch.Date) or Data.NoFiles then
+			Data.Status = "Unable to check"
+		elseif Data.Code == Branch.Code or IsUpdated(Data, Branch) then
+			Data.Status = "Up to date"
+		else
+			Data.Status = "Out of date"
+		end
+	end
+end
+
+do -- Repository functions
+	function ACF.AddRepository(Owner, Name, File)
+		if not isstring(Owner) then return end
+		if not isstring(Name) then return end
+		if not isstring(File) then return end
+		if Repos[Name] then return end
+
+		Repos[Name] = {
+			[Realm] = {
+				Pattern = "addons/%s/" .. File,
+				Owner = Owner,
+				Name = Name,
+			},
+			Branches = {},
+		}
+
+		if CLIENT then
+			Repos[Name].Server = {}
+		end
+
+		ACF.CheckLocalVersion(Name)
+	end
+
+	function ACF.GetRepository(Name)
+		if not isstring(Name) then return end
+
+		return Repos[Name]
+	end
+
+	function ACF.GetLocalRepo(Name)
+		if not isstring(Name) then return end
+
+		local Data = Repos[Name]
+
+		return Data and Data[Realm]
+	end
+
+	ACF.AddRepository("Stooberton", "ACF-3", "lua/autorun/acf_loader.lua")
+end
+
+do -- Branch functions
+	function ACF.GetBranches(Name)
+		if not isstring(Name) then return end
+
+		local Data = Repos[Name]
+
+		return Data and Data.Branches
+	end
+
+	function ACF.GetBranch(Name, Branch)
+		if not isstring(Name) then return end
+		if not isstring(Branch) then return end
+
+		local Data = Repos[Name]
+
+		if not Data then return end
+
+		return Data.Branches[Branch]
+	end
 end

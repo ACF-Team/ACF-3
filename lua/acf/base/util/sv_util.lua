@@ -61,6 +61,94 @@ do -- Clientside message delivery
 	end
 end
 
+do -- HTTP Request
+	local NoRequest = true
+	local http      = http
+	local Queue     = {}
+	local Count     = 0
+
+	local function SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
+		local Data = Body and util.JSONToTable(Body)
+		local Error
+
+		if not Body then
+			Error = "No data found on request."
+		elseif Code ~= 200 then
+			Error = "Request unsuccessful (Code " .. Code .. ")."
+		elseif not (Data and next(Data)) then
+			Error = "Empty request result."
+		end
+
+		if Error then
+			ACF.PrintLog("HTTP_Error", Error)
+
+			if OnFailure then
+				OnFailure(Error)
+			end
+		elseif OnSuccess then
+			OnSuccess(Body, Data)
+		end
+	end
+
+	function ACF.StartRequest(Link, OnSuccess, OnFailure, Headers)
+		if not isstring(Link) then return end
+		if not isfunction(OnSuccess) then OnSuccess = nil end
+		if not isfunction(OnFailure) then OnFailure = nil end
+		if not istable(Headers) then Headers = nil end
+
+		if NoRequest then
+			Count = Count + 1
+
+			Queue[Count] = {
+				Link = Link,
+				OnSuccess = OnSuccess,
+				OnFailure = OnFailure,
+				Headers = Headers,
+			}
+
+			return
+		end
+
+		http.Fetch(
+			Link,
+			function(Body, _, _, Code)
+				SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
+			end,
+			function(Error)
+				ACF.PrintLog("HTTP_Error", Error)
+
+				if OnFailure then
+					OnFailure(Error)
+				end
+			end,
+			Headers)
+	end
+
+	hook.Add("Initialize", "ACF Allow Requests", function()
+		timer.Simple(0, function()
+			NoRequest = nil
+
+			if Count > 0 then
+				for _, Request in ipairs(Queue) do
+					ACF.StartRequest(
+						Request.Link,
+						Request.OnSuccess,
+						Request.OnFailure,
+						Request.Headers
+					)
+				end
+			end
+
+			Count = nil
+			Queue = nil
+		end)
+
+		hook.Remove("Initialize", "ACF Allow Requests")
+	end)
+
+	ACF.AddLogType("HTTP_Error", "HTTP", Color(241, 80, 47))
+end
+
 do -- Entity saving and restoring
 	local Constraints = duplicator.ConstraintType
 	local Saved = {}

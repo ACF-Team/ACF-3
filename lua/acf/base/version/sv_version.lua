@@ -1,60 +1,25 @@
+local ACF = ACF
 local Repos = ACF.Repositories
-local PrintLog = ACF.PrintLog
-
-do -- HTTP Request
-	local function SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
-		local Data = Body and util.JSONToTable(Body)
-		local Error
-
-		if not Body then
-			Error = "No data found on request."
-		elseif Code ~= 200 then
-			Error = "Request unsuccessful (Code " .. Code .. ")."
-		elseif not (Data and next(Data)) then
-			Error = "Empty request result."
-		end
-
-		if Error then
-			PrintLog("Error", Error)
-
-			return OnFailure(Error)
-		end
-
-		OnSuccess(Body, Data)
-	end
-
-	function ACF.StartRequest(Link, OnSuccess, OnFailure, Headers)
-		OnSuccess = OnSuccess or function() end
-		OnFailure = OnFailure or function() end
-
-		http.Fetch(
-			Link,
-			function(Body, _, _, Code)
-				SuccessfulRequest(Code, Body, OnSuccess, OnFailure)
-			end,
-			function(Error)
-				PrintLog("Error", Error)
-
-				OnFailure(Error)
-			end,
-			Headers)
-	end
-end
 
 do -- Github data conversion
+	local string = string
+	local os = os
+
+	local DateData = { year = true, month = true, day = true, hour = true, min = true, sec = true }
+
 	function ACF.GetDateEpoch(GitDate)
 		local Date, Time = unpack(string.Explode("T", GitDate))
 		local Year, Month, Day = unpack(string.Explode("-", Date))
 		local Hour, Min, Sec = unpack(string.Explode(":", Time))
 
-		return os.time({
-			year = Year,
-			month = Month,
-			day = Day,
-			hour = Hour,
-			min = Min,
-			sec = Sec:sub(1, 2),
-		})
+		DateData.year  = Year
+		DateData.month = Month
+		DateData.day   = Day
+		DateData.hour  = Hour
+		DateData.min   = Min
+		DateData.sec   = Sec:sub(1, 2)
+
+		return os.time(DateData)
 	end
 
 	function ACF.GetCommitMessage(Message)
@@ -72,7 +37,7 @@ do -- Github data conversion
 end
 
 do -- Branch version retrieval and version printing
-	local Branches = "https://api.github.com/repos/%s/%s/branches"
+	local BranchLink = "https://api.github.com/repos/%s/%s/branches"
 	local Commits = "https://api.github.com/repos/%s/%s/commits?per_page=1&sha=%s"
 
 	local Messages = {
@@ -90,77 +55,62 @@ do -- Branch version retrieval and version printing
 		},
 	}
 
-	local function PrintStatus(Version)
-		local Branch = ACF.GetBranch(Version.Name)
-		local Lapse = ACF.GetTimeLapse(Branch.Date)
+	local function PrintStatus(Data)
+		local Branch  = ACF.GetBranch(Data.Name, Data.Head)
+		local Lapse   = ACF.GetTimeLapse(Branch.Date)
+		local LogData = Messages[Data.Status]
 
-		local Data = Messages[Version.Status]
-		local Message = Data.Message
-
-		PrintLog(Data.Type, Message:format(Version.Name, Version.Code, Lapse))
+		ACF.PrintLog(LogData.Type, LogData.Message:format(Data.Name, Data.Code, Lapse))
 	end
 
 	local function GetBranchData(Data, Branch, Commit)
 		local Title, Body = ACF.GetCommitMessage(Commit.commit.message)
 		local Date = ACF.GetDateEpoch(Commit.commit.author.date)
 
-		Branch.Title = Title
-		Branch.Body = Body
-		Branch.Date = Date
-		Branch.Link = Commit.html_url
+		Branch.Title  = Title
+		Branch.Body   = Body
+		Branch.Date   = Date
+		Branch.Author = Commit.commit.author.name
+		Branch.Link   = Commit.html_url
 
-		if Data.Head == Branch.Name then
-			ACF.GetVersionStatus(Data.Name)
+		if Branch.Name == Data.Head then
+			ACF.CheckLocalStatus(Data.Name)
 
 			PrintStatus(Data)
 		end
 	end
 
-	local function GetBranches(Name, Data, List)
-		local Request = ACF.StartRequest
-
-		Data.Branches = {}
-
+	local function LoadBranches(Data, Branches, List)
 		for _, Branch in ipairs(List) do
 			local SHA = Branch.commit.sha
-
-			Data.Branches[Branch.name] = {
+			local Current = {
 				Name = Branch.name,
 				Code = "Git-" .. Branch.name .. "-" .. SHA:sub(1, 7),
-				Title = false,
-				Body = false,
-				Date = false,
-				Link = false,
 			}
 
-			local Current = Data.Branches[Branch.name]
+			Branches[Branch.name] = Current
 
-			Request(
-				Commits:format(Data.Owner, Name, SHA),
+			ACF.StartRequest(
+				Commits:format(Data.Owner, Data.Name, SHA),
 				function(_, Commit)
 					GetBranchData(Data, Current, unpack(Commit))
-				end)
-		end
-	end
-
-	local function CheckAllRepos()
-		local Request = ACF.StartRequest
-
-		for Name, Data in pairs(Repos) do
-			ACF.GetVersion(Name)
-
-			Request(
-				Branches:format(Data.Owner, Name),
-				function(_, List)
-					GetBranches(Name, Data, List)
-				end)
+				end
+			)
 		end
 	end
 
 	hook.Add("Initialize", "ACF Request Git Data", function()
-		timer.Simple(0, CheckAllRepos)
+		for Name, Repo in pairs(Repos) do
+			local Data = Repo.Server
 
-		hook.Add("Initialize", "ACF Request Git Data")
+			ACF.StartRequest(
+				BranchLink:format(Data.Owner, Name),
+				function(_, List)
+					LoadBranches(Data, Repo.Branches, List)
+				end)
+		end
+
+		hook.Remove("Initialize", "ACF Request Git Data")
 	end)
 
 	ACF.AddLogType("Update_Ok", "Updates")
@@ -172,8 +122,10 @@ do -- Client syncronization
 	util.AddNetworkString("ACF_VersionSync")
 
 	hook.Add("ACF_OnPlayerLoaded", "ACF_VersionSync", function(Player)
+		local JSON = util.TableToJSON(Repos)
+
 		net.Start("ACF_VersionSync")
-			net.WriteTable(Repos)
+			net.WriteString(JSON)
 		net.Send(Player)
 	end)
 end
