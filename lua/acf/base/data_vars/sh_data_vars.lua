@@ -137,3 +137,83 @@ do -- Data persisting
 		hook.Remove("Initialize", "ACF Load Persisted Data")
 	end)
 end
+
+do -- Data callbacks
+	ACF.DataCallbacks = ACF.DataCallbacks or {
+		Server = {},
+		Client = {},
+	}
+
+	local Callbacks = ACF.DataCallbacks
+
+	--- Generates the following functions:
+	-- ACF.AddServerDataCallback(Key, Name, Function)
+	-- ACF.RemoveServerDataCallback(Key, Name)
+	-- ACF.AddClientDataCallback(Key, Name, Function)
+	-- ACF.RemoveClientDataCallback(Key, Name)
+
+	for Realm, Callback in pairs(Callbacks) do
+		local Queue = {}
+
+		local function ProcessQueue()
+			for Key, Data in pairs(Queue) do
+				local Store  = Callback[Key]
+				local Player = Data.Player
+				local Value  = Data.Value
+
+				for _, Function in pairs(Store) do
+					Function(Player, Key, Value)
+				end
+
+				Queue[Key] = nil
+			end
+		end
+
+		ACF["Add" .. Realm .. "DataCallback"] = function(Key, Name, Function)
+			if not isstring(Key) then return end
+			if not isstring(Name) then return end
+			if not isfunction(Function) then return end
+
+			local Store = Callback[Key]
+
+			if not Store then
+				Callback[Key] = {
+					[Name] = Function
+				}
+			else
+				Store[Name] = Function
+			end
+		end
+
+		ACF["Remove" .. Realm .. "DataCallback"] = function(Key, Name)
+			if not isstring(Key) then return end
+			if not isstring(Name) then return end
+
+			local Store = Callback[Key]
+
+			if not Store then return end
+
+			Store[Name] = nil
+		end
+
+		hook.Add("ACF_On" .. Realm .. "DataUpdate", "ACF Data Callbacks", function(Player, Key, Value)
+			if not Callback[Key] then return end
+
+			local Data = Queue[Key]
+
+			if not next(Queue) then
+				timer.Create("ACF Data Callback", 0, 1, ProcessQueue)
+			end
+
+			if not Data then
+				Queue[Key] = {
+					Player = Player,
+					Value = Value,
+				}
+			else
+				Data.Player = Player
+				Data.Value = Value
+			end
+		end)
+	end
+end
