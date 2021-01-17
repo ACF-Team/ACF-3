@@ -118,14 +118,6 @@ do -- Data syncronization
 		Client[Player] = nil
 		Queued[Player] = nil
 	end)
-
-	hook.Add("ACF_OnServerDataUpdate", "ACF Network Server Data", function(Player, Key)
-		for K in pairs(Client) do
-			if Player ~= K then
-				NetworkData(Key, K)
-			end
-		end
-	end)
 end
 
 do -- Client data getter functions
