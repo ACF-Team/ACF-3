@@ -150,8 +150,6 @@ end
 
 if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
-	util.AddNetworkString("ACF_RenderDamage")
-	util.AddNetworkString("ACF_Notify")
 
 	CreateConVar("acf_enable_workshop_content", 1, FCVAR_ARCHIVE, "Enable workshop content download for clients. Requires server restart on change.", 0, 1)
 	CreateConVar("acf_enable_workshop_extras", 0, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
@@ -249,55 +247,6 @@ do -- Player loaded hook
 		end)
 	end
 end
-
-do -- ACF Notify -----------------------------------
-	if SERVER then
-		function ACF.SendNotify(Player, Success, Message)
-			net.Start("ACF_Notify")
-				net.WriteBool(Success or false)
-				net.WriteString(Message or "")
-			net.Send(Player)
-		end
-
-		ACF_SendNotify = ACF.SendNotify -- Backwards compatibility
-	else
-		local notification = notification
-
-		net.Receive("ACF_Notify", function()
-			local Type = NOTIFY_ERROR
-
-			if net.ReadBool() then
-				Type = NOTIFY_GENERIC
-			else
-				surface.PlaySound("buttons/button10.wav")
-			end
-
-			notification.AddLegacy(net.ReadString(), Type, 7)
-		end)
-	end
-end ------------------------------------------------
-
-do -- Render Damage --------------------------------
-	hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(ply)
-		local Table = {}
-
-		for _, v in pairs(ents.GetAll()) do
-			if v.ACF and v.ACF.PrHealth then
-				table.insert(Table, {
-					ID = v:EntIndex(),
-					Health = v.ACF.Health,
-					MaxHealth = v.ACF.MaxHealth
-				})
-			end
-		end
-
-		if next(Table) then
-			net.Start("ACF_RenderDamage")
-				net.WriteTable(Table)
-			net.Send(ply)
-		end
-	end)
-end ------------------------------------------------
 
 --Stupid workaround red added to precache timescaling.
 hook.Add("Think", "Update ACF Internal Clock", function()

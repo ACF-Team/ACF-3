@@ -69,6 +69,22 @@ do -- Custom fonts
 	})
 end
 
+do -- Networked notifications
+	local notification = notification
+
+	net.Receive("ACF_Notify", function()
+		local Type = NOTIFY_ERROR
+
+		if net.ReadBool() then
+			Type = NOTIFY_GENERIC
+		else
+			surface.PlaySound("buttons/button10.wav")
+		end
+
+		notification.AddLegacy(net.ReadString(), Type, 7)
+	end)
+end
+
 do -- Clientside visclip check
 	local function CheckClip(Entity, Clip, Center, Pos)
 		if Clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway

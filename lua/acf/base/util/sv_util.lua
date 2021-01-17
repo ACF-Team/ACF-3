@@ -61,6 +61,19 @@ do -- Clientside message delivery
 	end
 end
 
+do -- Networked notifications
+	util.AddNetworkString("ACF_Notify")
+
+	function ACF.SendNotify(Player, Success, Message)
+		net.Start("ACF_Notify")
+			net.WriteBool(Success or false)
+			net.WriteString(Message or "")
+		net.Send(Player)
+	end
+
+	ACF_SendNotify = ACF.SendNotify -- Backwards compatibility
+end
+
 do -- HTTP Request
 	local NoRequest = true
 	local http      = http

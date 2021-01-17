@@ -74,6 +74,30 @@ ACF.KEShove = Shove
 
 -------------------------------------------------
 
+do -- Player syncronization
+	util.AddNetworkString("ACF_RenderDamage")
+
+	hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(ply)
+		local Table = {}
+
+		for _, v in pairs(ents.GetAll()) do
+			if v.ACF and v.ACF.PrHealth then
+				table.insert(Table, {
+					ID = v:EntIndex(),
+					Health = v.ACF.Health,
+					MaxHealth = v.ACF.MaxHealth
+				})
+			end
+		end
+
+		if next(Table) then
+			net.Start("ACF_RenderDamage")
+				net.WriteTable(Table)
+			net.Send(ply)
+		end
+	end)
+end
+
 do -- Explosions ----------------------------
 	local function GetRandomPos(Entity, IsChar)
 		if IsChar then
