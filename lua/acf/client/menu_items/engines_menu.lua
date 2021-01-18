@@ -1,18 +1,41 @@
-local ACF = ACF
+local ACF         = ACF
 local EngineTypes = ACF.Classes.EngineTypes
-local FuelTypes = ACF.Classes.FuelTypes
-local FuelTanks = ACF.Classes.FuelTanks
-local Engines = ACF.Classes.Engines
+local FuelTypes   = ACF.Classes.FuelTypes
+local FuelTanks   = ACF.Classes.FuelTanks
+local Engines     = ACF.Classes.Engines
+local RPMText = [[
+	Idle RPM : %s RPM
+	Powerband : %s-%s RPM
+	Redline : %s RPM
+	Mass : %s
+	
+	This entity can be fully parented.
+	%s
+	%s]]
+local PowerText  = [[
+	Peak Torque : %s n/m - %s ft-lb
+	Peak Power : %s kW - %s HP @ %s RPM]]
+local ConsumptionText = [[
+	%s Consumption :
+	%s L/min - %s gal/min @ %s RPM]]
+
+-- Fuel consumption is increased on competitive servers
+local function GetEfficiencyMult()
+	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
+end
 
 local function UpdateEngineStats(Label, Data)
-	local RPM = Data.RPM
-	local PeakkW = Data.Torque * RPM.PeakMax / 9548.8
-	local PeakkWRPM = RPM.PeakMax
-	local MinPower = RPM.PeakMin
-	local MaxPower = RPM.PeakMax
-
-	local RPMText = "Idle RPM : %s RPM\nPowerband : %s-%s RPM\nRedline : %s RPM\nMass : %s\n\nThis entity can be fully parented."
-	local LabelText = ""
+	local RPM        = Data.RPM
+	local PeakkW     = Data.Torque * RPM.PeakMax / 9548.8
+	local PeakkWRPM  = RPM.PeakMax
+	local MinPower   = RPM.PeakMin
+	local MaxPower   = RPM.PeakMax
+	local Mass       = ACF.GetProperMass(Data.Mass)
+	local Torque     = math.floor(Data.Torque)
+	local TorqueFeet = math.floor(Data.Torque * 0.73)
+	local Type       = EngineTypes[Data.Type]
+	local Efficiency = Type.Efficiency * GetEfficiencyMult()
+	local FuelList   = ""
 
 	-- Electric motors and turbines get peak power in middle of rpm range
 	if Data.IsElectric then
@@ -22,39 +45,28 @@ local function UpdateEngineStats(Label, Data)
 		MaxPower = PeakkWRPM
 	end
 
-	LabelText = LabelText .. RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, ACF.GetProperMass(Data.Mass))
-
-	local TorqueText = "\nPeak Torque : %s n/m - %s ft-lb"
-	local PowerText = "\nPeak Power : %s kW - %s HP @ %s RPM"
-	local Consumption, Power = "", ""
-
 	for K in pairs(Data.Fuel) do
 		if not FuelTypes[K] then continue end
 
-		local Type = EngineTypes[Data.Type]
 		local Fuel = FuelTypes[K]
 		local AddText = ""
 
 		if Fuel.ConsumptionText then
-			AddText = Fuel.ConsumptionText(PeakkW, PeakkWRPM, Type, Fuel)
+			AddText = Fuel.ConsumptionText(PeakkW, PeakkWRPM, Efficiency, Type, Fuel)
 		else
-			local Text = "\n\n%s Consumption :\n%s L/min - %s gal/min @ %s RPM"
-			local Rate = ACF.FuelRate * Type.Efficiency * PeakkW / (60 * Fuel.Density)
+			local Rate = ACF.FuelRate * Efficiency * PeakkW / (60 * Fuel.Density)
 
-			AddText = Text:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * 0.264, 2), PeakkWRPM)
+			AddText = ConsumptionText:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * 0.264, 2), PeakkWRPM)
 		end
 
-		Consumption = Consumption .. AddText
+		FuelList = FuelList .. "\n" .. AddText .. "\n"
 
 		Data.Fuel[K] = Fuel -- TODO: Replace once engines use the proper class functions
 	end
 
-	Power = Power .. "\n" .. PowerText:format(math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
-	Power = Power .. TorqueText:format(math.floor(Data.Torque), math.floor(Data.Torque * 0.73))
+	local Power = PowerText:format(Torque, TorqueFeet, math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
 
-	LabelText = LabelText .. Consumption .. Power
-
-	Label:SetText(LabelText)
+	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, FuelList, Power))
 end
 
 local function CreateMenu(Menu)
