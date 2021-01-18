@@ -367,6 +367,10 @@ do -- Gearbox registration functions
 	function ACF.RegisterGearboxClass(ID, Data)
 		local Group = AddClassGroup(ID, Gearboxes, Data)
 
+		if not Group.Sound then
+			Group.Sound = "buttons/lever7.wav"
+		end
+
 		if not Group.LimitConVar then
 			Group.LimitConVar = {
 				Name = "_acf_gearbox",

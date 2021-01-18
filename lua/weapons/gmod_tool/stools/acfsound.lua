@@ -50,6 +50,18 @@ Sounds.acf_engine = {
 	end
 }
 
+Sounds.acf_gearbox = {
+	GetSound = function(ent)
+		return { Sound = ent.SoundPath }
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+	end,
+	ResetSound = function(ent)
+		ent.SoundPath = ent.DefaultSound
+	end
+}
+
 Sounds.acf_piledriver = {
 	GetSound = function(ent)
 		return { Sound = ent.SoundPath or "" }

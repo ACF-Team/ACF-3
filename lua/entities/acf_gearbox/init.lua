@@ -328,20 +328,21 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name       = Gearbox.Name
-		Entity.ShortName  = Gearbox.ID
-		Entity.EntType    = Class.Name
-		Entity.ClassData  = Class
-		Entity.SwitchTime = Gearbox.Switch
-		Entity.MaxTorque  = Gearbox.MaxTorque
-		Entity.MinGear    = Class.Gears.Min
-		Entity.MaxGear    = Class.Gears.Max
-		Entity.GearCount  = Entity.MaxGear
-		Entity.DualClutch = Gearbox.DualClutch
-		Entity.In         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
-		Entity.OutL       = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
-		Entity.OutR       = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
-		Entity.HitBoxes   = ACF.HitBoxes[Gearbox.Model]
+		Entity.Name         = Gearbox.Name
+		Entity.ShortName    = Gearbox.ID
+		Entity.EntType      = Class.Name
+		Entity.ClassData    = Class
+		Entity.DefaultSound = Class.Sound
+		Entity.SwitchTime   = Gearbox.Switch
+		Entity.MaxTorque    = Gearbox.MaxTorque
+		Entity.MinGear      = Class.Gears.Min
+		Entity.MaxGear      = Class.Gears.Max
+		Entity.GearCount    = Entity.MaxGear
+		Entity.DualClutch   = Gearbox.DualClutch
+		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
+		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
+		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
+		Entity.HitBoxes     = ACF.HitBoxes[Gearbox.Model]
 
 		CreateInputs(Entity, Data, Class, Gearbox)
 		CreateOutputs(Entity, Data, Class, Gearbox)
@@ -425,6 +426,7 @@ do -- Spawn and Update functions
 		Player:AddCount(Limit, Gearbox)
 
 		Gearbox.Owner          = Player -- MUST be stored on ent for PP
+		Gearbox.SoundPath      = Class.Sound
 		Gearbox.Engines        = {}
 		Gearbox.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
 		Gearbox.GearboxIn      = {}
@@ -763,7 +765,7 @@ function ENT:ChangeGear(Value)
 	self.GearRatio      = self.Gears[Value] * self.FinalDrive
 	self.ChangeFinished = ACF.CurTime + self.SwitchTime
 
-	self:EmitSound("buttons/lever7.wav", 70, 100, 0.5 * ACF.Volume)
+	self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
 
 	WireLib.TriggerOutput(self, "Current Gear", Value)
 	WireLib.TriggerOutput(self, "Ratio", self.GearRatio)

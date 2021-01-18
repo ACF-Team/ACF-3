@@ -116,6 +116,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
 		Entity.ReloadTime     = Entity.Cyclic or 1
 		Entity.Spread         = Class.Spread
+		Entity.DefaultSound   = Class.Sound
 		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
 		Entity.Long           = Class.LongBarrel
 		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
@@ -182,7 +183,6 @@ do -- Spawn and Update functions --------------------------------
 
 		Gun.Owner        = Player -- MUST be stored on ent for PP
 		Gun.SoundPath    = Class.Sound
-		Gun.DefaultSound = Class.Sound
 		Gun.BarrelFilter = { Gun }
 		Gun.State        = "Empty"
 		Gun.Crates       = {}

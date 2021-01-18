@@ -265,6 +265,7 @@ do -- Spawn and Update functions
 		Entity.ShortName        = EngineData.ID
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
+		Entity.DefaultSound     = EngineData.Sound
 		Entity.SoundPitch       = EngineData.Pitch or 1
 		Entity.PeakTorque       = EngineData.Torque
 		Entity.PeakTorqueHeld   = EngineData.Torque
@@ -346,7 +347,6 @@ do -- Spawn and Update functions
 		Engine.Throttle     = 0
 		Engine.FlyRPM       = 0
 		Engine.SoundPath    = EngineData.Sound
-		Engine.DefaultSound = EngineData.Sound
 		Engine.Inputs       = WireLib.CreateInputs(Engine, { "Active", "Throttle" })
 		Engine.Outputs      = WireLib.CreateOutputs(Engine, { "RPM", "Torque", "Power", "Fuel Use", "Entity [ENTITY]", "Mass", "Physical Mass" })
 		Engine.DataStore    = ACF.GetEntityArguments("acf_engine")
