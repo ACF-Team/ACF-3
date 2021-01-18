@@ -2,7 +2,6 @@
 
 -- Local Vars -----------------------------------
 local ACF         = ACF
-local Gamemode	  = GetConVar("acf_gamemode")
 local StringFind  = string.find
 local TimerSimple = timer.Simple
 local Baddies	  = ACF.GlobalFilter
@@ -24,7 +23,7 @@ local Baddies	  = ACF.GlobalFilter
 	end
 ]]--
 local function IsLegal(Entity)
-	if Gamemode:GetInt() == 0 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
+	if ACF.Gamemode == 1 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
 
 	local Phys = Entity:GetPhysicsObject()
 
@@ -99,7 +98,7 @@ local function CheckLegal(Entity)
 		return false
 	end
 
-	if Gamemode:GetInt() ~= 0 then
+	if ACF.Gamemode ~= 1 then
 		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
 			if IsValid(Entity) then
 				CheckLegal(Entity)

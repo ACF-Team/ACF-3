@@ -341,8 +341,8 @@ do -- Firing ------------------------------------
 
 	-- The entity should produce a "click" sound if this function returns false
 	function ENT:CanShoot()
-		if not ACF.GetServerBool("GunfireEnabled") then return false end
-		if not ACF.GetServerBool("AllowFunEnts") then return false end
+		if not ACF.GunfireEnabled then return false end
+		if not ACF.AllowFunEnts then return false end
 		if hook.Run("ACF_FireShell", self) == false then return false end
 
 		return self.CurrentShot > 0

@@ -229,23 +229,26 @@ do -- Client and server settings
 	local Settings = ACF.SettingsPanels
 
 	--- Generates the following functions:
-	-- ACF.AddClientSettings(Name, Function)
+	-- ACF.AddClientSettings(Index, Name, Function)
 	-- ACF.RemoveClientSettings(Name)
 	-- ACF.GenerateClientSettings(MenuPanel)
-	-- ACF.AddServerSettings(Name, Function)
+	-- ACF.AddServerSettings(Index, Name, Function)
 	-- ACF.RemoveServerSettings(Name)
 	-- ACF.GenerateServerSettings(MenuPanel)
 
-	for Realm in pairs(Settings) do
-		local Destiny = Settings[Realm]
+	for Realm, Destiny in pairs(Settings) do
 		local Hook    = "ACF_On" .. Realm .. "SettingsLoaded"
 		local Message = "No %sside settings have been registered."
 
-		ACF["Add" .. Realm .. "Settings"] = function(Name, Function)
+		ACF["Add" .. Realm .. "Settings"] = function(Index, Name, Function)
+			if not isnumber(Index) then return end
 			if not isstring(Name) then return end
 			if not isfunction(Function) then return end
 
-			Destiny[Name] = Function
+			Destiny[Name] = {
+				Create = Function,
+				Index = Index,
+			}
 		end
 
 		ACF["Remove" .. Realm .. "Settings"] = function(Name)
@@ -263,10 +266,10 @@ do -- Client and server settings
 				return
 			end
 
-			for Name, Function in SortedPairs(Destiny) do
+			for Name, Data in SortedPairsByMemberValue(Destiny, "Index") do
 				local Base = Menu:AddCollapsible(Name)
 
-				Function(Base)
+				Data.Create(Base)
 
 				hook.Run(Hook, Name, Base)
 			end

@@ -111,11 +111,10 @@ local TimerCreate = timer.Create
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
-local Gamemode    = GetConVar("acf_gamemode")
 
 -- Fuel consumption is increased on competitive servers
 local function GetEfficiencyMult()
-	return Gamemode:GetInt() == 2 and ACF.CompFuelRate or 1
+	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
 end
 
 local function GetPitchVolume(Engine)
@@ -639,7 +638,7 @@ function ENT:CalcRPM()
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		FuelTank:Consume(Consumption)
-	elseif Gamemode:GetInt() ~= 0 then -- Sandbox gamemode servers will require no fuel
+	elseif ACF.Gamemode ~= 1 then -- Sandbox gamemode servers will require no fuel
 		SetActive(self, false)
 
 		self.FuelUsage = 0
