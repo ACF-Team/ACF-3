@@ -12,179 +12,11 @@ local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
 	local CheckLegal = ACF_CheckLegal
-	local Axises = {
-		x = { Y = "y", Z = "z", Ang = Angle() },
-		y = { Y = "x", Z = "z", Ang = Angle(0, 90) },
-		z = { Y = "x", Z = "y", Ang = Angle(90, 90) }
-	}
-
-	local function GetBoxDimensions(Axis, Size)
-		local AxisInfo = Axises[Axis]
-		local Y = Size[AxisInfo.Y]
-		local Z = Size[AxisInfo.Z]
-
-		return Size[Axis], Y, Z, AxisInfo.Ang
-	end
-
-	local function GetRoundsPerAxis(SizeX, SizeY, SizeZ, Length, Width, Height, Spacing)
-		-- Omitting spacing for the axises with just one round
-		if math.floor(SizeX / Length) > 1 then Length = Length + Spacing end
-		if math.floor(SizeY / Width) > 1 then Width = Width + Spacing end
-		if math.floor(SizeZ / Height) > 1 then Height = Height + Spacing end
-
-		local RoundsX = math.floor(SizeX / Length)
-		local RoundsY = math.floor(SizeY / Width)
-		local RoundsZ = math.floor(SizeZ / Height)
-
-		return RoundsX, RoundsY, RoundsZ
-	end
-
-	-- Split this off from the original function,
-	-- All this does is compare a distance against a table of distances with string indexes for the shortest fitting size
-	-- It returns the string index of the dimension, or nil if it fails to fit
-	local function ShortestSize(Length, Width, Height, Spacing, Dimensions, ExtraData, IsIrregular)
-		local BestCount = 0
-		local BestAxis
-
-		for Axis in pairs(Axises) do
-			local X, Y, Z = GetBoxDimensions(Axis, Dimensions)
-			local Multiplier = 1
-
-			if not IsIrregular then
-				local MagSize = ExtraData.MagSize
-
-				if MagSize and MagSize > 0 then
-					Multiplier = MagSize
-				end
-			end
-
-			local RoundsX, RoundsY, RoundsZ = GetRoundsPerAxis(X, Y, Z, Length, Width, Height, Spacing)
-			local Count = RoundsX * RoundsY * RoundsZ * Multiplier
-
-			if Count > BestCount then
-				BestAxis = Axis
-				BestCount = Count
-			end
-		end
-
-		return BestAxis, BestCount
-	end
-
-	-- BoxSize is just OBBMaxs-OBBMins
-	-- Removed caliber and round length inputs, uses GunData and BulletData now
-	-- AddSpacing is just extra spacing (directly reduces storage, but can later make it harder to detonate)
-	-- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
-	-- For missiles/bombs, they MUST have ActualLength and ActualWidth (of the model in cm, and in the round table) to use this, otherwise it will fall back to the original calculations
-	-- Made by LiddulBOFH :)
-	local function CalcAmmo(BoxSize, GunData, BulletData, AddSpacing, AddArmor)
-		-- gives a nice number of rounds per refill box
-		if BulletData.Type == "Refill" then return math.ceil(BoxSize.x * BoxSize.y * BoxSize.z * 0.01) end
-
-		local GunCaliber = GunData.Caliber * 0.1 -- mm to cm
-		local RoundCaliber = GunCaliber * ACF.AmmoCaseScale
-		local RoundLength = BulletData.PropLength + BulletData.ProjLength + (BulletData.Tracer or 0)
-
-		local ExtraData = {}
-
-		-- Filters for missiles, and sets up data
-		if GunData.Round.ActualWidth then
-			RoundCaliber = GunData.Round.ActualWidth
-			RoundLength = GunData.Round.ActualLength
-			ExtraData.isRacked = true
-		elseif GunData.Class.Entity == "acf_rack" then return -1 end -- Fallback to old capacity
-
-		local Rounds = 0
-		local Spacing = math.max(AddSpacing, 0) + 0.125
-		local MagSize = GunData.MagSize or 1
-		local IsBoxed = GunData.Class.IsBoxed
-		local Rotate
-
-		-- Converting everything to source units
-		local Length = RoundLength * 0.3937 -- cm to inches
-		local Width = RoundCaliber * 0.3937 -- cm to inches
-		local Height = Width
-
-		ExtraData.Spacing = Spacing
-
-		-- This block alters the stored round size, making it more like a container of the rounds
-		-- This cuts a little bit of ammo storage out
-		if MagSize > 1 then
-			if IsBoxed and not ExtraData.isRacked then
-				-- Makes certain automatic ammo stored by boxes
-				Width = Width * math.sqrt(MagSize)
-				Height = Width
-
-				ExtraData.MagSize = MagSize
-				ExtraData.isBoxed = true
-			else
-				MagSize = 1
-			end
-		end
-
-		if AddArmor then
-			-- Converting millimeters to inches then multiplying by two since the armor is on both sides
-			local BoxArmor = AddArmor * 0.039 * 2
-			local X = math.max(BoxSize.x - BoxArmor, 0)
-			local Y = math.max(BoxSize.y - BoxArmor, 0)
-			local Z = math.max(BoxSize.z - BoxArmor, 0)
-
-			BoxSize = Vector(X, Y, Z)
-		end
-
-		local ShortestFit = ShortestSize(Length, Width, Height, Spacing, BoxSize, ExtraData)
-
-		-- If ShortestFit is nil, that means the round isn't able to fit at all in the box
-		-- If its a racked munition that doesn't fit, it will go ahead and try to fit 2-pice
-		-- Otherwise, checks if the caliber is over 100mm before trying 2-piece ammunition
-		-- It will flatout not do anything if its boxed and not fitting
-		if not ShortestFit and not ExtraData.isBoxed and (GunCaliber >= 10 or ExtraData.isRacked) then
-			Length = Length * 0.5 -- Not exactly accurate, but cuts the round in two
-			Width = Width * 2 -- two pieces wide
-
-			ExtraData.isTwoPiece = true
-
-			local ShortestFit1, Count1 = ShortestSize(Length, Width, Height, Spacing, BoxSize, ExtraData, true)
-			local ShortestFit2, Count2 = ShortestSize(Length, Height, Width, Spacing, BoxSize, ExtraData, true)
-
-			if Count1 > Count2 then
-				ShortestFit = ShortestFit1
-			else
-				ShortestFit = ShortestFit2
-				Rotate = true
-			end
-		end
-
-		-- If it still doesn't fit the box, then it's just too small
-		if ShortestFit then
-			local SizeX, SizeY, SizeZ, LocalAng = GetBoxDimensions(ShortestFit, BoxSize)
-
-			ExtraData.LocalAng = LocalAng
-			ExtraData.RoundSize = Vector(Length, Width, Height)
-
-			-- In case the round was cut and needs to be rotated, then we do some minor changes
-			if Rotate then
-				local OldY = SizeY
-
-				SizeY = SizeZ
-				SizeZ = OldY
-
-				ExtraData.LocalAng = ExtraData.LocalAng + Angle(0, 0, 90)
-			end
-
-			local RoundsX, RoundsY, RoundsZ = GetRoundsPerAxis(SizeX, SizeY, SizeZ, Length, Width, Height, Spacing)
-
-			ExtraData.FitPerAxis = Vector(RoundsX, RoundsY, RoundsZ)
-
-			Rounds = RoundsX * RoundsY * RoundsZ * MagSize
-		end
-
-		return Rounds, ExtraData
-	end
-
 	local Classes = ACF.Classes
 	local Crates = Classes.Crates
 	local AmmoTypes = Classes.AmmoTypes
 	local GetClassGroup = ACF.GetClassGroup
+
 	local Updated = {
 		["20mmHRAC"] = "20mmRAC",
 		["30mmHRAC"] = "30mmRAC",
@@ -304,21 +136,12 @@ do -- Spawning and Updating --------------------
 		do -- Ammo count calculation
 			local Size = Entity:GetSize()
 			local Spacing = Weapon.Caliber * 0.0039
-			local Rounds, ExtraData = CalcAmmo(Size, Weapon, Entity.BulletData, Spacing, ACF.AmmoArmor)
+			local Rounds, ExtraData = ACF.CalculateCrateCapacity(Size, Weapon, Entity.BulletData, Spacing, ACF.AmmoArmor)
 			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
 
-			if Rounds ~= -1 then
-				Entity.Capacity = Rounds
-			else
-				local Efficiency = 0.1576 * ACF.AmmoMod
-				local Volume     = math.floor(Entity:GetPhysicsObject():GetVolume()) * Efficiency
-				local CapMul     = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-
-				Entity.Capacity = math.floor(CapMul * Volume * 16.38 / Entity.BulletData.RoundVolume)
-			end
-
+			Entity.Capacity    = Rounds
 			Entity.AmmoMassMax = math.floor(Entity.BulletData.CartMass * Entity.Capacity)
-			Entity.Ammo = math.floor(Entity.Capacity * Percentage)
+			Entity.Ammo        = math.floor(Entity.Capacity * Percentage)
 
 			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
 
@@ -328,11 +151,11 @@ do -- Spawning and Updating --------------------
 				local MagSize = Weapon.MagSize
 
 				-- for future use in reloading
-				--Entity.isBoxed = ExtraData.isBoxed -- Ammunition is boxed
-				--Entity.isTwoPiece = ExtraData.isTwoPiece -- Ammunition is broken down to two pieces
+				--Entity.IsBoxed = ExtraData.IsBoxed -- Ammunition is boxed
+				--Entity.IsTwoPiece = ExtraData.IsTwoPiece -- Ammunition is broken down to two pieces
 
-				ExtraData.MagSize = ExtraData.isBoxed and MagSize or 0
-				ExtraData.IsRound = not (ExtraData.isBoxed or ExtraData.isTwoPiece or ExtraData.isRacked)
+				ExtraData.MagSize = ExtraData.IsBoxed and MagSize or 0
+				ExtraData.IsRound = not (ExtraData.IsBoxed or ExtraData.IsTwoPiece or ExtraData.IsRacked)
 				ExtraData.Capacity = Entity.Capacity
 				ExtraData.Enabled = true
 			else
