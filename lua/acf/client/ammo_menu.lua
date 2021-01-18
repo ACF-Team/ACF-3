@@ -1,7 +1,14 @@
 
-local ACF = ACF
-local AmmoTypes = ACF.Classes.AmmoTypes
+local ACF       = ACF
+local Classes   = ACF.Classes
+local AmmoTypes = Classes.AmmoTypes
+local BoxSize   = Vector()
 local Ammo, BulletData
+
+local CrateText = [[
+	Crate Armor: %s mm
+	Crate Mass : %s
+	Crate Capacity : %s round(s)]]
 
 local function CopySettings(Settings)
 	local Copy = {}
@@ -26,6 +33,21 @@ local function GetAmmoList(Class)
 	end
 
 	return Result
+end
+
+local function GetWeaponData(ToolData)
+	local Destiny = Classes[ToolData.Destiny or "Weapons"]
+	local Class = ACF.GetClassGroup(Destiny, ToolData.Weapon)
+
+	return Class.Lookup[ToolData.Weapon]
+end
+
+local function GetEmptyMass()
+	local Armor          = ACF.AmmoArmor * 0.039 -- Millimeters to inches
+	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
+	local InteriorVolume = (BoxSize.x - Armor) * (BoxSize.y - Armor) * (BoxSize.z - Armor)
+
+	return math.Round((ExteriorVolume - InteriorVolume) * 0.13, 2)
 end
 
 local function AddPreview(Base, Settings, ToolData)
@@ -125,6 +147,36 @@ end
 local function AddInformation(Base, Settings, ToolData)
 	if Settings.SuppressInformation then return end
 
+	if not Settings.SuppressCrateInformation then
+		local Trackers = {}
+
+		local Crate = Base:AddLabel()
+		Crate:TrackClientData("Weapon", "SetText")
+		Crate:TrackClientData("CrateSizeX")
+		Crate:TrackClientData("CrateSizeY")
+		Crate:TrackClientData("CrateSizeZ")
+		Crate:DefineSetter(function()
+			local Weapon  = GetWeaponData(ToolData)
+			local Spacing = Weapon.Caliber * 0.0039
+			local Rounds  = ACF.GetAmmoCrateCapacity(BoxSize, Weapon, BulletData, Spacing, ACF.AmmoArmor)
+			local Empty   = GetEmptyMass()
+			local Load    = math.floor(BulletData.CartMass * Rounds)
+			local Mass    = ACF.GetProperMass(math.floor(Empty + Load))
+
+			return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
+		end)
+
+		if Ammo.AddCrateDataTrackers then
+			Ammo:AddCrateDataTrackers(Trackers, ToolData, BulletData)
+		end
+
+		hook.Run("ACF_AddCrateDataTrackers", Trackers, ToolData, Ammo, BulletData)
+
+		for Tracker in pairs(Trackers) do
+			Crate:TrackClientData(Tracker)
+		end
+	end
+
 	if Ammo.AddAmmoInformation then
 		Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 	end
@@ -173,25 +225,37 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local SizeX = Menu:AddSlider("Crate Width", 6, 96, 2)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
-		Panel:SetValue(Value)
+		local X = math.Round(Value, 2)
 
-		return Value
+		Panel:SetValue(X)
+
+		BoxSize.x = X
+
+		return X
 	end)
 
 	local SizeY = Menu:AddSlider("Crate Height", 6, 96, 2)
 	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
-		Panel:SetValue(Value)
+		local Y = math.Round(Value, 2)
 
-		return Value
+		Panel:SetValue(Y)
+
+		BoxSize.y = Y
+
+		return Y
 	end)
 
 	local SizeZ = Menu:AddSlider("Crate Depth", 6, 96, 2)
 	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
-		Panel:SetValue(Value)
+		local Z = math.Round(Value, 2)
 
-		return Value
+		Panel:SetValue(Z)
+
+		BoxSize.z = Z
+
+		return Z
 	end)
 
 	local Base = Menu:AddCollapsible("Ammo Information")

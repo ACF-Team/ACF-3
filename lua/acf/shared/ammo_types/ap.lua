@@ -216,6 +216,11 @@ else
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
+	function Ammo:AddCrateDataTrackers(Trackers)
+		Trackers.Projectile = true
+		Trackers.Propellant = true
+	end
+
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")

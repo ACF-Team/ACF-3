@@ -206,6 +206,12 @@ else
 		end)
 	end
 
+	function Ammo:AddCrateDataTrackers(Trackers, ...)
+		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+
+		Trackers.Flechettes = true
+	end
+
 	function Ammo:AddAmmoInformation(Menu, ToolData, BulletData)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")

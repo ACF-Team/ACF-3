@@ -232,6 +232,13 @@ else
 		end)
 	end
 
+	function Ammo:AddCrateDataTrackers(Trackers, ...)
+		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+
+		Trackers.SmokeFiller = true
+		Trackers.WPFiller = true
+	end
+
 	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")

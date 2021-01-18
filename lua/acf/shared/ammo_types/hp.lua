@@ -122,6 +122,12 @@ else
 		end)
 	end
 
+	function Ammo:AddCrateDataTrackers(Trackers, ...)
+		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+
+		Trackers.HollowCavity = true
+	end
+
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
