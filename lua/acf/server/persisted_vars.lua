@@ -17,7 +17,7 @@ ACF.PersistServerData("AllowFunEnts", true)
 ACF.PersistServerData("UseKillicons", true)
 ACF.PersistServerData("ShowFunMenu", true)
 ACF.PersistServerData("WorkshopContent", true)
-ACF.PersistServerData("WorkshopExtras", true)
+ACF.PersistServerData("WorkshopExtras", false)
 
 -- Debris
 ACF.PersistServerData("CreateDebris", true)

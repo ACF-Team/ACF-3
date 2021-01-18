@@ -64,6 +64,7 @@ do -- Data persisting
 	local Values  = ACF[Realm .. "Data"]
 	local Folder  = "acf/data_vars"
 	local File    = "stored.json"
+	local Storing
 
 	local function StoreData()
 		local Result = {}
@@ -77,21 +78,25 @@ do -- Data persisting
 			}
 		end
 
+		Storing = nil
+
 		ACF.SaveToJSON(Folder, File, Result, true)
 	end
 
 	local function UpdateData(Key)
 		if Keys[Key] == nil then return end
+		if Values[Key] == nil then return end
 
-		local Default = Keys[Key]
-		local Value   = Either(Values[Key] ~= nil, Values[Key], Default)
+		local Value = Values[Key]
 
 		if Persist[Key] ~= Value then
 			Persist[Key] = Value
 
-			if timer.Exists("ACF Store Persisted") then return end
+			if not Storing then
+				timer.Create("ACF Store Persisted", 1, 1, StoreData)
 
-			timer.Create("ACF Store Persisted", 1, 1, StoreData)
+				Storing = true
+			end
 		end
 	end
 
@@ -104,8 +109,6 @@ do -- Data persisting
 		if Default == nil then Default = "nil" end
 
 		Keys[Key] = Default
-
-		UpdateData(Key)
 	end
 
 	hook.Add("ACF_On" .. Realm .. "DataUpdate", "ACF Persisted Data", function(_, Key)
@@ -118,20 +121,19 @@ do -- Data persisting
 
 		if Saved then
 			for Key, Stored in pairs(Saved) do
-				if Keys[Key] == nil then
-					Keys[Key] = Stored.Default
-				end
+				if Keys[Key] == nil then continue end
 
 				if Stored.Value ~= "nil" then
 					SetFunction(Key, Stored.Value)
 				end
 			end
-		else
-			for Key, Default in pairs(Keys) do
-				local Value = Either(Persist[Key] ~= nil, Persist[Key], Default)
+		end
 
-				SetFunction(Key, Value)
-			end
+		-- In case the file doesn't exist or it's missing one of the persisted variables
+		for Key, Default in pairs(Keys) do
+			if Persist[Key] ~= nil then continue end
+
+			SetFunction(Key, Default)
 		end
 
 		hook.Remove("Initialize", "ACF Load Persisted Data")
