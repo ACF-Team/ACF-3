@@ -136,7 +136,7 @@ do -- Spawning and Updating --------------------
 		do -- Ammo count calculation
 			local Size = Entity:GetSize()
 			local Spacing = Weapon.Caliber * 0.0039
-			local Rounds, ExtraData = ACF.CalculateCrateCapacity(Size, Weapon, Entity.BulletData, Spacing, ACF.AmmoArmor)
+			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Weapon, Entity.BulletData, Spacing, ACF.AmmoArmor)
 			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
 
 			Entity.Capacity    = Rounds
@@ -206,6 +206,16 @@ do -- Spawning and Updating --------------------
 				net.WriteString(Entity.CrateData)
 			net.Send(Player)
 		end
+	end)
+
+	hook.Add("ACF_CanUpdateEntity", "ACF Crate Size Update", function(Entity, Data)
+		if not Entity.IsAmmoCrate then return end
+		if Data.Size then return end -- The menu won't send it like this
+
+		Data.Size       = Entity:GetSize()
+		Data.CrateSizeX = nil
+		Data.CrateSizeY = nil
+		Data.CrateSizeZ = nil
 	end)
 
 	-------------------------------------------------------------------------------

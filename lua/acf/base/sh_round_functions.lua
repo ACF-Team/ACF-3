@@ -214,7 +214,7 @@ do -- Ammo crate capacity calculation
 	-- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
 	-- For missiles/bombs, they MUST have ActualLength and ActualWidth (of the model in cm, and in the round table) to use this, otherwise it will fall back to the original calculations
 	-- Made by LiddulBOFH :)
-	function ACF.CalculateCrateCapacity(BoxSize, GunData, BulletData, AddSpacing, AddArmor)
+	function ACF.GetAmmoCrateCapacity(BoxSize, GunData, BulletData, AddSpacing, AddArmor)
 		-- gives a nice number of rounds per refill box
 		if BulletData.Type == "Refill" then return math.ceil(BoxSize.x * BoxSize.y * BoxSize.z * 0.01) end
 
