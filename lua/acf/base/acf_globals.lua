@@ -16,6 +16,7 @@ do -- ACF global vars
 	ACF.HEPush             = true -- Whether or not HE pushes on entities
 	ACF.KEPush             = true -- Whether or not kinetic force pushes on entities
 	ACF.RecoilPush         = true -- Whether or not ACF guns apply recoil
+	ACF.Volume             = 1 -- Global volume for ACF sounds
 	ACF.AllowFunEnts       = true -- Allows entities listed under the Fun Stuff option to be used
 	ACF.WorkshopContent    = true -- Enable workshop content download for clients
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients

@@ -90,8 +90,8 @@ if SERVER then
 				Crate:Consume(-Transfer)
 				Refill:Consume(Transfer)
 
-				Crate:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
-				Refill:EmitSound("items/ammo_pickup.wav", 350, 100, 0.5)
+				Crate:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.Volume)
+				Refill:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.Volume)
 
 			elseif Refill.SupplyingTo[Crate] then
 				Refill.SupplyingTo[Crate] = nil

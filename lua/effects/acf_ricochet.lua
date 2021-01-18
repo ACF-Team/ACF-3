@@ -1,8 +1,9 @@
-local TraceData = { start = true, endpos = true }
-local TraceLine = util.TraceLine
+local TraceData  = { start = true, endpos = true }
+local TraceLine  = util.TraceLine
 local ValidDecal = ACF.IsValidAmmoDecal
-local GetDecal = ACF.GetRicochetDecal
-local GetScale = ACF.GetDecalScale
+local GetDecal   = ACF.GetRicochetDecal
+local GetScale   = ACF.GetDecalScale
+local Sound      = "acf_base/fx/ricochet%s.mp3"
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
@@ -24,7 +25,10 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	sound.Play("acf_base/fx/penetration" .. math.random(1, 4) .. ".mp3", Origin, math.Clamp(Mass * 200, 65, 500), math.Clamp(Velocity * 0.01, 25, 255), 1)
+	local Level = math.Clamp(Mass * 200, 65, 500)
+	local Pitch = math.Clamp(Velocity * 0.01, 25, 255)
+
+	sound.Play(Sound:format(math.random(1, 4)), Origin, Level, Pitch, ACF.Volume)
 end
 
 function EFFECT:Think()

@@ -119,8 +119,10 @@ function EFFECT:Core(Direction)
 		end
 	end
 
-	sound.Play("ambient/explosions/explode_5.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 12, 15, 255))
-	sound.Play("ambient/explosions/explode_4.wav", self.Origin, math.Clamp(Radius * 10, 75, 165), math.Clamp(300 - Radius * 25, 15, 255))
+	local Level = math.Clamp(Radius * 10, 75, 165)
+
+	sound.Play("ambient/explosions/explode_5.wav", self.Origin, Level, math.Clamp(300 - Radius * 12, 15, 255), ACF.Volume)
+	sound.Play("ambient/explosions/explode_4.wav", self.Origin, Level, math.Clamp(300 - Radius * 25, 15, 255), ACF.Volume)
 end
 
 function EFFECT:GroundImpact()

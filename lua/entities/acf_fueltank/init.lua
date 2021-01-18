@@ -452,11 +452,11 @@ function ENT:Think()
 				Tank:Consume(-Exchange)
 
 				if self.FuelType == "Electric" then
-					self:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
-					Tank:EmitSound("ambient/energy/newspark04.wav", 75, 100, 0.5)
+					self:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
+					Tank:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
 				else
-					self:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
-					Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 75, 120, 0.5)
+					self:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
+					Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
 				end
 			end
 		end

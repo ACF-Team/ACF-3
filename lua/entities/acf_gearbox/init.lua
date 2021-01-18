@@ -763,7 +763,7 @@ function ENT:ChangeGear(Value)
 	self.GearRatio      = self.Gears[Value] * self.FinalDrive
 	self.ChangeFinished = ACF.CurTime + self.SwitchTime
 
-	self:EmitSound("buttons/lever7.wav", 250, 100)
+	self:EmitSound("buttons/lever7.wav", 70, 100, 0.5 * ACF.Volume)
 
 	WireLib.TriggerOutput(self, "Current Gear", Value)
 	WireLib.TriggerOutput(self, "Ratio", self.GearRatio)

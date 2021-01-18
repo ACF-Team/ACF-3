@@ -47,6 +47,18 @@ do -- Clientside settings
 		Base:AddHelp("Requires hitboxes to be enabled.")
 	end)
 
+	ACF.AddClientSettings(100, "Sound Volume", function(Base)
+		local Volume = Base:AddSlider("Client Sound Volume", 0, 1, 2)
+		Volume:SetClientData("Volume", "OnValueChanged")
+		Volume:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("For the moment, this will only affect sounds that are played from the clientside.")
+	end)
+
 	ACF.AddClientSettings(101, "Effects and Visual Elements", function(Base)
 		local Ropes = Base:AddCheckBox("Create mobility rope links.")
 		Ropes:SetConVar("acf_mobilityropelinks")
@@ -172,6 +184,17 @@ do -- Serverside settings
 	end)
 
 	ACF.AddServerSettings(100, "Sound Volume", function(Base)
+		local Volume = Base:AddSlider("Server Sound Volume", 0, 1, 2)
+		Volume:SetServerData("Volume", "OnValueChanged")
+		Volume:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Will affect a handful of sounds that are played from the serverside. This will be deprecated in the future.")
+	end)
+
 	ACF.AddServerSettings(101, "Entity Pushing", function(Base)
 		local HEPush = Base:AddCheckBox("Push entities due to HE forces.")
 		HEPush:SetServerData("HEPush", "OnChange")

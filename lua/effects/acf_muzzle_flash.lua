@@ -27,13 +27,14 @@ function EFFECT:Init(Data)
 		if Sound ~= "" then
 			local SoundPressure = (Propellant * 1000) ^ 0.5
 
-			sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100) --wiki documents level tops out at 180, but seems to fall off past 127
+			 -- NOTE: Wiki documents level tops out at 180, but seems to fall off past 127
+			sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100, ACF.Volume)
 
 			if not (Class == "MG" or Class == "RAC") then
-				sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100)
+				sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100, ACF.Volume)
 
 				if SoundPressure > 127 then
-					sound.Play(Sound, GunPos, math.Clamp(SoundPressure - 127, 1, 127), 100)
+					sound.Play(Sound, GunPos, math.Clamp(SoundPressure - 127, 1, 127), 100, ACF.Volume)
 				end
 			end
 		end

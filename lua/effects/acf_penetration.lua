@@ -1,8 +1,9 @@
-local TraceData = { start = true, endpos = true }
-local TraceLine = util.TraceLine
+local TraceData  = { start = true, endpos = true }
+local TraceLine  = util.TraceLine
 local ValidDecal = ACF.IsValidAmmoDecal
-local GetDecal = ACF.GetPenetrationDecal
-local GetScale = ACF.GetDecalScale
+local GetDecal   = ACF.GetPenetrationDecal
+local GetScale   = ACF.GetDecalScale
+local Sound      = "acf_base/fx/penetration%s.mp3"
 
 function EFFECT:Init(Data)
 	self.Caliber = Data:GetRadius()
@@ -37,7 +38,10 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, self.Normal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	sound.Play("acf_base/fx/penetration" .. math.random(1, 6) .. ".mp3", Trace.HitPos, math.Clamp(self.Mass * 200, 65, 500), math.Clamp(self.Velocity * 0.01, 25, 255), 1)
+	local Level = math.Clamp(self.Mass * 200, 65, 500)
+	local Pitch = math.Clamp(self.Velocity * 0.01, 25, 255)
+
+	sound.Play(Sound:format(math.random(1, 6)), Trace.HitPos, Level, Pitch, ACF.Volume)
 end
 
 function EFFECT:Metal()
