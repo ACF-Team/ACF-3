@@ -1,6 +1,5 @@
 -- Local Vars -----------------------------------
 local ACF         = ACF
-local ACF_HEPUSH  = GetConVar("acf_hepush")
 local TimerCreate = timer.Create
 local TraceRes    = {}
 local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
@@ -249,7 +248,7 @@ do -- Explosions ----------------------------
 					end
 
 					Loop = true -- Check for new targets since something died, maybe we'll find something new
-				elseif ACF_HEPUSH:GetBool() then -- Just damaged, not killed, so push on it some
+				elseif ACF.HEPush then -- Just damaged, not killed, so push on it some
 					Shove(Ent, Origin, Table.Vec, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
 				end
 

@@ -10,7 +10,6 @@ do -- Spawning and Updating --------------------
 	local Piledrivers = ACF.Classes.Piledrivers
 	local AmmoTypes   = ACF.Classes.AmmoTypes
 	local CheckLegal  = ACF_CheckLegal
-	local ACF_RECOIL  = GetConVar("acf_recoilpush")
 
 	local function VerifyData(Data)
 		if isstring(Data.Id) then
@@ -129,7 +128,7 @@ do -- Spawning and Updating --------------------
 			end
 
 			function BulletData:OnEndFlight(Trace)
-				if not ACF_RECOIL:GetBool() then return end
+				if not ACF.RecoilPush then return end
 				if not IsValid(Entity) then return end
 				if not Trace.HitWorld then return end
 				if Trace.Fraction == 0 then return end

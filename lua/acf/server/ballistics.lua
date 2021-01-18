@@ -15,7 +15,6 @@ local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 local HookRun		= hook.Run
-local ACF_KEPUSH    = GetConVar("acf_kepush")
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	Gravity.z = -Value
@@ -360,7 +359,7 @@ do -- Terminal ballistics --------------------------
 			end
 		end
 
-		if ACF_KEPUSH:GetBool() then
+		if ACF.KEPush then
 			ACF.KEShove(
 				Target,
 				HitPos,

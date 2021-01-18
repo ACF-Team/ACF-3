@@ -11,7 +11,6 @@ E2Lib.RegisterExtension("acf", true)
 -- Local Variables and Helper Functions
 --===============================================================================================--
 
-local Restrict       = GetConVar("acf_restrict_info")
 local ACF            = ACF
 local AllLinkSources = ACF.GetAllLinkSources
 local LinkSource     = ACF.GetLinkSource
@@ -29,7 +28,7 @@ local function IsACFEntity(Entity)
 end
 
 local function RestrictInfo(Player, Entity)
-	if not Restrict:GetBool() then return false end
+	if not ACF.RestrictInfo then return false end
 
 	return not isOwner(Player, Entity)
 end
@@ -103,7 +102,7 @@ end
 
 -- Returns 1 if functions returning sensitive info are restricted to owned props
 e2function number acfInfoRestricted()
-	return Restrict:GetBool() and 1 or 0
+	return ACF.RestrictInfo and 1 or 0
 end
 
 __e2setcost(5)

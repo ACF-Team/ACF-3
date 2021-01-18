@@ -1,4 +1,5 @@
 local ACF = ACF
+local Message = SERVER and ACF.PrintLog or ACF.PrintToChat
 
 local Names = {
 	[1] = "Sandbox",
@@ -14,12 +15,13 @@ local Settings = {
 
 		ACF.Gamemode = Mode
 
-		print("ACF Gamemode has been changed to " .. Names[Mode])
+		Message("Info", "ACF Gamemode has been changed to " .. Names[Mode])
 	end,
 	ServerDataAllowAdmin = function(_, _, Value)
-		local Bool = tobool(Value)
-
-		ACF.AllowAdminData = Bool
+		ACF.AllowAdminData = tobool(Value)
+	end,
+	RestrictInfo = function(_, _, Value)
+		ACF.RestrictInfo = tobool(Value)
 	end,
 	GunfireEnabled = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -28,7 +30,7 @@ local Settings = {
 
 		ACF.GunfireEnabled = Bool
 
-		print("ACF Gunfire has been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "ACF Gunfire has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	HealthFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -40,7 +42,7 @@ local Settings = {
 		ACF.HealthFactor = Factor
 		ACF.Threshold = ACF.Threshold / Old * Factor
 
-		print("ACF Health Mod changed to a factor of " .. Factor)
+		Message("Info", "ACF Health Mod changed to a factor of " .. Factor)
 	end,
 	ArmorFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -52,7 +54,7 @@ local Settings = {
 		ACF.ArmorFactor = Factor
 		ACF.ArmorMod = ACF.ArmorMod / Old * Factor
 
-		print("ACF Armor Mod changed to a factor of " .. Factor)
+		Message("Info", "ACF Armor Mod changed to a factor of " .. Factor)
 	end,
 	FuelFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -64,7 +66,7 @@ local Settings = {
 		ACF.FuelFactor = Factor
 		ACF.FuelRate = ACF.FuelRate / Old * Factor
 
-		print("ACF Fuel Rate changed to a factor of " .. Factor)
+		Message("Info", "ACF Fuel Rate changed to a factor of " .. Factor)
 	end,
 	CompFuelFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -76,12 +78,37 @@ local Settings = {
 		ACF.CompFuelFactor = Factor
 		ACF.CompFuelRate = ACF.CompFuelRate / Old * Factor
 
-		print("ACF Competitive Fuel Rate changed to a factor of " .. Factor)
+		Message("Info", "ACF Competitive Fuel Rate changed to a factor of " .. Factor)
+	end,
+	HEPush = function(_, _, Value)
+		ACF.HEPush = tobool(Value)
+	end,
+	KEPush = function(_, _, Value)
+		ACF.KEPush = tobool(Value)
+	end,
+	RecoilPush = function(_, _, Value)
+		ACF.RecoilPush = tobool(Value)
 	end,
 	AllowFunEnts = function(_, _, Value)
+		ACF.AllowFunEnts = tobool(Value)
+	end,
+	WorkshopContent = function(_, _, Value)
 		local Bool = tobool(Value)
 
-		ACF.AllowFunEnts = Bool
+		if ACF.WorkshopContent == Bool then return end
+
+		ACF.WorkshopContent = Bool
+
+		Message("Info", "ACF Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
+	end,
+	WorkshopExtras = function(_, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.WorkshopExtras == Bool then return end
+
+		ACF.WorkshopExtras = Bool
+
+		Message("Info", "ACF Extra Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
 }
 

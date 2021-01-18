@@ -21,7 +21,6 @@
 local ACF               = ACF
 local math              = math
 local match             = string.match
-local Restrict          = GetConVar("acf_restrict_info")
 local AmmoTypes         = ACF.Classes.AmmoTypes
 local Engines           = ACF.Classes.Engines
 local FuelTanks         = ACF.Classes.FuelTanks
@@ -136,7 +135,7 @@ local ang_meta, aunwrap = instance.Types.Angle, instance.Types.Angle.Unwrap
 local vec_meta, vunwrap = instance.Types.Vector, instance.Types.Vector.Unwrap
 
 local function RestrictInfo(Entity)
-	if not Restrict:GetBool() then return false end
+	if not ACF.RestrictInfo then return false end
 
 	return not isOwner(instance, Entity)
 end
@@ -204,7 +203,7 @@ end
 -- @server
 -- @return True if restriced, False if not
 function acf_library.infoRestricted()
-	return Restrict:GetBool()
+	return ACF.RestrictInfo
 end
 
 --- Returns current ACF drag divisor

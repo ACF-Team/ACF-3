@@ -6,13 +6,19 @@ do -- ACF global vars
 	ACF.ClientData         = ACF.ClientData or {}
 	ACF.ServerData         = ACF.ServerData or {}
 
-	-- Misc
+	-- General Settings
 	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
+	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
 	ACF.GunfireEnabled     = true
 	ACF.AllowAdminData     = false -- Allows admins to mess with a few server settings and data variables
+	ACF.HEPush             = true -- Whether or not HE pushes on entities
+	ACF.KEPush             = true -- Whether or not kinetic force pushes on entities
+	ACF.RecoilPush         = true -- Whether or not ACF guns apply recoil
 	ACF.AllowFunEnts       = true -- Allows entities listed under the Fun Stuff option to be used
+	ACF.WorkshopContent    = true -- Enable workshop content download for clients
+	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 
 	-- Fuzes
@@ -103,7 +109,7 @@ do -- ACF global vars
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 end
 
-do -- ACF Convars/Callbacks ------------------------
+do -- ACF Convars & Particles
 	CreateConVar("sbox_max_acf_ammo", 32, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Maximum amount of ACF ammo crates a player can create.")
 
 	game.AddParticles("particles/acf_muzzleflashes.pcf")
@@ -114,30 +120,18 @@ end
 if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
 
-	CreateConVar("acf_enable_workshop_content", 1, FCVAR_ARCHIVE, "Enable workshop content download for clients. Requires server restart on change.", 0, 1)
-	CreateConVar("acf_enable_workshop_extras", 0, FCVAR_ARCHIVE, "Enable extra workshop content download for clients. Requires server restart on change.", 0, 1)
-	CreateConVar("acf_gamemode", 1, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Sets the ACF gamemode of the server. 0 = Sandbox, 1 = Classic, 2 = Competitive", 0, 2)
-	CreateConVar("acf_restrict_info", 1, FCVAR_ARCHIVE, "If enabled, players will be only allowed to get info from entities they're allowed to mess with.", 0, 1)
-	CreateConVar("acf_hepush", 1, FCVAR_ARCHIVE, "Whether or not HE pushes on entities", 0, 1)
-	CreateConVar("acf_kepush", 1, FCVAR_ARCHIVE, "Whether or not kinetic force pushes on entities", 0, 1)
-	CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
+	hook.Add("PlayerConnect", "ACF Workshop Content", function()
+		if ACF.WorkshopContent then
+			resource.AddWorkshop("2183798463") -- Playermodel seats
+		end
 
-	-- Addon content ----------------------------
-	local Content = GetConVar("acf_enable_workshop_content")
+		if ACF.WorkshopExtras then
+			resource.AddWorkshop("439526795") -- Hide Errors addon
+			resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
+		end
 
-	if Content:GetBool() then
-		resource.AddWorkshop("2183798463") -- Playermodel seats
-	end
-	---------------------------------------------
-
-	-- Extra content ----------------------------
-	local Extras = GetConVar("acf_enable_workshop_extras")
-
-	if Extras:GetBool() then
-		resource.AddWorkshop("439526795") -- Hide Errors addon
-		resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
-	end
-	---------------------------------------------
+		hook.Add("PlayerConnect", "ACF Workshop Content")
+	end)
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)

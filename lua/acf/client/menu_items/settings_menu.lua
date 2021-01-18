@@ -126,7 +126,17 @@ do -- Serverside settings
 
 		Base:AddHelp("If enabled, admins will be able to mess with the settings on this panel.")
 
-		local Gunfire = Base:AddCheckBox("Allow weapons to be fired.")
+		local Info = Base:AddCheckBox("Restrict entity information.")
+		Info:SetServerData("RestrictInfo", "OnChange")
+		Info:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("You'll need the player's permissions in order to check relevant information on entities owned by them.")
+
+		local Gunfire = Base:AddCheckBox("Allow weapon fire.")
 		Gunfire:SetServerData("GunfireEnabled", "OnChange")
 		Gunfire:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
@@ -161,7 +171,34 @@ do -- Serverside settings
 		Base:AddHelp("Only applies to servers with their ACF Gamemode set to Competitive.")
 	end)
 
-	ACF.AddServerSettings(101, "Fun Entities and Menu", function(Base)
+	ACF.AddServerSettings(100, "Sound Volume", function(Base)
+	ACF.AddServerSettings(101, "Entity Pushing", function(Base)
+		local HEPush = Base:AddCheckBox("Push entities due to HE forces.")
+		HEPush:SetServerData("HEPush", "OnChange")
+		HEPush:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local KEPush = Base:AddCheckBox("Push entities due to kinetic forces.")
+		KEPush:SetServerData("KEPush", "OnChange")
+		KEPush:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local Recoil = Base:AddCheckBox("Push entities due to weapon recoil.")
+		Recoil:SetServerData("RecoilPush", "OnChange")
+		Recoil:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+	end)
+
+	ACF.AddServerSettings(201, "Fun Entities and Menu", function(Base)
 		local Entities = Base:AddCheckBox("Allow use of Fun Entities.")
 		Entities:SetServerData("AllowFunEnts", "OnChange")
 		Entities:DefineSetter(function(Panel, _, _, Value)
@@ -183,7 +220,27 @@ do -- Serverside settings
 		Base:AddHelp("Changes on this option will only take effect once the players reload their menu.")
 	end)
 
-	ACF.AddServerSettings(201, "Custom Killicons", function(Base)
+	ACF.AddServerSettings(301, "Workshop Content", function(Base)
+		local Content = Base:AddCheckBox("Enable workshop content download for clients.")
+		Content:SetServerData("WorkshopContent", "OnChange")
+		Content:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local Extra = Base:AddCheckBox("Enable extra workshop content download for clients.")
+		Extra:SetServerData("WorkshopExtras", "OnChange")
+		Extra:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		Base:AddHelp("Both of these options require a server restart to apply changes.")
+	end)
+
+	ACF.AddServerSettings(401, "Custom Killicons", function(Base)
 		local Icons = Base:AddCheckBox("Use custom killicons for ACF entities.")
 		Icons:SetServerData("UseKillicons", "OnChange")
 		Icons:DefineSetter(function(Panel, _, _, Value)
@@ -195,7 +252,7 @@ do -- Serverside settings
 		Base:AddHelp("Changing this option will require a server restart.")
 	end)
 
-	ACF.AddServerSettings(301, "Debris", function(Base)
+	ACF.AddServerSettings(501, "Debris", function(Base)
 		local Debris = Base:AddCheckBox("Allow networking of debris to clients.")
 		Debris:SetServerData("CreateDebris", "OnChange")
 		Debris:DefineSetter(function(Panel, _, _, Value)

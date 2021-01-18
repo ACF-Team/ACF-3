@@ -6,7 +6,6 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF          = ACF
-local ACF_RECOIL   = GetConVar("acf_recoilpush")
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal   = ACF_CheckLegal
 local Shove        = ACF.KEShove
@@ -487,7 +486,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Recoil()
-			if not ACF_RECOIL:GetBool() then return end
+			if not ACF.RecoilPush then return end
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
