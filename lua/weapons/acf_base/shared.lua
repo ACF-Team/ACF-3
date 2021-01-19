@@ -61,8 +61,9 @@ function SWEP:PrimaryAttack()
 		self:ApplyRecoil(math.min(Recoil,50))
 		self:MuzzleEffect()
 	else
-		local MuzzlePos = self.Owner:GetShootPos()
-		local MuzzleVec = self.Owner:GetAimVector()
+		local Owner = self:GetOwner()
+		local MuzzlePos = Owner:GetShootPos()
+		local MuzzleVec = Owner:GetAimVector()
 		local Speed = self.Primary.BulletData["MuzzleVel"]
 		local Modifiers = self:CalculateModifiers()
 		--local Recoil = (self.Primary.BulletData["ProjMass"] * self.Primary.BulletData["MuzzleVel"] + self.Primary.BulletData["PropMass"] * 3000)/self.Weight
@@ -74,8 +75,8 @@ function SWEP:PrimaryAttack()
 
 			self.Primary.BulletData["Pos"] = MuzzlePos
 			self.Primary.BulletData["Flight"] = (MuzzleVec + Inaccuracy):GetNormalized() * Speed * 39.37 + self:GetVelocity()
-			self.Primary.BulletData["Owner"] = self.Owner
-			self.Primary.BulletData["Gun"] = self.Owner
+			self.Primary.BulletData["Owner"] = Owner
+			self.Primary.BulletData["Gun"] = Owner
 			self.Primary.BulletData["Crate"] = self:EntIndex()
 
 			self.Primary.RoundData:Create(self, self.Primary.BulletData)
@@ -103,21 +104,20 @@ end
 
 -- Acuracy/recoil modifiers
 function SWEP:CalculateModifiers()
-
+	local Owner = self:GetOwner()
 	local modifier = 1
 
-	if self.Owner:KeyDown(IN_FORWARD or IN_BACK or IN_MOVELEFT or IN_MOVERIGHT) then
+	if Owner:KeyDown(IN_FORWARD or IN_BACK or IN_MOVELEFT or IN_MOVERIGHT) then
 		modifier = modifier * 2
 	end
 
-	if not self.Owner:IsOnGround() then
+	if not Owner:IsOnGround() then
 		modifier = modifier * 2 --You can't be jumping and crouching at the same time, so return here
 	return modifier end
 
-	if self.Owner:Crouching() then
+	if Owner:Crouching() then
 		modifier = modifier * 0.5
 	end
 
 	return modifier
-
 end

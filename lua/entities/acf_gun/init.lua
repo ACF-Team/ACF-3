@@ -372,7 +372,7 @@ do -- Metamethods --------------------------------
 			if TraceRes.Hit then
 				local Entity = TraceRes.Entity
 
-				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self.Owner then
+				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self:GetPlayer() then
 					self.BarrelFilter[#self.BarrelFilter + 1] = Entity
 
 					return self:BarrelCheck(Offset)

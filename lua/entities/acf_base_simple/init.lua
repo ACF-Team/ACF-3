@@ -174,10 +174,10 @@ do -- Entity user -------------------------------
 	end
 
 	function ENT:GetUser(Input)
-		if not IsValid(Input) then return self.Owner end
+		if not IsValid(Input) then return self:GetPlayer() end
 
 		local User = FindUser(self, Input)
 
-		return IsValid(User) and User or self.Owner
+		return IsValid(User) and User or self:GetPlayer()
 	end
 end ---------------------------------------------

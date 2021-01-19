@@ -75,7 +75,7 @@ function SWEP:Think()
 	if CLIENT then return end
 
 	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	local Trace = self.Owner:GetEyeTrace()
+	local Trace = self:GetOwner():GetEyeTrace()
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
@@ -121,7 +121,7 @@ function SWEP:PrimaryAttack()
 
 	local Entity = self.LastEntity
 	local Trace = self.LastTrace
-	local Owner = self.Owner
+	local Owner = self:GetOwner()
 
 	if ACF.Check(Entity) then
 		if Entity:IsPlayer() or Entity:IsNPC() then
@@ -181,7 +181,7 @@ function SWEP:SecondaryAttack()
 
 	local Entity = self.LastEntity
 	local Trace = self.LastTrace
-	local Owner = self.Owner
+	local Owner = self:GetOwner()
 
 	if ACF.Check(Entity) then
 		local HitRes = {}
