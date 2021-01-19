@@ -15,7 +15,8 @@ local function GenerateJSON(Table)
 
 		Data[Entity:EntIndex()] = {
 			Original = Entity:GetOriginalSize(),
-			Size = Entity:GetSize()
+			Size = Entity:GetSize(),
+			Extra = Entity.GetExtraInfo and Entity:GetExtraInfo(),
 		}
 	end
 
@@ -62,53 +63,76 @@ local function NetworkSize(Entity, Player)
 	timer.Create("ACF Network Sizes", 0, 1, SendQueued)
 end
 
+local function ChangeSize(Entity, Size)
+	if Entity.Size == Size then return false end
+
+	local Original = Entity:GetOriginalSize()
+	local Scale = Vector(1 / Original.x, 1 / Original.y, 1 / Original.z) * Size
+
+	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
+
+	-- If it's not a new entity, then network the new size
+	-- Otherwise, the entity will request its size by itself
+	if Entity.Size then NetworkSize(Entity) end
+
+	Entity.Size = Size
+	Entity.Scale = Scale
+
+	local PhysObj = Entity:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		if Entity.OnResized then Entity:OnResized(Size, Scale) end
+
+		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
+	end
+
+	if Entity.UpdateExtraInfo then Entity:UpdateExtraInfo() end
+
+	return true, Size, Scale
+end
+
 function ENT:Initialize()
 	BaseClass.Initialize(self)
 
 	self:GetOriginalSize() -- Instantly saving the original size
 end
 
+function ENT:FindOriginalSize(SizeTable)
+	local Key = self:GetModel()
+	local Stored = SizeTable[Key]
+
+	if Stored then return Stored end
+
+	local Min, Max = self:GetPhysicsObject():GetAABB()
+	local Size = -Min + Max
+
+	SizeTable[Key] = Size
+
+	return Size
+end
+
 function ENT:GetOriginalSize()
 	if not self.OriginalSize then
-		local Size = Sizes[self:GetModel()]
-
-		if not Size then
-			local Min, Max = self:GetPhysicsObject():GetAABB()
-
-			Size = -Min + Max
-
-			Sizes[self:GetModel()] = Size
-		end
-
-		self.OriginalSize = Size
+		self.OriginalSize = self:FindOriginalSize(Sizes)
 	end
 
 	return self.OriginalSize
 end
 
-function ENT:GetSize()
-	return self.Size
+function ENT:SetSize(Size)
+	if not isvector(Size) then return false end
+
+	return ChangeSize(self, Size)
 end
 
-function ENT:SetSize(NewSize)
-	if not isvector(NewSize) then return end
-	if self.Size == NewSize then return end
+function ENT:SetScale(Scale)
+	if isnumber(Scale) then Scale = Vector(Scale, Scale, Scale) end
+	if not isvector(Scale) then return false end
 
-	if self.ApplyNewSize then self:ApplyNewSize(NewSize) end
+	local Original = self:GetOriginalSize()
+	local Size = Vector(Original.x, Original.y, Original.z) * Scale
 
-	-- If it's not a new entity, then network the new size
-	-- Otherwise, the entity will request its size by itself
-	if self.Size then NetworkSize(self) end
-
-	self.Size = NewSize
-
-	local PhysObj = self:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		if self.OnResized then self:OnResized() end
-
-		hook.Run("OnEntityResized", self, PhysObj, NewSize)
-	end
+	return ChangeSize(self, Size)
 end
 
 do -- AdvDupe2 duped parented ammo workaround
@@ -140,11 +164,12 @@ do -- AdvDupe2 duped parented ammo workaround
 	hook.Add("AdvDupe_FinishPasting", "ACF Parented Scalable Ent Fix", function(DupeInfo)
 		DupeInfo = unpack(DupeInfo)
 
-		local Entities = DupeInfo.CreatedEntities
+		local CanParent = tobool(DupeInfo.Player:GetInfo("advdupe2_paste_parents"))
+		local Entities  = DupeInfo.CreatedEntities
 
 		for _, Entity in pairs(Entities) do
 			if Entity.IsScalable and Entity.ParentEnt then
-				Entity:SetParent(Entity.ParentEnt)
+				if CanParent then Entity:SetParent(Entity.ParentEnt) end
 
 				Entity.ParentEnt = nil
 			end

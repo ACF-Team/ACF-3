@@ -17,7 +17,7 @@ end
 local perms = ACF.Permissions
 
 -- a short description of what the mode does
-local modedescription = "Enables safe-zones and battlefield.  No ACF damage can occur in a safe-zone."
+local modedescription = "Enables safe-zones and battlefield. No ACF damage can occur in a safe-zone."
 -- battle-mode specifics: how much hp/armour should the players have?
 local MAX_HP = 100
 local MAX_Armour = 50

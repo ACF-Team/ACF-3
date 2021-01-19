@@ -1,4 +1,8 @@
-DEFINE_BASECLASS("base_wire_entity")
+DEFINE_BASECLASS("acf_base_simple")
 
-ENT.PrintName		= "ACF Gearbox"
-ENT.WireDebugName	= "ACF Gearbox"
+ENT.PrintName     = "ACF Gearbox"
+ENT.WireDebugName = "ACF Gearbox"
+ENT.PluralName    = "ACF Gearboxes"
+ENT.IsGearbox     = true
+
+cleanup.Register("acf_gearbox")

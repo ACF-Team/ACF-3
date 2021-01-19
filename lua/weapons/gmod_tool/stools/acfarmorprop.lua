@@ -22,10 +22,10 @@ end
 local function ApplySettings(_, Entity, Data)
 	if CLIENT then return end
 	if not Data then return end
-	if not ACF_Check(Entity) then return end
+	if not ACF.Check(Entity) then return end
 
 	if Data.Mass then
-		local PhysObj = Entity.ACF.PhysObj -- If it passed ACF_Check, then the PhysObj will always be valid
+		local PhysObj = Entity.ACF.PhysObj -- If it passed ACF.Check, then the PhysObj will always be valid
 		local Mass = math.Clamp(Data.Mass, 0.1, 50000)
 
 		PhysObj:SetMass(Mass)
@@ -41,13 +41,13 @@ local function ApplySettings(_, Entity, Data)
 		duplicator.StoreEntityModifier(Entity, "acfsettings", { Ductility = Ductility })
 	end
 
-	ACF_Check(Entity, true) -- Forcing the entity to update its information
+	ACF.Check(Entity, true) -- Forcing the entity to update its information
 end
 
 if CLIENT then
 	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
 	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility.")
-	language.Add("tool.acfarmorprop.0", "Left click to apply settings.  Right click to copy settings.  Reload to get the total mass of an object and all constrained objects.")
+	language.Add("tool.acfarmorprop.0", "Left click to apply settings. Right click to copy settings. Reload to get the total mass of an object and all constrained objects.")
 
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
@@ -69,7 +69,7 @@ if CLIENT then
 		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
 
 		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
-		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0).  A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
+		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0). A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
 
 		local SphereCheck = Panel:CheckBox("Use sphere search for armor readout", "acfarmorprop_sphere_search")
 		Panel:ControlHelp("If checked, the tool will find all the props in a sphere around the hit position instead of getting all the entities connected to a prop.")
@@ -228,7 +228,7 @@ else -- Serverside-only stuff
 		local Ductility = Entity.ACF.Ductility
 		local Thickness = Entity.ACF.MaxArmour
 
-		ACF_Check(Entity) -- We need to update again to get the Area
+		ACF.Check(Entity) -- We need to update again to get the Area
 
 		local Area = Entity.ACF.Area
 		local Mass = CalcArmor(Area, Ductility, Thickness)
@@ -247,7 +247,7 @@ else -- Serverside-only stuff
 
 		local Weapon = self.Weapon
 
-		if ACF_Check(Ent) then
+		if ACF.Check(Ent) then
 			Player:ConCommand("acfarmorprop_area " .. Ent.ACF.Area)
 			Player:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
 
@@ -274,7 +274,7 @@ else -- Serverside-only stuff
 	hook.Add("ProperClippingPhysicsClipped", "ACF Physclip Armor", UpdateMass)
 	hook.Add("ProperClippingPhysicsReset", "ACF Physclip Armor", UpdateMass)
 	hook.Add("ProperClippingCanPhysicsClip", "ACF PhysClip Armor", function(Entity)
-		ACF_Check(Entity, true) -- Just creating the ACF table on the entity
+		ACF.Check(Entity, true) -- Just creating the ACF table on the entity
 	end)
 
 	duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
@@ -300,7 +300,7 @@ function TOOL:LeftClick(Trace)
 	if not IsValid(Ent) then return false end
 	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
-	if not ACF_Check(Ent) then return false end
+	if not ACF.Check(Ent) then return false end
 
 	local Player = self:GetOwner()
 
@@ -323,7 +323,7 @@ function TOOL:RightClick(Trace)
 	if not IsValid(Ent) then return false end
 	if Ent:IsPlayer() or Ent:IsNPC() then return false end
 	if CLIENT then return true end
-	if not ACF_Check(Ent) then return false end
+	if not ACF.Check(Ent) then return false end
 
 	local Player = self:GetOwner()
 
@@ -359,7 +359,7 @@ do -- Armor readout
 		local PhysTotal = 0
 
 		for _, Ent in ipairs(Entities) do
-			if not ACF_Check(Ent) then
+			if not ACF.Check(Ent) then
 				if not Ent:IsWeapon() then -- We don't want to count weapon entities
 					OtherNum = OtherNum + 1
 				end

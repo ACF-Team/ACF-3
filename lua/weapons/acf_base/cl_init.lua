@@ -4,11 +4,15 @@ SWEP.Slot = 1
 SWEP.SlotPos = 1
 SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = false
-SWEP.ScreenFactor = {}
-SWEP.ScreenFactor.w = surface.ScreenWidth()
-SWEP.ScreenFactor.h = surface.ScreenHeight()
-SWEP.FloatingAim = {}
-SWEP.FloatingAim.bounds = 0.3
+
+SWEP.ScreenFactor = {
+	w = ScrW(),
+	h = ScrH(),
+}
+
+SWEP.FloatingAim = {
+	bounds = 0.3,
+}
 
 function SWEP:Initialize()
 	self:StartUp()
@@ -65,18 +69,18 @@ end
 
 function SWEP:ApplyRecoil(Recoil)
 	local RecoilAng = Angle(Recoil * math.Rand(-1, -0.25), Recoil * math.Rand(-0.25, 0.25), 0)
-	self.Owner:ViewPunch(RecoilAng)
+	self:GetOwner():ViewPunch(RecoilAng)
 end
 
 --Clientside effect, for Viewmodel stuff
 function SWEP:MuzzleEffect()
 	self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)
-	self.Owner:MuzzleFlash()
+	self:GetOwner():MuzzleFlash()
 end
 
 function SWEP:StartUp()
 	print("Starting Client")
-	self.FOV = self.Owner:GetFOV()
+	self.FOV = self:GetOwner():GetFOV()
 	self.ViewModelFOV = self.FOV
 	self.LastIrons = 0
 	--hook.Add("InputMouseApply","ACF_SWEPFloatingCrosshair",ACF_SWEPFloatingCrosshair)

@@ -1,25 +1,36 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+
 include("shared.lua")
+
+local AmmoTypes = ACF.Classes.AmmoTypes
+
 SWEP.AutoSwitchTo = false
 SWEP.AutoSwitchFrom = false
 
 function SWEP:Initialize()
-	self.Primary.BulletData = {}
-	self.ConvertData = ACF.RoundTypes[self.Primary.UserData["Type"]]["convert"] --Call the correct function for this round type to convert user input data into ballistics data
-	self.Primary.BulletData = self:ConvertData(self.Primary.UserData) --Put the results into the BulletData table
-	self.NetworkData = ACF.RoundTypes[self.Primary.UserData["Type"]]["network"]
-	self:NetworkData(self.Primary.BulletData)
+	local UserData = self.Primary.UserData
+	local AmmoType = AmmoTypes[UserData.Type]
+	local BulletData
 
-	if (SERVER) then
+	if SERVER then
+		BulletData = AmmoType:ServerConvert(UserData)
+
+		AmmoType:Network(self, BulletData)
+
 		self:SetWeaponHoldType("ar2")
-		--self.Owner:GiveAmmo( self.Primary.DefaultClip, self.Primary.Ammo )	
+		--self.Owner:GiveAmmo( self.Primary.DefaultClip, self.Primary.Ammo )
+	else
+		BulletData = AmmoType:ClientConvert(UserData)
 	end
+
+	self.Primary.BulletData = BulletData
+	self.Primary.RoundData = AmmoType
 end
 
 function SWEP:Reload()
-	if (self:Clip1() < self.Primary.ClipSize and self.Owner:GetAmmoCount(self.Primary.Ammo) > 0) then
-		self:EmitSound("weapons/AMR/sniper_reload.wav", 70, 110, ACF.SoundVolume)
+	if (self:Clip1() < self.Primary.ClipSize and self:GetOwner():GetAmmoCount(self.Primary.Ammo) > 0) then
+		self:EmitSound("weapons/AMR/sniper_reload.wav", 70, 110, ACF.Volume)
 		self:DefaultReload(ACT_VM_RELOAD)
 	end
 end
@@ -27,7 +38,7 @@ end
 function SWEP:Think()
 	if self.OwnerIsNPC then return end
 
-	if self.Owner:KeyDown(IN_USE) then
+	if self:GetOwner():KeyDown(IN_USE) then
 		self:CrateReload()
 	end
 
@@ -36,29 +47,40 @@ end
 
 --Server side effect, for external stuff
 function SWEP:MuzzleEffect()
-	self:EmitSound("weapons/AMR/sniper_fire.wav", nil, nil, ACF.SoundVolume)
-	self.Owner:MuzzleFlash()
-	self.Owner:SetAnimation(PLAYER_ATTACK1)
+	local Owner = self:GetOwner()
+
+	self:EmitSound("weapons/AMR/sniper_fire.wav", nil, nil, ACF.Volume)
+
+	Owner:MuzzleFlash()
+	Owner:SetAnimation(PLAYER_ATTACK1)
 end
 
 function SWEP:CrateReload()
-	local ViewTr = {}
-	ViewTr.start = self.Owner:GetShootPos()
-	ViewTr.endpos = self.Owner:GetShootPos() + self.Owner:GetAimVector() * 128
-	ViewTr.filter = {self.Owner, self}
+	local Owner = self:GetOwner()
+	local ViewTr = {
+		start = Owner:GetShootPos(),
+		endpos = Owner:GetShootPos() + Owner:GetAimVector() * 128,
+		filter = { Owner, self },
+	}
+
 	local ViewRes = util.TraceLine(ViewTr) --Trace to see if it will hit anything
 
 	if SERVER then
 		local AmmoEnt = ViewRes.Entity
 
-		if AmmoEnt and AmmoEnt:IsValid() and AmmoEnt.Ammo > 0 and AmmoEnt.RoundId == self.Primary.UserData["Id"] then
-			local CurAmmo = self.Owner:GetAmmoCount(self.Primary.Ammo)
+		if IsValid(AmmoEnt) and AmmoEnt.Ammo > 0 and AmmoEnt.RoundId == self.Primary.UserData["Id"] then
+			local CurAmmo = Owner:GetAmmoCount(self.Primary.Ammo)
 			local Transfert = math.min(AmmoEnt.Ammo, self.Primary.DefaultClip - CurAmmo)
+			local AmmoType = AmmoTypes[AmmoEnt.AmmoType]
+
 			AmmoEnt.Ammo = AmmoEnt.Ammo - Transfert
-			self.Owner:GiveAmmo(Transfert, self.Primary.Ammo)
+
+			Owner:GiveAmmo(Transfert, self.Primary.Ammo)
+
 			self.Primary.BulletData = AmmoEnt.BulletData
-			self.NetworkData = ACF.RoundTypes[AmmoEnt.RoundType]["network"]
-			self:NetworkData(self.Primary.BulletData)
+			self.Primary.RoundData = AmmoType
+
+			AmmoType:Network(self, self.Primary.BulletData)
 
 			return true
 		end
@@ -66,11 +88,13 @@ function SWEP:CrateReload()
 end
 
 function SWEP:StartUp()
+	local Owner = self:GetOwner()
+
 	self:SetDTBool(0, false)
 	self.LastIrons = 0
 
-	if self.Owner then
-		self.OwnerIsNPC = self.Owner:IsNPC() -- This ought to be better than getting it every time we fire
+	if Owner then
+		self.OwnerIsNPC = Owner:IsNPC() -- This ought to be better than getting it every time we fire
 	end
 end
 

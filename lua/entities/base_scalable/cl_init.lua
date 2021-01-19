@@ -4,6 +4,30 @@ include("shared.lua")
 
 local Queued = {}
 
+local function ChangeSize(Entity, Size)
+	if not isvector(Size) then return false end
+	if Entity.Size == Size then return false end
+	if not Entity:GetOriginalSize() then return false end
+
+	local Original = Entity:GetOriginalSize()
+	local Scale = Vector(Size.x / Original.x, Size.y / Original.y, Size.z / Original.z)
+
+	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
+
+	Entity.Size = Size
+	Entity.Scale = Scale
+
+	local PhysObj = Entity:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		if Entity.OnResized then Entity:OnResized(Size, Scale) end
+
+		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
+	end
+
+	return true, Size, Scale
+end
+
 function ENT:Initialize()
 	BaseClass.Initialize(self)
 
@@ -28,26 +52,20 @@ function ENT:GetOriginalSize()
 	return self.OriginalSize
 end
 
-function ENT:GetSize()
-	return self.Size
+function ENT:SetSize(Size)
+	if not isvector(Size) then return false end
+
+	return ChangeSize(self, Size)
 end
 
-function ENT:SetSize(NewSize)
-	if not isvector(NewSize) then return end
-	if self.Size == NewSize then return end
-	if not self:GetOriginalSize() then return end
+function ENT:SetScale(Scale)
+	if isnumber(Scale) then Scale = Vector(Scale, Scale, Scale) end
+	if not isvector(Scale) then return false end
 
-	if self.ApplyNewSize then self:ApplyNewSize(NewSize) end
+	local Original = self:GetOriginalSize()
+	local Size = Vector(Original.x, Original.y, Original.z) * Scale
 
-	self.Size = NewSize
-
-	local PhysObj = self:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		if self.OnResized then self:OnResized() end
-
-		hook.Run("OnEntityResized", self, PhysObj, NewSize)
-	end
+	return ChangeSize(self, Size)
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
@@ -83,6 +101,10 @@ net.Receive("RequestSize", function()
 		if not Ent.Initialized then continue end
 
 		if Data.Size ~= Ent.Size or Data.Original ~= Ent.OriginalSize then
+			if Ent.SetExtraInfo then
+				Ent:SetExtraInfo(Data.Extra)
+			end
+
 			Ent.OriginalSize = Data.Original
 			Ent:SetSize(Data.Size)
 		end
@@ -91,11 +113,10 @@ net.Receive("RequestSize", function()
 	end
 end)
 
--- Commented out for the moment, something's causing crashes
--- TODO: Maybe hijack PhysObj:EnableMotion instead?
---hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
-	--if Ent.IsScalable then return false end
---end)
+-- NOTE: Someone reported this could maybe be causing crashes. Please confirm.
+hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
+	if Ent.IsScalable then return false end
+end)
 
 hook.Add("NetworkEntityCreated", "Scalable Ent Full Update", function(Ent)
 	if Ent.IsScalable then

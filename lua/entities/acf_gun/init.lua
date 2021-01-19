@@ -5,15 +5,16 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF_RECOIL   = CreateConVar("acf_recoilpush", 1, FCVAR_ARCHIVE, "Whether or not ACF guns apply recoil", 0, 1)
+local ACF          = ACF
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
 local CheckLegal   = ACF_CheckLegal
 local Shove        = ACF.KEShove
 local Overpressure = ACF.Overpressure
+local Weapons	   = ACF.Classes.Weapons
+local AmmoTypes    = ACF.Classes.AmmoTypes
 local TraceRes     = {} -- Output for traces
 local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
 local Trace        = util.TraceLine
-local TimerExists  = timer.Exists
 local TimerCreate  = timer.Create
 local HookRun      = hook.Run
 local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -31,117 +32,178 @@ local function UpdateTotalAmmo(Entity)
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
 end
 
-do -- Spawn Func --------------------------------
-	function MakeACF_Gun(Player, Pos, Angle, Id, Data)
-		local List   = ACF.Weapons
-		local EID    = List.Guns[Id] and Id or "50mmC"
-		local Lookup = List.Guns[EID]
-		local Ext  = Lookup.gunclass == "SL" and "_acf_smokelauncher" or "_acf_gun"
-		local ClassData = ACF.Classes.GunClass[Lookup.gunclass]
-		local Caliber   = Lookup.caliber
+do -- Spawn and Update functions --------------------------------
+	local Updated = {
+		["20mmHRAC"] = "20mmRAC",
+		["30mmHRAC"] = "30mmRAC",
+		["40mmCL"] = "40mmGL",
+	}
 
-		if not Player:CheckLimit(Ext) then return false end -- Check gun spawn limits
+	local function VerifyData(Data)
+		if not Data.Weapon then
+			Data.Weapon = Data.Id or "50mmC"
+		end
+
+		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+
+		if not Class then
+			Data.Weapon = Data.Weapon and Updated[Data.Weapon] or "50mmC"
+
+			Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		end
+
+		do -- External verifications
+			if Class.VerifyData then
+				Class.VerifyData(Data, Class)
+			end
+
+			HookRun("ACF_VerifyData", "acf_gun", Data, Class)
+		end
+	end
+
+	local function CreateInputs(Entity, Data, Class, Weapon)
+		local List = { "Fire", "Unload", "Reload" }
+
+		if Class.SetupInputs then
+			Class.SetupInputs(List, Entity, Data, Class, Weapon)
+		end
+
+		HookRun("ACF_OnSetupInputs", "acf_gun", List, Entity, Data, Class, Weapon)
+
+		if Entity.Inputs then
+			Entity.Inputs = WireLib.AdjustInputs(Entity, List)
+		else
+			Entity.Inputs = WireLib.CreateInputs(Entity, List)
+		end
+	end
+
+	local function CreateOutputs(Entity, Data, Class, Weapon)
+		local List = { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" }
+
+		if Class.SetupOutputs then
+			Class.SetupOutputs(List, Entity, Data, Class, Weapon)
+		end
+
+		HookRun("ACF_OnSetupOutputs", "acf_gun", List, Entity, Data, Class, Weapon)
+
+		if Entity.Outputs then
+			Entity.Outputs = WireLib.AdjustOutputs(Entity, List)
+		else
+			Entity.Outputs = WireLib.CreateOutputs(Entity, List)
+		end
+	end
+
+	local function UpdateWeapon(Entity, Data, Class, Weapon)
+		Entity:SetModel(Weapon.Model)
+
+		Entity:PhysicsInit(SOLID_VPHYSICS)
+		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+
+		-- Storing all the relevant information on the entity for duping
+		for _, V in ipairs(Entity.DataStore) do
+			Entity[V] = Data[V]
+		end
+
+		Entity.Name           = Weapon.Name
+		Entity.ShortName      = Weapon.ID
+		Entity.EntType        = Class.Name
+		Entity.ClassData      = Class
+		Entity.WeaponData     = Weapon
+		Entity.Class          = Class.ID -- Needed for custom killicons
+		Entity.Caliber        = Weapon.Caliber
+		Entity.MagReload      = Weapon.MagReload
+		Entity.MagSize        = Weapon.MagSize or 1
+		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
+		Entity.ReloadTime     = Entity.Cyclic or 1
+		Entity.Spread         = Class.Spread
+		Entity.DefaultSound   = Class.Sound
+		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
+		Entity.Long           = Class.LongBarrel
+		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
+		Entity.Muzzle         = Entity.NormalMuzzle
+
+		CreateInputs(Entity, Data, Class, Weapon)
+		CreateOutputs(Entity, Data, Class, Weapon)
+
+		-- Set NWvars
+		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
+		Entity:SetNWString("Class", Entity.Class)
+		Entity:SetNWString("ID", Entity.Weapon)
+
+		-- Adjustable barrel length
+		if Entity.Long then
+			local Attachment = Entity:GetAttachment(Entity:LookupAttachment(Entity.Long.NewPos))
+
+			Entity.LongMuzzle = Attachment and Entity:WorldToLocal(Attachment.Pos)
+		end
+
+		if Entity.Cyclic then -- Automatics don't change their rate of fire
+			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)
+		end
+
+		ACF.Activate(Entity, true)
+
+		Entity.ACF.LegalMass	= Weapon.Mass
+		Entity.ACF.Model		= Weapon.Model
+
+		local Phys = Entity:GetPhysicsObject()
+		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
+	end
+
+	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Class, List, Entity)
+		if Class ~= "acf_gun" then return end
+		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
+
+		List[#List + 1] = "Fuze"
+	end)
+
+	-------------------------------------------------------------------------------
+
+	function MakeACF_Weapon(Player, Pos, Angle, Data)
+		VerifyData(Data)
+
+		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Weapon = Class.Lookup[Data.Weapon]
+		local Limit = Class.LimitConVar.Name
+
+		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
 		local Gun = ents.Create("acf_gun")
 
 		if not IsValid(Gun) then return end
 
-		Player:AddCleanup("acfmenu", Gun)
-		Player:AddCount(Ext, Gun)
+		Player:AddCleanup(Class.Cleanup, Gun)
+		Player:AddCount(Limit, Gun)
 
-		Gun:SetModel(Lookup.model)
 		Gun:SetPlayer(Player)
 		Gun:SetAngles(Angle)
 		Gun:SetPos(Pos)
 		Gun:Spawn()
 
-		Gun:PhysicsInit(SOLID_VPHYSICS)
-		Gun:SetMoveType(MOVETYPE_VPHYSICS)
-
-		Gun.Id           = Id -- MUST be stored on ent to be duped
 		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.Outputs 	 = WireLib.CreateOutputs(Gun, { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" })
+		Gun.SoundPath    = Class.Sound
+		Gun.BarrelFilter = { Gun }
+		Gun.State        = "Empty"
+		Gun.Crates       = {}
+		Gun.CurrentShot  = 0
+		Gun.BulletData   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+		Gun.DataStore    = ACF.GetEntityArguments("acf_gun")
 
-		if Caliber > ACF.MinFuzeCaliber then
-			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload", "Fuze" })
-		else
-			Gun.Inputs = WireLib.CreateInputs(Gun, { "Fire", "Unload", "Reload" })
-		end
+		Gun:SetNWString("Sound", Class.Sound)
 
-		-- ACF Specific vars
-		Gun.BarrelFilter 	= { Gun }
-		Gun.State        	= "Empty"
-		Gun.Crates       	= {}
-		Gun.Name			= Lookup.name
-		Gun.ShortName		= Id
-		Gun.EntType			= ClassData.name
-		Gun.Caliber			= Caliber
-		Gun.Class			= Lookup.gunclass
-		Gun.MagReload		= Lookup.magreload
-		Gun.MagSize			= Lookup.magsize or 1
-		Gun.Cyclic			= Lookup.Cyclic and 60 / Lookup.Cyclic or nil
-		Gun.ReloadTime		= Gun.Cyclic or 1
-		Gun.CurrentShot		= 0
-		Gun.Spread			= ClassData.spread
-		Gun.MinLengthBonus 	= 0.75 * 3.1416 * (Caliber / 2) ^ 2 * Lookup.round.maxlength
-		Gun.Muzzleflash		= ClassData.muzzleflash
-		Gun.PGRoFmod		= math.max(0.01, Lookup.rofmod or 1)
-		Gun.RoFmod			= ClassData.rofmod
-		Gun.Sound			= ClassData.sound
-		Gun.BulletData		= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.HitBoxes		= ACF.HitBoxes[Lookup.model]
-		Gun.Long			= ClassData.longbarrel
-		Gun.NormalMuzzle	= Gun:WorldToLocal(Gun:GetAttachment(Gun:LookupAttachment("muzzle")).Pos)
-		Gun.Muzzle			= Gun.NormalMuzzle
-
-		-- Set NWvars
-		Gun:SetNWString("Sound", Gun.Sound)
-		Gun:SetNWString("WireName", "ACF " .. Lookup.name)
-		Gun:SetNWString("ID", Id)
-		Gun:SetNWString("Class", Gun.Class)
-
-		-- Adjustable barrel length
-		if Gun.Long then
-			local Attachment = Gun:GetAttachment(Gun:LookupAttachment(Gun.Long.newpos))
-
-			Gun.LongMuzzle = Attachment and Gun:WorldToLocal(Attachment.Pos)
-
-			timer.Simple(0, function()
-				if not IsValid(Gun) then return end
-				if not Attachment then return end
-
-				local Long = Gun.Long
-
-				if Gun:GetBodygroup(Long.index) == Long.submodel then
-					Gun.Muzzle = Gun.LongMuzzle
-				end
-			end)
-		end
-
-		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
-			if not IsValid(Gun) then return end
-
-			UpdateTotalAmmo(Gun)
-		end)
+		UpdateWeapon(Gun, Data, Class, Weapon)
 
 		WireLib.TriggerOutput(Gun, "Status", "Empty")
 		WireLib.TriggerOutput(Gun, "Entity", Gun)
 		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
 
-		if Gun.Cyclic then -- Automatics don't change their rate of fire
-			WireLib.TriggerOutput(Gun, "Reload Time", Gun.Cyclic)
-			WireLib.TriggerOutput(Gun, "Rate of Fire", 60 / Gun.Cyclic)
+		if Class.OnSpawn then
+			Class.OnSpawn(Gun, Data, Class, Weapon)
 		end
 
-		local Mass = Lookup.weight
-		local Phys = Gun:GetPhysicsObject()
-		if IsValid(Phys) then Phys:SetMass(Mass) end
-
-		ACF_Activate(Gun)
-
-		Gun.ACF.LegalMass     = Mass
-		Gun.ACF.Model         = Lookup.model
+		HookRun("ACF_OnEntitySpawn", "acf_gun", Gun, Data, Class, Weapon)
 
 		Gun:UpdateOverlay(true)
 
@@ -153,70 +215,96 @@ do -- Spawn Func --------------------------------
 			end
 		end
 
+		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
+			if not IsValid(Gun) then return end
+
+			UpdateTotalAmmo(Gun)
+		end)
+
 		CheckLegal(Gun)
 
 		return Gun
 	end
 
-	list.Set("ACFCvars", "acf_gun", {"id"} )
-	duplicator.RegisterEntityClass("acf_gun", MakeACF_Gun, "Pos", "Angle", "Id", "Data")
+	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
-	function ENT:ACF_Activate(Recalc)
-		local PhysObj = self.ACF.PhysObj
+	------------------- Updating ---------------------
 
-		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+	function ENT:Update(Data)
+		if self.Firing then return false, "Stop firing before updating the weapon!" end
+
+		VerifyData(Data)
+
+		local Class    = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Weapon   = Class.Lookup[Data.Weapon]
+		local OldClass = self.ClassData
+
+		if self.State ~= "Empty" then
+			self:Unload()
 		end
 
-		local Volume = PhysObj:GetVolume() * 2
-
-		local Armour = self.Caliber * 10
-		local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
-		local Percent = 1
-
-		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-			Percent = self.ACF.Health / self.ACF.MaxHealth
+		if OldClass.OnLast then
+			OldClass.OnLast(self, OldClass)
 		end
 
-		self.ACF.Health = Health * Percent
-		self.ACF.MaxHealth = Health
-		self.ACF.Armour = Armour * (0.5 + Percent / 2)
-		self.ACF.MaxArmour = Armour
-		self.ACF.Type = "Prop"
+		HookRun("ACF_OnEntityLast", "acf_gun", self, OldClass)
+
+		ACF.SaveEntity(self)
+
+		UpdateWeapon(self, Data, Class, Weapon)
+
+		ACF.RestoreEntity(self)
+
+		if Class.OnUpdate then
+			Class.OnUpdate(self, Data, Class, Weapon)
+		end
+
+		HookRun("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+
+		if next(self.Crates) then
+			for Crate in pairs(self.Crates) do
+				self:Unlink(Crate)
+			end
+		end
+
+		self:UpdateOverlay(true)
+
+		net.Start("ACF_UpdateEntity")
+			net.WriteEntity(self)
+		net.Broadcast()
+
+		return true, "Weapon updated successfully!"
 	end
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
 	do -- Inputs/Outputs/Linking ----------------
-		local ClassLink	  = ACF.GetClassLink
-		local ClassUnlink = ACF.GetClassUnlink
-
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(Weapon, Target)
-			if Weapon.Crates[Target] then return false, "This weapon is already linked to this crate." end
-			if Target.Weapons[Weapon] then return false, "This weapon is already linked to this crate." end
-			if Target.RoundType == "Refill" then return false, "Refill crates cannot be linked to weapons." end
-			if Weapon.Id ~= Target.BulletData.Id then return false, "Wrong ammo type for this weapon." end
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
+			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
+			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
+			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
+			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 
-			local Blacklist = ACF.AmmoBlacklist[Target.RoundType]
+			local Blacklist = Crate.RoundData.Blacklist
 
-			if table.HasValue(Blacklist, Weapon.Class) then
-				return false, "That round type can't be used with this weapon."
+			if Blacklist[This.Class] then
+				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
-			Weapon.Crates[Target]  = true
-			Target.Weapons[Weapon] = true
+			This.Crates[Crate]  = true
+			Crate.Weapons[This] = true
 
-			Weapon:UpdateOverlay(true)
-			Target:UpdateOverlay(true)
+			This:UpdateOverlay(true)
+			Crate:UpdateOverlay(true)
 
-			if Weapon.State == "Empty" then -- When linked to an empty weapon, attempt to load it
+			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					if IsValid(Weapon) and IsValid(Target) and Weapon.State == "Empty" and Target:CanConsume() then
-						Weapon:Load()
+					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate:CanConsume() then
+						This:Load()
 					end
 				end)
 			end
@@ -224,118 +312,53 @@ do -- Metamethods --------------------------------
 			return true, "Weapon linked successfully."
 		end)
 
-		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(Weapon, Target)
-			if Weapon.Crates[Target] or Target.Weapons[Weapon] then
-				Weapon.Crates[Target]  = nil
-				Target.Weapons[Weapon] = nil
+		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(This, Crate)
+			if This.Crates[Crate] or Crate.Weapons[This] then
+				if This.CurrentCrate == Crate then
+					This.CurrentCrate = next(This.Crates, Crate)
+				end
 
-				Weapon:UpdateOverlay(true)
-				Target:UpdateOverlay(true)
+				This.Crates[Crate]  = nil
+				Crate.Weapons[This] = nil
+
+				This:UpdateOverlay(true)
+				Crate:UpdateOverlay(true)
 
 				return true, "Weapon unlinked successfully."
 			end
 
-
-			if not Weapon.Crates[Target] then return false, "This weapon is not linked to this crate." end
+			return false, "This weapon is not linked to this crate."
 		end)
 
-		local WireTable	  = {
-			gmod_wire_adv_pod = true,
-			gmod_wire_joystick = true,
-			gmod_wire_expression2 = true,
-			gmod_wire_joystick_multi = true,
-			gmod_wire_pod = function(_, Input)
-				if IsValid(Input.Pod) then
-					return Input.Pod:GetDriver()
-				end
-			end,
-			gmod_wire_keyboard = function(_, Input)
-				if Input.ply then
-					return Input.ply
-				end
-			end,
-		}
-
-		local function FindUser(Entity, Input, Checked)
-			local Function = WireTable[Input:GetClass()]
-
-			return Function and Function(Entity, Input, Checked or {})
-		end
-
-		WireTable.gmod_wire_adv_pod			= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_joystick		= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_joystick_multi	= WireTable.gmod_wire_pod
-		WireTable.gmod_wire_expression2		= function(This, Input, Checked)
-			for _, V in pairs(Input.Inputs) do
-				if IsValid(V.Src) and not Checked[V.Src] and WireTable[V.Src:GetClass()] then
-					Checked[V.Src] = true -- We don't want to start an infinite loop
-
-					return FindUser(This, V.Src, Checked)
-				end
-			end
-		end
-
-		function ENT:GetUser(Input)
-			if not IsValid(Input) then return self.Owner end
-
-			local User = FindUser(self, Input)
-
-			return IsValid(User) and User or self.Owner
-		end
-
-		function ENT:TriggerInput(Input, Value)
-			if self.Disabled then return end -- Ignore all input if the gun is disabled
-
+		ACF.AddInputAction("acf_gun", "Fire", function(Entity, Value)
 			local Bool = tobool(Value)
 
-			if Input == "Fire" then
-				self.Firing = Bool
+			Entity.Firing = Bool
 
-				if Bool and self:CanFire() then
-					self:Shoot()
-				end
-			elseif Input == "Fuze" then
-				self.SetFuze = Bool and math.abs(Value) or nil
-			elseif Input == "Unload" then
-				if Bool and self.State == "Loaded" then
-					self:Unload()
-				end
-			elseif Input == "Reload" then
-				if Bool then
-					if self.State == "Loaded" then
-						self:Unload(true) -- Unload, then reload
-					elseif self.State == "Empty" then
-						self:Load()
-					end
+			if Bool and Entity:CanFire() then
+				Entity:Shoot()
+			end
+		end)
+
+		ACF.AddInputAction("acf_gun", "Unload", function(Entity, Value)
+			if tobool(Value) and Entity.State == "Loaded" then
+				Entity:Unload()
+			end
+		end)
+
+		ACF.AddInputAction("acf_gun", "Reload", function(Entity, Value)
+			if tobool(Value) then
+				if Entity.State == "Loaded" then
+					Entity:Unload(true) -- Unload, then reload
+				elseif Entity.State == "Empty" then
+					Entity:Load()
 				end
 			end
-		end
+		end)
 
-		function ENT:Link(Target)
-			if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
-			if self == Target then return false, "Can't link a weapon to itself." end
-
-			local Function = ClassLink(self:GetClass(), Target:GetClass())
-
-			if Function then
-				return Function(self, Target)
-			end
-
-			return false, "Guns can't be linked to '" .. Target:GetClass() .. "'."
-		end
-
-		function ENT:Unlink(Target)
-			if not IsValid(Target) then return false, "Attempted to unlink an invalid entity." end
-			if self == Target then return false, "Can't unlink a weapon from itself." end
-
-			local Function = ClassUnlink(self:GetClass(), Target:GetClass())
-
-			if Function then
-				return Function(self, Target)
-			end
-
-			return false, "Guns can't be unlinked from '" .. Target:GetClass() .. "'."
-		end
+		ACF.AddInputAction("acf_gun", "Fuze", function(Entity, Value)
+			Entity.SetFuze = tobool(Value) and math.abs(Value)
+		end)
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
@@ -349,7 +372,7 @@ do -- Metamethods --------------------------------
 			if TraceRes.Hit then
 				local Entity = TraceRes.Entity
 
-				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self.Owner then
+				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self:GetPlayer() then
 					self.BarrelFilter[#self.BarrelFilter + 1] = Entity
 
 					return self:BarrelCheck(Offset)
@@ -360,13 +383,12 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:CanFire()
-			if not IsValid(self) then return false end -- Weapon doesn't exist
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
 			if self.State ~= "Loaded" then -- Weapon is not loaded
 				if self.State == "Empty" and not self.Retry then
 					if not self:Load() then
-						self:EmitSound("weapons/pistol/pistol_empty.wav", 70, 100, ACF.SoundVolume) -- Click!
+						self:EmitSound("weapons/pistol/pistol_empty.wav", 70, 100, ACF.Volume) -- Click!
 					end
 
 					self.Retry = true
@@ -404,7 +426,7 @@ do -- Metamethods --------------------------------
 			local Velocity = ACF_GetAncestor(self):GetVelocity()
 
 			if self.BulletData.CanFuze and self.SetFuze then
-				local Variance = math.Rand(-0.015, 0.015) * (20.3 - self.Caliber) * 0.1
+				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - self.Caliber) * 0.01
 
 				self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
 			else
@@ -414,13 +436,13 @@ do -- Metamethods --------------------------------
 			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 
 			self.BulletData.Owner  = self.CurrentUser
-			self.BulletData.Gun	   = self      -- because other guns share this table
+			self.BulletData.Gun	   = self -- because other guns share this table
 			self.BulletData.Pos    = self:BarrelCheck(Velocity * engine.TickInterval())
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			self.BulletData.Filter = self.BarrelFilter
 
-			ACF.RoundTypes[self.BulletData.Type].create(self, self.BulletData) -- Spawn projectile
+			AmmoTypes[self.BulletData.Type]:Create(self, self.BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
 			self:Recoil()
@@ -464,7 +486,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Recoil()
-			if not ACF_RECOIL:GetBool() then return end
+			if not ACF.RecoilPush then return end
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
@@ -478,9 +500,7 @@ do -- Metamethods --------------------------------
 			if not next(Gun.Crates) then return end
 
 			-- Find the next available crate to pull ammo from --
-			local Current = Gun.CurrentCrate
-			local NextKey = (IsValid(Current) and Gun.Crates[Current]) and Current or nil
-			local Select = next(Gun.Crates, NextKey) or next(Gun.Crates)
+			local Select = next(Gun.Crates, Gun.CurrentCrate) or next(Gun.Crates)
 			local Start  = Select
 
 			repeat
@@ -501,7 +521,7 @@ do -- Metamethods --------------------------------
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
-			self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.SoundVolume)
+			self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
 			self.CurrentShot = 0
 			self.BulletData  = EMPTY
 
@@ -584,7 +604,7 @@ do -- Metamethods --------------------------------
 			self:SetState("Loading")
 
 			if self.MagReload then -- Mag-fed/Automatically loaded
-				self:EmitSound("weapons/357/357_reload4.wav", 500, 100)
+				self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
 
 				self.NextFire = ACF.CurTime + self.MagReload
 
@@ -646,50 +666,55 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local function Overlay(Ent)
-			if Ent.Disabled then
-				Ent:SetOverlayText("Disabled: " .. Ent.DisableReason .. "\n" .. Ent.DisableDescription)
+		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
+
+		function ENT:UpdateOverlayText()
+			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
+			local Firerate  = math.floor(60 / self.ReloadTime)
+			local CrateAmmo = 0
+			local Status
+
+			if not next(self.Crates) then
+				Status = "Not linked to an ammo crate!"
 			else
-				local Status
-				local AmmoType  = Ent.BulletData.Type .. (Ent.BulletData.Tracer ~= 0 and "-T" or "")
-				local Firerate  = math.floor(60 / Ent.ReloadTime)
-				local CrateAmmo = 0
-
-				if Ent.DisableReason then
-					Status = "Disabled: " .. Ent.DisableReason
-				elseif not next(Ent.Crates) then
-					Status = "Not linked to an ammo crate!"
-				else
-					Status = Ent.State == "Loaded" and "Loaded with " .. AmmoType or Ent.State
-				end
-
-				for Crate in pairs(Ent.Crates) do -- Tally up the amount of ammo being provided by active crates
-					if Crate:CanConsume() then
-						CrateAmmo = CrateAmmo + Crate.Ammo
-					end
-				end
-
-				Ent:SetOverlayText(string.format("%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s", Status, Firerate, Ent.CurrentShot, CrateAmmo))
+				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
 			end
-		end
 
-		function ENT:UpdateOverlay()
-			if TimerExists("ACF Overlay Buffer" .. self:EntIndex()) then -- This entity has been updated too recently
-				self.OverlayBuffer = true -- Mark it to update when buffer time has expired
-			else
-				TimerCreate("ACF Overlay Buffer" .. self:EntIndex(), 1, 1, function()
-					if IsValid(self) and self.OverlayBuffer then
-						self.OverlayBuffer = nil
-						self:UpdateOverlay()
-					end
-				end)
-
-				Overlay(self)
+			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates
+				if Crate:CanConsume() then
+					CrateAmmo = CrateAmmo + Crate.Ammo
+				end
 			end
+
+			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo)
 		end
 	end -----------------------------------------
 
 	do -- Misc ----------------------------------
+		function ENT:ACF_Activate(Recalc)
+			local PhysObj = self.ACF.PhysObj
+
+			if not self.ACF.Area then
+				self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
+			end
+
+			local Volume = PhysObj:GetVolume() * 2
+
+			local Armour = self.Caliber
+			local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+			local Percent = 1
+
+			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
+				Percent = self.ACF.Health / self.ACF.MaxHealth
+			end
+
+			self.ACF.Health = Health * Percent
+			self.ACF.MaxHealth = Health
+			self.ACF.Armour = Armour * (0.5 + Percent * 0.5)
+			self.ACF.MaxArmour = Armour
+			self.ACF.Type = "Prop"
+		end
+
 		function ENT:SetState(State)
 			self.State = State
 
@@ -709,8 +734,8 @@ do -- Metamethods --------------------------------
 					if Crate:GetPos():DistToSqr(Pos) > 62500 then -- 250 unit radius
 						self:Unlink(Crate)
 
-						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.SoundVolume)
-						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.SoundVolume)
+						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
+						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
 					end
 				end
 			end
@@ -737,7 +762,7 @@ do -- Metamethods --------------------------------
 					if not IsValid(self) then return end
 
 					local Long = self.Long
-					local IsLong = self:GetBodygroup(Long.index) == Long.submodel
+					local IsLong = self:GetBodygroup(Long.Index) == Long.Submodel
 
 					self.Muzzle = IsLong and self.LongMuzzle or self.NormalMuzzle
 				end)
@@ -747,6 +772,14 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:OnRemove()
+			local Class = self.ClassData
+
+			if Class.OnLast then
+				Class.OnLast(self, Class)
+			end
+
+			HookRun("ACF_OnEntityLast", "acf_gun", self, Class)
+
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
 			end

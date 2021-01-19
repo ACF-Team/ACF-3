@@ -1,8 +1,7 @@
 -- Entity validation for ACF
-local LegalHints = CreateConVar("acf_legalhints", 1, FCVAR_ARCHIVE)
 
 -- Local Vars -----------------------------------
-local Gamemode	  = GetConVar("acf_gamemode")
+local ACF         = ACF
 local StringFind  = string.find
 local TimerSimple = timer.Simple
 local Baddies	  = ACF.GlobalFilter
@@ -24,7 +23,7 @@ local Baddies	  = ACF.GlobalFilter
 	end
 ]]--
 local function IsLegal(Entity)
-	if Gamemode:GetInt() == 0 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
+	if ACF.Gamemode == 1 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
 
 	local Phys = Entity:GetPhysicsObject()
 
@@ -69,17 +68,17 @@ local function CheckLegal(Entity)
 			Entity:Disable() -- Let the entity know it's disabled
 
 			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-			if LegalHints:GetBool() then -- Notify the owner
+			if tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
 				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
 
 				if Reason == "Not drawn" or Reason == "Not solid" then -- Thank you garry, very cool
 					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 						if not IsValid(Entity) then return end
 
-						ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 					end)
 				else
-					ACF_SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
 				end
 			end
 		end
@@ -99,7 +98,7 @@ local function CheckLegal(Entity)
 		return false
 	end
 
-	if Gamemode:GetInt() ~= 0 then
+	if ACF.Gamemode ~= 1 then
 		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
 			if IsValid(Entity) then
 				CheckLegal(Entity)
@@ -110,7 +109,7 @@ local function CheckLegal(Entity)
 	return true
 end
 -- Global Funcs ---------------------------------
-function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
+function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
 	local Class = Entity:GetClass()
@@ -126,15 +125,15 @@ function ACF_Check(Entity, ForceUpdate) -- IsValid but for ACF
 			return false
 		end
 
-		ACF_Activate(Entity)
+		ACF.Activate(Entity)
 	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or Entity.ACF.PhysObj ~= PhysObj then
-		ACF_Activate(Entity, true)
+		ACF.Activate(Entity, true)
 	end
 
 	return Entity.ACF.Type
 end
 
-function ACF_Activate(Entity, Recalc)
+function ACF.Activate(Entity, Recalc)
 	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = Entity:GetPhysicsObject()
 
@@ -149,6 +148,7 @@ function ACF_Activate(Entity, Recalc)
 	end
 
 	-- TODO: Figure out what are the 6.45 and 0.52505066107 multipliers for
+	-- NOTE: Why are we applying multipliers to the stored surface area?
 	local SurfaceArea = PhysObj:GetSurfaceArea()
 
 	if SurfaceArea then -- Normal collisions
@@ -190,116 +190,8 @@ function ACF_Activate(Entity, Recalc)
 	end
 end
 
-do -- Entity Links ------------------------------
-	local EntityLink = {}
-	local function GetEntityLinks(Entity, VarName, SingleEntry)
-		if not Entity[VarName] then return {} end
-
-		if SingleEntry then
-			return { [Entity[VarName]] = true }
-		end
-
-		local Result = {}
-
-		for K in pairs(Entity[VarName]) do
-			Result[K] = true
-		end
-
-		return Result
-	end
-
-	-- If your entity can link/unlink other entities, you should use this
-	function ACF.RegisterLinkSource(Class, VarName, SingleEntry)
-		local Data = EntityLink[Class]
-
-		if not Data then
-			EntityLink[Class] = {
-				[VarName] = function(Entity)
-					return GetEntityLinks(Entity, VarName, SingleEntry)
-				end
-			}
-		else
-			Data[VarName] = function(Entity)
-				return GetEntityLinks(Entity, VarName, SingleEntry)
-			end
-		end
-	end
-
-	function ACF.GetAllLinkSources(Class)
-		if not EntityLink[Class] then return {} end
-
-		local Result = {}
-
-		for K, V in pairs(EntityLink[Class]) do
-			Result[K] = V
-		end
-
-		return Result
-	end
-
-	function ACF.GetLinkSource(Class, VarName)
-		if not EntityLink[Class] then return end
-
-		return EntityLink[Class][VarName]
-	end
-
-	local ClassLink = { Link = {}, Unlink = {} }
-	local function RegisterNewLink(Action, Class1, Class2, Function)
-		if not isfunction(Function) then return end
-
-		local Target = ClassLink[Action]
-		local Data1 = Target[Class1]
-
-		if not Data1 then
-			Target[Class1] = {
-				[Class2] = function(Ent1, Ent2)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data1[Class2] = function(Ent1, Ent2)
-				return Function(Ent1, Ent2)
-			end
-		end
-
-		if Class1 == Class2 then return end
-
-		local Data2 = Target[Class2]
-
-		if not Data2 then
-			Target[Class2] = {
-				[Class1] = function(Ent2, Ent1)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data2[Class1] = function(Ent2, Ent1)
-				return Function(Ent1, Ent2)
-			end
-		end
-	end
-
-	function ACF.RegisterClassLink(Class1, Class2, Function)
-		RegisterNewLink("Link", Class1, Class2, Function)
-	end
-
-	function ACF.GetClassLink(Class1, Class2)
-		if not ClassLink.Link[Class1] then return end
-
-		return ClassLink.Link[Class1][Class2]
-	end
-
-	function ACF.RegisterClassUnlink(Class1, Class2, Function)
-		RegisterNewLink("Unlink", Class1, Class2, Function)
-	end
-
-	function ACF.GetClassUnlink(Class1, Class2)
-		if not ClassLink.Unlink[Class1] then return end
-
-		return ClassLink.Unlink[Class1][Class2]
-	end
-end ---------------------------------------------
-
 -- Globalize ------------------------------------
-ACF_IsLegal 	 = IsLegal
-ACF_CheckLegal 	 = CheckLegal
+ACF_IsLegal    = IsLegal
+ACF_CheckLegal = CheckLegal
+ACF_Check      = ACF.Check
+ACF_Activate   = ACF.Activate

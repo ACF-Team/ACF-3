@@ -11,13 +11,13 @@ E2Lib.RegisterExtension("acf", true)
 -- Local Variables and Helper Functions
 --===============================================================================================--
 
-local RestrictInfoConVar = GetConVar("sbox_acf_restrictinfo")
+local ACF            = ACF
 local AllLinkSources = ACF.GetAllLinkSources
-local LinkSource = ACF.GetLinkSource
-local RoundTypes = ACF.RoundTypes
-local match = string.match
-local floor = math.floor
-local Round = math.Round
+local LinkSource     = ACF.GetLinkSource
+local AmmoTypes      = ACF.Classes.AmmoTypes
+local match          = string.match
+local floor          = math.floor
+local Round          = math.Round
 
 local function IsACFEntity(Entity)
 	if not validPhysics(Entity) then return false end
@@ -28,7 +28,7 @@ local function IsACFEntity(Entity)
 end
 
 local function RestrictInfo(Player, Entity)
-	if not RestrictInfoConVar:GetBool() then return false end
+	if not ACF.RestrictInfo then return false end
 
 	return not isOwner(Player, Entity)
 end
@@ -102,27 +102,17 @@ end
 
 -- Returns 1 if functions returning sensitive info are restricted to owned props
 e2function number acfInfoRestricted()
-	return RestrictInfoConVar:GetBool() and 1 or 0
+	return ACF.RestrictInfo and 1 or 0
 end
 
 __e2setcost(5)
 
--- Returns the full name of an ACF entity, or the next projectile on a rack
+-- Returns the full name of an ACF entity
 e2function string entity:acfName()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	if not this.Name then
-		if not this.BulletData then return "" end	-- If not a a rack
-		if not this.BulletData.Id then return "" end
-
-		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
-		if not GunData then return "" end
-
-		return GunData.name or ""
-	end
-
-	return this.Name
+	return this.Name or ""
 end
 
 -- Returns the short name of an ACF entity
@@ -146,7 +136,7 @@ e2function number entity:acfIsEngine()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_engine" and 1 or 0
+	return this.IsEngine and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF gearbox
@@ -154,7 +144,7 @@ e2function number entity:acfIsGearbox()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_gearbox" and 1 or 0
+	return this.IsGearbox and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF gun
@@ -162,7 +152,7 @@ e2function number entity:acfIsGun()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_gun" and 1 or 0
+	return this.IsWeapon and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF ammo crate
@@ -170,7 +160,7 @@ e2function number entity:acfIsAmmo()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_ammo" and 1 or 0
+	return this.IsAmmoCrate and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF fuel tank
@@ -178,7 +168,7 @@ e2function number entity:acfIsFuel()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this:GetClass() == "acf_fueltank" and 1 or 0
+	return this.IsFuelTank and 1 or 0
 end
 
 -- Returns the capacity of an acf ammo crate or fuel tank
@@ -211,8 +201,6 @@ e2function void entity:acfActive(number On)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
 
-	-- Both have the same function on different entities
-	this:TriggerInput("Load", On)
 	this:TriggerInput("Active", On)
 end
 
@@ -220,49 +208,55 @@ end
 e2function number entity:acfPropHealth()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
-	if not this.ACF.Health then return 0 end
+	if not ACF.Check(this) then return 0 end
 
-	return Round(this.ACF.Health, 2)
+	local Health = this.ACF.Health
+
+	return Health and Round(Health, 2) or 0
 end
 
 -- Returns the current armor of an entity
 e2function number entity:acfPropArmor()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
-	if not this.ACF.Armour then return 0 end
+	if not ACF.Check(this) then return 0 end
 
-	return Round(this.ACF.Armour, 2)
+	local Armor = this.ACF.Armour
+
+	return Armor and Round(Armor, 2) or 0
 end
 
 -- Returns the max health of an entity
 e2function number entity:acfPropHealthMax()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
-	if not this.ACF.MaxHealth then return 0 end
+	if not ACF.Check(this) then return 0 end
 
-	return Round(this.ACF.MaxHealth, 2)
+	local MaxHealth = this.ACF.MaxHealth
+
+	return MaxHealth and Round(MaxHealth, 2) or 0
 end
 
 -- Returns the max armor of an entity
 e2function number entity:acfPropArmorMax()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
+	if not ACF.Check(this) then return 0 end
 
-	return Round(this.ACF.MaxArmour or 0, 2)
+	local MaxArmor = this.ACF.MaxArmour
+
+	return MaxArmor and Round(MaxArmor, 2) or 0
 end
 
 -- Returns the ductility of an entity
 e2function number entity:acfPropDuctility()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF_Check(this) then return 0 end
-	if not this.ACF.Ductility then return 0 end
+	if not ACF.Check(this) then return 0 end
 
-	return this.ACF.Ductility * 100
+	local Ductility = this.ACF.Ductility
+
+	return Ductility and Ductility * 100 or 0
 end
 
 __e2setcost(10)
@@ -276,12 +270,12 @@ end
 e2function number ranger:acfEffectiveArmor()
 	if not (this and validPhysics(this.Entity)) then return 0 end
 	if RestrictInfo(self, this.Entity) then return 0 end
-	if not ACF_Check(this.Entity) then return 0 end
-	if not this.Entity.ACF.Armour then return 0 end
+	if not ACF.Check(this.Entity) then return 0 end
 
+	local Armor    = this.Entity.ACF.Armour
 	local HitAngle = ACF_GetHitAngle(this.HitNormal , this.HitPos - this.StartPos)
 
-	return Round(this.Entity.ACF.Armour / math.abs(math.cos(math.rad(HitAngle))), 2)
+	return Round(Armor / math.abs(math.cos(math.rad(HitAngle))), 2)
 end
 
 __e2setcost(20)
@@ -291,7 +285,7 @@ e2function number entity:acfHitClip(vector HitPos)
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return ACF_CheckClips(this, HitPos) and 1 or 0
+	return ACF.CheckClips(this, HitPos) and 1 or 0
 end
 
 -- Returns all the linked entities
@@ -299,15 +293,13 @@ e2function array entity:acfLinks()
 	if not IsACFEntity(this) then return {} end
 	if RestrictInfo(self, this) then return {} end
 
-	local Sources = AllLinkSources(this:GetClass())
 	local Result = {}
 	local Count = 0
 
-	for _, Function in pairs(Sources) do
-		for Entity in pairs(Function(this)) do
-			Count = Count + 1
-			Result[Count] = Entity
-		end
+	for Entity in pairs(ACF.GetLinkedEntities(this)) do
+		Count = Count + 1
+
+		Result[Count] = Entity
 	end
 
 	return Result
@@ -319,7 +311,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "Must be called on entities you own.")
+			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -327,7 +319,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 
 	if not this.Link then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "This entity is not linkable.")
+			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
 		end
 
 		return 0
@@ -336,7 +328,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	local Sucess, Message = this:Link(Target)
 
 	if Notify ~= 0 then
-		ACF_SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Sucess, Message)
 	end
 
 	return Sucess and 1 or 0
@@ -348,7 +340,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "Must be called on entities you own.")
+			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -356,7 +348,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	if not this.Unlink then
 		if Notify ~= 0 then
-			ACF_SendNotify(self.player, 0, "This entity is not linkable.")
+			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
 		end
 
 		return 0
@@ -365,7 +357,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	local Sucess, Message = this:Unlink(Target)
 
 	if Notify > 0 then
-		ACF_SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Sucess, Message)
 	end
 
 	return Sucess and 1 or 0
@@ -461,18 +453,20 @@ end
 e2function number entity:acfRPM()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.FlyRPM then return 0 end
 
-	return floor(this.FlyRPM)
+	local FlyRPM = this.FlyRPM
+
+	return FlyRPM and floor(FlyRPM) or 0
 end
 
 -- Returns the current torque of an ACF engine
 e2function number entity:acfTorque()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Torque then return 0 end
 
-	return floor(this.Torque)
+	local Torque = this.Torque
+
+	return Torque and floor(Torque) or 0
 end
 
 -- Returns the inertia of an ACF engine's flywheel
@@ -487,9 +481,8 @@ end
 e2function number entity:acfFlyMass()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Inertia then return 0 end
 
-	return (this.Inertia / 3.1416) * (this.Inertia / 3.1416)
+	return this.FlywheelMass or 0
 end
 
 -- Returns the current power of an ACF engine
@@ -531,9 +524,10 @@ end
 e2function number entity:acfThrottle()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Throttle then return 0 end
 
-	return this.Throttle * 100
+	local Throttle = this.Throttle
+
+	return Throttle and Throttle * 100 or 0
 end
 
 -- Sets the throttle value for an ACF engine
@@ -557,16 +551,15 @@ e2function number entity:acfNumGears()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.Gears or 0
+	return this.GearCount or 0
 end
 
 -- Returns the final ratio for an ACF gearbox
 e2function number entity:acfFinalRatio()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.GearTable then return 0 end
 
-	return this.GearTable.Final or 0
+	return this.FinalDrive or 0
 end
 
 -- Returns the total ratio (current gear * final) for an ACF gearbox
@@ -590,16 +583,17 @@ e2function number entity:acfIsDual()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.Dual and 1 or 0
+	return this.DualClutch and 1 or 0
 end
 
 -- Returns the time in ms an ACF gearbox takes to change gears
 e2function number entity:acfShiftTime()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.SwitchTime then return 0 end
 
-	return this.SwitchTime * 1000
+	local Time = this.SwitchTime
+
+	return Time and Time * 1000 or 0
 end
 
 -- Returns 1 if an ACF gearbox is in gear
@@ -614,12 +608,9 @@ end
 e2function number entity:acfGearRatio(number Gear)
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.GearTable then return 0 end
 	if not this.Gears then return 0 end
 
-	local GearNum = math.Clamp(floor(Gear), 1, this.Gears)
-
-	return this.GearTable[GearNum] or 0
+	return this.Gears[floor(Gear)] or 0
 end
 
 -- Returns the current torque output for an ACF gearbox
@@ -634,7 +625,6 @@ end
 e2function void entity:acfCVTRatio(number Ratio)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.CVT then return end
 
 	this:TriggerInput("CVT Ratio", math.Clamp(Ratio, 0, 1))
 end
@@ -675,7 +665,6 @@ end
 e2function void entity:acfBrakeLeft(number Brake)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Dual then return end
 
 	this:TriggerInput("Left Brake", Brake)
 end
@@ -684,7 +673,6 @@ end
 e2function void entity:acfBrakeRight(number Brake)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Dual then return end
 
 	this:TriggerInput("Right Brake", Brake)
 end
@@ -701,7 +689,6 @@ end
 e2function void entity:acfClutchLeft(number Clutch)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Dual then return end
 
 	this:TriggerInput("Left Clutch", Clutch)
 end
@@ -710,7 +697,6 @@ end
 e2function void entity:acfClutchRight(number Clutch)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Dual then return end
 
 	this:TriggerInput("Right Clutch", Clutch)
 end
@@ -719,7 +705,6 @@ end
 e2function void entity:acfSteerRate(number Rate)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.DoubleDiff then return end
 
 	this:TriggerInput("Steer Rate", Rate)
 end
@@ -728,7 +713,6 @@ end
 e2function void entity:acfHoldGear(number Hold)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Auto then return end
 
 	this:TriggerInput("Hold Gear", Hold)
 end
@@ -737,7 +721,6 @@ end
 e2function void entity:acfShiftPointScale(number Scale)
 	if not IsACFEntity(this) then return end
 	if not isOwner(self, this) then return end
-	if not this.Auto then return end
 
 	this:TriggerInput("Shift Speed Scale", Scale)
 end
@@ -911,9 +894,10 @@ end
 e2function number entity:acfFireRate()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.ReloadTime then return 0 end
 
-	return Round(60 / this.ReloadTime, 2)
+	local Time = this.ReloadTime
+
+	return Time and Round(60 / Time, 2) or 0
 end
 
 -- Returns the number of rounds left in a magazine for an ACF gun
@@ -961,135 +945,113 @@ e2function string entity:acfRoundType()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	return this.RoundType or ""
+	local BulletData = this.BulletData
+
+	return BulletData and BulletData.Id or ""
 end
 
 -- Returns the type of ammo in a crate or gun
 e2function string entity:acfAmmoType()
 	if not IsACFEntity(this) then return "" end
 	if RestrictInfo(self, this) then return "" end
-	if not this.BulletData then return "" end
 
-	return this.BulletData.Type or ""
+	local BulletData = this.BulletData
+
+	return BulletData and BulletData.Type or ""
 end
 
--- Returns the caliber of an ammo, gun or rack
+-- Returns the caliber of an ammo
 e2function number entity:acfCaliber()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.Caliber then 		-- If not a gun or ammo crate
-		if not this.BulletData then return 0 end	-- If not a a rack
-		if not this.BulletData.Id then return 0 end
 
-		local GunData = ACF.Weapons.Guns[this.BulletData.Id]
-
-		if not GunData then return 0 end
-
-		return GunData.caliber * 10 or 0
-	end
-
-	return this.Caliber * 10
+	return this.Caliber or 0
 end
 
 -- Returns the muzzle velocity of the ammo in a crate or gun
 e2function number entity:acfMuzzleVel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.MuzzleVel then return 0 end
 
-	return this.BulletData.MuzzleVel * ACF.Scale
+	local BulletData = this.BulletData
+	local MuzzleVel  = BulletData and BulletData.MuzzleVel
+
+	return MuzzleVel and MuzzleVel * ACF.Scale or 0
 end
 
 -- Returns the mass of the projectile in a crate or gun
 e2function number entity:acfProjectileMass()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.ProjMass then return 0 end
 
-	return this.BulletData.ProjMass
+	local BulletData = this.BulletData
+
+	return BulletData and BulletData.ProjMass or 0
 end
 
 e2function number entity:acfDragCoef()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.DragCoef then return 0 end
 
-	return this.BulletData.DragCoef / ACF.DragDiv
+	local BulletData = this.BulletData
+	local DragCoef   = BulletData and BulletData.DragCoef
+
+	return DragCoef and DragCoef / ACF.DragDiv or 0
 end
 
 -- Returns the fin multiplier of the missile/bomb
 e2function number entity:acfFinMul()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
-
-	if not GunData then return 0 end
-	if not GunData.round then return 0 end
-
-	return GunData.round.finmul or 0
+	return this.FinMultiplier or 0
 end
 
 -- Returns the weight of the missile
 e2function number entity:acfMissileWeight()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
-
-	if not GunData then return 0 end
-
-	return GunData.weight or 0
+	return this.ForcedMass or 0
 end
 
 -- Returns the length of the missile
 e2function number entity:acfMissileLength()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.Id then return 0 end
 
-	local GunData = ACF.Weapons.Guns[this.BulletData.Id]
-
-	if not GunData then return 0 end
-
-	return GunData.length or 0
+	return this.Length or 0
 end
 
 -- Returns the number of projectiles in a flechette round
 e2function number entity:acfFLSpikes()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
 
-	return this.BulletData.Flechettes or 0
+	local BulletData = this.BulletData
+
+	return BulletData and BulletData.Flechettes or 0
 end
 
 -- Returns the mass of a single spike in a FL round in a crate or gun
 e2function number entity:acfFLSpikeMass()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.FlechetteMass then return 0 end
 
-	return this.BulletData.FlechetteMass
+	local BulletData = this.BulletData
+
+	return BulletData and BulletData.FlechetteMass or 0
 end
 
 -- Returns the radius of the spikes in a flechette round in mm
 e2function number entity:acfFLSpikeRadius()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.FlechetteRadius then return 0 end
 
-	return Round(this.BulletData.FlechetteRadius * 10, 2)
+	local BulletData = this.BulletData
+	local Radius     = BulletData and BulletData.FlechetteRadius
+
+	return Radius and Round(Radius * 10, 2) or 0
 end
 
 __e2setcost(10)
@@ -1098,38 +1060,32 @@ __e2setcost(10)
 e2function number entity:acfPenetration()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.Type then return 0 end
 
 	local BulletData = this.BulletData
-	local RoundData = RoundTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
 
-	if not RoundData then return 0 end
+	if not AmmoType then return 0 end
 
-	local DisplayData = RoundData.getDisplayData(BulletData)
+	local DisplayData = AmmoType:GetDisplayData(BulletData)
+	local MaxPen      = DisplayData and DisplayData.MaxPen
 
-	if not DisplayData.MaxPen then return 0 end
-
-	return Round(DisplayData.MaxPen, 2)
+	return MaxPen and Round(MaxPen, 2) or 0
 end
 
 -- Returns the blast radius of an ACF round
 e2function number entity:acfBlastRadius()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not this.BulletData then return 0 end
-	if not this.BulletData.Type then return 0 end
 
 	local BulletData = this.BulletData
-	local RoundData = RoundTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
 
-	if not RoundData then return 0 end
+	if not AmmoType then return 0 end
 
-	local DisplayData = RoundData.getDisplayData(BulletData)
+	local DisplayData = AmmoType:GetDisplayData(BulletData)
+	local Radius      = DisplayData and DisplayData.BlastRadius
 
-	if not DisplayData.BlastRadius then return 0 end
-
-	return Round(DisplayData.BlastRadius, 2)
+	return Radius and Round(Radius, 2) or 0
 end
 
 --Returns the number of rounds in active ammo crates linked to an ACF weapon

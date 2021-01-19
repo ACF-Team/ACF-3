@@ -103,7 +103,7 @@ do -- Ricochet/Penetration materials
 	end
 end
 
-do -- Time lapse function
+do -- Unit conversion
 	local Units = {
 		{ Unit = "year", Reduction = 1970 },
 		{ Unit = "month", Reduction = 1 },
@@ -135,6 +135,18 @@ do -- Time lapse function
 			end
 		end
 	end
+
+	function ACF.GetProperMass(Kilograms)
+		local Unit, Mult = "g", 1000
+
+		if Kilograms >= 1000 then
+			Unit, Mult = "t", 0.001
+		elseif Kilograms >= 1 then
+			Unit, Mult = "kg", 1
+		end
+
+		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
+	end
 end
 
 do -- Trace functions
@@ -148,8 +160,6 @@ do -- Trace functions
 
 			return ACF.Trace(TraceData)
 		end
-
-		debugoverlay.Line(TraceData.start, T.HitPos, 15, Color(0, 255, 0))
 
 		return T
 	end
@@ -174,6 +184,297 @@ do -- Trace functions
 		TraceData.filter = Original -- Restore filter
 
 		return T, Filter
+	end
+end
+
+-- Pretty much unused, should be moved into the ACF namespace or just removed
+function switch(cases, arg)
+	local Var = cases[arg]
+
+	if Var ~= nil then return Var end
+
+	return cases.default
+end
+
+function ACF.RandomVector(Min, Max)
+	local X = math.Rand(Min.x, Max.x)
+	local Y = math.Rand(Min.y, Max.y)
+	local Z = math.Rand(Min.z, Max.z)
+
+	return Vector(X, Y, Z)
+end
+
+do -- Native type verification functions
+	function ACF.CheckNumber(Value, Default)
+		if not Value then return Default end
+
+		return tonumber(Value) or Default
+	end
+
+	function ACF.CheckString(Value, Default)
+		if Value == nil then return Default end
+
+		return tostring(Value) or Default
+	end
+end
+
+do -- Attachment storage
+	local IsUseless = IsUselessModel
+	local EntTable = FindMetaTable("Entity")
+	local Models = {}
+
+	local function GetModelData(Model, NoCreate)
+		local Table = Models[Model]
+
+		if not (Table or NoCreate) then
+			Table = {}
+
+			Models[Model] = Table
+		end
+
+		return Table
+	end
+
+	local function SaveAttachments(Model, Attachments, Clear)
+		if IsUseless(Model) then return end
+
+		local Data  = GetModelData(Model)
+		local Count = Clear and 0 or #Data
+
+		if Clear then
+			for K in pairs(Data) do Data[K] = nil end
+		end
+
+		for I, Attach in ipairs(Attachments) do
+			local Index = Count + I
+			local Name  = ACF.CheckString(Attach.Name, "Unnamed" .. Index)
+
+			Data[Index] = {
+				Index = Index,
+				Name  = Name,
+				Pos   = Attach.Pos or Vector(),
+				Ang   = Attach.Ang or Angle(),
+				Bone  = Attach.Bone,
+			}
+		end
+
+		if not next(Data) then
+			Models[Model] = nil
+		end
+	end
+
+	local function GetAttachData(Entity)
+		if not Entity.AttachData then
+			Entity.AttachData = GetModelData(Entity:GetModel(), true)
+		end
+
+		return Entity.AttachData
+	end
+
+	-------------------------------------------------------------------
+
+	function ACF.AddCustomAttachment(Model, Name, Pos, Ang, Bone)
+		if not isstring(Model) then return end
+
+		SaveAttachments(Model, {{
+			Name = Name,
+			Pos  = Pos,
+			Ang  = Ang,
+			Bone = Bone,
+		}})
+	end
+
+	function ACF.AddCustomAttachments(Model, Attachments)
+		if not isstring(Model) then return end
+		if not istable(Attachments) then return end
+
+		SaveAttachments(Model, Attachments)
+	end
+
+	function ACF.SetCustomAttachment(Model, Name, Pos, Ang, Bone)
+		if not isstring(Model) then return end
+
+		SaveAttachments(Model, {{
+			Name = Name,
+			Pos  = Pos,
+			Ang  = Ang,
+			Bone = Bone,
+		}}, true)
+	end
+
+	function ACF.SetCustomAttachments(Model, Attachments)
+		if not isstring(Model) then return end
+		if not istable(Attachments) then return end
+
+		SaveAttachments(Model, Attachments, true)
+	end
+
+	function ACF.RemoveCustomAttachment(Model, Index)
+		if not isstring(Model) then return end
+
+		local Data = GetModelData(Model, true)
+
+		if not Data then return end
+
+		table.remove(Data, Index)
+
+		if not next(Data) then
+			Models[Model] = nil
+		end
+	end
+
+	function ACF.RemoveCustomAttachments(Model)
+		if not isstring(Model) then return end
+
+		local Data = GetModelData(Model, true)
+
+		if not Data then return end
+
+		for K in pairs(Data) do
+			Data[K] = nil
+		end
+
+		Models[Model] = nil
+	end
+
+	EntTable.LegacySetModel = EntTable.LegacySetModel or EntTable.SetModel
+	EntTable.LegacyGetAttachment = EntTable.LegacyGetAttachment or EntTable.GetAttachment
+	EntTable.LegacyGetAttachments = EntTable.LegacyGetAttachments or EntTable.GetAttachments
+	EntTable.LegacyLookupAttachment = EntTable.LegacyLookupAttachment or EntTable.LookupAttachment
+
+	function EntTable:SetModel(Path, ...)
+		self:LegacySetModel(Path, ...)
+
+		self.AttachData = GetModelData(Path, true)
+	end
+
+	function EntTable:GetAttachment(Index, ...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyGetAttachment(Index, ...)
+		end
+
+		local Attachment = Data[Index]
+
+		if not Attachment then return end
+
+		local Pos = Attachment.Pos
+
+		if self.Scale then
+			Pos = Pos * self.Scale
+		end
+
+		return {
+			Pos = self:LocalToWorld(Pos),
+			Ang = self:LocalToWorldAngles(Attachment.Ang),
+		}
+	end
+
+	function EntTable:GetAttachments(...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyGetAttachments(...)
+		end
+
+		local Result = {}
+
+		for Index, Info in ipairs(Data) do
+			Result[Index] = {
+				id   = Index,
+				name = Info.Name,
+			}
+		end
+
+		return Result
+	end
+
+	function EntTable:LookupAttachment(Name, ...)
+		local Data = GetAttachData(self)
+
+		if not Data then
+			return self:LegacyLookupAttachment(Name, ...)
+		end
+
+		for Index, Info in ipairs(Data) do
+			if Info.Name == Name then
+				return Index
+			end
+		end
+
+		return 0
+	end
+end
+
+do -- File creation
+	function ACF.FolderExists(Path, Create)
+		if not isstring(Path) then return end
+
+		local Exists = file.Exists(Path, "DATA")
+
+		if not Exists and Create then
+			file.CreateDir(Path)
+
+			return true
+		end
+
+		return Exists
+	end
+
+	function ACF.SaveToJSON(Path, Name, Table, GoodFormat)
+		if not isstring(Path) then return end
+		if not isstring(Name) then return end
+		if not istable(Table) then return end
+
+		ACF.FolderExists(Path, true) -- Creating the folder if it doesn't exist
+
+		local FullPath = Path .. "/" .. Name
+
+		file.Write(FullPath, util.TableToJSON(Table, GoodFormat))
+	end
+
+	function ACF.LoadFromFile(Path, Name)
+		if not isstring(Path) then return end
+		if not isstring(Name) then return end
+
+		local FullPath = Path .. "/" .. Name
+
+		if not file.Exists(FullPath, "DATA") then return end
+
+		return util.JSONToTable(file.Read(FullPath, "DATA"))
+	end
+end
+
+do -- Ballistic functions
+	-- changes here will be automatically reflected in the armor properties tool
+	function ACF_CalcArmor(Area, Ductility, Mass)
+		return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
+	end
+
+	function ACF_MuzzleVelocity(Propellant, Mass)
+		local PEnergy = ACF.PBase * ((1 + Propellant) ^ ACF.PScale - 1)
+		local Speed = ((PEnergy * 2000 / Mass) ^ ACF.MVScale)
+		local Final = Speed -- - Speed * math.Clamp(Speed/2000,0,0.5)
+
+		return Final
+	end
+
+	function ACF_Kinetic(Speed, Mass, LimitVel)
+		LimitVel = LimitVel or 99999
+		Speed    = Speed / 39.37
+
+		local Energy = {
+			Kinetic = (Mass * (Speed ^ 2)) / 2000, --Energy in KiloJoules
+			Momentum = Speed * Mass,
+		}
+		local KE = (Mass * (Speed ^ ACF.KinFudgeFactor)) / 2000 + Energy.Momentum
+
+		Energy.Penetration = math.max(KE - (math.max(Speed - LimitVel, 0) ^ 2) / (LimitVel * 5) * (KE / 200) ^ 0.95, KE * 0.1)
+		--Energy.Penetration = math.max( KE - (math.max(Speed-LimitVel,0)^2)/(LimitVel*5) * (KE/200)^0.95 , KE*0.1 )
+		--Energy.Penetration = math.max(Energy.Momentum^ACF.KinFudgeFactor - math.max(Speed-LimitVel,0)/(LimitVel*5) * Energy.Momentum , Energy.Momentum*0.1)
+
+		return Energy
 	end
 end
 

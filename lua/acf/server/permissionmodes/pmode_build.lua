@@ -2,7 +2,7 @@
 	ACF Permission mode: Build
 		This mode blocks all damage to entities without the owner's permission.
 		Owners can permit damage from specific players.
-		Players and NPCs remain vulnerable to damage.  This is what admin mods are for.
+		Players and NPCs remain vulnerable to damage. This is what admin mods are for.
 		This mode requires a CPPI-compatible prop-protector to function properly.
 //]]
 
@@ -16,7 +16,7 @@ end
 local perms = ACF.Permissions
 -- a short description of what the mode does
 local modedescription = "Disables all ACF damage unless the owner permits it. PvP is allowed."
--- if the attacker or victim can't be identified, what should we do?  true allows damage, false blocks it.
+-- if the attacker or victim can't be identified, what should we do? true allows damage, false blocks it.
 local DefaultPermission = false
 
 --[[

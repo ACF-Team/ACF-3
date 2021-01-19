@@ -1,11 +1,9 @@
-local Repos = ACF.Repositories
+local ACF = ACF
 
 do -- Server syncronization and status printing
-	local PrintToChat = ACF.PrintToChat
-
-	local Unique = {
-		Branches = true,
-	}
+	local Repos = ACF.Repositories
+	local Queue = {}
+	local Standby
 
 	local Messages = {
 		["Unable to check"] = {
@@ -22,50 +20,68 @@ do -- Server syncronization and status printing
 		},
 	}
 
-	local function GenerateCopy(Name, Data)
-		local Version = ACF.GetVersion(Name)
+	local function StoreInfo(Name, Data, Destiny)
+		local NewData = Data[Destiny]
 
-		if not Version.Server then
-			Version.Server = {}
+		if not NewData then return end
+
+		local Repo   = ACF.GetRepository(Name)
+		local Source = Repo[Destiny]
+
+		for K, V in pairs(NewData) do
+			Source[K] = V
 		end
-
-		for K, V in pairs(Data) do
-			if not Unique[K] then
-				Version.Server[K] = V
-			else
-				Version[K] = V
-			end
-		end
-
-		ACF.GetVersionStatus(Name)
 	end
 
 	local function PrintStatus(Server)
-		local Branch = ACF.GetBranch(Server.Name, Server.Head)
-		local Lapse = Branch and ACF.GetTimeLapse(Branch.Date)
+		local Branch  = ACF.GetBranch(Server.Name, Server.Head)
+		local Lapse   = Branch and ACF.GetTimeLapse(Branch.Date)
+		local Data    = Messages[Server.Status or "Unable to check"]
 
-		local Data = Messages[Server.Status or "Unable to check"]
-		local Message = Data.Message
-
-		PrintToChat(Data.Type, Message:format(Server.Name, Server.Code, Lapse))
+		ACF.PrintToChat(Data.Type, Data.Message:format(Server.Name, Server.Code, Lapse))
 	end
 
-	net.Receive("ACF_VersionSync", function()
-		local Table = net.ReadTable()
-
-		for Name, Data in pairs(Table) do
-			GenerateCopy(Name, Data)
-		end
+	local function PrepareStatus()
+		if Standby then return end
 
 		hook.Add("CreateMove", "ACF Print Version", function(Move)
 			if Move:GetButtons() ~= 0 then
-				for _, Data in pairs(Repos) do
-					PrintStatus(Data.Server)
+				for Name, Repo in pairs(Queue) do
+					PrintStatus(Repo.Server)
+
+					Queue[Name] = nil
 				end
+
+				Standby = nil
 
 				hook.Remove("CreateMove", "ACF Print Version")
 			end
 		end)
+
+		Standby = true
+	end
+
+	local function QueueStatusMessage(Name)
+		if Queue[Name] then return end
+
+		Queue[Name] = ACF.GetRepository(Name)
+
+		PrepareStatus()
+	end
+
+	net.Receive("ACF_VersionSync", function()
+		local Values = util.JSONToTable(net.ReadString())
+
+		for Name, Repo in pairs(Values) do
+			StoreInfo(Name, Repo, "Branches")
+			StoreInfo(Name, Repo, "Server")
+
+			ACF.CheckLocalStatus(Name)
+
+			QueueStatusMessage(Name)
+
+			hook.Run("ACF_UpdatedRepository", Name, Repos[Name])
+		end
 	end)
 
 	ACF.AddMessageType("Update_Ok", "Updates")

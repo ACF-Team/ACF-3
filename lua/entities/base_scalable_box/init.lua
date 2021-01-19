@@ -1,5 +1,6 @@
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
+
 include("shared.lua")
 
 function CreateScalableBox(Player, Pos, Angle, Size)
@@ -13,7 +14,7 @@ function CreateScalableBox(Player, Pos, Angle, Size)
 	Ent:SetPos(Pos)
 	Ent:Spawn()
 
-	Ent:SetSize(Size)
+	Ent:SetSize(Size or VectorRand(3, 96))
 
 	Ent.Owner = Player
 
@@ -27,7 +28,6 @@ function ENT:ApplyNewSize(NewSize)
 
 	self:PhysicsInitBox(-Bounds, Bounds)
 	self:EnableCustomCollisions(true)
-	self:SetSolid(SOLID_VPHYSICS)
 
 	local PhysObj = self:GetPhysicsObject()
 
