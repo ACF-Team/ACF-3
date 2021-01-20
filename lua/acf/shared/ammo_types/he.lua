@@ -20,7 +20,7 @@ function Ammo:GetDisplayData(Data)
 		BlastRadius = Data.FillerMass ^ 0.33 * 8,
 		Fragments   = Fragments,
 		FragMass    = FragMass / Fragments,
-		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / FragMass / Fragments / Fragments) ^ 0.5,
+		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / (FragMass / Fragments) / Fragments) ^ 0.5,
 	}
 
 	hook.Run("ACF_GetDisplayData", self, Data, Display)
