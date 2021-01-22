@@ -18,7 +18,7 @@ do -- Spawning and Updating
 		Size.z = math.Clamp(Size.z / 25.4, 0.19685, 420)
 	end
 
-	function MakeACF_Armor(Player, Pos, Ang, Data)
+	function MakeACF_Armor(Player, Pos, Angle, Data)
 		if not Player:CheckLimit("props") then return end
 
 		local Plate = ents.Create("acf_armor")
@@ -31,7 +31,7 @@ do -- Spawning and Updating
 		Plate:SetModel("models/holograms/cube.mdl")
 		Plate:SetMaterial("sprops/textures/sprops_metal1")
 		Plate:SetPlayer(Player)
-		Plate:SetAngles(Ang)
+		Plate:SetAngles(Angle)
 		Plate:SetPos(Pos)
 		Plate:Spawn()
 
