@@ -131,7 +131,7 @@ do -- Procedural Armor
 
 		Menu:AddTitle("Procedural Armor")
 
-		local SizeX = Menu:AddSlider("Plate Length", 0.25, 96, 2)
+		local SizeX = Menu:AddSlider("Plate Length", 0.25, 420, 2)
 		SizeX:SetClientData("PlateSizeX", "OnValueChanged")
 		SizeX:DefineSetter(function(Panel, _, _, Value)
 			local X = math.Round(Value, 2)
@@ -143,7 +143,7 @@ do -- Procedural Armor
 			return X
 		end)
 
-		local SizeY = Menu:AddSlider("Plate Width", 0.25, 96, 2)
+		local SizeY = Menu:AddSlider("Plate Width", 0.25, 420, 2)
 		SizeY:SetClientData("PlateSizeY", "OnValueChanged")
 		SizeY:DefineSetter(function(Panel, _, _, Value)
 			local Y = math.Round(Value, 2)

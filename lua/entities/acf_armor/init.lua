@@ -88,4 +88,38 @@ do -- ACF Activation and Damage
 		self.ACF.MaxArmour = Armour
 		self.ACF.Type = "Prop"
 	end
+
+	local function ArmorTrace(Trace)
+		local R = ACF.Trace(Trace)
+
+		if IsValid(R.Entity) and R.Entity:GetClass() == "acf_armor" then
+			Trace.filter[#Trace.filter + 1] = R.Entity
+
+			return ArmorTrace(Trace)
+		end
+
+		return R.HitPos
+	end
+
+	local function GetOpposite(Ent, Trace)
+		local Size       = Ent:GetSize()
+		local Mins, Maxs = Size * -0.5, Size * 0.5
+		local Delta      = (Trace.HitPos - Trace.StartPos):GetNormalized()
+
+		local Pos = util.IntersectRayWithOBB(Trace.HitPos + Delta * 1000, -Delta * 1000, Ent:GetPos(), Ent:GetAngles(), Mins, Maxs)
+		debugoverlay.Cross(Pos + Vector(0, 0.1, 0.1), 3, 5, Color(255, 255, 255), true)
+
+		return ArmorTrace({start = Trace.HitPos, endpos = Pos, filter = {ent} })
+	end
+
+	function ENT:GetArmor(Trace)
+		local Enter = Trace.HitPos
+		local Exit  = GetOpposite(self, Trace)
+
+		debugoverlay.Cross(Enter, 3, 5, Color(0, 255, 0), true)
+		debugoverlay.Cross(Exit, 3, 5, Color(255, 0, 0), true)
+		debugoverlay.Line(Enter, Exit, 5, Color(0, 255, 255), true)
+
+		return (Exit - Enter):Length() * 25.4 -- Inches to mm
+	end
 end

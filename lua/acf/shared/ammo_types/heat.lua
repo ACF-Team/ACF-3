@@ -209,14 +209,16 @@ if SERVER then
 		if ACF.Check(Target) then
 			local Speed = Bullet.Flight:Length() / ACF.Scale
 			local HitPos = Trace.HitPos
-			local HitNormal = Trace.HitNormal
-			local Bone = Trace.HitGroup
 
 			-- TODO: Figure out why bullets are missing 10% of their penetration
 			if Bullet.Detonated then
 				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
 				local Energy     = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
-				local HitRes     = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+
+				Bullet.Speed  = Speed
+				Bullet.Energy = Energy
+
+				local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 				Bullet.NotFirstPen = true
 
@@ -230,8 +232,7 @@ if SERVER then
 					return false
 				end
 			else
-				local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
-				local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
+				local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 				if HitRes.Ricochet then
 					return "Ricochet"

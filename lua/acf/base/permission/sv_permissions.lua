@@ -427,8 +427,10 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	--end
 end
 
-function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
-	local owner = CPPI and Entity:CPPIGetOwner() or Entity:GetOwner()
+function this.CanDamage(Bullet, Trace)
+	local Entity    = Trace.Entity
+	local Inflictor = Bullet.Owner
+	local owner     = CPPI and Entity:CPPIGetOwner() or Entity:GetOwner()
 
 	if not (IsValid(owner) and owner:IsPlayer()) then
 		if IsValid(Entity) and Entity:IsPlayer() then

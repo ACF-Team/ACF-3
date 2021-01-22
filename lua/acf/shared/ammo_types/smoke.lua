@@ -154,12 +154,14 @@ if SERVER then
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)
-		local Target = Trace.Entity
-
-		if ACF.Check(Target) then
+		if ACF.Check(Trace.Entity) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - (Bullet.FillerMass + Bullet.WPMass), Bullet.LimitVel)
-			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, Trace.HitPos, Trace.HitNormal, Trace.HitGroup)
+			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+
+			Bullet.Speed  = Speed
+			Bullet.Energy = Energy
+
+			local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 			if HitRes.Ricochet then return "Ricochet" end
 		end

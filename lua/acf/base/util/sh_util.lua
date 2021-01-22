@@ -467,6 +467,7 @@ do -- Ballistic functions
 		local Energy = {
 			Kinetic = (Mass * (Speed ^ 2)) / 2000, --Energy in KiloJoules
 			Momentum = Speed * Mass,
+			Penetration = true
 		}
 		local KE = (Mass * (Speed ^ ACF.KinFudgeFactor)) / 2000 + Energy.Momentum
 
