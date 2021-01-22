@@ -121,6 +121,56 @@ do -- Piledrivers menu
 	ACF.AddMenuItem(1, "Fun Stuff", "Piledrivers", "pencil", CreateMenu)
 end
 
+do -- Procedural Armor
+	local BoxSize = {}
+
+	local function CreateMenu(Menu)
+		ACF.SetToolMode("acf_menu", "Spawner", "Component")
+		ACF.SetClientData("PrimaryClass", "acf_armor")
+		ACF.SetClientData("SecondaryClass", "N/A")
+
+		Menu:AddTitle("Procedural Armor")
+
+		local SizeX = Menu:AddSlider("Plate Length", 0.25, 96, 2)
+		SizeX:SetClientData("PlateSizeX", "OnValueChanged")
+		SizeX:DefineSetter(function(Panel, _, _, Value)
+			local X = math.Round(Value, 2)
+
+			Panel:SetValue(X)
+
+			BoxSize.x = X
+
+			return X
+		end)
+
+		local SizeY = Menu:AddSlider("Plate Width", 0.25, 96, 2)
+		SizeY:SetClientData("PlateSizeY", "OnValueChanged")
+		SizeY:DefineSetter(function(Panel, _, _, Value)
+			local Y = math.Round(Value, 2)
+
+			Panel:SetValue(Y)
+
+			BoxSize.y = Y
+
+			return Y
+		end)
+
+		local SizeZ = Menu:AddSlider("Plate Thickness", 5, 1000, 0)
+		SizeZ:SetClientData("PlateSizeZ", "OnValueChanged")
+		SizeZ:DefineSetter(function(Panel, _, _, Value)
+			local Z = math.Round(Value)
+
+			Panel:SetValue(Z)
+
+			BoxSize.z = Z
+			return Z
+		end)
+	end
+
+	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
+end
+
+
 hook.Add("ACF_AllowMenuOption", "Allow Fun Menu", function(_, Name)
 	if Name ~= "Fun Stuff" then return end
 	if not ACF.GetServerBool("ShowFunMenu") then return false end
