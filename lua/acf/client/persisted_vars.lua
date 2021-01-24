@@ -7,3 +7,8 @@ ACF.PersistClientData("Volume", 1)
 ACF.PersistClientData("CrateSizeX", 24)
 ACF.PersistClientData("CrateSizeY", 24)
 ACF.PersistClientData("CrateSizeZ", 24)
+
+-- Plate size
+ACF.PersistClientData("PlateSizeX", 24)
+ACF.PersistClientData("PlateSizeY", 24)
+ACF.PersistClientData("PlateSizeZ", 5)
