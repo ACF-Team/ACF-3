@@ -131,7 +131,7 @@ do -- Procedural Armor
 
 		Menu:AddTitle("Procedural Armor")
 
-		local SizeX = Menu:AddSlider("Plate Length", 0.25, 420, 2)
+		local SizeX = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
 		SizeX:SetClientData("PlateSizeX", "OnValueChanged")
 		SizeX:DefineSetter(function(Panel, _, _, Value)
 			local X = math.Round(Value, 2)
@@ -143,7 +143,7 @@ do -- Procedural Armor
 			return X
 		end)
 
-		local SizeY = Menu:AddSlider("Plate Width", 0.25, 420, 2)
+		local SizeY = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
 		SizeY:SetClientData("PlateSizeY", "OnValueChanged")
 		SizeY:DefineSetter(function(Panel, _, _, Value)
 			local Y = math.Round(Value, 2)
@@ -155,21 +155,21 @@ do -- Procedural Armor
 			return Y
 		end)
 
-		local SizeZ = Menu:AddSlider("Plate Thickness", 5, 1000, 0)
+		local SizeZ = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
 		SizeZ:SetClientData("PlateSizeZ", "OnValueChanged")
 		SizeZ:DefineSetter(function(Panel, _, _, Value)
-			local Z = math.Round(Value)
+			local Z = math.floor(Value)
 
 			Panel:SetValue(Z)
 
 			BoxSize.z = Z
+
 			return Z
 		end)
 	end
 
 	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
 end
-
 
 hook.Add("ACF_AllowMenuOption", "Allow Fun Menu", function(_, Name)
 	if Name ~= "Fun Stuff" then return end
