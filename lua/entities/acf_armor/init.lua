@@ -5,17 +5,36 @@ include("shared.lua")
 
 do -- Spawning and Updating
 	local function VerifyData(Data)
-		local Size = Data.Size
-
-		if not isvector(Size) then
-			Size = Vector(Data.PlateSizeX or 24, Data.PlateSizeY or 24, Data.PlateSizeZ or 24)
-
-			Data.Size = Size
+		if not isnumber(Data.Width) then
+			Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
 		end
 
-		Size.x = math.Clamp(Size.x, 0.19685, 420)
-		Size.y = math.Clamp(Size.y, 0.19685, 420)
-		Size.z = math.Clamp(Size.z / 25.4, 0.19685, 420)
+		if not isnumber(Data.Height) then
+			Data.Height = ACF.CheckNumber(Data.PlateSizeY, 24)
+		end
+
+		if not isnumber(Data.Thickness) then
+			Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
+		end
+
+		do -- Clamping values
+			Data.Width = math.Clamp(Data.Width, 0.25, 420)
+			Data.Height = math.Clamp(Data.Height, 0.25, 420)
+			Data.Thickness = math.Clamp(Data.Thickness, 5, 1000)
+		end
+
+		Data.Size = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
+
+		hook.Run("ACF_VerifyData", "acf_armor", Data)
+	end
+
+	local function UpdatePlate(Entity, Data)
+		Entity:SetSize(Data.Size)
+
+		-- Storing all the relevant information on the entity for duping
+		for _, V in ipairs(Entity.DataStore) do
+			Entity[V] = Data[V]
+		end
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -24,6 +43,8 @@ do -- Spawning and Updating
 		local Plate = ents.Create("acf_armor")
 
 		if not IsValid(Plate) then return end
+
+		VerifyData(Data)
 
 		Player:AddCount("props", Plate)
 		Player:AddCleanup("props", Plate)
@@ -35,13 +56,12 @@ do -- Spawning and Updating
 		Plate:SetPos(Pos)
 		Plate:Spawn()
 
-		VerifyData(Data)
+		Plate.Owner     = Player -- MUST be stored on ent for PP
+		Plate.DataStore = ACF.GetEntityArguments("acf_armor")
 
-		Plate:SetSize(Data.Size)
+		UpdatePlate(Plate, Data)
 
-		--
-
-		Plate.Owner = Player -- MUST be stored on ent for PP
+		hook.Run("ACF_OnEntitySpawn", "acf_armor", Plate, Data)
 
 		do -- Mass entity mod removal
 			local EntMods = Data.EntityMods
@@ -54,7 +74,27 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Size")
+	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness")
+
+	------------------- Updating ---------------------
+
+	function ENT:Update(Data)
+		VerifyData(Data)
+
+		ACF.SaveEntity(self)
+
+		UpdatePlate(self, Data)
+
+		ACF.RestoreEntity(self)
+
+		hook.Run("ACF_OnEntityUpdate", "acf_armor", self, Data)
+
+		net.Start("ACF_UpdateEntity")
+			net.WriteEntity(self)
+		net.Broadcast()
+
+		return true, "Armor plate updated successfully!"
+	end
 
 	function ENT:OnResized(Size)
 		local Volume = Size.x * Size.y * Size.z
@@ -84,7 +124,7 @@ do -- ACF Activation and Damage
 
 		self.ACF.Health = Health * Percent
 		self.ACF.MaxHealth = Health
-		self.ACF.Armour = Armour * (0.5 + Percent / 2)
+		self.ACF.Armour = Armour * (0.5 + Percent * 0.5)
 		self.ACF.MaxArmour = Armour
 		self.ACF.Type = "Prop"
 	end
