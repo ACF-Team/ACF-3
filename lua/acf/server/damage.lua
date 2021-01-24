@@ -4,7 +4,6 @@ local TimerCreate = timer.Create
 local TraceRes    = {}
 local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
 local HookRun     = hook.Run
-local Trace       = ACF.TraceF
 local ValidDebris = ACF.ValidDebris
 local ChildDebris = ACF.ChildDebris
 local DragDiv     = ACF.DragDiv
@@ -186,7 +185,7 @@ do -- Explosions ----------------------------
 				local Displ	 = Target - Origin
 
 				TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-				Trace(TraceData) -- Outputs to TraceRes
+				ACF.TraceF(TraceData) -- Outputs to TraceRes
 
 				if TraceRes.HitNonWorld then
 					Ent = TraceRes.Entity
@@ -274,7 +273,7 @@ do -- Overpressure --------------------------
 	local Squishies = ACF.Squishies
 
 	local function CanSee(Target, Data)
-		local R = Trace(Data)
+		local R = ACF.TraceF(Data)
 
 		return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
 	end
