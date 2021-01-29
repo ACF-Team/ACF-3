@@ -188,7 +188,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 end
 
-do -- ACF Parent Detouring ----------------------
+do -- ACF Parent Detouring 
 	local Detours = {}
 	function ACF.AddParentDetour(Class, Variable)
 		if not Class then return end
@@ -217,7 +217,28 @@ do -- ACF Parent Detouring ----------------------
 
 		hook.Remove("Initialize", "ACF Parent Detour")
 	end)
-end ---------------------------------------------
+end
+
+do -- ASSUMING DIRECT CONTROL
+	--local ENT = FindMetaTable("Entity")
+	local OBJ = FindMetaTable("PhysObj")
+
+	do -- SetMass
+		-- Reject any changes to mass on ACF entities
+		-- Mass can only be set to whatever Ent.ACF.LegalMass is
+		local SetMass = SetMass or OBJ.SetMass
+
+		function OBJ:SetMass(Number)
+			local Ent = self:GetEntity()
+
+			if Ent.IsACFEntity and Ent.ACF and Number ~= Ent.ACF.LegalMass then
+				return
+			end
+
+			SetMass(self, Number)
+		end
+	end
+end
 
 -- Globalize ------------------------------------
 ACF_GetAllPhysicalEntities 	= GetAllPhysicalEntities
