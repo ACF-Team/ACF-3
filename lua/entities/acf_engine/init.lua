@@ -251,6 +251,9 @@ do -- Spawn and Update functions
 		local Type = EngineData.Type or "GenericPetrol"
 		local EngineType = EngineTypes[Type] or EngineTypes.GenericPetrol
 
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = EngineData.Model
+
 		Entity:SetModel(EngineData.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)

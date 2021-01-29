@@ -61,6 +61,9 @@ do -- Spawn and Update functions
 		local FuelData = FuelTypes[Data.FuelType]
 		local Percentage = 1
 
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
+
 		Entity:SetModel(FuelTank.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
@@ -106,8 +109,6 @@ do -- Spawn and Update functions
 		Entity.Fuel = Percentage * Entity.Capacity
 
 		ACF.Activate(Entity, true)
-
-		Entity.ACF.Model = FuelTank.Model
 
 		Entity:UpdateMass(true)
 

@@ -220,7 +220,7 @@ do -- ACF Parent Detouring
 end
 
 do -- ASSUMING DIRECT CONTROL
-	--local ENT = FindMetaTable("Entity")
+	local ENT = FindMetaTable("Entity")
 	local OBJ = FindMetaTable("PhysObj")
 
 	do -- SetMass
@@ -236,6 +236,47 @@ do -- ASSUMING DIRECT CONTROL
 			end
 
 			SetMass(self, Number)
+		end
+	end
+
+	do -- SetModel
+		-- Reject any changes to the model on ACF entities
+		-- Models can only be set to whatever Ent.ACF.Model is
+		local SetModel = SetModel or ENT.SetModel
+
+		function ENT:SetModel(String)
+			if self.IsACFEntity and self.ACF and String ~= self.ACF.Model then
+				print("Reject model")
+				return
+			end
+
+			SetModel(self, String)
+		end
+	end
+
+	do -- SetSolid
+		-- Reject any changes to the solidity on ACF entities
+		local SetSolid = SetSolid or ENT.SetSolid
+
+		function ENT:SetSolid(Number)
+			if self.IsACFEntity then
+				print("Reject solidity")
+				return
+			end
+
+			SetSolid(self, Number)
+		end
+	end
+
+	do -- SetNoDraw
+		local SetNoDraw = SetNoDraw or ENT.SetNoDraw
+
+		function ENT:SetNoDraw(Bool)
+			if Bool and self.IsACFEntity then
+				return
+			end
+
+			SetNoDraw(self, Bool)
 		end
 	end
 end

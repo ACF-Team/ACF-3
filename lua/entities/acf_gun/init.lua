@@ -94,6 +94,9 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
+		Entity.ACF       = Entity.ACF or {}
+		Entity.ACF.Model = Weapon.Model
+
 		Entity:SetModel(Weapon.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
@@ -144,8 +147,7 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass	= Weapon.Mass
-		Entity.ACF.Model		= Weapon.Model
+		Entity.ACF.LegalMass = Weapon.Mass
 
 		local Phys = Entity:GetPhysicsObject()
 		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end

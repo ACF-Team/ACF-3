@@ -35,15 +35,7 @@ local function IsLegal(Entity)
 			return false, "Invalid physics", "" -- This shouldn't even run
 		end
 	end
-	if Entity:GetModel() ~= Entity.ACF.Model then return false, "Incorrect model", "ACF entities cannot have their models changed." end
-	if not Entity:IsSolid() then return false, "Not solid", "ACF entities must be solid." end -- Entities must always be solid
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
-
-	if Entity:GetNoDraw() then
-		Entity:SetNoDraw(false)
-
-		return false, "Not drawn", "ACF entities must be drawn at all times."
-	end
 
 	return true
 end

@@ -237,7 +237,10 @@ do -- Spawning and Updating --------------------
 		Player:AddCount("_acf_ammo", Crate)
 		Player:AddCleanup("acf_ammo", Crate)
 
-		Crate:SetModel("models/holograms/rcube_thin.mdl")
+		Crate.ACF       = Crate.ACF or {}
+		Crate.ACF.Model = "models/holograms/rcube_thin.mdl"
+
+		Crate:SetModel(Crate.ACF.Model)
 		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:SetPlayer(Player)
 		Crate:SetAngles(Ang)

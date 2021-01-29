@@ -84,6 +84,9 @@ do -- Spawning and Updating --------------------
 		local Scale   = Caliber / Class.Caliber.Base
 		local Mass    = math.floor(Class.Mass * Scale)
 
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = Class.Model -- Must be set before changing model
+
 		Entity:SetModel(Class.Model)
 		Entity:SetScale(Scale)
 
