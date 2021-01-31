@@ -275,11 +275,18 @@ do -- Client and server settings
 			end
 
 			for Name, Data in SortedPairsByMemberValue(Destiny, "Index") do
-				local Base = Menu:AddCollapsible(Name)
+				local Base, Section = Menu:AddCollapsible(Name, false)
 
-				Data.Create(Base)
+				function Section:OnToggle(Bool)
+					if not Bool then return end
+					if self.Created then return end
 
-				hook.Run(Hook, Name, Base)
+					Data.Create(Base)
+
+					hook.Run(Hook, Name, Base)
+
+					self.Created = true
+				end
 			end
 		end
 	end
