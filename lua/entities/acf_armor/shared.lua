@@ -5,8 +5,6 @@ ENT.WireDebugName = "ACF Armor"
 ENT.PluralName    = "ACF Armor"
 ENT.IsArmor       = true
 
-cleanup.Register("acf_armor")
-
 local function FindOtherSide(Ent, Origin, Dire)
     local Mesh = Ent:GetPhysicsObject():GetMeshConvexes()
     local Min  = math.huge

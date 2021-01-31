@@ -1,4 +1,3 @@
-AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
@@ -110,7 +109,7 @@ do -- ACF Activation and Damage
 		local Volume  = PhysObj:GetVolume()
 
 		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetVolume() * 6.45
+			self.ACF.Area = PhysObj:GetVolume() * 6.45 -- NOTE: Shouldn't this just be Area = PhysObj:GetSurfaceArea()??
 		end
 
 		local Health  = Volume / ACF.Threshold
@@ -120,8 +119,11 @@ do -- ACF Activation and Damage
 			Percent = self.ACF.Health / self.ACF.MaxHealth
 		end
 
-		self.ACF.Health = Health * Percent
+		self.ACF.Armour    = 1
+		self.ACF.MaxArmour = 1
+		self.ACF.Health    = Health * Percent
 		self.ACF.MaxHealth = Health
-		self.ACF.Type = "Prop"
+		self.ACF.Ductility = 0
+		self.ACF.Type      = "Prop"
 	end
 end
