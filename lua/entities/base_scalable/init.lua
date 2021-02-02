@@ -5,7 +5,6 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 local Queued = {}
-local Sizes = {}
 
 local function GenerateJSON(Table)
 	local Data = {}
@@ -95,26 +94,17 @@ function ENT:Initialize()
 	self:GetOriginalSize() -- Instantly saving the original size
 end
 
-function ENT:FindOriginalSize(SizeTable)
-	local Key = self:GetModel()
-	local Stored = SizeTable[Key]
-
-	if Stored then return Stored end
-
-	local Min, Max = self:GetPhysicsObject():GetAABB()
-	local Size = -Min + Max
-
-	SizeTable[Key] = Size
-
-	return Size
-end
-
 function ENT:GetOriginalSize()
-	if not self.OriginalSize then
-		self.OriginalSize = self:FindOriginalSize(Sizes)
+	local Model   = self.ACF and self.ACF.Model or self:GetModel()
+	local Changed = self.LastModel ~= Model
+
+	if Changed or not self.OriginalSize then
+		self.LastModel = Model
+
+		self.OriginalSize = ACF.GetModelSize(Model)
 	end
 
-	return self.OriginalSize
+	return self.OriginalSize, Changed
 end
 
 function ENT:SetSize(Size)

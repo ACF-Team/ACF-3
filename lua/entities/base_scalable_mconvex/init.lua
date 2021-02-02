@@ -1,12 +1,11 @@
+DEFINE_BASECLASS("base_scalable") -- Required to get the local BaseClass
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
 -- TODO: Add support for creation via vertices table instead of model
-
-local Meshes = {}
-
 function CreateScalableMultiConvex(Player, Pos, Angle, Size)
 	local Ent = ents.Create("base_scalable_mconvex")
 
@@ -27,34 +26,14 @@ end
 
 duplicator.RegisterEntityClass("base_scalable_mconvex", CreateScalableMultiConvex, "Pos", "Angle", "Size")
 
-function ENT:FindOriginalSize(SizeTable)
-	local Key    = self:GetModel()
-	local Stored = SizeTable[Key]
+function ENT:GetOriginalSize()
+	local Size, Changed = BaseClass.GetOriginalSize(self)
 
-	if Stored then
-		self.Mesh = table.Copy(Meshes[Key])
-
-		return Stored
+	if Changed or not self.Mesh then
+		self.Mesh = ACF.GetModelMesh(self.LastModel)
 	end
 
-	local PhysObj = self:GetPhysicsObject()
-
-	if not IsValid(PhysObj) then
-		self:PhysicsInit(SOLID_VPHYSICS, true)
-
-		PhysObj = self:GetPhysicsObject()
-	end
-
-	local Min, Max = PhysObj:GetAABB()
-	local Mesh = PhysObj:GetMeshConvexes()
-	local Size = -Min + Max
-
-	self.Mesh = table.Copy(Mesh)
-
-	SizeTable[Key] = Size
-	Meshes[Key] = Mesh
-
-	return Size
+	return Size, Changed
 end
 
 function ENT:ApplyNewSize(NewSize)
@@ -83,6 +62,6 @@ end
 
 function ENT:GetExtraInfo()
 	return {
-		Mesh = Meshes[self:GetModel()]
+		Mesh = ACF.GetModelMesh(self.LastModel)
 	}
 end
