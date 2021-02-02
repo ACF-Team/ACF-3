@@ -228,6 +228,117 @@ do -- Native type verification functions
 	end
 end
 
+do -- Model convex mesh and volume
+	ACF.ModelInfo = ACF.ModelInfo or {}
+
+	local Models = ACF.ModelInfo
+
+	local function CreateServerProp(Model)
+		local Entity = ents.Create("base_anim")
+
+		Entity:SetModel(Model)
+		Entity:PhysicsInit(SOLID_VPHYSICS)
+
+		return Entity
+	end
+
+	local CreateEntity = SERVER and CreateServerProp or ents.CreateClientProp
+
+	local function GetModelData(Model)
+		if not isstring(Model) then return end
+		if IsUselessModel(Model) then return end
+
+		local Data = Models[Model]
+
+		if Data then return Data end
+
+		local Entity   = CreateEntity(Model)
+		local PhysObj  = Entity:GetPhysicsObject()
+		local Min, Max = PhysObj:GetAABB()
+
+		Data = {
+			Mesh   = PhysObj:GetMeshConvexes(),
+			Volume = PhysObj:GetVolume(),
+			Size   = Max - Min,
+			Min    = Min,
+			Max    = Max,
+		}
+
+		Models[Model] = Data
+
+		Entity:Remove()
+
+		return Data
+	end
+
+	local function IsValidScale(Scale)
+		if not Scale then return false end
+		if isnumber(Scale) then return true end
+
+		return isvector(Scale)
+	end
+
+	local function ScaleMesh(Mesh, Scale)
+		for I, Hull in ipairs(Mesh) do
+			for J, Vertex in ipairs(Hull) do
+				Mesh[I][J] = Vertex.pos * Scale
+			end
+		end
+	end
+
+	local function GetMeshVolume(Mesh)
+		local Entity = CreateEntity("models/props_junk/PopCan01a.mdl")
+		Entity:PhysicsInitMultiConvex(Mesh)
+
+		local PhysObj = Entity:GetPhysicsObject()
+		local Volume  = PhysObj:GetVolume()
+
+		Entity:Remove()
+
+		return Volume
+	end
+
+	-------------------------------------------------------------------
+
+	function ACF.GetModelMesh(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+
+		local Mesh = table.Copy(Data.Mesh)
+
+		if IsValidScale(Scale) then ScaleMesh(Mesh, Scale) end
+
+		return Mesh
+	end
+
+	function ACF.GetModelVolume(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+		if not IsValidScale(Scale) then
+			return Data.Volume
+		end
+
+		local Mesh = table.Copy(Data.Mesh)
+
+		ScaleMesh(Mesh, Scale)
+
+		return GetMeshVolume(Mesh)
+	end
+
+	function ACF.GetModelSize(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+		if not IsValidScale(Scale) then
+			return Vector(Data.Size)
+		end
+
+		return (Data.Max * Scale) - (Data.Min * Scale)
+	end
+end
+
 do -- Attachment storage
 	local IsUseless = IsUselessModel
 	local EntTable = FindMetaTable("Entity")
