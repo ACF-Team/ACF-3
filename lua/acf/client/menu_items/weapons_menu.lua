@@ -29,8 +29,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("WeaponClass", Data.ID)
-
 		ClassDesc:SetText(Data.Description)
 
 		ACF.LoadSortedList(EntList, Data.Items, "Caliber")
@@ -48,6 +46,7 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("Weapon", Data.ID)
 		ACF.SetClientData("Destiny", Data.Destiny or "Weapons")
+		ACF.SetClientData("Caliber", Data.Caliber)
 
 		EntName:SetText(Data.Name)
 

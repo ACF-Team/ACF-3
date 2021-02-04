@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
+DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
 

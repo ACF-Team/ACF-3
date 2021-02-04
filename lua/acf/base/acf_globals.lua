@@ -60,7 +60,6 @@ do -- ACF global vars
 	-- Ammo
 	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding        = 2 -- Millimeters of wasted space between rounds
-	ACF.AmmoMod            = 1.05 -- DEPRECATED. Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
 	ACF.AmmoCaseScale      = 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu

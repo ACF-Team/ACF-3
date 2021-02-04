@@ -35,11 +35,10 @@ local function GetAmmoList(Class)
 	return Result
 end
 
-local function GetWeaponData(ToolData)
+local function GetWeaponClass(ToolData)
 	local Destiny = Classes[ToolData.Destiny or "Weapons"]
-	local Class = ACF.GetClassGroup(Destiny, ToolData.Weapon)
 
-	return Class.Lookup[ToolData.Weapon]
+	return ACF.GetClassGroup(Destiny, ToolData.Weapon)
 end
 
 local function GetEmptyMass()
@@ -156,12 +155,11 @@ local function AddInformation(Base, Settings, ToolData)
 		Crate:TrackClientData("CrateSizeY")
 		Crate:TrackClientData("CrateSizeZ")
 		Crate:DefineSetter(function()
-			local Weapon  = GetWeaponData(ToolData)
-			local Spacing = Weapon.Caliber * 0.0039
-			local Rounds  = ACF.GetAmmoCrateCapacity(BoxSize, Weapon, BulletData, Spacing, ACF.AmmoArmor)
-			local Empty   = GetEmptyMass()
-			local Load    = math.floor(BulletData.CartMass * Rounds)
-			local Mass    = ACF.GetProperMass(math.floor(Empty + Load))
+			local Class  = GetWeaponClass(ToolData)
+			local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
+			local Empty  = GetEmptyMass()
+			local Load   = math.floor(BulletData.CartMass * Rounds)
+			local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
 
 			return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
 		end)

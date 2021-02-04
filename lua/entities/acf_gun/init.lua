@@ -36,9 +36,26 @@ do -- Spawn and Update functions --------------------------------
 		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
 
 		if not Class then
-			Data.Weapon = Data.Weapon and Updated[Data.Weapon] or "50mmC"
+			Class = ACF.GetClassGroup(Weapons, "C")
 
-			Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+			Data.Destiny = "Weapons"
+			Data.Weapon  = "C"
+			Data.Caliber = 50
+		elseif Class.IsScalable then
+			local Weapon = Class.Lookup[Data.Weapon]
+
+			if Weapon then
+				Data.Weapon  = Class.ID
+				Data.Caliber = Weapon.Caliber
+			end
+		end
+
+		-- Verifying and clamping caliber value
+		if Class.IsScalable then
+			local Bounds  = Class.Caliber
+			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
+
+			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
 		end
 
 		do -- External verifications
@@ -82,45 +99,74 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
+	local function GetSound(Caliber, Class, Weapon)
+		local Result = Weapon and Weapon.Sound or Class.Sound
+		local Sounds = Class.Sounds
+
+		if Sounds then
+			local Highest = 0
+
+			for Current, Sound in pairs(Sounds) do
+				if Current <= Caliber and Current > Highest then
+					Highest = Current
+					Result  = Sound
+				end
+			end
+		end
+
+		return Result
+	end
+
+	local function GetMass(Model, PhysObj, Class, Weapon)
+		if Weapon then return Weapon.Mass end
+
+		local Volume = PhysObj:GetVolume()
+		local Factor = Volume / ACF.GetModelVolume(Model)
+
+		return math.Round(Class.Mass * Factor)
+	end
+
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
-		Entity.ACF       = Entity.ACF or {}
-		Entity.ACF.Model = Weapon.Model
+		local Model   = Weapon and Weapon.Model or Class.Model
+		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
+		local Scale   = Weapon and 1 or Caliber / Class.Caliber.Base
+		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 
-		Entity:SetModel(Weapon.Model)
+		Entity.ACF.Model = Model
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		Entity:SetModel(Model)
+		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name           = Weapon.Name
-		Entity.ShortName      = Weapon.ID
-		Entity.EntType        = Class.Name
-		Entity.ClassData      = Class
-		Entity.WeaponData     = Weapon
-		Entity.Class          = Class.ID -- Needed for custom killicons
-		Entity.Caliber        = Weapon.Caliber
-		Entity.MagReload      = Weapon.MagReload
-		Entity.MagSize        = Weapon.MagSize or 1
-		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
-		Entity.ReloadTime     = Entity.Cyclic or 1
-		Entity.Spread         = Class.Spread
-		Entity.DefaultSound   = Class.Sound
-		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
-		Entity.Long           = Class.LongBarrel
-		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
-		Entity.Muzzle         = Entity.NormalMuzzle
+		Entity.Name         = Weapon and Weapon.Name or (Caliber .. "mm " .. Class.Name)
+		Entity.ShortName    = Weapon and Weapon.ID or (Caliber .. "mm" .. Class.ID)
+		Entity.EntType      = Class.Name
+		Entity.ClassData    = Class
+		Entity.Class        = Class.ID -- Needed for custom killicons
+		Entity.Caliber      = Caliber
+		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.MagSize      = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+		Entity.Cyclic       = Cyclic and 60 / Cyclic
+		Entity.ReloadTime   = Entity.Cyclic or 1
+		Entity.Spread       = Class.Spread
+		Entity.DefaultSound = GetSound(Caliber, Class)
+		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
+		Entity.HitBoxes     = ACF.HitBoxes[Model]
+		Entity.Long         = Class.LongBarrel
+		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
+		Entity.Muzzle       = Entity.NormalMuzzle
 
-		CreateInputs(Entity, Data, Class, Weapon)
-		CreateOutputs(Entity, Data, Class, Weapon)
+		CreateInputs(Entity, Data, Class)
+		CreateOutputs(Entity, Data, Class)
 
 		-- Set NWvars
-		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:SetNWString("Sound", Entity.SoundPath)
 		Entity:SetNWString("Class", Entity.Class)
-		Entity:SetNWString("ID", Entity.Weapon)
 
 		-- Adjustable barrel length
 		if Entity.Long then
@@ -136,10 +182,15 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass = Weapon.Mass
+		local PhysObj = Entity.ACF.PhysObj
 
-		local Phys = Entity:GetPhysicsObject()
-		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
+		if IsValid(PhysObj) then
+			local Mass = GetMass(Model, PhysObj, Class, Weapon)
+
+			Entity.ACF.LegalMass = Mass
+
+			PhysObj:SetMass(Mass)
+		end
 	end
 
 	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Class, List, Entity)
@@ -160,43 +211,42 @@ do -- Spawn and Update functions --------------------------------
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
-		local Gun = ents.Create("acf_gun")
+		local Entity = ents.Create("acf_gun")
 
-		if not IsValid(Gun) then return end
+		if not IsValid(Entity) then return end
 
-		Player:AddCleanup(Class.Cleanup, Gun)
-		Player:AddCount(Limit, Gun)
+		Player:AddCleanup(Class.Cleanup, Entity)
+		Player:AddCount(Limit, Entity)
 
-		Gun:SetPlayer(Player)
-		Gun:SetAngles(Angle)
-		Gun:SetPos(Pos)
-		Gun:Spawn()
+		Entity:SetModel(Class.Model) -- The model isn't automatically updated, so this is required
+		Entity:SetPlayer(Player)
+		Entity:SetAngles(Angle)
+		Entity:SetPos(Pos)
+		Entity:Spawn()
 
-		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.SoundPath    = Class.Sound
-		Gun.BarrelFilter = { Gun }
-		Gun.State        = "Empty"
-		Gun.Crates       = {}
-		Gun.CurrentShot  = 0
-		Gun.BulletData   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.DataStore    = ACF.GetEntityArguments("acf_gun")
+		Entity.ACF          = {}
+		Entity.Owner        = Player -- MUST be stored on ent for PP
+		Entity.BarrelFilter = { Entity }
+		Entity.State        = "Empty"
+		Entity.Crates       = {}
+		Entity.CurrentShot  = 0
+		Entity.BulletData   = EMPTY
+		Entity.DataStore    = ACF.GetEntityArguments("acf_gun")
 
-		Gun:SetNWString("Sound", Class.Sound)
+		UpdateWeapon(Entity, Data, Class, Weapon)
 
-		UpdateWeapon(Gun, Data, Class, Weapon)
-
-		WireLib.TriggerOutput(Gun, "Status", "Empty")
-		WireLib.TriggerOutput(Gun, "Entity", Gun)
-		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
-		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
+		WireLib.TriggerOutput(Entity, "Status", "Empty")
+		WireLib.TriggerOutput(Entity, "Entity", Entity)
+		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
+		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
 
 		if Class.OnSpawn then
-			Class.OnSpawn(Gun, Data, Class, Weapon)
+			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gun", Gun, Data, Class, Weapon)
+		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
-		Gun:UpdateOverlay(true)
+		Entity:UpdateOverlay(true)
 
 		do -- Mass entity mod removal
 			local EntMods = Data and Data.EntityMods
@@ -206,18 +256,18 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
-			if not IsValid(Gun) then return end
+		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
+			if not IsValid(Entity) then return end
 
-			UpdateTotalAmmo(Gun)
+			UpdateTotalAmmo(Entity)
 		end)
 
-		CheckLegal(Gun)
+		CheckLegal(Entity)
 
-		return Gun
+		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon")
+	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	------------------- Updating ---------------------
@@ -279,6 +329,7 @@ do -- Metamethods --------------------------------
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
 			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
+			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
 
@@ -793,3 +844,95 @@ do -- Metamethods --------------------------------
 		end
 	end -----------------------------------------
 end
+
+--[[
+local Results = {}
+local ClassFields = {
+	Mass = true,
+	MagSize = true,
+	MagReload = true,
+	Cyclic = true,
+}
+local RoundFields = {
+	MaxLength = true,
+	PropMass = true,
+}
+
+local function CheckField(Name, Stored, Data, Optional)
+	local Value = Data[Name]
+
+	if Value == nil then return end
+
+	if not Stored[Name] then
+		Stored[Name] = {
+			Total = 0,
+			Count = 0,
+			Avg   = 0,
+			Min   = math.huge,
+			Max   = -math.huge,
+			MinID = "N/A",
+			MaxID = "N/A",
+		}
+	end
+
+	Value = Value / (Data.Caliber or Optional.Caliber)
+
+	local Field = Stored[Name]
+	Field.Total = Field.Total + Value
+	Field.Count = Field.Count + 1
+	Field.Avg   = Field.Total / Field.Count
+
+	if Value < Field.Min then
+		Field.MinID = Data.Name or Optional.Name
+		Field.Min   = Value
+	end
+
+	if Value > Field.Max then
+		Field.MaxID = Data.Name or Optional.Name
+		Field.Max   = Value
+	end
+end
+
+local function CleanupFields(Stored)
+	for _, Field in pairs(Stored) do
+		Field.Total = nil
+		Field.Count = nil
+		Field.Avg   = math.Round(Field.Avg, 5) .. " per mm"
+
+		Field.Min = {
+			Value = math.Round(Field.Min, 5) .. " per mm",
+			Weapon = Field.MinID,
+		}
+
+		Field.Max = {
+			Value = math.Round(Field.Max, 5) .. " per mm",
+			Weapon = Field.MaxID,
+		}
+
+		Field.MaxID = nil
+		Field.MinID = nil
+	end
+end
+
+for ClassID, Class in pairs(Weapons) do
+	local Result = {}
+
+	for _, Data in pairs(Class.Lookup) do
+		local Round = Data.Round
+
+		for Field in pairs(ClassFields) do
+			CheckField(Field, Result, Data)
+		end
+
+		for Field in pairs(RoundFields) do
+			CheckField(Field, Result, Round, Data)
+		end
+	end
+
+	CleanupFields(Result)
+
+	Results[ClassID] = Result
+end
+
+ACF.SaveToJSON("acf", "scalable.json", Results, true)
+]]

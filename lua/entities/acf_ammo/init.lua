@@ -64,10 +64,24 @@ do -- Spawning and Updating --------------------
 			Class = ACF.GetClassGroup(Classes.Weapons, "C")
 
 			Data.Destiny = "Weapons"
-			Data.Weapon = "50mmC"
+			Data.Weapon  = "C"
+			Data.Caliber = 50
+		elseif Class.IsScalable then
+			local Weapon = Class.Lookup[Data.Weapon]
+
+			if Weapon then
+				Data.Weapon  = Class.ID
+				Data.Caliber = Weapon.Caliber
+			end
 		end
 
+		-- Verifying and clamping caliber value
+		if Class.IsScalable then
+			local Bounds  = Class.Caliber
+			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
 
+			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+		end
 
 		if not isstring(Data.AmmoType) then
 			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
@@ -95,16 +109,10 @@ do -- Spawning and Updating --------------------
 
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
+		local Caliber     = Weapon and Weapon.Caliber or Data.Caliber
+		local WeaponName  = Weapon and Weapon.Name or Caliber .. "mm " .. Class.Name
+		local WeaponShort = Weapon and Weapon.ID or Caliber .. "mm" .. Class.ID
 
-		Entity.Name       = Name or Weapon.Name .. " " .. Ammo.Name
-		Entity.ShortName  = ShortName or Weapon.ID .. " " .. Ammo.ID
-		Entity.EntType    = "Ammo Crate"
-		Entity.ClassData  = Class
-		Entity.WeaponData = Weapon
-		Entity.Caliber    = Weapon.Caliber
-		Entity.Class      = Class.ID
-
-		Entity:SetNWString("WireName", "ACF " .. (WireName or Weapon.Name .. " Ammo Crate"))
 		Entity:SetSize(Data.Size)
 
 		do -- Updating round data
@@ -136,22 +144,31 @@ do -- Spawning and Updating --------------------
 			Entity[V] = Data[V]
 		end
 
-		do -- Ammo count calculation
-			local Size = Entity:GetSize()
-			local Spacing = Weapon.Caliber * 0.0039
-			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Weapon, Entity.BulletData, Spacing, ACF.AmmoArmor)
-			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
+		Entity.Name      = Name or WeaponName .. " " .. Ammo.Name
+		Entity.ShortName = ShortName or WeaponShort .. Ammo.ID
+		Entity.EntType   = "Ammo Crate"
+		Entity.ClassData = Class
+		Entity.Class     = Class.ID -- Needed for custom killicons
+		Entity.Caliber   = Caliber
 
-			Entity.Capacity    = Rounds
-			Entity.AmmoMassMax = math.floor(Entity.BulletData.CartMass * Entity.Capacity)
-			Entity.Ammo        = math.floor(Entity.Capacity * Percentage)
+		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
+
+		do -- Ammo count calculation
+			local Size       = Entity:GetSize()
+			local BulletData = Entity.BulletData
+			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
+			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Class, Data, BulletData)
+
+			Entity.Capacity = Rounds
+			Entity.AmmoMass = math.floor(BulletData.CartMass * Entity.Capacity)
+			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
 
 			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
 
 			Entity:SetNWInt("Ammo", Entity.Ammo)
 
 			if ExtraData then
-				local MagSize = Weapon.MagSize
+				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
 
 				-- for future use in reloading
 				--Entity.IsBoxed = ExtraData.IsBoxed -- Ammunition is boxed
@@ -301,7 +318,7 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	ACF.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Weapon", "AmmoType", "Size")
+	ACF.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
 	------------------- Updating ---------------------
@@ -309,14 +326,16 @@ do -- Spawning and Updating --------------------
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Source    = Classes[Data.Destiny]
+		local Source     = Classes[Data.Destiny]
 		local Class      = ACF.GetClassGroup(Source, Data.Weapon)
-		local OldClass  = self.ClassData
-		local Weapon    = Class.Lookup[Data.Weapon]
-		local OldWeapon = self.Weapon
-		local Ammo      = AmmoTypes[Data.AmmoType]
-		local Blacklist = Ammo.Blacklist
-		local Extra     = ""
+		local Weapon     = Class.Lookup[Data.Weapon]
+		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
+		local OldClass   = self.ClassData
+		local OldWeapon  = self.Weapon
+		local OldCaliber = self.Caliber
+		local Ammo       = AmmoTypes[Data.AmmoType]
+		local Blacklist  = Ammo.Blacklist
+		local Extra      = ""
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
@@ -336,7 +355,7 @@ do -- Spawning and Updating --------------------
 
 		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
-		if Data.Weapon ~= OldWeapon or self.Unlinkable then
+		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
 			for Entity in pairs(self.Weapons) do
 				self:Unlink(Entity)
 			end
@@ -548,7 +567,7 @@ end ---------------------------------------------
 
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
-		Ent.ACF.LegalMass = math.floor(Ent.EmptyMass + (Ent.AmmoMassMax * (Ent.Ammo / math.max(Ent.Capacity, 1))))
+		Ent.ACF.LegalMass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
 
 		local Phys = Ent:GetPhysicsObject()
 
