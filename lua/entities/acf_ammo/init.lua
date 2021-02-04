@@ -5,6 +5,7 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
+local ACF          = ACF
 local ActiveCrates = ACF.AmmoCrates
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
@@ -12,48 +13,44 @@ local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
 	local CheckLegal = ACF_CheckLegal
-	local Classes = ACF.Classes
-	local Crates = Classes.Crates
-	local AmmoTypes = Classes.AmmoTypes
-	local GetClassGroup = ACF.GetClassGroup
-
-	local Updated = {
-		["20mmHRAC"] = "20mmRAC",
-		["30mmHRAC"] = "30mmRAC",
-		["40mmCL"] = "40mmGL",
-	}
+	local Classes    = ACF.Classes
+	local Crates     = Classes.Crates
+	local AmmoTypes  = Classes.AmmoTypes
 
 	local function VerifyData(Data)
-		if Data.RoundId then -- Updating old crates
-			Data.Weapon = Updated[Data.RoundId] or Data.RoundId
-			Data.AmmoType = Data.RoundType or "AP"
-
-			if Data.Id and Crates[Data.Id] then -- Pre scalable crate remnants
+		if Data.Id then -- Updating old crates
+			if Crates[Data.Id] then -- Pre scalable crate remnants
 				local Crate = Crates[Data.Id]
 
-				Data.Offset = Crate.Offset
-				Data.Size = Crate.Size
+				Data.Offset = Vector(Crate.Offset)
+				Data.Size   = Vector(Crate.Size)
 			else
-				local X = Data.RoundData11 or 24
-				local Y = Data.RoundData12 or 24
-				local Z = Data.RoundData13 or 24
+				local X = ACF.CheckNumber(Data.RoundData11, 24)
+				local Y = ACF.CheckNumber(Data.RoundData12, 24)
+				local Z = ACF.CheckNumber(Data.RoundData13, 24)
 
 				Data.Size = Vector(X, Y, Z)
 			end
+		elseif not isvector(Data.Size) then
+			local X = ACF.CheckNumber(Data.CrateSizeX, 24)
+			local Y = ACF.CheckNumber(Data.CrateSizeY, 24)
+			local Z = ACF.CheckNumber(Data.CrateSizeZ, 24)
+
+			Data.Size = Vector(X, Y, Z)
 		end
 
 		do -- Clamping size
+			local Min  = ACF.AmmoMinSize
+			local Max  = ACF.AmmoMaxSize
 			local Size = Data.Size
 
-			if not isvector(Size) then
-				Size = Vector(Data.CrateSizeX or 24, Data.CrateSizeY or 24, Data.CrateSizeZ or 24)
+			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
+			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
+			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+		end
 
-				Data.Size = Size
-			end
-
-			Size.x = math.Clamp(Size.x, 6, 96)
-			Size.y = math.Clamp(Size.y, 6, 96)
-			Size.z = math.Clamp(Size.z, 6, 96)
+		if not isstring(Data.Weapon) then
+			Data.Weapon = Data.RoundId
 		end
 
 		if not isstring(Data.Destiny) then
@@ -61,13 +58,19 @@ do -- Spawning and Updating --------------------
 		end
 
 		local Source = Classes[Data.Destiny]
-		local Class = GetClassGroup(Source, Data.Weapon)
+		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
 
 		if not Class then
-			Class = GetClassGroup(Classes.Weapons, "50mmC")
+			Class = ACF.GetClassGroup(Classes.Weapons, "C")
 
 			Data.Destiny = "Weapons"
 			Data.Weapon = "50mmC"
+		end
+
+
+
+		if not isstring(Data.AmmoType) then
+			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
 		end
 
 		local Ammo = AmmoTypes[Data.AmmoType]
@@ -221,28 +224,29 @@ do -- Spawning and Updating --------------------
 	-------------------------------------------------------------------------------
 
 	function MakeACF_Ammo(Player, Pos, Ang, Data)
-		VerifyData(Data)
-
-		local Source = Classes[Data.Destiny]
-		local Class = GetClassGroup(Source, Data.Weapon)
-		local Weapon = Class.Lookup[Data.Weapon]
-		local Ammo = AmmoTypes[Data.AmmoType]
-
 		if not Player:CheckLimit("_acf_ammo") then return end
 
 		local Crate = ents.Create("acf_ammo")
 
 		if not IsValid(Crate) then return end
 
-		Player:AddCount("_acf_ammo", Crate)
+		VerifyData(Data)
+
+		local Source = Classes[Data.Destiny]
+		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
+		local Weapon = Class.Lookup[Data.Weapon]
+		local Ammo   = AmmoTypes[Data.AmmoType]()
+		local Model  = "models/holograms/rcube_thin.mdl"
+
 		Player:AddCleanup("acf_ammo", Crate)
+		Player:AddCount("_acf_ammo", Crate)
 
 		Crate.ACF       = Crate.ACF or {}
-		Crate.ACF.Model = "models/holograms/rcube_thin.mdl"
+		Crate.ACF.Model = Model
 
-		Crate:SetModel(Crate.ACF.Model)
 		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:SetPlayer(Player)
+		Crate:SetModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()
@@ -306,7 +310,7 @@ do -- Spawning and Updating --------------------
 		VerifyData(Data)
 
 		local Source    = Classes[Data.Destiny]
-		local Class     = GetClassGroup(Source, Data.Weapon)
+		local Class      = ACF.GetClassGroup(Source, Data.Weapon)
 		local OldClass  = self.ClassData
 		local Weapon    = Class.Lookup[Data.Weapon]
 		local OldWeapon = self.Weapon

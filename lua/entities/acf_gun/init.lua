@@ -5,21 +5,14 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF          = ACF
-local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
-local CheckLegal   = ACF_CheckLegal
-local Shove        = ACF.KEShove
-local Overpressure = ACF.Overpressure
-local Weapons	   = ACF.Classes.Weapons
-local AmmoTypes    = ACF.Classes.AmmoTypes
-local TraceRes     = {} -- Output for traces
-local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
-local Trace        = util.TraceLine
-local TimerCreate  = timer.Create
-local HookRun      = hook.Run
-local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local ACF         = ACF
+local Weapons	  = ACF.Classes.Weapons
+local AmmoTypes   = ACF.Classes.AmmoTypes
+local TimerCreate = timer.Create
+local HookRun     = hook.Run
+local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
--- Replace with CFrame as soon as it's available
+-- TODO: Replace with CFrame as soon as it's available
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
@@ -33,15 +26,11 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn and Update functions --------------------------------
-	local Updated = {
-		["20mmHRAC"] = "20mmRAC",
-		["30mmHRAC"] = "30mmRAC",
-		["40mmCL"] = "40mmGL",
-	}
+	local CheckLegal = ACF_CheckLegal
 
 	local function VerifyData(Data)
-		if not Data.Weapon then
-			Data.Weapon = Data.Id or "50mmC"
+		if not isstring(Data.Weapon) then
+			Data.Weapon = Data.Id
 		end
 
 		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
@@ -165,9 +154,9 @@ do -- Spawn and Update functions --------------------------------
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Class  = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Limit  = Class.LimitConVar.Name
 		local Weapon = Class.Lookup[Data.Weapon]
-		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
@@ -364,6 +353,10 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
+		local Trace     = util.TraceLine
+		local TraceRes  = {} -- Output for traces
+		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
+
 		function ENT:BarrelCheck(Offset)
 			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
@@ -453,7 +446,7 @@ do -- Metamethods --------------------------------
 			local Energy = ACF_Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
-				Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
+				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
 			end
 
 			if self.MagSize then -- Mag-fed/Automatically loaded
@@ -496,7 +489,7 @@ do -- Metamethods --------------------------------
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
 
-			Shove(self, MassCenter, -self:GetForward(), Energy)
+			ACF.Shove(self, MassCenter, -self:GetForward(), Energy)
 		end
 	end -----------------------------------------
 
@@ -697,6 +690,7 @@ do -- Metamethods --------------------------------
 
 	do -- Misc ----------------------------------
 		local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+		local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj
