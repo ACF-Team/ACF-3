@@ -16,10 +16,12 @@ local function GetWeaponSpecs(ToolData)
 
 	local Bounds  = Class.Caliber
 	local Round   = Class.Round
+	local Model   = Class.Model
 	local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
 	local Scale   = Caliber / Bounds.Base
+	local Factor  = ACF.GetModelVolume(Model, Scale) / ACF.GetModelVolume(Model)
 
-	return Caliber, Round.MaxLength * Scale, Round.PropMass * Scale
+	return Caliber, Round.MaxLength * Scale, Round.PropMass * Factor
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
