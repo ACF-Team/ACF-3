@@ -1,12 +1,23 @@
 ACF.RegisterWeaponClass("C", {
-	Name		  = "Cannon",
-	Description	  = "High velocity guns that can fire very powerful ammunition, but are rather slow to reload.",
-	MuzzleFlash	  = "cannon_muzzleflash_noscale",
-	Spread		  = 0.08,
-	Sound		  = "acf_base/weapons/cannon_new.mp3",
+	Name        = "Cannon",
+	Description = "High velocity guns that can fire very powerful ammunition, but are rather slow to reload.",
+	Model       = "models/tankgun/tankgun_100mm.mdl",
+	Sound       = "acf_base/weapons/cannon_new.mp3",
+	MuzzleFlash = "cannon_muzzleflash_noscale",
+	IsScalable  = true,
+	Mass        = 2750,
+	Spread      = 0.08,
 	Caliber	= {
-		Min = 20,
-		Max = 140,
+		Base = 100,
+		Min  = 20,
+		Max  = 140,
+	},
+	Sounds = {
+		[50] = "acf_base/weapons/ac_fire4.mp3",
+	},
+	Round = {
+		MaxLength = 93,
+		PropMass  = 9.5,
 	},
 })
 

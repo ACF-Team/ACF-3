@@ -1,13 +1,33 @@
 ACF.RegisterWeaponClass("MG", {
-	Name		  = "Machinegun",
-	Description	  = "Machineguns are light guns that fire equally light bullets at a fast rate.",
-	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 0.16,
-	Sound		  = "acf_base/weapons/mg_fire4.mp3",
-	IsBoxed		  = true,
+	Name        = "Machinegun",
+	Description = "Machineguns are light guns that fire equally light bullets at a fast rate.",
+	Model       = "models/machinegun/machinegun_762mm.mdl",
+	Sound       = "acf_base/weapons/mg_fire4.mp3",
+	MuzzleFlash = "mg_muzzleflash_noscale",
+	IsScalable  = true,
+	IsBoxed     = true,
+	Spread      = 0.16,
+	Mass        = 12,
 	Caliber	= {
-		Min = 5.56,
-		Max = 20,
+		Base = 7.62,
+		Min  = 5.56,
+		Max  = 20,
+	},
+	MagSize = {
+		Min = 300,
+		Max = 200,
+	},
+	MagReload = {
+		Min = 5,
+		Max = 8,
+	},
+	Cyclic = {
+		Min = 800,
+		Max = 400,
+	},
+	Round = {
+		MaxLength = 13,
+		PropMass  = 0.04,
 	},
 })
 
@@ -24,7 +44,7 @@ ACF.RegisterWeapon("7.62mmMG", "MG", {
 	Round = {
 		MaxLength = 13,
 		PropMass  = 0.04,
-	}
+	},
 })
 
 ACF.RegisterWeapon("12.7mmMG", "MG", {

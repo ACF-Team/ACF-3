@@ -1,18 +1,38 @@
 ACF.RegisterWeaponClass("HMG", {
-	Name		  = "Heavy Machinegun",
-	Description	  = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
-	MuzzleFlash	  = "mg_muzzleflash_noscale",
-	Spread		  = 1.2,
-	Sound		  = "acf_base/weapons/mg_fire3.mp3",
+	Name        = "Heavy Machinegun",
+	Description = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
+	Model       = "models/machinegun/machinegun_20mm_compact.mdl",
+	Sound       = "acf_base/weapons/mg_fire3.mp3",
+	MuzzleFlash = "mg_muzzleflash_noscale",
+	IsScalable  = true,
+	Mass        = 160,
+	Spread      = 1.2,
 	Caliber	= {
-		Min = 13,
-		Max = 40,
+		Base = 20,
+		Min  = 13,
+		Max  = 40,
+	},
+	MagSize = {
+		Min = 50,
+		Max = 30,
+	},
+	MagReload = {
+		Min = 7.5,
+		Max = 10,
+	},
+	Cyclic = {
+		Min = 250,
+		Max = 200,
+	},
+	Round = {
+		MaxLength = 30,
+		PropMass  = 0.12,
 	},
 	LongBarrel = {
-		Index	 = 2,
+		Index    = 2,
 		Submodel = 4,
-		NewPos	 = "muzzle2",
-	}
+		NewPos   = "muzzle2",
+	},
 })
 
 ACF.RegisterWeapon("13mmHMG", "HMG", {

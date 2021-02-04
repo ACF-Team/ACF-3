@@ -1,13 +1,33 @@
 ACF.RegisterWeaponClass("SA", {
-	Name		  = "Semiautomatic Cannon",
-	Description	  = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
-	MuzzleFlash	  = "semi_muzzleflash_noscale",
-	Spread		  = 0.12,
-	Sound		  = "acf_base/weapons/sa_fire1.mp3",
-	IsBoxed		  = true,
+	Name        = "Semiautomatic Cannon",
+	Description = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
+	Model       = "models/autocannon/semiautocannon_45mm.mdl",
+	Sound       = "acf_base/weapons/sa_fire1.mp3",
+	MuzzleFlash = "semi_muzzleflash_noscale",
+	IsScalable  = true,
+	IsBoxed     = true,
+	Spread      = 0.12,
+	Mass        = 750,
 	Caliber	= {
-		Min = 20,
-		Max = 76,
+		Base = 45,
+		Min  = 20,
+		Max  = 76,
+	},
+	MagSize = {
+		Min = 5,
+		Max = 5,
+	},
+	MagReload = {
+		Min = 2,
+		Max = 7.6,
+	},
+	Cyclic = {
+		Min = 325,
+		Max = 150,
+	},
+	Round = {
+		MaxLength = 52,
+		PropMass  = 1.8,
 	},
 })
 

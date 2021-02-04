@@ -1,13 +1,34 @@
 ACF.RegisterWeaponClass("GL", {
-	Name		  = "Grenade Launcher",
-	Description	  = "Grenade Launchers can fire shells with relatively large payloads at a fast rate, but with very limited velocities and poor accuracy.",
-	MuzzleFlash	  = "gl_muzzleflash_noscale",
-	Spread		  = 0.28,
-	Sound		  = "acf_base/weapons/grenadelauncher.mp3",
-	IsBoxed		  = true,
+	Name        = "Grenade Launcher",
+	Description = "Grenade Launchers can fire shells with relatively large payloads at a fast rate, but with very limited velocities and poor accuracy.",
+	Sound       = "acf_base/weapons/grenadelauncher.mp3",
+	Model       = "models/launcher/40mmgl.mdl",
+	MuzzleFlash = "gl_muzzleflash_noscale",
+	DefaultAmmo = "HE",
+	IsScalable  = true,
+	IsBoxed     = true,
+	Mass		= 55,
+	Spread      = 0.28,
 	Caliber	= {
-		Min = 25,
-		Max = 40,
+		Base = 40,
+		Min  = 25,
+		Max  = 40,
+	},
+	MagSize = {
+		Min = 100,
+		Max = 60,
+	},
+	MagReload = {
+		Min = 7.5,
+		Max = 10,
+	},
+	Cyclic = {
+		Min = 250,
+		Max = 200,
+	},
+	Round = {
+		MaxLength = 7.5,
+		PropMass  = 0.01,
 	},
 })
 
@@ -25,6 +46,10 @@ ACF.RegisterWeapon("40mmGL", "GL", {
 		MaxLength = 7.5,
 		PropMass  = 0.01,
 	}
+})
+
+ACF.RegisterWeapon("40mmCL", "GL", {
+	Caliber = 40,
 })
 
 ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angle(0, 0, -180))

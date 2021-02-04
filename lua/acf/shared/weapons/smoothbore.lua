@@ -1,12 +1,21 @@
 ACF.RegisterWeaponClass("SB", {
-	Name		  = "Smoothbore Cannon",
-	Description	  = "More modern smoothbore cannons that can only fire munitions that do not rely on spinning for accuracy.",
-	MuzzleFlash	  = "cannon_muzzleflash_noscale",
-	Spread		  = 0.08,
-	Sound		  = "acf_base/weapons/cannon_new.mp3",
+	Name        = "Smoothbore Cannon",
+	Description = "More modern smoothbore cannons that can only fire munitions that do not rely on spinning for accuracy.",
+	Model		= "models/tankgun_old/tankgun_100mm.mdl",
+	Sound       = "acf_base/weapons/cannon_new.mp3",
+	MuzzleFlash = "cannon_muzzleflash_noscale",
+	DefaultAmmo = "APFSDS",
+	IsScalable  = true,
+	Spread      = 0.08,
+	Mass		= 3550,
 	Caliber	= {
-		Min = 20,
-		Max = 140,
+		Base = 105,
+		Min  = 105,
+		Max  = 140,
+	},
+	Round = {
+		MaxLength = 101,
+		PropMass  = 9,
 	},
 })
 

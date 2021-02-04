@@ -1,12 +1,32 @@
 ACF.RegisterWeaponClass("AC", {
-	Name		  = "Autocannon",
-	Description	  = "Autocannons have a rather high weight and bulk for the ammo they fire, but they can fire it extremely fast.",
-	MuzzleFlash	  = "auto_muzzleflash_noscale",
-	Spread		  = 0.2,
-	Sound		  = "acf_base/weapons/ac_fire4.mp3",
+	Name        = "Autocannon",
+	Description = "Autocannons have a rather high weight and bulk for the ammo they fire, but they can fire it extremely fast.",
+	Model       = "models/autocannon/autocannon_20mm.mdl",
+	Sound       = "acf_base/weapons/ac_fire4.mp3",
+	MuzzleFlash = "auto_muzzleflash_noscale",
+	IsScalable  = true,
+	Mass        = 500, -- Relative to the model's volume
+	Spread      = 0.2,
 	Caliber	= {
-		Min = 20,
-		Max = 50,
+		Base = 20,
+		Min  = 20,
+		Max  = 50,
+	},
+	MagSize = {
+		Min = 100,
+		Max = 25,
+	},
+	MagReload = {
+		Min = 15,
+		Max = 30,
+	},
+	Cyclic = {
+		Min = 250,
+		Max = 175,
+	},
+	Round = {
+		MaxLength = 32, -- Relative to the Base caliber, in cm
+		PropMass  = 0.13, -- Relative to the model's volume
 	},
 })
 

@@ -1,12 +1,32 @@
 ACF.RegisterWeaponClass("AL", {
-	Name		  = "Autoloader",
-	Description	  = "A cannon with attached autoloading mechanism. While it allows for several quick shots, the mechanism adds considerable bulk, weight, and magazine reload time.",
-	MuzzleFlash	  = "cannon_muzzleflash_noscale",
-	Spread		  = 0.08,
-	Sound		  = "acf_base/weapons/autoloader.mp3",
+	Name        = "Autoloader",
+	Description = "A cannon with attached autoloading mechanism. While it allows for several quick shots, the mechanism adds considerable bulk, weight, and magazine reload time.",
+	Model       = "models/tankgun/tankgun_al_100mm.mdl",
+	Sound       = "acf_base/weapons/autoloader.mp3",
+	MuzzleFlash = "cannon_muzzleflash_noscale",
+	IsScalable  = true,
+	Mass        = 3325,
+	Spread      = 0.08,
 	Caliber	= {
-		Min = 75,
-		Max = 140,
+		Base = 100,
+		Min  = 75,
+		Max  = 140,
+	},
+	MagSize = {
+		Min = 8,
+		Max = 5,
+	},
+	MagReload = {
+		Min = 15,
+		Max = 35,
+	},
+	Cyclic = {
+		Min = 30,
+		Max = 8,
+	},
+	Round = {
+		MaxLength = 93,
+		PropMass  = 9.5,
 	},
 })
 
