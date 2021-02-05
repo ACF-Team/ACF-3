@@ -385,6 +385,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:CanFire()
+			if not ACF.GunsCanFire then return false end -- Disabled by the server
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
 			if self.State ~= "Loaded" then -- Weapon is not loaded
@@ -470,6 +471,8 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:MuzzleEffect()
+			if not ACF.GunsCanSmoke then return end
+
 			local Effect = EffectData()
 				Effect:SetEntity(self)
 				Effect:SetScale(self.BulletData.PropMass)
