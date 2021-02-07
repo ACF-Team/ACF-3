@@ -696,6 +696,8 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Misc ----------------------------------
+		local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj
 
@@ -736,11 +738,13 @@ do -- Metamethods --------------------------------
 				local Pos = self:GetPos()
 
 				for Crate in pairs(self.Crates) do
-					if Crate:GetPos():DistToSqr(Pos) > 62500 then -- 250 unit radius
-						self:Unlink(Crate)
+					if Crate:GetPos():DistToSqr(Pos) > MaxDistance then
+						local Sound = UnlinkSound:format(math.random(1, 3))
 
-						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
-						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
+						Crate:EmitSound(Sound, 70, 100, ACF.Volume)
+						self:EmitSound(Sound, 70, 100, ACF.Volume)
+
+						self:Unlink(Crate)
 					end
 				end
 			end
