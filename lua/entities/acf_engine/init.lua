@@ -104,6 +104,7 @@ end
 local CheckLegal  = ACF_CheckLegal
 local Engines     = ACF.Classes.Engines
 local EngineTypes = ACF.Classes.EngineTypes
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
 local max         = math.max
@@ -144,8 +145,11 @@ local function CheckDistantFuelTanks(Engine)
 	local EnginePos = Engine:GetPos()
 
 	for Tank in pairs(Engine.FuelTanks) do
-		if EnginePos:DistToSqr(Tank:GetPos()) > 262144 then
-			Engine:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
+		if EnginePos:DistToSqr(Tank:GetPos()) > MaxDistance then
+			local Sound = UnlinkSound:format(math.random(1, 3))
+
+			Engine:EmitSound(Sound, 70, 100, ACF.Volume)
+			Tank:EmitSound(Sound, 70, 100, ACF.Volume)
 
 			Engine:Unlink(Tank)
 		end
@@ -250,6 +254,9 @@ do -- Spawn and Update functions
 	local function UpdateEngine(Entity, Data, Class, EngineData)
 		local Type = EngineData.Type or "GenericPetrol"
 		local EngineType = EngineTypes[Type] or EngineTypes.GenericPetrol
+
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = EngineData.Model
 
 		Entity:SetModel(EngineData.Model)
 

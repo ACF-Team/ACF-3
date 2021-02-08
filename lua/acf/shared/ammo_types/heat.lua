@@ -273,6 +273,14 @@ else
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
 
+	function Ammo:ImpactEffect(Effect, Bullet)
+		if not Bullet.Detonated then
+			self:PenetrationEffect(Effect, Bullet)
+		end
+
+		Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
+	end
+
 	function Ammo:PenetrationEffect(Effect, Bullet)
 		if Bullet.Detonated then
 			local Data = EffectData()

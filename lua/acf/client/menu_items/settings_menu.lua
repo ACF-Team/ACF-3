@@ -148,9 +148,25 @@ do -- Serverside settings
 
 		Base:AddHelp("You'll need the player's permissions in order to check relevant information on entities owned by them.")
 
-		local Gunfire = Base:AddCheckBox("Allow weapon fire.")
-		Gunfire:SetServerData("GunfireEnabled", "OnChange")
-		Gunfire:DefineSetter(function(Panel, _, _, Value)
+		local GunFire = Base:AddCheckBox("Allow guns to fire.")
+		GunFire:SetServerData("GunsCanFire", "OnChange")
+		GunFire:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local GunSmoke = Base:AddCheckBox("Allow guns to produce sound and particle effects.")
+		GunSmoke:SetServerData("GunsCanSmoke", "OnChange")
+		GunSmoke:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local RackFire = Base:AddCheckBox("Allow missiles and bombs to fire.")
+		RackFire:SetServerData("RacksCanFire", "OnChange")
+		RackFire:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value

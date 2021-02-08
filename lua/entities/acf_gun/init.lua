@@ -94,6 +94,9 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
+		Entity.ACF       = Entity.ACF or {}
+		Entity.ACF.Model = Weapon.Model
+
 		Entity:SetModel(Weapon.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
@@ -144,8 +147,7 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass	= Weapon.Mass
-		Entity.ACF.Model		= Weapon.Model
+		Entity.ACF.LegalMass = Weapon.Mass
 
 		local Phys = Entity:GetPhysicsObject()
 		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
@@ -383,6 +385,7 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:CanFire()
+			if not ACF.GunsCanFire then return false end -- Disabled by the server
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
 			if self.State ~= "Loaded" then -- Weapon is not loaded
@@ -468,6 +471,8 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:MuzzleEffect()
+			if not ACF.GunsCanSmoke then return end
+
 			local Effect = EffectData()
 				Effect:SetEntity(self)
 				Effect:SetScale(self.BulletData.PropMass)
@@ -691,6 +696,8 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Misc ----------------------------------
+		local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj
 
@@ -731,11 +738,13 @@ do -- Metamethods --------------------------------
 				local Pos = self:GetPos()
 
 				for Crate in pairs(self.Crates) do
-					if Crate:GetPos():DistToSqr(Pos) > 62500 then -- 250 unit radius
-						self:Unlink(Crate)
+					if Crate:GetPos():DistToSqr(Pos) > MaxDistance then
+						local Sound = UnlinkSound:format(math.random(1, 3))
 
-						self:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
-						Crate:EmitSound(UnlinkSound:format(math.random(1, 3)), 70, 100, ACF.Volume)
+						Crate:EmitSound(Sound, 70, 100, ACF.Volume)
+						self:EmitSound(Sound, 70, 100, ACF.Volume)
+
+						self:Unlink(Crate)
 					end
 				end
 			end

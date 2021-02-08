@@ -105,6 +105,23 @@ do -- ACF Menu context panel
 		return hook.Run("ACF_AllowMenuItem", Item.Index, Item.Option, Item.Name) ~= false
 	end
 
+	local function UpdateTree(Tree, Old, New)
+		local OldParent = Old and Old.Parent
+		local NewParent = New.Parent
+
+		if OldParent == NewParent then return end
+
+		if OldParent then
+			OldParent.AllowExpand = true
+			OldParent:SetExpanded(false)
+		end
+
+		NewParent.AllowExpand = true
+		NewParent:SetExpanded(true)
+
+		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
+	end
+
 	local function PopulateTree(Tree)
 		local OptionList = GetSortedList(Options)
 		local First
@@ -116,16 +133,24 @@ do -- ACF Menu context panel
 
 			local Parent = Tree:AddNode(Option.Name, Option.Icon)
 			local SetExpanded = Parent.SetExpanded
+			local Expander = Parent.Expander
 
 			Parent.Action = Option.Action
 			Parent.Master = true
 			Parent.Count = 0
-			Parent.SetExpanded = function(Panel, Bool)
-				if not Panel.AllowExpand then return end
 
-				SetExpanded(Panel, Bool)
+			function Parent:SetExpanded(Bool)
+				if not self.AllowExpand then return end
 
-				Panel.AllowExpand = nil
+				SetExpanded(self, Bool)
+
+				self.AllowExpand = nil
+			end
+
+			function Expander:DoClick()
+				local Node = Parent:GetParentNode()
+
+				Node:OnNodeSelected(Parent)
 			end
 
 			Tree.BaseHeight = Tree.BaseHeight + 1
@@ -151,23 +176,6 @@ do -- ACF Menu context panel
 		end
 
 		Tree:SetSelectedItem(First)
-	end
-
-	local function UpdateTree(Tree, Old, New)
-		local OldParent = Old and Old.Parent
-		local NewParent = New.Parent
-
-		if OldParent == NewParent then return end
-
-		if OldParent then
-			OldParent.AllowExpand = true
-			OldParent:SetExpanded(false)
-		end
-
-		NewParent.AllowExpand = true
-		NewParent:SetExpanded(true)
-
-		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
 	end
 
 	function ACF.CreateSpawnMenu(Panel)
@@ -267,11 +275,18 @@ do -- Client and server settings
 			end
 
 			for Name, Data in SortedPairsByMemberValue(Destiny, "Index") do
-				local Base = Menu:AddCollapsible(Name)
+				local Base, Section = Menu:AddCollapsible(Name, false)
 
-				Data.Create(Base)
+				function Section:OnToggle(Bool)
+					if not Bool then return end
+					if self.Created then return end
 
-				hook.Run(Hook, Name, Base)
+					Data.Create(Base)
+
+					hook.Run(Hook, Name, Base)
+
+					self.Created = true
+				end
 			end
 		end
 	end

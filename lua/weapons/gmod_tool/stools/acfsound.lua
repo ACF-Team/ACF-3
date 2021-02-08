@@ -26,9 +26,8 @@ Sounds.acf_gun = {
 		ent:SetNWString("Sound", soundData.Sound)
 	end,
 	ResetSound = function(ent)
-		local setSound = Sounds.acf_gun.SetSound
-
-		setSound(ent, { Sound = ent.DefaultSound })
+		ent.SoundPath = ent.DefaultSound
+		ent:SetNWString("Sound", ent.DefaultSound)
 	end
 }
 
@@ -74,23 +73,22 @@ Sounds.acf_piledriver = {
 	end
 }
 
-local function ReplaceSound(_, Entity, data)
+local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
-	local sound = data[1]
-	local pitch = data[2] or 1
+
+	local Support = Sounds[Entity:GetClass()]
+	local Sound, Pitch = unpack(Data)
+
+	if not Support then return end
 
 	timer.Simple(1, function()
-		local class = Entity:GetClass()
-		local support = ACF.SoundToolSupport[class]
-		if not support then return end
-
-		support.SetSound(Entity, {
-			Sound = sound,
-			Pitch = pitch
+		Support.SetSound(Entity, {
+			Sound = Sound,
+			Pitch = Pitch or 1,
 		})
-	end)
 
-	duplicator.StoreEntityModifier(Entity, "acf_replacesound", {sound, pitch})
+		duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1 })
+	end)
 end
 
 duplicator.RegisterEntityModifier("acf_replacesound", ReplaceSound)

@@ -318,6 +318,9 @@ do -- Spawn and Update functions
 	end
 
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = Gearbox.Model -- Must be set before changing model
+
 		Entity:SetModel(Gearbox.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)

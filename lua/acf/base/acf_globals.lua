@@ -11,7 +11,6 @@ do -- ACF global vars
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
-	ACF.GunfireEnabled     = true
 	ACF.AllowAdminData     = false -- Allows admins to mess with a few server settings and data variables
 	ACF.HEPush             = true -- Whether or not HE pushes on entities
 	ACF.KEPush             = true -- Whether or not kinetic force pushes on entities
@@ -21,6 +20,11 @@ do -- ACF global vars
 	ACF.WorkshopContent    = true -- Enable workshop content download for clients
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
+	ACF.LinkDistance       = 650 -- Maximum distance, on inches, at which components will remain linked with each other
+
+	ACF.GunsCanFire        = true
+	ACF.GunsCanSmoke       = true
+	ACF.RacksCanFire       = true
 
 	-- Fuzes
 	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed

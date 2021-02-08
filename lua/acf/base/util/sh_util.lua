@@ -635,10 +635,10 @@ do -- Sound aliases
 		local SoundCache = {}
 
 		function ACF.IsValidSound(Name)
-			Name = GetAlias(Name)
+			Name = GetAlias(Name:Trim())
 
 			if SoundCache[Name] == nil then
-				SoundCache[Name] = file.Exists(Path:format(Name), "GAME")
+				SoundCache[Name] = #Name > 0 and file.Exists(Path:format(Name), "GAME")
 			end
 
 			return SoundCache[Name]

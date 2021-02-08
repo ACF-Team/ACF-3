@@ -84,6 +84,9 @@ do -- Spawning and Updating --------------------
 		local Scale   = Caliber / Class.Caliber.Base
 		local Mass    = math.floor(Class.Mass * Scale)
 
+		Entity.ACF = Entity.ACF or {}
+		Entity.ACF.Model = Class.Model -- Must be set before changing model
+
 		Entity:SetModel(Class.Model)
 		Entity:SetScale(Scale)
 
@@ -340,7 +343,7 @@ do -- Firing ------------------------------------
 
 	-- The entity should produce a "click" sound if this function returns false
 	function ENT:CanShoot()
-		if not ACF.GunfireEnabled then return false end
+		if not ACF.GunsCanFire then return false end
 		if not ACF.AllowFunEnts then return false end
 		if hook.Run("ACF_FireShell", self) == false then return false end
 
