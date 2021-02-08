@@ -112,7 +112,7 @@ do -- ACF Activation and Damage
 			self.ACF.Area = PhysObj:GetVolume() * 6.45 -- NOTE: Shouldn't this just be Area = PhysObj:GetSurfaceArea()??
 		end
 
-		local Health  = Volume / ACF.Threshold
+		local Health  = Volume
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -125,5 +125,37 @@ do -- ACF Activation and Damage
 		self.ACF.MaxHealth = Health
 		self.ACF.Ductility = 0
 		self.ACF.Type      = "Prop"
+	end
+
+	function ENT:ACF_OnDamage(Bullet, Trace)
+		local Entity = Trace.Entity
+		local Armor  = Entity:GetArmor(Trace)
+		local Energy = Bullet.Energy
+		local FrArea = Bullet.PenArea
+		local Pen    = (Energy.Penetration / FrArea) * ACF.KEtoRHA -- RHA Penetration
+
+		local MaxPen = math.min(Armor, Pen)
+
+		local Damage = MaxPen * FrArea -- Damage is simply the volume of the hole made
+		local HP     = self.ACF.Health
+
+		self.ACF.Health = HP - Damage -- Update health
+
+		print("Damage!")
+		print("    PenCaliber: " .. math.Round(math.sqrt(FrArea / 3.14159) * 20))
+		print("    MaxPen: " .. MaxPen)
+		print("    MaxDamage: " .. Pen * FrArea)
+		print("    HP: " .. math.Round(HP, 3))
+		print("    Effective Armor: " .. math.Round(Armor))
+		print("    Damage: " .. math.Round(Damage, 3))
+		print("    pdHP: " .. math.Round(self.ACF.Health, 3))
+		print("    Loss: " .. math.Clamp(MaxPen / Pen, 0, 1))
+
+		return { -- Damage report
+			Loss = math.Clamp(MaxPen / Pen, 0, 1), -- Energy loss ratio
+			Damage = Damage,
+			Overkill = math.max(Pen - MaxPen, 0),
+			Kill = Damage > HP
+		}
 	end
 end
