@@ -62,16 +62,9 @@ local function TraceThroughObject(Trace)
     local Enter  = Trace.HitPos
     local Dire   = (Enter - Trace.StartPos):GetNormalized()
 
-    debugoverlay.Line(Origin, Enter, 0.03, Color(255, 255, 255))
-    debugoverlay.Cross(Enter, 2, 0.03, Color(0, 255, 0), true)
-
     local Opposite = FindOtherSide(Ent, Origin, Dire)
     local Exit     = ACF.Trace({start = Enter, endpos = Opposite, filter = {Ent}}).HitPos
     local Length   = (Exit - Enter):Length()
-
-    debugoverlay.Text((Enter + Exit) * 0.5 + Vector(0, 0, 3) + Dire:Cross(Vector(0, 0, 1)) * 3, Length * 25.4 .. "mm", 15, true)
-    debugoverlay.Line(Enter, Exit, 0.03, Color(255, 0, 160), true)
-    debugoverlay.Cross(Exit, 3, 0.03, Color(255, 0, 0), true)
 
     return Length, Exit
 end
@@ -84,9 +77,9 @@ function ENT:GetArmor(Trace)
     local Enter        = Trace.HitPos
     local Length, Exit = TraceThroughObject(Trace)
 
-    debugoverlay.Cross(Enter, 3, 5, Color(0, 255, 0), true)
-    debugoverlay.Cross(Exit, 3, 5, Color(255, 0, 0), true)
-    debugoverlay.Line(Enter, Exit, 5, Color(0, 255, 255), true)
+    debugoverlay.Cross(Enter, 3, 0.015, Color(0, 255, 0), true)
+    debugoverlay.Cross(Exit, 3, 0.015, Color(255, 0, 0), true)
+    debugoverlay.Line(Enter, Exit, 0.015, Color(0, 255, 255), true)
 
     return Length * 25.4 -- Inches to mm
 end

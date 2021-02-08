@@ -117,6 +117,8 @@ if CLIENT then
 	local Red = Color(200, 0, 0)
 
 	function TOOL:DrawToolScreen()
+		local Trace = self:GetOwner():GetEyeTrace()
+		local Ent   = Trace.Entity
 		local Weapon = self.Weapon
 		local Health = math.Round(Weapon:GetNWFloat("HP", 0), 2)
 		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0), 2)
@@ -124,7 +126,13 @@ if CLIENT then
 		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
 
 		local HealthTxt = Health .. "/" .. MaxHealth
-		local ArmourTxt = Armour .. "/" .. MaxArmour
+		local ArmourTxt
+
+		if Ent.GetArmor then -- Is procedural armor
+			ArmourTxt = tostring(math.Round(Ent:GetArmor(Trace), 4))
+		else
+			ArmourTxt = Armour .. "/" .. MaxArmour
+		end
 
 		cam.Start2D()
 			render.Clear(0, 0, 0, 0)
