@@ -11,46 +11,30 @@ local DragDiv     = ACF.DragDiv
 -- Local Funcs ----------------------------------
 
 local function CalcDamage(Bullet, Trace)
-	local Entity = Trace.Entity
-	local Angle  = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
+	-- TODO: Why are we getting impact angles outside these bounds?
+	local Angle  = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
 	local Energy = Bullet.Energy
-	local FrArea = Bullet.FrArea
-
-	local FinalAngle = math.Clamp(Angle, -90, 90) -- TODO: Why are we getting impact angles outside these bounds?
-	local armor = Entity.ACF.Armour -- Armor
-	local losArmor = armor / math.abs(math.cos(math.rad(FinalAngle)) ^ ACF.SlopeEffectFactor) -- LOS Armor
-	local maxPenetration = (Energy.Penetration / FrArea) * ACF.KEtoRHA --RHA Penetration
+	local Area   = Bullet.PenArea
 	local HitRes = {}
 
-	-- Projectile caliber. Messy, function signature
-	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
-	-- Breach probability
-	local breachProb = math.Clamp((caliber / Entity.ACF.Armour - 1.3) / (7 - 1.3), 0, 1)
-	-- Penetration probability
-	local penProb = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / losArmor - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
+	local Caliber        = Bullet.Caliber * 10
+	local BaseArmor      = Trace.Entity.ACF.Armour
+	local SlopeFactor    = BaseArmor / Caliber
+	local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+	local MaxPenetration = Energy.Penetration / Area * ACF.KEtoRHA --RHA Penetration
 
-	-- Breach chance roll
-	if breachProb > math.random() and maxPenetration > armor then
-		HitRes.Damage = FrArea -- Inflicted Damage
-		HitRes.Overkill = maxPenetration - armor -- Remaining penetration
-		HitRes.Loss = armor / maxPenetration -- Energy loss in percents
+	if MaxPenetration > EffectiveArmor then
+		HitRes.Damage   = Area -- Inflicted Damage
+		HitRes.Overkill = MaxPenetration - BaseArmor -- Remaining penetration
+		HitRes.Loss     = BaseArmor / MaxPenetration -- Energy loss in percents
+	else
+		-- Projectile did not penetrate the armor
+		local Penetration = math.min(MaxPenetration, EffectiveArmor)
 
-		return HitRes
-	elseif penProb > math.random() then
-		-- Penetration chance roll
-		local Penetration = math.min(maxPenetration, losArmor)
-		HitRes.Damage = (Penetration / losArmor) ^ 2 * FrArea
-		HitRes.Overkill = (maxPenetration - Penetration)
-		HitRes.Loss = Penetration / math.max(0.001, maxPenetration)
-
-		return HitRes
+		HitRes.Damage   = (Penetration / EffectiveArmor) ^ 2 * Area
+		HitRes.Overkill = 0
+		HitRes.Loss     = 1
 	end
-
-	-- Projectile did not breach nor penetrate armor
-	local Penetration = math.min(maxPenetration, losArmor)
-	HitRes.Damage = (Penetration / losArmor) ^ 2 * FrArea
-	HitRes.Overkill = 0
-	HitRes.Loss = 1
 
 	return HitRes
 end
