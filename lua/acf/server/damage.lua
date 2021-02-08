@@ -12,16 +12,17 @@ local DragDiv     = ACF.DragDiv
 
 local function CalcDamage(Bullet, Trace)
 	-- TODO: Why are we getting impact angles outside these bounds?
-	local Angle  = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
-	local Energy = Bullet.Energy
-	local Area   = Bullet.PenArea
-	local HitRes = {}
+	local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
+	local Energy  = Bullet.Energy
+	local PenArea = Bullet.PenArea
+	local Area    = Bullet.FrArea
+	local HitRes  = {}
 
 	local Caliber        = Bullet.Caliber * 10
 	local BaseArmor      = Trace.Entity.ACF.Armour
 	local SlopeFactor    = BaseArmor / Caliber
 	local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
-	local MaxPenetration = Energy.Penetration / Area * ACF.KEtoRHA --RHA Penetration
+	local MaxPenetration = Energy.Penetration / PenArea * ACF.KEtoRHA --RHA Penetration
 
 	if MaxPenetration > EffectiveArmor then
 		HitRes.Damage   = Area -- Inflicted Damage
