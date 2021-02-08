@@ -207,20 +207,20 @@ if SERVER then
 		local Target = Trace.Entity
 
 		if ACF.Check(Target) then
-			local Speed = Bullet.Flight:Length() / ACF.Scale
+			local Speed  = Bullet.Flight:Length() / ACF.Scale
 			local HitPos = Trace.HitPos
+
+			Bullet.Speed = Speed
 
 			-- TODO: Figure out why bullets are missing 10% of their penetration
 			if Bullet.Detonated then
 				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
 				local Energy     = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
 
-				Bullet.Speed  = Speed
-				Bullet.Energy = Energy
+				Bullet.Energy      = Energy
+				Bullet.NotFirstPen = true
 
 				local HitRes = ACF_RoundImpact(Bullet, Trace)
-
-				Bullet.NotFirstPen = true
 
 				if HitRes.Overkill > 0 then
 					table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
@@ -232,6 +232,8 @@ if SERVER then
 					return false
 				end
 			else
+				Bullet.Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
+
 				local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 				if HitRes.Ricochet then
