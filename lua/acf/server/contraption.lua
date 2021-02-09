@@ -246,7 +246,6 @@ do -- ASSUMING DIRECT CONTROL
 
 		function ENT:SetModel(String)
 			if self.IsACFEntity and self.ACF and String ~= self.ACF.Model then
-				print("Reject model")
 				return
 			end
 
@@ -259,8 +258,7 @@ do -- ASSUMING DIRECT CONTROL
 		local SetSolid = SetSolid or ENT.SetSolid
 
 		function ENT:SetSolid(Number)
-			if self.IsACFEntity then
-				print("Reject solidity")
+			if self.IsACFEntity and Number ~= SOLID_VPHYSICS then
 				return
 			end
 
