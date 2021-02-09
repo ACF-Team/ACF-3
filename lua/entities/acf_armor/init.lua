@@ -28,11 +28,7 @@ do -- Spawning and Updating
 	end
 
 	local function UpdatePlate(Entity, Data)
-		Entity.IsACFEntity = false -- Hack to make sure nothing goes wrong
-
 		Entity:SetSize(Data.Size)
-
-		Entity.IsACFEntity = true
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do

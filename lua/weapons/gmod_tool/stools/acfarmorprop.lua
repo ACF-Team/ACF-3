@@ -111,7 +111,6 @@ if CLIENT then
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
 	end
 
-	local DisplayMat = Material("models/props_combine/combine_interface_disp")
 	local TextGray = Color(224, 224, 255)
 	local BGGray = Color(200, 200, 200)
 	local Blue = Color(50, 200, 200)
@@ -120,31 +119,20 @@ if CLIENT then
 	local Black = Color(0, 0, 0)
 	local drawText = draw.SimpleTextOutlined
 
-	surface.CreateFont("ACF_Title", {
+	surface.CreateFont("ACF_ToolTitle", {
 		font = "Arial",
 		size = 32
 	})
 
-	surface.CreateFont("ACF_Sub", {
+	surface.CreateFont("ACF_ToolSub", {
 		font = "Arial",
 		size = 25
 	})
 
-	surface.CreateFont("ACF_Label", {
+	surface.CreateFont("ACF_ToolLabel", {
 		font = "Arial",
-		extended = false,
 		size = 32,
 		weight = 620,
-		blursize = 0,
-		scanlines = 0,
-		underline = 0,
-		italic = false,
-		strikeout = false,
-		symbol = false,
-		rotary = false,
-		shadow = false,
-		additive = false,
-		outline = false
 	})
 
 	function TOOL:DrawToolScreen()
