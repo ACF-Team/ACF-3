@@ -159,22 +159,22 @@ if CLIENT then
 				surface.SetDrawColor(BGGray)
 				surface.DrawRect(0, 34, 256, 2)
 
-				drawText("ACF Armor Data", "ACF_Title", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Material: " .. Material, "ACF_Sub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Weight: " .. Mass .. "kg", "ACF_Sub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Nominal Armor: " .. Nominal .. "mm", "ACF_Sub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("ACF Armor Data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Material: " .. Material, "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Weight: " .. Mass .. "kg", "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Nominal Armor: " .. Nominal .. "mm", "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 110, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 110, Angle / 90 * 236, 32, Green)
-				drawText("Hit Angle: " .. Angle .. "°", "ACF_Label", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText("Hit Angle: " .. Angle .. "°", "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 160, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 160, Armor / MaxArmor * 236, 32, Blue)
-				drawText("Armor: " .. Armor .. "mm", "ACF_Label", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText("Armor: " .. Armor .. "mm", "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 210, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 210, Health / MaxHealth * 236, 32, Red)
-				drawText("Health: " .. Health, "ACF_Label", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
+				drawText("Health: " .. Health, "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
 				--drawText("")
 			cam.End2D()
 		else
