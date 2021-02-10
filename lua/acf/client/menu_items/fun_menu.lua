@@ -123,13 +123,35 @@ end
 
 do -- Procedural Armor
 	local BoxSize = {}
+	local ArmorTypes = ACF.Classes.ArmorTypes
 
 	local function CreateMenu(Menu)
 		ACF.SetToolMode("acf_menu", "Spawner", "Component")
 		ACF.SetClientData("PrimaryClass", "acf_armor")
-		ACF.SetClientData("SecondaryClass", "N/A")
+		ACF.SetClientData("SecondaryClass", "RHA")
 
 		Menu:AddTitle("Procedural Armor")
+
+		local ClassBase = Menu:AddCollapsible("Material Information")
+		local ClassList = Menu:AddComboBox()
+		local ClassName = ClassBase:AddTitle()
+		local ClassDesc = ClassBase:AddLabel()
+		local ClassDens = ClassBase:AddLabel()
+
+		ACF.LoadSortedList(ClassList, ArmorTypes, "Name")
+
+		function ClassList:OnSelect(Index, _, Data)
+			if self.Selected == Data then return end
+
+			self.ListData.Index = Index
+			self.Selected       = Data
+
+			ClassName:SetText(Data.Name)
+			ClassDesc:SetText(Data.Description)
+			ClassDens:SetText("Density: " .. Data.Density .. "g/cm³ (" .. math.Round(Data.Density * 0.163871, 2) .. "kg/in³)")
+
+			ACF.SetClientData("SecondaryClass", Data.ID)
+		end
 
 		local SizeX = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
 		SizeX:SetClientData("PlateSizeX", "OnValueChanged")

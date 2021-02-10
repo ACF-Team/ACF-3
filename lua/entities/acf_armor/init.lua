@@ -1,8 +1,11 @@
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
 do -- Spawning and Updating
+	local Armors = ACF.Classes.ArmorTypes
+
 	local function VerifyData(Data)
 		if not isnumber(Data.Width) then
 			Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
@@ -22,18 +25,23 @@ do -- Spawning and Updating
 			Data.Thickness = math.Clamp(Data.Thickness, 5, 1000)
 		end
 
-		Data.Size = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
+		Data.Size  = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
 
 		hook.Run("ACF_VerifyData", "acf_armor", Data)
 	end
 
 	local function UpdatePlate(Entity, Data)
+		Entity.Class = Armors[Data.SecondaryClass]
+
+		Entity:SetNWString("Class", Data.SecondaryClass)
 		Entity:SetSize(Data.Size)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
+
+		Entity.Class = Armors[Data.SecondaryClass] -- What the fuck?
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -73,7 +81,7 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness")
+	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "Class")
 
 	------------------- Updating ---------------------
 
@@ -97,7 +105,7 @@ do -- Spawning and Updating
 
 	function ENT:OnResized(Size)
 		local Volume = Size.x * Size.y * Size.z
-		local Mass   = Volume * 0.13 -- Kg of steel per inch
+		local Mass   = self.Class:GetMass(Volume)
 
 		self:GetPhysicsObject():SetMass(Mass)
 	end
@@ -109,10 +117,10 @@ do -- ACF Activation and Damage
 		local Volume  = PhysObj:GetVolume()
 
 		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetVolume() * 6.45 -- NOTE: Shouldn't this just be Area = PhysObj:GetSurfaceArea()??
+			self.ACF.Area = PhysObj:GetVolume() * 6.45
 		end
 
-		local Health  = Volume
+		local Health  = Volume / ACF.Threshold * self.Class.Tensile
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then

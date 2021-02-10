@@ -64,7 +64,7 @@ local function TraceThroughObject(Trace)
 
     local Opposite = FindOtherSide(Ent, Origin, Dire)
     local Exit     = ACF.Trace({start = Enter, endpos = Opposite, filter = {Ent}}).HitPos
-    local Length   = (Exit - Enter):Length()
+    local Length   = (Exit - Enter):Length() * 25.4 -- Inches to mm
 
     return Length, Exit
 end
@@ -81,5 +81,5 @@ function ENT:GetArmor(Trace)
     debugoverlay.Cross(Exit, 3, 0.015, Color(255, 0, 0), true)
     debugoverlay.Line(Enter, Exit, 0.015, Color(0, 255, 255), true)
 
-    return Length * 25.4 -- Inches to mm
+    return ACF.RHAe(Length, self.Class.Density)
 end

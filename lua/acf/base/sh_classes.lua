@@ -275,6 +275,17 @@ do -- Ammo type registration function
 	end
 end
 
+do -- Armor type registration function
+	ACF.Classes.ArmorTypes = ACF.Classes.ArmorTypes or {}
+
+	local RegisterClass = ACF.RegisterClass
+	local Types = ACF.Classes.ArmorTypes
+
+	function ACF.RegisterArmorType(ID, Base)
+		return RegisterClass(ID, Base, Types)
+	end
+end
+
 do -- Engine registration functions
 	ACF.Classes.Engines = ACF.Classes.Engines or {}
 

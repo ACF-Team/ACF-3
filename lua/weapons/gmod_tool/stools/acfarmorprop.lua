@@ -144,7 +144,7 @@ if CLIENT then
 
 
 		if Ent.GetArmor then -- Is procedural armor
-			local Material = "RHA Steel"
+			local Material = Ent.Class.ID
 			local Mass     = math.Round(Weapon:GetNWFloat("WeightMass", 0), 1)
 			local Angle    = math.Round(ACF_GetHitAngle(Trace.HitNormal, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
 			local Armor    = math.Round(Ent:GetArmor(Trace), 1)
