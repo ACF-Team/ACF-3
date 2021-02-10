@@ -7,6 +7,25 @@ include("shared.lua")
 
 local Meshes = {}
 
+do -- Dirty, dirty hacking to prevent other addons initializing physics the wrong way
+	local ENT  = FindMetaTable("Entity")
+	local Init = Init or ENT.PhysicsInit
+
+	function ENT:PhysicsInit(Solid, Bypass)
+		if self.IsScalable and not Bypass then
+			if not self.FirstInit then
+				self.FirstInit = true
+				return
+			end
+
+			self:Restore()
+			return
+		end
+
+		Init(self, Solid)
+	end
+end
+
 function CreateScalableMultiConvex(Player, Pos, Angle, Size)
 	local Ent = ents.Create("base_scalable_mconvex")
 
@@ -40,7 +59,7 @@ function ENT:FindOriginalSize(SizeTable)
 	local PhysObj = self:GetPhysicsObject()
 
 	if not IsValid(PhysObj) then
-		self:PhysicsInit(SOLID_VPHYSICS)
+		self:PhysicsInit(SOLID_VPHYSICS, true)
 
 		PhysObj = self:GetPhysicsObject()
 	end
@@ -85,4 +104,14 @@ function ENT:GetExtraInfo()
 	return {
 		Mesh = Meshes[self:GetModel()]
 	}
+end
+
+function ENT:Restore()
+	local Size = self:GetSize() / self:GetOriginalSize()
+
+	self.Mesh = table.Copy(Meshes[self:GetModel()])
+	self.Size = Vector(1, 1, 1)
+	self:SetSize(Size)
+
+	Print(self:GetSize())
 end

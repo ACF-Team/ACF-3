@@ -45,7 +45,6 @@ do -- ACF global vars
 	ACF.GroundtoRHA        = 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
 	ACF.ArmorMod           = 1
 	ACF.ArmorFactor        = 1 -- Multiplier for ACF.ArmorMod
-	ACF.SlopeEffectFactor  = 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
 		acf_debris = true,

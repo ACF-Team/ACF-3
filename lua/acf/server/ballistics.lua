@@ -329,22 +329,14 @@ do -- Terminal ballistics --------------------------
 		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
 	end
 
-	function ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
-		local HitAngle = ACF_GetHitAngle(HitNormal, Bullet.Flight)
-
-		local HitRes = ACF_Damage( -- DAMAGE!!
-			Target,
-			Energy,
-			Bullet.PenArea,
-			HitAngle,
-			Bullet.Owner,
-			Bone,
-			Bullet.Gun,
-			Bullet.Type
-		)
-
+	function ACF_RoundImpact(Bullet, Trace)
+		local Speed    = Bullet.Speed
+		local Energy   = Bullet.Energy
+		local HitRes   = ACF_Damage(Bullet, Trace)
 		local Ricochet = 0
+
 		if HitRes.Loss == 1 then
+			local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
 			-- Ricochet distribution center
 			local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100)
 
@@ -353,23 +345,22 @@ do -- Terminal ballistics --------------------------
 
 			-- Checking for ricochet
 			if ricoProb > math.random() and HitAngle < 90 then
-				Ricochet       = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
-				HitRes.Loss    = 0.25 - Ricochet
-				Energy.Kinetic = Energy.Kinetic * HitRes.Loss
+				Ricochet    = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
+				HitRes.Loss = 0.25 - Ricochet
 			end
 		end
 
 		if ACF.KEPush then
 			ACF.KEShove(
-				Target,
-				HitPos,
+				Trace.Entity,
+				Trace.HitPos,
 				Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end
 
 		if HitRes.Kill then
-			local Debris = ACF_APKill(Target, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized() , Energy.Kinetic)
 
 			table.insert(Bullet.Filter , Debris)
 		end
@@ -378,8 +369,8 @@ do -- Terminal ballistics --------------------------
 
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.NextPos = HitPos
-			Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
+			Bullet.NextPos = Trace.HitPos
+			Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
 
 			HitRes.Ricochet = true
 		end

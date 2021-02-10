@@ -204,6 +204,16 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
+function ACF_GetHitAngle(HitNormal, HitVector)
+	local Ang = math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))) -- Can output nan sometimes on extremely small angles
+
+	if Ang ~= Ang then -- nan is the only value that does not equal itself
+		return 0 -- return 0 instead of nan
+	else
+		return Ang
+	end
+end
+
 do -- Native type verification functions
 	function ACF.CheckNumber(Value, Default)
 		if not Value then return Default end
@@ -467,6 +477,7 @@ do -- Ballistic functions
 		local Energy = {
 			Kinetic = (Mass * (Speed ^ 2)) / 2000, --Energy in KiloJoules
 			Momentum = Speed * Mass,
+			Penetration = true
 		}
 		local KE = (Mass * (Speed ^ ACF.KinFudgeFactor)) / 2000 + Energy.Momentum
 

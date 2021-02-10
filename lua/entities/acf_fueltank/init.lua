@@ -270,15 +270,16 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Type = "Prop"
 end
 
-function ENT:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, _, Type)
-	local Mul = Type == "HEAT" and ACF.HEATMulFuel or 1 --Heat penetrators deal bonus damage to fuel
-	local HitRes = ACF.PropDamage(self, Energy, FrArea * Mul, Angle, Inflictor) --Calling the standard damage prop function
+function ENT:ACF_OnDamage(Bullet, Trace)
+	local HitRes = ACF.PropDamage(Bullet, Trace) --Calling the standard damage prop function
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
 		if HookRun("ACF_FuelExplode", self) == false then return HitRes end
+
+		local Inflictor = Bullet.Owner
 
 		if IsValid(Inflictor) and Inflictor:IsPlayer() then
 			self.Inflictor = Inflictor

@@ -569,9 +569,8 @@ function ENT:ACF_Activate()
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, _, Type)
-	local Mul = Type == "HEAT" and ACF.HEATMulEngine or 1 --Heat penetrators deal bonus damage to engines
-	local Res = ACF.PropDamage(self, Energy, FrArea * Mul, Angle, Inflictor)
+function ENT:ACF_OnDamage(Bullet, Trace)
+	local Res = ACF.PropDamage(Bullet, Trace)
 
 	--adjusting performance based on damage
 	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)

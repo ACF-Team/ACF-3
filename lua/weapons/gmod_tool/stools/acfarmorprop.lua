@@ -92,6 +92,7 @@ if CLIENT then
 
 		if not IsValid(Ent) then return false end
 		if Ent:IsPlayer() or Ent:IsNPC() then return false end
+		if Ent.GetArmor then return end
 
 		local Weapon = self.Weapon
 		local Mass = math.Round(Weapon:GetNWFloat("WeightMass"), 2)
@@ -110,51 +111,109 @@ if CLIENT then
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
 	end
 
-	local DisplayMat = Material("models/props_combine/combine_interface_disp")
 	local TextGray = Color(224, 224, 255)
 	local BGGray = Color(200, 200, 200)
-	local Blue = Color(0, 0, 200)
-	local Red = Color(200, 0, 0)
+	local Blue = Color(50, 200, 200)
+	local Red = Color(200, 50, 50)
+	local Green = Color(50, 200, 50)
+	local Black = Color(0, 0, 0)
+	local drawText = draw.SimpleTextOutlined
+
+	surface.CreateFont("ACF_ToolTitle", {
+		font = "Arial",
+		size = 32
+	})
+
+	surface.CreateFont("ACF_ToolSub", {
+		font = "Arial",
+		size = 25
+	})
+
+	surface.CreateFont("ACF_ToolLabel", {
+		font = "Arial",
+		size = 32,
+		weight = 620,
+	})
 
 	function TOOL:DrawToolScreen()
+		local Trace = self:GetOwner():GetEyeTrace()
+		local Ent   = Trace.Entity
 		local Weapon = self.Weapon
 		local Health = math.Round(Weapon:GetNWFloat("HP", 0), 2)
 		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0), 2)
-		local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
-		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
 
-		local HealthTxt = Health .. "/" .. MaxHealth
-		local ArmourTxt = Armour .. "/" .. MaxArmour
 
-		cam.Start2D()
-			render.Clear(0, 0, 0, 0)
+		if Ent.GetArmor then -- Is procedural armor
+			local Material = "RHA Steel"
+			local Mass     = math.Round(Weapon:GetNWFloat("WeightMass", 0), 1)
+			local Angle    = math.Round(ACF_GetHitAngle(Trace.HitNormal, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
+			local Armor    = math.Round(Ent:GetArmor(Trace), 1)
+			local Size     = Ent:GetSize()
+			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * 25.4, 1)
+			local MaxArmor = Ent:GetSize():Length() * 25.4
 
-			surface.SetMaterial(DisplayMat)
-			surface.SetDrawColor(color_white)
-			surface.DrawTexturedRect(0, 0, 256, 256)
-			surface.SetFont("Torchfont")
+			cam.Start2D()
+				render.Clear(0, 0, 0, 0)
+				surface.SetDrawColor(Black)
+				surface.DrawRect(0, 0, 256, 256)
+				surface.SetDrawColor(BGGray)
+				surface.DrawRect(0, 34, 256, 2)
 
-			-- header
-			draw.SimpleTextOutlined("ACF Stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				drawText("ACF Armor Data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Material: " .. Material, "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Weight: " .. Mass .. "kg", "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("Nominal Armor: " .. Nominal .. "mm", "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
 
-			-- armor bar
-			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
-			if Armour ~= 0 and MaxArmour ~= 0 then
-				draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
-			end
+				draw.RoundedBox(6, 10, 110, 236, 32, BGGray)
+				draw.RoundedBox(6, 10, 110, Angle / 90 * 236, 32, Green)
+				drawText("Hit Angle: " .. Angle .. "°", "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
-			draw.SimpleTextOutlined("Armour", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.RoundedBox(6, 10, 160, 236, 32, BGGray)
+				draw.RoundedBox(6, 10, 160, Armor / MaxArmor * 236, 32, Blue)
+				drawText("Armor: " .. Armor .. "mm", "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
-			-- health bar
-			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
-			if Health ~= 0 and MaxHealth ~= 0 then
-				draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
-			end
+				draw.RoundedBox(6, 10, 210, 236, 32, BGGray)
+				draw.RoundedBox(6, 10, 210, Health / MaxHealth * 236, 32, Red)
+				drawText("Health: " .. Health, "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
+				--drawText("")
+			cam.End2D()
+		else
+			local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
+			local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
+			local HealthTxt = Health .. "/" .. MaxHealth
+			local ArmourTxt = Armour .. "/" .. MaxArmour
 
-			draw.SimpleTextOutlined("Health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-		cam.End2D()
+			cam.Start2D()
+				render.Clear(0, 0, 0, 0)
+
+				surface.SetDrawColor(Black)
+				surface.DrawRect(0, 0, 256, 256)
+				surface.SetFont("Torchfont")
+
+				-- header
+				draw.SimpleTextOutlined("ACF Stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+				-- armor bar
+				draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
+				if Armour ~= 0 and MaxArmour ~= 0 then
+					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
+				end
+
+				draw.SimpleTextOutlined("Armour", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+				-- health bar
+				draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
+				if Health ~= 0 and MaxHealth ~= 0 then
+					draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
+				end
+
+				draw.SimpleTextOutlined("Health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			cam.End2D()
+		end
+
+
 	end
 
 	-- clamp thickness if the change in ductility puts mass out of range

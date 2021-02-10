@@ -28,10 +28,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = Data.FrArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef  = Data.FrArea * 0.0001 / Data.ProjMass
-	Data.CartMass  = Data.PropMass + Data.ProjMass
+	Data.ProjMass   = Data.FrArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
+	Data.MuzzleVel  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.DragCoef   = Data.FrArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -128,7 +128,11 @@ if SERVER then
 		if ACF.Check(Target) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
-			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, Trace.HitPos, Trace.HitNormal, Trace.HitGroup)
+
+			Bullet.Speed  = Speed
+			Bullet.Energy = Energy
+
+			local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 			if HitRes.Overkill > 0 then
 				table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
