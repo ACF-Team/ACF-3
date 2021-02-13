@@ -1,14 +1,12 @@
 include("shared.lua")
 
-DEFINE_BASECLASS("acf_base_scalable")
-
 local Armors = ACF.Classes.ArmorTypes
 
-function ENT:Initialize()
-    self.ClassData = self:GetNWString("Class", "RHA")
-    self:SetNWVarProxy("Class", function(Ent, _, _, Val)
-        Ent.Class = Armors[Val]
-    end)
+function ENT:Update()
+    local Armor = Armors[self:GetNW2String("ArmorType", "RHA")]
 
-    BaseClass.Initialize(self)
+    self.ArmorClass = Armor
+    self.ArmorType  = Armor.ID print(self.ArmorType)
+    self.Tensile    = Armor.Tensile
+    self.Density    = Armor.Density
 end

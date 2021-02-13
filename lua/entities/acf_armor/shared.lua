@@ -81,5 +81,5 @@ function ENT:GetArmor(Trace)
     debugoverlay.Cross(Exit, 3, 0.015, Color(255, 0, 0), true)
     debugoverlay.Line(Enter, Exit, 0.015, Color(0, 255, 255), true)
 
-    return ACF.RHAe(Length, self.Class.Density)
+    return ACF.RHAe(Length, self.Density)
 end

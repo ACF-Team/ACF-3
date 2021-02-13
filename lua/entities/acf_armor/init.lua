@@ -7,41 +7,58 @@ do -- Spawning and Updating
 	local Armors = ACF.Classes.ArmorTypes
 
 	local function VerifyData(Data)
-		if not isnumber(Data.Width) then
-			Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
-		end
+		do -- Verifying dimension values
+			if not isnumber(Data.Width) then
+				Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
+			end
 
-		if not isnumber(Data.Height) then
-			Data.Height = ACF.CheckNumber(Data.PlateSizeY, 24)
-		end
+			if not isnumber(Data.Height) then
+				Data.Height = ACF.CheckNumber(Data.PlateSizeY, 24)
+			end
 
-		if not isnumber(Data.Thickness) then
-			Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
-		end
+			if not isnumber(Data.Thickness) then
+				Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
+			end
 
-		do -- Clamping values
-			Data.Width = math.Clamp(Data.Width, 0.25, 420)
-			Data.Height = math.Clamp(Data.Height, 0.25, 420)
+			Data.Width     = math.Clamp(Data.Width, 0.25, 420)
+			Data.Height    = math.Clamp(Data.Height, 0.25, 420)
 			Data.Thickness = math.Clamp(Data.Thickness, 5, 1000)
+			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
 		end
 
-		Data.Size  = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
+		if not isstring(Data.ArmorType) then
+			Data.ArmorType = "RHA"
+		end
 
-		hook.Run("ACF_VerifyData", "acf_armor", Data)
+		local Armor = Armors[Data.ArmorType]
+
+		if not Armor then
+			Data.ArmorType = RHA
+
+			Armor = Armors.RHA
+		end
+
+		do -- External verifications
+			if Armor.VerifyData then
+				Armor:VerifyData(Data)
+			end
+
+			hook.Run("ACF_VerifyData", "acf_armor", Data, Armor)
+		end
 	end
 
-	local function UpdatePlate(Entity, Data)
-		Entity.Class = Armors[Data.SecondaryClass]
+	local function UpdatePlate(Entity, Data, Armor)
+		Entity.ArmorClass = Armor
+		Entity.Tensile    = Armor.Tensile
+		Entity.Density    = Armor.Density
 
-		Entity:SetNWString("Class", Data.SecondaryClass)
+		Entity:SetNW2String("ArmorType", Armor.ID)
 		Entity:SetSize(Data.Size)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
-
-		Entity.Class = Armors[Data.SecondaryClass] -- What the fuck?
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -52,6 +69,8 @@ do -- Spawning and Updating
 		if not IsValid(Plate) then return end
 
 		VerifyData(Data)
+
+		local Armor = Armors[Data.ArmorType]
 
 		Player:AddCount("props", Plate)
 		Player:AddCleanup("props", Plate)
@@ -66,9 +85,13 @@ do -- Spawning and Updating
 		Plate.Owner     = Player -- MUST be stored on ent for PP
 		Plate.DataStore = ACF.GetEntityArguments("acf_armor")
 
-		UpdatePlate(Plate, Data)
+		UpdatePlate(Plate, Data, Armor)
 
-		hook.Run("ACF_OnEntitySpawn", "acf_armor", Plate, Data)
+		if Armor.OnSpawn then
+			Armor:OnSpawn(Plate, Data)
+		end
+
+		hook.Run("ACF_OnEntitySpawn", "acf_armor", Plate, Data, Armor)
 
 		do -- Mass entity mod removal
 			local EntMods = Data.EntityMods
@@ -81,20 +104,33 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "Class")
+	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
 
 	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
 		VerifyData(Data)
 
+		local Armor    = Armors[Data.ArmorType]
+		local OldArmor = self.ArmorClass
+
+		if OldArmor.OnLast then
+			OldArmor:OnLast(self)
+		end
+
+		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldClass)
+
 		ACF.SaveEntity(self)
 
-		UpdatePlate(self, Data)
+		UpdatePlate(self, Data, Armor)
 
 		ACF.RestoreEntity(self)
 
-		hook.Run("ACF_OnEntityUpdate", "acf_armor", self, Data)
+		if Armor.OnUpdate then
+			Armor:OnUpdate(Plate, Data)
+		end
+
+		hook.Run("ACF_OnEntityUpdate", "acf_armor", self, Data, Armor)
 
 		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)
@@ -105,7 +141,7 @@ do -- Spawning and Updating
 
 	function ENT:OnResized(Size)
 		local Volume = Size.x * Size.y * Size.z
-		local Mass   = self.Class:GetMass(Volume)
+		local Mass   = self.ArmorClass:GetMass(Volume)
 
 		self:GetPhysicsObject():SetMass(Mass)
 	end
@@ -120,7 +156,7 @@ do -- ACF Activation and Damage
 			self.ACF.Area = PhysObj:GetVolume() * 6.45
 		end
 
-		local Health  = Volume / ACF.Threshold * self.Class.Tensile
+		local Health  = Volume / ACF.Threshold * self.Tensile
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -166,4 +202,14 @@ do -- ACF Activation and Damage
 			Kill = Damage > HP
 		}
 	end
+end
+
+function ENT:OnRemove()
+	local Armor = self.ArmorClass
+
+	if Armor.OnLast then
+		Armor.OnLast(self, Armor)
+	end
+
+	WireLib.Remove(self)
 end

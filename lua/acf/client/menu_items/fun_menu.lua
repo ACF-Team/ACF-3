@@ -122,23 +122,26 @@ do -- Piledrivers menu
 end
 
 do -- Procedural Armor
-	local BoxSize = {}
-	local ArmorTypes = ACF.Classes.ArmorTypes
+	local DensityText = "Density: %sg/cm³ (%skg/in³)"
+	local ArmorTypes  = ACF.Classes.ArmorTypes
 
 	local function CreateMenu(Menu)
 		ACF.SetToolMode("acf_menu", "Spawner", "Component")
+
 		ACF.SetClientData("PrimaryClass", "acf_armor")
-		ACF.SetClientData("SecondaryClass", "RHA")
+		ACF.SetClientData("SecondaryClass", "N/A")
 
 		Menu:AddTitle("Procedural Armor")
 
-		local ClassBase = Menu:AddCollapsible("Material Information")
 		local ClassList = Menu:AddComboBox()
+		local SizeX     = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
+		local SizeY     = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
+		local SizeZ     = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
+
+		local ClassBase = Menu:AddCollapsible("Material Information")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
 		local ClassDens = ClassBase:AddLabel()
-
-		ACF.LoadSortedList(ClassList, ArmorTypes, "Name")
 
 		function ClassList:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
@@ -146,48 +149,43 @@ do -- Procedural Armor
 			self.ListData.Index = Index
 			self.Selected       = Data
 
+			local Density = Data.Density
+
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
-			ClassDens:SetText("Density: " .. Data.Density .. "g/cm³ (" .. math.Round(Data.Density * 0.163871, 2) .. "kg/in³)")
+			ClassDens:SetText(DensityText:format(Density, math.Round(Density * 0.163871, 2)))
 
-			ACF.SetClientData("SecondaryClass", Data.ID)
+			ACF.SetClientData("ArmorType", Data.ID)
 		end
 
-		local SizeX = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
 		SizeX:SetClientData("PlateSizeX", "OnValueChanged")
 		SizeX:DefineSetter(function(Panel, _, _, Value)
 			local X = math.Round(Value, 2)
 
 			Panel:SetValue(X)
 
-			BoxSize.x = X
-
 			return X
 		end)
 
-		local SizeY = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
 		SizeY:SetClientData("PlateSizeY", "OnValueChanged")
 		SizeY:DefineSetter(function(Panel, _, _, Value)
 			local Y = math.Round(Value, 2)
 
 			Panel:SetValue(Y)
 
-			BoxSize.y = Y
-
 			return Y
 		end)
 
-		local SizeZ = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
 		SizeZ:SetClientData("PlateSizeZ", "OnValueChanged")
 		SizeZ:DefineSetter(function(Panel, _, _, Value)
 			local Z = math.floor(Value)
 
 			Panel:SetValue(Z)
 
-			BoxSize.z = Z
-
 			return Z
 		end)
+
+		ACF.LoadSortedList(ClassList, ArmorTypes, "Name")
 	end
 
 	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
