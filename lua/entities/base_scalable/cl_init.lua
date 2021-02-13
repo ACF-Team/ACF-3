@@ -6,7 +6,6 @@ local Queued = {}
 
 local function ChangeSize(Entity, Size)
 	if not isvector(Size) then return false end
-	if Entity.Size == Size then return false end
 	if not Entity:GetOriginalSize() then return false end
 
 	local Original = Entity:GetOriginalSize()
