@@ -144,12 +144,13 @@ do -- Spawning and Updating --------------------
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name      = Name or WeaponName .. " " .. Ammo.Name
-		Entity.ShortName = ShortName or WeaponShort .. Ammo.ID
-		Entity.EntType   = "Ammo Crate"
-		Entity.ClassData = Class
-		Entity.Class     = Class.ID -- Needed for custom killicons
-		Entity.Caliber   = Caliber
+		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
+		Entity.ShortName  = ShortName or WeaponShort .. Ammo.ID
+		Entity.EntType    = "Ammo Crate"
+		Entity.ClassData  = Class
+		Entity.Class      = Class.ID -- Needed for custom killicons
+		Entity.WeaponData = Weapon
+		Entity.Caliber    = Caliber
 
 		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
