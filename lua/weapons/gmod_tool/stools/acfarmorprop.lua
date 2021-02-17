@@ -139,15 +139,15 @@ if CLIENT then
 		local Trace = self:GetOwner():GetEyeTrace()
 		local Ent   = Trace.Entity
 		local Weapon = self.Weapon
-		local Health = math.Round(Weapon:GetNWFloat("HP", 0), 2)
-		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0), 2)
+		local Health = math.Round(Weapon:GetNWFloat("HP", 0))
+		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0))
 
 
 		if Ent.GetArmor then -- Is procedural armor
 			local Material = Ent.ArmorType
 			local Mass     = math.Round(Weapon:GetNWFloat("WeightMass", 0), 1)
 			local Angle    = math.Round(ACF_GetHitAngle(Trace.HitNormal, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
-			local Armor    = math.Round(Ent:GetArmor(Trace), 1)
+			local Armor    = math.Round(Ent:GetArmor(Trace))
 			local Size     = Ent:GetSize()
 			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * 25.4, 1)
 			local MaxArmor = Ent:GetSize():Length() * 25.4
