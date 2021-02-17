@@ -186,7 +186,7 @@ local function CreateMenu(Menu)
 
 		local Wall		= 0.03937 --wall thickness in inches (1mm)
 		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		local Capacity	= Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
+		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 		local EmptyMass	= FuelTank.SurfaceArea * Wall * 16.387 * 0.0079 -- total wall volume * cu in to cc * density of steel (kg/cc)
 		local Mass		= EmptyMass + Capacity * self.Selected.Density -- weight of tank + weight of fuel
 
