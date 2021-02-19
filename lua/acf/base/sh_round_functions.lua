@@ -225,8 +225,8 @@ do -- Ammo crate capacity calculation
 
 		-- Filters for missiles, and sets up data
 		if GunData.Round.ActualWidth then
-			RoundCaliber = GunData.Round.ActualWidth * (1 / 0.3937) -- This was made before the big measurement change throughout, where I measured shit in actual source units
-			RoundLength = GunData.Round.ActualLength * (1 / 0.3937) -- as such, this corrects all missiles to the correct size
+			RoundCaliber = GunData.Round.ActualWidth -- Missile size does not depend on the propellant or projectile sizes
+			RoundLength = GunData.Round.ActualLength
 			ExtraData.IsRacked = true
 		elseif GunData.Class.Entity == "acf_rack" then
 			local Efficiency = 0.1576 * ACF.AmmoMod
