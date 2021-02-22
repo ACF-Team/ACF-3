@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Download GLuaFixer 1.17.1
-      run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.17.1/glualint-1.17.1-linux.zip
+    - name: Download GLuaFixer 1.17.2
+      run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.17.2/glualint-1.17.2-linux.zip
     - name: Extract glualint.zip
       run: unzip glualint.zip
     - name: Remove blacklisted folders
