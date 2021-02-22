@@ -3,6 +3,7 @@
 
 local Armor = ACF.RegisterArmorType("RHA")
 
+-- Length (mm), Density(g/cm3)
 function ACF.RHAe(Length, Density)
 	return Length * (Density / 7.84)
 end
@@ -15,5 +16,5 @@ function Armor:OnLoaded()
 end
 
 function Armor:GetMass(Volume)
-	return Volume * self.Density * 0.0163871 -- 1 g/cm3 == 0.0163871 kg/in3
+	return Volume * self.Density * ACF.gCmToKgIn
 end

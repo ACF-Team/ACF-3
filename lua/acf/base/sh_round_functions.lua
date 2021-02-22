@@ -251,7 +251,7 @@ do -- Ammo crate capacity calculation
 
 		-- Weapons are able to define the size of their ammo inside crates
 		if Round.ActualWidth then
-			local Scale = (Weapon and 1 or Caliber / Class.Caliber.Base) * 2.54
+			local Scale = Weapon and 1 or Caliber / Class.Caliber.Base
 
 			Width  = Round.ActualWidth * Scale -- This was made before the big measurement change throughout, where I measured shit in actual source units
 			Length = Round.ActualLength * Scale -- as such, this corrects all missiles to the correct size

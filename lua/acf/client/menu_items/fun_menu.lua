@@ -153,7 +153,7 @@ do -- Procedural Armor
 
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
-			ClassDens:SetText(DensityText:format(Density, math.Round(Density * 0.163871, 2)))
+			ClassDens:SetText(DensityText:format(Density, math.Round(Density * ACF.gCmToKgIn, 2)))
 
 			ACF.SetClientData("ArmorType", Data.ID)
 		end

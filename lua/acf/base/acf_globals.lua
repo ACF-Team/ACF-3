@@ -26,6 +26,10 @@ do -- ACF global vars
 	ACF.GunsCanSmoke       = true
 	ACF.RacksCanFire       = true
 
+	-- Unit Conversion
+	ACF.MeterToInch        = 39.3701 -- Meters to inches
+	ACF.gCmToKgIn          = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
+
 	-- Fuzes
 	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed
 
@@ -108,7 +112,6 @@ do -- ACF global vars
 	ACF.CompFuelFactor     = 1 -- Multiplier for ACF.CompFuelRate
 	ACF.TankVolumeMul      = 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.CuIToLiter         = 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance     = 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
