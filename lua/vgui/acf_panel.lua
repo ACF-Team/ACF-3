@@ -228,14 +228,32 @@ function PANEL:AddCollapsible(Text, State)
 end
 
 function PANEL:AddModelPreview(Model)
+	local Settings = {
+		Offset   = Vector(),
+		Position = Vector(45, 60, 45),
+		Height   = 80,
+		FOV      = 75,
+	}
+
 	local Panel = self:AddPanel("DModelPanel")
 	Panel:SetModel(Model or "models/props_junk/PopCan01a.mdl")
-	Panel:SetLookAt(Vector())
-	Panel:SetCamPos(Vector(45, 60, 45))
-	Panel:SetHeight(80)
-	Panel:SetFOV(75)
 
-	Panel.LayoutEntity = function() end
+	function Panel:UpdateSettings(Data)
+		if not istable(Data) then return end
+
+		if Data.Model then self:SetModel(Data.Model) end
+
+		self:SetLookAt(Data.Offset or Settings.Offset)
+		self:SetCamPos(Data.Position or Settings.Position)
+		self:SetHeight(Data.Height or Settings.Height)
+		self:SetFOV(Data.FOV or Settings.FOV)
+	end
+
+	Panel:UpdateSettings(Settings)
+
+	Panel.DefaultLayout = Panel.LayoutEntity
+	Panel.LayoutEntity  = function() end
+	Panel.Settings      = Settings -- Storing the default settings
 
 	return Panel
 end
