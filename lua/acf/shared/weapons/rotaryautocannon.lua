@@ -7,6 +7,7 @@ ACF.RegisterWeaponClass("RAC", {
 	IsScalable  = true,
 	Spread      = 0.48,
 	Mass        = 760,
+	Cyclic      = 2000,
 	Caliber	= {
 		Base = 20,
 		Min  = 7.62,
@@ -19,10 +20,6 @@ ACF.RegisterWeaponClass("RAC", {
 	MagReload = {
 		Min = 8,
 		Max = 20,
-	},
-	Cyclic = {
-		Min = 2500,
-		Max = 1500,
 	},
 	Round = {
 		MaxLength = 30,

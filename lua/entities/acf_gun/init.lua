@@ -104,12 +104,12 @@ do -- Spawn and Update functions --------------------------------
 		local Sounds = Class.Sounds
 
 		if Sounds then
-			local Highest = 0
+			local Lowest = math.huge
 
 			for Current, Sound in pairs(Sounds) do
-				if Current <= Caliber and Current > Highest then
-					Highest = Current
-					Result  = Sound
+				if Caliber <= Current and Current <= Lowest then
+					Lowest = Current
+					Result = Sound
 				end
 			end
 		end
@@ -540,7 +540,7 @@ do -- Metamethods --------------------------------
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
 
-			ACF.Shove(self, MassCenter, -self:GetForward(), Energy)
+			ACF.KEShove(self, MassCenter, -self:GetForward(), Energy)
 		end
 	end -----------------------------------------
 
@@ -558,8 +558,6 @@ do -- Metamethods --------------------------------
 				Select = next(Gun.Crates, Select) or next(Gun.Crates)
 			until
 				Select == Start
-
-			return Select:CanConsume() and Select or nil
 		end
 
 		function ENT:Unload(Reload)
