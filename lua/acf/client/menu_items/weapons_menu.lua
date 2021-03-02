@@ -1,7 +1,7 @@
 local ACF      = ACF
 local Weapons  = ACF.Classes.Weapons
 local NameText = "%smm %s"
-local EntText  = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
+local EntText  = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
 local MagText  = "\nRounds : %s rounds\nReload : %s seconds"
 local Current  = {}
 local CreateControl, IsScalable
@@ -122,7 +122,7 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	local MagReload = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 
-	return MagText:format(MagSize, MagReload)
+	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
 end
 
 local function GetMass(Caliber, Class, Weapon)
@@ -138,16 +138,14 @@ end
 local function CreateMenu(Menu)
 	Menu:AddTitle("Weapon Settings")
 
-	local ClassBase = Menu:AddPanel("ACF_Panel")
-	local ClassList = ClassBase:AddComboBox()
-
+	local ClassBase  = Menu:AddPanel("ACF_Panel")
+	local ClassList  = ClassBase:AddComboBox()
 	local WeaponBase = Menu:AddCollapsible("Weapon Information")
 	local EntName    = WeaponBase:AddTitle()
 	local ClassDesc  = WeaponBase:AddLabel()
 	local EntPreview = WeaponBase:AddModelPreview()
 	local EntData    = WeaponBase:AddLabel()
-
-	local AmmoList = ACF.CreateAmmoMenu(Menu)
+	local AmmoList   = ACF.CreateAmmoMenu(Menu)
 
 	ACF.SetClientData("PrimaryClass", "acf_gun")
 	ACF.SetClientData("SecondaryClass", "acf_ammo")
@@ -180,12 +178,12 @@ local function CreateMenu(Menu)
 
 		local Weapon   = Current.Weapon
 		local Caliber  = Current.Caliber
-		local Mass     = GetMass(Caliber, Class, Weapon)
+		local Mass     = ACF.GetProperMass(GetMass(Caliber, Class, Weapon))
 		local Firerate = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon) or 60 / GetReloadTime()
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return EntText:format(Mass, math.Round(Firerate, 2), Spread, Magazine)
+		return EntText:format(Mass, math.Round(Firerate), Spread, Magazine)
 	end)
 
 	ClassBase.Menu    = Menu

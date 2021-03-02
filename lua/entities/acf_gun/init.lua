@@ -131,6 +131,7 @@ do -- Spawn and Update functions --------------------------------
 		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
 		local Scale   = Weapon and 1 or Caliber / Class.Caliber.Base
 		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
+		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
 		Entity.ACF.Model = Model
 
@@ -149,7 +150,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Class        = Class.ID -- Needed for custom killicons
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
-		Entity.MagSize      = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+		Entity.MagSize      = math.floor(MagSize)
 		Entity.Cyclic       = Cyclic and 60 / Cyclic
 		Entity.ReloadTime   = Entity.Cyclic or 1
 		Entity.Spread       = Class.Spread
