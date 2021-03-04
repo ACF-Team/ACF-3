@@ -130,6 +130,7 @@ do -- Procedural Armor
 		ACF.SetClientData("SecondaryClass", "N/A")
 
 		Menu:AddTitle("Procedural Armor")
+		Menu:AddLabel("WARNING: EXPERIMENTAL!\nProcedural Armor is an experimental work in progress and may cause crashes, errors, or just not work properly with all of ACF.\n\nProcedural Armor can be prevented from spawning by setting sbox_max_acf_armor to 0")
 
 		local ClassList = Menu:AddComboBox()
 		local SizeX     = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
