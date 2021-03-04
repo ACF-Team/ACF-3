@@ -284,6 +284,12 @@ do -- Armor type registration function
 	function ACF.RegisterArmorType(ID, Base)
 		return RegisterClass(ID, Base, Types)
 	end
+
+	AddSboxLimit({
+		Name = "_acf_armor",
+		Amount = 50,
+		Text = "Maximum amount of ACF procedural armor plates a player can create"
+	})
 end
 
 do -- Engine registration functions
@@ -580,7 +586,7 @@ do -- Entity class registration function
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
-		if not IsValid(Entity) then return false, "The spawn function for" .. Class .. " didn't return a value entity." end
+		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
 		Entity:Activate()
 

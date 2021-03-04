@@ -62,7 +62,7 @@ do -- Spawning and Updating
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
-		if not Player:CheckLimit("props") then return end
+		if not Player:CheckLimit("_acf_armor") then return end
 
 		local Plate = ents.Create("acf_armor")
 
@@ -72,8 +72,8 @@ do -- Spawning and Updating
 
 		local Armor = Armors[Data.ArmorType]
 
-		Player:AddCount("props", Plate)
-		Player:AddCleanup("props", Plate)
+		Player:AddCount("_acf_armor", Plate)
+		Player:AddCleanup("_acf_armor", Plate)
 
 		Plate:SetModel("models/holograms/cube.mdl")
 		Plate:SetMaterial("sprops/textures/sprops_metal1")
