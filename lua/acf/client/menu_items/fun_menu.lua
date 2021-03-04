@@ -20,8 +20,6 @@ do -- Piledrivers menu
 		local ClassInfo = ClassBase:AddLabel()
 		local ClassStats = ClassBase:AddLabel()
 
-		ClassBase:AddLabel("This entity can be fully parented.")
-
 		ACF.SetClientData("PrimaryClass", "acf_piledriver")
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")

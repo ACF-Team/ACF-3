@@ -8,8 +8,7 @@ local RPMText = [[
 	Powerband : %s-%s RPM
 	Redline : %s RPM
 	Mass : %s
-	
-	This entity can be fully parented.
+
 	%s
 	%s]]
 local PowerText  = [[
@@ -193,7 +192,7 @@ local function CreateMenu(Menu)
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
 		else
-			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n\nThis entity can be fully parented."
+			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n"
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * 0.264172, 2)
 

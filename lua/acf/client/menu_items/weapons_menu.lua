@@ -2,7 +2,7 @@ local ACF = ACF
 local Weapons = ACF.Classes.Weapons
 
 local function CreateMenu(Menu)
-	local EntText = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
+	local EntText = "Mass : %s kg\nFirerate : %s rpm\nSpread : %s degrees%s\n"
 	local MagText = "\nRounds : %s rounds\nReload : %s seconds"
 
 	Menu:AddTitle("Weapon Settings")

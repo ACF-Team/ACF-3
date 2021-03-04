@@ -212,8 +212,6 @@ function ACF.UpdateAmmoMenu(Menu, Settings)
 		AddInformation(Base, Settings, ToolData)
 	end
 
-	Base:AddLabel("This entity can be fully parented.")
-
 	Menu:EndTemporal(Base)
 end
 
