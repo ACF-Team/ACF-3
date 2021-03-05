@@ -228,6 +228,134 @@ do -- Native type verification functions
 	end
 end
 
+do -- Hitbox storing and retrieval functions
+	ACF.Hitboxes = ACF.Hitboxes or {}
+
+	local Hitboxes = ACF.Hitboxes
+
+	local function IsValidModel(Model)
+		if not isstring(Model) then return false end
+
+		return not IsUselessModel(Model)
+	end
+
+	local function GetModelTable(Model)
+		local Result = Hitboxes[Model]
+
+		if not Result then
+			Result = {}
+
+			Hitboxes[Model] = Result
+		end
+
+		return Result
+	end
+
+	local function AddHitbox(Model, Name, Data)
+		local Table = GetModelTable(Model)
+
+		Table[Name] = {
+			Pos       = Vector(Data.Pos),
+			Scale     = Vector(Data.Scale),
+			Angle     = Angle(Data.Angle),
+			Sensitive = tobool(Data.Sensitive),
+		}
+	end
+
+	local function GetProperScale(Scale)
+		if not Scale then return 1 end
+		if isnumber(Scale) then return Scale end
+
+		return Vector(Scale)
+	end
+
+	local function GetCopy(Hitbox, Scale)
+		if not Hitbox then return end
+
+		return {
+			Pos       = Vector(Hitbox.Pos) * Scale,
+			Scale     = Vector(Hitbox.Scale) * Scale,
+			Angle     = Angle(Hitbox.Angle),
+			Sensitive = tobool(Hitbox.Sensitive),
+		}
+	end
+
+	function ACF.AddHitbox(Model, Name, Data)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+		if not istable(Data) then return end
+
+		AddHitbox(Model, Name, Data)
+	end
+
+	function ACF.AddHitboxes(Model, Data)
+		if not IsValidModel(Model) then return end
+		if not istable(Data) then return end
+
+		for Name, Hitbox in pairs(Data) do
+			if not isstring(Name) then continue end
+
+			AddHitbox(Model, Name, Hitbox)
+		end
+	end
+
+	function ACF.RemoveHitbox(Model, Name)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+
+		local Table = Hitboxes[Model]
+
+		if not Table then return end
+
+		Table[Name] = nil
+	end
+
+	function ACF.RemoveHitboxes(Model)
+		if not IsValidModel(Model) then return end
+
+		local Table = Hitboxes[Model]
+
+		if not Table then return end
+
+		for K in pairs(Table) do
+			Table[K] = nil
+		end
+
+		Hitboxes[Model] = nil
+	end
+
+	function ACF.GetHitbox(Model, Name, Scale)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+
+		local Table = Hitboxes[Model]
+
+		if Table then
+			Scale = GetProperScale(Scale)
+
+			return GetCopy(Table[Name], Scale)
+		end
+	end
+
+	function ACF.GetHitboxes(Model, Scale)
+		if not IsValidModel(Model) then return end
+
+		local Table = Hitboxes[Model]
+
+		if Table then
+			local Result = {}
+
+			Scale = GetProperScale(Scale)
+
+			for Name, Data in pairs(Table) do
+				Result[Name] = GetCopy(Data, Scale)
+			end
+
+			return Result
+		end
+	end
+end
+
 do -- Model convex mesh and volume
 	ACF.ModelInfo = ACF.ModelInfo or {}
 
