@@ -59,5 +59,15 @@ ACF.RegisterWeapon("140mmSB", "SB", {
 })
 
 ACF.SetCustomAttachment("models/tankgun_old/tankgun_100mm.mdl", "muzzle", Vector(135), Angle(0, 0, 90))
-ACF.SetCustomAttachment("models/tankgun_old/tankgun_120mm.mdl", "muzzle", Vector(162), Angle(0, 0, 90))
-ACF.SetCustomAttachment("models/tankgun_old/tankgun_140mm.mdl", "muzzle", Vector(189), Angle(0, 0, 90))
+
+ACF.AddHitboxes("models/tankgun_old/tankgun_100mm.mdl", {
+	Breech = {
+		Pos       = Vector(-46),
+		Scale     = Vector(28.5, 17.5, 15),
+		Sensitive = true
+	},
+	Barrel = {
+		Pos   = Vector(50),
+		Scale = Vector(165, 7.5, 7.5)
+	}
+})

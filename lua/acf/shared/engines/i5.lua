@@ -83,3 +83,25 @@ end
 
 ACF.SetCustomAttachment("models/engines/inline5m.mdl", "driveshaft", Vector(-15, 0, 6.6), Angle(0, 180, 90))
 ACF.SetCustomAttachment("models/engines/inline5s.mdl", "driveshaft", Vector(-10, 0, 4.4), Angle(0, 180, 90))
+
+local Models = {
+	{ Model = "models/engines/inline5b.mdl", Scale = 2.5 },
+	{ Model = "models/engines/inline5m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/inline5s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Shaft = {
+			Pos       = Vector(-0.75, 0, 4.75) * Scale,
+			Scale     = Vector(28, 7.5, 9) * Scale,
+			Sensitive = true
+		},
+		Pistons = {
+			Pos   = Vector(0.25, 0, 13.5) * Scale,
+			Scale = Vector(23, 5.25, 8.5) * Scale
+		}
+	})
+end

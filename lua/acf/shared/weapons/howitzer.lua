@@ -83,8 +83,16 @@ ACF.RegisterWeapon("203mmHW", "HW", {
 	}
 })
 
-ACF.SetCustomAttachment("models/howitzer/howitzer_75mm.mdl", "muzzle", Vector(71.67, 0, -0.77))
 ACF.SetCustomAttachment("models/howitzer/howitzer_105mm.mdl", "muzzle", Vector(101.08, 0, -1.08))
-ACF.SetCustomAttachment("models/howitzer/howitzer_122mm.mdl", "muzzle", Vector(117.51, 0, -1.26))
-ACF.SetCustomAttachment("models/howitzer/howitzer_155mm.mdl", "muzzle", Vector(149.31, 0, -1.6))
-ACF.SetCustomAttachment("models/howitzer/howitzer_203mm.mdl", "muzzle", Vector(195.59, 0, -2.1))
+
+ACF.AddHitboxes("models/howitzer/howitzer_105mm.mdl", {
+	Breech = {
+		Pos       = Vector(-8, 0, -0.8),
+		Scale     = Vector(47, 11.25, 9.5),
+		Sensitive = true
+	},
+	Barrel = {
+		Pos   = Vector(58.5, 0, -0.7),
+		Scale = Vector(86, 6, 6)
+	}
+})

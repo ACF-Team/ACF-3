@@ -53,3 +53,15 @@ ACF.RegisterWeapon("40mmCL", "GL", {
 })
 
 ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angle(0, 0, -180))
+
+ACF.AddHitboxes("models/launcher/40mmgl.mdl", {
+	Breech = {
+		Pos       = Vector(0, 0, -1.25),
+		Scale     = Vector(20, 5, 6),
+		Sensitive = true
+	},
+	Barrel = {
+		Pos   = Vector(14, 0, 0.1),
+		Scale = Vector(12, 2, 2)
+	}
+})

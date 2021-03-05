@@ -82,3 +82,33 @@ end
 ACF.SetCustomAttachment("models/engines/b6large.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/b6med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/b6small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+
+local Models = {
+	{ Model = "models/engines/b6large.mdl", Scale = 2.25 },
+	{ Model = "models/engines/b6med.mdl", Scale = 1.5 }, -- yes a medium B6 is overall larger than a medium B4 in more than length because ??????
+	{ Model = "models/engines/b6small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(11, 0, 0.5) * Scale,
+			Scale     = Vector(22, 16, 9) * Scale,
+			Sensitive = true
+		},
+		UpperSection = {
+			Pos   = Vector(9, 0, 7) * Scale,
+			Scale = Vector(15, 23, 4) * Scale
+		},
+		LeftBank = {
+			Pos   = Vector(12, -10, 2) * Scale,
+			Scale = Vector(20, 4, 6) * Scale
+		},
+		RightBank = {
+			Pos   = Vector(12, 10, 2) * Scale,
+			Scale = Vector(20, 4, 6) * Scale
+		}
+	})
+end

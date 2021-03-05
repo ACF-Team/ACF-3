@@ -103,3 +103,31 @@ end
 ACF.SetCustomAttachment("models/engines/v6large.mdl", "driveshaft", Vector(2), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v6med.mdl", "driveshaft", Vector(1.33), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v6small.mdl", "driveshaft", Vector(1.06), Angle(0, 90, 90))
+
+local Models = {
+	{ Model = "models/engines/v6large.mdl", Scale = 1.85 },
+	{ Model = "models/engines/v6med.mdl", Scale = 1.25 },
+	{ Model = "models/engines/v6small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(10.5, 0, 3.75) * Scale,
+			Scale     = Vector(22, 11.5, 16.25) * Scale,
+			Sensitive = true
+		},
+		LeftBank = {
+			Pos   = Vector(11.5, -6.5, 7) * Scale,
+			Scale = Vector(20, 8, 11) * Scale,
+			Angle = Angle(0, 0, 45)
+		},
+		RightBank = {
+			Pos   = Vector(11.5, 6.5, 7) * Scale,
+			Scale = Vector(20, 8, 11) * Scale,
+			Angle = Angle(0, 0, -45)
+		}
+	})
+end

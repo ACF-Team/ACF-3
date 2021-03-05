@@ -104,12 +104,9 @@ ACF.SetCustomAttachments("models/machinegun/machinegun_20mm_compact.mdl", {
 	{ Name = "muzzle2", Pos = Vector(69.93, -0.15), Ang = Angle(0, 0, 90) },
 })
 
-ACF.SetCustomAttachments("models/machinegun/machinegun_30mm_compact.mdl", {
-	{ Name = "muzzle", Pos = Vector(41.76, -0.03), Ang = Angle(0, 0, 90) },
-	{ Name = "muzzle2", Pos = Vector(94.41, -0.2), Ang = Angle(0, 0, 90) },
-})
-
-ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {
-	{ Name = "muzzle", Pos = Vector(51.04, -0.03), Ang = Angle(0, 0, 90) },
-	{ Name = "muzzle2", Pos = Vector(115.39, -0.25), Ang = Angle(0, 0, 90) },
+ACF.AddHitboxes("models/machinegun/machinegun_20mm_compact.mdl", {
+	Base = {
+		Pos   = Vector(10.5),
+		Scale = Vector(41, 3, 6)
+	}
 })

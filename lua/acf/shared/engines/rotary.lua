@@ -62,6 +62,39 @@ do
 	})
 end
 
+ACF.SetCustomAttachment("models/engines/wankel_4_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_3_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_2_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_2_small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+
+ACF.AddHitboxes("models/engines/wankel_4_med.mdl", {
+	Main = {
+		Pos       = Vector(13),
+		Scale     = Vector(26.5, 13, 17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_3_med.mdl", {
+	Main = {
+		Pos       = Vector(10.25),
+		Scale     = Vector(22,13,17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_2_med.mdl", {
+	Main = {
+		Pos       = Vector(7.5),
+		Scale     = Vector(16, 13, 17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_2_small.mdl", {
+	Main = {
+		Pos       = Vector(6),
+		Scale     = Vector(13, 10, 14),
+		Sensitive = true
+	}
+})

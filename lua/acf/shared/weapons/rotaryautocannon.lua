@@ -83,6 +83,16 @@ ACF.RegisterWeapon("30mmHRAC", "RAC", {
 	Caliber = 30,
 })
 
-ACF.SetCustomAttachment("models/rotarycannon/kw/14_5mmrac.mdl", "muzzle", Vector(43.21, 0, 1.26))
 ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))
-ACF.SetCustomAttachment("models/rotarycannon/kw/30mmrac.mdl", "muzzle", Vector(89.4, 0, 2.61))
+
+ACF.AddHitboxes("models/rotarycannon/kw/20mmrac.mdl", {
+	Breech = {
+		Pos       = Vector(1.7, 0, 0.1),
+		Scale     = Vector(16, 9, 8),
+		Sensitive = true
+	},
+	Barrel = {
+		Pos   = Vector(35),
+		Scale = Vector(50, 4, 4)
+	}
+})

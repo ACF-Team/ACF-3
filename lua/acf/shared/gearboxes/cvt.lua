@@ -239,3 +239,25 @@ ACF.SetCustomAttachments("models/engines/t5small.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
 })
+
+local Models = {
+	{ Model = "models/engines/t5large.mdl", Scale = 2 },
+	{ Model = "models/engines/t5med.mdl", Scale = 1.5 },
+	{ Model = "models/engines/t5small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Straight = {
+			Pos       = Vector(0, 12.5, -0.75) * Scale,
+			Scale     = Vector(6.5, 15, 8) * Scale,
+			Sensitive = true
+		},
+		Clutch = {
+			Pos   = Vector(0, 2.5, 0) * Scale,
+			Scale = Vector(11, 5, 11) * Scale
+		}
+	})
+end

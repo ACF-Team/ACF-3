@@ -81,3 +81,32 @@ end
 
 ACF.SetCustomAttachment("models/engines/b4med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/b4small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+
+local Models = {
+	{ Model = "models/engines/b4med.mdl", Scale = 1.25 },
+	{ Model = "models/engines/b4small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(8.5, 0, 0.5) * Scale,
+			Scale     = Vector(18, 16, 9) * Scale,
+			Sensitive = true
+		},
+		UpperSection = {
+			Pos   = Vector(7, 0, 7) * Scale,
+			Scale = Vector(11, 23, 4) * Scale
+		},
+		LeftBank = {
+			Pos   = Vector(9, -10, 2) * Scale,
+			Scale = Vector(16, 4, 6) * Scale
+		},
+		RightBank = {
+			Pos   = Vector(9, 10, 2) * Scale,
+			Scale = Vector(16, 4, 6) * Scale
+		}
+	})
+end

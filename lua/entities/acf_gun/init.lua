@@ -156,7 +156,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Spread       = Class.Spread
 		Entity.DefaultSound = GetSound(Caliber, Class)
 		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
-		Entity.HitBoxes     = ACF.HitBoxes[Model]
+		Entity.HitBoxes     = ACF.GetHitboxes(Model, Scale)
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle

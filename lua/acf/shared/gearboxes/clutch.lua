@@ -83,3 +83,22 @@ ACF.SetCustomAttachments("models/engines/flywheelclutcht.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 2), Ang = Angle(0, 180, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, 2), Ang = Angle(0, 180, 90) },
 })
+
+local Models = {
+	{ Model = "models/engines/flywheelclutchb.mdl", Scale = 3 },
+	{ Model = "models/engines/flywheelclutchm.mdl", Scale = 2 },
+	{ Model = "models/engines/flywheelclutchs.mdl", Scale = 1.5 },
+	{ Model = "models/engines/flywheelclutcht.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Clutch = {
+			Pos       = Vector(0, 0.25) * Scale,
+			Scale     = Vector(8, 4, 8) * Scale,
+			Sensitive = true
+		}
+	})
+end
