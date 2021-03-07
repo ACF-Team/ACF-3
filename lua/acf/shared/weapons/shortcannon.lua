@@ -18,7 +18,11 @@ ACF.RegisterWeaponClass("SC", {
 	Round = {
 		MaxLength = 93,
 		PropMass  = 4.5,
-	}
+	},
+	Preview = {
+		Height = 45,
+		FOV    = 60,
+	},
 })
 
 ACF.RegisterWeapon("37mmSC", "SC", {

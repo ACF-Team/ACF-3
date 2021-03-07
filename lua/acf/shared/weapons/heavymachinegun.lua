@@ -33,6 +33,10 @@ ACF.RegisterWeaponClass("HMG", {
 		Submodel = 4,
 		NewPos   = "muzzle2",
 	},
+	Preview = {
+		Height = 65,
+		FOV    = 55,
+	},
 })
 
 ACF.RegisterWeapon("13mmHMG", "HMG", {

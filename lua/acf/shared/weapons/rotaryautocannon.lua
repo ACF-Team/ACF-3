@@ -25,6 +25,10 @@ ACF.RegisterWeaponClass("RAC", {
 		MaxLength = 30,
 		PropMass  = 0.12,
 	},
+	Preview = {
+		Height = 50,
+		FOV    = 60,
+	},
 })
 
 ACF.RegisterWeapon("14.5mmRAC", "RAC", {

@@ -30,6 +30,10 @@ ACF.RegisterWeaponClass("GL", {
 		MaxLength = 7.5,
 		PropMass  = 0.01,
 	},
+	Preview = {
+		Height = 80,
+		FOV    = 70,
+	},
 })
 
 ACF.RegisterWeapon("40mmGL", "GL", {

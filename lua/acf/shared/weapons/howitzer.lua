@@ -16,6 +16,10 @@ ACF.RegisterWeaponClass("HW", {
 		MaxLength = 86,
 		PropMass  = 3.75,
 	},
+	Preview = {
+		Height = 55,
+		FOV    = 65,
+	},
 })
 
 ACF.RegisterWeapon("75mmHW", "HW", {

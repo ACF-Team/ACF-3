@@ -28,6 +28,10 @@ ACF.RegisterWeaponClass("AL", {
 		MaxLength = 93,
 		PropMass  = 9.5,
 	},
+	Preview = {
+		Height = 40,
+		FOV    = 57,
+	},
 })
 
 ACF.RegisterWeapon("75mmAL", "AL", {

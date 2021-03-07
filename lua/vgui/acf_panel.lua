@@ -229,27 +229,38 @@ end
 
 function PANEL:AddModelPreview(Model)
 	local Settings = {
-		Offset   = Vector(),
-		Position = Vector(45, 60, 45),
-		Height   = 80,
-		FOV      = 75,
+		Height = 120,
+		FOV    = 90,
 	}
 
 	local Panel = self:AddPanel("DModelPanel")
-	Panel:SetModel(Model or "models/props_junk/PopCan01a.mdl")
 
-	function Panel:UpdateSettings(Data)
-		if not istable(Data) then return end
+	function Panel:UpdateModel(Path)
+		local Center    = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
+		local Size      = ACF.GetModelSize(Path)
+		local Direction = Size:GetNormalized()
+		local Distance  = Size:Length()
+		local X, Y      = Direction:Unpack()
 
-		if Data.Model then self:SetModel(Data.Model) end
+		-- Most of the time the gun will be long instead of wide
+		-- We switch these two so it doesn't aim at us
+		Direction.x = Y
+		Direction.y = X
 
-		self:SetLookAt(Data.Offset or Settings.Offset)
-		self:SetCamPos(Data.Position or Settings.Position)
-		self:SetHeight(Data.Height or Settings.Height)
-		self:SetFOV(Data.FOV or Settings.FOV)
+		self:SetModel(Path)
+		self:SetLookAt(Center)
+		self:SetCamPos(Center + Direction * Distance)
 	end
 
-	Panel:UpdateSettings(Settings)
+	function Panel:UpdateSettings(Data)
+		if not istable(Data) then Data = nil end
+
+		self:SetHeight(Data and Data.Height or Settings.Height)
+		self:SetFOV(Data and Data.FOV or Settings.FOV)
+	end
+
+	Panel:UpdateModel(Model or "models/props_junk/PopCan01a.mdl")
+	Panel:UpdateSettings()
 
 	Panel.DefaultLayout = Panel.LayoutEntity
 	Panel.LayoutEntity  = function() end

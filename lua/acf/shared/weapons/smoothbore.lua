@@ -17,6 +17,10 @@ ACF.RegisterWeaponClass("SB", {
 		MaxLength = 101,
 		PropMass  = 9,
 	},
+	Preview = {
+		Height = 40,
+		FOV    = 55,
+	},
 })
 
 ACF.RegisterWeapon("105mmSB", "SB", {

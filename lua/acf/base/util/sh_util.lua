@@ -387,6 +387,7 @@ do -- Model convex mesh and volume
 		Data = {
 			Mesh   = PhysObj:GetMeshConvexes(),
 			Volume = PhysObj:GetVolume(),
+			Center = (Max + Min) * 0.5,
 			Size   = Max - Min,
 			Min    = Min,
 			Max    = Max,
@@ -441,6 +442,18 @@ do -- Model convex mesh and volume
 		return Mesh
 	end
 
+	function ACF.GetModelCenter(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+
+		if not IsValidScale(Scale) then
+			return Data.Center
+		end
+
+		return Data.Center * Scale
+	end
+
 	function ACF.GetModelVolume(Model, Scale)
 		local Data = GetModelData(Model)
 
@@ -464,7 +477,7 @@ do -- Model convex mesh and volume
 			return Vector(Data.Size)
 		end
 
-		return (Data.Max * Scale) - (Data.Min * Scale)
+		return Data.Size * Scale
 	end
 end
 

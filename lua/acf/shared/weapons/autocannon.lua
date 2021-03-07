@@ -28,6 +28,10 @@ ACF.RegisterWeaponClass("AC", {
 		MaxLength = 32, -- Relative to the Base caliber, in cm
 		PropMass  = 0.13, -- Relative to the model's volume
 	},
+	Preview = {
+		Height = 58,
+		FOV    = 55,
+	},
 })
 
 ACF.RegisterWeapon("20mmAC", "AC", {

@@ -9,7 +9,7 @@ local CreateControl, IsScalable
 local function UpdatePreview(Base, Data)
 	local Preview = Base.Preview
 
-	Preview:SetModel(Data.Model)
+	Preview:UpdateModel(Data.Model)
 	Preview:UpdateSettings(Data.Preview)
 end
 
