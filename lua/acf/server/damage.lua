@@ -26,8 +26,8 @@ local function CalcDamage(Bullet, Trace)
 
 	if MaxPenetration > EffectiveArmor then
 		HitRes.Damage   = Area -- Inflicted Damage
-		HitRes.Overkill = MaxPenetration - BaseArmor -- Remaining penetration
-		HitRes.Loss     = BaseArmor / MaxPenetration -- Energy loss in percents
+		HitRes.Overkill = MaxPenetration - EffectiveArmor -- Remaining penetration
+		HitRes.Loss     = EffectiveArmor / MaxPenetration -- Energy loss in percents
 	else
 		-- Projectile did not penetrate the armor
 		local Penetration = math.min(MaxPenetration, EffectiveArmor)
