@@ -1,8 +1,0 @@
-"VertexLitGeneric"
-{
-	"$basetexture" "Models/ammo/round_skin_HEAT"
-	"$envmap" "env_cubemap"
-	"$envmapcontrast" 1
-	"$envmapsaturation" 1
-	"$envmaptint" "[ .25 .25 .25]"
-}
