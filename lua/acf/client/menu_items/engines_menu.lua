@@ -78,7 +78,7 @@ local function CreateMenu(Menu)
 	local EngineBase = Menu:AddCollapsible("Engine Information")
 	local EngineName = EngineBase:AddTitle()
 	local EngineDesc = EngineBase:AddLabel()
-	local EnginePreview = EngineBase:AddModelPreview()
+	local EnginePreview = EngineBase:AddModelPreview(nil, true)
 	local EngineStats = EngineBase:AddLabel()
 
 	Menu:AddTitle("Fuel Tank Settings")
@@ -88,7 +88,7 @@ local function CreateMenu(Menu)
 	local FuelType = Menu:AddComboBox()
 	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
 	local FuelDesc = FuelBase:AddLabel()
-	local FuelPreview = FuelBase:AddModelPreview()
+	local FuelPreview = FuelBase:AddModelPreview(nil, true)
 	local FuelInfo = FuelBase:AddLabel()
 
 	ACF.SetClientData("PrimaryClass", "acf_engine")
@@ -113,7 +113,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 
@@ -122,11 +121,8 @@ local function CreateMenu(Menu)
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description)
 
-		EnginePreview:SetModel(Data.Model)
-		EnginePreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		EnginePreview:SetLookAt(Preview and Preview.Position or Vector())
-		EnginePreview:SetHeight(Preview and Preview.Height or 80)
-		EnginePreview:SetFOV(Preview and Preview.FOV or 75)
+		EnginePreview:UpdateModel(Data.Model)
+		EnginePreview:UpdateSettings(Data.Preview)
 
 		UpdateEngineStats(EngineStats, Data)
 
@@ -148,7 +144,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 
@@ -156,11 +151,8 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelTank", Data.ID)
 
-		FuelPreview:SetModel(Data.Model)
-		FuelPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		FuelPreview:SetLookAt(Preview and Preview.Position or Vector())
-		FuelPreview:SetHeight(Preview and Preview.Height or 80)
-		FuelPreview:SetFOV(Preview and Preview.FOV or 75)
+		FuelPreview:UpdateModel(Data.Model)
+		FuelPreview:UpdateSettings(Data.Preview)
 
 		FuelType:UpdateFuelText()
 	end

@@ -182,8 +182,9 @@ else
 		return Data
 	end
 
-	function Ammo:AddAmmoPreview(Preview)
-		Preview:SetModel(self.Model)
+	function Ammo:AddAmmoPreview(_, Setup)
+		Setup.Model  = self.Model
+		Setup.Height = 70
 	end
 
 	function Ammo:ImpactEffect(_, Bullet)

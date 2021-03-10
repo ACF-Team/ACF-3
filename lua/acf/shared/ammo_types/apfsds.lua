@@ -57,4 +57,10 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
+
+	function Ammo:AddAmmoPreview(Preview, Setup, ...)
+		Ammo.BaseClass.AddAmmoPreview(self, Preview, Setup, ...)
+
+		Setup.Height = 50
+	end
 end

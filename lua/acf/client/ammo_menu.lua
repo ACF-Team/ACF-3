@@ -52,16 +52,17 @@ end
 local function AddPreview(Base, Settings, ToolData)
 	if Settings.SuppressPreview then return end
 
-	local Preview = Base:AddModelPreview()
-	Preview:SetCamPos(Vector(45, 45, 30))
-	Preview:SetHeight(120)
-	Preview:SetFOV(50)
+	local Preview = Base:AddModelPreview(nil, true)
+	local Setup   = {}
 
 	if Ammo.AddAmmoPreview then
-		Ammo:AddAmmoPreview(Preview, ToolData, BulletData)
+		Ammo:AddAmmoPreview(Preview, Setup, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoPreview", Preview, ToolData, Ammo, BulletData)
+	hook.Run("ACF_AddAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
+
+	Preview:UpdateModel(Setup.Model)
+	Preview:UpdateSettings(Setup)
 end
 
 local function AddControls(Base, Settings, ToolData)

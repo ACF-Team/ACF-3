@@ -143,7 +143,7 @@ local function CreateMenu(Menu)
 	local WeaponBase = Menu:AddCollapsible("Weapon Information")
 	local EntName    = WeaponBase:AddTitle()
 	local ClassDesc  = WeaponBase:AddLabel()
-	local EntPreview = WeaponBase:AddModelPreview()
+	local EntPreview = WeaponBase:AddModelPreview(nil, true)
 	local EntData    = WeaponBase:AddLabel()
 	local AmmoList   = ACF.CreateAmmoMenu(Menu)
 

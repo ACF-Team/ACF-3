@@ -227,29 +227,36 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
-function PANEL:AddModelPreview(Model)
+function PANEL:AddModelPreview(Model, Rotate)
 	local Settings = {
 		Height = 120,
 		FOV    = 90,
 	}
 
-	local Panel = self:AddPanel("DModelPanel")
+	local Panel    = self:AddPanel("DModelPanel")
+	Panel.Rotate   = tobool(Rotate)
+	Panel.Rotation = Angle(0, -100)
+	Panel.Settings = Settings -- Storing the default settings
+
+	function Panel:SetRotateModel(Bool)
+		self.Rotate = tobool(Bool)
+	end
 
 	function Panel:UpdateModel(Path)
-		local Center    = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
-		local Size      = ACF.GetModelSize(Path)
-		local Direction = Size:GetNormalized()
-		local Distance  = Size:Length()
-		local X, Y      = Direction:Unpack()
+		if not isstring(Path) then
+			Path = "models/props_junk/PopCan01a.mdl"
+		end
 
-		-- Most of the time the gun will be long instead of wide
-		-- We switch these two so it doesn't aim at us
-		Direction.x = Y
-		Direction.y = X
+		local Center = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
+		local Size   = ACF.GetModelSize(Path)
+
+		self.CamCenter = Center
+		self.CamOffset = Vector(0, Size:Length())
+		self.LastTime  = RealTime()
 
 		self:SetModel(Path)
 		self:SetLookAt(Center)
-		self:SetCamPos(Center + Direction * Distance)
+		self:SetCamPos(Center + self.CamOffset)
 	end
 
 	function Panel:UpdateSettings(Data)
@@ -259,12 +266,28 @@ function PANEL:AddModelPreview(Model)
 		self:SetFOV(Data and Data.FOV or Settings.FOV)
 	end
 
-	Panel:UpdateModel(Model or "models/props_junk/PopCan01a.mdl")
-	Panel:UpdateSettings()
+	function Panel:LayoutEntity()
+		if self.bAnimated then
+			self:RunAnimation()
+		end
 
-	Panel.DefaultLayout = Panel.LayoutEntity
-	Panel.LayoutEntity  = function() end
-	Panel.Settings      = Settings -- Storing the default settings
+		if not self.Rotate then return end
+		if not self.CamOffset then return end
+
+		local Time     = RealTime()
+		local Delta    = Time - self.LastTime
+		local Rotation = self.Rotation * Delta
+		local Offset   = self.CamOffset
+
+		Offset:Rotate(Rotation)
+
+		self:SetCamPos(self.CamCenter + Offset)
+
+		self.LastTime = Time
+	end
+
+	Panel:UpdateModel(Model)
+	Panel:UpdateSettings()
 
 	return Panel
 end
