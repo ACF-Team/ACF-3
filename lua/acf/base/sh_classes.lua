@@ -115,6 +115,24 @@ do -- Basic class registration functions
 
 		return Group.IsScalable and Group
 	end
+
+	hook.Add("ACF_OnNewSimpleClass", "ACF Precache Model", function(_, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
+
+	hook.Add("ACF_OnNewClassGroup", "ACF Precache Model", function(_, Group)
+		if not isstring(Group.Model) then return end
+
+		util.PrecacheModel(Group.Model)
+	end)
+
+	hook.Add("ACF_OnNewGroupedClass", "ACF Precache Model", function(_, _, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
 end
 
 local AddSimpleClass  = ACF.AddSimpleClass
@@ -210,6 +228,12 @@ do -- Class registration function
 
 		return Class
 	end
+
+	hook.Add("ACF_OnClassLoaded", "ACF Model Precache", function(_, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
 end
 
 do -- Weapon registration functions
