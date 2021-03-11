@@ -25,6 +25,9 @@ do -- Electric Motors
 			Limit	 = 10000,
 			Override = 5000,
 		},
+		Preview = {
+			FOV = 86,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Medium", "EL", {
@@ -44,7 +47,10 @@ do -- Electric Motors
 			PeakMax	 = 1,
 			Limit	 = 7000,
 			Override = 8000,
-		}
+		},
+		Preview = {
+			FOV = 88,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Large", "EL", {
@@ -92,6 +98,9 @@ do -- Electric Standalone Motors
 			Limit	 = 10000,
 			Override = 500,
 		},
+		Preview = {
+			FOV = 120,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Small-NoBatt", "EL-S", {
@@ -111,7 +120,10 @@ do -- Electric Standalone Motors
 			PeakMax	 = 1,
 			Limit	 = 10000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 114,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Medium-NoBatt", "EL-S", {
@@ -132,6 +144,9 @@ do -- Electric Standalone Motors
 			Limit	 = 7000,
 			Override = 8000,
 		},
+		Preview = {
+			FOV = 112,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Large-NoBatt", "EL-S", {
@@ -151,7 +166,10 @@ do -- Electric Standalone Motors
 			PeakMax	 = 1,
 			Limit	 = 4500,
 			Override = 6000,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 end
 

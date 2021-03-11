@@ -22,7 +22,10 @@ do
 			PeakMin	= 4500,
 			PeakMax	= 9000,
 			Limit	= 9200,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("1.3L-R", "R", {
@@ -40,7 +43,10 @@ do
 			PeakMin	= 4100,
 			PeakMax	= 8500,
 			Limit	= 9000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("2.0L-R", "R", {
@@ -58,7 +64,10 @@ do
 			PeakMin	= 4100,
 			PeakMax	= 8500,
 			Limit	= 9500,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 

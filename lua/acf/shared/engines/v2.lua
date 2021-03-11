@@ -21,7 +21,10 @@ do -- Petrol Engines
 			PeakMin	= 4000,
 			PeakMax	= 6500,
 			Limit	= 7000,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterEngine("1.2-V2", "V2", {
@@ -39,7 +42,10 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5500,
 			Limit	= 6250,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterEngine("2.4-V2", "V2", {
@@ -57,7 +63,10 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5500,
 			Limit	= 6000,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 end
 

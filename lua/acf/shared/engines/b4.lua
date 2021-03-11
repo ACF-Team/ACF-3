@@ -22,6 +22,9 @@ do
 			PeakMax	= 4200,
 			Limit	= 4500,
 		},
+		Preview = {
+			FOV = 80,
+		},
 	})
 
 	ACF.RegisterEngine("2.1-B4", "B4", {
@@ -39,6 +42,9 @@ do
 			PeakMin	= 3000,
 			PeakMax	= 4800,
 			Limit	= 5000,
+		},
+		Preview = {
+			FOV = 80,
 		},
 	})
 
@@ -58,11 +64,14 @@ do
 			PeakMax	= 2650,
 			Limit	= 2800,
 		},
+		Preview = {
+			FOV = 80,
+		},
 	})
 
 	ACF.RegisterEngine("3.2-B4", "B4", {
 		Name		 = "3.2L Flat 4 Petrol",
-		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.",
+		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.", -- Ok
 		Model		 = "models/engines/b4med.mdl",
 		Sound		 = "acf_base/engines/b4_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -75,6 +84,9 @@ do
 			PeakMin	= 3400,
 			PeakMax	= 5500,
 			Limit	= 6500
+		},
+		Preview = {
+			FOV = 85,
 		},
 	})
 end

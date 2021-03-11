@@ -21,7 +21,10 @@ do
 			PeakMin	= 2600,
 			PeakMax	= 4350,
 			Limit	= 4800,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("11.0-R7", "R7", {
@@ -39,7 +42,10 @@ do
 			PeakMin	= 2300,
 			PeakMax	= 3850,
 			Limit	= 4400,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("8.0-R7", "R7", {
@@ -57,7 +63,10 @@ do
 			PeakMin	= 2200,
 			PeakMax	= 2500,
 			Limit	= 2800,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("24.0-R7", "R7", {
@@ -75,7 +84,10 @@ do
 			PeakMin	= 1900,
 			PeakMax	= 3150,
 			Limit	= 3500,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 

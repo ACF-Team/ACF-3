@@ -21,7 +21,10 @@ do -- Diesel Engines
 			PeakMin	= 950,
 			PeakMax	= 3000,
 			Limit	= 4000,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 
 	ACF.RegisterEngine("3.3L-V4", "V4", {
@@ -39,7 +42,10 @@ do -- Diesel Engines
 			PeakMin	= 1050,
 			PeakMax	= 3100,
 			Limit	= 3900,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 end
 

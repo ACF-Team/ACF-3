@@ -22,7 +22,10 @@ do -- Petrol Engines
 			PeakMin	= 2200,
 			PeakMax	= 3500,
 			Limit	= 5000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("6.2-V6", "V6", {
@@ -40,7 +43,10 @@ do -- Petrol Engines
 			PeakMin	= 2200,
 			PeakMax	= 3600,
 			Limit	= 5000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("12.0-V6", "V6", {
@@ -58,7 +64,10 @@ do -- Petrol Engines
 			PeakMin	= 1575,
 			PeakMax	= 2650,
 			Limit	= 3800,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
@@ -78,7 +87,10 @@ do -- Diesel Engines
 			PeakMin	= 1800,
 			PeakMax	= 4200,
 			Limit	= 4300,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("15.0-V6", "V6", {
@@ -96,7 +108,10 @@ do -- Diesel Engines
 			PeakMin	= 1150,
 			PeakMax	= 1950,
 			Limit	= 3100,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 

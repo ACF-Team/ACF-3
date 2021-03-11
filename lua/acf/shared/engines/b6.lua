@@ -22,6 +22,9 @@ do
 			PeakMax	= 6950,
 			Limit	= 7250,
 		},
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterEngine("5.0-B6", "B6", {
@@ -39,6 +42,9 @@ do
 			PeakMin	= 3500,
 			PeakMax	= 6000,
 			Limit	= 6800,
+		},
+		Preview = {
+			FOV = 83,
 		},
 	})
 
@@ -58,6 +64,9 @@ do
 			PeakMax	= 3600,
 			Limit	= 4200,
 		},
+		Preview = {
+			FOV = 83,
+		},
 	})
 
 	ACF.RegisterEngine("15.8-B6", "B6", {
@@ -75,6 +84,9 @@ do
 			PeakMin	= 2500,
 			PeakMax	= 4275,
 			Limit	= 4900,
+		},
+		Preview = {
+			FOV = 83,
 		},
 	})
 end

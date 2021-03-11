@@ -21,7 +21,10 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5400,
 			Limit	= 6000,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("3.4-I3", "I3", {
@@ -39,7 +42,10 @@ do -- Petrol Engines
 			PeakMin	= 3500,
 			PeakMax	= 6600,
 			Limit	= 6800,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("13.5-I3", "I3", {
@@ -57,7 +63,10 @@ do -- Petrol Engines
 			PeakMin	= 1900,
 			PeakMax	= 3500,
 			Limit	= 3900,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -77,7 +86,10 @@ do -- Diesel Engines
 			PeakMin	= 800,
 			PeakMax	= 2500,
 			Limit	= 3000,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("2.8-I3", "I3", {
@@ -95,7 +107,10 @@ do -- Diesel Engines
 			PeakMin	= 1200,
 			PeakMax	= 3600,
 			Limit	= 3800
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("11.0-I3", "I3", {
@@ -113,7 +128,10 @@ do -- Diesel Engines
 			PeakMin	= 650,
 			PeakMax	= 1800,
 			Limit	= 2000
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 

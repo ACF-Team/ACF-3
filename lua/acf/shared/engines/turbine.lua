@@ -24,7 +24,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 1500,
 			Limit	 = 10000,
 			Override = 4167,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium", "GT", {
@@ -44,7 +47,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large", "GT", {
@@ -64,7 +70,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 2025,
 			Limit	 = 13500,
 			Override = 5625,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -87,7 +96,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 1500,
 			Limit	 = 10000,
 			Override = 4167,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium-Trans", "GT", {
@@ -108,7 +120,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large-Trans", "GT", {
@@ -129,7 +144,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 2025,
 			Limit	 = 13500,
 			Override = 5625,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 end
 
@@ -156,7 +174,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 1350,
 			Limit	 = 3000,
 			Override = 1667,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Ground-Medium", "GGT", {
@@ -177,7 +198,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 2000,
 			Limit	 = 3000,
 			Override = 1450,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Ground-Large", "GGT", {
@@ -198,7 +222,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 1250,
 			Limit	 = 3000,
 			Override = 1250,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -221,7 +248,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 1350,
 			Limit	 = 3000,
 			Override = 1667,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium-Ground-Trans", "GGT", {
@@ -243,7 +273,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 2000,
 			Limit	 = 3000,
 			Override = 1450,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large-Ground-Trans", "GGT", {
@@ -265,7 +298,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 1250,
 			Limit	 = 3000,
 			Override = 1250,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 end
 
