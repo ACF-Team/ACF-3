@@ -30,6 +30,9 @@ do -- Inline Gearboxes
 		Mass		= Gear8SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear8ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-L-M", "8-Speed", {
@@ -39,6 +42,9 @@ do -- Inline Gearboxes
 		Mass		= Gear8MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear8MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-L-L", "8-Speed", {
@@ -48,6 +54,9 @@ do -- Inline Gearboxes
 		Mass		= Gear8LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear8LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -60,6 +69,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= Gear8ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-LD-M", "8-Speed", {
@@ -70,6 +82,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= Gear8MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-LD-L", "8-Speed", {
@@ -80,6 +95,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= Gear8LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -91,6 +109,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear8SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear8ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-T-M", "8-Speed", {
@@ -100,6 +121,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear8MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear8MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-T-L", "8-Speed", {
@@ -109,6 +133,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear8LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear8LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -121,6 +148,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= Gear8ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-TD-M", "8-Speed", {
@@ -131,6 +161,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= Gear8MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-TD-L", "8-Speed", {
@@ -141,6 +174,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= Gear8LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -152,6 +188,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear8SW * StWB),
 		Switch		= 0.15,
 		MaxTorque	= math.floor(Gear8ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-ST-M", "8-Speed", {
@@ -161,6 +200,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear8MW * StWB),
 		Switch		= 0.2,
 		MaxTorque	= math.floor(Gear8MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("8Gear-ST-L", "8-Speed", {
@@ -170,5 +212,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear8LW * StWB),
 		Switch		= 0.3,
 		MaxTorque	= math.floor(Gear8LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

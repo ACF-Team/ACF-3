@@ -133,6 +133,9 @@ do -- Inline Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-L-M", "3-Auto", {
@@ -142,6 +145,9 @@ do -- Inline Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-L-L", "3-Auto", {
@@ -151,6 +157,9 @@ do -- Inline Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -163,6 +172,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-LD-M", "3-Auto", {
@@ -173,6 +185,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-LD-L", "3-Auto", {
@@ -183,6 +198,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -194,6 +212,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-T-M", "3-Auto", {
@@ -203,6 +224,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-T-L", "3-Auto", {
@@ -212,6 +236,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear3LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -224,6 +251,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear3ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-TD-M", "3-Auto", {
@@ -234,6 +264,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear3MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-TD-L", "3-Auto", {
@@ -244,6 +277,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear3LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -255,6 +291,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3SW * StWB),
 		Switch		= ShiftS,
 		MaxTorque	= math.floor(Gear3ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-ST-M", "3-Auto", {
@@ -264,6 +303,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3MW * StWB),
 		Switch		= ShiftM,
 		MaxTorque	= math.floor(Gear3MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("3Gear-A-ST-L", "3-Auto", {
@@ -273,5 +315,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear3LW * StWB),
 		Switch		= ShiftL,
 		MaxTorque	= math.floor(Gear3LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

@@ -33,6 +33,9 @@ do -- Straight-through Gearboxes
 		Mass		= CTW,
 		Switch		= 0.1,
 		MaxTorque	= CTT,
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterGearbox("Clutch-S-S", "Clutch", {
@@ -42,6 +45,9 @@ do -- Straight-through Gearboxes
 		Mass		= CSW,
 		Switch		= 0.15,
 		MaxTorque	= CST,
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterGearbox("Clutch-S-M", "Clutch", {
@@ -51,6 +57,9 @@ do -- Straight-through Gearboxes
 		Mass		= CMW,
 		Switch		= 0.2,
 		MaxTorque	= CMT,
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterGearbox("Clutch-S-L", "Clutch", {
@@ -60,6 +69,9 @@ do -- Straight-through Gearboxes
 		Mass		= CLW,
 		Switch		= 0.3,
 		MaxTorque	= CLT,
+		Preview = {
+			FOV = 115,
+		},
 	})
 end
 

@@ -30,6 +30,9 @@ do -- Inline Gearboxes
 		Mass		= Gear4SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear4ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-L-M", "4-Speed", {
@@ -39,6 +42,9 @@ do -- Inline Gearboxes
 		Mass		= Gear4MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear4MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-L-L", "4-Speed", {
@@ -48,6 +54,9 @@ do -- Inline Gearboxes
 		Mass		= Gear4LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear4LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -60,6 +69,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= Gear4ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-LD-M", "4-Speed", {
@@ -70,6 +82,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= Gear4MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-LD-L", "4-Speed", {
@@ -80,6 +95,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= Gear4LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -91,6 +109,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear4SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear4ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-T-M", "4-Speed", {
@@ -100,6 +121,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear4MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear4MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-T-L", "4-Speed", {
@@ -109,6 +133,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear4LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear4LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -121,6 +148,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= Gear4ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-TD-M", "4-Speed", {
@@ -131,6 +161,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= Gear4MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-TD-L", "4-Speed", {
@@ -141,6 +174,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= Gear4LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -152,6 +188,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear4SW * StWB),
 		Switch		= 0.15,
 		MaxTorque	= math.floor(Gear4ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-ST-M", "4-Speed", {
@@ -161,6 +200,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear4MW * StWB),
 		Switch		= 0.2,
 		MaxTorque	= math.floor(Gear4MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("4Gear-ST-L", "4-Speed", {
@@ -170,5 +212,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear4LW * StWB),
 		Switch		= 0.3,
 		MaxTorque	= math.floor(Gear4LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

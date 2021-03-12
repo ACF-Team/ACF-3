@@ -17,9 +17,7 @@ ACF.RegisterPiledriverClass("PD", {
 		PropMass  = 0,
 	},
 	Preview = {
-		Position = Vector(0, 0, -5),
-		Offset = Vector(45, 45, 20),
-		Height = 120,
+		FOV = 115,
 	},
 })
 

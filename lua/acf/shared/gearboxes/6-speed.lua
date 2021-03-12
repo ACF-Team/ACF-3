@@ -30,6 +30,9 @@ do -- Inline Gearboxes
 		Mass		= Gear6SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear6ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-L-M", "6-Speed", {
@@ -39,6 +42,9 @@ do -- Inline Gearboxes
 		Mass		= Gear6MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear6MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-L-L", "6-Speed", {
@@ -48,6 +54,9 @@ do -- Inline Gearboxes
 		Mass		= Gear6LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear6LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -60,6 +69,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= Gear6ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-LD-M", "6-Speed", {
@@ -70,6 +82,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= Gear6MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-LD-L", "6-Speed", {
@@ -80,6 +95,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= Gear6LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -91,6 +109,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear6SW,
 		Switch		= 0.15,
 		MaxTorque	= Gear6ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-T-M", "6-Speed", {
@@ -100,6 +121,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear6MW,
 		Switch		= 0.2,
 		MaxTorque	= Gear6MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-T-L", "6-Speed", {
@@ -109,6 +133,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear6LW,
 		Switch		= 0.3,
 		MaxTorque	= Gear6LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -121,6 +148,9 @@ do -- Transaxial Dual Clutch
 		Switch		= 0.15,
 		MaxTorque	= Gear6ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-TD-M", "6-Speed", {
@@ -131,6 +161,9 @@ do -- Transaxial Dual Clutch
 		Switch		= 0.2,
 		MaxTorque	= Gear6MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-TD-L", "6-Speed", {
@@ -141,6 +174,9 @@ do -- Transaxial Dual Clutch
 		Switch		= 0.3,
 		MaxTorque	= Gear6LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -152,6 +188,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear6SW * StWB),
 		Switch		= 0.15,
 		MaxTorque	= math.floor(Gear6ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-ST-M", "6-Speed", {
@@ -161,6 +200,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear6MW * StWB),
 		Switch		= 0.2,
 		MaxTorque	= math.floor(Gear6MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("6Gear-ST-L", "6-Speed", {
@@ -170,5 +212,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear6LW * StWB),
 		Switch		= 0.3,
 		MaxTorque	= math.floor(Gear6LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

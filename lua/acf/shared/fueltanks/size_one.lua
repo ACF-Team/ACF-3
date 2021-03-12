@@ -178,7 +178,7 @@ do
 		Volume		= 31871,
 		Shape       = "Box",
 		Preview = {
-			FOV = 110, 
+			FOV = 110,
 		},
 	})
 end
