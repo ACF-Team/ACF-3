@@ -165,4 +165,10 @@ else
 		Settings.SuppressControls    = true
 		Settings.SuppressInformation = true
 	end
+
+	function Ammo:AddAmmoPreview(Preview, Setup, ...)
+		Ammo.BaseClass.AddAmmoPreview(self, Preview, Setup, ...)
+
+		Setup.FOV = 115
+	end
 end

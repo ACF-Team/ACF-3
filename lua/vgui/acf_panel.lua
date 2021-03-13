@@ -235,7 +235,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 	local Panel    = self:AddPanel("DModelPanel")
 	Panel.Rotate   = tobool(Rotate)
-	Panel.Rotation = Angle(0, -100)
+	Panel.Rotation = Angle(0, -75)
 	Panel.Settings = Settings -- Storing the default settings
 
 	function Panel:SetRotateModel(Bool)

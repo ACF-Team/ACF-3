@@ -17,8 +17,7 @@ ACF.RegisterWeaponClass("HW", {
 		PropMass  = 3.75,
 	},
 	Preview = {
-		Height = 55,
-		FOV    = 65,
+		FOV = 65,
 	},
 })
 

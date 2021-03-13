@@ -37,7 +37,7 @@ ACF.RegisterWeaponClass("SL", {
 		Text = "Maximum amount of ACF smoke launchers a player can create."
 	},
 	Preview = {
-		FOV = 60,
+		FOV = 75,
 	},
 })
 

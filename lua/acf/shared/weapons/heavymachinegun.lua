@@ -34,8 +34,8 @@ ACF.RegisterWeaponClass("HMG", {
 		NewPos   = "muzzle2",
 	},
 	Preview = {
-		Height = 65,
-		FOV    = 55,
+		Height = 100,
+		FOV    = 60,
 	},
 })
 

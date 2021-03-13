@@ -183,8 +183,8 @@ else
 	end
 
 	function Ammo:AddAmmoPreview(_, Setup)
-		Setup.Model  = self.Model
-		Setup.Height = 70
+		Setup.Model = self.Model
+		Setup.FOV   = 60
 	end
 
 	function Ammo:ImpactEffect(_, Bullet)

@@ -26,7 +26,7 @@ ACF.RegisterWeaponClass("RAC", {
 		PropMass  = 0.12,
 	},
 	Preview = {
-		Height = 50,
+		Height = 90,
 		FOV    = 60,
 	},
 })
