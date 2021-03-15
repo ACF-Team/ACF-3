@@ -280,7 +280,7 @@ do -- Overpressure --------------------------
 	end)
 
 	hook.Add("EntityRemoved", "ACF Squishies", function(Ent)
-			Squishies[Ent] = nil
+		Squishies[Ent] = nil
 	end)
 
 	function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
@@ -302,13 +302,15 @@ do -- Overpressure --------------------------
 		if Forward and Angle then -- Blast direction and angle are specified
 			Angle = math.rad(Angle * 0.5) -- Convert deg to rads
 
-			for V in pairs(ACF.Squishies) do
-				if math.acos(Forward:Dot((V:GetShootPos() - Origin):GetNormalized())) < Angle then
-					local D = V:GetShootPos():Distance(Origin)
+			for V in pairs(Squishies) do
+				local Position = V:EyePos()
+
+				if math.acos(Forward:Dot((Position - Origin):GetNormalized())) < Angle then
+					local D = Position:Distance(Origin)
 
 					if D / 39.37 <= Radius then
 
-						Data.endpos = V:GetShootPos() + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
 						if CanSee(V, Data) then
 							local Damage = Energy * 175000 * (1 / D^3)
@@ -319,13 +321,15 @@ do -- Overpressure --------------------------
 				end
 			end
 		else -- Spherical blast
-			for V in pairs(ACF.Squishies) do
+			for V in pairs(Squishies) do
+				local Position = V:EyePos()
+
 				if CanSee(Origin, V) then
-					local D = V:GetShootPos():Distance(Origin)
+					local D = Position:Distance(Origin)
 
 					if D / 39.37 <= Radius then
 
-						Data.endpos = V:GetShootPos() + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
 						if CanSee(V, Data) then
 							local Damage = Energy * 150000 * (1 / D^3)
