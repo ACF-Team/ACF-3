@@ -33,19 +33,7 @@ ACF.RegisterWeaponClass("GL", {
 })
 
 ACF.RegisterWeapon("40mmGL", "GL", {
-	Name		= "40mm Grenade Launcher",
-	Description	= "The 40mm chews up infantry but is about as useful as tits on a nun for fighting armor. Often found on 4x4s rolling through the third world.",
-	Model		= "models/launcher/40mmgl.mdl",
-	Caliber		= 40,
-	Mass		= 55,
-	Year		= 1970,
-	MagSize		= 30,
-	MagReload	= 7.5,
-	Cyclic		= 200,
-	Round = {
-		MaxLength = 7.5,
-		PropMass  = 0.01,
-	}
+	Caliber = 40,
 })
 
 ACF.RegisterWeapon("40mmCL", "GL", {

@@ -36,19 +36,7 @@ ACF.RegisterWeaponClass("SL", {
 })
 
 ACF.RegisterWeapon("40mmSL", "SL", {
-	Name		= "40mm Smoke Launcher",
-	Description	= "",
-	Model		= "models/launcher/40mmsl.mdl",
-	Caliber		= 40,
-	Mass		= 1,
-	Year		= 1941,
-	MagSize		= 1,
-	MagReload	= 30,
-	Cyclic		= 600,
-	Round = {
-		MaxLength = 17.5,
-		PropMass  = 0.000075,
-	}
+	Caliber = 40,
 })
 
 ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))
