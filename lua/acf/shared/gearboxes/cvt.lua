@@ -81,6 +81,9 @@ do -- Inline Gearboxes
 		Mass		= GearCVTSW,
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-L-M", "CVT", {
@@ -90,6 +93,9 @@ do -- Inline Gearboxes
 		Mass		= GearCVTMW,
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-L-L", "CVT", {
@@ -99,6 +105,9 @@ do -- Inline Gearboxes
 		Mass		= GearCVTLW,
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -111,6 +120,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-LD-M", "CVT", {
@@ -121,6 +133,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-LD-L", "CVT", {
@@ -131,6 +146,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -142,6 +160,9 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTSW,
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-T-M", "CVT", {
@@ -151,6 +172,9 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTMW,
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-T-L", "CVT", {
@@ -160,6 +184,9 @@ do -- Transaxial Gearboxes
 		Mass		= GearCVTLW,
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -172,6 +199,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.15,
 		MaxTorque	= GearCVTST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-TD-M", "CVT", {
@@ -182,6 +212,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearCVTMT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-TD-L", "CVT", {
@@ -192,6 +225,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= GearCVTLT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -203,6 +239,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTSW * StWB),
 		Switch		= 0.15,
 		MaxTorque	= math.floor(GearCVTST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-ST-M", "CVT", {
@@ -212,6 +251,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTMW * StWB),
 		Switch		= 0.2,
 		MaxTorque	= math.floor(GearCVTMT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("CVT-ST-L", "CVT", {
@@ -221,6 +263,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(GearCVTLW * StWB),
 		Switch		= 0.3,
 		MaxTorque	= math.floor(GearCVTLT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
@@ -239,3 +284,25 @@ ACF.SetCustomAttachments("models/engines/t5small.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
 })
+
+local Models = {
+	{ Model = "models/engines/t5large.mdl", Scale = 2 },
+	{ Model = "models/engines/t5med.mdl", Scale = 1.5 },
+	{ Model = "models/engines/t5small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Straight = {
+			Pos       = Vector(0, 12.5, -0.75) * Scale,
+			Scale     = Vector(6.5, 15, 8) * Scale,
+			Sensitive = true
+		},
+		Clutch = {
+			Pos   = Vector(0, 2.5, 0) * Scale,
+			Scale = Vector(11, 5, 11) * Scale
+		}
+	})
+end

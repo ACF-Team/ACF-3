@@ -21,7 +21,10 @@ do -- Special Rotary Engines
 			PeakMin	= 4500,
 			PeakMax	= 9000,
 			Limit	= 9500,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -41,7 +44,10 @@ do -- Special I2 Engines
 			PeakMin	= 3125,
 			PeakMax	= 5100,
 			Limit	= 6000,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -62,7 +68,10 @@ do -- Special I4 Engines
 			PeakMin	= 7500,
 			PeakMax	= 11500,
 			Limit	= 12000,
-		}
+		},
+		Preview = {
+			FOV = 120,
+		},
 	})
 
 	ACF.RegisterEngine("1.9L-I4", "SP", {
@@ -80,7 +89,10 @@ do -- Special I4 Engines
 			PeakMin	= 5200,
 			PeakMax	= 8500,
 			Limit	= 9000,
-		}
+		},
+		Preview = {
+			FOV = 120,
+		},
 	})
 end
 
@@ -100,7 +112,10 @@ do -- Special V4 Engines
 			PeakMin	= 4600,
 			PeakMax	= 7000,
 			Limit	= 7500,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 end
 
@@ -120,7 +135,10 @@ do -- Special I6 Engines
 			PeakMin	= 5200,
 			PeakMax	= 8500,
 			Limit	= 9000,
-		}
+		},
+		Preview = {
+			FOV = 112,
+		},
 	})
 end
 
@@ -140,7 +158,10 @@ do -- Special V6 Engines
 			PeakMin	= 4500,
 			PeakMax	= 7100,
 			Limit	= 8000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
@@ -160,7 +181,10 @@ do -- Special V8 Engines
 			PeakMin	= 5500,
 			PeakMax	= 9000,
 			Limit	= 10000,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("7.2-V8", "SP", {
@@ -178,7 +202,10 @@ do -- Special V8 Engines
 			PeakMin	= 5000,
 			PeakMax	= 8000,
 			Limit	= 8500,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -198,7 +225,10 @@ do -- Special V10 Engines
 			PeakMin	= 5750,
 			PeakMax	= 8000,
 			Limit	= 9000,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -219,8 +249,9 @@ do -- Special V12 Engines
 			PeakMin	= 6875,
 			PeakMax	= 11000,
 			Limit	= 12500,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 end
-
-ACF.SetCustomAttachment("models/engines/wankel_4_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))

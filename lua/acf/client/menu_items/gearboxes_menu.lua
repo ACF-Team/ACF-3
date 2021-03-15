@@ -10,7 +10,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("Gearbox Information")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
-	local GearboxPreview = Base:AddModelPreview()
+	local GearboxPreview = Base:AddModelPreview(nil, true)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -34,7 +34,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = GearboxClass.Selected
 
 		ACF.SetClientData("Gearbox", Data.ID)
@@ -42,11 +41,8 @@ local function CreateMenu(Menu)
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
 
-		GearboxPreview:SetModel(Data.Model)
-		GearboxPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		GearboxPreview:SetLookAt(Preview and Preview.Position or Vector())
-		GearboxPreview:SetHeight(Preview and Preview.Height or 80)
-		GearboxPreview:SetFOV(Preview and Preview.FOV or 75)
+		GearboxPreview:UpdateModel(Data.Model)
+		GearboxPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)

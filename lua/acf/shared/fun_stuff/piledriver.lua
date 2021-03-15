@@ -7,19 +7,17 @@ ACF.RegisterPiledriverClass("PD", {
 	MagSize     = 15,
 	Cyclic      = 60,
 	ChargeRate  = 0.5,
+	Round = {
+		MaxLength  = 114.3, -- Relative to the Base caliber, in cm
+		PropLength = 0,
+	},
+	Preview = {
+		FOV = 115,
+	},
 	Caliber = {
 		Base = 100,
 		Min  = 50,
 		Max  = 300,
-	},
-	Round = {
-		MaxLength = 114.3, -- Relative to the Base caliber, in cm
-		PropMass  = 0,
-	},
-	Preview = {
-		Position = Vector(0, 0, -5),
-		Offset = Vector(45, 45, 20),
-		Height = 120,
 	},
 })
 

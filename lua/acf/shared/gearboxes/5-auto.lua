@@ -132,6 +132,9 @@ do -- Inline Gearboxes
 		Mass		= Gear5SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear5ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-L-M", "5-Auto", {
@@ -141,6 +144,9 @@ do -- Inline Gearboxes
 		Mass		= Gear5MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear5MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-L-L", "5-Auto", {
@@ -150,6 +156,9 @@ do -- Inline Gearboxes
 		Mass		= Gear5LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear5LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -162,6 +171,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear5ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-LD-M", "5-Auto", {
@@ -172,6 +184,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear5MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-LD-L", "5-Auto", {
@@ -182,6 +197,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear5LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -193,6 +211,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear5SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear5ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-T-M", "5-Auto", {
@@ -202,6 +223,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear5MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear5MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-T-L", "5-Auto", {
@@ -211,6 +235,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear5LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear5LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -223,6 +250,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear5ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-TD-M", "5-Auto", {
@@ -233,6 +263,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear5MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-TD-L", "5-Auto", {
@@ -243,6 +276,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear5LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -254,6 +290,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear5SW * StWB),
 		Switch		= ShiftS,
 		MaxTorque	= math.floor(Gear5ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-ST-M", "5-Auto", {
@@ -263,6 +302,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear5MW * StWB),
 		Switch		= ShiftM,
 		MaxTorque	= math.floor(Gear5MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("5Gear-A-ST-L", "5-Auto", {
@@ -272,5 +314,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear5LW * StWB),
 		Switch		= ShiftL,
 		MaxTorque	= math.floor(Gear5LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

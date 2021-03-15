@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
+DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
 
@@ -22,7 +22,11 @@ function ENT:Initialize(...)
 end
 
 function ENT:Update()
-	self.HitBoxes = ACF.HitBoxes[self:GetModel()]
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
+end
+
+function ENT:OnResized(_, Scale)
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), Scale)
 end
 
 function ENT:Think()

@@ -24,7 +24,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 1500,
 			Limit	 = 10000,
 			Override = 4167,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium", "GT", {
@@ -44,7 +47,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large", "GT", {
@@ -64,7 +70,10 @@ do -- Forward-facing Gas Turbines
 			PeakMax	 = 2025,
 			Limit	 = 13500,
 			Override = 5625,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -87,7 +96,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 1500,
 			Limit	 = 10000,
 			Override = 4167,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium-Trans", "GT", {
@@ -108,7 +120,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large-Trans", "GT", {
@@ -129,7 +144,10 @@ do -- Transaxial Gas Turbines
 			PeakMax	 = 2025,
 			Limit	 = 13500,
 			Override = 5625,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 end
 
@@ -156,7 +174,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 1350,
 			Limit	 = 3000,
 			Override = 1667,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Ground-Medium", "GGT", {
@@ -177,7 +198,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 2000,
 			Limit	 = 3000,
 			Override = 1450,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Ground-Large", "GGT", {
@@ -198,7 +222,10 @@ do -- Forward-facing Ground Gas Turbines
 			PeakMax	 = 1250,
 			Limit	 = 3000,
 			Override = 1250,
-		}
+		},
+		Preview = {
+			FOV = 100,
+		},
 	})
 end
 
@@ -221,7 +248,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 1350,
 			Limit	 = 3000,
 			Override = 1667,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Medium-Ground-Trans", "GGT", {
@@ -243,7 +273,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 2000,
 			Limit	 = 3000,
 			Override = 1450,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 
 	ACF.RegisterEngine("Turbine-Large-Ground-Trans", "GGT", {
@@ -265,7 +298,10 @@ do -- Transaxial Ground Gas Turbines
 			PeakMax	 = 1250,
 			Limit	 = 3000,
 			Override = 1250,
-		}
+		},
+		Preview = {
+			FOV = 75,
+		},
 	})
 end
 
@@ -275,3 +311,63 @@ ACF.SetCustomAttachment("models/engines/turbine_s.mdl", "driveshaft", Vector(0, 
 ACF.SetCustomAttachment("models/engines/gasturbine_l.mdl", "driveshaft", Vector(-42), Angle(0, -180))
 ACF.SetCustomAttachment("models/engines/gasturbine_m.mdl", "driveshaft", Vector(-31.5), Angle(0, -180))
 ACF.SetCustomAttachment("models/engines/gasturbine_s.mdl", "driveshaft", Vector(-21), Angle(0, -180))
+
+local Straight = {
+	{ Model = "models/engines/turbine_l.mdl", Scale = 2 },
+	{ Model = "models/engines/turbine_m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/turbine_s.mdl", Scale = 1 },
+}
+
+local Transaxial = {
+	{ Model = "models/engines/gasturbine_l.mdl", Scale = 2 },
+	{ Model = "models/engines/gasturbine_m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/gasturbine_s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Straight) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(2) * Scale,
+			Scale     = Vector(26, 11, 11) * Scale,
+			Sensitive = true
+		},
+		Intake = {
+			Pos   = Vector(20) * Scale,
+			Scale = Vector(10, 15, 15) * Scale
+		},
+		Output = {
+			Pos   = Vector(-16, 0, 4) * Scale,
+			Scale = Vector(10, 15, 24) * Scale
+		}
+	})
+end
+
+for _, Data in ipairs(Transaxial) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos   = Vector(6) * Scale,
+			Scale = Vector(22, 10, 10) * Scale,
+			Sensitive = true
+		},
+		Intake = {
+			Pos   = Vector(19.5) * Scale,
+			Scale = Vector(5, 12, 12) * Scale
+		},
+		Chamber = {
+			Pos   = Vector(-9.5) * Scale,
+			Scale = Vector(9, 13, 13) * Scale
+		},
+		Output = {
+			Pos   = Vector(0, -6.5) * Scale,
+			Scale = Vector(7, 3, 7) * Scale
+		},
+		Exhaust = {
+			Pos   = Vector(-19) * Scale,
+			Scale = Vector(10, 10, 10) * Scale
+		}
+	})
+end

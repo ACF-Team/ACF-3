@@ -1,36 +1,49 @@
 ACF.RegisterWeaponClass("SL", {
-	Name		  = "Smoke Launcher",
-	Description	  = "Smoke launcher to block an attacker's line of sight.",
-	MuzzleFlash	  = "gl_muzzleflash_noscale",
-	Spread		  = 0.32,
-	Sound		  = "acf_base/weapons/smoke_launch.mp3",
-	IsBoxed		  = true,
-	Cleanup       = "acf_smokelauncher",
+	Name        = "Smoke Launcher",
+	Description = "Smoke launcher to block an attacker's line of sight.",
+	Sound       = "acf_base/weapons/smoke_launch.mp3",
+	Model       = "models/launcher/40mmsl.mdl",
+	MuzzleFlash = "gl_muzzleflash_noscale",
+	Cleanup     = "acf_smokelauncher",
+	DefaultAmmo = "SM",
+	IsScalable  = true,
+	IsBoxed     = true,
+	Spread      = 0.32,
+	Mass        = 2,
+	Cyclic      = 600,
+	MagSize     = 1,
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
 		Text = "Maximum amount of ACF smoke launchers a player can create."
 	},
+	Round = {
+		MaxLength  = 17.5,
+		PropLength = 0.05,
+	},
+	Preview = {
+		FOV = 75,
+	},
 	Caliber	= {
-		Min = 40,
-		Max = 81,
+		Base = 40,
+		Min  = 40,
+		Max  = 81,
+	},
+	MagReload = {
+		Min = 10,
+		Max = 15,
 	},
 })
 
 ACF.RegisterWeapon("40mmSL", "SL", {
-	Name		= "40mm Smoke Launcher",
-	Description	= "",
-	Model		= "models/launcher/40mmsl.mdl",
-	Caliber		= 40,
-	Mass		= 1,
-	Year		= 1941,
-	MagSize		= 1,
-	MagReload	= 30,
-	Cyclic		= 600,
-	Round = {
-		MaxLength = 17.5,
-		PropMass  = 0.000075,
-	}
+	Caliber = 40,
 })
 
 ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))
+
+ACF.AddHitboxes("models/launcher/40mmsl.mdl", {
+	Base = {
+		Pos   = Vector(0.7, 0, -0.1),
+		Scale = Vector(8, 3, 2)
+	}
+})

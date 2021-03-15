@@ -22,6 +22,9 @@ do
 			PeakMax	= 4200,
 			Limit	= 4500,
 		},
+		Preview = {
+			FOV = 80,
+		},
 	})
 
 	ACF.RegisterEngine("2.1-B4", "B4", {
@@ -39,6 +42,9 @@ do
 			PeakMin	= 3000,
 			PeakMax	= 4800,
 			Limit	= 5000,
+		},
+		Preview = {
+			FOV = 80,
 		},
 	})
 
@@ -58,11 +64,14 @@ do
 			PeakMax	= 2650,
 			Limit	= 2800,
 		},
+		Preview = {
+			FOV = 80,
+		},
 	})
 
 	ACF.RegisterEngine("3.2-B4", "B4", {
 		Name		 = "3.2L Flat 4 Petrol",
-		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.",
+		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.", -- Ok
 		Model		 = "models/engines/b4med.mdl",
 		Sound		 = "acf_base/engines/b4_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -76,8 +85,40 @@ do
 			PeakMax	= 5500,
 			Limit	= 6500
 		},
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/b4med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/b4small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+
+local Models = {
+	{ Model = "models/engines/b4med.mdl", Scale = 1.25 },
+	{ Model = "models/engines/b4small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(8.5, 0, 0.5) * Scale,
+			Scale     = Vector(18, 16, 9) * Scale,
+			Sensitive = true
+		},
+		UpperSection = {
+			Pos   = Vector(7, 0, 7) * Scale,
+			Scale = Vector(11, 23, 4) * Scale
+		},
+		LeftBank = {
+			Pos   = Vector(9, -10, 2) * Scale,
+			Scale = Vector(16, 4, 6) * Scale
+		},
+		RightBank = {
+			Pos   = Vector(9, 10, 2) * Scale,
+			Scale = Vector(16, 4, 6) * Scale
+		}
+	})
+end

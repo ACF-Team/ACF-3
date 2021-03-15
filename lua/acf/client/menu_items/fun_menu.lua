@@ -16,7 +16,7 @@ do -- Piledrivers menu
 		local ClassBase = Menu:AddCollapsible("Piledriver Information")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
-		local ClassPreview = ClassBase:AddModelPreview()
+		local ClassPreview = ClassBase:AddModelPreview(nil, true)
 		local ClassInfo = ClassBase:AddLabel()
 		local ClassStats = ClassBase:AddLabel()
 
@@ -35,7 +35,6 @@ do -- Piledrivers menu
 			self.ListData.Index = Index
 			self.Selected = Data
 
-			local Preview  = Data.Preview
 			local Bounds   = Data.Caliber
 			local Min, Max = Bounds.Min, Bounds.Max
 			local Current  = math.Clamp(ACF.GetClientNumber("Caliber", Min), Min, Max)
@@ -46,11 +45,8 @@ do -- Piledrivers menu
 
 			ClassDesc:SetText(Data.Description)
 
-			ClassPreview:SetModel(Data.Model)
-			ClassPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-			ClassPreview:SetLookAt(Preview and Preview.Position or Vector())
-			ClassPreview:SetHeight(Preview and Preview.Height or 80)
-			ClassPreview:SetFOV(Preview and Preview.FOV or 75)
+			ClassPreview:UpdateModel(Data.Model)
+			ClassPreview:UpdateSettings(Data.Preview)
 
 			ACF.SetClientData("Weapon", Data.ID)
 			ACF.SetClientData("Caliber", Current, true)

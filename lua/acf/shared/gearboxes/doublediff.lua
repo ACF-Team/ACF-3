@@ -44,6 +44,9 @@ do -- Transaxial Gearboxes
 		Switch		= 0.2,
 		MaxTorque	= GearDDST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("DoubleDiff-T-M", "DoubleDiff", {
@@ -54,6 +57,9 @@ do -- Transaxial Gearboxes
 		Switch		= 0.35,
 		MaxTorque	= GearDDMT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("DoubleDiff-T-L", "DoubleDiff", {
@@ -64,5 +70,8 @@ do -- Transaxial Gearboxes
 		Switch		= 0.5,
 		MaxTorque	= GearDDLT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end

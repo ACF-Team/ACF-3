@@ -21,7 +21,10 @@ do
 			PeakMin	= 750,
 			PeakMax	= 2450,
 			Limit	= 2950,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("10.0-I2", "I2", {
@@ -39,9 +42,33 @@ do
 			PeakMin	= 450,
 			PeakMax	= 900,
 			Limit	= 1200,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/inline2b.mdl", "driveshaft", Vector(), Angle(0, 180, 90))
 ACF.SetCustomAttachment("models/engines/inline2s.mdl", "driveshaft", Vector(-6, 0, 4), Angle(0, 180, 90))
+
+local Models = {
+	{ Model = "models/engines/inline2b.mdl", Scale = 2.5 },
+	{ Model = "models/engines/inline2s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Shaft = {
+			Pos       = Vector(-1.25, 0, 4.75) * Scale,
+			Scale     = Vector(15.5, 8, 9) * Scale,
+			Sensitive = true
+		},
+		Pistons = {
+			Pos   = Vector(-0.5, 0, 13.25) * Scale,
+			Scale = Vector(10, 5, 8) * Scale
+		}
+	})
+end

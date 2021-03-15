@@ -10,6 +10,11 @@ do
 		Model		= "models/fueltank/fueltank_6x6x1.mdl",
 		SurfaceArea	= 9405.2,
 		Volume		= 37278.5,
+		Shape       = "Box",
+		Preview = {
+			Height = 70,
+			FOV    = 60,
+		},
 	})
 
 	ACF.RegisterFuelTank("Tank_6x6x2","FTS_6", {
@@ -18,6 +23,10 @@ do
 		Model		= "models/fueltank/fueltank_6x6x2.mdl",
 		SurfaceArea	= 11514.5,
 		Volume		= 73606.2,
+		Shape       = "Box",
+		Preview = {
+			FOV = 70,
+		},
 	})
 
 	ACF.RegisterFuelTank("Tank_6x6x4","FTS_6", {
@@ -26,6 +35,10 @@ do
 		Model		= "models/fueltank/fueltank_6x6x4.mdl",
 		SurfaceArea	= 16028.8,
 		Volume		= 143269,
+		Shape       = "Box",
+		Preview = {
+			FOV = 100,
+		},
 	})
 
 	ACF.RegisterFuelTank("Tank_6x8x1","FTS_6", {
@@ -34,6 +47,11 @@ do
 		Model		= "models/fueltank/fueltank_6x8x1.mdl",
 		SurfaceArea	= 12131.1,
 		Volume		= 48480.2,
+		Shape       = "Box",
+		Preview = {
+			Height = 70,
+			FOV    = 60,
+		},
 	})
 
 	ACF.RegisterFuelTank("Tank_6x8x2","FTS_6", {
@@ -42,6 +60,10 @@ do
 		Model		= "models/fueltank/fueltank_6x8x2.mdl",
 		SurfaceArea	= 14403.8,
 		Volume		= 95065.5,
+		Shape       = "Box",
+		Preview = {
+			FOV = 60,
+		},
 	})
 
 	ACF.RegisterFuelTank("Tank_6x8x4","FTS_6", {
@@ -50,5 +72,9 @@ do
 		Model		= "models/fueltank/fueltank_6x8x4.mdl",
 		SurfaceArea	= 19592.4,
 		Volume		= 187296.4,
+		Shape       = "Box",
+		Preview = {
+			FOV = 95,
+		},
 	})
 end

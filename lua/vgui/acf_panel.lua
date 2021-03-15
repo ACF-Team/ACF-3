@@ -227,15 +227,67 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
-function PANEL:AddModelPreview(Model)
-	local Panel = self:AddPanel("DModelPanel")
-	Panel:SetModel(Model or "models/props_junk/PopCan01a.mdl")
-	Panel:SetLookAt(Vector())
-	Panel:SetCamPos(Vector(45, 60, 45))
-	Panel:SetHeight(80)
-	Panel:SetFOV(75)
+function PANEL:AddModelPreview(Model, Rotate)
+	local Settings = {
+		Height = 120,
+		FOV    = 90,
+	}
 
-	Panel.LayoutEntity = function() end
+	local Panel    = self:AddPanel("DModelPanel")
+	Panel.Rotate   = tobool(Rotate)
+	Panel.Rotation = Angle(0, -75)
+	Panel.Settings = Settings -- Storing the default settings
+
+	function Panel:SetRotateModel(Bool)
+		self.Rotate = tobool(Bool)
+	end
+
+	function Panel:UpdateModel(Path)
+		if not isstring(Path) then
+			Path = "models/props_junk/PopCan01a.mdl"
+		end
+
+		local Center = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
+		local Size   = ACF.GetModelSize(Path)
+
+		self.CamCenter = Center
+		self.CamOffset = Vector(0, Size:Length())
+		self.LastTime  = RealTime()
+
+		self:SetModel(Path)
+		self:SetLookAt(Center)
+		self:SetCamPos(Center + self.CamOffset)
+	end
+
+	function Panel:UpdateSettings(Data)
+		if not istable(Data) then Data = nil end
+
+		self:SetHeight(Data and Data.Height or Settings.Height)
+		self:SetFOV(Data and Data.FOV or Settings.FOV)
+	end
+
+	function Panel:LayoutEntity()
+		if self.bAnimated then
+			self:RunAnimation()
+		end
+
+		if not self.Rotate then return end
+		if not self.CamOffset then return end
+
+		local Time     = RealTime()
+		local Delta    = Time - self.LastTime
+		local Rotation = self.Rotation * Delta
+		local Offset   = self.CamOffset
+
+		Offset:Rotate(Rotation)
+
+		self:SetCamPos(self.CamCenter + Offset)
+
+		self.LastTime = Time
+	end
+
+	Panel:UpdateModel(Model)
+	Panel:UpdateSettings()
 
 	return Panel
 end

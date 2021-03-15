@@ -11,7 +11,7 @@ local function GetWeaponSpecs(ToolData)
 		local Weapon = Class.Lookup[ToolData.Weapon]
 		local Round  = Weapon.Round
 
-		return Weapon.Caliber, Round.MaxLength, Round.PropMass
+		return Weapon.Caliber, Round.MaxLength, Round.PropLength
 	end
 
 	local Bounds  = Class.Caliber
@@ -19,27 +19,25 @@ local function GetWeaponSpecs(ToolData)
 	local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
 	local Scale   = Caliber / Bounds.Base
 
-	return Caliber, Round.MaxLength * Scale, Round.PropMass * Scale
+	return Caliber, Round.MaxLength * Scale, Round.PropLength * Scale
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Caliber, MaxLength, PropMass = GetWeaponSpecs(ToolData)
+	local Caliber, MaxLength, PropLength = GetWeaponSpecs(ToolData)
 	local GUIData = {}
 
 	if not Caliber then return Data, GUIData end
 
+	local RoundLength = math.Round(MaxLength * (Data.LengthAdj or 1), 2)
+
 	Data.Caliber = Caliber * 0.1 -- Bullet caliber will have to stay in cm
-	Data.FrArea = 3.1416 * (Data.Caliber * 0.5) ^ 2
+	Data.FrArea  = 3.1416 * (Data.Caliber * 0.5) ^ 2
 
-	GUIData.MaxRoundLength = math.Round(MaxLength * (Data.LengthAdj or 1), 2)
-	GUIData.MinPropLength = 0.01
-	GUIData.MinProjLength = math.Round(Data.Caliber * 1.5, 2)
-
-	local DesiredProp = math.Round(PropMass * 1000 / ACF.PDensity / Data.FrArea, 2)
-	local AllowedProp = GUIData.MaxRoundLength - GUIData.MinProjLength
-
-	GUIData.MaxPropLength = math.min(DesiredProp, AllowedProp)
-	GUIData.MaxProjLength = GUIData.MaxRoundLength - GUIData.MinPropLength
+	GUIData.MaxRoundLength = RoundLength
+	GUIData.MinPropLength  = 0.01
+	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
+	GUIData.MaxPropLength  = math.min(PropLength, RoundLength - GUIData.MinProjLength)
+	GUIData.MaxProjLength  = RoundLength - GUIData.MinPropLength
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
@@ -149,6 +147,27 @@ function ACF.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
 	return math.Round(Vel * 0.0254, 2), math.Round(Pen, 2)
 end
 
+function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
+	if not isstring(Key) then return end
+
+	if istable(Weapon) and Weapon[Key] then
+		return Weapon[Key]
+	end
+
+	if not istable(Class) then return end
+
+	local Values = Class[Key]
+
+	if not Values then return end
+	if not istable(Values) then return Values end
+	if not isnumber(Caliber) then return end
+
+	local Bounds  = Class.Caliber
+	local Percent = (Caliber - Bounds.Min) / (Bounds.Max - Bounds.Min)
+
+	return Lerp(Percent, Values.Min, Values.Max)
+end
+
 do -- Ammo crate capacity calculation
 	local Axises = {
 		x = { Y = "y", Z = "z", Ang = Angle() },
@@ -208,44 +227,48 @@ do -- Ammo crate capacity calculation
 		return BestAxis, BestCount
 	end
 
-	-- BoxSize is just OBBMaxs-OBBMins
-	-- Removed caliber and round length inputs, uses GunData and BulletData now
-	-- AddSpacing is just extra spacing (directly reduces storage, but can later make it harder to detonate)
-	-- AddArmor is literally just extra armor on the ammo crate, but inside (also directly reduces storage)
-	-- For missiles/bombs, they MUST have ActualLength and ActualWidth (of the model in cm, and in the round table) to use this, otherwise it will fall back to the original calculations
 	-- Made by LiddulBOFH :)
-	function ACF.GetAmmoCrateCapacity(BoxSize, GunData, BulletData, AddSpacing, AddArmor)
-		-- gives a nice number of rounds per refill box
-		if BulletData.Type == "Refill" then return math.ceil(BoxSize.x * BoxSize.y * BoxSize.z * 0.01) end
-
-		local GunCaliber   = GunData.Caliber * 0.1 -- mm to cm
-		local RoundCaliber = GunCaliber * ACF.AmmoCaseScale
-		local RoundLength  = BulletData.PropLength + BulletData.ProjLength + (BulletData.Tracer or 0)
-		local ExtraData    = {}
-
-		-- Filters for missiles, and sets up data
-		if GunData.Round.ActualWidth then
-			RoundCaliber = GunData.Round.ActualWidth -- Missile size does not depend on the propellant or projectile sizes
-			RoundLength = GunData.Round.ActualLength
-			ExtraData.IsRacked = true
-		elseif GunData.Class.Entity == "acf_rack" then
-			local Efficiency = 0.1576 * ACF.AmmoMod
-			local Volume     = math.floor(BoxSize.x * BoxSize.y * BoxSize.z) * Efficiency
-			local CapMul     = (Volume > 40250) and ((math.log(Volume * 0.00066) / math.log(2) - 4) * 0.15 + 1) or 1
-
-			return math.floor(CapMul * Volume * 16.38 / BulletData.RoundVolume) -- Fallback to old capacity
+	function ACF.GetAmmoCrateCapacity(Size, WeaponClass, ToolData, BulletData)
+		if BulletData.Type == "Refill" then -- Gives a nice number of rounds per refill box
+			return math.ceil(Size.x * Size.y * Size.z * 0.01)
 		end
 
-		local Rounds  = 0
-		local Spacing = math.max(AddSpacing, 0) + 0.125
-		local MagSize = GunData.MagSize or 1
-		local IsBoxed = GunData.Class.IsBoxed
-		local Rotate
+		local Weapon    = WeaponClass.Lookup[ToolData.Weapon]
+		local Caliber   = Weapon and Weapon.Caliber or ToolData.Caliber
+		local Round     = Weapon and Weapon.Round or WeaponClass.Round
+		local Width     = Caliber * ACF.AmmoCaseScale * 0.1 -- mm to cm
+		local Length    = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
+		local MagSize   = ACF.GetWeaponValue("MagSize", Caliber, WeaponClass, Weapon) or 1
+		local Spacing   = math.max(0, ToolData.AmmoPadding or ACF.AmmoPadding) + 0.125
+		local IsBoxed   = WeaponClass.IsBoxed
+		local Rounds    = 0
+		local ExtraData = {}
+		local BoxSize, Height, Rotate
 
-		-- Converting everything to source units
-		local Length = RoundLength * 0.3937 -- cm to inches
-		local Width  = RoundCaliber * 0.3937 -- cm to inches
-		local Height = Width
+		-- Weapons are able to define the size of their ammo inside crates
+		if Round.ActualWidth then
+			local Scale = Weapon and 1 or Caliber / Class.Caliber.Base
+
+			Width  = Round.ActualWidth * Scale -- This was made before the big measurement change throughout, where I measured shit in actual source units
+			Length = Round.ActualLength * Scale -- as such, this corrects all missiles to the correct size
+
+			ExtraData.IsRacked = true
+		end
+
+		do -- Defining the actual boxsize
+			local Armor = math.max(0, ToolData.AmmoArmor or ACF.AmmoArmor) * 0.039 * 2
+			local X     = math.max(Size.x - Armor, 0)
+			local Y     = math.max(Size.y - Armor, 0)
+			local Z     = math.max(Size.z - Armor, 0)
+
+			BoxSize = Vector(X, Y, Z)
+		end
+
+		do -- Converting everything to source units
+			Length = Length * 0.3937 -- cm to in
+			Width  = Width * 0.3937 -- cm to in
+			Height = Width
+		end
 
 		ExtraData.Spacing = Spacing
 
@@ -264,23 +287,13 @@ do -- Ammo crate capacity calculation
 			end
 		end
 
-		if AddArmor then
-			-- Converting millimeters to inches then multiplying by two since the armor is on both sides
-			local BoxArmor = AddArmor * 0.039 * 2
-			local X = math.max(BoxSize.x - BoxArmor, 0)
-			local Y = math.max(BoxSize.y - BoxArmor, 0)
-			local Z = math.max(BoxSize.z - BoxArmor, 0)
-
-			BoxSize = Vector(X, Y, Z)
-		end
-
 		local ShortestFit = ShortestSize(Length, Width, Height, Spacing, BoxSize, ExtraData)
 
 		-- If ShortestFit is nil, that means the round isn't able to fit at all in the box
 		-- If its a racked munition that doesn't fit, it will go ahead and try to fit 2-pice
 		-- Otherwise, checks if the caliber is over 100mm before trying 2-piece ammunition
 		-- It will flatout not do anything if its boxed and not fitting
-		if not ShortestFit and not ExtraData.IsBoxed and (GunCaliber >= 10 or ExtraData.IsRacked) then
+		if not ShortestFit and not ExtraData.IsBoxed and (ExtraData.IsRacked or Caliber >= 100) then
 			Length = Length * 0.5 -- Not exactly accurate, but cuts the round in two
 			Width = Width * 2 -- two pieces wide
 
@@ -289,12 +302,8 @@ do -- Ammo crate capacity calculation
 			local ShortestFit1, Count1 = ShortestSize(Length, Width, Height, Spacing, BoxSize, ExtraData, true)
 			local ShortestFit2, Count2 = ShortestSize(Length, Height, Width, Spacing, BoxSize, ExtraData, true)
 
-			if Count1 > Count2 then
-				ShortestFit = ShortestFit1
-			else
-				ShortestFit = ShortestFit2
-				Rotate = true
-			end
+			Rotate      = Count1 <= Count2
+			ShortestFit = Either(Rotate, ShortestFit2, ShortestFit1) -- ShortestFitX values could be nil, a ternary won't work here
 		end
 
 		-- If it still doesn't fit the box, then it's just too small
@@ -306,10 +315,7 @@ do -- Ammo crate capacity calculation
 
 			-- In case the round was cut and needs to be rotated, then we do some minor changes
 			if Rotate then
-				local OldY = SizeY
-
-				SizeY = SizeZ
-				SizeZ = OldY
+				SizeY, SizeZ = SizeZ, SizeY -- Interchanging the values
 
 				ExtraData.LocalAng = ExtraData.LocalAng + Angle(0, 0, 90)
 			end

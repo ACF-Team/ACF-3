@@ -22,6 +22,9 @@ do -- Inline Gearboxes
 		Mass		= Gear1SW,
 		Switch		= 0.3,
 		MaxTorque	= 25000,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-L-M", "Differential", {
@@ -31,6 +34,9 @@ do -- Inline Gearboxes
 		Mass		= Gear1MW,
 		Switch		= 0.4,
 		MaxTorque	= 50000,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-L-L", "Differential", {
@@ -40,6 +46,9 @@ do -- Inline Gearboxes
 		Mass		= Gear1LW,
 		Switch		= 0.6,
 		MaxTorque	= 100000,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -52,6 +61,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= 25000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-LD-M", "Differential", {
@@ -62,6 +74,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.4,
 		MaxTorque	= 50000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-LD-L", "Differential", {
@@ -72,6 +87,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= 0.6,
 		MaxTorque	= 100000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -83,6 +101,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear1SW,
 		Switch		= 0.3,
 		MaxTorque	= 25000,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-T-M", "Differential", {
@@ -92,6 +113,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear1MW,
 		Switch		= 0.4,
 		MaxTorque	= 50000,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-T-L", "Differential", {
@@ -101,6 +125,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear1LW,
 		Switch		= 0.6,
 		MaxTorque	= 100000,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -113,6 +140,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= 25000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-TD-M", "Differential", {
@@ -123,6 +153,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.4,
 		MaxTorque	= 50000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("1Gear-TD-L", "Differential", {
@@ -133,6 +166,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= 0.6,
 		MaxTorque	= 100000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -166,3 +202,47 @@ ACF.SetCustomAttachments("models/engines/linear_s.mdl", {
 	{ Name = "driveshaftL", Pos = Vector(0, -9.6, 3.2), Ang = Angle(0, -90, 90) },
 	{ Name = "input", Pos = Vector(0, 1.6, 11.6), Ang = Angle(0, -90, 90) },
 })
+
+local Transaxial = {
+	{ Model = "models/engines/transaxial_l.mdl", Scale = 2.5 },
+	{ Model = "models/engines/transaxial_m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/transaxial_s.mdl", Scale = 1 },
+}
+
+local Linears = {
+	{ Model = "models/engines/linear_l.mdl", Scale = 2.5 },
+	{ Model = "models/engines/linear_m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/linear_s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Transaxial) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Axle = {
+			Pos       = Vector(0, 0, 3.25) * Scale,
+			Scale     = Vector(6.5, 16, 6.5) * Scale,
+			Sensitive = true
+		},
+		In = {
+			Pos   = Vector(5.5, 0, 3.25) * Scale,
+			Scale = Vector(4.5, 6.5, 6.5) * Scale
+		}
+	})
+end
+
+for _, Data in ipairs(Linears) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Straight = {
+			Pos       = Vector(0, -0.5, 3.25) * Scale,
+			Scale     = Vector(6.5, 18, 6.5) * Scale,
+			Sensitive = true
+		},
+		In = {
+			Pos   = Vector(0, 4.75, 11) * Scale,
+			Scale = Vector(6.5, 7.5, 9) * Scale
+		}
+	})
+end

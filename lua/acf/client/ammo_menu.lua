@@ -35,11 +35,10 @@ local function GetAmmoList(Class)
 	return Result
 end
 
-local function GetWeaponData(ToolData)
+local function GetWeaponClass(ToolData)
 	local Destiny = Classes[ToolData.Destiny or "Weapons"]
-	local Class = ACF.GetClassGroup(Destiny, ToolData.Weapon)
 
-	return Class.Lookup[ToolData.Weapon]
+	return ACF.GetClassGroup(Destiny, ToolData.Weapon)
 end
 
 local function GetEmptyMass()
@@ -53,16 +52,17 @@ end
 local function AddPreview(Base, Settings, ToolData)
 	if Settings.SuppressPreview then return end
 
-	local Preview = Base:AddModelPreview()
-	Preview:SetCamPos(Vector(45, 45, 30))
-	Preview:SetHeight(120)
-	Preview:SetFOV(50)
+	local Preview = Base:AddModelPreview(nil, true)
+	local Setup   = {}
 
 	if Ammo.AddAmmoPreview then
-		Ammo:AddAmmoPreview(Preview, ToolData, BulletData)
+		Ammo:AddAmmoPreview(Preview, Setup, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoPreview", Preview, ToolData, Ammo, BulletData)
+	hook.Run("ACF_AddAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
+
+	Preview:UpdateModel(Setup.Model)
+	Preview:UpdateSettings(Setup)
 end
 
 local function AddControls(Base, Settings, ToolData)
@@ -156,12 +156,11 @@ local function AddInformation(Base, Settings, ToolData)
 		Crate:TrackClientData("CrateSizeY")
 		Crate:TrackClientData("CrateSizeZ")
 		Crate:DefineSetter(function()
-			local Weapon  = GetWeaponData(ToolData)
-			local Spacing = Weapon.Caliber * 0.0039
-			local Rounds  = ACF.GetAmmoCrateCapacity(BoxSize, Weapon, BulletData, Spacing, ACF.AmmoArmor)
-			local Empty   = GetEmptyMass()
-			local Load    = math.floor(BulletData.CartMass * Rounds)
-			local Mass    = ACF.GetProperMass(math.floor(Empty + Load))
+			local Class  = GetWeaponClass(ToolData)
+			local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
+			local Empty  = GetEmptyMass()
+			local Load   = math.floor(BulletData.CartMass * Rounds)
+			local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
 
 			return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
 		end)
@@ -219,11 +218,13 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	Menu:AddTitle("Ammo Settings")
 
 	local List = Menu:AddComboBox()
+	local Min  = ACF.AmmoMinSize
+	local Max  = ACF.AmmoMaxSize
 
-	local SizeX = Menu:AddSlider("Crate Width", 6, 96, 2)
+	local SizeX = Menu:AddSlider("Crate Width", Min, Max)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
-		local X = math.Round(Value, 2)
+		local X = math.Round(Value)
 
 		Panel:SetValue(X)
 
@@ -232,10 +233,10 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return X
 	end)
 
-	local SizeY = Menu:AddSlider("Crate Height", 6, 96, 2)
+	local SizeY = Menu:AddSlider("Crate Height", Min, Max)
 	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
-		local Y = math.Round(Value, 2)
+		local Y = math.Round(Value)
 
 		Panel:SetValue(Y)
 
@@ -244,10 +245,10 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return Y
 	end)
 
-	local SizeZ = Menu:AddSlider("Crate Depth", 6, 96, 2)
+	local SizeZ = Menu:AddSlider("Crate Depth", Min, Max)
 	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
-		local Z = math.Round(Value, 2)
+		local Z = math.Round(Value)
 
 		Panel:SetValue(Z)
 

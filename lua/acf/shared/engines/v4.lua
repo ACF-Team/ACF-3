@@ -21,7 +21,10 @@ do -- Diesel Engines
 			PeakMin	= 950,
 			PeakMax	= 3000,
 			Limit	= 4000,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 
 	ACF.RegisterEngine("3.3L-V4", "V4", {
@@ -39,9 +42,40 @@ do -- Diesel Engines
 			PeakMin	= 1050,
 			PeakMax	= 3100,
 			Limit	= 3900,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/v4m.mdl", "driveshaft", Vector(-5.99, 0, 4.85), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v4s.mdl", "driveshaft", Vector(-4.79, 0, 3.88), Angle(0, 90, 90))
+
+local Models = {
+	--{ Model = "models/engines/v4l.mdl", Scale = 1.5 }, -- Unused
+	{ Model = "models/engines/v4m.mdl", Scale = 1.25 },
+	{ Model = "models/engines/v4s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(3.25, 0, 7.75) * Scale,
+			Scale     = Vector(18, 11.5, 16) * Scale,
+			Sensitive = true
+		},
+		LeftBank = {
+			Pos   = Vector(4.25, -6.75, 11.25) * Scale,
+			Scale = Vector(15.75, 6.5, 10) * Scale,
+			Angle = Angle(0, 0, 45)
+		},
+		RightBank = {
+			Pos   = Vector(4.25, 6.75, 11.25) * Scale,
+			Scale = Vector(15.75, 6.5, 10) * Scale,
+			Angle = Angle(0, 0, -45)
+		}
+	})
+end

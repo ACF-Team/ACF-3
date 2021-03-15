@@ -291,7 +291,7 @@ do -- Spawn and Update functions
 		Entity.Efficiency       = EngineType.Efficiency * GetEfficiencyMult()
 		Entity.TorqueScale      = EngineType.TorqueScale
 		Entity.HealthMult       = EngineType.HealthMult
-		Entity.HitBoxes         = ACF.HitBoxes[EngineData.Model]
+		Entity.HitBoxes         = ACF.GetHitboxes(EngineData.Model)
 		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
