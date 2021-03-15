@@ -1,37 +1,37 @@
 ACF.RegisterWeaponClass("MG", {
 	Name        = "Machinegun",
 	Description = "Machineguns are light guns that fire equally light bullets at a fast rate.",
-	Model       = "models/machinegun/machinegun_762mm.mdl",
+	Model       = "models/machinegun/machinegun_20mm.mdl",
 	Sound       = "acf_base/weapons/mg_fire4.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	IsBoxed     = true,
 	Spread      = 0.16,
-	Mass        = 12,
-	Caliber	= {
-		Base = 7.62,
-		Min  = 5.56,
-		Max  = 20,
-	},
-	MagSize = {
-		Min = 300,
-		Max = 200,
-	},
-	MagReload = {
-		Min = 5,
-		Max = 8,
-	},
-	Cyclic = {
-		Min = 800,
-		Max = 400,
-	},
+	Mass        = 100,
 	Round = {
-		MaxLength = 13,
-		PropMass  = 0.04,
+		MaxLength  = 16.5,
+		PropLength = 14,
 	},
 	Preview = {
 		Height = 60,
 		FOV    = 60,
+	},
+	Caliber	= {
+		Base = 20,
+		Min  = 5.56,
+		Max  = 20,
+	},
+	MagSize = {
+		Min = 400,
+		Max = 100,
+	},
+	MagReload = {
+		Min = 5,
+		Max = 12,
+	},
+	Cyclic = {
+		Min = 1000,
+		Max = 600,
 	},
 })
 
@@ -99,11 +99,11 @@ ACF.RegisterWeapon("20mmMG", "MG", {
 	}
 })
 
-ACF.SetCustomAttachment("models/machinegun/machinegun_762mm.mdl", "muzzle", Vector(26.53, 0, -0.05), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/machinegun/machinegun_20mm.mdl", "muzzle", Vector(53.05, 0, -0.11), Angle(0, 0, 90))
 
-ACF.AddHitboxes("models/machinegun/machinegun_762mm.mdl", {
+ACF.AddHitboxes("models/machinegun/machinegun_20mm.mdl", {
 	Base = {
-		Pos   = Vector(10, 0.1, -0.8),
-		Scale = Vector(34, 1, 3)
+		Pos   = Vector(20.1, 0.2, -1.5),
+		Scale = Vector(68, 2, 6),
 	}
 })

@@ -10,34 +10,28 @@ ACF.RegisterWeaponClass("SL", {
 	IsBoxed     = true,
 	Spread      = 0.32,
 	Mass        = 2,
-	Caliber	= {
-		Base = 40,
-		Min  = 40,
-		Max  = 81,
-	},
-	MagSize = {
-		Min = 1,
-		Max = 1,
-	},
-	MagReload = {
-		Min = 20,
-		Max = 30,
-	},
-	Cyclic = {
-		Min = 600,
-		Max = 600,
-	},
-	Round = {
-		MaxLength = 17.5,
-		PropMass  = 0.000075,
-	},
+	Cyclic      = 600,
+	MagSize     = 1,
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
 		Text = "Maximum amount of ACF smoke launchers a player can create."
 	},
+	Round = {
+		MaxLength  = 17.5,
+		PropLength = 0.05,
+	},
 	Preview = {
 		FOV = 75,
+	},
+	Caliber	= {
+		Base = 40,
+		Min  = 40,
+		Max  = 81,
+	},
+	MagReload = {
+		Min = 10,
+		Max = 15,
 	},
 })
 

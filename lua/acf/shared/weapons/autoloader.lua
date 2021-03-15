@@ -5,8 +5,16 @@ ACF.RegisterWeaponClass("AL", {
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 3325,
+	Mass        = 3000,
 	Spread      = 0.08,
+	Round = {
+		MaxLength  = 95,
+		PropLength = 70,
+	},
+	Preview = {
+		Height = 60,
+		FOV    = 60,
+	},
 	Caliber	= {
 		Base = 100,
 		Min  = 75,
@@ -21,16 +29,8 @@ ACF.RegisterWeaponClass("AL", {
 		Max = 35,
 	},
 	Cyclic = {
-		Min = 30,
-		Max = 8,
-	},
-	Round = {
-		MaxLength = 93,
-		PropMass  = 9.5,
-	},
-	Preview = {
-		Height = 60,
-		FOV    = 60,
+		Min = 25,
+		Max = 10,
 	},
 })
 

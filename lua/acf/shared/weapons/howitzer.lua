@@ -5,19 +5,19 @@ ACF.RegisterWeaponClass("HW", {
 	Model       = "models/howitzer/howitzer_105mm.mdl",
 	MuzzleFlash = "howie_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 1480,
+	Mass        = 2315, -- Approx 2 tons @ 100mm
 	Spread      = 0.1,
+	Round = {
+		MaxLength  = 105,
+		PropLength = 40.5,
+	},
+	Preview = {
+		FOV = 65,
+	},
 	Caliber	= {
 		Base = 105,
 		Min  = 75,
 		Max  = 203,
-	},
-	Round = {
-		MaxLength = 86,
-		PropMass  = 3.75,
-	},
-	Preview = {
-		FOV = 65,
 	},
 })
 

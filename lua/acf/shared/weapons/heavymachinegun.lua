@@ -1,32 +1,15 @@
 ACF.RegisterWeaponClass("HMG", {
 	Name        = "Heavy Machinegun",
 	Description = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
-	Model       = "models/machinegun/machinegun_20mm_compact.mdl",
+	Model       = "models/machinegun/machinegun_40mm_compact.mdl",-- TODO: Properly scale model, atm it's ~60mm
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 160,
-	Spread      = 1.2,
-	Caliber	= {
-		Base = 20,
-		Min  = 13,
-		Max  = 40,
-	},
-	MagSize = {
-		Min = 50,
-		Max = 30,
-	},
-	MagReload = {
-		Min = 7.5,
-		Max = 10,
-	},
-	Cyclic = {
-		Min = 250,
-		Max = 200,
-	},
+	Mass        = 200,
+	Spread      = 0.48,
 	Round = {
-		MaxLength = 30,
-		PropMass  = 0.12,
+		MaxLength  = 25,
+		PropLength = 17.5,
 	},
 	LongBarrel = {
 		Index    = 2,
@@ -36,6 +19,23 @@ ACF.RegisterWeaponClass("HMG", {
 	Preview = {
 		Height = 100,
 		FOV    = 60,
+	},
+	Caliber	= {
+		Base = 40,
+		Min  = 13,
+		Max  = 40,
+	},
+	MagSize = {
+		Min = 250,
+		Max = 100,
+	},
+	MagReload = {
+		Min = 6,
+		Max = 12,
+	},
+	Cyclic = {
+		Min = 600,
+		Max = 400,
 	},
 })
 
@@ -103,14 +103,14 @@ ACF.RegisterWeapon("40mmHMG", "HMG", {
 	}
 })
 
-ACF.SetCustomAttachments("models/machinegun/machinegun_20mm_compact.mdl", {
-	{ Name = "muzzle", Pos = Vector(30.93, -0.02), Ang = Angle(0, 0, 90) },
-	{ Name = "muzzle2", Pos = Vector(69.93, -0.15), Ang = Angle(0, 0, 90) },
+ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {
+	{ Name = "muzzle", Pos = Vector(51.04, -0.03), Ang = Angle(0, 0, 90) },
+	{ Name = "muzzle2", Pos = Vector(115.39, -0.25), Ang = Angle(0, 0, 90) },
 })
 
-ACF.AddHitboxes("models/machinegun/machinegun_20mm_compact.mdl", {
+ACF.AddHitboxes("models/machinegun/machinegun_40mm_compact.mdl", {
 	Base = {
-		Pos   = Vector(10.5),
-		Scale = Vector(41, 3, 6)
+		Pos   = Vector(17.5),
+		Scale = Vector(68, 5, 10)
 	}
 })

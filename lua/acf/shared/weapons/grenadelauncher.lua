@@ -7,31 +7,28 @@ ACF.RegisterWeaponClass("GL", {
 	DefaultAmmo = "HE",
 	IsScalable  = true,
 	IsBoxed     = true,
-	Mass		= 55,
+	Mass		= 80,
 	Spread      = 0.28,
+	Cyclic      = 250,
+	Round = {
+		MaxLength  = 10,
+		PropLength = 0.5,
+	},
+	Preview = {
+		FOV = 75,
+	},
 	Caliber	= {
 		Base = 40,
 		Min  = 25,
 		Max  = 40,
 	},
 	MagSize = {
-		Min = 100,
-		Max = 60,
+		Min = 80,
+		Max = 50,
 	},
 	MagReload = {
 		Min = 7.5,
 		Max = 10,
-	},
-	Cyclic = {
-		Min = 250,
-		Max = 200,
-	},
-	Round = {
-		MaxLength = 7.5,
-		PropMass  = 0.01,
-	},
-	Preview = {
-		FOV = 75,
 	},
 })
 

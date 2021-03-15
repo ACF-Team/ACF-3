@@ -6,28 +6,28 @@ ACF.RegisterWeaponClass("RAC", {
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	Spread      = 0.48,
-	Mass        = 760,
+	Mass        = 500,
 	Cyclic      = 2000,
+	Round = {
+		MaxLength  = 25,
+		PropLength = 20,
+	},
+	Preview = {
+		Height = 90,
+		FOV    = 60,
+	},
 	Caliber	= {
 		Base = 20,
 		Min  = 7.62,
 		Max  = 37,
 	},
 	MagSize = {
-		Min = 400,
-		Max = 100,
+		Min = 450,
+		Max = 150,
 	},
 	MagReload = {
 		Min = 8,
-		Max = 20,
-	},
-	Round = {
-		MaxLength = 30,
-		PropMass  = 0.12,
-	},
-	Preview = {
-		Height = 90,
-		FOV    = 60,
+		Max = 15,
 	},
 })
 

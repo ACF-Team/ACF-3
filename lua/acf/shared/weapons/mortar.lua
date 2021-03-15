@@ -7,19 +7,19 @@ ACF.RegisterWeaponClass("MO", {
 	DefaultAmmo = "HE",
 	IsScalable  = true,
 	Spread      = 0.72,
-	Mass        = 640,
-	Caliber	= {
-		Base = 120,
-		Min  = 37,
-		Max  = 280,
-	},
+	Mass        = 300,
 	Round = {
-		MaxLength = 45,
-		PropMass  = 0.175,
+		MaxLength  = 40,
+		PropLength = 2,
 	},
 	Preview = {
 		Height = 80,
 		FOV    = 65,
+	},
+	Caliber	= {
+		Base = 120,
+		Min  = 37,
+		Max  = 280,
 	},
 })
 

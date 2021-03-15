@@ -7,6 +7,14 @@ ACF.RegisterWeaponClass("SC", {
 	IsScalable  = true,
 	Spread      = 0.16,
 	Mass        = 1750,
+	Round = {
+		MaxLength  = 95,
+		PropLength = 45,
+	},
+	Preview = {
+		Height = 70,
+		FOV    = 60,
+	},
 	Caliber	= {
 		Base = 100,
 		Min  = 20,
@@ -14,14 +22,6 @@ ACF.RegisterWeaponClass("SC", {
 	},
 	Sounds = {
 		[50] = "acf_base/weapons/ac_fire4.mp3",
-	},
-	Round = {
-		MaxLength = 93,
-		PropMass  = 4.5,
-	},
-	Preview = {
-		Height = 70,
-		FOV    = 60,
 	},
 })
 
