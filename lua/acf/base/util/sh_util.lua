@@ -359,11 +359,10 @@ end
 do -- Model convex mesh and volume
 	ACF.ModelInfo = ACF.ModelInfo or {}
 
-	local Create = ents.Create or ents.CreateClientside
 	local Models = ACF.ModelInfo
 
 	local function CreateEntity(Model)
-		local Entity = Create("base_anim")
+		local Entity = SERVER and ents.Create("base_anim") or ents.CreateClientProp(Model)
 
 		Entity:SetModel(Model)
 		Entity:PhysicsInit(SOLID_VPHYSICS)
