@@ -117,6 +117,8 @@ local Settings = {
 
 		ACF.WorkshopContent = Bool
 
+		if CLIENT then return end
+
 		Message("Info", "ACF Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	WorkshopExtras = function(_, _, Value)
@@ -125,6 +127,8 @@ local Settings = {
 		if ACF.WorkshopExtras == Bool then return end
 
 		ACF.WorkshopExtras = Bool
+
+		if CLIENT then return end
 
 		Message("Info", "ACF Extra Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
