@@ -139,7 +139,7 @@ if SERVER then
 			resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
 		end
 
-		hook.Add("PlayerConnect", "ACF Workshop Content")
+		hook.Remove("PlayerConnect", "ACF Workshop Content")
 	end)
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
