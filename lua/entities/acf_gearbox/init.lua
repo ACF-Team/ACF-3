@@ -782,7 +782,7 @@ function ENT:Calc(InputRPM, InputInertia)
 		self.InGear = true
 	end
 
-	local BoxPhys = self:GetPhysicsObject()
+	local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 
 	if self.CVT and self.Gear == 1 then
@@ -869,7 +869,7 @@ function ENT:ApplyBrakes() -- This is just for brakes
 	if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
 	if not next(self.Wheels) then return end -- No brakes for the non-wheel users
 
-	local BoxPhys = self:GetPhysicsObject()
+	local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
