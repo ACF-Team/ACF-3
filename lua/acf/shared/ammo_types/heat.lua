@@ -264,7 +264,7 @@ if SERVER then
 			end
 		end
 
-		local Function = IsValid(Trace.Entity) and ACF_PenetrateMapEntity or ACF_PenetrateGround
+		local Function = ACF.Check(Trace.Entity) and ACF_PenetrateMapEntity or ACF_PenetrateGround
 
 		return Function(Bullet, Trace)
 	end

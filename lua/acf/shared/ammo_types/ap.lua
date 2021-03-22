@@ -153,7 +153,7 @@ if SERVER then
 	end
 
 	function Ammo:WorldImpact(Bullet, Trace)
-		if IsValid(Trace.Entity) then
+		if ACF.Check(Trace.Entity) then
 			return ACF_PenetrateMapEntity(Bullet, Trace)
 		else
 			return ACF_PenetrateGround(Bullet, Trace)
