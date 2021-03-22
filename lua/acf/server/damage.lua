@@ -257,10 +257,21 @@ do -- Overpressure --------------------------
 
 	local Squishies = ACF.Squishies
 
+	-- InVehicle and GetVehicle are only for players, we have NPCs too!
+	local function GetVehicle(Entity)
+		if not IsValid(Entity) then return end
+
+		local Parent = Entity:GetParent()
+
+		if not Parent:IsVehicle() then return end
+
+		return Parent
+	end
+
 	local function CanSee(Target, Data)
 		local R = ACF.TraceF(Data)
 
-		return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
+		return R.Entity == Target or not R.Hit or R.Entity == GetVehicle(Target)
 	end
 
 	hook.Add("PlayerSpawnedNPC", "ACF Squishies", function(_, Ent)
