@@ -29,7 +29,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local ProjMass	   = math.max(GUIData.ProjVolume * 0.5, 0) * 0.0079 --(Volume of the projectile as a cylinder - Volume of the cavity) * density of steel 
 	local MuzzleVel	   = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
 	local Energy	   = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	   = ACF.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
+	local MaxVol	   = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 	local MaxCavity	   = math.min(GUIData.ProjVolume, MaxVol)
 	local HollowCavity = math.Clamp(ToolData.HollowCavity, GUIData.MinCavVol, MaxCavity)
 	local ExpRatio	   = HollowCavity / GUIData.ProjVolume
@@ -37,12 +37,12 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData.MaxCavVol = MaxCavity
 
 	Data.CavVol		= HollowCavity
-	Data.ProjMass	= (Data.FrArea * Data.ProjLength - HollowCavity) * 0.0079 --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
+	Data.ProjMass	= (Data.ProjArea * Data.ProjLength - HollowCavity) * 0.0079 --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
 	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.ShovePower	= 0.2 + ExpRatio * 0.5
 	Data.ExpCaliber	= Data.Caliber + ExpRatio * Data.ProjLength
-	Data.PenArea	= (3.1416 * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
-	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
+	Data.PenArea	= (math.pi * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
+	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
@@ -57,9 +57,8 @@ function Ammo:BaseConvert(ToolData)
 
 	GUIData.MinCavVol = 0
 
-	Data.LimitVel	 = 400 --Most efficient penetration speed in m/s
-	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet	 = 90 --Base ricochet angle
+	Data.LimitVel = 400 --Most efficient penetration speed in m/s
+	Data.Ricochet = 90 --Base ricochet angle
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
 

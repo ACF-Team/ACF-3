@@ -15,10 +15,10 @@ hook.Add("ACF_UpdateRoundData", "ACF Piledriver Ammo", function(Ammo, _, Data, G
 
 	Data.MuzzleVel  = Ammo.SpikeLength * 0.01 / engine.TickInterval()
 	Data.CavVol     = HollowCavity
-	Data.ProjMass   = (Data.FrArea * Data.ProjLength - HollowCavity) * 0.0079
+	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - HollowCavity) * 0.0079
 	Data.ShovePower = 0.2 + ExpRatio * 0.5
 	Data.ExpCaliber = Data.Caliber + ExpRatio * Data.ProjLength
-	Data.PenArea    = (3.1416 * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
-	Data.DragCoef   = Data.FrArea * 0.0001 / Data.ProjMass
+	Data.PenArea    = (math.pi * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 end)

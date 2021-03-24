@@ -43,12 +43,12 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.Flechettes		   = Flechettes
 	Data.FlechetteSpread   = math.Clamp(ToolData.Spread, Data.MinSpread, Data.MaxSpread)
 	Data.FlechetteRadius   = (((PackRatio * RadiusAdj * Data.Caliber * 0.5) ^ 2) / Data.Flechettes) ^ 0.5
-	Data.FlechetteArea	   = 3.1416 * Data.FlechetteRadius ^ 2 -- area of a single flechette
+	Data.FlechetteArea	   = math.pi * Data.FlechetteRadius ^ 2 -- area of a single flechette
 	Data.FlechetteMass	   = Data.FlechetteArea * (Data.ProjLength * 7.9 / 1000) -- volume of single flechette * density of steel
 	Data.FlechettePenArea  = (PenAdj * Data.FlechetteArea) ^ ACF.PenAreaMod
 	Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
 	Data.ProjMass		   = Data.Flechettes * Data.FlechetteMass -- total mass of all flechettes
-	Data.DragCoef		   = Data.FrArea * 0.0001 / Data.ProjMass
+	Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.MuzzleVel		   = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
@@ -67,9 +67,8 @@ function Ammo:BaseConvert(ToolData)
 	Data.MinSpread	   = 0.25
 	Data.MaxSpread	   = 30
 	Data.ShovePower	   = 0.2
-	Data.PenArea	   = Data.FrArea ^ ACF.PenAreaMod
+	Data.PenArea	   = Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
-	Data.KETransfert   = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet	   = 75 --Base ricochet angle
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
@@ -125,7 +124,6 @@ if SERVER then
 			Ricochet    = BulletData.Ricochet,
 			PenArea     = BulletData.FlechettePenArea,
 			ShovePower  = BulletData.ShovePower,
-			KETransfert = BulletData.KETransfert,
 		}
 
 		--if ammo is cooking off, shoot in random direction

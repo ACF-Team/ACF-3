@@ -349,7 +349,6 @@ do -- Mass Update
 		local PhysObj = Entity.ACF.PhysObj
 
 		Entity.ACF.LegalMass = Mass
-		Entity.ACF.Density = Mass * 1000 / Entity.ACF.Volume
 
 		if IsValid(PhysObj) then
 			PhysObj:SetMass(Mass)

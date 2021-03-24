@@ -38,7 +38,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local ProjMass	= math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * HEDensity
 	local MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, ProjMass)
 	local Energy	= ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	= ACF.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
+	local MaxVol	= ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
 	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol)
 	GUIData.FillerVol	 = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
@@ -46,7 +46,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.FillerMass	= GUIData.FillerVol * HEDensity
 	Data.ProjMass	= math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
 	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
+	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass	= Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
@@ -62,9 +62,8 @@ function Ammo:BaseConvert(ToolData)
 	GUIData.MinFillerVol = 0
 
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.FrArea ^ ACF.PenAreaMod
+	Data.PenArea		= Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 --Most efficient penetration speed in m/s
-	Data.KETransfert	= 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet		= 60 --Base ricochet angle
 	Data.DetonatorAngle	= 80
 	Data.CanFuze		= Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm

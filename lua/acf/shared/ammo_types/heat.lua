@@ -18,8 +18,8 @@ end
 
 function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeLength = math.tan(math.rad(ConeAngle)) * Radius
-	local ConeArea = 3.1416 * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
-	local ConeVol = (3.1416 * Radius ^ 2 * ConeLength) * 0.33
+	local ConeArea = math.pi * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
+	local ConeVol = (math.pi * Radius ^ 2 * ConeLength) * 0.33
 
 	return ConeLength, ConeArea, ConeVol
 end
@@ -78,12 +78,12 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	local LinerRad	  = math.rad(LinerAngle * 0.5)
 	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) / 2
-	local SlugFrArea  = 3.1416 * (SlugCaliber * 0.5) ^ 2
+	local SlugFrArea  = math.pi * (SlugCaliber * 0.5) ^ 2
 	local ConeVol	  = ConeArea * Data.Caliber * 0.02
 	local ProjMass	  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity * 0.001 + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
 	local MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
 	local Energy	  = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	  = ACF.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
+	local MaxVol	  = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
 	GUIData.MaxConeAng	 = MaxConeAng
 	GUIData.MaxFillerVol = math.max(math.Round(MaxVol - AirVol - ConeVol, 2), GUIData.MinFillerVol)
@@ -103,7 +103,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.BoomFillerMass	= BoomFiller
 	Data.SlugMV			= self:CalcSlugMV(Data, HEATFiller)
 	Data.CasingMass		= Data.ProjMass - Data.FillerMass - ConeVol * 0.0079
-	Data.DragCoef		= Data.FrArea * 0.0001 / Data.ProjMass
+	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
@@ -121,9 +121,8 @@ function Ammo:BaseConvert(ToolData)
 
 	Data.SlugRicochet	= 500 -- Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.FrArea ^ ACF.PenAreaMod
+	Data.PenArea		= Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 -- Most efficient penetration speed in m/s
-	Data.KETransfert	= 0.1 -- Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet		= 60 -- Base ricochet angle
 	Data.DetonatorAngle	= 75
 	Data.Detonated		= false

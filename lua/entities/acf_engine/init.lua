@@ -282,7 +282,7 @@ do -- Spawn and Update functions
 		Entity.LimitRPM         = EngineData.RPM.Limit
 		Entity.FlywheelOverride = EngineData.RPM.Override
 		Entity.FlywheelMass     = EngineData.FlywheelMass
-		Entity.Inertia          = EngineData.FlywheelMass * 3.1416 ^ 2
+		Entity.Inertia          = EngineData.FlywheelMass * math.pi ^ 2
 		Entity.IsElectric       = EngineData.IsElectric
 		Entity.IsTrans          = EngineData.IsTrans -- driveshaft outputs to the side
 		Entity.FuelTypes        = EngineData.Fuel or { Petrol = true }

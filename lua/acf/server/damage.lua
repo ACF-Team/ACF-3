@@ -15,7 +15,7 @@ local function CalcDamage(Bullet, Trace)
 	local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
 	local Energy  = Bullet.Energy
 	local PenArea = Bullet.PenArea
-	local Area    = Bullet.FrArea
+	local Area    = Bullet.ProjArea
 	local HitRes  = {}
 
 	local Caliber        = Bullet.Caliber * 10

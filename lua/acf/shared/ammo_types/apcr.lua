@@ -21,9 +21,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = (Data.FrArea * 1.1111) * (Data.ProjLength * 0.0079) * 0.75 --Volume of the projectile as a cylinder * density of steel
+	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
 	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef  = (Data.FrArea * 0.000125) / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
+	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
@@ -34,13 +34,12 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 end
 
 function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { ProjScale = 0.7 }) -- APCR has a smaller penetrator
 
-	Data.ShovePower	 = 0.2
-	Data.PenArea	 = (Data.FrArea * 0.7) ^ ACF.PenAreaMod -- APCR has a smaller penetrator
-	Data.LimitVel	 = 900 --Most efficient penetration speed in m/s
-	Data.KETransfert = 0.1 --Kinetic energy transfert to the target for movement purposes
-	Data.Ricochet	 = 55 --Base ricochet angle
+	Data.ShovePower = 0.2
+	Data.PenArea    = Data.ProjArea ^ ACF.PenAreaMod
+	Data.LimitVel   = 900 --Most efficient penetration speed in m/s
+	Data.Ricochet   = 55 --Base ricochet angle
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
 
