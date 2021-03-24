@@ -248,7 +248,7 @@ do -- Ammo crate capacity calculation
 		local Width     = Caliber * ACF.AmmoCaseScale * 0.1 -- mm to cm
 		local Length    = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
 		local MagSize   = math.floor(ACF.GetWeaponValue("MagSize", Caliber, WeaponClass, Weapon) or 1)
-		local Spacing   = math.max(0, ToolData.AmmoPadding or ACF.AmmoPadding) + 0.125
+		local Spacing   = math.max(0, ToolData.AmmoPadding or ACF.AmmoPadding) * 0.1 + 0.125
 		local IsBoxed   = WeaponClass.IsBoxed
 		local Rounds    = 0
 		local ExtraData = {}
