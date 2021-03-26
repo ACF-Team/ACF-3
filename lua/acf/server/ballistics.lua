@@ -211,6 +211,7 @@ local function OnImpact(Bullet, Trace, Ammo, Type)
 		end
 
 		ACF.BulletClient(Bullet, "Update", 3, Trace.HitPos)
+		ACF.DoBulletsFlight(Bullet)
 	else
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
