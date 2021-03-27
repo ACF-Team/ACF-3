@@ -110,9 +110,19 @@ do -- Data syncronization
 		end
 	end)
 
-	hook.Add("PlayerInitialSpawn", "ACF Data Var Syncronization", function(Player)
-		Client[Player] = {}
-	end)
+	-- If a player does not exist, we'll add it
+	setmetatable(Client, {
+		__index = function(Table, Key)
+			if not IsValid(Key) then return end
+			if not Key:IsPlayer() then return end
+
+			local Tab = {}
+
+			Table[Key] = Tab
+
+			return Tab
+		end
+	})
 
 	hook.Add("PlayerDisconnected", "ACF Data Var Syncronization", function(Player)
 		Client[Player] = nil
