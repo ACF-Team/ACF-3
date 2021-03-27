@@ -22,7 +22,7 @@ if SERVER then
 		DisabledData[Data] = State
 	end)
 
-	hook.Add("PlayerInitialSpawn", "ACF Copy Data", function(Player)
+	hook.Add("ACF_OnPlayerLoaded", "ACF Copy Data", function(Player)
 		CopiedData[Player] = {}
 		Disabled[Player] = {}
 	end)
