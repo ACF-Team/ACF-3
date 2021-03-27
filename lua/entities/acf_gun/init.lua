@@ -206,9 +206,8 @@ do -- Spawn and Update functions --------------------------------
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class  = ACF.GetClassGroup(Weapons, Data.Weapon)
-		local Limit  = Class.LimitConVar.Name
-		local Weapon = Class.Lookup[Data.Weapon]
+		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
@@ -216,10 +215,13 @@ do -- Spawn and Update functions --------------------------------
 
 		if not IsValid(Entity) then return end
 
+		local Weapon = Class.Lookup[Data.Weapon]
+
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Class.Model) -- The model isn't automatically updated, so this is required
+		-- The model isn't automatically updated, so this is required
+		Entity:SetModel(Weapon and Weapon.Model or Class.Model)
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
