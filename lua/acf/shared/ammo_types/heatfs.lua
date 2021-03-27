@@ -21,7 +21,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	local LinerRad	  = math.rad(LinerAngle * 0.5)
 	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
-	local SlugFrArea  = math.pi * (SlugCaliber * 0.5) ^ 2
+	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
 	local ConeVol	  = ConeArea * Data.Caliber * 0.02
 	local ProjMass	  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity * 0.001 + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
 	local MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
@@ -38,8 +38,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
 	Data.SlugMass	  = ConeVol * 0.0079
 	Data.SlugCaliber  = SlugCaliber
-	Data.SlugPenArea  = (SlugFrArea ^ ACF.PenAreaMod) * 0.6666
-	Data.SlugDragCoef = SlugFrArea * 0.0001 / Data.SlugMass
+	Data.SlugPenArea  = (SlugArea ^ ACF.PenAreaMod) * 0.6666
+	Data.SlugDragCoef = SlugArea * 0.0001 / Data.SlugMass
 
 	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
 

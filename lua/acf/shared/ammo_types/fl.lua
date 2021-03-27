@@ -116,7 +116,7 @@ if SERVER then
 			Crate       = BulletData.Crate,
 			Gun         = BulletData.Gun,
 			Pos         = BulletData.Pos,
-			FrArea      = BulletData.FlechetteArea,
+			ProjArea    = BulletData.FlechetteArea,
 			ProjMass    = BulletData.FlechetteMass,
 			DragCoef    = BulletData.FlechetteDragCoef,
 			Tracer      = BulletData.Tracer,
