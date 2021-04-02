@@ -524,6 +524,20 @@ do -- Piledriver registration functions
 	end
 end
 
+do -- Create Turret class
+	ACF.Classes.TurretTypes = ACF.Classes.TurretTypes or {}
+
+	AddSboxLimit({
+			Name = "_acf_turret",
+			Amount = 50,
+			Text = "Maximum amount of ACF turret drives a player can create"
+		})
+
+	function ACF.RegisterTurretType(ID, Base)
+		return ACF.RegisterClass(ID, Base, ACF.Classes.TurretTypes)
+	end
+end
+
 do -- Entity class registration function
 	ACF.Classes.Entities = ACF.Classes.Entities or {}
 
