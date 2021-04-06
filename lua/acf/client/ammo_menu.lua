@@ -221,7 +221,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
 
-	local SizeX = Menu:AddSlider("Crate Width", Min, Max)
+	local SizeX = Menu:AddSlider("Crate Length", Min, Max)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value)
@@ -233,7 +233,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return X
 	end)
 
-	local SizeY = Menu:AddSlider("Crate Height", Min, Max)
+	local SizeY = Menu:AddSlider("Crate Width", Min, Max)
 	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
 		local Y = math.Round(Value)
@@ -245,7 +245,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return Y
 	end)
 
-	local SizeZ = Menu:AddSlider("Crate Depth", Min, Max)
+	local SizeZ = Menu:AddSlider("Crate Height", Min, Max)
 	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		local Z = math.Round(Value)
