@@ -1,16 +1,16 @@
 ACF.RegisterWeaponClass("RAC", {
 	Name        = "Rotary Autocannon",
-	Description = "Rotary Autocannons sacrifice weight, bulk and accuracy over classic autocannons to get the highest rate of fire possible.",
+	Description = "Rotary autocannons sacrifice accuracy and reload speed over autocannons to get the highest rate of fire possible.",
 	Model       = "models/rotarycannon/kw/20mmrac.mdl",
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	Spread      = 0.48,
-	Mass        = 500,
+	Mass        = 212,
 	Cyclic      = 2000,
 	Round = {
-		MaxLength  = 25,
-		PropLength = 20,
+		MaxLength  = 16,
+		PropLength = 13,
 	},
 	Preview = {
 		Height = 90,
@@ -26,8 +26,8 @@ ACF.RegisterWeaponClass("RAC", {
 		Max = 150,
 	},
 	MagReload = {
-		Min = 8,
-		Max = 15,
+		Min = 10,
+		Max = 20,
 	},
 })
 

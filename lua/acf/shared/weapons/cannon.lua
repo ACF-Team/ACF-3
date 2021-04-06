@@ -1,15 +1,15 @@
 ACF.RegisterWeaponClass("C", {
 	Name        = "Cannon",
-	Description = "High velocity guns that can fire very powerful ammunition, but are rather slow to reload.",
+	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
 	Model       = "models/tankgun/tankgun_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 2500,
+	Mass        = 1512,
 	Spread      = 0.08,
 	Round = {
-		MaxLength  = 95,
-		PropLength = 70,
+		MaxLength  = 80,
+		PropLength = 65,
 	},
 	Preview = {
 		Height = 50,
@@ -18,7 +18,7 @@ ACF.RegisterWeaponClass("C", {
 	Caliber	= {
 		Base = 100,
 		Min  = 20,
-		Max  = 140,
+		Max  = 170,
 	},
 	Sounds = {
 		[50] = "acf_base/weapons/ac_fire4.mp3",

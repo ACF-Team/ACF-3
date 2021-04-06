@@ -1,16 +1,16 @@
 ACF.RegisterWeaponClass("MG", {
 	Name        = "Machinegun",
-	Description = "Machineguns are light guns that fire equally light bullets at a fast rate.",
+	Description = "The lightest piece of automatic weaponry, machineguns offer a high rate of fire and good magazine size at the cost of a poor variety of ammo types.",
 	Model       = "models/machinegun/machinegun_20mm.mdl",
 	Sound       = "acf_base/weapons/mg_fire4.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	IsBoxed     = true,
 	Spread      = 0.16,
-	Mass        = 100,
+	Mass        = 53,
 	Round = {
-		MaxLength  = 16.5,
-		PropLength = 14,
+		MaxLength  = 16,
+		PropLength = 13,
 	},
 	Preview = {
 		Height = 60,
@@ -30,7 +30,7 @@ ACF.RegisterWeaponClass("MG", {
 		Max = 12,
 	},
 	Cyclic = {
-		Min = 1000,
+		Min = 900,
 		Max = 600,
 	},
 })
@@ -41,6 +41,10 @@ ACF.RegisterWeapon("7.62mmMG", "MG", {
 
 ACF.RegisterWeapon("12.7mmMG", "MG", {
 	Caliber = 12.7,
+})
+
+ACF.RegisterWeapon("13mmHMG", "MG", {
+	Caliber = 13,
 })
 
 ACF.RegisterWeapon("14.5mmMG", "MG", {

@@ -13,16 +13,14 @@ local DragDiv     = ACF.DragDiv
 local function CalcDamage(Bullet, Trace)
 	-- TODO: Why are we getting impact angles outside these bounds?
 	local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
-	local Energy  = Bullet.Energy
-	local PenArea = Bullet.PenArea
 	local Area    = Bullet.ProjArea
 	local HitRes  = {}
 
-	local Caliber        = Bullet.Caliber * 10
+	local Caliber        = Bullet.Diameter * 10
 	local BaseArmor      = Trace.Entity.ACF.Armour
 	local SlopeFactor    = BaseArmor / Caliber
 	local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
-	local MaxPenetration = Energy.Penetration / PenArea * ACF.KEtoRHA --RHA Penetration
+	local MaxPenetration = Bullet:GetPenetration() --RHA Penetration
 
 	if MaxPenetration > EffectiveArmor then
 		HitRes.Damage   = Area -- Inflicted Damage
@@ -30,9 +28,7 @@ local function CalcDamage(Bullet, Trace)
 		HitRes.Loss     = EffectiveArmor / MaxPenetration -- Energy loss in percents
 	else
 		-- Projectile did not penetrate the armor
-		local Penetration = math.min(MaxPenetration, EffectiveArmor)
-
-		HitRes.Damage   = (Penetration / EffectiveArmor) ^ 2 * Area
+		HitRes.Damage   = (MaxPenetration / EffectiveArmor) ^ 2 * Area
 		HitRes.Overkill = 0
 		HitRes.Loss     = 1
 	end
@@ -217,7 +213,7 @@ do -- Explosions ----------------------------
 				local BlastRes 		= ACF.Damage(Ent, Blast, AreaAdjusted, 0, Inflictor, 0, Gun, "HE")
 				local FragHit 		= math.floor(Fragments * AreaFraction)
 				local FragVel 		= math.max(BaseFragV - ((Table.Dist / BaseFragV) * BaseFragV ^ 2 * FragWeight ^ 0.33 / 10000) / DragDiv, 0)
-				local FragKE 		= ACF_Kinetic(FragVel, FragWeight * FragHit, 1500)
+				local FragKE 		= ACF.Kinetic(FragVel, FragWeight * FragHit)
 				local Losses		= BlastRes.Loss * 0.5
 				local FragRes
 

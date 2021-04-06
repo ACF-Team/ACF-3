@@ -1,14 +1,14 @@
 ACF.RegisterWeaponClass("SC", {
 	Name        = "Short-Barrelled Cannon",
-	Description = "Short cannons trade muzzle velocity and accuracy for lighter weight and smaller size, with more penetration than howitzers and lighter than cannons.",
+	Description = "Shorter variant of cannons, limited to shorter round size and therefore worse performance than their full sized counterpart.",
 	Model       = "models/tankgun/tankgun_short_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
 	Spread      = 0.16,
-	Mass        = 1750,
+	Mass        = 1195,
 	Round = {
-		MaxLength  = 95,
+		MaxLength  = 60,
 		PropLength = 45,
 	},
 	Preview = {
@@ -18,7 +18,7 @@ ACF.RegisterWeaponClass("SC", {
 	Caliber	= {
 		Base = 100,
 		Min  = 20,
-		Max  = 140,
+		Max  = 170,
 	},
 	Sounds = {
 		[50] = "acf_base/weapons/ac_fire4.mp3",

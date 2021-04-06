@@ -12,7 +12,7 @@ end
 
 function Ammo:GetDisplayData(Data)
 	local Display = Ammo.BaseClass.GetDisplayData(self, Data)
-	local Energy  = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
+	local Energy  = ACF.Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass)
 
 	Display.MaxKETransfert = Energy.Kinetic * Data.ShovePower
 
@@ -26,24 +26,23 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local ProjMass	   = math.max(GUIData.ProjVolume * 0.5, 0) * 0.0079 --(Volume of the projectile as a cylinder - Volume of the cavity) * density of steel 
-	local MuzzleVel	   = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	   = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	   = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxCavity	   = math.min(GUIData.ProjVolume, MaxVol)
+	local ProjMass     = math.max(GUIData.ProjVolume * 0.5, 0) * 0.0079 --(Volume of the projectile as a cylinder - Volume of the cavity) * density of steel 
+	local MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy       = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
+	local MaxVol       = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local MaxCavity    = math.min(GUIData.ProjVolume, MaxVol)
 	local HollowCavity = math.Clamp(ToolData.HollowCavity, GUIData.MinCavVol, MaxCavity)
-	local ExpRatio	   = HollowCavity / GUIData.ProjVolume
+	local ExpRatio     = HollowCavity / GUIData.ProjVolume
 
 	GUIData.MaxCavVol = MaxCavity
 
-	Data.CavVol		= HollowCavity
-	Data.ProjMass	= (Data.ProjArea * Data.ProjLength - HollowCavity) * 0.0079 --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
-	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.ShovePower	= 0.2 + ExpRatio * 0.5
-	Data.ExpCaliber	= Data.Caliber + ExpRatio * Data.ProjLength
-	Data.PenArea	= (math.pi * Data.ExpCaliber * 0.5) ^ 2 ^ ACF.PenAreaMod
-	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass	= Data.PropMass + Data.ProjMass
+	Data.CavVol     = HollowCavity
+	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - HollowCavity) * 0.0079 --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.ShovePower = 0.2 + ExpRatio * 0.5
+	Data.Diameter   = Data.Caliber + ExpRatio * Data.ProjLength
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -98,7 +97,7 @@ if SERVER then
 		local Data	   = self:GetDisplayData(BulletData)
 		local Text	   = BaseText .. "\nExpanded Caliber: %s mm\nImparted Energy: %s KJ"
 
-		return Text:format(math.Round(BulletData.ExpCaliber * 10, 2), math.Round(Data.MaxKETransfert, 2))
+		return Text:format(math.Round(BulletData.Diameter * 10, 2), math.Round(Data.MaxKETransfert, 2))
 	end
 else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
@@ -151,7 +150,7 @@ else
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text	  = "Expanded Caliber : %s mm\nTransfered Energy : %s KJ"
-			local Caliber = math.Round(BulletData.ExpCaliber * 10, 2)
+			local Caliber = math.Round(BulletData.Diameter * 10, 2)
 			local Energy  = math.Round(BulletData.MaxKETransfert, 2)
 
 			return Text:format(Caliber, Energy)
@@ -164,10 +163,10 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
+			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
+			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)

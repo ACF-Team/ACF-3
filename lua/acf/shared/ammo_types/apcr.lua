@@ -21,8 +21,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
-	Data.MuzzleVel = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel (kg/in3)
+	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass
 
@@ -34,10 +34,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 end
 
 function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { ProjScale = 0.7 }) -- APCR has a smaller penetrator
+	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { ProjScale = 0.75 }) -- APCR has a smaller penetrator
 
 	Data.ShovePower = 0.2
-	Data.PenArea    = Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel   = 900 --Most efficient penetration speed in m/s
 	Data.Ricochet   = 55 --Base ricochet angle
 

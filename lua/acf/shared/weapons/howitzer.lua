@@ -1,15 +1,15 @@
 ACF.RegisterWeaponClass("HW", {
 	Name        = "Howitzer",
-	Description = "Howitzers are limited to rather mediocre muzzle velocities, but can fire extremely heavy projectiles with large useful payload capacities.",
+	Description = "Analog of cannons, except it's intended to fire explosive and chemical rounds where its bigger round size a exceels at.",
 	Sound       = "acf_base/weapons/howitzer_new2.mp3",
 	Model       = "models/howitzer/howitzer_105mm.mdl",
 	MuzzleFlash = "howie_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 2315, -- Approx 2 tons @ 100mm
+	Mass        = 860,
 	Spread      = 0.1,
 	Round = {
-		MaxLength  = 105,
-		PropLength = 40.5,
+		MaxLength  = 73.5,
+		PropLength = 57.75,
 	},
 	Preview = {
 		FOV = 65,

@@ -41,13 +41,13 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.FillerPriority = Data.FillerPriority or "Smoke"
 
 	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local ProjMass	  = math.max(GUIData.ProjVolume - ToolData.SmokeFiller, 0) * 0.0079 + math.min(ToolData.SmokeFiller, GUIData.ProjVolume) * ACF.HEDensity * 0.0005
-	local MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	  = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
+	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.SmokeFiller, 0) * 0.0079 + math.min(ToolData.SmokeFiller, GUIData.ProjVolume) * ACF.HEDensity
+	local MuzzleVel   = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy      = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
 	local MaxCapacity = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxVolume	  = math.Round(math.min(GUIData.ProjVolume, MaxCapacity), 2)
+	local MaxVolume   = math.Round(math.min(GUIData.ProjVolume, MaxCapacity), 2)
 	local SmokeFiller = math.Clamp(ToolData.SmokeFiller, GUIData.MinFillerVol, MaxVolume)
-	local WPFiller	  = math.Clamp(ToolData.WPFiller, GUIData.MinFillerVol, MaxVolume)
+	local WPFiller    = math.Clamp(ToolData.WPFiller, GUIData.MinFillerVol, MaxVolume)
 
 	if Data.FillerPriority == "Smoke" then
 		WPFiller = math.Clamp(WPFiller, 0, MaxVolume - SmokeFiller)
@@ -56,15 +56,15 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 
 	GUIData.MaxFillerVol = MaxVolume
-	GUIData.FillerVol	 = math.Round(SmokeFiller, 2)
-	GUIData.WPVol		 = math.Round(WPFiller, 2)
+	GUIData.FillerVol    = math.Round(SmokeFiller, 2)
+	GUIData.WPVol        = math.Round(WPFiller, 2)
 
-	Data.FillerMass	= GUIData.FillerVol * ACF.HEDensity * 0.0005
-	Data.WPMass		= GUIData.WPVol * ACF.HEDensity * 0.0005
-	Data.ProjMass	= math.max(GUIData.ProjVolume - (GUIData.FillerVol + GUIData.WPVol), 0) * 0.0079 + Data.FillerMass + Data.WPMass
-	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass	= Data.PropMass + Data.ProjMass
+	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
+	Data.WPMass     = GUIData.WPVol * ACF.HEDensity
+	Data.ProjMass   = math.max(GUIData.ProjVolume - (GUIData.FillerVol + GUIData.WPVol), 0) * 0.0079 + Data.FillerMass + Data.WPMass
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -79,7 +79,6 @@ function Ammo:BaseConvert(ToolData)
 	GUIData.MinFillerVol = 0
 
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 --Most efficient penetration speed in m/s
 	Data.Ricochet		= 60 --Base ricochet angle
 	Data.DetonatorAngle	= 80
@@ -155,7 +154,7 @@ if SERVER then
 	function Ammo:PropImpact(Bullet, Trace)
 		if ACF.Check(Trace.Entity) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
 
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy

@@ -1,16 +1,16 @@
 ACF.RegisterWeaponClass("MO", {
 	Name        = "Mortar",
-	Description = "Mortars are able to fire shells with usefull payloads from a light weight gun, at the price of limited velocities.",
+	Description = "Intended as short range artillery, mortars are capable of firing explosives and smoke round at a decent rate at poor velocity and accuracy.",
 	Sound       = "acf_base/weapons/mortar_new.mp3",
 	Model		= "models/mortar/mortar_120mm.mdl",
 	MuzzleFlash = "mortar_muzzleflash_noscale",
 	DefaultAmmo = "HE",
 	IsScalable  = true,
 	Spread      = 0.72,
-	Mass        = 300,
+	Mass        = 459,
 	Round = {
 		MaxLength  = 40,
-		PropLength = 2,
+		PropLength = 3,
 	},
 	Preview = {
 		Height = 80,

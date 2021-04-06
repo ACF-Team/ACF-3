@@ -1,15 +1,15 @@
-ACF.RegisterWeaponClass("HMG", {
-	Name        = "Heavy Machinegun",
-	Description = "Designed as autocannons for aircraft, HMGs are rapid firing, lightweight, and compact but sacrifice accuracy, magazine size, and reload times.",
+ACF.RegisterWeaponClass("LAC", {
+	Name        = "Light Autocannon",
+	Description = "Compact variation of autocannons, they offer higher firerates at the cost of smaller magazine size.",
 	Model       = "models/machinegun/machinegun_40mm_compact.mdl",-- TODO: Properly scale model, atm it's ~60mm
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 200,
+	Mass        = 301,
 	Spread      = 0.48,
 	Round = {
-		MaxLength  = 25,
-		PropLength = 17.5,
+		MaxLength  = 32,
+		PropLength = 26,
 	},
 	LongBarrel = {
 		Index    = 2,
@@ -22,7 +22,7 @@ ACF.RegisterWeaponClass("HMG", {
 	},
 	Caliber	= {
 		Base = 40,
-		Min  = 13,
+		Min  = 20,
 		Max  = 40,
 	},
 	MagSize = {
@@ -39,19 +39,15 @@ ACF.RegisterWeaponClass("HMG", {
 	},
 })
 
-ACF.RegisterWeapon("13mmHMG", "HMG", {
-	Caliber = 13,
-})
-
-ACF.RegisterWeapon("20mmHMG", "HMG", {
+ACF.RegisterWeapon("20mmHMG", "LAC", {
 	Caliber = 20,
 })
 
-ACF.RegisterWeapon("30mmHMG", "HMG", {
+ACF.RegisterWeapon("30mmHMG", "LAC", {
 	Caliber = 30,
 })
 
-ACF.RegisterWeapon("40mmHMG", "HMG", {
+ACF.RegisterWeapon("40mmHMG", "LAC", {
 	Caliber = 40,
 })
 

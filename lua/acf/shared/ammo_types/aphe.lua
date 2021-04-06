@@ -34,21 +34,20 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local HEDensity	= ACF.HEDensity * 0.001
 	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local ProjMass	= math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * HEDensity
-	local MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	= ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	= ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local ProjMass  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity
+	local MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy    = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
+	local MaxVol    = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
 	GUIData.MaxFillerVol = math.Round(math.min(GUIData.ProjVolume, MaxVol * 0.9), 2)
-	GUIData.FillerVol	 = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
+	GUIData.FillerVol    = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
 
-	Data.FillerMass	= GUIData.FillerVol * HEDensity
-	Data.ProjMass	= math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
-	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass	= Data.PropMass + Data.ProjMass
+	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
+	Data.ProjMass   = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -61,7 +60,6 @@ function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
 	Data.ShovePower		 = 0.1
-	Data.PenArea		 = Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		 = 700 --Most efficient penetration speed in m/s
 	Data.Ricochet		 = 65 --Base ricochet angle
 	Data.CanFuze		 = Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
@@ -189,10 +187,10 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
+			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
+			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)

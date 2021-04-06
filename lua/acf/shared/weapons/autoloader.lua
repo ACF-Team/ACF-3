@@ -1,15 +1,16 @@
 ACF.RegisterWeaponClass("AL", {
-	Name        = "Autoloader",
-	Description = "A cannon with attached autoloading mechanism. While it allows for several quick shots, the mechanism adds considerable bulk, weight, and magazine reload time.",
+	Name        = "Autoloaded Cannon",
+	Description = "An improvement over cannons that allows you fire multiple rounds in succesion at the cost of internal volume, mass and reload speed.",
 	Model       = "models/tankgun/tankgun_al_100mm.mdl",
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 3000,
+	Mass        = 5630,
 	Spread      = 0.08,
+	MagSize     = 8,
 	Round = {
-		MaxLength  = 95,
-		PropLength = 70,
+		MaxLength  = 80,
+		PropLength = 65,
 	},
 	Preview = {
 		Height = 60,
@@ -18,11 +19,7 @@ ACF.RegisterWeaponClass("AL", {
 	Caliber	= {
 		Base = 100,
 		Min  = 75,
-		Max  = 140,
-	},
-	MagSize = {
-		Min = 8,
-		Max = 5,
+		Max  = 170,
 	},
 	MagReload = {
 		Min = 15,

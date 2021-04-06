@@ -1,15 +1,15 @@
 ACF.RegisterWeaponClass("AC", {
 	Name        = "Autocannon",
-	Description = "Autocannons have a rather high weight and bulk for the ammo they fire, but they can fire it extremely fast.",
+	Description = "Despite being the heaviest piece of automatic weaponry, they offer high magazine capacity with a decent firerate and reload speed.",
 	Model       = "models/autocannon/autocannon_50mm.mdl", -- TODO: Properly scale model, atm it's ~70mm
 	Sound       = "acf_base/weapons/ac_fire4.mp3",
 	MuzzleFlash = "auto_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 1200, -- Relative to the model's volume
+	Mass        = 1953, -- Relative to the model's volume
 	Spread      = 0.2,
 	Round = {
-		MaxLength  = 45, -- Relative to the Base caliber, in cm
-		PropLength = 35, -- Relative to the Base caliber, in cm
+		MaxLength  = 40, -- Relative to the Base caliber, in cm
+		PropLength = 32.5, -- Relative to the Base caliber, in cm
 	},
 	Preview = {
 		Height = 80,
@@ -29,7 +29,7 @@ ACF.RegisterWeaponClass("AC", {
 		Max = 20,
 	},
 	Cyclic = {
-		Min = 200,
+		Min = 250,
 		Max = 150,
 	},
 })

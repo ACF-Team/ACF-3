@@ -33,21 +33,20 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local HEDensity	= ACF.HEDensity * 0.001
 	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local ProjMass	= math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * HEDensity
-	local MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	= ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	= ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local ProjMass  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity
+	local MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy    = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
+	local MaxVol    = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
 	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol)
-	GUIData.FillerVol	 = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
+	GUIData.FillerVol    = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
 
-	Data.FillerMass	= GUIData.FillerVol * HEDensity
-	Data.ProjMass	= math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
-	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef	= Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass	= Data.PropMass + Data.ProjMass
+	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
+	Data.ProjMass   = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -62,7 +61,6 @@ function Ammo:BaseConvert(ToolData)
 	GUIData.MinFillerVol = 0
 
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 --Most efficient penetration speed in m/s
 	Data.Ricochet		= 60 --Base ricochet angle
 	Data.DetonatorAngle	= 80
@@ -90,7 +88,7 @@ if SERVER then
 	function Ammo:PropImpact(Bullet, Trace)
 		if ACF.Check(Trace.Entity) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
 
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy

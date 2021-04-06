@@ -1,6 +1,6 @@
 ACF.RegisterWeaponClass("SL", {
 	Name        = "Smoke Launcher",
-	Description = "Smoke launcher to block an attacker's line of sight.",
+	Description = "Compact, single shot launchers used to deploy smoke screens towards possible threats.",
 	Sound       = "acf_base/weapons/smoke_launch.mp3",
 	Model       = "models/launcher/40mmsl.mdl",
 	MuzzleFlash = "gl_muzzleflash_noscale",
@@ -9,7 +9,7 @@ ACF.RegisterWeaponClass("SL", {
 	IsScalable  = true,
 	IsBoxed     = true,
 	Spread      = 0.32,
-	Mass        = 2,
+	Mass        = 3.77,
 	Cyclic      = 600,
 	MagSize     = 1,
 	LimitConVar = {

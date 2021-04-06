@@ -34,6 +34,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
 
 	Data.Caliber  = Caliber * 0.1 -- Bullet caliber will have to stay in cm
+	Data.Diameter = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
 	Data.ProjArea = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
 	Data.PropArea = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
 
@@ -75,6 +76,44 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	GUIData.ProjVolume = ProjVolume
 end
+
+-- Using Simplified Garzke and Dulin Empirical Formula
+-- See: http://www.navweaps.com/index_tech/tech-109.pdf
+-- Speed in m/s, Mass in kg, Caliber in mm
+-- Returns penetration in mm
+function ACF.Penetration(Speed, Mass, Caliber)
+	local Constant = 0.0004689 -- The constant is actually called "s"
+
+	Mass    = Mass * 2.20462 -- From kg to lb
+	Speed   = Speed * 3.28084 -- From m/s to ft/s
+	Caliber = Caliber * 0.0393701 -- From mm to in
+
+	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * 25.4 -- 25.4 because converting from in to mm
+end
+
+function ACF.MuzzleVelocity(PropMass, ProjMass)
+	local Energy = PropMass * ACF.PropImpetus * 1000 -- In joules
+
+	return (2 * Energy / ProjMass) ^ 0.5
+end
+
+function ACF.Kinetic(Speed, Mass)
+	Speed = Speed * 0.0254 -- From in/s to m/s
+
+	return {
+		Kinetic = Mass * 0.5 * Speed ^ 2 * 0.001, --Energy in KiloJoules
+		Momentum = Speed * Mass,
+	}
+end
+
+-- changes here will be automatically reflected in the armor properties tool
+function ACF_CalcArmor(Area, Ductility, Mass)
+	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
+end
+
+-- Backwards compatibility
+ACF_MuzzleVelocity = ACF.MuzzleVelocity
+ACF_Kinetic        = ACF.Kinetic
 
 local Weaponry = {
 	Piledrivers = Classes.Piledrivers,
@@ -143,17 +182,16 @@ function ACF.RicoProbability(Rico, Speed)
 	}
 end
 
---Formula from https://mathscinotes.wordpress.com/2013/10/03/parameter-determination-for-pejsa-velocity-model/
---not terribly accurate for acf, particularly small caliber (7.62mm off by 120 m/s at 800m), but is good enough for quick indicator
---range in m, vel is m/s
-function ACF.PenRanging(MuzzleVel, DragCoef, ProjMass, PenArea, LimitVel, Range)
-	local V0 = MuzzleVel * 39.37 * ACF.Scale --initial velocity
+-- Formula from https://mathscinotes.wordpress.com/2013/10/03/parameter-determination-for-pejsa-velocity-model/
+-- not terribly accurate for acf, particularly small caliber (7.62mm off by 120 m/s at 800m), but is good enough for quick indicator
+-- Speed in m/s, Range in m
+-- Result in in/s
+function ACF.GetRangedSpeed(Speed, DragCoef, Range)
+	local V0 = Speed * 39.37 * ACF.Scale --initial velocity
 	local D0 = DragCoef * V0 ^ 2 / ACF.DragDiv --initial drag
 	local K1 = (D0 / (V0 ^ 1.5)) ^ -1 --estimated drag coefficient
-	local Vel = (math.sqrt(V0) - ((Range * 39.37) / (2 * K1))) ^ 2
-	local Pen = ACF_Kinetic(Vel, ProjMass, LimitVel).Penetration / PenArea * ACF.KEtoRHA
 
-	return math.Round(Vel * 0.0254, 2), math.Round(Pen, 2)
+	return (V0 ^ 0.5 - ((Range * 39.37) / (2 * K1))) ^ 2
 end
 
 function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)

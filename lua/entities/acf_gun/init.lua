@@ -497,7 +497,7 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
-			local Energy = ACF_Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
+			local Energy = ACF.Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
 				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)

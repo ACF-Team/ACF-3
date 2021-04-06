@@ -1,3 +1,4 @@
+local ACF  = ACF
 local Ammo = ACF.RegisterAmmoType("AP")
 
 function Ammo:OnLoaded()
@@ -12,10 +13,17 @@ function Ammo:OnLoaded()
 	}
 end
 
+function Ammo:GetPenetration(Bullet, Speed)
+	if not isnumber(Speed) then
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	end
+
+	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10)
+end
+
 function Ammo:GetDisplayData(Data)
-	local Energy  = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass, Data.LimitVel)
 	local Display = {
-		MaxPen = (Energy.Penetration / Data.PenArea) * ACF.KEtoRHA
+		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
 	hook.Run("ACF_GetDisplayData", self, Data, Display)
@@ -29,7 +37,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	Data.ProjMass   = Data.ProjArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel
-	Data.MuzzleVel  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
@@ -44,7 +52,6 @@ function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
 	Data.ShovePower = 0.2
-	Data.PenArea    = Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel   = 800 --Most efficient penetration speed in m/s
 	Data.Ricochet   = 60 --Base ricochet angle
 
@@ -126,7 +133,7 @@ if SERVER then
 
 		if ACF.Check(Target) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
 
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy
@@ -179,6 +186,12 @@ else
 		end
 
 		return Data
+	end
+
+	function Ammo:GetRangedPenetration(Bullet, Range)
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * 0.0254
+
+		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
 	function Ammo:AddAmmoPreview(_, Setup)
@@ -246,10 +259,10 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
+			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
+			local R2P, R2V = self:GetRangedPenetration(BulletData, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)

@@ -400,7 +400,7 @@ do -- ACF Activation and Damage -----------------
 			local AmmoRoll = math.Rand(0, 1) < Entity.Ammo / math.max(Entity.Capacity, 1)
 
 			if VolumeRoll and AmmoRoll then
-				local Speed = ACF_MuzzleVelocity(Entity.BulletData.PropMass, Entity.BulletData.ProjMass / 2)
+				local Speed = ACF.MuzzleVelocity(Entity.BulletData.PropMass, Entity.BulletData.ProjMass / 2)
 				local Pitch = math.max(255 - Entity.BulletData.PropMass * 100,60)
 
 				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
@@ -497,7 +497,7 @@ do -- ACF Activation and Damage -----------------
 		local Pos           = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
 		local Filler        = self.BulletData.FillerMass or 0
 		local Propellant    = self.BulletData.PropMass or 0
-		local ExplosiveMass = (Filler + Propellant * (ACF.PBase / ACF.HEPower)) * self.Ammo
+		local ExplosiveMass = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
 		local FragMass      = self.BulletData.ProjMass or ExplosiveMass * 0.5
 
 		ACF_KillChildProps(self, Pos, ExplosiveMass)

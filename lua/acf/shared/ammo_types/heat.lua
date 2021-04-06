@@ -41,11 +41,29 @@ function Ammo:CalcSlugMV(Data, HEATFillerMass)
 	return (HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + Data.ConeAng) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
 end
 
+function Ammo:GetPenetration(Bullet, Speed, Detonated)
+	if not isnumber(Speed) then
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	end
+
+	local Caliber = Bullet.Diameter
+	local Mass    = Bullet.ProjMass
+
+	if Detonated or Bullet.Detonated then
+		local Crushed, HEATFiller = self:CrushCalc(Speed, Bullet.FillerMass)
+
+		Speed   = self:CalcSlugMV(Bullet, HEATFiller) * (Bullet.SlugPenMul or 1)
+		Mass    = Bullet.SlugMass * (1 - Crushed)
+		Caliber = Bullet.SlugCaliber
+	end
+
+	return ACF.Penetration(Speed, Mass, Caliber * 10)
+end
+
 function Ammo:GetDisplayData(Data)
 	local Crushed, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
 	local SlugMV	= self:CalcSlugMV(Data, HEATFiller) * (Data.SlugPenMul or 1)
 	local MassUsed	= Data.SlugMass * (1 - Crushed)
-	local Energy	= ACF_Kinetic(SlugMV * 39.37, MassUsed, 999999)
 	local FragMass	= Data.CasingMass + Data.SlugMass * Crushed
 	local Fragments	= math.max(math.floor((BoomFiller / FragMass) * ACF.HEFrag), 2)
 	local Display   = {
@@ -54,7 +72,7 @@ function Ammo:GetDisplayData(Data)
 		BoomFillerMass = BoomFiller,
 		SlugMV         = SlugMV,
 		SlugMassUsed   = MassUsed,
-		MaxPen         = (Energy.Penetration / Data.SlugPenArea) * ACF.KEtoRHA,
+		MaxPen         = self:GetPenetration(Data, Data.MuzzleVel, true),
 		TotalFragMass  = FragMass,
 		BlastRadius    = BoomFiller ^ 0.33 * 8,
 		Fragments      = Fragments,
@@ -76,26 +94,25 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local LinerAngle = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
 	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 
-	local LinerRad	  = math.rad(LinerAngle * 0.5)
+	local LinerRad    = math.rad(LinerAngle * 0.5)
 	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) / 2
 	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
-	local ConeVol	  = ConeArea * Data.Caliber * 0.02
-	local ProjMass	  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity * 0.001 + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
-	local MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	  = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxVol	  = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local ConeVol     = ConeArea * Data.Caliber * 0.02
+	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
+	local MuzzleVel   = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local Energy      = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
+	local MaxVol      = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
-	GUIData.MaxConeAng	 = MaxConeAng
+	GUIData.MaxConeAng   = MaxConeAng
 	GUIData.MaxFillerVol = math.max(math.Round(MaxVol - AirVol - ConeVol, 2), GUIData.MinFillerVol)
-	GUIData.FillerVol	 = math.Clamp(ToolData.FillerMass, GUIData.MinFillerVol, GUIData.MaxFillerVol)
+	GUIData.FillerVol    = math.Clamp(ToolData.FillerMass, GUIData.MinFillerVol, GUIData.MaxFillerVol)
 
-	Data.ConeAng	  = LinerAngle
-	Data.FillerMass	  = GUIData.FillerVol * ACF.HEDensity * 0.00069
-	Data.ProjMass	  = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
-	Data.MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.SlugMass	  = ConeVol * 0.0079
+	Data.ConeAng      = LinerAngle
+	Data.FillerMass   = GUIData.FillerVol * ACF.HEDensity
+	Data.ProjMass     = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
+	Data.MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.SlugMass     = ConeVol * 0.0079
 	Data.SlugCaliber  = SlugCaliber
-	Data.SlugPenArea  = SlugArea ^ ACF.PenAreaMod
 	Data.SlugDragCoef = SlugArea * 0.0001 / Data.SlugMass
 
 	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
@@ -121,7 +138,6 @@ function Ammo:BaseConvert(ToolData)
 
 	Data.SlugRicochet	= 500 -- Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.ProjArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 -- Most efficient penetration speed in m/s
 	Data.Ricochet		= 60 -- Base ricochet angle
 	Data.DetonatorAngle	= 75
@@ -195,7 +211,7 @@ if SERVER then
 		Bullet.DragCoef  = Bullet.SlugDragCoef
 		Bullet.ProjMass  = Bullet.SlugMass * (1 - Crushed)
 		Bullet.Caliber   = Bullet.SlugCaliber
-		Bullet.PenArea   = Bullet.SlugPenArea
+		Bullet.Diameter  = Bullet.Caliber
 		Bullet.Ricochet  = Bullet.SlugRicochet
 		Bullet.LimitVel  = 999999
 
@@ -214,7 +230,7 @@ if SERVER then
 			-- TODO: Figure out why bullets are missing 10% of their penetration
 			if Bullet.Detonated then
 				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
-				local Energy     = ACF_Kinetic(Speed, Bullet.ProjMass, Bullet.LimitVel)
+				local Energy     = ACF.Kinetic(Speed, Bullet.ProjMass)
 
 				Bullet.Energy      = Energy
 				Bullet.NotFirstPen = true
@@ -231,7 +247,7 @@ if SERVER then
 					return false
 				end
 			else
-				Bullet.Energy = ACF_Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass, Bullet.LimitVel)
+				Bullet.Energy = ACF.Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass)
 
 				local HitRes = ACF_RoundImpact(Bullet, Trace)
 
@@ -271,6 +287,12 @@ else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
+
+	function Ammo:GetRangedPenetration(Bullet, Range)
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * 0.0254
+
+		return math.Round(self:GetPenetration(Bullet, Speed, true), 2), math.Round(Speed, 2)
+	end
 
 	function Ammo:ImpactEffect(Effect, Bullet)
 		if not Bullet.Detonated then
@@ -418,10 +440,10 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	 = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
 			local MaxPen = math.Round(BulletData.MaxPen, 2)
-			local R1V    = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 300)
-			local R2V    = ACF.PenRanging(BulletData.MuzzleVel, BulletData.DragCoef, BulletData.ProjMass, BulletData.PenArea, BulletData.LimitVel, 800)
+			local _, R1V = self:GetRangedPenetration(BulletData, 300)
+			local _, R2V = self:GetRangedPenetration(BulletData, 800)
 
 			return Text:format(MaxPen, MaxPen, R1V, MaxPen, R2V)
 		end)

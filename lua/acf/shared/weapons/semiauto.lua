@@ -1,17 +1,17 @@
 ACF.RegisterWeaponClass("SA", {
 	Name        = "Semiautomatic Cannon",
-	Description = "Semiautomatic cannons offer light weight, small size, and high rates of fire at the cost of often reloading and low accuracy.",
+	Description = "Semiautomatic cannons are smaller and lighter than their fully automatic counterpart, but they'll constantly reload every few rounds.",
 	Model       = "models/autocannon/semiautocannon_45mm.mdl", -- TODO: Properly scale model, atm it's ~60mm
 	Sound       = "acf_base/weapons/sa_fire1.mp3",
 	MuzzleFlash = "semi_muzzleflash_noscale",
 	IsScalable  = true,
 	IsBoxed     = true,
 	Spread      = 0.12,
-	Mass        = 585, -- Approx 800kg @ 50mm
+	Mass        = 453,
 	MagSize     = 5,
 	Round = {
-		MaxLength  = 40,
-		PropLength = 32,
+		MaxLength  = 36,
+		PropLength = 29.25,
 	},
 	Preview = {
 		FOV = 70,
@@ -26,7 +26,7 @@ ACF.RegisterWeaponClass("SA", {
 		Max = 10,
 	},
 	Cyclic = {
-		Min = 325,
+		Min = 350,
 		Max = 150,
 	},
 })

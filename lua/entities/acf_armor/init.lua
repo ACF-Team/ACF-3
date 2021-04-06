@@ -174,19 +174,16 @@ do -- ACF Activation and Damage
 	function ENT:ACF_OnDamage(Bullet, Trace)
 		local Entity = Trace.Entity
 		local Armor  = Entity:GetArmor(Trace)
-		local Energy = Bullet.Energy
-		local Area   = Bullet.PenArea
-		local Pen    = (Energy.Penetration / Area) * ACF.KEtoRHA -- RHA Penetration
-
+		local Area   = Bullet.ProjArea
+		local Pen    = Bullet:GetPenetration() -- RHA Penetration
 		local MaxPen = math.min(Armor, Pen)
-
 		local Damage = MaxPen * Area -- Damage is simply the volume of the hole made
 		local HP     = self.ACF.Health
 
 		self.ACF.Health = HP - Damage -- Update health
 
 		print("Damage!")
-		print("    PenCaliber: " .. math.Round(math.sqrt(Area / 3.14159) * 20))
+		print("    PenCaliber: " .. math.Round(Bullet.Diameter * 10))
 		print("    MaxPen: " .. MaxPen)
 		print("    MaxDamage: " .. Pen * Area)
 		print("    HP: " .. math.Round(HP, 3))

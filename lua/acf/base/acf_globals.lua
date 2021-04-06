@@ -44,10 +44,6 @@ do -- ACF global vars
 	ACF.Scale              = 1 --Scale factor for ACF in the game world
 	ACF.HealthFactor       = 1
 	ACF.Threshold          = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
-	ACF.PenAreaMod         = 0.85
-	ACF.KinFudgeFactor     = 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
-	ACF.KEtoRHA            = 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
-	ACF.GroundtoRHA        = 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
 	ACF.ArmorMod           = 1
 	ACF.ArmorFactor        = 1 -- Multiplier for ACF.ArmorMod
 	ACF.GlobalFilter = { -- Global ACF filter
@@ -65,17 +61,15 @@ do -- ACF global vars
 	-- Ammo
 	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding        = 10 -- Millimeters of wasted space between rounds
-	ACF.AmmoCaseScale      = 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
+	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
-	ACF.PBase              = 875 --1KG of propellant produces this much KE at the muzzle, in kj
-	ACF.PScale             = 1 --Gun Propellant power expotential
-	ACF.MVScale            = 0.5 --Propellant to MV convertion expotential
+	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity           = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
 	-- HE
 	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
-	ACF.HEDensity          = 1.65 --HE Filler density (That's TNT density)
+	ACF.HEDensity          = 0.00165 -- Density of TNT in kg/cm3
 	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
 	ACF.HEBlastPen         = 0.4 --Blast penetration exponent based of HE power
 	ACF.HEFeatherExp       = 0.5 --exponent applied to HE dist/maxdist feathering, <1 will increasingly bias toward max damage until sharp falloff at outer edge of range

@@ -182,6 +182,13 @@ function ACF.CreateBullet(BulletData)
 	Bullet.GroundRicos = 0
 	Bullet.Color       = ColorRand(100, 255)
 
+	-- TODO: Make bullets use a metatable instead
+	function Bullet:GetPenetration()
+		local Ammo = AmmoTypes[Bullet.Type]
+
+		return Ammo:GetPenetration(self)
+	end
+
 	if not next(Bullets) then
 		hook.Add("Tick", "IterateBullets", IterateBullets)
 	end
@@ -481,12 +488,10 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function ACF_PenetrateMapEntity(Bullet, Trace)
-		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
 		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
-
+		local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
+		local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
 
@@ -524,7 +529,7 @@ do -- Terminal ballistics --------------------------
 
 		local Thickness = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
 
-		Bullet.Flight  = Bullet.Flight * (1 - Thickness / Pen)
+		Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
 		Bullet.NextPos = Back.HitPos + Fwd * 0.25
 
 		table.insert(Bullet.Filter, Back.Entity)
@@ -533,12 +538,10 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function ACF_PenetrateGround(Bullet, Trace)
-		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
 		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
-
+		local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
+		local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
 
@@ -548,7 +551,7 @@ do -- Terminal ballistics --------------------------
 			local Thickness = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
 			local DeltaTime = engine.TickInterval()
 
-			Bullet.Flight  = Bullet.Flight * (1 - Thickness / Pen)
+			Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
 			Bullet.LastPos = nil
 			Bullet.Pos     = Exit
 			Bullet.NextPos = Exit + Bullet.Flight * ACF.Scale * DeltaTime
