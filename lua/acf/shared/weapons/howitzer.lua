@@ -8,8 +8,9 @@ ACF.RegisterWeaponClass("HW", {
 	Mass        = 860,
 	Spread      = 0.1,
 	Round = {
-		MaxLength  = 73.5,
-		PropLength = 57.75,
+		MaxLength  = 90,
+		PropLength = 90,
+		Efficiency = 0.65,
 	},
 	Preview = {
 		FOV = 65,

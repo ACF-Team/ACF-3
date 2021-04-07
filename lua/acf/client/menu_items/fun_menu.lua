@@ -23,6 +23,7 @@ do -- Piledrivers menu
 		ACF.SetClientData("PrimaryClass", "acf_piledriver")
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")
+		ACF.SetClientData("PropEfficiency", 1)
 		ACF.SetClientData("AmmoType", "HP")
 		ACF.SetClientData("Propellant", 0)
 		ACF.SetClientData("Tracer", false)

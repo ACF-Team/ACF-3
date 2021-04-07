@@ -24,7 +24,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local SabotMass = (Cylinder - Hole) * 0.0027 -- Aluminum sabot
 
 	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 -- Volume of the projectile as a cylinder * density of steel
-	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass)
+	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.000125 / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 

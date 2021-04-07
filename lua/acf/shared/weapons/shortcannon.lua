@@ -8,8 +8,9 @@ ACF.RegisterWeaponClass("SC", {
 	Spread      = 0.16,
 	Mass        = 1195,
 	Round = {
-		MaxLength  = 60,
-		PropLength = 45,
+		MaxLength  = 80,
+		PropLength = 65,
+		Efficiency = 0.8,
 	},
 	Preview = {
 		Height = 70,

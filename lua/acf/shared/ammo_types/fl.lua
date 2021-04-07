@@ -58,7 +58,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
 	Data.ProjMass		   = Flechettes * Data.FlechetteMass -- total mass of all flechettes
 	Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)

@@ -33,10 +33,11 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	local Radius    = Caliber * 0.05 -- Radius in cm
 	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
 
-	Data.Caliber  = Caliber * 0.1 -- Bullet caliber will have to stay in cm
-	Data.Diameter = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
-	Data.ProjArea = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
-	Data.PropArea = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
+	Data.Caliber    = Caliber * 0.1 -- Bullet caliber will have to stay in cm
+	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
+	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
+	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
+	Data.Efficiency = ToolData.PropEfficiency or 1
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
@@ -91,8 +92,8 @@ function ACF.Penetration(Speed, Mass, Caliber)
 	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * 25.4 -- 25.4 because converting from in to mm
 end
 
-function ACF.MuzzleVelocity(PropMass, ProjMass)
-	local Energy = PropMass * ACF.PropImpetus * 1000 -- In joules
+function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
+	local Energy = PropMass * ACF.PropImpetus * (Efficiency or 1) * 1000 -- In joules
 
 	return (2 * Energy / ProjMass) ^ 0.5
 end

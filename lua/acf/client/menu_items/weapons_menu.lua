@@ -29,6 +29,7 @@ local function UpdateControl(Base)
 		Base.Slider:SetMinMax(Bounds.Min, Bounds.Max)
 
 		ACF.SetClientData("Weapon", Class.ID)
+		ACF.SetClientData("PropEfficiency", Class.Round.Efficiency or 1)
 		ACF.SetClientData("Caliber", Caliber, true)
 
 		UpdatePreview(Base, Class)
@@ -80,6 +81,7 @@ CreateControl = function(Base)
 			Current.Caliber = Data.Caliber
 
 			ACF.SetClientData("Weapon", Data.ID)
+			ACF.SetClientData("PropEfficiency", Data.Round.Efficiency or 1)
 			ACF.SetClientData("Caliber", Data.Caliber)
 
 			Title:SetText(Data.Name)

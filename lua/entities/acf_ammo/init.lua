@@ -396,22 +396,23 @@ do -- ACF Activation and Damage -----------------
 		if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
 			Entity:Detonate()
 		elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
-			local VolumeRoll = math.Rand(0, 150) > Entity.BulletData.RoundVolume ^ 0.5
-			local AmmoRoll = math.Rand(0, 1) < Entity.Ammo / math.max(Entity.Capacity, 1)
+			local BulletData = Entity.BulletData
+			local VolumeRoll = math.Rand(0, 150) > BulletData.RoundVolume ^ 0.5
+			local AmmoRoll   = math.Rand(0, 1) < Entity.Ammo / math.max(Entity.Capacity, 1)
 
 			if VolumeRoll and AmmoRoll then
-				local Speed = ACF.MuzzleVelocity(Entity.BulletData.PropMass, Entity.BulletData.ProjMass / 2)
-				local Pitch = math.max(255 - Entity.BulletData.PropMass * 100,60)
+				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency)
+				local Pitch = math.max(255 - BulletData.PropMass * 100,60)
 
 				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
 
-				Entity.BulletData.Pos = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
-				Entity.BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
-				Entity.BulletData.Owner = Entity.Inflictor or Entity.Owner
-				Entity.BulletData.Gun = Entity
-				Entity.BulletData.Crate = Entity:EntIndex()
+				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
+				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
+				BulletData.Owner  = Entity.Inflictor or Entity.Owner
+				BulletData.Gun    = Entity
+				BulletData.Crate  = Entity:EntIndex()
 
-				Entity.RoundData:Create(Entity, Entity.BulletData)
+				Entity.RoundData:Create(Entity, BulletData)
 
 				Entity:Consume()
 			end

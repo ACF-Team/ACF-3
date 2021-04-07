@@ -24,7 +24,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
 	local ConeVol     = ConeArea * Data.Caliber * 0.02
 	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
-	local MuzzleVel   = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local MuzzleVel   = ACF.MuzzleVelocity(Data.PropMass, ProjMass, Data.Efficiency)
 	local Energy      = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
 	local MaxVol      = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
@@ -35,7 +35,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.ConeAng      = LinerAngle
 	Data.FillerMass   = GUIData.FillerVol * ACF.HEDensity
 	Data.ProjMass     = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
-	Data.MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass) * 1.25
+	Data.MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency) * 1.25
 	Data.SlugMass     = ConeVol * 0.0079
 	Data.SlugCaliber  = SlugCaliber
 	Data.SlugDragCoef = SlugArea * 0.0001 / Data.SlugMass

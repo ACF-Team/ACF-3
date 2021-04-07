@@ -36,7 +36,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	--Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
 	local ProjMass  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity
-	local MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, ProjMass)
+	local MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, ProjMass, Data.Efficiency)
 	local Energy    = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
 	local MaxVol    = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
@@ -45,7 +45,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
 	Data.ProjMass   = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
-	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
