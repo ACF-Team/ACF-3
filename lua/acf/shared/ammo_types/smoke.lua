@@ -9,7 +9,7 @@ function Ammo:OnLoaded()
 		GL = true,
 		MG = true,
 		SA = true,
-		HMG = true,
+		LAC = true,
 		RAC = true,
 	}
 end

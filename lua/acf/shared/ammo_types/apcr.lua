@@ -11,7 +11,7 @@ function Ammo:OnLoaded()
 		AC = true,
 		SA = true,
 		SC = true,
-		HMG = true,
+		LAC = true,
 		RAC = true,
 	})
 end
