@@ -12,7 +12,7 @@ local function GetWeaponSpecs(ToolData)
 		local Weapon = Class.Lookup[ToolData.Weapon]
 		local Round  = Weapon.Round
 
-		return Weapon.Caliber, Round.MaxLength, Round.PropLength
+		return Weapon.Caliber, Round.MaxLength, Round.PropLength, Round.ProjLength
 	end
 
 	local Bounds  = Class.Caliber
@@ -24,12 +24,13 @@ local function GetWeaponSpecs(ToolData)
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Caliber, MaxLength, PropLength = GetWeaponSpecs(ToolData)
+	local Caliber, MaxLength, PropLength, ProjLength = GetWeaponSpecs(ToolData)
 	local GUIData = {}
 
 	if not Caliber then return Data, GUIData end
 
 	local Length    = math.Round(MaxLength * (Data.LengthAdj or 1), 2)
+	ProjLength = ProjLength or Length
 	local Radius    = Caliber * 0.05 -- Radius in cm
 	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
 
@@ -43,7 +44,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MinPropLength  = 0.01
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
 	GUIData.MaxPropLength  = math.min(PropLength, Length - GUIData.MinProjLength)
-	GUIData.MaxProjLength  = Length - GUIData.MinPropLength
+	GUIData.MaxProjLength  = math.min(ProjLength, Length - GUIData.MinPropLength)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
@@ -165,7 +166,7 @@ function ACF.GetWeaponBlacklist(Whitelist)
 end
 
 function ACF.RoundShellCapacity(Momentum, ProjArea, Caliber, ProjLength)
-	local MinWall = 0.2 + ((Momentum / ProjArea) ^ 0.7) * 0.02 --The minimal shell wall thickness required to survive firing at the current energy level	
+	local MinWall = 0.2 + ((Momentum / ProjArea) ^ 0.7) * 0.02 --The minimal shell wall thickness required to survive firing at the current energy level
 	local Length = math.max(ProjLength - MinWall, 0)
 	local Radius = math.max((Caliber * 0.5) - MinWall, 0)
 	local Volume = math.pi * Radius ^ 2 * Length
