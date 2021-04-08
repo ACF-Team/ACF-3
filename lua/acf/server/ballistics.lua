@@ -340,7 +340,7 @@ do -- Terminal ballistics --------------------------
 	function ACF_RoundImpact(Bullet, Trace)
 		local Speed    = Bullet.Speed
 		local Energy   = Bullet.Energy
-		local HitRes   = ACF_Damage(Bullet, Trace)
+		local HitRes   = ACF.Damage(Bullet, Trace)
 		local Ricochet = 0
 
 		if HitRes.Loss == 1 then

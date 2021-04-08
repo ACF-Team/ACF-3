@@ -71,8 +71,6 @@ do -- ACF global vars
 	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity          = 0.00165 -- Density of TNT in kg/cm3
 	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
-	ACF.HEBlastPen         = 0.4 --Blast penetration exponent based of HE power
-	ACF.HEFeatherExp       = 0.5 --exponent applied to HE dist/maxdist feathering, <1 will increasingly bias toward max damage until sharp falloff at outer edge of range
 	ACF.HEATMVScale        = 0.75 --Filler KE to HEAT slug KE conversion expotential
 	ACF.HEATMulAmmo        = 30 --HEAT slug damage multiplier; 13.2x roughly equal to AP damage
 	ACF.HEATMulFuel        = 4 --needs less multiplier, much less health than ammo
