@@ -39,7 +39,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local Energy    = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
 	local MaxVol    = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
 
-	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol)
+	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol) * GUIData.FillerRatio
 	GUIData.FillerVol    = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
 
 	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
