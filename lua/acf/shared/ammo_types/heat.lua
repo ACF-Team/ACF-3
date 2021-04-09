@@ -79,7 +79,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 
 	local LinerRad    = math.rad(LinerAngle * 0.5)
-	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) / 2
+	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
 	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
 	local ConeVol     = ConeArea * Data.Caliber * 0.02
 	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
