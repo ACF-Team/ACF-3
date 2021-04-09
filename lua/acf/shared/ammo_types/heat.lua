@@ -43,8 +43,6 @@ function Ammo:GetPenetration(Bullet, Speed, Detonated)
 		Caliber = Bullet.SlugCaliber
 	end
 
-	print("Pen: " .. ACF.Penetration(Speed, Mass, Caliber * 10))
-
 	return ACF.Penetration(Speed, Mass, Caliber * 10)
 end
 
