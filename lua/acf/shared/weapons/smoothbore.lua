@@ -45,6 +45,7 @@ ACF.AddHitboxes("models/tankgun_old/tankgun_100mm.mdl", {
 	},
 	Barrel = {
 		Pos   = Vector(50),
-		Scale = Vector(165, 7.5, 7.5)
+		Scale = Vector(165, 5, 9.75),
+		Cylinder = true
 	}
 })

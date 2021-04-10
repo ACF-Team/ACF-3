@@ -54,11 +54,12 @@ ACF.SetCustomAttachment("models/tankgun/tankgun_100mm.mdl", "muzzle", Vector(150
 ACF.AddHitboxes("models/tankgun/tankgun_100mm.mdl", {
 	Breech = {
 		Pos       = Vector(-14.25),
-		Scale     = Vector(28.5, 12.5, 12.5),
+		Scale     = Vector(28.5, 11, 11),
 		Sensitive = true
 	},
 	Barrel = {
 		Pos   = Vector(75),
-		Scale = Vector(150, 5, 5)
+		Scale = Vector(150, 5, 7),
+		Cylinder = true
 	}
 })

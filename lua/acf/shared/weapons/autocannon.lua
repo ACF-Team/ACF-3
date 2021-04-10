@@ -53,13 +53,19 @@ ACF.RegisterWeapon("50mmAC", "AC", {
 ACF.SetCustomAttachment("models/autocannon/autocannon_50mm.mdl", "muzzle", Vector(120), Angle(0, 0, 180))
 
 ACF.AddHitboxes("models/autocannon/autocannon_50mm.mdl", {
-	Breech = {
+	Frame = {
 		Pos       = Vector(-3, 0, -1.6),
-		Scale     = Vector(52, 15, 19),
+		Scale     = Vector(52, 10, 17),
 		Sensitive = true,
-	},
+	},--[[
+	Cylinder = {
+		Pos       = Vector(4.5, 0, -4),
+		Scale     = Vector(23, 14.5, 15),
+		Sensitive = true,
+	},]]--
 	Barrel = {
-		Pos   = Vector(65),
-		Scale = Vector(83, 5, 5),
+		Pos   = Vector(64.5),
+		Scale = Vector(83, 3, 4),
+		Cylinder = true
 	}
 })

@@ -52,6 +52,7 @@ ACF.AddHitboxes("models/howitzer/howitzer_105mm.mdl", {
 	},
 	Barrel = {
 		Pos   = Vector(58.5, 0, -0.7),
-		Scale = Vector(86, 6, 6)
+		Scale = Vector(86, 6, 6.5),
+		Cylinder = true
 	}
 })

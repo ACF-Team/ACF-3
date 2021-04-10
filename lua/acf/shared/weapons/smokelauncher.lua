@@ -44,6 +44,7 @@ ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle
 ACF.AddHitboxes("models/launcher/40mmsl.mdl", {
 	Base = {
 		Pos   = Vector(0.7, 0, -0.1),
-		Scale = Vector(8, 3, 2)
+		Scale = Vector(8.5, 2.5, 2.5),
+		Cylinder = true
 	}
 })

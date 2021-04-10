@@ -259,6 +259,7 @@ do -- Hitbox storing and retrieval functions
 			Scale     = Vector(Data.Scale),
 			Angle     = Angle(Data.Angle),
 			Sensitive = tobool(Data.Sensitive),
+			Cylinder  = tobool(Data.Cylinder)
 		}
 	end
 
@@ -277,6 +278,7 @@ do -- Hitbox storing and retrieval functions
 			Scale     = Vector(Hitbox.Scale) * Scale,
 			Angle     = Angle(Hitbox.Angle),
 			Sensitive = tobool(Hitbox.Sensitive),
+			Cylinder  = tobool(Hitbox.Cylinder)
 		}
 	end
 

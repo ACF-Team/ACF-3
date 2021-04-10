@@ -58,8 +58,14 @@ ACF.RegisterWeapon("20mmMG", "MG", {
 ACF.SetCustomAttachment("models/machinegun/machinegun_20mm.mdl", "muzzle", Vector(53.05, 0, -0.11), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/machinegun/machinegun_20mm.mdl", {
-	Base = {
-		Pos   = Vector(20.1, 0.2, -1.5),
-		Scale = Vector(68, 2, 6),
+	Frame = {
+		Pos   = Vector(-5, 0.2, -1.5),
+		Scale = Vector(18, 2, 6),
+		Sensitive = true,
+	},
+	Barrel = {
+		Pos = Vector(28, 0, 0),
+		Scale = Vector(49, 1.15, 1.15),
+		Cylinder = true
 	}
 })

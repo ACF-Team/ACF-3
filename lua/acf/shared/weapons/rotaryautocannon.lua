@@ -55,12 +55,14 @@ ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(5
 
 ACF.AddHitboxes("models/rotarycannon/kw/20mmrac.mdl", {
 	Breech = {
-		Pos       = Vector(1.7, 0, 0.1),
-		Scale     = Vector(16, 9, 8),
-		Sensitive = true
+		Pos       = Vector(1, 0, 0.1),
+		Scale     = Vector(17, 7, 7),
+		Sensitive = true,
+		Cylinder = true
 	},
-	Barrel = {
-		Pos   = Vector(35),
-		Scale = Vector(50, 4, 4)
+	Barrels = {
+		Pos   = Vector(34.5),
+		Scale = Vector(50, 5, 5.5),
+		Cylinder = true
 	}
 })

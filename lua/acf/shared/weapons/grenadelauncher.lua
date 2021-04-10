@@ -44,12 +44,13 @@ ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angl
 
 ACF.AddHitboxes("models/launcher/40mmgl.mdl", {
 	Breech = {
-		Pos       = Vector(0, 0, -1.25),
+		Pos       = Vector(-0.25, 0, -1.25),
 		Scale     = Vector(20, 5, 6),
 		Sensitive = true
 	},
 	Barrel = {
-		Pos   = Vector(14, 0, 0.1),
-		Scale = Vector(12, 2, 2)
+		Pos   = Vector(14, 0, -0.1),
+		Scale = Vector(11, 2, 2),
+		Cylinder = true
 	}
 })

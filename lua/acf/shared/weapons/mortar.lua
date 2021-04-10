@@ -46,8 +46,15 @@ ACF.RegisterWeapon("200mmM", "MO", {
 ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/mortar/mortar_120mm.mdl", {
-	Base = {
-		Pos   = Vector(-15.4, 0.3),
-		Scale = Vector(69, 10, 9)
+	Breech = {
+		Pos   = Vector(-42.5),
+		Scale = Vector(14.25, 7.7, 7.7),
+		Cylinder = true,
+		Sensitive = true
+	},
+	Barrel = {
+		Pos   = Vector(-8),
+		Scale = Vector(54, 7.7, 7.7),
+		Cylinder = true
 	}
 })

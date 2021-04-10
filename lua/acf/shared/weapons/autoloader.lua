@@ -57,16 +57,19 @@ ACF.AddHitboxes("models/tankgun/tankgun_al_100mm.mdl", {
 	},
 	Barrel = {
 		Pos   = Vector(76.67),
-		Scale = Vector(140, 9, 9)
+		Scale = Vector(140, 5, 9),
+		Cylinder = true
 	},
 	LeftDrum = {
-		Pos   = Vector(-57.33, 16, 3),
-		Scale = Vector(40, 16, 16)
+		Pos   = Vector(-57, 16, 3),
+		Scale = Vector(40, 16, 16),
+		Cylinder = true
 		-- Critical = true
 	},
 	RightDrum = {
-		Pos   = Vector(-57.33, -16, 3),
-		Scale = Vector(40, 16, 16)
+		Pos   = Vector(-57, -16, 3),
+		Scale = Vector(40, 16, 16),
+		Cylinder = true
 		-- Critical = true
 	}
 })
