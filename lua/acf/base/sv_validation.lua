@@ -6,6 +6,66 @@ local StringFind  = string.find
 local TimerSimple = timer.Simple
 local Baddies	  = ACF.GlobalFilter
 
+-- TODO: Add Ray-Cylinder intersection test
+local function RayIntersectHitBoxes(Ent, Start, Ray)
+	for _, V in pairs(Ent.HitBoxes) do
+		local Hit, _, Frac = util.IntersectRayWithOBB(Start, Ray, Ent:LocalToWorld(V.Pos), Ent:LocalToWorldAngles(V.Angle), V.Scale * -0.5, V.Scale * 0.5)
+
+		if Hit then
+			debugoverlay.BoxAngles(Ent:LocalToWorld(V.Pos), V.Scale * -0.5, V.Scale * 0.5, Ent:LocalToWorldAngles(V.Angle), 5, Color(255, 50, 50, 75))
+			return true
+		end
+	end
+end
+
+local function CheckHitBoxes(Entity)
+	local Keys = table.GetKeys(Entity.HitBoxes)
+
+	-- Pick a random hitbox
+	local Key  = Keys[math.random(1, #Keys)]
+	local Box  = Entity.HitBoxes[Key]
+
+	-- Check any entities along a random ray from one end to the other of the selected box/cylinder
+	local Scale    = Box.Scale
+	local Pos, Ang = LocalToWorld(Box.Pos, Box.Angle, Entity:GetPos(), Entity:GetAngles())
+	local Start, End
+
+	if Box.Cylinder then
+		Start = Vector(1, 0, 1)
+			Start:Rotate(Angle(0, 0, math.Rand(0, 360)))
+			Start = Start * Vector(Scale.x, Scale.y, Scale.y) * 0.5
+			Start = LocalToWorld(Start, Angle(), Pos, Ang)
+
+		End = Vector(-1, 0, 1)
+			End:Rotate(Angle(0, 0, math.Rand(0, 360)))
+			End = End * Vector(Scale.x, Scale.z, Scale.z) * 0.5
+			End = LocalToWorld(End, Angle(), Pos, Ang)
+	else
+		Start = Vector(-Scale.x, Scale.y * math.Rand(-1, 1), Scale.z * math.Rand(-1, 1)) * Vector(0.5, 0.5, 0.5)
+		Start = LocalToWorld(Start, Angle(), Pos, Ang)
+
+		End = Vector(Scale.x, Scale.y * math.Rand(-1, 1), Scale.z * math.Rand(-1, 1)) * Vector(0.5, 0.5, 0.5)
+		End = LocalToWorld(End, Angle(), Pos, Ang)
+	end
+
+	local Ents = ents.FindAlongRay(Start, End)
+
+	debugoverlay.Line(Start, End, 1, Color(0, 255, 0), true)
+
+	-- Check if any of the found entities are ACF ents
+	if next(Ents) then
+		local Owner = Entity:CPPIGetOwner()
+
+		for _, V in ipairs(Ents) do
+			if V == Entity then continue end
+
+			if V.IsACFEntity and V:CPPIGetOwner() == Owner and RayIntersectHitBoxes(V, Start, End - Start) then
+				return true, V
+			end
+		end
+	end
+end
+
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
 	ENT.ACF.PhysObj defined when spawned
@@ -32,12 +92,20 @@ local function IsLegal(Entity)
 			Entity.ACF.PhysObj = Phys -- Updated PhysObj
 		else
 			Entity:Remove() -- Remove spherical trash
-			return false, "Invalid physics", "" -- This shouldn't even run
+			return false, "Invalid physics", ""
 		end
 	end
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 	if Entity.IsWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
+	if Entity.HitBoxes then
+		local Hit, Ent = CheckHitBoxes(Entity)
+
+		if Hit then
+			-- TODO: Disable the other entity too
+			return false, "Clipping", "Intersecting another ACF entity."
+		end
+	end
 
 	return true
 end

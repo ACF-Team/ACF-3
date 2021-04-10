@@ -79,7 +79,7 @@ function ENT:OnResized(Size)
 	self.HitBoxes = {
 		Main = {
 			Pos = self:OBBCenter(),
-			Scale = Size,
+			Scale = Size - Vector(0.5, 0.5, 0.5),
 			Angle = Angle(),
 			Sensitive = false
 		}

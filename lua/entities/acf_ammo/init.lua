@@ -651,7 +651,8 @@ do -- Misc --------------------------------------
 		self.HitBoxes = {
 			Main = {
 				Pos = self:OBBCenter(),
-				Scale = Size,
+				Angle = Angle(),
+				Scale = Size - Vector(0.5, 0.5, 0.5),
 			}
 		}
 	end
