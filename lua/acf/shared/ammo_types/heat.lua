@@ -24,21 +24,9 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	return ConeLength, ConeArea, ConeVol
 end
 
--- calculates conversion of filler from powering HEAT jet to raw HE based on crush vel
--- above a threshold vel, HEAT jet doesn't have time to form properly, converting to raw HE proportionally
--- Vel needs to be in m/s (gmu*0.0254)
-function Ammo:CrushCalc(Vel, FillerMass)
-	local Crushed = math.Clamp((Vel - ACF.HEATMinCrush) / (ACF.HEATMaxCrush - ACF.HEATMinCrush), 0, 1)
-	local HE_Filler = Lerp(Crushed, FillerMass * ACF.HEATBoomConvert, FillerMass)
-	local HEAT_Filler = Lerp(Crushed, FillerMass, 0)
-
-	return Crushed, HEAT_Filler, HE_Filler
-end
-
--- coneang now required for slug recalculation at detonation, defaults to 55 if not present
-function Ammo:CalcSlugMV(Data, HEATFillerMass)
+function Ammo:CalcSlugMV(Data)
 	--keep fillermass/2 so that penetrator stays the same.
-	return (HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + Data.ConeAng) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
+	return (Data.HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + Data.ConeAng) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
 end
 
 function Ammo:GetPenetration(Bullet, Speed, Detonated)
@@ -50,10 +38,8 @@ function Ammo:GetPenetration(Bullet, Speed, Detonated)
 	local Mass    = Bullet.ProjMass
 
 	if Detonated or Bullet.Detonated then
-		local Crushed, HEATFiller = self:CrushCalc(Speed, Bullet.FillerMass)
-
-		Speed   = self:CalcSlugMV(Bullet, HEATFiller) * (Bullet.SlugPenMul or 1)
-		Mass    = Bullet.SlugMass * (1 - Crushed)
+		Speed   = Bullet.SlugMV
+		Mass    = Bullet.SlugMass
 		Caliber = Bullet.SlugCaliber
 	end
 
@@ -61,23 +47,19 @@ function Ammo:GetPenetration(Bullet, Speed, Detonated)
 end
 
 function Ammo:GetDisplayData(Data)
-	local Crushed, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
-	local SlugMV	= self:CalcSlugMV(Data, HEATFiller) * (Data.SlugPenMul or 1)
-	local MassUsed	= Data.SlugMass * (1 - Crushed)
-	local FragMass	= Data.CasingMass + Data.SlugMass * Crushed
-	local Fragments	= math.max(math.floor((BoomFiller / FragMass) * ACF.HEFrag), 2)
-	local Display   = {
-		Crushed        = Crushed,
-		HEATFillerMass = HEATFiller,
-		BoomFillerMass = BoomFiller,
+	local SlugMV     = self:CalcSlugMV(Data) * (Data.SlugPenMul or 1)
+	local Fragments  = math.max(math.floor((Data.HEATFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
+	local Display    = {
+		HEATFillerMass = Data.HEATFillerMass,
+		BoomFillerMass = Data.BoomFillerMass,
 		SlugMV         = SlugMV,
-		SlugMassUsed   = MassUsed,
+		SlugMassUsed   = Data.SlugMass,
 		MaxPen         = self:GetPenetration(Data, Data.MuzzleVel, true),
-		TotalFragMass  = FragMass,
-		BlastRadius    = BoomFiller ^ 0.33 * 8,
+		TotalFragMass  = Data.CasingMass,
+		BlastRadius    = Data.HEATFillerMass ^ 0.33 * 8,
 		Fragments      = Fragments,
-		FragMass       = FragMass / Fragments,
-		FragVel        = (BoomFiller * ACF.HEPower * 1000 / FragMass) ^ 0.5,
+		FragMass       = Data.CasingMass / Fragments,
+		FragVel        = (Data.HEATFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
 	}
 
 	hook.Run("ACF_GetDisplayData", self, Data, Display)
@@ -95,10 +77,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 
 	local LinerRad    = math.rad(LinerAngle * 0.5)
-	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) / 2
+	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
 	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
 	local ConeVol     = ConeArea * Data.Caliber * 0.02
-	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler - Volume of the crush cone * density of steel + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
+	local ProjMass    = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity + ConeVol * 0.0079 --Volume of the projectile as a cylinder - Volume of the filler + Volume of the filler * density of TNT + Area of the cone * thickness * density of steel
 	local MuzzleVel   = ACF.MuzzleVelocity(Data.PropMass, ProjMass, Data.Efficiency)
 	local Energy      = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
 	local MaxVol      = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
@@ -107,18 +89,16 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData.MaxFillerVol = math.max(math.Round(MaxVol - AirVol - ConeVol, 2), GUIData.MinFillerVol)
 	GUIData.FillerVol    = math.Clamp(ToolData.FillerMass, GUIData.MinFillerVol, GUIData.MaxFillerVol)
 
-	Data.ConeAng      = LinerAngle
-	Data.FillerMass   = GUIData.FillerVol * ACF.HEDensity
-	Data.ProjMass     = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
-	Data.MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.SlugMass     = ConeVol * 0.0079
-	Data.SlugCaliber  = SlugCaliber
-	Data.SlugDragCoef = SlugArea * 0.0001 / Data.SlugMass
-
-	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
-
-	Data.BoomFillerMass	= BoomFiller
-	Data.SlugMV			= self:CalcSlugMV(Data, HEATFiller)
+	Data.ConeAng        = LinerAngle
+	Data.FillerMass     = GUIData.FillerVol * ACF.HEDensity
+	Data.ProjMass       = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
+	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+	Data.SlugMass       = ConeVol * 0.0079
+	Data.SlugCaliber    = SlugCaliber
+	Data.SlugDragCoef   = SlugArea * 0.0001 / Data.SlugMass
+	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert
+	Data.HEATFillerMass = Data.FillerMass * (1 - ACF.HEATBoomConvert)
+	Data.SlugMV			= self:CalcSlugMV(Data)
 	Data.CasingMass		= Data.ProjMass - Data.FillerMass - ConeVol * 0.0079
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
@@ -186,7 +166,7 @@ if SERVER then
 		Ammo.BaseClass.Network(self, Entity, BulletData)
 
 		Entity:SetNW2String("AmmoType", "HEAT")
-		Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
+		Entity:SetNW2Float("FillerMass", BulletData.BoomFillerMass)
 	end
 
 	function Ammo:GetCrateText(BulletData)
@@ -197,19 +177,15 @@ if SERVER then
 	end
 
 	function Ammo:Detonate(Bullet, HitPos)
-		local Crushed, HEATFillerMass, BoomFillerMass = self:CrushCalc(Bullet.Flight:Length() * 0.0254, Bullet.FillerMass)
+		ACF_HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
 
-		ACF_HE(HitPos, BoomFillerMass, Bullet.CasingMass + Bullet.SlugMass * Crushed, Bullet.Owner, Bullet.Filter, Bullet.Gun)
-
-		if Crushed == 1 then return false end -- no HEAT jet to fire off, it was all converted to HE
-
-		local SlugMV = self:CalcSlugMV(Bullet, HEATFillerMass) * 39.37 * (Bullet.SlugPenMul or 1)
+		local SlugMV = self:CalcSlugMV(Bullet) * 39.37 * (Bullet.SlugPenMul or 1)
 
 		Bullet.Detonated = true
 		Bullet.Flight    = Bullet.Flight:GetNormalized() * SlugMV
 		Bullet.NextPos   = HitPos
 		Bullet.DragCoef  = Bullet.SlugDragCoef
-		Bullet.ProjMass  = Bullet.SlugMass * (1 - Crushed)
+		Bullet.ProjMass  = Bullet.SlugMass
 		Bullet.Caliber   = Bullet.SlugCaliber
 		Bullet.Diameter  = Bullet.Caliber
 		Bullet.Ricochet  = Bullet.SlugRicochet
@@ -314,11 +290,10 @@ else
 
 			util.Effect("ACF_Penetration", Data)
 		else
-			local _, _, BoomFillerMass = self:CrushCalc(Bullet.SimFlight:Length() * 0.0254, Bullet.FillerMass)
 			local Data = EffectData()
 			Data:SetOrigin(Bullet.SimPos)
 			Data:SetNormal(Bullet.SimFlight:GetNormalized())
-			Data:SetRadius(math.max(BoomFillerMass ^ 0.33 * 8 * 39.37, 1))
+			Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
 
 			util.Effect("ACF_HEAT_Explosion", Data)
 
