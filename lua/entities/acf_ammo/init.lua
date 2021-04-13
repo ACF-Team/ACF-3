@@ -289,11 +289,14 @@ do -- Spawning and Updating --------------------
 		Crate:UpdateOverlay(true)
 
 		-- Backwards compatibility with old crates
-		-- TODO: Update constraints on the entity if it gets moved
 		if Data.Offset then
 			local Position = Crate:LocalToWorld(Data.Offset)
 
+			ACF.SaveEntity(Crate)
+
 			Crate:SetPos(Position)
+
+			ACF.RestoreEntity(Crate)
 
 			-- Updating the dupe position
 			if Data.BuildDupeInfo then
