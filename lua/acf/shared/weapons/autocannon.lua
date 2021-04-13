@@ -1,7 +1,7 @@
 ACF.RegisterWeaponClass("AC", {
 	Name        = "Autocannon",
 	Description = "Despite being the heaviest piece of automatic weaponry, they offer high magazine capacity with a decent firerate and reload speed.",
-	Model       = "models/autocannon/autocannon_50mm.mdl", -- TODO: Properly scale model, atm it's ~70mm
+	Model       = "models/autocannon/autocannon_50mm.mdl",
 	Sound       = "acf_base/weapons/ac_fire4.mp3",
 	MuzzleFlash = "auto_muzzleflash_noscale",
 	IsScalable  = true,

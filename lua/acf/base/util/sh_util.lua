@@ -413,7 +413,6 @@ do -- Model convex mesh and volume
 		end
 	end
 
-	-- TODO: Optimize this in a way that doesn't imply creating an entity
 	local function GetMeshVolume(Mesh)
 		local Entity = CreateEntity("models/props_junk/PopCan01a.mdl")
 		Entity:PhysicsInitMultiConvex(Mesh)

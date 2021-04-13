@@ -148,7 +148,7 @@ do -- Spawning and Updating
 end
 
 do -- ACF Activation and Damage
-	function ENT:ACF_Activate(Recalc) -- TODO: Remove this
+	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		local Volume  = PhysObj:GetVolume()
 

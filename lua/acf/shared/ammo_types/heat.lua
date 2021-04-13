@@ -203,7 +203,6 @@ if SERVER then
 
 			Bullet.Speed = Speed
 
-			-- TODO: Figure out why bullets are missing 10% of their penetration
 			if Bullet.Detonated then
 				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
 				local Energy     = ACF.Kinetic(Speed, Bullet.ProjMass)
