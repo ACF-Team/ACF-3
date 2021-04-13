@@ -363,7 +363,7 @@ do -- Deal Damage ---------------------------
 
 		return {
 			Damage   = (Penetration / EffectiveArmor) ^ 2 * Bullet.ProjArea,
-			Overkill = 0,
+			Overkill = math.max(Penetration - EffectiveArmor, 0),
 			Loss     = 1
 		}
 	end
