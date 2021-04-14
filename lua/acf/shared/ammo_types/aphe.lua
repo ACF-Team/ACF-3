@@ -109,7 +109,7 @@ if SERVER then
 	end
 
 	function Ammo:OnFlightEnd(Bullet, Trace)
-		ACF_HE(Trace.HitPos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
+		ACF_HE(Bullet.Pos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 
 		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
 	end

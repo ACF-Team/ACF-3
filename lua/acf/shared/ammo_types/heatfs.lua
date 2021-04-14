@@ -32,18 +32,16 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData.MaxFillerVol = math.max(math.Round(MaxVol - AirVol - ConeVol, 2), GUIData.MinFillerVol)
 	GUIData.FillerVol    = math.Clamp(ToolData.FillerMass, GUIData.MinFillerVol, GUIData.MaxFillerVol)
 
-	Data.ConeAng      = LinerAngle
-	Data.FillerMass   = GUIData.FillerVol * ACF.HEDensity
-	Data.ProjMass     = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
-	Data.MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency) * 1.25
-	Data.SlugMass     = ConeVol * 0.0079
-	Data.SlugCaliber  = SlugCaliber
-	Data.SlugDragCoef = SlugArea * 0.0001 / Data.SlugMass
-
-	local _, HEATFiller, BoomFiller = self:CrushCalc(Data.MuzzleVel, Data.FillerMass)
-
-	Data.BoomFillerMass	= BoomFiller
-	Data.SlugMV			= self:CalcSlugMV(Data, HEATFiller)
+	Data.ConeAng        = LinerAngle
+	Data.FillerMass     = GUIData.FillerVol * ACF.HEDensity
+	Data.ProjMass       = math.max(GUIData.ProjVolume - GUIData.FillerVol - AirVol - ConeVol, 0) * 0.0079 + Data.FillerMass + ConeVol * 0.0079
+	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency) * 1.25
+	Data.SlugMass       = ConeVol * 0.0079
+	Data.SlugCaliber    = SlugCaliber
+	Data.SlugDragCoef   = SlugArea * 0.0001 / Data.SlugMass
+	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert
+	Data.HEATFillerMass = Data.FillerMass * (1 - ACF.HEATBoomConvert)
+	Data.SlugMV			= self:CalcSlugMV(Data)
 	Data.CasingMass		= Data.ProjMass - Data.FillerMass - ConeVol * 0.0079
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass

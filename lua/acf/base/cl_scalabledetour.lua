@@ -13,7 +13,6 @@ hook.Add("Initialize", "Scalable Entities", function()
 
 				Pos = Ent:GetPos() + Offset * Scaler
 
-				-- TODO: Consider every face of the box will have a different scale
 				local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
 
 				W = W * Max

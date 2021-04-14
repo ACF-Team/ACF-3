@@ -61,7 +61,7 @@ do -- ACF global vars
 	-- Ammo
 	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding        = 10 -- Millimeters of wasted space between rounds
-	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
+	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
 	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
@@ -77,8 +77,6 @@ do -- ACF global vars
 	ACF.HEATMulEngine      = 10 --likewise
 	ACF.HEATPenLayerMul    = 0.75 --HEAT base energy multiplier
 	ACF.HEATBoomConvert    = 1 / 3 -- percentage of filler that creates HE damage at detonation
-	ACF.HEATMinCrush       = 800 -- vel where crush starts, progressively converting round to raw HE
-	ACF.HEATMaxCrush       = 1200 -- vel where fully crushed
 
 	-- Debris
 	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props

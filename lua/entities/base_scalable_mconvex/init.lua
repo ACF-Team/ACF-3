@@ -5,7 +5,6 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
--- TODO: Add support for creation via vertices table instead of model
 function CreateScalableMultiConvex(Player, Pos, Angle, Size)
 	local Ent = ents.Create("base_scalable_mconvex")
 
