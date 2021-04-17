@@ -93,7 +93,7 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
-	ACF.AddEntityArguments("acf_ammo", "SmokeFiller", "WPFiller") -- Adding extra info to ammo crates
+	ACF.AddEntityArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
