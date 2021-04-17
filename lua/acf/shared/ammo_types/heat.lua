@@ -56,7 +56,7 @@ function Ammo:GetDisplayData(Data)
 		SlugMassUsed   = Data.SlugMass,
 		MaxPen         = self:GetPenetration(Data, Data.MuzzleVel, true),
 		TotalFragMass  = Data.CasingMass,
-		BlastRadius    = Data.HEATFillerMass ^ 0.33 * 8,
+		BlastRadius    = Data.BoomFillerMass ^ 0.33 * 8,
 		Fragments      = Fragments,
 		FragMass       = Data.CasingMass / Fragments,
 		FragVel        = (Data.HEATFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
@@ -95,8 +95,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.SlugCaliber    = SlugCaliber
 	Data.SlugDragCoef   = SlugArea * 0.0001 / Data.SlugMass
 	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert
-	Data.HEATFillerMass = Data.FillerMass * (1 - ACF.HEATBoomConvert)
-	Data.SlugMV			= self:CalcSlugMV(Data)
+	Data.HEATFillerMass = Data.FillerMass
+	Data.SlugMV			= self:CalcSlugMV(Data) * (Data.SlugPenMul or 1)
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 

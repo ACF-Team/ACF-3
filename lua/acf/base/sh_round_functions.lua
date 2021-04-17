@@ -12,7 +12,7 @@ local function GetWeaponSpecs(ToolData)
 		local Weapon = Class.Lookup[ToolData.Weapon]
 		local Round  = Weapon.Round
 
-		return Weapon.Caliber, Round.MaxLength, Round.PropLength, Round.ProjLength
+		return Weapon.Caliber, Round.MaxLength, Round.PropLength, Round.ProjLength, Round.FillerRatio
 	end
 
 	local Bounds  = Class.Caliber
@@ -24,7 +24,7 @@ local function GetWeaponSpecs(ToolData)
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Caliber, MaxLength, PropLength, ProjLength = GetWeaponSpecs(ToolData)
+	local Caliber, MaxLength, PropLength, ProjLength, FillerRatio = GetWeaponSpecs(ToolData)
 	local GUIData = {}
 
 	if not Caliber then return Data, GUIData end
@@ -45,6 +45,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
 	GUIData.MaxPropLength  = math.min(PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(ProjLength, Length - GUIData.MinPropLength)
+	GUIData.FillerRatio    = FillerRatio or 1
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
