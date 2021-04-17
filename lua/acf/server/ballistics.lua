@@ -299,7 +299,8 @@ function ACF.DoBulletsFlight(Bullet)
 			local Lerp = DeltaFuze / DeltaTime
 
 			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
-				Bullet.Pos = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
+				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
+				Bullet.DetByFuze = true
 
 				if Bullet.OnEndFlight then
 					Bullet.OnEndFlight(Bullet, FlightRes)

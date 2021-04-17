@@ -109,6 +109,12 @@ if SERVER then
 	end
 
 	function Ammo:OnFlightEnd(Bullet, Trace)
+		if not Bullet.DetByFuze then
+			local Offset = Bullet.ProjLength * 0.39 * 0.5 -- Pulling the explosion back by half of the projectiles length
+
+			Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
+		end
+
 		ACF_HE(Bullet.Pos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 
 		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
