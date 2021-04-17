@@ -165,8 +165,9 @@ function ACF.GetWeaponBlacklist(Whitelist)
 	return Result
 end
 
-function ACF.RoundShellCapacity(Momentum, ProjArea, Caliber, ProjLength)
-	local MinWall = 0.2 + ((Momentum / ProjArea) ^ 0.7) * 0.02 --The minimal shell wall thickness required to survive firing at the current energy level
+function ACF.RoundShellCapacity(PropMass, ProjArea, Caliber, ProjLength)
+	local PropEnergy = ACF.PropImpetus * PropMass
+	local MinWall = 0.2 + ((PropEnergy / ProjArea) ^ 0.7) * 0.035 --The minimal shell wall thickness required to survive firing at the current energy level
 	local Length = math.max(ProjLength - MinWall, 0)
 	local Radius = math.max((Caliber * 0.5) - MinWall, 0)
 	local Volume = math.pi * Radius ^ 2 * Length

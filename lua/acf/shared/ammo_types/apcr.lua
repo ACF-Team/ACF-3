@@ -21,7 +21,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 --Volume of the projectile as a cylinder * density of steel (kg/in3)
+	Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel (kg/in3)
 	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass

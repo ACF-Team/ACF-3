@@ -12,7 +12,7 @@ function Ammo:GetDisplayData()
 end
 
 function Ammo:BaseConvert(ToolData)
-	local ProjMass = 5.5 * 0.079
+	local ProjMass = 5.5 * ACF.SteelDensity
 	local PropMass = 0.001
 
 	return {

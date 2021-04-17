@@ -26,18 +26,13 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local ProjMass     = math.max(GUIData.ProjVolume * 0.5, 0) * 0.0079 --(Volume of the projectile as a cylinder - Volume of the cavity) * density of steel 
-	local MuzzleVel    = ACF.MuzzleVelocity(Data.PropMass, ProjMass, Data.Efficiency)
-	local Energy       = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
-	local MaxVol       = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxCavity    = math.min(GUIData.ProjVolume, MaxVol)
-	local HollowCavity = math.Clamp(ToolData.HollowCavity, GUIData.MinCavVol, MaxCavity)
+	local FreeVol      = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local MaxCavity    = math.min(GUIData.ProjVolume, FreeVol)
+	local HollowCavity = FreeVol * ToolData.HollowCavity
 	local ExpRatio     = HollowCavity / GUIData.ProjVolume
 
-	GUIData.MaxCavVol = MaxCavity
-
 	Data.CavVol     = HollowCavity
-	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - HollowCavity) * 0.0079 --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
+	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - HollowCavity) * ACF.SteelDensity --Volume of the projectile as a cylinder * fraction missing due to hollow point (Data5) * density of steel
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.ShovePower = 0.2 + ExpRatio * 0.5
 	Data.Diameter   = Data.Caliber + ExpRatio * Data.ProjLength
@@ -103,18 +98,14 @@ else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local HollowCavity = Base:AddSlider("Cavity Volume", BulletData.MinCavVol, BulletData.MaxCavVol, 2)
+		local HollowCavity = Base:AddSlider("Cavity Ratio", 0, 1, 2)
 		HollowCavity:SetClientData("HollowCavity", "OnValueChanged")
-		HollowCavity:TrackClientData("Projectile")
 		HollowCavity:DefineSetter(function(Panel, _, Key, Value)
 			if Key == "HollowCavity" then
 				ToolData.HollowCavity = math.Round(Value, 2)
 			end
 
 			self:UpdateRoundData(ToolData, BulletData)
-
-			Panel:SetMax(BulletData.MaxCavVol)
-			Panel:SetValue(BulletData.CavVol)
 
 			return BulletData.CavVol
 		end)
