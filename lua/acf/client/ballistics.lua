@@ -6,7 +6,7 @@ local function BulletFlight(Bullet)
 
 	Bullet.SimPosLast = Bullet.SimPos
 	local Correction = 0.5 * (Bullet.Accel - Drag) * DeltaTime   --Double integrates constant acceleration for better positional accuracy
-	Bullet.SimPos = Bullet.SimPos + ACF.Scale * DeltaTime * (Bullet.SimFlight + PositionCorrection)  --Calculates the next shell position
+	Bullet.SimPos = Bullet.SimPos + ACF.Scale * DeltaTime * (Bullet.SimFlight + Correction)  --Calculates the next shell position
 	Bullet.SimFlight = Bullet.SimFlight + (Bullet.Accel - Drag) * DeltaTime			--Calculates the next shell vector
 
 	if IsValid(Bullet.Effect) then
