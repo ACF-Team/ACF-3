@@ -332,7 +332,7 @@ else
 
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(Panel, _, Key, Value)
+		FillerRatio:DefineSetter(function(_, _, Key, Value)
 			if Key == "FillerRatio" then
 				ToolData.FillerRatio = math.Round(Value, 2)
 			end

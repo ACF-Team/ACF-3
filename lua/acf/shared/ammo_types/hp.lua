@@ -27,7 +27,6 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local FreeVol      = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxCavity    = math.min(GUIData.ProjVolume, FreeVol)
 	local HollowCavity = FreeVol * ToolData.HollowCavity
 	local ExpRatio     = HollowCavity / GUIData.ProjVolume
 
@@ -100,7 +99,7 @@ else
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local HollowCavity = Base:AddSlider("Cavity Ratio", 0, 1, 2)
 		HollowCavity:SetClientData("HollowCavity", "OnValueChanged")
-		HollowCavity:DefineSetter(function(Panel, _, Key, Value)
+		HollowCavity:DefineSetter(function(_, _, Key, Value)
 			if Key == "HollowCavity" then
 				ToolData.HollowCavity = math.Round(Value, 2)
 			end

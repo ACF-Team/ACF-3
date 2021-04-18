@@ -178,7 +178,7 @@ else
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(Panel, _, Key, Value, IsTracked)
+		FillerRatio:DefineSetter(function(_, _, Key, Value)
 			if Key == "FillerRatio" then
 				ToolData.FillerRatio = math.Round(Value, 2)
 			end
@@ -190,7 +190,7 @@ else
 
 		local SmokeWPRatio = Base:AddSlider("Smoke/WP Ratio", 0, 1, 2)
 		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
-		SmokeWPRatio:DefineSetter(function(Panel, _, Key, Value, IsTracked)
+		SmokeWPRatio:DefineSetter(function(_, _, Key, Value)
 			if Key == "SmokeWPRatio" then
 				ToolData.SmokeWPRatio = math.Round(Value, 2)
 			end
