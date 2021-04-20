@@ -359,12 +359,12 @@ do -- Deal Damage ---------------------------
 		local SlopeFactor    = BaseArmor / Caliber
 		local Angle          = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
 		local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
-		local Penetration    = math.min(Bullet:GetPenetration(), EffectiveArmor)
+		local Penetration    = Bullet:GetPenetration() -- How far the bullet could penetrate in theory
 
 		return {
-			Damage   = (Penetration / EffectiveArmor) ^ 2 * Bullet.ProjArea,
-			Overkill = math.max(Penetration - EffectiveArmor, 0),
-			Loss     = 1
+			Damage   = (math.min(Penetration, EffectiveArmor)  / EffectiveArmor) ^ 2 * Bullet.ProjArea,
+			Overkill = Penetration - EffectiveArmor, -- Leftover penetration
+			Loss     = EffectiveArmor / Penetration -- Energy loss ratio 0 to 1
 		}
 	end
 
