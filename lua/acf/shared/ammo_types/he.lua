@@ -33,17 +33,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local ProjMass  = math.max(GUIData.ProjVolume - ToolData.FillerMass, 0) * 0.0079 + math.min(ToolData.FillerMass, GUIData.ProjVolume) * ACF.HEDensity
-	local MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, ProjMass, Data.Efficiency)
-	local Energy    = ACF.Kinetic(MuzzleVel * 39.37, ProjMass)
-	local MaxVol    = ACF.RoundShellCapacity(Energy.Momentum, Data.ProjArea, Data.Caliber, Data.ProjLength)
-
-	GUIData.MaxFillerVol = math.min(GUIData.ProjVolume, MaxVol) * GUIData.FillerRatio
-	GUIData.FillerVol    = math.min(ToolData.FillerMass, GUIData.MaxFillerVol)
-
-	Data.FillerMass = GUIData.FillerVol * ACF.HEDensity
-	Data.ProjMass   = math.max(GUIData.ProjVolume - GUIData.FillerVol, 0) * 0.0079 + Data.FillerMass
+	local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local FillerVol = FreeVol * ToolData.FillerRatio
+	Data.FillerMass = FillerVol * ACF.HEDensity
+	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
@@ -111,7 +104,7 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("FillerMass")
+		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -125,7 +118,7 @@ else
 		end)
 
 		local FillerStats = Base:AddLabel()
-		FillerStats:TrackClientData("FillerMass", "SetText")
+		FillerStats:TrackClientData("FillerRatio", "SetText")
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 

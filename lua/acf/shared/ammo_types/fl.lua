@@ -54,7 +54,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.FlechetteSpread   = math.Clamp(ToolData.Spread, Data.MinSpread, Data.MaxSpread)
 	Data.FlechetteCaliber  = self:GetFlechetteCaliber(Data.Caliber, Flechettes)
 	Data.FlechetteArea	   = math.pi * (Data.FlechetteCaliber * 0.5) ^ 2 -- area of a single flechette
-	Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * 0.0079 -- volume of single flechette * density of steel
+	Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * ACF.SteelDensity -- volume of single flechette * density of steel
 	Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
 	Data.ProjMass		   = Flechettes * Data.FlechetteMass -- total mass of all flechettes
 	Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass

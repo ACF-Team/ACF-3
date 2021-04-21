@@ -78,6 +78,10 @@ do -- ACF global vars
 	ACF.HEATPenLayerMul    = 0.75 --HEAT base energy multiplier
 	ACF.HEATBoomConvert    = 1 / 3 -- percentage of filler that creates HE damage at detonation
 
+	-- Material densities
+	ACF.SteelDensity       = 7.9e-3	-- kg/cm^3
+	ACF.AluminumDensity    = 2.7e-3	-- kg/cm^3
+
 	-- Debris
 	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance = 0.25

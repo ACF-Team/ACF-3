@@ -21,9 +21,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
 	local Hole		= Data.ProjArea * Data.ProjLength * 0.5 -- Volume removed by the hole the dart passes through
-	local SabotMass = (Cylinder - Hole) * 0.0027 -- Aluminum sabot
+	local SabotMass = (Cylinder - Hole) * ACF.AluminumDensity -- Aluminum sabot
 
-	Data.ProjMass  = Data.ProjArea * Data.ProjLength * 0.0079 -- Volume of the projectile as a cylinder * density of steel
+	Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity -- Volume of the projectile as a cylinder * density of steel
 	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.000125 / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
