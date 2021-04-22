@@ -27,7 +27,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local FreeVol      = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local HollowCavity = FreeVol * ToolData.HollowCavity
+	local HollowCavity = FreeVol * math.Clamp(ToolData.HollowRatio, 0, 1)
 	local ExpRatio     = HollowCavity / GUIData.ProjVolume
 
 	Data.CavVol     = HollowCavity
@@ -48,8 +48,6 @@ end
 function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
-	GUIData.MinCavVol = 0
-
 	Data.LimitVel = 400 --Most efficient penetration speed in m/s
 	Data.Ricochet = 90 --Base ricochet angle
 
@@ -61,21 +59,22 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not isnumber(ToolData.HollowCavity) then
-		ToolData.HollowCavity = ACF.CheckNumber(ToolData.RoundData5, 0)
+	if not isnumber(ToolData.HollowRatio) then
+		ToolData.HollowRatio = 0.5
 	end
 end
 
 if SERVER then
-	ACF.AddEntityArguments("acf_ammo", "HollowCavity") -- Adding extra info to ammo crates
+	ACF.AddEntityArguments("acf_ammo", "HollowRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.HollowCavity = nil
+		Entity.HollowRatio = nil
 
 		-- Cleanup the leftovers aswell
-		Entity.RoundData5 = nil
+		Entity.HollowCavity = nil
+		Entity.RoundData5   = nil
 	end
 
 	function Ammo:Network(Entity, BulletData)
@@ -95,12 +94,10 @@ else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local HollowCavity = Base:AddSlider("Cavity Ratio", 0, 1, 2)
-		HollowCavity:SetClientData("HollowCavity", "OnValueChanged")
-		HollowCavity:DefineSetter(function(_, _, Key, Value)
-			if Key == "HollowCavity" then
-				ToolData.HollowCavity = math.Round(Value, 2)
-			end
+		local HollowRatio = Base:AddSlider("Cavity Ratio", 0, 1, 2)
+		HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
+		HollowRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.HollowRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -111,14 +108,14 @@ else
 	function Ammo:AddCrateDataTrackers(Trackers, ...)
 		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
 
-		Trackers.HollowCavity = true
+		Trackers.HollowRatio = true
 	end
 
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("HollowCavity")
+		RoundStats:TrackClientData("HollowRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -133,7 +130,7 @@ else
 		local HollowStats = Base:AddLabel()
 		HollowStats:TrackClientData("Projectile", "SetText")
 		HollowStats:TrackClientData("Propellant")
-		HollowStats:TrackClientData("HollowCavity")
+		HollowStats:TrackClientData("HollowRatio")
 		HollowStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -147,7 +144,7 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("Projectile", "SetText")
 		PenStats:TrackClientData("Propellant")
-		PenStats:TrackClientData("HollowCavity")
+		PenStats:TrackClientData("HollowRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
