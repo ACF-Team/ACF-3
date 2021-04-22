@@ -16,8 +16,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local FreeVol, FreeLength = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxConeAng = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
-	local LinerAngle = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
+	local MaxConeAng  = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
+	local LinerAngle  = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
+	local FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 	local FreeFillerVol = FreeVol - AirVol
 
@@ -29,9 +30,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData.MaxConeAng = MaxConeAng
 
 	Data.ConeAng        = LinerAngle
-	Data.FillerMass     = FreeFillerVol * ToolData.FillerRatio * ACF.HEDensity
+	Data.FillerMass     = FreeFillerVol * FillerRatio * ACF.HEDensity
 	Data.CasingMass		= (GUIData.ProjVolume - FreeVol) * ACF.SteelDensity
-	Data.ProjMass       = (math.max(FreeFillerVol * (1 - ToolData.FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
+	Data.ProjMass       = (math.max(FreeFillerVol * (1 - FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
 	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency) * 1.25
 	Data.SlugMass       = ConeVol * ACF.SteelDensity
 	Data.SlugCaliber    = SlugCaliber

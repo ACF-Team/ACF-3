@@ -61,16 +61,12 @@ function Ammo:BaseConvert(ToolData)
 end
 
 function Ammo:VerifyData(ToolData)
-	if not ToolData.Projectile then
-		local Projectile = ToolData.RoundProjectile
-
-		ToolData.Projectile = Projectile and tonumber(Projectile) or 0
+	if not isnumber(ToolData.Projectile) then
+		ToolData.Projectile = ACF.CheckNumber(ToolData.RoundProjectile, 0)
 	end
 
-	if not ToolData.Propellant then
-		local Propellant = ToolData.RoundPropellant
-
-		ToolData.Propellant = Propellant and tonumber(Propellant) or 0
+	if not isnumber(ToolData.Propellant) then
+		ToolData.Propellant = ACF.CheckNumber(ToolData.RoundPropellant, 0)
 	end
 
 	if ToolData.Tracer == nil then

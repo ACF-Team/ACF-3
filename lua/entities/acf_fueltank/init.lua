@@ -320,7 +320,7 @@ function ENT:Detonate()
 	local ExplosiveMass = (math.max(self.Fuel, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
 
 	ACF_KillChildProps(self, Pos, ExplosiveMass)
-	ACF_HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
+	ACF.HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
 
 	local Effect = EffectData()
 		Effect:SetOrigin(Pos)

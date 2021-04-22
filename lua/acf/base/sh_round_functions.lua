@@ -8,33 +8,49 @@ local function GetWeaponSpecs(ToolData)
 
 	if not Class then return end
 
+	local Result = {
+		Caliber     = true,
+		MaxLength   = true,
+		PropLength  = true,
+		ProjLength  = true,
+		FillerRatio = true,
+	}
+
 	if not Class.IsScalable then
 		local Weapon = Class.Lookup[ToolData.Weapon]
 		local Round  = Weapon.Round
 
-		return Weapon.Caliber, Round.MaxLength, Round.PropLength, Round.ProjLength, Round.FillerRatio
+		Result.Caliber     = Weapon.Caliber
+		Result.MaxLength   = Round.MaxLength
+		Result.PropLength  = Round.PropLength
+		Result.ProjLength  = Round.ProjLength
+	else
+		local Bounds  = Class.Caliber
+		local Round   = Class.Round
+		local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
+		local Scale   = Caliber / Bounds.Base
+		local ProjLen = Round.ProjLength
+
+		Result.Caliber     = Caliber
+		Result.MaxLength   = Round.MaxLength * Scale
+		Result.PropLength  = Round.PropLength * Scale
+		Result.ProjLength  = ProjLen and ProjLen * Scale
 	end
 
-	local Bounds  = Class.Caliber
-	local Round   = Class.Round
-	local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
-	local Scale   = Caliber / Bounds.Base
-
-	return Caliber, Round.MaxLength * Scale, Round.PropLength * Scale
+	return Result
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Caliber, MaxLength, PropLength, ProjLength, FillerRatio = GetWeaponSpecs(ToolData)
+	local Specs   = GetWeaponSpecs(ToolData)
 	local GUIData = {}
 
-	if not Caliber then return Data, GUIData end
+	if not Specs then return Data, GUIData end
 
-	local Length    = math.Round(MaxLength * (Data.LengthAdj or 1), 2)
-	ProjLength = ProjLength or Length
-	local Radius    = Caliber * 0.05 -- Radius in cm
+	local Length    = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
+	local Radius    = Specs.Caliber * 0.05 -- Radius in cm
 	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
 
-	Data.Caliber    = Caliber * 0.1 -- Bullet caliber will have to stay in cm
+	Data.Caliber    = Specs.Caliber * 0.1 -- Bullet caliber will have to stay in cm
 	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
 	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
 	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
@@ -43,9 +59,8 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
-	GUIData.MaxPropLength  = math.min(PropLength, Length - GUIData.MinProjLength)
-	GUIData.MaxProjLength  = math.min(ProjLength, Length - GUIData.MinPropLength)
-	GUIData.FillerRatio    = FillerRatio or 1
+	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
+	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 

@@ -34,7 +34,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local FillerVol = FreeVol * ToolData.FillerRatio
+	local FillerVol = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
+
 	Data.FillerMass = FillerVol * ACF.HEDensity
 	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)

@@ -505,7 +505,7 @@ do -- ACF Activation and Damage -----------------
 		local FragMass      = self.BulletData.ProjMass or ExplosiveMass * 0.5
 
 		ACF_KillChildProps(self, Pos, ExplosiveMass)
-		ACF_HE(Pos, ExplosiveMass, FragMass, self.Inflictor, {self}, self)
+		ACF.HE(Pos, ExplosiveMass, FragMass, self.Inflictor, {self}, self)
 
 		local Effect = EffectData()
 			Effect:SetOrigin(Pos)

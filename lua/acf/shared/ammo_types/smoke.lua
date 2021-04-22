@@ -42,9 +42,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
 	local FreeVol     = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local FillerVol   = FreeVol * ToolData.FillerRatio
-	local SmokeFiller = FillerVol * ToolData.SmokeWPRatio
-	local WPFiller    = FillerVol * (1 - ToolData.SmokeWPRatio)
+	local FillerVol   = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
+	local SmokeRatio  = math.Clamp(ToolData.SmokeWPRatio, 0, 1)
+	local SmokeFiller = FillerVol * SmokeRatio
+	local WPFiller    = FillerVol * (1 - SmokeRatio)
 
 	Data.FillerMass = SmokeFiller * ACF.HEDensity
 	Data.WPMass     = WPFiller * ACF.HEDensity
@@ -79,16 +80,12 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.FillerRatio then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.FillerRatio = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.FillerRatio) then
+		ToolData.FillerRatio = 1
 	end
 
-	if not ToolData.SmokeWPRatio then
-		local Data6 = ToolData.RoundData6
-
-		ToolData.SmokeWPRatio = Data6 and tonumber(Data6) or 0
+	if not isnumber(ToolData.SmokeWPRatio) then
+		ToolData.SmokeWPRatio = 0.5
 	end
 end
 
@@ -98,12 +95,14 @@ if SERVER then
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.SmokeFiller = nil
-		Entity.WPFiller = nil
+		Entity.FillerRatio  = nil
+		Entity.SmokeWPRatio = nil
 
 		-- Cleanup the leftovers aswell
-		Entity.RoundData5 = nil
-		Entity.RoundData6 = nil
+		Entity.SmokeFiller = nil
+		Entity.WPFiller    = nil
+		Entity.RoundData5  = nil
+		Entity.RoundData6  = nil
 
 		Entity:SetNW2Float("FillerMass", 0)
 		Entity:SetNW2Float("WPMass", 0)
@@ -178,10 +177,8 @@ else
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, Key, Value)
-			if Key == "FillerRatio" then
-				ToolData.FillerRatio = math.Round(Value, 2)
-			end
+		FillerRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.FillerRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -190,10 +187,8 @@ else
 
 		local SmokeWPRatio = Base:AddSlider("Smoke/WP Ratio", 0, 1, 2)
 		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
-		SmokeWPRatio:DefineSetter(function(_, _, Key, Value)
-			if Key == "SmokeWPRatio" then
-				ToolData.SmokeWPRatio = math.Round(Value, 2)
-			end
+		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.SmokeWPRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

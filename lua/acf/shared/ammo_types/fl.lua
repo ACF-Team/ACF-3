@@ -87,16 +87,12 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.Flechettes then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.Flechettes = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.Flechettes) then
+		ToolData.Flechettes = ACF.CheckNumber(ToolData.RoundData5, 0)
 	end
 
-	if not ToolData.Spread then
-		local Data6 = ToolData.RoundData6
-
-		ToolData.Spread = Data6 and tonumber(Data6) or 0
+	if not isnumber(ToolData.Spread) then
+		ToolData.Spread = ACF.CheckNumber(ToolData.RoundData6, 0)
 	end
 end
 

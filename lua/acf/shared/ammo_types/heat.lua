@@ -74,8 +74,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 
 	local FreeVol, FreeLength = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxConeAng = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
-	local LinerAngle = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
+	local MaxConeAng  = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
+	local LinerAngle  = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
+	local FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
 	local FreeFillerVol = FreeVol - AirVol
 
@@ -87,9 +88,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData.MaxConeAng = MaxConeAng
 
 	Data.ConeAng        = LinerAngle
-	Data.FillerMass     = FreeFillerVol * ToolData.FillerRatio * ACF.HEDensity
+	Data.FillerMass     = FreeFillerVol * FillerRatio * ACF.HEDensity
 	Data.CasingMass		= (GUIData.ProjVolume - FreeVol) * ACF.SteelDensity
-	Data.ProjMass       = (math.max(FreeFillerVol * (1 - ToolData.FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
+	Data.ProjMass       = (math.max(FreeFillerVol * (1 - FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
 	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.SlugMass       = ConeVol * ACF.SteelDensity
 	Data.SlugCaliber    = SlugCaliber
@@ -130,16 +131,12 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.FillerMass then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.FillerMass = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.FillerRatio) then
+		ToolData.FillerRatio = 1
 	end
 
-	if not ToolData.LinerAngle then
-		local Data6 = ToolData.RoundData6
-
-		ToolData.LinerAngle = Data6 and tonumber(Data6) or 0
+	if not isnumber(ToolData.LinerAngle) then
+		ToolData.LinerAngle = ACF.CheckNumber(ToolData.RoundData6, 0)
 	end
 end
 
@@ -149,10 +146,11 @@ if SERVER then
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.FillerMass = nil
-		Entity.LinerAngle = nil
+		Entity.FillerRatio = nil
+		Entity.LinerAngle  = nil
 
 		-- Cleanup the leftovers aswell
+		Entity.FillerMass = nil
 		Entity.RoundData5 = nil
 		Entity.RoundData6 = nil
 
@@ -174,7 +172,7 @@ if SERVER then
 	end
 
 	function Ammo:Detonate(Bullet, HitPos)
-		ACF_HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
+		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
 
 		local SlugMV = self:CalcSlugMV(Bullet) * 39.37 * (Bullet.SlugPenMul or 1)
 
@@ -332,10 +330,8 @@ else
 
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, Key, Value)
-			if Key == "FillerRatio" then
-				ToolData.FillerRatio = math.Round(Value, 2)
-			end
+		FillerRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.FillerRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

@@ -35,7 +35,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local FillerVol = FreeVol * ToolData.FillerRatio
+	local FillerVol = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
+
 	Data.FillerMass = FillerVol * ACF.HEDensity
 	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
@@ -52,10 +53,10 @@ end
 function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
 
-	Data.ShovePower		 = 0.1
-	Data.LimitVel		 = 700 --Most efficient penetration speed in m/s
-	Data.Ricochet		 = 65 --Base ricochet angle
-	Data.CanFuze		 = Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.ShovePower = 0.1
+	Data.LimitVel   = 700 --Most efficient penetration speed in m/s
+	Data.Ricochet   = 65 --Base ricochet angle
+	Data.CanFuze    = Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	GUIData.MinFillerVol = 0
 
@@ -67,10 +68,8 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.FillerRatio then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.FillerRatio = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.FillerRatio) then
+		ToolData.FillerRatio = 1
 	end
 end
 
@@ -80,8 +79,11 @@ if SERVER then
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.FillerMass = nil
-		Entity.RoundData5 = nil -- Cleanup the leftovers aswell
+		Entity.FillerRatio = nil
+
+		-- Cleanup the leftovers aswell
+		Entity.FillerMass  = nil
+		Entity.RoundData5  = nil
 
 		Entity:SetNW2Float("FillerMass", 0)
 	end
@@ -108,7 +110,7 @@ if SERVER then
 			Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
 		end
 
-		ACF_HE(Bullet.Pos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
+		ACF.HE(Bullet.Pos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
 
 		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
 	end
@@ -128,10 +130,8 @@ else
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, Key, Value)
-			if Key == "FillerRatio" then
-				ToolData.FillerRatio = math.Round(Value, 2)
-			end
+		FillerRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.FillerRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 

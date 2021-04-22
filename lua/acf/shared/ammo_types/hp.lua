@@ -61,10 +61,8 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.HollowCavity then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.HollowCavity = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.HollowCavity) then
+		ToolData.HollowCavity = ACF.CheckNumber(ToolData.RoundData5, 0)
 	end
 end
 
