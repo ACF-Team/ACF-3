@@ -268,3 +268,20 @@ do -- Smoke/Wind -----------------------------------
 		end)
 	end
 end ------------------------------------------------
+
+do -- CPPI
+	timer.Simple(1, function()
+		if not CPPI then
+			local ENT = FindMetaTable("Entity")
+			local Ply = player.GetAll()[1]
+
+			function ENT:CPPICanTool()
+				return true
+			end
+
+			function ENT:CPPIGetOwner()
+				return Ply
+			end
+		end
+	end)
+end
