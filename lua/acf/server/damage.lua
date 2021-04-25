@@ -354,18 +354,29 @@ do -- Deal Damage ---------------------------
 	local TimerCreate = timer.Create
 
 	local function CalcDamage(Bullet, Trace)
+		-- TODO: Why are we getting impact angles outside these bounds?
+		local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
+		local Area    = Bullet.ProjArea
+		local HitRes  = {}
+
 		local Caliber        = Bullet.Diameter * 10
 		local BaseArmor      = Trace.Entity.ACF.Armour
 		local SlopeFactor    = BaseArmor / Caliber
-		local Angle          = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
 		local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
-		local Penetration    = Bullet:GetPenetration() -- How far the bullet could penetrate in theory
+		local MaxPenetration = Bullet:GetPenetration() --RHA Penetration
 
-		return {
-			Damage   = (math.min(Penetration, EffectiveArmor)  / EffectiveArmor) ^ 2 * Bullet.ProjArea,
-			Overkill = Penetration - EffectiveArmor, -- Leftover penetration
-			Loss     = EffectiveArmor / Penetration -- Energy loss ratio 0 to 1
-		}
+		if MaxPenetration > EffectiveArmor then
+			HitRes.Damage   = Area -- Inflicted Damage
+			HitRes.Overkill = MaxPenetration - EffectiveArmor -- Remaining penetration
+			HitRes.Loss     = EffectiveArmor / MaxPenetration -- Energy loss in percents
+		else
+			-- Projectile did not penetrate the armor
+			HitRes.Damage   = (MaxPenetration / EffectiveArmor) ^ 2 * Area
+			HitRes.Overkill = 0
+			HitRes.Loss     = 1
+		end
+
+		return HitRes
 	end
 
 	local function SquishyDamage(Bullet, Trace)
