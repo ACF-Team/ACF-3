@@ -18,7 +18,7 @@ Ammunition is customizable with varying ballistic performance along with armor b
 ### Dependencies
 > ACF requires these additional addons in order to function properly
 
-Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf). We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
+Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf) is not required, but highly recommended. We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
 
 Wiremod ([Workshop](https://steamcommunity.com/workshop/filedetails/?id=160250458) or [Github](https://github.com/wiremod))
 ### Git Client (Recommended)
