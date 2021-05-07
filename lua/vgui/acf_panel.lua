@@ -242,6 +242,16 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self.Rotate = tobool(Bool)
 	end
 
+	function Panel:DrawEntity(Bool)
+		local Entity = self:GetEntity()
+
+		if IsValid(Entity) then
+			Entity:SetNoDraw(not Bool)
+		end
+
+		self.NotDrawn = not Bool
+	end
+
 	function Panel:UpdateModel(Path)
 		if not isstring(Path) then
 			Path = "models/props_junk/PopCan01a.mdl"
@@ -250,10 +260,15 @@ function PANEL:AddModelPreview(Model, Rotate)
 		local Center = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
 		local Size   = ACF.GetModelSize(Path)
 
+		if not (Center or Size) then
+			return self:DrawEntity(false)
+		end
+
 		self.CamCenter = Center
 		self.CamOffset = Vector(0, Size:Length())
 		self.LastTime  = RealTime()
 
+		self:DrawEntity(true)
 		self:SetModel(Path)
 		self:SetLookAt(Center)
 		self:SetCamPos(Center + self.CamOffset)
@@ -267,6 +282,8 @@ function PANEL:AddModelPreview(Model, Rotate)
 	end
 
 	function Panel:LayoutEntity()
+		if self.NotDrawn then return end
+
 		if self.bAnimated then
 			self:RunAnimation()
 		end

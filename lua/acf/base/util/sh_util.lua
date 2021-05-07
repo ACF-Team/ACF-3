@@ -362,6 +362,8 @@ do -- Model convex mesh and volume
 	local Models = ACF.ModelInfo
 
 	local function CreateEntity(Model)
+		util.PrecacheModel(Model) -- 'ate CSEnts.
+
 		local Entity = SERVER and ents.Create("base_anim") or ents.CreateClientProp(Model)
 
 		Entity:SetModel(Model)
@@ -378,8 +380,14 @@ do -- Model convex mesh and volume
 
 		if Data then return Data end
 
-		local Entity   = CreateEntity(Model)
-		local PhysObj  = Entity:GetPhysicsObject()
+		local Entity = CreateEntity(Model)
+
+		if IsValid(Entity) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if not IsValid(PhysObj) then return end
+
 		local Min, Max = PhysObj:GetAABB()
 
 		Data = {
