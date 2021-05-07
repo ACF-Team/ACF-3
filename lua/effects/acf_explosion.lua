@@ -94,7 +94,7 @@ function EFFECT:GroundImpact()
 			Flame:SetColor(255, 255, 255)
 		end
 	end
-	print(Radius)
+
 	for _ = 0, 5 * math.Clamp(Radius,1,30) * Mult do
 
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
