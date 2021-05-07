@@ -382,7 +382,7 @@ do -- Model convex mesh and volume
 
 		local Entity = CreateEntity(Model)
 
-		if IsValid(Entity) then return end
+		if not IsValid(Entity) then return end
 
 		local PhysObj = Entity:GetPhysicsObject()
 
