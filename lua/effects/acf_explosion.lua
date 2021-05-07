@@ -237,7 +237,7 @@ function EFFECT:Airburst()
 		Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 	end
 
-	for _ = 0, Radius * Mult do
+	for I = 0, Radius * Mult do
 		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin - Normal * 4 * Radius)
 		local Radmod = Radius * 0.25
 
@@ -253,7 +253,7 @@ function EFFECT:Airburst()
 			Smoke:SetEndSize(140 * Radmod)
 			Smoke:SetRoll(math.Rand(150, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(math.random(1,_ * 2) * Radius)
+			Smoke:SetAirResistance(math.random(1, I * 2) * Radius)
 			Smoke:SetGravity(Vector(math.random(-5, 5) * Radius, math.random(-5, 5) * Radius, -math.random(10, 30)))
 			Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 		end
@@ -270,7 +270,7 @@ function EFFECT:Airburst()
 			Smoke:SetEndSize(100 * Radmod)
 			Smoke:SetRoll(math.Rand(150, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(math.random(1,_ * 2) * Radius)
+			Smoke:SetAirResistance(math.random(1, I * 2) * Radius)
 			Smoke:SetGravity(Vector(math.random(-5, 5) * Radius, math.random(-5, 5) * Radius, -math.random(10, 30)))
 			Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 		end
