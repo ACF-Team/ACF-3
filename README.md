@@ -16,7 +16,7 @@ Ammunition is customizable with varying ballistic performance along with armor b
 ## Installation
 
 ### Dependencies
-> ACF requires these additional addons in order to function properly
+    ACF Requires these to work
 
 Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf). We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
 
@@ -27,7 +27,10 @@ Install a Git client, such as the [Github client](https://desktop.github.com/) o
 
 ### Manually
 
-Click the green button at the top of the ACF repo and select zip. Extract and move to your addons folder.
+1. Click the green button at the top of the ACF repo and select zip.
+2. Extract the ACF folder.
+3. Inside you will find another ACF folder.
+4. Move the inner ACF folder to `garrysmod/garrysmod/addons`
 
 ## Contributing
 
