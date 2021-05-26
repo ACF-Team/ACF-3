@@ -17,49 +17,47 @@ function Ammo:OnLoaded()
 end
 
 function Ammo:ConeCalc(ConeAngle, Radius)
-	local ConeLength = math.tan(math.rad(ConeAngle)) * Radius
-	local ConeArea = math.pi * Radius * (Radius ^ 2 + ConeLength ^ 2) ^ 0.5
-	local ConeVol = (math.pi * Radius ^ 2 * ConeLength) * 0.33
+	local Height     = Radius / math.tan(math.rad(ConeAngle))
+	local ConeArea   = math.pi * Radius * math.sqrt(Height ^ 2 + Radius ^ 2)
+	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
-	return ConeLength, ConeArea, ConeVol
+	local AngleMult  = (45 + ConeAngle) / 45 -- Shallower cones need thicker liners to survive being made into EFPs
+	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult
+	local LinerVol   = ConeArea * LinerThick
+	local LinerMass  = LinerVol * ACF.CopperDensity
+
+	return LinerMass, ConeVol, Height
 end
 
-function Ammo:CalcSlugMV(Data)
-	--keep fillermass/2 so that penetrator stays the same.
-	return (Data.HEATFillerMass * 0.5 * ACF.HEPower * math.sin(math.rad(10 + Data.ConeAng) * 0.5) / Data.SlugMass) ^ ACF.HEATMVScale
-end
+function Ammo:GetPenetration(Bullet, Standoff, TargetDensity)
+	local BreakupT = Bullet.BreakupTime
+	local MinVel   = Bullet.JetMinVel
+	local MaxVel   = Bullet.JetMaxVel
+	local Gamma    = math.sqrt(TargetDensity / ACF.CopperDensity)
 
-function Ammo:GetPenetration(Bullet, Speed, Detonated)
-	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	local Penetration = 0
+	if Standoff < Bullet.BreakupDist then
+		local JetTravel = BreakupT * MaxVel
+		local K1 = 1 + Gamma
+		local K2 = 1 / K1
+		Penetration = (K1 * (JetTravel * Standoff) ^ K2 - math.sqrt(K1 * ACF.HEATMinPenVel * BreakupT * JetTravel ^ K2 * Standoff ^ (Gamma * K2))) / Gamma - Standoff
+	else
+		Penetration = (MaxVel * BreakupT - math.sqrt(ACF.HEATMinPenVel * BreakupT * (MaxVel * BreakupT + Gamma * Standoff))) / Gamma
 	end
 
-	local Caliber = Bullet.Diameter
-	local Mass    = Bullet.ProjMass
-
-	if Detonated or Bullet.Detonated then
-		Speed   = Bullet.SlugMV
-		Mass    = Bullet.SlugMass
-		Caliber = Bullet.SlugCaliber
-	end
-
-	return ACF.Penetration(Speed, Mass, Caliber * 10)
+	return Penetration * ACF.HEATPenMul * 1e3 -- m to mm
 end
 
 function Ammo:GetDisplayData(Data)
-	local SlugMV     = self:CalcSlugMV(Data) * (Data.SlugPenMul or 1)
-	local Fragments  = math.max(math.floor((Data.HEATFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
+	local Fragments  = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
 	local Display    = {
-		HEATFillerMass = Data.HEATFillerMass,
 		BoomFillerMass = Data.BoomFillerMass,
-		SlugMV         = SlugMV,
-		SlugMassUsed   = Data.SlugMass,
-		MaxPen         = self:GetPenetration(Data, Data.MuzzleVel, true),
+		MaxPen         = self:GetPenetration(Data, Data.Standoff, ACF.SteelDensity),
 		TotalFragMass  = Data.CasingMass,
 		BlastRadius    = Data.BoomFillerMass ^ 0.33 * 8,
 		Fragments      = Fragments,
 		FragMass       = Data.CasingMass / Fragments,
-		FragVel        = (Data.HEATFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
+		FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
 	}
 
 	hook.Run("ACF_GetDisplayData", self, Data, Display)
@@ -72,32 +70,59 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
+	local CapLength       = GUIData.MinProjLength * 0.5
+	local BodyLength      = Data.ProjLength - CapLength
+	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
+	local Standoff        = (CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
+	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
+	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
+	local ChargeDiameter  = 2 * FreeRadius
+	local MinConeAng      = math.deg(math.atan(FreeRadius / FreeLength))
+	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
-	local FreeVol, FreeLength = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxConeAng  = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
-	local LinerAngle  = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
-	local FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
-	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
-	local FreeFillerVol = FreeVol - AirVol
+	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
+	--  but the explosive behind it has diminishing returns. Most papers put the maximum useful head length (explosive length behind the
+	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
+	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
+	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
+	local EquivFillLen = ChargeDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
+	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
+	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
+	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
+	local FillerEnergy = EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local FillerVol    = FrontFillVol + RearFillVol
+	local FillerMass   = FillerVol * ACF.CompBDensity
 
-	local LinerRad    = math.rad(LinerAngle * 0.5)
-	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
-	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
-	local ConeVol     = ConeArea * Data.Caliber * 0.02
+	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
+	local MinVelMult = (0.98 - 0.6) * LinerAngle / 90 + 0.6
+	local JetMass    = LinerMass * ((1 - 0.8)* LinerAngle / 90  + 0.8)
+	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
+	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
+	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
+	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) -- Maximum velocity of the jet (the tip)
 
-	GUIData.MaxConeAng = MaxConeAng
+	-- Both the "magic numbers" are unitless, tuning constants that were used to fit the breakup time to real world values, I suggest they not be messed with
+	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333  -- Jet breakup time in seconds
+	local BreakupDist    = JetMaxVel * BreakupTime
+
+	GUIData.MinConeAng = MinConeAng
 
 	Data.ConeAng        = LinerAngle
-	Data.FillerMass     = FreeFillerVol * FillerRatio * ACF.HEDensity
-	Data.CasingMass		= (GUIData.ProjVolume - FreeVol) * ACF.SteelDensity
-	Data.ProjMass       = (math.max(FreeFillerVol * (1 - FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
+	Data.MinConeAng     = MinConeAng
+	Data.FillerMass     = FillerMass
+	local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
+	Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
 	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.SlugMass       = ConeVol * ACF.SteelDensity
-	Data.SlugCaliber    = SlugCaliber
-	Data.SlugDragCoef   = SlugArea * 0.0001 / Data.SlugMass
-	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert
-	Data.HEATFillerMass = Data.FillerMass
-	Data.SlugMV			= self:CalcSlugMV(Data) * (Data.SlugPenMul or 1)
+	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert * ACF.CompBEquivalent -- In TNT equivalent
+	Data.LinerMass      = LinerMass
+	Data.JetMass        = JetMass
+	Data.JetMinVel      = JetMinVel
+	Data.JetMaxVel      = JetMaxVel
+	Data.BreakupTime    = BreakupTime
+	Data.Standoff       = Standoff
+	Data.BreakupDist    = BreakupDist
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
@@ -114,13 +139,10 @@ function Ammo:BaseConvert(ToolData)
 	GUIData.MinConeAng	 = 0
 	GUIData.MinFillerVol = 0
 
-	Data.SlugRicochet	= 500 -- Base ricochet angle (The HEAT slug shouldn't ricochet at all)
 	Data.ShovePower		= 0.1
 	Data.LimitVel		= 100 -- Most efficient penetration speed in m/s
 	Data.Ricochet		= 60 -- Base ricochet angle
 	Data.DetonatorAngle	= 75
-	Data.Detonated		= false
-	Data.NotFirstPen	= false
 	Data.CanFuze		= Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
@@ -135,8 +157,12 @@ function Ammo:VerifyData(ToolData)
 		ToolData.FillerRatio = 1
 	end
 
+	if not isnumber(ToolData.StandoffRatio) then
+		ToolData.StandoffRatio = 0
+	end
+
 	if not isnumber(ToolData.LinerAngle) then
-		ToolData.LinerAngle = ACF.CheckNumber(ToolData.RoundData6, 0)
+		ToolData.LinerAngle = 90
 	end
 end
 
@@ -258,12 +284,6 @@ else
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
 
-	function Ammo:GetRangedPenetration(Bullet, Range)
-		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * 0.0254
-
-		return math.Round(self:GetPenetration(Bullet, Speed, true), 2), math.Round(Speed, 2)
-	end
-
 	function Ammo:ImpactEffect(Effect, Bullet)
 		if not Bullet.Detonated then
 			self:PenetrationEffect(Effect, Bullet)
@@ -312,7 +332,7 @@ else
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, BulletData.MaxConeAng, 2)
+		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -322,19 +342,31 @@ else
 
 			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMax(BulletData.MaxConeAng)
+			Panel:SetMin(BulletData.MinConeAng)
 			Panel:SetValue(BulletData.ConeAng)
 
 			return BulletData.ConeAng
 		end)
 
-		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
+		local FillerRatio = Base:AddSlider("Filler Ratio", 0.5, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.FillerRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
+			return BulletData.FillerVol
+		end)
+
+		-- Capped the max standoff at 0.4 for historical reasons
+		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.4, 2)
+		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
+		StandoffRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.StandoffRatio = math.Round(Value, 2)
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			-- TODO what should this be?
 			return BulletData.FillerVol
 		end)
 	end
@@ -344,6 +376,7 @@ else
 
 		Trackers.FillerRatio = true
 		Trackers.LinerAngle = true
+		Trackers.StandoffRatio = true
 	end
 
 	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
@@ -352,6 +385,7 @@ else
 		RoundStats:TrackClientData("Propellant")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:TrackClientData("LinerAngle")
+		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -365,8 +399,11 @@ else
 		end)
 
 		local FillerStats = Base:AddLabel()
-		FillerStats:TrackClientData("FillerRatio", "SetText")
+		FillerStats:TrackClientData("Projectile", "SetText")
+		FillerStats:TrackClientData("Propellant")
+		FillerStats:TrackClientData("FillerRatio")
 		FillerStats:TrackClientData("LinerAngle")
+		FillerStats:TrackClientData("StandoffRatio")
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -378,38 +415,45 @@ else
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
 		end)
 
+		-- TODO this should prolly be removed
 		local Penetrator = Base:AddLabel()
 		Penetrator:TrackClientData("Projectile", "SetText")
 		Penetrator:TrackClientData("Propellant")
 		Penetrator:TrackClientData("FillerRatio")
 		Penetrator:TrackClientData("LinerAngle")
+		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetrator Caliber : %s mm\nPenetrator Mass : %s\nPenetrator Velocity : %s m/s"
-			local Caliber  = math.Round(BulletData.SlugCaliber * 10, 2)
-			local Mass	   = ACF.GetProperMass(BulletData.SlugMassUsed)
-			local Velocity = math.Round(BulletData.SlugMV, 2)
+			local Text     = "Copper mass : %s g\nJet mass : %s g\nJet velocity : %s m/s - %s m/s"
+			local CuMass   = math.Round(BulletData.LinerMass * 1e3, 0)
+			local JetMass  = math.Round(BulletData.JetMass * 1e3, 0)
+			local MinVel   = math.Round(BulletData.JetMinVel, 0)
+			local MaxVel   = math.Round(BulletData.JetMaxVel, 0)
 
-			return Text:format(Caliber, Mass, Velocity)
+			return Text:format(CuMass, JetMass, MinVel, MaxVel)
 		end)
 
+		-- TODO add pen stats at passive standoff + maybe max pen
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("Projectile", "SetText")
 		PenStats:TrackClientData("Propellant")
 		PenStats:TrackClientData("FillerRatio")
 		PenStats:TrackClientData("LinerAngle")
+		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
-			local MaxPen = math.Round(BulletData.MaxPen, 2)
-			local _, R1V = self:GetRangedPenetration(BulletData, 300)
-			local _, R2V = self:GetRangedPenetration(BulletData, 800)
+			local Text   = "Penetration at passive standoff :\nAt %s mm : %s mm RHA\nMaximum penetration :\nAt %s mm : %s mm RHA"
+			local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)
+			local Pen1 = math.Round(self:GetPenetration(BulletData, BulletData.Standoff, ACF.SteelDensity), 1)
+			local Standoff2 = math.Round(BulletData.BreakupDist * 1e3, 0)
+			local Pen2 = math.Round(self:GetPenetration(BulletData, BulletData.BreakupDist, ACF.SteelDensity), 1)
 
-			return Text:format(MaxPen, MaxPen, R1V, MaxPen, R2V)
+			return Text:format(Standoff1, Pen1, Standoff2, Pen2)
 		end)
 
+		-- TODO remove this?
 		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 	end
 end

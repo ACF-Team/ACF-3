@@ -69,9 +69,20 @@ do -- ACF global vars
 
 	-- HE
 	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
-	ACF.HEDensity          = 0.00165 -- Density of TNT in kg/cm3
+	ACF.HEDensity          = 1.65e-3 -- Density of TNT in kg/cm3
 	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
-	ACF.HEATMVScale        = 0.75 --Filler KE to HEAT slug KE conversion expotential
+
+	-- HEAT
+	ACF.TNTPower           = 4184    -- J/g
+	ACF.CompBDensity       = 1.72e-3 -- kg/cm^3
+	ACF.CompBEquivalent    = 1.33    -- Relative to TNT
+	ACF.OctolDensity       = 1.83e-3 -- kg/cm^3
+	ACF.OctolEquivalent    = 1.54    -- Relative to TNT
+	ACF.LinerThicknessMult = 0.12    -- Metal liner thickness multiplier
+	ACF.MaxChargeHeadLen   = 1.5     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
+	ACF.HEATPenMul         = 0.4     -- Linear jet penetration multiplier
+	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
+	ACF.HEATMVScale        = 0.75    --Filler KE to HEAT slug KE conversion expotential
 	ACF.HEATMulAmmo        = 30 --HEAT slug damage multiplier; 13.2x roughly equal to AP damage
 	ACF.HEATMulFuel        = 4 --needs less multiplier, much less health than ammo
 	ACF.HEATMulEngine      = 10 --likewise
@@ -79,8 +90,9 @@ do -- ACF global vars
 	ACF.HEATBoomConvert    = 1 / 3 -- percentage of filler that creates HE damage at detonation
 
 	-- Material densities
-	ACF.SteelDensity       = 7.9e-3	-- kg/cm^3
-	ACF.AluminumDensity    = 2.7e-3	-- kg/cm^3
+	ACF.SteelDensity       = 7.9e-3	 -- kg/cm^3
+	ACF.AluminumDensity    = 2.7e-3	 -- kg/cm^3
+	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
 
 	-- Debris
 	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
