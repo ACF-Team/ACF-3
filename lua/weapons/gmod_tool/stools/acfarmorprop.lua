@@ -226,15 +226,8 @@ else -- Serverside-only stuff
 		if not IsValid(PhysObj) then return end
 
 		local Ductility = Entity.ACF.Ductility
-		local Thickness = Entity.ACF.MaxArmour
-
-		ACF.Check(Entity) -- We need to update again to get the Area
-
-		local Area = Entity.ACF.Area
-		local Mass = CalcArmor(Area, Ductility, Thickness)
 
 		ApplySettings(_, Entity, {
-			Mass = Mass,
 			Ductility = Ductility * 100,
 		})
 	end
