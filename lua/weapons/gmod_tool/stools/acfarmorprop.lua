@@ -18,30 +18,44 @@ local function CalcArmor(Area, Ductility, Thickness)
 	return mass, armor, health
 end
 
--- Apply settings to prop and store dupe info
-local function ApplySettings(_, Entity, Data)
+local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
+	local Thickness, Mass
+
+	if Data.Thickness then
+		Thickness = math.Clamp(Data.Thickness, 0.1, 5000)
+		Mass      = CalcArmor(Area, Ductility * 0.01, Thickness)
+	else
+		local EntMods = Entity.EntityMods
+		local MassMod = EntMods and EntMods.mass
+
+		Mass = MassMod and MassMod.Mass or PhysObj:GetMass()
+	end
+
+	Entity.ACF.Thickness = Thickness
+	Entity.ACF.Ductility = Ductility * 0.01
+
+	if Mass ~= Entity.ACF.Mass then
+		Entity.ACF.Mass = Mass
+
+		PhysObj:SetMass(Mass)
+	end
+
+	ACF.Check(Entity, true)
+end
+
+local function UpdateArmor(_, Entity, Data)
 	if CLIENT then return end
 	if not Data then return end
 	if not ACF.Check(Entity) then return end
 
-	if Data.Mass then
-		local PhysObj = Entity.ACF.PhysObj -- If it passed ACF.Check, then the PhysObj will always be valid
-		local Mass = math.Clamp(Data.Mass, 0.1, 50000)
+	local PhysObj   = Entity.ACF.PhysObj
+	local Area      = Entity.ACF.Area
+	local Ductility = math.Clamp(Data.Ductility or 0, -80, 80)
 
-		PhysObj:SetMass(Mass)
+	UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 
-		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
-	end
-
-	if Data.Ductility then
-		local Ductility = math.Clamp(Data.Ductility, -80, 80)
-
-		Entity.ACF.Ductility = Ductility * 0.01
-
-		duplicator.StoreEntityModifier(Entity, "acfsettings", { Ductility = Ductility })
-	end
-
-	ACF.Check(Entity, true) -- Forcing the entity to update its information
+	duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+	duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Entity.ACF.Thickness, Ductility = Ductility })
 end
 
 if CLIENT then
@@ -279,25 +293,6 @@ if CLIENT then
 		render.DrawWireframeSphere(Pos, Value, 20, 20, GreenFrame, true)
 	end)
 else -- Serverside-only stuff
-	local function UpdateMass(Entity)
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if not IsValid(PhysObj) then return end
-
-		local Ductility = Entity.ACF.Ductility
-		local Thickness = Entity.ACF.MaxArmour
-
-		ACF.Check(Entity) -- We need to update again to get the Area
-
-		local Area = Entity.ACF.Area
-		local Mass = CalcArmor(Area, Ductility, Thickness)
-
-		ApplySettings(_, Entity, {
-			Mass = Mass,
-			Ductility = Ductility * 100,
-		})
-	end
-
 	function TOOL:Think()
 		local Player = self:GetOwner()
 		local Ent = Player:GetEyeTrace().Entity
@@ -310,7 +305,7 @@ else -- Serverside-only stuff
 			Player:ConCommand("acfarmorprop_area " .. Ent.ACF.Area)
 			Player:ConCommand("acfarmorprop_thickness " .. self:GetClientNumber("thickness")) -- Force sliders to update themselves
 
-			Weapon:SetNWFloat("WeightMass", Ent:GetPhysicsObject():GetMass())
+			Weapon:SetNWFloat("WeightMass", Ent.ACF.Mass)
 			Weapon:SetNWFloat("HP", Ent.ACF.Health)
 			Weapon:SetNWFloat("Armour", Ent.ACF.Armour)
 			Weapon:SetNWFloat("MaxHP", Ent.ACF.MaxHealth)
@@ -328,16 +323,59 @@ else -- Serverside-only stuff
 		self.AimEntity = Ent
 	end
 
-	-- Proper Clipping tool compatibility
-	-- Whenever a physical clip is created, we'll attempt to keep the same armor on the entity
-	hook.Add("ProperClippingPhysicsClipped", "ACF Physclip Armor", UpdateMass)
-	hook.Add("ProperClippingPhysicsReset", "ACF Physclip Armor", UpdateMass)
-	hook.Add("ProperClippingCanPhysicsClip", "ACF PhysClip Armor", function(Entity)
-		ACF.Check(Entity, true) -- Just creating the ACF table on the entity
+	duplicator.RegisterEntityModifier("ACF_Armor", UpdateArmor)
+	duplicator.RegisterEntityModifier("acfsettings", function(_, Entity, Data)
+		if CLIENT then return end
+		if not ACF.Check(Entity, true) then return end
+
+		local EntMods   = Entity.EntityMods
+		local MassMod   = EntMods and EntMods.mass
+		local PhysObj   = Entity.ACF.PhysObj
+		local Area      = Entity.ACF.Area
+		local Mass      = MassMod and MassMod.Mass or PhysObj:GetMass()
+		local Ductility = math.Clamp(Data.Ductility or 0, -80, 80) * 0.01
+		local Thickness = ACF_CalcArmor(Area, Ductility, Mass)
+
+		duplicator.ClearEntityModifier(Entity, "mass")
+		duplicator.ClearEntityModifier(Entity, "acfsettings")
+
+		UpdateArmor(_, Entity, { Thickness = Thickness, Ductility = Ductility * 100 })
 	end)
 
-	duplicator.RegisterEntityModifier("acfsettings", ApplySettings)
-	duplicator.RegisterEntityModifier("mass", ApplySettings)
+	-- ProperClipping compatibility
+
+	if ProperClipping then
+		local Override = {
+			AddClip = true,
+			RemoveClip = true,
+			RemoveClips = true,
+		}
+
+		for Name in pairs(Override) do
+			local Old = ProperClipping[Name]
+
+			ProperClipping[Name] = function(Entity, ...)
+				local EntMods = Entity.EntityMods
+				local MassMod = EntMods and EntMods.mass
+				local Result  = Old(Entity, ...)
+
+				if not EntMods then return Result end
+
+				local Armor = EntMods.ACF_Armor
+
+				if Armor and Armor.Thickness then
+					if MassMod then
+						duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+						duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Armor.Ductility })
+					else
+						duplicator.ClearEntityModifier(Entity, "mass")
+					end
+				end
+
+				return Result
+			end
+		end
+	end
 end
 
 do -- Allowing everyone to read contraptions
@@ -361,13 +399,12 @@ function TOOL:LeftClick(Trace)
 	if CLIENT then return true end
 	if not ACF.Check(Ent) then return false end
 
-	local Player = self:GetOwner()
+	local Ductility = self:GetClientNumber("ductility")
+	local Thickness = self:GetClientNumber("thickness")
 
-	local ductility = math.Clamp(self:GetClientNumber("ductility"), -80, 80)
-	local thickness = math.Clamp(self:GetClientNumber("thickness"), 0.1, 5000)
-	local mass = CalcArmor(Ent.ACF.Area, ductility / 100, thickness)
+	duplicator.ClearEntityModifier(Ent, "mass")
 
-	ApplySettings(Player, Ent, { Mass = mass, Ductility = ductility })
+	UpdateArmor(_, Ent, { Thickness = Thickness, Ductility = Ductility })
 
 	-- this invalidates the entity and forces a refresh of networked armor values
 	self.AimEntity = nil

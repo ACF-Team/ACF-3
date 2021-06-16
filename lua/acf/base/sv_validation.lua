@@ -96,7 +96,73 @@ local function CheckLegal(Entity)
 
 	return true
 end
+local function GetEntityType(Entity)
+	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
+	if Entity:IsVehicle() then return "Vehicle" end
+
+	return "Prop"
+end
+
+local function UpdateArea(Entity, PhysObj)
+	local Area = PhysObj:GetSurfaceArea()
+
+	if Area then -- Normal collisions
+		Area = Area * 6.45 * 0.52505066107
+	elseif PhysObj:GetMesh() then -- Box collisions
+		local Size = Entity:OBBMaxs() - Entity:OBBMins()
+
+		Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+	else -- Spherical collisions
+		local Radius = Entity:BoundingRadius()
+
+		Area = 4 * 3.1415 * Radius * Radius * 6.45
+	end
+
+	Entity.ACF.Area = Area
+
+	return Area
+end
+
+local function UpdateThickness(Entity, PhysObj, Area, Ductility)
+	local Thickness = Entity.ACF.Thickness
+	local EntMods = Entity.EntityMods
+	local MassMod = EntMods and EntMods.mass
+
+	if Thickness then
+		if not MassMod then
+			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
+
+			if Mass ~= Entity.ACF.Mass then
+				Entity.ACF.Mass = Mass
+
+				PhysObj:SetMass(Mass)
+			end
+
+			return Thickness
+		end
+
+		Entity.ACF.Thickness = nil
+
+		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })
+	end
+
+	local Mass = MassMod and MassMod.Mass or PhysObj:GetMass()
+	local New  = math.Clamp(ACF_CalcArmor(Area, Ductility, Mass), 0.1, 5000)
+
+	if Mass ~= Entity.ACF.Mass then
+		Entity.ACF.Mass = Mass
+
+		PhysObj:SetMass(Mass)
+
+		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
+	end
+
+	return New
+end
+
 -- Global Funcs ---------------------------------
+
 function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
@@ -127,7 +193,12 @@ function ACF.Activate(Entity, Recalc)
 
 	if not IsValid(PhysObj) then return end
 
-	Entity.ACF = Entity.ACF or {}
+	if not Entity.ACF then
+		Entity.ACF = {
+			Type = GetEntityType(Entity)
+		}
+	end
+
 	Entity.ACF.PhysObj = PhysObj
 
 	if Entity.ACF_Activate then
@@ -135,45 +206,21 @@ function ACF.Activate(Entity, Recalc)
 		return
 	end
 
-	local SurfaceArea = PhysObj:GetSurfaceArea()
-
-	if SurfaceArea then -- Normal collisions
-		Entity.ACF.Area = SurfaceArea * 6.45 * 0.52505066107
-	elseif PhysObj:GetMesh() then -- Box collisions
-		local Size = Entity:OBBMaxs() - Entity:OBBMins()
-
-		Entity.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
-	else -- Spherical collisions
-		local Radius = Entity:BoundingRadius()
-
-		Entity.ACF.Area = 4 * 3.1415 * Radius * Radius * 6.45
-	end
-
-	Entity.ACF.Ductility = Entity.ACF.Ductility or 0
-
-	local Area = Entity.ACF.Area
-	local Ductility = math.Clamp(Entity.ACF.Ductility, -0.8, 0.8)
-	local Armour = ACF_CalcArmor(Area, Ductility, PhysObj:GetMass()) -- So we get the equivalent thickness of that prop in mm if all its weight was a steel plate
-	local Health = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
-	local Percent = 1
+	local Area      = UpdateArea(Entity, PhysObj)
+	local Ductility = math.Clamp(Entity.ACF.Ductility or 0, -0.8, 0.8)
+	local Thickness = UpdateThickness(Entity, PhysObj, Area, Ductility)
+	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
+	local Percent   = 1
 
 	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
 
-	Entity.ACF.Health = Health * Percent
+	Entity.ACF.Health    = Health * Percent
 	Entity.ACF.MaxHealth = Health
-	Entity.ACF.Armour = Armour * (0.5 + Percent / 2)
-	Entity.ACF.MaxArmour = Armour * ACF.ArmorMod
-	Entity.ACF.Mass = PhysObj:GetMass()
-
-	if Entity:IsPlayer() or Entity:IsNPC() then
-		Entity.ACF.Type = "Squishy"
-	elseif Entity:IsVehicle() then
-		Entity.ACF.Type = "Vehicle"
-	else
-		Entity.ACF.Type = "Prop"
-	end
+	Entity.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
+	Entity.ACF.MaxArmour = Thickness * ACF.ArmorMod
+	Entity.ACF.Ductility = Ductility
 end
 
 -- Globalize ------------------------------------
