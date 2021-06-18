@@ -24,6 +24,8 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	if Data.Thickness then
 		Thickness = math.Clamp(Data.Thickness, 0.1, 5000)
 		Mass      = CalcArmor(Area, Ductility * 0.01, Thickness)
+
+		duplicator.ClearEntityModifier(Entity, "mass")
 	else
 		local EntMods = Entity.EntityMods
 		local MassMod = EntMods and EntMods.mass
@@ -39,8 +41,6 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 
 		PhysObj:SetMass(Mass)
 	end
-
-	ACF.Check(Entity, true)
 end
 
 local function UpdateArmor(_, Entity, Data)
