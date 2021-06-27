@@ -4,13 +4,17 @@ local GetIndex = ACF.GetAmmoDecalIndex
 local GetDecal = ACF.GetRicochetDecal
 
 local Colors = {
-	[MAT_GRATE] = Vector(170, 170, 170),
-	[MAT_CLIP] = Vector(170, 170, 170),
-	[MAT_METAL] = Vector(170, 170, 170),
-	[MAT_COMPUTER] = Vector(170, 170, 170),
-	[MAT_DIRT] = Vector(100, 80, 50),
-	[MAT_FOLIAGE] = Vector(100, 80, 50),
-	[MAT_SAND] = Vector(100, 80, 50),
+	[MAT_GRATE] = Vector(170, 160, 144),
+	[MAT_CLIP] = Vector(170, 160, 144),
+	[MAT_METAL] = Vector(170, 160, 144),
+	[MAT_COMPUTER] = Vector(170, 160, 144),
+	[MAT_CONCRETE] = Vector(180, 172, 158),
+	[MAT_DIRT] = Vector(95, 80, 63),
+	[MAT_GRASS] = Vector(114,100, 80),
+	[MAT_SLOSH] = Vector(104,90, 70),
+	[MAT_SNOW] = Vector(154,140, 110),
+	[MAT_FOLIAGE] = Vector(104,90, 70),
+	[MAT_SAND] = Vector(180, 155, 100),
 }
 
 function EFFECT:Init(Data)
@@ -27,10 +31,8 @@ function EFFECT:Init(Data)
 	TraceData.mask = MASK_SOLID
 
 	local Impact = TraceLine(TraceData)
-
 	self.Normal = Impact.HitNormal
-	self.Color = Colors[Impact.MatType] or Vector(90, 90, 90)
-
+	self.Color = Colors[Impact.MatType] or Vector(120, 110, 100)
 	if Impact.HitSky or not Impact.Hit then
 		self:Airburst()
 	else
@@ -78,7 +80,6 @@ function EFFECT:GroundImpact()
 
 	for _ = 0, 3 do
 		local Flame = self.Emitter:Add("effects/muzzleflash" .. math.random(1, 4), self.Origin)
-
 		if Flame then
 			Flame:SetVelocity((Normal + VectorRand()) * 150 * Radius)
 			Flame:SetLifeTime(0)
@@ -98,7 +99,6 @@ function EFFECT:GroundImpact()
 	for _ = 0, 5 * math.Clamp(Radius,1,30) * Mult do
 
 		local Debris = self.Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
-
 		if Debris then
 			Debris:SetVelocity((Normal + VectorRand()) * 150 * Radius)
 			Debris:SetLifeTime(0)
@@ -115,9 +115,8 @@ function EFFECT:GroundImpact()
 		end
 	end
 
-	for _ = 0, 20 * math.Clamp(Radius,1,10) * Mult do
+	for _ = 0, 10 * math.Clamp(Radius,1,10) * Mult do
 		local Embers = self.Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
-
 		if Embers then
 			Embers:SetVelocity((Normal + VectorRand()) * 150 * Radius)
 			Embers:SetLifeTime(0)
@@ -176,7 +175,6 @@ function EFFECT:GroundImpact()
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 
 		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
-
 		if Smoke then
 			Smoke:SetVelocity(Angle:Up() * math.Rand(50, 200 * Radius))
 			Smoke:SetLifeTime(0)
@@ -203,13 +201,11 @@ function EFFECT:Airburst()
 	local Normal = self.DirVec
 
 	self:Core(self.DirVec)
-
 	for _ = 0, 3 do
 		local Flame = self.Emitter:Add("effects/muzzleflash" .. math.random(1, 4), self.Origin)
-
 		if Flame then
 			Flame:SetLifeTime(0)
-			Flame:SetDieTime(0.2)
+			Flame:SetDieTime(0.17)
 			Flame:SetStartAlpha(255)
 			Flame:SetEndAlpha(255)
 			Flame:SetStartSize(Radius)
@@ -223,7 +219,6 @@ function EFFECT:Airburst()
 	end
 
 	local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
-
 	if Smoke then
 		Smoke:SetLifeTime(0)
 		Smoke:SetDieTime(math.Rand(1, 0.2 * Radius))
@@ -236,13 +231,11 @@ function EFFECT:Airburst()
 		Smoke:SetGravity(Vector(math.random(-2, 2) * Radius, math.random(-2, 2) * Radius, -math.random(10, 30)))
 		Smoke:SetColor(SmokeColor.x, SmokeColor.y, SmokeColor.z)
 	end
-
-	for I = 0, Radius * Mult do
+	for I = 0, math.Clamp(Radius,1,10) * Mult do
 		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin - Normal * 4 * Radius)
 		local Radmod = Radius * 0.25
 
 		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
-
 		if Smoke then
 			Smoke:SetVelocity((Normal + VectorRand() * 0.08) * math.random(20,300) * Radmod)
 			Smoke:SetLifeTime(0)
@@ -259,7 +252,6 @@ function EFFECT:Airburst()
 		end
 
 		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
-
 		if Smoke then
 			Smoke:SetVelocity((Normal + VectorRand() * 0.08) * -math.random(20,40) * Radmod)
 			Smoke:SetLifeTime(0)
@@ -278,7 +270,7 @@ function EFFECT:Airburst()
 
 	local Angle = Normal:Angle()
 	Angle:RotateAroundAxis(Angle:Forward(), math.random(1,300))
-	local rv = math.random(8,12) * Mult * Radius
+	local rv = math.Clamp(math.random(8,12) * Mult * Radius,1,150)
 	for _ = 0, rv do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / rv)
 		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
@@ -335,7 +327,7 @@ function EFFECT:Airburst()
 		if EF then
 			EF:SetVelocity((Angle:Up() + Normal * math.random(0.3,5)):GetNormalized() *  1)
 			EF:SetAirResistance(100)
-			EF:SetDieTime(0.2)
+			EF:SetDieTime(0.17)
 			EF:SetStartAlpha(240)
 			EF:SetEndAlpha(20 )
 			EF:SetStartSize(6 * Radius)
