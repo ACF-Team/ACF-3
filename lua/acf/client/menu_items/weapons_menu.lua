@@ -132,7 +132,9 @@ local function GetMass(Caliber, Class, Weapon)
 
 	local Model  = Class.Model
 	local Scale  = Caliber / Class.Caliber.Base
-	local Factor = ACF.GetModelVolume(Model, Scale) / ACF.GetModelVolume(Model)
+	local Scaled = ACF.GetModelVolume(Model, Scale)
+	local Base   = ACF.GetModelVolume(Model)
+	local Factor = Scaled and Base and Scaled / Base or 0
 
 	return math.Round(Class.Mass * Factor)
 end
