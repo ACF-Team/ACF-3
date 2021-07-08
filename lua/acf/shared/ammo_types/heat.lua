@@ -29,11 +29,16 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	return LinerMass, ConeVol, Height
 end
 
-function Ammo:GetPenetration(Bullet, Standoff, TargetDensity)
-	local BreakupT = Bullet.BreakupTime
-	local MinVel   = Bullet.JetMinVel
-	local MaxVel   = Bullet.JetMaxVel
-	local Gamma    = math.sqrt(TargetDensity / ACF.CopperDensity)
+function Ammo:GetPenetration(Bullet, Standoff)
+	if not isnumber(Standoff) then
+		return 1 -- Does not matter, just so calls to damage functions don't go sneedmode
+	end
+
+	local BreakupT      = Bullet.BreakupTime
+	local MinVel        = Bullet.JetMinVel
+	local MaxVel        = Bullet.JetMaxVel
+	local TargetDensity = ACF.RHADensity -- Assuming RHA
+	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
 
 	local Penetration = 0
 	if Standoff < Bullet.BreakupDist then
@@ -45,7 +50,7 @@ function Ammo:GetPenetration(Bullet, Standoff, TargetDensity)
 		Penetration = (MaxVel * BreakupT - math.sqrt(ACF.HEATMinPenVel * BreakupT * (MaxVel * BreakupT + Gamma * Standoff))) / Gamma
 	end
 
-	return Penetration * ACF.HEATPenMul * 1e3 -- m to mm
+	return math.max(Penetration * ACF.HEATPenMul * 1e3, 0) -- m to mm
 end
 
 function Ammo:GetDisplayData(Data)
@@ -82,7 +87,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
-	--  but the explosive behind it has diminishing returns. Most papers put the maximum useful head length (explosive length behind the
+	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
 	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
 	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
@@ -198,19 +203,92 @@ if SERVER then
 	end
 
 	function Ammo:Detonate(Bullet, HitPos)
+		-- Apply HE damage
 		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
 
-		local SlugMV = self:CalcSlugMV(Bullet) * 39.37 * (Bullet.SlugPenMul or 1)
+		-- Find ACF entities in the range of the damage (or simplify to like 6m)
+		local SquishyEnts = ents.FindInSphere(HitPos, 250)
+		-- Move the jet start to the impact point and back it up by the passive standoff
+		local Direction = Bullet.Flight:GetNormalized()
+		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
+		local JetEnd    = HitPos + Direction * 10000
+		local Caliber   = Bullet.Diameter * 10
 
-		Bullet.Detonated = true
-		Bullet.Flight    = Bullet.Flight:GetNormalized() * SlugMV
-		Bullet.NextPos   = HitPos
-		Bullet.DragCoef  = Bullet.SlugDragCoef
-		Bullet.ProjMass  = Bullet.SlugMass
-		Bullet.Caliber   = Bullet.SlugCaliber
-		Bullet.Diameter  = Bullet.Caliber
-		Bullet.Ricochet  = Bullet.SlugRicochet
-		Bullet.LimitVel  = 999999
+		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
+		local Penetrations = 0
+		local JetMassPct   = 1
+		while Penetrations < 20 do
+			local TraceRes = ACF.Trace(TraceData)
+			local HitPos   = TraceRes.HitPos
+			local Ent      = TraceRes.Entity
+			debugoverlay.Line(JetStart, HitPos, 15, ColorRand(100, 255))
+
+			-- Get the (full jet's) penetration
+			local Standoff    = (HitPos - JetStart):Length() * 0.0254 -- Back to m
+			local Penetration = self:GetPenetration(Bullet, Standoff)
+			-- If it's out of range, stop here
+			if Penetration == 0 then break end
+
+			-- Get the effective armor thickness
+			local BaseArmor = 0
+			local Damage    = nil
+			if TraceRes.HitWorld then
+				-- Get the surface and calculate the RHA equivalent
+				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
+				local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
+				local Penetrated, Exit = ACF_DigTrace(HitPos + Direction, HitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
+				-- Base armor is the RHAe if penetrated, or simply more than the penetration so the jet loses all mass and penetration stops
+				BaseArmor = Penetrated and ((Exit - HitPos):Length() * Density * 25.4) or (Penetration + 1)
+				-- Update the starting position of the trace because world is not filterable
+				TraceData.start = Exit
+			elseif Ent:CPPIGetOwner() == game.GetWorld() then
+				-- AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+				BaseArmor = Penetration + 1
+			elseif TraceRes.Hit then
+				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF.Armour
+				-- Enable damage if a valid entity is hit
+				Damage = 0
+			end
+			local SlopeFactor    = BaseArmor / Caliber
+			local Angle          = math.Clamp(ACF_GetHitAngle(TraceRes.HitNormal, Direction), -90, 90)
+			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+
+			-- Percentage of total jet mass lost to this penetration
+			local LostMassPct = EffectiveArmor / Penetration
+			-- Deal damage based on the volume of the lost mass
+			if Damage == 0 then
+				local CopperMass = math.min(LostMassPct, 1 - JetMassPct) * Bullet.JetMass
+				local Cavity     = ACF.HEATCavityMul * CopperMass / ACF.CopperDensity -- in cm^3
+				ACF_VolumeDamage(Bullet, TraceRes, Cavity)
+			end
+			-- Reduce the jet mass by the lost mass
+			JetMassPct = JetMassPct - LostMassPct
+
+			print("\nPenetration " .. Penetrations + 1)
+			print("Hit entity:          " .. TraceRes.Entity:GetClass())
+			print("Effective armor:     " .. EffectiveArmor)
+			print("Standoff:            " .. Standoff)
+			print("Penetration at dist: " .. Penetration)
+			print("Lost mass pct:       " .. LostMassPct)
+			print("Remaining mass pct:  " .. JetMassPct)
+			print("Cavity:              " .. ACF.HEATCavityMul * math.min(LostMassPct, 1 - JetMassPct) * Bullet.JetMass / ACF.CopperDensity)
+			-- If no mass is left (jet penetration stopped) stop here
+			if JetMassPct < 0 then break end
+
+			-- If the target is ammo and the crate armor is penetrated, detonate
+			if Ent.Detonate then
+				Ent.Damaged = true
+				Ent:Detonate()
+			end
+
+			-- Filter the hit entity
+			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end
+			-- For every entity
+				-- Check dot product
+				-- Check free path (trace)
+				-- Use lost jet mass to do damage to in range entities
+			Penetrations = Penetrations + 1
+		end
 
 		return true
 	end
@@ -219,65 +297,23 @@ if SERVER then
 		local Target = Trace.Entity
 
 		if ACF.Check(Target) then
-			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local HitPos = Trace.HitPos
+			local Ricochet, _ = 0, 0 --ACF_CalcRicochet(Bullet, Trace)
 
-			Bullet.Speed = Speed
-
-			if Bullet.Detonated then
-				local Multiplier = Bullet.NotFirstPen and ACF.HEATPenLayerMul or 1
-				local Energy     = ACF.Kinetic(Speed, Bullet.ProjMass)
-
-				Bullet.Energy      = Energy
-				Bullet.NotFirstPen = true
-
-				local HitRes = ACF_RoundImpact(Bullet, Trace)
-
-				if HitRes.Overkill > 0 then
-					table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
-
-					Bullet.Flight = Bullet.Flight:GetNormalized() * math.sqrt(Energy.Kinetic * (1 - HitRes.Loss) * Multiplier * 2000 / Bullet.ProjMass) * 39.37
-
-					return "Penetrated"
-				else
-					return false
-				end
+			if Ricochet ~= 0 then
+				return "Ricochet"
 			else
-				Bullet.Energy = ACF.Kinetic(Speed, Bullet.ProjMass - Bullet.FillerMass)
-
-				local HitRes = ACF_RoundImpact(Bullet, Trace)
-
-				if HitRes.Ricochet then
-					return "Ricochet"
-				else
-					if self:Detonate(Bullet, HitPos) then
-						return "Penetrated"
-					else
-						return false
-					end
-				end
+				self:Detonate(Bullet, Trace.HitPos)
+				return false
 			end
 		else
 			table.insert(Bullet.Filter, Target)
 
 			return "Penetrated"
 		end
-
-		return false
 	end
 
 	function Ammo:WorldImpact(Bullet, Trace)
-		if not Bullet.Detonated then
-			if self:Detonate(Bullet, Trace.HitPos) then
-				return "Penetrated"
-			else
-				return false
-			end
-		end
-
-		local Function = ACF.Check(Trace.Entity) and ACF_PenetrateMapEntity or ACF_PenetrateGround
-
-		return Function(Bullet, Trace)
+		return false
 	end
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
@@ -446,9 +482,9 @@ else
 
 			local Text   = "Penetration at passive standoff :\nAt %s mm : %s mm RHA\nMaximum penetration :\nAt %s mm : %s mm RHA"
 			local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)
-			local Pen1 = math.Round(self:GetPenetration(BulletData, BulletData.Standoff, ACF.SteelDensity), 1)
+			local Pen1 = math.Round(self:GetPenetration(BulletData, BulletData.Standoff), 1)
 			local Standoff2 = math.Round(BulletData.BreakupDist * 1e3, 0)
-			local Pen2 = math.Round(self:GetPenetration(BulletData, BulletData.BreakupDist, ACF.SteelDensity), 1)
+			local Pen2 = math.Round(self:GetPenetration(BulletData, BulletData.BreakupDist), 1)
 
 			return Text:format(Standoff1, Pen1, Standoff2, Pen2)
 		end)

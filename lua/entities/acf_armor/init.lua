@@ -171,13 +171,13 @@ do -- ACF Activation and Damage
 		self.ACF.Type      = "Prop"
 	end
 
-	function ENT:ACF_OnDamage(Bullet, Trace)
+	function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 		local Entity = Trace.Entity
 		local Armor  = Entity:GetArmor(Trace)
 		local Area   = Bullet.ProjArea
 		local Pen    = Bullet:GetPenetration() -- RHA Penetration
 		local MaxPen = math.min(Armor, Pen)
-		local Damage = MaxPen * Area -- Damage is simply the volume of the hole made
+		local Damage = isnumber(Volume) and Volume or MaxPen * Area -- Damage is simply the volume of the hole made
 		local HP     = self.ACF.Health
 
 		self.ACF.Health = HP - Damage -- Update health

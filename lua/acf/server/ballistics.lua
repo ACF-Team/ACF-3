@@ -339,6 +339,15 @@ do -- Terminal ballistics --------------------------
 		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
 	end
 
+	function ACF_VolumeDamage(Bullet, Trace, Volume)
+		local HitRes = ACF.Damage(Bullet, Trace, Volume)
+
+		if HitRes.Kill then
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+			table.insert(Bullet.Filter , Debris)
+		end
+	end
+
 	function ACF_RoundImpact(Bullet, Trace)
 		local Speed    = Bullet.Speed
 		local Energy   = Bullet.Energy
@@ -488,6 +497,8 @@ do -- Terminal ballistics --------------------------
 			end
 		end
 	end
+
+	ACF_DigTrace = DigTrace
 
 	function ACF_PenetrateMapEntity(Bullet, Trace)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)

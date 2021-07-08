@@ -82,16 +82,13 @@ do -- ACF global vars
 	ACF.MaxChargeHeadLen   = 1.5     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
 	ACF.HEATPenMul         = 0.4     -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATMVScale        = 0.75    --Filler KE to HEAT slug KE conversion expotential
-	ACF.HEATMulAmmo        = 30 --HEAT slug damage multiplier; 13.2x roughly equal to AP damage
-	ACF.HEATMulFuel        = 4 --needs less multiplier, much less health than ammo
-	ACF.HEATMulEngine      = 10 --likewise
-	ACF.HEATPenLayerMul    = 0.75 --HEAT base energy multiplier
-	ACF.HEATBoomConvert    = 1 / 3 -- percentage of filler that creates HE damage at detonation
+	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
+	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 
 	-- Material densities
-	ACF.SteelDensity       = 7.9e-3	 -- kg/cm^3
-	ACF.AluminumDensity    = 2.7e-3	 -- kg/cm^3
+	ACF.SteelDensity       = 7.9e-3  -- kg/cm^3
+	ACF.RHADensity         = 7.84e-3 -- kg/cm^3
+	ACF.AluminumDensity    = 2.7e-3  -- kg/cm^3
 	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
 
 	-- Debris
