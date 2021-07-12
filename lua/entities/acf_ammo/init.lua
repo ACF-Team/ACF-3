@@ -448,8 +448,8 @@ do -- ACF Activation and Damage -----------------
 		self.ACF.Type = "Prop"
 	end
 
-	function ENT:ACF_OnDamage(Bullet, Trace)
-		local HitRes = ACF.PropDamage(Bullet, Trace) --Calling the standard damage prop function
+	function ENT:ACF_OnDamage(Bullet, Trace, Volume)
+		local HitRes = ACF.PropDamage(Bullet, Trace, Volume) --Calling the standard damage prop function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 

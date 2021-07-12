@@ -207,7 +207,20 @@ if SERVER then
 		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
-		local SquishyEnts = ents.FindInSphere(HitPos, 250)
+		local FoundEnts = ents.FindInSphere(HitPos, 250)
+		local Squishies = {}
+		for _, v in ipairs(FoundEnts) do
+			local Class = v:GetClass()
+
+			-- Blacklist armor and props, the most common entities
+			if Class ~= "acf_armor" and Class ~= "prop_physics" then
+				if Class:find("^acf") or Class:find("^gmod_wire") or Class:find("^prop_vehicle") or v:IsPlayer() then
+					Squishies[#Squishies + 1] = v
+				end
+			end
+		end
+		PrintTable(Squishies)
+
 		-- Move the jet start to the impact point and back it up by the passive standoff
 		local Direction = Bullet.Flight:GetNormalized()
 		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
@@ -256,9 +269,8 @@ if SERVER then
 			-- Percentage of total jet mass lost to this penetration
 			local LostMassPct = EffectiveArmor / Penetration
 			-- Deal damage based on the volume of the lost mass
+			local Cavity = ACF.HEATCavityMul * LostMassPct * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			if Damage == 0 then
-				local CopperMass = math.min(LostMassPct, 1 - JetMassPct) * Bullet.JetMass
-				local Cavity     = ACF.HEATCavityMul * CopperMass / ACF.CopperDensity -- in cm^3
 				ACF_VolumeDamage(Bullet, TraceRes, Cavity)
 			end
 			-- Reduce the jet mass by the lost mass
@@ -271,7 +283,7 @@ if SERVER then
 			print("Penetration at dist: " .. Penetration)
 			print("Lost mass pct:       " .. LostMassPct)
 			print("Remaining mass pct:  " .. JetMassPct)
-			print("Cavity:              " .. ACF.HEATCavityMul * math.min(LostMassPct, 1 - JetMassPct) * Bullet.JetMass / ACF.CopperDensity)
+			print("Cavity:              " .. Cavity)
 			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
@@ -283,14 +295,28 @@ if SERVER then
 
 			-- Filter the hit entity
 			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end
-			-- For every entity
-				-- Check dot product
-				-- Check free path (trace)
-				-- Use lost jet mass to do damage to in range entities
+
+			-- Deal damage to the squishies
+			for _, v in ipairs(Squishies) do
+				local TargetPos = v:GetPos()
+				if (TargetPos - HitPos):GetNormalized():Dot(Direction) > ACF.HEATSpallingArc then
+					-- Run a trace to determine if the target is occluded
+					local TargetTrace = {start = HitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
+					local TargetRes   = ACF.Trace(TargetTrace)
+					local Ent         = TargetRes.Entity
+
+					print(Ent)
+
+					if TraceRes.HitNonWorld and IsValid(Ent) then
+						debugoverlay.Line(HitPos, TargetPos, 15, ColorRand(100, 255))
+						print(Cavity * 0.1)
+						ACF_VolumeDamage(Bullet, TargetRes, Cavity * 0.1)
+					end
+				end
+			end
+
 			Penetrations = Penetrations + 1
 		end
-
-		return true
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)

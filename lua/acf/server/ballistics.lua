@@ -343,7 +343,7 @@ do -- Terminal ballistics --------------------------
 		local HitRes = ACF.Damage(Bullet, Trace, Volume)
 
 		if HitRes.Kill then
-			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), 0)
 			table.insert(Bullet.Filter , Debris)
 		end
 	end

@@ -569,8 +569,8 @@ function ENT:ACF_Activate()
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Bullet, Trace)
-	local Res = ACF.PropDamage(Bullet, Trace)
+function ENT:ACF_OnDamage(Bullet, Trace, Volume)
+	local Res = ACF.PropDamage(Bullet, Trace, Volume)
 
 	--adjusting performance based on damage
 	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)

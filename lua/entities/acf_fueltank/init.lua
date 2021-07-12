@@ -256,7 +256,7 @@ function ENT:ACF_Activate(Recalc)
 	end
 
 	local Armour = self.EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone 
+	local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone
 	local Percent = 1
 
 	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -270,8 +270,8 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Type = "Prop"
 end
 
-function ENT:ACF_OnDamage(Bullet, Trace)
-	local HitRes = ACF.PropDamage(Bullet, Trace) --Calling the standard damage prop function
+function ENT:ACF_OnDamage(Bullet, Trace, Volume)
+	local HitRes = ACF.PropDamage(Bullet, Trace, Volume) --Calling the standard damage prop function
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
