@@ -83,7 +83,7 @@ do -- ACF global vars
 	ACF.HEATPenMul         = 0.4     -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
 	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
-	ACF.HEATSpallingArc    = 0.85    -- Cossine of the HEAT spalling angle
+	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 
 	-- Material densities

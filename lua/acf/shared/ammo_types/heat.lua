@@ -202,6 +202,7 @@ if SERVER then
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), math.Round(Data.BoomFillerMass * ACF.HEPower, 2))
 	end
 
+	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
 		-- Apply HE damage
 		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
@@ -224,12 +225,13 @@ if SERVER then
 		-- Move the jet start to the impact point and back it up by the passive standoff
 		local Direction = Bullet.Flight:GetNormalized()
 		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
-		local JetEnd    = HitPos + Direction * 10000
+		local JetEnd    = HitPos + Direction * 3000
 		local Caliber   = Bullet.Diameter * 10
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
 		local JetMassPct   = 1
+		-- Main jet penetrations
 		while Penetrations < 20 do
 			local TraceRes = ACF.Trace(TraceData)
 			local HitPos   = TraceRes.HitPos
@@ -287,7 +289,7 @@ if SERVER then
 			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
-			-- If the target is ammo and the crate armor is penetrated, detonate
+			-- If the target is explosive and the armor is penetrated, detonate
 			if Ent.Detonate then
 				Ent.Damaged = true
 				Ent:Detonate()
@@ -296,23 +298,51 @@ if SERVER then
 			-- Filter the hit entity
 			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end
 
-			-- Deal damage to the squishies
+			-- Determine how much damage the squishies will take
+			local Damageables = {}
+			local AreaSum     = 0
+			local AvgDist     = 0
 			for _, v in ipairs(Squishies) do
 				local TargetPos = v:GetPos()
-				if (TargetPos - HitPos):GetNormalized():Dot(Direction) > ACF.HEATSpallingArc then
+				local DotProd   = (TargetPos - HitPos):GetNormalized():Dot(Direction)
+				-- If within the arc of spalling
+				if DotProd > 0 then
 					-- Run a trace to determine if the target is occluded
 					local TargetTrace = {start = HitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
 					local TargetRes   = ACF.Trace(TargetTrace)
 					local Ent         = TargetRes.Entity
-
-					print(Ent)
-
+					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
 					if TraceRes.HitNonWorld and IsValid(Ent) then
 						debugoverlay.Line(HitPos, TargetPos, 15, ColorRand(100, 255))
-						print(Cavity * 0.1)
-						ACF_VolumeDamage(Bullet, TargetRes, Cavity * 0.1)
+
+						local DistSqr = (TargetRes.HitPos - HitPos):LengthSqr()
+						-- Calculate how much shrapnel will hit the target based on it's relative area
+						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
+						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
+						--  as a cube, good enough) one of the 6 faces is visible
+						local RelArea = (DotProd ^ 3) * Ent.ACF.Area / (DistSqr * 6)
+						AreaSum = AreaSum + RelArea
+						AvgDist = AvgDist + math.sqrt(DistSqr)
+						Damageables[#Damageables + 1] = {Ent, RelArea}
 					end
 				end
+			end
+			AvgDist = AvgDist / #Damageables
+
+			local Radius  = AvgDist * SpallingSin
+			-- Minimum area is the base of the spalling cone, with the distance being the average squishy distance
+			-- Divided by the average distance squared so it's the same as the relative area
+			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
+			print(AreaSum, MinArea)
+			AreaSum = math.max(AreaSum, MinArea)
+			for _, v in ipairs(Damageables) do
+				-- The only information used from the trace is the entity, so we can use a fake TraceRes
+				-- Scuffed, but alas
+				local FakeTrace = {HitNormal = Vector(1,0,0), Entity = v[1]}
+				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
+				local Damage    = Cavity * v[2] / AreaSum
+				print(Cavity, v[2], AreaSum)
+				ACF_VolumeDamage(Bullet, FakeTrace, Damage)
 			end
 
 			Penetrations = Penetrations + 1
