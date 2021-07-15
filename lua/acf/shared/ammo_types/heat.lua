@@ -21,7 +21,7 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeArea   = math.pi * Radius * math.sqrt(Height ^ 2 + Radius ^ 2)
 	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
-	local AngleMult  = (45 + ConeAngle) / 45 -- Shallower cones need thicker liners to survive being made into EFPs
+	local AngleMult  = (30 + ConeAngle) / 30 -- Shallower cones need thicker liners to survive being made into EFPs
 	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
@@ -158,10 +158,6 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not isnumber(ToolData.FillerRatio) then
-		ToolData.FillerRatio = 1
-	end
-
 	if not isnumber(ToolData.StandoffRatio) then
 		ToolData.StandoffRatio = 0
 	end
@@ -177,7 +173,6 @@ if SERVER then
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.FillerRatio = nil
 		Entity.LinerAngle  = nil
 
 		-- Cleanup the leftovers aswell
@@ -206,6 +201,7 @@ if SERVER then
 	function Ammo:Detonate(Bullet, HitPos)
 		-- Apply HE damage
 		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
+		self:HEATExplosionEffect(Bullet, HitPos)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
 		local FoundEnts = ents.FindInSphere(HitPos, 250)
@@ -289,6 +285,8 @@ if SERVER then
 			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
+			self:PenetrationEffect(Bullet, HitPos, Cavity)
+
 			-- If the target is explosive and the armor is penetrated, detonate
 			if Ent.Detonate then
 				Ent.Damaged = true
@@ -349,13 +347,22 @@ if SERVER then
 		end
 	end
 
+	local function OnRicochet(Bullet, Trace, Ricochet)
+		if Ricochet > 0 and Bullet.Ricochets < 3 then
+			Bullet.Ricochets = Bullet.Ricochets + 1
+			Bullet.NextPos = Trace.HitPos
+			Bullet.Flight = (ACF_RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025):GetNormalized() * Bullet.Flight:Length() * Ricochet
+		end
+	end
+
 	function Ammo:PropImpact(Bullet, Trace)
 		local Target = Trace.Entity
 
 		if ACF.Check(Target) then
-			local Ricochet, _ = 0, 0 --ACF_CalcRicochet(Bullet, Trace)
+			local Ricochet, _ = ACF_CalcRicochet(Bullet, Trace)
 
 			if Ricochet ~= 0 then
+				OnRicochet(Bullet, Trace, Ricochet)
 				return "Ricochet"
 			else
 				self:Detonate(Bullet, Trace.HitPos)
@@ -371,54 +378,82 @@ if SERVER then
 	function Ammo:WorldImpact(Bullet, Trace)
 		return false
 	end
+
+
+	function Ammo:PenetrationEffect(Bullet, Pos, Cavity)
+		local Data = EffectData()
+		Data:SetOrigin(Pos)
+		Data:SetNormal(Bullet.Flight:GetNormalized())
+		Data:SetScale(Bullet.JetMaxVel * 3)
+		Data:SetMagnitude(Cavity)
+		Data:SetRadius(Bullet.Caliber)
+		--Data:SetDamageType(DecalIndex(Bullet.AmmoType))
+
+		util.Effect("ACF_Penetration", Data)
+	end
+
+	function Ammo:HEATExplosionEffect(Bullet, Pos)
+		local Data = EffectData()
+		Data:SetOrigin(Pos)
+		Data:SetNormal(Bullet.Flight:GetNormalized())
+		Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
+
+		util.Effect("ACF_HEAT_Explosion", Data)
+	end
+
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
 
 	function Ammo:ImpactEffect(Effect, Bullet)
-		if not Bullet.Detonated then
-			self:PenetrationEffect(Effect, Bullet)
-		end
+		return
+		--[[
+			if not Bullet.Detonated then
+				self:PenetrationEffect(Effect, Bullet)
+			end
 
-		Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
+			Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
+		--]]
 	end
 
 	function Ammo:PenetrationEffect(Effect, Bullet)
-		if Bullet.Detonated then
-			local Data = EffectData()
-			Data:SetOrigin(Bullet.SimPos)
-			Data:SetNormal(Bullet.SimFlight:GetNormalized())
-			Data:SetScale(Bullet.SimFlight:Length())
-			Data:SetMagnitude(Bullet.RoundMass)
-			Data:SetRadius(Bullet.Caliber)
-			Data:SetDamageType(DecalIndex(Bullet.AmmoType))
+		return
+		--[[
+			if Bullet.Detonated then
+				local Data = EffectData()
+				Data:SetOrigin(Bullet.SimPos)
+				Data:SetNormal(Bullet.SimFlight:GetNormalized())
+				Data:SetScale(Bullet.SimFlight:Length())
+				Data:SetMagnitude(Bullet.RoundMass)
+				Data:SetRadius(Bullet.Caliber)
+				Data:SetDamageType(DecalIndex(Bullet.AmmoType))
 
-			util.Effect("ACF_Penetration", Data)
-		else
-			local Data = EffectData()
-			Data:SetOrigin(Bullet.SimPos)
-			Data:SetNormal(Bullet.SimFlight:GetNormalized())
-			Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
+				util.Effect("ACF_Penetration", Data)
+			else
+				local Data = EffectData()
+				Data:SetOrigin(Bullet.SimPos)
+				Data:SetNormal(Bullet.SimFlight:GetNormalized())
+				Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
 
-			util.Effect("ACF_HEAT_Explosion", Data)
+				util.Effect("ACF_HEAT_Explosion", Data)
 
-			Bullet.Detonated = true
-			Bullet.LimitVel  = 999999
+				Bullet.Detonated = true
+				Bullet.LimitVel  = 999999
 
-			Effect:SetModel("models/Gibs/wood_gib01e.mdl")
-		end
+				Effect:SetModel("models/Gibs/wood_gib01e.mdl")
+			end
+		--]]
 	end
 
 	function Ammo:RicochetEffect(_, Bullet)
-		local Detonated = Bullet.Detonated
 		local Effect = EffectData()
 		Effect:SetOrigin(Bullet.SimPos)
 		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
 		Effect:SetScale(Bullet.SimFlight:Length())
 		Effect:SetMagnitude(Bullet.RoundMass)
 		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Detonated and Bullet.AmmoType or "AP"))
+		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 
 		util.Effect("ACF_Ricochet", Effect)
 	end
@@ -440,16 +475,6 @@ else
 			return BulletData.ConeAng
 		end)
 
-		local FillerRatio = Base:AddSlider("Filler Ratio", 0.5, 1, 2)
-		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, _, Value)
-			ToolData.FillerRatio = math.Round(Value, 2)
-
-			self:UpdateRoundData(ToolData, BulletData)
-
-			return BulletData.FillerVol
-		end)
-
 		-- Capped the max standoff at 0.4 for historical reasons
 		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.4, 2)
 		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
@@ -458,15 +483,13 @@ else
 
 			self:UpdateRoundData(ToolData, BulletData)
 
-			-- TODO what should this be?
-			return BulletData.FillerVol
+			return ToolData.StandoffRatio
 		end)
 	end
 
 	function Ammo:AddCrateDataTrackers(Trackers, ...)
 		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
 
-		Trackers.FillerRatio = true
 		Trackers.LinerAngle = true
 		Trackers.StandoffRatio = true
 	end
@@ -475,7 +498,6 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:TrackClientData("LinerAngle")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
@@ -493,7 +515,6 @@ else
 		local FillerStats = Base:AddLabel()
 		FillerStats:TrackClientData("Projectile", "SetText")
 		FillerStats:TrackClientData("Propellant")
-		FillerStats:TrackClientData("FillerRatio")
 		FillerStats:TrackClientData("LinerAngle")
 		FillerStats:TrackClientData("StandoffRatio")
 		FillerStats:DefineSetter(function()
@@ -511,7 +532,6 @@ else
 		local Penetrator = Base:AddLabel()
 		Penetrator:TrackClientData("Projectile", "SetText")
 		Penetrator:TrackClientData("Propellant")
-		Penetrator:TrackClientData("FillerRatio")
 		Penetrator:TrackClientData("LinerAngle")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
@@ -530,7 +550,6 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("Projectile", "SetText")
 		PenStats:TrackClientData("Propellant")
-		PenStats:TrackClientData("FillerRatio")
 		PenStats:TrackClientData("LinerAngle")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()
