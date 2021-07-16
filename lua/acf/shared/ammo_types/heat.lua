@@ -317,7 +317,9 @@ if SERVER then
 						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
 						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
 						--  as a cube, good enough) one of the 6 faces is visible
-						local RelArea = (DotProd ^ 3) * Ent.ACF.Area / (DistSqr * 6)
+						local Area    = 0
+						if ACF.Check(Ent) then Area = Ent.ACF.Area else continue end
+						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
 						Damageables[#Damageables + 1] = {Ent, RelArea}
