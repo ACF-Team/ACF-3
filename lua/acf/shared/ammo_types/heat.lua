@@ -216,7 +216,6 @@ if SERVER then
 				end
 			end
 		end
-		PrintTable(Squishies)
 
 		-- Move the jet start to the impact point and back it up by the passive standoff
 		local Direction = Bullet.Flight:GetNormalized()
@@ -331,15 +330,14 @@ if SERVER then
 			-- Minimum area is the base of the spalling cone, with the distance being the average squishy distance
 			-- Divided by the average distance squared so it's the same as the relative area
 			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
-			print(AreaSum, MinArea)
 			AreaSum = math.max(AreaSum, MinArea)
+			-- The only information used from the trace is the entity, so we can use a fake TraceRes with placeholder information,
+			--  which the damage function checks but doesn't use. Scuffed, but alas - rework damage
+			local FakeTrace = {HitNormal = Vector(1,0,0), StartPos = Vector(1,0,0), HitPos = Vector(0,0,0), EndPos = Vector(0,0,0)}
 			for _, v in ipairs(Damageables) do
-				-- The only information used from the trace is the entity, so we can use a fake TraceRes
-				-- Scuffed, but alas
-				local FakeTrace = {HitNormal = Vector(1,0,0), Entity = v[1]}
+				FakeTrace.Entity = v[1]
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
 				local Damage    = Cavity * v[2] / AreaSum
-				print(Cavity, v[2], AreaSum)
 				ACF_VolumeDamage(Bullet, FakeTrace, Damage)
 			end
 
@@ -528,7 +526,6 @@ else
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
 		end)
 
-		-- TODO this should prolly be removed
 		local Penetrator = Base:AddLabel()
 		Penetrator:TrackClientData("Projectile", "SetText")
 		Penetrator:TrackClientData("Propellant")
@@ -546,7 +543,6 @@ else
 			return Text:format(CuMass, JetMass, MinVel, MaxVel)
 		end)
 
-		-- TODO add pen stats at passive standoff + maybe max pen
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("Projectile", "SetText")
 		PenStats:TrackClientData("Propellant")
@@ -563,8 +559,5 @@ else
 
 			return Text:format(Standoff1, Pen1, Standoff2, Pen2)
 		end)
-
-		-- TODO remove this?
-		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
 	end
 end

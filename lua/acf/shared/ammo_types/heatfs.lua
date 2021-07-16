@@ -85,5 +85,31 @@ if SERVER then
 		Entity:SetNW2String("AmmoType", "HEATFS")
 	end
 else
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
+		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
+		LinerAngle:TrackClientData("Projectile")
+		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
+			if Key == "LinerAngle" then
+				ToolData.LinerAngle = math.Round(Value, 2)
+			end
 
+			self:UpdateRoundData(ToolData, BulletData)
+
+			Panel:SetMin(BulletData.MinConeAng)
+			Panel:SetValue(BulletData.ConeAng)
+
+			return BulletData.ConeAng
+		end)
+
+		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.75, 2)
+		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
+		StandoffRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.StandoffRatio = math.Round(Value, 2)
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			return ToolData.StandoffRatio
+		end)
+	end
 end
