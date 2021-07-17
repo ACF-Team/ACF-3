@@ -35,7 +35,6 @@ function Ammo:GetPenetration(Bullet, Standoff)
 	end
 
 	local BreakupT      = Bullet.BreakupTime
-	local MinVel        = Bullet.JetMinVel
 	local MaxVel        = Bullet.JetMaxVel
 	local TargetDensity = ACF.RHADensity -- Assuming RHA
 	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
@@ -104,7 +103,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
 	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25)* LinerAngle / 90  + 0.25)
+	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
@@ -213,10 +212,8 @@ if SERVER then
 			local Class = v:GetClass()
 
 			-- Blacklist armor and props, the most common entities
-			if Class ~= "acf_armor" and Class ~= "prop_physics" then
-				if Class:find("^acf") or Class:find("^gmod_wire") or Class:find("^prop_vehicle") or v:IsPlayer() then
-					Squishies[#Squishies + 1] = v
-				end
+			if Class ~= "acf_armor" and Class ~= "prop_physics" and (Class:find("^acf") or Class:find("^gmod_wire") or Class:find("^prop_vehicle") or v:IsPlayer()) then
+				Squishies[#Squishies + 1] = v
 			end
 		end
 
@@ -231,13 +228,13 @@ if SERVER then
 		local JetMassPct   = 1
 		-- Main jet penetrations
 		while Penetrations < 20 do
-			local TraceRes = ACF.Trace(TraceData)
-			local HitPos   = TraceRes.HitPos
-			local Ent      = TraceRes.Entity
-			debugoverlay.Line(JetStart, HitPos, 15, ColorRand(100, 255))
+			local TraceRes  = ACF.Trace(TraceData)
+			local PenHitPos = TraceRes.HitPos
+			local Ent       = TraceRes.Entity
+			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
 
 			-- Get the (full jet's) penetration
-			local Standoff    = (HitPos - JetStart):Length() * 0.0254 -- Back to m
+			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
 			local Penetration = self:GetPenetration(Bullet, Standoff)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
@@ -249,13 +246,13 @@ if SERVER then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
 				local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-				local Penetrated, Exit = ACF_DigTrace(HitPos + Direction, HitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
+				local Penetrated, Exit = ACF_DigTrace(PenHitPos + Direction, PenHitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
 				-- Base armor is the RHAe if penetrated, or simply more than the penetration so the jet loses all mass and penetration stops
-				BaseArmor = Penetrated and ((Exit - HitPos):Length() * Density * 25.4) or (Penetration + 1)
+				BaseArmor = Penetrated and ((Exit - PenHitPos):Length() * Density * 25.4) or (Penetration + 1)
 				-- Update the starting position of the trace because world is not filterable
 				TraceData.start = Exit
 			elseif Ent:CPPIGetOwner() == game.GetWorld() then
-				-- AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+				-- TODO: Fix world entity penetration
 				BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
 				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF.Armour
@@ -287,7 +284,7 @@ if SERVER then
 			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
-			self:PenetrationEffect(Bullet, HitPos, Cavity)
+			self:PenetrationEffect(Bullet, PenHitPos, Cavity)
 
 			-- If the target is explosive and the armor is penetrated, detonate
 			if Ent.Detonate then
@@ -304,28 +301,28 @@ if SERVER then
 			local AvgDist     = 0
 			for _, v in ipairs(Squishies) do
 				local TargetPos = v:GetPos()
-				local DotProd   = (TargetPos - HitPos):GetNormalized():Dot(Direction)
+				local DotProd   = (TargetPos - PenHitPos):GetNormalized():Dot(Direction)
 				-- If within the arc of spalling
 				if DotProd > 0 then
 					-- Run a trace to determine if the target is occluded
-					local TargetTrace = {start = HitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
+					local TargetTrace = {start = PenHitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
 					local TargetRes   = ACF.Trace(TargetTrace)
-					local Ent         = TargetRes.Entity
+					local SpallEnt    = TargetRes.Entity
 					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
-					if TraceRes.HitNonWorld and IsValid(Ent) then
-						debugoverlay.Line(HitPos, TargetPos, 15, ColorRand(100, 255))
+					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
+						debugoverlay.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
 
-						local DistSqr = (TargetRes.HitPos - HitPos):LengthSqr()
+						local DistSqr = (TargetRes.HitPos - PenHitPos):LengthSqr()
 						-- Calculate how much shrapnel will hit the target based on it's relative area
 						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
 						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
 						--  as a cube, good enough) one of the 6 faces is visible
 						local Area    = 0
-						if ACF.Check(Ent) then Area = Ent.ACF.Area else continue end
+						if ACF.Check(SpallEnt) then Area = SpallEnt.ACF.Area else continue end
 						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
-						Damageables[#Damageables + 1] = {Ent, RelArea}
+						Damageables[#Damageables + 1] = {SpallEnt, RelArea}
 					end
 				end
 			end
@@ -340,10 +337,10 @@ if SERVER then
 			--  which the damage function checks but doesn't use. Scuffed, but alas - rework damage
 			local FakeTrace = {HitNormal = Vector(1,0,0), StartPos = Vector(1,0,0), HitPos = Vector(0,0,0), EndPos = Vector(0,0,0)}
 			for _, v in ipairs(Damageables) do
-				FakeTrace.Entity = v[1]
+				FakeTrace.Entity  = v[1]
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local Damage    = Cavity * v[2] / AreaSum
-				ACF_VolumeDamage(Bullet, FakeTrace, Damage)
+				local SpallDamage = Cavity * v[2] / AreaSum
+				ACF_VolumeDamage(Bullet, FakeTrace, SpallDamage)
 			end
 
 			Penetrations = Penetrations + 1
@@ -378,7 +375,7 @@ if SERVER then
 		end
 	end
 
-	function Ammo:WorldImpact(Bullet, Trace)
+	function Ammo:WorldImpact()
 		return false
 	end
 
@@ -409,7 +406,7 @@ else
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
 
-	function Ammo:ImpactEffect(Effect, Bullet)
+	function Ammo:ImpactEffect()
 		return
 		--[[
 			if not Bullet.Detonated then
@@ -420,7 +417,7 @@ else
 		--]]
 	end
 
-	function Ammo:PenetrationEffect(Effect, Bullet)
+	function Ammo:PenetrationEffect()
 		return
 		--[[
 			if Bullet.Detonated then
