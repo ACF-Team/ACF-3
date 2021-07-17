@@ -43,7 +43,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
 	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25)* LinerAngle / 90  + 0.25)
+	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
