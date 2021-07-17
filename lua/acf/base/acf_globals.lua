@@ -78,9 +78,9 @@ do -- ACF global vars
 	ACF.CompBEquivalent    = 1.33    -- Relative to TNT
 	ACF.OctolDensity       = 1.83e-3 -- kg/cm^3
 	ACF.OctolEquivalent    = 1.54    -- Relative to TNT
-	ACF.LinerThicknessMult = 0.12    -- Metal liner thickness multiplier
+	ACF.LinerThicknessMult = 0.07    -- Metal liner thickness multiplier
 	ACF.MaxChargeHeadLen   = 1.5     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
-	ACF.HEATPenMul         = 0.4     -- Linear jet penetration multiplier
+	ACF.HEATPenMul         = 1.1     -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
 	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
 	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle

@@ -21,8 +21,8 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeArea   = math.pi * Radius * math.sqrt(Height ^ 2 + Radius ^ 2)
 	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
-	local AngleMult  = (30 + ConeAngle) / 30 -- Shallower cones need thicker liners to survive being made into EFPs
-	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult
+	local AngleMult  = (15 + ConeAngle) / 15 -- Shallower cones need thicker liners to survive being made into EFPs
+	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.4
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
 
@@ -78,7 +78,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local CapLength       = GUIData.MinProjLength * 0.5
 	local BodyLength      = Data.ProjLength - CapLength
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
-	local Standoff        = (CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
+	-- Considering most of the cap gets crushed (early HEAT suffered from this)
+	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
 	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
 	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
 	local ChargeDiameter  = 2 * FreeRadius
@@ -95,13 +96,15 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
 	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
 	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
-	local FillerEnergy = EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1)
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.CompBDensity
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
-	local MinVelMult = (0.98 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.8)* LinerAngle / 90  + 0.8)
+	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
+	local JetMass    = LinerMass * ((1 - 0.25)* LinerAngle / 90  + 0.25)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
@@ -476,7 +479,7 @@ else
 		end)
 
 		-- Capped the max standoff at 0.4 for historical reasons
-		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.4, 2)
+		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.2, 2)
 		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 		StandoffRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.StandoffRatio = math.Round(Value, 2)
