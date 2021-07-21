@@ -4,7 +4,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive Anti-Tank Fin Stabilized"
-	self.Description = "An improved HEAT round with higher penetration and muzzle velocity."
+	self.Description = "An improved HEAT round with better standoff and explosive power."
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		SB = true,
 	})
@@ -15,31 +15,61 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local FreeVol, FreeLength = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local MaxConeAng  = math.deg(math.atan((FreeLength - Data.Caliber * 0.02) / (Data.Caliber * 0.5)))
-	local LinerAngle  = math.Clamp(ToolData.LinerAngle, GUIData.MinConeAng, MaxConeAng)
-	local FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
-	local _, ConeArea, AirVol = self:ConeCalc(LinerAngle, Data.Caliber * 0.5)
-	local FreeFillerVol = FreeVol - AirVol
+	local CapLength       = GUIData.MinProjLength * 0.5
+	local BodyLength      = Data.ProjLength - CapLength
+	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
+	local Standoff        = (CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
+	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
+	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
+	local ChargeDiameter  = 2 * FreeRadius
+	local MinConeAng      = math.deg(math.atan(FreeRadius / FreeLength))
+	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
-	local LinerRad    = math.rad(LinerAngle * 0.5)
-	local SlugCaliber = Data.Caliber - Data.Caliber * (math.sin(LinerRad) * 0.5 + math.cos(LinerRad) * 1.5) * 0.5
-	local SlugArea    = math.pi * (SlugCaliber * 0.5) ^ 2
-	local ConeVol     = ConeArea * Data.Caliber * 0.02
+	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
+	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
+	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
+	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
+	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
+	local EquivFillLen = ChargeDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
+	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
+	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
+	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
+	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1)
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local FillerVol    = FrontFillVol + RearFillVol
+	local FillerMass   = FillerVol * ACF.OctolDensity
 
-	GUIData.MaxConeAng = MaxConeAng
+	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
+	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
+	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
+	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
+	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
+	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
+	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) -- Maximum velocity of the jet (the tip)
+
+	-- Both the "magic numbers" are unitless, tuning constants that were used to fit the breakup time to real world values, I suggest they not be messed with
+	local BreakupTime    = 2.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333  -- Jet breakup time in seconds
+	local BreakupDist    = JetMaxVel * BreakupTime
+
+	GUIData.MinConeAng = MinConeAng
 
 	Data.ConeAng        = LinerAngle
-	Data.FillerMass     = FreeFillerVol * FillerRatio * ACF.HEDensity
-	Data.CasingMass		= (GUIData.ProjVolume - FreeVol) * ACF.SteelDensity
-	Data.ProjMass       = (math.max(FreeFillerVol * (1 - FillerRatio), 0) + ConeVol) * ACF.SteelDensity + Data.FillerMass + Data.CasingMass
-	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency) * 1.25
-	Data.SlugMass       = ConeVol * ACF.SteelDensity
-	Data.SlugCaliber    = SlugCaliber
-	Data.SlugDragCoef   = SlugArea * 0.0001 / Data.SlugMass
-	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert
-	Data.HEATFillerMass = Data.FillerMass * (1 - ACF.HEATBoomConvert)
-	Data.SlugMV			= self:CalcSlugMV(Data)
+	Data.MinConeAng     = MinConeAng
+	Data.FillerMass     = FillerMass
+	local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
+	Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
+	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert * ACF.OctolEquivalent -- In TNT equivalent
+	Data.LinerMass      = LinerMass
+	Data.JetMass        = JetMass
+	Data.JetMinVel      = JetMinVel
+	Data.JetMaxVel      = JetMaxVel
+	Data.BreakupTime    = BreakupTime
+	Data.Standoff       = Standoff
+	Data.BreakupDist    = BreakupDist
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
@@ -57,5 +87,31 @@ if SERVER then
 		Entity:SetNW2String("AmmoType", "HEATFS")
 	end
 else
-	ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
+		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
+		LinerAngle:TrackClientData("Projectile")
+		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
+			if Key == "LinerAngle" then
+				ToolData.LinerAngle = math.Round(Value, 2)
+			end
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			Panel:SetMin(BulletData.MinConeAng)
+			Panel:SetValue(BulletData.ConeAng)
+
+			return BulletData.ConeAng
+		end)
+
+		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.75, 2)
+		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
+		StandoffRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.StandoffRatio = math.Round(Value, 2)
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			return ToolData.StandoffRatio
+		end)
+	end
 end

@@ -338,6 +338,34 @@ do -- Terminal ballistics --------------------------
 
 		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
 	end
+	ACF_RicochetVector = RicochetVector
+
+	function ACF_VolumeDamage(Bullet, Trace, Volume)
+		local HitRes = ACF.Damage(Bullet, Trace, Volume)
+
+		if HitRes.Kill then
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), 0)
+			table.insert(Bullet.Filter , Debris)
+		end
+	end
+
+	function ACF_CalcRicochet(Bullet, Trace)
+		local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
+		-- Ricochet distribution center
+		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / 39.37 - Bullet.LimitVel) / 100)
+
+		-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
+		local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
+
+		-- Checking for ricochet
+		local Ricochet = 0
+		local Loss     = 0
+		if ricoProb > math.random() and HitAngle < 90 then
+			Ricochet = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
+			Loss     = 0.25 - Ricochet
+		end
+		return Ricochet, Loss
+	end
 
 	function ACF_RoundImpact(Bullet, Trace)
 		local Speed    = Bullet.Speed
@@ -346,18 +374,7 @@ do -- Terminal ballistics --------------------------
 		local Ricochet = 0
 
 		if HitRes.Loss == 1 then
-			local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
-			-- Ricochet distribution center
-			local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100)
-
-			-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
-			local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
-
-			-- Checking for ricochet
-			if ricoProb > math.random() and HitAngle < 90 then
-				Ricochet    = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
-				HitRes.Loss = 0.25 - Ricochet
-			end
+			Ricochet, HitRes.Loss = ACF_CalcRicochet(Bullet, Trace)
 		end
 
 		if ACF.KEPush then
@@ -488,6 +505,8 @@ do -- Terminal ballistics --------------------------
 			end
 		end
 	end
+
+	ACF_DigTrace = DigTrace
 
 	function ACF_PenetrateMapEntity(Bullet, Trace)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
