@@ -21,8 +21,8 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeArea   = math.pi * Radius * math.sqrt(Height ^ 2 + Radius ^ 2)
 	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
-	local AngleMult  = (15 + ConeAngle) / 15 -- Shallower cones need thicker liners to survive being made into EFPs
-	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.2
+	local AngleMult  = math.Remap(ConeAngle ^ 4, 0, 90 ^ 4, 1, 5) -- Shallower cones need thicker liners to survive being made into EFPs
+	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.1
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
 
@@ -86,7 +86,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
-
+	local LinerMassMul    = Data.LinerMassMul or 1
+	LinerMass             = LinerMass * LinerMassMul
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
@@ -97,14 +98,15 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
 	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
-	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1) -- Excess explosive power makes the jet lose velocity
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
+	local FillerMul    = Data.FillerMul or 1
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.CompBDensity
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
-	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
+	local MinVelMult = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
+	local JetMass    = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
@@ -176,7 +178,7 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
-	ACF.AddEntityArguments("acf_ammo", "LinerAngle") -- Adding extra info to ammo crates
+	ACF.AddEntityArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
@@ -279,15 +281,6 @@ if SERVER then
 			-- Reduce the jet mass by the lost mass
 			JetMassPct = JetMassPct - LostMassPct
 
-			print("\nPenetration " .. Penetrations + 1)
-			print("Hit entity:          " .. TraceRes.Entity:GetClass())
-			print("Effective armor:     " .. EffectiveArmor)
-			print("Standoff:            " .. Standoff)
-			print("Penetration at dist: " .. Penetration)
-			print("Lost mass pct:       " .. LostMassPct)
-			print("Remaining mass pct:  " .. JetMassPct)
-			print("Cavity:              " .. Cavity)
-			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
 			self:PenetrationEffect(Bullet, PenHitPos, Cavity)
