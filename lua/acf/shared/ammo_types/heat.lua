@@ -71,10 +71,6 @@ function Ammo:GetDisplayData(Data)
 	return Display
 end
 
-function ACF_HEATRecalcBullet(Data)
-
-end
-
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
