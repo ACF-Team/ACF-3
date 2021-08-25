@@ -25,6 +25,8 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
+	local LinerMassMul    = Data.LinerMassMul or 1
+	LinerMass             = LinerMass * LinerMassMul
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
@@ -37,13 +39,14 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
 	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
 	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1) -- Excess explosive power makes the jet lose velocity
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.OctolDensity * 1e3 * ACF.TNTPower * ACF.OctolEquivalent * ACF.HEATEfficiency
+	local FillerMul    = Data.FillerMul or 1
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.OctolDensity * 1e3 * ACF.TNTPower * ACF.OctolEquivalent * ACF.HEATEfficiency * FillerMul
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.OctolDensity
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
-	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
+	local MinVelMult = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
+	local JetMass    = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
