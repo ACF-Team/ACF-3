@@ -22,9 +22,10 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
 	local AngleMult  = (15 + ConeAngle) / 15 -- Shallower cones need thicker liners to survive being made into EFPs
-	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.4
+	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.2
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
+	print(LinerThick)
 
 	return LinerMass, ConeVol, Height
 end
@@ -36,6 +37,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 
 	local BreakupT      = Bullet.BreakupTime
 	local MaxVel        = Bullet.JetMaxVel
+	local PenMul        = Bullet.PenMul or 1
 	local TargetDensity = ACF.RHADensity -- Assuming RHA
 	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
 
@@ -49,7 +51,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 		Penetration = (MaxVel * BreakupT - math.sqrt(ACF.HEATMinPenVel * BreakupT * (MaxVel * BreakupT + Gamma * Standoff))) / Gamma
 	end
 
-	return math.max(Penetration * ACF.HEATPenMul * 1e3, 0) -- m to mm
+	return math.max(Penetration * ACF.HEATPenMul * PenMul * 1e3, 0) -- m to mm
 end
 
 function Ammo:GetDisplayData(Data)
@@ -69,6 +71,10 @@ function Ammo:GetDisplayData(Data)
 	return Display
 end
 
+function ACF_HEATRecalcBullet(Data)
+
+end
+
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -79,25 +85,25 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
 	-- Considering most of the cap gets crushed (early HEAT suffered from this)
 	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
-	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
-	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
-	local ChargeDiameter  = 2 * FreeRadius
-	local MinConeAng      = math.deg(math.atan(FreeRadius / FreeLength))
+	local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
+	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
+	local WarheadDiameter = 2 * FreeRadius
+	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
-	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
-	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
-	local EquivFillLen = ChargeDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
-	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
-	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
-	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
+	local RearFillLen  = WarheadLength - ConeLength  -- Length of explosive behind the liner
+	local Exponential  = math.exp(2 * RearFillLen / (WarheadDiameter * ACF.MaxChargeHeadLen))
+	local EquivFillLen = WarheadDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
+	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
+	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
+	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
 	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
-	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1)
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1) -- Excess explosive power makes the jet lose velocity
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.CompBDensity
 
@@ -134,6 +140,11 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+
+	-- Recalculate the standoff for missiles
+	if Data.MissileStandoff then
+		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
+	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
