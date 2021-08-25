@@ -25,7 +25,6 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.2
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
-	print(LinerThick)
 
 	return LinerMass, ConeVol, Height
 end
