@@ -86,8 +86,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
-	local LinerMassMul    = Data.LinerMassMul or 1
-	LinerMass             = LinerMass * LinerMassMul
+
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
@@ -97,10 +96,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
 	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
+	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength)
 	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
-	local FillerMul    = Data.FillerMul or 1
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.CompBDensity
 
@@ -142,7 +140,24 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	if Data.MissileStandoff then
 		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
 	end
-
+	-- God weeped when this spaghetto was written (for missile roundinject)
+	if Data.FillerMul or Data.LinerMassMul then
+		local LinerMassMul = Data.LinerMassMul or 1
+		Data.LinerMass     = LinerMass * LinerMassMul
+		local FillerMul    = Data.FillerMul or 1
+		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
+		local FillerEnergy = Data.FillerEnergy
+		local MinVelMult   = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
+		local JetMass      = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
+		local JetAvgVel    = (2 * FillerEnergy / JetMass) ^ 0.5
+		local JetMinVel    = JetAvgVel * MinVelMult
+		local JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel)
+		Data.BreakupTime   = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333
+		Data.BreakupDist   = JetMaxVel * Data.BreakupTime
+		Data.JetMass       = JetMass
+		Data.JetMinVel     = JetMinVel
+		Data.JetMaxVel     = JetMaxVel
+	end
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
@@ -272,10 +287,11 @@ if SERVER then
 			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
 
 			-- Percentage of total jet mass lost to this penetration
-			local LostMassPct = EffectiveArmor / Penetration
+			local LostMassPct =  EffectiveArmor / Penetration
 			-- Deal damage based on the volume of the lost mass
-			local Cavity = ACF.HEATCavityMul * LostMassPct * Bullet.JetMass / ACF.CopperDensity -- in cm^3
+			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			if Damage == 0 then
+				local Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
 				ACF_VolumeDamage(Bullet, TraceRes, Cavity)
 			end
 			-- Reduce the jet mass by the lost mass
