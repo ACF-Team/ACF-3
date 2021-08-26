@@ -428,8 +428,6 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
-	local DecalIndex = ACF.GetAmmoDecalIndex
-
 	function Ammo:ImpactEffect()
 		return
 		--[[
