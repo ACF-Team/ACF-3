@@ -391,8 +391,16 @@ if SERVER then
 		end
 	end
 
-	function Ammo:WorldImpact()
-		return false
+	function Ammo:WorldImpact(Bullet, Trace)
+		local Ricochet, _ = ACF_CalcRicochet(Bullet, Trace)
+
+		if Ricochet ~= 0 then
+			OnRicochet(Bullet, Trace, Ricochet)
+			return "Ricochet"
+		else
+			self:Detonate(Bullet, Trace.HitPos)
+			return false
+		end
 	end
 
 
@@ -469,7 +477,7 @@ else
 		Effect:SetScale(Bullet.SimFlight:Length())
 		Effect:SetMagnitude(Bullet.RoundMass)
 		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+		--Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 
 		util.Effect("ACF_Ricochet", Effect)
 	end
