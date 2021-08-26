@@ -147,6 +147,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		local FillerMul    = Data.FillerMul or 1
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 		local FillerEnergy = Data.FillerEnergy
+		local LinerAngle   = Data.ConeAng
 		local MinVelMult   = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
 		local JetMass      = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
 		local JetAvgVel    = (2 * FillerEnergy / JetMass) ^ 0.5
