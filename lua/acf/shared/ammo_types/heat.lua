@@ -151,13 +151,13 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
 		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
-		local JetMinVel    = _JetAvgVel * _MinVelMult
-		local JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
-		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333
-		Data.BreakupDist   = JetMaxVel * Data.BreakupTime
+		local _JetMinVel    = _JetAvgVel * _MinVelMult
+		local _JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * _JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333
+		Data.BreakupDist   = _JetMaxVel * Data.BreakupTime
 		Data.JetMass       = _JetMass
-		Data.JetMinVel     = JetMinVel
-		Data.JetMaxVel     = JetMaxVel
+		Data.JetMinVel     = _JetMinVel
+		Data.JetMaxVel     = _JetMaxVel
 	end
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -292,8 +292,8 @@ if SERVER then
 			-- Deal damage based on the volume of the lost mass
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			if Damage == 0 then
-				local Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
-				ACF_VolumeDamage(Bullet, TraceRes, Cavity)
+				local _Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
+				ACF_VolumeDamage(Bullet, TraceRes, _Cavity)
 			end
 			-- Reduce the jet mass by the lost mass
 			JetMassPct = JetMassPct - LostMassPct
