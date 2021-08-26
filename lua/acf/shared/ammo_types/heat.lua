@@ -146,16 +146,16 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.LinerMass     = LinerMass * LinerMassMul
 		local FillerMul    = Data.FillerMul or 1
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
-		local FillerEnergy = Data.FillerEnergy
-		local LinerAngle   = Data.ConeAng
-		local MinVelMult   = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
-		local JetMass      = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
-		local JetAvgVel    = (2 * FillerEnergy / JetMass) ^ 0.5
-		local JetMinVel    = JetAvgVel * MinVelMult
-		local JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel)
-		Data.BreakupTime   = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333
+		local _FillerEnergy = Data.FillerEnergy
+		local _LinerAngle   = Data.ConeAng
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
+		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
+		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
+		local JetMinVel    = _JetAvgVel * _MinVelMult
+		local JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333
 		Data.BreakupDist   = JetMaxVel * Data.BreakupTime
-		Data.JetMass       = JetMass
+		Data.JetMass       = _JetMass
 		Data.JetMinVel     = JetMinVel
 		Data.JetMaxVel     = JetMaxVel
 	end
