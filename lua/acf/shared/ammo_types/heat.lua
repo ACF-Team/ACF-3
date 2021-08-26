@@ -403,69 +403,42 @@ if SERVER then
 		end
 	end
 
-
-	function Ammo:PenetrationEffect(Bullet, Pos, Cavity)
-		local Data = EffectData()
-		Data:SetOrigin(Pos)
-		Data:SetNormal(Bullet.Flight:GetNormalized())
-		Data:SetScale(Bullet.JetMaxVel * 3)
-		Data:SetMagnitude(Cavity)
-		Data:SetRadius(Bullet.Caliber)
-		--Data:SetDamageType(DecalIndex(Bullet.AmmoType))
-
-		util.Effect("ACF_Penetration", Data)
-	end
-
-	function Ammo:HEATExplosionEffect(Bullet, Pos)
-		local Data = EffectData()
-		Data:SetOrigin(Pos)
-		Data:SetNormal(Bullet.Flight:GetNormalized())
-		Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
-
-		util.Effect("ACF_HEAT_Explosion", Data)
-	end
-
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+	local DecalIndex = ACF.GetAmmoDecalIndex
 
-	function Ammo:ImpactEffect()
-		return
-		--[[
-			if not Bullet.Detonated then
-				self:PenetrationEffect(Effect, Bullet)
-			end
+	function Ammo:ImpactEffect(Effect, Bullet)
+		if not Bullet.Detonated then
+			self:PenetrationEffect(Effect, Bullet)
+		end
 
-			Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
-		--]]
+		Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
 	end
 
-	function Ammo:PenetrationEffect()
-		return
-		--[[
-			if Bullet.Detonated then
-				local Data = EffectData()
-				Data:SetOrigin(Bullet.SimPos)
-				Data:SetNormal(Bullet.SimFlight:GetNormalized())
-				Data:SetScale(Bullet.SimFlight:Length())
-				Data:SetMagnitude(Bullet.RoundMass)
-				Data:SetRadius(Bullet.Caliber)
-				Data:SetDamageType(DecalIndex(Bullet.AmmoType))
+	function Ammo:PenetrationEffect(Effect, Bullet)
+		if Bullet.Detonated then
+			local Data = EffectData()
+			Data:SetOrigin(Bullet.SimPos)
+			Data:SetNormal(Bullet.SimFlight:GetNormalized())
+			Data:SetScale(Bullet.SimFlight:Length())
+			Data:SetMagnitude(Bullet.RoundMass)
+			Data:SetRadius(Bullet.Caliber)
+			Data:SetDamageType(DecalIndex(Bullet.AmmoType))
 
-				util.Effect("ACF_Penetration", Data)
-			else
-				local Data = EffectData()
-				Data:SetOrigin(Bullet.SimPos)
-				Data:SetNormal(Bullet.SimFlight:GetNormalized())
-				Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
+			util.Effect("ACF_Penetration", Data)
+		else
+			local Data = EffectData()
+			Data:SetOrigin(Bullet.SimPos)
+			Data:SetNormal(Bullet.SimFlight:GetNormalized())
+			Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
 
-				util.Effect("ACF_HEAT_Explosion", Data)
+			util.Effect("ACF_HEAT_Explosion", Data)
 
-				Bullet.Detonated = true
-				Bullet.LimitVel  = 999999
+			Bullet.Detonated = true
+			Bullet.LimitVel  = 999999
 
-				Effect:SetModel("models/Gibs/wood_gib01e.mdl")
-			end
-		--]]
+			Effect:SetModel("models/Gibs/wood_gib01e.mdl")
+		end
 	end
 
 	function Ammo:RicochetEffect(_, Bullet)
@@ -475,8 +448,7 @@ else
 		Effect:SetScale(Bullet.SimFlight:Length())
 		Effect:SetMagnitude(Bullet.RoundMass)
 		Effect:SetRadius(Bullet.Caliber)
-		--Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
-
+		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
