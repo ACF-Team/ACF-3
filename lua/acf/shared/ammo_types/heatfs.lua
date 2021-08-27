@@ -19,31 +19,31 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local BodyLength      = Data.ProjLength - CapLength
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
 	local Standoff        = (CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
-	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
-	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
-	local ChargeDiameter  = 2 * FreeRadius
-	local MinConeAng      = math.deg(math.atan(FreeRadius / FreeLength))
+	local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
+	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
+	local WarheadDiameter = 2 * FreeRadius
+	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
-	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
-	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
-	local EquivFillLen = ChargeDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
-	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
-	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
-	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
-	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1)
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local RearFillLen  = WarheadLength - ConeLength  -- Length of explosive behind the liner
+	local Exponential  = math.exp(2 * RearFillLen / (WarheadDiameter * ACF.MaxChargeHeadLen))
+	local EquivFillLen = WarheadDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
+	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
+	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
+	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
+	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength)
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1) -- Excess explosive power makes the jet lose velocity
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.OctolDensity * 1e3 * ACF.TNTPower * ACF.OctolEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.OctolDensity
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
-	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
+	local MinVelMult = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
+	local JetMass    = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
@@ -74,6 +74,30 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+
+	-- Recalculate the standoff for missiles
+	if Data.MissileStandoff then
+		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
+	end
+	-- God weeped when this spaghetto was written (for missile roundinject)
+	if Data.FillerMul or Data.LinerMassMul then
+		local LinerMassMul = Data.LinerMassMul or 1
+		Data.LinerMass     = LinerMass * LinerMassMul
+		local FillerMul    = Data.FillerMul or 1
+		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
+		local _FillerEnergy = Data.FillerEnergy
+		local _LinerAngle   = Data.ConeAng
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
+		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
+		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
+		local _JetMinVel    = _JetAvgVel * _MinVelMult
+		local _JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * _JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333
+		Data.BreakupDist   = _JetMaxVel * Data.BreakupTime
+		Data.JetMass       = _JetMass
+		Data.JetMinVel     = _JetMinVel
+		Data.JetMaxVel     = _JetMaxVel
+	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

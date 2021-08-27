@@ -21,8 +21,8 @@ function Ammo:ConeCalc(ConeAngle, Radius)
 	local ConeArea   = math.pi * Radius * math.sqrt(Height ^ 2 + Radius ^ 2)
 	local ConeVol    = (math.pi * Radius ^ 2 * Height) / 3
 
-	local AngleMult  = (15 + ConeAngle) / 15 -- Shallower cones need thicker liners to survive being made into EFPs
-	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.4
+	local AngleMult  = math.Remap(ConeAngle ^ 4, 0, 90 ^ 4, 1, 5) -- Shallower cones need thicker liners to survive being made into EFPs
+	local LinerThick = ACF.LinerThicknessMult * Radius * AngleMult + 0.1
 	local LinerVol   = ConeArea * LinerThick
 	local LinerMass  = LinerVol * ACF.CopperDensity
 
@@ -36,6 +36,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 
 	local BreakupT      = Bullet.BreakupTime
 	local MaxVel        = Bullet.JetMaxVel
+	local PenMul        = Bullet.PenMul or 1
 	local TargetDensity = ACF.RHADensity -- Assuming RHA
 	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
 
@@ -49,7 +50,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 		Penetration = (MaxVel * BreakupT - math.sqrt(ACF.HEATMinPenVel * BreakupT * (MaxVel * BreakupT + Gamma * Standoff))) / Gamma
 	end
 
-	return math.max(Penetration * ACF.HEATPenMul * 1e3, 0) -- m to mm
+	return math.max(Penetration * ACF.HEATPenMul * PenMul * 1e3, 0) -- m to mm
 end
 
 function Ammo:GetDisplayData(Data)
@@ -79,31 +80,31 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
 	-- Considering most of the cap gets crushed (early HEAT suffered from this)
 	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
-	FreeVol               = FreeVol * (1 - ToolData.StandoffRatio)
-	FreeLength            = FreeLength * (1 - ToolData.StandoffRatio)
-	local ChargeDiameter  = 2 * FreeRadius
-	local MinConeAng      = math.deg(math.atan(FreeRadius / FreeLength))
+	local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
+	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
+	local WarheadDiameter = 2 * FreeRadius
+	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
 	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
 	--  but the explosive behind it sees it reduced. Most papers put the maximum useful head length (explosive length behind the
 	--  cone) at around 1.5-1.8 times the charge's diameter. Past that, adding more explosive won't do much.
-	local RearFillLen  = FreeLength - ConeLength  -- Length of explosive behind the liner
-	local Exponential  = math.exp(2 * RearFillLen / (ChargeDiameter * ACF.MaxChargeHeadLen))
-	local EquivFillLen = ChargeDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
-	local FrontFillVol = FreeVol * ConeLength / FreeLength - ConeVol -- Volume of explosive sorounding the liner
-	local RearFillVol  = FreeVol * RearFillLen / FreeLength -- Volume behind the liner
-	local EquivFillVol = FreeVol * EquivFillLen / FreeLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength * 2)
-	local OverEnergy   = math.min(math.Remap(LengthPct, 0.6, 1, 1, 0.3), 1)
-	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent
+	local RearFillLen  = WarheadLength - ConeLength  -- Length of explosive behind the liner
+	local Exponential  = math.exp(2 * RearFillLen / (WarheadDiameter * ACF.MaxChargeHeadLen))
+	local EquivFillLen = WarheadDiameter * ACF.MaxChargeHeadLen * ((Exponential - 1) / (Exponential + 1)) -- Equivalent length of explosive
+	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
+	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
+	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
+	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength)
+	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
+	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
 	local FillerMass   = FillerVol * ACF.CompBDensity
 
 	-- At lower cone angles, the explosive crushes the cone inward, expelling a jet. The steeper the cone, the faster the jet, but the less mass expelled
-	local MinVelMult = (0.99 - 0.6) * LinerAngle / 90 + 0.6
-	local JetMass    = LinerMass * ((1 - 0.25) * LinerAngle / 90  + 0.25)
+	local MinVelMult = math.Remap(LinerAngle, 0, 90, 0.5, 0.99)
+	local JetMass    = LinerMass * math.Remap(LinerAngle, 0, 90, 0.25, 1)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
@@ -135,6 +136,29 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
+	-- Recalculate the standoff for missiles
+	if Data.MissileStandoff then
+		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
+	end
+	-- God weeped when this spaghetto was written (for missile roundinject)
+	if Data.FillerMul or Data.LinerMassMul then
+		local LinerMassMul = Data.LinerMassMul or 1
+		Data.LinerMass     = LinerMass * LinerMassMul
+		local FillerMul    = Data.FillerMul or 1
+		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
+		local _FillerEnergy = Data.FillerEnergy
+		local _LinerAngle   = Data.ConeAng
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
+		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
+		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
+		local _JetMinVel    = _JetAvgVel * _MinVelMult
+		local _JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * _JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333
+		Data.BreakupDist   = _JetMaxVel * Data.BreakupTime
+		Data.JetMass       = _JetMass
+		Data.JetMinVel     = _JetMinVel
+		Data.JetMaxVel     = _JetMaxVel
+	end
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
@@ -170,7 +194,7 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
-	ACF.AddEntityArguments("acf_ammo", "LinerAngle") -- Adding extra info to ammo crates
+	ACF.AddEntityArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
@@ -264,24 +288,16 @@ if SERVER then
 			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
 
 			-- Percentage of total jet mass lost to this penetration
-			local LostMassPct = EffectiveArmor / Penetration
+			local LostMassPct =  EffectiveArmor / Penetration
 			-- Deal damage based on the volume of the lost mass
-			local Cavity = ACF.HEATCavityMul * LostMassPct * Bullet.JetMass / ACF.CopperDensity -- in cm^3
+			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			if Damage == 0 then
-				ACF_VolumeDamage(Bullet, TraceRes, Cavity)
+				local _Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
+				ACF_VolumeDamage(Bullet, TraceRes, _Cavity)
 			end
 			-- Reduce the jet mass by the lost mass
 			JetMassPct = JetMassPct - LostMassPct
 
-			print("\nPenetration " .. Penetrations + 1)
-			print("Hit entity:          " .. TraceRes.Entity:GetClass())
-			print("Effective armor:     " .. EffectiveArmor)
-			print("Standoff:            " .. Standoff)
-			print("Penetration at dist: " .. Penetration)
-			print("Lost mass pct:       " .. LostMassPct)
-			print("Remaining mass pct:  " .. JetMassPct)
-			print("Cavity:              " .. Cavity)
-			-- If no mass is left (jet penetration stopped) stop here
 			if JetMassPct < 0 then break end
 
 			self:PenetrationEffect(Bullet, PenHitPos, Cavity)
@@ -375,75 +391,54 @@ if SERVER then
 		end
 	end
 
-	function Ammo:WorldImpact()
-		return false
-	end
+	function Ammo:WorldImpact(Bullet, Trace)
+		local Ricochet, _ = ACF_CalcRicochet(Bullet, Trace)
 
-
-	function Ammo:PenetrationEffect(Bullet, Pos, Cavity)
-		local Data = EffectData()
-		Data:SetOrigin(Pos)
-		Data:SetNormal(Bullet.Flight:GetNormalized())
-		Data:SetScale(Bullet.JetMaxVel * 3)
-		Data:SetMagnitude(Cavity)
-		Data:SetRadius(Bullet.Caliber)
-		--Data:SetDamageType(DecalIndex(Bullet.AmmoType))
-
-		util.Effect("ACF_Penetration", Data)
-	end
-
-	function Ammo:HEATExplosionEffect(Bullet, Pos)
-		local Data = EffectData()
-		Data:SetOrigin(Pos)
-		Data:SetNormal(Bullet.Flight:GetNormalized())
-		Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
-
-		util.Effect("ACF_HEAT_Explosion", Data)
+		if Ricochet ~= 0 then
+			OnRicochet(Bullet, Trace, Ricochet)
+			return "Ricochet"
+		else
+			self:Detonate(Bullet, Trace.HitPos)
+			return false
+		end
 	end
 
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
-
 	local DecalIndex = ACF.GetAmmoDecalIndex
 
-	function Ammo:ImpactEffect()
-		return
-		--[[
-			if not Bullet.Detonated then
-				self:PenetrationEffect(Effect, Bullet)
-			end
+	function Ammo:ImpactEffect(Effect, Bullet)
+		if not Bullet.Detonated then
+			self:PenetrationEffect(Effect, Bullet)
+		end
 
-			Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
-		--]]
+		Ammo.BaseClass.ImpactEffect(self, Effect, Bullet)
 	end
 
-	function Ammo:PenetrationEffect()
-		return
-		--[[
-			if Bullet.Detonated then
-				local Data = EffectData()
-				Data:SetOrigin(Bullet.SimPos)
-				Data:SetNormal(Bullet.SimFlight:GetNormalized())
-				Data:SetScale(Bullet.SimFlight:Length())
-				Data:SetMagnitude(Bullet.RoundMass)
-				Data:SetRadius(Bullet.Caliber)
-				Data:SetDamageType(DecalIndex(Bullet.AmmoType))
+	function Ammo:PenetrationEffect(Effect, Bullet)
+		if Bullet.Detonated then
+			local Data = EffectData()
+			Data:SetOrigin(Bullet.SimPos)
+			Data:SetNormal(Bullet.SimFlight:GetNormalized())
+			Data:SetScale(Bullet.SimFlight:Length())
+			Data:SetMagnitude(Bullet.RoundMass)
+			Data:SetRadius(Bullet.Caliber)
+			Data:SetDamageType(DecalIndex(Bullet.AmmoType))
 
-				util.Effect("ACF_Penetration", Data)
-			else
-				local Data = EffectData()
-				Data:SetOrigin(Bullet.SimPos)
-				Data:SetNormal(Bullet.SimFlight:GetNormalized())
-				Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
+			util.Effect("ACF_Penetration", Data)
+		else
+			local Data = EffectData()
+			Data:SetOrigin(Bullet.SimPos)
+			Data:SetNormal(Bullet.SimFlight:GetNormalized())
+			Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
 
-				util.Effect("ACF_HEAT_Explosion", Data)
+			util.Effect("ACF_HEAT_Explosion", Data)
 
-				Bullet.Detonated = true
-				Bullet.LimitVel  = 999999
+			Bullet.Detonated = true
+			Bullet.LimitVel  = 999999
 
-				Effect:SetModel("models/Gibs/wood_gib01e.mdl")
-			end
-		--]]
+			Effect:SetModel("models/Gibs/wood_gib01e.mdl")
+		end
 	end
 
 	function Ammo:RicochetEffect(_, Bullet)
@@ -454,7 +449,6 @@ else
 		Effect:SetMagnitude(Bullet.RoundMass)
 		Effect:SetRadius(Bullet.Caliber)
 		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
-
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
