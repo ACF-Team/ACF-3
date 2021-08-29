@@ -227,7 +227,6 @@ if SERVER then
 	function Ammo:Detonate(Bullet, HitPos)
 		-- Apply HE damage
 		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
-		self:HEATExplosionEffect(Bullet, HitPos)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
 		local FoundEnts = ents.FindInSphere(HitPos, 250)
@@ -299,8 +298,6 @@ if SERVER then
 			JetMassPct = JetMassPct - LostMassPct
 
 			if JetMassPct < 0 then break end
-
-			self:PenetrationEffect(Bullet, PenHitPos, Cavity)
 
 			-- If the target is explosive and the armor is penetrated, detonate
 			if Ent.Detonate then
