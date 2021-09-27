@@ -8,9 +8,8 @@ ACF.SkyboxGraceZone  = 100
 
 local Bullets       = ACF.Bullets
 local Unused        = ACF.UnusedIndexes
-local FlightTr  	= { start = true, endpos = true, filter = true, mask = true }
-local BackRes 		= {}
-local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, output = BackRes }
+local FlightRes     = {}
+local FlightTr  	= { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
 local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
@@ -260,36 +259,9 @@ function ACF.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	local FlightRes, Filter = ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
+	ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
 
 	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
-	-- Something was hit, let's make sure we're not phasing through armor
-	if Bullet.LastPos and IsValid(FlightRes.Entity) and not GlobalFilter[FlightRes.Entity:GetClass()] then
-		BackTrace.start  = Bullet.LastPos
-		BackTrace.endpos = Bullet.Pos
-		BackTrace.mask   = Bullet.Mask
-		BackTrace.filter = Bullet.Filter
-
-		ACF.TraceF(BackTrace) -- Does not modify the bullet's original filter
-
-		-- There's something behind our trace, go back one tick
-		if IsValid(BackRes.Entity) and not GlobalFilter[BackRes.Entity:GetClass()] then
-			Bullet.NextPos = Bullet.Pos
-			Bullet.Pos = Bullet.LastPos
-			Bullet.LastPos = nil
-
-			FlightTr.start 	= Bullet.Pos
-			FlightTr.endpos = Bullet.NextPos
-
-			FlightRes = ACF.Trace(FlightTr)
-		else
-			Bullet.Filter = Filter
-		end
-	else
-		Bullet.Filter = Filter
-	end
-
-	local Ammo = AmmoTypes[Bullet.Type]
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -309,7 +281,7 @@ function ACF.DoBulletsFlight(Bullet)
 
 				ACF.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				Ammo:OnFlightEnd(Bullet, FlightRes)
+				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, FlightRes)
 
 				return
 			end
@@ -325,9 +297,11 @@ function ACF.DoBulletsFlight(Bullet)
 				ACF.RemoveBullet(Bullet)
 			end
 		else
+			if GlobalFilter[FlightRes.Entity:GetClass()] then return end
+
 			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == game.GetWorld()) and "World" or "Prop"
 
-			OnImpact(Bullet, FlightRes, Ammo, Type)
+			OnImpact(Bullet, FlightRes, AmmoTypes[Bullet.Type], Type)
 		end
 	end
 end
