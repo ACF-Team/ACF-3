@@ -280,8 +280,6 @@ function ACF.DoBulletsFlight(Bullet)
 		Bullet.Filter = Filter
 	end
 
-	local Ammo = AmmoTypes[Bullet.Type]
-
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
 			return ACF.RemoveBullet(Bullet)
@@ -299,7 +297,7 @@ function ACF.DoBulletsFlight(Bullet)
 
 				ACF.BulletClient(Bullet, "Update", 1, Pos)
 
-				Ammo:OnFlightEnd(Bullet, FlightRes)
+				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, FlightRes)
 
 				return
 			end
@@ -315,9 +313,11 @@ function ACF.DoBulletsFlight(Bullet)
 				ACF.RemoveBullet(Bullet)
 			end
 		else
+			if GlobalFilter[FlightRes.Entity:GetClass()] then return end
+
 			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == game.GetWorld()) and "World" or "Prop"
 
-			OnImpact(Bullet, FlightRes, Ammo, Type)
+			OnImpact(Bullet, FlightRes, AmmoTypes[Bullet.Type], Type)
 		end
 	end
 end
