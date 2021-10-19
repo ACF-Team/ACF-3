@@ -8,8 +8,7 @@ local RPMText = [[
 	Powerband : %s-%s RPM
 	Redline : %s RPM
 	Mass : %s
-	
-	This entity can be fully parented.
+
 	%s
 	%s]]
 local PowerText  = [[
@@ -78,7 +77,7 @@ local function CreateMenu(Menu)
 	local EngineBase = Menu:AddCollapsible("Engine Information")
 	local EngineName = EngineBase:AddTitle()
 	local EngineDesc = EngineBase:AddLabel()
-	local EnginePreview = EngineBase:AddModelPreview()
+	local EnginePreview = EngineBase:AddModelPreview(nil, true)
 	local EngineStats = EngineBase:AddLabel()
 
 	Menu:AddTitle("Fuel Tank Settings")
@@ -88,7 +87,7 @@ local function CreateMenu(Menu)
 	local FuelType = Menu:AddComboBox()
 	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
 	local FuelDesc = FuelBase:AddLabel()
-	local FuelPreview = FuelBase:AddModelPreview()
+	local FuelPreview = FuelBase:AddModelPreview(nil, true)
 	local FuelInfo = FuelBase:AddLabel()
 
 	ACF.SetClientData("PrimaryClass", "acf_engine")
@@ -113,7 +112,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 
@@ -122,11 +120,8 @@ local function CreateMenu(Menu)
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description)
 
-		EnginePreview:SetModel(Data.Model)
-		EnginePreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		EnginePreview:SetLookAt(Preview and Preview.Position or Vector())
-		EnginePreview:SetHeight(Preview and Preview.Height or 80)
-		EnginePreview:SetFOV(Preview and Preview.FOV or 75)
+		EnginePreview:UpdateModel(Data.Model)
+		EnginePreview:UpdateSettings(Data.Preview)
 
 		UpdateEngineStats(EngineStats, Data)
 
@@ -148,7 +143,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 
@@ -156,11 +150,8 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelTank", Data.ID)
 
-		FuelPreview:SetModel(Data.Model)
-		FuelPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		FuelPreview:SetLookAt(Preview and Preview.Position or Vector())
-		FuelPreview:SetHeight(Preview and Preview.Height or 80)
-		FuelPreview:SetFOV(Preview and Preview.FOV or 75)
+		FuelPreview:UpdateModel(Data.Model)
+		FuelPreview:UpdateSettings(Data.Preview)
 
 		FuelType:UpdateFuelText()
 	end
@@ -186,14 +177,14 @@ local function CreateMenu(Menu)
 
 		local Wall		= 0.03937 --wall thickness in inches (1mm)
 		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		local Capacity	= Volume * ACF.CuIToLiter * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
+		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 		local EmptyMass	= FuelTank.SurfaceArea * Wall * 16.387 * 0.0079 -- total wall volume * cu in to cc * density of steel (kg/cc)
 		local Mass		= EmptyMass + Capacity * self.Selected.Density -- weight of tank + weight of fuel
 
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
 		else
-			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n\nThis entity can be fully parented."
+			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n"
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * 0.264172, 2)
 

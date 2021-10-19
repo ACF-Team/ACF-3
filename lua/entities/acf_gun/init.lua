@@ -5,21 +5,14 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF          = ACF
-local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
-local CheckLegal   = ACF_CheckLegal
-local Shove        = ACF.KEShove
-local Overpressure = ACF.Overpressure
-local Weapons	   = ACF.Classes.Weapons
-local AmmoTypes    = ACF.Classes.AmmoTypes
-local TraceRes     = {} -- Output for traces
-local TraceData    = {start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes}
-local Trace        = util.TraceLine
-local TimerCreate  = timer.Create
-local HookRun      = hook.Run
-local EMPTY        = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local ACF         = ACF
+local Weapons	  = ACF.Classes.Weapons
+local AmmoTypes   = ACF.Classes.AmmoTypes
+local TimerCreate = timer.Create
+local HookRun     = hook.Run
+local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
--- Replace with CFrame as soon as it's available
+-- TODO: Replace with CFrame as soon as it's available
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
@@ -33,23 +26,36 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn and Update functions --------------------------------
-	local Updated = {
-		["20mmHRAC"] = "20mmRAC",
-		["30mmHRAC"] = "30mmRAC",
-		["40mmCL"] = "40mmGL",
-	}
+	local CheckLegal = ACF_CheckLegal
 
 	local function VerifyData(Data)
-		if not Data.Weapon then
-			Data.Weapon = Data.Id or "50mmC"
+		if not isstring(Data.Weapon) then
+			Data.Weapon = Data.Id
 		end
 
 		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
 
 		if not Class then
-			Data.Weapon = Data.Weapon and Updated[Data.Weapon] or "50mmC"
+			Class = ACF.GetClassGroup(Weapons, "C")
 
-			Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+			Data.Destiny = "Weapons"
+			Data.Weapon  = "C"
+			Data.Caliber = 50
+		elseif Class.IsScalable then
+			local Weapon = Class.Lookup[Data.Weapon]
+
+			if Weapon then
+				Data.Weapon  = Class.ID
+				Data.Caliber = Weapon.Caliber
+			end
+		end
+
+		-- Verifying and clamping caliber value
+		if Class.IsScalable then
+			local Bounds  = Class.Caliber
+			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
+
+			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
 		end
 
 		do -- External verifications
@@ -93,45 +99,75 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
+	local function GetSound(Caliber, Class, Weapon)
+		local Result = Weapon and Weapon.Sound or Class.Sound
+		local Sounds = Class.Sounds
+
+		if Sounds then
+			local Lowest = math.huge
+
+			for Current, Sound in pairs(Sounds) do
+				if Caliber <= Current and Current <= Lowest then
+					Lowest = Current
+					Result = Sound
+				end
+			end
+		end
+
+		return Result
+	end
+
+	local function GetMass(Model, PhysObj, Class, Weapon)
+		if Weapon then return Weapon.Mass end
+
+		local Volume = PhysObj:GetVolume()
+		local Factor = Volume / ACF.GetModelVolume(Model)
+
+		return math.Round(Class.Mass * Factor)
+	end
+
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
-		Entity.ACF       = Entity.ACF or {}
-		Entity.ACF.Model = Weapon.Model
+		local Model   = Weapon and Weapon.Model or Class.Model
+		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
+		local Scale   = Weapon and 1 or Caliber / Class.Caliber.Base
+		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
+		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
-		Entity:SetModel(Weapon.Model)
+		Entity.ACF.Model = Model
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		Entity:SetModel(Model)
+		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name           = Weapon.Name
-		Entity.ShortName      = Weapon.ID
-		Entity.EntType        = Class.Name
-		Entity.ClassData      = Class
-		Entity.WeaponData     = Weapon
-		Entity.Class          = Class.ID -- Needed for custom killicons
-		Entity.Caliber        = Weapon.Caliber
-		Entity.MagReload      = Weapon.MagReload
-		Entity.MagSize        = Weapon.MagSize or 1
-		Entity.Cyclic         = Weapon.Cyclic and 60 / Weapon.Cyclic
-		Entity.ReloadTime     = Entity.Cyclic or 1
-		Entity.Spread         = Class.Spread
-		Entity.DefaultSound   = Class.Sound
-		Entity.HitBoxes       = ACF.HitBoxes[Weapon.Model]
-		Entity.Long           = Class.LongBarrel
-		Entity.NormalMuzzle   = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
-		Entity.Muzzle         = Entity.NormalMuzzle
+		Entity.Name         = Weapon and Weapon.Name or (Caliber .. "mm " .. Class.Name)
+		Entity.ShortName    = Weapon and Weapon.ID or (Caliber .. "mm" .. Class.ID)
+		Entity.EntType      = Class.Name
+		Entity.ClassData    = Class
+		Entity.Class        = Class.ID -- Needed for custom killicons
+		Entity.Caliber      = Caliber
+		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.MagSize      = math.floor(MagSize)
+		Entity.Cyclic       = Cyclic and 60 / Cyclic
+		Entity.ReloadTime   = Entity.Cyclic or 1
+		Entity.Spread       = Class.Spread
+		Entity.DefaultSound = GetSound(Caliber, Class)
+		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
+		Entity.HitBoxes     = ACF.GetHitboxes(Model, Scale)
+		Entity.Long         = Class.LongBarrel
+		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
+		Entity.Muzzle       = Entity.NormalMuzzle
 
-		CreateInputs(Entity, Data, Class, Weapon)
-		CreateOutputs(Entity, Data, Class, Weapon)
+		CreateInputs(Entity, Data, Class)
+		CreateOutputs(Entity, Data, Class)
 
 		-- Set NWvars
-		Entity:SetNWString("WireName", "ACF " .. Weapon.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:SetNWString("Sound", Entity.SoundPath)
 		Entity:SetNWString("Class", Entity.Class)
-		Entity:SetNWString("ID", Entity.Weapon)
 
 		-- Adjustable barrel length
 		if Entity.Long then
@@ -147,10 +183,15 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass = Weapon.Mass
+		local PhysObj = Entity.ACF.PhysObj
 
-		local Phys = Entity:GetPhysicsObject()
-		if IsValid(Phys) then Phys:SetMass(Weapon.Mass) end
+		if IsValid(PhysObj) then
+			local Mass = GetMass(Model, PhysObj, Class, Weapon)
+
+			Entity.ACF.LegalMass = Mass
+
+			PhysObj:SetMass(Mass)
+		end
 	end
 
 	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Class, List, Entity)
@@ -166,48 +207,49 @@ do -- Spawn and Update functions --------------------------------
 		VerifyData(Data)
 
 		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
-		local Weapon = Class.Lookup[Data.Weapon]
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
-		local Gun = ents.Create("acf_gun")
+		local Entity = ents.Create("acf_gun")
 
-		if not IsValid(Gun) then return end
+		if not IsValid(Entity) then return end
 
-		Player:AddCleanup(Class.Cleanup, Gun)
-		Player:AddCount(Limit, Gun)
+		local Weapon = Class.Lookup[Data.Weapon]
 
-		Gun:SetPlayer(Player)
-		Gun:SetAngles(Angle)
-		Gun:SetPos(Pos)
-		Gun:Spawn()
+		Player:AddCleanup(Class.Cleanup, Entity)
+		Player:AddCount(Limit, Entity)
 
-		Gun.Owner        = Player -- MUST be stored on ent for PP
-		Gun.SoundPath    = Class.Sound
-		Gun.BarrelFilter = { Gun }
-		Gun.State        = "Empty"
-		Gun.Crates       = {}
-		Gun.CurrentShot  = 0
-		Gun.BulletData   = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-		Gun.DataStore    = ACF.GetEntityArguments("acf_gun")
+		-- The model isn't automatically updated, so this is required
+		Entity:SetModel(Weapon and Weapon.Model or Class.Model)
+		Entity:SetPlayer(Player)
+		Entity:SetAngles(Angle)
+		Entity:SetPos(Pos)
+		Entity:Spawn()
 
-		Gun:SetNWString("Sound", Class.Sound)
+		Entity.ACF          = {}
+		Entity.Owner        = Player -- MUST be stored on ent for PP
+		Entity.BarrelFilter = { Entity }
+		Entity.State        = "Empty"
+		Entity.Crates       = {}
+		Entity.CurrentShot  = 0
+		Entity.BulletData   = EMPTY
+		Entity.DataStore    = ACF.GetEntityArguments("acf_gun")
 
-		UpdateWeapon(Gun, Data, Class, Weapon)
+		UpdateWeapon(Entity, Data, Class, Weapon)
 
-		WireLib.TriggerOutput(Gun, "Status", "Empty")
-		WireLib.TriggerOutput(Gun, "Entity", Gun)
-		WireLib.TriggerOutput(Gun, "Projectile Mass", 1000)
-		WireLib.TriggerOutput(Gun, "Muzzle Velocity", 1000)
+		WireLib.TriggerOutput(Entity, "Status", "Empty")
+		WireLib.TriggerOutput(Entity, "Entity", Entity)
+		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
+		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
 
 		if Class.OnSpawn then
-			Class.OnSpawn(Gun, Data, Class, Weapon)
+			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gun", Gun, Data, Class, Weapon)
+		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
-		Gun:UpdateOverlay(true)
+		Entity:UpdateOverlay(true)
 
 		do -- Mass entity mod removal
 			local EntMods = Data and Data.EntityMods
@@ -217,18 +259,18 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		TimerCreate("ACF Ammo Left " .. Gun:EntIndex(), 1, 0, function()
-			if not IsValid(Gun) then return end
+		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
+			if not IsValid(Entity) then return end
 
-			UpdateTotalAmmo(Gun)
+			UpdateTotalAmmo(Entity)
 		end)
 
-		CheckLegal(Gun)
+		CheckLegal(Entity)
 
-		return Gun
+		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon")
+	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	------------------- Updating ---------------------
@@ -290,6 +332,7 @@ do -- Metamethods --------------------------------
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
 			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
+			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
 
@@ -364,6 +407,10 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
+		local Trace     = util.TraceLine
+		local TraceRes  = {} -- Output for traces
+		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
+
 		function ENT:BarrelCheck(Offset)
 			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
@@ -450,10 +497,10 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
-			local Energy = ACF_Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
+			local Energy = ACF.Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
-				Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
+				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
 			end
 
 			if self.MagSize then -- Mag-fed/Automatically loaded
@@ -496,7 +543,7 @@ do -- Metamethods --------------------------------
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
 
-			Shove(self, MassCenter, -self:GetForward(), Energy)
+			ACF.KEShove(self, MassCenter, -self:GetForward(), Energy)
 		end
 	end -----------------------------------------
 
@@ -514,8 +561,6 @@ do -- Metamethods --------------------------------
 				Select = next(Gun.Crates, Select) or next(Gun.Crates)
 			until
 				Select == Start
-
-			return Select:CanConsume() and Select or nil
 		end
 
 		function ENT:Unload(Reload)
@@ -697,6 +742,7 @@ do -- Metamethods --------------------------------
 
 	do -- Misc ----------------------------------
 		local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+		local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj

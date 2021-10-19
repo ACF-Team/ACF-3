@@ -10,7 +10,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("Gearbox Information")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
-	local GearboxPreview = Base:AddModelPreview()
+	local GearboxPreview = Base:AddModelPreview(nil, true)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -34,7 +34,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = GearboxClass.Selected
 
 		ACF.SetClientData("Gearbox", Data.ID)
@@ -42,11 +41,8 @@ local function CreateMenu(Menu)
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
 
-		GearboxPreview:SetModel(Data.Model)
-		GearboxPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		GearboxPreview:SetLookAt(Preview and Preview.Position or Vector())
-		GearboxPreview:SetHeight(Preview and Preview.Height or 80)
-		GearboxPreview:SetFOV(Preview and Preview.FOV or 75)
+		GearboxPreview:UpdateModel(Data.Model)
+		GearboxPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
@@ -68,7 +64,7 @@ do -- Default Menus
 
 	do -- Manual Gearbox Menu
 		function ACF.ManualGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Gears = Class.Gears
 			local Torque = math.floor(Data.MaxTorque * 0.73)
@@ -169,7 +165,7 @@ do -- Default Menus
 		}
 
 		function ACF.CVTGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Torque = math.floor(Data.MaxTorque * 0.73)
 
@@ -268,7 +264,7 @@ do -- Default Menus
 		}
 
 		function ACF.AutomaticGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n\nThis entity can be fully parented."
+			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Gears = Class.Gears
 			local Torque = math.floor(Data.MaxTorque * 0.73)

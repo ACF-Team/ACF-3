@@ -21,7 +21,10 @@ do -- Petrol Engines
 			PeakMin	= 4500,
 			PeakMax	= 7500,
 			Limit	= 8000,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 
 	ACF.RegisterEngine("7.0-V12", "V12", {
@@ -39,7 +42,10 @@ do -- Petrol Engines
 			PeakMin	= 3600,
 			PeakMax	= 6000,
 			Limit	= 7500,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 
 	ACF.RegisterEngine("13.0-V12", "V12", {
@@ -57,7 +63,10 @@ do -- Petrol Engines
 			PeakMin	= 2500,
 			PeakMax	= 4000,
 			Limit	= 4250,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 
 	ACF.RegisterEngine("23.0-V12", "V12", {
@@ -75,7 +84,10 @@ do -- Petrol Engines
 			PeakMin	= 1500,
 			PeakMax	= 3000,
 			Limit	= 3250,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 end
 
@@ -95,7 +107,10 @@ do -- Diesel Engines
 			PeakMin	= 1200,
 			PeakMax	= 3800,
 			Limit	= 4000,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 
 	ACF.RegisterEngine("9.2-V12", "V12", {
@@ -113,7 +128,10 @@ do -- Diesel Engines
 			PeakMin	= 1100,
 			PeakMax	= 3300,
 			Limit	= 3500,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 
 	ACF.RegisterEngine("21.0-V12", "V12", {
@@ -131,10 +149,41 @@ do -- Diesel Engines
 			PeakMin	= 500,
 			PeakMax	= 1500,
 			Limit	= 2500,
-		}
+		},
+		Preview = {
+			FOV = 95,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/v12l.mdl", "driveshaft", Vector(-34, 0, 7.3), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v12m.mdl", "driveshaft", Vector(-22.61, 0, 4.85), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v12s.mdl", "driveshaft", Vector(-18.09, 0, 3.88), Angle(0, 90, 90))
+
+local Models = {
+	{ Model = "models/engines/v12l.mdl", Scale = 1.85 },
+	{ Model = "models/engines/v12m.mdl", Scale = 1.25 },
+	{ Model = "models/engines/v12s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos   = Vector(-1.25, 0, 7.5) * Scale,
+			Scale = Vector(36, 11.5, 16.5) * Scale,
+			Sensitive = true
+		},
+		LeftBank = {
+			Pos   = Vector(-0.25, -6.5, 11) * Scale,
+			Scale = Vector(34, 8, 11.25) * Scale,
+			Angle = Angle(0, 0, 45)
+		},
+		RightBank = {
+			Pos   = Vector(-0.25, 6.5, 11) * Scale,
+			Scale = Vector(34, 8, 11.25) * Scale,
+			Angle = Angle(0, 0, -45)
+		}
+	})
+end

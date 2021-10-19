@@ -16,15 +16,14 @@ do -- Piledrivers menu
 		local ClassBase = Menu:AddCollapsible("Piledriver Information")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
-		local ClassPreview = ClassBase:AddModelPreview()
+		local ClassPreview = ClassBase:AddModelPreview(nil, true)
 		local ClassInfo = ClassBase:AddLabel()
 		local ClassStats = ClassBase:AddLabel()
-
-		ClassBase:AddLabel("This entity can be fully parented.")
 
 		ACF.SetClientData("PrimaryClass", "acf_piledriver")
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")
+		ACF.SetClientData("PropEfficiency", 1)
 		ACF.SetClientData("AmmoType", "HP")
 		ACF.SetClientData("Propellant", 0)
 		ACF.SetClientData("Tracer", false)
@@ -37,7 +36,6 @@ do -- Piledrivers menu
 			self.ListData.Index = Index
 			self.Selected = Data
 
-			local Preview  = Data.Preview
 			local Bounds   = Data.Caliber
 			local Min, Max = Bounds.Min, Bounds.Max
 			local Current  = math.Clamp(ACF.GetClientNumber("Caliber", Min), Min, Max)
@@ -48,11 +46,8 @@ do -- Piledrivers menu
 
 			ClassDesc:SetText(Data.Description)
 
-			ClassPreview:SetModel(Data.Model)
-			ClassPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-			ClassPreview:SetLookAt(Preview and Preview.Position or Vector())
-			ClassPreview:SetHeight(Preview and Preview.Height or 80)
-			ClassPreview:SetFOV(Preview and Preview.FOV or 75)
+			ClassPreview:UpdateModel(Data.Model)
+			ClassPreview:UpdateSettings(Data.Preview)
 
 			ACF.SetClientData("Weapon", Data.ID)
 			ACF.SetClientData("Caliber", Current, true)
@@ -119,6 +114,77 @@ do -- Piledrivers menu
 	end
 
 	ACF.AddMenuItem(1, "Fun Stuff", "Piledrivers", "pencil", CreateMenu)
+end
+
+do -- Procedural Armor
+	local DensityText = "Density: %sg/cm³ (%skg/in³)"
+	local ArmorTypes  = ACF.Classes.ArmorTypes
+
+	local function CreateMenu(Menu)
+		ACF.SetToolMode("acf_menu", "Spawner", "Component")
+
+		ACF.SetClientData("PrimaryClass", "acf_armor")
+		ACF.SetClientData("SecondaryClass", "N/A")
+
+		Menu:AddTitle("Procedural Armor")
+		Menu:AddLabel("WARNING: EXPERIMENTAL!\nProcedural Armor is an experimental work in progress and may cause crashes, errors, or just not work properly with all of ACF.\n\nProcedural Armor can be prevented from spawning by setting sbox_max_acf_armor to 0")
+
+		local ClassList = Menu:AddComboBox()
+		local SizeX     = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
+		local SizeY     = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
+		local SizeZ     = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
+
+		local ClassBase = Menu:AddCollapsible("Material Information")
+		local ClassName = ClassBase:AddTitle()
+		local ClassDesc = ClassBase:AddLabel()
+		local ClassDens = ClassBase:AddLabel()
+
+		function ClassList:OnSelect(Index, _, Data)
+			if self.Selected == Data then return end
+
+			self.ListData.Index = Index
+			self.Selected       = Data
+
+			local Density = Data.Density
+
+			ClassName:SetText(Data.Name)
+			ClassDesc:SetText(Data.Description)
+			ClassDens:SetText(DensityText:format(Density, math.Round(Density * ACF.gCmToKgIn, 2)))
+
+			ACF.SetClientData("ArmorType", Data.ID)
+		end
+
+		SizeX:SetClientData("PlateSizeX", "OnValueChanged")
+		SizeX:DefineSetter(function(Panel, _, _, Value)
+			local X = math.Round(Value, 2)
+
+			Panel:SetValue(X)
+
+			return X
+		end)
+
+		SizeY:SetClientData("PlateSizeY", "OnValueChanged")
+		SizeY:DefineSetter(function(Panel, _, _, Value)
+			local Y = math.Round(Value, 2)
+
+			Panel:SetValue(Y)
+
+			return Y
+		end)
+
+		SizeZ:SetClientData("PlateSizeZ", "OnValueChanged")
+		SizeZ:DefineSetter(function(Panel, _, _, Value)
+			local Z = math.floor(Value)
+
+			Panel:SetValue(Z)
+
+			return Z
+		end)
+
+		ACF.LoadSortedList(ClassList, ArmorTypes, "Name")
+	end
+
+	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
 end
 
 hook.Add("ACF_AllowMenuOption", "Allow Fun Menu", function(_, Name)

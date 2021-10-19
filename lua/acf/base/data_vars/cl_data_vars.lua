@@ -76,14 +76,6 @@ do -- Server data var syncronization
 
 		ProcessData(Server, Received)
 	end)
-
-	-- We'll request the server data vars as soon as the player starts moving
-	hook.Add("InitPostEntity", "ACF Request Data Vars", function()
-		net.Start("ACF_RequestDataVars")
-		net.SendToServer()
-
-		hook.Remove("InitPostEntity", "ACF Request Data Vars")
-	end)
 end
 
 do -- Client data getter functions

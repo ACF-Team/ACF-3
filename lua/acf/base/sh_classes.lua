@@ -115,6 +115,24 @@ do -- Basic class registration functions
 
 		return Group.IsScalable and Group
 	end
+
+	hook.Add("ACF_OnNewSimpleClass", "ACF Precache Model", function(_, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
+
+	hook.Add("ACF_OnNewClassGroup", "ACF Precache Model", function(_, Group)
+		if not isstring(Group.Model) then return end
+
+		util.PrecacheModel(Group.Model)
+	end)
+
+	hook.Add("ACF_OnNewGroupedClass", "ACF Precache Model", function(_, _, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
 end
 
 local AddSimpleClass  = ACF.AddSimpleClass
@@ -210,6 +228,12 @@ do -- Class registration function
 
 		return Class
 	end
+
+	hook.Add("ACF_OnClassLoaded", "ACF Model Precache", function(_, Class)
+		if not isstring(Class.Model) then return end
+
+		util.PrecacheModel(Class.Model)
+	end)
 end
 
 do -- Weapon registration functions
@@ -273,6 +297,23 @@ do -- Ammo type registration function
 	function ACF.RegisterAmmoType(ID, Base)
 		return RegisterClass(ID, Base, Types)
 	end
+end
+
+do -- Armor type registration function
+	ACF.Classes.ArmorTypes = ACF.Classes.ArmorTypes or {}
+
+	local RegisterClass = ACF.RegisterClass
+	local Types = ACF.Classes.ArmorTypes
+
+	function ACF.RegisterArmorType(ID, Base)
+		return RegisterClass(ID, Base, Types)
+	end
+
+	AddSboxLimit({
+		Name = "_acf_armor",
+		Amount = 50,
+		Text = "Maximum amount of ACF procedural armor plates a player can create"
+	})
 end
 
 do -- Engine registration functions
@@ -569,7 +610,7 @@ do -- Entity class registration function
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
-		if not IsValid(Entity) then return false, "The spawn function for" .. Class .. " didn't return a value entity." end
+		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
 		Entity:Activate()
 

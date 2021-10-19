@@ -1,77 +1,6 @@
 -- Local Vars -----------------------------------
-local ACF         = ACF
-local TimerCreate = timer.Create
-local TraceRes    = {}
-local TraceData   = { output = TraceRes, mask = MASK_SOLID, filter = false }
-local HookRun     = hook.Run
-local Trace       = ACF.TraceF
-local ValidDebris = ACF.ValidDebris
-local ChildDebris = ACF.ChildDebris
-local DragDiv     = ACF.DragDiv
-
--- Local Funcs ----------------------------------
-
-local function CalcDamage(Entity, Energy, FrArea, Angle)
-	local FinalAngle = math.Clamp(Angle, -90, 90) -- TODO: Why are we getting impact angles outside these bounds?
-	local armor = Entity.ACF.Armour -- Armor
-	local losArmor = armor / math.abs(math.cos(math.rad(FinalAngle)) ^ ACF.SlopeEffectFactor) -- LOS Armor
-	local maxPenetration = (Energy.Penetration / FrArea) * ACF.KEtoRHA --RHA Penetration
-	local HitRes = {}
-
-	-- Projectile caliber. Messy, function signature
-	local caliber = 20 * (FrArea ^ (1 / ACF.PenAreaMod) / 3.1416) ^ 0.5
-	-- Breach probability
-	local breachProb = math.Clamp((caliber / Entity.ACF.Armour - 1.3) / (7 - 1.3), 0, 1)
-	-- Penetration probability
-	local penProb = (math.Clamp(1 / (1 + math.exp(-43.9445 * (maxPenetration / losArmor - 1))), 0.0015, 0.9985) - 0.0015) / 0.997
-
-	-- Breach chance roll
-	if breachProb > math.random() and maxPenetration > armor then
-		HitRes.Damage = FrArea -- Inflicted Damage
-		HitRes.Overkill = maxPenetration - armor -- Remaining penetration
-		HitRes.Loss = armor / maxPenetration -- Energy loss in percents
-
-		return HitRes
-	elseif penProb > math.random() then
-		-- Penetration chance roll
-		local Penetration = math.min(maxPenetration, losArmor)
-		HitRes.Damage = (Penetration / losArmor) ^ 2 * FrArea
-		HitRes.Overkill = (maxPenetration - Penetration)
-		HitRes.Loss = Penetration / math.max(0.001, maxPenetration)
-
-		return HitRes
-	end
-
-	-- Projectile did not breach nor penetrate armor
-	local Penetration = math.min(maxPenetration, losArmor)
-	HitRes.Damage = (Penetration / losArmor) ^ 2 * FrArea
-	HitRes.Overkill = 0
-	HitRes.Loss = 1
-
-	return HitRes
-end
-
-local function Shove(Target, Pos, Vec, KE)
-	if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
-
-	local Ancestor = ACF_GetAncestor(Target)
-	local Phys = Ancestor:GetPhysicsObject()
-
-	if IsValid(Phys) then
-		if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.CurTime then
-			ACF_CalcMassRatio(Ancestor)
-		end
-
-		local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
-		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
-
-		Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
-	end
-end
-
-ACF.KEShove = Shove
-
--------------------------------------------------
+local ACF     = ACF
+local HookRun = hook.Run
 
 do -- Player syncronization
 	util.AddNetworkString("ACF_RenderDamage")
@@ -97,7 +26,44 @@ do -- Player syncronization
 	end)
 end
 
+do -- KE Shove
+	function ACF.KEShove(Target, Pos, Vec, KE)
+		if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
+
+		local Ancestor = ACF_GetAncestor(Target)
+		local Phys = Ancestor:GetPhysicsObject()
+
+		if IsValid(Phys) then
+			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.CurTime then
+				ACF_CalcMassRatio(Ancestor)
+			end
+
+			local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
+			local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
+
+			Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
+		end
+	end
+end
+
 do -- Explosions ----------------------------
+	local TraceData = { start = true, endpos = true, mask = MASK_SOLID, filter = false }
+	local Bullet = {
+		IsFrag   = true, -- We need to let people know this isn't a regular bullet somehow
+		Owner    = true,
+		Gun      = true,
+		Caliber  = true,
+		Diameter = true,
+		ProjArea = true,
+		ProjMass = true,
+		Flight   = true,
+		Speed    = true,
+	}
+
+	function Bullet:GetPenetration()
+		return ACF.Penetration(self.Speed, self.ProjMass, self.Diameter * 10)
+	end
+
 	local function GetRandomPos(Entity, IsChar)
 		if IsChar then
 			local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since most of the character is in the middle
@@ -123,6 +89,7 @@ do -- Explosions ----------------------------
 		end
 	end
 
+	-- TODO: Separate this function into multiple chunks, it's absolutely unreadable.
 	function ACF.HE(Origin, FillerMass, FragMass, Inflictor, Filter, Gun)
 		debugoverlay.Cross(Origin, 15, 15, Color( 255, 255, 255 ), true)
 		Filter = Filter or {}
@@ -134,7 +101,6 @@ do -- Explosions ----------------------------
 		local Fragments  = math.max(math.floor((FillerMass / FragMass) * ACF.HEFrag), 2)
 		local FragWeight = FragMass / Fragments
 		local BaseFragV  = (Power * 50000 / FragWeight / Fragments) ^ 0.5
-		local FragArea 	 = (FragWeight / 7.8) ^ 0.33
 		local Damaged	 = {}
 		local Ents 		 = ents.FindInSphere(Origin, Radius)
 		local Loop 		 = true -- Find more props to damage whenever a prop dies
@@ -143,6 +109,10 @@ do -- Explosions ----------------------------
 		TraceData.start  = Origin
 
 		util.ScreenShake(Origin, Amp, Amp, Amp / 15, Radius * 10)
+
+		-- We only need to set these once
+		Bullet.Owner = Inflictor
+		Bullet.Gun   = Gun
 
 		while Loop and Power > 0 do
 			Loop = false
@@ -181,7 +151,8 @@ do -- Explosions ----------------------------
 				local Displ	 = Target - Origin
 
 				TraceData.endpos = Origin + Displ:GetNormalized() * (Displ:Length() + 24)
-				Trace(TraceData) -- Outputs to TraceRes
+
+				local TraceRes = ACF.TraceF(TraceData)
 
 				if TraceRes.HitNonWorld then
 					Ent = TraceRes.Entity
@@ -199,10 +170,12 @@ do -- Explosions ----------------------------
 							local Area 		= math.min(Ent.ACF.Area / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 
 							Damage[Ent] = {
-								Dist = Distance,
-								Vec  = (Pos - Origin):GetNormalized(),
-								Area = Area,
-								Index = K
+								Dist  = Distance,
+								Displ = Pos - Origin,
+								Vec   = (Pos - Origin):GetNormalized(),
+								Area  = Area,
+								Index = K,
+								Trace = TraceRes,
 							}
 
 							Ents[K] = nil -- Removed from future damage searches (but may still block LOS)
@@ -219,25 +192,37 @@ do -- Explosions ----------------------------
 				end
 			end
 
+			-- TODO: Add proper fragment support
+			-- NOTE: Fragments are flying at several km/s
 			for Ent, Table in pairs(Damage) do -- Deal damage to the entities we found
-				local Feathering 	= (1 - math.min(1, Table.Dist / Radius)) ^ ACF.HEFeatherExp
 				local AreaFraction 	= Table.Area / MaxSphere
 				local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
-				local AreaAdjusted 	= (Ent.ACF.Area / ACF.Threshold) * Feathering
-				local Blast 		= { Penetration = PowerFraction ^ ACF.HEBlastPen * AreaAdjusted }
-				local BlastRes 		= ACF.Damage(Ent, Blast, AreaAdjusted, 0, Inflictor, 0, Gun, "HE")
+				local Caliber       = math.Rand(0.5, 1) -- Random fragment caliber
+				local ProjArea      = math.pi * (Caliber * 0.5) ^ 2
 				local FragHit 		= math.floor(Fragments * AreaFraction)
-				local FragVel 		= math.max(BaseFragV - ((Table.Dist / BaseFragV) * BaseFragV ^ 2 * FragWeight ^ 0.33 / 10000) / DragDiv, 0)
-				local FragKE 		= ACF_Kinetic(FragVel, FragWeight * FragHit, 1500)
-				local Losses		= BlastRes.Loss * 0.5
 				local FragRes
 
+				Bullet.Caliber  = Caliber
+				Bullet.Diameter = Caliber
+				Bullet.ProjArea = ProjArea * FragHit
+				Bullet.ProjMass = FragWeight * FragHit
+				Bullet.Flight   = Table.Displ
+				Bullet.Speed    = Bullet.Flight:Length() / ACF.Scale * 0.0254
+
+				local BlastRes = ACF.Damage(Bullet, Table.Trace)
+				local Losses   = BlastRes.Loss * 0.5
+
 				if FragHit > 0 then
-					FragRes = ACF.Damage(Ent, FragKE, FragArea * FragHit, 0, Inflictor, 0, Gun, "Frag")
+					local DragCoef = ProjArea * 0.0002 / Bullet.ProjMass
+
+					Bullet.ProjArea = ProjArea
+					Bullet.Speed    = ACF.GetRangedSpeed(BaseFragV * 0.0254, DragCoef, Table.Dist) -- NOTE: Assuming BaseFragV is on in/s
+
+					FragRes = ACF.Damage(Bullet, Table.Trace)
 					Losses 	= Losses + FragRes.Loss * 0.5
 				end
 
-				if (BlastRes and BlastRes.Kill) or (FragRes and FragRes.Kill) then -- We killed something
+				if BlastRes.Kill or (FragRes and FragRes.Kill) then -- We killed something
 					Filter[#Filter + 1] = Ent -- Filter out the dead prop
 					Ents[Table.Index]   = nil -- Don't bother looking for it in the future
 
@@ -249,7 +234,7 @@ do -- Explosions ----------------------------
 
 					Loop = true -- Check for new targets since something died, maybe we'll find something new
 				elseif ACF.HEPush then -- Just damaged, not killed, so push on it some
-					Shove(Ent, Origin, Table.Vec, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
+					ACF.KEShove(Ent, Origin, Table.Vec, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
 				end
 
 				PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
@@ -268,10 +253,21 @@ do -- Overpressure --------------------------
 
 	local Squishies = ACF.Squishies
 
-	local function CanSee(Target, Data)
-		local R = Trace(Data)
+	-- InVehicle and GetVehicle are only for players, we have NPCs too!
+	local function GetVehicle(Entity)
+		if not IsValid(Entity) then return end
 
-		return R.Entity == Target or not R.Hit or (Target:InVehicle() and R.Entity == Target:GetVehicle())
+		local Parent = Entity:GetParent()
+
+		if not Parent:IsVehicle() then return end
+
+		return Parent
+	end
+
+	local function CanSee(Target, Data)
+		local R = ACF.TraceF(Data)
+
+		return R.Entity == Target or not R.Hit or R.Entity == GetVehicle(Target)
 	end
 
 	hook.Add("PlayerSpawnedNPC", "ACF Squishies", function(_, Ent)
@@ -291,7 +287,7 @@ do -- Overpressure --------------------------
 	end)
 
 	hook.Add("EntityRemoved", "ACF Squishies", function(Ent)
-			Squishies[Ent] = nil
+		Squishies[Ent] = nil
 	end)
 
 	function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
@@ -313,13 +309,15 @@ do -- Overpressure --------------------------
 		if Forward and Angle then -- Blast direction and angle are specified
 			Angle = math.rad(Angle * 0.5) -- Convert deg to rads
 
-			for V in pairs(ACF.Squishies) do
-				if math.acos(Forward:Dot((V:GetShootPos() - Origin):GetNormalized())) < Angle then
-					local D = V:GetShootPos():Distance(Origin)
+			for V in pairs(Squishies) do
+				local Position = V:EyePos()
+
+				if math.acos(Forward:Dot((Position - Origin):GetNormalized())) < Angle then
+					local D = Position:Distance(Origin)
 
 					if D / 39.37 <= Radius then
 
-						Data.endpos = V:GetShootPos() + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
 						if CanSee(V, Data) then
 							local Damage = Energy * 175000 * (1 / D^3)
@@ -330,13 +328,15 @@ do -- Overpressure --------------------------
 				end
 			end
 		else -- Spherical blast
-			for V in pairs(ACF.Squishies) do
+			for V in pairs(Squishies) do
+				local Position = V:EyePos()
+
 				if CanSee(Origin, V) then
-					local D = V:GetShootPos():Distance(Origin)
+					local D = Position:Distance(Origin)
 
 					if D / 39.37 <= Radius then
 
-						Data.endpos = V:GetShootPos() + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
 						if CanSee(V, Data) then
 							local Damage = Energy * 150000 * (1 / D^3)
@@ -351,9 +351,38 @@ do -- Overpressure --------------------------
 end -----------------------------------------
 
 do -- Deal Damage ---------------------------
-	local function SquishyDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
-		local Size = Entity:BoundingRadius()
-		local Mass = Entity:GetPhysicsObject():GetMass()
+	local TimerCreate = timer.Create
+
+	local function CalcDamage(Bullet, Trace, Volume)
+		-- TODO: Why are we getting impact angles outside these bounds?
+		local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
+		local Area    = Bullet.ProjArea
+		local HitRes  = {}
+
+		local Caliber        = Bullet.Diameter * 10
+		local BaseArmor      = Trace.Entity.ACF.Armour
+		local SlopeFactor    = BaseArmor / Caliber
+		local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+		local MaxPenetration = Bullet:GetPenetration() --RHA Penetration
+
+		if MaxPenetration > EffectiveArmor then
+			HitRes.Damage   = isnumber(Volume) and Volume or Area -- Inflicted Damage
+			HitRes.Overkill = MaxPenetration - EffectiveArmor -- Remaining penetration
+			HitRes.Loss     = EffectiveArmor / MaxPenetration -- Energy loss in percents
+		else
+			-- Projectile did not penetrate the armor
+			HitRes.Damage   = isnumber(Volume) and Volume or (MaxPenetration / EffectiveArmor) ^ 2 * Area
+			HitRes.Overkill = 0
+			HitRes.Loss     = 1
+		end
+
+		return HitRes
+	end
+
+	local function SquishyDamage(Bullet, Trace, Volume)
+		local Entity = Trace.Entity
+		local Size   = Entity:BoundingRadius()
+		local Mass   = Entity:GetPhysicsObject():GetMass()
 		local HitRes = {}
 		local Damage = 0
 
@@ -368,55 +397,55 @@ do -- Deal Damage ---------------------------
 			--This means we hit the head
 			if Bone == 1 then
 				Target.ACF.Armour = Mass * 0.02 --Set the skull thickness as a percentage of Squishy weight, this gives us 2mm for a player, about 22mm for an Antlion Guard. Seems about right
-				HitRes = CalcDamage(Target, Energy, FrArea, Angle) --This is hard bone, so still sensitive to impact angle
+				HitRes = CalcDamage(Bullet, Trace, Volume) --This is hard bone, so still sensitive to impact angle
 				Damage = HitRes.Damage * 20
 
 				--If we manage to penetrate the skull, then MASSIVE DAMAGE
 				if HitRes.Overkill > 0 then
 					Target.ACF.Armour = Size * 0.25 * 0.01 --A quarter the bounding radius seems about right for most critters head size
-					HitRes = CalcDamage(Target, Energy, FrArea, 0)
+					HitRes = CalcDamage(Bullet, Trace, Volume)
 					Damage = Damage + HitRes.Damage * 100
 				end
 
 				Target.ACF.Armour = Mass * 0.065 --Then to check if we can get out of the other side, 2x skull + 1x brains
-				HitRes = CalcDamage(Target, Energy, FrArea, Angle)
+				HitRes = CalcDamage(Bullet, Trace, Volume)
 				Damage = Damage + HitRes.Damage * 20
 			elseif Bone == 0 or Bone == 2 or Bone == 3 then
 				--This means we hit the torso. We are assuming body armour/tough exoskeleton/zombie don't give fuck here, so it's tough
 				Target.ACF.Armour = Mass * 0.08 --Set the armour thickness as a percentage of Squishy weight, this gives us 8mm for a player, about 90mm for an Antlion Guard. Seems about right
-				HitRes = CalcDamage(Target, Energy, FrArea, Angle) --Armour plate,, so sensitive to impact angle
+				HitRes = CalcDamage(Bullet, Trace, Volume) --Armour plate,, so sensitive to impact angle
 				Damage = HitRes.Damage * 5
 
 				if HitRes.Overkill > 0 then
 					Target.ACF.Armour = Size * 0.5 * 0.02 --Half the bounding radius seems about right for most critters torso size
-					HitRes = CalcDamage(Target, Energy, FrArea, 0)
+					HitRes = CalcDamage(Bullet, Trace, Volume)
 					Damage = Damage + HitRes.Damage * 50 --If we penetrate the armour then we get into the important bits inside, so DAMAGE
 				end
 
 				Target.ACF.Armour = Mass * 0.185 --Then to check if we can get out of the other side, 2x armour + 1x guts
-				HitRes = CalcDamage(Target, Energy, FrArea, Angle)
+				HitRes = CalcDamage(Bullet, Trace, Volume)
 			elseif Bone == 4 or Bone == 5 then
 				--This means we hit an arm or appendage, so ormal damage, no armour
 				Target.ACF.Armour = Size * 0.2 * 0.02 --A fitht the bounding radius seems about right for most critters appendages
-				HitRes = CalcDamage(Target, Energy, FrArea, 0) --This is flesh, angle doesn't matter
+				HitRes = CalcDamage(Bullet, Trace, Volume) --This is flesh, angle doesn't matter
 				Damage = HitRes.Damage * 30 --Limbs are somewhat less important
 			elseif Bone == 6 or Bone == 7 then
 				Target.ACF.Armour = Size * 0.2 * 0.02 --A fitht the bounding radius seems about right for most critters appendages
-				HitRes = CalcDamage(Target, Energy, FrArea, 0) --This is flesh, angle doesn't matter
+				HitRes = CalcDamage(Bullet, Trace, Volume) --This is flesh, angle doesn't matter
 				Damage = HitRes.Damage * 30 --Limbs are somewhat less important
 			elseif (Bone == 10) then
 				--This means we hit a backpack or something
 				Target.ACF.Armour = Size * 0.1 * 0.02 --Arbitrary size, most of the gear carried is pretty small
-				HitRes = CalcDamage(Target, Energy, FrArea, 0) --This is random junk, angle doesn't matter
+				HitRes = CalcDamage(Bullet, Trace, Volume) --This is random junk, angle doesn't matter
 				Damage = HitRes.Damage * 2 --Damage is going to be fright and shrapnel, nothing much
 			else --Just in case we hit something not standard
 				Target.ACF.Armour = Size * 0.2 * 0.02
-				HitRes = CalcDamage(Target, Energy, FrArea, 0)
+				HitRes = CalcDamage(Bullet, Trace, Volume)
 				Damage = HitRes.Damage * 30
 			end
 		else --Just in case we hit something not standard
 			Target.ACF.Armour = Size * 0.2 * 0.02
-			HitRes = CalcDamage(Target, Energy, FrArea, 0)
+			HitRes = CalcDamage(Bullet, Trace, Volume)
 			Damage = HitRes.Damage * 10
 		end
 
@@ -427,12 +456,14 @@ do -- Deal Damage ---------------------------
 		return HitRes
 	end
 
-	local function VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, _, Gun)
-		local HitRes = CalcDamage(Entity, Energy, FrArea, Angle)
+	local function VehicleDamage(Bullet, Trace, Volume)
+		local HitRes = CalcDamage(Bullet, Trace, Volume)
+		local Entity = Trace.Entity
 		local Driver = Entity:GetDriver()
 
 		if IsValid(Driver) then
-			SquishyDamage(Driver, Energy, FrArea, Angle, Inflictor, math.Rand(0, 7), Gun)
+			Trace.HitGroup = math.Rand(0, 7) -- Hit a random part of the driver
+			SquishyDamage(Bullet, Trace) -- Deal direct damage to the driver
 		end
 
 		HitRes.Kill = false
@@ -447,8 +478,9 @@ do -- Deal Damage ---------------------------
 		return HitRes
 	end
 
-	local function PropDamage(Entity, Energy, FrArea, Angle)
-		local HitRes = CalcDamage(Entity, Energy, FrArea, Angle)
+	local function PropDamage(Bullet, Trace, Volume)
+		local Entity = Trace.Entity
+		local HitRes = CalcDamage(Bullet, Trace, Volume)
 
 		HitRes.Kill = false
 
@@ -496,11 +528,12 @@ do -- Deal Damage ---------------------------
 
 	ACF.PropDamage = PropDamage
 
-	function ACF.Damage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun, Type)
-		local Activated = ACF.Check(Entity)
+	function ACF.Damage(Bullet, Trace, Volume)
+		local Entity = Trace.Entity
+		local Type   = ACF.Check(Entity)
 
-		if HookRun("ACF_BulletDamage", Activated, Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun) == false or Activated == false then
-			return {
+		if HookRun("ACF_BulletDamage", Bullet, Trace) == false or Type == false then
+			return { -- No damage
 				Damage = 0,
 				Overkill = 0,
 				Loss = 0,
@@ -509,13 +542,13 @@ do -- Deal Damage ---------------------------
 		end
 
 		if Entity.ACF_OnDamage then -- Use special damage function if target entity has one
-			return Entity:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, Bone, Type)
-		elseif Activated == "Prop" then
-			return PropDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone)
-		elseif Activated == "Vehicle" then
-			return VehicleDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
-		elseif Activated == "Squishy" then
-			return SquishyDamage(Entity, Energy, FrArea, Angle, Inflictor, Bone, Gun)
+			return Entity:ACF_OnDamage(Bullet, Trace, Volume)
+		elseif Type == "Prop" then
+			return PropDamage(Bullet, Trace, Volume)
+		elseif Type == "Vehicle" then
+			return VehicleDamage(Bullet, Trace, Volume)
+		elseif Type == "Squishy" then
+			return SquishyDamage(Bullet, Trace, Volume)
 		end
 	end
 
@@ -525,7 +558,9 @@ end -----------------------------------------
 do -- Remove Props ------------------------------
 	util.AddNetworkString("ACF_Debris")
 
-	local Queue = {}
+	local ValidDebris = ACF.ValidDebris
+	local ChildDebris = ACF.ChildDebris
+	local Queue       = {}
 
 	local function SendQueue()
 		for Entity, Data in pairs(Queue) do

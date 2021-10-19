@@ -21,7 +21,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("Sensor Information")
 	local SensorName = Base:AddTitle()
 	local SensorDesc = Base:AddLabel()
-	local SensorPreview = Base:AddModelPreview()
+	local SensorPreview = Base:AddModelPreview(nil, true)
 
 	function SensorClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -40,7 +40,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = SensorClass.Selected
 
 		ACF.SetClientData("Sensor", Data.ID)
@@ -48,11 +47,8 @@ local function CreateMenu(Menu)
 		SensorName:SetText(Data.Name)
 		SensorDesc:SetText(Data.Description or "No description provided.")
 
-		SensorPreview:SetModel(Data.Model)
-		SensorPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		SensorPreview:SetLookAt(Preview and Preview.Position or Vector())
-		SensorPreview:SetHeight(Preview and Preview.Height or 80)
-		SensorPreview:SetFOV(Preview and Preview.FOV or 75)
+		SensorPreview:UpdateModel(Data.Model)
+		SensorPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)

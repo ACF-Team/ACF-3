@@ -472,14 +472,25 @@ do -- Generic Spawner/Linker operation creator
 		end
 
 		do -- Spawner stuff
+			local function GetClassName(Player, Data)
+				local PrimaryClass   = Data.PrimaryClass
+				local SecondaryClass = Data.SecondaryClass
+
+				if not SecondaryClass then return PrimaryClass end
+				if SecondaryClass == "N/A" then return PrimaryClass end
+
+				local OnKeybind = Player:KeyDown(IN_SPEED) or Player:KeyDown(IN_RELOAD)
+
+				return OnKeybind and SecondaryClass or PrimaryClass
+			end
+
 			ACF.RegisterOperation("acf_menu", "Spawner", Name, {
 				OnLeftClick = function(Tool, Trace)
 					if Trace.HitSky then return false end
 
 					local Player    = Tool:GetOwner()
 					local Data      = ACF.GetAllClientData(Player)
-					local UseSecond = Player:KeyDown(IN_SPEED) or Player:KeyDown(IN_RELOAD)
-					local ClassName = UseSecond and Data.SecondaryClass or Data.PrimaryClass
+					local ClassName = GetClassName(Player, Data)
 
 					return SpawnEntity(Player, ClassName, Trace, Data)
 				end,
@@ -534,7 +545,6 @@ do -- Generic Spawner/Linker operation creator
 					UnselectEntity(Tool, Player, K)
 				end
 
-				-- TODO: Add list of reasons for failed links
 				if Done > 0 then
 					local Status = (Unlink and "unlinked " or "linked ") .. Done .. " out of " .. Total
 

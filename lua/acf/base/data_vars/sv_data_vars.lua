@@ -60,7 +60,6 @@ end
 
 do -- Data syncronization
 	util.AddNetworkString("ACF_DataVarNetwork")
-	util.AddNetworkString("ACF_RequestDataVars")
 
 	local function ProcessData(Player, Type, Values, Received)
 		local Data = Received[Type]
@@ -84,6 +83,7 @@ do -- Data syncronization
 		local Received = util.JSONToTable(net.ReadString())
 
 		if not IsValid(Player) then return end -- NOTE: Can this even happen?
+		if not Client[Player] then return end -- Player no longer exists, discarding.
 
 		ProcessData(Player, "Client", Client[Player], Received)
 
@@ -103,13 +103,6 @@ do -- Data syncronization
 		end
 	end)
 
-	net.Receive("ACF_RequestDataVars", function(_, Player)
-		-- Server data var syncronization
-		for Key in pairs(Server) do
-			NetworkData(Key, Player)
-		end
-	end)
-
 	-- If a player does not exist, we'll add it
 	setmetatable(Client, {
 		__index = function(Table, Key)
@@ -123,6 +116,13 @@ do -- Data syncronization
 			return Tab
 		end
 	})
+
+	hook.Add("ACF_OnPlayerLoaded", "ACF Data Var Syncronization", function(Player)
+		-- Server data var syncronization
+		for Key in pairs(Server) do
+			NetworkData(Key, Player)
+		end
+	end)
 
 	hook.Add("PlayerDisconnected", "ACF Data Var Syncronization", function(Player)
 		Client[Player] = nil

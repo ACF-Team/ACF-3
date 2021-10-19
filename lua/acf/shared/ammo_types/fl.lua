@@ -14,15 +14,28 @@ function Ammo:OnLoaded()
 		SA = true,
 		SB = true,
 		SL = true,
-		HMG = true,
+		LAC = true,
 		RAC = true,
 	}
 end
 
+-- Packing function to get the rough caliber of a flechette
+-- based on the caliber of the full round and the amount of them
+function Ammo:GetFlechetteCaliber(Caliber, Count)
+	return (0.95231 * Caliber * 0.5 / Count ^ 0.5) * 2
+end
+
+function Ammo:GetPenetration(Bullet, Speed)
+	if not isnumber(Speed) then
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	end
+
+	return ACF.Penetration(Speed, Bullet.FlechetteMass, Bullet.FlechetteCaliber * 10)
+end
+
 function Ammo:GetDisplayData(Data)
-	local Energy  = ACF_Kinetic(Data.MuzzleVel * 39.37, Data.FlechetteMass, Data.LimitVel)
 	local Display = {
-		MaxPen = (Energy.Penetration / Data.FlechettePenArea) * ACF.KEtoRHA
+		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
 	hook.Run("ACF_GetDisplayData", self, Data, Display)
@@ -35,21 +48,17 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
-	local PenAdj	 = 0.8 --higher means lower pen, but more structure (hp) damage (old: 2.35, 2.85)
-	local RadiusAdj	 = 1.0 -- lower means less structure (hp) damage, but higher pen (old: 1.0, 0.8)
 	local Flechettes = math.Clamp(ToolData.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
-	local PackRatio	 = 0.0025 * Flechettes + 0.69 --how efficiently flechettes are packed into shell
 
 	Data.Flechettes		   = Flechettes
 	Data.FlechetteSpread   = math.Clamp(ToolData.Spread, Data.MinSpread, Data.MaxSpread)
-	Data.FlechetteRadius   = (((PackRatio * RadiusAdj * Data.Caliber * 0.5) ^ 2) / Data.Flechettes) ^ 0.5
-	Data.FlechetteArea	   = 3.1416 * Data.FlechetteRadius ^ 2 -- area of a single flechette
-	Data.FlechetteMass	   = Data.FlechetteArea * (Data.ProjLength * 7.9 / 1000) -- volume of single flechette * density of steel
-	Data.FlechettePenArea  = (PenAdj * Data.FlechetteArea) ^ ACF.PenAreaMod
+	Data.FlechetteCaliber  = self:GetFlechetteCaliber(Data.Caliber, Flechettes)
+	Data.FlechetteArea	   = math.pi * (Data.FlechetteCaliber * 0.5) ^ 2 -- area of a single flechette
+	Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * ACF.SteelDensity -- volume of single flechette * density of steel
 	Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
-	Data.ProjMass		   = Data.Flechettes * Data.FlechetteMass -- total mass of all flechettes
-	Data.DragCoef		   = Data.FrArea * 0.0001 / Data.ProjMass
-	Data.MuzzleVel		   = ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
+	Data.ProjMass		   = Flechettes * Data.FlechetteMass -- total mass of all flechettes
+	Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
@@ -62,14 +71,12 @@ end
 function Ammo:BaseConvert(ToolData)
 	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { LengthAdj = 0.5 })
 
-	Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4) - 8, 1, 32)
-	Data.MinFlechettes = math.min(6, Data.MaxFlechettes) --force bigger guns to have higher min count
-	Data.MinSpread	   = 0.25
-	Data.MaxSpread	   = 30
+	Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
+	Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
+	Data.MinSpread	   = 1
+	Data.MaxSpread	   = 10
 	Data.ShovePower	   = 0.2
-	Data.PenArea	   = Data.FrArea ^ ACF.PenAreaMod
 	Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
-	Data.KETransfert   = 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet	   = 75 --Base ricochet angle
 
 	self:UpdateRoundData(ToolData, Data, GUIData)
@@ -80,16 +87,12 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.Flechettes then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.Flechettes = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.Flechettes) then
+		ToolData.Flechettes = ACF.CheckNumber(ToolData.RoundData5, 0)
 	end
 
-	if not ToolData.Spread then
-		local Data6 = ToolData.RoundData6
-
-		ToolData.Spread = Data6 and tonumber(Data6) or 0
+	if not isnumber(ToolData.Spread) then
+		ToolData.Spread = ACF.CheckNumber(ToolData.RoundData6, 0)
 	end
 end
 
@@ -108,24 +111,25 @@ if SERVER then
 	end
 
 	function Ammo:Create(Gun, BulletData)
+		local Caliber = math.Round(BulletData.FlechetteCaliber, 2)
+
 		local FlechetteData = {
-			Caliber     = math.Round(BulletData.FlechetteRadius * 0.2, 2),
-			Id          = BulletData.Id,
-			Type        = "AP",
-			Owner       = BulletData.Owner,
-			Entity      = BulletData.Entity,
-			Crate       = BulletData.Crate,
-			Gun         = BulletData.Gun,
-			Pos         = BulletData.Pos,
-			FrArea      = BulletData.FlechetteArea,
-			ProjMass    = BulletData.FlechetteMass,
-			DragCoef    = BulletData.FlechetteDragCoef,
-			Tracer      = BulletData.Tracer,
-			LimitVel    = BulletData.LimitVel,
-			Ricochet    = BulletData.Ricochet,
-			PenArea     = BulletData.FlechettePenArea,
-			ShovePower  = BulletData.ShovePower,
-			KETransfert = BulletData.KETransfert,
+			Caliber    = Caliber,
+			Diameter   = Caliber,
+			Id         = BulletData.Id,
+			Type       = "AP",
+			Owner      = BulletData.Owner,
+			Entity     = BulletData.Entity,
+			Crate      = BulletData.Crate,
+			Gun        = BulletData.Gun,
+			Pos        = BulletData.Pos,
+			ProjArea   = BulletData.FlechetteArea,
+			ProjMass   = BulletData.FlechetteMass,
+			DragCoef   = BulletData.FlechetteDragCoef,
+			Tracer     = BulletData.Tracer,
+			LimitVel   = BulletData.LimitVel,
+			Ricochet   = BulletData.Ricochet,
+			ShovePower = BulletData.ShovePower,
 		}
 
 		--if ammo is cooking off, shoot in random direction
@@ -163,7 +167,7 @@ if SERVER then
 		Ammo.BaseClass.Network(self, Entity, BulletData)
 
 		Entity:SetNW2String("AmmoType", "FL")
-		Entity:SetNW2Float("Caliber", math.Round(BulletData.FlechetteRadius * 0.2, 2))
+		Entity:SetNW2Float("Caliber", math.Round(BulletData.FlechetteCaliber, 2))
 		Entity:SetNW2Float("ProjMass", BulletData.FlechetteMass)
 		Entity:SetNW2Float("DragCoef", BulletData.FlechetteDragCoef)
 	end
@@ -179,6 +183,12 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
+
+	function Ammo:GetRangedPenetration(Bullet, Range)
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * 0.0254
+
+		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
+	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
@@ -238,8 +248,8 @@ else
 
 			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1V, R1P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.FlechetteDragCoef, BulletData.FlechetteMass, BulletData.FlechettePenArea, BulletData.LimitVel, 300)
-			local R2V, R2P = ACF.PenRanging(BulletData.MuzzleVel, BulletData.FlechetteDragCoef, BulletData.FlechetteMass, BulletData.FlechettePenArea, BulletData.LimitVel, 800)
+			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
+			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)

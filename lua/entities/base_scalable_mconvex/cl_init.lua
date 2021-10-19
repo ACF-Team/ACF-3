@@ -1,7 +1,8 @@
 include("shared.lua")
 
 function ENT:SetExtraInfo(Extra)
-	self.Mesh = Extra.Mesh
+	self.RealMesh = Extra.Mesh
+	self.Mesh     = table.Copy(Extra.Mesh)
 end
 
 function ENT:ApplyNewSize(_, NewScale)

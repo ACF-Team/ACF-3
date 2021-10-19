@@ -59,6 +59,21 @@ function SWEP:Initialize()
 		self:SetWeaponHoldType("pistol") --"357 hold type doesnt exist, it's the generic pistol one" Kaf
 		self.LastDistance = 0
 		self.LastTrace = {}
+		self.Bullet = {
+			IsTorch   = true, -- We need to let people know this isn't a regular bullet somehow
+			Owner     = true,
+			Gun       = self,
+			Caliber   = 0.5,
+			Diameter  = 0.5,
+			ProjArea  = math.pi * 0.25 ^ 2,
+			ProjMass  = 1,
+			Flight    = true,
+			Speed     = self.MaxDistance ^ 0.5 * 39.37,
+		}
+
+		function self.Bullet:GetPenetration()
+			return ACF.Penetration(self.Speed, self.ProjMass, self.Diameter * 10)
+		end
 	end
 
 	util.PrecacheSound("ambient/energy/NewSpark03.wav")
@@ -144,7 +159,7 @@ function SWEP:PrimaryAttack()
 
 			Entity:EmitSound("items/medshot4.wav", nil, nil, ACF.Volume)
 		else
-			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
+			if not Entity:CPPICanTool(Owner, "torch") then return end
 
 			local OldHealth = Entity.ACF.Health
 			local MaxHealth = Entity.ACF.MaxHealth
@@ -170,8 +185,6 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-local Energy = { Kinetic = 5, Momentum = 0, Penetration = 5 }
-
 function SWEP:SecondaryAttack()
 	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
 
@@ -184,16 +197,20 @@ function SWEP:SecondaryAttack()
 	local Owner = self:GetOwner()
 
 	if ACF.Check(Entity) then
+		local Bullet = self.Bullet
 		local HitRes = {}
+
+		Bullet.Owner  = Owner
+		Bullet.Flight = Trace.Normal
 
 		if Entity:IsPlayer() or Entity:IsNPC() then
 			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF_Damage(Entity, Energy, 2, 0, Owner, 0, self, "Torch")
+			HitRes = ACF.Damage(self.Bullet, Trace)
 		else
-			if CPPI and not Entity:CPPICanTool(Owner, "torch") then return end
+			if not Entity:CPPICanTool(Owner, "torch") then print("No perms") return end
 
 			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF_Damage(Entity, Energy, 2, 0, Owner, 0, self, "Torch")
+			HitRes = ACF.Damage(self.Bullet, Trace)
 		end
 
 		if HitRes.Kill then

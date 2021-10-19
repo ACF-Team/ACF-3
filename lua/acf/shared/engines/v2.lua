@@ -21,7 +21,10 @@ do -- Petrol Engines
 			PeakMin	= 4000,
 			PeakMax	= 6500,
 			Limit	= 7000,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterEngine("1.2-V2", "V2", {
@@ -39,7 +42,10 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5500,
 			Limit	= 6250,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 
 	ACF.RegisterEngine("2.4-V2", "V2", {
@@ -57,10 +63,41 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5500,
 			Limit	= 6000,
-		}
+		},
+		Preview = {
+			FOV = 115,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/v-twinl2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v-twinm2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v-twins2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))
+
+local Models = {
+	{ Model = "models/engines/v-twinl2.mdl", Scale = 1.67 },
+	{ Model = "models/engines/v-twinm2.mdl", Scale = 1.33 },
+	{ Model = "models/engines/v-twins2.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Shaft = {
+			Pos       = Vector(4.25) * Scale,
+			Scale     = Vector(9, 8, 8) * Scale,
+			Sensitive = true
+		},
+		Piston1 = {
+			Pos   = Vector(5, -4, 8.5) * Scale,
+			Scale = Vector(6, 6, 12) * Scale,
+			Angle = Angle(0, 0, 25)
+		},
+		Piston2 = {
+			Pos   = Vector(5, 4, 8.5) * Scale,
+			Scale = Vector(6, 6, 12) * Scale,
+			Angle = Angle(0, 0, -25)
+		}
+	})
+end

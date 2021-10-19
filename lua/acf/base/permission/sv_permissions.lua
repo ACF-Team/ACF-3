@@ -427,12 +427,14 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	--end
 end
 
-function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
-	local owner = CPPI and Entity:CPPIGetOwner() or Entity:GetOwner()
+function this.CanDamage(Bullet, Trace)
+	local Entity    = Trace.Entity
+	local Inflictor = Bullet.Owner
+	local Owner     = IsValid(Entity) and Entity:CPPIGetOwner()
 
-	if not (IsValid(owner) and owner:IsPlayer()) then
+	if not (IsValid(Owner) and Owner:IsPlayer()) then
 		if IsValid(Entity) and Entity:IsPlayer() then
-			owner = Entity
+			Owner = Entity
 		else
 			if this.DefaultCanDamage then
 				return
@@ -450,7 +452,7 @@ function this.CanDamage(_, Entity, _, _, _, Inflictor, _, _)
 		end
 	end
 
-	return this.DamagePermission(owner, Inflictor, Entity)
+	return this.DamagePermission(Owner, Inflictor, Entity)
 end
 
 hook.Add("ACF_BulletDamage", "ACF_DamagePermissionCore", this.CanDamage)

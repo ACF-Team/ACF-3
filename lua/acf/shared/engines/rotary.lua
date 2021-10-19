@@ -22,7 +22,10 @@ do
 			PeakMin	= 4500,
 			PeakMax	= 9000,
 			Limit	= 9200,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("1.3L-R", "R", {
@@ -40,7 +43,10 @@ do
 			PeakMin	= 4100,
 			PeakMax	= 8500,
 			Limit	= 9000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("2.0L-R", "R", {
@@ -58,10 +64,46 @@ do
 			PeakMin	= 4100,
 			PeakMax	= 8500,
 			Limit	= 9500,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
+ACF.SetCustomAttachment("models/engines/wankel_4_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_3_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_2_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
 ACF.SetCustomAttachment("models/engines/wankel_2_small.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
+
+ACF.AddHitboxes("models/engines/wankel_4_med.mdl", {
+	Main = {
+		Pos       = Vector(13),
+		Scale     = Vector(26.5, 13, 17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_3_med.mdl", {
+	Main = {
+		Pos       = Vector(10.25),
+		Scale     = Vector(22,13,17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_2_med.mdl", {
+	Main = {
+		Pos       = Vector(7.5),
+		Scale     = Vector(16, 13, 17),
+		Sensitive = true
+	}
+})
+
+ACF.AddHitboxes("models/engines/wankel_2_small.mdl", {
+	Main = {
+		Pos       = Vector(6),
+		Scale     = Vector(13, 10, 14),
+		Sensitive = true
+	}
+})

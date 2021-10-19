@@ -6,7 +6,6 @@ local Queued = {}
 
 local function ChangeSize(Entity, Size)
 	if not isvector(Size) then return false end
-	if Entity.Size == Size then return false end
 	if not Entity:GetOriginalSize() then return false end
 
 	local Original = Entity:GetOriginalSize()
@@ -120,11 +119,12 @@ end)
 
 hook.Add("NetworkEntityCreated", "Scalable Ent Full Update", function(Ent)
 	if Ent.IsScalable then
-		local Size = Ent.Size
+		local Size    = Ent:GetSize()
+		local Scale   = Ent:GetScale()
+		local Counter = Vector(1 / Scale.x, 1 / Scale.y, 1 / Scale.z)
 
-		Ent.Size = nil -- Forcing the entity to "forget" its current size
-
-		Ent:SetSize(Size)
+		Ent:SetScale(Counter) -- Return to normal size
+		Ent:SetSize(Size) -- Reapply size
 
 		if Ent.OnFullUpdate then Ent:OnFullUpdate() end
 	end

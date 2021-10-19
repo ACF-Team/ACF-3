@@ -21,7 +21,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("Component Information")
 	local ComponentName = Base:AddTitle()
 	local ComponentDesc = Base:AddLabel()
-	local ComponentPreview = Base:AddModelPreview()
+	local ComponentPreview = Base:AddModelPreview(nil, true)
 
 	function ComponentClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -40,7 +40,6 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local Preview = Data.Preview
 		local ClassData = ComponentClass.Selected
 
 		ACF.SetClientData("Component", Data.ID)
@@ -48,11 +47,8 @@ local function CreateMenu(Menu)
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "No description provided.")
 
-		ComponentPreview:SetModel(Data.Model)
-		ComponentPreview:SetCamPos(Preview and Preview.Offset or Vector(45, 60, 45))
-		ComponentPreview:SetLookAt(Preview and Preview.Position or Vector())
-		ComponentPreview:SetHeight(Preview and Preview.Height or 80)
-		ComponentPreview:SetFOV(Preview and Preview.FOV or 75)
+		ComponentPreview:UpdateModel(Data.Model)
+		ComponentPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)

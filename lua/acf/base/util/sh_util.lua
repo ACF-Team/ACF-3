@@ -204,6 +204,16 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
+function ACF_GetHitAngle(HitNormal, HitVector)
+	local Ang = math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))) -- Can output nan sometimes on extremely small angles
+
+	if Ang ~= Ang then -- nan is the only value that does not equal itself
+		return 0 -- return 0 instead of nan
+	else
+		return Ang
+	end
+end
+
 do -- Native type verification functions
 	function ACF.CheckNumber(Value, Default)
 		if not Value then return Default end
@@ -215,6 +225,264 @@ do -- Native type verification functions
 		if Value == nil then return Default end
 
 		return tostring(Value) or Default
+	end
+end
+
+do -- Hitbox storing and retrieval functions
+	ACF.Hitboxes = ACF.Hitboxes or {}
+
+	local Hitboxes = ACF.Hitboxes
+
+	local function IsValidModel(Model)
+		if not isstring(Model) then return false end
+
+		return not IsUselessModel(Model)
+	end
+
+	local function GetModelTable(Model)
+		local Result = Hitboxes[Model]
+
+		if not Result then
+			Result = {}
+
+			Hitboxes[Model] = Result
+		end
+
+		return Result
+	end
+
+	local function AddHitbox(Model, Name, Data)
+		local Table = GetModelTable(Model)
+
+		Table[Name] = {
+			Pos       = Vector(Data.Pos),
+			Scale     = Vector(Data.Scale),
+			Angle     = Angle(Data.Angle),
+			Sensitive = tobool(Data.Sensitive),
+		}
+	end
+
+	local function GetProperScale(Scale)
+		if not Scale then return 1 end
+		if isnumber(Scale) then return Scale end
+
+		return Vector(Scale)
+	end
+
+	local function GetCopy(Hitbox, Scale)
+		if not Hitbox then return end
+
+		return {
+			Pos       = Vector(Hitbox.Pos) * Scale,
+			Scale     = Vector(Hitbox.Scale) * Scale,
+			Angle     = Angle(Hitbox.Angle),
+			Sensitive = tobool(Hitbox.Sensitive),
+		}
+	end
+
+	function ACF.AddHitbox(Model, Name, Data)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+		if not istable(Data) then return end
+
+		AddHitbox(Model, Name, Data)
+	end
+
+	function ACF.AddHitboxes(Model, Data)
+		if not IsValidModel(Model) then return end
+		if not istable(Data) then return end
+
+		for Name, Hitbox in pairs(Data) do
+			if not isstring(Name) then continue end
+
+			AddHitbox(Model, Name, Hitbox)
+		end
+	end
+
+	function ACF.RemoveHitbox(Model, Name)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+
+		local Table = Hitboxes[Model]
+
+		if not Table then return end
+
+		Table[Name] = nil
+	end
+
+	function ACF.RemoveHitboxes(Model)
+		if not IsValidModel(Model) then return end
+
+		local Table = Hitboxes[Model]
+
+		if not Table then return end
+
+		for K in pairs(Table) do
+			Table[K] = nil
+		end
+
+		Hitboxes[Model] = nil
+	end
+
+	function ACF.GetHitbox(Model, Name, Scale)
+		if not IsValidModel(Model) then return end
+		if not isstring(Name) then return end
+
+		local Table = Hitboxes[Model]
+
+		if Table then
+			Scale = GetProperScale(Scale)
+
+			return GetCopy(Table[Name], Scale)
+		end
+	end
+
+	function ACF.GetHitboxes(Model, Scale)
+		if not IsValidModel(Model) then return end
+
+		local Table = Hitboxes[Model]
+
+		if Table then
+			local Result = {}
+
+			Scale = GetProperScale(Scale)
+
+			for Name, Data in pairs(Table) do
+				Result[Name] = GetCopy(Data, Scale)
+			end
+
+			return Result
+		end
+	end
+end
+
+do -- Model convex mesh and volume
+	ACF.ModelInfo = ACF.ModelInfo or {}
+
+	local Models = ACF.ModelInfo
+
+	local function CreateEntity(Model)
+		util.PrecacheModel(Model) -- 'ate CSEnts.
+
+		local Entity = SERVER and ents.Create("base_anim") or ents.CreateClientProp(Model)
+
+		Entity:SetModel(Model)
+		Entity:PhysicsInit(SOLID_VPHYSICS)
+
+		return Entity
+	end
+
+	local function GetModelData(Model)
+		if not isstring(Model) then return end
+		if IsUselessModel(Model) then return end
+
+		local Data = Models[Model]
+
+		if Data then return Data end
+
+		local Entity = CreateEntity(Model)
+
+		if not IsValid(Entity) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if not IsValid(PhysObj) then return end
+
+		local Min, Max = PhysObj:GetAABB()
+
+		Data = {
+			Mesh   = PhysObj:GetMeshConvexes(),
+			Volume = PhysObj:GetVolume(),
+			Center = (Max + Min) * 0.5,
+			Size   = Max - Min,
+			Min    = Min,
+			Max    = Max,
+		}
+
+		Models[Model] = Data
+
+		Entity:Remove()
+
+		return Data
+	end
+
+	local function IsValidScale(Scale)
+		if not Scale then return false end
+		if isnumber(Scale) then return true end
+
+		return isvector(Scale)
+	end
+
+	local function ScaleMesh(Mesh, Scale)
+		for I, Hull in ipairs(Mesh) do
+			for J, Vertex in ipairs(Hull) do
+				Mesh[I][J] = Vertex.pos * Scale
+			end
+		end
+	end
+
+	local function GetMeshVolume(Mesh)
+		local Entity = CreateEntity("models/props_junk/PopCan01a.mdl")
+		Entity:PhysicsInitMultiConvex(Mesh)
+
+		local PhysObj = Entity:GetPhysicsObject()
+		local Volume  = PhysObj:GetVolume()
+
+		Entity:Remove()
+
+		return Volume
+	end
+
+	-------------------------------------------------------------------
+
+	function ACF.GetModelMesh(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+
+		local Mesh = table.Copy(Data.Mesh)
+
+		if IsValidScale(Scale) then ScaleMesh(Mesh, Scale) end
+
+		return Mesh
+	end
+
+	function ACF.GetModelCenter(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+
+		if not IsValidScale(Scale) then
+			return Data.Center
+		end
+
+		return Data.Center * Scale
+	end
+
+	function ACF.GetModelVolume(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+		if not IsValidScale(Scale) then
+			return Data.Volume
+		end
+
+		local Mesh = table.Copy(Data.Mesh)
+
+		ScaleMesh(Mesh, Scale)
+
+		return GetMeshVolume(Mesh)
+	end
+
+	function ACF.GetModelSize(Model, Scale)
+		local Data = GetModelData(Model)
+
+		if not Data then return end
+		if not IsValidScale(Scale) then
+			return Vector(Data.Size)
+		end
+
+		return Data.Size * Scale
 	end
 end
 
@@ -443,38 +711,6 @@ do -- File creation
 		if not file.Exists(FullPath, "DATA") then return end
 
 		return util.JSONToTable(file.Read(FullPath, "DATA"))
-	end
-end
-
-do -- Ballistic functions
-	-- changes here will be automatically reflected in the armor properties tool
-	function ACF_CalcArmor(Area, Ductility, Mass)
-		return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
-	end
-
-	function ACF_MuzzleVelocity(Propellant, Mass)
-		local PEnergy = ACF.PBase * ((1 + Propellant) ^ ACF.PScale - 1)
-		local Speed = ((PEnergy * 2000 / Mass) ^ ACF.MVScale)
-		local Final = Speed -- - Speed * math.Clamp(Speed/2000,0,0.5)
-
-		return Final
-	end
-
-	function ACF_Kinetic(Speed, Mass, LimitVel)
-		LimitVel = LimitVel or 99999
-		Speed    = Speed / 39.37
-
-		local Energy = {
-			Kinetic = (Mass * (Speed ^ 2)) / 2000, --Energy in KiloJoules
-			Momentum = Speed * Mass,
-		}
-		local KE = (Mass * (Speed ^ ACF.KinFudgeFactor)) / 2000 + Energy.Momentum
-
-		Energy.Penetration = math.max(KE - (math.max(Speed - LimitVel, 0) ^ 2) / (LimitVel * 5) * (KE / 200) ^ 0.95, KE * 0.1)
-		--Energy.Penetration = math.max( KE - (math.max(Speed-LimitVel,0)^2)/(LimitVel*5) * (KE/200)^0.95 , KE*0.1 )
-		--Energy.Penetration = math.max(Energy.Momentum^ACF.KinFudgeFactor - math.max(Speed-LimitVel,0)/(LimitVel*5) * Energy.Momentum , Energy.Momentum*0.1)
-
-		return Energy
 	end
 end
 

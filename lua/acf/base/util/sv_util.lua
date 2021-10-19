@@ -163,8 +163,115 @@ do -- HTTP Request
 end
 
 do -- Entity saving and restoring
-	local Constraints = duplicator.ConstraintType
-	local Saved = {}
+	local ConstraintTypes = duplicator.ConstraintType
+	local Entities = {}
+
+	local function ResetCollisions(Entity)
+		if not IsValid(Entity) then return end
+
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if not IsValid(PhysObj) then return end
+
+		PhysObj:EnableCollisions(true)
+	end
+
+	local function ClearHydraulic(Constraint)
+		local ID = Constraint.MyCrtl
+
+		if not ID then return end
+
+		local Controller = ents.GetByIndex(ID)
+
+		if not IsValid(Controller) then return end
+
+		local Rope = Controller.Rope
+
+		Controller:DontDeleteOnRemove(Constraint)
+		Constraint:DontDeleteOnRemove(Controller)
+
+		if IsValid(Rope) then
+			Controller:DontDeleteOnRemove(Rope)
+			Rope:DontDeleteOnRemove(Constraint)
+		end
+	end
+
+	-- Similar to constraint.RemoveAll
+	local function ClearConstraints(Entity)
+		local Constraints = Entity.Constraints
+
+		if not Constraints then return end
+
+		for Index, Constraint in pairs(Constraints) do
+			if IsValid(Constraint) then
+				ResetCollisions(Constraint.Ent1)
+				ResetCollisions(Constraint.Ent2)
+
+				if Constraint.Type == "WireHydraulic" then
+					ClearHydraulic(Constraint)
+				end
+
+				Constraint:Remove()
+			end
+
+			Constraints[Index] = nil
+		end
+
+		Entity:IsConstrained()
+	end
+
+	local function GetFactory(Name)
+		if not Name then return end
+
+		return ConstraintTypes[Name]
+	end
+
+	local function RestoreHydraulic(ID, Constraint, Rope)
+		local Controller = ents.GetByIndex(ID)
+
+		if not IsValid(Controller) then return end
+
+		Constraint.MyCrtl = Controller:EntIndex()
+		Controller.MyId   = Controller:EntIndex()
+
+		Controller:SetConstraint(Constraint)
+		Controller:DeleteOnRemove(Constraint)
+
+		if IsValid(Rope) then
+			Controller:SetRope(Rope)
+			Controller:DeleteOnRemove(Rope)
+		end
+
+		Controller:SetLength(Controller.TargetLength)
+		Controller:TriggerInput("Constant", Controller.current_constant)
+		Controller:TriggerInput("Damping", Controller.current_damping)
+
+		Constraint:DeleteOnRemove(Controller)
+	end
+
+	local function RestoreConstraint(Data)
+		local Type    = Data.Type
+		local Factory = GetFactory(Type)
+
+		if not Factory then return end
+
+		local ID   = Data.MyCrtl
+		local Args = {}
+
+		if ID then Data.MyCrtl = nil end
+
+		for Index, Name in ipairs(Factory.Args) do
+			Args[Index] = Data[Name]
+		end
+
+		local Constraint, Rope = Factory.Func(unpack(Args))
+
+		if Type == "WireHydraulic" then
+			RestoreHydraulic(ID, Constraint, Rope)
+		end
+	end
+
+	------------------------------------------------------------------------
 
 	function ACF.SaveEntity(Entity)
 		if not IsValid(Entity) then return end
@@ -173,7 +280,7 @@ do -- Entity saving and restoring
 
 		if not IsValid(PhysObj) then return end
 
-		Saved[Entity] = {
+		Entities[Entity] = {
 			Constraints = constraint.GetTable(Entity),
 			Gravity = PhysObj:IsGravityEnabled(),
 			Motion = PhysObj:IsMotionEnabled(),
@@ -181,17 +288,19 @@ do -- Entity saving and restoring
 			Material = PhysObj:GetMaterial(),
 		}
 
+		ClearConstraints(Entity)
+
 		Entity:CallOnRemove("ACF_RestoreEntity", function()
-			Saved[Entity] = nil
+			Entities[Entity] = nil
 		end)
 	end
 
 	function ACF.RestoreEntity(Entity)
 		if not IsValid(Entity) then return end
-		if not Saved[Entity] then return end
+		if not Entities[Entity] then return end
 
 		local PhysObj = Entity:GetPhysicsObject()
-		local EntData = Saved[Entity]
+		local EntData = Entities[Entity]
 
 		PhysObj:EnableGravity(EntData.Gravity)
 		PhysObj:EnableMotion(EntData.Motion)
@@ -199,20 +308,10 @@ do -- Entity saving and restoring
 		PhysObj:SetMaterial(EntData.Material)
 
 		for _, Data in ipairs(EntData.Constraints) do
-			local Constraint = Data.Type and Constraints[Data.Type]
-
-			if not Constraint then continue end
-
-			local Args = {}
-
-			for Index, Name in ipairs(Constraint.Args) do
-				Args[Index] = Data[Name]
-			end
-
-			Constraint.Func(unpack(Args))
+			RestoreConstraint(Data)
 		end
 
-		Saved[Entity] = nil
+		Entities[Entity] = nil
 
 		Entity:RemoveCallOnRemove("ACF_RestoreEntity")
 	end
@@ -429,16 +528,6 @@ do -- Extra overlay text
 		end
 
 		return Result
-	end
-end
-
-function ACF_GetHitAngle(HitNormal, HitVector)
-	local Ang = math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))) -- Can output nan sometimes on extremely small angles
-
-	if Ang ~= Ang then -- nan is the only value that does not equal itself
-		return 0 -- return 0 instead of nan
-	else
-		return Ang
 	end
 end
 

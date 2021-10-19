@@ -21,7 +21,10 @@ do -- Petrol Engines
 			PeakMin	= 3300,
 			PeakMax	= 5400,
 			Limit	= 6000,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("3.4-I3", "I3", {
@@ -39,7 +42,10 @@ do -- Petrol Engines
 			PeakMin	= 3500,
 			PeakMax	= 6600,
 			Limit	= 6800,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("13.5-I3", "I3", {
@@ -57,7 +63,10 @@ do -- Petrol Engines
 			PeakMin	= 1900,
 			PeakMax	= 3500,
 			Limit	= 3900,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -77,7 +86,10 @@ do -- Diesel Engines
 			PeakMin	= 800,
 			PeakMax	= 2500,
 			Limit	= 3000,
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("2.8-I3", "I3", {
@@ -95,7 +107,10 @@ do -- Diesel Engines
 			PeakMin	= 1200,
 			PeakMax	= 3600,
 			Limit	= 3800
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterEngine("11.0-I3", "I3", {
@@ -113,10 +128,35 @@ do -- Diesel Engines
 			PeakMin	= 650,
 			PeakMax	= 1800,
 			Limit	= 2000
-		}
+		},
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/inline3b.mdl", "driveshaft", Vector(-15, 0, 11), Angle(0, 180, 90))
 ACF.SetCustomAttachment("models/engines/inline3m.mdl", "driveshaft", Vector(-9, 0, 6.6), Angle(0, 180, 90))
 ACF.SetCustomAttachment("models/engines/inline3s.mdl", "driveshaft", Vector(-6, 0, 4.4), Angle(0, 180, 90))
+
+local Models = {
+	{ Model = "models/engines/inline3b.mdl", Scale = 2.5 },
+	{ Model = "models/engines/inline3m.mdl", Scale = 1.5 },
+	{ Model = "models/engines/inline3s.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Shaft = {
+			Pos       = Vector(0.5, 0, 4.75) * Scale,
+			Scale     = Vector(18.5, 8, 9) * Scale,
+			Sensitive = true
+		},
+		Pistons = {
+			Pos   = Vector(1, 0.25, 13.25) * Scale,
+			Scale = Vector(14, 5.5, 8) * Scale
+		}
+	})
+end

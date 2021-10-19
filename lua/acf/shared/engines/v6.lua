@@ -22,7 +22,10 @@ do -- Petrol Engines
 			PeakMin	= 2200,
 			PeakMax	= 3500,
 			Limit	= 5000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("6.2-V6", "V6", {
@@ -40,7 +43,10 @@ do -- Petrol Engines
 			PeakMin	= 2200,
 			PeakMax	= 3600,
 			Limit	= 5000,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("12.0-V6", "V6", {
@@ -58,7 +64,10 @@ do -- Petrol Engines
 			PeakMin	= 1575,
 			PeakMax	= 2650,
 			Limit	= 3800,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
@@ -78,7 +87,10 @@ do -- Diesel Engines
 			PeakMin	= 1800,
 			PeakMax	= 4200,
 			Limit	= 4300,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterEngine("15.0-V6", "V6", {
@@ -96,10 +108,41 @@ do -- Diesel Engines
 			PeakMin	= 1150,
 			PeakMax	= 1950,
 			Limit	= 3100,
-		}
+		},
+		Preview = {
+			FOV = 105,
+		},
 	})
 end
 
 ACF.SetCustomAttachment("models/engines/v6large.mdl", "driveshaft", Vector(2), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v6med.mdl", "driveshaft", Vector(1.33), Angle(0, 90, 90))
 ACF.SetCustomAttachment("models/engines/v6small.mdl", "driveshaft", Vector(1.06), Angle(0, 90, 90))
+
+local Models = {
+	{ Model = "models/engines/v6large.mdl", Scale = 1.85 },
+	{ Model = "models/engines/v6med.mdl", Scale = 1.25 },
+	{ Model = "models/engines/v6small.mdl", Scale = 1 },
+}
+
+for _, Data in ipairs(Models) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(10.5, 0, 3.75) * Scale,
+			Scale     = Vector(22, 11.5, 16.25) * Scale,
+			Sensitive = true
+		},
+		LeftBank = {
+			Pos   = Vector(11.5, -6.5, 7) * Scale,
+			Scale = Vector(20, 8, 11) * Scale,
+			Angle = Angle(0, 0, 45)
+		},
+		RightBank = {
+			Pos   = Vector(11.5, 6.5, 7) * Scale,
+			Scale = Vector(20, 8, 11) * Scale,
+			Angle = Angle(0, 0, -45)
+		}
+	})
+end

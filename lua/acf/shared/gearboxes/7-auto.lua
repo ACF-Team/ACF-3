@@ -132,6 +132,9 @@ do -- Inline Gearboxes
 		Mass		= Gear7SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear7ST,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-L-M", "7-Auto", {
@@ -141,6 +144,9 @@ do -- Inline Gearboxes
 		Mass		= Gear7MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear7MT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-L-L", "7-Auto", {
@@ -150,6 +156,9 @@ do -- Inline Gearboxes
 		Mass		= Gear7LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear7LT,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -162,6 +171,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear7ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-LD-M", "7-Auto", {
@@ -172,6 +184,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear7MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-LD-L", "7-Auto", {
@@ -182,6 +197,9 @@ do -- Inline Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear7LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -193,6 +211,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear7SW,
 		Switch		= ShiftS,
 		MaxTorque	= Gear7ST,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-T-M", "7-Auto", {
@@ -202,6 +223,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear7MW,
 		Switch		= ShiftM,
 		MaxTorque	= Gear7MT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-T-L", "7-Auto", {
@@ -211,6 +235,9 @@ do -- Transaxial Gearboxes
 		Mass		= Gear7LW,
 		Switch		= ShiftL,
 		MaxTorque	= Gear7LT,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -223,6 +250,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftS,
 		MaxTorque	= Gear7ST,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-TD-M", "7-Auto", {
@@ -233,6 +263,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftM,
 		MaxTorque	= Gear7MT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-TD-L", "7-Auto", {
@@ -243,6 +276,9 @@ do -- Transaxial Dual Clutch Gearboxes
 		Switch		= ShiftL,
 		MaxTorque	= Gear7LT,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end
 
@@ -254,6 +290,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear7SW * StWB),
 		Switch		= ShiftS,
 		MaxTorque	= math.floor(Gear7ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-ST-M", "7-Auto", {
@@ -263,6 +302,9 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear7MW * StWB),
 		Switch		= ShiftM,
 		MaxTorque	= math.floor(Gear7MT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 
 	ACF.RegisterGearbox("7Gear-A-ST-L", "7-Auto", {
@@ -272,5 +314,8 @@ do -- Straight-through Gearboxes
 		Mass		= math.floor(Gear7LW * StWB),
 		Switch		= ShiftL,
 		MaxTorque	= math.floor(Gear7LT * StTB),
+		Preview = {
+			FOV = 105,
+		},
 	})
 end

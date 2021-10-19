@@ -1,6 +1,0 @@
-VertexLitGeneric
-{
-	"$baseTexture" "models\steeringwheels\dodgemap.vtf"
-	"$envmap" "env_cubemap"
-	"$envmapmask" "models\steeringwheels\dodgemap_ref.vtf"
-}

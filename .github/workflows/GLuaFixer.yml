@@ -12,14 +12,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v1
-    - name: Download GLuaFixer 1.17.0 
-      run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.17.0/glualint-1.17.0-linux.zip
+    - uses: actions/checkout@v2
+    - name: Download GLuaFixer 1.17.2
+      run: curl -o glualint.zip -L https://github.com/FPtje/GLuaFixer/releases/download/1.17.2/glualint-1.17.2-linux-stripped.zip
     - name: Extract glualint.zip
       run: unzip glualint.zip
     - name: Remove blacklisted folders
       run: rm -r lua/entities/gmod_wire_expression2/
     - name: Initiate linting
-      run: ./glualint lua
+      run: ./glualint --output-format github lint .

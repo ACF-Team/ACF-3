@@ -12,7 +12,7 @@ function Ammo:GetDisplayData()
 end
 
 function Ammo:BaseConvert(ToolData)
-	local ProjMass = 5.5 * 0.079
+	local ProjMass = 5.5 * ACF.SteelDensity
 	local PropMass = 0.001
 
 	return {
@@ -164,5 +164,11 @@ else
 	function Ammo:SetupAmmoMenuSettings(Settings)
 		Settings.SuppressControls    = true
 		Settings.SuppressInformation = true
+	end
+
+	function Ammo:AddAmmoPreview(Preview, Setup, ...)
+		Ammo.BaseClass.AddAmmoPreview(self, Preview, Setup, ...)
+
+		Setup.FOV = 115
 	end
 end

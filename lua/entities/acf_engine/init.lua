@@ -282,7 +282,7 @@ do -- Spawn and Update functions
 		Entity.LimitRPM         = EngineData.RPM.Limit
 		Entity.FlywheelOverride = EngineData.RPM.Override
 		Entity.FlywheelMass     = EngineData.FlywheelMass
-		Entity.Inertia          = EngineData.FlywheelMass * 3.1416 ^ 2
+		Entity.Inertia          = EngineData.FlywheelMass * math.pi ^ 2
 		Entity.IsElectric       = EngineData.IsElectric
 		Entity.IsTrans          = EngineData.IsTrans -- driveshaft outputs to the side
 		Entity.FuelTypes        = EngineData.Fuel or { Petrol = true }
@@ -291,7 +291,7 @@ do -- Spawn and Update functions
 		Entity.Efficiency       = EngineType.Efficiency * GetEfficiencyMult()
 		Entity.TorqueScale      = EngineType.TorqueScale
 		Entity.HealthMult       = EngineType.HealthMult
-		Entity.HitBoxes         = ACF.HitBoxes[EngineData.Model]
+		Entity.HitBoxes         = ACF.GetHitboxes(EngineData.Model)
 		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
@@ -569,9 +569,8 @@ function ENT:ACF_Activate()
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Energy, FrArea, Angle, Inflictor, _, Type)
-	local Mul = Type == "HEAT" and ACF.HEATMulEngine or 1 --Heat penetrators deal bonus damage to engines
-	local Res = ACF.PropDamage(self, Energy, FrArea * Mul, Angle, Inflictor)
+function ENT:ACF_OnDamage(Bullet, Trace, Volume)
+	local Res = ACF.PropDamage(Bullet, Trace, Volume)
 
 	--adjusting performance based on damage
 	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)

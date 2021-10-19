@@ -5,6 +5,7 @@ do -- ACF global vars
 	ACF.Repositories       = ACF.Repositories or {}
 	ACF.ClientData         = ACF.ClientData or {}
 	ACF.ServerData         = ACF.ServerData or {}
+	ACF.CurTime            = CurTime()
 
 	-- General Settings
 	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
@@ -26,6 +27,10 @@ do -- ACF global vars
 	ACF.GunsCanSmoke       = true
 	ACF.RacksCanFire       = true
 
+	-- Unit Conversion
+	ACF.MeterToInch        = 39.3701 -- Meters to inches
+	ACF.gCmToKgIn          = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
+
 	-- Fuzes
 	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed
 
@@ -39,13 +44,8 @@ do -- ACF global vars
 	ACF.Scale              = 1 --Scale factor for ACF in the game world
 	ACF.HealthFactor       = 1
 	ACF.Threshold          = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
-	ACF.PenAreaMod         = 0.85
-	ACF.KinFudgeFactor     = 2.1 --True kinetic would be 2, over that it's speed biased, below it's mass biased
-	ACF.KEtoRHA            = 0.25 --Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
-	ACF.GroundtoRHA        = 0.15 --How much mm of steel is a mm of ground worth (Real soil is about 0.15)
 	ACF.ArmorMod           = 1
 	ACF.ArmorFactor        = 1 -- Multiplier for ACF.ArmorMod
-	ACF.SlopeEffectFactor  = 1.1 -- Sloped armor effectiveness: armor / cos(angle)^factor
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
 		acf_debris = true,
@@ -60,28 +60,38 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
-	ACF.AmmoPadding        = 2 -- Millimeters of wasted space between rounds
-	ACF.AmmoMod            = 1.05 -- DEPRECATED. Ammo modifier. 1 is 1x the amount of ammo. 0.6 default
-	ACF.AmmoCaseScale      = 1.4 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6) 
-	ACF.PBase              = 875 --1KG of propellant produces this much KE at the muzzle, in kj
-	ACF.PScale             = 1 --Gun Propellant power expotential
-	ACF.MVScale            = 0.5 --Propellant to MV convertion expotential
+	ACF.AmmoPadding        = 10 -- Millimeters of wasted space between rounds
+	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
+	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
+	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity           = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
 	-- HE
 	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
-	ACF.HEDensity          = 1.65 --HE Filler density (That's TNT density)
+	ACF.HEDensity          = 1.65e-3 -- Density of TNT in kg/cm3
 	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
-	ACF.HEBlastPen         = 0.4 --Blast penetration exponent based of HE power
-	ACF.HEFeatherExp       = 0.5 --exponent applied to HE dist/maxdist feathering, <1 will increasingly bias toward max damage until sharp falloff at outer edge of range
-	ACF.HEATMVScale        = 0.75 --Filler KE to HEAT slug KE conversion expotential
-	ACF.HEATMulAmmo        = 30 --HEAT slug damage multiplier; 13.2x roughly equal to AP damage
-	ACF.HEATMulFuel        = 4 --needs less multiplier, much less health than ammo
-	ACF.HEATMulEngine      = 10 --likewise
-	ACF.HEATPenLayerMul    = 0.75 --HEAT base energy multiplier
-	ACF.HEATBoomConvert    = 1 / 3 -- percentage of filler that creates HE damage at detonation
-	ACF.HEATMinCrush       = 800 -- vel where crush starts, progressively converting round to raw HE
-	ACF.HEATMaxCrush       = 1200 -- vel where fully crushed
+
+	-- HEAT
+	ACF.TNTPower           = 4184    -- J/g
+	ACF.CompBDensity       = 1.72e-3 -- kg/cm^3
+	ACF.CompBEquivalent    = 1.33    -- Relative to TNT
+	ACF.OctolDensity       = 1.83e-3 -- kg/cm^3
+	ACF.OctolEquivalent    = 1.54    -- Relative to TNT
+	ACF.HEATEfficiency     = 0.5     -- Efficiency of converting explosive energy to velocity
+	ACF.LinerThicknessMult = 0.04   -- Metal liner thickness multiplier
+	ACF.MaxChargeHeadLen   = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
+	ACF.HEATPenMul         = 0.85    -- Linear jet penetration multiplier
+	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
+	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
+	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle
+	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
+
+	-- Material densities
+	ACF.SteelDensity       = 7.9e-3  -- kg/cm^3
+	ACF.RHADensity         = 7.84e-3 -- kg/cm^3
+	ACF.AluminumDensity    = 2.7e-3  -- kg/cm^3
+	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
 
 	-- Debris
 	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
@@ -108,9 +118,8 @@ do -- ACF global vars
 	ACF.CompFuelFactor     = 1 -- Multiplier for ACF.CompFuelRate
 	ACF.TankVolumeMul      = 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.CuIToLiter         = 0.0163871 -- cubic inches to liters
 	ACF.RefillDistance     = 300 --Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance 
+	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 end
 
@@ -135,7 +144,7 @@ if SERVER then
 			resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
 		end
 
-		hook.Add("PlayerConnect", "ACF Workshop Content")
+		hook.Remove("PlayerConnect", "ACF Workshop Content")
 	end)
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
@@ -270,3 +279,20 @@ do -- Smoke/Wind -----------------------------------
 		end)
 	end
 end ------------------------------------------------
+
+do -- CPPI
+	timer.Simple(1, function()
+		if not CPPI then
+			local ENT = FindMetaTable("Entity")
+			local Ply = player.GetAll()[1]
+
+			function ENT:CPPICanTool()
+				return true
+			end
+
+			function ENT:CPPIGetOwner()
+				return Ply
+			end
+		end
+	end)
+end

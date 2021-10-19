@@ -8,9 +8,8 @@ ACF.SkyboxGraceZone  = 100
 
 local Bullets       = ACF.Bullets
 local Unused        = ACF.UnusedIndexes
-local FlightTr  	= { start = true, endpos = true, filter = true, mask = true }
-local BackRes 		= {}
-local BackTrace 	= { start = true, endpos = true, filter = true, mask = true, output = BackRes }
+local FlightRes     = {}
+local FlightTr  	= { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
 local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
 local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
@@ -121,7 +120,8 @@ function ACF.CalcBulletFlight(Bullet)
 	local Drag      = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
 	local Accel     = Bullet.Accel or Gravity
 
-	Bullet.NextPos   = Bullet.Pos + (Bullet.Flight * ACF.Scale * DeltaTime)
+	local Correction = 0.5 * (Accel - Drag) * DeltaTime
+	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Bullet.Flight + Correction)
 	Bullet.Flight    = Bullet.Flight + (Accel - Drag) * DeltaTime
 	Bullet.LastThink = ACF.CurTime
 	Bullet.DeltaTime = DeltaTime
@@ -182,6 +182,13 @@ function ACF.CreateBullet(BulletData)
 	Bullet.GroundRicos = 0
 	Bullet.Color       = ColorRand(100, 255)
 
+	-- TODO: Make bullets use a metatable instead
+	function Bullet:GetPenetration()
+		local Ammo = AmmoTypes[Bullet.Type]
+
+		return Ammo:GetPenetration(self)
+	end
+
 	if not next(Bullets) then
 		hook.Add("Tick", "IterateBullets", IterateBullets)
 	end
@@ -211,6 +218,7 @@ local function OnImpact(Bullet, Trace, Ammo, Type)
 		end
 
 		ACF.BulletClient(Bullet, "Update", 3, Trace.HitPos)
+		ACF.DoBulletsFlight(Bullet)
 	else
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
@@ -251,34 +259,9 @@ function ACF.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	local FlightRes, Filter = ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
+	ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
 
 	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
-	-- Something was hit, let's make sure we're not phasing through armor
-	if Bullet.LastPos and IsValid(FlightRes.Entity) and not GlobalFilter[FlightRes.Entity:GetClass()] then
-		BackTrace.start  = Bullet.LastPos
-		BackTrace.endpos = Bullet.Pos
-		BackTrace.mask   = Bullet.Mask
-		BackTrace.filter = Bullet.Filter
-
-		ACF.TraceF(BackTrace) -- Does not modify the bullet's original filter
-
-		-- There's something behind our trace, go back one tick
-		if IsValid(BackRes.Entity) and not GlobalFilter[BackRes.Entity:GetClass()] then
-			Bullet.NextPos = Bullet.Pos
-			Bullet.Pos = Bullet.LastPos
-			Bullet.LastPos = nil
-
-			FlightTr.start 	= Bullet.Pos
-			FlightTr.endpos = Bullet.NextPos
-
-			FlightRes = ACF.Trace(FlightTr)
-		else
-			Bullet.Filter = Filter
-		end
-	else
-		Bullet.Filter = Filter
-	end
 
 	if Bullet.Fuze and Bullet.Fuze <= ACF.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -289,13 +272,14 @@ function ACF.DoBulletsFlight(Bullet)
 			local Lerp = DeltaFuze / DeltaTime
 
 			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
-				local Pos = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
+				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
+				Bullet.DetByFuze = true
 
 				if Bullet.OnEndFlight then
 					Bullet.OnEndFlight(Bullet, FlightRes)
 				end
 
-				ACF.BulletClient(Bullet, "Update", 1, Pos)
+				ACF.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
 				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, FlightRes)
 
@@ -328,48 +312,56 @@ do -- Terminal ballistics --------------------------
 
 		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
 	end
+	ACF_RicochetVector = RicochetVector
 
-	function ACF_RoundImpact(Bullet, Speed, Energy, Target, HitPos, HitNormal, Bone)
-		local HitAngle = ACF_GetHitAngle(HitNormal, Bullet.Flight)
+	function ACF_VolumeDamage(Bullet, Trace, Volume)
+		local HitRes = ACF.Damage(Bullet, Trace, Volume)
 
-		local HitRes = ACF_Damage( -- DAMAGE!!
-			Target,
-			Energy,
-			Bullet.PenArea,
-			HitAngle,
-			Bullet.Owner,
-			Bone,
-			Bullet.Gun,
-			Bullet.Type
-		)
+		if HitRes.Kill then
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), 0)
+			table.insert(Bullet.Filter , Debris)
+		end
+	end
 
+	function ACF_CalcRicochet(Bullet, Trace)
+		local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
+		-- Ricochet distribution center
+		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / 39.37 - Bullet.LimitVel) / 100)
+
+		-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
+		local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
+
+		-- Checking for ricochet
 		local Ricochet = 0
+		local Loss     = 0
+		if ricoProb > math.random() and HitAngle < 90 then
+			Ricochet = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
+			Loss     = 0.25 - Ricochet
+		end
+		return Ricochet, Loss
+	end
+
+	function ACF_RoundImpact(Bullet, Trace)
+		local Speed    = Bullet.Speed
+		local Energy   = Bullet.Energy
+		local HitRes   = ACF.Damage(Bullet, Trace)
+		local Ricochet = 0
+
 		if HitRes.Loss == 1 then
-			-- Ricochet distribution center
-			local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Speed / 39.37 - Bullet.LimitVel) / 100)
-
-			-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
-			local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
-
-			-- Checking for ricochet
-			if ricoProb > math.random() and HitAngle < 90 then
-				Ricochet       = math.Clamp(HitAngle / 90, 0.05, 1) -- atleast 5% of energy is kept
-				HitRes.Loss    = 0.25 - Ricochet
-				Energy.Kinetic = Energy.Kinetic * HitRes.Loss
-			end
+			Ricochet, HitRes.Loss = ACF_CalcRicochet(Bullet, Trace)
 		end
 
 		if ACF.KEPush then
 			ACF.KEShove(
-				Target,
-				HitPos,
+				Trace.Entity,
+				Trace.HitPos,
 				Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end
 
 		if HitRes.Kill then
-			local Debris = ACF_APKill(Target, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized() , Energy.Kinetic)
 
 			table.insert(Bullet.Filter , Debris)
 		end
@@ -378,8 +370,8 @@ do -- Terminal ballistics --------------------------
 
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.NextPos = HitPos
-			Bullet.Flight = (RicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
+			Bullet.NextPos = Trace.HitPos
+			Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
 
 			HitRes.Ricochet = true
 		end
@@ -388,19 +380,24 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function ACF_Ricochet(Bullet, Trace)
-		local Ricochet = 0
-		local Speed = Bullet.Flight:Length() / ACF.Scale
 		local HitAngle = ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight)
-		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9)	--Making the chance of a ricochet get higher as the speeds increase
+		local Speed    = Bullet.Flight:Length() / ACF.Scale
+		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9) -- Making the chance of a ricochet get higher as the speeds increase
+		local Ricochet = 0
 
-		if HitAngle > math.random(MinAngle,90) and HitAngle < 89.9 then	--Checking for ricochet
+		if HitAngle < 89.9 and HitAngle > math.random(MinAngle, 90) then -- Checking for ricochet
 			Ricochet = HitAngle / 90 * 0.75
 		end
 
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then
+			local Direction = RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05
+			local DeltaTime = engine.TickInterval()
+
 			Bullet.GroundRicos = Bullet.GroundRicos + 1
-			Bullet.NextPos = Trace.HitPos
-			Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05):GetNormalized() * Speed * Ricochet
+			Bullet.Flight      = Direction:GetNormalized() * Speed * ACF.Scale * Ricochet
+			Bullet.LastPos     = nil
+			Bullet.Pos         = Trace.HitPos
+			Bullet.NextPos     = Bullet.Pos + Bullet.Flight * DeltaTime
 
 			return "Ricochet"
 		end
@@ -409,12 +406,10 @@ do -- Terminal ballistics --------------------------
 	end
 
 	local function DigTrace(From, To, Filter)
-		local Dig = util.TraceHull({
+		local Dig = util.TraceLine({
 			start  = From,
 			endpos = To,
 			mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
-			mins   = Vector(),
-			maxs   = Vector()
 		})
 
 		debugoverlay.Line(From, Dig.StartPos, 30, ColorRand(100, 255), true)
@@ -431,12 +426,10 @@ do -- Terminal ballistics --------------------------
 				for I = 1, C do
 					local P = From + Normal * I * N
 
-					local Back = util.TraceHull({ -- Send a trace backwards to hit the other side
+					local Back = util.TraceLine({ -- Send a trace backwards to hit the other side
 						start  = P,
 						endpos = From, -- Countering the initial offset position of the dig trace to handle things <1 inch thick
 						mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
-						mins   = Vector(),
-						maxs   = Vector()
 					})
 
 					if Back.StartSolid or Back.HitNoDraw then continue end
@@ -451,12 +444,10 @@ do -- Terminal ballistics --------------------------
 				if Dig.HitNoDraw then -- Hit a layer inside
 					return DigTrace(Dig.HitPos + (To - From):GetNormalized() * 0.1, To, Filter) -- Try again
 				else -- Complete penetration
-					local Back = util.TraceHull({
+					local Back = util.TraceLine({
 						start  = Dig.StartPos,
 						endpos = From,
 						mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
-						mins   = Vector(),
-						maxs   = Vector()
 					})
 
 					-- False positive, still inside the world
@@ -469,12 +460,10 @@ do -- Terminal ballistics --------------------------
 				end
 			end
 		else -- Started inside a brush
-			local Back = util.TraceHull({ -- Send a trace backwards to hit the other side
+			local Back = util.TraceLine({ -- Send a trace backwards to hit the other side
 				start  = Dig.HitPos,
 				endpos = From + (From - Dig.HitPos):GetNormalized(), -- Countering the initial offset position of the dig trace to handle things <1 inch thick
 				mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
-				mins   = Vector(),
-				maxs   = Vector()
 			})
 
 			if Back.StartSolid then -- object is too thick
@@ -491,20 +480,19 @@ do -- Terminal ballistics --------------------------
 		end
 	end
 
+	ACF_DigTrace = DigTrace
+
 	function ACF_PenetrateMapEntity(Bullet, Trace)
-		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
 		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
-
+		local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
+		local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
 
-		local PassThrough = util.TraceHull({
+		local PassThrough = util.TraceLine({
 			start  = Enter,
 			endpos = Enter + Fwd * RHAe / 25.4,
-			filter = {Trace.Entity},
 			mask   = MASK_SOLID_BRUSHONLY
 		})
 
@@ -512,46 +500,55 @@ do -- Terminal ballistics --------------------------
 		local Back
 
 		repeat
-			Back = util.TraceHull({
+			Back = util.TraceLine({
 				start  = PassThrough.HitPos,
 				endpos = Enter,
 				filter = Filt
 			})
 
+			-- NOTE: Temporary patch for map entity penetration
+			-- Sometimes, really short flight projectiles will be processed
+			-- after a bounce or penetration of another map entity.
+			-- These are created in the air, so no entity is every hit
+			-- which leads to an infinite loop.
+			if not Back.Hit then return false end
+
 			if Back.HitNonWorld and Back.Entity ~= Trace.Entity then
 				Filt[#Filt + 1] = Back.Entity
+
 				continue
 			end
 
 			if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
 		until Back.Entity == Trace.Entity
 
-		local Thicc = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
+		local Thickness = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
 
-		Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
-		Bullet.Pos     = Back.HitPos + Fwd * 0.25
+		Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
+		Bullet.NextPos = Back.HitPos + Fwd * 0.25
+
+		table.insert(Bullet.Filter, Back.Entity)
 
 		return "Penetrated"
 	end
 
 	function ACF_PenetrateGround(Bullet, Trace)
-		local Energy  = ACF_Kinetic(Bullet.Flight:Length() / ACF.Scale, Bullet.ProjMass, Bullet.LimitVel)
 		local Surface = util.GetSurfaceData(Trace.SurfaceProps)
 		local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-		local Pen     = Energy.Penetration / Bullet.PenArea * ACF.KEtoRHA -- Base RHA penetration of the projectile
-		local RHAe    = math.max(Pen / Density, 1) -- RHA equivalent thickness of the target material
-
+		local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
+		local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
 		local Enter   = Trace.HitPos -- Impact point
 		local Fwd     = Bullet.Flight:GetNormalized()
 
 		local Penetrated, Exit = DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
 
 		if Penetrated then
-			local Thicc     = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
+			local Thickness = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
 			local DeltaTime = engine.TickInterval()
 
-			Bullet.Flight  = Bullet.Flight * (1 - Thicc / Pen)
-			Bullet.Pos     = Exit + Fwd * 0.25
+			Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
+			Bullet.LastPos = nil
+			Bullet.Pos     = Exit
 			Bullet.NextPos = Exit + Bullet.Flight * ACF.Scale * DeltaTime
 
 			return "Penetrated"

@@ -23,6 +23,9 @@ do -- Inline Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= 25000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("2Gear-L-M", "Transfer", {
@@ -33,6 +36,9 @@ do -- Inline Gearboxes
 		Switch		= 0.4,
 		MaxTorque	= 50000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 
 	ACF.RegisterGearbox("2Gear-L-L", "Transfer", {
@@ -43,6 +49,9 @@ do -- Inline Gearboxes
 		Switch		= 0.6,
 		MaxTorque	= 100000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
 	})
 end
 
@@ -55,6 +64,9 @@ do -- Transaxial Gearboxes
 		Switch		= 0.3,
 		MaxTorque	= 25000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("2Gear-T-M", "Transfer", {
@@ -65,6 +77,9 @@ do -- Transaxial Gearboxes
 		Switch		= 0.4,
 		MaxTorque	= 50000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 
 	ACF.RegisterGearbox("2Gear-T-L", "Transfer", {
@@ -75,5 +90,8 @@ do -- Transaxial Gearboxes
 		Switch		= 0.6,
 		MaxTorque	= 100000,
 		DualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
 	})
 end

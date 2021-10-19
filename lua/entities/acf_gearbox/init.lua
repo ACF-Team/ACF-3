@@ -345,7 +345,7 @@ do -- Spawn and Update functions
 		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
 		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
 		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
-		Entity.HitBoxes     = ACF.HitBoxes[Gearbox.Model]
+		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model)
 
 		CreateInputs(Entity, Data, Class, Gearbox)
 		CreateOutputs(Entity, Data, Class, Gearbox)

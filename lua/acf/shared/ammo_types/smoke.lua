@@ -9,7 +9,7 @@ function Ammo:OnLoaded()
 		GL = true,
 		MG = true,
 		SA = true,
-		HMG = true,
+		LAC = true,
 		RAC = true,
 	}
 end
@@ -41,30 +41,18 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.FillerPriority = Data.FillerPriority or "Smoke"
 
 	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local ProjMass	  = math.max(GUIData.ProjVolume - ToolData.SmokeFiller, 0) * 0.0079 + math.min(ToolData.SmokeFiller, GUIData.ProjVolume) * ACF.HEDensity * 0.0005
-	local MuzzleVel	  = ACF_MuzzleVelocity(Data.PropMass, ProjMass)
-	local Energy	  = ACF_Kinetic(MuzzleVel * 39.37, ProjMass, Data.LimitVel)
-	local MaxCapacity = ACF.RoundShellCapacity(Energy.Momentum, Data.FrArea, Data.Caliber, Data.ProjLength)
-	local MaxVolume	  = math.Round(math.min(GUIData.ProjVolume, MaxCapacity), 2)
-	local SmokeFiller = math.Clamp(ToolData.SmokeFiller, GUIData.MinFillerVol, MaxVolume)
-	local WPFiller	  = math.Clamp(ToolData.WPFiller, GUIData.MinFillerVol, MaxVolume)
+	local FreeVol     = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+	local FillerVol   = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
+	local SmokeRatio  = math.Clamp(ToolData.SmokeWPRatio, 0, 1)
+	local SmokeFiller = FillerVol * SmokeRatio
+	local WPFiller    = FillerVol * (1 - SmokeRatio)
 
-	if Data.FillerPriority == "Smoke" then
-		WPFiller = math.Clamp(WPFiller, 0, MaxVolume - SmokeFiller)
-	elseif Data.FillerPriority == "WP" then
-		SmokeFiller = math.Clamp(SmokeFiller, 0, MaxVolume - WPFiller)
-	end
-
-	GUIData.MaxFillerVol = MaxVolume
-	GUIData.FillerVol	 = math.Round(SmokeFiller, 2)
-	GUIData.WPVol		 = math.Round(WPFiller, 2)
-
-	Data.FillerMass	= GUIData.FillerVol * ACF.HEDensity * 0.0005
-	Data.WPMass		= GUIData.WPVol * ACF.HEDensity * 0.0005
-	Data.ProjMass	= math.max(GUIData.ProjVolume - (GUIData.FillerVol + GUIData.WPVol), 0) * 0.0079 + Data.FillerMass + Data.WPMass
-	Data.MuzzleVel	= ACF_MuzzleVelocity(Data.PropMass, Data.ProjMass)
-	Data.DragCoef	= Data.FrArea * 0.0001 / Data.ProjMass
-	Data.CartMass	= Data.PropMass + Data.ProjMass
+	Data.FillerMass = SmokeFiller * ACF.HEDensity
+	Data.WPMass     = WPFiller * ACF.HEDensity
+	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass + Data.WPMass
+	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+	Data.CartMass   = Data.PropMass + Data.ProjMass
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -79,9 +67,7 @@ function Ammo:BaseConvert(ToolData)
 	GUIData.MinFillerVol = 0
 
 	Data.ShovePower		= 0.1
-	Data.PenArea		= Data.FrArea ^ ACF.PenAreaMod
 	Data.LimitVel		= 100 --Most efficient penetration speed in m/s
-	Data.KETransfert	= 0.1 --Kinetic energy transfert to the target for movement purposes
 	Data.Ricochet		= 60 --Base ricochet angle
 	Data.DetonatorAngle	= 80
 	Data.CanFuze		= Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
@@ -94,31 +80,29 @@ end
 function Ammo:VerifyData(ToolData)
 	Ammo.BaseClass.VerifyData(self, ToolData)
 
-	if not ToolData.SmokeFiller then
-		local Data5 = ToolData.RoundData5
-
-		ToolData.SmokeFiller = Data5 and tonumber(Data5) or 0
+	if not isnumber(ToolData.FillerRatio) then
+		ToolData.FillerRatio = 1
 	end
 
-	if not ToolData.WPFiller then
-		local Data6 = ToolData.RoundData6
-
-		ToolData.WPFiller = Data6 and tonumber(Data6) or 0
+	if not isnumber(ToolData.SmokeWPRatio) then
+		ToolData.SmokeWPRatio = 0.5
 	end
 end
 
 if SERVER then
-	ACF.AddEntityArguments("acf_ammo", "SmokeFiller", "WPFiller") -- Adding extra info to ammo crates
+	ACF.AddEntityArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.SmokeFiller = nil
-		Entity.WPFiller = nil
+		Entity.FillerRatio  = nil
+		Entity.SmokeWPRatio = nil
 
 		-- Cleanup the leftovers aswell
-		Entity.RoundData5 = nil
-		Entity.RoundData6 = nil
+		Entity.SmokeFiller = nil
+		Entity.WPFiller    = nil
+		Entity.RoundData5  = nil
+		Entity.RoundData6  = nil
 
 		Entity:SetNW2Float("FillerMass", 0)
 		Entity:SetNW2Float("WPMass", 0)
@@ -154,12 +138,14 @@ if SERVER then
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)
-		local Target = Trace.Entity
-
-		if ACF.Check(Target) then
+		if ACF.Check(Trace.Entity) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF_Kinetic(Speed, Bullet.ProjMass - (Bullet.FillerMass + Bullet.WPMass), Bullet.LimitVel)
-			local HitRes = ACF_RoundImpact(Bullet, Speed, Energy, Target, Trace.HitPos, Trace.HitNormal, Trace.HitGroup)
+			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
+
+			Bullet.Speed  = Speed
+			Bullet.Energy = Energy
+
+			local HitRes = ACF_RoundImpact(Bullet, Trace)
 
 			if HitRes.Ricochet then return "Ricochet" end
 		end
@@ -189,44 +175,22 @@ else
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local SmokeFiller = Base:AddSlider("Smoke Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
-		SmokeFiller:SetClientData("SmokeFiller", "OnValueChanged")
-		SmokeFiller:TrackClientData("Projectile")
-		SmokeFiller:TrackClientData("WPFiller")
-		SmokeFiller:DefineSetter(function(Panel, _, Key, Value, IsTracked)
-			if Key == "SmokeFiller" then
-				ToolData.SmokeFiller = math.Round(Value, 2)
-
-				if not IsTracked then
-					BulletData.FillerPriority = "Smoke"
-				end
-			end
+		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
+		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
+		FillerRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.FillerRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
-
-			Panel:SetMax(BulletData.MaxFillerVol)
-			Panel:SetValue(BulletData.FillerVol)
 
 			return BulletData.FillerVol
 		end)
 
-		local WPFiller = Base:AddSlider("WP Filler", BulletData.MinFillerVol, BulletData.MaxFillerVol, 2)
-		WPFiller:SetClientData("WPFiller", "OnValueChanged")
-		WPFiller:TrackClientData("SmokeFiller")
-		WPFiller:TrackClientData("Projectile")
-		WPFiller:DefineSetter(function(Panel, _, Key, Value, IsTracked)
-			if Key == "WPFiller" then
-				ToolData.WPFiller = math.Round(Value, 2)
-
-				if not IsTracked then
-					BulletData.FillerPriority = "WP"
-				end
-			end
+		local SmokeWPRatio = Base:AddSlider("Smoke/WP Ratio", 0, 1, 2)
+		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
+		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.SmokeWPRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
-
-			Panel:SetMax(BulletData.MaxFillerVol)
-			Panel:SetValue(BulletData.WPVol)
 
 			return BulletData.WPVol
 		end)
@@ -235,16 +199,16 @@ else
 	function Ammo:AddCrateDataTrackers(Trackers, ...)
 		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
 
-		Trackers.SmokeFiller = true
-		Trackers.WPFiller = true
+		Trackers.FillerRatio = true
+		Trackers.SmokeWPRatio = true
 	end
 
 	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("SmokeFiller")
-		RoundStats:TrackClientData("WPFiller")
+		RoundStats:TrackClientData("FillerRatio")
+		RoundStats:TrackClientData("SmokeWPRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 
@@ -257,8 +221,8 @@ else
 		end)
 
 		local SmokeStats = Menu:AddLabel()
-		SmokeStats:TrackClientData("SmokeFiller", "SetText")
-		SmokeStats:TrackClientData("WPFiller")
+		SmokeStats:TrackClientData("FillerRatio", "SetText")
+		SmokeStats:TrackClientData("SmokeWPRatio")
 		SmokeStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 

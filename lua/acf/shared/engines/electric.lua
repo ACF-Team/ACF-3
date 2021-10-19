@@ -25,6 +25,9 @@ do -- Electric Motors
 			Limit	 = 10000,
 			Override = 5000,
 		},
+		Preview = {
+			FOV = 86,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Medium", "EL", {
@@ -44,7 +47,10 @@ do -- Electric Motors
 			PeakMax	 = 1,
 			Limit	 = 7000,
 			Override = 8000,
-		}
+		},
+		Preview = {
+			FOV = 88,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Large", "EL", {
@@ -92,6 +98,9 @@ do -- Electric Standalone Motors
 			Limit	 = 10000,
 			Override = 500,
 		},
+		Preview = {
+			FOV = 120,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Small-NoBatt", "EL-S", {
@@ -111,7 +120,10 @@ do -- Electric Standalone Motors
 			PeakMax	 = 1,
 			Limit	 = 10000,
 			Override = 5000,
-		}
+		},
+		Preview = {
+			FOV = 114,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Medium-NoBatt", "EL-S", {
@@ -132,6 +144,9 @@ do -- Electric Standalone Motors
 			Limit	 = 7000,
 			Override = 8000,
 		},
+		Preview = {
+			FOV = 112,
+		},
 	})
 
 	ACF.RegisterEngine("Electric-Large-NoBatt", "EL-S", {
@@ -151,7 +166,10 @@ do -- Electric Standalone Motors
 			PeakMax	 = 1,
 			Limit	 = 4500,
 			Override = 6000,
-		}
+		},
+		Preview = {
+			FOV = 110,
+		},
 	})
 end
 
@@ -162,3 +180,61 @@ ACF.SetCustomAttachment("models/engines/emotor-standalone-big.mdl", "driveshaft"
 ACF.SetCustomAttachment("models/engines/emotor-standalone-mid.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
 ACF.SetCustomAttachment("models/engines/emotor-standalone-sml.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
 ACF.SetCustomAttachment("models/engines/emotor-standalone-tiny.mdl", "driveshaft", Vector(), Angle(0, -90, 90))
+
+local Fullsizes = {
+	{ Model = "models/engines/emotorlarge.mdl", Scale = 1.92 },
+	{ Model = "models/engines/emotormed.mdl", Scale = 1.37 },
+	{ Model = "models/engines/emotorsmall.mdl", Scale = 1 },
+}
+
+local Standalones = {
+	{ Model = "models/engines/emotor-standalone-big.mdl", Scale = 1.67 },
+	{ Model = "models/engines/emotor-standalone-mid.mdl", Scale = 1.33 },
+	{ Model = "models/engines/emotor-standalone-sml.mdl", Scale = 1 },
+
+}
+
+for _, Data in ipairs(Fullsizes) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(13, 0, 0.5) * Scale,
+			Scale     = Vector(26, 14, 14) * Scale,
+			Sensitive = true
+		},
+		CableBullshit = {
+			Pos   = Vector(31, 0, 0.5) * Scale,
+			Scale = Vector(10, 14, 14) * Scale
+		},
+		LeftPack = {
+			Pos   = Vector(18.75, -13.5, 0.5) * Scale,
+			Scale = Vector(37, 10, 14.5) * Scale
+		},
+		RightPack = {
+			Pos   = Vector(18.75, 13.5, 0.5) * Scale,
+			Scale = Vector(37, 10, 14.5) * Scale
+		}
+	})
+end
+
+for _, Data in ipairs(Standalones) do
+	local Scale = Data.Scale
+
+	ACF.AddHitboxes(Data.Model, {
+		Main = {
+			Pos       = Vector(9) * Scale,
+			Scale     = Vector(20, 16, 16) * Scale,
+			Sensitive = true
+		}
+	})
+end
+
+-- Special snowflake
+ACF.AddHitboxes("models/engines/emotor-standalone-tiny.mdl", {
+	Main = {
+		Pos       = Vector(-0.5),
+		Scale     = Vector(14, 10, 10),
+		Sensitive = true
+	}
+})
