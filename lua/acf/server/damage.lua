@@ -354,8 +354,7 @@ do -- Deal Damage ---------------------------
 	local TimerCreate = timer.Create
 
 	local function CalcDamage(Bullet, Trace, Volume)
-		-- TODO: Why are we getting impact angles outside these bounds?
-		local Angle   = math.Clamp(ACF_GetHitAngle(Trace.HitNormal, Bullet.Flight), -90, 90)
+		local Angle   = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
 		local Area    = Bullet.ProjArea
 		local HitRes  = {}
 

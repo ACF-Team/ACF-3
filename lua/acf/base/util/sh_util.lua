@@ -204,14 +204,16 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
-function ACF_GetHitAngle(HitNormal, HitVector)
-	local Ang = math.deg(math.acos(HitNormal:Dot(-HitVector:GetNormalized()))) -- Can output nan sometimes on extremely small angles
+function ACF.GetReflect(HitNormal,BulletDirection)
+	return BulletDirection - 2 * (HitNormal:Dot(BulletDirection) * HitNormal)
+end
 
-	if Ang ~= Ang then -- nan is the only value that does not equal itself
-		return 0 -- return 0 instead of nan
-	else
-		return Ang
-	end
+function ACF.GetHitAngle(HitNormal, HitDir)
+	local FV = HitDir:GetNormalized()
+	local Ang = math.deg(math.acos(FV:Dot(-ACF.GetReflect(HitNormal,FV))))
+
+	if Ang ~= Ang then print("invalid angle in ACF.GetHitAngle\n",">HitNormal: " .. tostring(HitNormal) .. ", HitDir (BulletVel): " .. tostring(HitDir)) return 0 end
+	return Ang / 2
 end
 
 do -- Native type verification functions
