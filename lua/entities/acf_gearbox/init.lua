@@ -286,7 +286,7 @@ do -- Spawn and Update functions
 	end
 
 	local function CreateInputs(Entity, Data, Class, Gearbox)
-		local List = { "Gear", "Gear Up", "Gear Down" }
+		local List = { "Gear (Sets the gear to this number)", "Gear Up (Shifts the gearbox up)", "Gear Down (Shifts the gearbox down)" }
 
 		if Class.SetupInputs then
 			Class.SetupInputs(List, Entity, Data, Class, Gearbox)
@@ -302,7 +302,7 @@ do -- Spawn and Update functions
 	end
 
 	local function CreateOutputs(Entity, Data, Class, Gearbox)
-		local List = { "Current Gear", "Ratio", "Entity [ENTITY]" }
+		local List = { "Current Gear (The gear that is currently active)", "Ratio (The final ratio of the current gear arrangement)", "Entity (The gearbox itself) [ENTITY]" }
 
 		if Class.SetupOutputs then
 			Class.SetupOutputs(List, Entity, Data, Class, Gearbox)
@@ -390,13 +390,13 @@ do -- Spawn and Update functions
 		local Count = #List
 
 		if Entity.DualClutch then
-			List[Count + 1] = "Left Clutch"
-			List[Count + 2] = "Right Clutch"
-			List[Count + 3] = "Left Brake"
-			List[Count + 4] = "Right Brake"
+			List[Count + 1] = "Left Clutch (The amount of power allowed through the left side, inversely)"
+			List[Count + 2] = "Right Clutch (The amount of power allowed through the right side, inversely)"
+			List[Count + 3] = "Left Brake (The amount of braking to apply to the left side)"
+			List[Count + 4] = "Right Brake (The amount of braking to apply to the right side)"
 		else
-			List[Count + 1] = "Clutch"
-			List[Count + 2] = "Brake"
+			List[Count + 1] = "Clutch (The amount of power to allow through the gearbox, inversely)"
+			List[Count + 2] = "Brake (The amount of braking to apply to any wheels attached)"
 		end
 	end)
 	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)

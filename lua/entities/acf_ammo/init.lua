@@ -272,8 +272,8 @@ do -- Spawning and Updating --------------------
 		Crate.Owner       = Player -- MUST be stored on ent for PP
 		Crate.IsExplosive = true
 		Crate.Weapons     = {}
-		Crate.Inputs      = WireLib.CreateInputs(Crate, { "Load" })
-		Crate.Outputs     = WireLib.CreateOutputs(Crate, { "Entity [ENTITY]", "Ammo", "Loading" })
+		Crate.Inputs      = WireLib.CreateInputs(Crate, { "Load (If true, will allow rounds to load from this crate)" })
+		Crate.Outputs     = WireLib.CreateOutputs(Crate, { "Entity (This ammo crate) [ENTITY]", "Ammo (Rounds left in the crate)", "Loading (Whether or not rounds can load from this crate)" })
 		Crate.DataStore	  = ACF.GetEntityArguments("acf_ammo")
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
