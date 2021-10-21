@@ -354,8 +354,15 @@ do -- Spawn and Update functions
 		Engine.Throttle     = 0
 		Engine.FlyRPM       = 0
 		Engine.SoundPath    = EngineData.Sound
-		Engine.Inputs       = WireLib.CreateInputs(Engine, { "Active", "Throttle" })
-		Engine.Outputs      = WireLib.CreateOutputs(Engine, { "RPM", "Torque", "Power", "Fuel Use", "Entity [ENTITY]", "Mass", "Physical Mass" })
+		Engine.Inputs       = WireLib.CreateInputs(Engine, { "Active (Turns the engine on if it is not 0)", "Throttle (0-100 for how hard the engine should run)" })
+		Engine.Outputs      = WireLib.CreateOutputs(Engine, {
+			"RPM (Current rotations per minute of the engine)",
+			"Torque (nM of torque from the engine)",
+			"Power (kW of power from the engine)",
+			"Fuel Use (Amount of fuel being used)",
+			"Entity (The engine itself) [ENTITY]",
+			"Mass (Total mass detected on the vehicle by the engine)",
+			"Physical Mass (Physical mass detected on the vehicle by the engine)" })
 		Engine.DataStore    = ACF.GetEntityArguments("acf_engine")
 
 		WireLib.TriggerOutput(Engine, "Entity", Engine)
