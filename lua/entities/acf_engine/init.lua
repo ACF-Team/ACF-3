@@ -195,7 +195,7 @@ local function SetActive(Entity, Value)
 			Entity.Sound:PlayEx(Volume, Pitch)
 		end
 
-		TimerSimple(engine.TickInterval(), function()
+		TimerSimple(ACF.TickRate, function()
 			if not IsValid(Entity) then return end
 
 			Entity:CalcRPM()
@@ -697,7 +697,7 @@ function ENT:CalcRPM()
 
 	self:UpdateOutputs()
 
-	TimerSimple(engine.TickInterval(), function()
+	TimerSimple(ACF.TickRate, function()
 		if not IsValid(self) then return end
 
 		self:CalcRPM()
