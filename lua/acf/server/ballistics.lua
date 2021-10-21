@@ -12,12 +12,7 @@ local FlightRes     = {}
 local FlightTr  	= { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
 local GlobalFilter 	= ACF.GlobalFilter
 local AmmoTypes     = ACF.Classes.AmmoTypes
-local Gravity       = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 local HookRun		= hook.Run
-
-cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
-	Gravity.z = -Value
-end, "ACF Bullet Gravity")
 
 -- This will check a vector against all of the hitboxes stored on an entity
 -- If the vector is inside a box, it will return true, the box name (organization I guess, can do an E2 function with all of this), and the hitbox itself
@@ -116,11 +111,11 @@ function ACF.CalcBulletFlight(Bullet)
 		Bullet:PreCalcFlight()
 	end
 
-	local DeltaTime = ACF.CurTime - Bullet.LastThink
-	local Drag      = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
-	local Accel     = Bullet.Accel or Gravity
-
+	local DeltaTime  = ACF.CurTime - Bullet.LastThink
+	local Drag       = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
+	local Accel      = Bullet.Accel or ACF.Gravity
 	local Correction = 0.5 * (Accel - Drag) * DeltaTime
+
 	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Bullet.Flight + Correction)
 	Bullet.Flight    = Bullet.Flight + (Accel - Drag) * DeltaTime
 	Bullet.LastThink = ACF.CurTime

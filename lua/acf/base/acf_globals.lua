@@ -1,3 +1,5 @@
+local ACF = ACF
+
 do -- ACF global vars
 	ACF.AmmoCrates         = ACF.AmmoCrates or {}
 	ACF.Classes            = ACF.Classes or {}
@@ -46,6 +48,7 @@ do -- ACF global vars
 	ACF.Threshold          = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
 	ACF.ArmorMod           = 1
 	ACF.ArmorFactor        = 1 -- Multiplier for ACF.ArmorMod
+	ACF.Gravity            = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
 		acf_debris = true,
@@ -223,6 +226,10 @@ end
 hook.Add("Think", "Update ACF Internal Clock", function()
 	ACF.CurTime = CurTime()
 end)
+
+cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
+	ACF.Gravity.z = -Value
+end, "ACF Bullet Gravity")
 
 do -- Smoke/Wind -----------------------------------
 	if SERVER then

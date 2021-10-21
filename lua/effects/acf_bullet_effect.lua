@@ -71,7 +71,7 @@ function EFFECT:Init(Data)
 			AmmoType   = Crate:GetNW2String("AmmoType", "AP"),
 			Tracer     = Tracer and ParticleEmitter(Origin) or nil,
 			Color      = Tracer and Crate:GetColor() or nil,
-			Accel      = Crate:GetNW2Vector("Accel", Vector(0, 0, -600)),
+			Accel      = Crate:GetNW2Vector("Accel", ACF.Gravity),
 			LastThink  = ACF.CurTime,
 			Effect     = self,
 		}
