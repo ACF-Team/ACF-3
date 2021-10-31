@@ -182,6 +182,7 @@ do -- ACF Activation and Damage
 
 		self.ACF.Health = HP - Damage -- Update health
 
+		--[[
 		print("Damage!")
 		print("    PenCaliber: " .. math.Round(Bullet.Diameter * 10))
 		print("    MaxPen: " .. MaxPen)
@@ -191,6 +192,7 @@ do -- ACF Activation and Damage
 		print("    Damage: " .. math.Round(Damage, 3))
 		print("    pdHP: " .. math.Round(self.ACF.Health, 3))
 		print("    Loss: " .. math.Clamp(MaxPen / Pen, 0, 1))
+		]]--
 
 		return { -- Damage report
 			Loss = math.Clamp(MaxPen / Pen, 0, 1), -- Energy loss ratio
