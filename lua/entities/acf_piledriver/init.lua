@@ -48,7 +48,7 @@ do -- Spawning and Updating --------------------
 	end
 
 	local function CreateInputs(Entity, Data, Class)
-		local List = { "Fire" }
+		local List = { "Fire (Fires the piledriver)" }
 
 		if Class.SetupInputs then
 			Class.SetupInputs(List, Entity, Data, Class)
@@ -64,7 +64,15 @@ do -- Spawning and Updating --------------------
 	end
 
 	local function CreateOutputs(Entity, Data, Class)
-		local List = { "Ready", "Status [STRING]", "Shots Left", "Reload Time", "Rate of Fire", "Spike Mass", "Muzzle Velocity", "Entity [ENTITY]" }
+		local List = {
+			"Ready (If the piledriver can fire)",
+			"Status (Current state of the weapon) [STRING]",
+			"Shots Left (Amount of charges stored in the piledriver)",
+			"Reload Time (Charge rate)",
+			"Rate of Fire (How fast the piledriver can fire)",
+			"Spike Mass (Mass of the spike shot by the piledriver)",
+			"Muzzle Velocity (Speed of the spike shot by the piledriver)",
+			"Entity (The piledriver itself) [ENTITY]" }
 
 		if Class.SetupOutputs then
 			Class.SetupOutputs(List, Entity, Data, Class)

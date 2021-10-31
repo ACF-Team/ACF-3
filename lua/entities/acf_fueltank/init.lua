@@ -141,8 +141,13 @@ do -- Spawn and Update functions
 		Tank.Engines	= {}
 		Tank.Leaking	= 0
 		Tank.LastThink	= 0
-		Tank.Inputs		= WireLib.CreateInputs(Tank, { "Active", "Refuel Duty" })
-		Tank.Outputs	= WireLib.CreateOutputs(Tank, { "Activated", "Fuel", "Capacity", "Leaking", "Entity [ENTITY]" })
+		Tank.Inputs		= WireLib.CreateInputs(Tank, { "Active (Whether or not fuel can be drawn from this tank)", "Refuel Duty (If 1, sends fuel to other tanks with matching types)" })
+		Tank.Outputs	= WireLib.CreateOutputs(Tank, {
+			"Activated (Whether or not this tank is active)",
+			"Fuel (Amount of fuel currently in the tank, in liters/kWh)",
+			"Capacity (Total amount of fuel the tank can hold, in liters/kWh)",
+			"Leaking (If 1, the tank is losing fuel)",
+			"Entity (The fuel tank itself) [ENTITY]" })
 		Tank.DataStore	= ACF.GetEntityArguments("acf_fueltank")
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)

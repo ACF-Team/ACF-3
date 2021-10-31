@@ -1,4 +1,4 @@
--- Double Differential 
+-- Double Differential
 -- Weight
 local GearDDSW = 45
 local GearDDMW = 85
@@ -25,7 +25,7 @@ ACF.RegisterGearboxClass("DoubleDiff", {
 	OnSpawn = InitGearbox,
 	OnUpdate = InitGearbox,
 	SetupInputs = function(List)
-		List[#List + 1] = "Steer Rate"
+		List[#List + 1] = "Steer Rate (A -1 to 0 to -1 steering rate for apply power to each side individually)"
 	end,
 	OnLast = function(Gearbox)
 		Gearbox.DoubleDiff = nil

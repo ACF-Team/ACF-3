@@ -50,13 +50,13 @@ ACF.RegisterGearboxClass("CVT", {
 		Data.MaxRPM = math.Clamp(Max, Data.MinRPM + 100, 10000)
 	end,
 	SetupInputs = function(List)
-		List[#List + 1] = "CVT Ratio"
+		List[#List + 1] = "CVT Ratio (Manually sets this specific gear ratio in the CVT)"
 	end,
 	SetupOutputs = function(List)
 		local Count = #List
 
-		List[Count + 1] = "Min Target RPM"
-		List[Count + 2] = "Max Target RPM"
+		List[Count + 1] = "Min Target RPM (The lower targeted RPM for the CVT to maintain)"
+		List[Count + 2] = "Max Target RPM (The upper targeted RPM for the CVT to maintain)"
 	end,
 	OnLast = function(Gearbox)
 		Gearbox.CVT      = nil

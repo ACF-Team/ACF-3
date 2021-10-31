@@ -68,7 +68,7 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function CreateInputs(Entity, Data, Class, Weapon)
-		local List = { "Fire", "Unload", "Reload" }
+		local List = { "Fire (Fires the weapon)", "Unload (Empties the breech/magazine)", "Reload (Forces the weapon to reload)" }
 
 		if Class.SetupInputs then
 			Class.SetupInputs(List, Entity, Data, Class, Weapon)
@@ -84,7 +84,16 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function CreateOutputs(Entity, Data, Class, Weapon)
-		local List = { "Ready", "Status [STRING]", "Total Ammo", "Entity [ENTITY]", "Shots Left", "Rate of Fire", "Reload Time", "Projectile Mass", "Muzzle Velocity" }
+		local List = {
+			"Ready (Whether the weapon can fire or not)",
+			"Status (Current state of the weapon) [STRING]",
+			"Total Ammo (Rounds immediately available to the weapon)",
+			"Entity (The weapon itself) [ENTITY]",
+			"Shots Left (How many rounds are left before a reload is required)",
+			"Rate of Fire (How fast the weapon can fire)",
+			"Reload Time (How long a reload will take)",
+			"Projectile Mass (The mass of the projectile)",
+			"Muzzle Velocity (The speed of the projectile, leaving the barrel)" }
 
 		if Class.SetupOutputs then
 			Class.SetupOutputs(List, Entity, Data, Class, Weapon)
@@ -198,7 +207,7 @@ do -- Spawn and Update functions --------------------------------
 		if Class ~= "acf_gun" then return end
 		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
 
-		List[#List + 1] = "Fuze"
+		List[#List + 1] = "Fuze (The time, in seconds, before force detonating any fuze in the round)"
 	end)
 
 	-------------------------------------------------------------------------------
@@ -628,7 +637,7 @@ do -- Metamethods --------------------------------
 						if self:CanFire() then self:Shoot() end
 					end
 				end)
-			else -- No available crate to pull ammo from, out of ammo!				
+			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
 
 				self.CurrentShot = 0

@@ -96,8 +96,8 @@ ACF.RegisterGearboxClass("7-Auto", {
 	SetupInputs = function(List)
 		local Count = #List
 
-		List[Count + 1] = "Hold Gear"
-		List[Count + 2] = "Shift Speed Scale"
+		List[Count + 1] = "Hold Gear (Prevents the automatic shifting from occurring)"
+		List[Count + 2] = "Shift Speed Scale (Scales the speeds set for the automatic shifting)"
 	end,
 	OnLast = function(Gearbox)
 		Gearbox.Automatic  = nil
