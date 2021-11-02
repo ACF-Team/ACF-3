@@ -852,12 +852,56 @@ e2function number entity:acfReloadProgress()
 	return math.Clamp(1 - (this.NextFire - ACF.CurTime) / GetReloadTime(this), 0, 1)
 end
 
--- returns time it takes for an ACF weapon to reload magazine
-e2function number entity:acfMagReloadTime()
+-- Round functions
+
+-- Returns the rounds left in an acf entity
+--[[
+	If its a weapon:
+		If it is just a breech loaded weapon, 1 if its loaded otherwise 0
+		If it has a magazine, number of rounds in the magazine currently
+	Otherwise its a crate, returning the number of rounds in the crate
+]]--
+e2function number entity:acfRounds()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.MagReload or 0
+	return this.CurrentShot or this.Ammo or 0
+end
+
+--Returns the number of rounds in active ammo crates linked to an ACF weapon
+e2function number entity:acfAmmoCount()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local Count = 0
+	local Source = LinkSource(this:GetClass(), "Crates")
+
+	if not Source then return 0 end
+
+	for Crate in pairs(Source(this)) do
+		if Crate:CanConsume() then
+			Count = Count + Crate.Ammo
+		end
+	end
+
+	return Count
+end
+
+--Returns the number of rounds in all ammo crates linked to an ACF weapon
+e2function number entity:acfTotalAmmoCount()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local Count = 0
+	local Source = LinkSource(this:GetClass(), "Crates")
+
+	if not Source then return 0 end
+
+	for Crate in pairs(Source(this)) do
+		Count = Count + Crate.Ammo
+	end
+
+	return Count
 end
 
 -- Returns the magazine size for an ACF gun
@@ -866,6 +910,22 @@ e2function number entity:acfMagSize()
 	if RestrictInfo(self, this) then return 0 end
 
 	return this.MagSize or 0
+end
+
+-- Returns the number of rounds left in a magazine for an ACF gun
+e2function number entity:acfMagRounds()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	return this.CurrentShot or 0
+end
+
+-- returns time it takes for an ACF weapon to reload magazine
+e2function number entity:acfMagReloadTime()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	return this.MagReload or 0
 end
 
 -- Returns the spread for an ACF gun or flechette ammo
@@ -900,14 +960,6 @@ e2function number entity:acfFireRate()
 	return Time and Round(60 / Time, 2) or 0
 end
 
--- Returns the number of rounds left in a magazine for an ACF gun
-e2function number entity:acfMagRounds()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	return this.CurrentShot or 0
-end
-
 -- Sets the firing state of an ACF weapon
 e2function void entity:acfFire(number Fire)
 	if not IsACFEntity(this) then return end
@@ -930,14 +982,6 @@ e2function void entity:acfReload()
 	if not isOwner(self, this) then return end
 
 	this:TriggerInput("Reload", 1)
-end
-
--- Returns the rounds left in an acf ammo crate
-e2function number entity:acfRounds()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	return this.Ammo or 0
 end
 
 -- Returns the type of weapon the ammo in an ACF ammo crate loads into
@@ -1086,40 +1130,4 @@ e2function number entity:acfBlastRadius()
 	local Radius      = DisplayData and DisplayData.BlastRadius
 
 	return Radius and Round(Radius, 2) or 0
-end
-
---Returns the number of rounds in active ammo crates linked to an ACF weapon
-e2function number entity:acfAmmoCount()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	local Count = 0
-	local Source = LinkSource(this:GetClass(), "Crates")
-
-	if not Source then return 0 end
-
-	for Crate in pairs(Source(this)) do
-		if Crate:CanConsume() then
-			Count = Count + Crate.Ammo
-		end
-	end
-
-	return Count
-end
-
---Returns the number of rounds in all ammo crates linked to an ACF weapon
-e2function number entity:acfTotalAmmoCount()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	local Count = 0
-	local Source = LinkSource(this:GetClass(), "Crates")
-
-	if not Source then return 0 end
-
-	for Crate in pairs(Source(this)) do
-		Count = Count + Crate.Ammo
-	end
-
-	return Count
 end

@@ -95,7 +95,7 @@ E2Desc["acfUnload(e:)"] = "Causes an ACF entity to unload."
 E2Desc["acfReload(e:)"] = "Causes an ACF entity to reload."
 E2Desc["acfMagRounds(e:)"] = "Returns the rounds remaining in the magazine of an ACF entity."
 
-E2Desc["acfRounds(e:)"] = "Returns the number of rounds on an ACF entity."
+E2Desc["acfRounds(e:)"] = "Returns the number of rounds in a weapon or crate."
 E2Desc["acfAmmoType(e:)"] = "Returns the type of ammo on an ACF entity."
 E2Desc["acfRoundType(e:)"] = "Returns the type of weapon the ammo in an ACF ammo crate loads into."
 E2Desc["acfCaliber(e:)"] = "Returns the caliber of an ACF entity."
