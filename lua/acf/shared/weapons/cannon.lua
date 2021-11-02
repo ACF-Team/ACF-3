@@ -1,7 +1,7 @@
 ACF.RegisterWeaponClass("C", {
 	Name        = "Cannon",
 	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
-	Model       = "models/tankgun/tankgun_100mm.mdl",
+	Model       = "models/tankgun_new/tankgun_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
@@ -49,9 +49,9 @@ ACF.RegisterWeapon("140mmC", "C", {
 	Caliber = 140,
 })
 
-ACF.SetCustomAttachment("models/tankgun/tankgun_100mm.mdl", "muzzle", Vector(150.72, -0.01), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/tankgun_new/tankgun_100mm.mdl", "muzzle", Vector(150.72, -0.01), Angle(0, 0, 90))
 
-ACF.AddHitboxes("models/tankgun/tankgun_100mm.mdl", {
+ACF.AddHitboxes("models/tankgun_new/tankgun_100mm.mdl", {
 	Breech = {
 		Pos       = Vector(-14.25),
 		Scale     = Vector(28.5, 12.5, 12.5),

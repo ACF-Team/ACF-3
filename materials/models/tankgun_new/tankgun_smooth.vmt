@@ -1,0 +1,11 @@
+"VertexLitGeneric"
+{
+	$basetexture "models/tankgun_new/tankgun_smooth"
+	$bumpmap "models/tankgun_new/tankgun_smooth_normal"
+	$surfaceprop "metal"
+	$model 1
+	$halflambert 1
+	$translucent 1
+}
+
+
