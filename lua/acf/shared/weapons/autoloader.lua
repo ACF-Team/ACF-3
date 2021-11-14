@@ -1,7 +1,7 @@
 ACF.RegisterWeaponClass("AL", {
 	Name        = "Autoloaded Cannon",
 	Description = "An improvement over cannons that allows you fire multiple rounds in succesion at the cost of internal volume, mass and reload speed.",
-	Model       = "models/tankgun/tankgun_al_100mm.mdl",
+	Model       = "models/tankgun_new/tankgun_al_100mm.mdl",
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
@@ -47,9 +47,9 @@ ACF.RegisterWeapon("140mmAL", "AL", {
 	Caliber = 140,
 })
 
-ACF.SetCustomAttachment("models/tankgun/tankgun_al_100mm.mdl", "muzzle", Vector(146.2), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/tankgun_new/tankgun_al_100mm.mdl", "muzzle", Vector(146.2), Angle(0, 0, 90))
 
-ACF.AddHitboxes("models/tankgun/tankgun_al_100mm.mdl", {
+ACF.AddHitboxes("models/tankgun_new/tankgun_al_100mm.mdl", {
 	Breech = {
 		Pos       = Vector(-35.33),
 		Scale     = Vector(84, 16, 12),
