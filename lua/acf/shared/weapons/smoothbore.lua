@@ -7,7 +7,7 @@ ACF.RegisterWeaponClass("SB", {
 	DefaultAmmo = "APFSDS",
 	IsScalable  = true,
 	Spread      = 0.08,
-	Mass		= 3068,
+	Mass		= 2031,
 	Round = {
 		MaxLength  = 80,
 		PropLength = 58,

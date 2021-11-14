@@ -5,7 +5,7 @@ ACF.RegisterWeaponClass("C", {
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 1512,
+	Mass        = 2031,
 	Spread      = 0.08,
 	Round = {
 		MaxLength  = 80,
