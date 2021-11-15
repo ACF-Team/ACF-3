@@ -1,7 +1,7 @@
 ACF.RegisterWeaponClass("SC", {
 	Name        = "Short-Barrelled Cannon",
 	Description = "Shorter variant of cannons, limited to shorter round size and therefore worse performance than their full sized counterpart.",
-	Model       = "models/tankgun_new/tankgun_short_100mm.mdl",
+	Model       = "models/tankgun/tankgun_short_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
@@ -50,9 +50,9 @@ ACF.RegisterWeapon("140mmSC", "SC", {
 	Caliber = 140,
 })
 
-ACF.SetCustomAttachment("models/tankgun_new/tankgun_short_100mm.mdl", "muzzle", Vector(82.86, -0.01), Angle(0, 0, 90))
+ACF.SetCustomAttachment("models/tankgun/tankgun_short_100mm.mdl", "muzzle", Vector(82.86, -0.01), Angle(0, 0, 90))
 
-ACF.AddHitboxes("models/tankgun_new/tankgun_short_100mm.mdl", {
+ACF.AddHitboxes("models/tankgun/tankgun_short_100mm.mdl", {
 	Breech = {
 		Pos       = Vector(-14.19),
 		Scale     = Vector(28.37, 12.83, 12.83),
