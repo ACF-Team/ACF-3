@@ -1,7 +1,7 @@
 # Armored Combat Framework
 > A standardized combat and damage addon for Garry's Mod
 
-[![Discord Invite](https://img.shields.io/discord/654142834030542878?label=Chat&style=flat-square)](https://discordapp.com/invite/shk5sc5)
+[![Discord Invite](https://img.shields.io/discord/654142834030542878?label=Chat&style=flat-square)](https://discord.gg/jgdzysxjST)
 [![Steam Group](https://img.shields.io/badge/ACF%20Official-Join%20Now!-informational?style=flat-square)](https://steamcommunity.com/groups/officialacf)
 [![Linting Status](https://img.shields.io/github/workflow/status/Stooberton/ACF-3/GLuaFixer?label=Linter%20Status&style=flat-square)](https://github.com/Stooberton/ACF-3/actions?query=workflow%3AGLuaFixer)
 [![Repository Size](https://img.shields.io/github/repo-size/Stooberton/ACF-3?label=Repository%20Size&style=flat-square)](https://github.com/Stooberton/ACF-3)
