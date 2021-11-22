@@ -129,6 +129,8 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 	local MassMod = EntMods and EntMods.mass
 
 	if Thickness then
+		Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
+
 		if not MassMod then
 			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
 
@@ -215,6 +217,8 @@ function ACF.Activate(Entity, Recalc)
 	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
+
+	Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
 
 	Entity.ACF.Health    = Health * Percent
 	Entity.ACF.MaxHealth = Health

@@ -117,6 +117,8 @@ if CLIENT then
 		local Ductility = ArmorProp_Ductility:GetFloat()
 		local Thickness = ArmorProp_Thickness:GetFloat()
 
+		Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
+
 		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility / 100, Thickness)
 		NewMass = math.Round(math.min(NewMass, 50000), 2)
 

@@ -197,6 +197,14 @@ do -- Serverside settings
 		end)
 
 		Base:AddHelp("Only applies to servers with their ACF Gamemode set to Competitive.")
+
+		local MaxThickness = Base:AddSlider("Max Armor Thickness", 0, 5000, 0)
+		MaxThickness:SetServerData("MaxThickness", "OnValueChanged")
+		MaxThickness:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
 	end)
 
 	ACF.AddServerSettings(100, "Sound Volume", function(Base)
