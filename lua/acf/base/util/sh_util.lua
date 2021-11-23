@@ -490,8 +490,11 @@ end
 
 do -- Attachment storage
 	local IsUseless = IsUselessModel
-	local EntTable = FindMetaTable("Entity")
-	local Models = {}
+	local EntMeta   = FindMetaTable("Entity")
+	local GetAttach = EntMeta.GetAttachment
+	local GetAll    = EntMeta.GetAttachments
+	local Lookup    = EntMeta.LookupAttachment
+	local Models    = {}
 
 	local function GetModelData(Model, NoCreate)
 		local Table = Models[Model]
@@ -534,11 +537,23 @@ do -- Attachment storage
 	end
 
 	local function GetAttachData(Entity)
-		if not Entity.AttachData then
-			Entity.AttachData = GetModelData(Entity:GetModel(), true)
+		local Data  = Entity.AttachData
+		local Model = Entity:GetModel()
+
+		if not Data or Data.Model ~= Model then
+			local Attachments = GetModelData(Model)
+
+			Data = {
+				Model = Model,
+			}
+
+			if next(Attachments) then
+				Data.Attachments  = Attachments
+				Entity.AttachData = Data
+			end
 		end
 
-		return Entity.AttachData
+		return Data.Attachments
 	end
 
 	-------------------------------------------------------------------
@@ -607,22 +622,16 @@ do -- Attachment storage
 		Models[Model] = nil
 	end
 
-	EntTable.LegacySetModel = EntTable.LegacySetModel or EntTable.SetModel
-	EntTable.LegacyGetAttachment = EntTable.LegacyGetAttachment or EntTable.GetAttachment
-	EntTable.LegacyGetAttachments = EntTable.LegacyGetAttachments or EntTable.GetAttachments
-	EntTable.LegacyLookupAttachment = EntTable.LegacyLookupAttachment or EntTable.LookupAttachment
+	print("Listing functions from Entity metatable")
+	print("GetAttachment", GetAttach)
+	print("GetAttachments", GetAll)
+	print("LookupAttachment", Lookup)
 
-	function EntTable:SetModel(Path, ...)
-		self:LegacySetModel(Path, ...)
-
-		self.AttachData = GetModelData(Path, true)
-	end
-
-	function EntTable:GetAttachment(Index, ...)
+	function EntMeta:GetAttachment(Index, ...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyGetAttachment(Index, ...)
+			return GetAttach(self, Index, ...)
 		end
 
 		local Attachment = Data[Index]
@@ -641,11 +650,11 @@ do -- Attachment storage
 		}
 	end
 
-	function EntTable:GetAttachments(...)
+	function EntMeta:GetAttachments(...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyGetAttachments(...)
+			return GetAll(self, ...)
 		end
 
 		local Result = {}
@@ -660,11 +669,11 @@ do -- Attachment storage
 		return Result
 	end
 
-	function EntTable:LookupAttachment(Name, ...)
+	function EntMeta:LookupAttachment(Name, ...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyLookupAttachment(Name, ...)
+			return Lookup(self, Name, ...)
 		end
 
 		for Index, Info in ipairs(Data) do
