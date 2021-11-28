@@ -448,7 +448,7 @@ do -- Deal Damage ---------------------------
 			Damage = HitRes.Damage * 10
 		end
 
-		Entity:TakeDamage(Damage, Inflictor, Gun)
+		Entity:TakeDamage(Damage, Bullet.Owner, Gun)
 
 		HitRes.Kill = false
 
