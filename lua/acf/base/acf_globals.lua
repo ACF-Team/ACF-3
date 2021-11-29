@@ -7,6 +7,7 @@ do -- ACF global vars
 	ACF.Repositories       = ACF.Repositories or {}
 	ACF.ClientData         = ACF.ClientData or {}
 	ACF.ServerData         = ACF.ServerData or {}
+	ACF.Networking         = ACF.Networking or { Sender = {}, Receiver = {} }
 	ACF.CurTime            = CurTime()
 
 	-- General Settings
