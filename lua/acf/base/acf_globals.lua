@@ -25,6 +25,7 @@ do -- ACF global vars
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.LinkDistance       = 650 -- Maximum distance, on inches, at which components will remain linked with each other
+	ACF.KillIconColor      = Color(200, 200, 48)
 
 	ACF.GunsCanFire        = true
 	ACF.GunsCanSmoke       = true

@@ -1,3 +1,5 @@
+local ACF = ACF
+
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
@@ -8,6 +10,8 @@ language.Add("Cleanup_acf_smokelauncher", "ACF Smoke Launchers")
 language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
 language.Add("Cleaned_acf_smokelauncher", "Cleaned up all ACF Smoke Launchers")
 language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
+
+killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACF.KillIconColor)
 
 function ENT:Initialize(...)
 	self.LastFire 	= 0

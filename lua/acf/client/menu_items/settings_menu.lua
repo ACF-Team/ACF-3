@@ -279,18 +279,6 @@ do -- Serverside settings
 		Base:AddHelp("Both of these options require a server restart to apply changes.")
 	end)
 
-	ACF.AddServerSettings(401, "Custom Killicons", function(Base)
-		local Icons = Base:AddCheckBox("Use custom killicons for ACF entities.")
-		Icons:SetServerData("UseKillicons", "OnChange")
-		Icons:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Changing this option will require a server restart.")
-	end)
-
 	ACF.AddServerSettings(501, "Debris", function(Base)
 		local Debris = Base:AddCheckBox("Allow networking of debris to clients.")
 		Debris:SetServerData("CreateDebris", "OnChange")

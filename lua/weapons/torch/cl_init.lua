@@ -1,4 +1,10 @@
---Chad provided a fix for multicore rendering.
+local ACF             = ACF
+local RT              = GetRenderTarget("GModToolgunScreen", 256, 256)
+local ToolGunMaterial = Material("models/weapons/v_toolgun/screen")
+local Texture         = surface.GetTextureID("models/props_combine/combine_interface_disp")
+local Center          = TEXT_ALIGN_CENTER
+local Text            = "%s/%s\n"
+
 include("shared.lua")
 
 surface.CreateFont("torchfont", {
@@ -9,12 +15,7 @@ surface.CreateFont("torchfont", {
 	font = "arial"
 })
 
--- moved these to the top, you don't want to be calling this every frame
-local RT = GetRenderTarget("GModToolgunScreen", 256, 256)
-local ToolGunMaterial = Material("models/weapons/v_toolgun/screen")
-local Texture = surface.GetTextureID("models/props_combine/combine_interface_disp")
-local Center = TEXT_ALIGN_CENTER
-local Text = "%s/%s\n"
+killicon.Add("torch", "HUD/killicons/torch", ACF.KillIconColor)
 
 function SWEP:ViewModelDrawn()
 	local Health = math.Round(self:GetNWFloat("HP", 0), 1)
