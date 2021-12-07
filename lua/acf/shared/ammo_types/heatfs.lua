@@ -111,6 +111,8 @@ if SERVER then
 		Entity:SetNW2String("AmmoType", "HEATFS")
 	end
 else
+	ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
