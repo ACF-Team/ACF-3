@@ -1,13 +1,15 @@
+local ACF = ACF
 
-local cat = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
-
-TOOL.Category	= cat
+TOOL.Category	= (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name		= "#tool.acfarmorprop.name"
 TOOL.Command	= nil
 TOOL.ConfigName	= ""
 
 TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
+
+local MinimumArmor = ACF.MinimumArmor
+local MaximumArmor = ACF.MaximumArmor
 
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor(Area, Ductility, Thickness)
@@ -22,7 +24,7 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	local Thickness, Mass
 
 	if Data.Thickness then
-		Thickness = math.Clamp(Data.Thickness, 0.1, 5000)
+		Thickness = math.Clamp(Data.Thickness, MinimumArmor, MaximumArmor)
 		Mass      = CalcArmor(Area, Ductility * 0.01, Thickness)
 
 		duplicator.ClearEntityModifier(Entity, "mass")
@@ -55,8 +57,14 @@ local function UpdateArmor(_, Entity, Data)
 	UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 
 	duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-	duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Entity.ACF.Thickness, Ductility = Ductility })
+	duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Data.Thickness, Ductility = Ductility })
 end
+
+hook.Add("ACF_OnServerDataUpdate", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
+	if Key ~= "MaxThickness" then return end
+
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+end)
 
 if CLIENT then
 	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
@@ -66,8 +74,8 @@ if CLIENT then
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
-	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true)
-	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true)
+	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", -80, 80)
+	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true, "", MinimumArmor, MaximumArmor)
 
 	local Sphere = CreateClientConVar("acfarmorprop_sphere_search", 0, false, true, "", 0, 1)
 	local Radius = CreateClientConVar("acfarmorprop_sphere_radius", 0, false, true, "", 0, 10000)
@@ -79,7 +87,7 @@ if CLIENT then
 			Presets:SetPreset("acfarmorprop")
 		Panel:AddItem(Presets)
 
-		Panel:NumSlider("Thickness", "acfarmorprop_thickness", 1, 5000)
+		Panel:NumSlider("Thickness", "acfarmorprop_thickness", MinimumArmor, MaximumArmor)
 		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
 
 		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
@@ -117,12 +125,8 @@ if CLIENT then
 		local Ductility = ArmorProp_Ductility:GetFloat()
 		local Thickness = ArmorProp_Thickness:GetFloat()
 
-		Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
-
-		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility / 100, Thickness)
-		NewMass = math.Round(math.min(NewMass, 50000), 2)
-
-		local Text = BubbleText:format(Mass, Armor, Health, NewMass, math.Round(NewArmor, 2), math.Round(NewHealth, 2))
+		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility * 0.01, Thickness)
+		local Text = BubbleText:format(Mass, Armor, Health, math.Round(NewMass, 2), math.Round(NewArmor, 2), math.Round(NewHealth, 2))
 
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
 	end
@@ -241,14 +245,14 @@ if CLIENT then
 		if area == 0 then return end
 
 		local ductility = math.Clamp((tonumber(value) or 0) / 100, -0.8, 0.8)
-		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), 0.1, 5000)
+		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), MinimumArmor, MaximumArmor)
 		local mass = CalcArmor(area, ductility, thickness)
 
 		if mass > 50000 or mass < 0.1 then
 			mass = math.Clamp(mass, 0.1, 50000)
 
 			thickness = ACF_CalcArmor(area, ductility, mass)
-			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, 0.1, 5000))
+			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
 		end
 	end)
 
@@ -260,8 +264,8 @@ if CLIENT then
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
-		local thickness = math.Clamp(tonumber(value) or 0, 0.1, 5000)
-		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() / 100, -0.8, 0.8)
+		local thickness = math.Clamp(tonumber(value) or MinimumArmor, MinimumArmor, MaximumArmor)
+		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, -0.8, 0.8)
 		local mass = CalcArmor(area, ductility, thickness)
 
 		if mass > 50000 or mass < 0.1 then
