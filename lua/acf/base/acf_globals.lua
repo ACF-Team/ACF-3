@@ -24,6 +24,8 @@ do -- ACF global vars
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.LinkDistance       = 650 -- Maximum distance, on inches, at which components will remain linked with each other
+	ACF.MinimumArmor       = 1 -- Minimum possible armor that can be given to an entity
+	ACF.MaximumArmor       = 5000 -- Maximum possible armor that can be given to an entity
 
 	ACF.GunsCanFire        = true
 	ACF.GunsCanSmoke       = true
