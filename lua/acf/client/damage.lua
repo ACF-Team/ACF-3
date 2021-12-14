@@ -1,5 +1,7 @@
-local ACF = ACF
-local Damaged = {
+local ACF       = ACF
+local Network   = ACF.Networking
+local Damaged   = {}
+local Materials = {
 	CreateMaterial("ACF_Damaged1", "VertexLitGeneric", {
 		["$basetexture"] = "damaged/damaged1"
 	}),
@@ -11,60 +13,66 @@ local Damaged = {
 	})
 }
 
-hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", function()
-	if not ACF_HealthRenderList then return end
+local function RenderDamage()
 	cam.Start3D(EyePos(), EyeAngles())
 
-	for k, ent in pairs(ACF_HealthRenderList) do
-		if IsValid(ent) then
-			render.ModelMaterialOverride(ent.ACF_Material)
-			render.SetBlend(math.Clamp(1 - ent.ACF_HealthPercent, 0, 0.8))
-			ent:DrawModel()
-		elseif ACF_HealthRenderList then
-			table.remove(ACF_HealthRenderList, k)
-		end
+	for Entity in pairs(Damaged) do
+		render.ModelMaterialOverride(Entity.ACF_Material)
+		render.SetBlend(math.Clamp(1 - Entity.ACF_HealthPercent, 0, 0.8))
+
+		Entity:DrawModel()
 	end
 
 	render.ModelMaterialOverride()
 	render.SetBlend(1)
 	cam.End3D()
-end)
+end
 
-net.Receive("ACF_RenderDamage", function()
-	local Table = net.ReadTable()
+local function Remove(Entity)
+	Entity:RemoveCallOnRemove("ACF_RenderDamage")
 
-	for _, v in ipairs(Table) do
-		local ent, Health, MaxHealth = ents.GetByIndex(v.ID), v.Health, v.MaxHealth
-		if not IsValid(ent) then return end
+	Damaged[Entity] = nil
 
-		if Health ~= MaxHealth then
-			ent.ACF_Health = Health
-			ent.ACF_MaxHealth = MaxHealth
-			ent.ACF_HealthPercent = Health / MaxHealth
+	if not next(Damaged) then
+		hook.Remove("PostDrawOpaqueRenderables", "ACF_RenderDamage")
+	end
+end
 
-			if ent.ACF_HealthPercent > 0.7 then
-				ent.ACF_Material = Damaged[1]
-			elseif ent.ACF_HealthPercent > 0.3 then
-				ent.ACF_Material = Damaged[2]
-			elseif ent.ACF_HealthPercent <= 0.3 then
-				ent.ACF_Material = Damaged[3]
+local function Add(Entity)
+	if not next(Damaged) then
+		hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", RenderDamage)
+	end
+
+	Damaged[Entity] = true
+
+	Entity:CallOnRemove("ACF_Damage", function()
+		Remove(Entity)
+	end)
+end
+
+Network.CreateReceiver("ACF_Damage", function(Data)
+	for Index, Percent in pairs(Data) do
+		local Entity = ents.GetByIndex(Index)
+
+		if not IsValid(Entity) then continue end
+
+		if Percent < 1 then
+			Entity.ACF_HealthPercent = Percent
+
+			if Percent > 0.7 then
+				Entity.ACF_Material = Materials[1]
+			elseif Percent > 0.3 then
+				Entity.ACF_Material = Materials[2]
+			else
+				Entity.ACF_Material = Materials[3]
 			end
 
-			ACF_HealthRenderList = ACF_HealthRenderList or {}
-			ACF_HealthRenderList[ent:EntIndex()] = ent
+			Add(Entity)
 		else
-			if ACF_HealthRenderList then
-				if #ACF_HealthRenderList <= 1 then
-					ACF_HealthRenderList = nil
-				else
-					table.remove(ACF_HealthRenderList, ent:EntIndex())
-				end
+			Remove(Entity)
 
-				if ent.ACF then
-					ent.ACF.Health = nil
-					ent.ACF.MaxHealth = nil
-				end
-			end
+			Entity.ACF_HealthPercent = nil
+			Entity.ACF_Material      = nil
 		end
 	end
 end)
