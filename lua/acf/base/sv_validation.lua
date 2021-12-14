@@ -1,10 +1,12 @@
 -- Entity validation for ACF
 
 -- Local Vars -----------------------------------
-local ACF         = ACF
-local StringFind  = string.find
-local TimerSimple = timer.Simple
-local Baddies	  = ACF.GlobalFilter
+local ACF          = ACF
+local StringFind   = string.find
+local TimerSimple  = timer.Simple
+local Baddies	   = ACF.GlobalFilter
+local MinimumArmor = ACF.MinimumArmor
+local MaximumArmor = ACF.MaximumArmor
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -129,8 +131,6 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 	local MassMod = EntMods and EntMods.mass
 
 	if Thickness then
-		Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
-
 		if not MassMod then
 			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
 
@@ -149,8 +149,8 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })
 	end
 
-	local Mass = MassMod and MassMod.Mass or PhysObj:GetMass()
-	local New  = math.Clamp(ACF_CalcArmor(Area, Ductility, Mass), 0.1, 5000)
+	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
+	local Armor = ACF_CalcArmor(Area, Ductility, Mass)
 
 	if Mass ~= Entity.ACF.Mass then
 		Entity.ACF.Mass = Mass
@@ -160,8 +160,14 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
 	end
 
-	return New
+	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
 end
+
+hook.Add("ACF_OnServerDataUpdate", "ACF_MaxThickness", function(_, Key, Value)
+	if Key ~= "MaxThickness" then return end
+
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+end)
 
 -- Global Funcs ---------------------------------
 
@@ -217,8 +223,6 @@ function ACF.Activate(Entity, Recalc)
 	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
 		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
 	end
-
-	Thickness = math.Clamp(Thickness, 0, ACF.GetServerNumber("MaxThickness"))
 
 	Entity.ACF.Health    = Health * Percent
 	Entity.ACF.MaxHealth = Health
