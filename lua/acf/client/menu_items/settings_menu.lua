@@ -172,6 +172,14 @@ do -- Serverside settings
 			return Value
 		end)
 
+		local MaxThickness = Base:AddSlider("Max Armor Thickness", ACF.MinimumArmor, ACF.MaximumArmor)
+		MaxThickness:SetServerData("MaxThickness", "OnValueChanged")
+		MaxThickness:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
 		local Health = Base:AddSlider("Health Factor", 0.01, 2, 2)
 		Health:SetServerData("HealthFactor", "OnValueChanged")
 		Health:DefineSetter(function(Panel, _, _, Value)
