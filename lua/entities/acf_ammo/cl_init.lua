@@ -1,3 +1,8 @@
+local ACF       = ACF
+local MaxRounds = GetConVar("acf_maxroundsdisplay")
+local Refills   = {}
+local Queued    = {}
+
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
@@ -6,9 +11,7 @@ language.Add("Cleanup_acf_ammo", "ACF Ammo Crates")
 language.Add("Cleaned_acf_ammo", "Cleaned up all ACF Ammo Crates")
 language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
 
-local MaxRounds = GetConVar("acf_maxroundsdisplay")
-local Refills = {}
-local Queued = {}
+killicon.Add("acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor)
 
 local function UpdateAmmoCount(Entity, Ammo)
 	if not IsValid(Entity) then return end

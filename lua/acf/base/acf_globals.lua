@@ -7,6 +7,7 @@ do -- ACF global vars
 	ACF.Repositories       = ACF.Repositories or {}
 	ACF.ClientData         = ACF.ClientData or {}
 	ACF.ServerData         = ACF.ServerData or {}
+	ACF.Networking         = ACF.Networking or { Sender = {}, Receiver = {} }
 	ACF.CurTime            = CurTime()
 
 	-- General Settings
@@ -26,6 +27,7 @@ do -- ACF global vars
 	ACF.LinkDistance       = 650 -- Maximum distance, on inches, at which components will remain linked with each other
 	ACF.MinimumArmor       = 1 -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor       = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.KillIconColor      = Color(200, 200, 48)
 
 	ACF.GunsCanFire        = true
 	ACF.GunsCanSmoke       = true
