@@ -45,7 +45,7 @@ local function Add(Entity)
 
 	Damaged[Entity] = true
 
-	Entity:CallOnRemove("ACF_Damage", function()
+	Entity:CallOnRemove("ACF_RenderDamage", function()
 		Remove(Entity)
 	end)
 end
