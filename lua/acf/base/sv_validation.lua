@@ -1,10 +1,12 @@
 -- Entity validation for ACF
 
 -- Local Vars -----------------------------------
-local ACF         = ACF
-local StringFind  = string.find
-local TimerSimple = timer.Simple
-local Baddies	  = ACF.GlobalFilter
+local ACF          = ACF
+local StringFind   = string.find
+local TimerSimple  = timer.Simple
+local Baddies	   = ACF.GlobalFilter
+local MinimumArmor = ACF.MinimumArmor
+local MaximumArmor = ACF.MaximumArmor
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -147,8 +149,8 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })
 	end
 
-	local Mass = MassMod and MassMod.Mass or PhysObj:GetMass()
-	local New  = math.Clamp(ACF_CalcArmor(Area, Ductility, Mass), 0.1, 5000)
+	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
+	local Armor = ACF_CalcArmor(Area, Ductility, Mass)
 
 	if Mass ~= Entity.ACF.Mass then
 		Entity.ACF.Mass = Mass
@@ -158,8 +160,14 @@ local function UpdateThickness(Entity, PhysObj, Area, Ductility)
 		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
 	end
 
-	return New
+	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
 end
+
+hook.Add("ACF_OnServerDataUpdate", "ACF_MaxThickness", function(_, Key, Value)
+	if Key ~= "MaxThickness" then return end
+
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+end)
 
 -- Global Funcs ---------------------------------
 

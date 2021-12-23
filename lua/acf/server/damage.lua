@@ -2,30 +2,6 @@
 local ACF     = ACF
 local HookRun = hook.Run
 
-do -- Player syncronization
-	util.AddNetworkString("ACF_RenderDamage")
-
-	hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(ply)
-		local Table = {}
-
-		for _, v in pairs(ents.GetAll()) do
-			if v.ACF and v.ACF.PrHealth then
-				table.insert(Table, {
-					ID = v:EntIndex(),
-					Health = v.ACF.Health,
-					MaxHealth = v.ACF.MaxHealth
-				})
-			end
-		end
-
-		if next(Table) then
-			net.Start("ACF_RenderDamage")
-				net.WriteTable(Table)
-			net.Send(ply)
-		end
-	end)
-end
-
 do -- KE Shove
 	function ACF.KEShove(Target, Pos, Vec, KE)
 		if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
@@ -351,7 +327,7 @@ do -- Overpressure --------------------------
 end -----------------------------------------
 
 do -- Deal Damage ---------------------------
-	local TimerCreate = timer.Create
+	local Network = ACF.Networking
 
 	local function CalcDamage(Bullet, Trace, Volume)
 		local Angle   = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
@@ -448,7 +424,7 @@ do -- Deal Damage ---------------------------
 			Damage = HitRes.Damage * 10
 		end
 
-		Entity:TakeDamage(Damage, Inflictor, Gun)
+		Entity:TakeDamage(Damage, Bullet.Owner, Bullet.Gun)
 
 		HitRes.Kill = false
 
@@ -479,47 +455,18 @@ do -- Deal Damage ---------------------------
 
 	local function PropDamage(Bullet, Trace, Volume)
 		local Entity = Trace.Entity
+		local Health = Entity.ACF.Health
 		local HitRes = CalcDamage(Bullet, Trace, Volume)
 
 		HitRes.Kill = false
 
-		if HitRes.Damage >= Entity.ACF.Health then
+		if HitRes.Damage >= Health then
 			HitRes.Kill = true
 		else
-			Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
+			Entity.ACF.Health = Health - HitRes.Damage
 			Entity.ACF.Armour = math.Clamp(Entity.ACF.MaxArmour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) ^ 1.7, Entity.ACF.MaxArmour * 0.25, Entity.ACF.MaxArmour) --Simulating the plate weakening after a hit
 
-			--math.Clamp( Entity.ACF.Ductility, -0.8, 0.8 )
-			if Entity.ACF.PrHealth and Entity.ACF.PrHealth ~= Entity.ACF.Health then
-				if not ACF_HealthUpdateList then
-					ACF_HealthUpdateList = {}
-
-					-- We should send things slowly to not overload traffic.
-					TimerCreate("ACF_HealthUpdateList", 1, 1, function()
-						local Table = {}
-
-						for _, v in pairs(ACF_HealthUpdateList) do
-							if IsValid(v) then
-								table.insert(Table, {
-									ID = v:EntIndex(),
-									Health = v.ACF.Health,
-									MaxHealth = v.ACF.MaxHealth
-								})
-							end
-						end
-
-						net.Start("ACF_RenderDamage")
-							net.WriteTable(Table)
-						net.Broadcast()
-
-						ACF_HealthUpdateList = nil
-					end)
-				end
-
-				table.insert(ACF_HealthUpdateList, Entity)
-			end
-
-			Entity.ACF.PrHealth = Entity.ACF.Health
+			Network.Broadcast("ACF_Damage", Entity)
 		end
 
 		return HitRes
@@ -552,6 +499,22 @@ do -- Deal Damage ---------------------------
 	end
 
 	ACF_Damage = ACF.Damage
+
+	hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(Player)
+		for _, Entity in ipairs(ents.GetAll()) do
+			local Data = Entity.ACF
+
+			if not Data or Data.Health == Data.MaxHealth then continue end
+
+			Network.Send("ACF_Damage", Player, Entity)
+		end
+	end)
+
+	Network.CreateSender("ACF_Damage", function(Queue, Entity)
+		local Index = Entity:EntIndex()
+
+		Queue[Index] = Entity.ACF.Health / Entity.ACF.MaxHealth
+	end)
 end -----------------------------------------
 
 do -- Remove Props ------------------------------

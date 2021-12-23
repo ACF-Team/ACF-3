@@ -1,3 +1,8 @@
+local ACF       = ACF
+local MaxRounds = GetConVar("acf_maxroundsdisplay")
+local Refills   = {}
+local Queued    = {}
+
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
@@ -6,9 +11,7 @@ language.Add("Cleanup_acf_ammo", "ACF Ammo Crates")
 language.Add("Cleaned_acf_ammo", "Cleaned up all ACF Ammo Crates")
 language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
 
-local MaxRounds = GetConVar("acf_maxroundsdisplay")
-local Refills = {}
-local Queued = {}
+killicon.Add("acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor)
 
 local function UpdateAmmoCount(Entity, Ammo)
 	if not IsValid(Entity) then return end
@@ -102,34 +105,55 @@ end
 
 -- TODO: Resupply effect library, should apply for both ammo and fuel
 do -- Resupply effect
-	local Yellow = Color(255, 255, 0, 10)
+	local render   = render
+	local Yellow   = Color(255, 255, 0, 10)
 	local Distance = ACF.RefillDistance
 
-	net.Receive("ACF_RefillEffect", function()
-		local Refill = net.ReadEntity()
-
-		if not IsValid(Refill) then return end
-
-		Refills[Refill] = true
-	end)
-
-	net.Receive("ACF_StopRefillEffect", function()
-		local Refill = net.ReadEntity()
-
-		if not IsValid(Refill) then return end
-
-		Refills[Refill] = nil
-	end)
-
-	hook.Add("PostDrawTranslucentRenderables", "ACF Draw Refill", function()
+	local function DrawSpheres()
 		render.SetColorMaterial()
 
-		for Refill in pairs(Refills) do
-			local Pos = Refill:GetPos()
+		for Entity in pairs(Refills) do
+			local Pos = Entity:GetPos()
 
 			render.DrawSphere(Pos, Distance, 50, 50, Yellow)
 			render.DrawSphere(Pos, -Distance, 50, 50, Yellow)
 		end
+	end
+
+	local function Remove(Entity)
+		if not IsValid(Entity) then return end
+
+		Refills[Entity] = nil
+
+		Entity:RemoveCallOnRemove("ACF_Refill")
+
+		if not next(Refills) then
+			hook.Remove("PostDrawOpaqueRenderables", "ACF_Refill")
+		end
+	end
+
+	local function Add(Entity)
+		if not IsValid(Entity) then return end
+
+		if not next(Refills) then
+			hook.Add("PostDrawOpaqueRenderables", "ACF_Refill", DrawSpheres)
+		end
+
+		Refills[Entity] = true
+
+		Entity:CallOnRemove("ACF_Refill", Remove)
+	end
+
+	net.Receive("ACF_RefillEffect", function()
+		local Entity = net.ReadEntity()
+
+		Add(Entity)
+	end)
+
+	net.Receive("ACF_StopRefillEffect", function()
+		local Entity = net.ReadEntity()
+
+		Remove(Entity)
 	end)
 end
 
