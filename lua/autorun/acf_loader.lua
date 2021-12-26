@@ -112,3 +112,5 @@ elseif CLIENT then
 end
 
 MsgN("|\n=======[ Finished Loading ACF ]=======\n")
+
+hook.Run("ACF_OnAddonLoaded")
