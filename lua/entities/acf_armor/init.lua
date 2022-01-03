@@ -72,6 +72,9 @@ do -- Spawning and Updating
 
 		local Armor = Armors[Data.ArmorType]
 
+		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_armor", Player, Data, Armor)
+		if CanSpawn == false then return false end
+
 		Player:AddCount("_acf_armor", Plate)
 		Player:AddCleanup("_acf_armor", Plate)
 

@@ -256,6 +256,9 @@ do -- Spawning and Updating --------------------
 		local Ammo   = AmmoTypes[Data.AmmoType]()
 		local Model  = "models/holograms/rcube_thin.mdl"
 
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+		if CanSpawn == false then return false end
+
 		Player:AddCleanup("acf_ammo", Crate)
 		Player:AddCount("_acf_ammo", Crate)
 
