@@ -296,6 +296,9 @@ do -- Spawn and Update functions --------------------------------
 		local Weapon   = Class.Lookup[Data.Weapon]
 		local OldClass = self.ClassData
 
+		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		if CanUpdate == false then return CanUpdate, Reason end
+
 		if self.State ~= "Empty" then
 			self:Unload()
 		end

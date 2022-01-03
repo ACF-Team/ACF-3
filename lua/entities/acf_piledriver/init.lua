@@ -239,6 +239,9 @@ do -- Spawning and Updating --------------------
 		local Class    = Piledrivers[Data.Weapon]
 		local OldClass = self.ClassData
 
+		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)
+		if CanUpdate == false then return CanUpdate, Reason end
+
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end

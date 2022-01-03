@@ -409,6 +409,9 @@ do -- Spawn and Update functions
 		local OldClass   = self.ClassData
 		local Feedback   = ""
 
+		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_engine", self, Data, Class, EngineData)
+		if CanUpdate == false then return CanUpdate, Reason end
+
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end

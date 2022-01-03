@@ -344,6 +344,9 @@ do -- Spawning and Updating --------------------
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
+		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		if CanUpdate == false then return CanUpdate, Reason end
+
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
