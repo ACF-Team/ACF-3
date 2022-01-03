@@ -416,6 +416,9 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return end
 
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, GearboxData)
+		if CanSpawn == false then return false end
+
 		local Gearbox = ents.Create("acf_gearbox")
 
 		if not IsValid(Gearbox) then return end

@@ -332,6 +332,9 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return false end
 
+		local CanSpawn = HookRun("ACF_OnEntitySpawn", "acf_engine", Player, Data, Class, EngineData)
+		if CanSpawn == false then return false end
+
 		local Engine = ents.Create("acf_engine")
 
 		if not IsValid(Engine) then return end

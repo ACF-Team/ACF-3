@@ -125,6 +125,9 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return end
 
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
+		if CanSpawn == false then return end
+
 		local Tank = ents.Create("acf_fueltank")
 
 		if not IsValid(Tank) then return end

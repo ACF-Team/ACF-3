@@ -220,11 +220,14 @@ do -- Spawn and Update functions --------------------------------
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
+		local Weapon = Class.Lookup[Data.Weapon]
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
+
+		if CanSpawn == false then return false end
+
 		local Entity = ents.Create("acf_gun")
 
 		if not IsValid(Entity) then return end
-
-		local Weapon = Class.Lookup[Data.Weapon]
 
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
