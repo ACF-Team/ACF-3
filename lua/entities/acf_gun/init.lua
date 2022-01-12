@@ -626,16 +626,17 @@ do -- Metamethods --------------------------------
 
 				timer.Simple(Time, function()
 					if IsValid(self) then
-						self:SetState("Loaded")
-						self.NextFire = nil
-
 						if self.CurrentShot == 0 then
 							self.CurrentShot = self.MagSize
 						end
 
+						self.NextFire = nil
+
 						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 						WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
 						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
+
+						self:SetState("Loaded")
 
 						if self:CanFire() then self:Shoot() end
 					end
