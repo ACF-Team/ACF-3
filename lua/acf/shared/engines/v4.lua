@@ -18,8 +18,6 @@ do -- Diesel Engines
 		FlywheelMass = 0.3,
 		RPM = {
 			Idle	= 650,
-			PeakMin	= 950,
-			PeakMax	= 3000,
 			Limit	= 4000,
 		},
 		Preview = {
@@ -39,8 +37,6 @@ do -- Diesel Engines
 		FlywheelMass = 1.05,
 		RPM = {
 			Idle	= 600,
-			PeakMin	= 1050,
-			PeakMax	= 3100,
 			Limit	= 3900,
 		},
 		Preview = {

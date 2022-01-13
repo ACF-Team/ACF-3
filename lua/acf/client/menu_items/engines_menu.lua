@@ -12,7 +12,7 @@ local RPMText = [[
 	%s
 	%s]]
 local PowerText  = [[
-	Peak Torque : %s n/m - %s ft-lb
+	Peak Torque : %s Nm - %s ft-lb @ %s RPM
 	Peak Power : %s kW - %s HP @ %s RPM]]
 local ConsumptionText = [[
 	%s Consumption :
@@ -25,8 +25,9 @@ end
 
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
-	local PeakkW     = Data.Torque * RPM.PeakMax / 9548.8
-	local PeakkWRPM  = RPM.PeakMax
+	local PeakTqRPM  = math.Round(Data.PeakTqRPM)
+	local PeakkW     = Data.PeakPower
+	local PeakkWRPM  = Data.PeakPowerRPM
 	local MinPower   = RPM.PeakMin
 	local MaxPower   = RPM.PeakMax
 	local Mass       = ACF.GetProperMass(Data.Mass)
@@ -35,14 +36,6 @@ local function UpdateEngineStats(Label, Data)
 	local Type       = EngineTypes[Data.Type]
 	local Efficiency = Type.Efficiency * GetEfficiencyMult()
 	local FuelList   = ""
-
-	-- Electric motors and turbines get peak power in middle of rpm range
-	if Data.IsElectric then
-		PeakkW = Data.Torque * (1 + RPM.PeakMax / RPM.Limit) * RPM.Limit / (4 * 9548.8)
-		PeakkWRPM = math.floor(RPM.Limit * 0.5)
-		MinPower = RPM.Idle
-		MaxPower = PeakkWRPM
-	end
 
 	for K in pairs(Data.Fuel) do
 		if not FuelTypes[K] then continue end
@@ -63,7 +56,7 @@ local function UpdateEngineStats(Label, Data)
 		Data.Fuel[K] = Fuel -- TODO: Replace once engines use the proper class functions
 	end
 
-	local Power = PowerText:format(Torque, TorqueFeet, math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
+	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
 
 	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, FuelList, Power))
 end

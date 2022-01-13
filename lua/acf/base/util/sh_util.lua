@@ -103,6 +103,103 @@ do -- Ricochet/Penetration materials
 	end
 end
 
+do -- Mobility functions
+	-- Calculates a position along a catmull-rom spline (as defined on https://www.mvps.org/directx/articles/catmull/)
+	function ACF.CalcCurve(Points, Pos)
+		if #Points < 3 then
+			return 0
+		end
+
+		local T = 0
+		if Pos <= 0 then
+			T = 0
+		elseif Pos >= 1 then
+			T = 1
+		else
+			T = Pos * (#Points - 1)
+			T = T % 1
+		end
+
+		local CurrentPoint = math.floor(Pos * (#Points - 1) + 1)
+		local P0 = Points[math.Clamp(CurrentPoint - 1, 1, #Points - 2)]
+		local P1 = Points[math.Clamp(CurrentPoint, 1, #Points - 1)]
+		local P2 = Points[math.Clamp(CurrentPoint + 1, 2, #Points)]
+		local P3 = Points[math.Clamp(CurrentPoint + 2, 3, #Points)]
+
+		return 0.5 * ((2 * P1) +
+			(P2 - P0) * T +
+			(2 * P0 - 5 * P1 + 4 * P2 - P3) * T ^ 2 +
+			(3 * P1 - P0 - 3 * P2 + P3) * T ^ 3)
+	end
+
+	-- Calculates the performance characteristics of an engine, given a torque curve, max torque (in nm), idle, and redline RPM
+	function ACF.CalcEnginePerformanceData(Curve, MaxTq, Idle, Redline)
+		local PeakTq = 0
+		local PeakTqRPM
+		local PeakPower = 0
+		local PeakPowerRPM
+		local PowerbandMinRPM
+		local PowerbandMaxRPM
+		local PowerTable = {} -- Power at each point on the curve for use in powerband calc
+		local PowerbandTable = {} -- (torque + power) / 2 at each point on the curve
+		local PowerbandPeak = 0 -- Highest value of (torque + power) / 2
+		local Res = 32 -- Iterations for use in calculating the curve, higher is more accurate
+		local CurveFactor = (Redline - Idle) / Redline --Torque curves all start after idle RPM is reached
+
+		-- Calculate peak torque/Power RPM.
+		for I = 0, Res do
+			local RPM = I / Res * Redline
+			local Perc = (RPM - Idle) / CurveFactor / Redline
+			local CurTq = ACF.CalcCurve(Curve, Perc)
+			local Power = MaxTq * CurTq * RPM / 9548.8
+			PowerTable[I] = Power
+			if Power > PeakPower then
+				PeakPower = Power
+				PeakPowerRPM = RPM
+			end
+
+			if math.Clamp(CurTq, 0, 1) > PeakTq then
+				PeakTq = CurTq
+				PeakTqRPM = RPM
+			end
+		end
+
+		-- Loop two, to calculate the powerband's peak.
+		for I = 0, Res do
+			local Power = PowerTable[I] / PeakPower
+			local Tq = ACF.CalcCurve(Curve, I / Res)
+			local Powerband = Power + Tq -- No solid definition of powerband, so this seemed to work alright
+			PowerbandTable[I] = Powerband
+
+			if Powerband > PowerbandPeak then
+				PowerbandPeak = Powerband
+			end
+		end
+
+		-- Loop three, to actually figure out where the bounds of the powerband are (within 10% of max).
+		for I = 0, Res do
+			local Powerband = PowerbandTable[I] / PowerbandPeak
+			local RPM = I / Res * Redline
+
+			if Powerband > 0.9 and not PowerbandMinRPM then
+				PowerbandMinRPM = RPM
+			end
+
+			if (PowerbandMinRPM and Powerband < 0.9 and not PowerbandMaxRPM) or (I == Res and not PowerbandMaxRPM) then
+				PowerbandMaxRPM = RPM
+			end
+		end
+
+		return {
+			PeakTqRPM = PeakTqRPM,
+			PeakPower = PeakPower,
+			PeakPowerRPM = PeakPowerRPM,
+			PowerbandMinRPM = PowerbandMinRPM,
+			PowerbandMaxRPM = PowerbandMaxRPM
+		}
+	end
+end
+
 do -- Unit conversion
 	local Units = {
 		{ Unit = "year", Reduction = 1970 },

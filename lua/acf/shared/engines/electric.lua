@@ -20,8 +20,6 @@ do -- Electric Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 10000,
 			Override = 5000,
 		},
@@ -43,8 +41,6 @@ do -- Electric Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 7000,
 			Override = 8000,
 		},
@@ -66,8 +62,6 @@ do -- Electric Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 4500,
 			Override = 6000,
 		},
@@ -93,8 +87,6 @@ do -- Electric Standalone Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 10000,
 			Override = 500,
 		},
@@ -116,8 +108,6 @@ do -- Electric Standalone Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 10000,
 			Override = 5000,
 		},
@@ -139,8 +129,6 @@ do -- Electric Standalone Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 7000,
 			Override = 8000,
 		},
@@ -162,8 +150,6 @@ do -- Electric Standalone Motors
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 10,
-			PeakMin	 = 1,
-			PeakMax	 = 1,
 			Limit	 = 4500,
 			Override = 6000,
 		},
