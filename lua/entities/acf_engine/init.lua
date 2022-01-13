@@ -108,6 +108,7 @@ local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
 local max         = math.max
+local min         = math.min
 local TimerCreate = timer.Create
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
@@ -274,7 +275,11 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = EngineData.Sound
 		Entity.SoundPitch       = EngineData.Pitch or 1
+		Entity.TorqueCurve      = EngineData.TorqueCurve or ACF.GenericTorqueCurves[Type]
+		Entity.CurveFactor      = EngineData.CurveFactor
 		Entity.PeakTorque       = EngineData.Torque
+		Entity.PeakPower		= EngineData.PeakPower
+		Entity.PeakPowerRPM		= EngineData.PeakPowerRPM
 		Entity.PeakTorqueHeld   = EngineData.Torque
 		Entity.IdleRPM          = EngineData.RPM.Idle
 		Entity.PeakMinRPM       = EngineData.RPM.PeakMin
@@ -297,15 +302,8 @@ do -- Spawn and Update functions
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		--calculate boosted peak kw
-		if EngineType.CalculatePeakEnergy then
-			local peakkw, PeakKwRPM = EngineType.CalculatePeakEnergy(Entity)
-
-			Entity.peakkw = peakkw
-			Entity.PeakKwRPM = PeakKwRPM
-		else
-			Entity.peakkw = Entity.PeakTorque * Entity.PeakMaxRPM / 9548.8
-			Entity.PeakKwRPM = Entity.PeakMaxRPM
-		end
+		Entity.peakkw = Entity.PeakPower
+		Entity.PeakKwRPM = Entity.PeakPowerRPM
 
 		--calculate base fuel usage
 		if EngineType.CalculateFuelUsage then
@@ -522,8 +520,8 @@ function ENT:UpdateOverlayText()
 	local State, Name = self.Active and "Active" or "Idle", self.Name
 	local Power, PowerFt = Round(self.peakkw), Round(self.peakkw * 1.34)
 	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
-	local PowerbandMin = self.IsElectric and self.IdleRPM or self.PeakMinRPM
-	local PowerbandMax = self.IsElectric and math.floor(self.LimitRPM / 2) or self.PeakMaxRPM
+	local PowerbandMin = self.PeakMinRPM
+	local PowerbandMax = self.PeakMaxRPM
 	local Redline = self.LimitRPM
 
 	return Text:format(State, Name, Power, PowerFt, Torque, TorqueFt, PowerbandMin, PowerbandMax, Redline)
@@ -663,13 +661,14 @@ function ENT:CalcRPM()
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	self.Torque = self.Throttle * max(self.PeakTorque * math.min(self.FlyRPM / self.PeakMinRPM, (self.LimitRPM - self.FlyRPM) / (self.LimitRPM - self.PeakMaxRPM), 1), 0)
+	local perc = (self.FlyRPM - self.IdleRPM) / self.CurveFactor / self.LimitRPM
+	self.Torque = self.Throttle * ACF.CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
 	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
 
 	-- Let's accelerate the flywheel based on that torque
-	self.FlyRPM = max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1)
+	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1), self.LimitRPM)
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	local Boxes = 0
 	local TotalReqTq = 0

@@ -128,6 +128,18 @@ do -- ACF global vars
 	ACF.RefillDistance     = 300 --Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Mobility
+	-- Use this Starfall chip to help design torque curves https://gist.github.com/CheezusChrust/7ccce5f5196d3adc95ab9573009f735a
+	-- Minimum of 3 points per curve
+	ACF.GenericTorqueCurves = { -- Default curves for engines that don't have one defined
+		GenericPetrol = {0.3, 0.55, 0.7, 0.85, 1, 0.9, 0.7},
+		GenericDiesel = {0.3, 0.9, 0.97, 1, 0.95, 0.9, 0.8, 0.65},
+		Turbine = {0.8, 1, 0.9, 0.8, 0.6, 0.4, 0.2, 0.1},
+		Wankel = {0.35, 0.7, 0.85, 0.95, 1, 0.9, 0.7},
+		Radial = {0.6, 0.75, 0.85, 0.95, 0.98, 0.6},
+		Electric = {1, 0.5, 0} -- Linear torque loss, like in industrial DC motors
+	}
 end
 
 do -- ACF Convars & Particles

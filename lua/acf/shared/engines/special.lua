@@ -18,8 +18,6 @@ do -- Special Rotary Engines
 		FlywheelMass = 0.11,
 		RPM = {
 			Idle	= 1200,
-			PeakMin	= 4500,
-			PeakMax	= 9000,
 			Limit	= 9500,
 		},
 		Preview = {
@@ -41,8 +39,6 @@ do -- Special I2 Engines
 		FlywheelMass = 0.085,
 		RPM = {
 			Idle	= 750,
-			PeakMin	= 3125,
-			PeakMax	= 5100,
 			Limit	= 6000,
 		},
 		Preview = {
@@ -65,8 +61,6 @@ do -- Special I4 Engines
 		Pitch		 = 0.75,
 		RPM = {
 			Idle	= 1200,
-			PeakMin	= 7500,
-			PeakMax	= 11500,
 			Limit	= 12000,
 		},
 		Preview = {
@@ -86,8 +80,6 @@ do -- Special I4 Engines
 		FlywheelMass = 0.06,
 		RPM = {
 			Idle	= 950,
-			PeakMin	= 5200,
-			PeakMax	= 8500,
 			Limit	= 9000,
 		},
 		Preview = {
@@ -109,8 +101,6 @@ do -- Special V4 Engines
 		FlywheelMass = 0.04,
 		RPM = {
 			Idle	= 900,
-			PeakMin	= 4600,
-			PeakMax	= 7000,
 			Limit	= 7500,
 		},
 		Preview = {
@@ -132,8 +122,6 @@ do -- Special I6 Engines
 		FlywheelMass = 0.1,
 		RPM = {
 			Idle	= 1100,
-			PeakMin	= 5200,
-			PeakMax	= 8500,
 			Limit	= 9000,
 		},
 		Preview = {
@@ -155,8 +143,6 @@ do -- Special V6 Engines
 		FlywheelMass = 0.075,
 		RPM = {
 			Idle	= 950,
-			PeakMin	= 4500,
-			PeakMax	= 7100,
 			Limit	= 8000,
 		},
 		Preview = {
@@ -178,8 +164,6 @@ do -- Special V8 Engines
 		FlywheelMass = 0.075,
 		RPM = {
 			Idle	= 1000,
-			PeakMin	= 5500,
-			PeakMax	= 9000,
 			Limit	= 10000,
 		},
 		Preview = {
@@ -199,8 +183,6 @@ do -- Special V8 Engines
 		FlywheelMass = 0.15,
 		RPM = {
 			Idle	= 1000,
-			PeakMin	= 5000,
-			PeakMax	= 8000,
 			Limit	= 8500,
 		},
 		Preview = {
@@ -222,8 +204,6 @@ do -- Special V10 Engines
 		FlywheelMass = 0.15,
 		RPM = {
 			Idle	= 1100,
-			PeakMin	= 5750,
-			PeakMax	= 8000,
 			Limit	= 9000,
 		},
 		Preview = {
@@ -246,8 +226,6 @@ do -- Special V12 Engines
 		Pitch		 = 0.85,
 		RPM = {
 			Idle	= 1200,
-			PeakMin	= 6875,
-			PeakMax	= 11000,
 			Limit	= 12500,
 		},
 		Preview = {

@@ -344,6 +344,15 @@ do -- Engine registration functions
 			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 		end
 
+		local EngineData = ACF.CalcEnginePerformanceData(Class.TorqueCurve or ACF.GenericTorqueCurves[Class.Type], Class.Torque, Class.RPM.Idle, Class.RPM.Limit)
+
+		Class.PeakTqRPM = EngineData.PeakTqRPM
+		Class.PeakPower = EngineData.PeakPower
+		Class.PeakPowerRPM = math.Round(EngineData.PeakPowerRPM, 0)
+		Class.RPM.PeakMin = math.Round(EngineData.PowerbandMinRPM, -1)
+		Class.RPM.PeakMax = math.Round(EngineData.PowerbandMaxRPM, -1)
+		Class.CurveFactor = (Class.RPM.Limit - Class.RPM.Idle) / Class.RPM.Limit
+
 		return Class
 	end
 end
