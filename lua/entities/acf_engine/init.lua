@@ -668,7 +668,7 @@ function ENT:CalcRPM()
 	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
 
 	-- Let's accelerate the flywheel based on that torque
-	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 1), self.LimitRPM)
+	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 0), self.LimitRPM)
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	local Boxes = 0
 	local TotalReqTq = 0

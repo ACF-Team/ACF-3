@@ -19,7 +19,7 @@ do -- Electric Motors
 		FlywheelMass = 0.3,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 10000,
 			Override = 5000,
 		},
@@ -40,7 +40,7 @@ do -- Electric Motors
 		FlywheelMass = 1.5,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 7000,
 			Override = 8000,
 		},
@@ -61,7 +61,7 @@ do -- Electric Motors
 		FlywheelMass = 11.2,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 4500,
 			Override = 6000,
 		},
@@ -86,7 +86,7 @@ do -- Electric Standalone Motors
 		FlywheelMass = 0.025,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 10000,
 			Override = 500,
 		},
@@ -107,7 +107,7 @@ do -- Electric Standalone Motors
 		FlywheelMass = 0.3,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 10000,
 			Override = 5000,
 		},
@@ -128,7 +128,7 @@ do -- Electric Standalone Motors
 		FlywheelMass = 1.5,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 7000,
 			Override = 8000,
 		},
@@ -149,7 +149,7 @@ do -- Electric Standalone Motors
 		FlywheelMass = 11.2,
 		IsElectric	 = true,
 		RPM = {
-			Idle	 = 10,
+			Idle	 = 0,
 			Limit	 = 4500,
 			Override = 6000,
 		},
