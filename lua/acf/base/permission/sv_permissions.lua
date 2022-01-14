@@ -405,7 +405,7 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 			this.DamagePermission = this.Modes[name]
 			this.DefaultCanDamage = this.ModeDefaultAction[name]
 			this.DefaultPermission = name
-			
+
 			timer.Simple(1, function()
 				print("ACF: Found default permission mode: " .. DPM)
 				print("ACF: Setting permission mode to: " .. name)
