@@ -274,9 +274,9 @@ if SERVER then
 				BaseArmor = Penetrated and ((Exit - PenHitPos):Length() * Density * 25.4) or (Penetration + 1)
 				-- Update the starting position of the trace because world is not filterable
 				TraceData.start = Exit
-			elseif Ent:CPPIGetOwner() == game.GetWorld() then
+			--elseif Ent:CPPIGetOwner() == game.GetWorld() then
 				-- TODO: Fix world entity penetration
-				BaseArmor = Penetration + 1
+				--BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
 				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF.Armour
 				-- Enable damage if a valid entity is hit
