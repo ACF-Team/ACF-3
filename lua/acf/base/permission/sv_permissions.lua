@@ -8,7 +8,7 @@ this.Player = {}
 this.Modes = {}
 this.ModeDescs = {}
 this.ModeThinks = {}
-this.ModeDefaultAction{}
+this.ModeDefaultAction = {}
 --TODO: convar this
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
