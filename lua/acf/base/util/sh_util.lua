@@ -492,11 +492,6 @@ do -- Attachment storage
 		Models[Model] = nil
 	end
 
-	print("Listing functions from Entity metatable")
-	print("GetAttachment", GetAttach)
-	print("GetAttachments", GetAll)
-	print("LookupAttachment", Lookup)
-
 	function EntMeta:GetAttachment(Index, ...)
 		local Data = GetAttachData(self)
 
