@@ -3,6 +3,7 @@ local ModelData = ACF.ModelData
 local Models    = ModelData.Models
 local Network   = ACF.Networking
 local Standby   = {}
+local Callbacks = {}
 
 function ModelData.IsOnStandby(Model)
 	local Path = ModelData.GetModelPath(Model)
@@ -21,6 +22,26 @@ function ModelData.GetModelData(Model)
 	if Data then return Data end
 
 	Network.Send("ACF_ModelData", Path)
+end
+
+function ModelData.QueuePanelRefresh(Model, Panel, Callback)
+	if not IsValid(Panel) then return end
+	if not isfunction(Callback) then return end
+
+	local Path = ModelData.GetModelPath(Model)
+
+	if not Path then return end
+	if Models[Path] then return end
+
+	local Data = Callbacks[Path]
+
+	if Data then
+		Data[Panel] = Callback
+	else
+		Callbacks[Path] = {
+			[Panel] = Callback
+		}
+	end
 end
 
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
@@ -50,4 +71,20 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	end)
 
 	hook.Remove("ACF_OnAddonLoaded", "ACF_ModelData")
+end)
+
+hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
+	local Data = Callbacks[Model]
+
+	if not Data then return end
+
+	for Panel, Callback in pairs(Data) do
+		if IsValid(Panel) then
+			Callback(Panel, Model)
+		end
+
+		Data[Panel] = nil
+	end
+
+	Callbacks[Model] = nil
 end)
