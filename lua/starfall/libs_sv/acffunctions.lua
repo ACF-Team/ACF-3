@@ -68,24 +68,6 @@ local function GetReloadTime(Entity)
 	return (Unloading or NewLoad) and Entity.MagReload or Entity.ReloadTime or 0
 end
 
-local function GetMaxPower(Entity)
-	if not Entity.PeakTorque then return 0 end
-
-	local MaxPower
-
-	if Entity.IsElectric then
-		if not Entity.LimitRPM then return 0 end
-
-		MaxPower = math.floor(Entity.PeakTorque * Entity.LimitRPM / 38195.2) --(4*9548.8)
-	else
-		if not Entity.PeakMaxRPM then return 0 end
-
-		MaxPower = math.floor(Entity.PeakTorque * Entity.PeakMaxRPM / 9548.8)
-	end
-
-	return MaxPower
-end
-
 local function GetLinkedWheels(Target)
 	local Current, Class, Sources
 	local Queued = { [Target] = true }
@@ -1068,7 +1050,7 @@ function ents_methods:acfMaxPower()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return 0 end
 
-	return GetMaxPower(This)
+	return This.PeakPower and math.Round(This.PeakPower) or 0
 end
 
 --- (DEPRECATED) Returns the torque in N/m of an ACF engine. Use Entity:acfMaxTorque()
@@ -1094,7 +1076,7 @@ function ents_methods:acfMaxPowerWithFuel()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return 0 end
 
-	return GetMaxPower(This)
+	return This.PeakPower and math.Round(This.PeakPower) or 0
 end
 
 --- Returns the idle rpm of an ACF engine
