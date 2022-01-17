@@ -8,6 +8,7 @@ do -- ACF global vars
 	ACF.ClientData         = ACF.ClientData or {}
 	ACF.ServerData         = ACF.ServerData or {}
 	ACF.Networking         = ACF.Networking or { Sender = {}, Receiver = {} }
+	ACF.ModelData          = ACF.ModelData or { Models = {} }
 	ACF.CurTime            = CurTime()
 
 	-- General Settings
