@@ -49,9 +49,11 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 		local Index  = next(Data)
 		local Entity = ents.GetByIndex(Index)
 
-		if not IsValid(Entity) then return end
+		if not IsValid(Entity) then return print("[CLIENT] Failed to receive ModelData entity") end
 
 		ModelData.Entity = Entity
+
+		print("[CLIENT] Received ModelData entity", Entity)
 	end)
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)

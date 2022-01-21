@@ -8,7 +8,7 @@ do -- Pointer entity creation
 	local function Create()
 		local Entity = ents.Create("base_anim")
 
-		if not IsValid(Entity) then return end
+		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
 
 		Entity:SetModel("models/props_junk/popcan01a.mdl")
 		Entity:SetNoDraw(true)
@@ -23,7 +23,7 @@ do -- Pointer entity creation
 
 		ModelData.Entity = Entity
 
-		print("Created ModelData entity", Entity)
+		print("[SERVER] Created ModelData entity", Entity)
 	end
 
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
@@ -34,6 +34,8 @@ do -- Pointer entity creation
 
 	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
 		Network.Send("ACF_ModelData_Entity", Player, ModelData.Entity)
+
+		print("[SERVER] Sending ModelData entity to player", Player)
 	end)
 
 	hook.Add("ShutDown", "ACF_ModelData", function()
@@ -104,6 +106,8 @@ end
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
 		Queue[Entity:EntIndex()] = true
+
+		print("[SERVER] Networking ModelData entity", Entity)
 	end)
 
 	Network.CreateReceiver("ACF_ModelData", function(Player, Data)
