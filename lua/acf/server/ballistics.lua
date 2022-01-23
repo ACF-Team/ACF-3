@@ -294,7 +294,7 @@ function ACF.DoBulletsFlight(Bullet)
 		else
 			if GlobalFilter[FlightRes.Entity:GetClass()] then return end
 
-			local Type = (FlightRes.HitWorld or FlightRes.Entity:CPPIGetOwner() == game.GetWorld()) and "World" or "Prop"
+			local Type = (FlightRes.HitWorld or not IsValid(FlightRes.Entity:CPPIGetOwner())) and "World" or "Prop"
 
 			OnImpact(Bullet, FlightRes, AmmoTypes[Bullet.Type], Type)
 		end

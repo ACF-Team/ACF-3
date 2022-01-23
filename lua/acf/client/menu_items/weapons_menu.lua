@@ -1,9 +1,10 @@
-local ACF      = ACF
-local Weapons  = ACF.Classes.Weapons
-local NameText = "%smm %s"
-local EntText  = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
-local MagText  = "\nRounds : %s rounds\nReload : %s seconds"
-local Current  = {}
+local ACF       = ACF
+local Weapons   = ACF.Classes.Weapons
+local ModelData = ACF.ModelData
+local NameText  = "%smm %s"
+local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
+local MagText   = "\nRounds : %s rounds\nReload : %s seconds"
+local Current   = {}
 local CreateControl, IsScalable
 
 local function UpdatePreview(Base, Data)
@@ -127,16 +128,26 @@ local function GetMagazineText(Caliber, Class, Weapon)
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
 end
 
-local function GetMass(Caliber, Class, Weapon)
+local function GetMass(Panel, Caliber, Class, Weapon)
 	if Weapon then return Weapon.Mass end
 
-	local Model  = Class.Model
-	local Scale  = Caliber / Class.Caliber.Base
-	local Scaled = ACF.GetModelVolume(Model, Scale)
-	local Base   = ACF.GetModelVolume(Model)
-	local Factor = Scaled and Base and Scaled / Base or 0
+	local Model = Class.Model
+	local Base  = ModelData.GetModelVolume(Model)
 
-	return math.Round(Class.Mass * Factor)
+	if not Base then
+		if ModelData.IsOnStandby(Model) then
+			ModelData.QueuePanelRefresh(Model, Panel, function()
+				Panel:SetText(Panel:GetText())
+			end)
+		end
+
+		return 0
+	end
+
+	local Scale  = Caliber / Class.Caliber.Base
+	local Scaled = ModelData.GetModelVolume(Model, Scale)
+
+	return math.Round(Class.Mass * Scaled / Base)
 end
 
 local function CreateMenu(Menu)
@@ -182,7 +193,7 @@ local function CreateMenu(Menu)
 
 		local Weapon   = Current.Weapon
 		local Caliber  = Current.Caliber
-		local Mass     = ACF.GetProperMass(GetMass(Caliber, Class, Weapon))
+		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
 		local Firerate = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon) or 60 / GetReloadTime()
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)

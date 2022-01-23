@@ -26,6 +26,7 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn and Update functions --------------------------------
+	local ModelData  = ACF.ModelData
 	local CheckLegal = ACF_CheckLegal
 
 	local function VerifyData(Data)
@@ -130,7 +131,7 @@ do -- Spawn and Update functions --------------------------------
 		if Weapon then return Weapon.Mass end
 
 		local Volume = PhysObj:GetVolume()
-		local Factor = Volume / ACF.GetModelVolume(Model)
+		local Factor = Volume / ModelData.GetModelVolume(Model)
 
 		return math.Round(Class.Mass * Factor)
 	end

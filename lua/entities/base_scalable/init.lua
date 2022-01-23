@@ -4,7 +4,9 @@ AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
-local Queued = {}
+local ACF       = ACF
+local ModelData = ACF.ModelData
+local Queued    = {}
 
 local function GenerateJSON(Table)
 	local Data = {}
@@ -101,7 +103,7 @@ function ENT:GetOriginalSize()
 	if Changed or not self.OriginalSize then
 		self.LastModel = Model
 
-		self.OriginalSize = ACF.GetModelSize(Model)
+		self.OriginalSize = ModelData.GetModelSize(Model)
 	end
 
 	return self.OriginalSize, Changed
