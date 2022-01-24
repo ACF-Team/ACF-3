@@ -19,7 +19,9 @@ do -- Pointer entity creation
 
 		Entity:CallOnRemove("ACF_ModelData", Create)
 
-		Network.Broadcast("ACF_ModelData_Entity", Entity)
+		--Network.Broadcast("ACF_ModelData_Entity", Entity)
+
+		ACF.SetServerData("ModelData Entity", Entity:EntIndex())
 
 		ModelData.Entity = Entity
 
@@ -31,13 +33,13 @@ do -- Pointer entity creation
 
 		hook.Remove("InitPostEntity", "ACF_ModelData")
 	end)
-
+	--[[
 	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
 		Network.Send("ACF_ModelData_Entity", Player, ModelData.Entity)
 
 		print("[SERVER] Sending ModelData entity to player", Player)
 	end)
-
+	]]
 	hook.Add("ShutDown", "ACF_ModelData", function()
 		local Entity = ModelData.Entity
 
@@ -104,11 +106,13 @@ do -- Model data getter method
 end
 
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
+	--[[
 	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
-		Queue[Entity:EntIndex()] = true
+		Queue.Index = Entity:EntIndex()
 
 		print("[SERVER] Networking ModelData entity", Entity)
 	end)
+	]]
 
 	Network.CreateReceiver("ACF_ModelData", function(Player, Data)
 		for Model in pairs(Data) do

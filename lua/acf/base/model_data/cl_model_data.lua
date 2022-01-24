@@ -45,16 +45,18 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 end
 
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
+	--[[
 	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
-		local Index  = next(Data)
+		local Index  = Data.Index
 		local Entity = ents.GetByIndex(Index)
 
-		if not IsValid(Entity) then return print("[CLIENT] Failed to receive ModelData entity") end
+		if not IsValid(Entity) then return print("[CLIENT] Failed to receive ModelData entity", Index) end
 
 		ModelData.Entity = Entity
 
 		print("[CLIENT] Received ModelData entity", Entity)
 	end)
+	]]
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)
 		Standby[Model] = true
@@ -73,6 +75,20 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	end)
 
 	hook.Remove("ACF_OnAddonLoaded", "ACF_ModelData")
+end)
+
+hook.Add("ACF_OnServerDataUpdate", "ModelData Entity", function(_, Key, Value)
+	if Key ~= "ModelData Entity" then return end
+
+	local ModelEnt = Entity(Value)
+
+	if not IsValid(ModelEnt) then
+		print("[CLIENT] Failed to receive ModelData entity", Index)
+	end
+
+	ModelData.Entity = ModelEnt
+
+	print("[CLIENT] Received ModelData entity", ModelEnt)
 end)
 
 hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
