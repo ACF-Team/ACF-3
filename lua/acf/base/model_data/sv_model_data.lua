@@ -31,6 +31,8 @@ do -- Pointer entity creation
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
 		Create()
 
+		print("[SERVER] Created ModelData entity on init", ACF.GetServerData("ModelData Entity"))
+
 		hook.Remove("InitPostEntity", "ACF_ModelData")
 	end)
 	--[[

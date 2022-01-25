@@ -83,7 +83,7 @@ hook.Add("ACF_OnServerDataUpdate", "ModelData Entity", function(_, Key, Value)
 	local ModelEnt = Entity(Value)
 
 	if not IsValid(ModelEnt) then
-		print("[CLIENT] Failed to receive ModelData entity", Index)
+		return print("[CLIENT] Failed to receive ModelData entity", Index)
 	end
 
 	ModelData.Entity = ModelEnt
