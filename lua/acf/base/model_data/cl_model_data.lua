@@ -16,6 +16,7 @@ function ModelData.GetModelData(Model)
 
 	if not Path then return end
 	if Standby[Path] then return end
+	if not IsValid(ModelData.Entity) then return end
 
 	local Data = Models[Path]
 
@@ -45,18 +46,49 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 end
 
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
-	--[[
+	local function ProcessReceived()
+		for Model, Data in pairs(Standby) do
+			if Data == true then continue end -- Information hasn't been received yet
+
+			Standby[Model] = nil
+			Models[Model]  = Data
+
+			hook.Run("ACF_OnReceivedModelData", Model, Data)
+		end
+
+		hook.Remove("OnEntityCreated", "ACF_ModelData")
+	end
+
+	local function CheckEntity(Entity)
+		if Entity:EntIndex() ~= ModelData.EntIndex then return end
+
+		print("[CLIENT] Found ModelData entity", Entity)
+
+		ModelData.Entity   = Entity
+		ModelData.EntIndex = nil
+
+		ProcessReceived()
+	end
+
 	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
 		local Index  = Data.Index
 		local Entity = ents.GetByIndex(Index)
 
-		if not IsValid(Entity) then return print("[CLIENT] Failed to receive ModelData entity", Index) end
+		if not IsValid(Entity) then
+			ModelData.EntIndex = Index
 
-		ModelData.Entity = Entity
+			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+
+			return print("[CLIENT] Entity doesn't exist yet, queueing", Index)
+		end
+
+		ModelData.Entity   = Entity
+		ModelData.EntIndex = nil
+
+		ProcessReceived()
 
 		print("[CLIENT] Received ModelData entity", Entity)
 	end)
-	]]
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)
 		Standby[Model] = true
@@ -67,30 +99,18 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 
 	Network.CreateReceiver("ACF_ModelData", function(Data)
 		for Model, Info in pairs(Data) do
-			Standby[Model] = nil
-			Models[Model]  = Info
+			if not IsValid(ModelData.Entity) then
+				Standby[Model] = Info
+			else
+				Standby[Model] = nil
+				Models[Model]  = Info
 
-			hook.Run("ACF_OnReceivedModelData", Model, Info)
+				hook.Run("ACF_OnReceivedModelData", Model, Info)
+			end
 		end
 	end)
 
 	hook.Remove("ACF_OnAddonLoaded", "ACF_ModelData")
-end)
-
-hook.Add("ACF_OnServerDataUpdate", "ModelData Entity", function(_, Key, Value)
-	if Key ~= "ModelData Entity" then return end
-
-	local ModelEnt = Entity(Value)
-
-	print("[CLIENT] Checking DataVar", ACF.GetServerData("ModelData Entity"))
-
-	if not IsValid(ModelEnt) then
-		return print("[CLIENT] Failed to receive ModelData entity", Index)
-	end
-
-	ModelData.Entity = ModelEnt
-
-	print("[CLIENT] Received ModelData entity", ModelEnt)
 end)
 
 hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
