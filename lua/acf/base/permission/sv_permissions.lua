@@ -8,6 +8,7 @@ this.Player = {}
 this.Modes = {}
 this.ModeDescs = {}
 this.ModeThinks = {}
+this.ModeDefaultAction = {}
 --TODO: convar this
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
@@ -311,6 +312,7 @@ concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 		end
 
 		local oldmode = table.KeyFromValue(this.Modes, this.DamagePermission)
+		this.DefaultCanDamage = this.ModeDefaultAction[mode]
 		this.DamagePermission = this.Modes[mode]
 		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
 		hook.Call("ACF_ProtectionModeChanged", GAMEMODE, mode, oldmode)
@@ -395,12 +397,13 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	this.Modes[name] = mode
 	this.ModeDescs[name] = desc
 	this.ModeThinks[name] = think or function() end
-	this.DefaultCanDamage = defaultaction or false
+	this.ModeDefaultAction[name] = defaultaction or false
 	local DPM = LoadMapDPM()
 
 	if DPM ~= nil then
 		if DPM == name then
 			this.DamagePermission = this.Modes[name]
+			this.DefaultCanDamage = this.ModeDefaultAction[name]
 			this.DefaultPermission = name
 
 			timer.Simple(1, function()
@@ -411,6 +414,7 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	else
 		if default then
 			this.DamagePermission = this.Modes[name]
+			this.DefaultCanDamage = this.ModeDefaultAction[name]
 			this.DefaultPermission = name
 
 			timer.Simple(1, function()
