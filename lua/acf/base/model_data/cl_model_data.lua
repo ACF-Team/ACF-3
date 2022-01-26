@@ -46,19 +46,15 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 	end
 end
 
-hook.Add("NetworkEntityCreated", "ACF Test", function(Entity)
-	if Entity:GetClass() ~= "base_anim" then return end
-
-	print("[TEST] Networked base_anim entity", Entity, Entity:EntIndex())
-end)
-
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	local function ProcessReceived()
 		for Model, Data in pairs(Standby) do
-			if Data == true then continue end -- Information hasn't been received yet
+			if Data == true then print("Ignoring", Model) continue end -- Information hasn't been received yet
 
 			Standby[Model] = nil
 			Models[Model]  = Data
+
+			print("Received", Model)
 
 			hook.Run("ACF_OnReceivedModelData", Model, Data)
 		end
@@ -67,10 +63,6 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	end
 
 	local function CheckEntity(Entity)
-		if Entity:GetClass() ~= "base_anim" then return end
-
-		print("[CLIENT] Found possible entity", Entity, Entity:EntIndex(), ModelData.EntIndex)
-
 		if Entity:EntIndex() ~= ModelData.EntIndex then return end
 
 		print("[CLIENT] Found ModelData entity", Entity)
@@ -93,12 +85,12 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 			return print("[CLIENT] Entity doesn't exist yet, queueing", Index)
 		end
 
+		print("[CLIENT] Received ModelData entity", ModelEnt)
+
 		ModelData.Entity   = ModelEnt
 		ModelData.EntIndex = nil
 
 		ProcessReceived()
-
-		print("[CLIENT] Received ModelData entity", ModelEnt)
 	end)
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)

@@ -3,10 +3,9 @@ local ModelData = ACF.ModelData
 local Models    = ModelData.Models
 local Network   = ACF.Networking
 
-
 do -- Pointer entity creation
 	local function Create()
-		local Entity = ents.Create("base_anim")
+		local Entity = ents.Create("base_entity")
 
 		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
 
@@ -30,6 +29,14 @@ do -- Pointer entity creation
 		Create()
 
 		hook.Remove("InitPostEntity", "ACF_ModelData")
+	end)
+
+	local Center = Vector()
+
+	-- Amazing hack to force all players to see the entity
+	-- Required since entities won't be networked to players that can't see them
+	hook.Add("SetupPlayerVisibility", "Test", function()
+		AddOriginToPVS(Center)
 	end)
 
 	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
