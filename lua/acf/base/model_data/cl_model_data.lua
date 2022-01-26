@@ -16,13 +16,14 @@ function ModelData.GetModelData(Model)
 
 	if not Path then return end
 	if Standby[Path] then return end
-	if not IsValid(ModelData.Entity) then return end
 
 	local Data = Models[Path]
 
-	if Data then return Data end
-
-	Network.Send("ACF_ModelData", Path)
+	if IsValid(ModelData.Entity) and Data then
+		return Data
+	elseif not Data then
+		Network.Send("ACF_ModelData", Path)
+	end
 end
 
 function ModelData.QueuePanelRefresh(Model, Panel, Callback)
@@ -45,6 +46,12 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 	end
 end
 
+hook.Add("NetworkEntityCreated", "ACF Test", function(Entity)
+	if Entity:GetClass() ~= "base_anim" then return end
+
+	print("[TEST] Networked base_anim entity", Entity, Entity:EntIndex())
+end)
+
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	local function ProcessReceived()
 		for Model, Data in pairs(Standby) do
@@ -56,10 +63,14 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 			hook.Run("ACF_OnReceivedModelData", Model, Data)
 		end
 
-		hook.Remove("OnEntityCreated", "ACF_ModelData")
+		hook.Remove("NetworkEntityCreated", "ACF_ModelData")
 	end
 
 	local function CheckEntity(Entity)
+		if Entity:GetClass() ~= "base_anim" then return end
+
+		print("[CLIENT] Found possible entity", Entity, Entity:EntIndex(), ModelData.EntIndex)
+
 		if Entity:EntIndex() ~= ModelData.EntIndex then return end
 
 		print("[CLIENT] Found ModelData entity", Entity)
@@ -71,23 +82,23 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	end
 
 	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
-		local Index  = Data.Index
-		local Entity = ents.GetByIndex(Index)
+		local Index    = Data.Index
+		local ModelEnt = Entity(Index)
 
-		if not IsValid(Entity) then
+		if not IsValid(ModelEnt) then
 			ModelData.EntIndex = Index
 
-			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+			hook.Add("NetworkEntityCreated", "ACF_ModelData", CheckEntity)
 
 			return print("[CLIENT] Entity doesn't exist yet, queueing", Index)
 		end
 
-		ModelData.Entity   = Entity
+		ModelData.Entity   = ModelEnt
 		ModelData.EntIndex = nil
 
 		ProcessReceived()
 
-		print("[CLIENT] Received ModelData entity", Entity)
+		print("[CLIENT] Received ModelData entity", ModelEnt)
 	end)
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)
