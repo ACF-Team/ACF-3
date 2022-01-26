@@ -275,7 +275,7 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = EngineData.Sound
 		Entity.SoundPitch       = EngineData.Pitch or 1
-		Entity.TorqueCurve      = EngineData.TorqueCurve or ACF.GenericTorqueCurves[Type]
+		Entity.TorqueCurve      = EngineData.TorqueCurve
 		Entity.CurveFactor      = EngineData.CurveFactor
 		Entity.PeakTorque       = EngineData.Torque
 		Entity.PeakPower		= EngineData.PeakPower

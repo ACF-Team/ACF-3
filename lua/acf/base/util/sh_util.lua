@@ -133,7 +133,11 @@ do -- Mobility functions
 	end
 
 	-- Calculates the performance characteristics of an engine, given a torque curve, max torque (in nm), idle, and redline RPM
-	function ACF.CalcEnginePerformanceData(Curve, MaxTq, Idle, Redline)
+	function ACF.CalcEnginePerformanceData(Class)
+		local Curve = Class.TorqueCurve
+		local MaxTq = Class.Torque
+		local Idle = Class.RPM.Idle
+		local Redline = Class.RPM.Limit
 		local PeakTq = 0
 		local PeakTqRPM
 		local PeakPower = 0
@@ -190,13 +194,12 @@ do -- Mobility functions
 			end
 		end
 
-		return {
-			PeakTqRPM = PeakTqRPM,
-			PeakPower = PeakPower,
-			PeakPowerRPM = PeakPowerRPM,
-			PowerbandMinRPM = PowerbandMinRPM,
-			PowerbandMaxRPM = PowerbandMaxRPM
-		}
+		Class.PeakTqRPM = PeakTqRPM
+		Class.PeakPower = PeakPower
+		Class.PeakPowerRPM = math.Round(PeakPowerRPM, 0)
+		Class.RPM.PeakMin = math.Round(PowerbandMinRPM, -1)
+		Class.RPM.PeakMax = math.Round(PowerbandMaxRPM, -1)
+		Class.CurveFactor = (Class.RPM.Limit - Class.RPM.Idle) / Class.RPM.Limit
 	end
 end
 
