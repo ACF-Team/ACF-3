@@ -196,6 +196,13 @@ function ACF.CreateBullet(BulletData)
 	return Bullet
 end
 
+local function GetImpactType(Trace, Entity)
+	if Trace.HitWorld then return "World" end
+	if Entity:IsPlayer() then return "Prop" end
+
+	return IsValid(Entity:CPPIGetOwner()) and "Prop" or "World"
+end
+
 local function OnImpact(Bullet, Trace, Ammo, Type)
 	local Func  = Type == "World" and Ammo.WorldImpact or Ammo.PropImpact
 	local Retry = Func(Ammo, Bullet, Trace)
@@ -292,9 +299,11 @@ function ACF.DoBulletsFlight(Bullet)
 				ACF.RemoveBullet(Bullet)
 			end
 		else
-			if GlobalFilter[FlightRes.Entity:GetClass()] then return end
+			local Entity = FlightRes.Entity
 
-			local Type = (FlightRes.HitWorld or not IsValid(FlightRes.Entity:CPPIGetOwner())) and "World" or "Prop"
+			if GlobalFilter[Entity:GetClass()] then return end
+
+			local Type = GetImpactType(FlightRes, Entity)
 
 			OnImpact(Bullet, FlightRes, AmmoTypes[Bullet.Type], Type)
 		end
