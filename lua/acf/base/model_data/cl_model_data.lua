@@ -47,50 +47,46 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 end
 
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
-	local function ProcessReceived()
+	local CheckEntity
+
+	local function UpdateEntity(Entity)
+		ModelData.Entity = Entity
+
 		for Model, Data in pairs(Standby) do
-			if Data == true then print("Ignoring", Model) continue end -- Information hasn't been received yet
+			if Data == true then continue end -- Information hasn't been received yet
 
 			Standby[Model] = nil
 			Models[Model]  = Data
 
-			print("Received", Model)
-
 			hook.Run("ACF_OnReceivedModelData", Model, Data)
 		end
+
+		Entity:CallOnRemove("ACF_ModelData", function()
+			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+		end)
 
 		hook.Remove("OnEntityCreated", "ACF_ModelData")
 	end
 
-	local function CheckEntity(Entity)
+	CheckEntity = function(Entity)
 		if Entity:EntIndex() ~= ModelData.EntIndex then return end
 
-		print("[CLIENT] Found ModelData entity", Entity)
-
-		ModelData.Entity   = Entity
-		ModelData.EntIndex = nil
-
-		ProcessReceived()
+		UpdateEntity(Entity)
 	end
 
 	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
 		local Index    = Data.Index
 		local ModelEnt = Entity(Index)
 
-		if not IsValid(ModelEnt) then
-			ModelData.EntIndex = Index
+		ModelData.EntIndex = Index
 
+		if not IsValid(ModelEnt) then
 			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
 
-			return print("[CLIENT] Entity doesn't exist yet, queueing", Index)
+			return
 		end
 
-		print("[CLIENT] Received ModelData entity", ModelEnt)
-
-		ModelData.Entity   = ModelEnt
-		ModelData.EntIndex = nil
-
-		ProcessReceived()
+		UpdateEntity(ModelEnt)
 	end)
 
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)
@@ -101,8 +97,10 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	end)
 
 	Network.CreateReceiver("ACF_ModelData", function(Data)
+		local Exists = IsValid(ModelData.Entity)
+
 		for Model, Info in pairs(Data) do
-			if not IsValid(ModelData.Entity) then
+			if not Exists then
 				Standby[Model] = Info
 			else
 				Standby[Model] = nil

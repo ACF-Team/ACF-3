@@ -26,8 +26,6 @@ do -- Pointer entity creation
 		Network.Broadcast("ACF_ModelData_Entity", Entity)
 
 		ModelData.Entity = Entity
-
-		print("[SERVER] Created ModelData entity", Entity)
 	end
 
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
@@ -108,8 +106,6 @@ end
 hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
 		Queue.Index = Entity:EntIndex()
-
-		print("[SERVER] Networking ModelData entity", Entity)
 	end)
 
 	Network.CreateReceiver("ACF_ModelData", function(Player, Data)
