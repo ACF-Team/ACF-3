@@ -59,7 +59,7 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 			hook.Run("ACF_OnReceivedModelData", Model, Data)
 		end
 
-		hook.Remove("NetworkEntityCreated", "ACF_ModelData")
+		hook.Remove("OnEntityCreated", "ACF_ModelData")
 	end
 
 	local function CheckEntity(Entity)
@@ -80,7 +80,7 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 		if not IsValid(ModelEnt) then
 			ModelData.EntIndex = Index
 
-			hook.Add("NetworkEntityCreated", "ACF_ModelData", CheckEntity)
+			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
 
 			return print("[CLIENT] Entity doesn't exist yet, queueing", Index)
 		end

@@ -9,6 +9,10 @@ do -- Pointer entity creation
 
 		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
 
+		function Entity:UpdateTransmitState()
+			return TRANSMIT_ALWAYS
+		end
+
 		Entity:SetModel("models/props_junk/popcan01a.mdl")
 		Entity:SetNoDraw(true)
 		Entity:PhysicsInit(SOLID_VPHYSICS)
@@ -16,6 +20,7 @@ do -- Pointer entity creation
 		Entity:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		Entity:Spawn()
 
+		Entity:AddEFlags(EFL_FORCE_CHECK_TRANSMIT)
 		Entity:CallOnRemove("ACF_ModelData", Create)
 
 		Network.Broadcast("ACF_ModelData_Entity", Entity)
@@ -29,14 +34,6 @@ do -- Pointer entity creation
 		Create()
 
 		hook.Remove("InitPostEntity", "ACF_ModelData")
-	end)
-
-	local Center = Vector()
-
-	-- Amazing hack to force all players to see the entity
-	-- Required since entities won't be networked to players that can't see them
-	hook.Add("SetupPlayerVisibility", "Test", function()
-		AddOriginToPVS(Center)
 	end)
 
 	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
