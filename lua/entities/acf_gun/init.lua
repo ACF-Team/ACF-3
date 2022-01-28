@@ -69,7 +69,7 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function CreateInputs(Entity, Data, Class, Weapon)
-		local List = { "Fire (Fires the weapon)", "Unload (Empties the breech/magazine)", "Reload (Forces the weapon to reload)" }
+		local List = { "Fire (Fires the weapon)", "Unload (Empties the breech/magazine)", "Reload (Forces the weapon to reload)", "Cyclic (Adjusts the interval between shots)" }
 
 		if Class.SetupInputs then
 			Class.SetupInputs(List, Entity, Data, Class, Weapon)
@@ -94,7 +94,8 @@ do -- Spawn and Update functions --------------------------------
 			"Rate of Fire (How fast the weapon can fire)",
 			"Reload Time (How long a reload will take)",
 			"Projectile Mass (The mass of the projectile)",
-			"Muzzle Velocity (The speed of the projectile, leaving the barrel)" }
+			"Muzzle Velocity (The speed of the projectile, leaving the barrel)"
+		}
 
 		if Class.SetupOutputs then
 			Class.SetupOutputs(List, Entity, Data, Class, Weapon)
@@ -161,7 +162,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
-		Entity.Cyclic       = Cyclic and 60 / Cyclic
+		Entity.BaseCyclic   = Cyclic and 60 / Cyclic
+		Entity.Cyclic       = Entity.BaseCyclic
 		Entity.ReloadTime   = Entity.Cyclic or 1
 		Entity.Spread       = Class.Spread
 		Entity.DefaultSound = GetSound(Caliber, Class)
@@ -416,6 +418,10 @@ do -- Metamethods --------------------------------
 
 		ACF.AddInputAction("acf_gun", "Fuze", function(Entity, Value)
 			Entity.SetFuze = tobool(Value) and math.abs(Value)
+		end)
+
+		ACF.AddInputAction("acf_gun", "Cyclic", function(Entity, Value)
+			Entity.Cyclic = math.Clamp(Value, Entity.BaseCyclic, 1)
 		end)
 	end -----------------------------------------
 
