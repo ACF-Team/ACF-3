@@ -1,4 +1,6 @@
-local PANEL = {}
+local PANEL     = {}
+local ACF       = ACF
+local ModelData = ACF.ModelData
 
 DEFINE_BASECLASS("Panel")
 
@@ -257,12 +259,19 @@ function PANEL:AddModelPreview(Model, Rotate)
 			Path = "models/props_junk/PopCan01a.mdl"
 		end
 
-		local Center = ACF.GetModelCenter(Path) -- Using the OBBCenter of the CSEnt always gives [0, 0, 0]
-		local Size   = ACF.GetModelSize(Path)
+		local Center = ModelData.GetModelCenter(Path)
 
-		if not (Center or Size) then
+		if not Center then
+			if ModelData.IsOnStandby(Path) then
+				ModelData.QueuePanelRefresh(Path, self, function()
+					self:UpdateModel(Path)
+				end)
+			end
+
 			return self:DrawEntity(false)
 		end
+
+		local Size = ModelData.GetModelSize(Path)
 
 		self.CamCenter = Center
 		self.CamOffset = Vector(0, Size:Length())

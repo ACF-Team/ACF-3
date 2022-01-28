@@ -458,140 +458,13 @@ do -- Hitbox storing and retrieval functions
 	end
 end
 
-do -- Model convex mesh and volume
-	ACF.ModelInfo = ACF.ModelInfo or {}
-
-	local Models = ACF.ModelInfo
-
-	local function CreateEntity(Model)
-		util.PrecacheModel(Model) -- 'ate CSEnts.
-
-		local Entity = SERVER and ents.Create("base_anim") or ents.CreateClientProp(Model)
-
-		Entity:SetModel(Model)
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-
-		return Entity
-	end
-
-	local function GetModelData(Model)
-		if not isstring(Model) then return end
-		if IsUselessModel(Model) then return end
-
-		local Data = Models[Model]
-
-		if Data then return Data end
-
-		local Entity = CreateEntity(Model)
-
-		if not IsValid(Entity) then return end
-
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if not IsValid(PhysObj) then return end
-
-		local Min, Max = PhysObj:GetAABB()
-
-		Data = {
-			Mesh   = PhysObj:GetMeshConvexes(),
-			Volume = PhysObj:GetVolume(),
-			Center = (Max + Min) * 0.5,
-			Size   = Max - Min,
-			Min    = Min,
-			Max    = Max,
-		}
-
-		Models[Model] = Data
-
-		Entity:Remove()
-
-		return Data
-	end
-
-	local function IsValidScale(Scale)
-		if not Scale then return false end
-		if isnumber(Scale) then return true end
-
-		return isvector(Scale)
-	end
-
-	local function ScaleMesh(Mesh, Scale)
-		for I, Hull in ipairs(Mesh) do
-			for J, Vertex in ipairs(Hull) do
-				Mesh[I][J] = Vertex.pos * Scale
-			end
-		end
-	end
-
-	local function GetMeshVolume(Mesh)
-		local Entity = CreateEntity("models/props_junk/PopCan01a.mdl")
-		Entity:PhysicsInitMultiConvex(Mesh)
-
-		local PhysObj = Entity:GetPhysicsObject()
-		local Volume  = PhysObj:GetVolume()
-
-		Entity:Remove()
-
-		return Volume
-	end
-
-	-------------------------------------------------------------------
-
-	function ACF.GetModelMesh(Model, Scale)
-		local Data = GetModelData(Model)
-
-		if not Data then return end
-
-		local Mesh = table.Copy(Data.Mesh)
-
-		if IsValidScale(Scale) then ScaleMesh(Mesh, Scale) end
-
-		return Mesh
-	end
-
-	function ACF.GetModelCenter(Model, Scale)
-		local Data = GetModelData(Model)
-
-		if not Data then return end
-
-		if not IsValidScale(Scale) then
-			return Data.Center
-		end
-
-		return Data.Center * Scale
-	end
-
-	function ACF.GetModelVolume(Model, Scale)
-		local Data = GetModelData(Model)
-
-		if not Data then return end
-		if not IsValidScale(Scale) then
-			return Data.Volume
-		end
-
-		local Mesh = table.Copy(Data.Mesh)
-
-		ScaleMesh(Mesh, Scale)
-
-		return GetMeshVolume(Mesh)
-	end
-
-	function ACF.GetModelSize(Model, Scale)
-		local Data = GetModelData(Model)
-
-		if not Data then return end
-		if not IsValidScale(Scale) then
-			return Vector(Data.Size)
-		end
-
-		return Data.Size * Scale
-	end
-end
-
 do -- Attachment storage
 	local IsUseless = IsUselessModel
-	local EntTable = FindMetaTable("Entity")
-	local Models = {}
+	local EntMeta   = FindMetaTable("Entity")
+	local GetAttach = EntMeta.GetAttachment
+	local GetAll    = EntMeta.GetAttachments
+	local Lookup    = EntMeta.LookupAttachment
+	local Models    = {}
 
 	local function GetModelData(Model, NoCreate)
 		local Table = Models[Model]
@@ -634,11 +507,23 @@ do -- Attachment storage
 	end
 
 	local function GetAttachData(Entity)
-		if not Entity.AttachData then
-			Entity.AttachData = GetModelData(Entity:GetModel(), true)
+		local Data  = Entity.AttachData
+		local Model = Entity:GetModel()
+
+		if not Data or Data.Model ~= Model then
+			local Attachments = GetModelData(Model)
+
+			Data = {
+				Model = Model,
+			}
+
+			if next(Attachments) then
+				Data.Attachments  = Attachments
+				Entity.AttachData = Data
+			end
 		end
 
-		return Entity.AttachData
+		return Data.Attachments
 	end
 
 	-------------------------------------------------------------------
@@ -707,22 +592,11 @@ do -- Attachment storage
 		Models[Model] = nil
 	end
 
-	EntTable.LegacySetModel = EntTable.LegacySetModel or EntTable.SetModel
-	EntTable.LegacyGetAttachment = EntTable.LegacyGetAttachment or EntTable.GetAttachment
-	EntTable.LegacyGetAttachments = EntTable.LegacyGetAttachments or EntTable.GetAttachments
-	EntTable.LegacyLookupAttachment = EntTable.LegacyLookupAttachment or EntTable.LookupAttachment
-
-	function EntTable:SetModel(Path, ...)
-		self:LegacySetModel(Path, ...)
-
-		self.AttachData = GetModelData(Path, true)
-	end
-
-	function EntTable:GetAttachment(Index, ...)
+	function EntMeta:GetAttachment(Index, ...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyGetAttachment(Index, ...)
+			return GetAttach(self, Index, ...)
 		end
 
 		local Attachment = Data[Index]
@@ -741,11 +615,11 @@ do -- Attachment storage
 		}
 	end
 
-	function EntTable:GetAttachments(...)
+	function EntMeta:GetAttachments(...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyGetAttachments(...)
+			return GetAll(self, ...)
 		end
 
 		local Result = {}
@@ -760,11 +634,11 @@ do -- Attachment storage
 		return Result
 	end
 
-	function EntTable:LookupAttachment(Name, ...)
+	function EntMeta:LookupAttachment(Name, ...)
 		local Data = GetAttachData(self)
 
 		if not Data then
-			return self:LegacyLookupAttachment(Name, ...)
+			return Lookup(self, Name, ...)
 		end
 
 		for Index, Info in ipairs(Data) do

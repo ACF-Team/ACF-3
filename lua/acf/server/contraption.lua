@@ -184,7 +184,9 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 
 	if Tally then
-		return Power, Fuel, PhysN, ParN, ConN, Ent:CPPIGetOwner():GetName(), OthN
+		local Owner = Ent:CPPIGetOwner()
+
+		return Power, Fuel, PhysN, ParN, ConN, IsValid(Owner) and Owner:Name() or "Unknown", OthN
 	end
 end
 

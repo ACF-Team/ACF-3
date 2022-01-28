@@ -5,6 +5,9 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
+local ACF       = ACF
+local ModelData = ACF.ModelData
+
 function CreateScalableMultiConvex(Player, Pos, Angle, Size)
 	local Ent = ents.Create("base_scalable_mconvex")
 
@@ -29,7 +32,7 @@ function ENT:GetOriginalSize()
 	local Size, Changed = BaseClass.GetOriginalSize(self)
 
 	if Changed or not self.Mesh then
-		self.Mesh = ACF.GetModelMesh(self.LastModel)
+		self.Mesh = ModelData.GetModelMesh(self.LastModel)
 	end
 
 	return Size, Changed
@@ -61,6 +64,6 @@ end
 
 function ENT:GetExtraInfo()
 	return {
-		Mesh = ACF.GetModelMesh(self.LastModel)
+		Mesh = ModelData.GetModelMesh(self.LastModel)
 	}
 end

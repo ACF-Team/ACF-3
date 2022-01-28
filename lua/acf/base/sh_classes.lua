@@ -616,10 +616,7 @@ do -- Entity class registration function
 		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
 		Entity:Activate()
-
-		if CPPI then
-			Entity:CPPISetOwner(Player)
-		end
+		Entity:CPPISetOwner(Player)
 
 		if not NoUndo then
 			undo.Create(Entity.Name or Class)

@@ -58,7 +58,7 @@ local function CheckLegal(Entity)
 			Entity:Disable() -- Let the entity know it's disabled
 
 			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-			if tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
+			if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
 				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
 
 				if Reason == "Not drawn" or Reason == "Not solid" then -- Thank you garry, very cool
