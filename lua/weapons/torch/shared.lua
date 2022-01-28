@@ -159,8 +159,6 @@ function SWEP:PrimaryAttack()
 
 			Entity:EmitSound("items/medshot4.wav", nil, nil, ACF.Volume)
 		else
-			if not Entity:CPPICanTool(Owner, "torch") then return end
-
 			local OldHealth = Entity.ACF.Health
 			local MaxHealth = Entity.ACF.MaxHealth
 
@@ -203,15 +201,7 @@ function SWEP:SecondaryAttack()
 		Bullet.Owner  = Owner
 		Bullet.Flight = Trace.Normal
 
-		if Entity:IsPlayer() or Entity:IsNPC() then
-			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF.Damage(self.Bullet, Trace)
-		else
-			if not Entity:CPPICanTool(Owner, "torch") then print("No perms") return end
-
-			--We can use the damage function instead of direct access here since no numbers are negative.
-			HitRes = ACF.Damage(self.Bullet, Trace)
-		end
+		HitRes = ACF.Damage(self.Bullet, Trace)
 
 		if HitRes.Kill then
 			ACF_APKill(Entity, Trace.Normal, 1)
@@ -227,7 +217,4 @@ function SWEP:SecondaryAttack()
 			Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)
 		end
 	end
-end
-
-function SWEP:Reload()
 end
