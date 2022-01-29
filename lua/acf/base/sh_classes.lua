@@ -352,7 +352,7 @@ do -- Engine registration functions
 			Class.TorqueCurve = Type.TorqueCurve
 		end
 
-		ACF.CalcEnginePerformanceData(Class)
+		ACF.AddEnginePerformanceData(Class)
 
 		return Class
 	end

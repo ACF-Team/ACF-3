@@ -661,16 +661,16 @@ function ENT:CalcRPM()
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	local perc = (self.FlyRPM - self.IdleRPM) / self.CurveFactor / self.LimitRPM
-	self.Torque = self.Throttle * ACF.CalcCurve(self.TorqueCurve, perc) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
-
+	local Percent = (self.FlyRPM - self.IdleRPM) / self.CurveFactor / self.LimitRPM
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
-	local Drag = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
+	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
 
+	self.Torque = self.Throttle * ACF.GetTorque(self.TorqueCurve, Percent) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 	-- Let's accelerate the flywheel based on that torque
 	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 0), self.LimitRPM)
+
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
-	local Boxes = 0
+	local Boxes      = 0
 	local TotalReqTq = 0
 
 	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
