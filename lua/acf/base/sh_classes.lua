@@ -316,6 +316,16 @@ do -- Armor type registration function
 	})
 end
 
+do -- Engine type registration function
+	ACF.Classes.EngineTypes = ACF.Classes.EngineTypes or {}
+
+	local Types = ACF.Classes.EngineTypes
+
+	function ACF.RegisterEngineType(ID, Data)
+		return AddSimpleClass(ID, Types, Data)
+	end
+end
+
 do -- Engine registration functions
 	ACF.Classes.Engines = ACF.Classes.Engines or {}
 
@@ -355,16 +365,6 @@ do -- Engine registration functions
 		ACF.AddEnginePerformanceData(Class)
 
 		return Class
-	end
-end
-
-do -- Engine type registration function
-	ACF.Classes.EngineTypes = ACF.Classes.EngineTypes or {}
-
-	local Types = ACF.Classes.EngineTypes
-
-	function ACF.RegisterEngineType(ID, Data)
-		return AddSimpleClass(ID, Types, Data)
 	end
 end
 
