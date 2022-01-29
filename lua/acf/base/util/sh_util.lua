@@ -505,8 +505,11 @@ do -- Attachment storage
 	end
 
 	local function GetAttachData(Entity)
-		local Data  = Entity.AttachData
 		local Model = Entity:GetModel()
+
+		if not Model or IsUseless(Model) then return end
+
+		local Data  = Entity.AttachData
 
 		if not Data or Data.Model ~= Model then
 			local Attachments = GetModelData(Model)
