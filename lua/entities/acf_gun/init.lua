@@ -69,7 +69,12 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function CreateInputs(Entity, Data, Class, Weapon)
-		local List = { "Fire (Fires the weapon)", "Unload (Empties the breech/magazine)", "Reload (Forces the weapon to reload)", "Cyclic (Adjusts the interval between shots)" }
+		local List = {
+			"Fire (Fires the weapon)",
+			"Unload (Empties the breech/magazine)",
+			"Reload (Forces the weapon to reload)",
+			"Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"
+		}
 
 		if Class.SetupInputs then
 			Class.SetupInputs(List, Entity, Data, Class, Weapon)
@@ -420,8 +425,13 @@ do -- Metamethods --------------------------------
 			Entity.SetFuze = tobool(Value) and math.abs(Value)
 		end)
 
-		ACF.AddInputAction("acf_gun", "Cyclic", function(Entity, Value)
-			Entity.Cyclic = math.Clamp(Value, Entity.BaseCyclic, 1)
+		ACF.AddInputAction("acf_gun", "Rate of Fire", function(Entity, Value)
+			if not Entity.BaseCyclic then return end
+
+			local Delay = 60 / math.max(Value, 1)
+
+			Entity.Cyclic     = math.Clamp(Delay, Entity.BaseCyclic, 2)
+			Entity.ReloadTime = Entity.Cyclic
 		end)
 	end -----------------------------------------
 
