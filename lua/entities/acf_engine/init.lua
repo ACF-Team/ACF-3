@@ -301,15 +301,11 @@ do -- Spawn and Update functions
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-		--calculate boosted peak kw
-		Entity.peakkw = Entity.PeakPower
-		Entity.PeakKwRPM = Entity.PeakPowerRPM
-
 		--calculate base fuel usage
 		if EngineType.CalculateFuelUsage then
 			Entity.FuelUse = EngineType.CalculateFuelUsage(Entity)
 		else
-			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * Entity.peakkw / 3600
+			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * Entity.PeakPower / 3600
 		end
 
 		ACF.Activate(Entity, true)
@@ -518,7 +514,7 @@ local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerban
 
 function ENT:UpdateOverlayText()
 	local State, Name = self.Active and "Active" or "Idle", self.Name
-	local Power, PowerFt = Round(self.peakkw), Round(self.peakkw * 1.34)
+	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * 1.34)
 	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
 	local PowerbandMin = self.PeakMinRPM
 	local PowerbandMax = self.PeakMaxRPM
@@ -630,7 +626,7 @@ function ENT:GetConsumption(Throttle, RPM)
 	else
 		local Load = 0.3 + Throttle * 0.7
 
-		Consumption = Load * self.FuelUse * (RPM / self.PeakKwRPM) / self.FuelTank.FuelDensity
+		Consumption = Load * self.FuelUse * (RPM / self.PeakPowerRPM) / self.FuelTank.FuelDensity
 	end
 
 	return Consumption

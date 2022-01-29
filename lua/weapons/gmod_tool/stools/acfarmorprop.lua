@@ -482,7 +482,7 @@ do -- Armor readout
 				end
 
 				if Class == "acf_engine" then
-					Power = Power + Ent.peakkw * 1.34
+					Power = Power + Ent.PeakPower * 1.34
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + Ent.Capacity
 				end
