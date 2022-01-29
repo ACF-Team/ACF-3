@@ -18,8 +18,6 @@ do -- Petrol Engines
 		FlywheelMass = 0.15,
 		RPM = {
 			Idle	= 800,
-			PeakMin	= 3000,
-			PeakMax	= 5000,
 			Limit	= 6500,
 		},
 		Preview = {
@@ -39,8 +37,6 @@ do -- Petrol Engines
 		FlywheelMass = 0.25,
 		RPM = {
 			Idle	= 700,
-			PeakMin	= 3100,
-			PeakMax	= 5000,
 			Limit	= 5500,
 		},
 		Preview = {
@@ -60,8 +56,6 @@ do -- Petrol Engines
 		FlywheelMass = 2.8,
 		RPM = {
 			Idle	= 600,
-			PeakMin	= 2000,
-			PeakMax	= 3300,
 			Limit	= 3800,
 		},
 		Preview = {
@@ -83,8 +77,6 @@ do -- Diesel Engines
 		FlywheelMass = 0.75,
 		RPM = {
 			Idle	= 800,
-			PeakMin	= 1000,
-			PeakMax	= 3000,
 			Limit	= 5000,
 		},
 		Preview = {
@@ -104,8 +96,6 @@ do -- Diesel Engines
 		FlywheelMass = 1.6,
 		RPM = {
 			Idle	= 650,
-			PeakMin	= 1000,
-			PeakMax	= 3000,
 			Limit	= 4000,
 		},
 		Preview = {
@@ -125,8 +115,6 @@ do -- Diesel Engines
 		FlywheelMass = 4.5,
 		RPM = {
 			Idle	= 500,
-			PeakMin	= 600,
-			PeakMax	= 1800,
 			Limit	= 2500,
 		},
 		Preview = {

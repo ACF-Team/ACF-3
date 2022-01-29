@@ -18,8 +18,6 @@ do
 		FlywheelMass = 0.12,
 		RPM = {
 			Idle	= 500,
-			PeakMin	= 750,
-			PeakMax	= 2450,
 			Limit	= 2950,
 		},
 		Preview = {
@@ -39,8 +37,6 @@ do
 		FlywheelMass = 7,
 		RPM = {
 			Idle	= 350,
-			PeakMin	= 450,
-			PeakMax	= 900,
 			Limit	= 1200,
 		},
 		Preview = {

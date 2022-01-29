@@ -316,10 +316,21 @@ do -- Armor type registration function
 	})
 end
 
+do -- Engine type registration function
+	ACF.Classes.EngineTypes = ACF.Classes.EngineTypes or {}
+
+	local Types = ACF.Classes.EngineTypes
+
+	function ACF.RegisterEngineType(ID, Data)
+		return AddSimpleClass(ID, Types, Data)
+	end
+end
+
 do -- Engine registration functions
 	ACF.Classes.Engines = ACF.Classes.Engines or {}
 
 	local Engines = ACF.Classes.Engines
+	local Types   = ACF.Classes.EngineTypes
 
 	function ACF.RegisterEngineClass(ID, Data)
 		local Group = AddClassGroup(ID, Engines, Data)
@@ -344,17 +355,16 @@ do -- Engine registration functions
 			Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 		end
 
+		if not Class.TorqueCurve then
+			local Name = Class.Type or "GenericPetrol"
+			local Type = Types[Name] or Types.GenericPetrol
+
+			Class.TorqueCurve = Type.TorqueCurve
+		end
+
+		ACF.AddEnginePerformanceData(Class)
+
 		return Class
-	end
-end
-
-do -- Engine type registration function
-	ACF.Classes.EngineTypes = ACF.Classes.EngineTypes or {}
-
-	local Types = ACF.Classes.EngineTypes
-
-	function ACF.RegisterEngineType(ID, Data)
-		return AddSimpleClass(ID, Types, Data)
 	end
 end
 
