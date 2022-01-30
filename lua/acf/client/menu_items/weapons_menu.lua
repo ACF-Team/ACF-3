@@ -136,7 +136,7 @@ local function GetMass(Panel, Caliber, Class, Weapon)
 
 	if not Base then
 		if ModelData.IsOnStandby(Model) then
-			ModelData.QueuePanelRefresh(Model, Panel, function()
+			ModelData.QueueRefresh(Model, Panel, function()
 				Panel:SetText(Panel:GetText())
 			end)
 		end

@@ -263,7 +263,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		if not Center then
 			if ModelData.IsOnStandby(Path) then
-				ModelData.QueuePanelRefresh(Path, self, function()
+				ModelData.QueueRefresh(Path, self, function()
 					self:UpdateModel(Path)
 				end)
 			end

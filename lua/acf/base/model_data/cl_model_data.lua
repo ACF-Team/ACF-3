@@ -11,22 +11,7 @@ function ModelData.IsOnStandby(Model)
 	return Standby[Path] or false
 end
 
-function ModelData.GetModelData(Model)
-	local Path = ModelData.GetModelPath(Model)
-
-	if not Path then return end
-	if Standby[Path] then return end
-
-	local Data = Models[Path]
-
-	if IsValid(ModelData.Entity) and Data then
-		return Data
-	elseif not Data then
-		Network.Send("ACF_ModelData", Path)
-	end
-end
-
-function ModelData.QueuePanelRefresh(Model, Panel, Callback)
+function ModelData.QueueRefresh(Model, Panel, Callback)
 	if not IsValid(Panel) then return end
 	if not isfunction(Callback) then return end
 
@@ -43,6 +28,21 @@ function ModelData.QueuePanelRefresh(Model, Panel, Callback)
 		Callbacks[Path] = {
 			[Panel] = Callback
 		}
+	end
+end
+
+function ModelData.GetModelData(Model)
+	local Path = ModelData.GetModelPath(Model)
+
+	if not Path then return end
+	if Standby[Path] then return end
+
+	local Data = Models[Path]
+
+	if IsValid(ModelData.Entity) and Data then
+		return Data
+	elseif not Data then
+		Network.Send("ACF_ModelData", Path)
 	end
 end
 
