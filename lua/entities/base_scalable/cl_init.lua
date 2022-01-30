@@ -11,7 +11,7 @@ local function ChangeSize(Entity, Size)
 	local Original = Entity:GetOriginalSize()
 	local Scale = Vector(Size.x / Original.x, Size.y / Original.y, Size.z / Original.z)
 
-	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
+	Entity:ApplyNewSize(Size, Scale)
 
 	Entity.Size = Size
 	Entity.Scale = Scale
@@ -51,6 +51,38 @@ function ENT:GetOriginalSize()
 	return self.OriginalSize
 end
 
+function ENT:ApplyNewSize(_, NewScale)
+	local Mesh = self.Mesh
+
+	self.Matrix = Matrix()
+	self.Matrix:Scale(NewScale)
+
+	self:EnableMatrix("RenderMultiply", self.Matrix)
+
+	for I, Hull in ipairs(Mesh) do
+		for J, Vertex in ipairs(Hull) do
+			Mesh[I][J] = (Vertex.pos or Vertex) * NewScale
+		end
+	end
+
+	self:PhysicsInitMultiConvex(Mesh)
+	self:EnableCustomCollisions(true)
+	self:SetRenderBounds(self:GetCollisionBounds())
+	self:DrawShadow(false)
+
+	local PhysObj = self:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		PhysObj:EnableMotion(false)
+		PhysObj:Sleep()
+	end
+end
+
+function ENT:SetExtraInfo(Extra)
+	self.RealMesh = Extra.Mesh
+	self.Mesh     = table.Copy(Extra.Mesh)
+end
+
 function ENT:SetSize(Size)
 	if not isvector(Size) then return false end
 
@@ -68,9 +100,9 @@ function ENT:SetScale(Scale)
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
-	local PhysObj = self:GetPhysicsObject()
+	local PhysObj  = self:GetPhysicsObject()
 	local Position = self:GetPos()
-	local Angles = self:GetAngles()
+	local Angles   = self:GetAngles()
 
 	if IsValid(PhysObj) then
 		PhysObj:SetPos(Position)

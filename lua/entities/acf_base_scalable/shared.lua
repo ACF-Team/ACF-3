@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("base_scalable_mconvex")
+DEFINE_BASECLASS("base_scalable")
 
 ENT.PrintName     = "Scalable ACF Base Entity"
 ENT.WireDebugName = "Scalable ACF Base Entity"

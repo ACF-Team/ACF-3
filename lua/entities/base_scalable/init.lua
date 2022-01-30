@@ -68,7 +68,7 @@ local function ChangeSize(Entity, Size)
 	local Original = Entity:GetOriginalSize()
 	local Scale = Vector(1 / Original.x, 1 / Original.y, 1 / Original.z) * Size
 
-	if Entity.ApplyNewSize then Entity:ApplyNewSize(Size, Scale) end
+	Entity:ApplyNewSize(Size, Scale)
 
 	-- If it's not a new entity, then network the new size
 	-- Otherwise, the entity will request its size by itself
@@ -104,9 +104,40 @@ function ENT:GetOriginalSize()
 		self.LastModel = Model
 
 		self.OriginalSize = ModelData.GetModelSize(Model)
+		self.Mesh         = ModelData.GetModelMesh(Model)
 	end
 
 	return self.OriginalSize, Changed
+end
+
+function ENT:GetExtraInfo()
+	return {
+		Mesh = ModelData.GetModelMesh(self.LastModel)
+	}
+end
+
+function ENT:ApplyNewSize(NewSize)
+	local Size   = self:GetSize() or self:GetOriginalSize()
+	local Factor = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * NewSize
+	local Mesh   = self.Mesh
+
+	for I, Hull in ipairs(Mesh) do
+		for J, Vertex in ipairs(Hull) do
+			Mesh[I][J] = (Vertex.pos or Vertex) * Factor
+		end
+	end
+
+	self:PhysicsInitMultiConvex(Mesh)
+	self:SetMoveType(MOVETYPE_VPHYSICS)
+	self:SetSolid(SOLID_VPHYSICS)
+	self:EnableCustomCollisions(true)
+	self:DrawShadow(false)
+
+	local PhysObj = self:GetPhysicsObject()
+
+	if IsValid(PhysObj) then
+		PhysObj:EnableMotion(false)
+	end
 end
 
 function ENT:SetSize(Size)

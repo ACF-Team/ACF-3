@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("base_scalable_mconvex") -- Required to get the local BaseClass
+DEFINE_BASECLASS("base_scalable") -- Required to get the local BaseClass
 
 include("shared.lua")
 
