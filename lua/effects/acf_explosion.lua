@@ -60,12 +60,13 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Core()
-	local Radius = self.Radius
+	local Position = self.Origin
+	local Radius   = self.Radius
+	local Pitch    = math.Clamp(123 - Radius * 3, 60, 120)
+	local Volume   = ACF.Volume
 
-	local Level = math.Clamp(Radius * 10, 75, 165)
-
-	sound.Play("ambient/explosions/explode_5.wav", self.Origin, Level, math.Clamp(300 - Radius * 12, 15, 255), ACF.Volume)
-	sound.Play("ambient/explosions/explode_4.wav", self.Origin, Level, math.Clamp(300 - Radius * 25, 15, 255), ACF.Volume)
+	sound.Play("ambient/explosions/explode_9.wav", Position, 105, Pitch, Volume)
+	sound.Play("ambient/levels/streetwar/city_battle19.wav", Position, 105, Pitch, Volume)
 end
 
 function EFFECT:GroundImpact()
