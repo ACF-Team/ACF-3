@@ -122,6 +122,37 @@ function ENT:Think()
 	BaseClass.Think(self)
 end
 
+do -- Dealing with visual clip's bullshit
+	local EntMeta = FindMetaTable("Entity")
+
+	function ENT:EnableMatrix(Type, Value, ...)
+		if Type == "RenderMultiply" and self.Matrix then
+			local Current = self.Matrix:GetScale()
+			local Scale   = Value:GetScale()
+
+			-- Visual clip provides a scale of 0, 0, 0
+			-- So we just update it with our actual scale
+			if Current ~= Scale then
+				Value:SetScale(Current)
+			end
+		end
+
+		return EntMeta.EnableMatrix(self, Type, Value, ...)
+	end
+
+	function ENT:DisableMatrix(Type, ...)
+		if Type == "RenderMultiply" and self.Matrix then
+			-- Visual clip will attempt to disable the matrix
+			-- We don't want that to happen with scalable entities
+			self:EnableMatrix(Type, self.Matrix)
+
+			return
+		end
+
+		return EntMeta.DisableMatrix(self, Type, ...)
+	end
+end
+
 net.Receive("RequestSize", function()
 	local Entities = util.JSONToTable(net.ReadString())
 
@@ -142,6 +173,33 @@ net.Receive("RequestSize", function()
 
 		if Queued[Ent] then Queued[Ent] = nil end
 	end
+end)
+
+hook.Add("Initialize", "ACF Scalable Decals", function()
+	-- Detour decals to scale better on scaled entities
+	local DecalEx = util.DecalEx
+
+	util.DecalEx = function(Mat, Ent, Pos, Normal, Color, W, H, ...)
+		if Ent.IsScalable and Ent:GetSize() then -- If entity is scaled, offset decal pos
+			local Offset = Pos - Ent:GetPos()
+
+			-- Thank you, Garry. Very cool.
+			local O 	 = Ent:GetOriginalSize()
+			local C 	 = Ent:GetSize()
+			local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
+
+			Pos = Ent:GetPos() + Offset * Scaler
+
+			local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
+
+			W = W * Max
+			H = H * Max
+		end
+
+		DecalEx(Mat, Ent, Pos, Normal, Color, W, H, ...)
+	end
+
+	hook.Remove("Initialize", "Scalable Entities")
 end)
 
 -- NOTE: Someone reported this could maybe be causing crashes. Please confirm.

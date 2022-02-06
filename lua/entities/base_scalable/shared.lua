@@ -1,9 +1,11 @@
 DEFINE_BASECLASS("base_wire_entity")
 
-ENT.PrintName     = "Base Scalable Entity"
-ENT.WireDebugName = "Base Scalable Entity"
-ENT.Contact       = "Don't"
-ENT.IsScalable    = true
+ENT.PrintName      = "Base Scalable Entity"
+ENT.WireDebugName  = "Base Scalable Entity"
+ENT.Contact        = "Don't"
+ENT.IsScalable     = true
+ENT.UseCustomIndex = true
+ENT.EntTable       = ENT
 
 function ENT:GetSize()
 	local Size = self.Size
