@@ -38,11 +38,10 @@ end
 -- Required for stuff like Proper Clipping resetting the physics object when clearing out physclips
 do
 	local EntMeta = FindMetaTable("Entity")
-	local Physics = EntMeta.PhysicsInit
 
-	function EntMeta:PhysicsInit(Solid, Bypass, ...)
-		if not self.IsScalable or Bypass then
-			return Physics(self, Solid, Bypass, ...)
+	function ENT:PhysicsInit(Solid, Bypass, ...)
+		if Bypass then
+			return EntMeta.PhysicsInit(self, Solid, Bypass, ...)
 		end
 
 		local Init = self.FirstInit
