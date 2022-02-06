@@ -336,7 +336,34 @@ do -- CPPI
 			if Previous then
 				local Lookup = Entities[Previous]
 
-				Lookup[self] = nil
+				if Lookup then
+					Lookup[self] = nil
+				else
+					local Players = {}
+
+					print("Congratulations, you've just run into a bug we cannot replicate.")
+					print("----------------------------------------------------")
+					print("Entity", self)
+					print("Last Owner", self.CPPIOwner or "N/A")
+					print("Last SteamID", Previous or "N/A")
+					print("New Owner", Player or "N/A")
+					print("New SteamID", Current or "N/A")
+					print("----------------------------------------------------")
+
+					for K in pairs(Entities) do
+						Players[#Players + 1] = K
+					end
+
+					print("Current players")
+					PrintTable(Players)
+					print("----------------------------------------------------")
+
+					print("Stack trace")
+					debug.Trace()
+					print("----------------------------------------------------")
+
+					print("Please report this to the ACF devs.\n")
+				end
 
 				self:RemoveCallOnRemove("CPPI_Owner")
 			end
