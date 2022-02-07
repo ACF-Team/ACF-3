@@ -5,7 +5,16 @@ ENT.WireDebugName  = "Base Scalable Entity"
 ENT.Contact        = "Don't"
 ENT.IsScalable     = true
 ENT.UseCustomIndex = true
-ENT.EntTable       = ENT
+ENT.ScaleData      = { Type = false, Path = false }
+
+function ENT:SetScaleData(Type, Path)
+	local Data = self.ScaleData
+
+	Data.Type    = Type
+	Data.Path    = Path
+	Data.GetMesh = self["Get" .. Type .. "Mesh"]
+	Data.GetSize = self["Get" .. Type .. "Size"]
+end
 
 function ENT:GetSize()
 	local Size = self.Size
@@ -24,14 +33,19 @@ function ENT:GetScale()
 end
 
 function ENT:Restore()
-	local Size = self:GetSize()
+	self:SetScale(self:GetScale())
+end
 
-	-- We must manually reset the mesh on the clientside for this to work
-	if CLIENT then
-		self.Mesh = table.Copy(self.RealMesh)
+do -- Model-based scalable entity methods
+	local ModelData = ACF.ModelData
+
+	function ENT.GetModelMesh(Data, Scale)
+		return ModelData.GetModelMesh(Data.Path, Scale)
 	end
 
-	self:SetSize(Size)
+	function ENT.GetModelSize(Data, Scale)
+		return ModelData.GetModelSize(Data.Path, Scale)
+	end
 end
 
 -- Dirty, dirty hacking to prevent other addons initializing physics the wrong way

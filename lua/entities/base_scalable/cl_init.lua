@@ -2,101 +2,16 @@ DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
 
 include("shared.lua")
 
-local Queued = {}
-
-local function ChangeSize(Entity, Size)
-	if not isvector(Size) then return false end
-	if not Entity:GetOriginalSize() then return false end
-
-	local Original = Entity:GetOriginalSize()
-	local Scale = Vector(Size.x / Original.x, Size.y / Original.y, Size.z / Original.z)
-
-	Entity:ApplyNewSize(Size, Scale)
-
-	Entity.Size = Size
-	Entity.Scale = Scale
-
-	local PhysObj = Entity:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		if Entity.OnResized then Entity:OnResized(Size, Scale) end
-
-		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
-	end
-
-	return true, Size, Scale
-end
+local ACF     = ACF
+local Network = ACF.Networking
+local Standby = {}
 
 function ENT:Initialize()
 	BaseClass.Initialize(self)
 
 	self.Initialized = true
 
-	self:GetOriginalSize() -- Getting the original and current size
-end
-
-function ENT:GetOriginalSize()
-	if not self.OriginalSize then
-		if not Queued[self] then
-			Queued[self] = true
-
-			net.Start("RequestSize")
-				net.WriteEntity(self)
-			net.SendToServer()
-		end
-
-		return
-	end
-
-	return self.OriginalSize
-end
-
-function ENT:ApplyNewSize(_, NewScale)
-	local Mesh = self.Mesh
-
-	self.Matrix = Matrix()
-	self.Matrix:Scale(NewScale)
-
-	self:EnableMatrix("RenderMultiply", self.Matrix)
-
-	for I, Hull in ipairs(Mesh) do
-		for J, Vertex in ipairs(Hull) do
-			Mesh[I][J] = (Vertex.pos or Vertex) * NewScale
-		end
-	end
-
-	self:PhysicsInitMultiConvex(Mesh)
-	self:EnableCustomCollisions(true)
-	self:SetRenderBounds(self:GetCollisionBounds())
-	self:DrawShadow(false)
-
-	local PhysObj = self:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		PhysObj:EnableMotion(false)
-		PhysObj:Sleep()
-	end
-end
-
-function ENT:SetExtraInfo(Extra)
-	self.RealMesh = Extra.Mesh
-	self.Mesh     = table.Copy(Extra.Mesh)
-end
-
-function ENT:SetSize(Size)
-	if not isvector(Size) then return false end
-
-	return ChangeSize(self, Size)
-end
-
-function ENT:SetScale(Scale)
-	if isnumber(Scale) then Scale = Vector(Scale, Scale, Scale) end
-	if not isvector(Scale) then return false end
-
-	local Original = self:GetOriginalSize()
-	local Size = Vector(Original.x, Original.y, Original.z) * Scale
-
-	return ChangeSize(self, Size)
+	self:GetOriginalSize() -- Instantly requesting ScaleData and Scale
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
@@ -114,13 +29,141 @@ function ENT:CalcAbsolutePosition() -- Faking sync
 	return Position, Angles
 end
 
-function ENT:Think()
+function ENT:Think(...)
 	if not self.Initialized then
 		self:Initialize()
 	end
 
-	BaseClass.Think(self)
+	return BaseClass.Think(self, ...)
 end
+
+function ENT:GetOriginalSize()
+	local Data = self.ScaleData
+	local Size = Data.GetSize and Data:GetSize()
+
+	if not Size then
+		if not (Data.Type or Standby[self]) then
+			Network.Send("ACF_Scalable_Entity", self)
+		end
+
+		return
+	end
+
+	return Size
+end
+
+do -- Size and scale setter methods
+	local ModelData = ACF.ModelData
+
+	local function ApplyScale(Entity, Data, Scale)
+		local Mesh = Data:GetMesh(Scale)
+
+		Entity.Matrix = Matrix()
+		Entity.Matrix:SetScale(Scale)
+
+		Entity:EnableMatrix("RenderMultiply", Entity.Matrix)
+		Entity:PhysicsInitMultiConvex(Mesh)
+		Entity:EnableCustomCollisions(true)
+		Entity:SetRenderBounds(Entity:GetCollisionBounds())
+		Entity:DrawShadow(false)
+
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if IsValid(PhysObj) then
+			PhysObj:EnableMotion(false)
+			PhysObj:Sleep()
+		end
+
+		return PhysObj
+	end
+
+	local function ResizeEntity(Entity, Scale)
+		local Data = Entity.ScaleData
+
+		if not Scale then
+			local Path = Data.Path
+
+			-- We have updated ScaleData but no ModelData yet
+			-- We'll wait for it and instantly tell the entity to rescale
+			if Path and ModelData.IsOnStandby(Path) then
+				ModelData.QueueRefresh(Path, Entity, function()
+					local Saved = Entity.SavedScale
+
+					if not Saved then return end
+
+					Entity:SetScale(Saved)
+
+					Entity.SavedScale = nil
+				end)
+			end
+
+			return false
+		end
+
+		local PhysObj = ApplyScale(Entity, Data, Scale)
+		local Size    = Data:GetSize(Scale)
+
+		Entity.Size  = Size
+		Entity.Scale = Scale
+
+		if IsValid(PhysObj) then
+			if Entity.OnResized then Entity:OnResized(Size, Scale) end
+
+			hook.Run("ACF_OnEntityResized", Entity, PhysObj, Size, Scale)
+		end
+
+		return true
+	end
+
+	function ENT:SetSize(Size)
+		if not isvector(Size) then return false end
+
+		local Base  = self:GetOriginalSize()
+		local Scale = Base and Vector(1 / Base.x, 1 / Base.y, 1 / Base.z) * Size
+
+		return ResizeEntity(self, Scale)
+	end
+
+	function ENT:SetScale(Scale)
+		if isnumber(Scale) then
+			Scale = Vector(Scale, Scale, Scale)
+		elseif not isvector(Scale) then
+			return false
+		end
+
+		local Base = self:GetOriginalSize()
+
+		return ResizeEntity(self, Base and Scale)
+	end
+end
+
+Network.CreateSender("ACF_Scalable_Entity", function(Queue, Entity)
+	Queue[Entity:EntIndex()] = true
+	Standby[Entity] = true
+
+	Entity:CallOnRemove("ACF_Scalable_Entity", function()
+		Standby[Entity] = nil
+	end)
+end)
+
+Network.CreateReceiver("ACF_Scalable_Entity", function(Data)
+	for Index, Info in pairs(Data) do
+		local Entity = ents.GetByIndex(Index)
+
+		if not IsValid(Entity) then continue end
+
+		local Scale = Info.Scale
+
+		Standby[Entity] = nil
+
+		Entity:RemoveCallOnRemove("ACF_Scalable_Entity")
+		Entity:SetScaleData(Info.Type, Info.Path)
+
+		if not Entity:SetScale(Scale) then
+			Entity.SavedScale = Scale
+		end
+	end
+end)
 
 do -- Dealing with visual clip's bullshit
 	local EntMeta = FindMetaTable("Entity")
@@ -153,69 +196,44 @@ do -- Dealing with visual clip's bullshit
 	end
 end
 
-net.Receive("RequestSize", function()
-	local Entities = util.JSONToTable(net.ReadString())
+do -- Scalable entity related hooks
+	hook.Add("Initialize", "ACF Scalable Decals", function()
+		-- Detour decals to scale better on scaled entities
+		local DecalEx = util.DecalEx
 
-	for ID, Data in pairs(Entities) do
-		local Ent = Entity(ID)
+		util.DecalEx = function(Mat, Entity, Pos, Normal, Color, W, H, ...)
+			if Entity.IsScalable and Entity:GetSize() then -- If entity is scaled, offset decal pos
+				local Offset = Pos - Entity:GetPos()
 
-		if not IsValid(Ent) then continue end
-		if not Ent.Initialized then continue end
+				-- Thank you, Garry. Very cool.
+				local O 	 = Entity:GetOriginalSize()
+				local C 	 = Entity:GetSize()
+				local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
 
-		if Data.Size ~= Ent.Size or Data.Original ~= Ent.OriginalSize then
-			if Ent.SetExtraInfo then
-				Ent:SetExtraInfo(Data.Extra)
+				Pos = Entity:GetPos() + Offset * Scaler
+
+				local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
+
+				W = W * Max
+				H = H * Max
 			end
 
-			Ent.OriginalSize = Data.Original
-			Ent:SetSize(Data.Size)
+			DecalEx(Mat, Entity, Pos, Normal, Color, W, H, ...)
 		end
 
-		if Queued[Ent] then Queued[Ent] = nil end
-	end
-end)
+		hook.Remove("Initialize", "Scalable Entities")
+	end)
 
-hook.Add("Initialize", "ACF Scalable Decals", function()
-	-- Detour decals to scale better on scaled entities
-	local DecalEx = util.DecalEx
+	-- NOTE: Someone reported this could maybe be causing crashes. Please confirm.
+	hook.Add("PhysgunPickup", "Scalable Entity Physgun", function(_, Entity)
+		if Entity.IsScalable then return false end
+	end)
 
-	util.DecalEx = function(Mat, Ent, Pos, Normal, Color, W, H, ...)
-		if Ent.IsScalable and Ent:GetSize() then -- If entity is scaled, offset decal pos
-			local Offset = Pos - Ent:GetPos()
+	hook.Add("NetworkEntityCreated", "Scalable Entity Full Update", function(Entity)
+		if not Entity.IsScalable then return end
 
-			-- Thank you, Garry. Very cool.
-			local O 	 = Ent:GetOriginalSize()
-			local C 	 = Ent:GetSize()
-			local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
+		Entity:Restore()
 
-			Pos = Ent:GetPos() + Offset * Scaler
-
-			local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
-
-			W = W * Max
-			H = H * Max
-		end
-
-		DecalEx(Mat, Ent, Pos, Normal, Color, W, H, ...)
-	end
-
-	hook.Remove("Initialize", "Scalable Entities")
-end)
-
--- NOTE: Someone reported this could maybe be causing crashes. Please confirm.
-hook.Add("PhysgunPickup", "Scalable Ent Physgun", function(_, Ent)
-	if Ent.IsScalable then return false end
-end)
-
-hook.Add("NetworkEntityCreated", "Scalable Ent Full Update", function(Ent)
-	if Ent.IsScalable then
-		local Size    = Ent:GetSize()
-		local Scale   = Ent:GetScale()
-		local Counter = Vector(1 / Scale.x, 1 / Scale.y, 1 / Scale.z)
-
-		Ent:SetScale(Counter) -- Return to normal size
-		Ent:SetSize(Size) -- Reapply size
-
-		if Ent.OnFullUpdate then Ent:OnFullUpdate() end
-	end
-end)
+		if Entity.OnFullUpdate then Entity:OnFullUpdate() end
+	end)
+end

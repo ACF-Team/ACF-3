@@ -2,158 +2,116 @@ DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
 
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
+
 include("shared.lua")
 
-local ACF       = ACF
-local ModelData = ACF.ModelData
-local Queued    = {}
-
-local function GenerateJSON(Table)
-	local Data = {}
-
-	for Entity in pairs(Table) do
-		if not IsValid(Entity) then continue end
-
-		Data[Entity:EntIndex()] = {
-			Original = Entity:GetOriginalSize(),
-			Size = Entity:GetSize(),
-			Extra = Entity.GetExtraInfo and Entity:GetExtraInfo(),
-		}
-	end
-
-	return util.TableToJSON(Data)
-end
-
-local function SendQueued()
-	if Queued.Broadcast then
-		net.Start("RequestSize")
-			net.WriteString(GenerateJSON(Queued.Broadcast))
-		net.Broadcast()
-
-		Queued.Broadcast = nil
-	end
-
-	for Player, Data in pairs(Queued) do
-		if not IsValid(Player) then continue end
-
-		net.Start("RequestSize")
-			net.WriteString(GenerateJSON(Data))
-		net.Send(Player)
-
-		Queued[Player] = nil
-	end
-end
-
-local function NetworkSize(Entity, Player)
-	local Key = IsValid(Player) and Player or "Broadcast"
-	local Destiny = Queued[Key]
-
-	if Destiny and Destiny[Entity] then return end -- Already queued
-
-	if not Destiny then
-		Queued[Key] = {
-			[Entity] = true
-		}
-	else
-		Destiny[Entity] = true
-	end
-
-	-- Avoiding net message spam by sending all the events of a tick at once
-	if timer.Exists("ACF Network Sizes") then return end
-
-	timer.Create("ACF Network Sizes", 0, 1, SendQueued)
-end
-
-local function ChangeSize(Entity, Size)
-	local Original = Entity:GetOriginalSize()
-	local Scale = Vector(1 / Original.x, 1 / Original.y, 1 / Original.z) * Size
-
-	Entity:ApplyNewSize(Size, Scale)
-
-	-- If it's not a new entity, then network the new size
-	-- Otherwise, the entity will request its size by itself
-	if Entity.Size then NetworkSize(Entity) end
-
-	Entity.Size = Size
-	Entity.Scale = Scale
-
-	local PhysObj = Entity:GetPhysicsObject()
-
-	if IsValid(PhysObj) then
-		if Entity.OnResized then Entity:OnResized(Size, Scale) end
-
-		hook.Run("OnEntityResized", Entity, PhysObj, Size, Scale)
-	end
-
-	if Entity.UpdateExtraInfo then Entity:UpdateExtraInfo() end
-
-	return true, Size, Scale
-end
-
-function ENT:Initialize()
-	BaseClass.Initialize(self)
-
-	self:GetOriginalSize() -- Instantly saving the original size
-end
+local ACF     = ACF
+local Network = ACF.Networking
 
 function ENT:GetOriginalSize()
-	local Model   = self.ACF and self.ACF.Model or self:GetModel()
-	local Changed = self.LastModel ~= Model
+	local Data = self.ScaleData
 
-	if Changed or not self.OriginalSize then
-		self.LastModel = Model
-
-		self.OriginalSize = ModelData.GetModelSize(Model)
-		self.Mesh         = ModelData.GetModelMesh(Model)
-	end
-
-	return self.OriginalSize, Changed
+	return Data:GetSize()
 end
 
-function ENT:GetExtraInfo()
-	return {
-		Mesh = ModelData.GetModelMesh(self.LastModel)
-	}
-end
+do -- Size and scale setter methods
+	local function ApplyScale(Entity, Data, Scale)
+		local Mesh = Data:GetMesh(Scale)
 
-function ENT:ApplyNewSize(NewSize)
-	local Size   = self:GetSize() or self:GetOriginalSize()
-	local Factor = Vector(1 / Size.x, 1 / Size.y, 1 / Size.z) * NewSize
-	local Mesh   = self.Mesh
+		Entity:PhysicsInitMultiConvex(Mesh)
+		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		Entity:SetSolid(SOLID_VPHYSICS)
+		Entity:EnableCustomCollisions(true)
+		Entity:DrawShadow(false)
 
-	for I, Hull in ipairs(Mesh) do
-		for J, Vertex in ipairs(Hull) do
-			Mesh[I][J] = (Vertex.pos or Vertex) * Factor
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if IsValid(PhysObj) then
+			PhysObj:EnableMotion(false)
 		end
+
+		return PhysObj
 	end
 
-	self:PhysicsInitMultiConvex(Mesh)
-	self:SetMoveType(MOVETYPE_VPHYSICS)
-	self:SetSolid(SOLID_VPHYSICS)
-	self:EnableCustomCollisions(true)
-	self:DrawShadow(false)
+	local function ResizeEntity(Entity, Scale)
+		local Data     = Entity.ScaleData
+		local PhysObj  = ApplyScale(Entity, Data, Scale)
+		local Size     = Data:GetSize(Scale)
+		local Previous = Entity.Size
 
-	local PhysObj = self:GetPhysicsObject()
+		Entity.Size  = Size
+		Entity.Scale = Scale
 
-	if IsValid(PhysObj) then
-		PhysObj:EnableMotion(false)
+		-- If it's not a new entity, then network the new size
+		-- Otherwise, the entity will request its size by itself
+		if Previous then
+			Network.Broadcast("ACF_Scalable_Entity", Entity)
+		end
+
+		if IsValid(PhysObj) then
+			if Entity.OnResized then Entity:OnResized(Size, Scale) end
+
+			hook.Run("ACF_OnEntityResized", Entity, PhysObj, Size, Scale)
+		end
+
+		return true
+	end
+
+	function ENT:SetSize(Size)
+		if not isvector(Size) then return false end
+
+		local Base  = self:GetOriginalSize()
+		local Scale = Vector(1 / Base.x, 1 / Base.y, 1 / Base.z) * Size
+
+		return ResizeEntity(self, Scale)
+	end
+
+	function ENT:SetScale(Scale)
+		if isnumber(Scale) then
+			Scale = Vector(Scale, Scale, Scale)
+		elseif not isvector(Scale) then
+			return false
+		end
+
+		return ResizeEntity(self, Scale)
 	end
 end
 
-function ENT:SetSize(Size)
-	if not isvector(Size) then return false end
+do -- Network sender and receivers
+	Network.CreateSender("ACF_Scalable_Entity", function(Queue, Entity)
+		local Data = Entity.ScaleData
 
-	return ChangeSize(self, Size)
+		Queue[Entity:EntIndex()] = {
+			Scale = Entity:GetScale(),
+			Type  = Data.Type,
+			Path  = Data.Path,
+		}
+	end)
+
+	Network.CreateReceiver("ACF_Scalable_Entity", function(Player, Data)
+		for Index in pairs(Data) do
+			local Entity = ents.GetByIndex(Index)
+
+			if IsValid(Entity) then
+				Network.Send("ACF_Scalable_Entity", Player, Entity)
+			end
+		end
+	end)
 end
 
-function ENT:SetScale(Scale)
-	if isnumber(Scale) then Scale = Vector(Scale, Scale, Scale) end
-	if not isvector(Scale) then return false end
+do -- ENT:SetModel override
+	local EntMeta = FindMetaTable("Entity")
 
-	local Original = self:GetOriginalSize()
-	local Size = Vector(Original.x, Original.y, Original.z) * Scale
+	function ENT:SetModel(Model, ...)
+		local Data = self.ScaleData
 
-	return ChangeSize(self, Size)
+		if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then
+			self:SetScaleData("Model", Model)
+			self:Restore()
+		end
+
+		return EntMeta.SetModel(self, Model, ...)
+	end
 end
 
 do -- AdvDupe2 duped parented ammo workaround
@@ -199,13 +157,3 @@ do -- AdvDupe2 duped parented ammo workaround
 		end
 	end)
 end
-
-util.AddNetworkString("RequestSize")
-
-net.Receive("RequestSize", function(_, Player) -- A client requested the size of an entity
-	local E = net.ReadEntity()
-
-	if IsValid(E) and E.IsScalable then -- Send them the size
-		NetworkSize(E, Player)
-	end
-end)
