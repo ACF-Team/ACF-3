@@ -7,7 +7,6 @@ function Ammo:OnLoaded()
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
 	self.Blacklist = {
 		GL = true,
-		MO = true,
 		SB = true,
 		SL = true,
 	}
