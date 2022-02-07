@@ -861,7 +861,7 @@ end
 do -- Entity metatable method overriding
 	-- One of the limitation of the entity __index metamethod is that you cannot override methods that exist on it
 	-- So having, for example, a custom ENT:SetPos method for a single class was impossible since it would never be called
-	-- With this hook, all you need to do is set the ENT.UseCustomIndex flag to true and save ENT inside ENT.EntTable
+	-- With this hook, all you need to do is set the ENT.UseCustomIndex flag to true
 	-- You might still need to call the original function from the entity metatable inside yours
 	-- But this helps reduce the amount of overhead and conflicts that could happen if you just override it for all entities.
 
