@@ -865,19 +865,18 @@ do -- Entity metatable method overriding
 	-- You might still need to call the original function from the entity metatable inside yours
 	-- But this helps reduce the amount of overhead and conflicts that could happen if you just override it for all entities.
 
+	local scripted_ents = scripted_ents
+
 	hook.Add("OnEntityCreated", "ACF Custom __index Metamethod", function(Entity)
 		if not Entity.UseCustomIndex then return end
 
-		local EntTable = Entity.EntTable
-
-		if not EntTable then print("Missing EntTable field, aborting custom index", Entity) return end
-
 		-- Using the original would overwrite it on all entities
-		local Meta = table.Copy(debug.getmetatable(Entity))
-		local Old  = Meta.__index
+		local Meta  = table.Copy(debug.getmetatable(Entity))
+		local Old   = Meta.__index
+		local Class = Entity:GetClass()
 
 		function Meta:__index(Key, ...)
-			local Value = Key ~= nil and EntTable[Key]
+			local Value = scripted_ents.GetMember(Class, Key)
 
 			if Value ~= nil then return Value end
 
