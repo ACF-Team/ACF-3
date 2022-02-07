@@ -1,7 +1,7 @@
 -- Variables that should be persisted between servers
 
 -- Settings
-ACF.PersistClientData("Volume", 1)
+ACF.PersistClientData("Volume", 0.5)
 
 -- Crate size
 ACF.PersistClientData("CrateSizeX", 24)
