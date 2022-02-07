@@ -862,27 +862,32 @@ do -- Entity metatable method overriding
 	-- One of the limitation of the entity __index metamethod is that you cannot override methods that exist on it
 	-- So having, for example, a custom ENT:SetPos method for a single class was impossible since it would never be called
 	-- With this hook, all you need to do is set the ENT.UseCustomIndex flag to true
-	-- You might still need to call the original function from the entity metatable inside yours
-	-- But this helps reduce the amount of overhead and conflicts that could happen if you just override it for all entities.
+	-- You might still need to call the original function from the entity metatable inside yours.
 
-	local scripted_ents = scripted_ents
+	local EntMeta = FindMetaTable("Entity")
+	local Index   = EntMeta.__index
+	local SENTs   = scripted_ents
+	local Custom  = {}
+
+	function EntMeta:__index(Key, ...)
+		local Class = Custom[self]
+
+		if Class and Key then
+			local Value = SENTs.GetMember(Class, Key)
+
+			if Value ~= nil then return Value end
+		end
+
+		return Index(self, Key, ...)
+	end
 
 	hook.Add("OnEntityCreated", "ACF Custom __index Metamethod", function(Entity)
 		if not Entity.UseCustomIndex then return end
 
-		-- Using the original would overwrite it on all entities
-		local Meta  = table.Copy(debug.getmetatable(Entity))
-		local Old   = Meta.__index
-		local Class = Entity:GetClass()
+		Custom[Entity] = Entity:GetClass()
 
-		function Meta:__index(Key, ...)
-			local Value = scripted_ents.GetMember(Class, Key)
-
-			if Value ~= nil then return Value end
-
-			return Old(self, Key, ...)
-		end
-
-		debug.setmetatable(Entity, Meta)
+		Entity:CallOnRemove("ACF Custom Index", function()
+			Custom[Entity] = nil
+		end)
 	end)
 end
