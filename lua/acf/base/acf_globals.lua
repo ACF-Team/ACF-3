@@ -330,56 +330,25 @@ do -- CPPI
 			if not isentity(Player) and Player ~= nil then return false end
 			if not IsValid(Player) then Player = nil end
 
-			local Previous = self.CPPISteamID
-			local Current  = Player and Player:SteamID64() or nil
+			local Owner    = self.CPPIOwner
+			local Previous = IsValid(Owner) and Entities[Owner]
+			local Current  = Player and Entities[Player]
 
 			if Previous then
-				local Lookup = Entities[Previous]
-
-				if Lookup then
-					Lookup[self] = nil
-				else
-					local Players = {}
-
-					print("Congratulations, you've just run into a bug we cannot replicate.")
-					print("----------------------------------------------------")
-					print("Entity", self)
-					print("Last Owner", self.CPPIOwner or "N/A")
-					print("Last SteamID", Previous or "N/A")
-					print("New Owner", Player or "N/A")
-					print("New SteamID", Current or "N/A")
-					print("----------------------------------------------------")
-
-					for K in pairs(Entities) do
-						Players[#Players + 1] = K
-					end
-
-					print("Current players")
-					PrintTable(Players)
-					print("----------------------------------------------------")
-
-					print("Stack trace")
-					debug.Trace()
-					print("----------------------------------------------------")
-
-					print("Please report this to the ACF devs.\n")
-				end
+				Previous[self] = nil
 
 				self:RemoveCallOnRemove("CPPI_Owner")
 			end
 
+			self.CPPIOwner = Player
+
 			self:SetNWEntity("CPPIOwner", Player)
 
-			self.CPPISteamID = Current
-			self.CPPIOwner   = Player
-
 			if Current then
-				local Lookup = Entities[Current]
-
-				Lookup[self] = true
+				Current[self] = true
 
 				self:CallOnRemove("CPPI_Owner", function()
-					Lookup[self] = nil
+					Current[self] = nil
 				end)
 			end
 
@@ -416,19 +385,42 @@ do -- CPPI
 			Entity:CPPISetOwner(Player)
 		end
 
-		hook.Add("PlayerInitialSpawn", "ACF_CPPI", function(Player)
-			local SteamID = Player:SteamID64()
-			local Restore = Backup[SteamID]
+		hook.Add("PlayerAuthed", "ACF_CPPI", function(Player, SteamID)
+			if not IsValid(Player) then return end
+			if not Player:IsPlayer() then return end
 
-			Entities[SteamID] = {}
+			local Backed  = Backup[SteamID]
+			local New     = {}
 
-			if Restore then
-				for Entity in pairs(Restore) do
+			Entities[Player] = New
+
+			if Backed then
+				for Entity in pairs(Backed) do
+					local Owner = Entity:CPPIGetOwner()
+
+					if IsValid(Owner) and Owner ~= Player then continue end
+
 					Entity:CPPISetOwner(Player)
 				end
 
 				Backup[SteamID] = nil
 			end
+
+			Player:CallOnRemove("ACF_CPPI", function()
+				Entities[Player] = nil
+
+				if not next(New) then return end
+
+				local Restore = {}
+
+				for Entity in pairs(New) do
+					Entity:CPPISetOwner()
+
+					Restore[Entity] = true
+				end
+
+				Backup[SteamID] = Restore
+			end)
 		end)
 
 		hook.Add("PlayerSpawnedNPC", "ACF_CPPI", SetOwner)
@@ -439,25 +431,6 @@ do -- CPPI
 		hook.Add("PlayerSpawnedEffect", "ACF_CPPI", SetOwnerTheReturn)
 		hook.Add("PlayerSpawnedProp", "ACF_CPPI", SetOwnerTheReturn)
 		hook.Add("PlayerSpawnedRagdoll", "ACF_CPPI", SetOwnerTheReturn)
-
-		hook.Add("PlayerDisconnected", "ACF_CPPI", function(Player)
-			local SteamID = Player:SteamID64()
-			local Ents    = Entities[SteamID]
-
-			if next(Ents) then
-				local Restore = {}
-
-				for Entity in pairs(Ents) do
-					Entity:CPPISetOwner()
-
-					Restore[Entity] = true
-				end
-
-				Backup[SteamID] = Restore
-			end
-
-			Entities[SteamID] = nil
-		end)
 
 		ACF.PrintLog("Warning", "Couldn't find a CPPI-compliant prop protection addon, using fallback methods.")
 		ACF.PrintLog("Warning", "Please consider giving the README file a look in the Github repository.")
