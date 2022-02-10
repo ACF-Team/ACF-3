@@ -106,7 +106,7 @@ if SERVER then
 	end
 
 	function Ammo:OnFirst(Entity)
-		if not Entity.IsAmmoCrate then return end
+		if not Entity.IsACFAmmoCrate then return end
 
 		if not Entity.SupplyingTo then
 			Entity.SupplyingTo = {}

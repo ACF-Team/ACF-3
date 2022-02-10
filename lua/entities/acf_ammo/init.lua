@@ -230,7 +230,7 @@ do -- Spawning and Updating --------------------
 	end)
 
 	hook.Add("ACF_CanUpdateEntity", "ACF Crate Size Update", function(Entity, Data)
-		if not Entity.IsAmmoCrate then return end
+		if not Entity.IsACFAmmoCrate then return end
 		if Data.Size then return end -- The menu won't send it like this
 
 		Data.Size       = Entity:GetSize()

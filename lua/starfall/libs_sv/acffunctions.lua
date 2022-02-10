@@ -727,7 +727,7 @@ function ents_methods:acfIsEngine()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return false end
 
-	return This.IsEngine or false
+	return This.IsACFEngine or false
 end
 
 --- Returns true if the entity is an ACF gearbox
@@ -740,7 +740,7 @@ function ents_methods:acfIsGearbox()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return false end
 
-	return This.IsGearbox or false
+	return This.IsACFGearbox or false
 end
 
 --- Returns true if the entity is an ACF gun
@@ -753,7 +753,7 @@ function ents_methods:acfIsGun()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return false end
 
-	return This.IsWeapon or false
+	return This.IsACFWeapon or false
 end
 
 --- Returns true if the entity is an ACF ammo crate
@@ -766,7 +766,7 @@ function ents_methods:acfIsAmmo()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return false end
 
-	return This.IsAmmoCrate or false
+	return This.IsACFAmmoCrate or false
 end
 
 --- Returns true if the entity is an ACF fuel tank
@@ -779,7 +779,7 @@ function ents_methods:acfIsFuel()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return false end
 
-	return This.IsFuelTank or false
+	return This.IsACFFuelTank or false
 end
 
 --- Returns the capacity of an acf ammo crate or fuel tank

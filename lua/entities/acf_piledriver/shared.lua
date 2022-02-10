@@ -1,9 +1,9 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
-ENT.PrintName     = "ACF Piledriver"
-ENT.WireDebugName = "ACF Piledriver"
-ENT.PluralName    = "ACF Piledrivers"
-ENT.IsPiledriver  = true
+ENT.PrintName       = "ACF Piledriver"
+ENT.WireDebugName   = "ACF Piledriver"
+ENT.PluralName      = "ACF Piledrivers"
+ENT.IsACFPiledriver = true
 
 cleanup.Register("acf_piledriver")
 
