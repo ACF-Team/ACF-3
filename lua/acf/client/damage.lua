@@ -97,12 +97,16 @@ do -- Debris Effects ------------------------
 
 		Entity:SetRenderMode(RENDERMODE_TRANSCOLOR)
 		Entity:SetRenderFX(kRenderFxFadeSlow) -- NOTE: Not synced to CurTime()
+		Entity:CallOnRemove("ACF_Debris_Fade", function()
+			Entity:StopAndDestroyParticles()
+		end)
 
 		if Smoke then Smoke:StopEmission() end
 		if Ember then Ember:StopEmission() end
 
 		timer.Simple(5, function()
-			Entity:StopAndDestroyParticles()
+			if not IsValid(Entity) then return end
+
 			Entity:Remove()
 		end)
 	end
