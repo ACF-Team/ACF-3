@@ -178,7 +178,6 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local VelDiff = WheelPhys:LocalToWorldVector(WheelPhys:GetAngleVelocity()) - SelfWorld
 	local BaseRPM = VelDiff:Dot(WheelPhys:LocalToWorldVector(Link.Axis))
 
-	Link.Vel = BaseRPM
 
 	if Entity.GearRatio == 0 then return 0 end
 
@@ -193,25 +192,25 @@ local function ActWheel(Link, Wheel, Torque, DeltaTime)
 	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+	local ForwardTorque =  -Torque * 1.5
 
-	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
+	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg( ForwardTorque ) * DeltaTime, -500000, 500000))
 end
 
-local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
+local function BrakeWheel(self, Link, Wheel, Brake, DeltaTime)
 	local Phys = Wheel:GetPhysicsObject()
 
 	if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-
 	local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-	local Velocity = Phys:GetVelocity():Length()
-	local BrakeMult = Link.Vel * Brake
+	local WheelInertia = Phys:GetInertia():Dot(TorqueAxis)
+	local WheelAngVel = Phys:LocalToWorldVector(Phys:GetAngleVelocity())
+	local Stabilizer =  -WheelInertia*WheelAngVel  
+	local BrakeR = (Brake)/100 --Ratio so that we can multiply
+	local BrakeTorque = BrakeR  * Stabilizer * (self.TotalMass/1000)--Mass Multiplier to help heavy vehicles brake
 
-	-- TODO: Add a proper method to deal with parking brakes
-	if Velocity < 1 then
-		BrakeMult = BrakeMult * (1 - Velocity)
-	end
-
-	Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
+	
+	
+	Phys:ApplyTorqueCenter(BrakeTorque)
 end
 
 local function SetCanApplyBrakes(Gearbox)
@@ -448,6 +447,7 @@ do -- Spawn and Update functions
 		Gearbox.LastActive     = 0
 		Gearbox.LClutch        = 1
 		Gearbox.RClutch        = 1
+		Gearbox.TotalMass	   = 1
 		Gearbox.DataStore      = ACF.GetEntityArguments("acf_gearbox")
 
 		UpdateGearbox(Gearbox, Data, Class, GearboxData)
@@ -476,6 +476,7 @@ do -- Spawn and Update functions
 			if IsValid(Gearbox) then
 				CheckRopes(Gearbox, "GearboxOut")
 				CheckRopes(Gearbox, "Wheels")
+				Gearbox:CalcMass()
 			else
 				timer.Remove("ACF Engine Clock " .. Gearbox:EntIndex())
 			end
@@ -593,7 +594,7 @@ do -- Spawn and Update functions
 				Feedback = Text:format(Count, Total)
 			end
 		end
-
+		
 		self:UpdateOverlay(true)
 
 		net.Start("ACF_UpdateEntity")
@@ -607,14 +608,30 @@ end
 --===============================================================================================--
 -- Meta Funcs
 --===============================================================================================--
+function ENT:CalcMass()
+	local TotalMass = 0
+	local Physical, Parented = ACF_GetEnts(self)
 
+	for K in pairs(Physical) do
+		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
+
+		if IsValid(Phys) then
+			local Mass = Phys:GetMass()
+
+			TotalMass = TotalMass + Mass
+		end
+	end
+
+	self.TotalMass = TotalMass
+end
 function ENT:Enable()
 	if self.Automatic then
 		self:ChangeDrive(self.OldGear)
 	else
 		self:ChangeGear(self.OldGear)
 	end
-
+	
+	
 	self.OldGear = nil
 
 	self:UpdateOverlay()
@@ -704,8 +721,8 @@ ACF.AddInputAction("acf_gearbox", "Right Clutch", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
-	Entity.LBrake = Clamp(Value, 0, 100)
-	Entity.RBrake = Clamp(Value, 0, 100)
+	Entity.LBrake = Clamp(Value, 0, 200)
+	Entity.RBrake = Clamp(Value, 0, 200)
 
 	SetCanApplyBrakes(Entity)
 end)
@@ -713,7 +730,7 @@ end)
 ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
 	if not Entity.DualClutch then return end
 
-	Entity.LBrake = Clamp(Value, 0, 100)
+	Entity.LBrake = Clamp(Value, 0, 200)
 
 	SetCanApplyBrakes(Entity)
 end)
@@ -721,7 +738,7 @@ end)
 ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
 	if not Entity.DualClutch then return end
 
-	Entity.RBrake = Clamp(Value, 0, 100)
+	Entity.RBrake = Clamp(Value, 0, 200)
 
 	SetCanApplyBrakes(Entity)
 end)
@@ -867,6 +884,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	return self.TorqueOutput
 end
 
+
 function ENT:ApplyBrakes() -- This is just for brakes
 	if self.Disabled then return end -- Illegal brakes man
 	if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
@@ -875,13 +893,13 @@ function ENT:ApplyBrakes() -- This is just for brakes
 	local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 	local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 	local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
-
+	
 	for Wheel, Link in pairs(self.Wheels) do
 		local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 
 		if Brake > 0 then -- regular ol braking
 			CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
-			BrakeWheel(Link, Wheel, Brake, DeltaTime)
+			BrakeWheel(self, Link, Wheel, Brake, DeltaTime)
 		end
 	end
 
