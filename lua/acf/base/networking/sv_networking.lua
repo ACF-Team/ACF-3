@@ -1,10 +1,12 @@
-local ACF      = ACF
-local Network  = ACF.Networking
-local Sender   = Network.Sender
-local Receiver = Network.Receiver
-local ToJSON   = util.TableToJSON
-local ToTable  = util.JSONToTable
-local Messages = {}
+local ACF        = ACF
+local Network    = ACF.Networking
+local Sender     = Network.Sender
+local Receiver   = Network.Receiver
+local ToJSON     = util.TableToJSON
+local ToTable    = util.JSONToTable
+local Compress   = util.Compress
+local Decompress = util.Decompress
+local Messages   = {}
 local IsQueued
 
 util.AddNetworkString("ACF_Networking")
@@ -26,8 +28,11 @@ local function SendMessages()
 	local All = Messages.All
 
 	if All and next(All) then
+		local Compressed = Compress(ToJSON(All))
+
 		net.Start("ACF_Networking")
-			net.WriteString(ToJSON(All))
+			net.WriteUInt(#Compressed, 16)
+			net.WriteData(Compressed)
 		net.Broadcast()
 
 		Messages.All = nil
@@ -35,8 +40,11 @@ local function SendMessages()
 
 	if next(Messages) then
 		for Target, Data in pairs(Messages) do
+			local Compressed = Compress(ToJSON(Data))
+
 			net.Start("ACF_Networking")
-				net.WriteString(ToJSON(Data))
+				net.WriteUInt(#Compressed, 16)
+				net.WriteData(Compressed)
 			net.Send(Target)
 
 			Messages[Target] = nil
@@ -80,7 +88,9 @@ function Network.Send(Name, Player, ...)
 end
 
 net.Receive("ACF_Networking", function(_, Player)
-	local Message = ToTable(net.ReadString())
+	local Bytes   = net.ReadUInt(16)
+	local String  = Decompress(net.ReadData(Bytes))
+	local Message = ToTable(String)
 
 	for Name, Data in pairs(Message) do
 		local Handler = Receiver[Name]
