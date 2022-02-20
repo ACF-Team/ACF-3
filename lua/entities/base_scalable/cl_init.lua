@@ -11,7 +11,11 @@ function ENT:Initialize()
 
 	self.Initialized = true
 
-	self:GetOriginalSize() -- Instantly requesting ScaleData and Scale
+	-- Instantly requesting ScaleData and Scale
+	if not Standby[self] then
+		print("Requesting on Initialize", self)
+		Network.Send("ACF_Scalable_Entity", self)
+	end
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
@@ -43,6 +47,7 @@ function ENT:GetOriginalSize()
 
 	if not Size then
 		if not (Data.Type or Standby[self]) then
+			print("Requesting on GetOriginalSize", self)
 			Network.Send("ACF_Scalable_Entity", self)
 		end
 
@@ -232,6 +237,7 @@ do -- Scalable entity related hooks
 	hook.Add("NetworkEntityCreated", "Scalable Entity Full Update", function(Entity)
 		if not Entity.IsScalable then return end
 
+		print("Restoring entity", Entity)
 		Entity:Restore()
 
 		if Entity.OnFullUpdate then Entity:OnFullUpdate() end
