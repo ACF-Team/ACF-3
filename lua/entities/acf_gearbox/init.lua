@@ -676,7 +676,7 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Driver: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
+	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
