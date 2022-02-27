@@ -92,7 +92,7 @@ do -- Network sender and receivers
 		for Index in pairs(Data) do
 			local Entity = ents.GetByIndex(Index)
 
-			if IsValid(Entity) then
+			if IsValid(Entity) and Entity.IsScalable then
 				Network.Send("ACF_Scalable_Entity", Player, Entity)
 			end
 		end

@@ -154,6 +154,7 @@ Network.CreateReceiver("ACF_Scalable_Entity", function(Data)
 		local Entity = ents.GetByIndex(Index)
 
 		if not IsValid(Entity) then continue end
+		if not Entity.IsScalable then continue end
 
 		local Scale = Info.Scale
 
