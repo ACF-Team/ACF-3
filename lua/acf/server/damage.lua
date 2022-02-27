@@ -511,9 +511,12 @@ do -- Deal Damage ---------------------------
 	end)
 
 	Network.CreateSender("ACF_Damage", function(Queue, Entity)
-		local Index = Entity:EntIndex()
+		local Value = math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 
-		Queue[Index] = Entity.ACF.Health / Entity.ACF.MaxHealth
+		if Value == 0 then return end
+		if Value ~= Value then return end
+
+		Queue[Entity:EntIndex()] = Value
 	end)
 end -----------------------------------------
 
