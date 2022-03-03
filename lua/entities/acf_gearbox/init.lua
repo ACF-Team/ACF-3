@@ -881,7 +881,6 @@ do -- Braking ------------------------------------------
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 		-- Wheel inertia as seen by the torque axis
 		local AxisInertia = Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis)
-		local Velocity = Phys:GetVelocity():Length()
 		local BrakeMult = sign(Link.Vel) * ACF.BrakeTorque * Brake
 
 		local MaxBrake = math.abs(Link.Vel * 100 * AxisInertia * DeltaTime)
