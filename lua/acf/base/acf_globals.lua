@@ -29,7 +29,8 @@ do -- ACF global vars
 	ACF.MinimumArmor       = 1 -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor       = 5000 -- Maximum possible armor that can be given to an entity
 	ACF.KillIconColor      = Color(200, 200, 48)
-	ACF.BrakeTorque        = 50000
+	ACF.BrakeTorque        = 2000
+	ACF.MaxBrakeVel        = 4000 -- Angular velocity at which the brakes apply at max power
 
 	ACF.GunsCanFire        = true
 	ACF.GunsCanSmoke       = true

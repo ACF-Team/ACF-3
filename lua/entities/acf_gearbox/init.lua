@@ -880,11 +880,12 @@ do -- Braking ------------------------------------------
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 		-- Wheel inertia as seen by the torque axis
-		local AxisInertia = Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis)
-		local BrakeMult = sign(Link.Vel) * ACF.BrakeTorque * Brake
+		local AxisInertia = math.abs(Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis))
+		local ClampedVel = (Clamp(Link.Vel, -ACF.MaxBrakeVel, ACF.MaxBrakeVel) / ACF.MaxBrakeVel)
+		local BrakeMult = ClampedVel * ACF.BrakeTorque * Brake * AxisInertia
 
-		local MaxBrake = math.abs(Link.Vel * 100 * AxisInertia * DeltaTime)
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(-BrakeMult * DeltaTime, -MaxBrake, MaxBrake))
+		local MaxBrake = math.abs(Link.Vel) * 100 * AxisInertia
+		Phys:ApplyTorqueCenter(TorqueAxis * DeltaTime * Clamp(-BrakeMult, -MaxBrake, MaxBrake))
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
