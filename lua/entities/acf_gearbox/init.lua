@@ -869,21 +869,22 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
+	local function sign(number)
+		return number > 0 and 1 or (number == 0 and 0 or -1)
+	end
+
 	local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-		local Velocity = Phys:GetVelocity():Length()
-		local BrakeMult = Link.Vel * Brake
+		-- Wheel inertia as seen by the torque axis
+		local AxisInertia = Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis)
+		local BrakeMult = sign(Link.Vel) * ACF.BrakeTorque * Brake
 
-		-- TODO: Add a proper method to deal with parking brakes
-		if Velocity < 1 then
-			BrakeMult = BrakeMult * (1 - Velocity)
-		end
-
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(math.deg(-BrakeMult) * DeltaTime, -500000, 500000))
+		local MaxBrake = math.abs(Link.Vel * 100 * AxisInertia * DeltaTime)
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(-BrakeMult * DeltaTime, -MaxBrake, MaxBrake))
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
