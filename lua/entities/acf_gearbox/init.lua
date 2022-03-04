@@ -869,10 +869,6 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
-	local function sign(number)
-		return number > 0 and 1 or (number == 0 and 0 or -1)
-	end
-
 	local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
 		local Phys = Wheel:GetPhysicsObject()
 
