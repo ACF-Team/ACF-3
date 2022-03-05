@@ -875,13 +875,11 @@ do -- Braking ------------------------------------------
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-		-- Wheel inertia as seen by the torque axis
-		local AxisInertia = math.abs(Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis))
-		local ClampedVel = (Clamp(Link.Vel, -ACF.MaxBrakeVel, ACF.MaxBrakeVel) / ACF.MaxBrakeVel)
-		local BrakeMult = ClampedVel * ACF.BrakeTorque * Brake * AxisInertia
+		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
+		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
+		local BrakeMult = Clamp(Link.Vel, -1, 1) * ACF.BrakeTorque * Brake * AxisInertia
 
-		local MaxBrake = math.abs(Link.Vel) * 100 * AxisInertia
-		Phys:ApplyTorqueCenter(TorqueAxis * DeltaTime * Clamp(-BrakeMult, -MaxBrake, MaxBrake))
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(-BrakeMult * DeltaTime, -MaxBrake, MaxBrake))
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
