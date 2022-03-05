@@ -5,6 +5,8 @@ local Network   = ACF.Networking
 
 do -- Pointer entity creation
 	local function Create()
+		if IsValid(ModelData.Entity) then return end -- No need to create it if it already exists
+
 		local Entity = ents.Create("base_entity")
 
 		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
@@ -21,7 +23,13 @@ do -- Pointer entity creation
 		Entity:Spawn()
 
 		Entity:AddEFlags(EFL_FORCE_CHECK_TRANSMIT)
-		Entity:CallOnRemove("ACF_ModelData", Create)
+		Entity:CallOnRemove("ACF_ModelData", function()
+			hook.Add("Think", "ACF_ModelData_Entity", function()
+				Create()
+
+				hook.Remove("Think", "ACF_ModelData_Entity")
+			end)
+		end)
 
 		Network.Broadcast("ACF_ModelData_Entity", Entity)
 
