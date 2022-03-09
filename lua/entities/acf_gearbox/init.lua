@@ -880,21 +880,15 @@ do -- Braking ------------------------------------------
 		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
 
 		-- Compensate for the deviation between the expected and actual change in angular velocity
-		local BrakeError = Link.ExpectedVel - Link.Vel -- Relative angular velocity error
-		local PhaseOut = Clamp(0.01 * (math.abs(Link.Vel) - 30), 0, 1) -- Phases out the extra brakes at lower speeds
+		local BrakeError = math.abs(Link.ExpectedVel - Link.Vel)
+		BrakeError = BrakeError - Clamp(BrakeError, -100, 100) -- Phases out the extra brakes at low velocity errors for stability
 		Link.ExtraBrake = BrakeError * AxisInertia
 
 		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake - Link.ExtraBrake
+		local BrakeMult = Clamp(Link.Vel, -1, 1) * (Brake * 0.01 * MaxBrake + Link.ExtraBrake)
 		Link.ExpectedVel = Link.Vel - BrakeMult / AxisInertia -- Velocity to expect considering the brakes applied
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
-
-		print("Link.Vel: " .. Link.Vel)
-		print("BrakeError: " .. BrakeError)
-		print("Link.ExtraBrake: " .. Link.ExtraBrake)
-		print("Link.ExpectedVel: " .. Link.ExpectedVel)
-		print("======================")
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
