@@ -873,13 +873,27 @@ do -- Braking ------------------------------------------
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+		if not Link.ExtraBrake then Link.ExtraBrake = 0 end
+		if not Link.ExpectedVel then Link.ExpectedVel = 0 end
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
-		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = Clamp(Link.Vel, -1, 1) * ACF.BrakeTorque * Brake * AxisInertia
 
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(-BrakeMult * DeltaTime, -MaxBrake, MaxBrake))
+		-- Compensate for the deviation between the expected and actual change in angular velocity
+		local BrakeError = Link.ExpectedVel - Link.Vel -- Relative angular velocity error
+		Link.ExtraBrake = 0.8 * Link.ExtraBrake + 0.2 * BrakeError * AxisInertia -- Low pass filter to help with spazz
+
+		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
+		local BrakeMult = Clamp(Link.Vel, -1, 1) * (Brake * 0.01 * MaxBrake + Link.ExtraBrake)
+		Link.ExpectedVel = Link.Vel - BrakeMult / AxisInertia -- Velocity to expect considering the brakes applied
+
+		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
+
+		print("Link.Vel: " .. Link.Vel)
+		print("BrakeError: " .. BrakeError)
+		print("Link.ExtraBrake: " .. Link.ExtraBrake)
+		print("Link.ExpectedVel: " .. Link.ExpectedVel)
+		print("======================")
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
