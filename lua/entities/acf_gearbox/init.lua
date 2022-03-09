@@ -881,10 +881,11 @@ do -- Braking ------------------------------------------
 
 		-- Compensate for the deviation between the expected and actual change in angular velocity
 		local BrakeError = Link.ExpectedVel - Link.Vel -- Relative angular velocity error
-		Link.ExtraBrake = 0.8 * Link.ExtraBrake + 0.2 * BrakeError * AxisInertia -- Low pass filter to help with spazz
+		local PhaseOut = Clamp(0.01 * (math.abs(Link.Vel) - 30), 0, 1) -- Phases out the extra brakes at lower speeds
+		Link.ExtraBrake = BrakeError * AxisInertia
 
 		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = Clamp(Link.Vel, -1, 1) * (Brake * 0.01 * MaxBrake + Link.ExtraBrake)
+		local BrakeMult = Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake - Link.ExtraBrake
 		Link.ExpectedVel = Link.Vel - BrakeMult / AxisInertia -- Velocity to expect considering the brakes applied
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
