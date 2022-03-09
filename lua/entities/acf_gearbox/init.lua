@@ -869,7 +869,7 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
-	local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
+	local function BrakeWheel(Link, Wheel, Brake)
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
