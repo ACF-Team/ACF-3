@@ -879,7 +879,6 @@ do -- Braking ------------------------------------------
 
 		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
 		local BrakeMult = 0.9 * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
-		Link.ExpectedVel = Link.Vel - BrakeMult / AxisInertia -- Velocity to expect considering the brakes applied
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
 	end
