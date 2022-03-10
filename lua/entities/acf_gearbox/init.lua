@@ -873,19 +873,12 @@ do -- Braking ------------------------------------------
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-		if not Link.ExtraBrake then Link.ExtraBrake = 0 end
-		if not Link.ExpectedVel then Link.ExpectedVel = 0 end
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
 
-		-- Compensate for the deviation between the expected and actual change in angular velocity
-		local BrakeError = math.abs(Link.ExpectedVel - Link.Vel)
-		BrakeError = BrakeError - Clamp(BrakeError, -100, 100) -- Phases out the extra brakes at low velocity errors for stability
-		Link.ExtraBrake = BrakeError * AxisInertia
-
 		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = 0.9 * Clamp(Link.Vel, -1, 1) * (Brake * 0.01 * MaxBrake + Link.ExtraBrake)
+		local BrakeMult = 0.9 * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
 		Link.ExpectedVel = Link.Vel - BrakeMult / AxisInertia -- Velocity to expect considering the brakes applied
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
