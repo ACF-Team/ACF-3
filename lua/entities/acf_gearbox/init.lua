@@ -869,22 +869,18 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
-	local function sign(number)
-		return number > 0 and 1 or (number == 0 and 0 or -1)
-	end
-
-	local function BrakeWheel(Link, Wheel, Brake, DeltaTime)
+	local function BrakeWheel(Link, Wheel, Brake)
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-		-- Wheel inertia as seen by the torque axis
-		local AxisInertia = Phys:LocalToWorldVector(Phys:GetInertia()):Dot(TorqueAxis)
-		local BrakeMult = sign(Link.Vel) * ACF.BrakeTorque * Brake
+		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
 
-		local MaxBrake = math.abs(Link.Vel * 100 * AxisInertia * DeltaTime)
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(-BrakeMult * DeltaTime, -MaxBrake, MaxBrake))
+		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
+		local BrakeMult = 0.9 * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
+
+		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
