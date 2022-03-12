@@ -402,7 +402,10 @@ end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
 	local function CookoffCrate(Entity)
-		if HookRun("ACF_AmmoCanCookOff", Entity) == false then return Entity:Detonate() end
+		if HookRun("ACF_AmmoCanCookOff", Entity) == false then
+			Entity:Detonate()
+			return
+		end
 
 		if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
 			Entity:Detonate()
@@ -497,7 +500,11 @@ do -- ACF Activation and Damage -----------------
 	end
 
 	function ENT:Detonate()
-		if HookRun("ACF_AmmoExplode", self) == false then return end
+		if HookRun("ACF_AmmoExplode", self) == false then
+			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
+			self:Remove()
+			return
+		end
 		if not self.Damaged then return end
 
 		self.Exploding = true
