@@ -402,6 +402,8 @@ end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
 	local function CookoffCrate(Entity)
+		if HookRun("ACF_AmmoCanCookOff", Entity) == false then return Entity:Detonate() end
+
 		if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
 			Entity:Detonate()
 		elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
@@ -460,8 +462,6 @@ do -- ACF Activation and Damage -----------------
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
 		if HitRes.Kill then
-			if HookRun("ACF_AmmoExplode", self, self.BulletData) == false then return HitRes end
-
 			local Inflictor = Bullet.Owner
 
 			if IsValid(Inflictor) and Inflictor:IsPlayer() then
@@ -497,6 +497,7 @@ do -- ACF Activation and Damage -----------------
 	end
 
 	function ENT:Detonate()
+		if HookRun("ACF_AmmoExplode", self) == false then return end
 		if not self.Damaged then return end
 
 		self.Exploding = true
