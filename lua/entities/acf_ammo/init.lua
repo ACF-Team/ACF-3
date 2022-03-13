@@ -402,12 +402,11 @@ end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
 	local function CookoffCrate(Entity)
-		if HookRun("ACF_AmmoCanCookOff", Entity) == false then
-			Entity:Detonate()
-			return
-		end
-
 		if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
+			timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
+
+			Entity.Damaged = nil
+
 			Entity:Detonate()
 		elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
 			local BulletData = Entity.BulletData
@@ -464,9 +463,9 @@ do -- ACF Activation and Damage -----------------
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
-		if HitRes.Kill then
-			local Inflictor = Bullet.Owner
+		local Inflictor = Bullet.Owner
 
+		if HitRes.Kill then
 			if IsValid(Inflictor) and Inflictor:IsPlayer() then
 				self.Inflictor = Inflictor
 			end
@@ -483,34 +482,32 @@ do -- ACF Activation and Damage -----------------
 
 		local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
-		if (Ratio * self.Capacity / self.Ammo) > math.Rand(0, 1) then
+		if (Ratio * self.Capacity / self.Ammo) > math.random() then
 			self.Inflictor = Inflictor
-			self.Damaged = ACF.CurTime + (5 - Ratio * 3)
 
-			local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
+			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
+				self.Damaged = ACF.CurTime + (5 - Ratio * 3)
 
-			TimerCreate("ACF Crate Cookoff " .. self:EntIndex(), Interval, 0, function()
-				if not IsValid(self) then return end
+				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 
-				CookoffCrate(self)
-			end)
+				TimerCreate("ACF Crate Cookoff " .. self:EntIndex(), Interval, 0, function()
+					if not IsValid(self) then return end
+
+					CookoffCrate(self)
+				end)
+			else
+				self:Detonate()
+			end
 		end
 
 		return HitRes
 	end
 
 	function ENT:Detonate()
-		if HookRun("ACF_AmmoExplode", self) == false then
-			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
-			self:Remove()
-			return
-		end
-		if not self.Damaged then return end
+		if self.Exploding then return end
+		if HookRun("ACF_AmmoExplode", self) == false then return end
 
 		self.Exploding = true
-		self.Damaged = nil -- Prevent multiple explosions
-
-		timer.Remove("ACF Crate Cookoff " .. self:EntIndex()) -- Prevent multiple explosions
 
 		local Pos           = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
 		local Filler        = self.BulletData.FillerMass or 0
@@ -518,7 +515,7 @@ do -- ACF Activation and Damage -----------------
 		local ExplosiveMass = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
 		local FragMass      = self.BulletData.ProjMass or ExplosiveMass * 0.5
 
-		ACF_KillChildProps(self, Pos, ExplosiveMass)
+		ACF.KillChildProps(self, Pos, ExplosiveMass)
 		ACF.HE(Pos, ExplosiveMass, FragMass, self.Inflictor, {self}, self)
 
 		local Effect = EffectData()
@@ -526,10 +523,10 @@ do -- ACF Activation and Damage -----------------
 			Effect:SetNormal(Vector(0, 0, -1))
 			Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
 			Effect:SetRadius(0)
-
 		util.Effect("ACF_Explosion", Effect)
 
 		constraint.RemoveAll(self)
+
 		self:Remove()
 	end
 end ---------------------------------------------
@@ -688,7 +685,12 @@ do -- Misc --------------------------------------
 			self.RoundData:OnLast(self)
 		end
 
-		self:Detonate() -- Detonate immediately if cooking off
+		-- Detonate immediately if cooking off
+		if self.Damaged then
+			timer.Remove("ACF Crate Cookoff " .. self:EntIndex()) -- Prevent multiple explosions
+
+			self:Detonate()
+		end
 
 		for K in pairs(self.Weapons) do -- Unlink weapons
 			self:Unlink(K)
