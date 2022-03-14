@@ -216,11 +216,11 @@ do -- Spawn and Update functions -----------------------
 		if Entity.DualClutch then
 			List[Count + 1] = "Left Clutch (The amount of power allowed through the left side, inversely)"
 			List[Count + 2] = "Right Clutch (The amount of power allowed through the right side, inversely)"
-			List[Count + 3] = "Left Brake (The amount of braking (0-10000) to apply to the left side)"
-			List[Count + 4] = "Right Brake (The amount of braking (0-10000) to apply to the right side)"
+			List[Count + 3] = "Left Brake (The amount of braking to apply to the left side)"
+			List[Count + 4] = "Right Brake (The amount of braking to apply to the right side)"
 		else
 			List[Count + 1] = "Clutch (The amount of power to allow through the gearbox, inversely)"
-			List[Count + 2] = "Brake (The amount of braking (0-10000) to apply to any wheels attached)"
+			List[Count + 2] = "Brake (The amount of braking to apply to any wheels attached)"
 		end
 	end)
 	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)
