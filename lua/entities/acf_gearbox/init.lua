@@ -216,11 +216,11 @@ do -- Spawn and Update functions -----------------------
 		if Entity.DualClutch then
 			List[Count + 1] = "Left Clutch (The amount of power allowed through the left side, inversely)"
 			List[Count + 2] = "Right Clutch (The amount of power allowed through the right side, inversely)"
-			List[Count + 3] = "Left Brake (The amount of braking to apply to the left side)"
-			List[Count + 4] = "Right Brake (The amount of braking to apply to the right side)"
+			List[Count + 3] = "Left Brake (The amount of braking (0-10000) to apply to the left side)"
+			List[Count + 4] = "Right Brake (The amount of braking (0-10000) to apply to the right side)"
 		else
 			List[Count + 1] = "Clutch (The amount of power to allow through the gearbox, inversely)"
-			List[Count + 2] = "Brake (The amount of braking to apply to any wheels attached)"
+			List[Count + 2] = "Brake (The amount of braking (0-10000) to apply to any wheels attached)"
 		end
 	end)
 	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)
@@ -488,8 +488,8 @@ do -- Inputs -------------------------------------------
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
-		Entity.LBrake = Clamp(Value, 0, 100)
-		Entity.RBrake = Clamp(Value, 0, 100)
+		Entity.LBrake = Clamp(Value, 0, 10000)
+		Entity.RBrake = Clamp(Value, 0, 10000)
 
 		SetCanApplyBrakes(Entity)
 	end)
@@ -497,7 +497,7 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
 		if not Entity.DualClutch then return end
 
-		Entity.LBrake = Clamp(Value, 0, 100)
+		Entity.LBrake = Clamp(Value, 0, 10000)
 
 		SetCanApplyBrakes(Entity)
 	end)
@@ -505,7 +505,7 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
 		if not Entity.DualClutch then return end
 
-		Entity.RBrake = Clamp(Value, 0, 100)
+		Entity.RBrake = Clamp(Value, 0, 10000)
 
 		SetCanApplyBrakes(Entity)
 	end)
@@ -873,12 +873,22 @@ do -- Braking ------------------------------------------
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+		if not Link.LastVel then Link.LastVel = 0 end
+		if not Link.AntiSpazz then Link.AntiSpazz = 0 end
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
 		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
 
+		local AntiSpazz = 0.9
+		if Brake > 100 then
+			local Overshot = math.abs(Link.LastVel - Link.Vel) > math.abs(Link.LastVel) -- Overshot the brakes last tick?
+			local Rate = Overshot and 0.2 or 0.002 -- If we overshot, cut back agressively, if we didn't, add more brakes slowly
+			Link.AntiSpazz = (1 - Rate) * Link.AntiSpazz + (Overshot and 0 or Rate) -- Low pass filter on the antispazz
+			AntiSpazz = math.min(Link.AntiSpazz * 10000 / Brake, 1) -- Anti-spazz relative to brake power
+		end
 		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = 0.9 * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
+		local BrakeMult = AntiSpazz * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
+		Link.LastVel = Link.Vel
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
 	end
