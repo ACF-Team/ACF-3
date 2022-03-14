@@ -300,7 +300,6 @@ if SERVER then
 
 			-- If the target is explosive and the armor is penetrated, detonate
 			if Ent.Detonate then
-				Ent.Damaged = true
 				Ent:Detonate()
 			end
 

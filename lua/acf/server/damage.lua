@@ -604,10 +604,8 @@ do -- Remove Props ------------------------------
 		-- explode stuff last, so we don't re-process all that junk again in a new explosion
 		if next(Explosives) then
 			for Ent in pairs(Explosives) do
-				if Ent.Exploding then continue end
-
-				Ent.Exploding = true
 				Ent.Inflictor = Entity.Inflictor
+
 				Ent:Detonate()
 			end
 		end
