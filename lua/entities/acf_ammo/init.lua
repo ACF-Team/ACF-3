@@ -145,7 +145,7 @@ do -- Spawning and Updating --------------------
 		end
 
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
-		Entity.ShortName  = ShortName or WeaponShort .. Ammo.ID
+		Entity.ShortName  = ShortName or WeaponShort .. " " .. Ammo.ID
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
 		Entity.Class      = Class.ID -- Needed for custom killicons
