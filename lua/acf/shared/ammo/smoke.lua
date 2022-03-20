@@ -19,11 +19,11 @@ function Ammo:GetDisplayData(Data)
 	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * 39.37) * 43.4216, 350)
 	local Display  = {
 		SMFiller    = SMFiller,
-		SMLife      = math.Round(20 + SMFiller * 0.25, 2),
+		SMLife      = math.Round(10 + SMFiller * 0.25, 2),
 		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * 0.0254, 2),
 		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * 0.0254, 2),
 		WPFiller    = WPFiller,
-		WPLife      = math.Round(6 + WPFiller * 0.1, 2),
+		WPLife      = math.Round(5 + WPFiller * 0.1, 2),
 		WPRadiusMin = math.Round(WPFiller * 1.25 * 0.0254, 2),
 		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
 	}
@@ -185,7 +185,7 @@ else
 			return BulletData.FillerVol
 		end)
 
-		local SmokeWPRatio = Base:AddSlider("Smoke/WP Ratio", 0, 1, 2)
+		local SmokeWPRatio = Base:AddSlider("WP to Smoke Ratio", 0, 1, 2)
 		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
 		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.SmokeWPRatio = math.Round(Value, 2)
