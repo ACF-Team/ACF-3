@@ -36,7 +36,7 @@ do -- Clientside chat messages
 		local Prefix = "[ACF" .. Data.Prefix .. "] "
 		local Message = istable(...) and ... or { ... }
 
-		chat.AddText(Data.Color, Prefix, color_white, unpack(Message))
+		chat.AddText(Data.Color, Prefix, color_white, table.concat(Message))
 	end
 
 	ACF.PrintToChat = PrintToChat
