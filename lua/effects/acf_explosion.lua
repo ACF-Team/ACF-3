@@ -198,7 +198,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	Emitter:Finish()
 end
 
-function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor)
+function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor, Mult)
 	self:Core(Origin, Radius)
 
 	if not IsValid(Emitter) then return end
