@@ -145,11 +145,12 @@ if SERVER then
 	hook.Add("PlayerConnect", "ACF Workshop Content", function()
 		if ACF.WorkshopContent then
 			resource.AddWorkshop("2183798463") -- Playermodel seats
+			resource.AddWorkshop("2782411885") -- ACF-3 Content for Players
 		end
 
 		if ACF.WorkshopExtras then
-			resource.AddWorkshop("439526795") -- Hide Errors addon
-			resource.AddWorkshop("2099387099") -- ACF-3 Removed Extra Sounds
+			resource.AddWorkshop("2099387099") -- ACF-3 Removed Sounds
+			resource.AddWorkshop("2782407502") -- ACF-3 Removed Models
 		end
 
 		hook.Remove("PlayerConnect", "ACF Workshop Content")
