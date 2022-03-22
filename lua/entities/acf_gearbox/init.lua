@@ -606,6 +606,9 @@ do -- Linking ------------------------------------------
 
 		if not Link then return false, "Cannot link due to excessive driveshaft angle!" end
 
+		Link.LastVel   = 0
+		Link.AntiSpazz = 0
+
 		Gearbox.Wheels[Wheel] = Link
 
 		Wheel:CallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex(), function()
@@ -873,21 +876,23 @@ do -- Braking ------------------------------------------
 		local Phys = Wheel:GetPhysicsObject()
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-		if not Link.LastVel then Link.LastVel = 0 end
-		if not Link.AntiSpazz then Link.AntiSpazz = 0 end
 
-		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+		local TorqueAxis  = Phys:LocalToWorldVector(Link.Axis)
 		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
+		local AntiSpazz   = 0.9
 
-		local AntiSpazz = 0.9
 		if Brake > 100 then
 			local Overshot = math.abs(Link.LastVel - Link.Vel) > math.abs(Link.LastVel) -- Overshot the brakes last tick?
-			local Rate = Overshot and 0.2 or 0.002 -- If we overshot, cut back agressively, if we didn't, add more brakes slowly
+			local Rate     = Overshot and 0.2 or 0.002 -- If we overshot, cut back agressively, if we didn't, add more brakes slowly
+
 			Link.AntiSpazz = (1 - Rate) * Link.AntiSpazz + (Overshot and 0 or Rate) -- Low pass filter on the antispazz
+
 			AntiSpazz = math.min(Link.AntiSpazz * 10000 / Brake, 1) -- Anti-spazz relative to brake power
 		end
-		local MaxBrake = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
+
+		local MaxBrake  = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
 		local BrakeMult = AntiSpazz * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
+
 		Link.LastVel = Link.Vel
 
 		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
