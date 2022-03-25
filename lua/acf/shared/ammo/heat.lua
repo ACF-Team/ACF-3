@@ -95,7 +95,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
 	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.MaxProjLength or Data.ProjLength)
+	local LengthPct    = Data.ProjLength / (Data.Caliber * 7.8)
 	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
 	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
