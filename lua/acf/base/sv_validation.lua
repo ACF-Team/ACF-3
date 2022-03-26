@@ -41,11 +41,15 @@ local function IsLegal(Entity)
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 
+	local Legal, Reason, Desc, OverrideIllegalTime = hook.Run("ACF_IsLegal",Entity)
+	if not Legal then return Legal, Reason, Desc, OverrideIllegalTime end
+
 	return true
 end
 
 local function CheckLegal(Entity)
-	local Legal, Reason, Description = IsLegal(Entity)
+	local Legal, Reason, Description, OverrideIllegalTime = IsLegal(Entity)
+	if OverrideIllegalTime then OverrideIllegalTime = math.max(OverrideIllegalTime,0.1) end
 
 	if not Legal then -- Not legal
 		if Reason ~= Entity.DisableReason then -- Only complain if the reason has changed
@@ -73,7 +77,7 @@ local function CheckLegal(Entity)
 			end
 		end
 
-		TimerSimple(ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
+		TimerSimple(OverrideIllegalTime or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
 			if IsValid(Entity) and CheckLegal(Entity) then
 				Entity.Disabled	   	 = nil
 				Entity.DisableReason = nil
