@@ -204,13 +204,9 @@ function ACF.Activate(Entity, Recalc)
 	local PhysObj = Entity:GetPhysicsObject()
 
 	if not IsValid(PhysObj) then return end
+	if not Entity.ACF then Entity.ACF = {} end
 
-	if not Entity.ACF then
-		Entity.ACF = {
-			Type = GetEntityType(Entity)
-		}
-	end
-
+	Entity.ACF.Type    = GetEntityType(Entity)
 	Entity.ACF.PhysObj = PhysObj
 
 	if Entity.ACF_Activate then
