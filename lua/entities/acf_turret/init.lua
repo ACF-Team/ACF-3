@@ -47,7 +47,7 @@ do -- Spawning and updating
 	end
 
 	local function GetMass(Model)
-		return math.Round(ACF.GetModelVolume(Model) * 7.84 * ACF.gCmToKgIn)
+		return math.Round(ACF.ModelData.GetModelVolume(Model) * 7.84 * ACF.gCmToKgIn)
 	end
 
 	local function VerifyData(Data)
