@@ -1971,7 +1971,7 @@ function ents_methods:acfBulletData()
 	local This = unwrap(self)
 
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
-	if RestrictInfo(This) then return "" end
+	if RestrictInfo(This) then return {} end
 
 	local BulletData = This.BulletData
 
@@ -1980,15 +1980,17 @@ end
 
 --- Returns a table containing the missile's data
 -- @server
+-- @class function
+-- @return table The table containing the missile's data
 function ents_methods:acfMissileData()
 	CheckType(self, ents_metatable)
 
 	local This = unwrap(self)
 
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
-	if RestrictInfo(This) then return "" end
+	if RestrictInfo(This) then return {} end
 
-	if not This.IsACFMissile then return end
+	if not This.IsACFMissile then return {} end
 
 	return {
 		ShortName = This.ShortName,
