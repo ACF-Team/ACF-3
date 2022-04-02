@@ -4,6 +4,8 @@ local HookRun = hook.Run
 
 do -- KE Shove
 	function ACF.KEShove(Target, Pos, Vec, KE)
+		if not IsValid(Target) then return end
+
 		if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
 
 		local Ancestor = ACF_GetAncestor(Target)
