@@ -190,7 +190,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 end
 
-do -- ACF Parent Detouring 
+do -- ACF Parent Detouring
 	local Detours = {}
 	function ACF.AddParentDetour(Class, Variable)
 		if not Class then return end
@@ -201,23 +201,40 @@ do -- ACF Parent Detouring
 		end
 	end
 
-	hook.Add("Initialize", "ACF Parent Detour", function()
-		local EntMeta = FindMetaTable("Entity")
-		local SetParent = EntMeta.SetParent
+	-- Detouring is inherently a race condition... and we want to come in last so that our code runs first
+	hook.Add("Initialize", "ACF Parent Detouring", function()
+		timer.Simple(1, function()
+			local ENT         = FindMetaTable("Entity")
+			local SetParent   = SetParent or ENT.SetParent
+			local GetParent   = GetParent or ENT.GetParent
+			local GetChildren = GetChildren or ENT.GetChildren
 
-		function EntMeta:SetParent(Entity, ...)
-			if IsValid(Entity) then
-				local Detour = Detours[Entity:GetClass()]
+			function ENT:SetParent(parent, ...)
+				if IsValid(parent) then
+					local detour = Detours[parent:GetClass()]
 
-				if Detour then
-					Entity = Detour(Entity)
+					if detour then
+						parent = detour(parent) or parent
+					end
 				end
+
+				SetParent(self, parent, ...)
 			end
 
-			SetParent(self, Entity, ...)
-		end
+			function ENT:GetParent()
+				local parent = GetParent(self)
 
-		hook.Remove("Initialize", "ACF Parent Detour")
+				if IsValid(parent) then
+					local detour = Detours[parent:GetClass()]
+
+					if detour then
+						parent = detour(parent) or parent
+					end
+				end
+
+				return parent
+			end
+		end)
 	end)
 end
 
