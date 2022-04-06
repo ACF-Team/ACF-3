@@ -63,6 +63,11 @@ do -- Spawning and Updating
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
+
+		ACF.Activate(Entity)
+
+		Entity.ACF.Mass       = Entity:CalcMass()
+		Entity.ACF.LegalMamss = Entity.ACF.Mass
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -146,11 +151,12 @@ do -- Spawning and Updating
 		return true, "Armor plate updated successfully!"
 	end
 
-	function ENT:OnResized(Size)
-		local Volume = Size.x * Size.y * Size.z
-		local Mass   = self.ArmorClass:GetMass(Volume)
+	function ENT:CalcMass()
+		return self.ArmorClass:GetMass(self.Size.x * self.Size.y * self.Size.z)
+	end
 
-		self:GetPhysicsObject():SetMass(Mass)
+	function ENT:OnResized(Size)
+		self:GetPhysicsObject():SetMass(self:CalcMass())
 	end
 end
 
