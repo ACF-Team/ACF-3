@@ -7,6 +7,18 @@ do -- Spawning and Updating
 	local Armors = ACF.Classes.ArmorTypes
 
 	local function VerifyData(Data)
+		if not isstring(Data.ArmorType) then
+			Data.ArmorType = "RHA"
+		end
+
+		local Armor = Armors[Data.ArmorType]
+
+		if not Armor then
+			Data.ArmorType = RHA
+
+			Armor = Armors.RHA
+		end
+
 		do -- Verifying dimension values
 			if not isnumber(Data.Width) then
 				Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
@@ -22,21 +34,13 @@ do -- Spawning and Updating
 
 			Data.Width     = math.Clamp(Data.Width, 0.25, 420)
 			Data.Height    = math.Clamp(Data.Height, 0.25, 420)
-			Data.Thickness = math.Clamp(Data.Thickness, 5, 1000)
-			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness * 0.03937)
+
+			local itWeighs50kAtThisThickness = 50000 / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn)
+
+			Data.Thickness = math.min(math.Clamp(Data.Thickness, 5, 1000) * 0.03937, itWeighs50kAtThisThickness)
+			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness)
 		end
 
-		if not isstring(Data.ArmorType) then
-			Data.ArmorType = "RHA"
-		end
-
-		local Armor = Armors[Data.ArmorType]
-
-		if not Armor then
-			Data.ArmorType = RHA
-
-			Armor = Armors.RHA
-		end
 
 		do -- External verifications
 			if Armor.VerifyData then
