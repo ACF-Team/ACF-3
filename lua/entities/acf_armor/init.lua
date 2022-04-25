@@ -3,6 +3,8 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
+local ACF = ACF
+
 do -- Spawning and Updating
 	local Armors = ACF.Classes.ArmorTypes
 
@@ -35,12 +37,11 @@ do -- Spawning and Updating
 			Data.Width     = math.Clamp(Data.Width, 0.25, 420)
 			Data.Height    = math.Clamp(Data.Height, 0.25, 420)
 
-			local itWeighs50kAtThisThickness = 50000 / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn)
+			local MaxPossible = 50000 / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
 
-			Data.Thickness = math.min(math.Clamp(Data.Thickness, 5, 1000) * 0.03937, itWeighs50kAtThisThickness)
-			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness)
+			Data.Thickness = math.min(math.Clamp(Data.Thickness, 5, ACF.MaximumArmor), MaxPossible)
+			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness * ACF.MmToInch)
 		end
-
 
 		do -- External verifications
 			if Armor.VerifyData then
@@ -52,12 +53,14 @@ do -- Spawning and Updating
 	end
 
 	local function UpdatePlate(Entity, Data, Armor)
+		local Size = Data.Size
+
 		Entity.ArmorClass = Armor
 		Entity.Tensile    = Armor.Tensile
 		Entity.Density    = Armor.Density
 
 		Entity:SetNW2String("ArmorType", Armor.ID)
-		Entity:SetSize(Data.Size)
+		Entity:SetSize(Size)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -66,7 +69,7 @@ do -- Spawning and Updating
 
 		ACF.Activate(Entity)
 
-		Entity.ACF.Mass       = Entity:CalcMass()
+		Entity.ACF.Mass       = Armor:GetMass(Size.x * Size.y * Size.z)
 		Entity.ACF.LegalMamss = Entity.ACF.Mass
 	end
 
@@ -151,12 +154,10 @@ do -- Spawning and Updating
 		return true, "Armor plate updated successfully!"
 	end
 
-	function ENT:CalcMass()
-		return self.ArmorClass:GetMass(self.Size.x * self.Size.y * self.Size.z)
-	end
-
 	function ENT:OnResized(Size)
-		self:GetPhysicsObject():SetMass(self:CalcMass())
+		local Mass = self.ArmorClass:GetMass(Size.x * Size.y * Size.z)
+
+		self:GetPhysicsObject():SetMass(Mass)
 	end
 end
 
