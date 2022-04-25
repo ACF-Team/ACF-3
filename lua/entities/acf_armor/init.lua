@@ -34,13 +34,13 @@ do -- Spawning and Updating
 				Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
 			end
 
-			Data.Width     = math.Clamp(Data.Width, 0.25, 420)
-			Data.Height    = math.Clamp(Data.Height, 0.25, 420)
+			Data.Width  = math.Clamp(Data.Width, 0.25, 420)
+			Data.Height = math.Clamp(Data.Height, 0.25, 420)
 
 			local MaxPossible = 50000 / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
 
-			Data.Thickness = math.min(math.Clamp(Data.Thickness, 5, ACF.MaximumArmor), MaxPossible)
-			Data.Size      = Vector(Data.Width, Data.Height, Data.Thickness * ACF.MmToInch)
+			Data.Thickness = math.Clamp(Data.Thickness, 5, MaxPossible)
+			Data.Size      = Vector(Data.Width, Data.Height, math.min(Data.Thickness, ACF.MaximumArmor) * ACF.MmToInch)
 		end
 
 		do -- External verifications
