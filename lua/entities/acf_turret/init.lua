@@ -5,8 +5,10 @@ include("shared.lua")
 
 --------
 
-local ACF = ACF
+local ACF   = ACF
+local VEC_0 = Vector()
 
+ACF.AddParentDetour("acf_turret", "rotator")
 
 function ENT:Enable() end
 function ENT:Disable() end
@@ -15,7 +17,7 @@ do -- Spawning and updating
 	local Turrets = ACF.Classes.TurretTypes
 
 	local function CreateInputs(Entity, Data, Class)
-		local List = { "Active" }
+		local List = { "Active (Toggle the drive on or off)", "Angle (Desired angle to aim towards) [ANGLE]"}
 
 		if Class.SetupInputs then
 			Class:SetupInputs(List, Entity, Data, Class)
@@ -57,9 +59,10 @@ do -- Spawning and updating
 	local function UpdateTurret(Entity, Data, Class)
 		local Model    = Class.Model
 		local Diameter = Data.Diameter
-
+		local ratio    = Diameter / Entity:GetOriginalSize().x
 		Entity.ACF.Model = Model
-		Entity:SetScale(Diameter / Entity:GetOriginalSize().x)
+
+		Entity:SetScale(Vector(ratio, ratio, ratio * 0.25))
 
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
@@ -70,6 +73,9 @@ do -- Spawning and updating
 		Entity.EntType   = Class.Name
 		Entity.Class     = Class.Id
 		Entity.Diameter  = Diameter
+
+		Entity.desiredAngle = Entity.desiredAngle or Angle(0, 0, 0)
+		Entity.currentAngle = Entity.currentAngle or Angle(0, 0, 0)
 
 		CreateInputs(Entity, Data, Class)
 		CreateOutputs(Entity, Data, Class)
@@ -92,14 +98,20 @@ do -- Spawning and updating
 		Entity:UpdateOverlay()
 	end
 
-	function MakeACF_Turret(Player, Pos, Angle, Data)
+	function MakeACF_Turret(Player, Pos, Ang, Data)
 		VerifyData(Data)
 
 		if not Player:CheckLimit("_acf_turret") then return false end
 
-		local Entity = ents.Create("acf_turret")
-
+		local Entity  = ents.Create("acf_turret")
 		if not IsValid(Entity) then return end
+
+		local rotator = ents.Create("acf_turret_rotator")
+
+		if not IsValid(rotator) then
+			Entity:Remove()
+			return
+		end
 
 		local Class = Turrets[Data.Class]
 
@@ -108,17 +120,28 @@ do -- Spawning and updating
 
 		Entity:SetModel(Class.Model)
 		Entity:SetPlayer(Player)
-		Entity:SetAngles(Angle)
+		Entity:SetAngles(Ang)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
+
+		rotator:SetPos(Entity:GetPos())
+		rotator:SetAngles(Entity:GetAngles())
+		rotator:SetParent(Entity)
+		rotator:SetModel("models/sprops/misc/origin.mdl")
+		rotator:Spawn()
 
 		Entity.Owner     = Player -- MUST be stored on ent for PP
 		Entity.DataStore = ACF.GetEntityArguments("acf_turret")
 		Entity.ACF       = {}
 		Entity.Class     = Data.Class
 
+		Entity.rotator   = rotator
+
+		Entity.slewRate  = 0
+		Entity.slewMax   = 40 * engine.TickInterval()  -- Degrees per second
+		Entity.slewAccel = 5 * engine.TickInterval()  -- Degrees per second per second
+
 		UpdateTurret(Entity, Data, Class)
-		print("aa" .. Data.Class)
 
 		if Class.OnSpawn then
 			Class:OnSpawn(Entity, Data)
@@ -169,10 +192,58 @@ do -- Spawning and updating
 
 		return true, "Turret drive updated successfully!"
 	end
+
+	function ENT:OnRemove()
+		if IsValid(self.rotator) then
+			self.rotator:Remove()
+		end
+	end
+end
+
+do -- Wire io
+	ACF.AddInputAction("acf_turret", "Active", function(Ent, Value)
+		if not IsValid(Ent) then return end
+
+	end)
+
+	ACF.AddInputAction("acf_turret", "Angle", function(Ent, Value)
+		if not IsValid(Ent) then return end
+
+		local p, y, r = Value[1], Value[2], Value[3]
+
+		Ent.desiredAngle = Angle(p, y, r)
+	end)
+end
+
+do -- Movement
+	local function clampAngle(a, mins, maxs)
+
+	end
+
+	function ENT:Think()
+		local bearing = self.rotator:WorldToLocalAngles(self.desiredAngle).yaw -- Get the bearing (relative yaw) of the desired angle from the current angle
+
+		local sign            = bearing < 0 and -1 or 1
+		local distance        = math.abs(bearing)
+		local brakingDistance = self.slewRate^2 / self.slewAccel / 2
+
+		self.slewRate = math.Clamp(bearing, -self.slewMax, self.slewMax)
+
+		self.currentAngle = self.currentAngle + Angle(0, self.slewRate, 0)
+
+		self.rotator:SetAngles(self:LocalToWorldAngles(self.currentAngle))
+
+		self:NextThink(CurTime())
+		return true
+	end
 end
 
 do -- Overlay
 	function ENT:UpdateOverlayText()
-		return " "
+		return ""
 	end
+end
+
+function ENT:GetChildren()
+	return self.rotator:GetChildren()
 end

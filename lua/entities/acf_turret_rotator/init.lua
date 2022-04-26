@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("base_point")
+include("shared.lua")
 
 ACF.AddParentDetour("acf_turret_rotator", "turret")
 
@@ -10,4 +10,8 @@ function ENT:OnRemove()
     if IsValid(self.turret) then
         self.turret:Remove()
     end
+end
+
+function ENT:UpdateTransmitState()
+	return TRANSMIT_PVS
 end

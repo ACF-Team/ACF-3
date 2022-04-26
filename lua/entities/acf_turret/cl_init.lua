@@ -27,7 +27,7 @@ do -- Turret menu item
 		Menu:AddLabel("WARNING: EXPERIMENTAL!\nProcedural Turrets are an experimental work in progress and may cause crashes, errors, or just not work properly with all of ACF.\n\nProcedural Turrets can be prevented from spawning by setting sbox_acf_max_turrets to 0")
 
 		local ClassList = Menu:AddComboBox()
-		local SizeX     = Menu:AddSlider("Ring diameter (gmu)", 5, 96 * 2, 2)
+		local SizeX     = Menu:AddSlider("Ring diameter (gmu)", 5, 96 * 2, 0)
 
 		local ClassBase = Menu:AddCollapsible("Turret Drive Information")
 		local ClassName = ClassBase:AddTitle()
@@ -41,7 +41,7 @@ do -- Turret menu item
 
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
-
+			Print(Data)
 			ACF.SetClientData("Class", Data.ID)
 		end
 
