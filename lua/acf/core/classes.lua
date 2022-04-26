@@ -1,5 +1,7 @@
 local ACF = ACF
 
+ACF.Classes = {}
+
 do -- Basic class registration functions
 	function ACF.AddSimpleClass(ID, Destiny, Data)
 		if not ID then return end

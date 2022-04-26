@@ -1,6 +1,47 @@
 --[[
 	-- Commented out for now until this gets implemented to reduce confusion
--- This is an automated system for pod hitboxes
+
+-- This will check a vector against all of the hitboxes stored on an entity
+-- If the vector is inside a box, it will return true, the box name (organization I guess, can do an E2 function with all of this), and the hitbox itself
+-- If the entity in question does not have hitboxes, it returns false
+-- Finally, if it never hits a hitbox in its check, it also returns false
+function ACF_CheckInsideHitbox(Ent, Vec)
+	if not Ent.HitBoxes then return false end -- If theres no hitboxes, then don't worry about them
+
+	for k,v in pairs(Ent.HitBoxes) do
+		-- v is the box table
+
+		-- Need to make sure the vector is local and LEVEL with the box, otherwise WithinAABox will be wildly wrong
+		local LocalPos = WorldToLocal(Vec,Angle(0,0,0),Ent:LocalToWorld(v.Pos),Ent:LocalToWorldAngles(v.Angle))
+		local CheckHitbox = LocalPos:WithinAABox(-v.Scale / 2,v.Scale / 2)
+
+		if CheckHitbox == true then return Check,k,v end
+	end
+
+	return false
+end
+
+-- This performs ray-OBB intersection with all of the hitboxes on an entity
+-- Ray is the TOTAL ray to check with, so vec(500,0,0) to check all 500u forward
+-- It will return false if there are no hitboxes or it didn't hit anything
+-- If it hits any hitboxes, it will put them all together and return (true,HitBoxes)
+function ACF_CheckHitbox(Ent,RayStart,Ray)
+	if not Ent.HitBoxes then return false end -- Once again, cancel if there are no hitboxes
+
+	local AllHit = {}
+
+	for k,v in pairs(Ent.HitBoxes) do
+
+		local _,_,Frac = util.IntersectRayWithOBB(RayStart, Ray, Ent:LocalToWorld(v.Pos), Ent:LocalToWorldAngles(v.Angle), -v.Scale / 2, v.Scale / 2)
+
+		if Frac ~= nil then
+			AllHit[k] = v
+		end
+	end
+
+	return next(AllHit) and true or false, AllHit
+end
+
 if SERVER then util.AddNetworkString("ACF_SeatHitboxes") end
 
 -- Critical is if the player should die faster from being hit there

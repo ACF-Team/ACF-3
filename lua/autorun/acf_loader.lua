@@ -1,12 +1,12 @@
-local addonName  = "ACF" -- This is the name of the folder that gets loaded
-local globalName = "ACF" -- This is the name of the global table for the addon
+local addonFolderName      = "ACF" -- This is the name of the folder that gets loaded eg. addons\addonFolderName\lua\addonFolderName\
+local addonGlobalTableName = "ACF" -- This is the name of the global table for the addon ( _G.addonGlobalTableName )
 
 --[[
-    This script automatically loads all files under the <addonName> folder
-    A global variable is created for the addon named <globalName>
-    The first folders under addonName\ are given tables under globalName, eg. globalName.core, globalName.damage, globalName.fred
+    This script automatically loads all files under garrysmod/garrysmod/addons/addonFolderName/lua/addonFolderName/
+    All files and folders in this directory are loaded in alphabetical order EXCEPT for a "core" directory, which is loaded before the other directories
 
-    To reload the addon, run the concmd 'globalName_reload'.
+
+    To reload the addon, run the concmd 'addonGlobalTableName_reload'.
 
     Files and folders can have their realms specified by adding a suffix to the filename.
         _cl marks files and folders for CLIENTS
@@ -16,17 +16,17 @@ local globalName = "ACF" -- This is the name of the global table for the addon
     Folder structure:
 
     addons\
-        addonName\
+        addonFolderName\
             lua\
                 autorun\
                     loader.lua
-                addonName\
-                    core\
+                addonFolderName\ <--- FILES in this directory are NOT LOADED, only DIRECTORIES
+                    core\        <--- FILES in this directory are loaded FIRST
                         example_sv.lua
-                    damage\
+                    damage\      <--- ALL other DIRECTORIES are loaded AFTER in ALPHABETICAL ORDER
                         exampleFolder_cl\
                             thisFileIsSentToClients.lua
-                    ballistics\
+                    ballistics\  <--- All directories under addonFolderName have a table created for them, eg. addonGlobalTableName.ballistics
 ]]--
 
 local realms = {
@@ -63,19 +63,20 @@ local function load(path, realm)
 end
 
 local function loadAddon()
-	Msg("\n> " .. addonName .. "/\n")
+	Msg("\n> " .. addonFolderName .. "/\n")
 
-    local addonGlobal = {}; _G[addonName] = addonGlobal
-    local  _, dirs    = file.Find(addonName .. "/*", "LUA")
+    local addonGlobal = {}; _G[addonFolderName] = addonGlobal
+    local _, dirs    = file.Find(addonFolderName .. "/*", "LUA")
     local rootFolders = {}
 
-    -- Create a table underneath <addonName> for each folder under the root directory, eg. addonName.core, addonName.damage, addonName.ballistics
+    -- Create a "library" named by each folder under the addon's root directory ( _G.addonGlobalName.core, _G.addonGlobalName.menu, etc )
+    -- If there is a "core" folder load it first
     for _, folderName in ipairs(dirs) do
         addonGlobal[folderName] = {}
 
-        if folderName == "core" then -- if there is a "core" folder load it first
+        if folderName == "core" then
             MsgN(" ├──" .. folderName .. "/")
-            load(addonName .. "/" .. folderName)
+            load(addonFolderName .. "/" .. folderName)
         else
             rootFolders[#rootFolders + 1] = folderName
         end
@@ -88,11 +89,18 @@ local function loadAddon()
         local dirSnip  = string.sub(dirName, 1, 6)
         local dirRealm = realms[dirSnip] or realm or "_sh"
 
-        load(addonName .. "/" .. dirName, dirRealm)
+        load(addonFolderName .. "/" .. dirName, dirRealm)
+    end
+
+    -- Remove any libraries that weren't populated
+    for addonGlobalTableName in pairs(addonGlobal) do
+        if not next(addonGlobal[addonGlobalTableName]) then
+            addonGlobal[addonGlobalTableName] = nil
+        end
     end
 end
 
-concommand.Add(string.lower(globalName .. "_reload"), function()
+concommand.Add(string.lower(addonGlobalTableName .. "_reload"), function()
 	loadAddon()
 end)
 
