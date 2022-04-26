@@ -137,9 +137,11 @@ do -- Spawning and updating
 
 		Entity.rotator   = rotator
 
-		Entity.slewRate  = 0
-		Entity.slewMax   = 40 * engine.TickInterval()  -- Degrees per second
-		Entity.slewAccel = 5 * engine.TickInterval()  -- Degrees per second per second
+		Entity.slewRate  = 0 -- Internal value for motor speeds
+		--Entity.slewMax   = 40 * engine.TickInterval()  -- Degrees per second (Unused)
+		--Entity.slewAccel = 5 * engine.TickInterval()  -- Degrees per second per second (Unused)
+		Entity.Active	 = false -- If true, the motor is active and the turret is attempting to point to the required angle
+		-- If false, the motor slows to a stop and no aiming happens
 
 		UpdateTurret(Entity, Data, Class)
 
@@ -203,7 +205,8 @@ end
 do -- Wire io
 	ACF.AddInputAction("acf_turret", "Active", function(Ent, Value)
 		if not IsValid(Ent) then return end
-
+		Ent.Active = Value == 1 and true or false
+		print(Ent.Active)
 	end)
 
 	ACF.AddInputAction("acf_turret", "Angle", function(Ent, Value)
@@ -221,13 +224,21 @@ do -- Movement
 	end
 
 	function ENT:Think()
-		local bearing = self.rotator:WorldToLocalAngles(self.desiredAngle).yaw -- Get the bearing (relative yaw) of the desired angle from the current angle
+		local tick = engine.TickInterval()
+		local bearing = self.rotator:WorldToLocalAngles(self.desiredAngle).yaw * (self.Active and 1 or 0) -- Get the bearing (relative yaw) of the desired angle from the current angle
+		local slewMax = 72 * tick -- replace 72 with a value for total motor speed
+		local slewAccel = 1 * tick -- replace 1 with a value for motor acceleration
 
 		local sign            = bearing < 0 and -1 or 1
 		local distance        = math.abs(bearing)
-		local brakingDistance = self.slewRate^2 / self.slewAccel / 2
+		local finalAccel	  = math.Clamp(bearing / 2,-slewAccel,slewAccel) -- a somewhat successful effort at getting rid of the "vibrating" when the gun settles
+		local brakingDistance = self.slewRate^2 / math.abs(finalAccel) / 2
 
-		self.slewRate = math.Clamp(bearing, -self.slewMax, self.slewMax)
+		--self.slewRate = math.Clamp(bearing, -slewMax, slewMax) -- old calculation, kept for reference or whatever
+		if self.Active then self.slewRate = math.Clamp(self.slewRate + (math.abs(finalAccel) * ((distance + (self.slewRate * 2 * -sign)) > brakingDistance and sign or -sign)), -slewMax, slewMax)
+		elseif not self.Active and self.slewRate ~= 0 then
+			self.slewRate = self.slewRate - (math.min(slewAccel,math.abs(self.slewRate)) * (self.slewRate >= 0 and 1 or -1))
+		end
 
 		self.currentAngle = self.currentAngle + Angle(0, self.slewRate, 0)
 

@@ -41,7 +41,7 @@ do -- Turret menu item
 
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
-			Print(Data)
+			PrintTable(Data)
 			ACF.SetClientData("Class", Data.ID)
 		end
 
