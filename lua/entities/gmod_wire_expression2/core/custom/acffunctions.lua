@@ -831,7 +831,7 @@ e2function number entity:acfReloadProgress()
 	if RestrictInfo(self, this) then return 0 end
 	if not this.NextFire then return this.State == "Loaded" and 1 or 0 end
 
-	return math.Clamp(1 - (this.NextFire - ACF.CurTime) / GetReloadTime(this), 0, 1)
+	return math.Clamp(1 - (this.NextFire - ACF.clock.curTime) / GetReloadTime(this), 0, 1)
 end
 
 -- Round functions
