@@ -12,7 +12,7 @@ do -- KE Shove
 		local Phys = Ancestor:GetPhysicsObject()
 
 		if IsValid(Phys) then
-			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.CurTime then
+			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.clock.curTime then
 				ACF_CalcMassRatio(Ancestor)
 			end
 

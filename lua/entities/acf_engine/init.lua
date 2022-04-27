@@ -113,6 +113,7 @@ local TimerCreate = timer.Create
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
+local clock       = ACF.clock
 
 -- Fuel consumption is increased on competitive servers
 local function GetEfficiencyMult()
@@ -185,7 +186,7 @@ local function SetActive(Entity, Value)
 
 		Entity:CalcMassRatio()
 
-		Entity.LastThink = ACF.CurTime
+		Entity.LastThink = clock.curTime
 		Entity.Torque = Entity.PeakTorque
 		Entity.FlyRPM = Entity.IdleRPM * 1.5
 
@@ -638,7 +639,7 @@ end
 function ENT:CalcRPM()
 	if not self.Active then return end
 
-	local DeltaTime = ACF.CurTime - self.LastThink
+	local DeltaTime = clock.curTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
 
 	--calculate fuel usage
@@ -694,7 +695,7 @@ function ENT:CalcRPM()
 	end
 
 	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
-	self.LastThink = ACF.CurTime
+	self.LastThink = clock.curTime
 
 	if self.Sound then
 		local Pitch, Volume = GetPitchVolume(self)

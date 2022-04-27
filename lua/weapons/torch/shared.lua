@@ -124,11 +124,11 @@ function SWEP:Think()
 		self:SetNWFloat("MaxArmour", MaxArmor)
 	end
 
-	self:NextThink(ACF.CurTime + 0.05)
+	self:NextThink(ACF.clock.curTime + 0.05)
 end
 
 function SWEP:PrimaryAttack()
-	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+	self:SetNextPrimaryFire(ACF.clock.curTime + 0.05)
 
 	if CLIENT then return end
 
@@ -184,7 +184,7 @@ function SWEP:PrimaryAttack()
 end
 
 function SWEP:SecondaryAttack()
-	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+	self:SetNextPrimaryFire(ACF.clock.curTime + 0.05)
 
 	if CLIENT then return end
 

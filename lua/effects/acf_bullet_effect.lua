@@ -1,7 +1,8 @@
 
-local ACF = ACF
+local ACF       = ACF
+local clock     = ACF.clock
 local AmmoTypes = ACF.Classes.AmmoTypes
-local Bullets = ACF.BulletEffect
+local Bullets   = ACF.BulletEffect
 
 function EFFECT:Init(Data)
 	self.Index = Data:GetDamageType()
@@ -14,7 +15,7 @@ function EFFECT:Init(Data)
 		return
 	end
 
-	self.CreateTime = ACF.CurTime
+	self.CreateTime = clock.curTime
 
 	local CanDraw = Data:GetAttachment() > 0
 	local Bullet  = Bullets[self.Index]
@@ -72,7 +73,7 @@ function EFFECT:Init(Data)
 			Tracer     = Tracer and ParticleEmitter(Origin) or nil,
 			Color      = Tracer and Crate:GetColor() or nil,
 			Accel      = Crate:GetNW2Vector("Accel", ACF.Gravity),
-			LastThink  = ACF.CurTime,
+			LastThink  = clock.curTime,
 			Effect     = self,
 		}
 
@@ -96,7 +97,7 @@ end
 function EFFECT:Think()
 	local Bullet = Bullets[self.Index]
 
-	if Bullet and not self.Kill and self.CreateTime > ACF.CurTime - 30 then return true end
+	if Bullet and not self.Kill and self.CreateTime > clock.curTime - 30 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then

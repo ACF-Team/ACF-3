@@ -8,7 +8,6 @@ do -- ACF global vars
 	ACF.ServerData         = ACF.ServerData or {}
 	ACF.Networking         = ACF.Networking or { Sender = {}, Receiver = {} }
 	ACF.ModelData          = ACF.ModelData or { Models = {} }
-	ACF.CurTime            = CurTime()
 
 	-- General Settings
 	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
@@ -228,11 +227,6 @@ do -- Player loaded hook
 		end)
 	end
 end
-
---Stupid workaround red added to precache timescaling.
-hook.Add("Think", "Update ACF Internal Clock", function()
-	ACF.CurTime = CurTime()
-end)
 
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	ACF.Gravity.z = -Value

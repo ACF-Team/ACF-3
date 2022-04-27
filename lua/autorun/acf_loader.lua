@@ -91,13 +91,6 @@ local function loadAddon()
 
         load(addonFolderName .. "/" .. dirName, dirRealm)
     end
-
-    -- Remove any libraries that weren't populated
-    for addonGlobalTableName in pairs(addonGlobal) do
-        if not next(addonGlobal[addonGlobalTableName]) then
-            addonGlobal[addonGlobalTableName] = nil
-        end
-    end
 end
 
 concommand.Add(string.lower(addonGlobalTableName .. "_reload"), function()

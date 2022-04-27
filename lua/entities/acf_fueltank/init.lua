@@ -16,6 +16,7 @@ local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local HookRun     = hook.Run
 local Wall		  = 0.03937 --wall thickness in inches (1mm)
+local clock       = ACF.clock
 
 local function CanRefuel(Refill, Tank, Distance)
 	if Refill == Tank then return false end
@@ -316,7 +317,7 @@ function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
-		self:NextThink(ACF.CurTime + 0.1)
+		self:NextThink(clock.curTime + 0.1)
 	end
 
 	return HitRes
@@ -437,7 +438,7 @@ function ENT:Consume(Amount)
 end
 
 function ENT:Think()
-	self:NextThink(ACF.CurTime + 1)
+	self:NextThink(clock.curTime + 1)
 
 	if self.Leaking > 0 then
 		self:Consume(self.Leaking)
@@ -446,12 +447,12 @@ function ENT:Think()
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
-		self:NextThink(ACF.CurTime + 0.25)
+		self:NextThink(clock.curTime + 0.25)
 	end
 
 	--refuelling
 	if self.SupplyFuel and self:CanConsume() then
-		local DeltaTime = ACF.CurTime - self.LastThink
+		local DeltaTime = clock.curTime - self.LastThink
 		local Position = self:GetPos()
 
 		for Tank in pairs(ACF.FuelTanks) do
@@ -474,7 +475,7 @@ function ENT:Think()
 		end
 	end
 
-	self.LastThink = ACF.CurTime
+	self.LastThink = clock.curTime
 
 	return true
 end
