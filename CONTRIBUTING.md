@@ -32,7 +32,7 @@
 
 ## Do you have any questions?
 
-- You can just [join our official Discord server](https://discordapp.com/invite/shk5sc5) and contact the developers. Please consider that the response may not be immediate.
+- You can just [join our official Discord server](https://discordapp.com/invite/jgdzysxjST) and contact the developers. Please consider that the response may not be immediate.
 
 Our idea is to take full advantage of what ACF can be, only you can help to achieve this.
 

@@ -10,7 +10,7 @@ local function CreateMenu(Menu)
 		local Link = Base:AddButton("Join the Discord Server")
 
 		function Link:DoClickInternal()
-			gui.OpenURL("https://discordapp.com/invite/shk5sc5")
+			gui.OpenURL("https://discordapp.com/invite/jgdzysxjST")
 		end
 	end
 
