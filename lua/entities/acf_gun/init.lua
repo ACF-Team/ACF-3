@@ -460,7 +460,8 @@ do -- Metamethods --------------------------------
 			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity:CPPIGetOwner() ~= owner or Entity ~= self.CurrentUser then break end
+				if Entity.IsACFEntity then break end
+				if Entity:CPPIGetOwner() ~= owner then break end
 
 				self.BarrelFilter[#self.BarrelFilter + 1] = Entity
 
