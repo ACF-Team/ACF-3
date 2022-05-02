@@ -444,25 +444,30 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
-		local Trace     = util.TraceLine
-		local TraceRes  = {} -- Output for traces
-		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
+		local Trace        = util.TraceLine
+		local TraceRes     = {} -- Output for traces
+		local TraceData    = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
+		local hasAncestor  = ACF.hasAncestor
 
 		function ENT:BarrelCheck(Offset)
-			TraceData.start	 = self:LocalToWorld(Vector()) + Offset
+			local owner = self:GetPlayer()
+
+			TraceData.start	 = self:GetPos() + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
 			TraceData.filter = self.BarrelFilter
 
 			Trace(TraceData)
 
-			if TraceRes.Hit then
+			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self:GetPlayer() then
-					self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+				if Entity.IsACFEntity then break end
+				if Entity:CPPIGetOwner() ~= owner then break end
+				if not Entity:GetParent() then break end
+				if not hasAncestor(Entity, self) then break end
 
-					return self:BarrelCheck(Offset)
-				end
+				self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+				Trace(TraceData)
 			end
 
 			return TraceRes.HitPos
