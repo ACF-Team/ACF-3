@@ -206,7 +206,6 @@ do -- Wire io
 	ACF.AddInputAction("acf_turret", "Active", function(Ent, Value)
 		if not IsValid(Ent) then return end
 		Ent.Active = Value == 1 and true or false
-		print(Ent.Active)
 	end)
 
 	ACF.AddInputAction("acf_turret", "Angle", function(Ent, Value)
@@ -225,7 +224,7 @@ do -- Movement
 
 	function ENT:Think()
 		local tick = engine.TickInterval()
-		local bearing = self.rotator:WorldToLocalAngles(self.desiredAngle).yaw * (self.Active and 1 or 0) -- Get the bearing (relative yaw) of the desired angle from the current angle
+		local bearing = self.rotator:WorldToLocalAngles(self.desiredAngle).yaw -- Get the bearing (relative yaw) of the desired angle from the current angle
 		local slewMax = 72 * tick -- replace 72 with a value for total motor speed
 		local slewAccel = 1 * tick -- replace 1 with a value for motor acceleration
 
