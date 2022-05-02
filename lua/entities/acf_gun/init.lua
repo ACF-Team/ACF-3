@@ -455,14 +455,16 @@ do -- Metamethods --------------------------------
 
 			Trace(TraceData)
 
-			if TraceRes.Hit then
+			local owner = self:GetPlayer()
+
+			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity == self.CurrentUser or Entity:CPPIGetOwner() == self:GetPlayer() then
-					self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+				if Entity:CPPIGetOwner() ~= owner or Entity ~= self.CurrentUser then break end
 
-					return self:BarrelCheck(Offset)
-				end
+				self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+
+				Trace(TraceData)
 			end
 
 			return TraceRes.HitPos
