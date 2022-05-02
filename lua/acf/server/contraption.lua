@@ -44,6 +44,8 @@ function ACF.hasAncestor(ent, ancestor)
 		if parent == ancestor then
 			return true
 		end
+
+		parent = parent:GetParent()
 	end
 
 	return false
