@@ -447,14 +447,15 @@ do -- Metamethods --------------------------------
 		local Trace        = util.TraceLine
 		local TraceRes     = {} -- Output for traces
 		local TraceData    = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
-		local hasAncestor  = ACF.hasAncestor
+		--local hasAncestor  = ACF.hasAncestor
 
 		function ENT:BarrelCheck(Offset)
-			local owner = self:GetPlayer()
+			local owner  = self:GetPlayer()
+			local filter = self.BarrelFilter
 
 			TraceData.start	 = self:GetPos() + Offset
 			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
-			TraceData.filter = self.BarrelFilter
+			TraceData.filter = filter
 
 			Trace(TraceData)
 
@@ -463,10 +464,11 @@ do -- Metamethods --------------------------------
 
 				if Entity.IsACFEntity then break end
 				if Entity:CPPIGetOwner() ~= owner then break end
-				if not Entity:GetParent() then break end
-				if not hasAncestor(Entity, self) then break end
+				--if not Entity:GetParent() then break end
+				--if not hasAncestor(Entity, self) then break end
 
-				self.BarrelFilter[#self.BarrelFilter + 1] = Entity
+				filter[#filter + 1] = Entity
+
 				Trace(TraceData)
 			end
 
