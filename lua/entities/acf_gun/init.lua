@@ -461,7 +461,7 @@ do -- Metamethods --------------------------------
 			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity.IsACFEntity then break end
+				if Entity.IsACFEntity and not Entity.IsACFArmor then break end
 				if Entity:CPPIGetOwner() ~= owner then break end
 				if not Entity:GetParent() then break end
 				if not hasAncestor(Entity, self) then break end
