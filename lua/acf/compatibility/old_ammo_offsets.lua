@@ -1,3 +1,5 @@
+local ACF = ACF
+
 ACF.RegisterCrate("AmmoSmall", {
 	Size = Vector(20.44, 7.93, 13.77),
 	Offset = Vector(-0.36, -0.01, 7.01)

@@ -26,29 +26,29 @@ local addonGlobal = "ACF" -- This is the name of the global table for the addon 
 					damage\	  <--- ALL other DIRECTORIES are loaded AFTER in ALPHABETICAL ORDER
 						exampleFolder_cl\
 							thisFileIsSentToClients.lua
-					ballistics\  <--- All directories under addonFolder have a table created for them, eg. addonGlobal.ballistics
+					ballistics\  <--- All directories under addonFolder have a table created for them, eg. addonGlobal.Ballistics
 ]]--
 
 local table   = table
 local pattern = "_([cs][lvh])[.lua]*$"
 
 local realms = {
-	cl = "client",
-	sv = "server",
-	sh = "shared",
-	client = function(path)
+	cl = "Client",
+	sv = "Server",
+	sh = "Shared",
+	Client = function(path)
 		if CLIENT then
 			include(path)
 		else
 			AddCSLuaFile(path)
 		end
 	end,
-	server = function(path)
+	Server = function(path)
 		if CLIENT then return end
 
 		include(path)
 	end,
-	shared = function(path)
+	Shared = function(path)
 		AddCSLuaFile(path)
 		include(path)
 	end,
@@ -56,7 +56,7 @@ local realms = {
 
 local function canLoad(realm, sessionRealm)
 	if not realm then return true end
-	if realm == "shared" then return true end
+	if realm == "Shared" then return true end
 
 	return realm == sessionRealm
 end
@@ -74,7 +74,7 @@ local function getLibraryName(name)
 end
 
 local function prepareFiles(current, context, folders, files, realm, forced)
-	local contextRealm = context.realm
+	local contextRealm = context.Realm
 
 	if not canLoad(contextRealm, realm) then return end
 
@@ -86,8 +86,8 @@ local function prepareFiles(current, context, folders, files, realm, forced)
 		if not canLoad(fileRealm, realm) then continue end
 
 		files[#files + 1] = {
-			path = current .. "/" .. path,
-			load = realms[fileRealm or "shared"],
+			Path = current .. "/" .. path,
+			Load = realms[fileRealm or "Shared"],
 		}
 	end
 
@@ -100,11 +100,11 @@ local function prepareFiles(current, context, folders, files, realm, forced)
 		local libTable = context[libName] or {}
 
 		local data = {
-			name    = libName,
-			realm   = libRealm,
-			context = libTable,
-			folders = {},
-			files   = {},
+			Name    = libName,
+			Realm   = libRealm,
+			Context = libTable,
+			Folders = {},
+			Files   = {},
 		}
 
 		if libName == "Core" then
@@ -115,24 +115,24 @@ local function prepareFiles(current, context, folders, files, realm, forced)
 
 		context[libName] = libTable
 
-		prepareFiles(current .. "/" .. name, libTable, data.folders, data.files, realm, libRealm)
+		prepareFiles(current .. "/" .. name, libTable, data.Folders, data.Files, realm, libRealm)
 	end
 end
 
 local function loadLibrary(library, context)
-	local fileCount = #library.files
+	local fileCount = #library.Files
 	local libCount  = 1
 
 	LIBRARY = context
 
-	for _, data in ipairs(library.files) do
-		data.load(data.path)
+	for _, data in ipairs(library.Files) do
+		data.Load(data.Path)
 	end
 
 	LIBRARY = nil
 
-	for _, data in ipairs(library.folders) do
-		local libContext = data.context
+	for _, data in ipairs(library.Folders) do
+		local libContext = data.Context
 		local addedFiles, addedLibs = loadLibrary(data, libContext)
 
 		fileCount = fileCount + addedFiles
@@ -141,7 +141,9 @@ local function loadLibrary(library, context)
 		if not next(libContext) then
 			--print("Removing " ..  data.name ..  " folder from " .. (library.name or addonGlobal))
 
-			context[data.name] = nil
+			context[data.Name] = nil
+		else
+			print("Keeping " ..  data.Name ..  " folder from " .. (library.Name or addonGlobal))
 		end
 	end
 
@@ -149,17 +151,17 @@ local function loadLibrary(library, context)
 end
 
 local function loadAddon()
-	local realm     = SERVER and "server" or "client"
+	local realm     = SERVER and "Server" or "Client"
 	local addonRoot = _G[addonGlobal] or {}
 	local libraries = {
-		folders = {},
-		files   = {},
+		Folders = {},
+		Files   = {},
 	}
 
 	_G[addonGlobal] = addonRoot
 
 	print("Preparing files....")
-	prepareFiles(addonFolder, addonRoot, libraries.folders, libraries.files, realm)
+	prepareFiles(addonFolder, addonRoot, libraries.Folders, libraries.Files, realm)
 
 	print("Loading files....")
 	local files, libs = loadLibrary(libraries, addonRoot, realm)

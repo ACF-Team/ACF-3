@@ -6,9 +6,9 @@ clock.curTime   = CurTime()
 clock.deltaTime = engine.TickInterval()
 
 hook.Add("Think", "ACF.clock", function()
-    local theTime = CurTime()
+	local theTime = CurTime()
 
-    clock.deltaTime = theTime - clock.curTime
+	clock.deltaTime = theTime - clock.curTime
 	clock.curTime   = CurTime()
 end)
 

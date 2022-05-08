@@ -74,7 +74,7 @@ local function GetEnts(Ent)
 	return Phys, Pare
 end
 -------------------------------------------------
-function ACF_HasConstraint(Ent)
+function ACF.HasConstraints(Ent)
 	if Ent.Constraints then
 		for _, V in pairs(Ent.Constraints) do
 			if V.Type ~= "NoCollide" then
