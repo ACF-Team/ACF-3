@@ -4,3 +4,5 @@ ENT.PrintName     = "ACF Turret Drive"
 ENT.WireDebugName = "ACF Turret Drive"
 ENT.PluralName    = "ACF Turret Drives"
 ENT.IsACFEntity   = true
+
+cleanup.Register("_acf_turret")

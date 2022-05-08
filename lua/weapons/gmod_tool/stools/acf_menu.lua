@@ -20,8 +20,9 @@ if CLIENT then
 		cam.Start3D()
 		render.SetColorMaterial()
 
-		if DrawBoxes:GetBool() and IsValid(Entity) and Distance <= 65536 then
-			hook.Run("ACF_DrawBoxes", Entity, Trace)
+		if IsValid(Entity) and Distance <= 65536 then
+			if Entity:GetClass() == "acf_ammo" and DrawBoxes:GetBool() then hook.Run("ACF_DrawFunc", Entity, Trace) -- Ammo boxes have a special cvar to turn this off entirely
+			else hook.Run("ACF_DrawFunc", Entity, Trace) end
 		end
 
 		cam.End3D()
@@ -35,7 +36,7 @@ if CLIENT then
 		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
 	end)
 
-	hook.Add("ACF_DrawBoxes", "ACF Draw Hitboxes", function(Entity)
+	hook.Add("ACF_DrawFunc", "ACF Draw Hitboxes", function(Entity)
 		if not Entity.HitBoxes then return end
 		if not next(Entity.HitBoxes) then return end
 

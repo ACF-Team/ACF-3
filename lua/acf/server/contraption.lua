@@ -210,8 +210,16 @@ do -- ACF Parent Detouring
 			local GetChildren = GetChildren or ENT.GetChildren
 
 			function ENT:SetParent(parent, ...)
+				local Trigger
+				if (IsValid(self:GetParent()) and self:GetParent().ACF_OnParent) and not IsValid(parent) then
+					self:GetParent():ACF_OnParent(self,false)
+				end
 				if IsValid(parent) then
 					local detour = Detours[parent:GetClass()]
+
+					if parent.ACF_OnParent then
+						Trigger = parent -- Need to delay the function till AFTER the parent function occurs otherwise its wrong
+					end
 
 					if detour then
 						parent = detour(parent) or parent
@@ -219,9 +227,14 @@ do -- ACF Parent Detouring
 				end
 
 				SetParent(self, parent, ...)
+
+				if IsValid(Trigger) then
+					Trigger:ACF_OnParent(self,true)
+				end
 			end
 
 			function ENT:GetParent()
+				if not IsValid(self) then return end
 				local parent = GetParent(self)
 
 				if IsValid(parent) then

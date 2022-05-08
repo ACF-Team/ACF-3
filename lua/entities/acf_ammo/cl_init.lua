@@ -193,7 +193,7 @@ do -- Ammo overlay
 		end
 	end
 
-	hook.Add("ACF_DrawBoxes", "ACF Draw Ammo", function(Entity)
+	hook.Add("ACF_DrawFunc", "ACF Draw Ammo", function(Entity)
 		if not Entity.IsScalable then return end
 		if not Entity.HasData then
 			if Entity.HasData == nil and Entity.RequestAmmoData then
