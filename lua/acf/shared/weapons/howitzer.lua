@@ -18,7 +18,7 @@ ACF.RegisterWeaponClass("HW", {
 	Caliber	= {
 		Base = 105,
 		Min  = 75,
-		Max  = 406,
+		Max  = 203,
 	},
 })
 
