@@ -123,13 +123,9 @@ local function loadLibrary(library, context)
 	local fileCount = #library.Files
 	local libCount  = 1
 
-	LIBRARY = context
-
 	for _, data in ipairs(library.Files) do
 		data.Load(data.Path)
 	end
-
-	LIBRARY = nil
 
 	for _, data in ipairs(library.Folders) do
 		local libContext = data.Context
