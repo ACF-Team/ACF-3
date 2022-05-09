@@ -97,6 +97,8 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
+	local Ballistics = ACF.Ballistics
+
 	ACF.AddEntityArguments("acf_ammo", "Flechettes", "Spread") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
@@ -141,7 +143,7 @@ if SERVER then
 
 				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
 
-				ACF.CreateBullet(FlechetteData)
+				Ballistics.CreateBullet(FlechetteData)
 			end
 		else
 			local BaseInaccuracy = math.tan(math.rad(Gun:GetSpread()))
@@ -158,7 +160,7 @@ if SERVER then
 
 				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
 
-				ACF.CreateBullet(FlechetteData)
+				Ballistics.CreateBullet(FlechetteData)
 			end
 		end
 	end

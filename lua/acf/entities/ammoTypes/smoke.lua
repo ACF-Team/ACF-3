@@ -90,6 +90,8 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
+	local Ballistics = ACF.Ballistics
+
 	ACF.AddEntityArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
@@ -145,7 +147,7 @@ if SERVER then
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy
 
-			local HitRes = ACF_RoundImpact(Bullet, Trace)
+			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
 
 			if HitRes.Ricochet then return "Ricochet" end
 		end

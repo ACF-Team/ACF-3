@@ -65,6 +65,8 @@ function Ammo:BaseConvert(ToolData)
 end
 
 if SERVER then
+	local Ballistics = ACF.Ballistics
+
 	function Ammo:Network(Entity, BulletData)
 		Ammo.BaseClass.Network(self, Entity, BulletData)
 
@@ -86,7 +88,7 @@ if SERVER then
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy
 
-			local HitRes = ACF_RoundImpact(Bullet, Trace)
+			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
 
 			if HitRes.Ricochet then return "Ricochet" end
 		end

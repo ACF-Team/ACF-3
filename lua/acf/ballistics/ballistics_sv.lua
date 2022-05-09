@@ -1,23 +1,25 @@
 local ACF   = ACF
 local clock = ACF.clock
+local Ballistics = ACF.Ballistics
 
-ACF.Bullets          = ACF.Bullets or {}
-ACF.UnusedIndexes    = ACF.UnusedIndexes or {}
-ACF.HighestIndex     = ACF.HighestIndex or 0
-ACF.IndexLimit       = 2000
-ACF.SkyboxGraceZone  = 100
+Ballistics.Bullets         = Ballistics.Bullets or {}
+Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
+Ballistics.HighestIndex    = Ballistics.HighestIndex or 0
+Ballistics.SkyboxGraceZone = 100
 
-local Bullets       = ACF.Bullets
-local Unused        = ACF.UnusedIndexes
-local FlightRes     = {}
-local FlightTr  	= { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
-local GlobalFilter 	= ACF.GlobalFilter
-local AmmoTypes     = ACF.Classes.AmmoTypes
-local HookRun		= hook.Run
+local Bullets      = Ballistics.Bullets
+local Unused       = Ballistics.UnusedIndexes
+local IndexLimit   = 2000
+local SkyGraceZone = 100
+local FlightRes    = {}
+local FlightTr     = { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
+local GlobalFilter = ACF.GlobalFilter
+local AmmoTypes    = ACF.Classes.AmmoTypes
+local HookRun      = hook.Run
 
 
 -- This will create, or update, the tracer effect on the clientside
-function ACF.BulletClient(Bullet, Type, Hit, HitPos)
+function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
 
 	local Effect = EffectData()
@@ -42,7 +44,7 @@ function ACF.BulletClient(Bullet, Type, Hit, HitPos)
 	util.Effect("ACF_Bullet_Effect", Effect, true, true)
 end
 
-function ACF.RemoveBullet(Bullet)
+function Ballistics.RemoveBullet(Bullet)
 	if Bullet.Removed then return end
 
 	local Index = Bullet.Index
@@ -56,16 +58,16 @@ function ACF.RemoveBullet(Bullet)
 
 	Bullet.Removed = true
 
-	ACF.BulletClient(Bullet, "Update", 1, Bullet.Pos) -- Kills the bullet on the clientside
+	Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos) -- Kills the bullet on the clientside
 
 	if not next(Bullets) then
 		hook.Remove("Tick", "IterateBullets")
 	end
 end
 
-function ACF.CalcBulletFlight(Bullet)
+function Ballistics.CalcBulletFlight(Bullet)
 	if Bullet.KillTime and clock.curTime > Bullet.KillTime then
-		return ACF.RemoveBullet(Bullet)
+		return Ballistics.RemoveBullet(Bullet)
 	end
 
 	if Bullet.PreCalcFlight then
@@ -82,7 +84,7 @@ function ACF.CalcBulletFlight(Bullet)
 	Bullet.LastThink = clock.curTime
 	Bullet.DeltaTime = DeltaTime
 
-	ACF.DoBulletsFlight(Bullet)
+	Ballistics.DoBulletsFlight(Bullet)
 
 	if Bullet.PostCalcFlight then
 		Bullet:PostCalcFlight()
@@ -101,25 +103,24 @@ local function GetBulletIndex()
 		return Index
 	end
 
-	local Index = ACF.HighestIndex + 1
+	local Index = Ballistics.HighestIndex + 1
 
-	if Index > ACF.IndexLimit then return end
+	if Index > IndexLimit then return end
 
-	ACF.HighestIndex = Index
+	Ballistics.HighestIndex = Index
 
 	return Index
 end
 
-local CalcFlight = ACF.CalcBulletFlight
 local function IterateBullets()
 	for _, Bullet in pairs(Bullets) do
 		if not Bullet.HandlesOwnIteration then
-			CalcFlight(Bullet)
+			Ballistics.CalcBulletFlight(Bullet)
 		end
 	end
 end
 
-function ACF.CreateBullet(BulletData)
+function Ballistics.CreateBullet(BulletData)
 	local Index = GetBulletIndex()
 
 	if not Index then return end -- Too many bullets in the air
@@ -151,8 +152,8 @@ function ACF.CreateBullet(BulletData)
 
 	Bullets[Index] = Bullet
 
-	ACF.BulletClient(Bullet, "Init", 0)
-	ACF.CalcBulletFlight(Bullet)
+	Ballistics.BulletClient(Bullet, "Init", 0)
+	Ballistics.CalcBulletFlight(Bullet)
 
 	return Bullet
 end
@@ -173,42 +174,42 @@ local function OnImpact(Bullet, Trace, Ammo, Type)
 			Bullet.OnPenetrated(Bullet, Trace)
 		end
 
-		ACF.BulletClient(Bullet, "Update", 2, Trace.HitPos)
-		ACF.DoBulletsFlight(Bullet)
+		Ballistics.BulletClient(Bullet, "Update", 2, Trace.HitPos)
+		Ballistics.DoBulletsFlight(Bullet)
 	elseif Retry == "Ricochet" then
 		if Bullet.OnRicocheted then
 			Bullet.OnRicocheted(Bullet, Trace)
 		end
 
-		ACF.BulletClient(Bullet, "Update", 3, Trace.HitPos)
-		ACF.DoBulletsFlight(Bullet)
+		Ballistics.BulletClient(Bullet, "Update", 3, Trace.HitPos)
+		Ballistics.DoBulletsFlight(Bullet)
 	else
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
 		end
 
-		ACF.BulletClient(Bullet, "Update", 1, Trace.HitPos)
+		Ballistics.BulletClient(Bullet, "Update", 1, Trace.HitPos)
 
 		Ammo:OnFlightEnd(Bullet, Trace)
 	end
 end
 
-function ACF.DoBulletsFlight(Bullet)
+function Ballistics.DoBulletsFlight(Bullet)
 	if HookRun("ACF Bullet Flight", Bullet) == false then return end
 
 	if Bullet.SkyLvL then
 		if clock.curTime - Bullet.LifeTime > 30 then
-			return ACF.RemoveBullet(Bullet)
+			return Ballistics.RemoveBullet(Bullet)
 		end
 
-		if Bullet.NextPos.z + ACF.SkyboxGraceZone > Bullet.SkyLvL then
+		if Bullet.NextPos.z + SkyGraceZone > Bullet.SkyLvL then
 			if Bullet.Fuze and Bullet.Fuze <= clock.curTime then -- Fuze detonated outside map
-				ACF.RemoveBullet(Bullet)
+				Ballistics.RemoveBullet(Bullet)
 			end
 
 			return
 		elseif not util.IsInWorld(Bullet.NextPos) then
-			return ACF.RemoveBullet(Bullet)
+			return Ballistics.RemoveBullet(Bullet)
 		else
 			Bullet.SkyLvL = nil
 			Bullet.LifeTime = nil
@@ -228,7 +229,7 @@ function ACF.DoBulletsFlight(Bullet)
 
 	if Bullet.Fuze and Bullet.Fuze <= clock.curTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
-			return ACF.RemoveBullet(Bullet)
+			return Ballistics.RemoveBullet(Bullet)
 		else
 			local DeltaTime = Bullet.DeltaTime
 			local DeltaFuze = clock.curTime - Bullet.Fuze
@@ -242,7 +243,7 @@ function ACF.DoBulletsFlight(Bullet)
 					Bullet.OnEndFlight(Bullet, FlightRes)
 				end
 
-				ACF.BulletClient(Bullet, "Update", 1, Bullet.Pos)
+				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
 				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, FlightRes)
 
@@ -257,7 +258,7 @@ function ACF.DoBulletsFlight(Bullet)
 				Bullet.SkyLvL = FlightRes.HitPos.z
 				Bullet.LifeTime = clock.curTime
 			else
-				ACF.RemoveBullet(Bullet)
+				Ballistics.RemoveBullet(Bullet)
 			end
 		else
 			local Entity = FlightRes.Entity
@@ -272,13 +273,13 @@ function ACF.DoBulletsFlight(Bullet)
 end
 
 do -- Terminal ballistics --------------------------
-	local function RicochetVector(Flight, HitNormal)
-		local Vec = Flight:GetNormalized()
+	function Ballistics.GetRicochetVector(Flight, HitNormal)
+		local Normal = Flight:GetNormalized()
 
-		return Vec - (2 * Vec:Dot(HitNormal)) * HitNormal
+		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
 	end
-	ACF_RicochetVector = RicochetVector
 
+	-- TODO: Move to damage_sv.lua and use the proper namespace
 	function ACF_VolumeDamage(Bullet, Trace, Volume)
 		local HitRes = ACF.Damage(Bullet, Trace, Volume)
 
@@ -288,7 +289,7 @@ do -- Terminal ballistics --------------------------
 		end
 	end
 
-	function ACF_CalcRicochet(Bullet, Trace)
+	function Ballistics.CalculateRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
 		-- Ricochet distribution center
 		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / 39.37 - Bullet.LimitVel) / 100)
@@ -306,14 +307,14 @@ do -- Terminal ballistics --------------------------
 		return Ricochet, Loss
 	end
 
-	function ACF_RoundImpact(Bullet, Trace)
+	function Ballistics.DoRoundImpact(Bullet, Trace)
 		local Speed    = Bullet.Speed
 		local Energy   = Bullet.Energy
 		local HitRes   = ACF.Damage(Bullet, Trace)
 		local Ricochet = 0
 
 		if HitRes.Loss == 1 then
-			Ricochet, HitRes.Loss = ACF_CalcRicochet(Bullet, Trace)
+			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
 		end
 
 		if ACF.KEPush then
@@ -334,9 +335,11 @@ do -- Terminal ballistics --------------------------
 		HitRes.Ricochet = false
 
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
+			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
+
 			Bullet.Ricochets = Bullet.Ricochets + 1
 			Bullet.NextPos = Trace.HitPos
-			Bullet.Flight = (RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025):GetNormalized() * Speed * Ricochet
+			Bullet.Flight = Direction:GetNormalized() * Speed * Ricochet
 
 			HitRes.Ricochet = true
 		end
@@ -344,7 +347,7 @@ do -- Terminal ballistics --------------------------
 		return HitRes
 	end
 
-	function ACF_Ricochet(Bullet, Trace)
+	function Ballistics.DoRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
 		local Speed    = Bullet.Flight:Length() / ACF.Scale
 		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9) -- Making the chance of a ricochet get higher as the speeds increase
@@ -355,7 +358,7 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then
-			local Direction = RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05
+			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05
 			local DeltaTime = engine.TickInterval()
 
 			Bullet.GroundRicos = Bullet.GroundRicos + 1
@@ -372,8 +375,12 @@ do -- Terminal ballistics --------------------------
 end
 
 -- Backwards compatibility
-ACF_BulletClient = ACF.BulletClient
-ACF_CalcBulletFlight = ACF.CalcBulletFlight
-ACF_DoBulletsFlight = ACF.DoBulletsFlight
-ACF_RemoveBullet = ACF.RemoveBullet
-ACF_CreateBullet = ACF.CreateBullet
+ACF_BulletClient     = Ballistics.BulletClient
+ACF_CalcBulletFlight = Ballistics.CalcBulletFlight
+ACF_DoBulletsFlight  = Ballistics.DoBulletsFlight
+ACF_RemoveBullet     = Ballistics.RemoveBullet
+ACF_CreateBullet     = Ballistics.CreateBullet
+ACF_RicochetVector   = Ballistics.GetRicochetVector
+ACF_CalcRicochet     = Ballistics.CalculateRicochet
+ACF_RoundImpact      = Ballistics.DoRoundImpact
+ACF_Ricochet         = Ballistics.DoRicochet

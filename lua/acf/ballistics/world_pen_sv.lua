@@ -1,3 +1,6 @@
+local ACF        = ACF
+local Ballistics = ACF.Ballistics
+
 local function DigTrace(From, To, Filter)
     local Dig = util.TraceLine({
         start  = From,
@@ -112,7 +115,7 @@ function ACF_PenetrateMapEntity(Bullet, Trace)
             continue
         end
 
-        if Back.StartSolid then return ACF_Ricochet(Bullet, Trace) end
+        if Back.StartSolid then return Ballistics.DoRicochet(Bullet, Trace) end
     until Back.Entity == Trace.Entity
 
     local Thickness = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
@@ -146,6 +149,6 @@ function ACF_PenetrateGround(Bullet, Trace)
 
         return "Penetrated"
     else -- Ricochet
-        return ACF_Ricochet(Bullet, Trace)
+        return Ballistics.DoRicochet(Bullet, Trace)
     end
 end

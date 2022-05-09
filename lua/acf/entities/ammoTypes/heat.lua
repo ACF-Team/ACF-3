@@ -193,6 +193,8 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
+	local Ballistics = ACF.Ballistics
+
 	ACF.AddEntityArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
@@ -360,9 +362,11 @@ if SERVER then
 
 	local function OnRicochet(Bullet, Trace, Ricochet)
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
+			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
+
 			Bullet.Ricochets = Bullet.Ricochets + 1
 			Bullet.NextPos = Trace.HitPos
-			Bullet.Flight = (ACF_RicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025):GetNormalized() * Bullet.Flight:Length() * Ricochet
+			Bullet.Flight = Direction:GetNormalized() * Bullet.Flight:Length() * Ricochet
 		end
 	end
 
@@ -370,7 +374,7 @@ if SERVER then
 		local Target = Trace.Entity
 
 		if ACF.Check(Target) then
-			local Ricochet, _ = ACF_CalcRicochet(Bullet, Trace)
+			local Ricochet = Ballistics.CalculateRicochet(Bullet, Trace)
 
 			if Ricochet ~= 0 then
 				OnRicochet(Bullet, Trace, Ricochet)
@@ -387,7 +391,7 @@ if SERVER then
 	end
 
 	function Ammo:WorldImpact(Bullet, Trace)
-		local Ricochet, _ = ACF_CalcRicochet(Bullet, Trace)
+		local Ricochet = Ballistics.CalculateRicochet(Bullet, Trace)
 
 		if Ricochet ~= 0 then
 			OnRicochet(Bullet, Trace, Ricochet)

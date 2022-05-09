@@ -76,6 +76,8 @@ function Ammo:VerifyData(ToolData)
 end
 
 if SERVER then
+	local Ballistics = ACF.Ballistics
+
 	ACF.AddEntityArguments("acf_ammo", "Projectile", "Propellant", "Tracer") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
@@ -90,7 +92,7 @@ if SERVER then
 	end
 
 	function Ammo:Create(_, BulletData)
-		ACF.CreateBullet(BulletData)
+		Ballistics.CreateBullet(BulletData)
 	end
 
 	function Ammo:ServerConvert(ToolData)
@@ -133,7 +135,7 @@ if SERVER then
 			Bullet.Speed  = Speed
 			Bullet.Energy = Energy
 
-			local HitRes = ACF_RoundImpact(Bullet, Trace)
+			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
 
 			if HitRes.Overkill > 0 then
 				table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
