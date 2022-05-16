@@ -97,7 +97,8 @@ local function prepareFiles(current, context, folders, files, realm, forced)
 		if not canLoad(libRealm, realm) then continue end
 
 		local libName  = getLibraryName(name)
-		local libTable = context[libName] or {}
+		local isCore   = libName == "Core"
+		local libTable = isCore and context or (context[libName] or {})
 
 		local data = {
 			Name    = libName,
@@ -107,13 +108,13 @@ local function prepareFiles(current, context, folders, files, realm, forced)
 			Files   = {},
 		}
 
-		if libName == "Core" then
+		if isCore then
 			table.insert(folders, 1, data)
 		else
 			folders[#folders + 1] = data
-		end
 
-		context[libName] = libTable
+			context[libName] = libTable
+		end
 
 		prepareFiles(current .. "/" .. name, libTable, data.Folders, data.Files, realm, libRealm)
 	end
@@ -129,17 +130,18 @@ local function loadLibrary(library, context)
 
 	for _, data in ipairs(library.Folders) do
 		local libContext = data.Context
+		local libName    = data.Name
 		local addedFiles, addedLibs = loadLibrary(data, libContext)
 
 		fileCount = fileCount + addedFiles
 		libCount  = libCount  + addedLibs
 
-		if not next(libContext) then
+		if libName ~= "Core" and not next(libContext) then
 			--print("Removing " ..  data.name ..  " folder from " .. (library.name or addonGlobal))
 
-			context[data.Name] = nil
-		else
-			print("Keeping " ..  data.Name ..  " folder from " .. (library.Name or addonGlobal))
+			context[libName] = nil
+		--else
+			--print("Keeping " ..  libName ..  " folder from " .. (library.Name or addonGlobal))
 		end
 	end
 
@@ -154,15 +156,18 @@ local function loadAddon()
 		Files   = {},
 	}
 
+	print("\nInitializing " .. addonGlobal .. " loader.")
+	print("> Creating global " .. addonGlobal .. " table...")
 	_G[addonGlobal] = addonRoot
 
-	print("Preparing files....")
+	print("> Preparing files....")
 	prepareFiles(addonFolder, addonRoot, libraries.Folders, libraries.Files, realm)
 
-	print("Loading files....")
+	print("> Loading files....")
 	local files, libs = loadLibrary(libraries, addonRoot, realm)
 
-	print("Loaded " .. files .. " files and " .. libs .. " folders.")
+	print("> Loaded " .. files .. " files and " .. libs .. " folders.")
+	print(addonGlobal .. " has finished loading.\n")
 end
 
 concommand.Add(addonGlobal:lower() .. "_reload", function()

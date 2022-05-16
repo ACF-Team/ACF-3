@@ -1,5 +1,8 @@
-local ACF        = ACF
 local Network    = ACF.Networking
+
+Network.Sender   = Network.Sender or {}
+Network.Receiver = Network.Receiver or {}
+
 local Sender     = Network.Sender
 local Receiver   = Network.Receiver
 local isstring   = isstring
