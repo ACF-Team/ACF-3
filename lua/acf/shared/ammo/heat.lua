@@ -264,7 +264,7 @@ if SERVER then
 			-- Get the effective armor thickness
 			local BaseArmor = 0
 			local Damage    = nil
-			if TraceRes.HitWorld then
+			if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
 				local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
@@ -277,7 +277,7 @@ if SERVER then
 				-- TODO: Fix world entity penetration
 				--BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
-				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF.Armour
+				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
 				-- Enable damage if a valid entity is hit
 				Damage = 0
 			end
@@ -333,7 +333,8 @@ if SERVER then
 						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
-						Damageables[#Damageables + 1] = {SpallEnt, RelArea}
+						local EffArmor = (EffectiveArmor * 0.5 / (SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour or 0)) * 14 -- Magic multiplier to prevent nuking armored plates
+						Damageables[#Damageables + 1] = {SpallEnt, RelArea * EffArmor}
 					end
 				end
 			end
@@ -350,7 +351,7 @@ if SERVER then
 			for _, v in ipairs(Damageables) do
 				FakeTrace.Entity  = v[1]
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local SpallDamage = Cavity * v[2] / AreaSum
+				local SpallDamage = _Cavity * v[2] / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 				ACF_VolumeDamage(Bullet, FakeTrace, SpallDamage)
 			end
 
