@@ -70,20 +70,7 @@ AddVehicle( {
 	}
 }, "playerstart_chairs_seated" )
 
-AddVehicle( {
-	Name = "Pod Pose",  ----
-	Model = "models/chairs_playerstart/podpose.mdl", ----
-	Class = lClass,
-	Category = lCategory,
 
-	Author = lAuthor,
-	Information = lInformation,
-
-	KeyValues = lKeyvalues,
-	Members = {
-		HandleAnimation = HandlePodAnim, ----
-	}
-}, "playerstart_chairs_podpose" )
 
 
 ---- Experimental seats ----
