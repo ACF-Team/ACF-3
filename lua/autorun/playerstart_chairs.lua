@@ -21,7 +21,7 @@ local function HandlePHXAirboatAnimation( _, player )
 	return player:SelectWeightedSequence( ACT_DRIVE_AIRBOAT ) 
 end
 
-local function HandlePodAnim( _, ply )
+local function HandlePodAnim( _, player )
 	return player:LookupSequence( "drive_pd" )
 end
 
