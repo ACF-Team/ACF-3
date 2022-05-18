@@ -289,8 +289,9 @@ if SERVER then
 			local LostMassPct =  EffectiveArmor / Penetration
 			-- Deal damage based on the volume of the lost mass
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
+			local _Cavity = Cavity -- Remove when health scales with armor
 			if Damage == 0 then
-				local _Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
 				ACF_VolumeDamage(Bullet, TraceRes, _Cavity)
 			end
 			-- Reduce the jet mass by the lost mass
