@@ -68,6 +68,19 @@ local function GetReloadTime(Entity)
 	return (Unloading or NewLoad) and Entity.MagReload or Entity.ReloadTime or 0
 end
 
+local function shallowCopy(tbl)
+	local copy = {}
+	if type(tbl) == "table" then
+		for k,v in pairs(tbl) do
+			if type(v) ~= "table" then copy[k] = v end
+		end
+	else
+		copy = tbl
+	end
+
+	return copy
+end
+
 local function GetLinkedWheels(Target)
 	local Current, Class, Sources
 	local Queued = { [Target] = true }
@@ -1948,6 +1961,60 @@ function ents_methods:acfRoundType()
 	local BulletData = This.BulletData
 
 	return BulletData and BulletData.Id or ""
+end
+
+--- Returns the BulletData table of the ammo in an ACF ammo crate
+-- @server
+function ents_methods:acfBulletData()
+	CheckType(self, ents_metatable)
+
+	local This = unwrap(self)
+
+	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+	if RestrictInfo(This) then return {} end
+
+	local BulletData = This.BulletData
+
+	return BulletData and shallowCopy(BulletData) or {}
+end
+
+--- Returns a table containing the missile's data
+-- @server
+-- @class function
+-- @return table The table containing the missile's data
+function ents_methods:acfMissileData()
+	CheckType(self, ents_metatable)
+
+	local This = unwrap(self)
+
+	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+	if RestrictInfo(This) then return {} end
+
+	if not This.IsACFMissile then return {} end
+
+	return {
+		ShortName = This.ShortName,
+		EntType = This.EntType,
+		Caliber = This.Caliber,
+		SeekCone = This.SeekCone,
+		ViewCone = This.ViewCone,
+		DragCoef = This.DragCoef,
+		MaxThrust = This.MaxThrust,
+		FuelConsumption = This.FuelConsumption,
+		StarterPercent = This.StarterPercent,
+		FinMultiplier = This.FinMultiplier,
+		GLimit = This.GLimit,
+		MaxLength = This.MaxLength,
+		Agility = This.Agility,
+		ProjMass = This.ProjMass,
+		PropMass = This.PropMass,
+		Mass = This.Mass,
+		AreaOfInertia = This.AreaOfInertia,
+		Inertia = This.Inertia,
+		Length = This.Length,
+		TorqueMul = This.TorqueMul,
+		ControlSurfMul = This.ControlSurfMul
+	}
 end
 
 --- Returns the type of ammo in a crate or gun
