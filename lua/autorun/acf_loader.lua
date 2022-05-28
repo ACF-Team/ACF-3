@@ -137,7 +137,7 @@ local function loadLibrary(library, context)
 		libCount  = libCount  + addedLibs
 
 		if libName ~= "Core" and not next(libContext) then
-			--print("Removing " ..  data.name ..  " folder from " .. (library.name or addonGlobal))
+			--print("Removing " ..  data.Name ..  " folder from " .. (library.Name or addonGlobal))
 
 			context[libName] = nil
 		--else

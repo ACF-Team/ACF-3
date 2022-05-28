@@ -1,6 +1,6 @@
 local ACF = ACF
 
-ACF.Classes = {}
+ACF.Classes = ACF.Classes or {}
 
 do -- Basic class registration functions
 	function ACF.AddSimpleClass(ID, Destiny, Data)
