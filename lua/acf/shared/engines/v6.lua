@@ -85,7 +85,7 @@ do -- Diesel Engines
 			FOV = 105,
 		},
 	})
-	
+
 	ACF.RegisterEngine("5.2-V6", "V6", {
 		Name		 = "5.2L V6 Diesel",
 		Description	 = "Light AFV-grade two-stroke diesel, high output but heavy.",
