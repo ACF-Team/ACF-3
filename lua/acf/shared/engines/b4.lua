@@ -81,8 +81,6 @@ do
 			FOV = 85,
 		},
 	})
-	
-
 end
 
 ACF.SetCustomAttachment("models/engines/b4med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))
