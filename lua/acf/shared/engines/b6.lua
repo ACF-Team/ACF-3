@@ -81,7 +81,8 @@ do
 			FOV = 83,
 		},
 	})
-		ACF.RegisterEngine("14.5-B6", "B6", {
+
+	ACF.RegisterEngine("14.5-B6", "B6", {
 		Name		 = "14.5L Flat 6 Diesel",
 		Description	 = "Very large diesel boxer, compact, but lacking in torque compared to others",
 		Model		 = "models/engines/b6large.mdl",
