@@ -52,7 +52,7 @@ do
 		Fuel		 = { Petrol = true, Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 480,
-		Torque		 = 706,
+		Torque		 = 606,
 		FlywheelMass = 0.65,
 		RPM = {
 			Idle	= 500,
@@ -76,6 +76,25 @@ do
 		RPM = {
 			Idle	= 620,
 			Limit	= 4900,
+		},
+		Preview = {
+			FOV = 83,
+		},
+	})
+	
+		ACF.RegisterEngine("14.5-B6", "B6", {
+		Name		 = "14.5L Flat 6 Diesel",
+		Description	 = "Very large diesel boxer, compact, but lacking in torque compared to others",
+		Model		 = "models/engines/b6large.mdl",
+		Sound		 = "acf_base/engines/i6_diesellarge2.wav",
+		Fuel		 = { Diesel = true },
+		Type		 = "GenericDiesel",
+		Mass		 = 1600,
+		Torque		 = 1995,
+		FlywheelMass = 3,
+		RPM = {
+			Idle	= 620,
+			Limit	= 2550,
 		},
 		Preview = {
 			FOV = 83,

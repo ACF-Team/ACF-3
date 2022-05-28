@@ -14,11 +14,11 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 260,
-		Torque		 = 400,
+		Torque		 = 389,
 		FlywheelMass = 0.15,
 		RPM = {
 			Idle	= 800,
-			Limit	= 6500,
+			Limit	= 5700,
 		},
 		Preview = {
 			FOV = 100,
@@ -33,7 +33,7 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 400,
-		Torque		 = 575,
+		Torque		 = 576,
 		FlywheelMass = 0.25,
 		RPM = {
 			Idle	= 700,
@@ -52,11 +52,11 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 850,
-		Torque		 = 1822,
+		Torque		 = 1848,
 		FlywheelMass = 2.8,
 		RPM = {
 			Idle	= 600,
-			Limit	= 3800,
+			Limit	= 3000,
 		},
 		Preview = {
 			FOV = 100,
@@ -73,11 +73,11 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 320,
-		Torque		 = 518,
+		Torque		 = 446, --nice
 		FlywheelMass = 0.75,
 		RPM = {
 			Idle	= 800,
-			Limit	= 5000,
+			Limit	= 4000,
 		},
 		Preview = {
 			FOV = 100,
@@ -92,11 +92,11 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 520,
-		Torque		 = 875,
+		Torque		 = 870,
 		FlywheelMass = 1.6,
 		RPM = {
 			Idle	= 650,
-			Limit	= 4000,
+			Limit	= 3800,
 		},
 		Preview = {
 			FOV = 100,
@@ -111,11 +111,11 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 1200,
-		Torque		 = 2875,
+		Torque		 = 3308,
 		FlywheelMass = 4.5,
 		RPM = {
 			Idle	= 500,
-			Limit	= 2500,
+			Limit	= 2000,
 		},
 		Preview = {
 			FOV = 100,
