@@ -1,4 +1,8 @@
-ACF.RegisterEngineType("Electric", {
+local ACF         = ACF
+local EngineTypes = ACF.Classes.EngineTypes
+
+
+EngineTypes.Register("Electric", {
 	Name        = "Generic Electric Engine",
 	Efficiency  = 0.85, --percent efficiency converting chemical kw into mechanical kw
 	TorqueScale = 0.5,

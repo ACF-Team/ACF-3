@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("LAC", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("LAC", {
 	Name        = "Light Autocannon",
 	Description = "Compact variation of autocannons, they offer higher firerates at the cost of smaller magazine size.",
 	Model       = "models/machinegun/machinegun_40mm_compact.mdl",
@@ -39,15 +43,15 @@ ACF.RegisterWeaponClass("LAC", {
 	},
 })
 
-ACF.RegisterWeapon("20mmHMG", "LAC", {
+Weapons.Register("20mmHMG", "LAC", {
 	Caliber = 20,
 })
 
-ACF.RegisterWeapon("30mmHMG", "LAC", {
+Weapons.Register("30mmHMG", "LAC", {
 	Caliber = 30,
 })
 
-ACF.RegisterWeapon("40mmHMG", "LAC", {
+Weapons.Register("40mmHMG", "LAC", {
 	Caliber = 40,
 })
 

@@ -1,5 +1,5 @@
-
--- 6-Speed gearboxes
+local ACF       = ACF
+local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
 local Gear6SW = 80
@@ -13,7 +13,7 @@ local Gear6MT = 1360
 local Gear6LT = 10000
 local StTB = 1.25 --straight torque bonus multiplier
 
-ACF.RegisterGearboxClass("6-Speed", {
+Gearboxes.RegisterGroup("6-Speed", {
 	Name		= "6-Speed Gearbox",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -23,7 +23,7 @@ ACF.RegisterGearboxClass("6-Speed", {
 })
 
 do -- Inline Gearboxes
-	ACF.RegisterGearbox("6Gear-L-S", "6-Speed", {
+	Gearboxes.Register("6Gear-L-S", "6-Speed", {
 		Name		= "6-Speed, Inline, Small",
 		Description	= "A small and light 6 speed inline gearbox, with a limited max torque rating.",
 		Model		= "models/engines/linear_s.mdl",
@@ -35,7 +35,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-L-M", "6-Speed", {
+	Gearboxes.Register("6Gear-L-M", "6-Speed", {
 		Name		= "6-Speed, Inline, Medium",
 		Description	= "A medium duty 6 speed inline gearbox with a limited torque rating.",
 		Model		= "models/engines/linear_m.mdl",
@@ -47,7 +47,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-L-L", "6-Speed", {
+	Gearboxes.Register("6Gear-L-L", "6-Speed", {
 		Name		= "6-Speed, Inline, Large",
 		Description	= "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed.",
 		Model		= "models/engines/linear_l.mdl",
@@ -61,7 +61,7 @@ do -- Inline Gearboxes
 end
 
 do -- Inline Dual Clutch Gearboxes
-	ACF.RegisterGearbox("6Gear-LD-S", "6-Speed", {
+	Gearboxes.Register("6Gear-LD-S", "6-Speed", {
 		Name		= "6-Speed, Inline, Small, Dual Clutch",
 		Description	= "A small and light 6 speed inline gearbox, with a limited max torque rating.",
 		Model		= "models/engines/linear_s.mdl",
@@ -74,7 +74,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-LD-M", "6-Speed", {
+	Gearboxes.Register("6Gear-LD-M", "6-Speed", {
 		Name		= "6-Speed, Inline, Medium, Dual Clutch",
 		Description	= "A a medium duty 6 speed inline gearbox. The added gears reduce torque capacity substantially.",
 		Model		= "models/engines/linear_m.mdl",
@@ -87,7 +87,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-LD-L", "6-Speed", {
+	Gearboxes.Register("6Gear-LD-L", "6-Speed", {
 		Name		= "6-Speed, Inline, Large, Dual Clutch",
 		Description	= "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed.",
 		Model		= "models/engines/linear_l.mdl",
@@ -102,7 +102,7 @@ do -- Inline Dual Clutch Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	ACF.RegisterGearbox("6Gear-T-S", "6-Speed", {
+	Gearboxes.Register("6Gear-T-S", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Small",
 		Description	= "A small and light 6 speed gearbox, with a limited max torque rating.",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -114,7 +114,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-T-M", "6-Speed", {
+	Gearboxes.Register("6Gear-T-M", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Medium",
 		Description	= "A medium duty 6 speed gearbox with a limited torque rating.",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -126,7 +126,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-T-L", "6-Speed", {
+	Gearboxes.Register("6Gear-T-L", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Large",
 		Description	= "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed.",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -140,7 +140,7 @@ do -- Transaxial Gearboxes
 end
 
 do -- Transaxial Dual Clutch
-	ACF.RegisterGearbox("6Gear-TD-S", "6-Speed", {
+	Gearboxes.Register("6Gear-TD-S", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Small, Dual Clutch",
 		Description	= "A small and light 6 speed gearbox, with a limited max torque rating.",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -153,7 +153,7 @@ do -- Transaxial Dual Clutch
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-TD-M", "6-Speed", {
+	Gearboxes.Register("6Gear-TD-M", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Medium, Dual Clutch",
 		Description	= "A a medium duty 6 speed gearbox. The added gears reduce torque capacity substantially.",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -166,7 +166,7 @@ do -- Transaxial Dual Clutch
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-TD-L", "6-Speed", {
+	Gearboxes.Register("6Gear-TD-L", "6-Speed", {
 		Name		= "6-Speed, Transaxial, Large, Dual Clutch",
 		Description	= "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed.",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -181,7 +181,7 @@ do -- Transaxial Dual Clutch
 end
 
 do -- Straight-through Gearboxes
-	ACF.RegisterGearbox("6Gear-ST-S", "6-Speed", {
+	Gearboxes.Register("6Gear-ST-S", "6-Speed", {
 		Name		= "6-Speed, Straight, Small",
 		Description	= "A small and light 6 speed straight-through gearbox.",
 		Model		= "models/engines/t5small.mdl",
@@ -193,7 +193,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-ST-M", "6-Speed", {
+	Gearboxes.Register("6Gear-ST-M", "6-Speed", {
 		Name		= "6-Speed, Straight, Medium",
 		Description	= "A medium 6 speed straight-through gearbox.",
 		Model		= "models/engines/t5med.mdl",
@@ -205,7 +205,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("6Gear-ST-L", "6-Speed", {
+	Gearboxes.Register("6Gear-ST-L", "6-Speed", {
 		Name		= "6-Speed, Straight, Large",
 		Description	= "A large 6 speed straight-through gearbox.",
 		Model		= "models/engines/t5large.mdl",

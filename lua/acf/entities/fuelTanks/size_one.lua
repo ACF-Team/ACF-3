@@ -1,10 +1,13 @@
-ACF.RegisterFuelTankClass("FTS_1", {
+local FuelTanks = ACF.Classes.FuelTanks
+
+
+FuelTanks.RegisterGroup("FTS_1", {
 	Name		= "Size 1 Container",
 	Description	= "Size 1 fuel containers, required for engines to work.",
 })
 
 do
-	ACF.RegisterFuelTank("Tank_1x1x1","FTS_1", {
+	FuelTanks.Register("Tank_1x1x1","FTS_1", {
 		Name		= "1x1x1 Container",
 		Description	= "Seriously consider walking.",
 		Model		= "models/fueltank/fueltank_1x1x1.mdl",
@@ -16,7 +19,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x1x2","FTS_1", {
+	FuelTanks.Register("Tank_1x1x2","FTS_1", {
 		Name		= "1x1x2 Container",
 		Description	= "Will keep a kart running all day.",
 		Model		= "models/fueltank/fueltank_1x1x2.mdl",
@@ -28,7 +31,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x1x4","FTS_1", {
+	FuelTanks.Register("Tank_1x1x4","FTS_1", {
 		Name		= "1x1x4 Container",
 		Description	= "Dinghy",
 		Model		= "models/fueltank/fueltank_1x1x4.mdl",
@@ -40,7 +43,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x2x1","FTS_1", {
+	FuelTanks.Register("Tank_1x2x1","FTS_1", {
 		Name		= "1x2x1 Container",
 		Description	= "Will keep a kart running all day.",
 		Model		= "models/fueltank/fueltank_1x2x1.mdl",
@@ -52,7 +55,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x2x2","FTS_1", {
+	FuelTanks.Register("Tank_1x2x2","FTS_1", {
 		Name		= "1x2x2 Container",
 		Description	= "Dinghy",
 		Model		= "models/fueltank/fueltank_1x2x2.mdl",
@@ -64,7 +67,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x2x4","FTS_1", {
+	FuelTanks.Register("Tank_1x2x4","FTS_1", {
 		Name		= "1x2x4 Container",
 		Description	= "Outboard motor.",
 		Model		= "models/fueltank/fueltank_1x2x4.mdl",
@@ -76,7 +79,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x4x1","FTS_1", {
+	FuelTanks.Register("Tank_1x4x1","FTS_1", {
 		Name		= "1x4x1 Container",
 		Description	= "Dinghy",
 		Model		= "models/fueltank/fueltank_1x4x1.mdl",
@@ -88,7 +91,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x4x2","FTS_1", {
+	FuelTanks.Register("Tank_1x4x2","FTS_1", {
 		Name		= "1x4x2 Container",
 		Description	= "Clown car.",
 		Model		= "models/fueltank/fueltank_1x4x2.mdl",
@@ -100,7 +103,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x4x4","FTS_1", {
+	FuelTanks.Register("Tank_1x4x4","FTS_1", {
 		Name		= "1x4x4 Container",
 		Description	= "Fuel pancake.",
 		Model		= "models/fueltank/fueltank_1x4x4.mdl",
@@ -112,7 +115,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x6x1","FTS_1", {
+	FuelTanks.Register("Tank_1x6x1","FTS_1", {
 		Name		= "1x6x1 Container",
 		Description	= "Lawn tractors.",
 		Model		= "models/fueltank/fueltank_1x6x1.mdl",
@@ -124,7 +127,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x6x2","FTS_1", {
+	FuelTanks.Register("Tank_1x6x2","FTS_1", {
 		Name		= "1x6x2 Container",
 		Description	= "Small tractor tank.",
 		Model		= "models/fueltank/fueltank_1x6x2.mdl",
@@ -133,7 +136,7 @@ do
 		Shape       = "Box",
 	})
 
-	ACF.RegisterFuelTank("Tank_1x6x4","FTS_1", {
+	FuelTanks.Register("Tank_1x6x4","FTS_1", {
 		Name		= "1x6x4 Container",
 		Description	= "Fuel. Will keep you going for awhile.",
 		Model		= "models/fueltank/fueltank_1x6x4.mdl",
@@ -145,7 +148,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x8x1","FTS_1", {
+	FuelTanks.Register("Tank_1x8x1","FTS_1", {
 		Name		= "1x8x1 Container",
 		Description	= "Clown car.",
 		Model		= "models/fueltank/fueltank_1x8x1.mdl",
@@ -158,7 +161,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x8x2","FTS_1", {
+	FuelTanks.Register("Tank_1x8x2","FTS_1", {
 		Name		= "1x8x2 Container",
 		Description	= "Gas stations? We don't need no stinking gas stations!",
 		Model		= "models/fueltank/fueltank_1x8x2.mdl",
@@ -170,7 +173,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_1x8x4","FTS_1", {
+	FuelTanks.Register("Tank_1x8x4","FTS_1", {
 		Name		= "1x8x4 Container",
 		Description	= "Beep beep.",
 		Model		= "models/fueltank/fueltank_1x8x4.mdl",

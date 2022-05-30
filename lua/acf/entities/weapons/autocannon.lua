@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("AC", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("AC", {
 	Name        = "Autocannon",
 	Description = "Despite being the heaviest piece of automatic weaponry, they offer high magazine capacity with a decent firerate and reload speed.",
 	Model       = "models/autocannon/autocannon_50mm.mdl",
@@ -18,7 +22,7 @@ ACF.RegisterWeaponClass("AC", {
 	Caliber	= {
 		Base = 50,
 		Min  = 20,
-		Max  = 50,
+		Max  = 60,
 	},
 	MagSize = {
 		Min = 500,
@@ -34,19 +38,19 @@ ACF.RegisterWeaponClass("AC", {
 	},
 })
 
-ACF.RegisterWeapon("20mmAC", "AC", {
+Weapons.Register("20mmAC", "AC", {
 	Caliber = 20,
 })
 
-ACF.RegisterWeapon("30mmAC", "AC", {
+Weapons.Register("30mmAC", "AC", {
 	Caliber = 30,
 })
 
-ACF.RegisterWeapon("40mmAC", "AC", {
+Weapons.Register("40mmAC", "AC", {
 	Caliber = 40,
 })
 
-ACF.RegisterWeapon("50mmAC", "AC", {
+Weapons.Register("50mmAC", "AC", {
 	Caliber = 50,
 })
 

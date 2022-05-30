@@ -1,11 +1,11 @@
-
--- Differentials
+local ACF       = ACF
+local Gearboxes = ACF.Classes.Gearboxes
 
 local Gear1SW = 10
 local Gear1MW = 20
 local Gear1LW = 40
 
-ACF.RegisterGearboxClass("Differential", {
+Gearboxes.RegisterGroup("Differential", {
 	Name		= "Differential",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -15,7 +15,7 @@ ACF.RegisterGearboxClass("Differential", {
 })
 
 do -- Inline Gearboxes
-	ACF.RegisterGearbox("1Gear-L-S", "Differential", {
+	Gearboxes.Register("1Gear-L-S", "Differential", {
 		Name		= "Differential, Inline, Small",
 		Description	= "Small differential, used to connect power from gearbox to wheels",
 		Model		= "models/engines/linear_s.mdl",
@@ -27,7 +27,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-L-M", "Differential", {
+	Gearboxes.Register("1Gear-L-M", "Differential", {
 		Name		= "Differential, Inline, Medium",
 		Description	= "Medium duty differential",
 		Model		= "models/engines/linear_m.mdl",
@@ -39,7 +39,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-L-L", "Differential", {
+	Gearboxes.Register("1Gear-L-L", "Differential", {
 		Name		= "Differential, Inline, Large",
 		Description	= "Heavy duty differential, for the heaviest of engines",
 		Model		= "models/engines/linear_l.mdl",
@@ -53,7 +53,7 @@ do -- Inline Gearboxes
 end
 
 do -- Inline Dual Clutch Gearboxes
-	ACF.RegisterGearbox("1Gear-LD-S", "Differential", {
+	Gearboxes.Register("1Gear-LD-S", "Differential", {
 		Name		= "Differential, Inline, Small, Dual Clutch",
 		Description	= "Small differential, used to connect power from gearbox to wheels",
 		Model		= "models/engines/linear_s.mdl",
@@ -66,7 +66,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-LD-M", "Differential", {
+	Gearboxes.Register("1Gear-LD-M", "Differential", {
 		Name		= "Differential, Inline, Medium, Dual Clutch",
 		Description	= "Medium duty differential",
 		Model		= "models/engines/linear_m.mdl",
@@ -79,7 +79,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-LD-L", "Differential", {
+	Gearboxes.Register("1Gear-LD-L", "Differential", {
 		Name		= "Differential, Inline, Large, Dual Clutch",
 		Description	= "Heavy duty differential, for the heaviest of engines",
 		Model		= "models/engines/linear_l.mdl",
@@ -94,7 +94,7 @@ do -- Inline Dual Clutch Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	ACF.RegisterGearbox("1Gear-T-S", "Differential", {
+	Gearboxes.Register("1Gear-T-S", "Differential", {
 		Name		= "Differential, Small",
 		Description	= "Small differential, used to connect power from gearbox to wheels",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -106,7 +106,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-T-M", "Differential", {
+	Gearboxes.Register("1Gear-T-M", "Differential", {
 		Name		= "Differential, Medium",
 		Description	= "Medium duty differential",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -118,7 +118,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-T-L", "Differential", {
+	Gearboxes.Register("1Gear-T-L", "Differential", {
 		Name		= "Differential, Large",
 		Description	= "Heavy duty differential, for the heaviest of engines",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -132,7 +132,7 @@ do -- Transaxial Gearboxes
 end
 
 do -- Transaxial Dual Clutch Gearboxes
-	ACF.RegisterGearbox("1Gear-TD-S", "Differential", {
+	Gearboxes.Register("1Gear-TD-S", "Differential", {
 		Name		= "Differential, Small, Dual Clutch",
 		Description	= "Small differential, used to connect power from gearbox to wheels",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -145,7 +145,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-TD-M", "Differential", {
+	Gearboxes.Register("1Gear-TD-M", "Differential", {
 		Name		= "Differential, Medium, Dual Clutch",
 		Description	= "Medium duty differential",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -158,7 +158,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("1Gear-TD-L", "Differential", {
+	Gearboxes.Register("1Gear-TD-L", "Differential", {
 		Name		= "Differential, Large, Dual Clutch",
 		Description	= "Heavy duty differential, for the heaviest of engines",
 		Model		= "models/engines/transaxial_l.mdl",

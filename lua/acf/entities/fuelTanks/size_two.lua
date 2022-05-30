@@ -1,10 +1,13 @@
-ACF.RegisterFuelTankClass("FTS_2", {
+local FuelTanks = ACF.Classes.FuelTanks
+
+
+FuelTanks.RegisterGroup("FTS_2", {
 	Name		= "Size 2 Container",
 	Description	= "Size 2 fuel containers, required for engines to work.",
 })
 
 do
-	ACF.RegisterFuelTank("Tank_2x2x1","FTS_2", {
+	FuelTanks.Register("Tank_2x2x1","FTS_2", {
 		Name		= "2x2x1 Container",
 		Description	= "Dinghy",
 		Model		= "models/fueltank/fueltank_2x2x1.mdl",
@@ -13,7 +16,7 @@ do
 		Shape       = "Box",
 	})
 
-	ACF.RegisterFuelTank("Tank_2x2x2","FTS_2", {
+	FuelTanks.Register("Tank_2x2x2","FTS_2", {
 		Name		= "2x2x2 Container",
 		Description	= "Clown car.",
 		Model		= "models/fueltank/fueltank_2x2x2.mdl",
@@ -25,7 +28,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x2x4","FTS_2", {
+	FuelTanks.Register("Tank_2x2x4","FTS_2", {
 		Name		= "2x2x4 Container",
 		Description	= "Mini Cooper.",
 		Model		= "models/fueltank/fueltank_2x2x4.mdl",
@@ -37,7 +40,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x4x1","FTS_2", {
+	FuelTanks.Register("Tank_2x4x1","FTS_2", {
 		Name		= "2x4x1 Container",
 		Description	= "Good bit of go-juice.",
 		Model		= "models/fueltank/fueltank_2x4x1.mdl",
@@ -50,7 +53,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x4x2","FTS_2", {
+	FuelTanks.Register("Tank_2x4x2","FTS_2", {
 		Name		= "2x4x2 Container",
 		Description	= "Mini Cooper.",
 		Model		= "models/fueltank/fueltank_2x4x2.mdl",
@@ -62,7 +65,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x4x4","FTS_2", {
+	FuelTanks.Register("Tank_2x4x4","FTS_2", {
 		Name		= "2x4x4 Container",
 		Description	= "Land boat.",
 		Model		= "models/fueltank/fueltank_2x4x4.mdl",
@@ -74,7 +77,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x6x1","FTS_2", {
+	FuelTanks.Register("Tank_2x6x1","FTS_2", {
 		Name		= "2x6x1 Container",
 		Description	= "Conformal fuel tank, fits narrow spaces.",
 		Model		= "models/fueltank/fueltank_2x6x1.mdl",
@@ -87,7 +90,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x6x2","FTS_2", {
+	FuelTanks.Register("Tank_2x6x2","FTS_2", {
 		Name		= "2x6x2 Container",
 		Description	= "Compact car.",
 		Model		= "models/fueltank/fueltank_2x6x2.mdl",
@@ -99,7 +102,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x6x4","FTS_2", {
+	FuelTanks.Register("Tank_2x6x4","FTS_2", {
 		Name		= "2x6x4 Container",
 		Description	= "Sedan.",
 		Model		= "models/fueltank/fueltank_2x6x4.mdl",
@@ -111,7 +114,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x8x1","FTS_2", {
+	FuelTanks.Register("Tank_2x8x1","FTS_2", {
 		Name		= "2x8x1 Container",
 		Description	= "Conformal fuel tank, fits into tight spaces",
 		Model		= "models/fueltank/fueltank_2x8x1.mdl",
@@ -124,7 +127,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x8x2","FTS_2", {
+	FuelTanks.Register("Tank_2x8x2","FTS_2", {
 		Name		= "2x8x2 Container",
 		Description	= "Truck.",
 		Model		= "models/fueltank/fueltank_2x8x2.mdl",
@@ -136,7 +139,7 @@ do
 		},
 	})
 
-	ACF.RegisterFuelTank("Tank_2x8x4","FTS_2", {
+	FuelTanks.Register("Tank_2x8x4","FTS_2", {
 		Name		= "2x8x4 Container",
 		Description	= "With great capacity, comes great responsibili--VROOOOM",
 		Model		= "models/fueltank/fueltank_2x8x4.mdl",

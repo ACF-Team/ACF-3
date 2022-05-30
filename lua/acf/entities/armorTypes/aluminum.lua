@@ -1,7 +1,8 @@
 -- 6061 Alumunium alloy
 -- https://en.wikipedia.org/wiki/6061_aluminium_alloy
 
-local Armor = ACF.RegisterArmorType("Aluminum", "RHA")
+local Types = ACF.Classes.ArmorTypes
+local Armor = Types.Register("Aluminum", "RHA")
 
 function Armor:OnLoaded()
 	self.Name		 = "6061 Aluminum"

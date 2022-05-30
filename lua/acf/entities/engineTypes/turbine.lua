@@ -1,4 +1,7 @@
-ACF.RegisterEngineType("Turbine", {
+local EngineTypes = ACF.Classes.EngineTypes
+
+
+EngineTypes.Register("Turbine", {
 	Name        = "Generic Turbine",
 	Efficiency  = 0.375, -- previously 0.231
 	TorqueScale = 0.2,

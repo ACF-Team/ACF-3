@@ -1,4 +1,8 @@
-ACF.RegisterFuelType("Electric", {
+local ACF       = ACF
+local FuelTypes = ACF.Classes.FuelTypes
+
+
+FuelTypes.Register("Electric", {
 	Name			= "Lit-Ion Battery",
 	Density			= 3.89,
 	ConsumptionText	= function(PeakkW, _, Efficiency)

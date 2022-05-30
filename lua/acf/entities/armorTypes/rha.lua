@@ -1,7 +1,9 @@
 -- RHA Steel (MIL-DTL-12560)
 -- https://www.alternatewars.com/BBOW/Ballistics/Term/Armor_Material.htm
 
-local Armor = ACF.RegisterArmorType("RHA")
+local ACF   = ACF
+local Types = ACF.Classes.ArmorTypes
+local Armor = Types.Register("RHA")
 
 -- Length (mm), Density(g/cm3)
 function ACF.RHAe(Length, Density)

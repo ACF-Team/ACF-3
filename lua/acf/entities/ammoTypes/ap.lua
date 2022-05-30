@@ -1,5 +1,7 @@
-local ACF  = ACF
-local Ammo = ACF.RegisterAmmoType("AP")
+local ACF   = ACF
+local Types = ACF.Classes.AmmoTypes
+local Ammo  = Types.Register("AP")
+
 
 function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing"

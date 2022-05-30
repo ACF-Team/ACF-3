@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("HW", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("HW", {
 	Name        = "Howitzer",
 	Description = "Analog of cannons, except it's intended to fire explosive and chemical rounds where its bigger round size a exceels at.",
 	Sound       = "acf_base/weapons/howitzer_new2.mp3",
@@ -22,23 +26,23 @@ ACF.RegisterWeaponClass("HW", {
 	},
 })
 
-ACF.RegisterWeapon("75mmHW", "HW", {
+Weapons.Register("75mmHW", "HW", {
 	Caliber = 75,
 })
 
-ACF.RegisterWeapon("105mmHW", "HW", {
+Weapons.Register("105mmHW", "HW", {
 	Caliber = 105,
 })
 
-ACF.RegisterWeapon("122mmHW", "HW", {
+Weapons.Register("122mmHW", "HW", {
 	Caliber = 122,
 })
 
-ACF.RegisterWeapon("155mmHW", "HW", {
+Weapons.Register("155mmHW", "HW", {
 	Caliber = 155,
 })
 
-ACF.RegisterWeapon("203mmHW", "HW", {
+Weapons.Register("203mmHW", "HW", {
 	Caliber = 203,
 })
 

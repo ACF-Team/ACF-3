@@ -1,3 +1,6 @@
+local ACF       = ACF
+local Gearboxes = ACF.Classes.Gearboxes
+
 -- Weight
 local wmul = 1.5
 local Gear7SW = 100 * wmul
@@ -31,7 +34,7 @@ local function InitGearbox(Gearbox)
 	Gearbox:ChangeDrive(1)
 end
 
-ACF.RegisterGearboxClass("7-Auto", {
+Gearboxes.RegisterGroup("7-Auto", {
 	Name		= "7-Speed Automatic",
 	CreateMenu	= ACF.AutomaticGearboxMenu,
 	Gears = {
@@ -125,7 +128,7 @@ ACF.RegisterGearboxClass("7-Auto", {
 })
 
 do -- Inline Gearboxes
-	ACF.RegisterGearbox("7Gear-A-L-S", "7-Auto", {
+	Gearboxes.Register("7Gear-A-L-S", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Small",
 		Description	= "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating",
 		Model		= "models/engines/linear_s.mdl",
@@ -137,7 +140,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-L-M", "7-Auto", {
+	Gearboxes.Register("7Gear-A-L-M", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Medium",
 		Description	= "A medium sized, 7 speed automatic inline gearbox",
 		Model		= "models/engines/linear_m.mdl",
@@ -149,7 +152,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-L-L", "7-Auto", {
+	Gearboxes.Register("7Gear-A-L-L", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Large",
 		Description	= "A large, heavy and sturdy 7 speed inline gearbox",
 		Model		= "models/engines/linear_l.mdl",
@@ -163,7 +166,7 @@ do -- Inline Gearboxes
 end
 
 do -- Inline Dual Clutch Gearboxes
-	ACF.RegisterGearbox("7Gear-A-LD-S", "7-Auto", {
+	Gearboxes.Register("7Gear-A-LD-S", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Small, Dual Clutch",
 		Description	= "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating",
 		Model		= "models/engines/linear_s.mdl",
@@ -176,7 +179,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-LD-M", "7-Auto", {
+	Gearboxes.Register("7Gear-A-LD-M", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Medium, Dual Clutch",
 		Description	= "A medium sized, 7 speed automatic inline gearbox",
 		Model		= "models/engines/linear_m.mdl",
@@ -189,7 +192,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-LD-L", "7-Auto", {
+	Gearboxes.Register("7Gear-A-LD-L", "7-Auto", {
 		Name		= "7-Speed Auto, Inline, Large, Dual Clutch",
 		Description	= "A large, heavy and sturdy 7 speed automatic inline gearbox",
 		Model		= "models/engines/linear_l.mdl",
@@ -204,7 +207,7 @@ do -- Inline Dual Clutch Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	ACF.RegisterGearbox("7Gear-A-T-S", "7-Auto", {
+	Gearboxes.Register("7Gear-A-T-S", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Small",
 		Description	= "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -216,7 +219,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-T-M", "7-Auto", {
+	Gearboxes.Register("7Gear-A-T-M", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Medium",
 		Description	= "A medium sized, 7 speed automatic gearbox",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -228,7 +231,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-T-L", "7-Auto", {
+	Gearboxes.Register("7Gear-A-T-L", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Large",
 		Description	= "A large, heavy and sturdy 7 speed automatic gearbox",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -242,7 +245,7 @@ do -- Transaxial Gearboxes
 end
 
 do -- Transaxial Dual Clutch Gearboxes
-	ACF.RegisterGearbox("7Gear-A-TD-S", "7-Auto", {
+	Gearboxes.Register("7Gear-A-TD-S", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Small, Dual Clutch",
 		Description	= "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -255,7 +258,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-TD-M", "7-Auto", {
+	Gearboxes.Register("7Gear-A-TD-M", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Medium, Dual Clutch",
 		Description	= "A medium sized, 7 speed automatic gearbox",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -268,7 +271,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-TD-L", "7-Auto", {
+	Gearboxes.Register("7Gear-A-TD-L", "7-Auto", {
 		Name		= "7-Speed Auto, Transaxial, Large, Dual Clutch",
 		Description	= "A large, heavy and sturdy 7 speed automatic gearbox",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -283,7 +286,7 @@ do -- Transaxial Dual Clutch Gearboxes
 end
 
 do -- Straight-through Gearboxes
-	ACF.RegisterGearbox("7Gear-A-ST-S", "7-Auto", {
+	Gearboxes.Register("7Gear-A-ST-S", "7-Auto", {
 		Name		= "7-Speed Auto, Straight, Small",
 		Description	= "A small straight-through automatic gearbox",
 		Model		= "models/engines/t5small.mdl",
@@ -295,7 +298,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-ST-M", "7-Auto", {
+	Gearboxes.Register("7Gear-A-ST-M", "7-Auto", {
 		Name		= "7-Speed Auto, Straight, Medium",
 		Description	= "A medium sized, 7 speed automatic straight-through gearbox.",
 		Model		= "models/engines/t5med.mdl",
@@ -307,7 +310,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("7Gear-A-ST-L", "7-Auto", {
+	Gearboxes.Register("7Gear-A-ST-L", "7-Auto", {
 		Name		= "7-Speed Auto, Straight, Large",
 		Description	= "A large sized, 7 speed automatic straight-through gearbox.",
 		Model		= "models/engines/t5large.mdl",

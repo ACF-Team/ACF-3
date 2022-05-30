@@ -1,4 +1,7 @@
-local Ammo = ACF.RegisterAmmoType("Refill", "AP")
+local ACF   = ACF
+local Types = ACF.Classes.AmmoTypes
+local Ammo  = Types.Register("Refill", "AP")
+
 
 function Ammo:OnLoaded()
 	self.Name        = "Refill"

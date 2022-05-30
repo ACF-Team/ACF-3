@@ -1,13 +1,14 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Gas turbines
 
-ACF.RegisterEngineClass("GT", {
+Engines.RegisterGroup("GT", {
 	Name		= "Gas Turbine",
 	Description	= "These turbines are optimized for aero use due to them being powerful but suffering from poor throttle response and fuel consumption."
 })
 
 do -- Forward-facing Gas Turbines
-	ACF.RegisterEngine("Turbine-Small", "GT", {
+	Engines.Register("Turbine-Small", "GT", {
 		Name		 = "Small Gas Turbine",
 		Description	 = "A small gas turbine, high power and a very wide powerband.",
 		Model		 = "models/engines/gasturbine_s.mdl",
@@ -28,7 +29,7 @@ do -- Forward-facing Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Medium", "GT", {
+	Engines.Register("Turbine-Medium", "GT", {
 		Name		 = "Medium Gas Turbine",
 		Description	 = "A medium gas turbine, moderate power but a very wide powerband.",
 		Model		 = "models/engines/gasturbine_m.mdl",
@@ -49,7 +50,7 @@ do -- Forward-facing Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Large", "GT", {
+	Engines.Register("Turbine-Large", "GT", {
 		Name		 = "Large Gas Turbine",
 		Description	 = "A large gas turbine, powerful with a wide powerband.",
 		Model		 = "models/engines/gasturbine_l.mdl",
@@ -72,7 +73,7 @@ do -- Forward-facing Gas Turbines
 end
 
 do -- Transaxial Gas Turbines
-	ACF.RegisterEngine("Turbine-Small-Trans", "GT", {
+	Engines.Register("Turbine-Small-Trans", "GT", {
 		Name		 = "Small Transaxial Gas Turbine",
 		Description	 = "A small gas turbine, high power and a very wide powerband. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_s.mdl",
@@ -94,7 +95,7 @@ do -- Transaxial Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Medium-Trans", "GT", {
+	Engines.Register("Turbine-Medium-Trans", "GT", {
 		Name		 = "Medium Transaxial Gas Turbine",
 		Description	 = "A medium gas turbine, moderate power but a very wide powerband. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_m.mdl",
@@ -116,7 +117,7 @@ do -- Transaxial Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Large-Trans", "GT", {
+	Engines.Register("Turbine-Large-Trans", "GT", {
 		Name		 = "Large Transaxial Gas Turbine",
 		Description	 = "A large gas turbine, powerful with a wide powerband. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_l.mdl",
@@ -139,13 +140,13 @@ do -- Transaxial Gas Turbines
 	})
 end
 
-ACF.RegisterEngineClass("GGT", {
+Engines.RegisterGroup("GGT", {
 	Name		= "Ground Gas Turbine",
 	Description	= "Ground-use turbines have excellent low-rev performance and are deceptively powerful. However, they have high gearbox demands, high fuel usage and low tolerance to damage."
 })
 
 do -- Forward-facing Ground Gas Turbines
-	ACF.RegisterEngine("Turbine-Ground-Small", "GGT", {
+	Engines.Register("Turbine-Ground-Small", "GGT", {
 		Name		 = "Small Ground Gas Turbine",
 		Description	 = "A small gas turbine, fitted with ground-use air filters and tuned for ground use.",
 		Model		 = "models/engines/gasturbine_s.mdl",
@@ -166,7 +167,7 @@ do -- Forward-facing Ground Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Ground-Medium", "GGT", {
+	Engines.Register("Turbine-Ground-Medium", "GGT", {
 		Name		 = "Medium Ground Gas Turbine",
 		Description	 = "A medium gas turbine, fitted with ground-use air filters and tuned for ground use.",
 		Model		 = "models/engines/gasturbine_m.mdl",
@@ -188,7 +189,7 @@ do -- Forward-facing Ground Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Ground-Large", "GGT", {
+	Engines.Register("Turbine-Ground-Large", "GGT", {
 		Name		 = "Large Ground Gas Turbine",
 		Description	 = "A large gas turbine, fitted with ground-use air filters and tuned for ground use.",
 		Model		 = "models/engines/gasturbine_l.mdl",
@@ -212,7 +213,7 @@ do -- Forward-facing Ground Gas Turbines
 end
 
 do -- Transaxial Ground Gas Turbines
-	ACF.RegisterEngine("Turbine-Small-Ground-Trans", "GGT", {
+	Engines.Register("Turbine-Small-Ground-Trans", "GGT", {
 		Name		 = "Small Transaxial Ground Gas Turbine",
 		Description	 = "A small gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_s.mdl",
@@ -234,7 +235,7 @@ do -- Transaxial Ground Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Medium-Ground-Trans", "GGT", {
+	Engines.Register("Turbine-Medium-Ground-Trans", "GGT", {
 		Name		 = "Medium Transaxial Ground Gas Turbine",
 		Description	 = "A medium gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_m.mdl",
@@ -257,7 +258,7 @@ do -- Transaxial Ground Gas Turbines
 		},
 	})
 
-	ACF.RegisterEngine("Turbine-Large-Ground-Trans", "GGT", {
+	Engines.Register("Turbine-Large-Ground-Trans", "GGT", {
 		Name		 = "Large Transaxial Ground Gas Turbine",
 		Description	 = "A large gas turbine fitted with ground-use air filters and tuned for ground use. Outputs to the side instead of rear.",
 		Model		 = "models/engines/turbine_l.mdl",

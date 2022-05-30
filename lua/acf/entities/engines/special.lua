@@ -1,12 +1,13 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Special engines
 
-ACF.RegisterEngineClass("SP", {
+Engines.RegisterGroup("SP", {
 	Name = "Special Engine",
 })
 
 do -- Special Rotary Engines
-	ACF.RegisterEngine("2.6L-Wankel", "SP", {
+	Engines.Register("2.6L-Wankel", "SP", {
 		Name		 = "2.6L Rotary",
 		Description	 = "4 rotor racing Wankel, high revving and high strung.",
 		Model		 = "models/engines/wankel_4_med.mdl",
@@ -27,7 +28,7 @@ do -- Special Rotary Engines
 end
 
 do -- Special I2 Engines
-	ACF.RegisterEngine("0.9L-I2", "SP", {
+	Engines.Register("0.9L-I2", "SP", {
 		Name		 = "0.9L I2 Petrol",
 		Description	 = "Turbocharged inline twin engine that delivers surprising pep for its size.",
 		Model		 = "models/engines/inline2s.mdl",
@@ -48,7 +49,7 @@ do -- Special I2 Engines
 end
 
 do -- Special I4 Engines
-	ACF.RegisterEngine("1.0L-I4", "SP", {
+	Engines.Register("1.0L-I4", "SP", {
 		Name		 = "1.0L I4 Petrol",
 		Description	 = "Tiny I4 designed for racing bikes. Doesn't pack much torque, but revs ludicrously high.",
 		Model		 = "models/engines/inline4s.mdl",
@@ -68,7 +69,7 @@ do -- Special I4 Engines
 		},
 	})
 
-	ACF.RegisterEngine("1.9L-I4", "SP", {
+	Engines.Register("1.9L-I4", "SP", {
 		Name		 = "1.9L I4 Petrol",
 		Description	 = "Supercharged racing 4 cylinder, most of the power in the high revs.",
 		Model		 = "models/engines/inline4s.mdl",
@@ -89,7 +90,7 @@ do -- Special I4 Engines
 end
 
 do -- Special V4 Engines
-	ACF.RegisterEngine("1.8L-V4", "SP", {
+	Engines.Register("1.8L-V4", "SP", {
 		Name		 = "1.8L V4 Petrol",
 		Description	 = "Naturally aspirated rally-tuned V4 with enlarged bore and stroke.",
 		Model		 = "models/engines/v4s.mdl",
@@ -110,7 +111,7 @@ do -- Special V4 Engines
 end
 
 do -- Special I6 Engines
-	ACF.RegisterEngine("3.8-I6", "SP", {
+	Engines.Register("3.8-I6", "SP", {
 		Name		 = "3.8L I6 Petrol",
 		Description	 = "Large racing straight six, powerful and high revving, but lacking in torque.",
 		Model		 = "models/engines/inline6m.mdl",
@@ -131,7 +132,7 @@ do -- Special I6 Engines
 end
 
 do -- Special V6 Engines
-	ACF.RegisterEngine("2.4L-V6", "SP", {
+	Engines.Register("2.4L-V6", "SP", {
 		Name		 = "2.4L V6 Petrol",
 		Description	 = "Although the cast iron engine block is fairly weighty, this tiny v6 makes up for it with impressive power. The unique V angle allows uncharacteristically high RPM for a V6.",
 		Model		 = "models/engines/v6small.mdl",
@@ -152,7 +153,7 @@ do -- Special V6 Engines
 end
 
 do -- Special V8 Engines
-	ACF.RegisterEngine("2.9-V8", "SP", {
+	Engines.Register("2.9-V8", "SP", {
 		Name		 = "2.9L V8 Petrol",
 		Description	 = "Racing V8, very high revving and loud",
 		Model		 = "models/engines/v8s.mdl",
@@ -171,7 +172,7 @@ do -- Special V8 Engines
 		},
 	})
 
-	ACF.RegisterEngine("7.2-V8", "SP", {
+	Engines.Register("7.2-V8", "SP", {
 		Name		 = "7.2L V8 Petrol",
 		Description	 = "Very high revving, glorious v8 of ear rapetasticalness.",
 		Model		 = "models/engines/v8m.mdl",
@@ -192,7 +193,7 @@ do -- Special V8 Engines
 end
 
 do -- Special V10 Engines
-	ACF.RegisterEngine("5.3-V10", "SP", {
+	Engines.Register("5.3-V10", "SP", {
 		Name		 = "5.3L V10 Special",
 		Description	 = "Extreme performance v10",
 		Model		 = "models/engines/v10sml.mdl",
@@ -213,7 +214,7 @@ do -- Special V10 Engines
 end
 
 do -- Special V12 Engines
-	ACF.RegisterEngine("3.0-V12", "SP", {
+	Engines.Register("3.0-V12", "SP", {
 		Name		 = "3.0L V12 Petrol",
 		Description	 = "A purpose-built racing v12, not known for longevity.",
 		Model		 = "models/engines/v12s.mdl",

@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("SC", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("SC", {
 	Name        = "Short-Barrelled Cannon",
 	Description = "Shorter variant of cannons, limited to shorter round size and therefore worse performance than their full sized counterpart.",
 	Model       = "models/tankgun/tankgun_short_100mm.mdl",
@@ -26,27 +30,27 @@ ACF.RegisterWeaponClass("SC", {
 	},
 })
 
-ACF.RegisterWeapon("37mmSC", "SC", {
+Weapons.Register("37mmSC", "SC", {
 	Caliber = 37,
 })
 
-ACF.RegisterWeapon("50mmSC", "SC", {
+Weapons.Register("50mmSC", "SC", {
 	Caliber = 50,
 })
 
-ACF.RegisterWeapon("75mmSC", "SC", {
+Weapons.Register("75mmSC", "SC", {
 	Caliber = 75,
 })
 
-ACF.RegisterWeapon("100mmSC", "SC", {
+Weapons.Register("100mmSC", "SC", {
 	Caliber = 100,
 })
 
-ACF.RegisterWeapon("120mmSC", "SC", {
+Weapons.Register("120mmSC", "SC", {
 	Caliber = 120,
 })
 
-ACF.RegisterWeapon("140mmSC", "SC", {
+Weapons.Register("140mmSC", "SC", {
 	Caliber = 140,
 })
 

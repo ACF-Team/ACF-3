@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("GL", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("GL", {
 	Name        = "Grenade Launcher",
 	Description = "Small and light, grenade launchers allow you to fire huge amounts of explosives into an area at the cost of poor accuracy and small magazine size.",
 	Sound       = "acf_base/weapons/grenadelauncher.mp3",
@@ -32,11 +36,11 @@ ACF.RegisterWeaponClass("GL", {
 	},
 })
 
-ACF.RegisterWeapon("40mmGL", "GL", {
+Weapons.Register("40mmGL", "GL", {
 	Caliber = 40,
 })
 
-ACF.RegisterWeapon("40mmCL", "GL", {
+Weapons.Register("40mmCL", "GL", {
 	Caliber = 40,
 })
 

@@ -1,12 +1,13 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Single-cylinder engines
 
-ACF.RegisterEngineClass("I1", {
+Engines.RegisterGroup("I1", {
 	Name = "Single Cylinder Engine",
 })
 
 do
-	ACF.RegisterEngine("0.25-I1", "I1", {
+	Engines.Register("0.25-I1", "I1", {
 		Name		 = "250cc Single Cylinder",
 		Description	 = "Tiny bike engine.",
 		Model		 = "models/engines/1cylsml.mdl",
@@ -25,7 +26,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("0.5-I1", "I1", {
+	Engines.Register("0.5-I1", "I1", {
 		Name		 = "500cc Single Cylinder",
 		Description	 = "Large single cylinder bike engine.",
 		Model		 = "models/engines/1cylmed.mdl",
@@ -44,7 +45,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("1.3-I1", "I1", {
+	Engines.Register("1.3-I1", "I1", {
 		Name		 = "1300cc Single Cylinder",
 		Description	 = "Ridiculously large single cylinder engine, seriously what the fuck.",
 		Model		 = "models/engines/1cylbig.mdl",

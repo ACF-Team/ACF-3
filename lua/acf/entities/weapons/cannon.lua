@@ -1,3 +1,6 @@
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
 local OldModels = {
 	["models/tankgun/tankgun_100mm.mdl"] = true,
 	["models/tankgun/tankgun_120mm.mdl"] = true,
@@ -39,7 +42,8 @@ local PortingData = {
 	},
 }
 
-ACF.RegisterWeaponClass("C", {
+
+Weapons.RegisterGroup("C", {
 	Name        = "Cannon",
 	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
 	Model       = "models/tankgun_new/tankgun_100mm.mdl",
@@ -99,27 +103,27 @@ ACF.RegisterWeaponClass("C", {
 	end,
 })
 
-ACF.RegisterWeapon("37mmC", "C", {
+Weapons.Register("37mmC", "C", {
 	Caliber = 37,
 })
 
-ACF.RegisterWeapon("50mmC", "C", {
+Weapons.Register("50mmC", "C", {
 	Caliber = 50,
 })
 
-ACF.RegisterWeapon("75mmC", "C", {
+Weapons.Register("75mmC", "C", {
 	Caliber = 75,
 })
 
-ACF.RegisterWeapon("100mmC", "C", {
+Weapons.Register("100mmC", "C", {
 	Caliber = 100,
 })
 
-ACF.RegisterWeapon("120mmC", "C", {
+Weapons.Register("120mmC", "C", {
 	Caliber = 120,
 })
 
-ACF.RegisterWeapon("140mmC", "C", {
+Weapons.Register("140mmC", "C", {
 	Caliber = 140,
 })
 

@@ -1,12 +1,13 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Flat 4 engines
 
-ACF.RegisterEngineClass("B4", {
+Engines.RegisterGroup("B4", {
 	Name = "Flat 4 Engine",
 })
 
 do
-	ACF.RegisterEngine("1.4-B4", "B4", {
+	Engines.Register("1.4-B4", "B4", {
 		Name		 = "1.4L Flat 4 Petrol",
 		Description	 = "Small air cooled flat four, most commonly found in nazi insects",
 		Model		 = "models/engines/b4small.mdl",
@@ -25,7 +26,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("2.1-B4", "B4", {
+	Engines.Register("2.1-B4", "B4", {
 		Name		 = "2.1L Flat 4 Petrol",
 		Description	 = "Tuned up flat four, probably find this in things that go fast in a desert.",
 		Model		 = "models/engines/b4small.mdl",
@@ -44,7 +45,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("2.4-B4", "B4", {
+	Engines.Register("2.4-B4", "B4", {
 		Name		 = "2.4L Flat 4 Multifuel",
 		Description	 = "Tiny military-grade multifuel. Heavy, but grunts hard.",
 		Model		 = "models/engines/b4small.mdl",
@@ -63,7 +64,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("3.2-B4", "B4", {
+	Engines.Register("3.2-B4", "B4", {
 		Name		 = "3.2L Flat 4 Petrol",
 		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.", -- Ok
 		Model		 = "models/engines/b4med.mdl",

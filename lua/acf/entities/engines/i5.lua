@@ -1,12 +1,13 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Inline 5 engines
 
-ACF.RegisterEngineClass("I5", {
+Engines.RegisterGroup("I5", {
 	Name = "Inline 5 Engine",
 })
 
 do -- Petrol Engines
-	ACF.RegisterEngine("2.3-I5", "I5", {
+	Engines.Register("2.3-I5", "I5", {
 		Name		 = "2.3L I5 Petrol",
 		Description	 = "Sedan-grade 5-cylinder, solid and dependable.",
 		Model		 = "models/engines/inline5s.mdl",
@@ -25,7 +26,7 @@ do -- Petrol Engines
 		},
 	})
 
-	ACF.RegisterEngine("3.9-I5", "I5", {
+	Engines.Register("3.9-I5", "I5", {
 		Name		 = "3.9L I5 Petrol",
 		Description	 = "Truck sized inline 5, strong with a good balance of revs and torque.",
 		Model		 = "models/engines/inline5m.mdl",
@@ -46,7 +47,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	ACF.RegisterEngine("2.9-I5", "I5", {
+	Engines.Register("2.9-I5", "I5", {
 		Name		 = "2.9L I5 Diesel",
 		Description	 = "Aging fuel-injected diesel, low in horsepower but very forgiving and durable.",
 		Model		 = "models/engines/inline5s.mdl",
@@ -65,7 +66,7 @@ do -- Diesel Engines
 		},
 	})
 
-	ACF.RegisterEngine("4.1-I5", "I5", {
+	Engines.Register("4.1-I5", "I5", {
 		Name		 = "4.1L I5 Diesel",
 		Description	 = "Heavier duty diesel, found in things that work hard.",
 		Model		 = "models/engines/inline5m.mdl",

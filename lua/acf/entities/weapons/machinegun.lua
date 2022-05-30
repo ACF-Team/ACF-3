@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("MG", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("MG", {
 	Name        = "Machinegun",
 	Description = "The lightest piece of automatic weaponry, machineguns offer a high rate of fire and good magazine size at the cost of a poor variety of ammo types.",
 	Model       = "models/machinegun/machinegun_20mm.mdl",
@@ -35,23 +39,23 @@ ACF.RegisterWeaponClass("MG", {
 	},
 })
 
-ACF.RegisterWeapon("7.62mmMG", "MG", {
+Weapons.Register("7.62mmMG", "MG", {
 	Caliber = 7.62,
 })
 
-ACF.RegisterWeapon("12.7mmMG", "MG", {
+Weapons.Register("12.7mmMG", "MG", {
 	Caliber = 12.7,
 })
 
-ACF.RegisterWeapon("13mmHMG", "MG", {
+Weapons.Register("13mmHMG", "MG", {
 	Caliber = 13,
 })
 
-ACF.RegisterWeapon("14.5mmMG", "MG", {
+Weapons.Register("14.5mmMG", "MG", {
 	Caliber = 14.5,
 })
 
-ACF.RegisterWeapon("20mmMG", "MG", {
+Weapons.Register("20mmMG", "MG", {
 	Caliber = 20,
 })
 

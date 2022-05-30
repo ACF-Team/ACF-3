@@ -1,4 +1,7 @@
-local Ammo = ACF.RegisterAmmoType("SM", "AP")
+local ACF   = ACF
+local Types = ACF.Classes.AmmoTypes
+local Ammo  = Types.Register("SM", "AP")
+
 
 function Ammo:OnLoaded()
 	self.Name		 = "Smoke"

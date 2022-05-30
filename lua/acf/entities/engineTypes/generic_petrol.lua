@@ -1,4 +1,7 @@
-ACF.RegisterEngineType("GenericPetrol", {
+local EngineTypes = ACF.Classes.EngineTypes
+
+
+EngineTypes.Register("GenericPetrol", {
 	Name        = "Generic Petrol Engine",
 	Efficiency  = 0.304, --kg per kw hr
 	TorqueScale = 0.25,

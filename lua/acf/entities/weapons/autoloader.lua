@@ -1,4 +1,8 @@
-ACF.RegisterWeaponClass("AL", {
+local ACF     = ACF
+local Weapons = ACF.Classes.Weapons
+
+
+Weapons.RegisterGroup("AL", {
 	Name        = "Autoloaded Cannon",
 	Description = "An improvement over cannons that allows you fire multiple rounds in succesion at the cost of internal volume, mass and reload speed.",
 	Model       = "models/tankgun/tankgun_al_100mm.mdl",
@@ -31,19 +35,19 @@ ACF.RegisterWeaponClass("AL", {
 	},
 })
 
-ACF.RegisterWeapon("75mmAL", "AL", {
+Weapons.Register("75mmAL", "AL", {
 	Caliber = 75,
 })
 
-ACF.RegisterWeapon("100mmAL", "AL", {
+Weapons.Register("100mmAL", "AL", {
 	Caliber = 100,
 })
 
-ACF.RegisterWeapon("120mmAL", "AL", {
+Weapons.Register("120mmAL", "AL", {
 	Caliber = 120,
 })
 
-ACF.RegisterWeapon("140mmAL", "AL", {
+Weapons.Register("140mmAL", "AL", {
 	Caliber = 140,
 })
 

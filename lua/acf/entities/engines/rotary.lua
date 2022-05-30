@@ -1,13 +1,14 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
--- Wankel engines
 
-ACF.RegisterEngineClass("R", {
+Engines.RegisterGroup("R", {
 	Name		= "Rotary Engine",
 	Description	= "Wankels have rather wide powerbands, but are very high strung."
 })
 
 do
-	ACF.RegisterEngine("900cc-R", "R", {
+	Engines.Register("900cc-R", "R", {
 		Name		 = "0.9L Rotary",
 		Description	 = "Small 2-rotor Wankel, suited for yard use.",
 		Model		 = "models/engines/wankel_2_small.mdl",
@@ -26,7 +27,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("1.3L-R", "R", {
+	Engines.Register("1.3L-R", "R", {
 		Name		 = "1.3L Rotary",
 		Description	 = "Medium 2-rotor Wankel.",
 		Model		 = "models/engines/wankel_2_med.mdl",
@@ -45,7 +46,7 @@ do
 		},
 	})
 
-	ACF.RegisterEngine("2.0L-R", "R", {
+	Engines.Register("2.0L-R", "R", {
 		Name		 = "2.0L Rotary",
 		Description	 = "High performance 3-rotor Wankel.",
 		Model		 = "models/engines/wankel_3_med.mdl",

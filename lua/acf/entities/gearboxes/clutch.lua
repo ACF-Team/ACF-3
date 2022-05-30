@@ -1,5 +1,5 @@
-
--- Clutch
+local ACF       = ACF
+local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
 local CTW = 2
@@ -16,7 +16,7 @@ local CLT = 8000
 -- general description
 local CDesc = "A standalone clutch for when a full size gearbox is unnecessary or too long."
 
-ACF.RegisterGearboxClass("Clutch", {
+Gearboxes.RegisterGroup("Clutch", {
 	Name		= "Clutch",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -26,7 +26,7 @@ ACF.RegisterGearboxClass("Clutch", {
 })
 
 do -- Straight-through Gearboxes
-	ACF.RegisterGearbox("Clutch-S-T", "Clutch", {
+	Gearboxes.Register("Clutch-S-T", "Clutch", {
 		Name		= "Clutch, Straight, Tiny",
 		Description	= CDesc,
 		Model		= "models/engines/flywheelclutcht.mdl",
@@ -38,7 +38,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("Clutch-S-S", "Clutch", {
+	Gearboxes.Register("Clutch-S-S", "Clutch", {
 		Name		= "Clutch, Straight, Small",
 		Description	= CDesc,
 		Model		= "models/engines/flywheelclutchs.mdl",
@@ -50,7 +50,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("Clutch-S-M", "Clutch", {
+	Gearboxes.Register("Clutch-S-M", "Clutch", {
 		Name		= "Clutch, Straight, Medium",
 		Description	= CDesc,
 		Model		= "models/engines/flywheelclutchm.mdl",
@@ -62,7 +62,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("Clutch-S-L", "Clutch", {
+	Gearboxes.Register("Clutch-S-L", "Clutch", {
 		Name		= "Clutch, Straight, Large",
 		Description	= CDesc,
 		Model		= "models/engines/flywheelclutchb.mdl",

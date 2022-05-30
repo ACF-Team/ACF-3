@@ -1,4 +1,7 @@
-local Ammo = ACF.RegisterAmmoType("HEAT", "AP")
+local ACF   = ACF
+local Types = ACF.Classes.AmmoTypes
+local Ammo  = Types.Register("HEAT", "AP")
+
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)

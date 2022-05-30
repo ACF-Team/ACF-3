@@ -1,4 +1,6 @@
--- Double Differential
+local ACF       = ACF
+local Gearboxes = ACF.Classes.Gearboxes
+
 -- Weight
 local GearDDSW = 45
 local GearDDMW = 85
@@ -15,7 +17,7 @@ local function InitGearbox(Gearbox)
 	Gearbox:SetBodygroup(1, 1)
 end
 
-ACF.RegisterGearboxClass("DoubleDiff", {
+Gearboxes.RegisterGroup("DoubleDiff", {
 	Name		= "Double Differential",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -36,7 +38,7 @@ ACF.RegisterGearboxClass("DoubleDiff", {
 })
 
 do -- Transaxial Gearboxes
-	ACF.RegisterGearbox("DoubleDiff-T-S", "DoubleDiff", {
+	Gearboxes.Register("DoubleDiff-T-S", "DoubleDiff", {
 		Name		= "Double Differential, Small",
 		Description	= "A light duty regenerative steering transmission.",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -49,7 +51,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("DoubleDiff-T-M", "DoubleDiff", {
+	Gearboxes.Register("DoubleDiff-T-M", "DoubleDiff", {
 		Name		= "Double Differential, Medium",
 		Description	= "A medium regenerative steering transmission.",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -62,7 +64,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	ACF.RegisterGearbox("DoubleDiff-T-L", "DoubleDiff", {
+	Gearboxes.Register("DoubleDiff-T-L", "DoubleDiff", {
 		Name		= "Double Differential, Large",
 		Description	= "A heavy regenerative steering transmission.",
 		Model		= "models/engines/transaxial_l.mdl",

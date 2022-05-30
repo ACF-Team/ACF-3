@@ -1,4 +1,7 @@
-ACF.RegisterEngineType("Wankel", {
+local EngineTypes = ACF.Classes.EngineTypes
+
+
+EngineTypes.Register("Wankel", {
 	Name        = "Generic Wankel Engine",
 	Efficiency  = 0.335,
 	TorqueScale = 0.2,
