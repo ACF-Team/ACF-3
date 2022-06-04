@@ -100,12 +100,10 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	if not istable(Namespace) then return end
 	if not istable(Entries) then return end
 
-	-- Getters
-	function Namespace.GetGroup(ID)
-		return isstring(ID) and Entries[ID] or nil
-	end
+	Classes.AddSimpleFunctions(Namespace, Entries)
 
-	function Namespace.Get(ID, ClassID)
+	-- Getters
+	function Namespace.GetItem(ClassID, ID)
 		local Group = isstring(ClassID) and Entries[ClassID]
 
 		if not Group then return end
@@ -113,15 +111,36 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		return isstring(ID) and Group.Lookup[ID] or nil
 	end
 
-	-- Aliases
-	function Namespace.AddGroupAlias(ID, Alias)
-		if not isstring(ID) then return end
-		if not isstring(Alias) then return end
+	function Namespace.GetItemEntries(ClassID)
+		local Group = isstring(ClassID) and Entries[ClassID]
 
-		Entries[Alias] = Entries[ID]
+		if not Group then return end
+
+		local Result = {}
+
+		for _, V in pairs(Group.Lookup) do
+			Result[V.ID] = V
+		end
+
+		return Result
 	end
 
-	function Namespace.AddAlias(ID, GroupID, Alias)
+	function Namespace.GetItemList(ClassID)
+		local Group = isstring(ClassID) and Entries[ClassID]
+
+		if not Group then return end
+
+		local Result = {}
+
+		for K, V in ipairs(Group.Items) do
+			Result[K] = V
+		end
+
+		return Result
+	end
+
+	-- Aliases
+	function Namespace.AddItemAlias(GroupID, ID, Alias)
 		local Group = isstring(GroupID) and Entries[GroupID]
 
 		if not Group then return end
@@ -133,13 +152,7 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		Lookup[Alias] = Lookup[ID]
 	end
 
-	function Namespace.IsGroupAlias(ID)
-		local Data = isstring(ID) and Entries[ID]
-
-		return Data and Data.ID == ID or false
-	end
-
-	function Namespace.IsAlias(ID, GroupID)
+	function Namespace.IsItemAlias(GroupID, ID)
 		local Group = isstring(GroupID) and Entries[GroupID]
 
 		if not Group then return false end

@@ -38,6 +38,29 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 		return isstring(ID) and Entries[ID] or nil
 	end
 
+	function Namespace.GetEntries()
+		local Result = {}
+
+		for _, V in pairs(Entries) do
+			Result[V.ID] = V
+		end
+
+		return Result
+	end
+
+	function Namespace.GetList()
+		local Result = {}
+		local Count  = 0
+
+		for _, V in pairs(Entries) do
+			Count = Count + 1
+
+			Result[Count] = V
+		end
+
+		return Result
+	end
+
 	-- Aliases
 	function Namespace.AddAlias(ID, Alias)
 		if not isstring(ID) then return end
