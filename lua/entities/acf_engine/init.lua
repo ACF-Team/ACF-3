@@ -102,8 +102,9 @@ end
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local Engines     = ACF.Classes.Engines
-local EngineTypes = ACF.Classes.EngineTypes
+local Classes     = ACF.Classes
+local Engines     = Classes.Engines
+local EngineTypes = Classes.EngineTypes
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
@@ -231,6 +232,8 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
+	local Entities = Classes.Entities
+
 	local function VerifyData(Data)
 		if not Data.Engine then
 			Data.Engine = Data.Id or "5.7-V8"
@@ -361,7 +364,7 @@ do -- Spawn and Update functions
 			"Entity (The engine itself) [ENTITY]",
 			"Mass (Total mass detected on the vehicle by the engine)",
 			"Physical Mass (Physical mass detected on the vehicle by the engine)" })
-		Engine.DataStore    = ACF.GetEntityArguments("acf_engine")
+		Engine.DataStore    = Entities.GetArguments("acf_engine")
 
 		WireLib.TriggerOutput(Engine, "Entity", Engine)
 
@@ -388,7 +391,8 @@ do -- Spawn and Update functions
 		return Engine
 	end
 
-	ACF.RegisterEntityClass("acf_engine", MakeACF_Engine, "Engine")
+	Entities.Register("acf_engine", MakeACF_Engine, "Engine")
+
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 

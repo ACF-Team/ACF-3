@@ -8,8 +8,9 @@ include("shared.lua")
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
-local FuelTanks	  = ACF.Classes.FuelTanks
-local FuelTypes	  = ACF.Classes.FuelTypes
+local Classes     = ACF.Classes
+local FuelTanks	  = Classes.FuelTanks
+local FuelTypes	  = Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
@@ -31,6 +32,8 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
+	local Entities = Classes.Entities
+
 	local function VerifyData(Data)
 		if not Data.FuelTank then
 			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
@@ -152,7 +155,7 @@ do -- Spawn and Update functions
 			"Capacity (Total amount of fuel the tank can hold, in liters/kWh)",
 			"Leaking (If 1, the tank is losing fuel)",
 			"Entity (The fuel tank itself) [ENTITY]" })
-		Tank.DataStore	= ACF.GetEntityArguments("acf_fueltank")
+		Tank.DataStore	= Entities.GetArguments("acf_fueltank")
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
 
@@ -184,7 +187,8 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 	------------------- Updating ---------------------

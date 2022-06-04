@@ -26,7 +26,9 @@ end
 
 do -- Spawn and Update functions -----------------------
 	local CheckLegal = ACF_CheckLegal
-	local Gearboxes  = ACF.Classes.Gearboxes
+	local Classes    = ACF.Classes
+	local Gearboxes  = Classes.Gearboxes
+	local Entities   = Classes.Entities
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
@@ -273,7 +275,7 @@ do -- Spawn and Update functions -----------------------
 		Gearbox.LastActive     = 0
 		Gearbox.LClutch        = 1
 		Gearbox.RClutch        = 1
-		Gearbox.DataStore      = ACF.GetEntityArguments("acf_gearbox")
+		Gearbox.DataStore      = Entities.GetArguments("acf_gearbox")
 
 		UpdateGearbox(Gearbox, Data, Class, GearboxData)
 
@@ -309,7 +311,8 @@ do -- Spawn and Update functions -----------------------
 		return Gearbox
 	end
 
-	ACF.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
 	ACF.RegisterLinkSource("acf_gearbox", "Engines")

@@ -1,6 +1,8 @@
+local ACF        = ACF
+local Entities   = ACF.Classes.Entities
 local CopiedData = {}
-local Disabled = {}
-local ACF = ACF
+local Disabled   = {}
+
 
 local function GetDisabledData(Player, Class)
 	return Disabled[Player][Class]
@@ -103,7 +105,7 @@ local function CreateNewEntity(Player, Trace)
 	local Angles   = Trace.HitNormal:Angle():Up():Angle()
 	local Message  = ""
 
-	local Success, Result = ACF.CreateEntity(Class, Player, Position, Angles, Data)
+	local Success, Result = Entities.Spawn(Class, Player, Position, Angles, Data)
 
 	if not Success then
 		Message = "Couldn't create entity: " .. Result
@@ -145,7 +147,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 			return false
 		end
 
-		local Result, Message = ACF.UpdateEntity(Entity, Data)
+		local Result, Message = Entities.Update(Entity, Data)
 
 		if not Result then
 			Message = "Couldn't update entity: " .. Message

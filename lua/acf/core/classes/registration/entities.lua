@@ -86,6 +86,8 @@ end
 
 Classes.AddSimpleFunctions(Entities, Entries)
 
+if CLIENT then return end
+
 do -- Spawning and updating
 	local hook = hook
 	local undo = undo

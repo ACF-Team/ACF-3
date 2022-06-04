@@ -6,8 +6,9 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF         = ACF
-local Weapons	  = ACF.Classes.Weapons
-local AmmoTypes   = ACF.Classes.AmmoTypes
+local Classes     = ACF.Classes
+local Weapons	  = Classes.Weapons
+local AmmoTypes   = Classes.AmmoTypes
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -31,6 +32,7 @@ end
 do -- Spawn and Update functions --------------------------------
 	local ModelData  = ACF.ModelData
 	local CheckLegal = ACF_CheckLegal
+	local Entities   = Classes.Entities
 
 	local function VerifyData(Data)
 		if not isstring(Data.Weapon) then
@@ -259,7 +261,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.CurrentShot  = 0
 		Entity.TotalAmmo    = 0
 		Entity.BulletData   = EMPTY
-		Entity.DataStore    = ACF.GetEntityArguments("acf_gun")
+		Entity.DataStore    = Entities.GetArguments("acf_gun")
 
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
@@ -296,7 +298,8 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	------------------- Updating ---------------------

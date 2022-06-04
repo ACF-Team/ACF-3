@@ -21,12 +21,14 @@
 local ACF               = ACF
 local math              = math
 local match             = string.match
-local AmmoTypes         = ACF.Classes.AmmoTypes
-local Engines           = ACF.Classes.Engines
-local FuelTanks         = ACF.Classes.FuelTanks
-local FuelTypes         = ACF.Classes.FuelTypes
-local Gearboxes         = ACF.Classes.Gearboxes
-local Weapons           = ACF.Classes.Weapons
+local Classes           = ACF.Classes
+local AmmoTypes         = Classes.AmmoTypes
+local Engines           = Classes.Engines
+local Entities          = Classes.Entities
+local FuelTanks         = Classes.FuelTanks
+local FuelTypes         = Classes.FuelTypes
+local Gearboxes         = Classes.Gearboxes
+local Weapons           = Classes.Weapons
 local CheckLuaType      = SF.CheckLuaType
 local CheckPerms        = SF.Permissions.check
 local RegisterPrivilege = SF.Permissions.registerPrivilege
@@ -226,7 +228,7 @@ function acf_library.createAmmo(pos, ang, data)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
 
-	local Success, Entity = ACF.CreateEntity("acf_ammo", Player, Position, Angles, Data, Undo)
+	local Success, Entity = Entities.Spawn("acf_ammo", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Ammo Crate", 2) end
 
@@ -258,7 +260,7 @@ function acf_library.createEngine(pos, ang, data)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
 
-	local Success, Entity = ACF.CreateEntity("acf_engine", Player, Position, Angles, Data, Undo)
+	local Success, Entity = Entities.Spawn("acf_engine", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Engine", 2) end
 
@@ -290,7 +292,7 @@ function acf_library.createFuelTank(pos, ang, data)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
 
-	local Success, Entity = ACF.CreateEntity("acf_fueltank", Player, Position, Angles, Data, Undo)
+	local Success, Entity = Entities.Spawn("acf_fueltank", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Fuel Tank", 2) end
 
@@ -322,7 +324,7 @@ function acf_library.createGearbox(pos, ang, data)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
 
-	local Success, Entity = ACF.CreateEntity("acf_gearbox", Player, Position, Angles, Data, Undo)
+	local Success, Entity = Entities.Spawn("acf_gearbox", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Gearbox", 2) end
 
@@ -354,7 +356,7 @@ function acf_library.createWeapon(pos, ang, data)
 	local Data     = UnwrapTable(data)
 	local Undo     = not instance.data.props.undo
 
-	local Success, Entity = ACF.CreateEntity("acf_gun", Player, Position, Angles, Data, Undo)
+	local Success, Entity = Entities.Spawn("acf_gun", Player, Position, Angles, Data, Undo)
 
 	if not Success then SF.Throw("Unable to create ACF Weapon", 2) end
 

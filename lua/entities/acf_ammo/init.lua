@@ -16,6 +16,7 @@ do -- Spawning and Updating --------------------
 	local CheckLegal = ACF_CheckLegal
 	local Classes    = ACF.Classes
 	local Crates     = Classes.Crates
+	local Entities   = Classes.Entities
 	local AmmoTypes  = Classes.AmmoTypes
 
 	local function VerifyData(Data)
@@ -278,7 +279,7 @@ do -- Spawning and Updating --------------------
 		Crate.Weapons     = {}
 		Crate.Inputs      = WireLib.CreateInputs(Crate, { "Load (If true, will allow rounds to load from this crate)" })
 		Crate.Outputs     = WireLib.CreateOutputs(Crate, { "Entity (This ammo crate) [ENTITY]", "Ammo (Rounds left in the crate)", "Loading (Whether or not rounds can load from this crate)" })
-		Crate.DataStore	  = ACF.GetEntityArguments("acf_ammo")
+		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
 
@@ -326,7 +327,8 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	ACF.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
+	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
+
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
 	------------------- Updating ---------------------

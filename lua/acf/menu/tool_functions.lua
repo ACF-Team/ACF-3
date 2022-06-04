@@ -381,15 +381,16 @@ do -- Clientside Tool interaction
 end
 
 do -- Generic Spawner/Linker operation creator
-	local Entities  = {}
-	local SpawnText = "Spawn a new %s or update an existing one."
+	local Entities   = ACF.Classes.Entities
+	local SpawnText  = "Spawn a new %s or update an existing one."
+	local PlayerEnts = {}
 
 	local function GetPlayerEnts(Player)
-		local Ents = Entities[Player]
+		local Ents = PlayerEnts[Player]
 
 		if not Ents then
 			Ents = {}
-			Entities[Player] = Ents
+			PlayerEnts[Player] = Ents
 		end
 
 		return Ents
@@ -407,7 +408,7 @@ do -- Generic Spawner/Linker operation creator
 		local Entity = Trace.Entity
 
 		if CanUpdate(Entity, ClassName) then
-			local Result, Message = ACF.UpdateEntity(Entity, Data)
+			local Result, Message = Entities.Update(Entity, Data)
 
 			ACF.SendMessage(Player, Result and "Info" or "Error", Message)
 
@@ -417,7 +418,7 @@ do -- Generic Spawner/Linker operation creator
 		local Position = Trace.HitPos + Trace.HitNormal * 128
 		local Angles   = Trace.HitNormal:Angle():Up():Angle()
 
-		local Success, Result = ACF.CreateEntity(ClassName, Player, Position, Angles, Data)
+		local Success, Result = Entities.Spawn(ClassName, Player, Position, Angles, Data)
 
 		if Success then
 			local PhysObj = Result:GetPhysicsObject()

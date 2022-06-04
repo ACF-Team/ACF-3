@@ -6,7 +6,9 @@ include("shared.lua")
 local ACF = ACF
 
 do -- Spawning and Updating
-	local Armors = ACF.Classes.ArmorTypes
+	local Classes  = ACF.Classes
+	local Armors   = Classes.ArmorTypes
+	local Entities = Classes.Entities
 
 	local function VerifyData(Data)
 		if not isstring(Data.ArmorType) then
@@ -99,7 +101,7 @@ do -- Spawning and Updating
 		Plate:Spawn()
 
 		Plate.Owner     = Player -- MUST be stored on ent for PP
-		Plate.DataStore = ACF.GetEntityArguments("acf_armor")
+		Plate.DataStore = Entities.GetArguments("acf_armor")
 
 		UpdatePlate(Plate, Data, Armor)
 
@@ -120,7 +122,7 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
+	Entities.Register("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
 
 	------------------- Updating ---------------------
 

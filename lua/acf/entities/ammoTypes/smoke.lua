@@ -1,6 +1,7 @@
-local ACF   = ACF
-local Types = ACF.Classes.AmmoTypes
-local Ammo  = Types.Register("SM", "AP")
+local ACF       = ACF
+local Classes   = ACF.Classes
+local AmmoTypes = Classes.AmmoTypes
+local Ammo      = AmmoTypes.Register("SM", "AP")
 
 
 function Ammo:OnLoaded()
@@ -94,8 +95,9 @@ end
 
 if SERVER then
 	local Ballistics = ACF.Ballistics
+	local Entities   = Classes.Entities
 
-	ACF.AddEntityArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)

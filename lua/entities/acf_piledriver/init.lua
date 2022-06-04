@@ -8,9 +8,11 @@ local hook  = hook
 local clock = ACF.clock
 
 do -- Spawning and Updating --------------------
-	local Piledrivers = ACF.Classes.Piledrivers
-	local AmmoTypes   = ACF.Classes.AmmoTypes
 	local CheckLegal  = ACF_CheckLegal
+	local Classes     = ACF.Classes
+	local Piledrivers = Classes.Piledrivers
+	local AmmoTypes   = Classes.AmmoTypes
+	local Entities    = Classes.Entities
 
 	local function VerifyData(Data)
 		if isstring(Data.Id) then
@@ -216,7 +218,7 @@ do -- Spawning and Updating --------------------
 		Entity.Charge       = 0
 		Entity.SingleCharge = 0
 		Entity.CurrentShot  = 0
-		Entity.DataStore    = ACF.GetEntityArguments("acf_piledriver")
+		Entity.DataStore    = Entities.GetArguments("acf_piledriver")
 
 		UpdatePiledriver(Entity, Data, Class)
 
@@ -230,7 +232,7 @@ do -- Spawning and Updating --------------------
 		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
+	Entities.Register("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
 
 	------------------- Updating ---------------------
 

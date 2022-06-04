@@ -1,4 +1,8 @@
-ACF.RegisterPiledriverClass("PD", {
+local ACF         = ACF
+local Piledrivers = ACF.Classes.Piledrivers
+
+
+Piledrivers.RegisterGroup("PD", {
 	Name        = "Piledriver",
 	Description = "Formerly a piece of construction equipment, it was modified to be used in close-quarters combat. Doesn't actually drive piles.",
 	Model       = "models/piledriver/piledriver_100mm.mdl",
@@ -21,15 +25,15 @@ ACF.RegisterPiledriverClass("PD", {
 	},
 })
 
-ACF.RegisterPiledriver("75mmPD", "PD", {
+Piledrivers.Register("75mmPD", "PD", {
 	Caliber = 75
 })
 
-ACF.RegisterPiledriver("100mmPD", "PD", {
+Piledrivers.Register("100mmPD", "PD", {
 	Caliber = 100
 })
 
-ACF.RegisterPiledriver("150mmPD", "PD", {
+Piledrivers.Register("150mmPD", "PD", {
 	Caliber = 150
 })
 
