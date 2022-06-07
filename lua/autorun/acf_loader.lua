@@ -55,6 +55,7 @@ local realms = {
 }
 
 local function canLoad(realm, sessionRealm)
+	if SERVER then return true end -- We need to add clientside files
 	if not realm then return true end
 	if realm == "Shared" then return true end
 
@@ -168,6 +169,8 @@ local function loadAddon()
 
 	print("> Loaded " .. files .. " files and " .. libs .. " folders.")
 	print(addonGlobal .. " has finished loading.\n")
+
+	hook.Run(addonGlobal .. "_OnAddonLoaded")
 end
 
 concommand.Add(addonGlobal:lower() .. "_reload", function()
