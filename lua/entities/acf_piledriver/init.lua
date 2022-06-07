@@ -15,24 +15,17 @@ do -- Spawning and Updating --------------------
 	local Entities    = Classes.Entities
 
 	local function VerifyData(Data)
-		if isstring(Data.Id) then
-			local OldClass = ACF.GetClassGroup(Piledrivers, Data.Id)
+		local OldClass = Classes.GetGroup(Piledrivers, Data.Id)
 
-			if OldClass then
-				Data.Weapon = OldClass.ID
-				Data.Caliber = OldClass.Lookup[Data.Id].Caliber
-			end
+		if OldClass then
+			Data.Weapon = OldClass.ID
+			Data.Caliber = Piledriver.GetItem(OldClass.ID, Data.Id).Caliber
 		end
 
-		if not (isstring(Data.Weapon) and Piledrivers[Data.Weapon]) then
-			Data.Weapon = "PD"
-		end
+		Data.Weapon  = Classes.GetGroup(Piledrivers, Data.Weapon) or "PD"
+		Data.Destiny = "Piledrivers"
 
-		if not isstring(Data.Destiny) then
-			Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Piledrivers"
-		end
-
-		local Class  = Piledrivers[Data.Weapon]
+		local Class  = Piledrivers.Get(Data.Weapon)
 		local Bounds = Class.Caliber
 
 		if not isnumber(Data.Caliber) then
@@ -191,7 +184,7 @@ do -- Spawning and Updating --------------------
 	function MakeACF_Piledriver(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = Piledrivers[Data.Weapon]
+		local Class = Piledrivers.Get(Data.Weapon)
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
@@ -199,6 +192,8 @@ do -- Spawning and Updating --------------------
 		local Entity = ents.Create("acf_piledriver")
 
 		if not IsValid(Entity) then return end
+
+		local AmmoType = AmmoTypes.Get("HP")
 
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
@@ -211,7 +206,7 @@ do -- Spawning and Updating --------------------
 
 		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
-		Entity.RoundData    = AmmoTypes.HP()
+		Entity.RoundData    = AmmoType()
 		Entity.LastThink    = clock.curTime
 		Entity.State        = "Loading"
 		Entity.Firing       = false
@@ -239,7 +234,7 @@ do -- Spawning and Updating --------------------
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class    = Piledrivers[Data.Weapon]
+		local Class    = Piledrivers.Get(Data.Weapon)
 		local OldClass = self.ClassData
 
 		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)

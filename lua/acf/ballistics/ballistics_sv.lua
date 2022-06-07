@@ -141,7 +141,7 @@ function Ballistics.CreateBullet(BulletData)
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
-		local Ammo = AmmoTypes[Bullet.Type]
+		local Ammo = AmmoTypes.Get(Bullet.Type)
 
 		return Ammo:GetPenetration(self)
 	end
@@ -245,7 +245,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				AmmoTypes[Bullet.Type]:OnFlightEnd(Bullet, FlightRes)
+				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, FlightRes)
 
 				return
 			end
@@ -267,7 +267,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 			local Type = GetImpactType(FlightRes, Entity)
 
-			OnImpact(Bullet, FlightRes, AmmoTypes[Bullet.Type], Type)
+			OnImpact(Bullet, FlightRes, AmmoTypes.Get(Bullet.Type), Type)
 		end
 	end
 end

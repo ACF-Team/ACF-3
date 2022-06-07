@@ -4,7 +4,7 @@ local math    = math
 
 local function GetWeaponSpecs(ToolData)
 	local Source = Classes[ToolData.Destiny]
-	local Class = Source and ACF.GetClassGroup(Source, ToolData.Weapon)
+	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
 
 	if not Class then return end
 
@@ -17,7 +17,7 @@ local function GetWeaponSpecs(ToolData)
 	}
 
 	if not Class.IsScalable then
-		local Weapon = Class.Lookup[ToolData.Weapon]
+		local Weapon = Source.GetItem(Class.ID, ToolData.Weapon)
 		local Round  = Weapon.Round
 
 		Result.Caliber     = Weapon.Caliber
@@ -135,8 +135,8 @@ ACF_Kinetic        = ACF.Kinetic
 
 local Weaponry = {
 	Piledrivers = Classes.Piledrivers,
-	Missiles = Classes.Missiles,
-	Weapons = Classes.Weapons,
+	Missiles    = Classes.Missiles,
+	Weapons     = Classes.Weapons,
 }
 
 -- In case you might want to add more
@@ -161,7 +161,7 @@ function ACF.FindWeaponrySource(ID)
 	if not ID then return end
 
 	for Key, Source in pairs(Weaponry) do
-		if ACF.GetClassGroup(Source, ID) then
+		if Classes.GetGroup(Source, ID) then
 			return Key, Source
 		end
 	end

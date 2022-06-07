@@ -25,7 +25,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and Hit > 0 then
-		local RoundData = AmmoTypes[Bullet.AmmoType]
+		local RoundData = AmmoTypes.Get(Bullet.AmmoType)
 
 		-- Updating old effect with new values
 		Bullet.Effect.DrawEffect = CanDraw

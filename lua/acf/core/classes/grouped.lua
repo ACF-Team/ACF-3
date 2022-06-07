@@ -3,20 +3,7 @@ local hook     = hook
 local isstring = isstring
 local istable  = istable
 local Classes  = ACF.Classes
-local Groups   = {}
 
-
-local function GetDestinyData(Destiny)
-	local Data = Groups[Destiny]
-
-	if not Data then
-		Data = {}
-
-		Groups[Destiny] = Data
-	end
-
-	return Data
-end
 
 function Classes.AddClassGroup(ID, Destiny, Data)
 	if not isstring(ID) then return end
@@ -56,15 +43,11 @@ function Classes.AddGrouped(ID, GroupID, Destiny, Data)
 	local Class = Group.Lookup[ID]
 
 	if not Class then
-		local DestinyData = GetDestinyData(Destiny)
-
 		Class = {
 			ID      = ID,
 			Class   = Group,
 			ClassID = GroupID,
 		}
-
-		DestinyData[ID] = Group
 
 		Group.Count              = Group.Count + 1
 		Group.Lookup[ID]         = Class
@@ -80,20 +63,21 @@ function Classes.AddGrouped(ID, GroupID, Destiny, Data)
 	return Class
 end
 
-function Classes.GetClassGroup(Destiny, Name)
-	if not istable(Destiny) then return end
-	if not isstring(Name) then return end
+function Classes.GetGroup(Namespace, ID)
+	if not istable(Namespace) then return end
+	if not isstring(ID) then return end
 
-	local Data  = Groups[Destiny]
-	local Class = Data and Data[Name]
+	local Class = Namespace.Get(ID)
 
 	if Class then return Class end
 
-	local Group = Destiny[Name]
+	local Groups = Namespace.GetList()
 
-	if not Group then return end
+	for _, Group in ipairs(Groups) do
+		local Item = Namespace.GetItem(Group.ID, ID)
 
-	return Group.IsScalable and Group
+		if Item then return Group end
+	end
 end
 
 function Classes.AddGroupedFunctions(Namespace, Entries)

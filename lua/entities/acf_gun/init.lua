@@ -7,7 +7,6 @@ include("shared.lua")
 
 local ACF         = ACF
 local Classes     = ACF.Classes
-local Weapons	  = Classes.Weapons
 local AmmoTypes   = Classes.AmmoTypes
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
@@ -33,22 +32,23 @@ do -- Spawn and Update functions --------------------------------
 	local ModelData  = ACF.ModelData
 	local CheckLegal = ACF_CheckLegal
 	local Entities   = Classes.Entities
+	local Weapons    = Classes.Weapons
 
 	local function VerifyData(Data)
 		if not isstring(Data.Weapon) then
 			Data.Weapon = Data.Id
 		end
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 
 		if not Class then
-			Class = ACF.GetClassGroup(Weapons, "C")
+			Class = Weapons.Get("C")
 
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
 		elseif Class.IsScalable then
-			local Weapon = Class.Lookup[Data.Weapon]
+			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
@@ -229,12 +229,12 @@ do -- Spawn and Update functions --------------------------------
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
-		local Weapon = Class.Lookup[Data.Weapon]
+		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
 
 		if CanSpawn == false then return false end
@@ -309,11 +309,12 @@ do -- Spawn and Update functions --------------------------------
 
 		VerifyData(Data)
 
-		local Class    = ACF.GetClassGroup(Weapons, Data.Weapon)
-		local Weapon   = Class.Lookup[Data.Weapon]
+		local Class    = Classes.GetGroup(Weapons, Data.Weapon)
+		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local OldClass = self.ClassData
 
 		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if self.State ~= "Empty" then
@@ -515,6 +516,7 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 			local Velocity = ACF_GetAncestor(self):GetVelocity()
+			local AmmoType = AmmoTypes.Get(self.BulletData.Type)
 
 			if self.BulletData.CanFuze and self.SetFuze then
 				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - self.Caliber) * 0.01
@@ -533,7 +535,7 @@ do -- Metamethods --------------------------------
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			self.BulletData.Filter = self.BarrelFilter
 
-			AmmoTypes[self.BulletData.Type]:Create(self, self.BulletData) -- Spawn projectile
+			AmmoType:Create(self, self.BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
 			self:Recoil()

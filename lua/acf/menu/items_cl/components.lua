@@ -1,13 +1,15 @@
-local ACF = ACF
+local ACF        = ACF
 local Components = ACF.Classes.Components
 
 local function CreateMenu(Menu)
+	local Entries = Components.GetEntries()
+
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Component")
 
-	if not next(Components) then
+	if not next(Entries) then
 		Menu:AddTitle("No Components Registered")
 		Menu:AddLabel("No components have been registered. If this is incorrect, check your console for errors and contact the server owner.")
 		return
@@ -62,7 +64,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(ComponentClass, Components, "ID")
+	ACF.LoadSortedList(ComponentClass, Entries, "ID")
 end
 
 ACF.AddMenuItem(501, "Entities", "Components", "drive", CreateMenu)

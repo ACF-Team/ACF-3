@@ -1088,7 +1088,7 @@ e2function number entity:acfPenetration()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
 
 	if not AmmoType then return 0 end
 
@@ -1104,7 +1104,7 @@ e2function number entity:acfBlastRadius()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
 
 	if not AmmoType then return 0 end
 

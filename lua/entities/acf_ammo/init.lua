@@ -18,12 +18,13 @@ do -- Spawning and Updating --------------------
 	local Crates     = Classes.Crates
 	local Entities   = Classes.Entities
 	local AmmoTypes  = Classes.AmmoTypes
+	local Weapons    = Classes.Weapons
 
 	local function VerifyData(Data)
 		if Data.Id then -- Updating old crates
-			if Crates[Data.Id] then -- Pre scalable crate remnants
-				local Crate = Crates[Data.Id]
+			local Crate = Crates.Get(Data.Id)
 
+			if Crate then -- Pre scalable crate remnants
 				Data.Offset = Vector(Crate.Offset)
 				Data.Size   = Vector(Crate.Size)
 			else
@@ -60,16 +61,16 @@ do -- Spawning and Updating --------------------
 		end
 
 		local Source = Classes[Data.Destiny]
-		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
+		local Class  = Classes.GetGroup(Source, Data.Weapon)
 
 		if not Class then
-			Class = ACF.GetClassGroup(Classes.Weapons, "C")
+			Class = Weapons.Get("C")
 
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
 		elseif Class.IsScalable then
-			local Weapon = Class.Lookup[Data.Weapon]
+			local Weapon = Source.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
@@ -89,13 +90,13 @@ do -- Spawning and Updating --------------------
 			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
 		end
 
-		local Ammo = AmmoTypes[Data.AmmoType]
+		local Ammo = AmmoTypes.Get(Data.AmmoType)
 
 		-- Making sure our ammo type exists and it's not blacklisted by the weapon
 		if not Ammo or Ammo.Blacklist[Class.ID] then
 			Data.AmmoType = Class.DefaultAmmo or "AP"
 
-			Ammo = AmmoTypes[Data.AmmoType]
+			Ammo = AmmoTypes.Get(Data.AmmoType)
 		end
 
 		do -- External verifications
@@ -246,20 +247,21 @@ do -- Spawning and Updating --------------------
 	function MakeACF_Ammo(Player, Pos, Ang, Data)
 		if not Player:CheckLimit("_acf_ammo") then return end
 
-		local Crate = ents.Create("acf_ammo")
-
-		if not IsValid(Crate) then return end
-
 		VerifyData(Data)
 
 		local Source = Classes[Data.Destiny]
-		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
-		local Weapon = Class.Lookup[Data.Weapon]
-		local Ammo   = AmmoTypes[Data.AmmoType]()
+		local Class  = Classes.GetGroup(Source, Data.Weapon)
+		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+		local Ammo   = AmmoTypes.Get(Data.AmmoType)
 		local Model  = "models/holograms/rcube_thin.mdl"
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+
 		if CanSpawn == false then return false end
+
+		local Crate = ents.Create("acf_ammo")
+
+		if not IsValid(Crate) then return end
 
 		Player:AddCleanup("acf_ammo", Crate)
 		Player:AddCount("_acf_ammo", Crate)
@@ -337,13 +339,13 @@ do -- Spawning and Updating --------------------
 		VerifyData(Data)
 
 		local Source     = Classes[Data.Destiny]
-		local Class      = ACF.GetClassGroup(Source, Data.Weapon)
-		local Weapon     = Class.Lookup[Data.Weapon]
+		local Class      = Classes.GetGroup(Source, Data.Weapon)
+		local Weapon     = Source.GetItem(Class.ID, Data.Weapon)
 		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
 		local OldClass   = self.ClassData
 		local OldWeapon  = self.Weapon
 		local OldCaliber = self.Caliber
-		local Ammo       = AmmoTypes[Data.AmmoType]
+		local Ammo       = AmmoTypes.Get(Data.AmmoType)
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 

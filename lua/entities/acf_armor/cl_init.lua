@@ -3,7 +3,8 @@ include("shared.lua")
 local Armors = ACF.Classes.ArmorTypes
 
 function ENT:Update()
-    local Armor = Armors[self:GetNW2String("ArmorType", "RHA")]
+    local Name  = self:GetNW2String("ArmorType", "RHA")
+    local Armor = Armors.Get(Name)
 
     self.ArmorClass = Armor
     self.ArmorType  = Armor.ID

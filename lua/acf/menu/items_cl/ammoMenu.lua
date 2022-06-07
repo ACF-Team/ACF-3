@@ -23,9 +23,10 @@ local function CopySettings(Settings)
 end
 
 local function GetAmmoList(Class)
-	local Result = {}
+	local Entries = AmmoTypes.GetEntries()
+	local Result  = {}
 
-	for K, V in pairs(AmmoTypes) do
+	for K, V in pairs(Entries) do
 		if V.Unlistable then continue end
 		if V.Blacklist[Class] then continue end
 
@@ -38,7 +39,7 @@ end
 local function GetWeaponClass(ToolData)
 	local Destiny = Classes[ToolData.Destiny or "Weapons"]
 
-	return ACF.GetClassGroup(Destiny, ToolData.Weapon)
+	return Classes.GetGroup(Destiny, ToolData.Weapon)
 end
 
 local function GetEmptyMass()

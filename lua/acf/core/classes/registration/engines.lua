@@ -1,10 +1,28 @@
+local ACF     = ACF
 local Classes = ACF.Classes
 
 Classes.Engines = Classes.Engines or {}
 
 local Engines = Classes.Engines
 local Entries = {}
+local Types
 
+
+local function AddPerformanceData(Engine)
+	local Type = Types.Get(Engine.Type)
+
+	if not Type then
+		Type = Types.Get("GenericPetrol")
+
+		Engine.Type = "GenericPetrol"
+	end
+
+	if not Engine.TorqueCurve then
+		Engine.TorqueCurve = Type.TorqueCurve
+	end
+
+	ACF.AddEnginePerformanceData(Engine)
+end
 
 function Engines.RegisterGroup(ID, Data)
 	local Group = Classes.AddClassGroup(ID, Entries, Data)
@@ -29,19 +47,28 @@ function Engines.Register(ID, ClassID, Data)
 		Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 	end
 
-	--if not Class.TorqueCurve then
-		--local Name = Class.Type or "GenericPetrol"
-		--local Type = Types[Name] or Types.GenericPetrol
-
-		--Class.TorqueCurve = Type.TorqueCurve
-	--end
-
-	--ACF.AddEnginePerformanceData(Class)
+	if Types then
+		AddPerformanceData(Class)
+	end
 
 	return Class
 end
 
 Classes.AddGroupedFunctions(Engines, Entries)
+
+do -- Adding engine performance data
+	hook.Add("ACF_OnAddonLoaded", "ACF Engine Performance", function()
+		Types = Classes.EngineTypes
+
+		for Name in pairs(Engines.GetEntries()) do
+			for _, Engine in pairs(Engines.GetItemEntries(Name)) do
+				AddPerformanceData(Engine)
+			end
+		end
+
+		hook.Remove("ACF_OnAddonLoaded", "ACF Engine Performance")
+	end)
+end
 
 do -- Discontinued function
 	function ACF_DefineEngine(ID)

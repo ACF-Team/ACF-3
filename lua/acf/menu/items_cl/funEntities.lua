@@ -1,13 +1,17 @@
-local ACF = ACF
+local ACF     = ACF
+local Classes = ACF.Classes
 
 do -- Piledrivers menu
-	local Info = "Mass : %s kg\nRate of Fire : %s rpm\nMax Charges : %s\nRecharge Rate : %s charges/s"
-	local Stats = "Penetration : %s mm RHA\nSpike Velocity : %s m/s\nSpike Length : %s cm\nSpike Mass : %s"
-	local Piledrivers = ACF.Classes.Piledrivers
-	local AmmoTypes = ACF.Classes.AmmoTypes
+	local Piledrivers = Classes.Piledrivers
+	local AmmoTypes   = Classes.AmmoTypes
+	local Info        = "Mass : %s kg\nRate of Fire : %s rpm\nMax Charges : %s\nRecharge Rate : %s charges/s"
+	local Stats       = "Penetration : %s mm RHA\nSpike Velocity : %s m/s\nSpike Length : %s cm\nSpike Mass : %s"
 	local Ammo, BulletData
 
 	local function CreateMenu(Menu)
+		local Entries  = Piledrivers.GetEntries()
+		local AmmoType = AmmoTypes.Get("HP")
+
 		Menu:AddTitle("Piledriver Settings")
 
 		local ClassList = Menu:AddComboBox()
@@ -40,7 +44,7 @@ do -- Piledrivers menu
 			local Min, Max = Bounds.Min, Bounds.Max
 			local Current  = math.Clamp(ACF.GetClientNumber("Caliber", Min), Min, Max)
 
-			Ammo = AmmoTypes.HP()
+			Ammo = AmmoType()
 
 			Caliber:SetMinMax(Min, Max)
 
@@ -110,7 +114,7 @@ do -- Piledrivers menu
 			return Stats:format(MaxPen, MuzzleVel, Length, Mass)
 		end)
 
-		ACF.LoadSortedList(ClassList, Piledrivers, "Name")
+		ACF.LoadSortedList(ClassList, Entries, "Name")
 	end
 
 	ACF.AddMenuItem(1, "Fun Stuff", "Piledrivers", "pencil", CreateMenu)
@@ -118,9 +122,11 @@ end
 
 do -- Procedural Armor
 	local DensityText = "Density: %sg/cm³ (%skg/in³)"
-	local ArmorTypes  = ACF.Classes.ArmorTypes
+	local ArmorTypes  = Classes.ArmorTypes
 
 	local function CreateMenu(Menu)
+		local Entries = ArmorTypes.GetEntries()
+
 		ACF.SetToolMode("acf_menu", "Spawner", "Component")
 
 		ACF.SetClientData("PrimaryClass", "acf_armor")
@@ -181,7 +187,7 @@ do -- Procedural Armor
 			return Z
 		end)
 
-		ACF.LoadSortedList(ClassList, ArmorTypes, "Name")
+		ACF.LoadSortedList(ClassList, Entries, "Name")
 	end
 
 	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)

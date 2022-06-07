@@ -15,12 +15,12 @@ do -- Spawning and Updating
 			Data.ArmorType = "RHA"
 		end
 
-		local Armor = Armors[Data.ArmorType]
+		local Armor = Armors.Get(Data.ArmorType)
 
 		if not Armor then
 			Data.ArmorType = RHA
 
-			Armor = Armors.RHA
+			Armor = Armors.Get("RHA")
 		end
 
 		do -- Verifying dimension values
@@ -85,7 +85,7 @@ do -- Spawning and Updating
 
 		VerifyData(Data)
 
-		local Armor = Armors[Data.ArmorType]
+		local Armor = Armors.Get(Data.ArmorType)
 
 		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_armor", Player, Data, Armor)
 		if CanSpawn == false then return false end
@@ -129,7 +129,7 @@ do -- Spawning and Updating
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Armor    = Armors[Data.ArmorType]
+		local Armor    = Armors.Get(Data.ArmorType)
 		local OldArmor = self.ArmorClass
 
 		if OldArmor.OnLast then

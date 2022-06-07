@@ -371,13 +371,11 @@ end
 --- Returns a list of every registered ACF ammo type
 -- @server
 function acf_library.listAllAmmoTypes()
+	local List   = AmmoTypes.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for ID in pairs(AmmoTypes) do
-		Count = Count + 1
-
-		Result[Count] = ID
+	for K, V in ipairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -386,13 +384,11 @@ end
 --- Returns a list of every registered ACF engine class
 -- @server
 function acf_library.listAllEngineClasses()
+	local List   = Engines.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for _, Class in pairs(Engines) do
-		Count = Count + 1
-
-		Result[Count] = Class.ID
+	for K, V in ipairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -401,10 +397,11 @@ end
 --- Returns a list of every registered ACF engine
 -- @server
 function acf_library.listAllEngines()
+	local List   = Engines.GetList()
 	local Result = {}
 	local Count  = 0
 
-	for _, Class in pairs(Engines) do
+	for _, Class in ipairs(List) do
 		for _, Engine in ipairs(Class.Items) do
 			Count = Count + 1
 
@@ -418,13 +415,11 @@ end
 --- Returns a list of every registered ACF fuel tank class
 -- @server
 function acf_library.listAllFuelTankClasses()
+	local List   = FuelTanks.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for _, Class in pairs(FuelTanks) do
-		Count = Count + 1
-
-		Result[Count] = Class.ID
+	for K, V in ipairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -433,10 +428,11 @@ end
 --- Returns a list of every registered ACF fuel tank
 -- @server
 function acf_library.listAllFuelTanks()
+	local List   = FuelTanks.GetList()
 	local Result = {}
 	local Count  = 0
 
-	for _, Class in pairs(FuelTanks) do
+	for _, Class in ipairs(List) do
 		for _, Tank in ipairs(Class.Items) do
 			Count = Count + 1
 
@@ -450,13 +446,11 @@ end
 --- Returns a list of every registered ACF fuel type
 -- @server
 function acf_library.listAllFuelTypes()
+	local List   = FuelTypes.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for ID in pairs(FuelTypes) do
-		Count = Count + 1
-
-		Result[Count] = ID
+	for K, V in ipairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -465,13 +459,11 @@ end
 --- Returns a list of every registered ACF gearbox class
 -- @server
 function acf_library.listAllGearboxClasses()
+	local List   = Gearboxes.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for _, Class in pairs(Gearboxes) do
-		Count = Count + 1
-
-		Result[Count] = Class.ID
+	for K, V in ipairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -480,10 +472,11 @@ end
 --- Returns a list of every registered ACF gearbox
 -- @server
 function acf_library.listAllGearboxes()
+	local List   = Gearboxes.GetList()
 	local Result = {}
 	local Count  = 0
 
-	for _, Class in pairs(Gearboxes) do
+	for _, Class in ipairs(List) do
 		for _, Gearbox in ipairs(Class.Items) do
 			Count = Count + 1
 
@@ -497,13 +490,11 @@ end
 --- Returns a list of every registered ACF weapon class
 -- @server
 function acf_library.listAllWeaponClasses()
+	local List   = Weapons.GetList()
 	local Result = {}
-	local Count  = 0
 
-	for _, Class in pairs(Weapons) do
-		Count = Count + 1
-
-		Result[Count] = Class.ID
+	for K, V in pairs(List) do
+		Result[K] = V.ID
 	end
 
 	return Result
@@ -512,10 +503,11 @@ end
 --- Returns a list of every registered ACF weapon
 -- @server
 function acf_library.listAllWeapons()
+	local List   = Weapons.GetList()
 	local Result = {}
 	local Count  = 0
 
-	for _, Class in pairs(Weapons) do
+	for _, Class in ipairs(List) do
 		for _, Weapon in ipairs(Class.Items) do
 			Count = Count + 1
 
@@ -532,7 +524,7 @@ end
 function acf_library.getAmmoTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Ammo = AmmoTypes[id]
+	local Ammo = AmmoTypes.Get(id)
 
 	if not Ammo then SF.Throw("Invalid ammo type ID, not found.", 2) end
 
@@ -545,20 +537,7 @@ end
 function acf_library.getEngineClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = Engines[id]
-
-	if not Class then SF.Throw("Invalid engine class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
-end
-
---- Returns the specifications of an ACF engine class
--- @param id The ID of the engine class you want to get the information from
--- @server
-function acf_library.getEngineClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Engines[id]
+	local Class = Engines.Get(id)
 
 	if not Class then SF.Throw("Invalid engine class ID, not found.", 2) end
 
@@ -571,11 +550,13 @@ end
 function acf_library.getEngineSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = ACF.GetClassGroup(Engines, id)
+	local Class = Classes.GetGroup(Engines, id)
 
 	if not Class then SF.Throw("Invalid engine ID, not found.", 2) end
 
-	return WrapTable(Class.Lookup[id], Ignored)
+	local Engine = Engines.GetItem(Class.ID, id)
+
+	return WrapTable(Engine, Ignored)
 end
 
 --- Returns the specifications of an ACF fuel tank class
@@ -584,7 +565,7 @@ end
 function acf_library.getFuelTankClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = FuelTanks[id]
+	local Class = FuelTanks.Get(id)
 
 	if not Class then SF.Throw("Invalid fuel tank class ID, not found.", 2) end
 
@@ -597,11 +578,13 @@ end
 function acf_library.getFuelTankSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = ACF.GetClassGroup(FuelTanks, id)
+	local Class = Classes.GetGroup(FuelTanks, id)
 
 	if not Class then SF.Throw("Invalid fuel tank ID, not found.", 2) end
 
-	return WrapTable(Class.Lookup[id], Ignored)
+	local FuelTank = FuelTanks.GetItem(Class.ID, id)
+
+	return WrapTable(FuelTank, Ignored)
 end
 
 --- Returns the specifications of an ACF fuel type
@@ -610,7 +593,7 @@ end
 function acf_library.getFuelTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Type = FuelTypes[id]
+	local Type = FuelTypes.Get(id)
 
 	if not Type then SF.Throw("Invalid fuel type ID, not found.", 2) end
 
@@ -623,7 +606,7 @@ end
 function acf_library.getGearboxClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = Gearboxes[id]
+	local Class = Gearboxes.Get(id)
 
 	if not Class then SF.Throw("Invalid gearbox class ID, not found.", 2) end
 
@@ -636,11 +619,13 @@ end
 function acf_library.getGearboxSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = ACF.GetClassGroup(Gearboxes, id)
+	local Class = Classes.GetGroup(Gearboxes, id)
 
 	if not Class then SF.Throw("Invalid gearbox ID, not found.", 2) end
 
-	return WrapTable(Class.Lookup[id], Ignored)
+	local Gearbox = Gearboxes.GetItem(Class.ID, id)
+
+	return WrapTable(Gearbox, Ignored)
 end
 
 --- Returns the specifications of an ACF weapon class
@@ -649,7 +634,7 @@ end
 function acf_library.getWeaponClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = Weapons[id]
+	local Class = Weapons.Get(id)
 
 	if not Class then SF.Throw("Invalid weapon class ID, not found.", 2) end
 
@@ -662,11 +647,13 @@ end
 function acf_library.getWeaponSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Class = ACF.GetClassGroup(Weapons, id)
+	local Class = Classes.GetGroup(Weapons, id)
 
 	if not Class then SF.Throw("Invalid weapon ID, not found.", 2) end
 
-	return WrapTable(Class.Lookup[id], Ignored)
+	local Weapon = Weapons.GetItem(Class.ID, id)
+
+	return WrapTable(Weapon, Ignored)
 end
 
 --- Returns true if This entity contains sensitive info and is not accessable to us
@@ -2124,7 +2111,7 @@ function ents_methods:acfPenetration()
 	if RestrictInfo(This) then return 0 end
 
 	local BulletData = This.BulletData
-	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
 
 	if not AmmoType then return 0 end
 
@@ -2145,7 +2132,7 @@ function ents_methods:acfBlastRadius()
 	if RestrictInfo(This) then return 0 end
 
 	local BulletData = This.BulletData
-	local AmmoType   = BulletData and AmmoTypes[BulletData.Type]
+	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
 
 	if not AmmoType then return 0 end
 

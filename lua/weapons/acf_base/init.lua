@@ -10,7 +10,7 @@ SWEP.AutoSwitchFrom = false
 
 function SWEP:Initialize()
 	local UserData = self.Primary.UserData
-	local AmmoType = AmmoTypes[UserData.Type]
+	local AmmoType = AmmoTypes.Get(UserData.Type)
 	local BulletData
 
 	if SERVER then
@@ -71,7 +71,7 @@ function SWEP:CrateReload()
 		if IsValid(AmmoEnt) and AmmoEnt.Ammo > 0 and AmmoEnt.RoundId == self.Primary.UserData["Id"] then
 			local CurAmmo = Owner:GetAmmoCount(self.Primary.Ammo)
 			local Transfert = math.min(AmmoEnt.Ammo, self.Primary.DefaultClip - CurAmmo)
-			local AmmoType = AmmoTypes[AmmoEnt.AmmoType]
+			local AmmoType = AmmoTypes.Get(AmmoEnt.AmmoType)
 
 			AmmoEnt.Ammo = AmmoEnt.Ammo - Transfert
 

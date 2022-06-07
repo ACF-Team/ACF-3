@@ -2,12 +2,14 @@ local ACF = ACF
 local Sensors = ACF.Classes.Sensors
 
 local function CreateMenu(Menu)
+	local Entries = Sensors.GetEntries()
+
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Sensor")
 
-	if not next(Sensors) then
+	if not next(Entries) then
 		Menu:AddTitle("No Sensors Registered")
 		Menu:AddLabel("No sensors have been registered. If this is incorrect, check your console for errors and contact the server owner.")
 		return
@@ -62,7 +64,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(SensorClass, Sensors, "ID")
+	ACF.LoadSortedList(SensorClass, Entries, "ID")
 end
 
 ACF.AddMenuItem(401, "Entities", "Sensors", "transmit", CreateMenu)

@@ -1,8 +1,9 @@
 local ACF         = ACF
-local EngineTypes = ACF.Classes.EngineTypes
-local FuelTypes   = ACF.Classes.FuelTypes
-local FuelTanks   = ACF.Classes.FuelTanks
-local Engines     = ACF.Classes.Engines
+local Classes     = ACF.Classes
+local EngineTypes = Classes.EngineTypes
+local FuelTypes   = Classes.FuelTypes
+local FuelTanks   = Classes.FuelTanks
+local Engines     = Classes.Engines
 local RPMText = [[
 	Idle RPM : %s RPM
 	Powerband : %s-%s RPM
@@ -33,14 +34,15 @@ local function UpdateEngineStats(Label, Data)
 	local Mass       = ACF.GetProperMass(Data.Mass)
 	local Torque     = math.floor(Data.Torque)
 	local TorqueFeet = math.floor(Data.Torque * 0.73)
-	local Type       = EngineTypes[Data.Type]
+	local Type       = EngineTypes.Get(Data.Type)
 	local Efficiency = Type.Efficiency * GetEfficiencyMult()
 	local FuelList   = ""
 
 	for K in pairs(Data.Fuel) do
-		if not FuelTypes[K] then continue end
+		local Fuel = FuelTypes.Get(K)
 
-		local Fuel = FuelTypes[K]
+		if not Fuel then continue end
+
 		local AddText = ""
 
 		if Fuel.ConsumptionText then
@@ -62,6 +64,9 @@ local function UpdateEngineStats(Label, Data)
 end
 
 local function CreateMenu(Menu)
+	local EngineEntries = Engines.GetEntries()
+	local FuelEntries   = FuelTanks.GetEntries()
+
 	Menu:AddTitle("Engine Settings")
 
 	local EngineClass = Menu:AddComboBox()
@@ -115,6 +120,11 @@ local function CreateMenu(Menu)
 
 		EnginePreview:UpdateModel(Data.Model)
 		EnginePreview:UpdateSettings(Data.Preview)
+
+		print("Checking stats ", Data.Name)
+		for K, V in pairs(Data) do
+			print(K, V)
+		end
 
 		UpdateEngineStats(EngineStats, Data)
 
@@ -196,8 +206,8 @@ local function CreateMenu(Menu)
 		FuelInfo:SetText(FuelText)
 	end
 
-	ACF.LoadSortedList(EngineClass, Engines, "ID")
-	ACF.LoadSortedList(FuelClass, FuelTanks, "ID")
+	ACF.LoadSortedList(EngineClass, EngineEntries, "ID")
+	ACF.LoadSortedList(FuelClass, FuelEntries, "ID")
 end
 
 ACF.AddMenuItem(201, "Entities", "Engines", "car", CreateMenu)

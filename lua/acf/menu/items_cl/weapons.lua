@@ -151,6 +151,8 @@ local function GetMass(Panel, Caliber, Class, Weapon)
 end
 
 local function CreateMenu(Menu)
+	local Entries = Weapons.GetEntries()
+
 	Menu:AddTitle("Weapon Settings")
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
@@ -205,7 +207,7 @@ local function CreateMenu(Menu)
 	ClassBase.Title   = EntName
 	ClassBase.Preview = EntPreview
 
-	ACF.LoadSortedList(ClassList, Weapons, "Name")
+	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
 ACF.AddMenuItem(1, "Entities", "Weapons", "gun", CreateMenu)
