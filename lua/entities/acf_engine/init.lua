@@ -305,7 +305,7 @@ do -- Spawn and Update functions
 		if EngineType.CalculateFuelUsage then
 			Entity.FuelUse = EngineType.CalculateFuelUsage(Entity)
 		else
-			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * Entity.PeakPower / 3600
+			Entity.FuelUse = ACF.FuelRate * Entity.Efficiency * 3e-8
 		end
 
 		ACF.Activate(Entity, true)
@@ -622,14 +622,11 @@ end
 function ENT:GetConsumption(Throttle, RPM)
 	if not IsValid(self.FuelTank) then return 0 end
 
-	local Consumption
-
 	if self.FuelType == "Electric" then
-		Consumption = self.Torque * RPM * self.FuelUse / 9548.8
+		Consumption = Throttle * self.FuelUse * self.Torque * RPM * 1.05e-4
 	else
-		local Load = 0.3 + Throttle * 0.7
-
-		Consumption = Load * self.FuelUse * (RPM / self.PeakPowerRPM) / self.FuelTank.FuelDensity
+		local IdleConsumption = self.PeakPower * 4e-6
+		Consumption = (IdleConsumption + Throttle * self.FuelUse * self.Torque * RPM) / self.FuelTank.FuelDensity
 	end
 
 	return Consumption
