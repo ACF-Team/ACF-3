@@ -628,7 +628,6 @@ function ENT:GetConsumption(Throttle, RPM)
 		local IdleConsumption = self.PeakPower * 5e2
 		return self.FuelUse * (IdleConsumption + Throttle * self.Torque * RPM) / self.FuelTank.FuelDensity
 	end
-	
 end
 
 function ENT:CalcRPM()
