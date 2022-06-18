@@ -44,9 +44,9 @@ do -- ACF global vars
 	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
-	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.BaseReload         = 3 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime         = 0.2 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.LengthToTime       = 0.4 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv            = 80 --Drag fudge factor
