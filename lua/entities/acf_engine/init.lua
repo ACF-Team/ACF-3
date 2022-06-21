@@ -122,7 +122,8 @@ end
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = math.Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
-	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Engine.Throttle * 0.666
+	local Throttle = Engine.RevLimited and 0 or Engine.Throttle
+	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
 	return Pitch, Volume * ACF.Volume
 end
@@ -646,7 +647,7 @@ function ENT:CalcRPM()
 	if not self.IsElectric then
 		if self.FlyRPM > self.LimitRPM * 0.99 then
 			self.RevLimited = true
-		elseif self.FlyRPM < self.LimitRPM * 0.9 then
+		elseif self.FlyRPM < self.LimitRPM * 0.95 then
 			self.RevLimited = false
 		end
 	end
