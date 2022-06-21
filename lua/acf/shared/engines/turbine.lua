@@ -300,7 +300,7 @@ local Transaxial = {
 	{ Model = "models/engines/gasturbine_s.mdl", Scale = 1 },
 }
 
-for _, Data in ipairs(Straight) do
+for _, Data in ipairs(Transaxial) do
 	local Scale = Data.Scale
 
 	ACF.AddHitboxes(Data.Model, {
@@ -320,7 +320,7 @@ for _, Data in ipairs(Straight) do
 	})
 end
 
-for _, Data in ipairs(Transaxial) do
+for _, Data in ipairs(Straight) do
 	local Scale = Data.Scale
 
 	ACF.AddHitboxes(Data.Model, {
@@ -336,10 +336,6 @@ for _, Data in ipairs(Transaxial) do
 		Chamber = {
 			Pos   = Vector(-9.5) * Scale,
 			Scale = Vector(9, 13, 13) * Scale
-		},
-		Output = {
-			Pos   = Vector(0, -6.5) * Scale,
-			Scale = Vector(7, 3, 7) * Scale
 		},
 		Exhaust = {
 			Pos   = Vector(-19) * Scale,
