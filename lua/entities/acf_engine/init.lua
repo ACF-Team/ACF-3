@@ -122,7 +122,8 @@ end
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = math.Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
-	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Engine.Throttle * 0.666
+	local Throttle = Engine.RevLimited and 0 or Engine.Throttle
+	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
 	return Pitch, Volume * ACF.Volume
 end
@@ -285,6 +286,7 @@ do -- Spawn and Update functions
 		Entity.PeakMinRPM       = EngineData.RPM.PeakMin
 		Entity.PeakMaxRPM       = EngineData.RPM.PeakMax
 		Entity.LimitRPM         = EngineData.RPM.Limit
+		Entity.RevLimited       = false
 		Entity.FlywheelOverride = EngineData.RPM.Override
 		Entity.FlywheelMass     = EngineData.FlywheelMass
 		Entity.Inertia          = EngineData.FlywheelMass * math.pi ^ 2
@@ -641,12 +643,22 @@ function ENT:CalcRPM()
 	local DeltaTime = ACF.CurTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
 
+	-- Determine if the rev limiter will engage or disengage
+	if not self.IsElectric then
+		if self.FlyRPM > self.LimitRPM * 0.99 then
+			self.RevLimited = true
+		elseif self.FlyRPM < self.LimitRPM * 0.95 then
+			self.RevLimited = false
+		end
+	end
+	local Throttle = self.RevLimited and 0 or self.Throttle
+
 	--calculate fuel usage
 	if IsValid(FuelTank) then
 		self.FuelTank = FuelTank
 		self.FuelType = FuelTank.FuelType
 
-		local Consumption = self:GetConsumption(self.Throttle, self.FlyRPM) * DeltaTime
+		local Consumption = self:GetConsumption(Throttle, self.FlyRPM) * DeltaTime
 
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
@@ -662,9 +674,9 @@ function ENT:CalcRPM()
 	-- Calculate the current torque from flywheel RPM
 	local Percent = (self.FlyRPM - self.IdleRPM) / self.CurveFactor / self.LimitRPM
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
-	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - self.Throttle) / self.Inertia
+	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - Throttle) / self.Inertia
 
-	self.Torque = self.Throttle * ACF.GetTorque(self.TorqueCurve, Percent) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
+	self.Torque = Throttle * ACF.GetTorque(self.TorqueCurve, Percent) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
 	-- Let's accelerate the flywheel based on that torque
 	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 0), self.LimitRPM)
 
