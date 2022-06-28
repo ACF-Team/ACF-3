@@ -25,16 +25,16 @@ do -- Diesel Engines
 		},
 	})
 
-	ACF.RegisterEngine("3.3L-V4", "V4", {
-		Name		 = "3.3L V4 Diesel",
-		Description	 = "Compact cube of git; for moderate utility applications",
+	ACF.RegisterEngine("4.9L-V4", "V4", {
+		Name		 = "4.9L V4 Diesel",
+		Description	 = "Fairly confident this thing would rattle to bits",
 		Model		 = "models/engines/v4m.mdl",
 		Sound		 = "acf_base/engines/i4_dieselmedium.wav",
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
-		Mass		 = 275,
+		Mass		 = 375,
 		Torque		 = 600,
-		FlywheelMass = 1.05,
+		FlywheelMass = 2,
 		RPM = {
 			Idle	= 600,
 			Limit	= 3900,

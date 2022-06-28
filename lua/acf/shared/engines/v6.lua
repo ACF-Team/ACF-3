@@ -15,7 +15,7 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 190,
-		Torque		 = 316,
+		Torque		 = 277,
 		FlywheelMass = 0.25,
 		RPM = {
 			Idle	= 700,
@@ -34,11 +34,11 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 360,
-		Torque		 = 590,
+		Torque		 = 495,
 		FlywheelMass = 0.45,
 		RPM = {
 			Idle	= 800,
-			Limit	= 5000,
+			Limit	= 4800,
 		},
 		Preview = {
 			FOV = 105,
@@ -53,11 +53,11 @@ do -- Petrol Engines
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 675,
-		Torque		 = 1806,
+		Torque		 = 1650,
 		FlywheelMass = 4,
 		RPM = {
 			Idle	= 600,
-			Limit	= 3800,
+			Limit	= 3000,
 		},
 		Preview = {
 			FOV = 105,
@@ -66,6 +66,25 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
+	ACF.RegisterEngine("3.3-V6", "V6", {
+		Name		 = "3.3L V6 Diesel",
+		Description	 = "Some two stroke diesel let loose from a scrapyard.",
+		Model		 = "models/engines/v6small.mdl",
+		Sound		 = "acf_base/engines/v6_petrolsmall.wav",
+		Fuel		 = { Diesel = true },
+		Type		 = "GenericDiesel",
+		Mass		 = 220,
+		Torque		 = 303,
+		FlywheelMass = 0.8,
+		RPM = {
+			Idle	= 450,
+			Limit	= 3700,
+		},
+		Preview = {
+			FOV = 105,
+		},
+	})
+
 	ACF.RegisterEngine("5.2-V6", "V6", {
 		Name		 = "5.2L V6 Diesel",
 		Description	 = "Light AFV-grade two-stroke diesel, high output but heavy.",
@@ -74,11 +93,11 @@ do -- Diesel Engines
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
 		Mass		 = 520,
-		Torque		 = 606,
+		Torque		 = 657,
 		FlywheelMass = 0.8,
 		RPM = {
 			Idle	= 650,
-			Limit	= 4300,
+			Limit	= 4000,
 		},
 		Preview = {
 			FOV = 105,
@@ -92,12 +111,12 @@ do -- Diesel Engines
 		Sound		 = "acf_base/engines/v6_diesellarge.wav",
 		Fuel		 = { Diesel = true },
 		Type		 = "GenericDiesel",
-		Mass		 = 900,
-		Torque		 = 2208,
+		Mass		 = 1400,
+		Torque		 = 2003,
 		FlywheelMass = 6.4,
 		RPM = {
 			Idle	= 400,
-			Limit	= 3100,
+			Limit	= 3050,
 		},
 		Preview = {
 			FOV = 105,
