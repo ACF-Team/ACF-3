@@ -1,13 +1,10 @@
 local Classes = ACF.Classes
-
-Classes.Sensors = Classes.Sensors or {}
-
 local Sensors = Classes.Sensors
 local Entries = {}
 
 
 function Sensors.RegisterGroup(ID, Data)
-	local Group = ClassesAddClassGroup(ID, Entries, Data)
+	local Group = Classes.AddClassGroup(ID, Entries, Data)
 
 	if not Group.LimitConVar then
 		Group.LimitConVar = {

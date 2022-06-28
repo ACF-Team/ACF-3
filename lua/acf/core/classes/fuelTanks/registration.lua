@@ -1,7 +1,4 @@
-local Classes = ACF.Classes
-
-Classes.FuelTanks = Classes.FuelTanks or {}
-
+local Classes   = ACF.Classes
 local FuelTanks = Classes.FuelTanks
 local Entries   = {}
 

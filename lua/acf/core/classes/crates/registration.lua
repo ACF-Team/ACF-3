@@ -1,7 +1,4 @@
 local Classes = ACF.Classes
-
-Classes.Crates = Classes.Crates or {}
-
 local Crates  = Classes.Crates
 local Entries = {}
 

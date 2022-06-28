@@ -1,7 +1,4 @@
-local Classes = ACF.Classes
-
-Classes.AmmoTypes = Classes.AmmoTypes or {}
-
+local Classes   = ACF.Classes
 local AmmoTypes = Classes.AmmoTypes
 local Entries   = {}
 

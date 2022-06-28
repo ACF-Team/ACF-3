@@ -1,8 +1,5 @@
 local Classes = ACF.Classes
-
-Classes.EngineTypes = Classes.EngineTypes or {}
-
-local Types   = Classes.EngineTypes
+local Types   = Classes.FuelTypes
 local Entries = {}
 
 

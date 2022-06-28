@@ -1,7 +1,4 @@
-local Classes = ACF.Classes
-
-Classes.Gearboxes = Classes.Gearboxes or {}
-
+local Classes   = ACF.Classes
 local Gearboxes = Classes.Gearboxes
 local Entries   = {}
 

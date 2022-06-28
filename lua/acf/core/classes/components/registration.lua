@@ -1,7 +1,4 @@
-local Classes = ACF.Classes
-
-Classes.Components = Classes.Components or {}
-
+local Classes    = ACF.Classes
 local Components = Classes.Components
 local Entries    = {}
 

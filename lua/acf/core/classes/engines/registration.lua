@@ -1,11 +1,9 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-
-Classes.Engines = Classes.Engines or {}
-
 local Engines = Classes.Engines
+local Types   = Classes.EngineTypes
 local Entries = {}
-local Types
+local Loaded
 
 
 local function AddPerformanceData(Engine)
@@ -47,7 +45,7 @@ function Engines.Register(ID, ClassID, Data)
 		Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 	end
 
-	if Types then
+	if Loaded then
 		AddPerformanceData(Class)
 	end
 
@@ -58,7 +56,7 @@ Classes.AddGroupedFunctions(Engines, Entries)
 
 do -- Adding engine performance data
 	hook.Add("ACF_OnAddonLoaded", "ACF Engine Performance", function()
-		Types = Classes.EngineTypes
+		Loaded = true
 
 		for Name in pairs(Engines.GetEntries()) do
 			for _, Engine in pairs(Engines.GetItemEntries(Name)) do

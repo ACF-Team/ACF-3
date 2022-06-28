@@ -1,7 +1,4 @@
-local Classes = ACF.Classes
-
-Classes.Piledrivers = Classes.Piledrivers or {}
-
+local Classes     = ACF.Classes
 local Piledrivers = Classes.Piledrivers
 local Entries     = {}
 

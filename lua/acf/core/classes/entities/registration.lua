@@ -4,11 +4,8 @@ local isstring   = isstring
 local istable    = istable
 local unpack     = unpack
 local Classes    = ACF.Classes
-
-Classes.Entities = Classes.Entities or {}
-
-local Entities = Classes.Entities
-local Entries  = {}
+local Entities   = Classes.Entities
+local Entries    = {}
 
 
 local function GetEntityTable(Class)
