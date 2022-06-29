@@ -3,6 +3,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local ACF = ACF
+
 --===============================================================================================--
 -- Engine class setup
 --===============================================================================================--
@@ -102,6 +104,7 @@ end
 --===============================================================================================--
 
 local CheckLegal  = ACF_CheckLegal
+local Clock       = ACF.Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
@@ -111,7 +114,6 @@ local TimerCreate = timer.Create
 local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
-local clock       = ACF.clock
 
 -- Fuel consumption is increased on competitive servers
 local function GetEfficiencyMult()
@@ -184,7 +186,7 @@ local function SetActive(Entity, Value)
 
 		Entity:CalcMassRatio()
 
-		Entity.LastThink = clock.curTime
+		Entity.LastThink = Clock.CurTime
 		Entity.Torque = Entity.PeakTorque
 		Entity.FlyRPM = Entity.IdleRPM * 1.5
 
@@ -650,7 +652,7 @@ end
 function ENT:CalcRPM()
 	if not self.Active then return end
 
-	local DeltaTime = clock.curTime - self.LastThink
+	local DeltaTime = Clock.CurTime - self.LastThink
 	local FuelTank 	= GetNextFuelTank(self)
 
 	--calculate fuel usage
@@ -706,7 +708,7 @@ function ENT:CalcRPM()
 	end
 
 	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
-	self.LastThink = clock.curTime
+	self.LastThink = Clock.CurTime
 
 	if self.Sound then
 		local Pitch, Volume = GetPitchVolume(self)

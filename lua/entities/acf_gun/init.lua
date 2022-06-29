@@ -8,10 +8,10 @@ include("shared.lua")
 local ACF         = ACF
 local Classes     = ACF.Classes
 local AmmoTypes   = Classes.AmmoTypes
+local Clock       = ACF.Utilities.Clock
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-local clock       = ACF.clock
 
 -- TODO: Replace with CFrame as soon as it's available
 local function UpdateTotalAmmo(Entity)
@@ -647,7 +647,7 @@ do -- Metamethods --------------------------------
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
-				self.NextFire 	  = clock.curTime + Time
+				self.NextFire 	  = Clock.CurTime + Time
 
 				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
 					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
@@ -704,7 +704,7 @@ do -- Metamethods --------------------------------
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
 
-				self.NextFire = clock.curTime + self.MagReload
+				self.NextFire = Clock.CurTime + self.MagReload
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
@@ -843,7 +843,7 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			self:NextThink(clock.curTime + 1)
+			self:NextThink(Clock.CurTime + 1)
 
 			return true
 		end

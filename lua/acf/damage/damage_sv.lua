@@ -3,6 +3,8 @@ local ACF     = ACF
 local HookRun = hook.Run
 
 do -- KE Shove
+	local Clock = ACF.Utilities.Clock
+
 	function ACF.KEShove(Target, Pos, Vec, KE)
 		if not IsValid(Target) then return end
 
@@ -12,7 +14,7 @@ do -- KE Shove
 		local Phys = Ancestor:GetPhysicsObject()
 
 		if IsValid(Phys) then
-			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < ACF.clock.curTime then
+			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < Clock.CurTime then
 				ACF_CalcMassRatio(Ancestor)
 			end
 

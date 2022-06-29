@@ -4,8 +4,8 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF   = ACF
+local Clock = ACF.Utilities.Clock
 local hook  = hook
-local clock = ACF.clock
 
 do -- Spawning and Updating --------------------
 	local CheckLegal  = ACF_CheckLegal
@@ -133,9 +133,9 @@ do -- Spawning and Updating --------------------
 			function BulletData:PreCalcFlight()
 				if self.KillTime then return end
 				if not self.DeltaTime then return end
-				if self.LastThink == clock.curTime then return end
+				if self.LastThink == Clock.CurTime then return end
 
-				self.KillTime = clock.curTime
+				self.KillTime = Clock.CurTime
 			end
 
 			function BulletData:OnEndFlight(Trace)
@@ -207,7 +207,7 @@ do -- Spawning and Updating --------------------
 		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.RoundData    = AmmoType()
-		Entity.LastThink    = clock.curTime
+		Entity.LastThink    = Clock.CurTime
 		Entity.State        = "Loading"
 		Entity.Firing       = false
 		Entity.Charge       = 0
@@ -443,7 +443,7 @@ do -- Misc --------------------------------------
 	end
 
 	function ENT:Think()
-		local Time = clock.curTime
+		local Time = Clock.CurTime
 
 		if not self.Disabled and self.CurrentShot < self.MagSize then
 			local Delta  = Time - self.LastThink

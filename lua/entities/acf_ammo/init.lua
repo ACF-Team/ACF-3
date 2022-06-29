@@ -10,7 +10,6 @@ local ActiveCrates = ACF.AmmoCrates
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
 local HookRun      = hook.Run
-local clock        = ACF.clock
 
 do -- Spawning and Updating --------------------
 	local CheckLegal = ACF_CheckLegal
@@ -406,8 +405,10 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
+	local Clock = ACF.Utilities.Clock
+
 	local function CookoffCrate(Entity)
-		if Entity.Ammo <= 1 or Entity.Damaged < clock.curTime then -- Detonate when time is up or crate is out of ammo
+		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
 			timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
 
 			Entity.Damaged = nil
@@ -491,7 +492,7 @@ do -- ACF Activation and Damage -----------------
 			self.Inflictor = Inflictor
 
 			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
-				self.Damaged = clock.curTime + (5 - Ratio * 3)
+				self.Damaged = Clock.CurTime + (5 - Ratio * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 

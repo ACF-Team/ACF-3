@@ -29,10 +29,10 @@ local FuelTanks         = Classes.FuelTanks
 local FuelTypes         = Classes.FuelTypes
 local Gearboxes         = Classes.Gearboxes
 local Weapons           = Classes.Weapons
+local Clock             = ACF.Utilities.Clock
 local CheckLuaType      = SF.CheckLuaType
 local CheckPerms        = SF.Permissions.check
 local RegisterPrivilege = SF.Permissions.registerPrivilege
-local clock             = ACF.clock
 
 local Ignored = {
 	LimitConVar = true,
@@ -1777,7 +1777,7 @@ function ents_methods:acfReloadProgress()
 	if RestrictInfo(This) then return 0 end
 	if not This.NextFire then return This.State == "Loaded" and 1 or 0 end
 
-	return math.Clamp(1 - (This.NextFire - clock.curTime) / GetReloadTime(This), 0, 1)
+	return math.Clamp(1 - (This.NextFire - Clock.CurTime) / GetReloadTime(This), 0, 1)
 end
 
 --- Returns time it takes for an ACF weapon to reload magazine

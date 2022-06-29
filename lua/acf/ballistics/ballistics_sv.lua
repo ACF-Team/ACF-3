@@ -1,6 +1,6 @@
-local ACF   = ACF
-local clock = ACF.clock
+local ACF        = ACF
 local Ballistics = ACF.Ballistics
+local Clock      = ACF.Utilities.Clock
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -66,7 +66,7 @@ function Ballistics.RemoveBullet(Bullet)
 end
 
 function Ballistics.CalcBulletFlight(Bullet)
-	if Bullet.KillTime and clock.curTime > Bullet.KillTime then
+	if Bullet.KillTime and Clock.CurTime > Bullet.KillTime then
 		return Ballistics.RemoveBullet(Bullet)
 	end
 
@@ -74,14 +74,14 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PreCalcFlight()
 	end
 
-	local DeltaTime  = clock.curTime - Bullet.LastThink
+	local DeltaTime  = Clock.CurTime - Bullet.LastThink
 	local Drag       = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
 	local Accel      = Bullet.Accel or ACF.Gravity
 	local Correction = 0.5 * (Accel - Drag) * DeltaTime
 
 	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Bullet.Flight + Correction)
 	Bullet.Flight    = Bullet.Flight + (Accel - Drag) * DeltaTime
-	Bullet.LastThink = clock.curTime
+	Bullet.LastThink = Clock.CurTime
 	Bullet.DeltaTime = DeltaTime
 
 	Ballistics.DoBulletsFlight(Bullet)
@@ -132,8 +132,8 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	Bullet.Index       = Index
-	Bullet.LastThink   = clock.curTime
-	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + clock.curTime or nil -- Convert Fuze from fuze length to time of detonation
+	Bullet.LastThink   = Clock.CurTime
+	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	Bullet.Mask        = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
 	Bullet.Ricochets   = 0
 	Bullet.GroundRicos = 0
@@ -198,12 +198,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 	if HookRun("ACF Bullet Flight", Bullet) == false then return end
 
 	if Bullet.SkyLvL then
-		if clock.curTime - Bullet.LifeTime > 30 then
+		if Clock.CurTime - Bullet.LifeTime > 30 then
 			return Ballistics.RemoveBullet(Bullet)
 		end
 
 		if Bullet.NextPos.z + SkyGraceZone > Bullet.SkyLvL then
-			if Bullet.Fuze and Bullet.Fuze <= clock.curTime then -- Fuze detonated outside map
+			if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then -- Fuze detonated outside map
 				Ballistics.RemoveBullet(Bullet)
 			end
 
@@ -227,12 +227,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
 
-	if Bullet.Fuze and Bullet.Fuze <= clock.curTime then
+	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
 			return Ballistics.RemoveBullet(Bullet)
 		else
 			local DeltaTime = Bullet.DeltaTime
-			local DeltaFuze = clock.curTime - Bullet.Fuze
+			local DeltaFuze = Clock.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
 
 			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
@@ -256,7 +256,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		if FlightRes.HitSky then
 			if FlightRes.HitNormal == Vector(0, 0, -1) then
 				Bullet.SkyLvL = FlightRes.HitPos.z
-				Bullet.LifeTime = clock.curTime
+				Bullet.LifeTime = Clock.CurTime
 			else
 				Ballistics.RemoveBullet(Bullet)
 			end

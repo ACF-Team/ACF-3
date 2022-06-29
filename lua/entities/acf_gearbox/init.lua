@@ -7,9 +7,10 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
+local ACF     = ACF
+local Clock   = ACF.Utilities.Clock
 local Clamp   = math.Clamp
 local HookRun = hook.Run
-local clock   = ACF.clock
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
@@ -729,7 +730,7 @@ do -- Gear Shifting ------------------------------------
 		self.Gear           = Value
 		self.InGear         = false
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
-		self.ChangeFinished = clock.curTime + self.SwitchTime
+		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
 		self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
 
@@ -751,9 +752,9 @@ do -- Movement -----------------------------------------
 
 	function ENT:Calc(InputRPM, InputInertia)
 		if self.Disabled then return 0 end
-		if self.LastActive == clock.curTime then return self.TorqueOutput end
+		if self.LastActive == Clock.CurTime then return self.TorqueOutput end
 
-		if self.ChangeFinished < clock.curTime then
+		if self.ChangeFinished < Clock.CurTime then
 			self.InGear = true
 		end
 
@@ -872,7 +873,7 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.LastActive = clock.curTime
+		self.LastActive = Clock.CurTime
 	end
 end ----------------------------------------------------
 
@@ -910,7 +911,7 @@ do -- Braking ------------------------------------------
 
 		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
-		local DeltaTime = math.min(clock.curTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
+		local DeltaTime = math.min(Clock.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 		for Wheel, Link in pairs(self.Wheels) do
 			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
@@ -921,7 +922,7 @@ do -- Braking ------------------------------------------
 			end
 		end
 
-		self.LastBrakeThink = clock.curTime
+		self.LastBrakeThink = Clock.CurTime
 
 		timer.Simple(engine.TickInterval(), function()
 			if not IsValid(self) then return end
