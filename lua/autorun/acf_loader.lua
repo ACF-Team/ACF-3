@@ -6,7 +6,7 @@ local addonGlobal = "ACF" -- This is the name of the global table for the addon 
 	All files and folders in this directory are loaded in alphabetical order EXCEPT for a "core" directory, which is loaded before the other directories
 
 
-	To reload the addon, run the concmd 'addonGlobalTableName_reload'.
+	To reload the addon, run the concmd 'addonGlobal_reload'.
 
 	Files and folders can have their realms specified by adding a suffix to the filename.
 		_cl marks files and folders for CLIENTS
@@ -68,10 +68,20 @@ local function getRealm(path)
 	return realm and realms[realm]
 end
 
-local function getLibraryName(name)
-	local finish = name:find(pattern)
+local function getLibraryName(String)
+	local Finish = String:find(pattern)
 
-	return name:sub(1, 1):upper() .. name:sub(2, finish and finish - 1)
+	if Finish then
+		String = String:sub(1, Finish - 1)
+	end
+
+	local Words = {}
+
+	for Word in String:gmatch("%a+") do
+		Words[#Words + 1] = Word:sub(1, 1):upper() .. Word:sub(2)
+	end
+
+	return table.concat(Words)
 end
 
 local function prepareFiles(current, context, folders, files, realm, forced)
@@ -137,7 +147,7 @@ local function loadLibrary(library, context)
 		fileCount = fileCount + addedFiles
 		libCount  = libCount  + addedLibs
 
-		if libName ~= "Core" and not next(libContext) then
+		if libName ~= "Core" and next(libContext) == nil then
 			--print("Removing " ..  data.Name ..  " folder from " .. (library.Name or addonGlobal))
 
 			context[libName] = nil
@@ -165,7 +175,7 @@ local function loadAddon()
 	prepareFiles(addonFolder, addonRoot, libraries.Folders, libraries.Files, realm)
 
 	print("> Loading files....")
-	local files, libs = loadLibrary(libraries, addonRoot, realm)
+	local files, libs = loadLibrary(libraries, addonRoot)
 
 	print("> Loaded " .. files .. " files and " .. libs .. " folders.")
 	print(addonGlobal .. " has finished loading.\n")
