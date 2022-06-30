@@ -436,8 +436,10 @@ do -- Deal Damage ---------------------------
 		local Driver = Entity:GetDriver()
 
 		if IsValid(Driver) then
-			Trace.HitGroup = math.Rand(0, 7) -- Hit a random part of the driver
-			SquishyDamage(Bullet, Trace) -- Deal direct damage to the driver
+			local NewTrace = table.Copy(Trace)
+			NewTrace.Entity = Driver
+			NewTrace.HitGroup = math.Rand(0, 7) -- Hit a random part of the driver
+			SquishyDamage(Bullet, NewTrace) -- Deal direct damage to the driver
 		end
 
 		HitRes.Kill = false
