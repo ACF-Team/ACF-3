@@ -61,7 +61,7 @@ function Ballistics.RemoveBullet(Bullet)
 	Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos) -- Kills the bullet on the clientside
 
 	if not next(Bullets) then
-		hook.Remove("Tick", "IterateBullets")
+		hook.Remove("ACF_OnClock", "ACF Iterate Bullets")
 	end
 end
 
@@ -147,7 +147,7 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	if not next(Bullets) then
-		hook.Add("Tick", "IterateBullets", IterateBullets)
+		hook.Add("ACF_OnClock", "ACF Iterate Bullets", IterateBullets)
 	end
 
 	Bullets[Index] = Bullet

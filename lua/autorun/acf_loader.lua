@@ -1,12 +1,9 @@
-local addonFolder = "ACF" -- This is the name of the folder that gets loaded eg. addons\addonFolder\lua\addonFolder\
-local addonGlobal = "ACF" -- This is the name of the global table for the addon ( _G.addonGlobal )
-
 --[[
-	This script automatically loads all files under garrysmod/garrysmod/addons/addonFolder/lua/addonFolder/
+	This script automatically loads all files under garrysmod/garrysmod/addons/AddonFolder/lua/AddonFolder/
 	All files and folders in this directory are loaded in alphabetical order EXCEPT for a "core" directory, which is loaded before the other directories
 
 
-	To reload the addon, run the concmd 'addonGlobal_reload'.
+	To reload the addon, run the concmd 'AddonGlobal_reload'.
 
 	Files and folders can have their realms specified by adding a suffix to the filename.
 		_cl marks files and folders for CLIENTS
@@ -16,175 +13,182 @@ local addonGlobal = "ACF" -- This is the name of the global table for the addon 
 	Folder structure:
 
 	addons\
-		addonFolder\
+		AddonFolder\
 			lua\
 				autorun\
 					loader.lua
-				addonFolder\
+				AddonFolder\
 					core\		<--- FILES in this directory are loaded FIRST
 						example_sv.lua
 					damage\	  <--- ALL other DIRECTORIES are loaded AFTER in ALPHABETICAL ORDER
 						exampleFolder_cl\
 							thisFileIsSentToClients.lua
-					ballistics\  <--- All directories under addonFolder have a table created for them, eg. addonGlobal.Ballistics
+					ballistics\  <--- All directories under AddonFolder have a table created for them, eg. AddonGlobal.Ballistics
 ]]--
 
-local table   = table
-local pattern = "_([cs][lvh])[.lua]*$"
-
-local realms = {
+local AddonFolder = "ACF" -- This is the name of the folder that gets loaded eg. addons\AddonFolder\lua\AddonFolder\
+local AddonGlobal = "ACF" -- This is the name of the global table for the addon (_G.AddonGlobal)
+local Suffix      = "_([cs][lvh])[.lua]*$"
+local table       = table
+local Realms = {
 	cl = "Client",
 	sv = "Server",
 	sh = "Shared",
-	Client = function(path)
+	Client = function(Filepath)
 		if CLIENT then
-			include(path)
+			include(Filepath)
 		else
-			AddCSLuaFile(path)
+			AddCSLuaFile(Filepath)
 		end
 	end,
-	Server = function(path)
+	Server = function(Filepath)
 		if CLIENT then return end
 
-		include(path)
+		include(Filepath)
 	end,
-	Shared = function(path)
-		AddCSLuaFile(path)
-		include(path)
+	Shared = function(Filepath)
+		AddCSLuaFile(Filepath)
+		include(Filepath)
 	end,
 }
 
-local function canLoad(realm, sessionRealm)
+local function CanLoad(Realm, SessionRealm)
 	if SERVER then return true end -- We need to add clientside files
-	if not realm then return true end
-	if realm == "Shared" then return true end
+	if not Realm then return true end
+	if Realm == "Shared" then return true end
 
-	return realm == sessionRealm
+	return Realm == SessionRealm
 end
 
-local function getRealm(path)
-	local realm = path:match(pattern)
+local function GetRealm(Filename)
+	local Realm = Filename:match(Suffix)
 
-	return realm and realms[realm]
+	return Realm and Realms[Realm]
 end
 
-local function getLibraryName(String)
-	local Finish = String:find(pattern)
+local function GetLibraryName(Filename)
+	local Finish = Filename:find(Suffix)
 
 	if Finish then
-		String = String:sub(1, Finish - 1)
+		Filename = Filename:sub(1, Finish - 1)
 	end
 
 	local Words = {}
 
-	for Word in String:gmatch("%a+") do
+	for Word in Filename:gmatch("%a+") do
 		Words[#Words + 1] = Word:sub(1, 1):upper() .. Word:sub(2)
 	end
 
 	return table.concat(Words)
 end
 
-local function prepareFiles(current, context, folders, files, realm, forced)
-	local contextRealm = context.Realm
+local function PrepareFiles(Path, Context, Library, Realm, Forced)
+	if not CanLoad(Context.Realm, Realm) then return end
 
-	if not canLoad(contextRealm, realm) then return end
+	local NewFiles, NewFolders = file.Find(Path .. "/*", "LUA")
+	local Files   = Library.Files
+	local Folders = Library.Folders
 
-	local newFiles, newFolders = file.Find(current .. "/*", "LUA")
+	for _, Filename in ipairs(NewFiles) do
+		local FileRealm = Forced or GetRealm(Filename)
 
-	for _, path in ipairs(newFiles) do
-		local fileRealm = forced or getRealm(path)
+		if not CanLoad(FileRealm, Realm) then continue end
 
-		if not canLoad(fileRealm, realm) then continue end
-
-		files[#files + 1] = {
-			Path = current .. "/" .. path,
-			Load = realms[fileRealm or "Shared"],
+		Files[#Files + 1] = {
+			Path = Path .. "/" .. Filename,
+			Load = Realms[FileRealm or "Shared"],
 		}
 	end
 
-	for _, name in ipairs(newFolders) do
-		local libRealm = forced or getRealm(name)
+	for _, Folder in ipairs(NewFolders) do
+		local LibRealm = Forced or GetRealm(Folder)
 
-		if not canLoad(libRealm, realm) then continue end
+		if not CanLoad(LibRealm, Realm) then continue end
 
-		local libName  = getLibraryName(name)
-		local isCore   = libName == "Core"
-		local libTable = isCore and context or (context[libName] or {})
-
-		local data = {
-			Name    = libName,
-			Realm   = libRealm,
-			Context = libTable,
+		local LibName  = GetLibraryName(Folder)
+		local IsCore   = LibName == "Core"
+		local LibTable = IsCore and Context or (Context[LibName] or {})
+		local NewLib = {
+			Name    = LibName,
+			Realm   = LibRealm,
+			Context = LibTable,
 			Folders = {},
 			Files   = {},
 		}
 
-		if isCore then
-			table.insert(folders, 1, data)
+		if IsCore then
+			table.insert(Folders, 1, NewLib)
 		else
-			folders[#folders + 1] = data
+			Folders[#Folders + 1] = NewLib
 
-			context[libName] = libTable
+			Context[LibName] = LibTable
 		end
 
-		prepareFiles(current .. "/" .. name, libTable, data.Folders, data.Files, realm, libRealm)
+		PrepareFiles(Path .. "/" .. Folder, LibTable, NewLib, Realm, LibRealm)
 	end
 end
 
-local function loadLibrary(library, context)
-	local fileCount = #library.Files
-	local libCount  = 1
+local function ShouldClear(Context, Name, Table)
+	if Name == "Core" then return false end
+	if Context[Name] ~= Table then return false end
 
-	for _, data in ipairs(library.Files) do
-		data.Load(data.Path)
+	return next(Table) == nil
+end
+
+local function LoadLibrary(Library, Context)
+	local FileCount = #Library.Files
+	local LibCount  = 1
+
+	for _, File in ipairs(Library.Files) do
+		File.Load(File.Path)
 	end
 
-	for _, data in ipairs(library.Folders) do
-		local libContext = data.Context
-		local libName    = data.Name
-		local addedFiles, addedLibs = loadLibrary(data, libContext)
+	for _, Folder in ipairs(Library.Folders) do
+		local LibContext = Folder.Context
+		local LibName    = Folder.Name
+		local AddedFiles, AddedLibs = LoadLibrary(Folder, LibContext)
 
-		fileCount = fileCount + addedFiles
-		libCount  = libCount  + addedLibs
+		FileCount = FileCount + AddedFiles
+		LibCount  = LibCount  + AddedLibs
 
-		if libName ~= "Core" and next(libContext) == nil then
-			--print("Removing " ..  data.Name ..  " folder from " .. (library.Name or addonGlobal))
+		if ShouldClear(Context, LibName, LibContext) then
+			--print("Removing " ..  LibName ..  " folder from " .. (Library.Name or AddonGlobal))
 
-			context[libName] = nil
+			Context[LibName] = nil
 		--else
-			--print("Keeping " ..  libName ..  " folder from " .. (library.Name or addonGlobal))
+			--print("Keeping " ..  LibName ..  " folder from " .. (Library.Name or AddonGlobal))
 		end
 	end
 
-	return fileCount, libCount
+	return FileCount, LibCount
 end
 
-local function loadAddon()
-	local realm     = SERVER and "Server" or "Client"
-	local addonRoot = _G[addonGlobal] or {}
-	local libraries = {
+local function LoadAddon()
+	local Realm = SERVER and "Server" or "Client"
+	local Root  = _G[AddonGlobal] or {}
+	local Libraries = {
 		Folders = {},
 		Files   = {},
 	}
 
-	print("\nInitializing " .. addonGlobal .. " loader.")
-	print("> Creating global " .. addonGlobal .. " table...")
-	_G[addonGlobal] = addonRoot
+	print("\nInitializing " .. AddonGlobal .. " loader.")
+	print("> Creating global " .. AddonGlobal .. " table...")
+	_G[AddonGlobal] = Root
 
 	print("> Preparing files....")
-	prepareFiles(addonFolder, addonRoot, libraries.Folders, libraries.Files, realm)
+	PrepareFiles(AddonFolder, Root, Libraries, Realm)
 
 	print("> Loading files....")
-	local files, libs = loadLibrary(libraries, addonRoot)
+	local TotalFiles, TotalLibs = LoadLibrary(Libraries, Root)
 
-	print("> Loaded " .. files .. " files and " .. libs .. " folders.")
-	print(addonGlobal .. " has finished loading.\n")
+	print("> Loaded " .. TotalFiles .. " files and " .. TotalLibs .. " folders.")
+	print(AddonGlobal .. " has finished loading.\n")
 
-	hook.Run(addonGlobal .. "_OnAddonLoaded")
+	hook.Run(AddonGlobal .. "_OnAddonLoaded")
 end
 
-concommand.Add(addonGlobal:lower() .. "_reload", function()
-	loadAddon()
+concommand.Add(AddonGlobal:lower() .. "_reload", function()
+	LoadAddon()
 end)
 
-loadAddon()
+LoadAddon()
