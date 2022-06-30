@@ -171,7 +171,7 @@ function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 
 	for _, Source in pairs(Weaponry) do
-		for ID in pairs(Source) do
+		for ID in pairs(Source.GetEntries()) do
 			if not Whitelist[ID] then
 				Result[ID] = true
 			end
