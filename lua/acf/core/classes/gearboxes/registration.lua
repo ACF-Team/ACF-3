@@ -28,9 +28,3 @@ function Gearboxes.RegisterItem(ID, ClassID, Data)
 end
 
 Classes.AddGroupedFunctions(Gearboxes, Entries)
-
-do -- Discontinued function
-	function ACF_DefineGearbox(ID)
-		print("Attempted to register gearbox " .. ID .. " with a discontinued function. Use ACF.RegisterGearbox instead.")
-	end
-end

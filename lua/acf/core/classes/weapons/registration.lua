@@ -40,13 +40,3 @@ function Weapons.RegisterItem(ID, ClassID, Data)
 end
 
 Classes.AddGroupedFunctions(Weapons, Entries)
-
-do -- Discontinued functions
-	function ACF_defineGunClass(ID)
-		print("Attempted to register weapon class " .. ID .. " with a discontinued function. Use ACF.RegisterWeaponClass instead.")
-	end
-
-	function ACF_defineGun(ID)
-		print("Attempted to register weapon " .. ID .. " with a discontinued function. Use ACF.RegisterWeapon instead.")
-	end
-end

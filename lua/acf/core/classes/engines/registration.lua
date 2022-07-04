@@ -67,9 +67,3 @@ do -- Adding engine performance data
 		hook.Remove("ACF_OnAddonLoaded", "ACF Engine Performance")
 	end)
 end
-
-do -- Discontinued function
-	function ACF_DefineEngine(ID)
-		print("Attempted to register engine " .. ID .. " with a discontinued function. Use ACF.RegisterEngine instead.")
-	end
-end

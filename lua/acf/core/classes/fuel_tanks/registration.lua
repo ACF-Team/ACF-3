@@ -30,13 +30,3 @@ function FuelTanks.RegisterItem(ID, ClassID, Data)
 end
 
 Classes.AddGroupedFunctions(FuelTanks, Entries)
-
-do -- Discontinued functions
-	function ACF_DefineFuelTank(ID)
-		print("Attempted to register fuel tank type " .. ID .. " with a discontinued function. Use ACF.RegisterFuelTankClass instead.")
-	end
-
-	function ACF_DefineFuelTankSize(ID)
-		print("Attempted to register fuel tank " .. ID .. " with a discontinued function. Use ACF.RegisterFuelTank instead.")
-	end
-end
