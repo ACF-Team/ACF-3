@@ -2,12 +2,12 @@ local ACF     = ACF
 local Engines = ACF.Classes.Engines
 
 
-Engines.RegisterGroup("V10", {
+Engines.Register("V10", {
 	Name = "V10 Engine",
 })
 
 do
-	Engines.Register("4.3-V10", "V10", {
+	Engines.RegisterItem("4.3-V10", "V10", {
 		Name		 = "4.3L V10 Petrol",
 		Description	 = "Small-block V-10 gasoline engine, great for powering a hot rod lincoln",
 		Model		 = "models/engines/v10sml.mdl",
@@ -26,7 +26,7 @@ do
 		},
 	})
 
-	Engines.Register("8.0-V10", "V10", {
+	Engines.RegisterItem("8.0-V10", "V10", {
 		Name		 = "8.0L V10 Petrol",
 		Description	 = "Beefy 10-cylinder gas engine, gets 9 kids to soccer practice",
 		Model		 = "models/engines/v10med.mdl",
@@ -45,7 +45,7 @@ do
 		},
 	})
 
-	Engines.Register("22.0-V10", "V10", {
+	Engines.RegisterItem("22.0-V10", "V10", {
 		Name		 = "22.0L V10 Multifuel",
 		Description	 = "Heavy multifuel V-10, gearbox-shredding torque but very heavy.",
 		Model		 = "models/engines/v10big.mdl",

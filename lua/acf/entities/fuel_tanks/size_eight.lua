@@ -1,13 +1,13 @@
 local FuelTanks = ACF.Classes.FuelTanks
 
 
-FuelTanks.RegisterGroup("FTS_8", {
+FuelTanks.Register("FTS_8", {
 	Name		= "Size 8 Container",
 	Description	= "Size 8 fuel containers, required for engines to work.",
 })
 
 do
-	FuelTanks.Register("Tank_8x8x1","FTS_8", {
+	FuelTanks.RegisterItem("Tank_8x8x1","FTS_8", {
 		Name		= "8x8x1 Container",
 		Description	= "Sloshy sloshy!",
 		Model		= "models/fueltank/fueltank_8x8x1.mdl",
@@ -20,7 +20,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_8x8x2","FTS_8", {
+	FuelTanks.RegisterItem("Tank_8x8x2","FTS_8", {
 		Name		= "8x8x2 Container",
 		Description	= "What's global warming?",
 		Model		= "models/fueltank/fueltank_8x8x2.mdl",
@@ -32,7 +32,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_8x8x4","FTS_8", {
+	FuelTanks.RegisterItem("Tank_8x8x4","FTS_8", {
 		Name		= "8x8x4 Container",
 		Description	= "Tank Tank.",
 		Model		= "models/fueltank/fueltank_8x8x4.mdl",

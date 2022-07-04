@@ -5,7 +5,7 @@ local istable  = istable
 local Classes  = ACF.Classes
 
 
-function Classes.AddClassGroup(ID, Destiny, Data)
+function Classes.AddGroup(ID, Destiny, Data)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
 	if not istable(Data) then return end
@@ -32,7 +32,7 @@ function Classes.AddClassGroup(ID, Destiny, Data)
 	return Group
 end
 
-function Classes.AddGrouped(ID, GroupID, Destiny, Data)
+function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 	if not isstring(ID) then return end
 	if not isstring(GroupID) then return end
 	if not istable(Destiny) then return end

@@ -58,7 +58,7 @@ local function AttachMetaTable(Class, Base)
 	end)
 end
 
-function Classes.AddObjectClass(ID, Base, Destiny)
+function Classes.AddObject(ID, Base, Destiny)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
 	if not Stored[ID] then Stored[ID] = {} end

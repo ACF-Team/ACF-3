@@ -2,7 +2,7 @@ local ACF     = ACF
 local Weapons = ACF.Classes.Weapons
 
 
-Weapons.RegisterGroup("RAC", {
+Weapons.Register("RAC", {
 	Name        = "Rotary Autocannon",
 	Description = "Rotary autocannons sacrifice accuracy and reload speed over autocannons to get the highest rate of fire possible.",
 	Model       = "models/rotarycannon/kw/20mmrac.mdl",
@@ -35,23 +35,23 @@ Weapons.RegisterGroup("RAC", {
 	},
 })
 
-Weapons.Register("14.5mmRAC", "RAC", {
+Weapons.RegisterItem("14.5mmRAC", "RAC", {
 	Caliber = 14.5,
 })
 
-Weapons.Register("20mmRAC", "RAC", {
+Weapons.RegisterItem("20mmRAC", "RAC", {
 	Caliber = 20,
 })
 
-Weapons.Register("30mmRAC", "RAC", {
+Weapons.RegisterItem("30mmRAC", "RAC", {
 	Caliber = 30,
 })
 
-Weapons.Register("20mmHRAC", "RAC", {
+Weapons.RegisterItem("20mmHRAC", "RAC", {
 	Caliber = 20,
 })
 
-Weapons.Register("30mmHRAC", "RAC", {
+Weapons.RegisterItem("30mmHRAC", "RAC", {
 	Caliber = 30,
 })
 

@@ -13,7 +13,7 @@ local Gear8MT = 1000
 local Gear8LT = 10000
 local StTB = 1.25 --straight torque bonus multiplier
 
-Gearboxes.RegisterGroup("8-Speed", {
+Gearboxes.Register("8-Speed", {
 	Name		= "8-Speed Gearbox",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -23,7 +23,7 @@ Gearboxes.RegisterGroup("8-Speed", {
 })
 
 do -- Inline Gearboxes
-	Gearboxes.Register("8Gear-L-S", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-L-S", "8-Speed", {
 		Name		= "8-Speed, Inline, Small",
 		Description	= "A small and light 8 speed gearbox.",
 		Model		= "models/engines/linear_s.mdl",
@@ -35,7 +35,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-L-M", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-L-M", "8-Speed", {
 		Name		= "8-Speed, Inline, Medium",
 		Description	= "A medium duty 8 speed gearbox..",
 		Model		= "models/engines/linear_m.mdl",
@@ -47,7 +47,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-L-L", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-L-L", "8-Speed", {
 		Name		= "8-Speed, Inline, Large",
 		Description	= "Heavy duty 8 speed gearbox, however rather heavy.",
 		Model		= "models/engines/linear_l.mdl",
@@ -61,7 +61,7 @@ do -- Inline Gearboxes
 end
 
 do -- Inline Dual Clutch Gearboxes
-	Gearboxes.Register("8Gear-LD-S", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-LD-S", "8-Speed", {
 		Name		= "8-Speed, Inline, Small, Dual Clutch",
 		Description	= "A small and light 8 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/linear_s.mdl",
@@ -74,7 +74,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-LD-M", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-LD-M", "8-Speed", {
 		Name		= "8-Speed, Inline, Medium, Dual Clutch",
 		Description	= "A a medium duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/linear_m.mdl",
@@ -87,7 +87,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-LD-L", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-LD-L", "8-Speed", {
 		Name		= "8-Speed, Inline, Large, Dual Clutch",
 		Description	= "Heavy duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/linear_l.mdl",
@@ -102,7 +102,7 @@ do -- Inline Dual Clutch Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	Gearboxes.Register("8Gear-T-S", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-T-S", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Small",
 		Description	= "A small and light 8 speed gearbox..",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -114,7 +114,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-T-M", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-T-M", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Medium",
 		Description	= "A medium duty 8 speed gearbox..",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -126,7 +126,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-T-L", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-T-L", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Large",
 		Description	= "Heavy duty 8 speed gearbox, however rather heavy.",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -140,7 +140,7 @@ do -- Transaxial Gearboxes
 end
 
 do -- Transaxial Dual Clutch Gearboxes
-	Gearboxes.Register("8Gear-TD-S", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-TD-S", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Small, Dual Clutch",
 		Description	= "A small and light 8 speed gearbox The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -153,7 +153,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-TD-M", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-TD-M", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Medium, Dual Clutch",
 		Description	= "A a medium duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -166,7 +166,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-TD-L", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-TD-L", "8-Speed", {
 		Name		= "8-Speed, Transaxial, Large, Dual Clutch",
 		Description	= "Heavy duty 8 speed gearbox. The dual clutch allows you to apply power and brake each side independently\n\nThe Final Drive slider is a multiplier applied to all the other gear ratios",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -181,7 +181,7 @@ do -- Transaxial Dual Clutch Gearboxes
 end
 
 do -- Straight-through Gearboxes
-	Gearboxes.Register("8Gear-ST-S", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-ST-S", "8-Speed", {
 		Name		= "8-Speed, Straight, Small",
 		Description	= "A small and light 8 speed straight-through gearbox.",
 		Model		= "models/engines/t5small.mdl",
@@ -193,7 +193,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-ST-M", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-ST-M", "8-Speed", {
 		Name		= "8-Speed, Straight, Medium",
 		Description	= "A medium 8 speed straight-through gearbox.",
 		Model		= "models/engines/t5med.mdl",
@@ -205,7 +205,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	Gearboxes.Register("8Gear-ST-L", "8-Speed", {
+	Gearboxes.RegisterItem("8Gear-ST-L", "8-Speed", {
 		Name		= "8-Speed, Straight, Large",
 		Description	= "A large 8 speed straight-through gearbox.",
 		Model		= "models/engines/t5large.mdl",

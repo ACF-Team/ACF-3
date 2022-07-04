@@ -2,7 +2,7 @@ local ACF     = ACF
 local Weapons = ACF.Classes.Weapons
 
 
-Weapons.RegisterGroup("SA", {
+Weapons.Register("SA", {
 	Name        = "Semiautomatic Cannon",
 	Description = "Semiautomatic cannons are smaller and lighter than their fully automatic counterpart, but they'll constantly reload every few rounds.",
 	Model       = "models/autocannon/semiautocannon_45mm.mdl",
@@ -35,23 +35,23 @@ Weapons.RegisterGroup("SA", {
 	},
 })
 
-Weapons.Register("25mmSA", "SA", {
+Weapons.RegisterItem("25mmSA", "SA", {
 	Caliber = 25,
 })
 
-Weapons.Register("37mmSA", "SA", {
+Weapons.RegisterItem("37mmSA", "SA", {
 	Caliber = 37,
 })
 
-Weapons.Register("45mmSA", "SA", {
+Weapons.RegisterItem("45mmSA", "SA", {
 	Caliber = 45,
 })
 
-Weapons.Register("57mmSA", "SA", {
+Weapons.RegisterItem("57mmSA", "SA", {
 	Caliber = 57,
 })
 
-Weapons.Register("76mmSA", "SA", {
+Weapons.RegisterItem("76mmSA", "SA", {
 	Caliber = 76,
 })
 

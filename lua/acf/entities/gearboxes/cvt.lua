@@ -23,7 +23,7 @@ local function InitGearbox(Gearbox)
 	WireLib.TriggerOutput(Gearbox, "Max Target RPM", Gears.MaxRPM)
 end
 
-Gearboxes.RegisterGroup("CVT", {
+Gearboxes.Register("CVT", {
 	Name		= "CVT",
 	CreateMenu	= ACF.CVTGearboxMenu,
 	Gears = {
@@ -77,7 +77,7 @@ Gearboxes.RegisterGroup("CVT", {
 })
 
 do -- Inline Gearboxes
-	Gearboxes.Register("CVT-L-S", "CVT", {
+	Gearboxes.RegisterItem("CVT-L-S", "CVT", {
 		Name		= "CVT, Inline, Small",
 		Description	= "A light duty inline CVT.",
 		Model		= "models/engines/linear_s.mdl",
@@ -89,7 +89,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-L-M", "CVT", {
+	Gearboxes.RegisterItem("CVT-L-M", "CVT", {
 		Name		= "CVT, Inline, Medium",
 		Description	= "A medium inline CVT.",
 		Model		= "models/engines/linear_m.mdl",
@@ -101,7 +101,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-L-L", "CVT", {
+	Gearboxes.RegisterItem("CVT-L-L", "CVT", {
 		Name		= "CVT, Inline, Large",
 		Description	= "A massive inline CVT designed for high torque applications.",
 		Model		= "models/engines/linear_l.mdl",
@@ -115,7 +115,7 @@ do -- Inline Gearboxes
 end
 
 do -- Inline Dual Clutch Gearboxes
-	Gearboxes.Register("CVT-LD-S", "CVT", {
+	Gearboxes.RegisterItem("CVT-LD-S", "CVT", {
 		Name		= "CVT, Inline, Small, Dual Clutch",
 		Description	= "A light duty inline CVT. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/linear_s.mdl",
@@ -128,7 +128,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-LD-M", "CVT", {
+	Gearboxes.RegisterItem("CVT-LD-M", "CVT", {
 		Name		= "CVT, Inline, Medium, Dual Clutch",
 		Description	= "A medium inline CVT. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/linear_m.mdl",
@@ -141,7 +141,7 @@ do -- Inline Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-LD-L", "CVT", {
+	Gearboxes.RegisterItem("CVT-LD-L", "CVT", {
 		Name		= "CVT, Inline, Large, Dual Clutch",
 		Description	= "A massive inline CVT designed for high torque applications. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/linear_l.mdl",
@@ -156,7 +156,7 @@ do -- Inline Dual Clutch Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	Gearboxes.Register("CVT-T-S", "CVT", {
+	Gearboxes.RegisterItem("CVT-T-S", "CVT", {
 		Name		= "CVT, Transaxial, Small",
 		Description	= "A light duty CVT.",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -168,7 +168,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-T-M", "CVT", {
+	Gearboxes.RegisterItem("CVT-T-M", "CVT", {
 		Name		= "CVT, Transaxial, Medium",
 		Description	= "A medium CVT.",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -180,7 +180,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-T-L", "CVT", {
+	Gearboxes.RegisterItem("CVT-T-L", "CVT", {
 		Name		= "CVT, Transaxial, Large",
 		Description	= "A massive CVT designed for high torque applications.",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -194,7 +194,7 @@ do -- Transaxial Gearboxes
 end
 
 do -- Transaxial Dual Clutch Gearboxes
-	Gearboxes.Register("CVT-TD-S", "CVT", {
+	Gearboxes.RegisterItem("CVT-TD-S", "CVT", {
 		Name		= "CVT, Transaxial, Small, Dual Clutch",
 		Description	= "A light duty CVT. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -207,7 +207,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-TD-M", "CVT", {
+	Gearboxes.RegisterItem("CVT-TD-M", "CVT", {
 		Name		= "CVT, Transaxial, Medium, Dual Clutch",
 		Description	= "A medium CVT. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -220,7 +220,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-TD-L", "CVT", {
+	Gearboxes.RegisterItem("CVT-TD-L", "CVT", {
 		Name		= "CVT, Transaxial, Large, Dual Clutch",
 		Description	= "A massive CVT designed for high torque applications. The dual clutch allows you to apply power and brake each side independently.",
 		Model		= "models/engines/transaxial_l.mdl",
@@ -235,7 +235,7 @@ do -- Transaxial Dual Clutch Gearboxes
 end
 
 do -- Straight-through Gearboxes
-	Gearboxes.Register("CVT-ST-S", "CVT", {
+	Gearboxes.RegisterItem("CVT-ST-S", "CVT", {
 		Name		= "CVT, Straight, Small",
 		Description	= "A light duty straight-through CVT.",
 		Model		= "models/engines/t5small.mdl",
@@ -247,7 +247,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-ST-M", "CVT", {
+	Gearboxes.RegisterItem("CVT-ST-M", "CVT", {
 		Name		= "CVT, Straight, Medium",
 		Description	= "A medium straight-through CVT.",
 		Model		= "models/engines/t5med.mdl",
@@ -259,7 +259,7 @@ do -- Straight-through Gearboxes
 		},
 	})
 
-	Gearboxes.Register("CVT-ST-L", "CVT", {
+	Gearboxes.RegisterItem("CVT-ST-L", "CVT", {
 		Name		= "CVT, Straight, Large",
 		Description	= "A massive straight-through CVT designed for high torque applications.",
 		Model		= "models/engines/t5large.mdl",

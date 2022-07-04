@@ -2,12 +2,12 @@ local ACF     = ACF
 local Engines = ACF.Classes.Engines
 
 
-Engines.RegisterGroup("V12", {
+Engines.Register("V12", {
 	Name = "V12 Engine",
 })
 
 do -- Petrol Engines
-	Engines.Register("4.6-V12", "V12", {
+	Engines.RegisterItem("4.6-V12", "V12", {
 		Name		 = "4.6L V12 Petrol",
 		Description	 = "An elderly racecar engine; low on torque, but plenty of power",
 		Model		 = "models/engines/v12s.mdl",
@@ -26,7 +26,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("7.0-V12", "V12", {
+	Engines.RegisterItem("7.0-V12", "V12", {
 		Name		 = "7.0L V12 Petrol",
 		Description	 = "A high end V12; primarily found in very expensive cars",
 		Model		 = "models/engines/v12m.mdl",
@@ -45,7 +45,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("13.0-V12", "V12", {
+	Engines.RegisterItem("13.0-V12", "V12", {
 		Name		 = "13.0L V12 Petrol",
 		Description	 = "Thirsty gasoline v12, good torque and power for medium applications.",
 		Model		 = "models/engines/v12m.mdl",
@@ -64,7 +64,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("23.0-V12", "V12", {
+	Engines.RegisterItem("23.0-V12", "V12", {
 		Name		 = "23.0L V12 Petrol",
 		Description	 = "A large, thirsty gasoline V12, found in early cold war tanks",
 		Model		 = "models/engines/v12l.mdl",
@@ -85,7 +85,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Engines.Register("4.0-V12", "V12", {
+	Engines.RegisterItem("4.0-V12", "V12", {
 		Name		 = "4.0L V12 Diesel",
 		Description	 = "Reliable truck-duty diesel; a lot of smooth torque",
 		Model		 = "models/engines/v12s.mdl",
@@ -104,7 +104,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("9.2-V12", "V12", {
+	Engines.RegisterItem("9.2-V12", "V12", {
 		Name		 = "9.2L V12 Diesel",
 		Description	 = "High torque light-tank V12, used mainly for vehicles that require balls",
 		Model		 = "models/engines/v12m.mdl",
@@ -123,7 +123,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("21.0-V12", "V12", {
+	Engines.RegisterItem("21.0-V12", "V12", {
 		Name		 = "21.0L V12 Diesel",
 		Description	 = "AVDS-1790-2 tank engine; massively powerful, but enormous and heavy",
 		Model		 = "models/engines/v12l.mdl",

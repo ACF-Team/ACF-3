@@ -2,12 +2,12 @@ local ACF     = ACF
 local Engines = ACF.Classes.Engines
 
 
-Engines.RegisterGroup("V8", {
+Engines.Register("V8", {
 	Name = "V8 Engine",
 })
 
 do -- Petrol Engines
-	Engines.Register("5.7-V8", "V8", {
+	Engines.RegisterItem("5.7-V8", "V8", {
 		Name		 = "5.7L V8 Petrol",
 		Description	 = "Car sized petrol engine, good power and mid range torque",
 		Model		 = "models/engines/v8s.mdl",
@@ -26,7 +26,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("9.0-V8", "V8", {
+	Engines.RegisterItem("9.0-V8", "V8", {
 		Name		 = "9.0L V8 Petrol",
 		Description	 = "Thirsty, giant V8, for medium applications",
 		Model		 = "models/engines/v8m.mdl",
@@ -45,7 +45,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("18.0-V8", "V8", {
+	Engines.RegisterItem("18.0-V8", "V8", {
 		Name		 = "18.0L V8 Petrol",
 		Description	 = "American gasoline tank V8, good overall power and torque and fairly lightweight",
 		Model		 = "models/engines/v8l.mdl",
@@ -66,7 +66,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Engines.Register("4.5-V8", "V8", {
+	Engines.RegisterItem("4.5-V8", "V8", {
 		Name		 = "4.5L V8 Diesel",
 		Description	 = "Light duty diesel v8, good for light vehicles that require a lot of torque",
 		Model		 = "models/engines/v8s.mdl",
@@ -85,7 +85,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("7.8-V8", "V8", {
+	Engines.RegisterItem("7.8-V8", "V8", {
 		Name		 = "7.8L V8 Diesel",
 		Description	 = "Redneck chariot material. Truck duty V8 diesel, has a good, wide powerband",
 		Model		 = "models/engines/v8m.mdl",
@@ -104,7 +104,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("19.0-V8", "V8", {
+	Engines.RegisterItem("19.0-V8", "V8", {
 		Name		 = "19.0L V8 Diesel",
 		Description	 = "Heavy duty diesel V8, used in heavy construction equipment and tanks",
 		Model		 = "models/engines/v8l.mdl",

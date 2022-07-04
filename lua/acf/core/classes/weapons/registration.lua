@@ -3,8 +3,8 @@ local Weapons = Classes.Weapons
 local Entries = {}
 
 
-function Weapons.RegisterGroup(ID, Data)
-	local Group = Classes.AddClassGroup(ID, Entries, Data)
+function Weapons.Register(ID, Data)
+	local Group = Classes.AddGroup(ID, Entries, Data)
 
 	if not Group.LimitConVar then
 		Group.LimitConVar = {
@@ -27,8 +27,8 @@ function Weapons.RegisterGroup(ID, Data)
 	return Group
 end
 
-function Weapons.Register(ID, ClassID, Data)
-	local Class = Classes.AddGrouped(ID, ClassID, Entries, Data)
+function Weapons.RegisterItem(ID, ClassID, Data)
+	local Class = Classes.AddGroupItem(ID, ClassID, Entries, Data)
 
 	Class.Destiny = "Weapons"
 

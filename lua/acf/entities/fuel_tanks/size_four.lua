@@ -1,13 +1,13 @@
 local FuelTanks = ACF.Classes.FuelTanks
 
 
-FuelTanks.RegisterGroup("FTS_4", {
+FuelTanks.Register("FTS_4", {
 	Name		= "Size 4 Container",
 	Description	= "Size 4 fuel containers, required for engines to work.",
 })
 
 do
-	FuelTanks.Register("Tank_4x4x1","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x4x1","FTS_4", {
 		Name		= "4x4x1 Container",
 		Description	= "Sedan.",
 		Model		= "models/fueltank/fueltank_4x4x1.mdl",
@@ -19,7 +19,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x4x2","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x4x2","FTS_4", {
 		Name		= "4x4x2 Container",
 		Description	= "Land boat.",
 		Model		= "models/fueltank/fueltank_4x4x2.mdl",
@@ -31,7 +31,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x4x4","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x4x4","FTS_4", {
 		Name		= "4x4x4 Container",
 		Description	= "Popular with arsonists.",
 		Model		= "models/fueltank/fueltank_4x4x4.mdl",
@@ -43,7 +43,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x6x1","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x6x1","FTS_4", {
 		Name		= "4x6x1 Container",
 		Description	= "Conformal fuel tank, fits in tight spaces.",
 		Model		= "models/fueltank/fueltank_4x6x1.mdl",
@@ -56,7 +56,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x6x2","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x6x2","FTS_4", {
 		Name		= "4x6x2 Container",
 		Description	= "Fire juice.",
 		Model		= "models/fueltank/fueltank_4x6x2.mdl",
@@ -68,7 +68,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x6x4","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x6x4","FTS_4", {
 		Name		= "4x6x4 Container",
 		Description	= "Trees are gay anyway.",
 		Model		= "models/fueltank/fueltank_4x6x4.mdl",
@@ -80,7 +80,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x8x1","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x8x1","FTS_4", {
 		Name		= "4x8x1 Container",
 		Description	= "Arson material.",
 		Model		= "models/fueltank/fueltank_4x8x1.mdl",
@@ -93,7 +93,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x8x2","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x8x2","FTS_4", {
 		Name		= "4x8x2 Container",
 		Description	= "What's a gas station?",
 		Model		= "models/fueltank/fueltank_4x8x2.mdl",
@@ -105,7 +105,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Tank_4x8x4","FTS_4", {
+	FuelTanks.RegisterItem("Tank_4x8x4","FTS_4", {
 		Name		= "4x8x4 Container",
 		Description	= "\'MURRICA FUCKYEAH!",
 		Model		= "models/fueltank/fueltank_4x8x4.mdl",

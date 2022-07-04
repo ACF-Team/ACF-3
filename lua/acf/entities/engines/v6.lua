@@ -2,13 +2,13 @@ local ACF     = ACF
 local Engines = ACF.Classes.Engines
 
 
-Engines.RegisterGroup("V6", {
+Engines.Register("V6", {
 	Name		= "V6 Engine",
 	Description	= "V6s are more torquey than the Boxer and Inline 6s but suffer in power."
 })
 
 do -- Petrol Engines
-	Engines.Register("3.6-V6", "V6", {
+	Engines.RegisterItem("3.6-V6", "V6", {
 		Name		 = "3.6L V6 Petrol",
 		Description	 = "Meaty Car sized V6, lots of torque.",
 		Model		 = "models/engines/v6small.mdl",
@@ -27,7 +27,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("6.2-V6", "V6", {
+	Engines.RegisterItem("6.2-V6", "V6", {
 		Name		 = "6.2L V6 Petrol",
 		Description	 = "Heavy duty 6V71 v6, throatier than an LA whore, but loaded with torque.",
 		Model		 = "models/engines/v6med.mdl",
@@ -46,7 +46,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("12.0-V6", "V6", {
+	Engines.RegisterItem("12.0-V6", "V6", {
 		Name		 = "12.0L V6 Petrol",
 		Description	 = "Fuck duty V6, guts ripped from god himself diluted in salt and shaped into an engine.",
 		Model		 = "models/engines/v6large.mdl",
@@ -67,7 +67,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Engines.Register("5.2-V6", "V6", {
+	Engines.RegisterItem("5.2-V6", "V6", {
 		Name		 = "5.2L V6 Diesel",
 		Description	 = "Light AFV-grade two-stroke diesel, high output but heavy.",
 		Model		 = "models/engines/v6med.mdl",
@@ -86,7 +86,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("15.0-V6", "V6", {
+	Engines.RegisterItem("15.0-V6", "V6", {
 		Name		 = "15.0L V6 Diesel",
 		Description	 = "Powerful military-grade large V6, with impressive output. Well suited to medium-sized AFVs.",
 		Model		 = "models/engines/v6large.mdl",

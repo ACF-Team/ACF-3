@@ -43,7 +43,7 @@ local PortingData = {
 }
 
 
-Weapons.RegisterGroup("C", {
+Weapons.Register("C", {
 	Name        = "Cannon",
 	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
 	Model       = "models/tankgun_new/tankgun_100mm.mdl",
@@ -103,27 +103,27 @@ Weapons.RegisterGroup("C", {
 	end,
 })
 
-Weapons.Register("37mmC", "C", {
+Weapons.RegisterItem("37mmC", "C", {
 	Caliber = 37,
 })
 
-Weapons.Register("50mmC", "C", {
+Weapons.RegisterItem("50mmC", "C", {
 	Caliber = 50,
 })
 
-Weapons.Register("75mmC", "C", {
+Weapons.RegisterItem("75mmC", "C", {
 	Caliber = 75,
 })
 
-Weapons.Register("100mmC", "C", {
+Weapons.RegisterItem("100mmC", "C", {
 	Caliber = 100,
 })
 
-Weapons.Register("120mmC", "C", {
+Weapons.RegisterItem("120mmC", "C", {
 	Caliber = 120,
 })
 
-Weapons.Register("140mmC", "C", {
+Weapons.RegisterItem("140mmC", "C", {
 	Caliber = 140,
 })
 

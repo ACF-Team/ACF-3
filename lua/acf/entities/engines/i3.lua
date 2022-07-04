@@ -2,12 +2,12 @@ local ACF     = ACF
 local Engines = ACF.Classes.Engines
 
 
-Engines.RegisterGroup("I3", {
+Engines.Register("I3", {
 	Name = "Inline 3 Engine",
 })
 
 do -- Petrol Engines
-	Engines.Register("1.2-I3", "I3", {
+	Engines.RegisterItem("1.2-I3", "I3", {
 		Name		 = "1.2L I3 Petrol",
 		Description	 = "Tiny microcar engine, efficient but weak.",
 		Model		 = "models/engines/inline3s.mdl",
@@ -26,7 +26,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("3.4-I3", "I3", {
+	Engines.RegisterItem("3.4-I3", "I3", {
 		Name		 = "3.4L I3 Petrol",
 		Description	 = "Short block engine for light utility use.",
 		Model		 = "models/engines/inline3m.mdl",
@@ -45,7 +45,7 @@ do -- Petrol Engines
 		},
 	})
 
-	Engines.Register("13.5-I3", "I3", {
+	Engines.RegisterItem("13.5-I3", "I3", {
 		Name		 = "13.5L I3 Petrol",
 		Description	 = "Short block light tank engine, likes sideways mountings.",
 		Model		 = "models/engines/inline3b.mdl",
@@ -66,7 +66,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Engines.Register("1.1-I3", "I3", {
+	Engines.RegisterItem("1.1-I3", "I3", {
 		Name		 = "1.1L I3 Diesel",
 		Description	 = "ATV grade 3-banger, enormous rev band but a choppy idle, great for light utility work.",
 		Model		 = "models/engines/inline3s.mdl",
@@ -85,7 +85,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("2.8-I3", "I3", {
+	Engines.RegisterItem("2.8-I3", "I3", {
 		Name		 = "2.8L I3 Diesel",
 		Description	 = "Medium utility grade I3 diesel, for tractors",
 		Model		 = "models/engines/inline3m.mdl",
@@ -104,7 +104,7 @@ do -- Diesel Engines
 		},
 	})
 
-	Engines.Register("11.0-I3", "I3", {
+	Engines.RegisterItem("11.0-I3", "I3", {
 		Name		 = "11.0L I3 Diesel",
 		Description	 = "Light tank duty engine, compact yet grunts hard.",
 		Model		 = "models/engines/inline3b.mdl",

@@ -3,8 +3,8 @@ local FuelTanks = Classes.FuelTanks
 local Entries   = {}
 
 
-function FuelTanks.RegisterGroup(ID, Data)
-	local Group = Classes.AddClassGroup(ID, Entries, Data)
+function FuelTanks.Register(ID, Data)
+	local Group = Classes.AddGroup(ID, Entries, Data)
 
 	if not Group.LimitConVar then
 		Group.LimitConVar = {
@@ -19,8 +19,8 @@ function FuelTanks.RegisterGroup(ID, Data)
 	return Group
 end
 
-function FuelTanks.Register(ID, ClassID, Data)
-	local Class = Classes.AddGrouped(ID, ClassID, Entries, Data)
+function FuelTanks.RegisterItem(ID, ClassID, Data)
+	local Class = Classes.AddGroupItem(ID, ClassID, Entries, Data)
 
 	if Class.IsExplosive == nil then
 		Class.IsExplosive = true

@@ -1,13 +1,13 @@
 local FuelTanks = ACF.Classes.FuelTanks
 
 
-FuelTanks.RegisterGroup("FTS_M", {
+FuelTanks.Register("FTS_M", {
 	Name		= "Miscellaneous",
 	Description	= "Random fuel tank models, some of them can only be used for refueling.",
 })
 
 do
-	FuelTanks.Register("Fuel_Drum","FTS_M", {
+	FuelTanks.RegisterItem("Fuel_Drum","FTS_M", {
 		Name		= "Fuel Drum",
 		Description	= "Tends to explode when shot.",
 		Model		= "models/props_c17/oildrum001_explosive.mdl",
@@ -19,7 +19,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Jerry_Can","FTS_M", {
+	FuelTanks.RegisterItem("Jerry_Can","FTS_M", {
 		Name		= "Jerry Can",
 		Description	= "Handy portable fuel container.",
 		Model		= "models/props_junk/gascan001a.mdl",
@@ -31,7 +31,7 @@ do
 		},
 	})
 
-	FuelTanks.Register("Transport_Tank","FTS_M", {
+	FuelTanks.RegisterItem("Transport_Tank","FTS_M", {
 		Name		= "Transport Tank",
 		Description	= "Disappointingly non-explosive.",
 		Model		= "models/props_wasteland/horizontalcoolingtank04.mdl",
@@ -42,7 +42,7 @@ do
 		Unlinkable	= true,
 	})
 
-	FuelTanks.Register("Storage_Tank","FTS_M", {
+	FuelTanks.RegisterItem("Storage_Tank","FTS_M", {
 		Name		= "Storage Tank",
 		Description	= "Disappointingly non-explosive.",
 		Model		= "models/props_wasteland/coolingtank02.mdl",

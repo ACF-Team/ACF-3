@@ -3,12 +3,12 @@ local Engines = ACF.Classes.Engines
 
 
 do -- Electric Motors
-	Engines.RegisterGroup("EL", {
+	Engines.Register("EL", {
 		Name		= "Electric Motor",
 		Description	= "Electric motors provide huge amounts of torque, but are very heavy.",
 	})
 
-	Engines.Register("Electric-Small", "EL", {
+	Engines.RegisterItem("Electric-Small", "EL", {
 		Name		 = "Small Electric Motor",
 		Description	 = "A small electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotorsmall.mdl",
@@ -29,7 +29,7 @@ do -- Electric Motors
 		},
 	})
 
-	Engines.Register("Electric-Medium", "EL", {
+	Engines.RegisterItem("Electric-Medium", "EL", {
 		Name		 = "Medium Electric Motor",
 		Description	 = "A medium electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotormed.mdl",
@@ -50,7 +50,7 @@ do -- Electric Motors
 		},
 	})
 
-	Engines.Register("Electric-Large", "EL", {
+	Engines.RegisterItem("Electric-Large", "EL", {
 		Name		 = "Large Electric Motor",
 		Description	 = "A huge electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotorlarge.mdl",
@@ -70,12 +70,12 @@ do -- Electric Motors
 end
 
 do -- Electric Standalone Motors
-	Engines.RegisterGroup("EL-S", {
+	Engines.Register("EL-S", {
 		Name		= "Electric Standalone Motor",
 		Description	= "Electric motors provide huge amounts of torque, but are very heavy. Standalones also require external batteries.",
 	})
 
-	Engines.Register("Electric-Tiny-NoBatt", "EL-S", {
+	Engines.RegisterItem("Electric-Tiny-NoBatt", "EL-S", {
 		Name		 = "Tiny Electric Standalone Motor",
 		Description	 = "A pint-size electric motor, for the lightest of light utility work. Can power electric razors, desk fans, or your hopes and dreams.",
 		Model		 = "models/engines/emotor-standalone-tiny.mdl",
@@ -96,7 +96,7 @@ do -- Electric Standalone Motors
 		},
 	})
 
-	Engines.Register("Electric-Small-NoBatt", "EL-S", {
+	Engines.RegisterItem("Electric-Small-NoBatt", "EL-S", {
 		Name		 = "Small Electric Standalone Motor",
 		Description	 = "A small standalone electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotor-standalone-sml.mdl",
@@ -117,7 +117,7 @@ do -- Electric Standalone Motors
 		},
 	})
 
-	Engines.Register("Electric-Medium-NoBatt", "EL-S", {
+	Engines.RegisterItem("Electric-Medium-NoBatt", "EL-S", {
 		Name		 = "Medium Electric Standalone Motor",
 		Description	 = "A medium standalone electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotor-standalone-mid.mdl",
@@ -138,7 +138,7 @@ do -- Electric Standalone Motors
 		},
 	})
 
-	Engines.Register("Electric-Large-NoBatt", "EL-S", {
+	Engines.RegisterItem("Electric-Large-NoBatt", "EL-S", {
 		Name		 = "Large Electric Standalone Motor",
 		Description	 = "A huge standalone electric motor, loads of torque, but low power.",
 		Model		 = "models/engines/emotor-standalone-big.mdl",

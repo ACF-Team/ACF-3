@@ -2,7 +2,7 @@ local ACF     = ACF
 local Weapons = ACF.Classes.Weapons
 
 
-Weapons.RegisterGroup("MO", {
+Weapons.Register("MO", {
 	Name        = "Mortar",
 	Description = "Intended as short range artillery, mortars are capable of firing explosives and smoke round at a decent rate at poor velocity and accuracy.",
 	Sound       = "acf_base/weapons/mortar_new.mp3",
@@ -27,23 +27,23 @@ Weapons.RegisterGroup("MO", {
 	},
 })
 
-Weapons.Register("60mmM", "MO", {
+Weapons.RegisterItem("60mmM", "MO", {
 	Caliber = 60,
 })
 
-Weapons.Register("80mmM", "MO", {
+Weapons.RegisterItem("80mmM", "MO", {
 	Caliber = 80,
 })
 
-Weapons.Register("120mmM", "MO", {
+Weapons.RegisterItem("120mmM", "MO", {
 	Caliber = 120,
 })
 
-Weapons.Register("150mmM", "MO", {
+Weapons.RegisterItem("150mmM", "MO", {
 	Caliber = 150,
 })
 
-Weapons.Register("200mmM", "MO", {
+Weapons.RegisterItem("200mmM", "MO", {
 	Caliber = 200,
 })
 

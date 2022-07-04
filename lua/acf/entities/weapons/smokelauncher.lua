@@ -2,7 +2,7 @@ local ACF     = ACF
 local Weapons = ACF.Classes.Weapons
 
 
-Weapons.RegisterGroup("SL", {
+Weapons.Register("SL", {
 	Name        = "Smoke Launcher",
 	Description = "Compact, single shot launchers used to deploy smoke screens towards possible threats.",
 	Sound       = "acf_base/weapons/smoke_launch.mp3",
@@ -39,7 +39,7 @@ Weapons.RegisterGroup("SL", {
 	},
 })
 
-Weapons.Register("40mmSL", "SL", {
+Weapons.RegisterItem("40mmSL", "SL", {
 	Caliber = 40,
 })
 

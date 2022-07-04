@@ -5,7 +5,7 @@ local Gear2SW = 20
 local Gear2MW = 40
 local Gear2LW = 80
 
-Gearboxes.RegisterGroup("Transfer", {
+Gearboxes.Register("Transfer", {
 	Name		= "Transfer Case",
 	CreateMenu	= ACF.ManualGearboxMenu,
 	Gears = {
@@ -15,7 +15,7 @@ Gearboxes.RegisterGroup("Transfer", {
 })
 
 do -- Inline Gearboxes
-	Gearboxes.Register("2Gear-L-S", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-L-S", "Transfer", {
 		Name		= "Transfer case, Inline, Small",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_s.mdl",
@@ -28,7 +28,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("2Gear-L-M", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-L-M", "Transfer", {
 		Name		= "Transfer case, Inline, Medium",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_m.mdl",
@@ -41,7 +41,7 @@ do -- Inline Gearboxes
 		},
 	})
 
-	Gearboxes.Register("2Gear-L-L", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-L-L", "Transfer", {
 		Name		= "Transfer case, Inline, Large",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_l.mdl",
@@ -56,7 +56,7 @@ do -- Inline Gearboxes
 end
 
 do -- Transaxial Gearboxes
-	Gearboxes.Register("2Gear-T-S", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-T-S", "Transfer", {
 		Name		= "Transfer case, Small",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_s.mdl",
@@ -69,7 +69,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("2Gear-T-M", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-T-M", "Transfer", {
 		Name		= "Transfer case, Medium",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_m.mdl",
@@ -82,7 +82,7 @@ do -- Transaxial Gearboxes
 		},
 	})
 
-	Gearboxes.Register("2Gear-T-L", "Transfer", {
+	Gearboxes.RegisterItem("2Gear-T-L", "Transfer", {
 		Name		= "Transfer case, Large",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_l.mdl",

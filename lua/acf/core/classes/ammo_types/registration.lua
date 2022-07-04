@@ -4,7 +4,7 @@ local Entries   = {}
 
 
 function AmmoTypes.Register(ID, Base)
-	return Classes.AddObjectClass(ID, Base, Entries)
+	return Classes.AddObject(ID, Base, Entries)
 end
 
 Classes.AddSimpleFunctions(AmmoTypes, Entries)

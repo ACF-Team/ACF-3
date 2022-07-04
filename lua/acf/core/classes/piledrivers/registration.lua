@@ -3,8 +3,8 @@ local Piledrivers = Classes.Piledrivers
 local Entries     = {}
 
 
-function Piledrivers.RegisterGroup(ID, Data)
-	local Group = Classes.AddClassGroup(ID, Entries, Data)
+function Piledrivers.Register(ID, Data)
+	local Group = Classes.AddGroup(ID, Entries, Data)
 
 	Group.Cyclic = math.min(120, Group.Cyclic or 60)
 
@@ -25,8 +25,8 @@ function Piledrivers.RegisterGroup(ID, Data)
 	return Group
 end
 
-function Piledrivers.Register(ID, ClassID, Data)
-	return Classes.AddGrouped(ID, ClassID, Entries, Data)
+function Piledrivers.RegisterItem(ID, ClassID, Data)
+	return Classes.AddGroupItem(ID, ClassID, Entries, Data)
 end
 
 Classes.AddGroupedFunctions(Piledrivers, Entries)

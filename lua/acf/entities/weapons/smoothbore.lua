@@ -1,6 +1,6 @@
 local Weapons = ACF.Classes.Weapons
 
-Weapons.RegisterGroup("SB", {
+Weapons.Register("SB", {
 	Name        = "Smoothbore Cannon",
 	Description = "A direct improvement over regular cannons, these can only fire modern munitions.",
 	Model		= "models/tankgun_new/tankgun_100mm.mdl",
@@ -25,14 +25,14 @@ Weapons.RegisterGroup("SB", {
 	},
 })
 
-Weapons.Register("105mmSB", "SB", {
+Weapons.RegisterItem("105mmSB", "SB", {
 	Caliber = 105,
 })
 
-Weapons.Register("120mmSB", "SB", {
+Weapons.RegisterItem("120mmSB", "SB", {
 	Caliber = 120,
 })
 
-Weapons.Register("140mmSB", "SB", {
+Weapons.RegisterItem("140mmSB", "SB", {
 	Caliber = 140,
 })

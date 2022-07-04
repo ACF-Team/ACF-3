@@ -22,8 +22,8 @@ local function AddPerformanceData(Engine)
 	ACF.AddEnginePerformanceData(Engine)
 end
 
-function Engines.RegisterGroup(ID, Data)
-	local Group = Classes.AddClassGroup(ID, Entries, Data)
+function Engines.Register(ID, Data)
+	local Group = Classes.AddGroup(ID, Entries, Data)
 
 	if not Group.LimitConVar then
 		Group.LimitConVar = {
@@ -38,8 +38,8 @@ function Engines.RegisterGroup(ID, Data)
 	return Group
 end
 
-function Engines.Register(ID, ClassID, Data)
-	local Class = Classes.AddGrouped(ID, ClassID, Entries, Data)
+function Engines.RegisterItem(ID, ClassID, Data)
+	local Class = Classes.AddGroupItem(ID, ClassID, Entries, Data)
 
 	if not Class.Sound then
 		Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"

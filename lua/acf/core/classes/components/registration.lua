@@ -3,8 +3,8 @@ local Components = Classes.Components
 local Entries    = {}
 
 
-function Components.RegisterGroup(ID, Data)
-	local Group = Classes.AddClassGroup(ID, Entries, Data)
+function Components.Register(ID, Data)
+	local Group = Classes.AddGroup(ID, Entries, Data)
 
 	if not Group.LimitConVar then
 		Group.LimitConVar = {
@@ -19,8 +19,8 @@ function Components.RegisterGroup(ID, Data)
 	return Group
 end
 
-function Components.Register(ID, ClassID, Data)
-	return Classes.AddGrouped(ID, ClassID, Entries, Data)
+function Components.RegisterItem(ID, ClassID, Data)
+	return Classes.AddGroupItem(ID, ClassID, Entries, Data)
 end
 
 Classes.AddGroupedFunctions(Components, Entries)
