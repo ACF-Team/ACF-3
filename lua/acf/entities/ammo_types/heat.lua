@@ -275,7 +275,7 @@ if SERVER then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
 				local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-				local Penetrated, Exit = ACF_DigTrace(PenHitPos + Direction, PenHitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
+				local Penetrated, Exit = Ballistics.DigTrace(PenHitPos + Direction, PenHitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
 				-- Base armor is the RHAe if penetrated, or simply more than the penetration so the jet loses all mass and penetration stops
 				BaseArmor = Penetrated and ((Exit - PenHitPos):Length() * Density * 25.4) or (Penetration + 1)
 				-- Update the starting position of the trace because world is not filterable

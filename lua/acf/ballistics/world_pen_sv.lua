@@ -1,7 +1,7 @@
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
 
-local function DigTrace(From, To, Filter)
+function Ballistics.DigTrace(From, To, Filter)
     local Dig = util.TraceLine({
         start  = From,
         endpos = To,
@@ -38,7 +38,7 @@ local function DigTrace(From, To, Filter)
             return false
         else -- Penetrated
             if Dig.HitNoDraw then -- Hit a layer inside
-                return DigTrace(Dig.HitPos + (To - From):GetNormalized() * 0.1, To, Filter) -- Try again
+                return Ballistics.DigTrace(Dig.HitPos + (To - From):GetNormalized() * 0.1, To, Filter) -- Try again
             else -- Complete penetration
                 local Back = util.TraceLine({
                     start  = Dig.StartPos,
@@ -49,7 +49,7 @@ local function DigTrace(From, To, Filter)
                 -- False positive, still inside the world
                 -- Typically occurs when two brushes meet
                 if Back.StartSolid or Back.HitNoDraw then
-                    return DigTrace(Dig.StartPos + (To - From):GetNormalized() * 0.1, To, Filter)
+                    return Ballistics.DigTrace(Dig.StartPos + (To - From):GetNormalized() * 0.1, To, Filter)
                 end
 
                 return true, Dig.StartPos
@@ -76,9 +76,7 @@ local function DigTrace(From, To, Filter)
     end
 end
 
-ACF_DigTrace = DigTrace
-
-function ACF_PenetrateMapEntity(Bullet, Trace)
+function Ballistics.PenetrateMapEntity(Bullet, Trace)
     local Surface = util.GetSurfaceData(Trace.SurfaceProps)
     local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
     local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
@@ -128,7 +126,7 @@ function ACF_PenetrateMapEntity(Bullet, Trace)
     return "Penetrated"
 end
 
-function ACF_PenetrateGround(Bullet, Trace)
+function Ballistics.PenetrateGround(Bullet, Trace)
     local Surface = util.GetSurfaceData(Trace.SurfaceProps)
     local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
     local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
@@ -136,7 +134,7 @@ function ACF_PenetrateGround(Bullet, Trace)
     local Enter   = Trace.HitPos -- Impact point
     local Fwd     = Bullet.Flight:GetNormalized()
 
-    local Penetrated, Exit = DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
+    local Penetrated, Exit = Ballistics.DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
 
     if Penetrated then
         local Thickness = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through

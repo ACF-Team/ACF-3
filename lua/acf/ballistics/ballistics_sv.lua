@@ -373,14 +373,3 @@ do -- Terminal ballistics --------------------------
 		return false
 	end
 end
-
--- Backwards compatibility
-ACF_BulletClient     = Ballistics.BulletClient
-ACF_CalcBulletFlight = Ballistics.CalcBulletFlight
-ACF_DoBulletsFlight  = Ballistics.DoBulletsFlight
-ACF_RemoveBullet     = Ballistics.RemoveBullet
-ACF_CreateBullet     = Ballistics.CreateBullet
-ACF_RicochetVector   = Ballistics.GetRicochetVector
-ACF_CalcRicochet     = Ballistics.CalculateRicochet
-ACF_RoundImpact      = Ballistics.DoRoundImpact
-ACF_Ricochet         = Ballistics.DoRicochet
