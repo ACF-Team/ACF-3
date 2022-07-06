@@ -37,7 +37,7 @@ do
 		FlywheelMass = 0.45,
 		RPM = {
 			Idle	= 600,
-			Limit	= 4400,
+			Limit	= 4000,
 		},
 		Preview = {
 			FOV = 105,
@@ -71,11 +71,11 @@ do
 		Fuel		 = { Petrol = true },
 		Type		 = "Radial",
 		Mass		 = 952,
-		Torque		 = 2018,
+		Torque		 = 1990,
 		FlywheelMass = 3.4,
 		RPM = {
 			Idle	= 750,
-			Limit	= 3500,
+			Limit	= 2650,
 		},
 		Preview = {
 			FOV = 105,
