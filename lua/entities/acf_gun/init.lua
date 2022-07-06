@@ -6,8 +6,9 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF         = ACF
-local Weapons	  = ACF.Classes.Weapons
-local AmmoTypes   = ACF.Classes.AmmoTypes
+local Classes     = ACF.Classes
+local AmmoTypes   = Classes.AmmoTypes
+local Clock       = ACF.Utilities.Clock
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -30,22 +31,24 @@ end
 do -- Spawn and Update functions --------------------------------
 	local ModelData  = ACF.ModelData
 	local CheckLegal = ACF_CheckLegal
+	local Entities   = Classes.Entities
+	local Weapons    = Classes.Weapons
 
 	local function VerifyData(Data)
 		if not isstring(Data.Weapon) then
 			Data.Weapon = Data.Id
 		end
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 
 		if not Class then
-			Class = ACF.GetClassGroup(Weapons, "C")
+			Class = Weapons.Get("C")
 
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
 		elseif Class.IsScalable then
-			local Weapon = Class.Lookup[Data.Weapon]
+			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
@@ -226,12 +229,12 @@ do -- Spawn and Update functions --------------------------------
 	function MakeACF_Weapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Weapons, Data.Weapon)
+		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
-		local Weapon = Class.Lookup[Data.Weapon]
+		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
 
 		if CanSpawn == false then return false end
@@ -258,7 +261,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.CurrentShot  = 0
 		Entity.TotalAmmo    = 0
 		Entity.BulletData   = EMPTY
-		Entity.DataStore    = ACF.GetEntityArguments("acf_gun")
+		Entity.DataStore    = Entities.GetArguments("acf_gun")
 
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
@@ -295,7 +298,8 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
 	------------------- Updating ---------------------
@@ -305,11 +309,12 @@ do -- Spawn and Update functions --------------------------------
 
 		VerifyData(Data)
 
-		local Class    = ACF.GetClassGroup(Weapons, Data.Weapon)
-		local Weapon   = Class.Lookup[Data.Weapon]
+		local Class    = Classes.GetGroup(Weapons, Data.Weapon)
+		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local OldClass = self.ClassData
 
 		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if self.State ~= "Empty" then
@@ -518,6 +523,7 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 			local Velocity = ACF_GetAncestor(self):GetVelocity()
+			local AmmoType = AmmoTypes.Get(self.BulletData.Type)
 
 			if self.BulletData.CanFuze and self.SetFuze then
 				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - self.Caliber) * 0.01
@@ -536,7 +542,7 @@ do -- Metamethods --------------------------------
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			self.BulletData.Filter = self.BarrelFilter
 
-			AmmoTypes[self.BulletData.Type]:Create(self, self.BulletData) -- Spawn projectile
+			AmmoType:Create(self, self.BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
 			self:Recoil()
@@ -648,7 +654,7 @@ do -- Metamethods --------------------------------
 				self.CurrentCrate = Crate
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
-				self.NextFire 	  = ACF.CurTime + Time
+				self.NextFire 	  = Clock.CurTime + Time
 
 				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
 					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
@@ -705,7 +711,7 @@ do -- Metamethods --------------------------------
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
 
-				self.NextFire = ACF.CurTime + self.MagReload
+				self.NextFire = Clock.CurTime + self.MagReload
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
@@ -844,7 +850,7 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			self:NextThink(ACF.CurTime + 1)
+			self:NextThink(Clock.CurTime + 1)
 
 			return true
 		end

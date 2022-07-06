@@ -1,4 +1,5 @@
 local Invisible = Color(0, 0, 0, 0)
+local Clock     = ACF.Utilities.Clock
 
 function EFFECT:Init(Data)
 	local Origin  = Data:GetOrigin()
@@ -14,7 +15,7 @@ function EFFECT:Init(Data)
 	self:SetRenderMode(RENDERMODE_TRANSALPHA)
 
 	self.Scale    = Data:GetScale() * 5
-	self.LifeTime = ACF.CurTime + math.random(1, 2)
+	self.LifeTime = Clock.CurTime + math.random(1, 2)
 	self.Emitter  = Emitter
 
 	local PhysObj = self:GetPhysicsObject()
@@ -27,7 +28,7 @@ end
 
 function EFFECT:Think()
 	local Emitter = self.Emitter
-	local Remove  = self.LifeTime > ACF.CurTime
+	local Remove  = self.LifeTime > Clock.CurTime
 
 	if Emitter then
 		local Origin = self:GetPos()

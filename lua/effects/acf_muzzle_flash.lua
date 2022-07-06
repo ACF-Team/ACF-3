@@ -7,9 +7,9 @@ function EFFECT:Init(Data)
 
 	local Propellant = Data:GetScale()
 	local ReloadTime = Data:GetMagnitude()
-	local Sound = Gun:GetNWString("Sound")
-	local Class = Gun:GetNWString("Class")
-	local ClassData = Weapons[Class]
+	local Sound      = Gun:GetNWString("Sound")
+	local Class      = Gun:GetNWString("Class")
+	local ClassData  = Weapons.Get(Class)
 	local Attachment = "muzzle"
 	local LongBarrel = ClassData.LongBarrel
 

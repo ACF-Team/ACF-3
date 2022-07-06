@@ -1,4 +1,5 @@
-local ACF = ACF
+local ACF   = ACF
+local Clock = ACF.Utilities.Clock
 
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
@@ -36,11 +37,11 @@ end
 function ENT:Think()
 	BaseClass.Think(self)
 
-	local SinceFire = ACF.CurTime - self.LastFire
+	local SinceFire = Clock.CurTime - self.LastFire
 
 	self:SetCycle(SinceFire * self.Rate / self.RateScale)
 
-	if ACF.CurTime > self.LastFire + self.CloseTime and self.CloseAnim then
+	if Clock.CurTime > self.LastFire + self.CloseTime and self.CloseAnim then
 		self:ResetSequence(self.CloseAnim)
 		self:SetCycle((SinceFire - self.CloseTime) * self.Rate / self.RateScale)
 		self.Rate = 1 / (self.Reload - self.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
@@ -67,6 +68,6 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	end
 
 	self:SetPlaybackRate(self.Rate)
-	self.LastFire = ACF.CurTime
+	self.LastFire = Clock.CurTime
 	self.Reload = ReloadTime
 end
