@@ -1,12 +1,13 @@
+local ACF     = ACF
+local Engines = ACF.Classes.Engines
 
---V4 Engines
 
-ACF.RegisterEngineClass("V4", {
+Engines.Register("V4", {
 	Name = "V4 Engine",
 })
 
 do -- Diesel Engines
-	ACF.RegisterEngine("1.9L-V4", "V4", {
+	Engines.RegisterItem("1.9L-V4", "V4", {
 		Name		 = "1.9L V4 Diesel",
 		Description	 = "Torquey little lunchbox; for those smaller vehicles that don't agree with petrol powerbands",
 		Model		 = "models/engines/v4s.mdl",
@@ -25,7 +26,7 @@ do -- Diesel Engines
 		},
 	})
 
-	ACF.RegisterEngine("4.9L-V4", "V4", {
+	Engines.RegisterItem("4.9L-V4", "V4", {
 		Name		 = "4.9L V4 Diesel",
 		Description	 = "Fairly confident this thing would rattle to bits",
 		Model		 = "models/engines/v4m.mdl",
@@ -43,6 +44,8 @@ do -- Diesel Engines
 			FOV = 110,
 		},
 	})
+
+	Engines.AddItemAlias("V4", "4.9L-V4", "3.3L-V4")
 end
 
 ACF.SetCustomAttachment("models/engines/v4m.mdl", "driveshaft", Vector(-5.99, 0, 4.85), Angle(0, 90, 90))
