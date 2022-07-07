@@ -20,10 +20,11 @@ local function GetWeaponSpecs(ToolData)
 		local Weapon = Source.GetItem(Class.ID, ToolData.Weapon)
 		local Round  = Weapon.Round
 
-		Result.Caliber     = Weapon.Caliber
-		Result.MaxLength   = Round.MaxLength
-		Result.PropLength  = Round.PropLength
-		Result.ProjLength  = Round.ProjLength
+		Result.Caliber    = Weapon.Caliber
+		Result.MaxLength  = Round.MaxLength
+		Result.PropLength = Round.PropLength
+		Result.ProjLength = Round.ProjLength
+		Result.Efficiency = Round.Efficiency
 	else
 		local Bounds  = Class.Caliber
 		local Round   = Class.Round
@@ -31,10 +32,11 @@ local function GetWeaponSpecs(ToolData)
 		local Scale   = Caliber / Bounds.Base
 		local ProjLen = Round.ProjLength
 
-		Result.Caliber     = Caliber
-		Result.MaxLength   = Round.MaxLength * Scale
-		Result.PropLength  = Round.PropLength * Scale
-		Result.ProjLength  = ProjLen and ProjLen * Scale
+		Result.Caliber    = Caliber
+		Result.MaxLength  = Round.MaxLength * Scale
+		Result.PropLength = Round.PropLength * Scale
+		Result.ProjLength = ProjLen and ProjLen * Scale
+		Result.Efficiency = Round.Efficiency
 	end
 
 	return Result
@@ -54,7 +56,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
 	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
 	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
-	Data.Efficiency = ToolData.PropEfficiency or 1
+	Data.Efficiency = Specs.Efficiency or 1
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
