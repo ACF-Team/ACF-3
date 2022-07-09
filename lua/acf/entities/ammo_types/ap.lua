@@ -168,7 +168,7 @@ if SERVER then
 	end
 
 	function Ammo:OnFlightEnd(Bullet)
-		ACF_RemoveBullet(Bullet)
+		Ballistics.RemoveBullet(Bullet)
 	end
 else
 	ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")
