@@ -7,6 +7,12 @@ local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
 local MinimumArmor = ACF.MinimumArmor
 local MaximumArmor = ACF.MaximumArmor
+local NoCollision  = { -- These prevent ACF bullets from hitting an entity
+	[COLLISION_GROUP_DEBRIS] = true,
+	[COLLISION_GROUP_IN_VEHICLE] = true,
+	[COLLISION_GROUP_VEHICLE_CLIP] = true,
+	[COLLISION_GROUP_DOOR_BLOCKER] = true
+}
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -14,7 +20,7 @@ local MaximumArmor = ACF.MaximumArmor
 	ENT.ACF.LegalMass defined when spawned
 	ENT.ACF.Model defined when spawned
 
-	ACF_CheckLegal(entity) called when finished spawning
+	ACF.CheckLegal(entity) called when finished spawning
 
 	function ENT:Enable()
 		<code>
@@ -24,7 +30,7 @@ local MaximumArmor = ACF.MaximumArmor
 		<code>
 	end
 ]]--
-local function IsLegal(Entity)
+function ACF.IsLegal(Entity)
 	if ACF.Gamemode == 1 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
 
 	local Phys = Entity:GetPhysicsObject()
@@ -33,31 +39,35 @@ local function IsLegal(Entity)
 		if Phys:GetVolume() then
 			Entity.ACF.PhysObj = Phys -- Updated PhysObj
 		else
-			Entity:Remove() -- Remove spherical trash
-			return false, "Invalid physics", "" -- This shouldn't even run
+			return false, "Invalid Physics", "Custom physics objects cannot be applied to ACF entities."
 		end
 	end
+	if not Entity:IsSolid() then return false, "Not Solid", "The entity is invisible to projectiles." end
+	if NoCollision[Entity:GetCollisionGroup()] then return false, "Invalid Collisions", "The entity is invisible to projectiles." end
 	if Entity.ClipData and next(Entity.ClipData) then return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 
-	local Legal, Reason, Desc, OverrideIllegalTime = hook.Run("ACF_IsLegal",Entity)
-	if not Legal then return Legal, Reason, Desc, OverrideIllegalTime end
+	local Legal, Reason, Message, Timeout = hook.Run("ACF_IsLegal", Entity)
+
+	if Legal ~= nil then return Legal, Reason, Message, Timeout end
 
 	return true
 end
 
-local function CheckLegal(Entity)
-	local Legal, Reason, Description, OverrideIllegalTime = IsLegal(Entity)
-	if OverrideIllegalTime then OverrideIllegalTime = math.max(OverrideIllegalTime,0.1) end
+function ACF.CheckLegal(Entity)
+	local Legal, Reason, Message, Timeout = ACF.IsLegal(Entity)
 
 	if not Legal then -- Not legal
-		if Reason ~= Entity.DisableReason then -- Only complain if the reason has changed
+		local Disabled = Entity.Disabled
+
+		if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
 			local Owner = Entity:CPPIGetOwner()
 
-			Entity.Disabled		 = true
-			Entity.DisableReason = Reason
-			Entity.DisableDescription = Description
+			Entity.Disabled	= {
+				Reason  = Reason,
+				Message = Message
+			}
 
 			Entity:Disable() -- Let the entity know it's disabled
 
@@ -65,28 +75,29 @@ local function CheckLegal(Entity)
 			if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
 				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
 
-				if Reason == "Not drawn" or Reason == "Not solid" then -- Thank you garry, very cool
+				if Reason == "Not Solid" then -- Thank you garry, very cool
 					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 						if not IsValid(Entity) then return end
 
-						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
 					end)
 				else
-					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Description)
+					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
 				end
 			end
 		end
 
-		TimerSimple(OverrideIllegalTime or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
-			if IsValid(Entity) and CheckLegal(Entity) then
-				Entity.Disabled	   	 = nil
-				Entity.DisableReason = nil
-				Entity.DisableDescription = nil
+		if Timeout then Timeout = math.max(Timeout, 1) end
 
-				Entity:Enable()
+		TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
+			if not IsValid(Entity) then return end
+			if not ACF.CheckLegal(Entity) then return end
 
-				if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
-			end
+			Entity.Disabled = nil
+
+			Entity:Enable()
+
+			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
 		end)
 
 		return false
@@ -94,14 +105,15 @@ local function CheckLegal(Entity)
 
 	if ACF.Gamemode ~= 1 then
 		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
-			if IsValid(Entity) then
-				CheckLegal(Entity)
-			end
+			if not IsValid(Entity) then return end
+
+			ACF.CheckLegal(Entity)
 		end)
 	end
 
 	return true
 end
+
 local function GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
 	if Entity:IsVehicle() then return "Vehicle" end
@@ -232,7 +244,6 @@ function ACF.Activate(Entity, Recalc)
 end
 
 -- Globalize ------------------------------------
-ACF_IsLegal    = IsLegal
-ACF_CheckLegal = CheckLegal
+ACF_CheckLegal = ACF.CheckLegal
 ACF_Check      = ACF.Check
 ACF_Activate   = ACF.Activate

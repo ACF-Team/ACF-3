@@ -7,7 +7,6 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local CheckLegal  = ACF_CheckLegal
 local ActiveTanks = ACF.FuelTanks
 local Clock       = ACF.Utilities.Clock
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
@@ -179,7 +178,7 @@ do -- Spawn and Update functions
 
 		ActiveTanks[Tank] = true
 
-		CheckLegal(Tank)
+		ACF.CheckLegal(Tank)
 
 		return Tank
 	end

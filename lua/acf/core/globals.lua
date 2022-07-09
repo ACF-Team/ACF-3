@@ -11,7 +11,7 @@ do -- ACF global vars
 	-- General Settings
 	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
 	ACF.Year               = 1945
-	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF_IsLegal
+	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
 	ACF.AllowAdminData     = false -- Allows admins to mess with a few server settings and data variables
 	ACF.HEPush             = true -- Whether or not HE pushes on entities

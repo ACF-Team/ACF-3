@@ -8,7 +8,6 @@ local Clock = ACF.Utilities.Clock
 local hook  = hook
 
 do -- Spawning and Updating --------------------
-	local CheckLegal  = ACF_CheckLegal
 	local Classes     = ACF.Classes
 	local Piledrivers = Classes.Piledrivers
 	local AmmoTypes   = Classes.AmmoTypes
@@ -222,7 +221,7 @@ do -- Spawning and Updating --------------------
 
 		Entity:UpdateOverlay(true)
 
-		CheckLegal(Entity)
+		ACF.CheckLegal(Entity)
 
 		return Entity
 	end

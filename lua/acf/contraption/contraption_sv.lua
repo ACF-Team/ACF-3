@@ -3,8 +3,6 @@
 -- Local Funcs ----------------------------------
 -- These functions are used within this file and made global at the end
 
-local ColGroupFilter = {[1] = true, [2] = true}
-
 local function GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
@@ -168,10 +166,6 @@ function ACF_CalcMassRatio(Ent, Tally)
 
 			TotMass  = TotMass + Mass
 			PhysMass = PhysMass + Mass
-
-			if ColGroupFilter[K:GetCollisionGroup()] then
-				K:SetCollisionGroup(COLLISION_GROUP_NONE)
-			end
 		end
 	end
 
@@ -197,9 +191,6 @@ function ACF_CalcMassRatio(Ent, Tally)
 
 			TotMass = TotMass + Phys:GetMass()
 
-			if ColGroupFilter[K:GetCollisionGroup()] then
-				K:SetCollisionGroup(COLLISION_GROUP_NONE)
-			end
 		end
 	end
 
@@ -284,19 +275,6 @@ do -- ASSUMING DIRECT CONTROL
 			end
 
 			SetModel(self, String)
-		end
-	end
-
-	do -- SetSolid
-		-- Reject any changes to the solidity on ACF entities
-		local SetSolid = SetSolid or ENT.SetSolid
-
-		function ENT:SetSolid(Number)
-			if self.IsACFEntity and Number ~= SOLID_VPHYSICS then
-				return
-			end
-
-			SetSolid(self, Number)
 		end
 	end
 

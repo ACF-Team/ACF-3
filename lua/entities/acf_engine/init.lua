@@ -103,7 +103,6 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local CheckLegal  = ACF_CheckLegal
 local Clock       = ACF.Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
@@ -395,7 +394,7 @@ do -- Spawn and Update functions
 			end
 		end
 
-		CheckLegal(Entity)
+		ACF.CheckLegal(Entity)
 
 		return Entity
 	end

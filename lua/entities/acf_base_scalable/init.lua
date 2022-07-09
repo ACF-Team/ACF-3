@@ -26,7 +26,9 @@ do -- Entity Overlay ----------------------------
 	end
 
 	function ENT:GetDisableText()
-		return Disable:format(self.DisableReason, self.DisableDescription)
+		local Disabled = self.Disabled
+
+		return Disable:format(Disabled.Reason, Disabled.Message)
 	end
 
 	function ENT:UpdateOverlay(Instant)

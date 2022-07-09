@@ -12,12 +12,11 @@ local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
-	local CheckLegal = ACF_CheckLegal
-	local Classes    = ACF.Classes
-	local Crates     = Classes.Crates
-	local Entities   = Classes.Entities
-	local AmmoTypes  = Classes.AmmoTypes
-	local Weapons    = Classes.Weapons
+	local Classes   = ACF.Classes
+	local Crates    = Classes.Crates
+	local Entities  = Classes.Entities
+	local AmmoTypes = Classes.AmmoTypes
+	local Weapons   = Classes.Weapons
 
 	local function VerifyData(Data)
 		if Data.Id then -- Updating old crates
@@ -323,7 +322,7 @@ do -- Spawning and Updating --------------------
 
 		ActiveCrates[Crate] = true
 
-		CheckLegal(Crate)
+		ACF.CheckLegal(Crate)
 
 		return Crate
 	end

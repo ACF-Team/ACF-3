@@ -26,10 +26,9 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 end
 
 do -- Spawn and Update functions -----------------------
-	local CheckLegal = ACF_CheckLegal
-	local Classes    = ACF.Classes
-	local Gearboxes  = Classes.Gearboxes
-	local Entities   = Classes.Entities
+	local Classes   = ACF.Classes
+	local Gearboxes = Classes.Gearboxes
+	local Entities  = Classes.Entities
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
@@ -299,7 +298,7 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
-		CheckLegal(Entity)
+		ACF.CheckLegal(Entity)
 
 		timer.Create("ACF Gearbox Clock " .. Entity:EntIndex(), 3, 0, function()
 			if IsValid(Entity) then

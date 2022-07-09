@@ -29,10 +29,9 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn and Update functions --------------------------------
-	local ModelData  = ACF.ModelData
-	local CheckLegal = ACF_CheckLegal
-	local Entities   = Classes.Entities
-	local Weapons    = Classes.Weapons
+	local ModelData = ACF.ModelData
+	local Entities  = Classes.Entities
+	local Weapons   = Classes.Weapons
 
 	local function VerifyData(Data)
 		if not isstring(Data.Weapon) then
@@ -293,7 +292,7 @@ do -- Spawn and Update functions --------------------------------
 			UpdateTotalAmmo(Entity)
 		end)
 
-		CheckLegal(Entity)
+		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
