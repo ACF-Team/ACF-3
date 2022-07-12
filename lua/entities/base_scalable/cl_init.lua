@@ -236,7 +236,10 @@ do -- Scalable entity related hooks
 	hook.Add("NetworkEntityCreated", "Scalable Entity Full Update", function(Entity)
 		if not Entity.IsScalable then return end
 
-		Entity:Restore()
+		-- Instantly requesting ScaleData and Scale
+		if not Standby[Entity] then
+			Network.Send("ACF_Scalable_Entity", Entity)
+		end
 
 		if Entity.OnFullUpdate then Entity:OnFullUpdate() end
 	end)

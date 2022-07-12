@@ -5,14 +5,25 @@ local Network   = ACF.Networking
 local Standby   = {}
 local Callbacks = {}
 
+--- Returns the current state of the requested model information
+-- @param Model The model to check.
+-- @return True if the model has been requested and the client is waiting for it.
 function ModelData.IsOnStandby(Model)
 	local Path = ModelData.GetModelPath(Model)
+
+	if not Path then return false end
 
 	return Standby[Path] or false
 end
 
-function ModelData.QueueRefresh(Model, Panel, Callback)
-	if not IsValid(Panel) then return end
+--- Queues a function to be called for an object when the model data is received.
+-- If the object is valid, the callback will be called with it as the first argument.
+-- Otherwise, the callback won't be called at all.
+-- @param Model The model to queue the callback for.
+-- @param Object Anything that won't fail the IsValid check, usually panels or entities.
+-- @param Callback The function to call when the model data is received.
+function ModelData.QueueRefresh(Model, Object, Callback)
+	if not IsValid(Object) then return end
 	if not isfunction(Callback) then return end
 
 	local Path = ModelData.GetModelPath(Model)
@@ -23,10 +34,10 @@ function ModelData.QueueRefresh(Model, Panel, Callback)
 	local Data = Callbacks[Path]
 
 	if Data then
-		Data[Panel] = Callback
+		Data[Object] = Callback
 	else
 		Callbacks[Path] = {
-			[Panel] = Callback
+			[Object] = Callback
 		}
 	end
 end
@@ -119,12 +130,12 @@ hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model
 
 	if not Data then return end
 
-	for Panel, Callback in pairs(Data) do
-		if IsValid(Panel) then
-			Callback(Panel, Model)
+	for Object, Callback in pairs(Data) do
+		if IsValid(Object) then
+			Callback(Object, Model)
 		end
 
-		Data[Panel] = nil
+		Data[Object] = nil
 	end
 
 	Callbacks[Model] = nil
