@@ -613,6 +613,7 @@ do -- Linking ------------------------------------------
 
 		Link.LastVel   = 0
 		Link.AntiSpazz = 0
+		Link.IsBraking = false
 
 		Gearbox.Wheels[Wheel] = Link
 
@@ -857,11 +858,13 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.Wheels) do
-			local WheelTorque = Link.ReqTq * AvailTq
+			-- If the gearbox is braking, always
+			if not self.Braking or not Link.IsBraking then
+				local WheelTorque = Link.ReqTq * AvailTq
+				ReactTq = ReactTq + WheelTorque
 
-			ActWheel(Link, Ent, WheelTorque, DeltaTime)
-
-			ReactTq = ReactTq + WheelTorque
+				ActWheel(Link, Ent, WheelTorque, DeltaTime)
+			end
 		end
 
 		if ReactTq ~= 0 then
@@ -910,8 +913,11 @@ do -- Braking ------------------------------------------
 			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 
 			if Brake > 0 then -- regular ol braking
+				Link.IsBraking = true
 				CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
 				BrakeWheel(Link, Wheel, Brake, DeltaTime)
+			else
+				Link.IsBraking = false
 			end
 		end
 
