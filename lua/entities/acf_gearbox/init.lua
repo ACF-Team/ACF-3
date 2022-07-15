@@ -613,6 +613,7 @@ do -- Linking ------------------------------------------
 
 		Link.LastVel   = 0
 		Link.AntiSpazz = 0
+		Link.IsBraking = false
 
 		Gearbox.Wheels[Wheel] = Link
 
@@ -857,11 +858,13 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.Wheels) do
-			local WheelTorque = Link.ReqTq * AvailTq
+			-- If the gearbox is braking, always
+			if not self.Braking or not Link.IsBraking then
+				local WheelTorque = Link.ReqTq * AvailTq
+				ReactTq = ReactTq + WheelTorque
 
-			ActWheel(Link, Ent, WheelTorque, DeltaTime)
-
-			ReactTq = ReactTq + WheelTorque
+				ActWheel(Link, Ent, WheelTorque, DeltaTime)
+			end
 		end
 
 		if ReactTq ~= 0 then
@@ -878,13 +881,10 @@ end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
 	local function BrakeWheel(Link, Wheel, Brake)
-		local Phys = Wheel:GetPhysicsObject()
+		local Phys      = Wheel:GetPhysicsObject()
+		local AntiSpazz = 1
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-
-		local TorqueAxis  = Phys:LocalToWorldVector(Link.Axis)
-		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
-		local AntiSpazz   = 0.9
 
 		if Brake > 100 then
 			local Overshot = math.abs(Link.LastVel - Link.Vel) > math.abs(Link.LastVel) -- Overshot the brakes last tick?
@@ -895,12 +895,9 @@ do -- Braking ------------------------------------------
 			AntiSpazz = math.min(Link.AntiSpazz * 10000 / Brake, 1) -- Anti-spazz relative to brake power
 		end
 
-		local MaxBrake  = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = AntiSpazz * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
-
 		Link.LastVel = Link.Vel
 
-		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
+		Phys:AddAngleVelocity(-Link.Axis * Link.Vel * AntiSpazz * Brake * 0.01)
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
@@ -916,8 +913,11 @@ do -- Braking ------------------------------------------
 			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 
 			if Brake > 0 then -- regular ol braking
+				Link.IsBraking = true
 				CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
 				BrakeWheel(Link, Wheel, Brake, DeltaTime)
+			else
+				Link.IsBraking = false
 			end
 		end
 
