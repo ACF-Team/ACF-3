@@ -12,16 +12,17 @@ local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
-	local CheckLegal = ACF_CheckLegal
-	local Classes    = ACF.Classes
-	local Crates     = Classes.Crates
-	local AmmoTypes  = Classes.AmmoTypes
+	local Classes   = ACF.Classes
+	local Crates    = Classes.Crates
+	local Entities  = Classes.Entities
+	local AmmoTypes = Classes.AmmoTypes
+	local Weapons   = Classes.Weapons
 
 	local function VerifyData(Data)
 		if Data.Id then -- Updating old crates
-			if Crates[Data.Id] then -- Pre scalable crate remnants
-				local Crate = Crates[Data.Id]
+			local Crate = Crates.Get(Data.Id)
 
+			if Crate then -- Pre scalable crate remnants
 				Data.Offset = Vector(Crate.Offset)
 				Data.Size   = Vector(Crate.Size)
 			else
@@ -58,16 +59,16 @@ do -- Spawning and Updating --------------------
 		end
 
 		local Source = Classes[Data.Destiny]
-		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
+		local Class  = Classes.GetGroup(Source, Data.Weapon)
 
 		if not Class then
-			Class = ACF.GetClassGroup(Classes.Weapons, "C")
+			Class = Weapons.Get("C")
 
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
 		elseif Class.IsScalable then
-			local Weapon = Class.Lookup[Data.Weapon]
+			local Weapon = Source.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
@@ -87,13 +88,13 @@ do -- Spawning and Updating --------------------
 			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
 		end
 
-		local Ammo = AmmoTypes[Data.AmmoType]
+		local Ammo = AmmoTypes.Get(Data.AmmoType)
 
 		-- Making sure our ammo type exists and it's not blacklisted by the weapon
 		if not Ammo or Ammo.Blacklist[Class.ID] then
 			Data.AmmoType = Class.DefaultAmmo or "AP"
 
-			Ammo = AmmoTypes[Data.AmmoType]
+			Ammo = AmmoTypes.Get(Data.AmmoType)
 		end
 
 		do -- External verifications
@@ -244,20 +245,21 @@ do -- Spawning and Updating --------------------
 	function MakeACF_Ammo(Player, Pos, Ang, Data)
 		if not Player:CheckLimit("_acf_ammo") then return end
 
-		local Crate = ents.Create("acf_ammo")
-
-		if not IsValid(Crate) then return end
-
 		VerifyData(Data)
 
 		local Source = Classes[Data.Destiny]
-		local Class  = ACF.GetClassGroup(Source, Data.Weapon)
-		local Weapon = Class.Lookup[Data.Weapon]
-		local Ammo   = AmmoTypes[Data.AmmoType]()
+		local Class  = Classes.GetGroup(Source, Data.Weapon)
+		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+		local Ammo   = AmmoTypes.Get(Data.AmmoType)
 		local Model  = "models/holograms/rcube_thin.mdl"
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+
 		if CanSpawn == false then return false end
+
+		local Crate = ents.Create("acf_ammo")
+
+		if not IsValid(Crate) then return end
 
 		Player:AddCleanup("acf_ammo", Crate)
 		Player:AddCount("_acf_ammo", Crate)
@@ -277,7 +279,7 @@ do -- Spawning and Updating --------------------
 		Crate.Weapons     = {}
 		Crate.Inputs      = WireLib.CreateInputs(Crate, { "Load (If true, will allow rounds to load from this crate)" })
 		Crate.Outputs     = WireLib.CreateOutputs(Crate, { "Entity (This ammo crate) [ENTITY]", "Ammo (Rounds left in the crate)", "Loading (Whether or not rounds can load from this crate)" })
-		Crate.DataStore	  = ACF.GetEntityArguments("acf_ammo")
+		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
 
@@ -320,12 +322,13 @@ do -- Spawning and Updating --------------------
 
 		ActiveCrates[Crate] = true
 
-		CheckLegal(Crate)
+		ACF.CheckLegal(Crate)
 
 		return Crate
 	end
 
-	ACF.RegisterEntityClass("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
+	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
+
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
 	------------------- Updating ---------------------
@@ -334,13 +337,13 @@ do -- Spawning and Updating --------------------
 		VerifyData(Data)
 
 		local Source     = Classes[Data.Destiny]
-		local Class      = ACF.GetClassGroup(Source, Data.Weapon)
-		local Weapon     = Class.Lookup[Data.Weapon]
+		local Class      = Classes.GetGroup(Source, Data.Weapon)
+		local Weapon     = Source.GetItem(Class.ID, Data.Weapon)
 		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
 		local OldClass   = self.ClassData
 		local OldWeapon  = self.Weapon
 		local OldCaliber = self.Caliber
-		local Ammo       = AmmoTypes[Data.AmmoType]
+		local Ammo       = AmmoTypes.Get(Data.AmmoType)
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
@@ -401,8 +404,10 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
+	local Clock = ACF.Utilities.Clock
+
 	local function CookoffCrate(Entity)
-		if Entity.Ammo <= 1 or Entity.Damaged < ACF.CurTime then -- Detonate when time is up or crate is out of ammo
+		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
 			timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
 
 			Entity.Damaged = nil
@@ -486,7 +491,7 @@ do -- ACF Activation and Damage -----------------
 			self.Inflictor = Inflictor
 
 			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
-				self.Damaged = ACF.CurTime + (5 - Ratio * 3)
+				self.Damaged = Clock.CurTime + (5 - Ratio * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 

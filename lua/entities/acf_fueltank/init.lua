@@ -7,15 +7,13 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local CheckLegal  = ACF_CheckLegal
-local FuelTanks	  = ACF.Classes.FuelTanks
-local FuelTypes	  = ACF.Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
+local Clock       = ACF.Utilities.Clock
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local HookRun     = hook.Run
-local Wall		  = 0.03937 --wall thickness in inches (1mm)
+local Wall        = 0.03937 --wall thickness in inches (1mm)
 
 local function CanRefuel(Refill, Tank, Distance)
 	if Refill == Tank then return false end
@@ -30,21 +28,26 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
+	local Classes   = ACF.Classes
+	local Entities  = Classes.Entities
+	local FuelTanks = Classes.FuelTanks
+	local FuelTypes = Classes.FuelTypes
+
 	local function VerifyData(Data)
 		if not Data.FuelTank then
 			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
 		end
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
+		local Class = Classes.GetGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
 			Data.FuelTank = "Jerry_Can"
 
-			Class = ACF.GetClassGroup(FuelTanks, "Jerry_Can")
+			Class = Classes.GetGroup(FuelTanks, "Jerry_Can")
 		end
 
 		-- Making sure to provide a valid fuel type
-		if not (Data.FuelType and FuelTypes[Data.FuelType]) then
+		if not FuelTypes.Get(Data.FuelType) then
 			Data.FuelType = "Petrol"
 		end
 
@@ -57,9 +60,9 @@ do -- Spawn and Update functions
 		end
 	end
 
-	local function UpdateFuelTank(Entity, Data, Class, FuelTank)
-		local FuelData = FuelTypes[Data.FuelType]
-		local Percentage = 1
+	local function UpdateFuelTank(Entity, Data, Class, FuelTank, FuelType)
+		-- If updating, keep the same fuel level
+		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
 
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
@@ -77,16 +80,11 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		-- If updating, keep the same fuel level
-		if Entity.Capacity then
-			Percentage = Entity.Fuel / Entity.Capacity
-		end
-
 		Entity.Name        = FuelTank.Name
 		Entity.ShortName   = Entity.FuelTank
 		Entity.EntType     = Class.Name
 		Entity.ClassData   = Class
-		Entity.FuelDensity = FuelData.Density
+		Entity.FuelDensity = FuelType.Density
 		Entity.Volume      = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
 		Entity.Capacity    = Entity.Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 		Entity.EmptyMass   = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
@@ -119,13 +117,15 @@ do -- Spawn and Update functions
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
-		local FuelTank = Class.Lookup[Data.FuelTank]
-		local Limit = Class.LimitConVar.Name
+		local Class    = Classes.GetGroup(FuelTanks, Data.FuelTank)
+		local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
+		local FuelType = FuelTypes.Get(Data.FuelType)
+		local Limit    = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
+
 		if CanSpawn == false then return end
 
 		local Tank = ents.Create("acf_fueltank")
@@ -151,11 +151,11 @@ do -- Spawn and Update functions
 			"Capacity (Total amount of fuel the tank can hold, in liters/kWh)",
 			"Leaking (If 1, the tank is losing fuel)",
 			"Entity (The fuel tank itself) [ENTITY]" })
-		Tank.DataStore	= ACF.GetEntityArguments("acf_fueltank")
+		Tank.DataStore	= Entities.GetArguments("acf_fueltank")
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
 
-		UpdateFuelTank(Tank, Data, Class, FuelTank)
+		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
@@ -178,12 +178,13 @@ do -- Spawn and Update functions
 
 		ActiveTanks[Tank] = true
 
-		CheckLegal(Tank)
+		ACF.CheckLegal(Tank)
 
 		return Tank
 	end
 
-	ACF.RegisterEntityClass("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
 	------------------- Updating ---------------------
@@ -191,8 +192,9 @@ do -- Spawn and Update functions
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(FuelTanks, Data.FuelTank)
-		local FuelTank = Class.Lookup[Data.FuelTank]
+		local Class    = Classes.GetGroup(FuelTanks, Data.FuelTank)
+		local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
+		local FuelType = FuelTypes.Get(Data.FuelType)
 		local OldClass = self.ClassData
 		local Feedback = ""
 
@@ -207,7 +209,7 @@ do -- Spawn and Update functions
 
 		ACF.SaveEntity(self)
 
-		UpdateFuelTank(self, Data, Class, FuelTank)
+		UpdateFuelTank(self, Data, Class, FuelTank, FuelType)
 
 		ACF.RestoreEntity(self)
 
@@ -218,12 +220,12 @@ do -- Spawn and Update functions
 		HookRun("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if next(self.Engines) then
-			local FuelType = self.FuelType
+			local Fuel    = self.FuelType
 			local NoLinks = self.NoLinks
 			local Count, Total = 0, 0
 
 			for Engine in pairs(self.Engines) do
-				if NoLinks or not Engine.FuelTypes[FuelType] then
+				if NoLinks or not Engine.FuelTypes[Fuel] then
 					self:Unlink(Engine)
 
 					Count = Count + 1
@@ -316,7 +318,7 @@ function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
-		self:NextThink(ACF.CurTime + 0.1)
+		self:NextThink(Clock.CurTime + 0.1)
 	end
 
 	return HitRes
@@ -437,7 +439,7 @@ function ENT:Consume(Amount)
 end
 
 function ENT:Think()
-	self:NextThink(ACF.CurTime + 1)
+	self:NextThink(Clock.CurTime + 1)
 
 	if self.Leaking > 0 then
 		self:Consume(self.Leaking)
@@ -446,12 +448,12 @@ function ENT:Think()
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
-		self:NextThink(ACF.CurTime + 0.25)
+		self:NextThink(Clock.CurTime + 0.25)
 	end
 
 	--refuelling
 	if self.SupplyFuel and self:CanConsume() then
-		local DeltaTime = ACF.CurTime - self.LastThink
+		local DeltaTime = Clock.CurTime - self.LastThink
 		local Position = self:GetPos()
 
 		for Tank in pairs(ACF.FuelTanks) do
@@ -474,7 +476,7 @@ function ENT:Think()
 		end
 	end
 
-	self.LastThink = ACF.CurTime
+	self.LastThink = Clock.CurTime
 
 	return true
 end

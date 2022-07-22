@@ -10,7 +10,7 @@ It's good to note crashing the server is not considered a vulnerability by itsel
 
 ## How to report a vulnerability?
 
-Due to the risk it poses, a vulnerability should be reported directly to the developer team. We highly suggest you to contact any of the developer team members directly via private messages. You can find them on the [Discord server](https://discordapp.com/invite/shk5sc5).
+Due to the risk it poses, a vulnerability should be reported directly to the developer team. We highly suggest you to contact any of the developer team members directly via private messages. You can find them on the [Discord server](https://discordapp.com/invite/jgdzysxjST).
 
 ## What happens after reporting a vulnerability?
 

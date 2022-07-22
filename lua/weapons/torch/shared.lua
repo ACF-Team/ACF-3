@@ -1,6 +1,12 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 --include('shared.lua')
+
+local ACF   = ACF
+local Clock = ACF.Utilities.Clock
+local Spark = "ambient/energy/NewSpark0%s.wav"
+local Zap   = "weapons/physcannon/superphys_small_zap%s.wav"
+
 SWEP.Weight = 5
 SWEP.AutoSwitchTo = false
 SWEP.AutoSwitchFrom = false
@@ -29,9 +35,6 @@ SWEP.IconLetter = "G"
 SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = true
 SWEP.MaxDistance = 64 * 64 -- Squared distance
-
-local Spark = "ambient/energy/NewSpark0%s.wav"
-local Zap   = "weapons/physcannon/superphys_small_zap%s.wav"
 
 local function TeslaSpark(pos, magnitude)
 	zap = ents.Create("point_tesla")
@@ -124,11 +127,11 @@ function SWEP:Think()
 		self:SetNWFloat("MaxArmour", MaxArmor)
 	end
 
-	self:NextThink(ACF.CurTime + 0.05)
+	self:NextThink(Clock.CurTime + 0.05)
 end
 
 function SWEP:PrimaryAttack()
-	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
 
 	if CLIENT then return end
 
@@ -184,7 +187,7 @@ function SWEP:PrimaryAttack()
 end
 
 function SWEP:SecondaryAttack()
-	self:SetNextPrimaryFire(ACF.CurTime + 0.05)
+	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
 
 	if CLIENT then return end
 

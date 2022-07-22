@@ -1,7 +1,8 @@
 
-local ACF = ACF
+local ACF       = ACF
 local AmmoTypes = ACF.Classes.AmmoTypes
-local Bullets = ACF.BulletEffect
+local Bullets   = ACF.BulletEffect
+local Clock     = ACF.Utilities.Clock
 
 function EFFECT:Init(Data)
 	self.Index = Data:GetDamageType()
@@ -14,7 +15,7 @@ function EFFECT:Init(Data)
 		return
 	end
 
-	self.CreateTime = ACF.CurTime
+	self.CreateTime = Clock.CurTime
 
 	local CanDraw = Data:GetAttachment() > 0
 	local Bullet  = Bullets[self.Index]
@@ -24,7 +25,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and Hit > 0 then
-		local RoundData = AmmoTypes[Bullet.AmmoType]
+		local RoundData = AmmoTypes.Get(Bullet.AmmoType)
 
 		-- Updating old effect with new values
 		Bullet.Effect.DrawEffect = CanDraw
@@ -72,7 +73,7 @@ function EFFECT:Init(Data)
 			Tracer     = Tracer and ParticleEmitter(Origin) or nil,
 			Color      = Tracer and Crate:GetColor() or nil,
 			Accel      = Crate:GetNW2Vector("Accel", ACF.Gravity),
-			LastThink  = ACF.CurTime,
+			LastThink  = Clock.CurTime,
 			Effect     = self,
 		}
 
@@ -96,7 +97,7 @@ end
 function EFFECT:Think()
 	local Bullet = Bullets[self.Index]
 
-	if Bullet and not self.Kill and self.CreateTime > ACF.CurTime - 30 then return true end
+	if Bullet and not self.Kill and self.CreateTime > Clock.CurTime - 30 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then

@@ -3,33 +3,28 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-local ACF  = ACF
-local hook = hook
+local ACF   = ACF
+local Clock = ACF.Utilities.Clock
+local hook  = hook
 
 do -- Spawning and Updating --------------------
-	local Piledrivers = ACF.Classes.Piledrivers
-	local AmmoTypes   = ACF.Classes.AmmoTypes
-	local CheckLegal  = ACF_CheckLegal
+	local Classes     = ACF.Classes
+	local Piledrivers = Classes.Piledrivers
+	local AmmoTypes   = Classes.AmmoTypes
+	local Entities    = Classes.Entities
 
 	local function VerifyData(Data)
-		if isstring(Data.Id) then
-			local OldClass = ACF.GetClassGroup(Piledrivers, Data.Id)
+		local OldClass = Classes.GetGroup(Piledrivers, Data.Id)
 
-			if OldClass then
-				Data.Weapon = OldClass.ID
-				Data.Caliber = OldClass.Lookup[Data.Id].Caliber
-			end
+		if OldClass then
+			Data.Weapon = OldClass.ID
+			Data.Caliber = Piledriver.GetItem(OldClass.ID, Data.Id).Caliber
 		end
 
-		if not (isstring(Data.Weapon) and Piledrivers[Data.Weapon]) then
-			Data.Weapon = "PD"
-		end
+		Data.Weapon  = Classes.GetGroup(Piledrivers, Data.Weapon) or "PD"
+		Data.Destiny = "Piledrivers"
 
-		if not isstring(Data.Destiny) then
-			Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Piledrivers"
-		end
-
-		local Class  = Piledrivers[Data.Weapon]
+		local Class  = Piledrivers.Get(Data.Weapon)
 		local Bounds = Class.Caliber
 
 		if not isnumber(Data.Caliber) then
@@ -137,9 +132,9 @@ do -- Spawning and Updating --------------------
 			function BulletData:PreCalcFlight()
 				if self.KillTime then return end
 				if not self.DeltaTime then return end
-				if self.LastThink == ACF.CurTime then return end
+				if self.LastThink == Clock.CurTime then return end
 
-				self.KillTime = ACF.CurTime
+				self.KillTime = Clock.CurTime
 			end
 
 			function BulletData:OnEndFlight(Trace)
@@ -188,7 +183,7 @@ do -- Spawning and Updating --------------------
 	function MakeACF_Piledriver(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = Piledrivers[Data.Weapon]
+		local Class = Piledrivers.Get(Data.Weapon)
 		local Limit = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
@@ -196,6 +191,8 @@ do -- Spawning and Updating --------------------
 		local Entity = ents.Create("acf_piledriver")
 
 		if not IsValid(Entity) then return end
+
+		local AmmoType = AmmoTypes.Get("HP")
 
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
@@ -208,14 +205,14 @@ do -- Spawning and Updating --------------------
 
 		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
-		Entity.RoundData    = AmmoTypes.HP()
-		Entity.LastThink    = ACF.CurTime
+		Entity.RoundData    = AmmoType()
+		Entity.LastThink    = Clock.CurTime
 		Entity.State        = "Loading"
 		Entity.Firing       = false
 		Entity.Charge       = 0
 		Entity.SingleCharge = 0
 		Entity.CurrentShot  = 0
-		Entity.DataStore    = ACF.GetEntityArguments("acf_piledriver")
+		Entity.DataStore    = Entities.GetArguments("acf_piledriver")
 
 		UpdatePiledriver(Entity, Data, Class)
 
@@ -224,19 +221,19 @@ do -- Spawning and Updating --------------------
 
 		Entity:UpdateOverlay(true)
 
-		CheckLegal(Entity)
+		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
+	Entities.Register("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
 
 	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class    = Piledrivers[Data.Weapon]
+		local Class    = Piledrivers.Get(Data.Weapon)
 		local OldClass = self.ClassData
 
 		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)
@@ -445,7 +442,7 @@ do -- Misc --------------------------------------
 	end
 
 	function ENT:Think()
-		local Time = ACF.CurTime
+		local Time = Clock.CurTime
 
 		if not self.Disabled and self.CurrentShot < self.MagSize then
 			local Delta  = Time - self.LastThink

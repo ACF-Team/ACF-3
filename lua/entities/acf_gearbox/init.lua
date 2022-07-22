@@ -7,6 +7,8 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
+local ACF     = ACF
+local Clock   = ACF.Utilities.Clock
 local Clamp   = math.Clamp
 local HookRun = hook.Run
 
@@ -24,20 +26,21 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 end
 
 do -- Spawn and Update functions -----------------------
-	local CheckLegal = ACF_CheckLegal
-	local Gearboxes  = ACF.Classes.Gearboxes
+	local Classes   = ACF.Classes
+	local Gearboxes = Classes.Gearboxes
+	local Entities  = Classes.Entities
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
 			Data.Gearbox = Data.Id or "2Gear-T-S"
 		end
 
-		local Class = ACF.GetClassGroup(Gearboxes, Data.Gearbox)
+		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
 		if not Class then
 			Data.Gearbox = "2Gear-T-S"
 
-			Class = ACF.GetClassGroup(Gearboxes, "2Gear-T-S")
+			Class = Classes.GetGroup(Gearboxes, "2Gear-T-S")
 		end
 
 		do -- Gears table verification
@@ -234,57 +237,58 @@ do -- Spawn and Update functions -----------------------
 	function MakeACF_Gearbox(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = ACF.GetClassGroup(Gearboxes, Data.Gearbox)
-		local GearboxData = Class.Lookup[Data.Gearbox]
-		local Limit = Class.LimitConVar.Name
+		local Class   = Classes.GetGroup(Gearboxes, Data.Gearbox)
+		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
+		local Limit   = Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, GearboxData)
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, Gearbox)
+
 		if CanSpawn == false then return false end
 
-		local Gearbox = ents.Create("acf_gearbox")
+		local Entity = ents.Create("acf_gearbox")
 
-		if not IsValid(Gearbox) then return end
+		if not IsValid(Entity) then return end
 
-		Gearbox:SetPlayer(Player)
-		Gearbox:SetAngles(Angle)
-		Gearbox:SetPos(Pos)
-		Gearbox:Spawn()
+		Entity:SetPlayer(Player)
+		Entity:SetAngles(Angle)
+		Entity:SetPos(Pos)
+		Entity:Spawn()
 
-		Player:AddCleanup("acf_gearbox", Gearbox)
-		Player:AddCount(Limit, Gearbox)
+		Player:AddCleanup("acf_gearbox", Entity)
+		Player:AddCount(Limit, Entity)
 
-		Gearbox.Owner          = Player -- MUST be stored on ent for PP
-		Gearbox.SoundPath      = Class.Sound
-		Gearbox.Engines        = {}
-		Gearbox.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
-		Gearbox.GearboxIn      = {}
-		Gearbox.GearboxOut     = {}
-		Gearbox.TotalReqTq     = 0
-		Gearbox.TorqueOutput   = 0
-		Gearbox.LBrake         = 0
-		Gearbox.RBrake         = 0
-		Gearbox.ChangeFinished = 0
-		Gearbox.InGear         = false
-		Gearbox.Braking        = false
-		Gearbox.LastBrakeThink = 0
-		Gearbox.LastActive     = 0
-		Gearbox.LClutch        = 1
-		Gearbox.RClutch        = 1
-		Gearbox.DataStore      = ACF.GetEntityArguments("acf_gearbox")
+		Entity.Owner          = Player -- MUST be stored on ent for PP
+		Entity.SoundPath      = Class.Sound
+		Entity.Engines        = {}
+		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
+		Entity.GearboxIn      = {}
+		Entity.GearboxOut     = {}
+		Entity.TotalReqTq     = 0
+		Entity.TorqueOutput   = 0
+		Entity.LBrake         = 0
+		Entity.RBrake         = 0
+		Entity.ChangeFinished = 0
+		Entity.InGear         = false
+		Entity.Braking        = false
+		Entity.LastBrakeThink = 0
+		Entity.LastActive     = 0
+		Entity.LClutch        = 1
+		Entity.RClutch        = 1
+		Entity.DataStore      = Entities.GetArguments("acf_gearbox")
 
-		UpdateGearbox(Gearbox, Data, Class, GearboxData)
+		UpdateGearbox(Entity, Data, Class, Gearbox)
 
-		WireLib.TriggerOutput(Gearbox, "Entity", Gearbox)
+		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
 		if Class.OnSpawn then
-			Class.OnSpawn(Gearbox, Data, Class, GearboxData)
+			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Gearbox, Data, Class, GearboxData)
+		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
 
-		Gearbox:UpdateOverlay(true)
+		Entity:UpdateOverlay(true)
 
 		do -- Mass entity mod removal
 			local EntMods = Data and Data.EntityMods
@@ -294,21 +298,22 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
-		CheckLegal(Gearbox)
+		ACF.CheckLegal(Entity)
 
-		timer.Create("ACF Gearbox Clock " .. Gearbox:EntIndex(), 3, 0, function()
-			if IsValid(Gearbox) then
-				CheckRopes(Gearbox, "GearboxOut")
-				CheckRopes(Gearbox, "Wheels")
+		timer.Create("ACF Gearbox Clock " .. Entity:EntIndex(), 3, 0, function()
+			if IsValid(Entity) then
+				CheckRopes(Entity, "GearboxOut")
+				CheckRopes(Entity, "Wheels")
 			else
-				timer.Remove("ACF Engine Clock " .. Gearbox:EntIndex())
+				timer.Remove("ACF Gearbox Clock " .. Entity:EntIndex())
 			end
 		end)
 
-		return Gearbox
+		return Entity
 	end
 
-	ACF.RegisterEntityClass("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
 	ACF.RegisterLinkSource("acf_gearbox", "Engines")
@@ -319,12 +324,12 @@ do -- Spawn and Update functions -----------------------
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class       = ACF.GetClassGroup(Gearboxes, Data.Gearbox)
-		local GearboxData = Class.Lookup[Data.Gearbox]
-		local OldClass    = self.ClassData
-		local Feedback     = ""
+		local Class    = Classes.GetGroup(Gearboxes, Data.Gearbox)
+		local Gearbox  = Class.Lookup[Data.Gearbox]
+		local OldClass = self.ClassData
+		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, GearboxData)
+		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -335,15 +340,15 @@ do -- Spawn and Update functions -----------------------
 
 		ACF.SaveEntity(self)
 
-		UpdateGearbox(self, Data, Class, GearboxData)
+		UpdateGearbox(self, Data, Class, Gearbox)
 
 		ACF.RestoreEntity(self)
 
 		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, GearboxData)
+			Class.OnUpdate(self, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, GearboxData)
+		HookRun("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
 
 		if next(self.Engines) then
 			local Count, Total = 0, 0
@@ -392,20 +397,20 @@ do -- Spawn and Update functions -----------------------
 		if next(self.GearboxIn) or next(self.GearboxOut) then
 			local Count, Total = 0, 0
 
-			for Gearbox in pairs(self.GearboxIn) do
-				Gearbox:Unlink(self)
+			for Entity in pairs(self.GearboxIn) do
+				Entity:Unlink(self)
 
-				local Result = Gearbox:Link(self)
+				local Result = Entity:Link(self)
 
 				if not Result then Count = Count + 1 end
 
 				Total = Total + 1
 			end
 
-			for Gearbox in pairs(self.GearboxOut) do
-				self:Unlink(Gearbox)
+			for Entity in pairs(self.GearboxOut) do
+				self:Unlink(Entity)
 
-				local Result = self:Link(Gearbox)
+				local Result = self:Link(Entity)
 
 				if not Result then Count = Count + 1 end
 
@@ -608,6 +613,7 @@ do -- Linking ------------------------------------------
 
 		Link.LastVel   = 0
 		Link.AntiSpazz = 0
+		Link.IsBraking = false
 
 		Gearbox.Wheels[Wheel] = Link
 
@@ -724,7 +730,7 @@ do -- Gear Shifting ------------------------------------
 		self.Gear           = Value
 		self.InGear         = false
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
-		self.ChangeFinished = ACF.CurTime + self.SwitchTime
+		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
 		self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
 
@@ -746,9 +752,9 @@ do -- Movement -----------------------------------------
 
 	function ENT:Calc(InputRPM, InputInertia)
 		if self.Disabled then return 0 end
-		if self.LastActive == ACF.CurTime then return self.TorqueOutput end
+		if self.LastActive == Clock.CurTime then return self.TorqueOutput end
 
-		if self.ChangeFinished < ACF.CurTime then
+		if self.ChangeFinished < Clock.CurTime then
 			self.InGear = true
 		end
 
@@ -852,11 +858,13 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.Wheels) do
-			local WheelTorque = Link.ReqTq * AvailTq
+			-- If the gearbox is braking, always
+			if not self.Braking or not Link.IsBraking then
+				local WheelTorque = Link.ReqTq * AvailTq
+				ReactTq = ReactTq + WheelTorque
 
-			ActWheel(Link, Ent, WheelTorque, DeltaTime)
-
-			ReactTq = ReactTq + WheelTorque
+				ActWheel(Link, Ent, WheelTorque, DeltaTime)
+			end
 		end
 
 		if ReactTq ~= 0 then
@@ -867,19 +875,16 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.LastActive = ACF.CurTime
+		self.LastActive = Clock.CurTime
 	end
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
 	local function BrakeWheel(Link, Wheel, Brake)
-		local Phys = Wheel:GetPhysicsObject()
+		local Phys      = Wheel:GetPhysicsObject()
+		local AntiSpazz = 1
 
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-
-		local TorqueAxis  = Phys:LocalToWorldVector(Link.Axis)
-		local AxisInertia = math.abs(Phys:GetInertia():Dot(Link.Axis)) -- Wheel inertia as seen by the torque axis
-		local AntiSpazz   = 0.9
 
 		if Brake > 100 then
 			local Overshot = math.abs(Link.LastVel - Link.Vel) > math.abs(Link.LastVel) -- Overshot the brakes last tick?
@@ -890,12 +895,9 @@ do -- Braking ------------------------------------------
 			AntiSpazz = math.min(Link.AntiSpazz * 10000 / Brake, 1) -- Anti-spazz relative to brake power
 		end
 
-		local MaxBrake  = math.abs(Link.Vel) * AxisInertia -- Torque that completely stops the wheel
-		local BrakeMult = AntiSpazz * Clamp(Link.Vel, -1, 1) * Brake * 0.01 * MaxBrake
-
 		Link.LastVel = Link.Vel
 
-		Phys:ApplyTorqueCenter(TorqueAxis * -BrakeMult)
+		Phys:AddAngleVelocity(-Link.Axis * Link.Vel * AntiSpazz * Brake * 0.01)
 	end
 
 	function ENT:ApplyBrakes() -- This is just for brakes
@@ -905,18 +907,21 @@ do -- Braking ------------------------------------------
 
 		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
-		local DeltaTime = math.min(ACF.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
+		local DeltaTime = math.min(Clock.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
 
 		for Wheel, Link in pairs(self.Wheels) do
 			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
 
 			if Brake > 0 then -- regular ol braking
+				Link.IsBraking = true
 				CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
 				BrakeWheel(Link, Wheel, Brake, DeltaTime)
+			else
+				Link.IsBraking = false
 			end
 		end
 
-		self.LastBrakeThink = ACF.CurTime
+		self.LastBrakeThink = Clock.CurTime
 
 		timer.Simple(engine.TickInterval(), function()
 			if not IsValid(self) then return end

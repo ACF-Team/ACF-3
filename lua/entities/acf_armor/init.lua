@@ -6,19 +6,21 @@ include("shared.lua")
 local ACF = ACF
 
 do -- Spawning and Updating
-	local Armors = ACF.Classes.ArmorTypes
+	local Classes  = ACF.Classes
+	local Armors   = Classes.ArmorTypes
+	local Entities = Classes.Entities
 
 	local function VerifyData(Data)
 		if not isstring(Data.ArmorType) then
 			Data.ArmorType = "RHA"
 		end
 
-		local Armor = Armors[Data.ArmorType]
+		local Armor = Armors.Get(Data.ArmorType)
 
 		if not Armor then
 			Data.ArmorType = RHA
 
-			Armor = Armors.RHA
+			Armor = Armors.Get("RHA")
 		end
 
 		do -- Verifying dimension values
@@ -83,7 +85,7 @@ do -- Spawning and Updating
 
 		VerifyData(Data)
 
-		local Armor = Armors[Data.ArmorType]
+		local Armor = Armors.Get(Data.ArmorType)
 
 		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_armor", Player, Data, Armor)
 		if CanSpawn == false then return false end
@@ -99,7 +101,7 @@ do -- Spawning and Updating
 		Plate:Spawn()
 
 		Plate.Owner     = Player -- MUST be stored on ent for PP
-		Plate.DataStore = ACF.GetEntityArguments("acf_armor")
+		Plate.DataStore = Entities.GetArguments("acf_armor")
 
 		UpdatePlate(Plate, Data, Armor)
 
@@ -120,14 +122,14 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	ACF.RegisterEntityClass("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
+	Entities.Register("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
 
 	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Armor    = Armors[Data.ArmorType]
+		local Armor    = Armors.Get(Data.ArmorType)
 		local OldArmor = self.ArmorClass
 
 		if OldArmor.OnLast then
