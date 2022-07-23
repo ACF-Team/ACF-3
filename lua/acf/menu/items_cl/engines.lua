@@ -121,11 +121,6 @@ local function CreateMenu(Menu)
 		EnginePreview:UpdateModel(Data.Model)
 		EnginePreview:UpdateSettings(Data.Preview)
 
-		print("Checking stats ", Data.Name)
-		for K, V in pairs(Data) do
-			print(K, V)
-		end
-
 		UpdateEngineStats(EngineStats, Data)
 
 		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
