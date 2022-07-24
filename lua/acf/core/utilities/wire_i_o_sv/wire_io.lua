@@ -24,11 +24,11 @@ function WireIO.SetupInputs(Entity, Inputs, Data, ...)
 	end
 end
 
---- Creates or updates wire outputs on a given entity.
+--- Creates or updates Wire outputs on a given entity.
 -- @param Entity The entity to create or update Wire outputs on.
 -- @param Inputs A numerically indexed list of outputs.
 -- @param Data A key-value table with entity information, either ToolData or dupe data.
--- @param ... A list of entries that could further add outputs without having to use the hook.
+-- @param ... A list of entries that could further add outputs without having to use the hook, usually definition groups or items.
 function WireIO.SetupOutputs(Entity, Outputs, Data, ...)
 	local Entries = { ... }
 
