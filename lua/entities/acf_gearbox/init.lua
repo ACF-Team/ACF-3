@@ -272,7 +272,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.ChangeFinished = 0
 		Entity.InGear         = false
 		Entity.Braking        = false
-		Entity.LastBrakeThink = 0
+		Entity.LastBrake      = 0
 		Entity.LastActive     = 0
 		Entity.LClutch        = 1
 		Entity.RClutch        = 1
@@ -904,10 +904,11 @@ do -- Braking ------------------------------------------
 		if self.Disabled then return end -- Illegal brakes man
 		if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
 		if not next(self.Wheels) then return end -- No brakes for the non-wheel users
+		if self.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
 
 		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
-		local DeltaTime = math.min(Clock.CurTime - self.LastBrakeThink, engine.TickInterval()) -- prevents from too big a multiplier, because LastBrakeThink only runs here
+		local DeltaTime = Clock.DeltaTime
 
 		for Wheel, Link in pairs(self.Wheels) do
 			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
@@ -921,9 +922,9 @@ do -- Braking ------------------------------------------
 			end
 		end
 
-		self.LastBrakeThink = Clock.CurTime
+		self.LastBrake = Clock.CurTime
 
-		timer.Simple(engine.TickInterval(), function()
+		timer.Simple(DeltaTime, function()
 			if not IsValid(self) then return end
 
 			self:ApplyBrakes()
