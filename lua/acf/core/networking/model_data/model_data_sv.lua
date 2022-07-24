@@ -16,10 +16,11 @@ do -- Pointer entity creation
 		end
 
 		Entity:SetModel("models/props_junk/popcan01a.mdl")
-		Entity:SetNoDraw(true)
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_NONE)
 		Entity:SetCollisionGroup(COLLISION_GROUP_WORLD)
+		Entity:SetNotSolid(true)
+		Entity:SetNoDraw(true)
 		Entity:Spawn()
 
 		Entity:AddEFlags(EFL_FORCE_CHECK_TRANSMIT)
