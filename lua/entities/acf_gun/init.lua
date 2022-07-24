@@ -76,8 +76,7 @@ do -- Spawn and Update functions --------------------------------
 		local List = {
 			"Fire (Fires the weapon)",
 			"Unload (Empties the breech/magazine)",
-			"Reload (Forces the weapon to reload)",
-			"Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"
+			"Reload (Forces the weapon to reload)"
 		}
 
 		if Class.SetupInputs then
@@ -221,6 +220,13 @@ do -- Spawn and Update functions --------------------------------
 		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
 
 		List[#List + 1] = "Fuze (The time, in seconds, before force detonating any fuze in the round)"
+	end)
+
+	hook.Add("ACF_OnSetupInputs", "ACF Cyclic ROF", function(Class, List, Entity)
+		if Class ~= "acf_gun" then return end
+		if not Entity.BaseCyclic then return end
+
+		List[#List + 1] = "Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"
 	end)
 
 	-------------------------------------------------------------------------------
