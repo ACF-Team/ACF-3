@@ -3,15 +3,31 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-local ACF   = ACF
-local Clock = ACF.Utilities.Clock
-local hook  = hook
+local ACF       = ACF
+local Utilities = ACF.Utilities
+local Clock     = Utilities.Clock
+local hook      = hook
 
 do -- Spawning and Updating --------------------
 	local Classes     = ACF.Classes
+	local WireIO      = Utilities.WireIO
 	local Piledrivers = Classes.Piledrivers
 	local AmmoTypes   = Classes.AmmoTypes
 	local Entities    = Classes.Entities
+
+	local Inputs = {
+		"Fire (Attempts to fire the piledriver.)",
+	}
+	local Outputs = {
+		"Ready (Returns 1 if the piledriver can be fired.)",
+		"Status (Returns the current state of the piledriver.) [STRING]",
+		"Shots Left (Returns the amount of charges available to fire.)",
+		"Reload Time (Returns the charge rate of the piledriver.)",
+		"Rate of Fire (Returns how many charges per minute can be fired.)",
+		"Spike Mass (Returns the mass in grams of the piledriver's spike.)",
+		"Muzzle Velocity (Returns the speed in m/s at which the spike is fired.)",
+		"Entity (The piledriver itself.) [ENTITY]",
+	}
 
 	local function VerifyData(Data)
 		local OldClass = Classes.GetGroup(Piledrivers, Data.Id)
@@ -21,7 +37,9 @@ do -- Spawning and Updating --------------------
 			Data.Caliber = Piledriver.GetItem(OldClass.ID, Data.Id).Caliber
 		end
 
-		Data.Weapon  = Classes.GetGroup(Piledrivers, Data.Weapon) or "PD"
+		local Weapon = Classes.GetGroup(Piledrivers, Data.Weapon)
+
+		Data.Weapon  = Weapon and Weapon.ID or "PD"
 		Data.Destiny = "Piledrivers"
 
 		local Class  = Piledrivers.Get(Data.Weapon)
@@ -39,46 +57,6 @@ do -- Spawning and Updating --------------------
 			end
 
 			hook.Run("ACF_VerifyData", "acf_piledriver", Data, Class)
-		end
-	end
-
-	local function CreateInputs(Entity, Data, Class)
-		local List = { "Fire (Fires the piledriver)" }
-
-		if Class.SetupInputs then
-			Class.SetupInputs(List, Entity, Data, Class)
-		end
-
-		hook.Run("ACF_OnSetupInputs", "acf_piledriver", List, Entity, Data, Class)
-
-		if Entity.Inputs then
-			Entity.Inputs = WireLib.AdjustInputs(Entity, List)
-		else
-			Entity.Inputs = WireLib.CreateInputs(Entity, List)
-		end
-	end
-
-	local function CreateOutputs(Entity, Data, Class)
-		local List = {
-			"Ready (If the piledriver can fire)",
-			"Status (Current state of the weapon) [STRING]",
-			"Shots Left (Amount of charges stored in the piledriver)",
-			"Reload Time (Charge rate)",
-			"Rate of Fire (How fast the piledriver can fire)",
-			"Spike Mass (Mass of the spike shot by the piledriver)",
-			"Muzzle Velocity (Speed of the spike shot by the piledriver)",
-			"Entity (The piledriver itself) [ENTITY]" }
-
-		if Class.SetupOutputs then
-			Class.SetupOutputs(List, Entity, Data, Class)
-		end
-
-		hook.Run("ACF_OnSetupOutputs", "acf_piledriver", List, Entity, Data, Class)
-
-		if Entity.Outputs then
-			Entity.Outputs = WireLib.AdjustOutputs(Entity, List)
-		else
-			Entity.Outputs = WireLib.CreateOutputs(Entity, List)
 		end
 	end
 
@@ -108,8 +86,8 @@ do -- Spawning and Updating --------------------
 		Entity.SpikeLength = Class.Round.MaxLength * Scale
 		Entity.Muzzle      = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 
-		CreateInputs(Entity, Data, Class)
-		CreateOutputs(Entity, Data, Class)
+		WireIO.SetupInputs(Entity, Inputs, Data, Class)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class)
 
 		WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
 		WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)

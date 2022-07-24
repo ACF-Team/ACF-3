@@ -7,16 +7,27 @@ include("shared.lua")
 
 local ACF          = ACF
 local ActiveCrates = ACF.AmmoCrates
+local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
 	local Classes   = ACF.Classes
+	local WireIO    = Utilities.WireIO
 	local Crates    = Classes.Crates
 	local Entities  = Classes.Entities
 	local AmmoTypes = Classes.AmmoTypes
 	local Weapons   = Classes.Weapons
+
+	local Inputs = {
+		"Load (If set to a non-zero value, it'll allow weapons to use rounds from this ammo crate.)",
+	}
+	local Outputs = {
+		"Loading (Whether or not weapons can use rounds from this crate.)",
+		"Ammo (Rounds left in this ammo crate.)",
+		"Entity (The ammo crate itself.) [ENTITY]",
+	}
 
 	local function VerifyData(Data)
 		if Data.Id then -- Updating old crates
@@ -153,6 +164,9 @@ do -- Spawning and Updating --------------------
 		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
 
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon, Ammo)
+
 		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
 		do -- Ammo count calculation
@@ -277,8 +291,6 @@ do -- Spawning and Updating --------------------
 		Crate.Owner       = Player -- MUST be stored on ent for PP
 		Crate.IsExplosive = true
 		Crate.Weapons     = {}
-		Crate.Inputs      = WireLib.CreateInputs(Crate, { "Load (If true, will allow rounds to load from this crate)" })
-		Crate.Outputs     = WireLib.CreateOutputs(Crate, { "Entity (This ammo crate) [ENTITY]", "Ammo (Rounds left in the crate)", "Loading (Whether or not rounds can load from this crate)" })
 		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
 		WireLib.TriggerOutput(Crate, "Entity", Crate)
@@ -404,7 +416,7 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
-	local Clock = ACF.Utilities.Clock
+	local Clock = Utilities.Clock
 
 	local function CookoffCrate(Entity)
 		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo

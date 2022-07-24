@@ -26,8 +26,8 @@ Gearboxes.Register("DoubleDiff", {
 	},
 	OnSpawn = InitGearbox,
 	OnUpdate = InitGearbox,
-	SetupInputs = function(List)
-		List[#List + 1] = "Steer Rate (A -1 to 0 to -1 steering rate for apply power to each side individually)"
+	SetupInputs = function(_, List)
+		List[#List + 1] = "Steer Rate (From -1 to 1, defines the rate of steering.\nSetting it outside the +-0.5 bounds will produce pivot steering.)"
 	end,
 	OnLast = function(Gearbox)
 		Gearbox.DoubleDiff = nil

@@ -96,11 +96,11 @@ Gearboxes.Register("5-Auto", {
 			Data.Reverse = math.Clamp(Reverse, -1, 1)
 		end
 	end,
-	SetupInputs = function(List)
+	SetupInputs = function(_, List)
 		local Count = #List
 
-		List[Count + 1] = "Hold Gear (Prevents the automatic shifting from occurring)"
-		List[Count + 2] = "Shift Speed Scale (Scales the speeds set for the automatic shifting)"
+		List[Count + 1] = "Hold Gear (If set to a non-zero value, it'll prevent the gearbox from shifting gears.)"
+		List[Count + 2] = "Shift Speed Scale (Scales the speeds set for the automatic shifting.)"
 	end,
 	OnLast = function(Gearbox)
 		Gearbox.Automatic  = nil

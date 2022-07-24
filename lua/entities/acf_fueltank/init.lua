@@ -8,7 +8,8 @@ include("shared.lua")
 --===============================================================================================--
 
 local ActiveTanks = ACF.FuelTanks
-local Clock       = ACF.Utilities.Clock
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
@@ -29,9 +30,22 @@ end
 
 do -- Spawn and Update functions
 	local Classes   = ACF.Classes
+	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
 	local FuelTanks = Classes.FuelTanks
 	local FuelTypes = Classes.FuelTypes
+
+	local Inputs = {
+		"Active (If set to a non-zero value, it'll allow engines to consume fuel from this fuel tank.)",
+		"Refuel Duty (If set to a non-zero value, this fuel tank will refill surrounding tanks that contain the same fuel type.)",
+	}
+	local Outputs = {
+		"Activated (Whether or not this fuel tank is able to be used by an engine.)",
+		"Fuel (Amount of fuel currently in the tank, in liters or kWh)",
+		"Capacity (Total amount of fuel the tank can hold, in liters or kWh)",
+		"Leaking (Returns 1 if the fuel tank is currently losing fuel.)",
+		"Entity (The fuel tank itself.) [ENTITY]"
+	}
 
 	local function VerifyData(Data)
 		if not Data.FuelTank then
@@ -97,6 +111,9 @@ do -- Spawn and Update functions
 			}
 		}
 
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelTank, FuelType)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelTank, FuelType)
+
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		if Entity.FuelType == "Electric" then
@@ -140,18 +157,11 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_fueltank", Tank)
 		Player:AddCount(Limit, Tank)
 
-		Tank.Owner		= Player -- MUST be stored on ent for PP
-		Tank.Engines	= {}
-		Tank.Leaking	= 0
-		Tank.LastThink	= 0
-		Tank.Inputs		= WireLib.CreateInputs(Tank, { "Active (Whether or not fuel can be drawn from this tank)", "Refuel Duty (If 1, sends fuel to other tanks with matching types)" })
-		Tank.Outputs	= WireLib.CreateOutputs(Tank, {
-			"Activated (Whether or not this tank is active)",
-			"Fuel (Amount of fuel currently in the tank, in liters/kWh)",
-			"Capacity (Total amount of fuel the tank can hold, in liters/kWh)",
-			"Leaking (If 1, the tank is losing fuel)",
-			"Entity (The fuel tank itself) [ENTITY]" })
-		Tank.DataStore	= Entities.GetArguments("acf_fueltank")
+		Tank.Owner     = Player -- MUST be stored on ent for PP
+		Tank.Engines   = {}
+		Tank.Leaking   = 0
+		Tank.LastThink = 0
+		Tank.DataStore = Entities.GetArguments("acf_fueltank")
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
 
@@ -454,7 +464,7 @@ function ENT:Think()
 	--refuelling
 	if self.SupplyFuel and self:CanConsume() then
 		local DeltaTime = Clock.CurTime - self.LastThink
-		local Position = self:GetPos()
+		local Position  = self:GetPos()
 
 		for Tank in pairs(ACF.FuelTanks) do
 			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then

@@ -7,10 +7,11 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
-local ACF     = ACF
-local Clock   = ACF.Utilities.Clock
-local Clamp   = math.Clamp
-local HookRun = hook.Run
+local ACF       = ACF
+local Utilities = ACF.Utilities
+local Clock     = Utilities.Clock
+local Clamp     = math.Clamp
+local HookRun   = hook.Run
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
@@ -27,8 +28,20 @@ end
 
 do -- Spawn and Update functions -----------------------
 	local Classes   = ACF.Classes
+	local WireIO    = Utilities.WireIO
 	local Gearboxes = Classes.Gearboxes
 	local Entities  = Classes.Entities
+
+	local Inputs = {
+		"Gear (Changes the current gear to the given value.)",
+		"Gear Up (Attempts to shift up the current gear.)",
+		"Gear Down (Attempts to shift down the current gear.)",
+	}
+	local Outputs = {
+		"Current Gear (Returns the gear currently in use.)",
+		"Ratio (Returns the current gear ratio, based on the current gear and final drive.)",
+		"Entity (The gearbox itself.) [ENTITY]"
+	}
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
@@ -88,38 +101,6 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
-	local function CreateInputs(Entity, Data, Class, Gearbox)
-		local List = { "Gear (Sets the gear to this number)", "Gear Up (Shifts the gearbox up)", "Gear Down (Shifts the gearbox down)" }
-
-		if Class.SetupInputs then
-			Class.SetupInputs(List, Entity, Data, Class, Gearbox)
-		end
-
-		HookRun("ACF_OnSetupInputs", "acf_gearbox", List, Entity, Data, Class, Gearbox)
-
-		if Entity.Inputs then
-			Entity.Inputs = WireLib.AdjustInputs(Entity, List)
-		else
-			Entity.Inputs = WireLib.CreateInputs(Entity, List)
-		end
-	end
-
-	local function CreateOutputs(Entity, Data, Class, Gearbox)
-		local List = { "Current Gear (The gear that is currently active)", "Ratio (The final ratio of the current gear arrangement)", "Entity (The gearbox itself) [ENTITY]" }
-
-		if Class.SetupOutputs then
-			Class.SetupOutputs(List, Entity, Data, Class, Gearbox)
-		end
-
-		HookRun("ACF_OnSetupOutputs", "acf_gearbox", List, Entity, Data, Class, Gearbox)
-
-		if Entity.Outputs then
-			Entity.Outputs = WireLib.AdjustOutputs(Entity, List)
-		else
-			Entity.Outputs = WireLib.CreateOutputs(Entity, List)
-		end
-	end
-
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = Gearbox.Model -- Must be set before changing model
@@ -150,8 +131,8 @@ do -- Spawn and Update functions -----------------------
 		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
 		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model)
 
-		CreateInputs(Entity, Data, Class, Gearbox)
-		CreateOutputs(Entity, Data, Class, Gearbox)
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, Gearbox)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gearbox)
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
@@ -211,19 +192,23 @@ do -- Spawn and Update functions -----------------------
 
 	hook.Add("ACF_OnEntitySpawn", "ACF Cleanup Gearbox Data", CleanupData)
 	hook.Add("ACF_OnEntityUpdate", "ACF Cleanup Gearbox Data", CleanupData)
-	hook.Add("ACF_OnSetupInputs", "ACF Cleanup Gearbox Data", function(Class, List, Entity)
-		if Class ~= "acf_gearbox" then return end
+	hook.Add("ACF_OnSetupInputs", "ACF Cleanup Gearbox Data", function(Entity, List)
+		if Entity:GetClass() ~= "acf_gearbox" then return end
 
 		local Count = #List
 
 		if Entity.DualClutch then
-			List[Count + 1] = "Left Clutch (The amount of power allowed through the left side, inversely)"
-			List[Count + 2] = "Right Clutch (The amount of power allowed through the right side, inversely)"
-			List[Count + 3] = "Left Brake (The amount of braking to apply to the left side)"
-			List[Count + 4] = "Right Brake (The amount of braking to apply to the right side)"
+			List[Count + 1] = "Left Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the left side output.)"
+			List[Count + 2] = "Right Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the right side output.)"
+			List[Count + 3] = "Left Brake (Sets the amount of power given to the left side brakes.)"
+			List[Count + 4] = "Right Brake (Sets the amount of power given to the right side brakes.)"
+
+			print("dual", Entity)
 		else
-			List[Count + 1] = "Clutch (The amount of power to allow through the gearbox, inversely)"
-			List[Count + 2] = "Brake (The amount of braking to apply to any wheels attached)"
+			List[Count + 1] = "Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the output.)"
+			List[Count + 2] = "Brake (Sets the amount of power given to the brakes.)"
+
+			print("single", Entity)
 		end
 	end)
 	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)

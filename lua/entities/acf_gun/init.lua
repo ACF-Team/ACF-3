@@ -8,7 +8,8 @@ include("shared.lua")
 local ACF         = ACF
 local Classes     = ACF.Classes
 local AmmoTypes   = Classes.AmmoTypes
-local Clock       = ACF.Utilities.Clock
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -30,8 +31,27 @@ end
 
 do -- Spawn and Update functions --------------------------------
 	local ModelData = ACF.ModelData
+	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
 	local Weapons   = Classes.Weapons
+
+	local Inputs = {
+		"Fire (Attempts to fire the weapon.)",
+		"Unload (Forces the weapon to empty itself)",
+		"Reload (Forces the weapon to reload itself.)"
+	}
+	local Outputs = {
+		"Ready (Returns 1 if the weapon can be fired.)",
+		"Status (Returns the current state of the weapon.) [STRING]",
+		"Ammo Type (Returns  the name of the currently loaded ammo type.) [STRING]",
+		"Shots Left (Returns the amount of rounds left in the breech or magazine.)",
+		"Total Ammo (Returns the amount of rounds available for this weapon.)",
+		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
+		"Reload Time (Returns the amount of time in seconds it'll take to reload the weapon.)",
+		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
+		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
+		"Entity (The weapon itself.) [ENTITY]",
+	}
 
 	local function VerifyData(Data)
 		if not isstring(Data.Weapon) then
@@ -69,53 +89,6 @@ do -- Spawn and Update functions --------------------------------
 			end
 
 			HookRun("ACF_VerifyData", "acf_gun", Data, Class)
-		end
-	end
-
-	local function CreateInputs(Entity, Data, Class, Weapon)
-		local List = {
-			"Fire (Fires the weapon)",
-			"Unload (Empties the breech/magazine)",
-			"Reload (Forces the weapon to reload)"
-		}
-
-		if Class.SetupInputs then
-			Class.SetupInputs(List, Entity, Data, Class, Weapon)
-		end
-
-		HookRun("ACF_OnSetupInputs", "acf_gun", List, Entity, Data, Class, Weapon)
-
-		if Entity.Inputs then
-			Entity.Inputs = WireLib.AdjustInputs(Entity, List)
-		else
-			Entity.Inputs = WireLib.CreateInputs(Entity, List)
-		end
-	end
-
-	local function CreateOutputs(Entity, Data, Class, Weapon)
-		local List = {
-			"Entity (The weapon itself) [ENTITY]",
-			"Ready (Whether the weapon can fire or not)",
-			"Status (Current state of the weapon) [STRING]",
-			"Ammo Type (Name of the ammo currently loaded into the weapon) [STRING]",
-			"Shots Left (How many rounds are left before a reload is required)",
-			"Total Ammo (Rounds immediately available to the weapon)",
-			"Rate of Fire (How fast the weapon can fire)",
-			"Reload Time (How long a reload will take)",
-			"Projectile Mass (The mass of the projectile)",
-			"Muzzle Velocity (The speed of the projectile, leaving the barrel)"
-		}
-
-		if Class.SetupOutputs then
-			Class.SetupOutputs(List, Entity, Data, Class, Weapon)
-		end
-
-		HookRun("ACF_OnSetupOutputs", "acf_gun", List, Entity, Data, Class, Weapon)
-
-		if Entity.Outputs then
-			Entity.Outputs = WireLib.AdjustOutputs(Entity, List)
-		else
-			Entity.Outputs = WireLib.CreateOutputs(Entity, List)
 		end
 	end
 
@@ -182,8 +155,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
 
-		CreateInputs(Entity, Data, Class)
-		CreateOutputs(Entity, Data, Class)
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
 
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
@@ -215,15 +188,15 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
-	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Class, List, Entity)
-		if Class ~= "acf_gun" then return end
+	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Entity, List)
+		if Entity:GetClass() ~= "acf_gun" then return end
 		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
 
-		List[#List + 1] = "Fuze (The time, in seconds, before force detonating any fuze in the round)"
+		List[#List + 1] = "Fuze (Sets the delay in seconds in which explosive rounds will detonate after leaving the weapon.)"
 	end)
 
-	hook.Add("ACF_OnSetupInputs", "ACF Cyclic ROF", function(Class, List, Entity)
-		if Class ~= "acf_gun" then return end
+	hook.Add("ACF_OnSetupInputs", "ACF Cyclic ROF", function(Entity, List)
+		if Entity:GetClass() ~= "acf_gun" then return end
 		if not Entity.BaseCyclic then return end
 
 		List[#List + 1] = "Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"

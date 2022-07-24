@@ -103,7 +103,8 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local Clock       = ACF.Utilities.Clock
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local Round       = math.Round
@@ -232,9 +233,24 @@ end
 
 do -- Spawn and Update functions
 	local Classes     = ACF.Classes
+	local WireIO      = Utilities.WireIO
 	local Engines     = Classes.Engines
 	local EngineTypes = Classes.EngineTypes
 	local Entities    = Classes.Entities
+
+	local Inputs = {
+		"Active (If set to a non-zero value, it'll attempt to start the engine.)",
+		"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)"
+	}
+	local Outputs = {
+		"RPM (Current rotations per minute of the engine.)",
+		"Torque (Current torque, in nM, output by the engine.)",
+		"Power (Current power, in kW, output by the engine.)",
+		"Fuel Use (Amount of fuel, in liters per minute, being consumed by the engine.)",
+		"Mass (Total mass detected on the vehicle by the engine.)",
+		"Physical Mass (Physical mass detected on the vehicle by the engine.)",
+		"Entity (The engine itself.) [ENTITY]",
+	}
 
 	local function VerifyData(Data)
 		if not Data.Engine then
@@ -305,6 +321,9 @@ do -- Spawn and Update functions
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
 		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
 
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
+
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		--calculate base fuel usage
@@ -349,30 +368,17 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner        = Player -- MUST be stored on ent for PP
-		Entity.Active       = false
-		Entity.Gearboxes    = {}
-		Entity.FuelTanks    = {}
-		Entity.LastThink    = 0
-		Entity.MassRatio    = 1
-		Entity.FuelUsage    = 0
-		Entity.Throttle     = 0
-		Entity.FlyRPM       = 0
-		Entity.SoundPath    = Engine.Sound
-		Entity.DataStore    = Entities.GetArguments("acf_engine")
-		Entity.Inputs       = WireLib.CreateInputs(Entity, {
-			"Active (Turns the engine on if it is not 0)",
-			"Throttle (0-100 for how hard the engine should run)"
-		})
-		Entity.Outputs      = WireLib.CreateOutputs(Entity, {
-			"RPM (Current rotations per minute of the engine)",
-			"Torque (nM of torque from the engine)",
-			"Power (kW of power from the engine)",
-			"Fuel Use (Amount of fuel being used)",
-			"Entity (The engine itself) [ENTITY]",
-			"Mass (Total mass detected on the vehicle by the engine)",
-			"Physical Mass (Physical mass detected on the vehicle by the engine)"
-		})
+		Entity.Owner     = Player -- MUST be stored on ent for PP
+		Entity.Active    = false
+		Entity.Gearboxes = {}
+		Entity.FuelTanks = {}
+		Entity.LastThink = 0
+		Entity.MassRatio = 1
+		Entity.FuelUsage = 0
+		Entity.Throttle  = 0
+		Entity.FlyRPM    = 0
+		Entity.SoundPath = Engine.Sound
+		Entity.DataStore = Entities.GetArguments("acf_engine")
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
