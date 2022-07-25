@@ -2257,4 +2257,17 @@ function ents_methods:acfTotalAmmoCount()
 	return Count
 end
 
+--- Disables the rev limiter on an ACF engine
+-- @server
+function ents_methods:acfDisableRevLimiter(bool)
+	CheckType(self, ents_metatable)
+
+	local This = unwrap(self)
+
+	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+	if RestrictInfo(This) then return 0 end
+
+	This.revLimiterEnabled = not tobool(bool)
+end
+
 end

@@ -113,3 +113,4 @@ E2Desc["acfPenetration(e:)"] = "Returns the penetration of a round in an ACF ent
 E2Desc["acfBlastRadius(e:)"] = "Returns the blast radius of a round in an ACF entity."
 E2Desc["acfAmmoCount(e:)"] = "Returns the number of rounds in active ammo crates linked to an ACF entity."
 E2Desc["acfTotalAmmoCount(e:)"] = "Returns the number of rounds in all ammo crates linked to an ACF entity."
+E2Desc["acfDisableRevLimiter(e:n)"] = "Disables the rev limiter on an ACF engine."

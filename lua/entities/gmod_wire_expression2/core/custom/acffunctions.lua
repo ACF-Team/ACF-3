@@ -1114,3 +1114,10 @@ e2function number entity:acfBlastRadius()
 
 	return Radius and Round(Radius, 2) or 0
 end
+
+e2function void entity:acfDisableRevLimiter(number Disabled)
+	if not this.IsACFEngine then return end
+	if RestrictInfo(self, this) then return 0 end
+
+	this.revLimiterEnabled = not tobool(Disabled)
+end
