@@ -3,13 +3,18 @@ local WireIO = ACF.Utilities.WireIO
 
 --- Creates or updates Wire inputs on a given entity.
 -- @param Entity The entity to create or update Wire inputs on.
--- @param Inputs A numerically indexed list of inputs.
+-- @param List A numerically indexed list of inputs.
 -- @param Data A key-value table with entity information, either ToolData or dupe data.
 -- @param ... A list of entries that could further add inputs without having to use the hook, usually definition groups or items.
-function WireIO.SetupInputs(Entity, Inputs, Data, ...)
-	local Entries = { ... }
+function WireIO.SetupInputs(Entity, List, Data, ...)
+	local Objects = { ... }
+	local Inputs  = {}
 
-	for _, V in ipairs(Entries) do
+	for K, V in ipairs(List) do
+		Inputs[K] = V
+	end
+
+	for _, V in ipairs(Objects) do
 		if not V.SetupInputs then continue end
 
 		V.SetupInputs(Entity, Inputs, Data, ...)
@@ -26,13 +31,18 @@ end
 
 --- Creates or updates Wire outputs on a given entity.
 -- @param Entity The entity to create or update Wire outputs on.
--- @param Inputs A numerically indexed list of outputs.
+-- @param List A numerically indexed list of outputs.
 -- @param Data A key-value table with entity information, either ToolData or dupe data.
 -- @param ... A list of entries that could further add outputs without having to use the hook, usually definition groups or items.
-function WireIO.SetupOutputs(Entity, Outputs, Data, ...)
-	local Entries = { ... }
+function WireIO.SetupOutputs(Entity, List, Data, ...)
+	local Objects = { ... }
+	local Outputs = {}
 
-	for _, V in ipairs(Entries) do
+	for K, V in ipairs(List) do
+		Outputs[K] = V
+	end
+
+	for _, V in ipairs(Objects) do
 		if not V.SetupOutputs then continue end
 
 		V.SetupOutputs(Entity, Outputs, Data, ...)
