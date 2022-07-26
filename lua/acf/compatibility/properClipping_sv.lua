@@ -4,14 +4,14 @@
 local timerSimple = timer.Simple
 
 local function activate(ent)
-    if ent._ACF_PropperClipping then return end
+    if ent._ACF_ProperClipping then return end
 
-    ent._ACF_PropperClipping = true
+    ent._ACF_ProperClipping = true
 
     timerSimple(engine.TickInterval() * 2, function()
         if not IsValid(ent) then return end
 
-        ent._ACF_PropperClipping = nil
+        ent._ACF_ProperClipping = nil
 
         ACF.Activate(ent, true)
     end)
