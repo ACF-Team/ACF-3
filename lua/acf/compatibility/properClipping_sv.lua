@@ -1,5 +1,5 @@
 -- Resolves issues with properClipping
--- Triggers an ACF.Activate update whenever a new clip is created
+-- Triggers an ACF.Activate update whenever a new clip is created or removed
 
 local timerSimple = timer.Simple
 
@@ -11,7 +11,6 @@ local function activate(ent)
     timerSimple(engine.TickInterval() * 2, function()
         if not IsValid(ent) then return end
 
-        print("Pclip", ent)
         ent._ACF_PropperClipping = nil
 
         ACF.Activate(ent, true)
