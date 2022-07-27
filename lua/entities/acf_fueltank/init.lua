@@ -163,9 +163,9 @@ do -- Spawn and Update functions
 		Tank.LastThink = 0
 		Tank.DataStore = Entities.GetArguments("acf_fueltank")
 
-		WireLib.TriggerOutput(Tank, "Entity", Tank)
-
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
+
+		WireLib.TriggerOutput(Tank, "Entity", Tank)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Tank, Data, Class, FuelTank)

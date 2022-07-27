@@ -293,9 +293,9 @@ do -- Spawning and Updating --------------------
 		Crate.Weapons     = {}
 		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
-		WireLib.TriggerOutput(Crate, "Entity", Crate)
-
 		UpdateCrate(Crate, Data, Class, Weapon, Ammo)
+
+		WireLib.TriggerOutput(Crate, "Entity", Crate)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
