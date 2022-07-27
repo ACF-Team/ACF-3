@@ -381,9 +381,9 @@ do -- Spawn and Update functions
 		Entity.DataStore = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		UpdateEngine(Entity, Data, Class, Engine, Type)
+
+		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Engine)
