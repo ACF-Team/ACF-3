@@ -289,7 +289,7 @@ if SERVER then
 				Damage = 0
 			end
 			local SlopeFactor    = BaseArmor / Caliber
-			local Angle          = ACF.GetHitAngle(TraceRes.HitNormal, Direction)
+			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
 			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
 
 			-- Percentage of total jet mass lost to this penetration
