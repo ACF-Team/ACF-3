@@ -437,7 +437,7 @@ do -- Deal Damage ---------------------------
 		local Entity = Trace.Entity
 		local Driver = Entity:GetDriver()
 
-		if IsValid(Driver) then
+		if IsValid(Driver) and ACF.Check(Driver) == "Squishy" then
 			local NewTrace = table.Copy(Trace)
 			NewTrace.Entity = Driver
 			NewTrace.HitGroup = math.Rand(0, 7) -- Hit a random part of the driver
