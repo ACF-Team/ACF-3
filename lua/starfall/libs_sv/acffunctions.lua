@@ -199,21 +199,23 @@ end
 
 --- Returns true if functions returning sensitive info are restricted to owned props
 -- @server
--- @return True if restriced, False if not
+-- @return boolean True if restriced, False if not
 function acf_library.infoRestricted()
 	return ACF.RestrictInfo
 end
 
 --- Returns current ACF drag divisor
 -- @server
--- @return The current drag divisor
+-- @return number The current drag divisor
 function acf_library.dragDivisor()
 	return ACF.DragDiv
 end
 
 --- Returns the effective armor given an armor value and hit angle
 -- @server
--- @return The effective armor
+-- @param number Armor The nominal armor value
+-- @param number Angle The hit angle
+-- @return number The effective armor
 function acf_library.effectiveArmor(armor, angle)
 	CheckLuaType(armor, TYPE_NUMBER)
 	CheckLuaType(angle, TYPE_NUMBER)
@@ -223,6 +225,10 @@ end
 
 --- Creates an ACF ammo crate using the information from the data table argument
 -- @server
+-- @param Vector pos The position to create the crate at
+-- @param Angle ang The angle to create the crate at
+-- @param table data The data table to use
+-- @return Entity The created ammo crate
 function acf_library.createAmmo(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createAmmo")
 
@@ -255,6 +261,10 @@ end
 
 --- Creates an ACF engine using the information from the data table argument
 -- @server
+-- @param Vector pos The position to create the engine at
+-- @param Angle ang The angle to create the engine at
+-- @param table data The data table to use
+-- @return Entity The created engine
 function acf_library.createEngine(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createEngine")
 
@@ -287,6 +297,10 @@ end
 
 --- Creates an ACF fuel tank using the information from the data table argument
 -- @server
+-- @param Vector pos The position to create the fuel tank at
+-- @param Angle ang The angle to create the fuel tank at
+-- @param table data The data table to use
+-- @return Entity The created fuel tank
 function acf_library.createFuelTank(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createFuelTank")
 
@@ -319,6 +333,10 @@ end
 
 --- Creates an ACF gearbox using the information from the data table argument
 -- @server
+-- @param Vector pos The position to create the gearbox at
+-- @param Angle ang The angle to create the gearbox at
+-- @param table data The data table to use
+-- @return Entity The created gearbox
 function acf_library.createGearbox(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createGearbox")
 
@@ -351,6 +369,10 @@ end
 
 --- Creates an ACF weapon using the information from the data table argument
 -- @server
+-- @param Vector pos The position to create the weapon at
+-- @param Angle ang The angle to create the weapon at
+-- @param table data The data table to use
+-- @return Entity The created weapon
 function acf_library.createWeapon(pos, ang, data)
 	CheckPerms(instance, nil, "acf.createWeapon")
 
@@ -383,6 +405,7 @@ end
 
 --- Returns a list of every registered ACF ammo type
 -- @server
+-- @return table The list of ammo types
 function acf_library.listAllAmmoTypes()
 	local List   = AmmoTypes.GetList()
 	local Result = {}
@@ -396,6 +419,7 @@ end
 
 --- Returns a list of every registered ACF engine class
 -- @server
+-- @return table The list of engine classes
 function acf_library.listAllEngineClasses()
 	local List   = Engines.GetList()
 	local Result = {}
@@ -409,6 +433,7 @@ end
 
 --- Returns a list of every registered ACF engine
 -- @server
+-- @return table The list of engines
 function acf_library.listAllEngines()
 	local List   = Engines.GetList()
 	local Result = {}
@@ -427,6 +452,7 @@ end
 
 --- Returns a list of every registered ACF fuel tank class
 -- @server
+-- @return table The list of fuel tank classes
 function acf_library.listAllFuelTankClasses()
 	local List   = FuelTanks.GetList()
 	local Result = {}
@@ -440,6 +466,7 @@ end
 
 --- Returns a list of every registered ACF fuel tank
 -- @server
+-- @return table The list of fuel tanks
 function acf_library.listAllFuelTanks()
 	local List   = FuelTanks.GetList()
 	local Result = {}
@@ -458,6 +485,7 @@ end
 
 --- Returns a list of every registered ACF fuel type
 -- @server
+-- @return table The list of fuel types
 function acf_library.listAllFuelTypes()
 	local List   = FuelTypes.GetList()
 	local Result = {}
@@ -471,6 +499,7 @@ end
 
 --- Returns a list of every registered ACF gearbox class
 -- @server
+-- @return table The list of gearbox classes
 function acf_library.listAllGearboxClasses()
 	local List   = Gearboxes.GetList()
 	local Result = {}
@@ -484,6 +513,7 @@ end
 
 --- Returns a list of every registered ACF gearbox
 -- @server
+-- @return table The list of gearboxes
 function acf_library.listAllGearboxes()
 	local List   = Gearboxes.GetList()
 	local Result = {}
@@ -502,6 +532,7 @@ end
 
 --- Returns a list of every registered ACF weapon class
 -- @server
+-- @return table The list of weapon classes
 function acf_library.listAllWeaponClasses()
 	local List   = Weapons.GetList()
 	local Result = {}
@@ -515,6 +546,7 @@ end
 
 --- Returns a list of every registered ACF weapon
 -- @server
+-- @return table The list of weapons
 function acf_library.listAllWeapons()
 	local List   = Weapons.GetList()
 	local Result = {}
@@ -532,8 +564,9 @@ function acf_library.listAllWeapons()
 end
 
 --- Returns the specifications of an ACF ammo type
--- @param id The ID of the engine class you want to get the information from
+-- @param string id The ID of the engine class you want to get the information from
 -- @server
+-- @return table The specifications of the ammo
 function acf_library.getAmmoTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -545,8 +578,9 @@ function acf_library.getAmmoTypeSpecs(id)
 end
 
 --- Returns the specifications of an ACF engine class
--- @param id The ID of the engine class you want to get the information from
+-- @param string id The ID of the engine class you want to get the information from
 -- @server
+-- @return table The specifications of the engine class
 function acf_library.getEngineClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -558,8 +592,9 @@ function acf_library.getEngineClassSpecs(id)
 end
 
 --- Returns the specifications of an ACF engine
--- @param id The ID of the engine you want to get the information from
+-- @param string id The ID of the engine you want to get the information from
 -- @server
+-- @return table The specifications of the engine
 function acf_library.getEngineSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -573,8 +608,9 @@ function acf_library.getEngineSpecs(id)
 end
 
 --- Returns the specifications of an ACF fuel tank class
--- @param id The ID of the fuel tank class you want to get the information from
+-- @param string id The ID of the fuel tank class you want to get the information from
 -- @server
+-- @return table The specifications of the fuel tank class
 function acf_library.getFuelTankClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -586,8 +622,9 @@ function acf_library.getFuelTankClassSpecs(id)
 end
 
 --- Returns the specifications of an ACF fuel tank
--- @param id The ID of the fuel tank you want to get the information from
+-- @param string id The ID of the fuel tank you want to get the information from
 -- @server
+-- @return table The specifications of the fuel tank
 function acf_library.getFuelTankSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -601,8 +638,9 @@ function acf_library.getFuelTankSpecs(id)
 end
 
 --- Returns the specifications of an ACF fuel type
--- @param id The ID of the fuel type you want to get the information from
+-- @param string id The ID of the fuel type you want to get the information from
 -- @server
+-- @return table The specifications of the fuel type
 function acf_library.getFuelTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -614,8 +652,9 @@ function acf_library.getFuelTypeSpecs(id)
 end
 
 --- Returns the specifications of an ACF gearbox class
--- @param id The ID of the gearbox class you want to get the information from
+-- @param string id The ID of the gearbox class you want to get the information from
 -- @server
+-- @return table The specifications of the gearbox class
 function acf_library.getGearboxClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -627,8 +666,9 @@ function acf_library.getGearboxClassSpecs(id)
 end
 
 --- Returns the specifications of an ACF gearbox
--- @param id The ID of the gearbox you want to get the information from
+-- @param string id The ID of the gearbox you want to get the information from
 -- @server
+-- @return table The specifications of the gearbox
 function acf_library.getGearboxSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -642,8 +682,9 @@ function acf_library.getGearboxSpecs(id)
 end
 
 --- Returns the specifications of an ACF weapon class
--- @param id The ID of the weapon class you want to get the information from
+-- @param string id The ID of the weapon class you want to get the information from
 -- @server
+-- @return table The specifications of the weapon class
 function acf_library.getWeaponClassSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -655,8 +696,9 @@ function acf_library.getWeaponClassSpecs(id)
 end
 
 --- Returns the specifications of an ACF weapon
--- @param id The ID of the weapon you want to get the information from
+-- @param string id The ID of the weapon you want to get the information from
 -- @server
+-- @return table The specifications of the weapon
 function acf_library.getWeaponSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
@@ -671,6 +713,7 @@ end
 
 --- Returns true if This entity contains sensitive info and is not accessable to us
 -- @server
+-- @return boolean True if the entity contans sensitive info
 function ents_methods:acfIsInfoRestricted()
 	CheckType(self, ents_metatable)
 
@@ -683,6 +726,7 @@ end
 
 --- Returns the full name of an ACF entity
 -- @server
+-- @return string The full name of the entity
 function ents_methods:acfName()
 	CheckType(self, ents_metatable)
 
@@ -696,6 +740,7 @@ end
 
 --- Returns the short name of an ACF entity
 -- @server
+-- @return string The short name of the entity
 function ents_methods:acfNameShort()
 	CheckType(self, ents_metatable)
 
@@ -709,6 +754,7 @@ end
 
 --- Returns the type of ACF entity
 -- @server
+-- @return string The type of the entity
 function ents_methods:acfType()
 	CheckType(self, ents_metatable)
 
@@ -722,6 +768,7 @@ end
 
 --- Returns true if the entity is an ACF engine
 -- @server
+-- @return boolean True if the entity is an ACF engine
 function ents_methods:acfIsEngine()
 	CheckType(self, ents_metatable)
 
@@ -735,6 +782,7 @@ end
 
 --- Returns true if the entity is an ACF gearbox
 -- @server
+-- @return boolean True if the entity is an ACF gearbox
 function ents_methods:acfIsGearbox()
 	CheckType(self, ents_metatable)
 
@@ -748,6 +796,7 @@ end
 
 --- Returns true if the entity is an ACF gun
 -- @server
+-- @return boolean True if the entity is an ACF gun
 function ents_methods:acfIsGun()
 	CheckType(self, ents_metatable)
 
@@ -761,6 +810,7 @@ end
 
 --- Returns true if the entity is an ACF ammo crate
 -- @server
+-- @return boolean True if the entity is an ACF ammo crate
 function ents_methods:acfIsAmmo()
 	CheckType(self, ents_metatable)
 
@@ -774,6 +824,7 @@ end
 
 --- Returns true if the entity is an ACF fuel tank
 -- @server
+-- @return boolean True if the entity is an ACF fuel tank
 function ents_methods:acfIsFuel()
 	CheckType(self, ents_metatable)
 
@@ -787,6 +838,7 @@ end
 
 --- Returns the capacity of an acf ammo crate or fuel tank
 -- @server
+-- @return number The capacity of the entity
 function ents_methods:acfCapacity()
 	CheckType(self, ents_metatable)
 
@@ -800,6 +852,7 @@ end
 
 --- Returns the path of an ACF entity's sound
 -- @server
+-- @return string The sound path
 function ents_methods:acfSoundPath()
 	CheckType(self, ents_metatable)
 
@@ -813,6 +866,7 @@ end
 
 --- Returns true if the acf engine, fuel tank, or ammo crate is active
 -- @server
+-- @return boolean True if the entity is active
 function ents_methods:acfGetActive()
 	CheckType(self, ents_metatable)
 
@@ -826,7 +880,7 @@ function ents_methods:acfGetActive()
 end
 
 --- Turns an ACF engine, ammo crate, or fuel tank on or off
--- @param on The new active state of the entity
+-- @param boolean on The new active state of the entity
 -- @server
 function ents_methods:acfSetActive(on)
 	CheckType(self, ents_metatable)
@@ -843,6 +897,7 @@ end
 
 --- Returns the current health of an entity
 -- @server
+-- @return number The entity's health
 function ents_methods:acfPropHealth()
 	CheckType(self, ents_metatable)
 
@@ -858,6 +913,7 @@ end
 
 --- Returns the current armor of an entity
 -- @server
+-- @return number The entity's armor
 function ents_methods:acfPropArmor()
 	CheckType(self, ents_metatable)
 
@@ -873,6 +929,7 @@ end
 
 --- Returns the max health of an entity
 -- @server
+-- @return number The entity's max health
 function ents_methods:acfPropHealthMax()
 	CheckType(self, ents_metatable)
 
@@ -888,6 +945,7 @@ end
 
 --- Returns the max armor of an entity
 -- @server
+-- @return number The entity's max armor
 function ents_methods:acfPropArmorMax()
 	CheckType(self, ents_metatable)
 
@@ -903,6 +961,7 @@ end
 
 --- Returns the ductility of an entity
 -- @server
+-- @return number The entity's ductility
 function ents_methods:acfPropDuctility()
 	CheckType(self, ents_metatable)
 
@@ -917,9 +976,9 @@ function ents_methods:acfPropDuctility()
 end
 
 --- Returns true if hitpos is on a clipped part of prop
--- @param hitpos The world hit position we want to check
+-- @param Vector hitpos The world hit position we want to check
 -- @server
--- @return Returns true if hitpos is inside a visclipped part of the entity
+-- @return boolean Returns true if hitpos is inside a visclipped part of the entity
 function ents_methods:acfHitClip(hitpos)
 	CheckType(self, ents_metatable)
 	CheckType(hitpos, vec_meta)
@@ -936,6 +995,7 @@ end
 
 --- Returns the ACF links associated with the entity
 -- @server
+-- @return table The ACF links
 function ents_methods:acfLinks()
 	CheckType(self, ents_metatable)
 
@@ -957,10 +1017,11 @@ function ents_methods:acfLinks()
 end
 
 --- Perform ACF links
--- @param target The entity to get linked to
--- @param notify If set, a notification will be sent to the player
+-- @param Entity target The entity to get linked to
+-- @param boolean notify If set, a notification will be sent to the player
 -- @server
--- @return Returns the result of the operation, along with the result message as a second argument
+-- @return boolean The result of the operation
+-- @return string The result message
 function ents_methods:acfLinkTo(target, notify)
 	CheckType(self, ents_metatable)
 	CheckType(target, ents_metatable)
@@ -988,6 +1049,8 @@ end
 
 --- Perform ACF unlinks
 -- @server
+-- @return boolean The result of the operation
+-- @return string The result message
 function ents_methods:acfUnlinkFrom(target, notify)
 	CheckType(self, ents_metatable)
 	CheckType(target, ents_metatable)
@@ -1019,6 +1082,7 @@ end
 
 --- Returns true if an ACF engine is electric
 -- @server
+-- @return boolean True if the engine is electric
 function ents_methods:acfIsElectric()
 	CheckType(self, ents_metatable)
 
@@ -1030,8 +1094,9 @@ function ents_methods:acfIsElectric()
 	return This.IsElectric or false
 end
 
---- Returns the torque in N/m of an ACF engine
+--- Returns the torque in N⋅m of an ACF engine
 -- @server
+-- @return number The torque in N⋅m
 function ents_methods:acfMaxTorque()
 	CheckType(self, ents_metatable)
 
@@ -1045,6 +1110,7 @@ end
 
 --- Returns the power in kW of an ACF engine
 -- @server
+-- @return number The power in kW
 function ents_methods:acfMaxPower()
 	CheckType(self, ents_metatable)
 
@@ -1056,8 +1122,9 @@ function ents_methods:acfMaxPower()
 	return This.PeakPower and math.Round(This.PeakPower) or 0
 end
 
---- (DEPRECATED) Returns the torque in N/m of an ACF engine. Use Entity:acfMaxTorque()
+--- (DEPRECATED) Returns the torque in N⋅m of an ACF engine. Use Entity:acfMaxTorque()
 -- @server
+-- @return number The torque in N⋅m
 function ents_methods:acfMaxTorqueWithFuel()
 	CheckType(self, ents_metatable)
 
@@ -1071,6 +1138,7 @@ end
 
 --- (DEPRECATED) Returns the power in kW of an ACF engine. Use Entity:acfMaxPower()
 -- @server
+-- @return number The power in kW
 function ents_methods:acfMaxPowerWithFuel()
 	CheckType(self, ents_metatable)
 
@@ -1084,6 +1152,7 @@ end
 
 --- Returns the idle rpm of an ACF engine
 -- @server
+-- @return number The idle rpm
 function ents_methods:acfIdleRPM()
 	CheckType(self, ents_metatable)
 
@@ -1097,6 +1166,8 @@ end
 
 --- Returns the powerband min and max of an ACF Engine
 -- @server
+-- @return number The powerband min
+-- @return number The powerband max
 function ents_methods:acfPowerband()
 	CheckType(self, ents_metatable)
 
@@ -1110,6 +1181,7 @@ end
 
 --- Returns the powerband min of an ACF engine
 -- @server
+-- @return number The powerband min
 function ents_methods:acfPowerbandMin()
 	CheckType(self, ents_metatable)
 
@@ -1123,6 +1195,7 @@ end
 
 --- Returns the powerband max of an ACF engine
 -- @server
+-- @return number The powerband max
 function ents_methods:acfPowerbandMax()
 	CheckType(self, ents_metatable)
 
@@ -1136,6 +1209,7 @@ end
 
 --- Returns the redline rpm of an ACF engine
 -- @server
+-- @return number The redline rpm
 function ents_methods:acfRedline()
 	CheckType(self, ents_metatable)
 
@@ -1149,6 +1223,7 @@ end
 
 --- Returns the current rpm of an ACF engine
 -- @server
+-- @return number The current rpm
 function ents_methods:acfRPM()
 	CheckType(self, ents_metatable)
 
@@ -1164,6 +1239,7 @@ end
 
 --- Returns the current torque of an ACF engine
 -- @server
+-- @return number The current torque, in N⋅m
 function ents_methods:acfTorque()
 	CheckType(self, ents_metatable)
 
@@ -1179,6 +1255,8 @@ end
 
 --- Returns the inertia of an ACF engine's flywheel
 -- @server
+-- @return number The flywheel inertia
+-- TODO: units?
 function ents_methods:acfFlyInertia()
 	CheckType(self, ents_metatable)
 
@@ -1192,6 +1270,8 @@ end
 
 --- Returns the mass of an ACF engine's flywheel
 -- @server
+-- @return number The flywheel mass
+-- TODO: units?
 function ents_methods:acfFlyMass()
 	CheckType(self, ents_metatable)
 
@@ -1205,6 +1285,7 @@ end
 
 --- Returns the current power of an ACF engine
 -- @server
+-- @return number The current power, in kW
 function ents_methods:acfPower()
 	CheckType(self, ents_metatable)
 
@@ -1220,6 +1301,7 @@ end
 
 --- Returns true if the RPM of an ACF engine is inside the powerband
 -- @server
+-- @return boolean True if the RPM is inside the powerband
 function ents_methods:acfInPowerband()
 	CheckType(self, ents_metatable)
 
@@ -1249,6 +1331,7 @@ end
 
 --- Returns the throttle value
 -- @server
+-- @return number The throttle value
 function ents_methods:acfGetThrottle()
 	CheckType(self, ents_metatable)
 
@@ -1264,6 +1347,7 @@ end
 
 --- Sets the throttle value for an ACF engine
 -- @server
+-- @param number The throttle value
 function ents_methods:acfSetThrottle(throttle)
 	CheckType(self, ents_metatable)
 	CheckLuaType(throttle, TYPE_NUMBER)
@@ -1280,6 +1364,7 @@ end
 
 --- Returns the current gear for an ACF gearbox
 -- @server
+-- @return number The current gear
 function ents_methods:acfGear()
 	CheckType(self, ents_metatable)
 
@@ -1293,6 +1378,7 @@ end
 
 --- Returns the number of gears for an ACF gearbox
 -- @server
+-- @return number The number of gears
 function ents_methods:acfNumGears()
 	CheckType(self, ents_metatable)
 
@@ -1306,6 +1392,7 @@ end
 
 --- Returns the final ratio for an ACF gearbox
 -- @server
+-- @return number The final ratio
 function ents_methods:acfFinalRatio()
 	CheckType(self, ents_metatable)
 
@@ -1319,6 +1406,7 @@ end
 
 --- Returns the total ratio (current gear * final) for an ACF gearbox
 -- @server
+-- @return number The total ratio
 function ents_methods:acfTotalRatio()
 	CheckType(self, ents_metatable)
 
@@ -1332,6 +1420,7 @@ end
 
 --- Returns the max torque for an ACF gearbox
 -- @server
+-- @return number The max torque, in N⋅m
 function ents_methods:acfTorqueRating()
 	CheckType(self, ents_metatable)
 
@@ -1345,6 +1434,7 @@ end
 
 --- Returns whether an ACF gearbox is dual clutch
 -- @server
+-- @return boolean True if the gearbox is dual clutch
 function ents_methods:acfIsDual()
 	CheckType(self, ents_metatable)
 
@@ -1358,6 +1448,7 @@ end
 
 --- Returns the time in ms an ACF gearbox takes to change gears
 -- @server
+-- @return number The shift time
 function ents_methods:acfShiftTime()
 	CheckType(self, ents_metatable)
 
@@ -1373,6 +1464,7 @@ end
 
 --- Returns true if an ACF gearbox is in gear
 -- @server
+-- @return boolean True if the gearbox is in gear
 function ents_methods:acfInGear()
 	CheckType(self, ents_metatable)
 
@@ -1386,6 +1478,7 @@ end
 
 --- Returns the ratio for a specified gear of an ACF gearbox
 -- @server
+-- @param number gear The ratio for the specified gear
 function ents_methods:acfGearRatio(gear)
 	CheckType(self, ents_metatable)
 	CheckLuaType(gear, TYPE_NUMBER)
@@ -1401,6 +1494,7 @@ end
 
 --- Returns the current torque output for an ACF gearbox
 -- @server
+-- @return number The current torque output, in N⋅m
 function ents_methods:acfTorqueOut()
 	CheckType(self, ents_metatable)
 
@@ -1414,6 +1508,7 @@ end
 
 --- Sets the gear ratio of a CVT, set to 0 to use built-in algorithm
 -- @server
+-- @param number ratio The gear ratio
 function ents_methods:acfCVTRatio(ratio)
 	CheckType(self, ents_metatable)
 	CheckLuaType(ratio, TYPE_NUMBER)
@@ -1431,6 +1526,7 @@ end
 
 --- Sets the current gear for an ACF gearbox
 -- @server
+-- @param number gear The gear to set
 function ents_methods:acfShift(gear)
 	CheckType(self, ents_metatable)
 	CheckLuaType(gear, TYPE_NUMBER)
@@ -1477,6 +1573,7 @@ end
 
 --- Sets the brakes for an ACF gearbox
 -- @server
+-- @param number brake The brake value to set
 function ents_methods:acfBrake(brake)
 	CheckType(self, ents_metatable)
 	CheckLuaType(brake, TYPE_NUMBER)
@@ -1493,6 +1590,7 @@ end
 
 --- Sets the left brakes for an ACF gearbox
 -- @server
+-- @param number brake The brake value to set
 function ents_methods:acfBrakeLeft(brake)
 	CheckType(self, ents_metatable)
 	CheckLuaType(brake, TYPE_NUMBER)
@@ -1509,6 +1607,7 @@ end
 
 --- Sets the right brakes for an ACF gearbox
 -- @server
+-- @param number brake The brake value to set
 function ents_methods:acfBrakeRight(brake)
 	CheckType(self, ents_metatable)
 	CheckLuaType(brake, TYPE_NUMBER)
@@ -1525,6 +1624,7 @@ end
 
 --- Sets the clutch for an ACF gearbox
 -- @server
+-- @param number clutch The clutch value to set
 function ents_methods:acfClutch(clutch)
 	CheckType(self, ents_metatable)
 	CheckLuaType(clutch, TYPE_NUMBER)
@@ -1541,6 +1641,7 @@ end
 
 --- Sets the left clutch for an ACF gearbox
 -- @server
+-- @param number clutch The clutch value to set
 function ents_methods:acfClutchLeft(clutch)
 	CheckType(self, ents_metatable)
 	CheckLuaType(clutch, TYPE_NUMBER)
@@ -1557,6 +1658,7 @@ end
 
 --- Sets the right clutch for an ACF gearbox
 -- @server
+-- @param number clutch The clutch value to set
 function ents_methods:acfClutchRight(clutch)
 	CheckType(self, ents_metatable)
 	CheckLuaType(clutch, TYPE_NUMBER)
@@ -1573,6 +1675,7 @@ end
 
 --- Sets the steer ratio for an ACF gearbox
 -- @server
+-- @param number rate The steer ratio to set
 function ents_methods:acfSteerRate(rate)
 	CheckType(self, ents_metatable)
 	CheckLuaType(rate, TYPE_NUMBER)
@@ -1589,6 +1692,7 @@ end
 
 --- Applies gear hold for an automatic ACF gearbox
 -- @server
+-- @param boolean hold The gear to hold
 function ents_methods:acfHoldGear(hold)
 	CheckType(self, ents_metatable)
 	CheckLuaType(hold, TYPE_BOOL)
@@ -1605,6 +1709,7 @@ end
 
 --- Sets the shift point scaling for an automatic ACF gearbox
 -- @server
+-- @param number scale The shift point scaling to set
 function ents_methods:acfShiftPointScale(scale)
 	CheckType(self, ents_metatable)
 	CheckLuaType(scale, TYPE_NUMBER)
@@ -1621,6 +1726,7 @@ end
 
 --- Sets the ACF fuel tank refuel duty status, which supplies fuel to other fuel tanks
 -- @server
+-- @param boolean status The refuel duty status to set
 function ents_methods:acfRefuelDuty(on)
 	CheckType(self, ents_metatable)
 	CheckLuaType(on, TYPE_BOOL)
@@ -1637,6 +1743,7 @@ end
 
 --- Returns the remaining liters or kilowatt hours of fuel in an ACF fuel tank or engine
 -- @server
+-- @return number The remaining fuel
 function ents_methods:acfFuel()
 	CheckType(self, ents_metatable)
 
@@ -1661,6 +1768,7 @@ end
 
 --- Returns the amount of fuel in an ACF fuel tank or linked to engine as a percentage of capacity
 -- @server
+-- @return number The fuel percentage
 function ents_methods:acfFuelLevel()
 	CheckType(self, ents_metatable)
 
@@ -1689,6 +1797,7 @@ end
 
 --- Returns the current fuel consumption in liters per minute or kilowatts of an engine
 -- @server
+-- @return number The fuel consumption
 function ents_methods:acfFuelUse()
 	CheckType(self, ents_metatable)
 
@@ -1705,6 +1814,7 @@ end
 
 --- Returns the peak fuel consumption in liters per minute or kilowatts of an engine at powerband max, for the current fuel type the engine is using
 -- @server
+-- @return number The peak fuel consumption
 function ents_methods:acfPeakFuelUse()
 	CheckType(self, ents_metatable)
 
@@ -1720,6 +1830,7 @@ end
 
 --- returns any wheels linked to This engine/gearbox or child gearboxes
 -- @server
+-- @return table The wheels
 function ents_methods:acfGetLinkedWheels()
 	CheckType(self, ents_metatable)
 
@@ -1741,6 +1852,7 @@ end
 
 --- Returns true if the ACF gun is ready to fire
 -- @server
+-- @return boolean True if the gun is ready to fire
 function ents_methods:acfReady()
 	CheckType(self, ents_metatable)
 
@@ -1754,6 +1866,7 @@ end
 
 --- Returns a string with the current state of the entity
 -- @server
+-- @return string The current state
 function ents_methods:acfState()
 	CheckType(self, ents_metatable)
 
@@ -1767,6 +1880,7 @@ end
 
 --- Returns time to next shot of an ACF weapon
 -- @server
+-- @return number The time to next shot
 function ents_methods:acfReloadTime()
 	CheckType(self, ents_metatable)
 
@@ -1781,6 +1895,7 @@ end
 
 --- Returns number between 0 and 1 which represents reloading progress of an ACF weapon. Useful for progress bars
 -- @server
+-- @return number The reloading progress
 function ents_methods:acfReloadProgress()
 	CheckType(self, ents_metatable)
 
@@ -1795,6 +1910,7 @@ end
 
 --- Returns time it takes for an ACF weapon to reload magazine
 -- @server
+-- @return number The reload time
 function ents_methods:acfMagReloadTime()
 	CheckType(self, ents_metatable)
 
@@ -1808,6 +1924,7 @@ end
 
 --- Returns the magazine size for an ACF gun
 -- @server
+-- @return number The magazine size
 function ents_methods:acfMagSize()
 	CheckType(self, ents_metatable)
 
@@ -1821,6 +1938,7 @@ end
 
 --- Returns the spread for an ACF gun or flechette ammo
 -- @server
+-- @return number The spread
 function ents_methods:acfSpread()
 	CheckType(self, ents_metatable)
 
@@ -1840,6 +1958,7 @@ end
 
 --- Returns true if an ACF gun is reloading
 -- @server
+-- @return boolean True if the gun is reloading
 function ents_methods:acfIsReloading()
 	CheckType(self, ents_metatable)
 
@@ -1853,6 +1972,7 @@ end
 
 --- Returns the rate of fire of an acf gun
 -- @server
+-- @return number The rate of fire
 function ents_methods:acfFireRate()
 	CheckType(self, ents_metatable)
 
@@ -1868,6 +1988,7 @@ end
 
 --- Returns the number of rounds left in a magazine for an ACF gun
 -- @server
+-- @return number The number of rounds left
 function ents_methods:acfMagRounds()
 	CheckType(self, ents_metatable)
 
@@ -1881,6 +2002,7 @@ end
 
 --- Sets the firing state of an ACF weapon
 -- @server
+-- @param boolean state The firing state
 function ents_methods:acfFire(fire)
 	CheckType(self, ents_metatable)
 	CheckLuaType(fire, TYPE_BOOL)
@@ -1927,6 +2049,7 @@ end
 
 --- Returns the rounds left in an acf ammo crate
 -- @server
+-- @return number The number of rounds left
 function ents_methods:acfRounds()
 	CheckType(self, ents_metatable)
 
@@ -1940,6 +2063,7 @@ end
 
 --- Returns the type of weapon the ammo in an ACF ammo crate loads into
 -- @server
+-- @return string The type of weapon
 function ents_methods:acfRoundType()
 	CheckType(self, ents_metatable)
 
@@ -1955,6 +2079,7 @@ end
 
 --- Returns the BulletData table of the ammo in an ACF ammo crate
 -- @server
+-- @return table The BulletData table
 function ents_methods:acfBulletData()
 	CheckType(self, ents_metatable)
 
@@ -1970,7 +2095,6 @@ end
 
 --- Returns a table containing the missile's data
 -- @server
--- @class function
 -- @return table The table containing the missile's data
 function ents_methods:acfMissileData()
 	CheckType(self, ents_metatable)
@@ -2009,6 +2133,7 @@ end
 
 --- Returns the type of ammo in a crate or gun
 -- @server
+-- @return string The type of ammo
 function ents_methods:acfAmmoType()
 	CheckType(self, ents_metatable)
 
@@ -2024,6 +2149,7 @@ end
 
 --- Returns the caliber of an ammo or gun
 -- @server
+-- @return number The caliber
 function ents_methods:acfCaliber()
 	CheckType(self, ents_metatable)
 
@@ -2037,6 +2163,7 @@ end
 
 --- Returns the muzzle velocity of the ammo in a crate or gun
 -- @server
+-- @return number The muzzle velocity
 function ents_methods:acfMuzzleVel()
 	CheckType(self, ents_metatable)
 
@@ -2053,6 +2180,7 @@ end
 
 --- Returns the mass of the projectile in a crate or gun
 -- @server
+-- @return number The projectile mass
 function ents_methods:acfProjectileMass()
 	CheckType(self, ents_metatable)
 
@@ -2068,6 +2196,7 @@ end
 
 --- Returns the drag coef of the ammo in a crate or gun
 -- @server
+-- @return number The drag coef
 function ents_methods:acfDragCoef()
 	CheckType(self, ents_metatable)
 
@@ -2084,6 +2213,7 @@ end
 
 --- Returns the fin multiplier of the ammo in a crate or launcher
 -- @server
+-- @return number The fin multiplier
 function ents_methods:acfFinMul()
 	CheckType(self, ents_metatable)
 
@@ -2095,8 +2225,9 @@ function ents_methods:acfFinMul()
 	return This.FinMultiplier or 0
 end
 
--- Returns the weight of the missile in a crate or rack
+--- Returns the weight of the missile in a crate or rack
 -- @server
+-- @return number The weight of the missile
 function ents_methods:acfMissileWeight()
 	CheckType(self, ents_metatable)
 
@@ -2108,8 +2239,9 @@ function ents_methods:acfMissileWeight()
 	return This.ForcedMass or 0
 end
 
--- Returns the weight of the missile in a crate or rack
+-- Returns the length of the missile in a crate or rack
 -- @server
+-- @return number The length of the missile
 function ents_methods:acfMissileLength()
 	CheckType(self, ents_metatable)
 
@@ -2123,6 +2255,7 @@ end
 
 --- Returns the number of projectiles in a flechette round
 -- @server
+-- @return number The number of projectiles
 function ents_methods:acfFLSpikes()
 	CheckType(self, ents_metatable)
 
@@ -2138,6 +2271,7 @@ end
 
 --- Returns the mass of a single spike in a FL round in a crate or gun
 -- @server
+-- @return number The mass of a single spike
 function ents_methods:acfFLSpikeMass()
 	CheckType(self, ents_metatable)
 
@@ -2153,6 +2287,7 @@ end
 
 --- Returns the radius of the spikes in a flechette round in mm
 -- @server
+-- @return number The radius of the spikes
 function ents_methods:acfFLSpikeRadius()
 	CheckType(self, ents_metatable)
 
@@ -2169,6 +2304,7 @@ end
 
 --- Returns the penetration of an AP, APHE, or HEAT round
 -- @server
+-- @return number The penetration
 function ents_methods:acfPenetration()
 	CheckType(self, ents_metatable)
 
@@ -2190,6 +2326,7 @@ end
 
 --- Returns the blast radius of an HE, APHE, or HEAT round
 -- @server
+-- @return number The blast radius
 function ents_methods:acfBlastRadius()
 	CheckType(self, ents_metatable)
 
@@ -2211,6 +2348,7 @@ end
 
 --- Returns the number of rounds in active ammo crates linked to an ACF weapon
 -- @server
+-- @return number The number of rounds
 function ents_methods:acfAmmoCount()
 	CheckType(self, ents_metatable)
 
@@ -2236,6 +2374,7 @@ end
 
 --- Returns the number of rounds in all ammo crates linked to an ACF weapon
 -- @server
+-- @return number The number of rounds
 function ents_methods:acfTotalAmmoCount()
 	CheckType(self, ents_metatable)
 
