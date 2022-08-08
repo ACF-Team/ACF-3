@@ -365,9 +365,9 @@ do -- ACF.GetHitAngle
 
 	function ACF.GetHitAngle(trace, rayNormal)
 		local hitNormal = trace.HitNormal
+		local rayNormal = -rayNormal:GetNormalized()
 
 		if hitNormal == v0 then
-			local rayNormal = rayNormal:GetNormalized()
 			local rayOrigin = trace.HitPos - rayNormal * 5000
 
 			hitNormal = rayMeshIntersect(trace.Entity, rayOrigin, rayNormal)
