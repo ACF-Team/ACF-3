@@ -26,17 +26,15 @@ return {
         {
             name = "Is Legal when Gamemode is Sandbox",
 
-            before = function( state )
+            func = function( state )
                 state.OriginalGamemode = ACF.Gamemode
                 ACF.Gamemode = 1
+
+                expect( ACF.IsLegal() ).to.beTrue()
             end,
 
             cleanup = function( state )
                 ACF.Gamemode = state.OriginalGamemode
-            end,
-
-            func = function()
-                expect( ACF.IsLegal() ).to.beTrue()
             end
         },
 
@@ -126,10 +124,9 @@ return {
         {
             name = "Gun is not Legal when Guns cannot fire",
 
-            before = function() ACF.GunsCanFire = false end,
-            cleanup = function() ACF.GunsCanFire = true end,
-
             func = function( state )
+                ACF.GunsCanFire = false
+
                 local ent = state.ent
                 ent.IsACFWeapon = true
 
@@ -138,16 +135,17 @@ return {
                 local isLegal, err = ACF.IsLegal( ent )
                 expect( isLegal ).to.beFalse()
                 expect( err ).to.equal( "Cannot fire" )
-            end
+            end,
+
+            cleanup = function() ACF.GunsCanFire = true end
         },
 
         {
             name = "Rack is not Legal when Racks cannot fire",
 
-            before = function() ACF.RacksCanFire = false end,
-            cleanup = function() ACF.RacksCanFire = true end,
-
             func = function( state )
+                ACF.RacksCanFire = false
+
                 local ent = state.ent
                 ent.IsRack = true
 
@@ -156,33 +154,30 @@ return {
                 local isLegal, err = ACF.IsLegal( ent )
                 expect( isLegal ).to.beFalse()
                 expect( err ).to.equal( "Cannot fire" )
-            end
+            end,
+
+            cleanup = function() ACF.RacksCanFire = true end
         },
 
         {
             name = "Is not Legal when ACF_IsLegal hook returns",
 
-            before = function()
+            func = function( state )
                 hook.Add( "ACF_IsLegal", "TestFailure", function()
                     print( "ACF_IsLegal ran! returning false" )
                     return false, "Test reason", "Test message", "Test timeout"
                 end )
-            end,
 
-            cleanup = function() hook.Remove( "ACF_IsLegal", "TestFailure" ) end,
-
-            func = function( state )
                 local ent = state.ent
-
-                PrintTable( hook.GetTable().ACF_IsLegal )
-
                 local isLegal, reason, message, timeout = ACF.IsLegal( ent )
 
                 expect( isLegal ).to.beFalse()
                 expect( reason ).to.equal( "Test reason" )
                 expect( message ).to.equal( "Test message" )
                 expect( timeout ).to.equal( "Test timeout" )
-            end
+            end,
+
+            cleanup = function() hook.Remove( "ACF_IsLegal", "TestFailure" ) end
         },
 
         {
