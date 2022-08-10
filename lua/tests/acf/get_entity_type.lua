@@ -1,18 +1,20 @@
 return {
     groupName = "ACF.GetEntityType",
-    cases = {
-        beforeEach = function( state )
-            state.ent = {
-                IsPlayer = function() return false end,
-                IsNPC = function() return false end,
-                IsNextBot = function() return false end,
-                IsVehicle = function() return false end
-            }
-        end,
 
+    beforeEach = function( state )
+        state.ent = {
+            IsPlayer = function() return false end,
+            IsNPC = function() return false end,
+            IsNextBot = function() return false end,
+            IsVehicle = function() return false end
+        }
+    end,
+
+    cases = {
         {
             name = "Returns 'Prop' by default",
             func = function( state )
+                PrintTable( state )
                 local ent = state.ent
 
                 expect( ACF.GetEntityType( ent ) ).to.equal( "Prop" )
