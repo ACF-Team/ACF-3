@@ -134,7 +134,7 @@ return {
                     e.ACF = { Type = "Test" }
                 end )
 
-                expect( ACF.Check( ent ) ).to.equal( "Test" )
+                expect( ACF.Check( ent, true ) ).to.equal( "Test" )
                 expect( activate ).to.haveBeenCalled()
             end
         },
