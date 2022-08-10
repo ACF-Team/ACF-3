@@ -114,12 +114,13 @@ function ACF.CheckLegal(Entity)
 	return true
 end
 
-local function GetEntityType(Entity)
+function ACF.GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
 	if Entity:IsVehicle() then return "Vehicle" end
 
 	return "Prop"
 end
+local GetEntityType = ACF.GetEntityType
 
 local function UpdateArea(Entity, PhysObj)
 	local Area = PhysObj:GetSurfaceArea()
