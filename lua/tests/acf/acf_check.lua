@@ -28,10 +28,6 @@ return {
             func = function( state )
                 local ent = state.ent
 
-                print( "IsValid", not IsValid( ent ) )
-                print( "Class", ACF.GlobalFilter[ent:GetClass()] )
-                print( "PhsObj IsValid", not IsValid( ent:GetPhysicsObject() ) )
-
                 expect( ACF.Check( ent ) ).to.equal( "Test" )
             end
         },

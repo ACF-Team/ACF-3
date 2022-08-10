@@ -14,7 +14,6 @@ return {
         {
             name = "Returns 'Prop' by default",
             func = function( state )
-                PrintTable( state )
                 local ent = state.ent
 
                 expect( ACF.GetEntityType( ent ) ).to.equal( "Prop" )
