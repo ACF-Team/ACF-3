@@ -4,9 +4,8 @@ return {
     beforeEach = function( state )
         local mass = 1
         local physObj = {
-            GetMass = function()
-                return mass
-            end
+            GetMass = function() return mass end,
+            IsValid = function() return true end
         }
 
         state.ent = {
@@ -15,10 +14,11 @@ return {
                 PhysObj = physObj,
                 Mass = mass
             },
+            IsValid = function() return true end,
+            IsWorld = function() return false end,
+            IsWeapon = function() return false end,
             GetClass = function() return "prop_physics" end,
             GetPhysicsObject = function() return physObj end,
-            IsWorld = function() return false end,
-            IsWeapon = function() return false end
         }
     end,
 
