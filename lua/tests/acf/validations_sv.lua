@@ -28,6 +28,7 @@ return {
 
             before = function( state )
                 state.OriginalGamemode = ACF.Gamemode
+                ACF.Gamemode = 1
             end,
 
             cleanup = function( state )
@@ -35,7 +36,7 @@ return {
             end,
 
             func = function()
-                expect( ACF.IsLegal( {} ) ).to.beTrue()
+                expect( ACF.IsLegal() ).to.beTrue()
             end
         },
 
@@ -114,7 +115,7 @@ return {
             name = "Is not Legal with empty ClipData",
             func = function( state )
                 local ent = state.ent
-                ent.ClipData = {}
+                ent.ClipData = { "clip" }
 
                 local isLegal, err = ACF.IsLegal( ent )
                 expect( isLegal ).to.beFalse()
