@@ -116,9 +116,11 @@ return {
                 local ent = state.ent
                 ent.ACF = nil
 
-                local activate = stub( ACF, "Activate" )
-                ACF.Check( ent )
+                local activate = stub( ACF, "Activate" ).with( function( e )
+                    e.ACF = { Type = "Test" }
+                end )
 
+                expect( ACF.Check( ent ) ).to.equal( "Test" )
                 expect( activate ).to.haveBeenCalled()
             end
         },
@@ -128,10 +130,12 @@ return {
             func = function( state )
                 local ent = state.ent
 
-                local activate = stub( ACF, "Activate" )
-                ACF.Check( ent, true )
+                local activate = stub( ACF, "Activate" ).with( function( e )
+                    e.ACF = { Type = "Test" }
+                end )
 
-                expect( activate ).to.haveBeenCAlled()
+                expect( ACF.Check( ent ) ).to.equal( "Test" )
+                expect( activate ).to.haveBeenCalled()
             end
         },
 
@@ -141,10 +145,12 @@ return {
                 local ent = state.ent
                 ent.ACF.Mass = ent.ACF.Mass + 1
 
-                local activate = stub( ACF, "Activate" )
-                ACF.Check( ent, true )
+                local activate = stub( ACF, "Activate" ).with( function( e )
+                    e.ACF = { Type = "Test" }
+                end )
 
-                expect( activate ).to.haveBeenCAlled()
+                expect( ACF.Check( ent ) ).to.equal( "Test" )
+                expect( activate ).to.haveBeenCalled()
             end
         },
 
@@ -154,10 +160,12 @@ return {
                 local ent = state.ent
                 ent.ACF.PhysObj = {}
 
-                local activate = stub( ACF, "Activate" )
-                ACF.Check( ent, true )
+                local activate = stub( ACF, "Activate" ).with( function( e )
+                    e.ACF = { Type = "Test" }
+                end )
 
-                expect( activate ).to.haveBeenCAlled()
+                expect( ACF.Check( ent ) ).to.equal( "Test" )
+                expect( activate ).to.haveBeenCalled()
             end
         },
 
