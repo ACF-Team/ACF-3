@@ -133,6 +133,8 @@ return {
                 local ent = state.ent
                 ent.IsACFWeapon = true
 
+                print( "ACF GunsCanFire: ", ACF.GunsCanFire )
+
                 local isLegal, err = ACF.IsLegal( ent )
                 expect( isLegal ).to.beFalse()
                 expect( err ).to.equal( "Cannot fire" )
@@ -149,6 +151,8 @@ return {
                 local ent = state.ent
                 ent.IsRack = true
 
+                print( "ACF RacksCanFire: ", ACF.RacksCanFire )
+
                 local isLegal, err = ACF.IsLegal( ent )
                 expect( isLegal ).to.beFalse()
                 expect( err ).to.equal( "Cannot fire" )
@@ -160,6 +164,7 @@ return {
 
             before = function()
                 hook.Add( "ACF_IsLegal", "TestFailure", function()
+                    print( "ACF_IsLegal ran! returning false" )
                     return false, "Test reason", "Test message", "Test timeout"
                 end )
             end,
@@ -168,6 +173,8 @@ return {
 
             func = function( state )
                 local ent = state.ent
+
+                PrintTable( hook.GetTable().ACF_IsLegal )
 
                 local isLegal, reason, message, timeout = ACF.IsLegal( ent )
 
