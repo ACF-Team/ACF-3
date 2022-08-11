@@ -92,33 +92,6 @@ return {
 
                 expect( calcMass ).to.haveBeenCalled()
             end
-        },
-
-        {
-            name = "Async test",
-            async = true,
-            timeout = 2,
-            func = function()
-                local og = function() return "test1" end
-
-                local var = {
-                    func = og
-                }
-
-                local funcStub = stub( var, "func" ).returns( "test2" )
-
-                timer.Simple( 1, function()
-                    expect( var.func() ).to.equal( "test2" )
-                    expect( funcStub ).to.haveBeenCalled()
-
-                    funcStub:Restore()
-                end )
-
-                timer.Simple( 1.5, function()
-                    expect( var.func ).to.equal( og )
-                    done()
-                end )
-            end
         }
     }
 }
