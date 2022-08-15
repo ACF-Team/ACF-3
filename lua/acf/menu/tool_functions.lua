@@ -382,7 +382,10 @@ end
 
 do -- Generic Spawner/Linker operation creator
 	local Entities   = ACF.Classes.Entities
+	local Messages   = ACF.Utilities.Messages
 	local SpawnText  = "Spawn a new %s or update an existing one."
+	local Green      = Color(0, 255, 0)
+	local NameFormat = "%s[ID: %s]"
 	local PlayerEnts = {}
 
 	local function GetPlayerEnts(Player)
@@ -396,21 +399,39 @@ do -- Generic Spawner/Linker operation creator
 		return Ents
 	end
 
-	local function CanUpdate(Entity, ClassName)
+	local function CanUpdate(Entity, Class)
 		if not IsValid(Entity) then return false end
 
-		return Entity:GetClass() == ClassName
+		return Entity:GetClass() == Class
 	end
 
-	local function SpawnEntity(Player, ClassName, Trace, Data)
-		if not ClassName or ClassName == "N/A" then return false end
+	local function GetClassName(Player, Data)
+		local PrimaryClass   = Data.PrimaryClass
+		local SecondaryClass = Data.SecondaryClass
+
+		if not SecondaryClass then return PrimaryClass end
+		if SecondaryClass == "N/A" then return PrimaryClass end
+
+		local OnKeybind = Player:KeyDown(IN_SPEED) or Player:KeyDown(IN_RELOAD)
+
+		return OnKeybind and SecondaryClass or PrimaryClass
+	end
+
+	local function SpawnEntity(Tool, Trace)
+		if Trace.HitSky then return false end
+
+		local Player = Tool:GetOwner()
+		local Data   = ACF.GetAllClientData(Player)
+		local Class  = GetClassName(Player, Data)
+
+		if not Class or Class == "N/A" then return false end
 
 		local Entity = Trace.Entity
 
-		if CanUpdate(Entity, ClassName) then
+		if CanUpdate(Entity, Class) then
 			local Result, Message = Entities.Update(Entity, Data)
 
-			ACF.SendMessage(Player, Result and "Info" or "Error", Message)
+			Messages.SendChat(Player, Result and "Info" or "Error", Message)
 
 			return true
 		end
@@ -418,7 +439,7 @@ do -- Generic Spawner/Linker operation creator
 		local Position = Trace.HitPos + Trace.HitNormal * 128
 		local Angles   = Trace.HitNormal:Angle():Up():Angle()
 
-		local Success, Result = Entities.Spawn(ClassName, Player, Position, Angles, Data)
+		local Success, Result = Entities.Spawn(Class, Player, Position, Angles, Data)
 
 		if Success then
 			local PhysObj = Result:GetPhysicsObject()
@@ -429,10 +450,145 @@ do -- Generic Spawner/Linker operation creator
 				PhysObj:EnableMotion(false)
 			end
 		else
-			ACF.SendMessage(Player, "Error", "Couldn't create entity: " .. Result)
+			Messages.SendChat(Player, "Error", "Couldn't create entity: " .. Result)
 		end
 
 		return Success
+	end
+
+	local function UnselectEntity(Entity, Name, Tool)
+		local Player   = Tool:GetOwner()
+		local Ents     = GetPlayerEnts(Player)
+		local EntColor = Ents[Entity]
+
+		Entity:RemoveCallOnRemove("ACF_ToolLinking")
+		Entity:SetColor(EntColor)
+
+		Ents[Entity] = nil
+
+		if not next(Ents) then
+			Tool:SetMode("Spawner", Name)
+		end
+	end
+
+	local function SelectEntity(Entity, Name, Tool)
+		if not IsValid(Entity) then return false end
+
+		local Player = Tool:GetOwner()
+		local Ents   = GetPlayerEnts(Player)
+
+		if not next(Ents) then
+			Tool:SetMode("Linker", Name)
+		end
+
+		Ents[Entity] = Entity:GetColor()
+
+		Entity:CallOnRemove("ACF_ToolLinking", UnselectEntity, Name, Tool)
+		Entity:SetColor(Green)
+
+		return true
+	end
+
+	local function GetName(Entity)
+		local Name  = Entity.Name or Entity:GetClass()
+		local Index = Entity:EntIndex()
+
+		return NameFormat:format(Name, Index)
+	end
+
+	local Single = {
+		Success = "Successfully %sed %s to %s.",
+		Failure = "Couldn't %s %s to %s: %s",
+	}
+
+	local Multiple = {
+		Success  = "Successfully %sed %s entities to %s.%s",
+		Failure  = "Couldn't %s any of the %s entities to %s.%s",
+		ErrorEnd = " Printing %s error message(s) to the console.",
+		ErrorTop = "The following entities couldn't be %sed to %s:\n%s\n",
+		ErrorBit = ">>> %s: %s",
+	}
+
+	local function ReportSingle(Player, Action, EntName, Target, Result, Message)
+		local Template = Result and Single.Success or Single.Failure
+		local Feedback = Template:format(Action, EntName, Target, Message)
+		local Type     = Result and "Info" or "Error"
+
+		Messages.SendChat(Player, Type, Feedback)
+	end
+
+	local function ReportMultiple(Player, Action, EntName, Failed, Count, Total)
+		local Errors   = #Failed
+		local Result   = Count > 0
+		local Template = Result and Multiple.Success or Multiple.Failure
+		local Amount   = Result and Count or Total
+		local EndBit   = Errors > 0 and Multiple.ErrorEnd:format(Errors) or ""
+		local Feedback = Template:format(Action, Amount, EntName, EndBit)
+		local Type     = Result and "Info" or "Error"
+
+		Messages.SendChat(Player, Type, Feedback)
+
+		if Errors > 0 then
+			local Error = Multiple.ErrorBit
+			local List  = {}
+
+			for Index, Data in ipairs(Failed) do
+				List[Index] = Error:format(Data.Name, Data.Message)
+			end
+
+			local ErrorList = table.concat(List, "\n")
+			local ErrorLog  = Multiple.ErrorTop:format(Action, EntName, ErrorList)
+
+			Messages.SendLog(Player, "Warning", ErrorLog)
+		end
+	end
+
+	local function LinkEntities(Player, Name, Tool, Entity, Ents)
+		local OnKey    = Player:KeyDown(IN_RELOAD)
+		local Function = OnKey and Entity.Unlink or Entity.Link
+		local Action   = OnKey and "unlink" or "link"
+		local EntName  = GetName(Entity)
+		local Success  = {}
+		local Failed   = {}
+		local Total    = 0
+
+		for K in pairs(Ents) do
+			local EntFunc = OnKey and K.Unlink or K.Link
+			local Result  = false
+			local Message
+
+			if EntFunc then
+				Result, Message = EntFunc(K, Entity)
+			elseif Function then
+				Result, Message = Function(Entity, K)
+			end
+
+			Total = Total + 1
+
+			if Result then
+				Success[#Success + 1] = {
+					Name = GetName(K),
+				}
+			else
+				Failed[#Failed + 1] = {
+					Message = Message or "No reason given.",
+					Name    = GetName(K),
+				}
+			end
+
+			UnselectEntity(K, Name, Tool)
+		end
+
+		if Total > 1 then
+			ReportMultiple(Player, Action, EntName, Failed, #Success, Total)
+		else
+			local Result  = next(Success) and true or false
+			local Origin  = table.remove(Result and Success or Failed)
+			local Target  = Origin.Name
+			local Message = Origin.Message
+
+			ReportSingle(Player, Action, EntName, Target, Result, Message)
+		end
 	end
 
 	function ACF.CreateMenuOperation(Name, Primary, Secondary)
@@ -441,64 +597,13 @@ do -- Generic Spawner/Linker operation creator
 
 		Secondary = ACF.CheckString(Secondary)
 
-		local function UnselectEntity(Tool, Player, Entity)
-			local Ents = GetPlayerEnts(Player)
-
-			Entity:RemoveCallOnRemove("ACF_ToolLinking")
-			Entity:SetColor(Ents[Entity])
-
-			Ents[Entity] = nil
-
-			if not next(Ents) then
-				Tool:SetMode("Spawner", Name)
-			end
-		end
-
-		local function SelectEntity(Tool, Player, Entity)
-			if not IsValid(Entity) then return false end
-
-			local Ents = GetPlayerEnts(Player)
-
-			if not next(Ents) then
-				Tool:SetMode("Linker", Name)
-			end
-
-			Ents[Entity] = Entity:GetColor()
-			Entity:SetColor(Color(0, 255, 0))
-			Entity:CallOnRemove("ACF_ToolLinking", function()
-				UnselectEntity(Tool, Player, Entity)
-			end)
-
-			return true
-		end
-
 		do -- Spawner stuff
-			local function GetClassName(Player, Data)
-				local PrimaryClass   = Data.PrimaryClass
-				local SecondaryClass = Data.SecondaryClass
-
-				if not SecondaryClass then return PrimaryClass end
-				if SecondaryClass == "N/A" then return PrimaryClass end
-
-				local OnKeybind = Player:KeyDown(IN_SPEED) or Player:KeyDown(IN_RELOAD)
-
-				return OnKeybind and SecondaryClass or PrimaryClass
-			end
-
 			ACF.RegisterOperation("acf_menu", "Spawner", Name, {
-				OnLeftClick = function(Tool, Trace)
-					if Trace.HitSky then return false end
-
-					local Player    = Tool:GetOwner()
-					local Data      = ACF.GetAllClientData(Player)
-					local ClassName = GetClassName(Player, Data)
-
-					return SpawnEntity(Player, ClassName, Trace, Data)
-				end,
+				OnLeftClick  = SpawnEntity,
 				OnRightClick = function(Tool, Trace)
-					local Player = Tool:GetOwner()
+					local Entity = Trace.Entity
 
-					return SelectEntity(Tool, Player, Trace.Entity)
+					return SelectEntity(Entity, Name, Tool)
 				end,
 			})
 
@@ -522,72 +627,39 @@ do -- Generic Spawner/Linker operation creator
 		end
 
 		do -- Linker stuff
-			local function LinkEntities(Tool, Player, Entity, Ents)
-				local Total, Done = 0, 0
-				local Unlink = Player:KeyDown(IN_RELOAD)
-				local Action = Unlink and Entity.Unlink or Entity.Link
-
-				for K in pairs(Ents) do
-					local EntAction = Unlink and K.Unlink or K.Link
-					local Success = false
-
-					if EntAction then
-						Success = EntAction(K, Entity)
-					elseif Action then
-						Success = Action(Entity, K)
-					end
-
-					Total = Total + 1
-
-					if Success then
-						Done = Done + 1
-					end
-
-					UnselectEntity(Tool, Player, K)
-				end
-
-				if Done > 0 then
-					local Status = (Unlink and "unlinked " or "linked ") .. Done .. " out of " .. Total
-
-					ACF.SendMessage(Player, "Info", "Successfully ", Status, " entities to ", tostring(Entity), ".")
-				else
-					local Status = Total .. " entities could be " .. (Unlink and "unlinked" or "linked")
-
-					ACF.SendMessage(Player, "Error", "None of the ", Status, " to ", tostring(Entity), ".")
-				end
-			end
-
 			ACF.RegisterOperation("acf_menu", "Linker", Name, {
 				OnRightClick = function(Tool, Trace)
-					local Player = Tool:GetOwner()
+					if Trace.HitWorld then Tool:Holster() return true end
+
 					local Entity = Trace.Entity
 
-					if Trace.HitWorld then Tool:Holster() return true end
 					if not IsValid(Entity) then return false end
 
-					local Ents = GetPlayerEnts(Player)
+					local Player = Tool:GetOwner()
+					local Ents   = GetPlayerEnts(Player)
 
 					if not Player:KeyDown(IN_SPEED) then
-						LinkEntities(Tool, Player, Entity, Ents)
+						LinkEntities(Player, Name, Tool, Entity, Ents)
+
 						return true
 					end
 
 					if not Ents[Entity] then
-						SelectEntity(Tool, Player, Entity)
+						SelectEntity(Entity, Name, Tool)
 					else
-						UnselectEntity(Tool, Player, Entity)
+						UnselectEntity(Entity, Name, Tool)
 					end
 
 					return true
 				end,
 				OnHolster = function(Tool)
 					local Player = Tool:GetOwner()
-					local Ents = GetPlayerEnts(Player)
+					local Ents   = GetPlayerEnts(Player)
 
 					if not next(Ents) then return end
 
 					for Entity in pairs(Ents) do
-						UnselectEntity(Tool, Player, Entity)
+						UnselectEntity(Entity, Name, Tool)
 					end
 				end,
 			})
