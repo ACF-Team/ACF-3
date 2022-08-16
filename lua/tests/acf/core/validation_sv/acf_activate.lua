@@ -1,65 +1,63 @@
 return {
     groupName = "ACF.Activate",
 
-    beforeEach = function( state )
-        local physObj = {
-            IsValid = function() return true end
-        }
+    beforeEach = function( State )
+        local PhysObj = { IsValid = function() return true end }
 
-        state.ent = {
+        State.Ent = {
             ACF = {},
-            GetPhysicsObject = function() return physObj end
+            GetPhysicsObject = function() return PhysObj end
         }
     end,
 
     cases = {
         {
             name = "Sets up the ACF table if Entity is valid",
-            func = function( state )
-                local ent = state.ent
-                ent.ACF = nil
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ACF = nil
 
                 stub( ACF, "GetEntityType" ).returns( "Prop" )
                 stub( ACF, "UpdateArea" ).returns( 1 )
                 stub( ACF, "UpdateThickness" ).returns( 1 )
 
-                ACF.Activate( ent )
+                ACF.Activate( Ent )
 
-                expect( ent.ACF ).to.exist()
+                expect( Ent.ACF ).to.exist()
             end
         },
 
         {
             name = "Does not set up ACF table if Entity has invalid physics object",
-            func = function( state )
-                local ent = state.ent
-                ent.ACF = nil
-                ent.GetPhysicsObject = function() return nil end
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ACF = nil
+                Ent.GetPhysicsObject = function() return nil end
 
-                ACF.Activate( ent )
+                ACF.Activate( Ent )
 
-                expect( ent.ACF ).notTo.exist()
+                expect( Ent.ACF ).notTo.exist()
             end
         },
 
         {
             name = "Runs the Entity's ACF_Activate method if present",
-            func = function( state )
-                local ent = state.ent
-                ent.ACF_Activate = stub()
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ACF_Activate = stub()
 
                 stub( ACF, "GetEntityType" ).returns( "TestType" )
 
-                ACF.Activate( ent )
-                expect( ent.ACF_Activate ).to.haveBeenCalled()
-                expect( ent.ACF.Type ).to.equal( "TestType" )
+                ACF.Activate( Ent )
+                expect( Ent.ACF_Activate ).to.haveBeenCalled()
+                expect( Ent.ACF.Type ).to.equal( "TestType" )
             end
         },
 
         {
             -- Sort of a Snapshot test to check for calculation changes
             name = "Sets the proper values for a 1x1x1 Cube",
-            func = function( state )
+            func = function( State )
                 local function roundValues( t )
                     for key, value in pairs( t ) do
                         if isnumber( value ) then
@@ -69,7 +67,7 @@ return {
                 end
 
                 -- Acquired by spawning a 1x1x1 cube on plain sandbox and running ACF.Activate on it
-                local expected = {
+                local Expected = {
                     Area      = 45749.315111603,
                     Armour    = 1.7934974950143,
                     Ductility = 0,
@@ -78,36 +76,36 @@ return {
                     MaxArmour = 1.7934974950143,
                     MaxHealth = 172.83458674576,
                 }
-                roundValues( expected )
+                roundValues( Expected )
 
                 -- Set up the cube
-                state.cube = ents.Create( "prop_physics" )
-                local cube = state.cube
+                State.Cube = ents.Create( "prop_physics" )
+                local Cube = State.Cube
 
-                cube:SetModel( "models/hunter/blocks/cube1x1x1.mdl" )
-                cube:SetPos( Vector( 0, 0, 0 ) )
-                cube:Spawn()
+                Cube:SetModel( "models/hunter/blocks/cube1x1x1.mdl" )
+                Cube:SetPos( Vector( 0, 0, 0 ) )
+                Cube:Spawn()
 
-                ACF.Activate( cube )
+                ACF.Activate( Cube )
 
                 -- Run the expectations
-                expect( cube.ACF ).to.exist()
+                expect( Cube.ACF ).to.exist()
 
-                local actual = cube.ACF
-                roundValues( actual )
+                local Actual = Cube.ACF
+                roundValues( Actual )
 
-                expect( actual.Area ).to.equal( expected.Area )
-                expect( actual.Armour ).to.equal( expected.Armour )
-                expect( actual.Ductility ).to.equal( expected.Ductility )
-                expect( actual.Health ).to.equal( expected.Health )
-                expect( actual.Mass ).to.equal( expected.Mass )
-                expect( actual.MaxArmour ).to.equal( expected.MaxArmour )
-                expect( actual.MaxHealth ).to.equal( expected.MaxHealth )
+                expect( Actual.Area ).to.equal( Expected.Area )
+                expect( Actual.Armour ).to.equal( Expected.Armour )
+                expect( Actual.Ductility ).to.equal( Expected.Ductility )
+                expect( Actual.Health ).to.equal( Expected.Health )
+                expect( Actual.Mass ).to.equal( Expected.Mass )
+                expect( Actual.MaxArmour ).to.equal( Expected.MaxArmour )
+                expect( Actual.MaxHealth ).to.equal( Expected.MaxHealth )
             end,
 
-            cleanup = function( state )
-                if IsValid( state.cube ) then
-                    SafeRemoveEntity( state.cube )
+            cleanup = function( State )
+                if IsValid( State.Cube ) then
+                    SafeRemoveEntity( State.Cube )
                 end
             end
         }

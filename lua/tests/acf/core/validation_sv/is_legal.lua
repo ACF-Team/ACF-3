@@ -1,15 +1,15 @@
 return {
     groupName = "ACF.IsLegal",
 
-    beforeEach = function( state )
-        local physObj = {}
+    beforeEach = function( State )
+        local PhysObj = {}
 
         -- A technically Legal entity mock
-        state.ent = {
-            ACF = { PhysObj = physObj },
+        State.Ent = {
+            ACF = { PhysObj = PhysObj },
 
             GetPhysicsObject = function()
-                return physObj
+                return PhysObj
             end,
 
             IsSolid = function()
@@ -26,113 +26,112 @@ return {
         {
             name = "Is Legal when Gamemode is Sandbox",
 
-            func = function( state )
-                state.OriginalGamemode = ACF.Gamemode
+            func = function( State )
+                State.OriginalGamemode = ACF.Gamemode
                 ACF.Gamemode = 1
 
                 expect( ACF.IsLegal() ).to.beTrue()
             end,
 
-            cleanup = function( state )
-                ACF.Gamemode = state.OriginalGamemode
+            cleanup = function( State )
+                ACF.Gamemode = State.OriginalGamemode
             end
         },
 
         {
             name = "Is not Legal with custom PhysObj",
-            func = function( state )
-                local ent = state.ent
-                ent.ACF.PhysObj = {}
-                ent.GetPhysicsObject = function()
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ACF.PhysObj = {}
+                Ent.GetPhysicsObject = function()
                     return { GetVolume = function() return nil end }
                 end
 
-                local isLegal, err = ACF.IsLegal( ent )
+                local IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Invalid Physics" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Invalid Physics" )
             end
         },
 
         {
             name = "Is not Legal when Entity is not solid",
-            func = function( state )
-                local ent = state.ent
-                ent.IsSolid = function() return false end
+            func = function( State )
+                local Ent = State.Ent
+                Ent.IsSolid = function() return false end
 
-                local isLegal, err = ACF.IsLegal( ent )
+                local IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Not Solid" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Not Solid" )
             end
         },
 
         {
             name = "Is not Legal with an illegal collision group",
-            func = function( state )
-                local collisionGroup
+            func = function( State )
+                local CollisionGroup
 
-                local ent = state.ent
-                ent.GetCollisionGroup = function()
-                    return collisionGroup
+                local Ent = State.Ent
+                Ent.GetCollisionGroup = function()
+                    return CollisionGroup
                 end
 
-                local isLegal, err
+                local IsLegal, Err
 
                 -- COLLISION_GROUP_DEBRIS
-                collisionGroup = COLLISION_GROUP_DEBRIS
-                isLegal, err = ACF.IsLegal( ent )
+                CollisionGroup = COLLISION_GROUP_DEBRIS
+                IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Invalid Collisions" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Invalid Collisions" )
 
                 -- COLLISION_GROUP_IN_VEHICLE
-                collisionGroup = COLLISION_GROUP_IN_VEHICLE
-                isLegal, err = ACF.IsLegal( ent )
+                CollisionGroup = COLLISION_GROUP_IN_VEHICLE
+                IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Invalid Collisions" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Invalid Collisions" )
 
                 -- COLLISION_GROUP_VEHICLE_CLIP
-                collisionGroup = COLLISION_GROUP_VEHICLE_CLIP
-                isLegal, err = ACF.IsLegal( ent )
+                CollisionGroup = COLLISION_GROUP_VEHICLE_CLIP
+                IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Invalid Collisions" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Invalid Collisions" )
 
                 -- COLLISION_GROUP_DOOR_BLOCKER
-                collisionGroup = COLLISION_GROUP_DOOR_BLOCKER
-                isLegal, err = ACF.IsLegal( ent )
+                CollisionGroup = COLLISION_GROUP_DOOR_BLOCKER
+                IsLegal, Err = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Invalid Collisions" )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Invalid Collisions" )
             end
         },
 
         {
-            name = "Is not Legal with empty ClipData",
-            func = function( state )
-                local ent = state.ent
-                ent.ClipData = { "clip" }
+            name = "Is not Legal with not-empty ClipData",
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ClipData = { "clip" }
 
-                local isLegal, err = ACF.IsLegal( ent )
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Visual Clip" )
+                local IsLegal, Err = ACF.IsLegal( Ent )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Visual Clip" )
             end
         },
 
         {
             name = "Gun is not Legal when Guns cannot fire",
-
-            func = function( state )
+            func = function( State )
                 ACF.GunsCanFire = false
 
-                local ent = state.ent
-                ent.IsACFWeapon = true
+                local Ent = State.Ent
+                Ent.IsACFWeapon = true
 
-                local isLegal, err = ACF.IsLegal( ent )
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Cannot fire" )
+                local IsLegal, Err = ACF.IsLegal( Ent )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Cannot fire" )
             end,
 
             cleanup = function() ACF.GunsCanFire = true end
@@ -140,16 +139,15 @@ return {
 
         {
             name = "Rack is not Legal when Racks cannot fire",
-
-            func = function( state )
+            func = function( State )
                 ACF.RacksCanFire = false
 
-                local ent = state.ent
-                ent.IsRack = true
+                local Ent = State.Ent
+                Ent.IsRack = true
 
-                local isLegal, err = ACF.IsLegal( ent )
-                expect( isLegal ).to.beFalse()
-                expect( err ).to.equal( "Cannot fire" )
+                local IsLegal, Err = ACF.IsLegal( Ent )
+                expect( IsLegal ).to.beFalse()
+                expect( Err ).to.equal( "Cannot fire" )
             end,
 
             cleanup = function() ACF.RacksCanFire = true end
@@ -157,19 +155,18 @@ return {
 
         {
             name = "Is not Legal when ACF_IsLegal hook returns",
-
-            func = function( state )
+            func = function( State )
                 hook.Add( "ACF_IsLegal", "TestFailure", function()
                     return false, "Test reason", "Test message", "Test timeout"
                 end )
 
-                local ent = state.ent
-                local isLegal, reason, message, timeout = ACF.IsLegal( ent )
+                local Ent = State.Ent
+                local IsLegal, Reason, Message, Timeout = ACF.IsLegal( Ent )
 
-                expect( isLegal ).to.beFalse()
-                expect( reason ).to.equal( "Test reason" )
-                expect( message ).to.equal( "Test message" )
-                expect( timeout ).to.equal( "Test timeout" )
+                expect( IsLegal ).to.beFalse()
+                expect( Reason ).to.equal( "Test reason" )
+                expect( Message ).to.equal( "Test message" )
+                expect( Timeout ).to.equal( "Test timeout" )
             end,
 
             cleanup = function() hook.Remove( "ACF_IsLegal", "TestFailure" ) end
@@ -177,12 +174,12 @@ return {
 
         {
             name = "Is Legal when all conditions are met",
-            func = function( state )
-                local ent = state.ent
+            func = function( State )
+                local Ent = State.Ent
 
-                local isLegal, err = ACF.IsLegal( ent )
-                expect( isLegal ).to.beTrue()
-                expect( err ).to.beNil()
+                local IsLegal, Err = ACF.IsLegal( Ent )
+                expect( IsLegal ).to.beTrue()
+                expect( Err ).to.beNil()
             end
         }
     }
