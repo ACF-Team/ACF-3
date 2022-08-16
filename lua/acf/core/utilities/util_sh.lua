@@ -317,7 +317,7 @@ do -- ACF.GetHitAngle
 	local function rayMeshIntersect(ent, rayOrigin, rayDir)
 		local mesh        = ent:GetPhysicsObject():GetMeshConvexes()
 		local minDistance = math.huge
-		local minNormal
+		local minNormal   = -rayDir
 
 		-- Translate the ray to the local space of the mesh
 		local rayOrigin = ent:WorldToLocal(rayOrigin)
