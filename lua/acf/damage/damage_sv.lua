@@ -106,17 +106,17 @@ do -- Explosions ----------------------------
 					Ents[K] = nil -- Remove from list
 					Filter[#Filter + 1] = Ent -- Filter from traces
 
-					goto cont
+					continue
 				end
 
-				if Damage[Ent] then goto cont end -- A trace sent towards another prop already hit this one instead, no need to check if we can see it
+				if Damage[Ent] then continue end -- A trace sent towards another prop already hit this one instead, no need to check if we can see it
 
 				if Ent.Exploding then -- Detonate explody things immediately if they're already cooking off
 					Ents[K] = nil
 					Filter[#Filter + 1] = Ent
 
 					--Ent:Detonate()
-					goto cont
+					continue
 				end
 
 				local IsChar = Ent:IsPlayer() or Ent:IsNPC()
@@ -124,7 +124,7 @@ do -- Explosions ----------------------------
 					Ents[K] = nil
 					Filter[#Filter + 1] = Ent -- Shouldn't need to filter a dead player but we'll do it just in case
 
-					goto cont
+					continue
 				end
 
 				local Target = GetRandomPos(Ent, IsChar) -- Try to hit a random spot on the entity
@@ -222,8 +222,6 @@ do -- Explosions ----------------------------
 			end
 
 			Power = math.max(Power - PowerSpent, 0)
-
-			::cont::
 		end
 	end
 
