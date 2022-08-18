@@ -113,6 +113,6 @@ return {
 
                 expect( Penetration ).to.equal( 12345 )
             end
-        },
+        }
     }
 }
