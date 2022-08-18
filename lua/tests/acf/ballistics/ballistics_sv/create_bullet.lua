@@ -1,12 +1,16 @@
 return {
     groupName = "ACF.Ballistics.CreateBullet",
 
+    beforeAll = function( State )
+        State.IterateBullets = ACF.Ballistics.IterateBullets
+        ACF.Ballistics.IterateBullets = function() end
+    end,
+
     beforeEach = function( State )
         State.TestAmmo = {}
         stub( ACF.Classes.AmmoTypes, "Get" ).returns( State.TestAmmo )
         stub( ACF.Ballistics, "BulletClient" )
         stub( ACF.Ballistics, "CalcBulletFlight" )
-        stub( ACF.Ballistics, "IterateBullets" )
 
         State.Bullet = {
             Type = "TestType"
@@ -15,6 +19,11 @@ return {
 
     afterEach = function()
         table.Empty( ACF.Ballistics.Bullets )
+        hook.Remove( "ACF_OnClock", "ACF Iterate Bullets" )
+    end,
+
+    afterAll = function( State )
+        ACF.Ballistics.IterateBullets = State.IterateBullets
     end,
 
     cases = {
