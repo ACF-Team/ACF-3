@@ -11,17 +11,6 @@ do -- Local repository version checking
 		return os.time(os.date("!*t", Time))
 	end
 
-	local function GetPath(Data)
-		local _, Folders = file.Find("addons/*", "GAME")
-		local Pattern    = Data.Pattern
-
-		for _, Folder in ipairs(Folders) do
-			if file.Exists(Pattern:format(Folder), "GAME") then
-				return "addons/" .. Folder
-			end
-		end
-	end
-
 	-- Makes sure the owner of the repo is correct, deals with forks
 	local function UpdateOwner(Path, Data)
 		if not file.Exists(Path .. "/.git/FETCH_HEAD", "GAME") then return end
@@ -36,7 +25,12 @@ do -- Local repository version checking
 
 	local function GetGitData(Path, Data)
 		local _, _, Head = file.Read(Path .. "/.git/HEAD", "GAME"):find("heads/(.+)$")
-		local Heads = Path .. "/.git/refs/heads/"
+		local HeadPrefix = string.Split(Head, "/")
+		Head = HeadPrefix[#HeadPrefix]
+		HeadPrefix = table.concat(HeadPrefix, "/", 1, #HeadPrefix - 1)
+		if #HeadPrefix > 0 then HeadPrefix = HeadPrefix .. "/" end
+
+		local Heads = Path .. "/.git/refs/heads/" .. HeadPrefix .. "/"
 		local Files = file.Find(Heads .. "*", "GAME")
 		local Code, Date
 
@@ -65,7 +59,7 @@ do -- Local repository version checking
 
 		if not Data then return end
 
-		local Path = GetPath(Data)
+		local Path = Data.Path
 
 		if not Path then
 			Data.Code    = "Not Installed"
@@ -126,9 +120,12 @@ do -- Repository functions
 		if not isstring(File) then return end
 		if Repos[Name] then return end
 
+		local DebugInfo = debug.getinfo( 2, "S" )
+		local AddonFolder = string.Split( DebugInfo.short_src, "/lua/" )[1]
+
 		Repos[Name] = {
 			[Realm] = {
-				Pattern = "addons/%s/" .. File,
+				Path = AddonFolder,
 				Owner = Owner,
 				Name = Name,
 			},
