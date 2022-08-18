@@ -23,18 +23,23 @@ do -- Local repository version checking
 		Data.Owner = Fetch:sub(Start + 11, End - 1)
 	end
 
-	local function GetGitData(Path, Data)
+	local function GetHeadsPath(Path, Data)
 		local _, _, Head = file.Read(Path .. "/.git/HEAD", "GAME"):find("heads/(.+)$")
 		local HeadPrefix = string.Split(Head, "/")
 		Head = HeadPrefix[#HeadPrefix]
 		HeadPrefix = table.concat(HeadPrefix, "/", 1, #HeadPrefix - 1)
 		if #HeadPrefix > 0 then HeadPrefix = HeadPrefix .. "/" end
 
+		Data.Head = Head:Trim()
+
 		local Heads = Path .. "/.git/refs/heads/" .. HeadPrefix .. "/"
+		return Heads
+	end
+
+	local function GetGitData(Path, Data)
+		local Heads = GetHeadsPath(Path, Data)
 		local Files = file.Find(Heads .. "*", "GAME")
 		local Code, Date
-
-		Data.Head = Head:Trim()
 
 		for _, Name in ipairs(Files) do
 			if Name == Data.Head then
