@@ -256,7 +256,7 @@ e2function number ranger:acfEffectiveArmor()
 	if not ACF.Check(this.Entity) then return 0 end
 
 	local Armor    = this.Entity.ACF.Armour
-	local HitAngle = ACF.GetHitAngle(this.HitNormal , this.HitPos - this.StartPos)
+	local HitAngle = ACF.GetHitAngle(this, this.HitPos - this.StartPos)
 
 	return Round(Armor / math.abs(math.cos(math.rad(HitAngle))), 2)
 end
@@ -1113,4 +1113,11 @@ e2function number entity:acfBlastRadius()
 	local Radius      = DisplayData and DisplayData.BlastRadius
 
 	return Radius and Round(Radius, 2) or 0
+end
+
+e2function void entity:acfDisableRevLimiter(number Disabled)
+	if not this.IsACFEngine then return end
+	if RestrictInfo(self, this) then return 0 end
+
+	this.revLimiterEnabled = not tobool(Disabled)
 end

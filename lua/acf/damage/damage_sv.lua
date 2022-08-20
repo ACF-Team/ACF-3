@@ -334,7 +334,7 @@ do -- Deal Damage ---------------------------
 	local Network = ACF.Networking
 
 	local function CalcDamage(Bullet, Trace, Volume)
-		local Angle   = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
+		local Angle   = ACF.GetHitAngle(Trace, Bullet.Flight)
 		local Area    = Bullet.ProjArea
 		local HitRes  = {}
 

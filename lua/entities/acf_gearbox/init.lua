@@ -202,13 +202,9 @@ do -- Spawn and Update functions -----------------------
 			List[Count + 2] = "Right Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the right side output.)"
 			List[Count + 3] = "Left Brake (Sets the amount of power given to the left side brakes.)"
 			List[Count + 4] = "Right Brake (Sets the amount of power given to the right side brakes.)"
-
-			print("dual", Entity)
 		else
 			List[Count + 1] = "Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the output.)"
 			List[Count + 2] = "Brake (Sets the amount of power given to the brakes.)"
-
-			print("single", Entity)
 		end
 	end)
 	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)

@@ -302,16 +302,78 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
-function ACF.GetReflect(HitNormal,BulletDirection)
-	return BulletDirection - 2 * (HitNormal:Dot(BulletDirection) * HitNormal)
-end
+do -- ACF.GetHitAngle
+	-- This includes workarounds for traces starting and/or ending inside an object
+	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0
+	-- If the trace also starts inside the normal (direction) will be 1,0,0 and the fraction 0
 
-function ACF.GetHitAngle(HitNormal, HitDir)
-	local FV = HitDir:GetNormalized()
-	local Ang = math.deg(math.acos(FV:Dot(-ACF.GetReflect(HitNormal,FV))))
+	-- Whenever a trace starts inside an object, a ray-mesh intersection will be used to calculate the real hitNormal
+	-- Additionally, the trace.Normal is unreliable and rayNormal (bullet.Flight) will be used instead
 
-	if Ang ~= Ang then print("invalid angle in ACF.GetHitAngle\n",">HitNormal: " .. tostring(HitNormal) .. ", HitDir (BulletVel): " .. tostring(HitDir)) return 0 end
-	return Ang / 2
+	local v0       = Vector()
+	local toDegree = math.deg
+	local acos     = math.acos
+
+	local function rayMeshIntersect(ent, rayOrigin, rayDir)
+		local mesh        = ent:GetPhysicsObject():GetMeshConvexes()
+		local minDistance = math.huge
+		local minNormal
+
+		-- Translate the ray to the local space of the mesh
+		local rayOrigin = ent:WorldToLocal(rayOrigin)
+		local rayDir    = ent:WorldToLocalAngles(rayDir:Angle()):Forward()
+
+		for _, hull in ipairs(mesh) do
+			local hc = #hull
+
+			for i = 1, hc, 3 do
+				local p1, p2, p3   = hull[i].pos, hull[i + 1].pos, hull[i + 2].pos
+				local edge1, edge2 = p2 - p1, p3 - p1
+
+				-- check if surfaceNormal is facing towards the ray
+				local surfaceNormal = edge2:GetNormalized():Cross(edge1:GetNormalized())
+
+				if rayDir:Dot(surfaceNormal) > 0.001 then continue end
+
+				-- check if ray passes through triangle
+				local h = rayDir:Cross(edge2)
+				local a = edge1:Dot(h)
+				local f = 1 / a
+				local s = rayOrigin - p1
+				local u = f * s:Dot(h)
+
+				if u < 0 or u > 1 then continue end
+
+				local q = s:Cross(edge1)
+				local v = f * rayDir:Dot(q)
+
+				if v < 0 or u + v > 1 then continue end
+
+				-- length of the ray from rayOrigin to the point of intersection
+				local length = f * edge2:Dot(q)
+
+				if length > 0.0001 and length < minDistance then
+					minDistance = length
+					minNormal   = surfaceNormal
+				end
+			end
+		end
+
+		return ent:LocalToWorldAngles(minNormal:Angle()):Forward()
+	end
+
+	function ACF.GetHitAngle(trace, rayNormal)
+		local hitNormal = trace.HitNormal
+		local rayNormal = -rayNormal:GetNormalized()
+
+		if hitNormal == v0 then
+			local rayOrigin = trace.HitPos - rayNormal * 5000
+
+			hitNormal = rayMeshIntersect(trace.Entity, rayOrigin, rayNormal)
+		end
+
+		return toDegree(acos(rayNormal:Dot(hitNormal)))
+	end
 end
 
 do -- Native type verification functions

@@ -379,6 +379,7 @@ do -- Spawn and Update functions
 		Entity.FlyRPM    = 0
 		Entity.SoundPath = Engine.Sound
 		Entity.DataStore = Entities.GetArguments("acf_engine")
+		Entity.revLimiterEnabled = true
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
 
@@ -658,7 +659,7 @@ function ENT:CalcRPM()
 	local FuelTank 	= GetNextFuelTank(self)
 
 	-- Determine if the rev limiter will engage or disengage
-	if not self.IsElectric then
+	if self.revLimiterEnabled and not self.IsElectric then
 		if self.FlyRPM > self.LimitRPM * 0.99 then
 			self.RevLimited = true
 		elseif self.FlyRPM < self.LimitRPM * 0.95 then

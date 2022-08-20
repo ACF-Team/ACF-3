@@ -166,7 +166,7 @@ if CLIENT then
 		if Ent.GetArmor then -- Is procedural armor
 			local Material = Ent.ArmorType
 			local Mass     = math.Round(Weapon:GetNWFloat("WeightMass", 0), 1)
-			local Angle    = math.Round(ACF.GetHitAngle(Trace.HitNormal, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
+			local Angle    = math.Round(ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
 			local Armor    = math.Round(Ent:GetArmor(Trace))
 			local Size     = Ent:GetSize()
 			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * 25.4, 1)
