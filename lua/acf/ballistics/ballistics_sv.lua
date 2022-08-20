@@ -94,7 +94,7 @@ function Ballistics.CalcBulletFlight(Bullet)
 	Bullet.Pos = Bullet.NextPos
 end
 
-local function GetBulletIndex()
+function Ballistics.GetBulletIndex()
 	if next(Unused) then
 		local Index = next(Unused)
 
@@ -112,7 +112,7 @@ local function GetBulletIndex()
 	return Index
 end
 
-local function IterateBullets()
+function Ballistics.IterateBullets()
 	for _, Bullet in pairs(Bullets) do
 		if not Bullet.HandlesOwnIteration then
 			Ballistics.CalcBulletFlight(Bullet)
@@ -121,7 +121,7 @@ local function IterateBullets()
 end
 
 function Ballistics.CreateBullet(BulletData)
-	local Index = GetBulletIndex()
+	local Index = Ballistics.GetBulletIndex()
 
 	if not Index then return end -- Too many bullets in the air
 
@@ -147,7 +147,7 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	if not next(Bullets) then
-		hook.Add("ACF_OnClock", "ACF Iterate Bullets", IterateBullets)
+		hook.Add("ACF_OnClock", "ACF Iterate Bullets", Ballistics.IterateBullets)
 	end
 
 	Bullets[Index] = Bullet
@@ -158,14 +158,14 @@ function Ballistics.CreateBullet(BulletData)
 	return Bullet
 end
 
-local function GetImpactType(Trace, Entity)
+function Ballistics.GetImpactType(Trace, Entity)
 	if Trace.HitWorld then return "World" end
 	if Entity:IsPlayer() then return "Prop" end
 
 	return IsValid(Entity:CPPIGetOwner()) and "Prop" or "World"
 end
 
-local function OnImpact(Bullet, Trace, Ammo, Type)
+function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 	local Func  = Type == "World" and Ammo.WorldImpact or Ammo.PropImpact
 	local Retry = Func(Ammo, Bullet, Trace)
 
@@ -265,9 +265,9 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 			if GlobalFilter[Entity:GetClass()] then return end
 
-			local Type = GetImpactType(FlightRes, Entity)
+			local Type = Ballistics.GetImpactType(FlightRes, Entity)
 
-			OnImpact(Bullet, FlightRes, AmmoTypes.Get(Bullet.Type), Type)
+			Ballistics.OnImpact(Bullet, FlightRes, AmmoTypes.Get(Bullet.Type), Type)
 		end
 	end
 end
