@@ -153,6 +153,27 @@ do -- Deal Damage ---------------------------
 			HitRes.Loss     = 1
 		end
 
+		if HitRes.Damage ~= HitRes.Damage then
+			-- This gets triggered during explosions sometimes... Not sure how, yet.
+
+			print("Angle", Angle)
+			print("Area", Area)
+			print("Caliber", Caliber)
+			print("BaseArmor", BaseArmor)
+			print("EffectiveArmor", EffectiveArmor)
+
+			print("")
+			Print(HitRes)
+			print("")
+			Print(Trace)
+			print("")
+			Print(Bullet)
+
+			ErrorNoHalt()
+
+			HitRes.Damage = 0
+		end
+
 		debugoverlay.Text(Trace.HitPos, math.Round(HitRes.Damage, 1), 5)
 		return HitRes
 	end
@@ -487,6 +508,7 @@ do -- ACF.HE
 	local max   = math.max
 	local floor = math.floor
 	local round = math.Round
+	local clamp = math.Clamp
 
 	local function isValidTarget(ent)
 		if not IsValid(ent) then return false end
@@ -531,7 +553,7 @@ do -- ACF.HE
 
 		if traceRes.HitNonWorld then
 			if traceRes.Entity ~= originalTarget and not isValidTarget(traceRes.Entity) then
-				traceData.filter[#traceData.filter + 1] = trace.Entity
+				traceData.filter[#traceData.filter + 1] = traceRes.Entity
 
 				return doTrace()
 			end
@@ -564,12 +586,12 @@ do -- ACF.HE
 
 		local totalPower = explosiveMass * ACF.HEPower -- KJ
 
-		local blastRatio       = explosiveMass / fragMass
+		local blastRatio       = clamp(explosiveMass / fragMass, 0, 1)
 		local blastRadius      = explosiveMass ^ 0.33 * 8 * 39.37 -- in
 		local blastSurfaceArea = 4 * 3.1415 * blastRadius ^ 2 -- in^2
 		local blastPower       = totalPower * blastRatio -- KJ
 
-		local fragCount   = max(floor(blastRatio * ACF.HEFrag), 2) -- minimum of 2 fragments
+		local fragCount   = blastRatio < 1 and max(floor(blastRatio * ACF.HEFrag), 2) or 0
 		local fragPower   = totalPower - blastPower -- KJ
 		local fragMass    = fragMass / fragCount -- kg
 		local fragSpeed   = (2 * (fragPower * 1000 / fragCount) * fragMass) ^ 0.5 -- m/s
@@ -601,17 +623,17 @@ do -- ACF.HE
 		do -- debug prints
 			print("HE")
 			print("  Total Power: " .. round(totalPower / 1000, 1) .. " MJ")
-			--print("  Blast Ratio: " .. round(blastRatio, 2))
+			print("  Blast Ratio: " .. round(blastRatio, 2))
 			print("  Blast Radius: " .. round(blastRadius / 39.37) .. " m")
 			print("  Blast Energy: " .. round(blastPower, 1) .. " KJ")
-			--print("  Blast Surface Area: " .. round(blastSurfaceArea) .. " in^2")
+			print("  Blast Surface Area: " .. round(blastSurfaceArea) .. " in^2")
 			print("")
 			print("  Frag Energy: " .. round(fragPower, 1) .. " KJ")
 			print("  Frag Count: " .. fragCount)
-			--print("  Frag Mass: " .. round(fragMass * 1000, 2) .. " g")
-			--print("  Frag Speed: " .. round(fragSpeed) .. " m/s")
-			--print("  Frag Volume: " .. round(fragVolume, 2) .. " mm^3")
-			--print("  Frag Caliber: " .. round(fragCaliber, 2) .. " mm")
+			print("  Frag Mass: " .. round(fragMass * 1000, 2) .. " g")
+			print("  Frag Speed: " .. round(fragSpeed) .. " m/s")
+			print("  Frag Volume: " .. round(fragVolume, 2) .. " mm^3")
+			print("  Frag Caliber: " .. round(fragCaliber, 2) .. " mm")
 			print("  Frag Penetration: " .. round(fragPen, 2) .. " mm")
 
 			debugoverlay.Sphere(origin, blastRadius, DEBUG_TIME, Color(255, 255, 255, 5))
@@ -688,12 +710,12 @@ do -- ACF.HE
 					doShove(ent, origin, displacement, powerDelivered)
 
 					-- Handle killed or penetrated targets
-					local targetKilled     = blastRes and blastRes.Kill or fragRes and fragRes.Kill
-					local targetPenetrated = blastRes and blastRes.Overkill > 0 or fragRes and fragRes.Overkill > 0
+					local targetKilled     = (blastRes and blastRes.Kill) or (fragRes and fragRes.Kill)
+					local targetPenetrated = (blastRes and blastRes.Overkill > 0) or (fragRes and fragRes.Overkill > 0)
 
 					if targetKilled or targetPenetrated then
 						print("    Target " .. (targetKilled and "killed" or "penetrated"))
-						debugoverlay.BoxAngles(ent:GetPos(), nt:OBBMins(), ent:OBBMaxs(), ent:GetAngles(), DEBUG_TIME, DEBUG_RED)
+						debugoverlay.BoxAngles(ent:GetPos(), ent:OBBMins(), ent:OBBMaxs(), ent:GetAngles(), DEBUG_TIME, DEBUG_RED)
 
 						penetratedSomething = true
 						filterCount         = filterCount + 1
