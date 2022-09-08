@@ -306,7 +306,7 @@ do -- ACF.GetHitAngle
 	-- This includes workarounds for traces starting and/or ending inside an object
 	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0
 	-- If the trace also starts inside the normal (direction) will be 1,0,0 and the fraction 0
-	
+
 	-- Whenever a trace starts inside an object, a ray-mesh intersection will be used to calculate the real hitNormal
 	-- Additionally, the trace.Normal is unreliable and rayNormal (bullet.Flight) will be used instead
 
@@ -329,13 +329,12 @@ do -- ACF.GetHitAngle
 			for i = 1, hc, 3 do
 				local p1, p2, p3   = hull[i].pos, hull[i + 1].pos, hull[i + 2].pos
 				local edge1, edge2 = p2 - p1, p3 - p1
-				local center = (p1 + p2 + p3) / 3
 
 				-- check if surfaceNormal is facing towards the ray
 				local surfaceNormal = edge2:GetNormalized():Cross(edge1:GetNormalized())
 
 				if rayDir:Dot(surfaceNormal) > 0.001 then continue end
-				
+
 				-- check if ray passes through triangle
 				local h = rayDir:Cross(edge2)
 				local a = edge1:Dot(h)
@@ -343,7 +342,7 @@ do -- ACF.GetHitAngle
 				local s = rayOrigin - p1
 				local u = f * s:Dot(h)
 
-				if u < 0 or u > 1 then continue end		
+				if u < 0 or u > 1 then continue end
 
 				local q = s:Cross(edge1)
 				local v = f * rayDir:Dot(q)

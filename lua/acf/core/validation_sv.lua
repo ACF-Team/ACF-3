@@ -114,14 +114,14 @@ function ACF.CheckLegal(Entity)
 	return true
 end
 
-local function GetEntityType(Entity)
+function ACF.GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
 	if Entity:IsVehicle() then return "Vehicle" end
 
 	return "Prop"
 end
 
-local function UpdateArea(Entity, PhysObj)
+function ACF.UpdateArea(Entity, PhysObj)
 	local Area = PhysObj:GetSurfaceArea()
 
 	if Area then -- Normal collisions
@@ -141,7 +141,7 @@ local function UpdateArea(Entity, PhysObj)
 	return Area
 end
 
-local function UpdateThickness(Entity, PhysObj, Area, Ductility)
+function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	local Thickness = Entity.ACF.Thickness
 	local EntMods = Entity.EntityMods
 	local MassMod = EntMods and EntMods.mass
@@ -218,7 +218,7 @@ function ACF.Activate(Entity, Recalc)
 	if not IsValid(PhysObj) then return end
 	if not Entity.ACF then Entity.ACF = {} end
 
-	Entity.ACF.Type    = GetEntityType(Entity)
+	Entity.ACF.Type    = ACF.GetEntityType(Entity)
 	Entity.ACF.PhysObj = PhysObj
 
 	if Entity.ACF_Activate then
@@ -226,9 +226,9 @@ function ACF.Activate(Entity, Recalc)
 		return
 	end
 
-	local Area      = UpdateArea(Entity, PhysObj)
+	local Area      = ACF.UpdateArea(Entity, PhysObj)
 	local Ductility = math.Clamp(Entity.ACF.Ductility or 0, -0.8, 0.8)
-	local Thickness = UpdateThickness(Entity, PhysObj, Area, Ductility)
+	local Thickness = ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
 	local Percent   = 1
 
