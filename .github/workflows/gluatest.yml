@@ -2,6 +2,9 @@ name: GLuaTest Runner
 
 on:
   pull_request:
+  push:
+    branches:
+      - "master"
 
 jobs:
   run-gluatest:
