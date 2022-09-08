@@ -718,9 +718,9 @@ do -- ACF.HE
 
 		local effect = EffectData()
 			effect:SetOrigin(origin)
-			effect:SetNormal(Vector(0, 0, 1))
-			effect:SetScale(blastRadius)
-			effect:SetRadius(blastRadius)
+			effect:SetNormal(Vector(0, 0, -1))
+			effect:SetScale(max(explosiveMass ^ 0.33 * 8 * 39.37, 1))
+			effect:SetRadius(0)
 
 		util.Effect("ACF_Explosion", effect)
 	end

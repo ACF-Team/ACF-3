@@ -345,14 +345,6 @@ function ENT:Detonate()
 	ACF_KillChildProps(self, Pos, ExplosiveMass)
 	ACF.HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
 
-	local Effect = EffectData()
-		Effect:SetOrigin(Pos)
-		Effect:SetNormal(Vector(0, 0, -1))
-		Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
-		Effect:SetRadius(0)
-
-	util.Effect("ACF_Explosion", Effect)
-
 	constraint.RemoveAll(self)
 	self:Remove()
 end
