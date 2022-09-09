@@ -670,8 +670,11 @@ do -- ACF.HE
 					local displacement  = targetPos - origin
 					local distance      = displacement:Length()
 					local sphereAtRange = 4 * 3.1415 * distance^2
-					local shadowArea    = ent.ACF.Area / sphereAtRange * blastSurfaceArea
+					local surfaceArea   = ent.ACF.Area / 6.45 / 4 -- Approximate surface area visible to the blast
+					local shadowArea    = surfaceArea / sphereAtRange * blastSurfaceArea
 
+					local visibleRadius  = 2 * math.sqrt(surfaceArea / 3.1415)
+					debugoverlay.Sphere(targetPos, visibleRadius, DEBUG_TIME, Color(0, 255, 160, 5))
 					-- How much power goes to the target
 					local areaFraction   = min(shadowArea / blastSurfaceArea, 0.5)
 					local powerDelivered = blastPower * areaFraction
