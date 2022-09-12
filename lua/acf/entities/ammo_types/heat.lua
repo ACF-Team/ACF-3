@@ -257,7 +257,7 @@ if SERVER then
 		local JetMassPct   = 1
 		-- Main jet penetrations
 		while Penetrations < 20 do
-			local TraceRes  = ACF.Trace(TraceData)
+			local TraceRes  = ACF.trace(TraceData)
 			local PenHitPos = TraceRes.HitPos
 			local Ent       = TraceRes.Entity
 			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
@@ -325,7 +325,7 @@ if SERVER then
 				if DotProd > 0 then
 					-- Run a trace to determine if the target is occluded
 					local TargetTrace = {start = PenHitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
-					local TargetRes   = ACF.Trace(TargetTrace)
+					local TargetRes   = ACF.trace(TargetTrace)
 					local SpallEnt    = TargetRes.Entity
 					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
 					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then

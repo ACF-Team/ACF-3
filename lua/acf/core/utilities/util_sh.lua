@@ -247,44 +247,6 @@ do -- Unit conversion
 	end
 end
 
-do -- Trace functions
-	local TraceLine = util.TraceLine
-
-	function ACF.Trace(TraceData)
-		local T = TraceLine(TraceData)
-
-		if T.HitNonWorld and ACF.CheckClips(T.Entity, T.HitPos) then
-			TraceData.filter[#TraceData.filter + 1] = T.Entity
-
-			return ACF.Trace(TraceData)
-		end
-
-		return T
-	end
-
-	-- Generates a copy of and uses it's own filter instead of using the existing one
-	function ACF.TraceF(TraceData)
-		local Original = TraceData.filter
-		local Filter = {}
-
-		if istable(Original) then
-			for K, V in pairs(Original) do Filter[K] = V end -- Quick copy
-		elseif isentity(Original) then
-			Filter[1] = Original
-		else
-			Filter = Original
-		end
-
-		TraceData.filter = Filter -- Temporarily replace filter
-
-		local T = ACF.Trace(TraceData)
-
-		TraceData.filter = Original -- Restore filter
-
-		return T, Filter
-	end
-end
-
 -- Pretty much unused, should be moved into the ACF namespace or just removed
 function switch(cases, arg)
 	local Var = cases[arg]

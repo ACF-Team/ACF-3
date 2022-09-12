@@ -43,7 +43,7 @@ do -- Overpressure --------------------------
 	end
 
 	local function CanSee(Target, Data)
-		local R = ACF.TraceF(Data)
+		local R = ACF.trace(Data)
 
 		return R.Entity == Target or not R.Hit or R.Entity == GetVehicle(Target)
 	end
@@ -544,12 +544,11 @@ do -- ACF.HE
 		end
 	end
 
-	local trace     = ACF.Trace
-	local traceRes  = {}
-	local traceData = {mask = MASK_SOLID, output = traceRes}
+	local trace     = ACF.trace
+	local traceData = {mask = MASK_SOLID}
 
 	local function doTrace(originalTarget)
-		trace(traceData)
+		local traceRes = trace(traceData)
 
 		if traceRes.HitNonWorld then
 			if traceRes.Entity ~= originalTarget and not isValidTarget(traceRes.Entity) then
@@ -557,9 +556,9 @@ do -- ACF.HE
 
 				return doTrace()
 			end
-
-			return traceRes.Entity
 		end
+
+		return traceRes
 	end
 
 	local findInSphere = ents.FindInSphere
@@ -655,7 +654,8 @@ do -- ACF.HE
 				-- We'll target any entity that the trace hits so long as it's a valid target and has not been damaged already
 				traceData.endpos = getRandomPos(bogie, bogie:IsPlayer() or bogie:IsNPC())
 
-				local ent = doTrace(bogie)
+				local traceRes = doTrace(bogie)
+				local ent      = traceRes.HitNonWorld and traceRes.Entity
 
 				if ent and not damaged[ent] then
 					debugoverlay.Line(origin, traceRes.HitPos, DEBUG_TIME, Color(255, 255, 255, 5))

@@ -11,8 +11,7 @@ local Bullets      = Ballistics.Bullets
 local Unused       = Ballistics.UnusedIndexes
 local IndexLimit   = 2000
 local SkyGraceZone = 100
-local FlightRes    = {}
-local FlightTr     = { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
+local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
 local HookRun      = hook.Run
@@ -223,9 +222,9 @@ function Ballistics.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
+	local traceRes = ACF.trace(FlightTr, mask) -- Does not modify the bullet's original filter
 
-	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
+	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -235,39 +234,39 @@ function Ballistics.DoBulletsFlight(Bullet)
 			local DeltaFuze = Clock.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
 
-			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
+			if not traceRes.Hit or Lerp < traceRes.Fraction then -- Fuze went off before running into something
 				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
 				Bullet.DetByFuze = true
 
 				if Bullet.OnEndFlight then
-					Bullet.OnEndFlight(Bullet, FlightRes)
+					Bullet.OnEndFlight(Bullet, traceRes)
 				end
 
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, FlightRes)
+				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
 
 				return
 			end
 		end
 	end
 
-	if FlightRes.Hit then
-		if FlightRes.HitSky then
-			if FlightRes.HitNormal == Vector(0, 0, -1) then
-				Bullet.SkyLvL = FlightRes.HitPos.z
+	if traceRes.Hit then
+		if traceRes.HitSky then
+			if traceRes.HitNormal == Vector(0, 0, -1) then
+				Bullet.SkyLvL = traceRes.HitPos.z
 				Bullet.LifeTime = Clock.CurTime
 			else
 				Ballistics.RemoveBullet(Bullet)
 			end
 		else
-			local Entity = FlightRes.Entity
+			local Entity = traceRes.Entity
 
 			if GlobalFilter[Entity:GetClass()] then return end
 
-			local Type = Ballistics.GetImpactType(FlightRes, Entity)
+			local Type = Ballistics.GetImpactType(traceRes, Entity)
 
-			Ballistics.OnImpact(Bullet, FlightRes, AmmoTypes.Get(Bullet.Type), Type)
+			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
 		end
 	end
 end
