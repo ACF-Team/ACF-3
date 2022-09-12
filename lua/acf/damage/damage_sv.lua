@@ -139,7 +139,7 @@ do -- Deal Damage ---------------------------
 		local Caliber        = Bullet.Diameter * 10
 		local BaseArmor      = Trace.Entity.ACF.Armour
 		local SlopeFactor    = BaseArmor / Caliber
-		local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+		local EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle))) ^ SlopeFactor
 		local MaxPenetration = Bullet:GetPenetration() --RHA Penetration
 
 		if MaxPenetration > EffectiveArmor then
