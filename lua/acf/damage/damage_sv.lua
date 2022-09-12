@@ -153,27 +153,6 @@ do -- Deal Damage ---------------------------
 			HitRes.Loss     = 1
 		end
 
-		if HitRes.Damage ~= HitRes.Damage then
-			-- This gets triggered during explosions sometimes... Not sure how, yet.
-
-			print("Angle", Angle)
-			print("Area", Area)
-			print("Caliber", Caliber)
-			print("BaseArmor", BaseArmor)
-			print("EffectiveArmor", EffectiveArmor)
-
-			print("")
-			Print(HitRes)
-			print("")
-			Print(Trace)
-			print("")
-			Print(Bullet)
-
-			ErrorNoHalt()
-
-			HitRes.Damage = 0
-		end
-
 		debugoverlay.Text(Trace.HitPos, math.Round(HitRes.Damage, 1), 5)
 		return HitRes
 	end
@@ -576,13 +555,10 @@ do -- ACF.HE
 		ProjMass = true,
 		Flight   = true,
 		Speed    = true,
-		DragCoef = true,
 		GetPenetration = function(self) return self.penetration end
 	}
 
 	function ACF.HE(origin, explosiveMass, fragMass, inflictor, filter, gun)
-		print(origin, inflictor, filter, gun)
-
 		local totalPower = explosiveMass * ACF.HEPower -- KJ
 
 		local blastRatio       = clamp(explosiveMass / fragMass, 0, 1)
@@ -593,12 +569,11 @@ do -- ACF.HE
 		local fragCount   = blastRatio < 1 and max(floor(blastRatio * ACF.HEFrag), 2) or 0
 		local fragPower   = totalPower - blastPower -- KJ
 		local fragMass    = fragMass / fragCount -- kg
-		local fragSpeed   = (2 * (fragPower * 1000 / fragCount) * fragMass) ^ 0.5 -- m/s
+		local fragSpeed   = (2 * (fragPower * 1000 / fragCount) / fragMass) ^ 0.5 -- m/s
 		local fragVolume  = fragMass / 0.00794 -- g/mm^3
-		local fragCaliber = (6 * fragVolume / 3.1415) ^ (1/3) -- (3 * fragVolume / 4 * 3.1415) * 1/3 -- mm
+		local fragCaliber = (6 * fragVolume / 3.1415) ^ (1/3) -- mm
 		local fragArea    = 1/4 * 3.1415 * fragCaliber^2
-		local fragPen     = ACF.Penetration(fragSpeed, fragMass, fragCaliber) -- mm
-		local fragDrag    = fragArea * 0.0002 / fragMass
+		local fragPen     = ACF.Penetration(fragSpeed, fragMass, fragCaliber) * 0.25 -- mm
 
 		fakeBullet.Owner    = inflictor or gun
 		fakeBullet.Caliber  = fragCaliber
@@ -606,7 +581,6 @@ do -- ACF.HE
 		fakeBullet.ProjArea = fragArea
 		fakeBullet.ProjMass = fragMass
 		fakeBullet.Speed    = fragSpeed / 39.37 -- m/s
-		fakeBullet.DragCoef = fragDrag
 
 		local filter       = filter or {}
 		local filterCount  = #filter
@@ -620,20 +594,21 @@ do -- ACF.HE
 		local penetratedSomething = true
 
 		do -- debug prints
-			print("HE")
-			print("  Total Power: " .. round(totalPower / 1000, 1) .. " MJ")
+			--print("HE")
+			print("  Total Power: " .. round(totalPower, 1) .. " KJ")
 			print("  Blast Ratio: " .. round(blastRatio, 2))
 			print("  Blast Radius: " .. round(blastRadius / 39.37) .. " m")
-			print("  Blast Energy: " .. round(blastPower, 1) .. " KJ")
-			print("  Blast Surface Area: " .. round(blastSurfaceArea) .. " in^2")
+			--print("  Blast Energy: " .. round(blastPower, 1) .. " KJ")
+			--print("  Blast Surface Area: " .. round(blastSurfaceArea) .. " in^2")
 			print("")
-			print("  Frag Energy: " .. round(fragPower, 1) .. " KJ")
+			--print("  Frag Energy: " .. round(fragPower / fragCount, 1) .. " KJ")
 			print("  Frag Count: " .. fragCount)
 			print("  Frag Mass: " .. round(fragMass * 1000, 2) .. " g")
 			print("  Frag Speed: " .. round(fragSpeed) .. " m/s")
-			print("  Frag Volume: " .. round(fragVolume, 2) .. " mm^3")
+			--print("  Frag Volume: " .. round(fragVolume, 2) .. " mm^3")
 			print("  Frag Caliber: " .. round(fragCaliber, 2) .. " mm")
 			print("  Frag Penetration: " .. round(fragPen, 2) .. " mm")
+			print("")
 
 			debugoverlay.Sphere(origin, blastRadius, DEBUG_TIME, Color(255, 255, 255, 5))
 		end
@@ -670,11 +645,9 @@ do -- ACF.HE
 					local displacement  = targetPos - origin
 					local distance      = displacement:Length()
 					local sphereAtRange = 4 * 3.1415 * distance^2
-					local surfaceArea   = ent.ACF.Area / 6.45 / 4 -- Approximate surface area visible to the blast
-					local shadowArea    = surfaceArea / sphereAtRange * blastSurfaceArea
+					local circleArea    = ent.ACF.Area / 6.45 / 4 -- Surface area converted to a circle
+					local shadowArea    = circleArea / sphereAtRange * blastSurfaceArea
 
-					local visibleRadius  = 2 * math.sqrt(surfaceArea / 3.1415)
-					debugoverlay.Sphere(targetPos, visibleRadius, DEBUG_TIME, Color(0, 255, 160, 5))
 					-- How much power goes to the target
 					local areaFraction   = min(shadowArea / blastSurfaceArea, 0.5)
 					local powerDelivered = blastPower * areaFraction
@@ -685,10 +658,6 @@ do -- ACF.HE
 
 					if fragHits > 0 then
 						print("    Frags hitting " .. fragHits)
-						--print("    Sphere at range: " .. round(sphereAtRange))
-						--print("    Area Fraction: " .. round(areaFraction, 2))
-						--print("    Power delivered: " .. round(powerDelivered, 2))
-						print("")
 
 						fakeBullet.ProjArea    = fragArea * fragHits
 						fakeBullet.Mass        = fragMass * fragHits
@@ -697,7 +666,6 @@ do -- ACF.HE
 
 						fragRes = doDamage(fakeBullet, traceRes)
 
-						--Print(fragRes)
 					end
 
 					-- Blast damage
@@ -712,6 +680,7 @@ do -- ACF.HE
 					-- Push on it
 					doShove(ent, origin, displacement, powerDelivered)
 
+					print("    Damage: " .. (blastRes and blastRes.Damage or 0) + (fragRes and fragRes.Damage or 0))
 					-- Handle killed or penetrated targets
 					local targetKilled     = (blastRes and blastRes.Kill) or (fragRes and fragRes.Kill)
 					local targetPenetrated = (blastRes and blastRes.Overkill > 0) or (fragRes and fragRes.Overkill > 0)
@@ -741,6 +710,7 @@ do -- ACF.HE
 			end
 		end
 
+		-- Explosion effect
 		local effect = EffectData()
 			effect:SetOrigin(origin)
 			effect:SetNormal(Vector(0, 0, -1))
@@ -751,15 +721,19 @@ do -- ACF.HE
 	end
 
 	local rounds = {
-		["M107 155mm HE"] = {
+		["(155mm) M107 HE"] = {
 			mass = 43.2, -- kg
 			filler = 6.86, -- tnt
+		}--[[
+		["(76mm) M42A1 HE"] = {
+			mass = 5.84,
+			filler = 0.39
 		},
-		--[[["40mm L/60 Bofors HE-T"] = {
+		["(40mm) L/60 Bofors HE-T"] = {
 			mass = 0.93,
 			filler = 0.092,
 		},
-		["M67 Hand Grenade"] = {
+		["(??) M67 Hand Grenade"] = {
 			mass = 0.4,
 			filler = 0.18,
 		}]]--
@@ -767,7 +741,7 @@ do -- ACF.HE
 
 	function ACF.testHE()
 		for name, data in pairs(rounds) do
-			print("Testing " .. name)
+			print(name)
 			ACF.HE(eye().HitPos, data.filler, data.mass - data.filler, me(), {me()}, me())
 		end
 	end
