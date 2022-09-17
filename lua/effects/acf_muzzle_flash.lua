@@ -10,6 +10,7 @@ function EFFECT:Init(Data)
 	local Sound      = Gun:GetNWString("Sound")
 	local Class      = Gun:GetNWString("Class")
 	local ClassData  = Weapons.Get(Class)
+    if not ClassData then return end
 	local Attachment = "muzzle"
 	local LongBarrel = ClassData.LongBarrel
 
