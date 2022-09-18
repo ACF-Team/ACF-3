@@ -326,8 +326,9 @@ do -- Terminal ballistics --------------------------
 			)
 		end
 
+        print( Trace.Entity )
 		if HitRes.Kill and IsValid(Trace.Entity) then
-			ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized() , Energy.Kinetic)
+			ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
 		end
 
 		HitRes.Ricochet = false
