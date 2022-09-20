@@ -102,7 +102,7 @@ return {
                 local Trace = State.Trace
                 local Bullet = State.Bullet
 
-                State.Entity.IsValid = function() return false end
+                State.Trace.Entity.IsValid = function() return false end
                 State.ACF_Damage_Result.Kill = true
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
