@@ -92,7 +92,7 @@ return {
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
                 expect( State.ACF_APKill ).to.haveBeenCalled()
-            end
+            end,
 
             cleanup = function( State )
                 IsValid = _IsValid
@@ -114,7 +114,7 @@ return {
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
                 expect( State.ACF_APKill ).notTo.haveBeenCalled()
-            end
+            end,
 
             cleanup = function( State )
                 IsValid = _IsValid
