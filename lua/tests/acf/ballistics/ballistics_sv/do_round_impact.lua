@@ -18,7 +18,11 @@ return {
             Flight = Vector( 1, 1, 1 )
         }
 
-        State.Trace = {}
+        State.Trace = {
+            Entity = {
+                IsValid = function() return true end
+            }
+        }
     end,
 
     cases = {
@@ -83,13 +87,27 @@ return {
             func = function( State )
                 local Trace = State.Trace
                 local Bullet = State.Bullet
+
                 State.ACF_Damage_Result.Kill = true
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
                 expect( State.ACF_APKill ).to.haveBeenCalled()
-                expect( #Bullet.Filter ).to.equal( 1 )
-                expect( Bullet.Filter[1] ).to.equal( State.ACF_APKill_Result )
+            end
+        },
+
+        {
+            name = "Does not call ACF_APKill when an invalid entity is killed",
+            func = function( State )
+                local Trace = State.Trace
+                local Bullet = State.Bullet
+
+                State.Trace.Entity.IsValid = function() return false end
+                State.ACF_Damage_Result.Kill = true
+
+                ACF.Ballistics.DoRoundImpact( Bullet, Trace )
+
+                expect( State.ACF_APKill ).notTo.haveBeenCalled()
             end
         }
     }
