@@ -134,7 +134,7 @@ function SWEP:Think()
 	local PlyVel = Owner:GetVelocity():Length()
 	local IsMoving = Owner:KeyDown(IN_FORWARD or IN_BACK or IN_MOVELEFT or IN_MOVERIGHT)
 
-	if self:GetAnimationTime() != 0 and self:GetAnimationTime() < CurTime() then
+	if self:GetAnimationTime() ~= 0 and self:GetAnimationTime() < CurTime() then
 		self:SetAnimationTime(0)
 		self:SetAnimPriority(0)
 	end
@@ -143,22 +143,22 @@ function SWEP:Think()
 	if CLIENT and Owner:WaterLevel() >= 2 then return end
 
 	if Owner:OnGround() and PlyVel > Owner:GetRunSpeed() * 0.9 then
-		if self:GetCurrentAnim() != "sprint" then
+		if self:GetCurrentAnim() ~= "sprint" then
 			self:SetAnim("sprint", true)
 		end
 	elseif Owner:OnGround() and PlyVel > Owner:GetWalkSpeed() * 0.9 then
-		if self:GetCurrentAnim() != "walk" then
+		if self:GetCurrentAnim() ~= "walk" then
 			self:SetAnim("walk", true)
 		end
 	else
 		local force = false
 
 		-- Force if we were previously walking
-		if self:GetCurrentAnim() != "sprint" or self:GetCurrentAnim() != "walk" then
+		if self:GetCurrentAnim() ~= "sprint" or self:GetCurrentAnim() ~= "walk" then
 			force = true
 		end
 
-		if self:GetCurrentAnim() != "idle01" then
+		if self:GetCurrentAnim() ~= "idle01" then
 			self:SetAnim("idle01", force)
 		end
 	end
