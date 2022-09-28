@@ -110,7 +110,7 @@ function SWEP:SetAnim(anim, forceplay, animpriority)
 	end
 
 	if IsIdle or (forceplay and self:GetAnimPriority() <= animpriority) then
-		local vm = self.Owner:GetViewModel()
+		local vm = self:GetOwner():GetViewModel()
 		self:SetCurrentAnim(anim)
 		vm:SendViewModelMatchingSequence(vm:LookupSequence(anim))
 		self:SetAnimationTime(CurTime() + vm:SequenceDuration() / vm:GetPlaybackRate())
@@ -130,42 +130,43 @@ function SWEP:Holster()
 end
 
 function SWEP:Think()
-	local PlyVel = self.Owner:GetVelocity():Length()
-	local IsMoving = self.Owner:KeyDown(IN_FORWARD or IN_BACK or IN_MOVELEFT or IN_MOVERIGHT)
+	local Owner = self:GetOwner()
+	local PlyVel = Owner:GetVelocity():Length()
+	local IsMoving = Owner:KeyDown(IN_FORWARD or IN_BACK or IN_MOVELEFT or IN_MOVERIGHT)
 
-    if self:GetAnimationTime() != 0 and self:GetAnimationTime() < CurTime() then
-        self:SetAnimationTime(0)
-        self:SetAnimPriority(0)
-    end
+	if self:GetAnimationTime() != 0 and self:GetAnimationTime() < CurTime() then
+		self:SetAnimationTime(0)
+		self:SetAnimPriority(0)
+	end
 
 	if CLIENT and not IsMoving then return end
-	if CLIENT and self.Owner:WaterLevel() >= 2 then return end
-	
-    if self.Owner:OnGround() and PlyVel > self.Owner:GetRunSpeed() * 0.9 then
-        if self:GetCurrentAnim() != "sprint" then
-            self:SetAnim("sprint", true)
-        end
-    elseif self.Owner:OnGround() and PlyVel > self.Owner:GetWalkSpeed() * 0.9 then
+	if CLIENT and Owner:WaterLevel() >= 2 then return end
+
+	if Owner:OnGround() and PlyVel > Owner:GetRunSpeed() * 0.9 then
+		if self:GetCurrentAnim() != "sprint" then
+			self:SetAnim("sprint", true)
+		end
+	elseif Owner:OnGround() and PlyVel > Owner:GetWalkSpeed() * 0.9 then
 		if self:GetCurrentAnim() != "walk" then
 			self:SetAnim("walk", true)
 		end
 	else
-        local force = false
-        
-        -- Force if we were previously walking
-        if self:GetCurrentAnim() != "sprint" or self:GetCurrentAnim() != "walk" then
-            force = true
-        end
+		local force = false
 
-        if self:GetCurrentAnim() != "idle01" then
-            self:SetAnim("idle01", force)
-        end
-    end
+		-- Force if we were previously walking
+		if self:GetCurrentAnim() != "sprint" or self:GetCurrentAnim() != "walk" then
+			force = true
+		end
+
+		if self:GetCurrentAnim() != "idle01" then
+			self:SetAnim("idle01", force)
+		end
+	end
 
 	if CLIENT then return end
 
 	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	local Trace = self:GetOwner():GetEyeTrace()
+	local Trace = Owner:GetEyeTrace()
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
@@ -203,7 +204,9 @@ function SWEP:Think()
 end
 
 function SWEP:PrimaryAttack()
-	if self.Owner:KeyPressed(IN_ATTACK) then
+	local Owner = self:GetOwner()
+
+	if Owner:KeyPressed(IN_ATTACK) then
 		self:SetAnim("fire_windup", true, 3)
 	end
 	self:SetAnim("fire_loop", true, 2)
@@ -215,7 +218,6 @@ function SWEP:PrimaryAttack()
 
 	local Entity = self.LastEntity
 	local Trace = self.LastTrace
-	local Owner = self:GetOwner()
 
 	if not ACF.Check(Entity) then return end
 
@@ -263,7 +265,9 @@ function SWEP:PrimaryAttack()
 end
 
 function SWEP:SecondaryAttack()
-	if self.Owner:KeyPressed(IN_ATTACK2) then
+	local Owner = self:GetOwner()
+
+	if Owner:KeyPressed(IN_ATTACK2) then
 		self:SetAnim("fire_windup", true, 3)
 	end
 	self:SetAnim("fire_loop", true, 2)
@@ -275,7 +279,6 @@ function SWEP:SecondaryAttack()
 
 	local Entity = self.LastEntity
 	local Trace = self.LastTrace
-	local Owner = self:GetOwner()
 
 	if not ACF.Check(Entity) then return end
 
