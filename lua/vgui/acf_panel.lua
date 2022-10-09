@@ -277,6 +277,17 @@ local function RotateMatrixRollToZero(A, t)
 	return B
 end
 
+-- Returns the distance from P to the closest point on a box
+-- From https://iquilezles.org/articles/distfunctions/
+local function BoxSDF(P, Box)
+	local Q = Vector(math.abs(P.x), math.abs(P.y), math.abs(P.z)) - Box
+	
+	local D1 = Vector(math.max(0, Q.x), math.max(0, Q.y), math.max(0, Q.z)):Length()
+	local D2 = math.min(math.max(Q.x, math.max(Q.y, Q.z)), 0)
+
+	return D1 + D2
+end
+
 function PANEL:AddModelPreview(Model, Rotate)
 	local Settings = {
 		Height   = 120,
@@ -331,8 +342,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		local StartMatrix = Matrix()
 
-		print(Path)
-
 		-- looks a bit nicer with this
 		if string.find(Path, "engines") ~= nil then
 			StartMatrix:Rotate(Angle(self.Settings.Pitch, 0, 0))
@@ -347,6 +356,8 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		self.CamCenter = Center
 		self.CamDistance = 1.2 * math.max(Size.x, math.max(Size.y, Size.z))
+
+		self.BoxSize = Vector(Size) -- Used for zooming
 
 		self.CamDistanceMul = 1
 		self.CamDistanceMulTarget = 1
@@ -431,9 +442,18 @@ function PANEL:AddModelPreview(Model, Rotate)
 			self.RotMatrix = RotateMatrixRollToZero(self.RotMatrix, LerpT * 0.25)
 		end
 
+		-- Compute zoom distance
+		if self.IsMouseDown and input.IsMouseDown(MOUSE_RIGHT) then
+			local DistToBox = BoxSDF(self.RotMatrix * Vector(-self.CamDistance, 0, 0), self.BoxSize)
+			local Fraction = math.pow(1 - DistToBox / self.CamDistance, 0.5)
+
+			self.CamDistanceMulTarget = Fraction
+		else
+			self.CamDistanceMulTarget = 1
+		end
+
 		-- Lerp distance towards target
-		self.CamDistanceMulTarget = (self.IsMouseDown and input.IsMouseDown(MOUSE_RIGHT)) and 0.76 or 1
-		self.CamDistanceMul = self.CamDistanceMul + (self.CamDistanceMulTarget - self.CamDistanceMul) * LerpT
+		self.CamDistanceMul = self.CamDistanceMul + (self.CamDistanceMulTarget - self.CamDistanceMul) * LerpT * 0.5
 
 		local CamTransform = Matrix()
 		CamTransform:Translate(self.CamCenter)
