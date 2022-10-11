@@ -322,7 +322,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 	function Panel:UpdateModel(Path)
 		if not isstring(Path) then
-			Path = "models/props_junk/PopCan01a.mdl"
+			return self:DrawEntity(false)
 		end
 
 		local Center = ModelData.GetModelCenter(Path)
@@ -363,7 +363,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		self:DrawEntity(true)
 		self:SetModel(Path)
-		self:SetFOV(self.Settings.FOV)
 		self:SetCamPos(Center + Vector(-self.CamDistance, 0, 0))
 	end
 
