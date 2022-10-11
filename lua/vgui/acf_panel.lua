@@ -249,7 +249,7 @@ local function LerpMatrix(A, B, t)
 	local Dot = A_Dir:Dot(B_Dir)
 	if Dot < 0.999999 then
 		-- else use cross product
-		RotAxis = A_Dir:Cross(B_Dir) 
+		RotAxis = A_Dir:Cross(B_Dir)
 		RotAxis:Normalize()
 
 		RotAngle = 180 / math.pi * math.acos(Dot)
@@ -281,7 +281,7 @@ end
 -- From https://iquilezles.org/articles/distfunctions/
 local function BoxSDF(P, Box)
 	local Q = Vector(math.abs(P.x), math.abs(P.y), math.abs(P.z)) - Box
-	
+
 	local D1 = Vector(math.max(0, Q.x), math.max(0, Q.y), math.max(0, Q.z)):Length()
 	local D2 = math.min(math.max(Q.x, math.max(Q.y, Q.z)), 0)
 
@@ -292,7 +292,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 	local Settings = {
 		Height   = 120,
 		FOV      = 60,
-		
+
 		Pitch    = 15,				-- Default pitch angle, camera will kinda bob up and down with nonzero setting
 		Rotation = Angle(0, -35, 0) -- Default rotation rate
 	}
