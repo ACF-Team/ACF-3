@@ -297,7 +297,6 @@ do -- Spawn and Update functions
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
-		Entity.CurveFactor      = Engine.CurveFactor
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
 		Entity.PeakPowerRPM		= Engine.PeakPowerRPM
@@ -687,7 +686,7 @@ function ENT:CalcRPM()
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	local Percent = (self.FlyRPM - self.IdleRPM) / self.CurveFactor / self.LimitRPM
+	local Percent = math.Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
 	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - Throttle) / self.Inertia
 
