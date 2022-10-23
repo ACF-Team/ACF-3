@@ -11,14 +11,12 @@ E2Lib.RegisterExtension("acf", true)
 -- Local Variables and Helper Functions
 --===============================================================================================--
 
-local ACF            = ACF
-local AllLinkSources = ACF.GetAllLinkSources
-local LinkSource     = ACF.GetLinkSource
-local AmmoTypes      = ACF.Classes.AmmoTypes
-local Clock          = ACF.Utilities.Clock
-local match          = string.match
-local floor          = math.floor
-local Round          = math.Round
+local ACF       = ACF
+local AmmoTypes = ACF.Classes.AmmoTypes
+local Clock     = ACF.Utilities.Clock
+local match     = string.match
+local floor     = math.floor
+local Round     = math.Round
 
 local function IsACFEntity(Entity)
 	if not validPhysics(Entity) then return false end
@@ -42,15 +40,15 @@ local function GetReloadTime(Entity)
 end
 
 local function GetLinkedWheels(Target)
-	local Current, Class, Sources
-	local Queued = { [Target] = true }
+	local Queued  = { [Target] = true }
 	local Checked = {}
-	local Linked = {}
+	local Linked  = {}
+	local Current, Class, Sources
 
 	while next(Queued) do
 		Current = next(Queued)
-		Class = Current:GetClass()
-		Sources = AllLinkSources(Class)
+		Class   = Current:GetClass()
+		Sources = ACF.GetAllLinkSources(Class)
 
 		Queued[Current] = nil
 		Checked[Current] = true
@@ -725,7 +723,7 @@ e2function number entity:acfFuel()
 	if this.Fuel then return Round(this.Fuel, 2) end
 
 	local Fuel = 0
-	local Source = LinkSource(this:GetClass(), "FuelTanks")
+	local Source = ACF.GetLinkSource(this:GetClass(), "FuelTanks")
 
 	if not Source then return 0 end
 
@@ -744,7 +742,7 @@ e2function number entity:acfFuelLevel()
 
 	local Fuel = 0
 	local Capacity = 0
-	local Source = LinkSource(this:GetClass(), "FuelTanks")
+	local Source = ACF.GetLinkSource(this:GetClass(), "FuelTanks")
 
 	if not Source then return 0 end
 
@@ -857,7 +855,7 @@ e2function number entity:acfAmmoCount()
 	if RestrictInfo(self, this) then return 0 end
 
 	local Count = 0
-	local Source = LinkSource(this:GetClass(), "Crates")
+	local Source = ACF.GetLinkSource(this:GetClass(), "Crates")
 
 	if not Source then return 0 end
 
@@ -876,7 +874,7 @@ e2function number entity:acfTotalAmmoCount()
 	if RestrictInfo(self, this) then return 0 end
 
 	local Count = 0
-	local Source = LinkSource(this:GetClass(), "Crates")
+	local Source = ACF.GetLinkSource(this:GetClass(), "Crates")
 
 	if not Source then return 0 end
 

@@ -85,15 +85,15 @@ local function shallowCopy(tbl)
 end
 
 local function GetLinkedWheels(Target)
-	local Current, Class, Sources
-	local Queued = { [Target] = true }
+	local Queued  = { [Target] = true }
 	local Checked = {}
-	local Linked = {}
+	local Linked  = {}
+	local Current, Class, Sources
 
 	while next(Queued) do
 		Current = next(Queued)
-		Class = Current:GetClass()
-		Sources = AllLinkSources(Class)
+		Class   = Current:GetClass()
+		Sources = ACF.GetAllLinkSources(Class)
 
 		Queued[Current] = nil
 		Checked[Current] = true
@@ -1753,7 +1753,7 @@ function ents_methods:acfFuel()
 	if RestrictInfo(This) then return 0 end
 	if This.Fuel then return math.Round(This.Fuel, 2) end
 
-	local Source = LinkSource(This:GetClass(), "FuelTanks")
+	local Source = ACF.GetLinkSource(This:GetClass(), "FuelTanks")
 
 	if not Source then return 0 end
 
@@ -1780,7 +1780,7 @@ function ents_methods:acfFuelLevel()
 		return math.Round(This.Fuel or 0 / This.Capacity, 2)
 	end
 
-	local Source = LinkSource(This:GetClass(), "FuelTanks")
+	local Source = ACF.GetLinkSource(This:GetClass(), "FuelTanks")
 
 	if not Source then return 0 end
 
@@ -2357,7 +2357,7 @@ function ents_methods:acfAmmoCount()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return 0 end
 
-	local Source = LinkSource(This:GetClass(), "Crates")
+	local Source = ACF.GetLinkSource(This:GetClass(), "Crates")
 
 	if not Source then return 0 end
 
@@ -2383,7 +2383,7 @@ function ents_methods:acfTotalAmmoCount()
 	if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 	if RestrictInfo(This) then return 0 end
 
-	local Source = LinkSource(This:GetClass(), "Crates")
+	local Source = ACF.GetLinkSource(This:GetClass(), "Crates")
 
 	if not Source then return 0 end
 
