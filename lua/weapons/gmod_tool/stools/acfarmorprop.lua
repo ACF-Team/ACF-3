@@ -466,11 +466,11 @@ do -- Armor readout
 					OtherNum = OtherNum + 1
 				end
 			elseif not (Ent:IsPlayer() or Ent:IsNPC()) then -- These will pass the ACF check, but we don't want them either
-				local Owner = Ent:CPPIGetOwner()
+				local Owner   = Ent:CPPIGetOwner() or game.GetWorld()
 				local PhysObj = Ent.ACF.PhysObj
-				local Class = Ent:GetClass()
-				local Mass = PhysObj:GetMass()
-				local IsPhys = false
+				local Class   = Ent:GetClass()
+				local Mass    = PhysObj:GetMass()
+				local IsPhys  = false
 
 				if (IsValid(Owner) or Owner:IsWorld()) and not Lookup[Owner] then
 					local Name = Owner:GetName()
