@@ -112,7 +112,11 @@ do -- Mobility functions
 
 		if Count < 3 then return 0 end
 
-		Pos = Clamp(Pos, 0, 1)
+		if Pos <= 0 then
+			return Points[1]
+		elseif Pos >= 1 then
+			return Points[Count]
+		end
 
 		local T       = (Pos * (Count - 1)) % 1
 		local Current = math.floor(Pos * (Count - 1) + 1)
@@ -133,22 +137,17 @@ do -- Mobility functions
 		local MaxTq          = Class.Torque
 		local Idle           = Class.RPM.Idle
 		local Redline        = Class.RPM.Limit
-		local CurveFactor    = (Redline - Idle) / Redline --Torque curves all start after idle RPM is reached
 		local PeakTq         = 0
 		local PeakPower      = 0
-		local PowerbandPeak  = 0 -- Highest value of (torque + power) / 2
 		local PowerTable     = {} -- Power at each point on the curve for use in powerband calc
-		local PowerbandTable = {} -- (torque + power) / 2 at each point on the curve
 		local Iterations     = 32 -- Iterations for use in calculating the curve, higher is more accurate
 		local PeakTqRPM
 		local PeakPowerRPM
-		local PowerbandMinRPM
-		local PowerbandMaxRPM
 
-		-- Calculate peak torque/Power RPM.
+		-- Calculate peak torque/Power RPM
 		for I = 0, Iterations do
 			local RPM   = I / Iterations * Redline
-			local Perc  = (RPM - Idle) / CurveFactor / Redline
+			local Perc = math.Remap(RPM, Idle, Redline, 0, 1)
 			local CurTq = ACF.GetTorque(Curve, Perc)
 			local Power = MaxTq * CurTq * RPM / 9548.8
 
@@ -165,29 +164,19 @@ do -- Mobility functions
 			end
 		end
 
-		-- Loop two, to calculate the powerband's peak.
+		-- Find the bounds of the powerband (within 10% of its peak)
+		local PowerbandMinRPM
+		local PowerbandMaxRPM
+
 		for I = 0, Iterations do
-			local Power     = PowerTable[I] / PeakPower
-			local Torque    = ACF.GetTorque(Curve, I / Iterations)
-			local Powerband = Power + Torque -- No solid definition of powerband, so this seemed to work alright
-
-			PowerbandTable[I] = Powerband
-
-			if Powerband > PowerbandPeak then
-				PowerbandPeak = Powerband
-			end
-		end
-
-		-- Loop three, to actually figure out where the bounds of the powerband are (within 10% of max).
-		for I = 0, Iterations do
-			local Powerband = PowerbandTable[I] / PowerbandPeak
+			local PowerFrac = PowerTable[I] / PeakPower
 			local RPM       = I / Iterations * Redline
 
-			if Powerband > 0.9 and not PowerbandMinRPM then
+			if PowerFrac > 0.9 and not PowerbandMinRPM then
 				PowerbandMinRPM = RPM
 			end
 
-			if (PowerbandMinRPM and Powerband < 0.9 and not PowerbandMaxRPM) or (I == Iterations and not PowerbandMaxRPM) then
+			if (PowerbandMinRPM and PowerFrac < 0.9 and not PowerbandMaxRPM) or (I == Iterations and not PowerbandMaxRPM) then
 				PowerbandMaxRPM = RPM
 			end
 		end
@@ -197,7 +186,6 @@ do -- Mobility functions
 		Class.PeakPowerRPM = math.Round(PeakPowerRPM)
 		Class.RPM.PeakMin  = math.Round(PowerbandMinRPM, -1)
 		Class.RPM.PeakMax  = math.Round(PowerbandMaxRPM, -1)
-		Class.CurveFactor  = (Class.RPM.Limit - Class.RPM.Idle) / Class.RPM.Limit
 	end
 end
 

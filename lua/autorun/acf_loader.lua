@@ -131,6 +131,7 @@ end
 local function ShouldClear(Context, Name, Table)
 	if Name == "Core" then return false end
 	if Context[Name] ~= Table then return false end
+	if not istable(Table) then return false end
 
 	return next(Table) == nil
 end
