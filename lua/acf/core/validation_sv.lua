@@ -50,7 +50,7 @@ function ACF.IsLegal(Entity)
 
 	local Legal, Reason, Message, Timeout = hook.Run("ACF_IsLegal", Entity)
 
-	if Legal ~= nil then return Legal, Reason, Message, Timeout end
+	if not Legal then return Legal, Reason, Message, Timeout end
 
 	return true
 end

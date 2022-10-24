@@ -6,11 +6,11 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF          = ACF
+local hook         = hook
 local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
-local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
 	local Classes   = ACF.Classes
@@ -115,7 +115,7 @@ do -- Spawning and Updating --------------------
 				Class.VerifyData(Data, Class, Ammo)
 			end
 
-			HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+			hook.Run("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
 		end
 	end
 
@@ -135,7 +135,7 @@ do -- Spawning and Updating --------------------
 					OldAmmo:OnLast(Entity)
 				end
 
-				HookRun("ACF_OnAmmoLast", OldAmmo, Entity)
+				hook.Run("ACF_OnAmmoLast", OldAmmo, Entity)
 			end
 
 			Entity.RoundData  = Ammo
@@ -146,7 +146,7 @@ do -- Spawning and Updating --------------------
 				Ammo:OnFirst(Entity)
 			end
 
-			HookRun("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
+			hook.Run("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
 
 			Ammo:Network(Entity, Entity.BulletData)
 		end
@@ -267,7 +267,7 @@ do -- Spawning and Updating --------------------
 		local Ammo   = AmmoTypes.Get(Data.AmmoType)
 		local Model  = "models/holograms/rcube_thin.mdl"
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 
 		if CanSpawn == false then return false end
 
@@ -301,7 +301,7 @@ do -- Spawning and Updating --------------------
 			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
+		hook.Run("ACF_OnEntitySpawn", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
 
 		Crate:UpdateOverlay(true)
 
@@ -359,14 +359,14 @@ do -- Spawning and Updating --------------------
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_ammo", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -378,7 +378,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		hook.Run("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
 		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
 			for Entity in pairs(self.Weapons) do
@@ -500,9 +500,11 @@ do -- ACF Activation and Damage -----------------
 		local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
 		if (Ratio * self.Capacity / self.Ammo) > math.random() then
+			local CanBurn = hook.Run("ACF_AmmoCanBurn", self)
+
 			self.Inflictor = Inflictor
 
-			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
+			if CanBurn then
 				self.Damaged = Clock.CurTime + (5 - Ratio * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
@@ -522,7 +524,10 @@ do -- ACF Activation and Damage -----------------
 
 	function ENT:Detonate()
 		if self.Exploding then return end
-		if HookRun("ACF_AmmoExplode", self) == false then return end
+
+		local CanExplode = hook.Run("ACF_AmmoCanExplode", self)
+
+		if not CanExplode then return end
 
 		self.Exploding = true
 
@@ -694,7 +699,7 @@ do -- Misc --------------------------------------
 			Class.OnLast(self, Class)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, Class)
+		hook.Run("ACF_OnEntityLast", "acf_ammo", self, Class)
 
 		ActiveCrates[self] = nil
 

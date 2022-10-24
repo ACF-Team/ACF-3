@@ -331,9 +331,11 @@ do -- Firing ------------------------------------
 	function ENT:CanShoot()
 		if not ACF.GunsCanFire then return false end
 		if not ACF.AllowFunEnts then return false end
-		if hook.Run("ACF_FireShell", self) == false then return false end
+		if self.CurrentShot == 0 then return false end
 
-		return self.CurrentShot > 0
+		local CanFire = hook.Run("ACF_WeaponCanFire", self)
+
+		return CanFire
 	end
 
 	function ENT:Shoot()

@@ -1,6 +1,6 @@
--- Local Vars -----------------------------------
-local ACF     = ACF
-local HookRun = hook.Run
+local hook = hook
+local ACF  = ACF
+
 
 do -- KE Shove
 	local Clock = ACF.Utilities.Clock
@@ -8,12 +8,14 @@ do -- KE Shove
 	function ACF.KEShove(Target, Pos, Vec, KE)
 		if not IsValid(Target) then return end
 
-		if HookRun("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
+		local CanShove = hook.Run("ACF_KEShove", Target, Pos, Vec, KE)
+
+		if not CanShove then return end
 
 		local Ancestor = ACF_GetAncestor(Target)
-		local Phys = Ancestor:GetPhysicsObject()
+		local PhysObj  = Ancestor:GetPhysicsObject()
 
-		if IsValid(Phys) then
+		if IsValid(PhysObj) then
 			if not Ancestor.acflastupdatemass or Ancestor.acflastupdatemass + 2 < Clock.CurTime then
 				ACF_CalcMassRatio(Ancestor)
 			end
@@ -21,7 +23,7 @@ do -- KE Shove
 			local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
 			local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
 
-			Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
+			PhysObj:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
 		end
 	end
 end
@@ -479,7 +481,7 @@ do -- Deal Damage ---------------------------
 		local Entity = Trace.Entity
 		local Type   = ACF.Check(Entity)
 
-		if HookRun("ACF_BulletDamage", Bullet, Trace) == false or Type == false then
+		if Type == false or not hook.Run("ACF_BulletDamage", Bullet, Trace) then
 			return { -- No damage
 				Damage = 0,
 				Overkill = 0,

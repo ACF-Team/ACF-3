@@ -13,7 +13,6 @@ local Clock       = Utilities.Clock
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local HookRun     = hook.Run
 local Wall        = 0.03937 --wall thickness in inches (1mm)
 
 local function CanRefuel(Refill, Tank, Distance)
@@ -70,7 +69,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_fueltank", Data, Class)
+			hook.Run("ACF_VerifyData", "acf_fueltank", Data, Class)
 		end
 	end
 
@@ -141,7 +140,7 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
+		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
 
 		if CanSpawn == false then return end
 
@@ -171,7 +170,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
+		hook.Run("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
 
 		Tank:UpdateOverlay(true)
 
@@ -208,14 +207,15 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_fueltank", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_fueltank", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -227,7 +227,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, FuelTank)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		hook.Run("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if next(self.Engines) then
 			local Fuel    = self.FuelType
@@ -300,7 +300,9 @@ function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
-		if HookRun("ACF_FuelExplode", self) == false then return HitRes end
+		local CanExplode = hook.Run("ACF_FuelCanExplode", self)
+
+		if not CanExplode then return HitRes end
 
 		local Inflictor = Bullet.Owner
 
@@ -318,7 +320,9 @@ function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 
 	--it's gonna blow
 	if math.random() < (ExplodeChance + Ratio) then
-		if HookRun("ACF_FuelExplode", self) == false then return HitRes end
+		local CanExplode = hook.Run("ACF_FuelCanExplode", self)
+
+		if not CanExplode then return HitRes end
 
 		self.Inflictor = Inflictor
 
@@ -467,10 +471,13 @@ function ENT:Think()
 		local Position  = self:GetPos()
 
 		for Tank in pairs(ACF.FuelTanks) do
-			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
-				local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+			local Distance = Position:DistToSqr(Tank:GetPos())
 
-				if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+			if CanRefuel(self, Tank, Distance) then
+				local Exchange  = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+				local CanRefill = hook.Run("ACF_FuelCanRefill", self, Tank, Exchange)
+
+				if not CanRefill then continue end
 
 				self:Consume(Exchange)
 				Tank:Consume(-Exchange)
@@ -498,7 +505,7 @@ function ENT:OnRemove()
 		Class.OnLast(self, Class)
 	end
 
-	HookRun("ACF_OnEntityLast", "acf_fueltank", self, Class)
+	hook.Run("ACF_OnEntityLast", "acf_fueltank", self, Class)
 
 	for Engine in pairs(self.Engines) do
 		self:Unlink(Engine)

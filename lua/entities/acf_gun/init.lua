@@ -11,7 +11,6 @@ local AmmoTypes   = Classes.AmmoTypes
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local TimerCreate = timer.Create
-local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- TODO: Replace with CFrame as soon as it's available
@@ -88,7 +87,7 @@ do -- Spawn and Update functions --------------------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_gun", Data, Class)
+			hook.Run("ACF_VerifyData", "acf_gun", Data, Class)
 		end
 	end
 
@@ -213,7 +212,7 @@ do -- Spawn and Update functions --------------------------------
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
+		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
 
 		if CanSpawn == false then return false end
 
@@ -253,7 +252,7 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
+		hook.Run("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
 
@@ -291,7 +290,7 @@ do -- Spawn and Update functions --------------------------------
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -303,7 +302,7 @@ do -- Spawn and Update functions --------------------------------
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gun", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_gun", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -315,7 +314,7 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnUpdate(self, Data, Class, Weapon)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		hook.Run("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
 
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do
@@ -483,9 +482,10 @@ do -- Metamethods --------------------------------
 
 				return false
 			end
-			if HookRun("ACF_FireShell", self) == false then return false end -- Something hooked into ACF_FireShell said no
 
-			return true
+			local CanFire = hook.Run("ACF_WeaponCanFire", self)
+
+			return CanFire
 		end
 
 		function ENT:GetSpread()
@@ -866,7 +866,7 @@ do -- Metamethods --------------------------------
 				Class.OnLast(self, Class)
 			end
 
-			HookRun("ACF_OnEntityLast", "acf_gun", self, Class)
+			hook.Run("ACF_OnEntityLast", "acf_gun", self, Class)
 
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)

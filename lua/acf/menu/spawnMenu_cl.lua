@@ -96,13 +96,17 @@ do -- ACF Menu context panel
 	local function AllowOption(Option)
 		if Option.IsEnabled and not Option:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuOption", Option.Index, Option.Name) ~= false
+		local Allow = hook.Run("ACF_AllowMenuOption", Option.Index, Option.Name)
+
+		return Allow
 	end
 
 	local function AllowItem(Item)
 		if Item.IsEnabled and not Item:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuItem", Item.Index, Item.Option, Item.Name) ~= false
+		local Allow = hook.Run("ACF_AllowMenuItem", Item.Index, Item.Option, Item.Name)
+
+		return Allow
 	end
 
 	local function UpdateTree(Tree, Old, New)

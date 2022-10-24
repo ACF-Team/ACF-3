@@ -1,3 +1,4 @@
+local hook       = hook
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Clock      = ACF.Utilities.Clock
@@ -15,7 +16,6 @@ local FlightRes    = {}
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
-local HookRun      = hook.Run
 
 
 -- This will create, or update, the tracer effect on the clientside
@@ -195,7 +195,9 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
-	if HookRun("ACF Bullet Flight", Bullet) == false then return end
+	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
+
+	if not CanFly then return end
 
 	if Bullet.SkyLvL then
 		if Clock.CurTime - Bullet.LifeTime > 30 then

@@ -99,7 +99,7 @@ do -- Spawning and updating
 
 		local HookResult, HookMessage = hook.Run("ACF_CanCreateEntity", Class, Player, Position, Angles, Data)
 
-		if HookResult == false then return false, HookMessage end
+		if not HookResult then return false, HookMessage end
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
@@ -126,7 +126,7 @@ do -- Spawning and updating
 
 		local HookResult, HookMessage = hook.Run("ACF_CanUpdateEntity", Entity, Data)
 
-		if HookResult == false then return false, "Couldn't update entity: " .. (HookMessage or "No reason provided.") end
+		if not HookResult then return false, "Couldn't update entity: " .. (HookMessage or "No reason provided.") end
 
 		local Result, Message = Entity:Update(Data)
 
