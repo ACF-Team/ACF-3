@@ -7,6 +7,7 @@ local Meta    = {}
 -- @return The new DamageInfo object.
 function Objects.DamageInfo()
 	local Object = {
+		Type      = "Unknown",
 		Attacker  = NULL,
 		Inflictor = NULL,
 		HitGroup  = 0,
@@ -17,6 +18,7 @@ function Objects.DamageInfo()
 	return Object
 end
 
+AccessorFunc(Meta, "Type", "Type", FORCE_STRING)
 AccessorFunc(Meta, "Attacker", "Attacker")
 AccessorFunc(Meta, "Inflictor", "Inflictor")
 AccessorFunc(Meta, "HitGroup", "HitGroup", FORCE_NUMBER)
