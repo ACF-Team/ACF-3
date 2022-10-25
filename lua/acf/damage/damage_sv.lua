@@ -481,7 +481,7 @@ end
 do -- ACF.HE
 	local DEBUG_TIME  = 30
 	local DEBUG_RED   = Color(255, 0, 0, 15)
-	local DEBUG_GREEN = Color(0, 255, 0)
+	--local DEBUG_GREEN = Color(0, 255, 0)
 
 	local min   = math.min
 	local max   = math.max
@@ -498,7 +498,7 @@ do -- ACF.HE
 		return true
 	end
 
-	local function getRandomPos(Entity)
+	local function getRandomPos(Entity, IsChar)
 		if IsChar then
 			local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since most of the character is in the middle
 			local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
@@ -524,17 +524,16 @@ do -- ACF.HE
 	end
 
 	local trace     = ACF.trace
-	local traceData = {mask = MASK_SOLID}
+	local traceData = { mask = MASK_SOLID }
 
 	local function doTrace(originalTarget)
-		local traceRes = trace(traceData)
+		local traceRes  = trace(traceData)
+		local hitEntity = traceRes.Entity
 
-		if traceRes.HitNonWorld then
-			if traceRes.Entity ~= originalTarget and not isValidTarget(traceRes.Entity) then
-				traceData.filter[#traceData.filter + 1] = traceRes.Entity
+		if traceRes.HitNonWorld and hitEntity ~= originalTarget and not isValidTarget(hitEntity) then
+			traceData.filter[#traceData.filter + 1] = hitEntity
 
-				return doTrace()
-			end
+			return doTrace()
 		end
 
 		return traceRes
@@ -571,8 +570,8 @@ do -- ACF.HE
 		local fragMass    = fragMass / fragCount -- kg
 		local fragSpeed   = (2 * (fragPower * 1000 / fragCount) / fragMass) ^ 0.5 -- m/s
 		local fragVolume  = fragMass / 0.00794 -- g/mm^3
-		local fragCaliber = (6 * fragVolume / 3.1415) ^ (1/3) -- mm
-		local fragArea    = 1/4 * 3.1415 * fragCaliber^2
+		local fragCaliber = (6 * fragVolume / 3.1415) ^ 0.3333 -- mm
+		local fragArea    = 0.25 * 3.1415 * fragCaliber^2
 		local fragPen     = ACF.Penetration(fragSpeed, fragMass, fragCaliber) * 0.25 -- mm
 
 		fakeBullet.Owner    = inflictor or gun
@@ -589,7 +588,7 @@ do -- ACF.HE
 		traceData.filter = filter
 
 		local bogies              = findInSphere(origin, blastRadius)
-		local bogieCount          = #bogies
+		--local bogieCount          = #bogies
 		local damaged             = {} -- entities that have been damaged and cannot be damaged again
 		local penetratedSomething = true
 
