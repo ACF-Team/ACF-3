@@ -33,6 +33,17 @@ function Meta:Compute()
 	}
 end
 
+--- Returns a blank damage result table with all its values set to zero (false for Kill).
+-- @return The blank damage result table.
+function Meta:GetBlank()
+	return {
+		Damage   = 0,
+		Overkill = 0,
+		Loss     = 0,
+		Kill     = false,
+	}
+end
+
 AccessorFunc(Meta, "Area", "Area", FORCE_NUMBER) -- cm2
 AccessorFunc(Meta, "Penetration", "Penetration", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm
