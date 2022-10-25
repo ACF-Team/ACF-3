@@ -2,8 +2,8 @@ local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
 
---- Creates a new damage result object with default values.
--- @return The new damage result object.
+--- Creates a new DamageResult object with all its fields set to default values.
+-- @return The new DamageResult object.
 function Objects.DamageResult()
 	local Object = {
 		Area        = 1,

@@ -2,6 +2,9 @@ local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
 
+--- Create a new DamageInfo object with all its fields set to default values.
+-- This is just a much more simplified version of Gmod's CTakeDamageInfo object.
+-- @return The new DamageInfo object.
 function Objects.DamageInfo()
 	local Object = {
 		Attacker  = NULL,
