@@ -1,9 +1,7 @@
 local ACF     = ACF
 local Damage  = ACF.TempDamage
---local Objects = Damage.Objects
+local Objects = Damage.Objects
 local Network = ACF.Networking
-
-ACF.KEtoRHA = 0.25 -- Empirical conversion from (kinetic energy in KJ)/(Area in Cm2) to RHA penetration
 
 --- Returns the blast's energy, later to be used to calculate its penetration.
 -- This is a functionally similar copy to what ACF_Kinetic used to do.
@@ -18,6 +16,38 @@ function Damage.getBlastEnergy(Speed, Mass, LimitVel)
 	local Excess = math.max(0, Speed - LimitVel)
 
 	return math.max(Energy * 0.1, Energy - Excess * Excess / (LimitVel * 5) * (Energy * 0.005) ^ 0.95)
+end
+
+--- Returns the penetration of a blast, usually paired with getBlastEnergy.
+-- @param Energy The energy of the blast in KJ.
+-- @param Area The area of the blast in cm2.
+-- @return The penetration of the blast in RHA mm.
+function Damage.getBlastPenetration(Energy, Area)
+	return Energy / Area * 0.25 -- NOTE: 0.25 is what ACF.KEtoRHA used to be set at.
+end
+
+function Damage.getBulletDamage(Bullet, Trace)
+	local Entity = Trace.Entity
+
+	if not ACF.Check(Entity) then return end
+
+	local DmgResult = Objects.DamageResult()
+	local DmgInfo   = Objects.DamageInfo()
+	local Thickness = Entity.ACF.Armour
+	local Angle     = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
+
+	DmgResult:SetArea(Bullet.ProjArea)
+	DmgResult:SetPenetration(Bullet:GetPenetration())
+	DmgResult:SetThickness(Thickness)
+	DmgResult:SetAngle(Angle)
+	DmgResult:SetFactor(Thickness / Bullet.Diameter)
+
+	DmgInfo:SetType("Bullet")
+	DmgInfo:SetAttacker(Bullet.Owner)
+	DmgInfo:SetInflictor(Bullet.Gun)
+	DmgInfo:SetHitGroup(Trace.HitGroup)
+
+	return DmgResult, DmgInfo
 end
 
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
@@ -184,4 +214,3 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 
 	return DmgResult:GetBlank()
 end
-
