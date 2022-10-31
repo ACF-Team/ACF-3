@@ -194,23 +194,28 @@ end
 -- @return A table containing the damage done to the entity.
 -- Most of the time, this table will be the output of the DamageResult object.
 function Damage.dealDamage(Entity, DmgResult, DmgInfo)
-	local Type = ACF.Check(Entity)
+	local Type   = ACF.Check(Entity)
+	local HitRes = DmgResult:GetBlank()
 
-	if not Type then return DmgResult:GetBlank() end
+	if not Type then return HitRes end
 
-	local CanDamage = hook.Run("ACF_CanDamage", Entity, DmgResult, DmgInfo)
+	local CanDamage = hook.Run("ACF_PreDamageEntity", Entity, DmgResult, DmgInfo)
 
-	if CanDamage == false then return DmgResult:GetBlank() end
+	if CanDamage == false then return HitRes end
+
+	hook.Run("ACF_OnDamageEntity", Entity, DmgResult, DmgInfo)
 
 	if Entity.ACF_OnDamage then
-		return Entity:ACF_OnDamage(DmgResult, DmgInfo)
-	elseif EntType == "Prop" then
-		return Damage.doPropDamage(Entity, DmgResult, DmgInfo)
-	elseif EntType == "Vehicle" then
-		return Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-	elseif EntType == "Squishy" then
-		return Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
+		HitRes = Entity:ACF_OnDamage(DmgResult, DmgInfo)
+	elseif Type == "Prop" then
+		HitRes = Damage.doPropDamage(Entity, DmgResult, DmgInfo)
+	elseif Type == "Vehicle" then
+		HitRes = Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
+	elseif Type == "Squishy" then
+		HitRes = Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 	end
 
-	return DmgResult:GetBlank()
+	hook.Run("ACF_PostDamageEntity", Entity, DmgResult, DmgInfo)
+
+	return HitRes or DmgResult:GetBlank()
 end
