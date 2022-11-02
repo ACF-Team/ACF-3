@@ -31,21 +31,17 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	if not ACF.Check(Entity) then return end
 
-	local DmgResult = Objects.DamageResult()
-	local DmgInfo   = Objects.DamageInfo()
-	local Thickness = Entity.ACF.Armour
-	local Angle     = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
+	local Area        = Bullet.ProjArea
+	local Penetration = Bullet:GetPenetration()
+	local Thickness   = Entity.ACF.Armour
+	local Angle       = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
+	local Factor      = Thickness / Bullet.Diameter
+	local DmgResult   = Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
 
-	DmgResult:SetArea(Bullet.ProjArea)
-	DmgResult:SetPenetration(Bullet:GetPenetration())
-	DmgResult:SetThickness(Thickness)
-	DmgResult:SetAngle(Angle)
-	DmgResult:SetFactor(Thickness / Bullet.Diameter)
-
-	DmgInfo:SetType("Bullet")
-	DmgInfo:SetAttacker(Bullet.Owner)
-	DmgInfo:SetInflictor(Bullet.Gun)
-	DmgInfo:SetHitGroup(Trace.HitGroup)
+	local Attacker  = Bullet.Owner
+	local Inflictor = Bullet.Gun
+	local HitGroup  = Trace.HitGroup
+	local DmgInfo   = Objects.DamageInfo("Bullet", Attacker, Inflictor, HitGroup)
 
 	return DmgResult, DmgInfo
 end

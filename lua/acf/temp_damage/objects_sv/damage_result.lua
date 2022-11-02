@@ -2,15 +2,20 @@ local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
 
---- Creates a new DamageResult object with all its fields set to default values.
+--- Creates a new DamageResult object.
+-- @param Area The damaged area in cm2. Leaving this blank will default it to 1.
+-- @param Penetration The depth of the damage in mm. Leaving this blank will default it to 1.
+-- @param Thickness The width of the damaged object in mm. Leaving this blank will default it to 1.
+-- @param Angle The inclination at which the object was damaged in degrees. Leaving this blank will default it to 0.
+-- @param Factor Usually, the ratio between Thickness and diameter of the penetrating object. Leaving this blank will default it to 1.
 -- @return The new DamageResult object.
-function Objects.DamageResult()
+function Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
 	local Object = {
-		Area        = 1,
-		Penetration = 1,
-		Thickness   = 1,
-		Angle       = 0,
-		Factor      = 1,
+		Area        = Area or 1,
+		Penetration = Penetration or 1,
+		Thickness   = Thickness or 1,
+		Angle       = Angle or 0,
+		Factor      = Factor or 1,
 	}
 
 	setmetatable(Object, Meta)
