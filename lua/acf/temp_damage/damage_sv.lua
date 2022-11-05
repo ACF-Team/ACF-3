@@ -195,9 +195,15 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 
 	if not Type then return HitRes end
 
-	local CanDamage = hook.Run("ACF_PreDamageEntity", Entity, DmgResult, DmgInfo)
+	local HookResult = hook.Run("ACF_PreDamageEntity", Entity, DmgResult, DmgInfo)
 
-	if CanDamage == false then return HitRes end
+	if HookResult == false then return HitRes end
+
+	if Entity.ACF_PreDamage then
+		local MethodResult = Entity:ACF_PreDamage(DmgResult, DmgInfo)
+
+		if MethodResult == false then return HitRes end
+	end
 
 	hook.Run("ACF_OnDamageEntity", Entity, DmgResult, DmgInfo)
 
@@ -212,6 +218,10 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 	end
 
 	hook.Run("ACF_PostDamageEntity", Entity, DmgResult, DmgInfo)
+
+	if Entity.ACF_PostDamage then
+		Entity:ACF_PostDamage(DmgResult, DmgInfo)
+	end
 
 	return HitRes or DmgResult:GetBlank()
 end
