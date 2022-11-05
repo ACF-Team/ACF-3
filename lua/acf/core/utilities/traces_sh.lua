@@ -1,5 +1,5 @@
 local traceOut  = {}
-local traceData = {mins = Vector(), maxs = Vector(), output = traceOut}
+local traceData = { mins = Vector(), maxs = Vector(), output = traceOut }
 local trace     = SERVER and util.TraceHull or util.TraceLine
 
 local hitClip
@@ -18,7 +18,7 @@ do -- Visual clip compatibility
 		if not IsValid(ent) then return false end
 		if not ent.ClipData then return false end -- Doesn't have clips
 		if ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
-        if SERVER and not ent:GetPhysicsObject():GetVolume() then return false end -- Spherical collisions applied to it
+		if SERVER and not ent:GetPhysicsObject():GetVolume() then return false end -- Spherical collisions applied to it
 
 		-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
 		-- The bounding box center will change if the entity is physically clipped
@@ -32,38 +32,38 @@ do -- Visual clip compatibility
 		return false
 	end
 
-    hitClip = ACF.CheckClips
+	hitClip = ACF.CheckClips
 end
 
 do -- ACF.trace
-    -- Automatically filters out and retries when hitting a clipped portion of a prop
-    -- Does NOT modify the original filter
+	-- Automatically filters out and retries when hitting a clipped portion of a prop
+	-- Does NOT modify the original filter
 
-    local function doRecursiveTrace()
-        trace(traceData)
+	local function doRecursiveTrace()
+		trace(traceData)
 
-        if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
-            traceData.filter[#traceData.filter + 1] = traceOut.entity
+		if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
+			traceData.filter[#traceData.filter + 1] = traceOut.entity
 
-            doRecursiveTrace()
-        end
-    end
+			doRecursiveTrace()
+		end
+	end
 
-    function ACF.trace(traceData)
-        traceData.output = traceOut
+	function ACF.trace(traceData)
+		traceData.output = traceOut
 
-        trace(traceData)
+		trace(traceData)
 
-        if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
-            traceData.originalFilter = traceData.filter
-            traceData.filter[1]      = traceOut.entity
+		if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
+			traceData.originalFilter = traceData.filter
+			traceData.filter[1]      = traceOut.entity
 
-            doRecursiveTrace()
+			doRecursiveTrace()
 
-            traceData.filter         = traceData.originalFilter
-            traceData.originalFilter = nil
-        end
+			traceData.filter         = traceData.originalFilter
+			traceData.originalFilter = nil
+		end
 
-        return traceOut
-    end
+		return traceOut
+	end
 end
