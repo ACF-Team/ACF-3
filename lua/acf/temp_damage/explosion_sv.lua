@@ -178,7 +178,9 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 					Damaged[HitEnt] = true -- This entity can no longer recieve damage from this explosion
 
-					if BlastResult.Kill or (FragResult and FragResult.Kill) then
+					local FragKill = FragResult and FragResult.Kill
+
+					if BlastResult.Kill or FragKill then
 						local Min = HitEnt:OBBMins()
 						local Max = HitEnt:OBBMaxs()
 
@@ -187,10 +189,14 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						Filter[#Filter + 1] = HitEnt -- Filter from traces
 						Targets[HitEnt]     = nil -- Remove from list
 
-						local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position)
+						if FragKill then
+							ACF.APKill(HitEnt, Direction, PowerFraction)
+						else
+							local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position)
 
-						for Fireball in pairs(Debris) do
-							if IsValid(Fireball) then Filter[#Filter + 1] = Fireball end
+							for Fireball in pairs(Debris) do
+								if IsValid(Fireball) then Filter[#Filter + 1] = Fireball end
+							end
 						end
 
 						Loop = true -- Check for new targets since something died, maybe we'll find something new
@@ -224,6 +230,6 @@ concommand.Add("acf_boom", function(Player)
 
 	print("Creating explosion with " .. Filler .. "kg of filler.")
 
-	Damage.createExplosion(HitPos, Filler, Filler * 2, nil, DmgInfo)
+	Damage.createExplosion(HitPos, Filler, Filler * 0.5, nil, DmgInfo)
 	Damage.explosionEffect(HitPos, nil, Filler)
 end)
