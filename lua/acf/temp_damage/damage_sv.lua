@@ -26,6 +26,11 @@ function Damage.getBlastPenetration(Energy, Area)
 	return Energy / Area * 0.25 -- NOTE: 0.25 is what ACF.KEtoRHA used to be set at.
 end
 
+--- Helper function used to generate DamageResult and DamageInfo objects from projectile information.
+-- @param Bullet A bullet object.
+-- @param Trace The result table of a trace.
+-- @return A properly formatted DamageResult object.
+-- @return A properly formatted DamageInfo object.
 function Damage.getBulletDamage(Bullet, Trace)
 	local Entity = Trace.Entity
 
