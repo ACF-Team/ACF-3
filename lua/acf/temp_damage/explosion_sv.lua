@@ -219,7 +219,7 @@ concommand.Add("acf_boom", function(Player)
 	if not IsValid(Player) then return end
 
 	local Filler  = math.random(0.5, 50)
-	local DmgInfo = Objects.DamageInfo(nil, Player, game.GetWorld())
+	local DmgInfo = Objects.DamageInfo(Player)
 	local HitPos  = Player:GetEyeTrace().HitPos
 
 	print("Creating explosion with " .. Filler .. "kg of filler.")
