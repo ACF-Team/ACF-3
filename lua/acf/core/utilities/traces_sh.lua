@@ -1,8 +1,4 @@
-local traceOut  = {}
-local traceData = { mins = Vector(), maxs = Vector(), output = traceOut }
-local trace     = SERVER and util.TraceHull or util.TraceLine
-
-local hitClip
+local ACF = ACF
 
 do -- Visual clip compatibility
 	local function checkClip(entity, clip, Center, pos)
@@ -31,39 +27,55 @@ do -- Visual clip compatibility
 
 		return false
 	end
-
-	hitClip = ACF.CheckClips
 end
 
 do -- ACF.trace
 	-- Automatically filters out and retries when hitting a clipped portion of a prop
 	-- Does NOT modify the original filter
+	local util = util
 
-	local function doRecursiveTrace()
-		trace(traceData)
+	local function doRecursiveTrace(traceData)
+		local Output = traceData.output
 
-		if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
-			traceData.filter[#traceData.filter + 1] = traceOut.entity
+		util.TraceLine(traceData)
 
-			doRecursiveTrace()
+		if Output.HitNonWorld and ACF.CheckClips(Output.Entity, Output.HitPos) then
+			local Filter = traceData.filter
+
+			Filter[#Filter + 1] = Output.Entity
+
+			doRecursiveTrace(traceData)
 		end
 	end
 
 	function ACF.trace(traceData)
-		traceData.output = traceOut
+		local Original = traceData.output
+		local Output   = {}
 
-		trace(traceData)
+		traceData.output = Output
 
-		if traceOut.HitNonWorld and hitClip(traceOut.entity, traceOut.HitPos) then
-			traceData.originalFilter = traceData.filter
-			traceData.filter[1]      = traceOut.entity
+		util.TraceLine(traceData)
 
-			doRecursiveTrace()
+		if Output.HitNonWorld and ACF.CheckClips(Output.Entity, Output.HitPos) then
+			local OldFilter = traceData.filter
+			local Filter    = { Output.Entity }
 
-			traceData.filter         = traceData.originalFilter
-			traceData.originalFilter = nil
+			for _, V in ipairs(OldFilter) do Filter[#Filter + 1] = V end
+
+			traceData.filter = Filter
+
+			doRecursiveTrace(traceData)
+
+			traceData.filter = OldFilter
 		end
 
-		return traceOut
+		if Original then
+			for K in pairs(Original) do Original[K] = nil end
+			for K, V in pairs(Output) do Original[K] = V end
+
+			traceData.output = Original
+		end
+
+		return Output
 	end
 end
