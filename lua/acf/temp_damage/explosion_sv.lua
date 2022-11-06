@@ -133,7 +133,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			if Trace.HitNonWorld then
 				local HitEnt = Trace.Entity
 
-				if not Damaged[HitEnt] and Damage.isValidTarget(HitEnt) then
+				if Damage.isValidTarget(HitEnt) and not Damaged[HitEnt] then
 					local Distance      = Position:Distance(HitPos)
 					local Sphere        = math.max(4 * math.pi * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 					local EntArea       = HitEnt.ACF.Area
@@ -199,7 +199,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					end
 
 					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
-				else
+				elseif not Damaged[HitEnt] then
 					debugoverlay.Line(Position, HitPos, 15, Blue, true) -- Blue line for an invalid entity
 
 					Filter[#Filter + 1] = HitEnt -- Filter from traces
