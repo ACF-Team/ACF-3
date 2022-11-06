@@ -2,6 +2,8 @@ local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
 
+Meta.__index = Meta
+
 --- Create a new DamageInfo object.
 -- This is just a much more simplified version of Gmod's CTakeDamageInfo object.
 -- @param Type The type of damage this object will carry. Leaving this blank will default it to "Unknown".

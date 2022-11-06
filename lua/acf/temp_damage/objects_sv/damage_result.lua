@@ -2,6 +2,8 @@ local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
 
+Meta.__index = Meta
+
 --- Creates a new DamageResult object.
 -- @param Area The damaged area in cm2. Leaving this blank will default it to 1.
 -- @param Penetration The depth of the damage in mm. Leaving this blank will default it to 1.
