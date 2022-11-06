@@ -2,8 +2,7 @@ local math    = math
 local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
-
-Meta.__index = Meta
+local String  = "DamageResult [Area = %scm2, Penetration = %smm, Thickness = %smm, Angle = %s°, Factor = %s, Count = %s times]"
 
 --- Creates a new DamageResult object.
 -- @param Area The damaged area in cm2. Leaving this blank will default it to 1.
@@ -55,9 +54,16 @@ function Meta:GetBlank()
 	}
 end
 
+function Meta:ToString()
+	return String:format(self.Area, self.Penetration, self.Thickness, self.Angle, self.Factor, self.Count)
+end
+
 AccessorFunc(Meta, "Area", "Area", FORCE_NUMBER) -- cm2
 AccessorFunc(Meta, "Penetration", "Penetration", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Angle", "Angle", FORCE_NUMBER) -- degrees
 AccessorFunc(Meta, "Factor", "Factor", FORCE_NUMBER) -- thickness / caliber
 AccessorFunc(Meta, "Count", "Count", FORCE_NUMBER) -- number of hits
+
+Meta.__index    = Meta
+Meta.__tostring = Meta.ToString

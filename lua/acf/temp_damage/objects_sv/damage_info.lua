@@ -1,8 +1,7 @@
 local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
-
-Meta.__index = Meta
+local String  = "DamageInfo [Type = %s, Attacker = %s, Inflictor = %s, HitGroup = %s]"
 
 --- Create a new DamageInfo object.
 -- This is just a much more simplified version of Gmod's CTakeDamageInfo object.
@@ -24,7 +23,14 @@ function Objects.DamageInfo(Type, Attacker, Inflictor, HitGroup)
 	return Object
 end
 
+function Meta:ToString()
+	return String:format(self.Type, self.Attacker, self.Inflictor, self.HitGroup)
+end
+
 AccessorFunc(Meta, "Type", "Type", FORCE_STRING)
 AccessorFunc(Meta, "Attacker", "Attacker")
 AccessorFunc(Meta, "Inflictor", "Inflictor")
 AccessorFunc(Meta, "HitGroup", "HitGroup", FORCE_NUMBER)
+
+Meta.__index    = Meta
+Meta.__tostring = Meta.ToString
