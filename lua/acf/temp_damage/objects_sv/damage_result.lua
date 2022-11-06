@@ -1,3 +1,4 @@
+local math    = math
 local ACF     = ACF
 local Objects = ACF.TempDamage.Objects
 local Meta    = {}
@@ -10,14 +11,16 @@ Meta.__index = Meta
 -- @param Thickness The width of the damaged object in mm. Leaving this blank will default it to 1.
 -- @param Angle The inclination at which the object was damaged in degrees. Leaving this blank will default it to 0.
 -- @param Factor Usually, the ratio between Thickness and diameter of the penetrating object. Leaving this blank will default it to 1.
+-- @param Count A simple multiplier for the damage. Leaving this blank will default it to 1.
 -- @return The new DamageResult object.
-function Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
+function Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor, Count)
 	local Object = {
 		Area        = Area or 1,
 		Penetration = Penetration or 1,
 		Thickness   = Thickness or 1,
 		Angle       = Angle or 0,
 		Factor      = Factor or 1,
+		Count       = Count or 1
 	}
 
 	setmetatable(Object, Meta)
@@ -31,9 +34,10 @@ function Meta:Compute()
 	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)) ^ self.Factor)
 	local Penetration = self.Penetration
 	local Ratio       = math.min(1, Penetration / Effective)
+	local Count       = math.max(1, self.Count)
 
 	return {
-		Damage   = self.Area * Ratio * Ratio, -- <=== old - new  ===> Area * math.min(Penetration, Effective) * 10,
+		Damage   = self.Area * Ratio * Ratio * Count, -- <=== old - new  ===> Area * math.min(Penetration, Effective) * 10,
 		Overkill = math.max(0, Penetration - Effective),
 		Loss     = math.min(1, Effective / Penetration),
 		Kill     = false,
@@ -56,3 +60,4 @@ AccessorFunc(Meta, "Penetration", "Penetration", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Angle", "Angle", FORCE_NUMBER) -- degrees
 AccessorFunc(Meta, "Factor", "Factor", FORCE_NUMBER) -- thickness / caliber
+AccessorFunc(Meta, "Count", "Count", FORCE_NUMBER) -- number of hits
