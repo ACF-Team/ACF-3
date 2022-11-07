@@ -1,5 +1,6 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
+local Damage    = ACF.TempDamage
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("HEAT", "AP")
 
@@ -199,6 +200,7 @@ end
 if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
+	local Objects    = Damage.Objects
 
 	Entities.AddArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
 
@@ -231,8 +233,12 @@ if SERVER then
 
 	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
-		-- Apply HE damage
-		ACF.HE(HitPos, Bullet.BoomFillerMass, Bullet.CasingMass, Bullet.Owner, Bullet.Filter, Bullet.Gun)
+		local Filler    = Bullet.BoomFillerMass
+		local Fragments = Bullet.CasingMass
+		local Filter    = Bullet.Filter
+		local DmgInfo   = Objects.DamageInfo(Bullet.Gun, Bullet.Owner)
+
+		Damage.createExplosion(HitPos, Filler, Fragments, Filter, DmgInfo)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
 		local FoundEnts = ents.FindInSphere(HitPos, 250)
@@ -299,7 +305,19 @@ if SERVER then
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if Damage == 0 then
 				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
-				ACF_VolumeDamage(Bullet, TraceRes, _Cavity)
+
+				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
+
+				JetInfo:SetType("HEAT Jet")
+				JetDmg:SetDamage(_Cavity)
+
+				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
+
+				if JetResult.Kill then
+					local Debris = ACF.APKill(Ent, Direction, 0)
+
+					table.insert(Filter , Debris)
+				end
 			end
 			-- Reduce the jet mass by the lost mass
 			JetMassPct = JetMassPct - LostMassPct
@@ -355,12 +373,26 @@ if SERVER then
 			AreaSum = math.max(AreaSum, MinArea)
 			-- The only information used from the trace is the entity, so we can use a fake TraceRes with placeholder information,
 			--  which the damage function checks but doesn't use. Scuffed, but alas - rework damage
-			local FakeTrace = {HitNormal = Vector(1,0,0), StartPos = Vector(1,0,0), HitPos = Vector(0,0,0), EndPos = Vector(0,0,0)}
+			local FakeTrace = { Entity = true }
 			for _, v in ipairs(Damageables) do
-				FakeTrace.Entity  = v[1]
+				local Entity, Area = unpack(v, 1, 2)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local SpallDamage = _Cavity * v[2] / AreaSum  -- change from _Cavity to Cavity when health scales with armor
-				ACF_VolumeDamage(Bullet, FakeTrace, SpallDamage)
+				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
+
+				FakeTrace.Entity = Entity
+
+				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, FakeTrace)
+
+				SpallInfo:SetType("HEAT Spall")
+				SpallDmg:SetDamage(SpallDamage)
+
+				local JetResult = Damage.dealDamage(Ent, SpallDmg, SpallInfo)
+
+				if JetResult.Kill then
+					local Debris = ACF.APKill(Entity, Direction, 0)
+
+					table.insert(Filter , Debris)
+				end
 			end
 
 			Penetrations = Penetrations + 1

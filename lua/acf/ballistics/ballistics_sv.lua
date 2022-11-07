@@ -1,5 +1,6 @@
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
+local Damage     = ACF.TempDamage
 local Clock      = ACF.Utilities.Clock
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
@@ -278,16 +279,6 @@ do -- Terminal ballistics --------------------------
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
 	end
 
-	-- TODO: Move to damage_sv.lua and use the proper namespace
-	function ACF_VolumeDamage(Bullet, Trace, Volume)
-		local HitRes = ACF.Damage(Bullet, Trace, Volume)
-
-		if HitRes.Kill then
-			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), 0)
-			table.insert(Bullet.Filter , Debris)
-		end
-	end
-
 	function Ballistics.CalculateRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		-- Ricochet distribution center
@@ -307,9 +298,11 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function Ballistics.DoRoundImpact(Bullet, Trace)
+		local DmgResult, DmgInfo = Damage.getBulletDamage(Bullet, Trace)
 		local Speed    = Bullet.Speed
 		local Energy   = Bullet.Energy
-		local HitRes   = ACF.Damage(Bullet, Trace)
+		local Entity   = Trace.Entity
+		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
 		if HitRes.Loss == 1 then
@@ -318,15 +311,15 @@ do -- Terminal ballistics --------------------------
 
 		if ACF.KEPush then
 			ACF.KEShove(
-				Trace.Entity,
+				Entity,
 				Trace.HitPos,
 				Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end
 
-		if HitRes.Kill and IsValid(Trace.Entity) then
-			ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
+		if HitRes.Kill and IsValid(Entity) then
+			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
 		end
 
 		HitRes.Ricochet = false

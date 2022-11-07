@@ -1,5 +1,6 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
+local Damage    = ACF.TempDamage
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("APHE", "AP")
 
@@ -78,6 +79,7 @@ end
 
 if SERVER then
 	local Entities = Classes.Entities
+	local Objects  = Damage.Objects
 
 	Entities.AddArguments("acf_ammo", "FillerRatio") -- Adding extra info to ammo crates
 
@@ -115,7 +117,12 @@ if SERVER then
 			Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
 		end
 
-		ACF.HE(Bullet.Pos, Bullet.FillerMass, Bullet.ProjMass - Bullet.FillerMass, Bullet.Owner, nil, Bullet.Gun)
+		local Position = Bullet.Pos
+		local Filler   = Bullet.FillerMass
+		local Fragment = Bullet.ProjMass - Filler
+		local DmgInfo  = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
+
+		Damage.createExplosion(Position, Filler, Fragment, nil, DmgInfo)
 
 		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
 	end
@@ -123,13 +130,12 @@ else
 	ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:ImpactEffect(_, Bullet)
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
-		Effect:SetRadius(Bullet.Caliber)
+		local Position  = Bullet.SimPos
+		local Direction = Bullet.SimFlight
+		local Filler    = Bullet.FillerMass
+		local Caliber   = Bullet.Caliber
 
-		util.Effect("ACF_Explosion", Effect)
+		Damage.explosionEffect(Position, Direction, Filler, Caliber)
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)

@@ -1,10 +1,12 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
-local ACF   = ACF
-local Clock = ACF.Utilities.Clock
-local Spark = "ambient/energy/NewSpark0%s.wav"
-local Zap   = "weapons/physcannon/superphys_small_zap%s.wav"
+local ACF     = ACF
+local Clock   = ACF.Utilities.Clock
+local Damage  = ACF.TempDamage
+local Objects = Damage.Objects
+local Spark   = "ambient/energy/NewSpark0%s.wav"
+local Zap     = "weapons/physcannon/superphys_small_zap%s.wav"
 
 SWEP.Author = "Lazermaniac"
 SWEP.Contact = "lazermaniac@gmail.com"
@@ -81,8 +83,11 @@ function SWEP:Initialize()
 	if CLIENT then return end
 
 	self:SetWeaponHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
+
 	self.LastDistance = 0
-	self.LastTrace = {}
+	self.LastTrace    = {}
+	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
+	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), "Torch")
 	self.Bullet = {
 		IsTorch   = true, -- We need to let people know this isn't a regular bullet somehow
 		Owner     = true,
@@ -282,13 +287,11 @@ function SWEP:SecondaryAttack()
 
 	if not ACF.Check(Entity) then return end
 
-	local Bullet = self.Bullet
-	local HitRes = {}
+	local DmgResult = self.DamageResult
 
-	Bullet.Owner  = Owner
-	Bullet.Flight = Trace.Normal
+	DmgResult:SetThickness(Entity.ACF.Armour)
 
-	HitRes = ACF.Damage(self.Bullet, Trace)
+	local HitRes = Damage.dealDamage(Entity, self.DamageResult, self.DamageInfo)
 
 	if HitRes.Kill then
 		ACF_APKill(Entity, Trace.Normal, 1)
