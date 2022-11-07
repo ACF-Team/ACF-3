@@ -39,7 +39,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 	local Area        = Bullet.ProjArea
 	local Penetration = Bullet:GetPenetration()
 	local Thickness   = Entity.ACF.Armour
-	local Angle       = ACF.GetHitAngle(Trace.HitNormal, Bullet.Flight)
+	local Angle       = ACF.GetHitAngle(Trace, Bullet.Flight)
 	local Factor      = Thickness / Bullet.Diameter
 	local DmgResult   = Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
 
