@@ -30,7 +30,8 @@ end
 --- Generates the damage result table based on the values stored on the object.
 -- @return The damage result table, contains the Damage, Overkill, Loss and Kill fields.
 function Meta:Compute()
-	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)) ^ self.Factor)
+	local Factor      = math.min(1, self.Factor)
+	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)) ^ Factor)
 	local Penetration = self.Penetration
 	local Ratio       = math.min(1, Penetration / Effective)
 	local Count       = math.max(1, self.Count)
@@ -63,7 +64,7 @@ AccessorFunc(Meta, "Penetration", "Penetration", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Angle", "Angle", FORCE_NUMBER) -- degrees
 AccessorFunc(Meta, "Factor", "Factor", FORCE_NUMBER) -- thickness / caliber
-AccessorFunc(Meta, "Count", "Count", FORCE_NUMBER) -- number of hits
+AccessorFunc(Meta, "Count", "Count", FORCE_NUMBER) -- Number of hits
 
 Meta.__index    = Meta
 Meta.__tostring = Meta.ToString
