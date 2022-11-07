@@ -35,9 +35,10 @@ function Meta:Compute()
 	local Penetration = self.Penetration
 	local Ratio       = math.min(1, Penetration / Effective)
 	local Count       = math.max(1, self.Count)
+	local Damage      = isnumber(self.Damage) and self.Damage or self.Area * Ratio * Ratio -- <=== old - new  ===> Area * math.min(Penetration, Effective) * 10
 
 	return {
-		Damage   = self.Area * Ratio * Ratio * Count, -- <=== old - new  ===> Area * math.min(Penetration, Effective) * 10,
+		Damage   = Damage * Count,
 		Overkill = math.max(0, Penetration - Effective),
 		Loss     = math.min(1, Effective / Penetration),
 		Kill     = false,
@@ -65,6 +66,7 @@ AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Angle", "Angle", FORCE_NUMBER) -- degrees
 AccessorFunc(Meta, "Factor", "Factor", FORCE_NUMBER) -- thickness / caliber
 AccessorFunc(Meta, "Count", "Count", FORCE_NUMBER) -- Number of hits
+AccessorFunc(Meta, "Damage", "Damage") -- Custom damage, temporary workaround
 
 Meta.__index    = Meta
 Meta.__tostring = Meta.ToString
