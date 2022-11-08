@@ -294,7 +294,7 @@ function SWEP:SecondaryAttack()
 	local HitRes = Damage.dealDamage(Entity, self.DamageResult, self.DamageInfo)
 
 	if HitRes.Kill then
-		ACF_APKill(Entity, Trace.Normal, 1)
+		ACF.APKill(Entity, Trace.Normal, 1)
 	else
 		local Effect = EffectData()
 			Effect:SetMagnitude(1)

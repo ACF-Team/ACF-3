@@ -1,26 +1,37 @@
 return {
-    groupName = "ACF.Damage",
+    groupName = "ACF.TempDamage.dealDamage",
 
     beforeEach = function( State )
-        State.Ent = {}
-        State.Trace = { Entity = State.Ent }
+        local Entries = hook.GetTable().ACF_PreDamageEntity
+        local Hooks   = {}
 
-        State.originalCanDamage = ACF.Permissions.CanDamage
-        hook.Remove( "ACF_BulletDamage", "ACF_DamagePermissionCore" )
+        State.Ent       = {}
+        State.DmgResult = ACF.TempDamage.Objects.DamageResult()
+
+        if Entries then
+            for K, V in pairs( Entries ) do
+                Hooks[K] = V
+
+                hook.Remove( "ACF_PreDamageEntity", K )
+            end
+        end
+
+        State.Hooks = Hooks
     end,
 
     afterEach = function( State )
-        local OG = State.originalCanDamage
-        hook.Add( "ACF_BulletDamage", "ACF_DamagePermissionCore", OG )
+        for K, V in pairs( State.Hooks ) do
+            hook.Add( "ACF_PreDamageEntity", K, V )
+        end
     end,
 
     cases = {
         {
-            name = "Does not deal damage to an invalid Type",
+            name = "Does not deal damage if ACF.Check fails",
             func = function( State )
                 stub( ACF, "Check" ).returns( false )
 
-                local HitRes = ACF.Damage( nil, State.Trace, nil )
+                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
                 expect( HitRes.Overkill ).to.equal( 0 )
                 expect( HitRes.Loss ).to.equal( 0 )
@@ -29,14 +40,28 @@ return {
         },
 
         {
-            name = "Does not deal damage if ACF_BulletDamage returns false",
+            name = "Does not deal damage to an invalid type",
+            func = function( State )
+                stub( ACF, "Check" ).returns( "Test" )
+
+                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                expect( HitRes.Damage ).to.equal( 0 )
+                expect( HitRes.Overkill ).to.equal( 0 )
+                expect( HitRes.Loss ).to.equal( 0 )
+                expect( HitRes.Kill ).to.beFalse()
+            end
+        },
+
+        {
+            name = "Does not deal damage if ACF_PreDamageEntity returns false",
             func = function( State )
                 stub( ACF, "Check" )
-                hook.Add( "ACF_BulletDamage", "Test", function()
+
+                hook.Add( "ACF_PreDamageEntity", "Test", function()
                     return false
                 end )
 
-                local HitRes = ACF.Damage( nil, State.Trace, nil )
+                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
                 expect( HitRes.Overkill ).to.equal( 0 )
                 expect( HitRes.Loss ).to.equal( 0 )
@@ -50,9 +75,10 @@ return {
                 local Ent = State.Ent
 
                 Ent.ACF_OnDamage = stub()
+
                 stub( ACF, "Check" )
 
-                ACF.Damage( nil, State.Trace, nil )
+                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( Ent.ACF_OnDamage ).to.haveBeenCalled()
             end
@@ -61,10 +87,11 @@ return {
         {
             name = "Calls PropDamage for a Prop",
             func = function( State )
-                stub( ACF, "Check" ).returns( "Prop" )
-                local PropDamage = stub( ACF, "PropDamage" )
+                local PropDamage = stub( ACF.TempDamag, "doPropDamage" )
 
-                ACF.Damage( nil, State.Trace, nil )
+                stub( ACF, "Check" ).returns( "Prop" )
+
+                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( PropDamage ).to.haveBeenCalled()
             end
@@ -73,10 +100,11 @@ return {
         {
             name = "Calls VehicleDamage for a Vehicle",
             func = function( State )
-                stub( ACF, "Check" ).returns( "Vehicle" )
-                local VehicleDamage = stub( ACF, "VehicleDamage" )
+                local VehicleDamage = stub( ACF.TempDamag, "doVehicleDamage" )
 
-                ACF.Damage( nil, State.Trace, nil )
+                stub( ACF, "Check" ).returns( "Vehicle" )
+
+                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( VehicleDamage ).to.haveBeenCalled()
             end
@@ -85,10 +113,11 @@ return {
         {
             name = "Calls SquishyDamage for a Squish",
             func = function( State )
-                stub( ACF, "Check" ).returns( "Squishy" )
-                local SquishyDamage = stub( ACF, "SquishyDamage" )
+                local SquishyDamage = stub( ACF.TempDamag, "doSquishyDamage" )
 
-                ACF.Damage( nil, State.Trace, nil )
+                stub( ACF, "Check" ).returns( "Squishy" )
+
+                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( SquishyDamage ).to.haveBeenCalled()
             end
