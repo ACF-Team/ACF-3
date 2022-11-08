@@ -88,21 +88,6 @@ function SWEP:Initialize()
 	self.LastTrace    = {}
 	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
 	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), "Torch")
-	self.Bullet = {
-		IsTorch   = true, -- We need to let people know this isn't a regular bullet somehow
-		Owner     = true,
-		Gun       = self,
-		Caliber   = 0.5,
-		Diameter  = 0.5,
-		ProjArea  = math.pi * 0.25 ^ 2,
-		ProjMass  = 1,
-		Flight    = true,
-		Speed     = self.MaxDistance ^ 0.5 * 39.37,
-	}
-
-	function self.Bullet:GetPenetration()
-		return ACF.Penetration(self.Speed, self.ProjMass, self.Diameter * 10)
-	end
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
