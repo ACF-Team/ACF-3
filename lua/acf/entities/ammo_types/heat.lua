@@ -1,6 +1,6 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
-local Damage    = ACF.TempDamage
+local Damage    = ACF.Damage
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("HEAT", "AP")
 

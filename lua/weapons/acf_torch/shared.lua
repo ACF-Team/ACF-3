@@ -3,7 +3,7 @@ AddCSLuaFile("shared.lua")
 
 local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
-local Damage  = ACF.TempDamage
+local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
 local Zap     = "weapons/physcannon/superphys_small_zap%s.wav"

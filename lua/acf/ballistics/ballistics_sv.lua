@@ -1,6 +1,6 @@
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
-local Damage     = ACF.TempDamage
+local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
 
 Ballistics.Bullets         = Ballistics.Bullets or {}

@@ -1,7 +1,7 @@
 local math   = math
 local util   = util
 local ACF    = ACF
-local Damage = ACF.TempDamage
+local Damage = ACF.Damage
 local Down   = Vector(0, 0, -1)
 
 --- Returns the blast radius based on a given amount of filler mass

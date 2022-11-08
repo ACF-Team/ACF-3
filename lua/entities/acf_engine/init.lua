@@ -103,7 +103,7 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local Damage      = ACF.TempDamage
+local Damage      = ACF.Damage
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance

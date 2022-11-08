@@ -1,12 +1,12 @@
 return {
-    groupName = "ACF.TempDamage.dealDamage",
+    groupName = "ACF.Damage.dealDamage",
 
     beforeEach = function( State )
         local Entries = hook.GetTable().ACF_PreDamageEntity
         local Hooks   = {}
 
         State.Ent       = {}
-        State.DmgResult = ACF.TempDamage.Objects.DamageResult()
+        State.DmgResult = ACF.Damage.Objects.DamageResult()
 
         if Entries then
             for K, V in pairs( Entries ) do
@@ -31,7 +31,7 @@ return {
             func = function( State )
                 stub( ACF, "Check" ).returns( false )
 
-                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                local HitRes = ACF.Damage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
                 expect( HitRes.Overkill ).to.equal( 0 )
                 expect( HitRes.Loss ).to.equal( 0 )
@@ -44,7 +44,7 @@ return {
             func = function( State )
                 stub( ACF, "Check" ).returns( "Test" )
 
-                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                local HitRes = ACF.Damage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
                 expect( HitRes.Overkill ).to.equal( 0 )
                 expect( HitRes.Loss ).to.equal( 0 )
@@ -61,7 +61,7 @@ return {
                     return false
                 end )
 
-                local HitRes = ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                local HitRes = ACF.Damage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
                 expect( HitRes.Overkill ).to.equal( 0 )
                 expect( HitRes.Loss ).to.equal( 0 )
@@ -78,7 +78,7 @@ return {
 
                 stub( ACF, "Check" )
 
-                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( Ent.ACF_OnDamage ).to.haveBeenCalled()
             end
@@ -91,7 +91,7 @@ return {
 
                 stub( ACF, "Check" ).returns( "Prop" )
 
-                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( PropDamage ).to.haveBeenCalled()
             end
@@ -104,7 +104,7 @@ return {
 
                 stub( ACF, "Check" ).returns( "Vehicle" )
 
-                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( VehicleDamage ).to.haveBeenCalled()
             end
@@ -117,7 +117,7 @@ return {
 
                 stub( ACF, "Check" ).returns( "Squishy" )
 
-                ACF.TempDamage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
 
                 expect( SquishyDamage ).to.haveBeenCalled()
             end

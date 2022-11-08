@@ -417,7 +417,7 @@ end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
 	local Clock   = Utilities.Clock
-	local Damage  = ACF.TempDamage
+	local Damage  = ACF.Damage
 	local Objects = Damage.Objects
 
 	local function CookoffCrate(Entity)

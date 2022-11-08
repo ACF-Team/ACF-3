@@ -7,7 +7,7 @@ return {
         State.ACF_KEShove = stub( ACF, "KEShove" )
 
         State.ACF_Damage_Result = { Loss = 0, Kill = false }
-        stub( ACF.TempDamage, "dealDamage" ).returns( State.ACF_Damage_Result )
+        stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 
         State.Bullet = {
             Speed = 1,

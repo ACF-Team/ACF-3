@@ -1,6 +1,6 @@
 local game    = game
 local ACF     = ACF
-local Objects = ACF.TempDamage.Objects
+local Objects = ACF.Damage.Objects
 local Meta    = {}
 local String  = "DamageInfo [Attacker = %s, Inflictor = %s, Type = %s, HitGroup = %s]"
 

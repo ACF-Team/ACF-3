@@ -1,5 +1,5 @@
 local ACF     = ACF
-local Damage  = ACF.TempDamage
+local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Network = ACF.Networking
 
@@ -52,7 +52,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 end
 
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
--- This function will be internally used by ACF.TempDamage.dealDamage, you're not expected to use it.
+-- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
 -- @param DmgResult A DamageResult object.
 -- @param DmgInfo A DamageInfo object.
@@ -139,7 +139,7 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 end
 
 --- Used to inflict damage to any entity that was tagged as "Vehicle" by ACF.Check.
--- This function will be internally used by ACF.TempDamage.dealDamage, you're not expected to use it.
+-- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
 -- @param DmgResult A DamageResult object.
 -- @param DmgInfo A DamageInfo object.
@@ -165,7 +165,7 @@ function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
 end
 
 --- Used to inflict damage to any entity that was tagged as "Prop" by ACF.Check.
--- This function will be internally used by ACF.TempDamage.dealDamage, you're not expected to use it.
+-- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
 -- @param DmgResult A DamageResult object.
 -- @param DmgInfo A DamageInfo object.

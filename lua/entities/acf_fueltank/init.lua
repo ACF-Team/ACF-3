@@ -7,7 +7,7 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local Damage      = ACF.TempDamage
+local Damage      = ACF.Damage
 local Objects     = Damage.Objects
 local ActiveTanks = ACF.FuelTanks
 local Utilities   = ACF.Utilities

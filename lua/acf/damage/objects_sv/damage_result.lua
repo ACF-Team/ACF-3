@@ -1,6 +1,6 @@
 local math    = math
 local ACF     = ACF
-local Objects = ACF.TempDamage.Objects
+local Objects = ACF.Damage.Objects
 local Meta    = {}
 local String  = "DamageResult [Area = %scm2, Penetration = %smm, Thickness = %smm, Angle = %s°, Factor = %s, Count = %s times]"
 
