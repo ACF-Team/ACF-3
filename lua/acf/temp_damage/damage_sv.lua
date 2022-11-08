@@ -230,3 +230,22 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 
 	return HitRes or DmgResult:GetBlank()
 end
+
+hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(Player)
+	for _, Entity in ipairs(ents.GetAll()) do
+		local Data = Entity.ACF
+
+		if not Data or Data.Health == Data.MaxHealth then continue end
+
+		Network.Send("ACF_Damage", Player, Entity)
+	end
+end)
+
+Network.CreateSender("ACF_Damage", function(Queue, Entity)
+	local Value = math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
+
+	if Value == 0 then return end
+	if Value ~= Value then return end
+
+	Queue[Entity:EntIndex()] = Value
+end)
