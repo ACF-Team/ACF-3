@@ -63,7 +63,7 @@ local function TraceThroughObject(Trace)
     local Dire   = (Enter - Trace.StartPos):GetNormalized()
 
     local Opposite = FindOtherSide(Ent, Origin, Dire)
-    local Exit     = ACF.Trace({start = Enter, endpos = Opposite, filter = {Ent}}).HitPos
+    local Exit     = ACF.trace({start = Enter, endpos = Opposite, filter = {Ent}}).HitPos
     local Length   = (Exit - Enter):Length() * 25.4 -- Inches to mm
 
     return Length, Exit

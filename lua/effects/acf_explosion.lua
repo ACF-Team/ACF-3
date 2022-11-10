@@ -3,6 +3,7 @@ local TraceLine = util.TraceLine
 local GetIndex  = ACF.GetAmmoDecalIndex
 local GetDecal  = ACF.GetRicochetDecal
 local White     = Color(255, 255, 255)
+local Yellow    = Color(255, 255, 0)
 
 local Colors = {
 	Default        = Color(120, 110, 100),
@@ -23,9 +24,13 @@ function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
 	local Origin  = Data:GetOrigin()
 	local Normal  = Data:GetNormal()
-	local Radius  = math.max(Data:GetScale() * 0.02, 1)
+	local Size    = Data:GetScale()
+	local Radius  = math.max(Size * 0.02, 1)
 	local Emitter = ParticleEmitter(Origin)
 	local Mult    = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
+
+	debugoverlay.Cross(Origin, 15, 15, Yellow, true)
+	debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
 
 	TraceData.start  = Origin - Normal
 	TraceData.endpos = Origin + (Normal * Radius)
@@ -42,7 +47,7 @@ function EFFECT:Init(Data)
 		self:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
 
 		if Caliber > 0 and (IsValid(Entity) or Impact.HitWorld) then
-			if Radius > 0 then
+			if Radius > 1 then
 				local Size = Radius * 0.66
 				local Type = GetIndex("HE")
 

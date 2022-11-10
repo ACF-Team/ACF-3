@@ -3,11 +3,11 @@ return {
 
     beforeEach = function( State )
         State.ACF_APKill_Result = {}
-        State.ACF_APKill = stub( _G, "ACF_APKill" ).returns( State.ACF_APKill_Result )
+        State.ACF_APKill = stub( ACF, "APKill" ).returns( State.ACF_APKill_Result )
         State.ACF_KEShove = stub( ACF, "KEShove" )
 
         State.ACF_Damage_Result = { Loss = 0, Kill = false }
-        stub( ACF, "Damage" ).returns( State.ACF_Damage_Result )
+        stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 
         State.Bullet = {
             Speed = 1,
@@ -83,7 +83,7 @@ return {
         },
 
         {
-            name = "Calls ACF_APKill when the entity is killed",
+            name = "Calls ACF.APKill when the entity is killed",
             func = function( State )
                 local Trace = State.Trace
                 local Bullet = State.Bullet
@@ -97,7 +97,7 @@ return {
         },
 
         {
-            name = "Does not call ACF_APKill when an invalid entity is killed",
+            name = "Does not call ACF.APKill when an invalid entity is killed",
             func = function( State )
                 local Trace = State.Trace
                 local Bullet = State.Bullet
