@@ -45,8 +45,10 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	local Attacker  = Bullet.Owner
 	local Inflictor = Bullet.Gun
+	local Origin    = Bullet.Pos
+	local HitPos    = Trace.HitPos
 	local HitGroup  = Trace.HitGroup
-	local DmgInfo   = Objects.DamageInfo(Attacker, Inflictor, "Bullet", HitGroup)
+	local DmgInfo   = Objects.DamageInfo(Attacker, Inflictor, "Bullet", Origin, HitPos, HitGroup)
 
 	return DmgResult, DmgInfo
 end

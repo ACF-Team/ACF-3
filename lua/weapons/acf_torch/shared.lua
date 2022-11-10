@@ -273,20 +273,27 @@ function SWEP:SecondaryAttack()
 	if not ACF.Check(Entity) then return end
 
 	local DmgResult = self.DamageResult
+	local DmgInfo   = self.DamageInfo
+	local HitPos    = Trace.HitPos
 
 	DmgResult:SetThickness(Entity.ACF.Armour)
 
-	local HitRes = Damage.dealDamage(Entity, self.DamageResult, self.DamageInfo)
+	DmgInfo:SetOrigin(Trace.StartPos)
+	DmgInfo:SetHitPos(HitPos)
+	DmgInfo:SetHitGroup(Trace.HitGroup)
+
+	local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
 
 	if HitRes.Kill then
 		ACF.APKill(Entity, Trace.Normal, 1)
 	else
 		local Effect = EffectData()
-			Effect:SetMagnitude(1)
-			Effect:SetRadius(1)
-			Effect:SetScale(1)
-			Effect:SetStart(Trace.HitPos)
-			Effect:SetOrigin(Trace.HitPos)
+		Effect:SetMagnitude(1)
+		Effect:SetRadius(1)
+		Effect:SetScale(1)
+		Effect:SetStart(HitPos)
+		Effect:SetOrigin(HitPos)
+
 		util.Effect("Sparks", Effect, true, true)
 
 		Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)

@@ -107,6 +107,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 	end
 
+	if not next(Targets) then return end -- There's nothing to damage
+
+	DmgInfo:SetOrigin(Position)
+
 	while Loop and Power > 0 do
 		local PowerSpent = 0
 		local Damaged    = {}
@@ -145,6 +149,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 					debugoverlay.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
 
+					DmgInfo:SetHitPos(HitPos)
 					DmgInfo:SetHitGroup(Trace.HitGroup)
 
 					do -- Blast damage
