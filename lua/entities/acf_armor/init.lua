@@ -165,6 +165,8 @@ do -- Spawning and Updating
 end
 
 do -- ACF Activation and Damage
+	local Trace = { Entity = true, StartPos = true, HitPos = true }
+
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		local Volume  = PhysObj:GetVolume()
@@ -188,8 +190,12 @@ do -- ACF Activation and Damage
 		self.ACF.Type      = "Prop"
 	end
 
-	function ENT:ACF_OnDamage(DmgResult --[[, DmgInfo]])
-		local Armor  = 1 -- self:GetArmor(Trace)
+	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+		Trace.Entity   = self
+		Trace.StartPos = DmgInfo:GetOrigin()
+		Trace.HitPos   = DmgInfo:GetHitPos()
+
+		local Armor  = self:GetArmor(Trace)
 		local Area   = DmgResult:GetArea()
 		local Pen    = DmgResult:GetPenetration()
 		local MaxPen = math.min(Armor, Pen)
