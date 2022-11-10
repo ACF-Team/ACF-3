@@ -276,7 +276,7 @@ if SERVER then
 
 			-- Get the effective armor thickness
 			local BaseArmor = 0
-			local Damage    = nil
+			local DamageDealt
 			if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
@@ -292,7 +292,7 @@ if SERVER then
 			elseif TraceRes.Hit then
 				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
 				-- Enable damage if a valid entity is hit
-				Damage = 0
+				DamageDealt = 0
 			end
 			local SlopeFactor    = BaseArmor / Caliber
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
@@ -303,7 +303,7 @@ if SERVER then
 			-- Deal damage based on the volume of the lost mass
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
-			if Damage == 0 then
+			if DamageDealt == 0 then
 				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
