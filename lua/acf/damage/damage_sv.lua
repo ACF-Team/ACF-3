@@ -3,22 +3,7 @@ local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Network = ACF.Networking
 
---- Returns the blast's energy, later to be used to calculate its penetration.
--- This is a functionally similar copy to what ACF_Kinetic used to do.
--- @param Speed The speed of the blast in inch/s.
--- @param Mass idk, in kg.
--- @param LimitVel idk, also in inch/s.
--- @return The energy of the blast in KJ.
-function Damage.getBlastEnergy(Speed, Mass, LimitVel)
-	if not LimitVel then LimitVel = 99999 end
-
-	local Energy = (Mass * Speed * Speed) * 0.0005 + Speed * Mass
-	local Excess = math.max(0, Speed - LimitVel)
-
-	return math.max(Energy * 0.1, Energy - Excess * Excess / (LimitVel * 5) * (Energy * 0.005) ^ 0.95)
-end
-
---- Returns the penetration of a blast, usually paired with getBlastEnergy.
+--- Returns the penetration of a blast.
 -- @param Energy The energy of the blast in KJ.
 -- @param Area The area of the blast in cm2.
 -- @return The penetration of the blast in RHA mm.
