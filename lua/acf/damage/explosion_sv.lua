@@ -172,7 +172,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 							local Loss    = (Distance / BaseFragV) * BaseFragV ^ 2 * FragMass ^ 0.33 * 0.0001
 							local FragVel = math.max(BaseFragV - Loss / ACF.DragDiv, 0) * 0.0254
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments ^ 0.5)
+							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 
 							DmgInfo:SetType("Fragment")
 
