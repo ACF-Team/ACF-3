@@ -68,8 +68,13 @@ function Damage.getRandomPos(Entity)
 end
 
 --- Creates an explosion. Important to note this explosion is completely invisible
--- See: ACF.Damage.explosionEffect.
--- @param 
+-- See: ACF.Damage.explosionEffect to create a visual representation of an explosion.
+-- @param Position The world coordinates where the explosion will be created at.
+-- @param FillerMass The amount of HE filler on kilograms used to create this explosion.
+-- @param FragMass The amount of steel containing the filler on kilograms.
+-- @param Filter Optional, a list of entities that will not be affected by the explosion.
+-- @param DmgInfo A DamageInfo object. It's recommended to populate the Attacker and Inflictor fields.
+-- All the other fields will be controlled by the explosion itself, so they're not necessary.
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
 	local Radius      = Damage.getBlastRadius(FillerMass)
@@ -82,11 +87,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Found       = ents.FindInSphere(Position, Radius)
 	local Targets     = {}
 	local Loop        = true -- Find more props to damage whenever a prop dies
-
-	if not Filter then Filter = {} end
-
-	TraceData.start  = Position
-	TraceData.filter = Filter
 
 	debugoverlay.Cross(Position, 15, 15, White, true)
 	debugoverlay.Sphere(Position, Radius, 15, White, true)
@@ -108,8 +108,12 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	end
 
 	if not next(Targets) then return end -- There's nothing to damage
+	if not Filter then Filter = {} end
 
 	DmgInfo:SetOrigin(Position)
+
+	TraceData.start  = Position
+	TraceData.filter = Filter
 
 	while Loop and Power > 0 do
 		local PowerSpent = 0
