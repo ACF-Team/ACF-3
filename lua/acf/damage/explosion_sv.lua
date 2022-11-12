@@ -88,6 +88,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Targets     = {}
 	local Loop        = true -- Find more props to damage whenever a prop dies
 
+	if not Filter then Filter = {} end
+
 	debugoverlay.Cross(Position, 15, 15, White, true)
 	debugoverlay.Sphere(Position, Radius, 15, White, true)
 
@@ -108,7 +110,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	end
 
 	if not next(Targets) then return end -- There's nothing to damage
-	if not Filter then Filter = {} end
 
 	DmgInfo:SetOrigin(Position)
 
