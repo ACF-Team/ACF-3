@@ -21,10 +21,12 @@ end
 local function SendQueued()
 	local Broadcast = Queued.Broadcast
 
-	if Broadcast and #player.GetAll() > 0 then
-		net.Start("ACF_DataVarNetwork")
-			net.WriteString(PrepareQueue("Broadcast", Server))
-		net.Broadcast()
+	if Broadcast then
+		if #player.GetAll() > 0 then
+			net.Start("ACF_DataVarNetwork")
+				net.WriteString(PrepareQueue("Broadcast", Server))
+			net.Broadcast()
+		end
 
 		Queued.Broadcast = nil
 	end
