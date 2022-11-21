@@ -42,7 +42,7 @@ return {
         {
             name = "Does not deal damage to an invalid type",
             func = function( State )
-                stub( ACF, "Check" ).returns( "Test" )
+                stub( ACF, "Check" )
 
                 local HitRes = ACF.Damage.dealDamage( nil, State.DmgResult, nil )
                 expect( HitRes.Damage ).to.equal( 0 )
@@ -72,13 +72,12 @@ return {
         {
             name = "Calls an entity's custom OnDamage function, if present",
             func = function( State )
-                local Ent = State.Ent
+                stub( ACF, "Check" ).returns( "Test" )
 
+                local Ent = State.Ent
                 Ent.ACF_OnDamage = stub()
 
-                stub( ACF, "Check" )
-
-                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( Ent, State.DmgResult, nil )
 
                 expect( Ent.ACF_OnDamage ).to.haveBeenCalled()
             end
@@ -87,11 +86,11 @@ return {
         {
             name = "Calls PropDamage for a Prop",
             func = function( State )
-                local PropDamage = stub( ACF.TempDamag, "doPropDamage" )
+                local PropDamage = stub( ACF.Damage, "doPropDamage" )
 
                 stub( ACF, "Check" ).returns( "Prop" )
 
-                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
                 expect( PropDamage ).to.haveBeenCalled()
             end
@@ -100,11 +99,11 @@ return {
         {
             name = "Calls VehicleDamage for a Vehicle",
             func = function( State )
-                local VehicleDamage = stub( ACF.TempDamag, "doVehicleDamage" )
+                local VehicleDamage = stub( ACF.Damage, "doVehicleDamage" )
 
                 stub( ACF, "Check" ).returns( "Vehicle" )
 
-                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
                 expect( VehicleDamage ).to.haveBeenCalled()
             end
@@ -113,11 +112,11 @@ return {
         {
             name = "Calls SquishyDamage for a Squish",
             func = function( State )
-                local SquishyDamage = stub( ACF.TempDamag, "doSquishyDamage" )
+                local SquishyDamage = stub( ACF.Damage, "doSquishyDamage" )
 
                 stub( ACF, "Check" ).returns( "Squishy" )
 
-                ACF.Damage.dealDamage( nil, State.DmgResult, nil )
+                ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
                 expect( SquishyDamage ).to.haveBeenCalled()
             end
