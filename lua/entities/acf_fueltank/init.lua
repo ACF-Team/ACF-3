@@ -7,6 +7,8 @@ include("shared.lua")
 -- Local Funcs and Vars
 --===============================================================================================--
 
+local Damage      = ACF.Damage
+local Objects     = Damage.Objects
 local ActiveTanks = ACF.FuelTanks
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
@@ -293,8 +295,8 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Type = "Prop"
 end
 
-function ENT:ACF_OnDamage(Bullet, Trace, Volume)
-	local HitRes = ACF.PropDamage(Bullet, Trace, Volume) --Calling the standard damage prop function
+function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+	local HitRes    = Damage.doPropDamage(self, DmgResult, DmgInfo) -- Calling the standard prop damage function
 	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
@@ -304,7 +306,7 @@ function ENT:ACF_OnDamage(Bullet, Trace, Volume)
 
 		if not CanExplode then return HitRes end
 
-		local Inflictor = Bullet.Owner
+		local Inflictor = DmgInfo:GetInflictor()
 
 		if IsValid(Inflictor) and Inflictor:IsPlayer() then
 			self.Inflictor = Inflictor
@@ -343,19 +345,14 @@ function ENT:Detonate()
 
 	self.Exploding = true -- Prevent multiple explosions
 
-	local Pos		 	= self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
-	local ExplosiveMass = (math.max(self.Fuel, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
+	local Position  = self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
+	local Explosive = (math.max(self.Fuel, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
+	local DmgInfo   = Objects.DamageInfo(self, self.Inflictor)
 
-	ACF_KillChildProps(self, Pos, ExplosiveMass)
-	ACF.HE(Pos, ExplosiveMass, ExplosiveMass * 0.5, self.Inflictor, {self}, self)
+	ACF.KillChildProps(self, Position, Explosive)
 
-	local Effect = EffectData()
-		Effect:SetOrigin(Pos)
-		Effect:SetNormal(Vector(0, 0, -1))
-		Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
-		Effect:SetRadius(0)
-
-	util.Effect("ACF_Explosion", Effect)
+	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
+	Damage.explosionEffect(Position, nil, Explosive)
 
 	constraint.RemoveAll(self)
 	self:Remove()

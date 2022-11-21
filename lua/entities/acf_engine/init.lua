@@ -103,6 +103,7 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
+local Damage      = ACF.Damage
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
@@ -596,14 +597,15 @@ function ENT:ACF_Activate()
 end
 
 --This function needs to return HitRes
-function ENT:ACF_OnDamage(Bullet, Trace, Volume)
-	local Res = ACF.PropDamage(Bullet, Trace, Volume)
+function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
 	--adjusting performance based on damage
 	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 
-	return Res
+	return HitRes
 end
 
 -- specialized calcmassratio for engines

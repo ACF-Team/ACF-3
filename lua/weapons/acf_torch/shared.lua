@@ -1,10 +1,12 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
-local ACF   = ACF
-local Clock = ACF.Utilities.Clock
-local Spark = "ambient/energy/NewSpark0%s.wav"
-local Zap   = "weapons/physcannon/superphys_small_zap%s.wav"
+local ACF     = ACF
+local Clock   = ACF.Utilities.Clock
+local Damage  = ACF.Damage
+local Objects = Damage.Objects
+local Spark   = "ambient/energy/NewSpark0%s.wav"
+local Zap     = "weapons/physcannon/superphys_small_zap%s.wav"
 
 SWEP.Author = "Lazermaniac"
 SWEP.Contact = "lazermaniac@gmail.com"
@@ -81,23 +83,11 @@ function SWEP:Initialize()
 	if CLIENT then return end
 
 	self:SetWeaponHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
-	self.LastDistance = 0
-	self.LastTrace = {}
-	self.Bullet = {
-		IsTorch   = true, -- We need to let people know this isn't a regular bullet somehow
-		Owner     = true,
-		Gun       = self,
-		Caliber   = 0.5,
-		Diameter  = 0.5,
-		ProjArea  = math.pi * 0.25 ^ 2,
-		ProjMass  = 1,
-		Flight    = true,
-		Speed     = self.MaxDistance ^ 0.5 * 39.37,
-	}
 
-	function self.Bullet:GetPenetration()
-		return ACF.Penetration(self.Speed, self.ProjMass, self.Diameter * 10)
-	end
+	self.LastDistance = 0
+	self.LastTrace    = {}
+	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
+	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), "Torch")
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
@@ -282,23 +272,28 @@ function SWEP:SecondaryAttack()
 
 	if not ACF.Check(Entity) then return end
 
-	local Bullet = self.Bullet
-	local HitRes = {}
+	local DmgResult = self.DamageResult
+	local DmgInfo   = self.DamageInfo
+	local HitPos    = Trace.HitPos
 
-	Bullet.Owner  = Owner
-	Bullet.Flight = Trace.Normal
+	DmgResult:SetThickness(Entity.ACF.Armour)
 
-	HitRes = ACF.Damage(self.Bullet, Trace)
+	DmgInfo:SetOrigin(Trace.StartPos)
+	DmgInfo:SetHitPos(HitPos)
+	DmgInfo:SetHitGroup(Trace.HitGroup)
+
+	local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
 
 	if HitRes.Kill then
-		ACF_APKill(Entity, Trace.Normal, 1)
+		ACF.APKill(Entity, Trace.Normal, 1)
 	else
 		local Effect = EffectData()
-			Effect:SetMagnitude(1)
-			Effect:SetRadius(1)
-			Effect:SetScale(1)
-			Effect:SetStart(Trace.HitPos)
-			Effect:SetOrigin(Trace.HitPos)
+		Effect:SetMagnitude(1)
+		Effect:SetRadius(1)
+		Effect:SetScale(1)
+		Effect:SetStart(HitPos)
+		Effect:SetOrigin(HitPos)
+
 		util.Effect("Sparks", Effect, true, true)
 
 		Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)

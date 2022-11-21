@@ -1,6 +1,7 @@
 local hook       = hook
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
+local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
@@ -12,8 +13,7 @@ local Bullets      = Ballistics.Bullets
 local Unused       = Ballistics.UnusedIndexes
 local IndexLimit   = 2000
 local SkyGraceZone = 100
-local FlightRes    = {}
-local FlightTr     = { start = true, endpos = true, filter = true, mask = true, output = FlightRes }
+local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
 
@@ -225,9 +225,9 @@ function Ballistics.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	ACF.TraceF(FlightTr) -- Does not modify the bullet's original filter
+	local traceRes = ACF.trace(FlightTr, mask) -- Does not modify the bullet's original filter
 
-	debugoverlay.Line(Bullet.Pos, FlightRes.HitPos, 15, Bullet.Color)
+	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -237,39 +237,39 @@ function Ballistics.DoBulletsFlight(Bullet)
 			local DeltaFuze = Clock.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
 
-			if not FlightRes.Hit or Lerp < FlightRes.Fraction then -- Fuze went off before running into something
+			if not traceRes.Hit or Lerp < traceRes.Fraction then -- Fuze went off before running into something
 				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
 				Bullet.DetByFuze = true
 
 				if Bullet.OnEndFlight then
-					Bullet.OnEndFlight(Bullet, FlightRes)
+					Bullet.OnEndFlight(Bullet, traceRes)
 				end
 
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, FlightRes)
+				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
 
 				return
 			end
 		end
 	end
 
-	if FlightRes.Hit then
-		if FlightRes.HitSky then
-			if FlightRes.HitNormal == Vector(0, 0, -1) then
-				Bullet.SkyLvL = FlightRes.HitPos.z
+	if traceRes.Hit then
+		if traceRes.HitSky then
+			if traceRes.HitNormal == Vector(0, 0, -1) then
+				Bullet.SkyLvL = traceRes.HitPos.z
 				Bullet.LifeTime = Clock.CurTime
 			else
 				Ballistics.RemoveBullet(Bullet)
 			end
 		else
-			local Entity = FlightRes.Entity
+			local Entity = traceRes.Entity
 
 			if GlobalFilter[Entity:GetClass()] then return end
 
-			local Type = Ballistics.GetImpactType(FlightRes, Entity)
+			local Type = Ballistics.GetImpactType(traceRes, Entity)
 
-			Ballistics.OnImpact(Bullet, FlightRes, AmmoTypes.Get(Bullet.Type), Type)
+			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
 		end
 	end
 end
@@ -279,16 +279,6 @@ do -- Terminal ballistics --------------------------
 		local Normal = Flight:GetNormalized()
 
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
-	end
-
-	-- TODO: Move to damage_sv.lua and use the proper namespace
-	function ACF_VolumeDamage(Bullet, Trace, Volume)
-		local HitRes = ACF.Damage(Bullet, Trace, Volume)
-
-		if HitRes.Kill then
-			local Debris = ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), 0)
-			table.insert(Bullet.Filter , Debris)
-		end
 	end
 
 	function Ballistics.CalculateRicochet(Bullet, Trace)
@@ -310,9 +300,11 @@ do -- Terminal ballistics --------------------------
 	end
 
 	function Ballistics.DoRoundImpact(Bullet, Trace)
+		local DmgResult, DmgInfo = Damage.getBulletDamage(Bullet, Trace)
 		local Speed    = Bullet.Speed
 		local Energy   = Bullet.Energy
-		local HitRes   = ACF.Damage(Bullet, Trace)
+		local Entity   = Trace.Entity
+		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
 		if HitRes.Loss == 1 then
@@ -321,15 +313,15 @@ do -- Terminal ballistics --------------------------
 
 		if ACF.KEPush then
 			ACF.KEShove(
-				Trace.Entity,
+				Entity,
 				Trace.HitPos,
 				Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end
 
-		if HitRes.Kill and IsValid(Trace.Entity) then
-			ACF_APKill(Trace.Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
+		if HitRes.Kill and IsValid(Entity) then
+			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
 		end
 
 		HitRes.Ricochet = false
