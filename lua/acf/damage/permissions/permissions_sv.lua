@@ -431,10 +431,9 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	--end
 end
 
-function this.CanDamage(Bullet, Trace)
-	local Entity    = Trace.Entity
-	local Inflictor = Bullet.Owner
-	local Owner     = IsValid(Entity) and Entity:CPPIGetOwner()
+function this.CanDamage(Entity, _, DmgInfo)
+	local Attacker = DmgInfo:GetAttacker()
+	local Owner    = IsValid(Entity) and Entity:CPPIGetOwner()
 
 	if not (IsValid(Owner) and Owner:IsPlayer()) then
 		if IsValid(Entity) and Entity:IsPlayer() then
@@ -448,7 +447,7 @@ function this.CanDamage(Bullet, Trace)
 		end
 	end
 
-	if not (IsValid(Inflictor) and Inflictor:IsPlayer()) then
+	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
 		if this.DefaultCanDamage then
 			return
 		else
@@ -456,10 +455,10 @@ function this.CanDamage(Bullet, Trace)
 		end
 	end
 
-	return this.DamagePermission(Owner, Inflictor, Entity)
+	return this.DamagePermission(Owner, Attacker, Entity)
 end
 
-hook.Add("ACF_BulletDamage", "ACF_DamagePermissionCore", this.CanDamage)
+hook.Add("ACF_PreDamageEntity", "ACF_DamagePermissionCore", this.CanDamage)
 
 this.thinkWrapper = function()
 	local curmode = table.KeyFromValue(this.Modes, this.DamagePermission)

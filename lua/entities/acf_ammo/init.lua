@@ -416,7 +416,9 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
-	local Clock = Utilities.Clock
+	local Clock   = Utilities.Clock
+	local Damage  = ACF.Damage
+	local Objects = Damage.Objects
 
 	local function CookoffCrate(Entity)
 		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
@@ -475,12 +477,12 @@ do -- ACF Activation and Damage -----------------
 		self.ACF.Type = "Prop"
 	end
 
-	function ENT:ACF_OnDamage(Bullet, Trace, Volume)
-		local HitRes = ACF.PropDamage(Bullet, Trace, Volume) --Calling the standard damage prop function
+	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+		local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo) -- Calling the standard prop damage function
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
-		local Inflictor = Bullet.Owner
+		local Inflictor = DmgInfo:GetInflictor()
 
 		if HitRes.Kill then
 			if IsValid(Inflictor) and Inflictor:IsPlayer() then
@@ -526,21 +528,17 @@ do -- ACF Activation and Damage -----------------
 
 		self.Exploding = true
 
-		local Pos           = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
-		local Filler        = self.BulletData.FillerMass or 0
-		local Propellant    = self.BulletData.PropMass or 0
-		local ExplosiveMass = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
-		local FragMass      = self.BulletData.ProjMass or ExplosiveMass * 0.5
+		local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
+		local Filler     = self.BulletData.FillerMass or 0
+		local Propellant = self.BulletData.PropMass or 0
+		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
+		local FragMass   = self.BulletData.ProjMass or Explosive * 0.5
+		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
 
-		ACF.KillChildProps(self, Pos, ExplosiveMass)
-		ACF.HE(Pos, ExplosiveMass, FragMass, self.Inflictor, {self}, self)
+		ACF.KillChildProps(self, Position, Explosive)
 
-		local Effect = EffectData()
-			Effect:SetOrigin(Pos)
-			Effect:SetNormal(Vector(0, 0, -1))
-			Effect:SetScale(math.max(ExplosiveMass ^ 0.33 * 8 * 39.37, 1))
-			Effect:SetRadius(0)
-		util.Effect("ACF_Explosion", Effect)
+		Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+		Damage.explosionEffect(Position, nil, Explosive)
 
 		constraint.RemoveAll(self)
 

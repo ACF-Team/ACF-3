@@ -173,9 +173,8 @@ do -- Ammo overlay
 	end
 
 	local function DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Total)
-		local Count = 0
-
 		local StartPos = GetPosition(Fits.x, Fits.y, Fits.z, RoundSize, Spacing, RoundAngle, 1) * 0.5
+		local Count    = 0
 
 		for X = 1, Fits.x do
 			for Y = 1, Fits.y do
@@ -203,6 +202,7 @@ do -- Ammo overlay
 			return
 		end
 		if Entity.FinalAmmo <= 0 then return end
+		if not Entity.LocalAng then return end
 
 		local RoundAngle = Entity:LocalToWorldAngles(Entity.LocalAng)
 		local Center = Entity:LocalToWorld(Entity:OBBCenter())
