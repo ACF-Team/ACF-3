@@ -17,27 +17,29 @@ end
 -- @return A properly formatted DamageResult object.
 -- @return A properly formatted DamageInfo object.
 function Damage.getBulletDamage(Bullet, Trace)
-	local Entity = Trace.Entity
+	local Entity    = Trace.Entity
+	local DmgResult = Objects.DamageResult()
+	local DmgInfo   = Objects.DamageInfo()
 
-	if not ACF.Check(Entity) then return end
+	if ACF.Check(Entity) then
+		local Thickness = Entity.ACF.Armour
 
-	local Area        = Bullet.ProjArea
-	local Penetration = Bullet:GetPenetration()
-	local Thickness   = Entity.ACF.Armour
-	local Angle       = ACF.GetHitAngle(Trace, Bullet.Flight)
-	local Factor      = Thickness / Bullet.Diameter
-	local DmgResult   = Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
+		DmgResult:SetArea(Bullet.ProjArea)
+		DmgResult:SetPenetration(Bullet:GetPenetration())
+		DmgResult:SetThickness(Thickness)
+		DmgResult:SetAngle(ACF.GetHitAngle(Trace, Bullet.Flight))
+		DmgResult:SetFactor(Thickness / Bullet.Diameter)
 
-	local Attacker  = Bullet.Owner
-	local Inflictor = Bullet.Gun
-	local Origin    = Bullet.Pos
-	local HitPos    = Trace.HitPos
-	local HitGroup  = Trace.HitGroup
-	local DmgInfo   = Objects.DamageInfo(Attacker, Inflictor, "Bullet", Origin, HitPos, HitGroup)
+		DmgInfo:SetAttacker(Bullet.Owner)
+		DmgInfo:SetInflictor(Bullet.Gun)
+		DmgInfo:SetType("Bullet")
+		DmgInfo:SetOrigin(Bullet.Pos)
+		DmgInfo:SetHitPos(Trace.HitPos)
+		DmgInfo:SetHitGroup(Trace.HitGroup)
+	end
 
 	return DmgResult, DmgInfo
 end
-
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
 -- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
