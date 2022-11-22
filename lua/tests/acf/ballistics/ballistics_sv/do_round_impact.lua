@@ -9,6 +9,10 @@ return {
         State.ACF_Damage_Result = { Loss = 0, Kill = false }
         stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 
+        State.DmgInfo = {}
+        State.DmgResult = {}
+        stub( ACF.Damage, "getBulletDamage" ).returns( State.DmgResult, State.DmgInfo )
+
         State.Bullet = {
             Speed = 1,
             Filter = {},
