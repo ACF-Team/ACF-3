@@ -164,7 +164,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
 						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
 
-						DmgInfo:SetType("Blast")
+						DmgInfo:SetType(DMG_BLAST)
 
 						BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 						Losses      = BlastResult.Loss * 0.5
@@ -179,7 +179,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
 							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 
-							DmgInfo:SetType("Fragment")
+							DmgInfo:SetType(DMG_BULLET)
 
 							FragResult = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
 							Losses     = Losses + FragResult.Loss * 0.5

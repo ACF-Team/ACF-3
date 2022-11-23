@@ -308,7 +308,7 @@ if SERVER then
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
-				JetInfo:SetType("HEAT Jet")
+				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
@@ -383,7 +383,7 @@ if SERVER then
 
 				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, FakeTrace)
 
-				SpallInfo:SetType("HEAT Spall")
+				SpallInfo:SetType(DMG_BULLET)
 				SpallDmg:SetDamage(SpallDamage)
 
 				local JetResult = Damage.dealDamage(Ent, SpallDmg, SpallInfo)

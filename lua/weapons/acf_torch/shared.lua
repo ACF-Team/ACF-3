@@ -87,7 +87,7 @@ function SWEP:Initialize()
 	self.LastDistance = 0
 	self.LastTrace    = {}
 	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
-	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), "Torch")
+	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), DMG_PLASMA)
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)

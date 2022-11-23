@@ -32,7 +32,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 		DmgInfo:SetAttacker(Bullet.Owner)
 		DmgInfo:SetInflictor(Bullet.Gun)
-		DmgInfo:SetType("Bullet")
+		DmgInfo:SetType(DMG_BULLET)
 		DmgInfo:SetOrigin(Bullet.Pos)
 		DmgInfo:SetHitPos(Trace.HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
