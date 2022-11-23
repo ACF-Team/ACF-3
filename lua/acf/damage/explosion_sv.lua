@@ -79,7 +79,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
 	local Radius      = Damage.getBlastRadius(FillerMass)
 	local MaxSphere   = 4 * math.pi * (Radius * 2.54) ^ 2 -- Surface Area of the sphere at maximum radius
-	local Fragments   = math.max(math.floor((FillerMass / FragMass) * ACF.HEFrag), 2)
+	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
 	local FragMass    = FragMass / Fragments
 	local BaseFragV   = (Power * 50000 / FragMass / Fragments) ^ 0.5
 	local FragArea    = (FragMass / 7.8) ^ 0.33 -- cm2
@@ -160,7 +160,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					do -- Blast damage
 						local Feathering  = 1 - math.min(1, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
 						local BlastArea   = EntArea / ACF.Threshold * Feathering
-						local BlastEnergy = PowerFraction ^ 0.4 * BlastArea -- 0.4 was ACF.HEBlastPen
+						local BlastEnergy = PowerFraction ^ 0.3 * BlastArea -- 0.3 was ACF.HEBlastPen
 						local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
 						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
 
@@ -174,8 +174,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						local FragHit = math.floor(Fragments * AreaFraction)
 
 						if FragHit > 0 then
-							local Loss    = (Distance / BaseFragV) * BaseFragV ^ 2 * FragMass ^ 0.33 * 0.0001
-							local FragVel = math.max(BaseFragV - Loss / ACF.DragDiv, 0) * 0.0254
+							local Loss    = BaseFragV * Distance / Radius
+							local FragVel = math.max(BaseFragV - Loss, 0) * 0.0254
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
 							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 

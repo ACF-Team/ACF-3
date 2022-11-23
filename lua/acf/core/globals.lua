@@ -77,7 +77,7 @@ do -- ACF global vars
 	-- HE
 	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
 	ACF.HEDensity          = 1.65e-3 -- Density of TNT in kg/cm3
-	ACF.HEFrag             = 100 --Mean fragment number for equal weight TNT and casing
+	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
 
 	-- HEAT
 	ACF.TNTPower           = 4184    -- J/g
