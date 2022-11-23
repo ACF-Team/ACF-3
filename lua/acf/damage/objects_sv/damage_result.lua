@@ -30,7 +30,7 @@ end
 --- Generates the damage result table based on the values stored on the object.
 -- @return The damage result table, contains the Damage, Overkill, Loss and Kill fields.
 function Meta:Compute()
-	local Factor      = math.min(1, self.Factor)
+	local Factor      = math.Clamp(self.Factor, 0.1, 1)
 	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)) ^ Factor)
 	local Penetration = self.Penetration
 	local Ratio       = math.min(1, Penetration / Effective)
