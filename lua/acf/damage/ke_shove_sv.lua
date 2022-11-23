@@ -16,8 +16,16 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 			ACF_CalcMassRatio(Ancestor)
 		end
 
-		local Ratio = Ancestor.acfphystotal / Ancestor.acftotal
+		local Ratio    = Ancestor.acfphystotal / Ancestor.acftotal
 		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
+
+		if KE ~= KE then
+			print("Congratulations, you've just found a bug on ACF. Report this to the developer team.")
+
+			debug.Trace()
+
+			return
+		end
 
 		Phys:ApplyForceOffset(Vec:GetNormalized() * KE * Ratio, Ancestor:LocalToWorld(LocalPos))
 	end
