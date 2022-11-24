@@ -134,7 +134,6 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-	local HitRes = DmgResult:Compute()
 	local Driver = Entity:GetDriver()
 
 	if IsValid(Driver) then
@@ -143,14 +142,7 @@ function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
 		Damage.dealDamage(Driver, DmgInfo, DmgResult) -- Deal direct damage to the driver
 	end
 
-	if HitRes.Damage >= Entity.ACF.Health then
-		HitRes.Kill = true
-	else
-		Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.Armour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
-	end
-
-	return HitRes
+	return Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 end
 
 --- Used to inflict damage to any entity that was tagged as "Prop" by ACF.Check.
