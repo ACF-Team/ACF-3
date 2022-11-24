@@ -21,6 +21,7 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 
 		if KE ~= KE then
 			print("Congratulations, you've just found a bug on ACF. Report this to the developer team.")
+			print("Affected entity", Target, Ancestor)
 
 			debug.Trace()
 

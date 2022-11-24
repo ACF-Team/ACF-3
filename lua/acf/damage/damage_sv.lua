@@ -166,10 +166,8 @@ function Damage.doPropDamage(Entity, DmgResult)
 	if HitRes.Damage >= Health then
 		HitRes.Kill = true
 	else
-		local MaxArmor = Entity.ACF.MaxArmour
-
 		Entity.ACF.Health = Health - HitRes.Damage
-		Entity.ACF.Armour = math.Clamp(MaxArmor * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) ^ 1.7, MaxArmor * 0.25, MaxArmor) --Simulating the plate weakening after a hit
+		Entity.ACF.Armour = Entity.ACF.Armour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
 		Network.Broadcast("ACF_Damage", Entity)
 	end

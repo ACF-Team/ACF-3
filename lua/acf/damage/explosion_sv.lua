@@ -146,7 +146,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					local Distance      = Position:Distance(HitPos)
 					local Sphere        = math.max(4 * math.pi * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 					local EntArea       = HitEnt.ACF.Area
-					local EntArmor      = HitEnt.ACF.Armour
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 					local AreaFraction  = Area / MaxSphere
 					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
@@ -158,11 +157,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					DmgInfo:SetHitGroup(Trace.HitGroup)
 
 					do -- Blast damage
-						local Feathering  = 1 - math.min(1, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
+						local Feathering  = 1 - math.min(0.99, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
 						local BlastArea   = EntArea / ACF.Threshold * Feathering
 						local BlastEnergy = PowerFraction ^ 0.3 * BlastArea -- 0.3 was ACF.HEBlastPen
 						local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
-						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
+						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, HitEnt.ACF.Armour)
 
 						DmgInfo:SetType(DMG_BLAST)
 
@@ -177,7 +176,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 							local Loss    = BaseFragV * Distance / Radius
 							local FragVel = math.max(BaseFragV - Loss, 0) * 0.0254
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
+							local FragDmg = Objects.DamageResult(FragArea, FragPen, HitEnt.ACF.Armour, nil, nil, Fragments)
 
 							DmgInfo:SetType(DMG_BULLET)
 
