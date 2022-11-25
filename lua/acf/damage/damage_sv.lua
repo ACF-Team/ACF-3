@@ -139,7 +139,7 @@ function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
 	if IsValid(Driver) then
 		DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
 
-		Damage.dealDamage(Driver, DmgInfo, DmgResult) -- Deal direct damage to the driver
+		Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
 	end
 
 	return Damage.doPropDamage(Entity, DmgResult, DmgInfo) -- We'll just damage it like a regular prop
