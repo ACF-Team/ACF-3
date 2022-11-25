@@ -360,7 +360,7 @@ if SERVER then
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
 						local EffArmor = (EffectiveArmor * 0.5 / (SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour or 0)) * 14 -- Magic multiplier to prevent nuking armored plates
-						Damageables[#Damageables + 1] = {SpallEnt, RelArea * EffArmor}
+						Damageables[#Damageables + 1] = { SpallEnt, RelArea * EffArmor, TargetRes }
 					end
 				end
 			end
@@ -371,17 +371,13 @@ if SERVER then
 			-- Divided by the average distance squared so it's the same as the relative area
 			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
 			AreaSum = math.max(AreaSum, MinArea)
-			-- The only information used from the trace is the entity, so we can use a fake TraceRes with placeholder information,
-			--  which the damage function checks but doesn't use. Scuffed, but alas - rework damage
-			local FakeTrace = { Entity = true }
+
 			for _, v in ipairs(Damageables) do
-				local Entity, Area = unpack(v, 1, 2)
+				local Entity, Area, TraceRes = unpack(v, 1, 2)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
 				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 
-				FakeTrace.Entity = Entity
-
-				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, FakeTrace)
+				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 				SpallInfo:SetType(DMG_BULLET)
 				SpallDmg:SetDamage(SpallDamage)
