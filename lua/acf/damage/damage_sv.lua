@@ -137,12 +137,12 @@ function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
 	local Driver = Entity:GetDriver()
 
 	if IsValid(Driver) then
-		DmgInfo:SetHitGroup(math.Rand(0, 7)) -- Hit a random part of the driver
+		DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
 
 		Damage.dealDamage(Driver, DmgInfo, DmgResult) -- Deal direct damage to the driver
 	end
 
-	return Damage.doPropDamage(Entity, DmgResult, DmgInfo)
+	return Damage.doPropDamage(Entity, DmgResult, DmgInfo) -- We'll just damage it like a regular prop
 end
 
 --- Used to inflict damage to any entity that was tagged as "Prop" by ACF.Check.
