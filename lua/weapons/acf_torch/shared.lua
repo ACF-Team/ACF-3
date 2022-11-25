@@ -80,9 +80,9 @@ function SWEP:Initialize()
 	util.PrecacheSound("items/medshot4.wav")
 	util.PrecacheSound("ambient/energy/zap2.wav")
 
-	if CLIENT then return end
+	self:SetHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
 
-	self:SetWeaponHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
+	if CLIENT then return end
 
 	self.LastDistance = 0
 	self.LastTrace    = {}
@@ -91,19 +91,22 @@ function SWEP:Initialize()
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
-	local IsIdle = self:GetCurrentAnim() == "idle01" or self:GetAnimationTime() < CurTime()
-	if forceplay == nil then
-		forceplay = false
-	end
-	if animpriority == nil then
-		animpriority = 0
-	end
+	if CLIENT then return end
+
+	local ViewModel = self:GetOwner():GetViewModel()
+
+	if not IsValid(ViewModel) then return end -- TODO: Figure out why this could be happening
+	if not animpriority then animpriority = 0 end
+
+	local Now    = Clock.CurTime
+	local IsIdle = self:GetCurrentAnim() == "idle01" or self:GetAnimationTime() < Now
 
 	if IsIdle or (forceplay and self:GetAnimPriority() <= animpriority) then
-		local vm = self:GetOwner():GetViewModel()
 		self:SetCurrentAnim(anim)
-		vm:SendViewModelMatchingSequence(vm:LookupSequence(anim))
-		self:SetAnimationTime(CurTime() + vm:SequenceDuration() / vm:GetPlaybackRate())
+
+		ViewModel:SendViewModelMatchingSequence(ViewModel:LookupSequence(anim))
+
+		self:SetAnimationTime(Now + ViewModel:SequenceDuration() / ViewModel:GetPlaybackRate())
 		self:SetAnimPriority(animpriority)
 	end
 end
