@@ -89,6 +89,21 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 	end
 end
 
+local function Gib(Entity,DmgInfo)
+	Entity:PrecacheGibs()
+
+	local dmg = DamageInfo()
+	dmg:SetDamage(Entity:Health())
+	if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
+	if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
+	dmg:SetDamageType(DMG_ALWAYSGIB)
+
+	timer.Simple(0,function()
+		if not IsValid(Entity) then return end
+		Entity:TakeDamageInfo(dmg)
+	end)
+end
+
 function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is an optional world-pos input for flinging away children props more realistically
 	-- if it hasn't been processed yet, check for children
 	if not Entity.ACF_Killed then
@@ -141,16 +156,7 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is a
 	constraint.RemoveAll(Entity)
 
 	if CanBreak then
-		local dmg = DamageInfo()
-		dmg:SetDamage(Entity:Health())
-		if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) end
-		if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) end
-		dmg:SetDamageType(DMG_ALWAYSGIB)
-
-		Entity:PrecacheGibs()
-		Entity:GibBreakClient(Vector())
-
-		Entity:TakeDamageInfo(dmg)
+		Gib(Entity,DmgInfo)
 	else
 		Entity:Remove()
 	end
@@ -168,16 +174,7 @@ function ACF.APKill(Entity, Normal, Power, DmgInfo)
 	constraint.RemoveAll(Entity)
 
 	if CanBreak then
-		local dmg = DamageInfo()
-		dmg:SetDamage(Entity:Health())
-		if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) end
-		if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) end
-		dmg:SetDamageType(DMG_ALWAYSGIB)
-
-		Entity:PrecacheGibs()
-		Entity:GibBreakClient(Vector())
-
-		Entity:TakeDamageInfo(dmg)
+		Gib(Entity,DmgInfo)
 	else
 		Entity:Remove()
 	end
