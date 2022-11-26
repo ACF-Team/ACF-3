@@ -373,7 +373,7 @@ if SERVER then
 			AreaSum = math.max(AreaSum, MinArea)
 
 			for _, v in ipairs(Damageables) do
-				local Entity, Area, TraceRes = unpack(v, 1, 2)
+				local Entity, Area, TraceRes = unpack(v, 1, 3)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
 				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 
