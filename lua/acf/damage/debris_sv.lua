@@ -149,7 +149,7 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is a
 
 		Entity:PrecacheGibs()
 		Entity:GibBreakClient(Vector())
-		
+
 		Entity:TakeDamageInfo(dmg)
 	else
 		Entity:Remove()
@@ -176,7 +176,7 @@ function ACF.APKill(Entity, Normal, Power, DmgInfo)
 
 		Entity:PrecacheGibs()
 		Entity:GibBreakClient(Vector())
-		
+
 		Entity:TakeDamageInfo(dmg)
 	else
 		Entity:Remove()
