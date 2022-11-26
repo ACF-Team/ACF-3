@@ -117,10 +117,13 @@ function SWEP:Deploy()
 	return true
 end
 
+--[[
+-- Temporarily commented out as it's apparently causing errors on some setups.
 function SWEP:Holster()
 	self:SetAnim("holster", true, 1)
 	return true
 end
+]]
 
 function SWEP:Think()
 	local Owner = self:GetOwner()
