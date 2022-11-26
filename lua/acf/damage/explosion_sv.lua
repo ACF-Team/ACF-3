@@ -199,7 +199,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						Targets[HitEnt]     = nil -- Remove from list
 
 						if FragKill then
-							ACF.APKill(HitEnt, Direction, PowerFraction)
+							ACF.APKill(HitEnt, Direction, PowerFraction, DmgInfo)
 						else
 							local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position)
 

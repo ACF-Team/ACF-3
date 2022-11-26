@@ -319,7 +319,7 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if HitRes.Kill and IsValid(Entity) then
-			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
+			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic, DmgInfo)
 		end
 
 		HitRes.Ricochet = false
