@@ -87,8 +87,8 @@ function SWEP:Initialize()
 
 	self.LastDistance = 0
 	self.LastTrace    = {}
-	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
-	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), DMG_PLASMA)
+	self.DamageResult = Objects.DamageResult(math.pi * 2 ^ 2, 1)
+	self.DamageInfo   = Objects.DamageInfo(self, nil, DMG_PLASMA)
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
@@ -287,6 +287,7 @@ function SWEP:SecondaryAttack()
 
 	DmgResult:SetThickness(Entity.ACF.Armour)
 
+	DmgInfo:SetAttacker(Owner)
 	DmgInfo:SetOrigin(Trace.StartPos)
 	DmgInfo:SetHitPos(HitPos)
 	DmgInfo:SetHitGroup(Trace.HitGroup)
