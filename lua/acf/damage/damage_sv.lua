@@ -158,8 +158,10 @@ function Damage.doPropDamage(Entity, DmgResult)
 	if HitRes.Damage >= Health then
 		HitRes.Kill = true
 	else
-		Entity.ACF.Health = Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.Armour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
+		local NewHealth = Health - HitRes.Damage
+
+		Entity.ACF.Health = NewHealth
+		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + NewHealth / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
 		Network.Broadcast("ACF_Damage", Entity)
 	end
