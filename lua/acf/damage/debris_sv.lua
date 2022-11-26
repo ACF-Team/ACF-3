@@ -70,7 +70,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 
 		for Ent in pairs( Children ) do
 			if math.random() < DebrisChance then
-				ACF.HEKill(Ent, (Ent:GetPos() - BlastPos):GetNormalized(), Power)
+				ACF.HEKill(Ent, (Ent:GetPos() - BlastPos):GetNormalized(), Power, nil, DmgInfo)
 			else
 				constraint.RemoveAll(Ent)
 
@@ -89,7 +89,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 	end
 end
 
-function ACF.HEKill(Entity, Normal, Energy, BlastPos) -- blast pos is an optional world-pos input for flinging away children props more realistically
+function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is an optional world-pos input for flinging away children props more realistically
 	-- if it hasn't been processed yet, check for children
 	if not Entity.ACF_Killed then
 		ACF.KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy)
@@ -97,8 +97,10 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos) -- blast pos is an optiona
 
 	local Radius = Entity:BoundingRadius()
 	local Debris = {}
+	local Class = Entity:GetClass()
+	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
 
-	DebrisNetter(Entity, Normal, Energy, false, true)
+	if not CanBreak then DebrisNetter(Entity, Normal, Energy, false, true) end -- if we can't break the prop into its own gibs, then use ACF's system
 
 	if ACF.GetServerBool("CreateFireballs") then
 		local Fireballs = math.Clamp(Radius * 0.01, 1, math.max(10 * ACF.GetServerNumber("FireballMult", 1), 1))
@@ -138,17 +140,45 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos) -- blast pos is an optiona
 
 	constraint.RemoveAll(Entity)
 
-	Entity:Remove()
+	if CanBreak then
+		local dmg = DamageInfo()
+		dmg:SetDamage(Entity:Health())
+		if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) end
+		if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) end
+		dmg:SetDamageType(DMG_ALWAYSGIB)
+
+		Entity:PrecacheGibs()
+		Entity:GibBreakClient(Vector())
+		
+		Entity:TakeDamageInfo(dmg)
+	else
+		Entity:Remove()
+	end
 
 	return Debris
 end
 
-function ACF.APKill(Entity, Normal, Power)
+function ACF.APKill(Entity, Normal, Power, DmgInfo)
 	ACF.KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
+	local Class = Entity:GetClass()
+	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
 
-	DebrisNetter(Entity, Normal, Power, true, false)
+	if not CanBreak then DebrisNetter(Entity, Normal, Power, true, false) end -- if we can't break the prop into its own gibs, then use ACF's system
 
 	constraint.RemoveAll(Entity)
 
-	Entity:Remove()
+	if CanBreak then
+		local dmg = DamageInfo()
+		dmg:SetDamage(Entity:Health())
+		if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) end
+		if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) end
+		dmg:SetDamageType(DMG_ALWAYSGIB)
+
+		Entity:PrecacheGibs()
+		Entity:GibBreakClient(Vector())
+		
+		Entity:TakeDamageInfo(dmg)
+	else
+		Entity:Remove()
+	end
 end

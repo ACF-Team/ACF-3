@@ -24,7 +24,7 @@ function SWEP:PostDrawViewModel()
 	local Armor = math.Round(self:GetNWFloat("Armour", 0), 2)
 	local MaxArmor = math.Round(self:GetNWFloat("MaxArmour", 0), 2)
 
-	local Flicker = math.random(100, 150)
+	local Flicker = math.random(220, 240)
 	local TextColor = Color(224, 224, 255, Flicker)
 	local OutColor = Color(0, 0, 0, Flicker)
 
@@ -39,20 +39,29 @@ function SWEP:PostDrawViewModel()
 
 	render.SetRenderTarget(RT)
 	render.SetViewPort(0, 0, 256, 256)
+	render.Clear(0,0,0,255)
 
 	cam.Start2D()
 		surface.SetTexture(Texture)
 		surface.DrawTexturedRect(0, 0, 256, 256)
 		surface.SetDrawColor(255, 255, 255, Flicker)
-		draw.SimpleTextOutlined("ACF Stats", "torchfont", 128, 30, TextColor, Center, Center, 4, OutColor)
-		draw.RoundedBox(5, 10, 83, 236, 64, Color(200, 200, 200, Flicker))
-		draw.RoundedBox(5, 15, 88, ArmorRatio * 226, 54, Color(0, 0, 200, Flicker))
-		draw.RoundedBox(5, 10, 183, 236, 64, Color(200, 200, 200, Flicker))
-		draw.RoundedBox(5, 15, 188, HealthRatio * 226, 54, Color(200, 0, 0, Flicker))
-		draw.SimpleTextOutlined("Armor", "torchfont", 128, 100, TextColor, Center, Center, 4, OutColor)
-		draw.SimpleTextOutlined(ArmorText, "torchfont", 128, 150, TextColor, Center, Center, 4, OutColor)
-		draw.SimpleTextOutlined("Health", "torchfont", 128, 200, TextColor, Center, Center, 4, OutColor)
-		draw.SimpleTextOutlined(HealthText, "torchfont", 128, 250, TextColor, Center, Center, 4, OutColor)
+		draw.SimpleTextOutlined("ACF Stats", "torchfont", 128, 48, TextColor, Center, Center, 4, OutColor)
+
+		if MaxHealth > 0 then
+			if MaxArmor > 0  then
+				draw.RoundedBox(5, 10, 83, 236, 64, Color(200, 200, 200, Flicker))
+				draw.RoundedBox(5, 15, 88, ArmorRatio * 226, 54, Color(0, 0, 200, Flicker))
+				draw.SimpleTextOutlined("Armor", "torchfont", 128, 100, TextColor, Center, Center, 4, OutColor)
+				draw.SimpleTextOutlined(ArmorText, "torchfont", 128, 150, TextColor, Center, Center, 4, OutColor)
+			end
+
+			draw.RoundedBox(5, 10, 183, 236, 64, Color(200, 200, 200, Flicker))
+			draw.RoundedBox(5, 15, 188, HealthRatio * 226, 54, Color(200, 0, 0, Flicker))
+			draw.SimpleTextOutlined("Health", "torchfont", 128, 200, TextColor, Center, Center, 4, OutColor)
+			draw.SimpleTextOutlined(HealthText, "torchfont", 128, 250, TextColor, Center, Center, 4, OutColor)
+		else
+			draw.SimpleTextOutlined("NO TARGET", "torchfont", 128, 140, TextColor, Center, Center, 4, OutColor)
+		end
 	cam.End2D()
 
 	render.SetRenderTarget(OldRT)

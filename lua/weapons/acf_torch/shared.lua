@@ -3,6 +3,7 @@ AddCSLuaFile("shared.lua")
 
 local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
+local Network = ACF.Networking
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
@@ -251,6 +252,8 @@ function SWEP:PrimaryAttack()
 		Entity.ACF.Health = Health
 		Entity.ACF.Armour = Armor
 
+		Network.Broadcast("ACF_Damage", Entity) -- purely to update the damage material on props
+
 		if Entity.ACF_OnRepaired then
 			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
 		end
@@ -291,7 +294,7 @@ function SWEP:SecondaryAttack()
 	local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
 
 	if HitRes.Kill then
-		ACF.APKill(Entity, Trace.Normal, 1)
+		ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
 	else
 		local Effect = EffectData()
 		Effect:SetMagnitude(1)
