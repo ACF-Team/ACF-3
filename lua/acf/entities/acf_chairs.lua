@@ -31,6 +31,7 @@ list.Set( "Vehicles", "acf_pilotseat", {
 	Author = "Lazermaniac",
 	Information = "A generic seat for accurate damage modelling.",
 	Model = "models/vehicles/pilot_seat.mdl",
+	Offset = 16,
 	KeyValues = {
 					vehiclescript	=	"scripts/vehicles/prisoner_pod.txt",
 					limitview		=	"0"
