@@ -100,7 +100,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
 	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.Caliber * 7.8)
+	local LengthPct    = math.min(Data.ProjLength / (Data.Caliber * 7.8), 1)
 	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
 	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
@@ -152,7 +152,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 		local _FillerEnergy = Data.FillerEnergy
 		local _LinerAngle   = Data.ConeAng
-		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99) print("misle", _LinerAngle, _MinVelMult)
 		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
