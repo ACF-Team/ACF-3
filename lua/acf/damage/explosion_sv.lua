@@ -201,7 +201,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						if FragKill then
 							ACF.APKill(HitEnt, Direction, PowerFraction, DmgInfo)
 						else
-							local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position)
+							local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position, DmgInfo)
 
 							for Fireball in pairs(Debris) do
 								if IsValid(Fireball) then Filter[#Filter + 1] = Fireball end
