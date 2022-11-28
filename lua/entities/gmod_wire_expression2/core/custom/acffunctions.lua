@@ -229,6 +229,28 @@ e2function number entity:acfPropArmorMax()
 	return MaxArmor and Round(MaxArmor, 2) or 0
 end
 
+-- Returns the current health percentage of an entity
+e2function number entity:acfPropHealthPercent()
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not ACF.Check(this) then return 0 end
+
+	local PercHealth = this.ACF.Health / this.ACF.MaxHealth
+
+	return PercHealth and Round(PercHealth, 2) or 0
+end
+
+-- Returns the current armor percentage of an entity
+e2function number entity:acfPropArmorPercent()
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not ACF.Check(this) then return 0 end
+
+	local PercArmor = this.ACF.Armour / this.ACF.MaxArmour
+
+	return PercArmor and Round(PercArmor, 2) or 0
+end
+
 -- Returns the ductility of an entity
 e2function number entity:acfPropDuctility()
 	if not validPhysics(this) then return 0 end
