@@ -325,10 +325,13 @@ do -- Terminal ballistics --------------------------
 
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
 			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
+			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
+			local Position  = Trace.HitPos
 
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.NextPos = Trace.HitPos
-			Bullet.Flight = Direction:GetNormalized() * Speed * Ricochet
+			Bullet.Flight    = Flight
+			Bullet.Pos       = Position
+			Bullet.NextPos   = Position + Flight * Bullet.DeltaTime
 
 			HitRes.Ricochet = true
 		end
