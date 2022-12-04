@@ -90,7 +90,6 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -223,7 +222,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	local traceRes = ACF.trace(FlightTr, mask) -- Does not modify the bullet's original filter
+	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
 	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
@@ -353,7 +352,6 @@ do -- Terminal ballistics --------------------------
 
 			Bullet.GroundRicos = Bullet.GroundRicos + 1
 			Bullet.Flight      = Direction:GetNormalized() * Speed * ACF.Scale * Ricochet
-			Bullet.LastPos     = nil
 			Bullet.Pos         = Trace.HitPos
 			Bullet.NextPos     = Bullet.Pos + Bullet.Flight * DeltaTime
 
