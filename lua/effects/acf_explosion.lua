@@ -30,7 +30,7 @@ function EFFECT:Init(Data)
 	local Mult    = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
 
 	debugoverlay.Cross(Origin, 15, 15, Yellow, true)
-	debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
+	--debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
 
 	TraceData.start  = Origin - Normal
 	TraceData.endpos = Origin + (Normal * Radius)

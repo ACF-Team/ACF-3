@@ -91,7 +91,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	if not Filter then Filter = {} end
 
 	debugoverlay.Cross(Position, 15, 15, White, true)
-	debugoverlay.Sphere(Position, Radius, 15, White, true)
+	--debugoverlay.Sphere(Position, Radius, 15, White, true)
 
 	do -- Screen shaking
 		local Amp = math.min(Power * 0.0005, 50)
