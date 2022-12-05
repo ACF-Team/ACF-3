@@ -56,6 +56,7 @@ do -- Spawning and Updating
 	end
 
 	local function UpdatePlate(Entity, Data, Armor)
+		local Mass = Armor:GetMass(Size.x * Size.y * Size.z)
 		local Size = Data.Size
 
 		Entity.ArmorClass = Armor
@@ -72,8 +73,8 @@ do -- Spawning and Updating
 
 		ACF.Activate(Entity)
 
-		Entity.ACF.Mass       = Armor:GetMass(Size.x * Size.y * Size.z)
-		Entity.ACF.LegalMamss = Entity.ACF.Mass
+		Entity.ACF.Mass      = Mass
+		Entity.ACF.LegalMass = Mass
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -170,11 +171,6 @@ do -- ACF Activation and Damage
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		local Volume  = PhysObj:GetVolume()
-
-		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetVolume() * 6.45
-		end
-
 		local Health  = Volume / ACF.Threshold * self.Tensile
 		local Percent = 1
 
@@ -182,6 +178,7 @@ do -- ACF Activation and Damage
 			Percent = self.ACF.Health / self.ACF.MaxHealth
 		end
 
+		self.ACF.Area      = PhysObj:GetVolume() * 6.45 -- NOTE: Is this really correct?
 		self.ACF.Armour    = 1
 		self.ACF.MaxArmour = 1
 		self.ACF.Health    = Health * Percent

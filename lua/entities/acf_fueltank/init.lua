@@ -271,28 +271,21 @@ end
 
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
-
-	if not self.ACF.Area then
-		self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
-	end
-
-	if not self.ACF.Volume then
-		self.ACF.Volume = PhysObj:GetVolume() * 1
-	end
-
-	local Armour = self.EmptyMass * 1000 / self.ACF.Area / 0.78 --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
-	local Health = self.ACF.Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+	local Area    = PhysObj:GetSurfaceArea() * 6.45
+	local Armour  = self.EmptyMass * 1000 / Area / 0.78 * ACF.ArmorMod --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
+	local Health  = Area / ACF.Threshold
 	local Percent = 1
 
 	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 		Percent = self.ACF.Health / self.ACF.MaxHealth
 	end
 
-	self.ACF.Health = Health * Percent
+	self.ACF.Area      = Area
+	self.ACF.Health    = Health * Percent
 	self.ACF.MaxHealth = Health
-	self.ACF.Armour = Armour * (0.5 + Percent / 2)
+	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
 	self.ACF.MaxArmour = Armour
-	self.ACF.Type = "Prop"
+	self.ACF.Type      = "Prop"
 end
 
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -364,13 +357,14 @@ end
 
 do -- Mass Update
 	local function UpdateMass(Entity)
-		local Fuel = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
-		local Mass = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
+		local Fuel    = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
+		local Mass    = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
 		local PhysObj = Entity.ACF.PhysObj
 
-		Entity.ACF.LegalMass = Mass
-
 		if IsValid(PhysObj) then
+			Entity.ACF.Mass      = Mass
+			Entity.ACF.LegalMass = Mass
+
 			PhysObj:SetMass(Mass)
 		end
 	end

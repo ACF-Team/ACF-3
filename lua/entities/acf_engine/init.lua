@@ -278,6 +278,8 @@ do -- Spawn and Update functions
 	end
 
 	local function UpdateEngine(Entity, Data, Class, Engine, Type)
+		local Mass = Engine.Mass
+
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = Engine.Model
 
@@ -335,11 +337,14 @@ do -- Spawn and Update functions
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass	= Engine.Mass
-		Entity.ACF.Model		= Engine.Model
+		local PhysObj = Entity:GetPhysicsObject()
 
-		local Phys = Entity:GetPhysicsObject()
-		if IsValid(Phys) then Phys:SetMass(Engine.Mass) end
+		if IsValid(PhysObj) then
+			Entity.ACF.Mass      = Mass
+			Entity.ACF.LegalMass = Mass
+
+			PhysObj:SetMass(Mass)
+		end
 	end
 
 	function MakeACF_Engine(Player, Pos, Angle, Data)
@@ -556,45 +561,24 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value))
 end)
 
-function ENT:ACF_Activate()
-	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
-	local Count
-
-	if PhysObj:GetMesh() then
-		Count = #PhysObj:GetMesh()
-	end
-
-	if IsValid(PhysObj) and Count and Count > 100 then
-		if not self.ACF.Area then
-			self.ACF.Area = (PhysObj:GetSurfaceArea() * 6.45) * 0.52505066107
-		end
-	else
-		local Size = self:OBBMaxs() - self:OBBMins()
-
-		if not self.ACF.Area then
-			self.ACF.Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
-		end
-	end
-
-	self.ACF.Ductility = self.ACF.Ductility or 0
-
-	local Area = self.ACF.Area
-	local Armour = PhysObj:GetMass() * 1000 / Area / 0.78
-	local Health = Area / ACF.Threshold
+	local Mass    = PhysObj:GetMass()
+	local Area    = PhysObj:GetSurfaceArea() * 6.45
+	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod --Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+	local Health  = Area / ACF.Threshold
 	local Percent = 1
 
 	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 		Percent = self.ACF.Health / self.ACF.MaxHealth
 	end
 
-	self.ACF.Health = Health * Percent * self.HealthMult
+	self.ACF.Area      = Area
+	self.ACF.Health    = Health * Percent * self.HealthMult
 	self.ACF.MaxHealth = Health * self.HealthMult
-	self.ACF.Armour = Armour * (0.5 + Percent / 2)
-	self.ACF.MaxArmour = Armour * ACF.ArmorMod
-	self.ACF.Type = nil
-	self.ACF.Mass = PhysObj:GetMass()
-	self.ACF.Type = "Prop"
+	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
+	self.ACF.MaxArmour = Armour
+	self.ACF.Type      = "Prop"
 end
 
 --This function needs to return HitRes

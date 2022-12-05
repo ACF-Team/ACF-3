@@ -228,7 +228,7 @@ function ACF.Activate(Entity, Recalc)
 
 	local Area      = ACF.UpdateArea(Entity, PhysObj)
 	local Ductility = math.Clamp(Entity.ACF.Ductility or 0, -0.8, 0.8)
-	local Thickness = ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
+	local Thickness = ACF.UpdateThickness(Entity, PhysObj, Area, Ductility) * ACF.ArmorMod
 	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
 	local Percent   = 1
 
@@ -239,7 +239,7 @@ function ACF.Activate(Entity, Recalc)
 	Entity.ACF.Health    = Health * Percent
 	Entity.ACF.MaxHealth = Health
 	Entity.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
-	Entity.ACF.MaxArmour = Thickness * ACF.ArmorMod
+	Entity.ACF.MaxArmour = Thickness
 	Entity.ACF.Ductility = Ductility
 end
 

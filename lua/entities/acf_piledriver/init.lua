@@ -147,11 +147,12 @@ do -- Spawning and Updating --------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass = Mass
-
 		local Phys = Entity:GetPhysicsObject()
 
 		if IsValid(Phys) then
+			Entity.ACF.Mass      = Mass
+			Entity.ACF.LegalMass = Mass
+
 			Phys:SetMass(Mass)
 		end
 	end
@@ -248,19 +249,16 @@ end --------------------------------------------
 do -- Entity Activation ------------------------
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-
-		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetSurfaceArea()
-		end
-
-		local Armour  = self.Caliber
-		local Health  = PhysObj:GetVolume() * 2 / ACF.Threshold
+		local Area    = PhysObj:GetSurfaceArea() * 6.45
+		local Armour  = self.Caliber * ACF.ArmorMod
+		local Health  = Area / ACF.Threshold
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 			Percent = self.ACF.Health / self.ACF.MaxHealth
 		end
 
+		self.ACF.Area      = Area
 		self.ACF.Health    = Health * Percent
 		self.ACF.MaxHealth = Health
 		self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)

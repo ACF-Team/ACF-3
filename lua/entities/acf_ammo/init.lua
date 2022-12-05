@@ -455,26 +455,21 @@ do -- ACF Activation and Damage -----------------
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-
-		if not self.ACF.Area then
-			self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
-		end
-
-		local Volume = PhysObj:GetVolume()
-
-		local Armour = ACF.AmmoArmor
-		local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+		local Area    = PhysObj:GetSurfaceArea() * 6.45
+		local Armour  = ACF.AmmoArmor * ACF.ArmorMod
+		local Health  = Area / ACF.Threshold
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 			Percent = self.ACF.Health / self.ACF.MaxHealth
 		end
 
-		self.ACF.Health = Health * Percent
+		self.ACF.Area      = Area
+		self.ACF.Health    = Health * Percent
 		self.ACF.MaxHealth = Health
-		self.ACF.Armour = Armour * (0.5 + Percent / 2)
+		self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
 		self.ACF.MaxArmour = Armour
-		self.ACF.Type = "Prop"
+		self.ACF.Type      = "Prop"
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -598,11 +593,13 @@ end ---------------------------------------------
 
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
-		Ent.ACF.LegalMass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
-
+		local Mass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
 		local Phys = Ent:GetPhysicsObject()
 
 		if IsValid(Phys) then
+			Ent.ACF.Mass      = Mass
+			Ent.ACF.LegalMass = Mass
+
 			Phys:SetMass(Ent.ACF.LegalMass)
 		end
 	end
