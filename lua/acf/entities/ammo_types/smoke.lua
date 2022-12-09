@@ -18,6 +18,10 @@ function Ammo:OnLoaded()
 	}
 end
 
+function Ammo:GetPenetration()
+	return 0
+end
+
 function Ammo:GetDisplayData(Data)
 	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * 39.37) * 43.4216, 350)
 	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * 39.37) * 43.4216, 350)

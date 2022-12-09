@@ -208,9 +208,12 @@ end
 -- Speed in m/s, Range in m
 -- Result in in/s
 function ACF.GetRangedSpeed(Speed, DragCoef, Range)
-	local V0 = Speed * 39.37 * ACF.Scale --initial velocity
-	local D0 = DragCoef * V0 ^ 2 / ACF.DragDiv --initial drag
-	local K1 = (D0 / (V0 ^ 1.5)) ^ -1 --estimated drag coefficient
+	local V0    = Speed * 39.37 * ACF.Scale --initial velocity
+	local D0    = DragCoef * V0 ^ 2 / ACF.DragDiv --initial drag
+	local K1    = (D0 / (V0 ^ 1.5)) ^ -1 --estimated drag coefficient
+	local Limit = 200 * K1 * V0 ^ 0.5 / 3937 -- Maximum possible range
+
+	if Range >= Limit then return 0 end
 
 	return (V0 ^ 0.5 - ((Range * 39.37) / (2 * K1))) ^ 2
 end

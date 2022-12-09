@@ -101,6 +101,8 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
+		local Mass = Gearbox.Mass
+
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = Gearbox.Model -- Must be set before changing model
 
@@ -137,11 +139,14 @@ do -- Spawn and Update functions -----------------------
 
 		ACF.Activate(Entity, true)
 
-		Entity.ACF.LegalMass = Gearbox.Mass
-		Entity.ACF.Model     = Gearbox.Model
+		local PhysObj = Entity:GetPhysicsObject()
 
-		local Phys = Entity:GetPhysicsObject()
-		if IsValid(Phys) then Phys:SetMass(Gearbox.Mass) end
+		if IsValid(PhysObj) then
+			Entity.ACF.Mass      = Mass
+			Entity.ACF.LegalMass = Mass
+
+			PhysObj:SetMass(Mass)
+		end
 
 		Entity:ChangeGear(1)
 	end

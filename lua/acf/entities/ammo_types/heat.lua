@@ -100,7 +100,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local FrontFillVol = WarheadVol * ConeLength / WarheadLength - ConeVol -- Volume of explosive sorounding the liner
 	local RearFillVol  = WarheadVol * RearFillLen / WarheadLength -- Volume behind the liner
 	local EquivFillVol = WarheadVol * EquivFillLen / WarheadLength + FrontFillVol -- Equivalent total explosive volume
-	local LengthPct    = Data.ProjLength / (Data.Caliber * 7.8)
+	local LengthPct    = math.min(Data.ProjLength / (Data.Caliber * 7.8), 1)
 	local OverEnergy   = math.min(math.Remap(LengthPct, 0.4, 1, 1, 0.2), 1) -- Excess explosive power makes the jet lose velocity
 	local FillerEnergy = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency
 	local FillerVol    = FrontFillVol + RearFillVol
@@ -152,7 +152,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 		local _FillerEnergy = Data.FillerEnergy
 		local _LinerAngle   = Data.ConeAng
-		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99) print("misle", _LinerAngle, _MinVelMult)
 		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
@@ -308,13 +308,13 @@ if SERVER then
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
-				JetInfo:SetType("HEAT Jet")
+				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Ent, Direction, 0)
+					local Debris = ACF.APKill(Ent, Direction, 0, JetInfo)
 
 					table.insert(Filter , Debris)
 				end
@@ -360,7 +360,7 @@ if SERVER then
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
 						local EffArmor = (EffectiveArmor * 0.5 / (SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour or 0)) * 14 -- Magic multiplier to prevent nuking armored plates
-						Damageables[#Damageables + 1] = {SpallEnt, RelArea * EffArmor}
+						Damageables[#Damageables + 1] = { SpallEnt, RelArea * EffArmor, TargetRes }
 					end
 				end
 			end
@@ -371,25 +371,21 @@ if SERVER then
 			-- Divided by the average distance squared so it's the same as the relative area
 			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
 			AreaSum = math.max(AreaSum, MinArea)
-			-- The only information used from the trace is the entity, so we can use a fake TraceRes with placeholder information,
-			--  which the damage function checks but doesn't use. Scuffed, but alas - rework damage
-			local FakeTrace = { Entity = true }
+
 			for _, v in ipairs(Damageables) do
-				local Entity, Area = unpack(v, 1, 2)
+				local Entity, Area, TraceRes = unpack(v, 1, 3)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
 				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 
-				FakeTrace.Entity = Entity
+				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
-				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, FakeTrace)
-
-				SpallInfo:SetType("HEAT Spall")
+				SpallInfo:SetType(DMG_BULLET)
 				SpallDmg:SetDamage(SpallDamage)
 
 				local JetResult = Damage.dealDamage(Ent, SpallDmg, SpallInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Entity, Direction, 0)
+					local Debris = ACF.APKill(Entity, Direction, 0, SpallInfo)
 
 					table.insert(Filter , Debris)
 				end

@@ -17,27 +17,29 @@ end
 -- @return A properly formatted DamageResult object.
 -- @return A properly formatted DamageInfo object.
 function Damage.getBulletDamage(Bullet, Trace)
-	local Entity = Trace.Entity
+	local Entity    = Trace.Entity
+	local DmgResult = Objects.DamageResult()
+	local DmgInfo   = Objects.DamageInfo()
 
-	if not ACF.Check(Entity) then return end
+	if ACF.Check(Entity) then
+		local Thickness = Entity.ACF.Armour
 
-	local Area        = Bullet.ProjArea
-	local Penetration = Bullet:GetPenetration()
-	local Thickness   = Entity.ACF.Armour
-	local Angle       = ACF.GetHitAngle(Trace, Bullet.Flight)
-	local Factor      = Thickness / Bullet.Diameter
-	local DmgResult   = Objects.DamageResult(Area, Penetration, Thickness, Angle, Factor)
+		DmgResult:SetArea(Bullet.ProjArea)
+		DmgResult:SetPenetration(Bullet:GetPenetration())
+		DmgResult:SetThickness(Thickness)
+		DmgResult:SetAngle(ACF.GetHitAngle(Trace, Bullet.Flight))
+		DmgResult:SetFactor(Thickness / Bullet.Diameter)
 
-	local Attacker  = Bullet.Owner
-	local Inflictor = Bullet.Gun
-	local Origin    = Bullet.Pos
-	local HitPos    = Trace.HitPos
-	local HitGroup  = Trace.HitGroup
-	local DmgInfo   = Objects.DamageInfo(Attacker, Inflictor, "Bullet", Origin, HitPos, HitGroup)
+		DmgInfo:SetAttacker(Bullet.Owner)
+		DmgInfo:SetInflictor(Bullet.Gun)
+		DmgInfo:SetType(DMG_BULLET)
+		DmgInfo:SetOrigin(Bullet.Pos)
+		DmgInfo:SetHitPos(Trace.HitPos)
+		DmgInfo:SetHitGroup(Trace.HitGroup)
+	end
 
 	return DmgResult, DmgInfo
 end
-
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
 -- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
@@ -132,23 +134,15 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-	local HitRes = DmgResult:Compute()
 	local Driver = Entity:GetDriver()
 
 	if IsValid(Driver) then
-		DmgInfo:SetHitGroup(math.Rand(0, 7)) -- Hit a random part of the driver
+		DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
 
-		Damage.dealDamage(Driver, DmgInfo, DmgResult) -- Deal direct damage to the driver
+		Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
 	end
 
-	if HitRes.Damage >= Entity.ACF.Health then
-		HitRes.Kill = true
-	else
-		Entity.ACF.Health = Entity.ACF.Health - HitRes.Damage
-		Entity.ACF.Armour = Entity.ACF.Armour * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
-	end
-
-	return HitRes
+	return Damage.doPropDamage(Entity, DmgResult, DmgInfo) -- We'll just damage it like a regular prop
 end
 
 --- Used to inflict damage to any entity that was tagged as "Prop" by ACF.Check.
@@ -164,10 +158,10 @@ function Damage.doPropDamage(Entity, DmgResult)
 	if HitRes.Damage >= Health then
 		HitRes.Kill = true
 	else
-		local MaxArmor = Entity.ACF.MaxArmour
+		local NewHealth = Health - HitRes.Damage
 
-		Entity.ACF.Health = Health - HitRes.Damage
-		Entity.ACF.Armour = math.Clamp(MaxArmor * (0.5 + Entity.ACF.Health / Entity.ACF.MaxHealth / 2) ^ 1.7, MaxArmor * 0.25, MaxArmor) --Simulating the plate weakening after a hit
+		Entity.ACF.Health = NewHealth
+		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + NewHealth / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
 		Network.Broadcast("ACF_Damage", Entity)
 	end

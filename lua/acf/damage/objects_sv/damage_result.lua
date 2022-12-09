@@ -2,7 +2,7 @@ local math    = math
 local ACF     = ACF
 local Objects = ACF.Damage.Objects
 local Meta    = {}
-local String  = "DamageResult [Area = %scm2, Penetration = %smm, Thickness = %smm, Angle = %s°, Factor = %s, Count = %s times]"
+local String  = "DamageResult [Area = %.2fcm2, Penetration = %.2fmm, Thickness = %.2fmm, Angle = %.2f°, Factor = %.2f, Count = %s times]"
 
 --- Creates a new DamageResult object.
 -- @param Area The damaged area in cm2. Leaving this blank will default it to 1.
@@ -30,8 +30,8 @@ end
 --- Generates the damage result table based on the values stored on the object.
 -- @return The damage result table, contains the Damage, Overkill, Loss and Kill fields.
 function Meta:Compute()
-	local Factor      = math.min(1, self.Factor)
-	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)) ^ Factor)
+	--local Factor      = math.Clamp(self.Factor, 0.1, 1)
+	local Effective   = self.Thickness / math.abs(math.cos(math.rad(self.Angle)))
 	local Penetration = self.Penetration
 	local Ratio       = math.min(1, Penetration / Effective)
 	local Count       = math.max(1, self.Count)
@@ -40,7 +40,7 @@ function Meta:Compute()
 	return {
 		Damage   = Damage * Count,
 		Overkill = math.max(0, Penetration - Effective),
-		Loss     = math.min(1, Effective / Penetration),
+		Loss     = math.min(1, Effective / math.max(1, Penetration)),
 		Kill     = false,
 	}
 end
@@ -57,7 +57,9 @@ function Meta:GetBlank()
 end
 
 function Meta:ToString()
-	return String:format(self.Area, self.Penetration, self.Thickness, self.Angle, self.Factor, self.Count)
+	local Factor = math.Clamp(self.Factor, 0.1, 1)
+
+	return String:format(self.Area, self.Penetration, self.Thickness, self.Angle, Factor, self.Count)
 end
 
 AccessorFunc(Meta, "Area", "Area", FORCE_NUMBER) -- cm2

@@ -3,6 +3,7 @@ AddCSLuaFile("shared.lua")
 
 local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
+local Network = ACF.Networking
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
@@ -80,30 +81,33 @@ function SWEP:Initialize()
 	util.PrecacheSound("items/medshot4.wav")
 	util.PrecacheSound("ambient/energy/zap2.wav")
 
-	if CLIENT then return end
+	self:SetHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
 
-	self:SetWeaponHoldType("pistol") -- "357 hold type doesn't exist, it's the generic pistol one" Kaf
+	if CLIENT then return end
 
 	self.LastDistance = 0
 	self.LastTrace    = {}
-	self.DamageResult = Objects.DamageResult(math.pi * 0.5 ^ 2, 10)
-	self.DamageInfo   = Objects.DamageInfo(self, self:GetOwner(), "Torch")
+	self.DamageResult = Objects.DamageResult(math.pi * 2 ^ 2, 1)
+	self.DamageInfo   = Objects.DamageInfo(self, nil, DMG_PLASMA)
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
-	local IsIdle = self:GetCurrentAnim() == "idle01" or self:GetAnimationTime() < CurTime()
-	if forceplay == nil then
-		forceplay = false
-	end
-	if animpriority == nil then
-		animpriority = 0
-	end
+	if CLIENT then return end
+
+	local ViewModel = self:GetOwner():GetViewModel()
+
+	if not IsValid(ViewModel) then return end -- TODO: Figure out why this could be happening
+	if not animpriority then animpriority = 0 end
+
+	local Now    = Clock.CurTime
+	local IsIdle = self:GetCurrentAnim() == "idle01" or self:GetAnimationTime() < Now
 
 	if IsIdle or (forceplay and self:GetAnimPriority() <= animpriority) then
-		local vm = self:GetOwner():GetViewModel()
 		self:SetCurrentAnim(anim)
-		vm:SendViewModelMatchingSequence(vm:LookupSequence(anim))
-		self:SetAnimationTime(CurTime() + vm:SequenceDuration() / vm:GetPlaybackRate())
+
+		ViewModel:SendViewModelMatchingSequence(ViewModel:LookupSequence(anim))
+
+		self:SetAnimationTime(Now + ViewModel:SequenceDuration() / ViewModel:GetPlaybackRate())
 		self:SetAnimPriority(animpriority)
 	end
 end
@@ -114,10 +118,13 @@ function SWEP:Deploy()
 	return true
 end
 
+--[[
+-- Temporarily commented out as it's apparently causing errors on some setups.
 function SWEP:Holster()
 	self:SetAnim("holster", true, 1)
 	return true
 end
+]]
 
 function SWEP:Think()
 	local Owner = self:GetOwner()
@@ -245,6 +252,8 @@ function SWEP:PrimaryAttack()
 		Entity.ACF.Health = Health
 		Entity.ACF.Armour = Armor
 
+		Network.Broadcast("ACF_Damage", Entity) -- purely to update the damage material on props
+
 		if Entity.ACF_OnRepaired then
 			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
 		end
@@ -278,6 +287,7 @@ function SWEP:SecondaryAttack()
 
 	DmgResult:SetThickness(Entity.ACF.Armour)
 
+	DmgInfo:SetAttacker(Owner)
 	DmgInfo:SetOrigin(Trace.StartPos)
 	DmgInfo:SetHitPos(HitPos)
 	DmgInfo:SetHitGroup(Trace.HitGroup)
@@ -285,7 +295,7 @@ function SWEP:SecondaryAttack()
 	local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
 
 	if HitRes.Kill then
-		ACF.APKill(Entity, Trace.Normal, 1)
+		ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
 	else
 		local Effect = EffectData()
 		Effect:SetMagnitude(1)

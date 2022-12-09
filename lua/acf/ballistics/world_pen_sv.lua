@@ -141,7 +141,6 @@ function Ballistics.PenetrateGround(Bullet, Trace)
         local DeltaTime = engine.TickInterval()
 
         Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
-        Bullet.LastPos = nil
         Bullet.Pos     = Exit
         Bullet.NextPos = Exit + Bullet.Flight * ACF.Scale * DeltaTime
 

@@ -15,6 +15,10 @@ function Ammo:OnLoaded()
 	}
 end
 
+function Ammo:GetPenetration()
+	return 0
+end
+
 function Ammo:GetDisplayData(Data)
 	local FragMass	= Data.ProjMass - Data.FillerMass
 	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)

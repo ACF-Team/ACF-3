@@ -90,7 +90,6 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -225,7 +224,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
-	local traceRes = ACF.trace(FlightTr, mask) -- Does not modify the bullet's original filter
+	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
 	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
@@ -321,17 +320,20 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if HitRes.Kill and IsValid(Entity) then
-			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic)
+			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic, DmgInfo)
 		end
 
 		HitRes.Ricochet = false
 
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
 			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
+			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
+			local Position  = Trace.HitPos
 
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.NextPos = Trace.HitPos
-			Bullet.Flight = Direction:GetNormalized() * Speed * Ricochet
+			Bullet.Flight    = Flight
+			Bullet.Pos       = Position
+			Bullet.NextPos   = Position + Flight * Bullet.DeltaTime
 
 			HitRes.Ricochet = true
 		end
@@ -355,7 +357,6 @@ do -- Terminal ballistics --------------------------
 
 			Bullet.GroundRicos = Bullet.GroundRicos + 1
 			Bullet.Flight      = Direction:GetNormalized() * Speed * ACF.Scale * Ricochet
-			Bullet.LastPos     = nil
 			Bullet.Pos         = Trace.HitPos
 			Bullet.NextPos     = Bullet.Pos + Bullet.Flight * DeltaTime
 

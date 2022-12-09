@@ -181,6 +181,7 @@ do -- Spawn and Update functions --------------------------------
 		if IsValid(PhysObj) then
 			local Mass = GetMass(Model, PhysObj, Class, Weapon)
 
+			Entity.ACF.Mass      = Mass
 			Entity.ACF.LegalMass = Mass
 
 			PhysObj:SetMass(Mass)
@@ -426,32 +427,28 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
-		local Trace        = util.TraceLine
-		local TraceRes     = {} -- Output for traces
-		local TraceData    = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
-		--local hasAncestor  = ACF.hasAncestor
+		local TraceRes  = {} -- Output for traces
+		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
 
-		function ENT:BarrelCheck(Offset)
+		function ENT:BarrelCheck()
 			local owner  = self:GetPlayer()
 			local filter = self.BarrelFilter
 
-			TraceData.start	 = self:GetPos() + Offset
-			TraceData.endpos = self:LocalToWorld(self.Muzzle) + Offset
+			TraceData.start	 = self:GetPos()
+			TraceData.endpos = self:LocalToWorld(self.Muzzle)
 			TraceData.filter = filter
 
-			Trace(TraceData)
+			ACF.trace(TraceData)
 
 			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
 				if Entity.IsACFEntity and not Entity.IsACFArmor then break end
 				if Entity:CPPIGetOwner() ~= owner then break end
-				--if not Entity:GetParent() then break end
-				--if not hasAncestor(Entity, self) then break end
 
 				filter[#filter + 1] = Entity
 
-				Trace(TraceData)
+				ACF.trace(TraceData)
 			end
 
 			return TraceRes.HitPos
@@ -515,7 +512,7 @@ do -- Metamethods --------------------------------
 
 			self.BulletData.Owner  = self.CurrentUser
 			self.BulletData.Gun	   = self -- because other guns share this table
-			self.BulletData.Pos    = self:BarrelCheck(Velocity * engine.TickInterval())
+			self.BulletData.Pos    = self:BarrelCheck()
 			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
 			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			self.BulletData.Filter = self.BarrelFilter
@@ -779,26 +776,21 @@ do -- Metamethods --------------------------------
 
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj
-
-			if not self.ACF.Area then
-				self.ACF.Area = PhysObj:GetSurfaceArea() * 6.45
-			end
-
-			local Volume = PhysObj:GetVolume() * 2
-
-			local Armour = self.Caliber
-			local Health = Volume / ACF.Threshold --Setting the threshold of the prop Area gone
+			local Area    = PhysObj:GetSurfaceArea() * 6.45
+			local Armour  = self.Caliber * ACF.ArmorMod
+			local Health  = Area / ACF.Threshold
 			local Percent = 1
 
 			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 				Percent = self.ACF.Health / self.ACF.MaxHealth
 			end
 
-			self.ACF.Health = Health * Percent
+			self.ACF.Area      = Area
+			self.ACF.Health    = Health * Percent
 			self.ACF.MaxHealth = Health
-			self.ACF.Armour = Armour * (0.5 + Percent * 0.5)
+			self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
 			self.ACF.MaxArmour = Armour
-			self.ACF.Type = "Prop"
+			self.ACF.Type      = "Prop"
 		end
 
 		function ENT:SetState(State)

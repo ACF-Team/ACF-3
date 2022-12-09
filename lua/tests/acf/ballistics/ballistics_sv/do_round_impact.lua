@@ -9,16 +9,22 @@ return {
         State.ACF_Damage_Result = { Loss = 0, Kill = false }
         stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 
+        State.DmgInfo = {}
+        State.DmgResult = {}
+        stub( ACF.Damage, "getBulletDamage" ).returns( State.DmgResult, State.DmgInfo )
+
         State.Bullet = {
             Speed = 1,
             Filter = {},
             Ricochets = 0,
             ShovePower = 1,
             Energy = { Kinetic = 1 },
-            Flight = Vector( 1, 1, 1 )
+            Flight = Vector( 1, 1, 1 ),
+            DeltaTime = 1
         }
 
         State.Trace = {
+            HitPos = Vector(),
             Entity = {
                 IsValid = function() return true end
             }
