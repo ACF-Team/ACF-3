@@ -24,6 +24,7 @@ return {
         }
 
         State.Trace = {
+            HitPos = Vector(),
             Entity = {
                 IsValid = function() return true end
             }
