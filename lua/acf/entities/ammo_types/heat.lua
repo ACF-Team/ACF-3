@@ -294,9 +294,9 @@ if SERVER then
 				-- Enable damage if a valid entity is hit
 				DamageDealt = 0
 			end
-			local SlopeFactor    = BaseArmor / Caliber
+
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
-			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
 
 			-- Percentage of total jet mass lost to this penetration
 			local LostMassPct =  EffectiveArmor / Penetration
