@@ -256,7 +256,6 @@ if SERVER then
 		local Direction = Bullet.Flight:GetNormalized()
 		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
 		local JetEnd    = HitPos + Direction * 3000
-		local Caliber   = Bullet.Diameter * 10
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
@@ -349,40 +348,44 @@ if SERVER then
 					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
 						debugoverlay.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
 
-						local DistSqr = (TargetRes.HitPos - PenHitPos):LengthSqr()
+						local DistSqr = math.max(1, (TargetRes.HitPos - PenHitPos):LengthSqr())
 						-- Calculate how much shrapnel will hit the target based on it's relative area
 						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
 						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
 						--  as a cube, good enough) one of the 6 faces is visible
-						local Area    = 0
-						if ACF.Check(SpallEnt) then Area = SpallEnt.ACF.Area else continue end
+						local Area    = SpallEnt.ACF.Area
 						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
+
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
-						local EffArmor = (EffectiveArmor * 0.5 / (SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour or 0)) * 14 -- Magic multiplier to prevent nuking armored plates
+
+						local EntArmor = SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour
+						local EffArmor = (EffectiveArmor * 0.5 / EntArmor) * 14 -- Magic multiplier to prevent nuking armored plates
+
 						Damageables[#Damageables + 1] = { SpallEnt, RelArea * EffArmor, TargetRes }
 					end
 				end
 			end
+
 			AvgDist = AvgDist / #Damageables
 
 			local Radius  = AvgDist * SpallingSin
 			-- Minimum area is the base of the spalling cone, with the distance being the average squishy distance
 			-- Divided by the average distance squared so it's the same as the relative area
 			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
+
 			AreaSum = math.max(AreaSum, MinArea)
 
 			for _, v in ipairs(Damageables) do
-				local Entity, Area, TraceRes = unpack(v, 1, 3)
+				local Entity, Area, TraceRes = unpack(v)
+				local SpallDmg, SpallInfo    = Damage.getBulletDamage(Bullet, TraceRes)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
-
-				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, TraceRes)
+				local SpallDamage = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 
 				SpallInfo:SetType(DMG_BULLET)
 				SpallDmg:SetDamage(SpallDamage)
 
-				local JetResult = Damage.dealDamage(Ent, SpallDmg, SpallInfo)
+				local JetResult = Damage.dealDamage(Entity, SpallDmg, SpallInfo)
 
 				if JetResult.Kill then
 					local Debris = ACF.APKill(Entity, Direction, 0, SpallInfo)
