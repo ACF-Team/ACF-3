@@ -80,12 +80,27 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
-	--- Called when a bullet hits an entity and is attempting to deal damage to it.
-	-- @param Bullet The bullet that's attempting to deal damage.
-	-- @param Trace The trace result attached to the bullet, contains all the information related to the impact.
-	-- @return True if the bullet can damage the entity it hit, false otherwise.
-	function Gamemode:ACF_BulletDamage()
+	--- Called before a given entity receives ACF damage.
+	-- @param Entity The entity to be damaged.
+	-- @param DmgResult A DamageResult object.
+	-- @param DmgInfo A DamageInfo object.
+	-- @return True if the given entity can be damaged, false otherwise.
+	function Gamemode:ACF_PreDamageEntity()
 		return true
+	end
+
+	--- Called when a given entity is about to receive ACF damage.
+	-- @param Entity The entity to be damaged.
+	-- @param DmgResult A DamageResult object.
+	-- @param DmgInfo A DamageInfo object.
+	function Gamemode:ACF_OnDamageEntity()
+	end
+
+	--- Called after a given entity receives ACF damage.
+	-- @param Entity The entity to be damaged.
+	-- @param DmgResult A DamageResult object.
+	-- @param DmgInfo A DamageInfo object.
+	function Gamemode:ACF_PostDamageEntity()
 	end
 
 	--- Called whenever the data table needs to be verified prior attempting to spawn an entity.
