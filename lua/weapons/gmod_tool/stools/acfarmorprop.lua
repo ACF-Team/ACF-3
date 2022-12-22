@@ -281,11 +281,13 @@ if CLIENT then
 
 	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function()
 		local Player = LocalPlayer()
-		local Tool = Player:GetTool()
+		local Weapon = Player:GetActiveWeapon()
+		if not Weapon then return end
+		if Weapon:GetClass() ~= "gmod_tool" then return end
 
+		local Tool = Player:GetTool()
 		if not Tool then return end -- Player has no toolgun
 		if Tool ~= Player:GetTool("acfarmorprop") then return end -- Current tool is not the armor tool
-		if Tool.Weapon ~= Player:GetActiveWeapon() then return end -- Player is not holding the toolgun
 		if not Sphere:GetBool() then return end
 
 		local Value = Radius:GetFloat()
