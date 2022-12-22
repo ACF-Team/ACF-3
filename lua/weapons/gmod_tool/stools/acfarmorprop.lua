@@ -1,4 +1,5 @@
 local ACF = ACF
+local IsValid = IsValid
 
 TOOL.Category	= (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name		= "#tool.acfarmorprop.name"
@@ -282,7 +283,7 @@ if CLIENT then
 	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function()
 		local Player = LocalPlayer()
 		local Weapon = Player:GetActiveWeapon()
-		if not Weapon then return end
+		if not IsValid( Weapon ) then return end
 		if Weapon:GetClass() ~= "gmod_tool" then return end
 
 		local Tool = Player:GetTool()
