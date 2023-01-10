@@ -56,8 +56,8 @@ do -- Spawning and Updating
 	end
 
 	local function UpdatePlate(Entity, Data, Armor)
-		local Mass = Armor:GetMass(Size.x * Size.y * Size.z)
 		local Size = Data.Size
+		local Mass = Armor:GetMass(Size.x * Size.y * Size.z)
 
 		Entity.ArmorClass = Armor
 		Entity.Tensile    = Armor.Tensile
