@@ -76,7 +76,7 @@ return {
                 local Activate = stub( ACF, "Activate" )
 
                 expect( ACF.Check( Ent ) ).to.beFalse()
-                expect( Activate ).notTo.haveBeenCalled()
+                expect( Activate ).wasNot.called()
             end
         },
 
@@ -91,7 +91,7 @@ return {
                 local Activate = stub( ACF, "Activate" )
 
                 expect( ACF.Check( Ent ) ).to.beFalse()
-                expect( Activate ).notTo.haveBeenCalled()
+                expect( Activate ).wasNot.called()
             end
         },
 
@@ -105,7 +105,7 @@ return {
                 local Activate = stub( ACF, "Activate" )
 
                 expect( ACF.Check( Ent ) ).to.beFalse()
-                expect( Activate ).notTo.haveBeenCalled()
+                expect( Activate ).wasNot.called()
             end
         },
 
@@ -120,7 +120,7 @@ return {
                 end )
 
                 expect( ACF.Check( Ent ) ).to.equal( "Test" )
-                expect( Activate ).to.haveBeenCalled()
+                expect( Activate ).was.called()
             end
         },
 
@@ -134,7 +134,7 @@ return {
                 end )
 
                 expect( ACF.Check( Ent, true ) ).to.equal( "Test" )
-                expect( Activate ).to.haveBeenCalled()
+                expect( Activate ).was.called()
             end
         },
 
@@ -149,7 +149,7 @@ return {
                 end )
 
                 expect( ACF.Check( Ent ) ).to.equal( "Test" )
-                expect( Activate ).to.haveBeenCalled()
+                expect( Activate ).was.called()
             end
         },
 
@@ -164,7 +164,7 @@ return {
                 end )
 
                 expect( ACF.Check( Ent ) ).to.equal( "Test" )
-                expect( Activate ).to.haveBeenCalled()
+                expect( Activate ).was.called()
             end
         }
     }
