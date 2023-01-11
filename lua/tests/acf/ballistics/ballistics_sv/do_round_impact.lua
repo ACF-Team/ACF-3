@@ -45,8 +45,8 @@ return {
                 local HitRes = ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
                 expect( HitRes.Ricochet ).to.equal( true )
-                expect( GetRicochetVector ).to.haveBeenCalled()
-                expect( CalculateRicochet ).to.haveBeenCalled()
+                expect( GetRicochetVector ).was.called()
+                expect( CalculateRicochet ).was.called()
             end
         },
 
@@ -61,7 +61,7 @@ return {
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
-                expect( State.ACF_KEShove ).to.haveBeenCalled()
+                expect( State.ACF_KEShove ).was.called()
             end,
 
             cleanup = function( State )
@@ -80,7 +80,7 @@ return {
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
-                expect( State.ACF_KEShove ).toNot.haveBeenCalled()
+                expect( State.ACF_KEShove ).wasNot.called()
             end,
 
             cleanup = function( State )
@@ -98,7 +98,7 @@ return {
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
-                expect( State.ACF_APKill ).to.haveBeenCalled()
+                expect( State.ACF_APKill ).was.called()
             end
         },
 
@@ -113,7 +113,7 @@ return {
 
                 ACF.Ballistics.DoRoundImpact( Bullet, Trace )
 
-                expect( State.ACF_APKill ).notTo.haveBeenCalled()
+                expect( State.ACF_APKill ).wasNot.called()
             end
         }
     }

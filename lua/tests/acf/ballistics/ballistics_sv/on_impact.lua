@@ -20,8 +20,8 @@ return {
                 local Type = "World"
 
                 ACF.Ballistics.OnImpact( Bullet, Trace, Ammo, Type )
-                expect( Ammo.WorldImpact ).to.haveBeenCalled()
-                expect( Ammo.PropImpact ).toNot.haveBeenCalled()
+                expect( Ammo.WorldImpact ).was.called()
+                expect( Ammo.PropImpact ).wasNot.called()
             end
         },
 
@@ -38,8 +38,8 @@ return {
                 local Type = "Test"
 
                 ACF.Ballistics.OnImpact( Bullet, Trace, Ammo, Type )
-                expect( Ammo.WorldImpact ).toNot.haveBeenCalled()
-                expect( Ammo.PropImpact ).to.haveBeenCalled()
+                expect( Ammo.WorldImpact ).wasNot.called()
+                expect( Ammo.PropImpact ).was.called()
             end
         },
 
@@ -52,7 +52,7 @@ return {
                 local Type = "Test"
 
                 ACF.Ballistics.OnImpact( Bullet, Trace, Ammo, Type )
-                expect( Bullet.OnPenetrated ).to.haveBeenCalled()
+                expect( Bullet.OnPenetrated ).was.called()
             end
         },
 
@@ -65,7 +65,7 @@ return {
                 local Type = "Test"
 
                 ACF.Ballistics.OnImpact( Bullet, Trace, Ammo, Type )
-                expect( Bullet.OnRicocheted ).to.haveBeenCalled()
+                expect( Bullet.OnRicocheted ).was.called()
             end
         },
 
@@ -81,7 +81,7 @@ return {
                 local Type = "Test"
 
                 ACF.Ballistics.OnImpact( Bullet, Trace, Ammo, Type )
-                expect( Bullet.OnEndFlight ).to.haveBeenCalled()
+                expect( Bullet.OnEndFlight ).was.called()
             end
         }
     }
