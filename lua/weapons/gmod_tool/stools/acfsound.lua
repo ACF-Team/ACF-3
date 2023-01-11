@@ -80,7 +80,6 @@ local function ReplaceSound(_, Entity, Data)
 	local Sound, Pitch = unpack(Data)
 
 	if not Support then return end
-	if not file.Exists("sound/" .. Sound, "GAME") then return end
 
 	timer.Simple(1, function()
 		Support.SetSound(Entity, {
@@ -116,13 +115,7 @@ end
 function TOOL:LeftClick(trace)
 	if CLIENT then return true end
 	if not IsReallyValid(trace, self:GetOwner()) then return false end
-
 	local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
-	if not file.Exists("sound/" .. sound, "GAME") then
-		ACF.SendNotify(self:GetOwner(), false, "Sound file not found!")
-		return false
-	end
-
 	local pitch = self:GetOwner():GetInfo("acfsound_pitch")
 	ReplaceSound(self:GetOwner(), trace.Entity, {sound, pitch})
 
