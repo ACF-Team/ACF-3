@@ -194,7 +194,7 @@ local function SetActive(Entity, Value)
 
 		local Pitch, Volume = GetPitchVolume(Entity)
 
-		if Entity.SoundPath ~= "" then
+		if Entity.SoundPath ~= "" and file.Exists("sound/" .. Entity.SoundPath, "GAME") then
 			Entity.Sound = CreateSound(Entity, Entity.SoundPath)
 			Entity.Sound:PlayEx(Volume, Pitch)
 		end

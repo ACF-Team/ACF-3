@@ -718,7 +718,9 @@ do -- Gear Shifting ------------------------------------
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
-		self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
+		if self.SoundPath ~= "" and file.Exists("sound/" .. self.SoundPath, "GAME") then
+			self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
+		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
 		WireLib.TriggerOutput(self, "Ratio", self.GearRatio)

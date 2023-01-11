@@ -343,7 +343,9 @@ do -- Firing ------------------------------------
 			local Sound  = self.SoundPath or Impact:format(math.random(5, 6))
 			local Bullet = self.BulletData
 
-			self:EmitSound(Sound, 70, math.Rand(98, 102), ACF.Volume)
+			if Sound ~= "" and file.Exists("sound/" .. Sound, "GAME") then
+				self:EmitSound(Sound, 70, math.Rand(98, 102), ACF.Volume)
+			end
 			self:SetSequence("load")
 
 			Bullet.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
