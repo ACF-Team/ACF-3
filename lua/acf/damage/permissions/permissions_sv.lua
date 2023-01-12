@@ -108,7 +108,9 @@ end)
 local plyzones = {}
 
 hook.Add("Think", "ACF_DetectSZTransition", function()
-	for _, ply in pairs(player.GetAll()) do
+	if not this.Safezones then return end
+
+	for _, ply in ipairs(player.GetAll()) do
 		local sid = ply:SteamID()
 		local pos = ply:GetPos()
 		local oldzone = plyzones[sid]
@@ -358,7 +360,7 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		this.DefaultPermission = mode
 		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. game.GetMap() .. " set to: " .. mode)
 
-		for _, v in pairs(player.GetAll()) do
+		for _, v in ipairs(player.GetAll()) do
 			if v:IsAdmin() then
 				v:SendLua("chat.AddText(Color(255,0,0),\"Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!\")")
 			end
@@ -373,7 +375,7 @@ end)
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
-	for _, v in pairs(player.GetAll()) do
+	for _, v in ipairs(player.GetAll()) do
 		v:SendLua("chat.AddText(Color(255,0,0),\"Damage protection has been changed to " .. mode .. " mode!\")")
 	end
 end
@@ -533,7 +535,7 @@ end
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
 local function plyBySID(steamid)
-	for _, v in pairs(player.GetAll()) do
+	for _, v in ipairs(player.GetAll()) do
 		if v:SteamID() == steamid then return v end
 	end
 
@@ -607,7 +609,7 @@ net.Receive("ACF_refreshpermissions", function(_, ply)
 end)
 
 function this.ResendPermissionsOnChanged()
-	for _, ply in pairs(player.GetAll()) do
+	for _, ply in ipairs(player.GetAll()) do
 		this.SendPermissionsState(ply)
 	end
 end
