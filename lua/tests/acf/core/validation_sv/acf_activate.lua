@@ -49,7 +49,7 @@ return {
                 stub( ACF, "GetEntityType" ).returns( "TestType" )
 
                 ACF.Activate( Ent )
-                expect( Ent.ACF_Activate ).to.haveBeenCalled()
+                expect( Ent.ACF_Activate ).was.called()
                 expect( Ent.ACF.Type ).to.equal( "TestType" )
             end
         },

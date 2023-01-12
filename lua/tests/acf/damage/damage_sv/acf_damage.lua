@@ -79,7 +79,7 @@ return {
 
                 ACF.Damage.dealDamage( Ent, State.DmgResult, nil )
 
-                expect( Ent.ACF_OnDamage ).to.haveBeenCalled()
+                expect( Ent.ACF_OnDamage ).was.called()
             end
         },
 
@@ -92,7 +92,7 @@ return {
 
                 ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
-                expect( PropDamage ).to.haveBeenCalled()
+                expect( PropDamage ).was.called()
             end
         },
 
@@ -105,7 +105,7 @@ return {
 
                 ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
-                expect( VehicleDamage ).to.haveBeenCalled()
+                expect( VehicleDamage ).was.called()
             end
         },
 
@@ -118,7 +118,7 @@ return {
 
                 ACF.Damage.dealDamage( State.Ent, State.DmgResult, nil )
 
-                expect( SquishyDamage ).to.haveBeenCalled()
+                expect( SquishyDamage ).was.called()
             end
         }
     }
