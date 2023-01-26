@@ -236,7 +236,7 @@ if SERVER then
 		local Filler    = Bullet.BoomFillerMass
 		local Fragments = Bullet.CasingMass
 		local Filter    = Bullet.Filter
-		local DmgInfo   = Objects.DamageInfo(Bullet.Gun, Bullet.Owner)
+		local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
 		Damage.createExplosion(HitPos, Filler, Fragments, Filter, DmgInfo)
 
