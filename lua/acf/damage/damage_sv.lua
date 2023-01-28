@@ -47,77 +47,35 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
-	local Bone   = DmgInfo:GetHitGroup()
+	local Hitbox   = ACF.GetBestSquishyHitBox(Entity,DmgInfo:GetHitPos(),(DmgInfo:GetHitPos() - DmgInfo:GetOrigin()):GetNormalized())
 	local Size   = Entity:BoundingRadius()
-	local Mass   = Entity:GetPhysicsObject():GetMass()
 	local HitRes = DmgResult:GetBlank()
 	local Damage = 0
 
 	DmgResult:SetFactor(1) -- We don't care about the penetration factor on squishy targets
 
-	if Bone then
-		--This means we hit the head
-		if Bone == 1 then
-			--Set the skull thickness as a percentage of Squishy weight, this gives us 2mm for a player, about 22mm for an Antlion Guard. Seems about right
-			DmgResult:SetThickness(Mass * 0.02)
-
-			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 20
-
-			--If we manage to penetrate the skull, then MASSIVE DAMAGE
-			if HitRes.Overkill > 0 then
-				--A quarter the bounding radius seems about right for most critters head size
-				DmgResult:SetThickness(Size * 0.25 * 0.01)
-
-				HitRes = DmgResult:Compute()
-				Damage = Damage + HitRes.Damage * 100
-			end
-
-			-- Then to check if we can get out of the other side, 2x skull + 1x brains
-			DmgResult:SetThickness(Mass * 0.065)
-
-			HitRes = DmgResult:Compute()
-			Damage = Damage + HitRes.Damage * 20
-		elseif Bone == 0 or Bone == 2 or Bone == 3 then
-			-- This means we hit the torso. We are assuming body armour/tough exoskeleton/zombie don't give fuck here, so it's tough
-			-- Set the armour thickness as a percentage of Squishy weight, this gives us 8mm for a player, about 90mm for an Antlion Guard. Seems about right
-			DmgResult:SetThickness(Mass * 0.08)
-
-			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 5
-
-			if HitRes.Overkill > 0 then
-				-- Half the bounding radius seems about right for most critters torso size
-				DmgResult:SetThickness(Size * 0.5 * 0.02)
-
-				HitRes = DmgResult:Compute()
-				Damage = Damage + HitRes.Damage * 50 -- If we penetrate the armour then we get into the important bits inside, so DAMAGE
-			end
-
-			--Then to check if we can get out of the other side, 2x armour + 1x guts
-			DmgResult:SetThickness(Mass * 0.185)
-
-			HitRes = DmgResult:Compute()
-		elseif Bone == 10 then
-			-- This means we hit a backpack or something
-			-- Arbitrary size, most of the gear carried is pretty small
-			DmgResult:SetThickness(Size * 0.1 * 0.02)
-
-			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 2 -- Damage is going to be fright and shrapnel, nothing much
-		else
-			--Just in case we hit something not standard
-			DmgResult:SetThickness(Size * 0.2 * 0.02)
-
-			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 30
-		end
-	else
-		-- Just in case we hit something not standard
+	if Hitbox == "none" then -- Default damage
 		DmgResult:SetThickness(Size * 0.2 * 0.02)
 
 		HitRes = DmgResult:Compute()
-		Damage = HitRes.Damage * 10
+		Damage = HitRes.Damage * 20
+	else
+		-- Using player armor for fake armor works decently, as even if you don't take actual damage, the armor takes 1 point of damage, so it can potentially wear off
+		-- These funcs are also done on a hierarchy sort of system, so if the helmet is penetrated, then DamageHead is called, same for Vest -> Chest
+		if Hitbox == "helmet" then
+			Damage,HitRes = ACF.SquishyFuncs.DamageHelmet(Entity,HitRes,DmgResult)
+		elseif Hitbox == "head" then
+			Damage,HitRes = ACF.SquishyFuncs.DamageHead(Entity,HitRes,DmgResult)
+		elseif Hitbox == "vest" then
+			Damage,HitRes = ACF.SquishyFuncs.DamageVest(Entity,HitRes,DmgResult)
+		elseif Hitbox == "chest" then
+			Damage,HitRes = ACF.SquishyFuncs.DamageChest(Entity,HitRes,DmgResult)
+		else
+			DmgResult:SetThickness(Size * 0.2 * 0.02)
+
+			HitRes = DmgResult:Compute()
+			Damage = HitRes.Damage * 10
+		end
 	end
 
 	Entity:TakeDamage(Damage, DmgInfo:GetAttacker(), DmgInfo:GetInflictor())
