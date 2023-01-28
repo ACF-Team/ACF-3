@@ -531,7 +531,7 @@ do -- Special squishy functions
 		local BestChoice = next(HitBones)
 		local BestDist = HitBones[BestChoice]:DistToSqr(RayStart)
 
-		for k,v in pairs(HitBones) do
+		for k,_ in pairs(HitBones) do
 			if BestChoice == k then continue end
 			local BoxPosDist = HitBones[k]:DistToSqr(RayStart)
 			if BoxPosDist < BestDist then BestChoice = k BestDist = BoxPosDist end
