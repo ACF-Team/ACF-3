@@ -248,6 +248,10 @@ do -- Client and server settings
 	-- ACF.RemoveServerSettings(Name)
 	-- ACF.GenerateServerSettings(MenuPanel)
 
+	--- Uses the following hooks:
+	-- ACF_OnServerSettingsLoaded
+	-- ACF_OnClientSettingsLoaded
+
 	for Realm, Destiny in pairs(Settings) do
 		local Hook    = "ACF_On" .. Realm .. "SettingsLoaded"
 		local Message = "No %sside settings have been registered."
