@@ -259,12 +259,34 @@ do -- ACF.GetHitAngle
 
 	-- Whenever a trace starts inside an object, a ray-mesh intersection will be used to calculate the real hitNormal
 	-- Additionally, the trace.Normal is unreliable and rayNormal (bullet.Flight) will be used instead
-
 	local v0       = Vector()
 	local toDegree = math.deg
 	local acos     = math.acos
+	local abs      = math.abs
+	local clamp    = math.Clamp
+	local sqrt     = math.sqrt
+	local theta    = 0.001
 
-	local function rayMeshIntersect(ent, rayOrigin, rayDir)
+	local function raySphere(rayOrigin, rayDir, sphereOrigin, radius)
+		local a = 2 * rayDir:LengthSqr()
+		local b = 2 * rayDir:Dot(rayOrigin - sphereOrigin)
+		local c = sphereOrigin:LengthSqr() + rayOrigin:LengthSqr() - 2 * sphereOrigin:Dot(rayOrigin) - radius^2
+
+		local bac4 = b^2 - (2 * a * c)
+
+		if bac4 >= theta and b < theta then
+
+			local enter  = rayOrigin + ((-sqrt(bac4) - b) / a) * rayDir
+			--local exit   =  rayOrigin + ((sqrt(bac4) - b) / a) * rayDir
+			local normal = (enter - sphereOrigin):GetNormalized()
+
+			return normal
+		end
+
+		return false
+	end
+
+	local function rayMesh(ent, rayOrigin, rayDir)
 		local mesh        = ent:GetPhysicsObject():GetMeshConvexes()
 		local minDistance = math.huge
 		local minNormal   = -rayDir
@@ -312,17 +334,24 @@ do -- ACF.GetHitAngle
 		return ent:LocalToWorldAngles(minNormal:Angle()):Forward()
 	end
 
+	local function rayIntersect(ent, rayOrigin, rayDir)
+		local mesh = ent:GetPhysicsObject():GetMesh()
+
+		if mesh then return rayMesh(ent, rayOrigin, rayDir) end
+		if not mesh then return raySphere(rayOrigin, rayDir, ent:GetPos(), abs(ent:GetCollisionBounds().x)) end -- Spherical collisions
+	end
+
 	function ACF.GetHitAngle(trace, rayNormal)
 		local hitNormal = trace.HitNormal
-		local rayNormal = -rayNormal:GetNormalized()
+		local rayNormal = rayNormal:GetNormalized()
 
 		if hitNormal == v0 then
 			local rayOrigin = trace.HitPos - rayNormal * 5000
 
-			hitNormal = rayMeshIntersect(trace.Entity, rayOrigin, rayNormal)
+			hitNormal = rayIntersect(trace.Entity, rayOrigin, rayNormal)
 		end
 
-		return toDegree(acos(rayNormal:Dot(hitNormal)))
+		return toDegree(acos(clamp(rayNormal:Dot(hitNormal), -1, 1)))
 	end
 end
 
