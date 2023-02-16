@@ -116,7 +116,7 @@ hook.Add("Think", "ACF_DetectSZTransition", function()
 		plyzones[sid] = zone
 
 		if oldzone ~= zone then
-			hook.Call("ACF_PlayerChangedZone", GAMEMODE, ply, zone, oldzone)
+			hook.Run("ACF_PlayerChangedZone", ply, zone, oldzone)
 		end
 	end
 end)
@@ -315,7 +315,7 @@ concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 		this.DefaultCanDamage = this.ModeDefaultAction[mode]
 		this.DamagePermission = this.Modes[mode]
 		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
-		hook.Call("ACF_ProtectionModeChanged", GAMEMODE, mode, oldmode)
+		hook.Run("ACF_ProtectionModeChanged", mode, oldmode)
 
 		return true
 	end
@@ -619,6 +619,6 @@ local m = table.KeyFromValue(this.Modes, this.DamagePermission)
 
 if not m then
 	this.DamagePermission = function() end
-	hook.Call("ACF_ProtectionModeChanged", GAMEMODE, "default", nil)
+	hook.Run("ACF_ProtectionModeChanged", "default", nil)
 	mode = "default"
 end
