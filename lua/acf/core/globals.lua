@@ -62,7 +62,8 @@ do -- ACF global vars
 		prop_vehicle_crane = true,
 		prop_dynamic = true,
 		npc_strider = true,
-		npc_dog = true
+		npc_dog = true,
+		phys_bone_follower = true,
 	}
 
 	-- Ammo
