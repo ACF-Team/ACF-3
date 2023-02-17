@@ -215,4 +215,17 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_WeaponCanFire()
 		return true
 	end
+
+	--- Called when a player switches between safezones.
+	-- @param Player The affected player.
+	-- @param Zone? The zone which the player moved into, could be nil.
+	-- @param OldZone? The zone which the player moved from, could be nil.
+	function Gamemode:ACF_PlayerChangedZone()
+	end
+
+	--- Called when the active protection mode is changed on the server.
+	-- @param Mode The currently active protection mode.
+	-- @param OldMode? The protection mode that was being used before, will be nil on startup.
+	function Gamemode:ACF_ProtectionModeChanged()
+	end
 end)
