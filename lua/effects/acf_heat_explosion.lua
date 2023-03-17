@@ -8,7 +8,6 @@ function EFFECT:Init(Data)
 		Effect:SetOrigin(Origin)
 		Effect:SetNormal(Normal)
 		Effect:SetScale(Radius * 50)
-		Effect:SetRadius(0)
 
 	util.Effect("ACF_Explosion", Effect)
 
