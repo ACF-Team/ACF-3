@@ -10,7 +10,6 @@ function Ammo:OnLoaded()
 	self.Description = "A shell filled with explosives, detonates on impact."
 	self.Blacklist = {
 		MG = true,
-		SB = true,
 		RAC = true,
 	}
 end

@@ -13,7 +13,6 @@ function Ammo:OnLoaded()
 	self.Blacklist = {
 		AC = true,
 		MG = true,
-		SB = true,
 		SL = true,
 		LAC = true,
 		RAC = true,
