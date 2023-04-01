@@ -35,7 +35,7 @@ net.Receive("ACF_refreshfeedback", function()
 end)
 
 function this.ApplyPermissions(checks)
-	perms = {}
+	local perms = {}
 
 	for _, check in pairs(checks) do
 		if not check.steamid then

@@ -160,8 +160,8 @@ if SERVER then
 				local BaseInaccuracyMult = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
 				local AddSpreadMult		 = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
 
-				BaseSpread = BaseInaccuracy * BaseInaccuracyMult
-				AddSpread  = AddInaccuracy * AddSpreadMult
+				local BaseSpread = BaseInaccuracy * BaseInaccuracyMult
+				local AddSpread  = AddInaccuracy * AddSpreadMult
 
 				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
 

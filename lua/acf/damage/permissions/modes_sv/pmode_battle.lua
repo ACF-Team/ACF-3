@@ -45,7 +45,7 @@ local function modepermission(_, attacker, ent)
 	return
 end
 
-function tellPlyAboutZones(ply, zone)
+local function tellPlyAboutZones(ply, zone)
 	if perms.DamagePermission ~= modepermission then return end
 	ply:SendLua("chat.AddText(Color(" .. (zone and "0,255,0" or "255,0,0") .. "),\"You have entered the " .. (zone and zone .. " safezone." or "battlefield!") .. "\")")
 end

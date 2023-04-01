@@ -44,7 +44,7 @@ SWEP.MaxDistance = 64 * 64 -- Squared distance
 
 
 local function TeslaSpark(pos, magnitude)
-	zap = ents.Create("point_tesla")
+	local zap = ents.Create("point_tesla")
 	zap:SetKeyValue("targetname", "teslab")
 	zap:SetKeyValue("m_SoundName", "null")
 	zap:SetKeyValue("texture", "sprites/laser.spr")

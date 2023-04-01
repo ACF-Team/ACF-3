@@ -234,7 +234,7 @@ do -- Unit conversion
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
 	end
 end
-
+--[[
 -- Pretty much unused, should be moved into the ACF namespace or just removed
 function switch(cases, arg)
 	local Var = cases[arg]
@@ -243,7 +243,7 @@ function switch(cases, arg)
 
 	return cases.default
 end
-
+]]
 function ACF.RandomVector(Min, Max)
 	local X = math.Rand(Min.x, Max.x)
 	local Y = math.Rand(Min.y, Max.y)
