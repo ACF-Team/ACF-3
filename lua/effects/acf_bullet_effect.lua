@@ -24,7 +24,7 @@ function EFFECT:Init(Data)
 	local Hit     = Data:GetScale()
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
-	if Bullet and Hit > 0 then
+	if Bullet and not Bullet.Removed and Hit > 0 then
 		local RoundData = AmmoTypes.Get(Bullet.AmmoType)
 
 		-- Updating old effect with new values
@@ -60,6 +60,7 @@ function EFFECT:Init(Data)
 		-- TODO: Force crates to network and store this information on the client when they're created
 		local Tracer = Crate:GetNW2Float("Tracer") > 0
 		local BulletData = {
+			Index      = self.Index,
 			Crate      = Crate,
 			SimFlight  = Flight,
 			SimPos     = Origin,
@@ -103,6 +104,8 @@ function EFFECT:Think()
 		if IsValid(Bullet.Tracer) then
 			Bullet.Tracer:Finish()
 		end
+
+		Bullet.Removed = true
 
 		Bullets[self.Index] = nil
 	end
