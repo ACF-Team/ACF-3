@@ -133,9 +133,8 @@ else
 		local Position  = Bullet.SimPos
 		local Direction = Bullet.SimFlight
 		local Filler    = Bullet.FillerMass
-		local Caliber   = Bullet.Caliber
 
-		Damage.explosionEffect(Position, Direction, Filler, Caliber)
+		Damage.explosionEffect(Position, Direction, Filler)
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)

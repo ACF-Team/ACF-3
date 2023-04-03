@@ -21,7 +21,6 @@ local Colors = {
 }
 
 function EFFECT:Init(Data)
-	local Caliber = Data:GetRadius()
 	local Origin  = Data:GetOrigin()
 	local Normal  = Data:GetNormal()
 	local Size    = Data:GetScale()
@@ -46,21 +45,11 @@ function EFFECT:Init(Data)
 
 		self:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
 
-		if Caliber > 0 and (IsValid(Entity) or Impact.HitWorld) then
-			if Radius > 1 then
-				local Size = Radius * 0.66
-				local Type = GetIndex("HE")
+		if Radius > 1 and (IsValid(Entity) or Impact.HitWorld) then
+			local Size = Radius * 0.66
+			local Type = GetIndex("HE")
 
-				util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
-			end
-
-			local Effect = EffectData()
-			Effect:SetOrigin(Origin)
-			Effect:SetNormal(Normal)
-			Effect:SetRadius(Caliber)
-			Effect:SetDamageType(GetIndex("AP"))
-
-			util.Effect("ACF_Impact", Effect)
+			util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
 		end
 	end
 end
