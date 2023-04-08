@@ -10,7 +10,11 @@ function Ammo:OnLoaded()
 	self.Model		 = "models/munitions/dart_100mm.mdl"
 	self.Description = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
 	self.Blacklist = ACF.GetWeaponBlacklist({
-		SB = true,
+		C = true,
+		AC = true,
+		AL = true,
+		SA = true,
+		SC = true,
 	})
 end
 

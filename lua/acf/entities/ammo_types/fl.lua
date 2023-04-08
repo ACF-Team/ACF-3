@@ -16,7 +16,6 @@ function Ammo:OnLoaded()
 		MG = true,
 		MO = true,
 		SA = true,
-		SB = true,
 		SL = true,
 		LAC = true,
 		RAC = true,
