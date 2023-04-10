@@ -150,6 +150,9 @@ do -- Spawn and Update functions -----------------------
 		end
 
 		Entity:ChangeGear(1)
+
+		-- ChangeGear doesn't update GearRatio if the gearbox is already in gear 1
+		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
 	end
 
 	local function CheckRopes(Entity, Target)
