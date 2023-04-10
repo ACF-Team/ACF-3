@@ -192,12 +192,7 @@ local function SetActive(Entity, Value)
 		Entity.Torque = Entity.PeakTorque
 		Entity.FlyRPM = Entity.IdleRPM * 1.5
 
-		local Pitch, Volume = GetPitchVolume(Entity)
-
-		if Entity.SoundPath ~= "" and file.Exists("sound/" .. Entity.SoundPath, "GAME") then
-			Entity.Sound = CreateSound(Entity, Entity.SoundPath)
-			Entity.Sound:PlayEx(Volume, Pitch)
-		end
+		Entity:UpdateSound()
 
 		TimerSimple(engine.TickInterval(), function()
 			if not IsValid(Entity) then return end
@@ -218,10 +213,7 @@ local function SetActive(Entity, Value)
 		Entity.FlyRPM = 0
 		Entity.Torque = 0
 
-		if Entity.Sound then
-			Entity.Sound:Stop()
-			Entity.Sound = nil
-		end
+		Entity:DestroySound()
 
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
@@ -593,6 +585,46 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
+function ENT:UpdateSound()
+	local Path = self.SoundPath
+
+	if Path ~= self.LastSound then
+		self:DestroySound()
+
+		self.LastSound = Path
+	end
+
+	local Sound = self.Sound
+
+	if not Sound then
+		Sound = CreateSound(self, Path)
+
+		self.Sound = Sound
+	end
+
+	if not self.Active then return end
+
+	local Pitch, Volume = GetPitchVolume(self)
+
+	if Sound:IsPlaying() then
+		Sound:ChangePitch(Pitch, 0)
+		Sound:ChangeVolume(Volume, 0)
+	else
+		Sound:PlayEx(Volume, Pitch)
+	end
+end
+
+function ENT:DestroySound()
+	local Current = self.Sound
+
+	if Current then
+		Current:Stop()
+	end
+
+	self.LastSound = nil
+	self.Sound     = nil
+end
+
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio()
 	local PhysMass 	= 0
@@ -708,13 +740,7 @@ function ENT:CalcRPM()
 	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
 	self.LastThink = Clock.CurTime
 
-	if self.Sound then
-		local Pitch, Volume = GetPitchVolume(self)
-
-		self.Sound:ChangePitch(Pitch, 0)
-		self.Sound:ChangeVolume(Volume, 0)
-	end
-
+	self:UpdateSound()
 	self:UpdateOutputs()
 
 	TimerSimple(engine.TickInterval(), function()
@@ -803,9 +829,7 @@ function ENT:OnRemove()
 
 	HookRun("ACF_OnEntityLast", "acf_engine", self, Class)
 
-	if self.Sound then
-		self.Sound:Stop()
-	end
+	self:DestroySound()
 
 	for Gearbox in pairs(self.Gearboxes) do
 		self:Unlink(Gearbox)
