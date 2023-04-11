@@ -66,17 +66,19 @@ do -- Spawn and Update functions --------------------------------
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
-		elseif Class.IsScalable then
+		elseif Weapons.IsAlias(Data.Weapon) then
+			Data.Weapon = Class.ID
+		end
+
+		-- Verifying and clamping caliber value
+		if Class.IsScalable then
 			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
 				Data.Caliber = Weapon.Caliber
 			end
-		end
 
-		-- Verifying and clamping caliber value
-		if Class.IsScalable then
 			local Bounds  = Class.Caliber
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
 
