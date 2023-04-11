@@ -189,8 +189,8 @@ local function SetActive(Entity, Value)
 		Entity:CalcMassRatio()
 
 		Entity.LastThink = Clock.CurTime
-		Entity.Torque = Entity.PeakTorque
-		Entity.FlyRPM = Entity.IdleRPM * 1.5
+		Entity.Torque    = Entity.PeakTorque
+		Entity.FlyRPM    = Entity.IdleRPM * 1.5
 
 		Entity:UpdateSound()
 
