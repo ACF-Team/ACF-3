@@ -594,6 +594,8 @@ function ENT:UpdateSound()
 		self.LastSound = Path
 	end
 
+	if Path == "" then return end
+
 	local Sound = self.Sound
 
 	if not Sound then

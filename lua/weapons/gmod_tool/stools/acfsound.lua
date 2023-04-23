@@ -43,7 +43,7 @@ Sounds.acf_engine = {
 		local Sound     = soundData.Sound:Trim():lower()
 		local Extension = string.GetExtensionFromFilename(Sound)
 
-		if Sound == "" or not Extension or not file.Exists("sound/" .. Sound, "GAME") then
+		if (Sound ~= "" and not Extension) or not file.Exists("sound/" .. Sound, "GAME") then
 			local Owner = ent:GetPlayer()
 
 			return Messages.SendChat(Owner, "Error", "Couldn't change engine sound, does not exist on server: ", Sound)
