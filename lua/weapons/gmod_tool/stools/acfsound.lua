@@ -13,7 +13,8 @@ end
 
 ACF.SoundToolSupport = ACF.SoundToolSupport or {}
 
-local Sounds = ACF.SoundToolSupport
+local Sounds   = ACF.SoundToolSupport
+local Messages = ACF.Utilities.Messages
 
 Sounds.acf_gun = {
 	GetSound = function(ent)
@@ -39,13 +40,25 @@ Sounds.acf_engine = {
 		}
 	end,
 	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
+		local Sound     = soundData.Sound:Trim():lower()
+		local Extension = string.GetExtensionFromFilename(Sound)
+
+		if (Sound ~= "" and not Extension) or not file.Exists("sound/" .. Sound, "GAME") then
+			local Owner = ent:GetPlayer()
+
+			return Messages.SendChat(Owner, "Error", "Couldn't change engine sound, does not exist on server: ", Sound)
+		end
+
+		ent.SoundPath = Sound
 		ent.SoundPitch = soundData.Pitch
+
+		ent:UpdateSound()
 	end,
 	ResetSound = function(ent)
-		local setSound = Sounds.acf_engine.SetSound
+		ent.SoundPath  = ent.DefaultSound
+		ent.SoundPitch = 1
 
-		setSound(ent, { Sound = ent.DefaultSound })
+		ent:UpdateSound()
 	end
 }
 
@@ -81,14 +94,12 @@ local function ReplaceSound(_, Entity, Data)
 
 	if not Support then return end
 
-	timer.Simple(1, function()
-		Support.SetSound(Entity, {
-			Sound = Sound,
-			Pitch = Pitch or 1,
-		})
+	Support.SetSound(Entity, {
+		Sound = Sound,
+		Pitch = Pitch or 1,
+	})
 
-		duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1 })
-	end)
+	duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1 })
 end
 
 duplicator.RegisterEntityModifier("acf_replacesound", ReplaceSound)
