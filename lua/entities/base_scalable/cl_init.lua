@@ -89,7 +89,7 @@ do -- Size and scale setter methods
 			-- We have updated ScaleData but no ModelData yet
 			-- We'll wait for it and instantly tell the entity to rescale
 			if Path and ModelData.IsOnStandby(Path) then
-				ModelData.QueueRefresh(Path, Entity, function()
+				ModelData.CallOnReceive(Path, Entity, function()
 					local Saved = Entity.SavedScale
 
 					if not Saved then return end

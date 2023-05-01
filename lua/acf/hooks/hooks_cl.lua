@@ -2,17 +2,6 @@ local Hooks = ACF.Utilities.Hooks
 
 
 Hooks.Add("ACF_Base_Client", function(Gamemode)
-	--- Called when a new request for model information is made to the server
-	-- @param Model The model whose information has been requested.
-	function Gamemode:ACF_OnRequestedModelData()
-	end
-
-	--- Called when the model data has been received from the server.
-	-- @param Model The model whose data has been received.
-	-- @param Data The model information sent by the server.
-	function Gamemode:ACF_OnReceivedModelData()
-	end
-
 	--- Called when the information about a repository is received and updated.
 	-- @param Name The name of the repository that was updated.
 	-- @param Repository The information about the repository.
