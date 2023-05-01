@@ -11,18 +11,16 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	--- Called when a new option is about to be added to the menu.
 	-- This hook won't be called if the option object has
 	-- an IsEnabled method defined and said method returns false.
-	-- @param Index REMOVE
 	-- @param Name The name of the option object.
 	-- @return True if the option should be added to the menu, false otherwise.
-	function Gamemode:ACF_AllowMenuOption()
+	function Gamemode:ACF_OnMenuOptionEnable()
 		return true
 	end
 
 	--- Called when a new option item is about to be added to the menu.
-	-- @param Index REMOVE
 	-- @param Option The name of the option this item will be added to.
 	-- @param Name The name of the new option item object.
-	function Gamemode:ACF_AllowMenuItem()
+	function Gamemode:ACF_OnMenuItemEnable()
 		return true
 	end
 
