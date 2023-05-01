@@ -5,7 +5,7 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	--- Called when the information about a repository is received and updated.
 	-- @param Name The name of the repository that was updated.
 	-- @param Repository The information about the repository.
-	function Gamemode:ACF_UpdatedRepository()
+	function Gamemode:ACF_OnRepositoryFetch()
 	end
 
 	--- Called when a new option is about to be added to the menu.

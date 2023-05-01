@@ -81,7 +81,7 @@ end
 
 ACF.AddMenuItem(1, "About the Addon", "Updates", "newspaper", CreateMenu)
 
-hook.Add("ACF_UpdatedRepository", "ACF Updates Menu", function(Name, Repo)
+hook.Add("ACF_OnRepositoryFetch", "ACF Updates Menu", function(Name, Repo)
 	if Name ~= "ACF-3" then return end
 
 	Repository = Repo
