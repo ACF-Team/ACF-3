@@ -333,7 +333,7 @@ function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor, Mult)
 			end
 		end
 
-		EF = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
+		local EF = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
 
 		if EF then
 			EF:SetVelocity((Angle:Up() + Direction * math.random(0.3,5)):GetNormalized() *  1)

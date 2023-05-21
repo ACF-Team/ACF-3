@@ -523,7 +523,7 @@ function this.PermissionsRaw(ownerid, attackerid, value)
 end
 
 local function onDisconnect(ply)
-	plyid = ply:SteamID()
+	local plyid = ply:SteamID()
 
 	if this.Player[plyid] then
 		this.Player[plyid] = nil
@@ -622,5 +622,4 @@ local m = table.KeyFromValue(this.Modes, this.DamagePermission)
 if not m then
 	this.DamagePermission = function() end
 	hook.Call("ACF_ProtectionModeChanged", GAMEMODE, "default", nil)
-	mode = "default"
 end

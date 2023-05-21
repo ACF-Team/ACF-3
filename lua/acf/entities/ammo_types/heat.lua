@@ -151,7 +151,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 		local _FillerEnergy = Data.FillerEnergy
 		local _LinerAngle   = Data.ConeAng
-		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99) print("misle", _LinerAngle, _MinVelMult)
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
 		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
