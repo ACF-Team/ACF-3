@@ -192,7 +192,7 @@ do -- Procedural Armor
 	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
 end
 
-hook.Add("ACF_OnMenuOptionEnable", "Enable Fun Menu", function(Name)
+hook.Add("ACF_OnEnableMenuOption", "Enable Fun Menu", function(Name)
 	if Name ~= "Fun Stuff" then return end
 	if not ACF.GetServerBool("ShowFunMenu") then return false end
 end)

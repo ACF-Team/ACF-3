@@ -5,7 +5,7 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	--- Called when the information about a repository is received and updated.
 	-- @param Name The name of the repository that was updated.
 	-- @param Repository The information about the repository.
-	function Gamemode:ACF_OnRepositoryFetch()
+	function Gamemode:ACF_OnFetchRepository()
 	end
 
 	--- Called when a new option is about to be added to the menu.
@@ -13,27 +13,57 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	-- an IsEnabled method defined and said method returns false.
 	-- @param Name The name of the option object.
 	-- @return True if the option should be added to the menu, false otherwise.
-	function Gamemode:ACF_OnMenuOptionEnable()
+	function Gamemode:ACF_OnEnableMenuOption()
 		return true
 	end
 
 	--- Called when a new option item is about to be added to the menu.
 	-- @param Option The name of the option this item will be added to.
 	-- @param Name The name of the new option item object.
-	function Gamemode:ACF_OnMenuItemEnable()
+	function Gamemode:ACF_OnEnableMenuItem()
 		return true
 	end
 
-	--- Called after a client settings section has been loaded.
+	--- Called before a client settings collapsible section is created.
 	-- @param Name The name of the client settings section.
-	-- @param Panel The base panel where all the settings were placed.
-	function Gamemode:ACF_OnClientSettingsLoaded()
+	-- @return True if the collapsible section can be created, false otherwise.
+	function Gamemode:ACF_PreLoadClientSettings()
+		return true
 	end
 
-	--- Called after a server settings section has been loaded.
+	--- Called when a client settings section is about to be populated.
+	-- @param Name The name of the client settings section.
+	-- @param Panel The base panel where all the settings are going to be placed.
+	-- @return True to override the panels created by the section itself, false otherwise.
+	function Gamemode:ACF_OnLoadClientSettings()
+		return false
+	end
+
+	--- Called after a client settings section has been populated.
+	-- @param Name The name of the client settings section.
+	-- @param Panel The base panel where all the settings were placed.
+	function Gamemode:ACF_PostLoadClientSettings()
+	end
+
+	--- Called before a server settings collapsible section is created.
+	-- @param Name The name of the server settings section.
+	-- @return True if the collapsible section can be created, false otherwise.
+	function Gamemode:ACF_PreLoadServerSettings()
+		return true
+	end
+
+	--- Called when a server settings section is about to be populated.
+	-- @param Name The name of the server settings section.
+	-- @param Panel The base panel where all the settings are going to be placed.
+	-- @return True to override the panels created by the section itself, false otherwise.
+	function Gamemode:ACF_OnLoadServerSettings()
+		return false
+	end
+
+	--- Called after a server settings section has been populated.
 	-- @param Name The name of the server settings section.
 	-- @param Panel The base panel where all the settings were placed.
-	function Gamemode:ACF_OnServerSettingsLoaded()
+	function Gamemode:ACF_PostLoadServerSettings()
 	end
 
 	--- Called before the ammo menu is created.
