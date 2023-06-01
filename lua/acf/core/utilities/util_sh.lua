@@ -283,7 +283,7 @@ do -- ACF.GetHitAngle
 			return normal
 		end
 
-		return false
+		return rayDir
 	end
 
 	local function rayMesh(ent, rayOrigin, rayDir)
