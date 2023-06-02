@@ -21,7 +21,7 @@ if CLIENT then
 		render.SetColorMaterial()
 
 		if DrawBoxes:GetBool() and IsValid(Entity) and Distance <= 65536 then
-			hook.Run("ACF_DrawBoxes", Entity, Trace)
+			hook.Run("ACF_OnDrawBoxes", Entity, Trace)
 		end
 
 		cam.End3D()
@@ -35,7 +35,7 @@ if CLIENT then
 		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
 	end)
 
-	hook.Add("ACF_DrawBoxes", "ACF Draw Hitboxes", function(Entity)
+	hook.Add("ACF_OnDrawBoxes", "ACF Draw Hitboxes", function(Entity)
 		if not Entity.HitBoxes then return end
 		if not next(Entity.HitBoxes) then return end
 

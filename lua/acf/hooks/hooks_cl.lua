@@ -186,12 +186,12 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	function Gamemode:ACF_OnCreateBulletEffect()
 	end
 
-	-- Called when the ACF Menu tool is being pointed towards an entity.
+	--- Called when the ACF Menu tool is being pointed towards an entity.
 	-- The entity has to be, at most, 256 inches away from the player's eyes.
 	-- This hook will only be called if the acf_drawboxes convar is set to a non zero value.
 	-- For the developer's convenience, cam.Start3D and render.SetColorMaterial are called before this hook is ran.
 	-- @param Entity The entity being pointed at.
 	-- @param Trace The TraceResult from the player's eye trace.
-	function Gamemode:ACF_DrawBoxes()
+	function Gamemode:ACF_OnDrawBoxes()
 	end
 end)
