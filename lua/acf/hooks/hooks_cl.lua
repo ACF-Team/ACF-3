@@ -178,11 +178,12 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	function Gamemode:ACF_OnCreateAmmoInformation()
 	end
 
-	-- Called after a clientside bullet effect has been created.
+	--- Called after a clientside bullet effect has been created.
 	-- Used to override the default bullet effect.
-	-- @param AmmoType The ID of the ammo type assigned to the bullet effect.
-	-- @return The function that will override EFFECT:ApplyMovement, nil otherwise.
-	function Gamemode:ACF_BulletEffect()
+	-- @param Effect The effect entity that was created for a bullet.
+	-- @param BulletData An object with the networked information from the bullet's ammo crate of origin.
+	-- Note that the information on this object will be much more limited than the one serverside bullet data would carry.
+	function Gamemode:ACF_OnCreateBulletEffect()
 	end
 
 	-- Called when the ACF Menu tool is being pointed towards an entity.
