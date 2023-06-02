@@ -195,7 +195,7 @@ else
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
-	function Ammo:AddAmmoPreview(_, Setup)
+	function Ammo:OnCreateAmmoPreview(_, Setup)
 		Setup.Model = self.Model
 		Setup.FOV   = 60
 	end
@@ -234,12 +234,12 @@ else
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers)
-		Trackers.Projectile = true
-		Trackers.Propellant = true
+	function Ammo:OnCreateCrateInformation(_, Label)
+		Label:TrackClientData("Projectile")
+		Label:TrackClientData("Propellant")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

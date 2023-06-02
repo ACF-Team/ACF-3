@@ -486,7 +486,7 @@ else
 		util.Effect("ACF_Ricochet", Effect)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
@@ -515,14 +515,14 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.LinerAngle = true
-		Trackers.StandoffRatio = true
+		Label:TrackClientData("LinerAngle")
+		Label:TrackClientData("StandoffRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

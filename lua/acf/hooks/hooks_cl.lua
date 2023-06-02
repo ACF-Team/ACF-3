@@ -67,21 +67,33 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	end
 
 	--- Called before the ammo menu is created.
-	-- @param Settings A table containing flags, used to define which parts of the default ammo menu won't be created.
-	-- Adding the SuppressMenu field to this table will completely omit the default ammo menu creation.
-	-- Adding the SupressPreview field to this table will omit the ammo model preview panel creation.
-	-- Adding the SupressControls field to this table will omit the ammo settings panels creation.
-	-- Adding the SupressTracer field to this table will omit the tracer checkbox panel creation.
-	-- Adding the SupressInformation field to this table will omit the ammo stats panels creation.
-	-- Adding the SuppressCrateInformation field to this table will omit the ammo crate stats panel creation.
 	-- @param ToolData A table containing the copy of the local player's data variables.
 	-- @param AmmoType The ammo type object to be used on the menu.
 	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
-	function Gamemode:ACF_SetupAmmoMenuSettings()
+	-- @return True to create the ammo menu, false otherwise
+	function Gamemode:ACF_PreCreateAmmoMenu()
+		return true
 	end
 
-	-- Called after the ammo preview panel has been created but before it has been setup.
-	-- This hook will only be called if Settings.SuppressPreview is not set.
+	--- Called when the ammo menu is about to be populated.
+	-- @param Panel The base ACF_Menu panel where everything will be created.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	function Gamemode:ACF_OnCreateAmmoMenu()
+	end
+
+	--- Called before the ammo preview panel gets created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	-- @return False to prevent the ammo preview panel from being created, true otherwise.
+	function Gamemode:ACF_PreCreateAmmoPreview()
+		return true
+	end
+
+	--- Called after the ammo preview panel has been created but before it has been setup.
 	-- @param Panel The model preview panel used to display the ammo type model.
 	-- @param SetupData The information table used for the model preview panel.
 	-- The Model field will define the path of the model that will get displayed.
@@ -90,35 +102,80 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	-- @param ToolData A table containing the copy of the local player's data variables.
 	-- @param AmmoType The ammo type object to be used on the menu.
 	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
-	function Gamemode:ACF_AddAmmoPreview()
+	function Gamemode:ACF_OnCreateAmmoPreview()
 	end
 
-	-- Called after the projectile and propellant length panels have been created.
-	-- This hook will only be called if Settings.SuppressControls is not set.
+	--- Called before the projectile and propellant length panels are created.
 	-- @param Panel The base panel where all the controls are being placed.
 	-- @param ToolData A table containing the copy of the local player's data variables.
 	-- @param AmmoType The ammo type object to be used on the menu.
 	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
-	function Gamemode:ACF_AddAmmoControls()
+	-- @return False to prevent the panels from being created, true otherwise.
+	function Gamemode:ACF_PreCreateAmmoControls()
+		return true
 	end
 
-	-- Called after the ammunition stats text panel has been created.
-	-- This hook will only be called if Settings.SuppressInformation and Settings.SuppressCrateInformation are not set.
-	-- @param Trackers A lookup table with the name of all the client data variables
-	-- that could affect the size of the ammunition stored inside the crate.
-	-- @param ToolData A table containing the copy of the local player's data variables.
-	-- @param AmmoType The ammo type object to be used on the menu.
-	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
-	function Gamemode:ACF_AddCrateDataTrackers()
-	end
-
-	-- Called after all the ammunition information panels have been created.
-	-- This hook will only be called if Settings.SuppressInformation is not set.
+	--- Called after the projectile and propellant length panels have been created.
 	-- @param Panel The base panel where all the controls are being placed.
 	-- @param ToolData A table containing the copy of the local player's data variables.
 	-- @param AmmoType The ammo type object to be used on the menu.
 	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
-	function Gamemode:ACF_AddAmmoInformation()
+	function Gamemode:ACF_OnCreateAmmoControls()
+	end
+
+	--- Called before the tracer checkbox panel gets created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	-- @return False to prevent the checkbox from being created, true otherwise.
+	function Gamemode:ACF_PreCreateTracerControls()
+		return true
+	end
+
+	--- Called after the tracer checkbox panel has been created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	function Gamemode:ACF_OnCreateTracerControls()
+	end
+
+	--- Called before the ammo information panels get created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	-- @return False to prevent the ammo information panels from being created, true otherwise.
+	function Gamemode:ACF_PreCreateAmmoInformation()
+		return true
+	end
+
+	--- Called before the ammo crate information panel gets created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	-- @return False to prevent the ammo crate information panel from being created, true otherwise.
+	function Gamemode:ACF_PreCreateCrateInformation()
+		return true
+	end
+
+	--- Called after the ammo crate information panel has been created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param Label The label panel where all the ammo crate information is being displayed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	function Gamemode:ACF_OnCreateCrateInformation()
+	end
+
+	--- Called after all the ammunition information panels have been created.
+	-- @param Panel The base panel where all the controls are being placed.
+	-- @param ToolData A table containing the copy of the local player's data variables.
+	-- @param AmmoType The ammo type object to be used on the menu.
+	-- @param BulletData A bullet object used to display the stats of the chosen ammunition type.
+	function Gamemode:ACF_OnCreateAmmoInformation()
 	end
 
 	-- Called after a clientside bullet effect has been created.

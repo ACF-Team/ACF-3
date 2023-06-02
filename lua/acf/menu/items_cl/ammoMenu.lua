@@ -1,4 +1,5 @@
 
+local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
 local AmmoTypes = Classes.AmmoTypes
@@ -9,18 +10,6 @@ local CrateText = [[
 	Crate Armor: %s mm
 	Crate Mass : %s
 	Crate Capacity : %s round(s)]]
-
-local function CopySettings(Settings)
-	local Copy = {}
-
-	if Settings then
-		for K, V in pairs(Settings) do
-			Copy[K] = V
-		end
-	end
-
-	return Copy
-end
 
 local function GetAmmoList(Class)
 	local Entries = AmmoTypes.GetEntries()
@@ -50,24 +39,82 @@ local function GetEmptyMass()
 	return math.Round((ExteriorVolume - InteriorVolume) * 0.13, 2)
 end
 
-local function AddPreview(Base, Settings, ToolData)
-	if Settings.SuppressPreview then return end
+local function AddPreview(Base, ToolData)
+	if Ammo.PreCreateAmmoPreview then
+		local Result = Ammo:PreCreateAmmoPreview(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoPreview", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
 
 	local Preview = Base:AddModelPreview(nil, true)
 	local Setup   = {}
 
-	if Ammo.AddAmmoPreview then
-		Ammo:AddAmmoPreview(Preview, Setup, ToolData, BulletData)
+	if Ammo.OnCreateAmmoPreview then
+		Ammo:OnCreateAmmoPreview(Preview, Setup, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
 
 	Preview:UpdateModel(Setup.Model)
 	Preview:UpdateSettings(Setup)
 end
 
-local function AddControls(Base, Settings, ToolData)
-	if Settings.SuppressControls then return end
+local function AddTracer(Base, ToolData)
+	if Ammo.PreCreateTracerControls then
+		local Result = Ammo:PreCreateTracerControls(Base, ToolData, BulletData)
+
+		if not Result then
+			ACF.SetClientData("Tracer", false)
+
+			return
+		end
+	end
+
+	local Result = hook.Run("ACF_PreCreateTracerControls", Base, ToolData, Ammo, BulletData)
+
+	if not Result then
+		ACF.SetClientData("Tracer", false)
+
+		return
+	end
+
+	local Tracer = Base:AddCheckBox("Tracer")
+	Tracer:SetClientData("Tracer", "OnChange")
+	Tracer:DefineSetter(function(Panel, _, _, Value)
+		ToolData.Tracer = Value
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		ACF.SetClientData("Projectile", BulletData.ProjLength)
+		ACF.SetClientData("Propellant", BulletData.PropLength)
+
+		Panel:SetText("Tracer : " .. BulletData.Tracer .. " cm")
+		Panel:SetValue(ToolData.Tracer)
+
+		return ToolData.Tracer
+	end)
+
+	if Ammo.OnCreateTracerControls then
+		Ammo:OnCreateTracerControls(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateTracerControls", Base, ToolData, Ammo, BulletData)
+end
+
+local function AddControls(Base, ToolData)
+	if Ammo.PreCreateAmmoControls then
+		local Result = Ammo:PreCreateAmmoControls(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoControls", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
 
 	local RoundLength = Base:AddLabel()
 	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
@@ -117,105 +164,108 @@ local function AddControls(Base, Settings, ToolData)
 		return BulletData.PropLength
 	end)
 
-	if Ammo.AddAmmoControls then
-		Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	if Ammo.OnCreateAmmoControls then
+		Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoControls", Base, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateAmmoControls", Base, ToolData, Ammo, BulletData)
 
-	-- We'll create the tracer checkbox after all the other controls
-	if not Settings.SuppressTracer then
-		local Tracer = Base:AddCheckBox("Tracer")
-		Tracer:SetClientData("Tracer", "OnChange")
-		Tracer:DefineSetter(function(Panel, _, _, Value)
-			ToolData.Tracer = Value
-
-			Ammo:UpdateRoundData(ToolData, BulletData)
-
-			ACF.SetClientData("Projectile", BulletData.ProjLength)
-			ACF.SetClientData("Propellant", BulletData.PropLength)
-
-			Panel:SetText("Tracer : " .. BulletData.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-	else
-		ACF.SetClientData("Tracer", false) -- Disabling the tracer, as it takes up spaces on ammo.
-	end
+	AddTracer(Base, ToolData)
 end
 
-local function AddInformation(Base, Settings, ToolData)
-	if Settings.SuppressInformation then return end
+local function AddCrateInformation(Base, ToolData)
+	if Ammo.PreCreateCrateInformation then
+		local Result = Ammo:PreCreateCrateInformation(Base, ToolData, BulletData)
 
-	if not Settings.SuppressCrateInformation then
-		local Trackers = {}
-
-		local Crate = Base:AddLabel()
-		Crate:TrackClientData("Weapon", "SetText")
-		Crate:TrackClientData("CrateSizeX")
-		Crate:TrackClientData("CrateSizeY")
-		Crate:TrackClientData("CrateSizeZ")
-		Crate:DefineSetter(function()
-			local Class  = GetWeaponClass(ToolData)
-			local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
-			local Empty  = GetEmptyMass()
-			local Load   = math.floor(BulletData.CartMass * Rounds)
-			local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
-
-			return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
-		end)
-
-		if Ammo.AddCrateDataTrackers then
-			Ammo:AddCrateDataTrackers(Trackers, ToolData, BulletData)
-		end
-
-		hook.Run("ACF_AddCrateDataTrackers", Trackers, ToolData, Ammo, BulletData)
-
-		for Tracker in pairs(Trackers) do
-			Crate:TrackClientData(Tracker)
-		end
+		if not Result then return end
 	end
 
-	if Ammo.AddAmmoInformation then
-		Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	local Result = hook.Run("ACF_PreCreateCrateInformation", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	local Crate = Base:AddLabel()
+	Crate:TrackClientData("Weapon", "SetText")
+	Crate:TrackClientData("CrateSizeX")
+	Crate:TrackClientData("CrateSizeY")
+	Crate:TrackClientData("CrateSizeZ")
+	Crate:DefineSetter(function()
+		local Class  = GetWeaponClass(ToolData)
+		local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
+		local Empty  = GetEmptyMass()
+		local Load   = math.floor(BulletData.CartMass * Rounds)
+		local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
+
+		return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
+	end)
+
+	if Ammo.OnCreateCrateInformation then
+		Ammo:OnCreateCrateInformation(Base, Crate, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoInformation", Base, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateCrateInformation", Base, Crate, ToolData, Ammo, BulletData)
+end
+
+local function AddInformation(Base, ToolData)
+	if Ammo.PreCreateAmmoInformation then
+		local Result = Ammo:PreCreateAmmoInformation(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	AddCrateInformation(Base, ToolData)
+
+	if Ammo.OnCreateAmmoInformation then
+		Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 end
 
 function ACF.GetCurrentAmmoData()
 	return BulletData
 end
 
-function ACF.UpdateAmmoMenu(Menu, Settings)
+function ACF.UpdateAmmoMenu(Menu)
 	if not Ammo then return end
 
 	local ToolData = ACF.GetAllClientData()
 	local Base = Menu.AmmoBase
 
 	BulletData = Ammo:ClientConvert(ToolData)
-	Settings   = CopySettings(Settings)
-
-	if Ammo.SetupAmmoMenuSettings then
-		Ammo:SetupAmmoMenuSettings(Settings, ToolData, BulletData)
-	end
-
-	hook.Run("ACF_SetupAmmoMenuSettings", Settings, ToolData, Ammo, BulletData)
 
 	Menu:ClearTemporal(Base)
+
+	if Ammo.PreCreateAmmoMenu then
+		local Result = Ammo:PreCreateAmmoMenu(ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoMenu", ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
 	Menu:StartTemporal(Base)
 
-	if not Settings.SuppressMenu then
-		AddPreview(Base, Settings, ToolData)
-		AddControls(Base, Settings, ToolData)
-		AddInformation(Base, Settings, ToolData)
+	if Ammo.OnCreateAmmoMenu then
+		Ammo:OnCreateAmmoMenu(Base, ToolData, BulletData)
 	end
+
+	hook.Run("ACF_OnCreateAmmoMenu", Base, ToolData, Ammo, BulletData)
+
+	AddPreview(Base, ToolData)
+	AddControls(Base, ToolData)
+	AddInformation(Base, ToolData)
 
 	Menu:EndTemporal(Base)
 end
 
-function ACF.CreateAmmoMenu(Menu, Settings)
+function ACF.CreateAmmoMenu(Menu)
 	Menu:AddTitle("Ammo Settings")
 
 	local List = Menu:AddComboBox()
@@ -277,7 +327,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 
 		Desc:SetText(Data.Description)
 
-		ACF.UpdateAmmoMenu(Menu, Settings)
+		ACF.UpdateAmmoMenu(Menu)
 	end
 
 	Menu.AmmoBase = Base

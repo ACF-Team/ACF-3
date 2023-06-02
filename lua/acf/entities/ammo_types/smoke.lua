@@ -185,7 +185,7 @@ else
 		util.Effect("ACF_Smoke", Effect)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
@@ -207,14 +207,14 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.FillerRatio = true
-		Trackers.SmokeWPRatio = true
+		Label:TrackClientData("FillerRatio")
+		Label:TrackClientData("SmokeWPRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
+	function Ammo:OnCreateAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

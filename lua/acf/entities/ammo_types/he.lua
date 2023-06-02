@@ -109,7 +109,7 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
