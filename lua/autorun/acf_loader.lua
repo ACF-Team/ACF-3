@@ -185,7 +185,7 @@ local function LoadAddon()
 	print("> Loaded " .. TotalFiles .. " files and " .. TotalLibs .. " folders.")
 	print(AddonGlobal .. " has finished loading.\n")
 
-	hook.Run(AddonGlobal .. "_OnAddonLoaded", Root)
+	hook.Run(AddonGlobal .. "_OnLoadAddon", Root)
 end
 
 concommand.Add(AddonGlobal:lower() .. "_reload", function()

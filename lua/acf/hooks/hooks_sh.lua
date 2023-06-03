@@ -4,7 +4,7 @@ local Hooks = ACF.Utilities.Hooks
 Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	--- Called when ACF is loaded and every time it's reloaded with the acf_reload console command.
 	-- @param Root The global ACF table.
-	function Gamemode:ACF_OnAddonLoaded()
+	function Gamemode:ACF_OnLoadAddon()
 	end
 
 	--- Called when a class group object is created, not necessarily for the first time.
