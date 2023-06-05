@@ -112,6 +112,14 @@ e2function string entity:acfType()
 	return this.EntType or ""
 end
 
+-- Returns the class of ACF entity
+e2function string entity:acfClass()
+	if not IsACFEntity(this) then return "" end
+	if RestrictInfo(self, this) then return "" end
+
+	return this.Class or ""
+end
+
 -- Returns 1 if the entity is an ACF engine
 e2function number entity:acfIsEngine()
 	if not validPhysics(this) then return 0 end
