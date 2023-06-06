@@ -773,6 +773,20 @@ if SERVER then
 		return This.EntType or ""
 	end
 
+	--- Returns the class of ACF entity
+	-- @server
+	-- @return string The class of the entity
+	function ents_methods:acfClass()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		return This.Class or ""
+	end
+
 	--- Returns true if the entity is an ACF engine
 	-- @server
 	-- @return boolean True if the entity is an ACF engine

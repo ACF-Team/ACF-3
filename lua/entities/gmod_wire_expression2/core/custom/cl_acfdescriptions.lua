@@ -6,6 +6,7 @@ E2Desc["acfInfoRestricted()"] = "Returns 1 if functions are not returning sensit
 E2Desc["acfName(e:)"] = "Returns the full name of an ACF entity."
 E2Desc["acfNameShort(e:)"] = "Returns the short name of an ACF entity."
 E2Desc["acfType(e:)"] = "Returns the type of ACF entity."
+E2Desc["acfClass(e:)"] = "Returns the class of ACF entity."
 E2Desc["acfIsEngine(e:)"] = "Returns 1 if the entity is an ACF engine."
 E2Desc["acfIsGearbox(e:)"] = "Returns 1 if the entity is an ACF gearbox."
 E2Desc["acfIsGun(e:)"] = "Returns 1 if the entity is an ACF gun."
