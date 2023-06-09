@@ -285,7 +285,7 @@ do -- Spawning and Updating --------------------
 
 		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:SetPlayer(Player)
-		Crate:SetModel(Model)
+		Crate:SetScaledModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()
