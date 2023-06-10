@@ -345,13 +345,13 @@ do -- ACF.GetHitAngle
 		local hitNormal = trace.HitNormal
 		local rayNormal = rayNormal:GetNormalized()
 
-		if hitNormal == v0 then
+		if trace.Hit and hitNormal == v0 then
 			local rayOrigin = trace.HitPos - rayNormal * 5000
 
 			hitNormal = rayIntersect(trace.Entity, rayOrigin, rayNormal)
 		end
 
-		return toDegree(acos(clamp(rayNormal:Dot(hitNormal), -1, 1)))
+		return toDegree(acos(clamp(-rayNormal:Dot(hitNormal), -1, 1)))
 	end
 end
 
