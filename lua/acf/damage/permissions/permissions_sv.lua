@@ -399,7 +399,7 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	this.Modes[name] = mode
 	this.ModeDescs[name] = desc
 	this.ModeThinks[name] = think or function() end
-	this.ModeDefaultAction[name] = defaultaction or false
+	this.ModeDefaultAction[name] = Either(defaultaction, nil, defaultaction)
 	local DPM = LoadMapDPM()
 
 	if DPM ~= nil then
@@ -441,20 +441,12 @@ function this.CanDamage(Entity, _, DmgInfo)
 		if IsValid(Entity) and Entity:IsPlayer() then
 			Owner = Entity
 		else
-			if this.DefaultCanDamage then
-				return
-			else
-				return this.DefaultCanDamage
-			end
+			return this.DefaultCanDamage
 		end
 	end
 
 	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
-		if this.DefaultCanDamage then
-			return
-		else
-			return this.DefaultCanDamage
-		end
+		return this.DefaultCanDamage
 	end
 
 	return this.DamagePermission(Owner, Attacker, Entity)
