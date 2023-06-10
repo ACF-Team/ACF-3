@@ -1,14 +1,14 @@
 -- This file defines damage permission with all ACF weaponry
-ACF.Permissions = {}
+ACF.Permissions = ACF.Permissions or {}
 local this = ACF.Permissions
 --TODO: make player-customizable
 this.Selfkill = true
 this.Safezones = false
-this.Player = {}
-this.Modes = {}
-this.ModeDescs = {}
-this.ModeThinks = {}
-this.ModeDefaultAction = {}
+this.Player = this.Player or {}
+this.Modes = this.Modes or {}
+this.ModeDescs = this.ModeDescs or {}
+this.ModeThinks = this.ModeThinks or {}
+this.ModeDefaultAction = this.ModeDefaultAction or {}
 --TODO: convar this
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
