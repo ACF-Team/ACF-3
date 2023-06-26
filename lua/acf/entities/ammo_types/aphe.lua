@@ -18,6 +18,14 @@ function Ammo:OnLoaded()
 	}
 end
 
+function Ammo:GetPenetration(Bullet, Speed)
+	if not isnumber(Speed) then
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	end
+
+	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
+end
+
 function Ammo:GetDisplayData(Data)
 	local Display  = Ammo.BaseClass.GetDisplayData(self, Data)
 	local FragMass = Data.ProjMass - Data.FillerMass
@@ -45,6 +53,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
+	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
