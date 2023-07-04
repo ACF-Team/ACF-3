@@ -1,4 +1,5 @@
 local ACF = ACF
+local GlobalFilter = ACF.GlobalFilter
 local Message = SERVER and ACF.PrintLog or ACF.PrintToChat
 
 local Names = {
@@ -109,6 +110,11 @@ local Settings = {
 	end,
 	AllowFunEnts = function(_, _, Value)
 		ACF.AllowFunEnts = tobool(Value)
+	end,
+	AllowProcArmor = function(_, _, Value)
+		local allowProcArmor = tobool(Value)
+		ACF.AllowProcArmor = allowProcArmor
+		GlobalFilter["acf_armor"] = not allowProcArmor
 	end,
 	WorkshopContent = function(_, _, Value)
 		local Bool = tobool(Value)
