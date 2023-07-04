@@ -469,3 +469,132 @@ do -- Extra overlay text
 		return Result
 	end
 end
+
+do -- Special squishy functions
+	local BoneList = {
+		head = {boneName = "ValveBiped.Bip01_Head1",group = "head",min = Vector(-6,-6,-4),max = Vector(8,4,4)},
+
+		spine = {boneName = "ValveBiped.Bip01_Spine",group = "chest",min = Vector(-6,-4,-9),max = Vector(18,10,9)},
+
+		lthigh = {boneName = "ValveBiped.Bip01_L_Thigh",group = "limb",min = Vector(0,-4,-4),max = Vector(18,4,4)},
+		lcalf = {boneName = "ValveBiped.Bip01_L_Calf",group = "limb",min = Vector(0,-4,-4),max = Vector(18,4,4)},
+
+		rthigh = {boneName = "ValveBiped.Bip01_R_Thigh",group = "limb",min = Vector(0,-3,-3),max = Vector(18,3,3)},
+		rcalf = {boneName = "ValveBiped.Bip01_R_Calf",group = "limb",min = Vector(0,-3,-3),max = Vector(18,3,3)},
+	}
+
+	local ArmorHitboxes = { -- only applied if the entity has armor greater than 0
+		helmet = {boneName = "ValveBiped.Bip01_Head1",group = "helmet",min = Vector(4.5,-6.5,-4.5),max = Vector(8.5,4.5,4.5)},
+		vest = {boneName = "ValveBiped.Bip01_Spine",group = "vest",min = Vector(-5,-5,-8),max = Vector(17,11,8)},
+	}
+
+	-- The goal of this is to provide a much sturdier way to get the part of a player that got hit with a bullet
+	-- This will ignore any bone manipulation too
+	function ACF.GetBestSquishyHitBox(Entity,RayStart,RayDir)
+		local Bones = {}
+		local CheckList = {}
+
+		for k,v in pairs(BoneList) do
+			CheckList[k] = v
+		end
+
+		if Entity:IsPlayer() and Entity:Armor() > 0 then
+			for k,v in pairs(ArmorHitboxes) do
+				CheckList[k] = v
+			end
+		end
+
+		--if true then return "none" end
+
+		for k,v in pairs(CheckList) do
+			local bone = Entity:LookupBone(v.boneName)
+			if bone then Bones[k] = bone end
+		end
+
+		if table.IsEmpty(Bones) then return "none" end
+
+		local HitBones = {}
+
+		for k,v in pairs(Bones) do
+			local BoneData = CheckList[k]
+			local BonePos,BoneAng = Entity:GetBonePosition(v)
+
+			local HitPos = util.IntersectRayWithOBB(RayStart, RayDir * 64, BonePos, BoneAng, BoneData.min, BoneData.max)
+			if HitPos ~= nil then
+				HitBones[k] = HitPos
+			end
+		end
+
+		if table.IsEmpty(HitBones) then return "none" end -- No boxes got hit, so return the default
+		if table.Count(HitBones) == 1 then return CheckList[next(HitBones)].group end -- Single box got hit, just return that
+
+		local BestChoice = next(HitBones)
+		local BestDist = HitBones[BestChoice]:DistToSqr(RayStart)
+
+		for k,_ in pairs(HitBones) do
+			if BestChoice == k then continue end
+			local BoxPosDist = HitBones[k]:DistToSqr(RayStart)
+			if BoxPosDist < BestDist then BestChoice = k BestDist = BoxPosDist end
+		end
+
+		return CheckList[BestChoice].group
+	end
+
+	ACF.SquishyFuncs = {}
+
+	function ACF.SquishyFuncs.DamageHelmet(Entity,HitRes,DmgResult)
+		local Damage = 0
+
+		DmgResult:SetThickness(12.5) -- helmet armor, sorta just shot in the dark for thickness
+		HitRes = DmgResult:Compute()
+
+		if HitRes.Overkill > 0 then -- Went through helmet
+			return ACF.SquishyFuncs.DamageHead(Entity,HitRes,DmgResult)
+		else return Damage,HitRes end
+	end
+
+	function ACF.SquishyFuncs.DamageHead(Entity,HitRes,DmgResult)
+		local Damage = 0
+		local Mass = Entity:GetPhysicsObject():GetMass() or 100
+
+		DmgResult:SetThickness(Mass * 0.075) -- skull is around 7-8mm on average for humans, but this gets thicker with bigger creatures
+
+		HitRes = DmgResult:Compute()
+		Damage = Damage + HitRes.Damage * 10
+
+		if HitRes.Overkill > 0 then -- Went through skull
+			DmgResult:SetThickness(0.01) -- squishy squishy brain matter, no resistance
+			HitRes = DmgResult:Compute()
+			Damage = Damage + (HitRes.Damage * 50 * math.max(1,HitRes.Overkill / 4)) -- yuge damage, yo brains just got scrambled by a BOOLET
+			return Damage,HitRes
+		else return Damage,HitRes end
+	end
+
+	function ACF.SquishyFuncs.DamageVest(Entity,HitRes,DmgResult)
+		local Damage = 0
+
+		DmgResult:SetThickness(15) -- Vest armor, also a shot in the dark for thickness
+		HitRes = DmgResult:Compute()
+
+		if HitRes.Overkill > 0 then -- Went through vest
+			return ACF.SquishyFuncs.DamageChest(Entity,HitRes,DmgResult)
+		else return Damage,HitRes end
+	end
+
+	function ACF.SquishyFuncs.DamageChest(Entity,HitRes,DmgResult)
+		local Damage = 0
+		local Size = Entity:BoundingRadius()
+
+		DmgResult:SetThickness(Size * 0.25 * 0.02) -- the SKIN and SKELETON, just some generic trashy "armor"
+
+		HitRes = DmgResult:Compute()
+		Damage = Damage + HitRes.Damage * 10
+
+		if HitRes.Overkill > 0 then -- Went through body surface
+			DmgResult:SetThickness(0.05) -- fleshy organs, ain't much here
+			HitRes = DmgResult:Compute()
+			Damage = Damage + (HitRes.Damage * 25 * math.max(1,HitRes.Overkill / 5)) -- some decent damage, vital organs got hurt for sure
+			return Damage,HitRes
+		else return Damage,HitRes end
+	end
+end
