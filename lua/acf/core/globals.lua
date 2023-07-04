@@ -19,6 +19,7 @@ do -- ACF global vars
 	ACF.RecoilPush         = true -- Whether or not ACF guns apply recoil
 	ACF.Volume             = 1 -- Global volume for ACF sounds
 	ACF.AllowFunEnts       = true -- Allows entities listed under the Fun Stuff option to be used
+	ACF.AllowProcArmor     = false --Allows procedural armor entities to be used.
 	ACF.WorkshopContent    = true -- Enable workshop content download for clients
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
