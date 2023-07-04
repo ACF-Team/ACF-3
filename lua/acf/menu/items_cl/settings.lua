@@ -265,7 +265,7 @@ do -- Serverside settings
 		end)
 
 		Base:AddHelp("Changes on this option will only take effect once the players reload their menu.")
-	
+
 		local AllowProcArmor = Base:AddCheckBox("Allow use of Procedural Armor.")
 		AllowProcArmor:SetServerData("AllowProcArmor", "OnChange")
 		AllowProcArmor:DefineSetter(function(Panel, _, _, Value)
