@@ -31,7 +31,7 @@ function EFFECT:Init(Data)
 	debugoverlay.Cross(Origin, 15, 15, Yellow, true)
 	--debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
 
-	TraceData.start  = Origin -- Adding - Normal makes it difficult for the trace to reach for some reason, even though it should reach. Will look into it sometime later (probably not).
+	TraceData.start  = Origin -- Adding - Normal makes it difficult for the trace to reach for some reason, even though it should reach.
 	TraceData.endpos = Origin + Normal * Radius
 
 	local Impact     = TraceLine(TraceData)
@@ -172,7 +172,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	for _ = 0, Density * Mult do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin+Angle:Up() * math.Rand(5, 50) * Radius)
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(5, 50) * Radius)
 
 		if Smoke then
 			Smoke:SetVelocity(Angle:Up() * math.Rand(5, 70 * Radius))
@@ -188,8 +188,8 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
 			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
 		end
-		
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin+Angle:Up() * math.Rand(40, 100) * Radius)
+
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(40, 100) * Radius)
 
 		if Smoke then
 			Smoke:SetVelocity(Angle:Up() * math.Rand(5, 10 * Radius))
@@ -205,7 +205,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
 			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
 		end
-		
+
 		local EF = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
 
 		if EF then
