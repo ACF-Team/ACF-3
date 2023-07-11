@@ -731,37 +731,3 @@ do -- File creation
 		return util.JSONToTable(file.Read(FullPath, "DATA"))
 	end
 end
-
-do -- Entity metatable method overriding
-	-- One of the limitation of the entity __index metamethod is that you cannot override methods that exist on it
-	-- So having, for example, a custom ENT:SetPos method for a single class was impossible since it would never be called
-	-- With this hook, all you need to do is set the ENT.UseCustomIndex flag to true
-	-- You might still need to call the original function from the entity metatable inside yours.
-
-	local EntMeta = FindMetaTable("Entity")
-	local Index   = EntMeta.__index
-	local SENTs   = scripted_ents
-	local Custom  = {}
-
-	function EntMeta:__index(Key, ...)
-		local Class = Custom[self]
-
-		if Class and Key then
-			local Value = SENTs.GetMember(Class, Key)
-
-			if Value ~= nil then return Value end
-		end
-
-		return Index(self, Key, ...)
-	end
-
-	hook.Add("OnEntityCreated", "ACF Custom __index Metamethod", function(Entity)
-		if not Entity.UseCustomIndex then return end
-
-		Custom[Entity] = Entity:GetClass()
-
-		Entity:CallOnRemove("ACF Custom Index", function()
-			Custom[Entity] = nil
-		end)
-	end)
-end

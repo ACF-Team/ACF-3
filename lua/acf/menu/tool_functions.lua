@@ -162,6 +162,8 @@ do -- Tool Functions Loader
 			local Name = net.ReadString()
 			local Value = net.ReadInt(8)
 
+			if not IsValid( LocalPlayer() ) then return end
+
 			local Data = Tools[ToolName]
 			local Tool = LocalPlayer():GetTool(ToolName)
 

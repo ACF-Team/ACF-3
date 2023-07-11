@@ -94,7 +94,7 @@ do -- Spawning and Updating
 		Player:AddCount("_acf_armor", Plate)
 		Player:AddCleanup("_acf_armor", Plate)
 
-		Plate:SetModel("models/holograms/cube.mdl")
+		Plate:SetScaledModel("models/holograms/cube.mdl")
 		Plate:SetMaterial("sprops/textures/sprops_metal1")
 		Plate:SetPlayer(Player)
 		Plate:SetAngles(Angle)
