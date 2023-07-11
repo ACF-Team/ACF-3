@@ -345,7 +345,7 @@ do -- ACF.GetHitAngle
 		local hitNormal = trace.HitNormal
 		local rayNormal = rayNormal:GetNormalized()
 
-		if trace.Hit and hitNormal == v0 then
+		if trace.Hit and hitNormal == v0 and trace.Entity ~= game.GetWorld() then
 			local rayOrigin = trace.HitPos - rayNormal * 5000
 
 			hitNormal = rayIntersect(trace.Entity, rayOrigin, rayNormal)
