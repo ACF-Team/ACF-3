@@ -83,7 +83,7 @@ do -- Spawn and Update functions
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
 
-		Entity:SetScaledModel(FuelTank.Model)
+		Entity:SetModel(FuelTank.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
