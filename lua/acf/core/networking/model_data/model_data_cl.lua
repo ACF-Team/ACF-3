@@ -57,7 +57,7 @@ function ModelData.GetModelData(Model)
 	end
 end
 
-hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
+hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 	local CheckEntity
 
 	local function UpdateEntity(Entity)
@@ -122,7 +122,7 @@ hook.Add("ACF_OnAddonLoaded", "ACF_ModelData", function()
 		end
 	end)
 
-	hook.Remove("ACF_OnAddonLoaded", "ACF_ModelData")
+	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
 end)
 
 hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)

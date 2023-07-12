@@ -55,7 +55,7 @@ end
 Classes.AddGroupedFunctions(Engines, Entries)
 
 do -- Adding engine performance data
-	hook.Add("ACF_OnAddonLoaded", "ACF Engine Performance", function()
+	hook.Add("ACF_OnLoadAddon", "ACF Engine Performance", function()
 		Loaded = true
 
 		for Name in pairs(Engines.GetEntries()) do
@@ -64,6 +64,6 @@ do -- Adding engine performance data
 			end
 		end
 
-		hook.Remove("ACF_OnAddonLoaded", "ACF Engine Performance")
+		hook.Remove("ACF_OnLoadAddon", "ACF Engine Performance")
 	end)
 end
