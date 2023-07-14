@@ -13,8 +13,8 @@ local Materials = {
 	})
 }
 
-local function RenderDamage(bDrawingDepth, bDrawingSkybox)
-	if bDrawingDepth or bDrawingSkybox then return end
+local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
+	if bDrawingDepth or isDraw3DSkybox then return end
 	cam.Start3D(EyePos(), EyeAngles())
 
 	for Entity in pairs(Damaged) do

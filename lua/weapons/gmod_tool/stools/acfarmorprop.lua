@@ -280,8 +280,8 @@ if CLIENT then
 	local GreenSphere = Color(0, 200, 0, 50)
 	local GreenFrame = Color(0, 200, 0, 100)
 
-	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function(bDrawingDepth, bDrawingSkybox)
-		if bDrawingDepth or bDrawingSkybox then return end
+	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function(bDrawingDepth, _, isDraw3DSkybox)
+		if bDrawingDepth or isDraw3DSkybox then return end
 		local Player = LocalPlayer()
 		local Weapon = Player:GetActiveWeapon()
 		if not IsValid( Weapon ) then return end
