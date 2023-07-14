@@ -22,7 +22,7 @@ local Colors = {
 
 function EFFECT:Init(Data)
 	local Origin  = Data:GetOrigin()
-	local Normal  = Data:GetNormal()
+	local Normal  = Data:GetNormal():GetNormalized() -- Gross
 	local Size    = Data:GetScale()
 	local Radius  = math.max(Size * 0.02, 1)
 	local Emitter = ParticleEmitter(Origin)
@@ -31,7 +31,7 @@ function EFFECT:Init(Data)
 	debugoverlay.Cross(Origin, 15, 15, Yellow, true)
 	--debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
 
-	TraceData.start  = Origin -- Adding - Normal makes it difficult for the trace to reach for some reason, even though it should reach.
+	TraceData.start  = Origin - Normal * 5
 	TraceData.endpos = Origin + Normal * Radius
 
 	local Impact     = TraceLine(TraceData)
