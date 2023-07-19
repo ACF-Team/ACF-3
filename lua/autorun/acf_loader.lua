@@ -1,3 +1,3 @@
-require("gloader")
+include("includes/gloader.lua")
 
 gloader.Load("ACF", "acf")
