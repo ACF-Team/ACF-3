@@ -39,7 +39,7 @@ function EFFECT:Init(Data)
 
 	if Impact.HitSky or not Impact.Hit then
 		TraceData.start = Origin
-		TraceData.endpos = Origin - Vector(0,0,Size*2)
+		TraceData.endpos = Origin - Vector(0,0,Size * 2)
 		TraceData.collisiongroup = 1
 		local Impact = TraceLine(TraceData)
 		self:Airburst(Emitter, Impact.Hit, Origin, Impact.HitPos, Radius * 0.5, Normal, SmokeColor, Colors[Impact.MatType] or Colors.Default, Mult)
