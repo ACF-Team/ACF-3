@@ -38,7 +38,11 @@ function EFFECT:Init(Data)
 	local SmokeColor = Colors[Impact.MatType] or Colors.Default
 
 	if Impact.HitSky or not Impact.Hit then
-		self:Airburst(Emitter, Origin, Radius * 0.75, Normal, SmokeColor, Mult)
+		TraceData.start = Origin
+		TraceData.endpos = Origin - Vector(0,0,Size*2)
+		TraceData.collisiongroup = 1
+		local Impact = TraceLine(TraceData)
+		self:Airburst(Emitter, Impact.Hit, Origin, Impact.HitPos, Radius * 0.5, Normal, SmokeColor, Colors[Impact.MatType] or Colors.Default, Mult)
 	else
 		local HitNormal = Impact.HitNormal
 		local Entity    = Impact.Entity
@@ -227,7 +231,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	Emitter:Finish()
 end
 
-function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor, Mult)
+function EFFECT:Airburst(Emitter, GroundHit, Origin, GroundOrigin, Radius, Direction, SmokeColor, GroundColor, Mult)
 	self:Core(Origin, Radius)
 
 	if not IsValid(Emitter) then return end
@@ -306,14 +310,18 @@ function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor, Mult)
 	end
 
 	local rv = math.Clamp(math.random(8,12) * Mult * Radius,1,150)
+	local GroundAngle = Angle(-90,0,0)
 	local Angle = Direction:Angle()
-
+	GroundAngle:RotateAroundAxis(GroundAngle:Forward(), math.random(1,300))
 	Angle:RotateAroundAxis(Angle:Forward(), math.random(1,300))
+	local DietimeMod = math.Clamp(Radius, 1, 14)
 
 	for _ = 0, rv do
-		Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
+		local rrv = 360 / rv
+		Angle:RotateAroundAxis(Angle:Forward(), rrv)
+		GroundAngle :RotateAroundAxis(GroundAngle:Forward(), rrv)
 
-		Angle:RotateAroundAxis(Angle:Forward(), 360 / rv)
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(5, 20) * Radius)
 
 		if Smoke then
 			local Gravity = Vector(math.random(-5, 5) * Radius, math.random(-5, 5) * Radius, -math.random(20, 40))
@@ -348,12 +356,30 @@ function EFFECT:Airburst(Emitter, Origin, Radius, Direction, SmokeColor, Mult)
 		end
 
 		for _ = 0, 2 do
+			if GroundHit then
+				local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), GroundOrigin + GroundAngle:Up() * math.Rand(5, 200) * Radius)
+
+				if Smoke then
+					Smoke:SetVelocity(GroundAngle:Up() * math.Rand(10, 50 * Radius))
+					Smoke:SetLifeTime(0)
+					Smoke:SetDieTime(math.Rand(0.2, 0.4) * DietimeMod)
+					Smoke:SetStartAlpha(math.Rand(100, 150))
+					Smoke:SetEndAlpha(0)
+					Smoke:SetStartSize(15 * Radius)
+					Smoke:SetEndSize(25 * Radius)
+					Smoke:SetRoll(math.Rand(0, 360))
+					Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
+					Smoke:SetAirResistance(12 * Radius)
+					Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
+					Smoke:SetColor(GroundColor.r, GroundColor.g, GroundColor.b)
+				end
+			end
 			local Spark = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin + (Angle:Up() * math.random(1,10) * Radius))
 
 			if Spark then
-				Spark:SetVelocity((Angle:Up() + Direction * math.random(2,40)):GetNormalized() * math.random(2000,4000) * (Radius * 0.2))
+				Spark:SetVelocity((Angle:Up() + Direction * math.random(2,40)):GetNormalized() * math.random(5000,7000) * (Radius * 0.2))
 				Spark:SetLifeTime(0)
-				Spark:SetDieTime(math.Rand(1, 2 * (Radius * 0.15)))
+				Spark:SetDieTime(0.3)
 				Spark:SetStartAlpha(255)
 				Spark:SetEndAlpha(0)
 				Spark:SetStartSize(math.random(2,4) * 0.2 * Radius)
