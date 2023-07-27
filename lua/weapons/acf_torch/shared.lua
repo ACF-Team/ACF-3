@@ -282,7 +282,13 @@ function SWEP:SecondaryAttack()
 	if not ACF.Check(Entity) then return end
 
 	if Entity:IsPlayer() or Entity:IsNPC() then
-		Entity:TakeDamage(1, Owner, self)
+		local damageInfo = DamageInfo()
+		damageInfo:SetDamage(1)
+		damageInfo:SetAttacker(Owner)
+		damageInfo:SetInflictor(self)
+		damageInfo:SetDamageType(DMG_DISSOLVE) -- Applies combine ball death effect
+		damageInfo:SetDamagePosition(Trace.HitPos)
+		Entity:TakeDamageInfo(damageInfo)
 
 		local effect = EffectData()
 			effect:SetOrigin(Trace.HitPos)
