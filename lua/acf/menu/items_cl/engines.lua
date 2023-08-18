@@ -32,8 +32,8 @@ local function UpdateEngineStats(Label, Data)
 	local MinPower   = RPM.PeakMin
 	local MaxPower   = RPM.PeakMax
 	local Mass       = ACF.GetProperMass(Data.Mass)
-	local Torque     = math.floor(Data.Torque)
-	local TorqueFeet = math.floor(Data.Torque * 0.73)
+	local Torque     = math.Round(Data.Torque)
+	local TorqueFeet = math.Round(Data.Torque * 0.73)
 	local Type       = EngineTypes.Get(Data.Type)
 	local Efficiency = Type.Efficiency * GetEfficiencyMult()
 	local FuelList   = ""
@@ -58,7 +58,7 @@ local function UpdateEngineStats(Label, Data)
 		Data.Fuel[K] = Fuel -- TODO: Replace once engines use the proper class functions
 	end
 
-	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.floor(PeakkW), math.floor(PeakkW * 1.34), PeakkWRPM)
+	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.Round(PeakkW), math.Round(PeakkW * 1.34), PeakkWRPM)
 
 	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, FuelList, Power))
 end

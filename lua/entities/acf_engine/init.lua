@@ -527,9 +527,9 @@ function ENT:UpdateOutputs()
 	local Power = self.Torque * self.FlyRPM / 9548.8
 
 	WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
-	WireLib.TriggerOutput(self, "Torque", math.floor(self.Torque))
-	WireLib.TriggerOutput(self, "Power", math.floor(Power))
-	WireLib.TriggerOutput(self, "RPM", math.floor(self.FlyRPM))
+	WireLib.TriggerOutput(self, "Torque", Round(self.Torque))
+	WireLib.TriggerOutput(self, "Power", Round(Power))
+	WireLib.TriggerOutput(self, "RPM", Round(self.FlyRPM))
 end
 
 local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
