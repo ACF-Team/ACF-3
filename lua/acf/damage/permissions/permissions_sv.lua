@@ -1,6 +1,8 @@
 -- This file defines damage permission with all ACF weaponry
+local ACF = ACF
 ACF.Permissions = ACF.Permissions or {}
 local this = ACF.Permissions
+local Messages = ACF.Utilities.Messages
 --TODO: make player-customizable
 this.Selfkill = true
 this.Safezones = false
@@ -362,7 +364,7 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 
 		for _, v in ipairs(player.GetAll()) do
 			if v:IsAdmin() then
-				v:SendLua("chat.AddText(Color(255,0,0),\"Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!\")")
+				Messages.SendChat(v, "Info", "Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!")
 			end
 		end
 
@@ -375,9 +377,7 @@ end)
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
-	for _, v in ipairs(player.GetAll()) do
-		v:SendLua("chat.AddText(Color(255,0,0),\"Damage protection has been changed to " .. mode .. " mode!\")")
-	end
+	Messages.SendChat(_, "Info", "Damage protection has been changed to " .. mode .. " mode!")
 end
 
 hook.Add("ACF_ProtectionModeChanged", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
@@ -558,8 +558,9 @@ net.Receive("ACF_dmgfriends", function(_, ply)
 
 			if targ then
 				local note = v and "given you" or "removed your"
+				local nick = string.format("%q", ply:Nick()) -- Ensuring that the name is Lua safe
 				--Msg("Sending", targ, " ", note, "\n")
-				targ:SendLua(string.format("GAMEMODE:AddNotify(%q,%s,7)", ply:Nick() .. " has " .. note .. " permission to damage their objects with ACF!", "NOTIFY_GENERIC"))
+				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
 			end
 		end
 	end

@@ -87,7 +87,6 @@ function this.ClientPanel(Panel)
 	end
 
 	net.Start("ACF_refreshfriends")
-	net.WriteBit(true)
 	net.SendToServer(ply)
 end
 
