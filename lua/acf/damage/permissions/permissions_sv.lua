@@ -1,6 +1,8 @@
 -- This file defines damage permission with all ACF weaponry
+local ACF = ACF
 ACF.Permissions = ACF.Permissions or {}
 local this = ACF.Permissions
+local Messages = ACF.Utilities.Messages
 --TODO: make player-customizable
 this.Selfkill = true
 this.Safezones = false
@@ -13,6 +15,7 @@ this.ModeDefaultAction = this.ModeDefaultAction or {}
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
+local curMap = game.GetMap()
 
 local function msgtoconsole(_, msg)
 	print(msg)
@@ -73,7 +76,7 @@ local function validateSZs(safetable)
 end
 
 local function getMapFilename()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 
 	return mapSZDir .. mapname .. ".txt"
 end
@@ -89,12 +92,12 @@ local function getMapSZs()
 end
 
 local function SaveMapDPM(mode)
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 	file.Write(mapDPMDir .. mapname .. ".txt", mode)
 end
 
 local function LoadMapDPM()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 
 	return file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
 end
@@ -358,11 +361,11 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		if this.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
 		this.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. game.GetMap() .. " set to: " .. mode)
+		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
 
 		for _, v in ipairs(player.GetAll()) do
 			if v:IsAdmin() then
-				v:SendLua("chat.AddText(Color(255,0,0),\"Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!\")")
+				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
 			end
 		end
 
@@ -375,9 +378,7 @@ end)
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
-	for _, v in ipairs(player.GetAll()) do
-		v:SendLua("chat.AddText(Color(255,0,0),\"Damage protection has been changed to " .. mode .. " mode!\")")
-	end
+	Messages.SendChat(_, "Info", "Damage protection has been changed to " .. mode .. " mode!")
 end
 
 hook.Add("ACF_ProtectionModeChanged", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
@@ -558,8 +559,9 @@ net.Receive("ACF_dmgfriends", function(_, ply)
 
 			if targ then
 				local note = v and "given you" or "removed your"
+				local nick = string.Trim(string.format("%q", ply:Nick()), "\"") -- Ensuring that the name is Lua safe
 				--Msg("Sending", targ, " ", note, "\n")
-				targ:SendLua(string.format("GAMEMODE:AddNotify(%q,%s,7)", ply:Nick() .. " has " .. note .. " permission to damage their objects with ACF!", "NOTIFY_GENERIC"))
+				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
 			end
 		end
 	end

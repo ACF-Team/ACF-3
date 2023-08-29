@@ -15,6 +15,7 @@ if not ACF or not ACF.Permissions or not ACF.Permissions.RegisterMode then
 end
 
 local perms = ACF.Permissions
+local Messages = ACF.Utilities.Messages
 
 -- a short description of what the mode does
 local modedescription = "Enables safe-zones and battlefield. No ACF damage can occur in a safe-zone."
@@ -47,7 +48,7 @@ end
 
 local function tellPlyAboutZones(ply, zone)
 	if perms.DamagePermission ~= modepermission then return end
-	ply:SendLua("chat.AddText(Color(" .. (zone and "0,255,0" or "255,0,0") .. "),\"You have entered the " .. (zone and zone .. " safezone." or "battlefield!") .. "\")")
+	Messages.SendChat(ply, zone and "Normal" or "Warning", "You have entered the " .. (zone and zone .. " safezone." or "battlefield!"))
 end
 
 hook.Add("ACF_PlayerChangedZone", "ACF_TellPlyAboutSafezoneBattle", tellPlyAboutZones)
@@ -61,7 +62,7 @@ end
 hook.Add("PlayerNoClip", "ACF_DisableNoclipPressInBattle", DisableNoclipPressInBattle)
 
 local function modethink()
-	for _, ply in pairs(player.GetAll()) do
+	for _, ply in ipairs(player.GetAll()) do
 		--print(ply:GetPos(), perms.IsInSafezone(ply:GetPos()))
 		if not perms.IsInSafezone(ply:GetPos()) then
 			ply:GodDisable()

@@ -1,18 +1,13 @@
-
-
 local Menu = {}
 
 -- the category the menu goes under
 Menu.Category = "ACF"
-
 
 -- the name of the item
 Menu.Name = "Set Permission Mode"
 
 -- the convar to execute when the player clicks on the tab
 Menu.Command = ""
-
-
 
 local Permissions = {}
 
@@ -25,22 +20,17 @@ local currentMode
 local currentModeTxt = "\nThe current damage permission mode is %s."
 local introTxt = "Damage Permission Modes change the way that ACF damage works.\n\nYou can change the DP mode if you are an admin."
 local list
-
-
+local firstMenuOpen = true
 
 net.Receive("ACF_refreshpermissions", function()
-
 	PermissionModes = net.ReadTable()
 	CurrentPermission = net.ReadString()
 	DefaultPermission = net.ReadString()
 
 	Permissions:Update()
-
 end)
 
-
 function Menu.MakePanel(Panel)
-
 	Permissions:RequestUpdate()
 
 	Panel:ClearControls()
@@ -48,7 +38,6 @@ function Menu.MakePanel(Panel)
 	if not PermissionModes then return end
 
 	Panel:SetName("Permission Modes")
-
 
 	local txt = Panel:Help(introTxt)
 	txt:SetContentAlignment( TEXT_ALIGN_CENTER )
@@ -65,9 +54,7 @@ function Menu.MakePanel(Panel)
 
 	Panel:AddItem(currentMode)
 
-
 	if LocalPlayer():IsAdmin() then
-
 		list = vgui.Create("DListView")
 		list:AddColumn("Mode")
 		list:AddColumn("Active")
@@ -79,7 +66,7 @@ function Menu.MakePanel(Panel)
 			list:AddLine(permission, "", "")
 		end
 
-		for id,line in pairs(list:GetLines()) do
+		for id, line in pairs(list:GetLines()) do
 			if line:GetValue(1) == CurrentPermission then
 				list:GetLine(id):SetValue(2,"Yes")
 			end
@@ -97,7 +84,6 @@ function Menu.MakePanel(Panel)
 
 		Panel:AddItem(list)
 
-
 		txt = Panel:Help("What this mode does:")
 		txt:SetContentAlignment( TEXT_ALIGN_CENTER )
 		--txt:SetAutoStretchVertical(false)
@@ -107,14 +93,12 @@ function Menu.MakePanel(Panel)
 
 		Panel:AddItem(txt)
 
-
 		ModeDescTxt = Panel:Help(PermissionModes[CurrentPermission] or ModeDescDefault)
 		ModeDescTxt:SetContentAlignment( TEXT_ALIGN_CENTER )
 		--txt:SetAutoStretchVertical(false)
 		ModeDescTxt:SizeToContents()
 
 		Panel:AddItem(ModeDescTxt)
-
 
 		local button = Panel:Button("Set Permission Mode")
 		button.DoClick = function()
@@ -130,7 +114,6 @@ function Menu.MakePanel(Panel)
 
 		Panel:AddItem(button)
 
-
 		local button2 = Panel:Button("Set Default Permission Mode")
 		button2.DoClick = function()
 			local line = list:GetLine(list:GetSelectedLine())
@@ -144,15 +127,12 @@ function Menu.MakePanel(Panel)
 		end
 
 		Panel:AddItem(button2)
-
 	end
 end
 
-
 function Permissions:Update()
-
 	if list then
-		for id,line in pairs(list:GetLines()) do
+		for id, line in pairs(list:GetLines()) do
 			if line:GetValue(1) == CurrentPermission then
 				list:GetLine(id):SetValue(2,"Yes")
 			else
@@ -170,22 +150,19 @@ function Permissions:Update()
 		currentMode:SetText(string.format(currentModeTxt, CurrentPermission))
 		currentMode:SizeToContents()
 	end
-
 end
-
 
 function Permissions:RequestUpdate()
 	net.Start("ACF_refreshpermissions")
-		net.WriteBit(true)
 	net.SendToServer()
 end
 
-
 function Menu.OnSpawnmenuOpen()
+	if not firstMenuOpen then return end
+
+	firstMenuOpen = false
 	Permissions:RequestUpdate()
 end
-
-
 
 local cat = Menu.Category
 local item = Menu.Name
@@ -194,9 +171,7 @@ local open = Menu.OnSpawnmenuOpen
 local panel = Menu.MakePanel
 local hookname = string.Replace(item," ","_")
 
-
 hook.Add("SpawnMenuOpen", "ACF.SpawnMenuOpen." .. hookname, open)
-
 
 hook.Add("PopulateToolMenu", "ACF.PopulateToolMenu." .. hookname, function()
 	spawnmenu.AddToolMenuOption("Utilities", cat, item, item, var, "", panel)

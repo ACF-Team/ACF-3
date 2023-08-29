@@ -71,7 +71,7 @@ function this.ClientPanel(Panel)
 	getPanelChecks = function() return checks end
 	local Players = player.GetAll()
 
-	for _, tar in pairs(Players) do
+	for _, tar in ipairs(Players) do
 		if (IsValid(tar)) then
 			local check = Panel:CheckBox(tar:Nick())
 			check.steamid = tar:SteamID()
@@ -87,7 +87,6 @@ function this.ClientPanel(Panel)
 	end
 
 	net.Start("ACF_refreshfriends")
-	net.WriteBit(true)
 	net.SendToServer(ply)
 end
 
