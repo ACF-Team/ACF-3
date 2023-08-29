@@ -15,6 +15,7 @@ this.ModeDefaultAction = this.ModeDefaultAction or {}
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
+local curMap = game.GetMap()
 
 local function msgtoconsole(_, msg)
 	print(msg)
@@ -75,7 +76,7 @@ local function validateSZs(safetable)
 end
 
 local function getMapFilename()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 
 	return mapSZDir .. mapname .. ".txt"
 end
@@ -91,12 +92,12 @@ local function getMapSZs()
 end
 
 local function SaveMapDPM(mode)
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 	file.Write(mapDPMDir .. mapname .. ".txt", mode)
 end
 
 local function LoadMapDPM()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 
 	return file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
 end
@@ -360,11 +361,11 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		if this.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
 		this.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. game.GetMap() .. " set to: " .. mode)
+		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
 
 		for _, v in ipairs(player.GetAll()) do
 			if v:IsAdmin() then
-				Messages.SendChat(v, "Info", "Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!")
+				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
 			end
 		end
 
