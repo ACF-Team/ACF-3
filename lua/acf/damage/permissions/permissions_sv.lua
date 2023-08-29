@@ -558,7 +558,7 @@ net.Receive("ACF_dmgfriends", function(_, ply)
 
 			if targ then
 				local note = v and "given you" or "removed your"
-				local nick = string.format("%q", ply:Nick()) -- Ensuring that the name is Lua safe
+				local nick = string.Trim(string.format("%q", ply:Nick()), "\"") -- Ensuring that the name is Lua safe
 				--Msg("Sending", targ, " ", note, "\n")
 				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
 			end
