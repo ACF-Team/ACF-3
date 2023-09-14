@@ -163,6 +163,14 @@ do -- Serverside settings
 			return Value
 		end)
 
+		local RequireFuel = Base:AddCheckBox("Require fuel usage for engines.")
+		RequireFuel:SetServerData("RequireFuel", "OnChange")
+		RequireFuel:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
 		local MaxThickness = Base:AddSlider("Max Armor Thickness", ACF.MinimumArmor, ACF.MaximumArmor)
 		MaxThickness:SetServerData("MaxThickness", "OnValueChanged")
 		MaxThickness:DefineSetter(function(Panel, _, _, Value)
@@ -179,7 +187,7 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local Fuel = Base:AddSlider("Fuel Factor", 0, 30, 2)
+		local Fuel = Base:AddSlider("Fuel Factor", 0.01, 30, 2)
 		Fuel:SetServerData("FuelFactor", "OnValueChanged")
 		Fuel:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)

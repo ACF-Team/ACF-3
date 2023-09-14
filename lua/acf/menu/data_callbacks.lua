@@ -45,6 +45,15 @@ local Settings = {
 
 		Message("Info", "ACF Missile Racks have been " .. (Bool and "enabled." or "disabled."))
 	end,
+	RequireFuel = function(_, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.RequireFuel == Bool then return end
+
+		ACF.RequireFuel = Bool
+
+		Message("Info", "ACF engine fuel requirements have been " .. (Bool and "enabled." or "disabled."))
+	end,
 	HealthFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
 
@@ -70,7 +79,7 @@ local Settings = {
 		Message("Info", "ACF Armor Mod changed to a factor of " .. Factor)
 	end,
 	FuelFactor = function(_, _, Value)
-		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0, 30)
+		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 30)
 
 		if ACF.FuelFactor == Factor then return end
 

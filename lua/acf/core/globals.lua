@@ -121,6 +121,7 @@ do -- ACF global vars
 	ACF.GunInaccuracyBias  = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
+	ACF.RequireFuel        = true -- Whether fuel usage should required for engines
 	ACF.FuelRate           = 1 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
