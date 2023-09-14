@@ -695,7 +695,7 @@ function ENT:CalcRPM()
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		FuelTank:Consume(Consumption)
-	elseif ACF.FuelFactor == 0 then -- Fuel consumption is disabled
+	elseif ACF.FuelFactor ~= 0 then -- Stay active if fuel consumption is disabled
 		SetActive(self, false)
 
 		self.FuelUsage = 0
