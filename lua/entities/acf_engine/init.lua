@@ -116,11 +116,6 @@ local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
 
--- Fuel consumption is increased on competitive servers
-local function GetEfficiencyMult()
-	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
-end
-
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = math.Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
@@ -309,7 +304,7 @@ do -- Spawn and Update functions
 		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
 		Entity.FuelType         = next(Engine.Fuel)
 		Entity.EngineType       = Type.ID
-		Entity.Efficiency       = Type.Efficiency * GetEfficiencyMult()
+		Entity.Efficiency       = Type.Efficiency * ACF.FuelRate
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
@@ -687,7 +682,7 @@ function ENT:CalcRPM()
 	end
 	local Throttle = self.RevLimited and 0 or self.Throttle
 
-	--calculate fuel usage
+	-- Calculate fuel usage
 	if IsValid(FuelTank) then
 		self.FuelTank = FuelTank
 		self.FuelType = FuelTank.FuelType
@@ -697,7 +692,7 @@ function ENT:CalcRPM()
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		FuelTank:Consume(Consumption)
-	elseif ACF.Gamemode ~= 1 then -- Sandbox gamemode servers will require no fuel
+	elseif ACF.FuelFactor == 0 then -- Fuel consumption is disabled
 		SetActive(self, false)
 
 		self.FuelUsage = 0

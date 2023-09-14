@@ -2,27 +2,21 @@ local ACF = ACF
 local GlobalFilter = ACF.GlobalFilter
 local Message = SERVER and ACF.PrintLog or ACF.PrintToChat
 
-local Names = {
-	[1] = "Sandbox",
-	[2] = "Classic",
-	[3] = "Competitive"
-}
-
 local Settings = {
-	Gamemode = function(_, _, Value)
-		local Mode = math.Clamp(math.floor(tonumber(Value) or 2), 1, 3)
-
-		if Mode == ACF.Gamemode then return end
-
-		ACF.Gamemode = Mode
-
-		Message("Info", "ACF Gamemode has been changed to " .. Names[Mode])
-	end,
 	ServerDataAllowAdmin = function(_, _, Value)
 		ACF.AllowAdminData = tobool(Value)
 	end,
 	RestrictInfo = function(_, _, Value)
 		ACF.RestrictInfo = tobool(Value)
+	end,
+	LegalChecks = function(_, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.LegalChecks == Bool then return end
+
+		ACF.LegalChecks = Bool
+
+		Message("Info", "ACF legality checks have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	GunsCanFire = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -40,7 +34,7 @@ local Settings = {
 
 		ACF.GunsCanSmoke = Bool
 
-		Message("Info", "ACF Gun sound and particles have been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "ACF gun sounds and particles have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	RacksCanFire = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -76,7 +70,7 @@ local Settings = {
 		Message("Info", "ACF Armor Mod changed to a factor of " .. Factor)
 	end,
 	FuelFactor = function(_, _, Value)
-		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
+		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0, 30)
 
 		if ACF.FuelFactor == Factor then return end
 
@@ -86,18 +80,6 @@ local Settings = {
 		ACF.FuelRate = ACF.FuelRate / Old * Factor
 
 		Message("Info", "ACF Fuel Rate changed to a factor of " .. Factor)
-	end,
-	CompFuelFactor = function(_, _, Value)
-		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
-
-		if ACF.CompFuelFactor == Factor then return end
-
-		local Old = ACF.CompFuelFactor
-
-		ACF.CompFuelFactor = Factor
-		ACF.CompFuelRate = ACF.CompFuelRate / Old * Factor
-
-		Message("Info", "ACF Competitive Fuel Rate changed to a factor of " .. Factor)
 	end,
 	HEPush = function(_, _, Value)
 		ACF.HEPush = tobool(Value)

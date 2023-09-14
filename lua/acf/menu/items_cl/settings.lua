@@ -111,23 +111,6 @@ do -- Serverside settings
 	ACF.AddMenuItem(101, "Settings", "Serverside Settings", "server", ACF.GenerateServerSettings)
 
 	ACF.AddServerSettings(1, "General Settings", function(Base)
-		Base:AddLabel("ACF Gamemode for this server:")
-
-		local Gamemode = Base:AddComboBox()
-		Gamemode:AddChoice("Sandbox")
-		Gamemode:AddChoice("Classic")
-		Gamemode:AddChoice("Competitive")
-		Gamemode:SetServerData("Gamemode", "OnSelect")
-		Gamemode:DefineSetter(function(Panel, _, _, Value)
-			if Panel.selected == Value then return end -- God bless derma
-
-			Panel:ChooseOptionID(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Each gamemode has its own restrictions, Sandbox being the most relaxed and Competitive the most strict.")
-
 		local Admins = Base:AddCheckBox("Allow admins to control server data.")
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)
@@ -147,6 +130,14 @@ do -- Serverside settings
 		end)
 
 		Base:AddHelp("You'll need the player's permissions in order to check relevant information on entities owned by them.")
+
+		local LegalChecks = Base:AddCheckBox("Enable legality checks on ACF entities.")
+		LegalChecks:SetServerData("LegalChecks", "OnChange")
+		LegalChecks:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
 
 		local GunFire = Base:AddCheckBox("Allow guns to fire.")
 		GunFire:SetServerData("GunsCanFire", "OnChange")
@@ -188,23 +179,13 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local Fuel = Base:AddSlider("Fuel Factor", 0.01, 2, 2)
+		local Fuel = Base:AddSlider("Fuel Factor", 0, 30, 2)
 		Fuel:SetServerData("FuelFactor", "OnValueChanged")
 		Fuel:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value
 		end)
-
-		local CompFuel = Base:AddSlider("Competitive Fuel Factor", 0.01, 2, 2)
-		CompFuel:SetServerData("CompFuelFactor", "OnValueChanged")
-		CompFuel:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Only applies to servers with their ACF Gamemode set to Competitive.")
 	end)
 
 	ACF.AddServerSettings(100, "Sound Volume", function(Base)

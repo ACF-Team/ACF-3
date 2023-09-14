@@ -9,7 +9,7 @@ do -- ACF global vars
 	ACF.ModelData          = ACF.ModelData or { Models = {} }
 
 	-- General Settings
-	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
+	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
@@ -103,7 +103,7 @@ do -- ACF global vars
 	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
 
 	-- Debris
-	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
+	ACF.ChildDebris        = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance = 0.25
 	ACF.ValidDebris        = { -- Whitelist for things that can be turned into debris
 		acf_ammo = true,
@@ -121,13 +121,11 @@ do -- ACF global vars
 	ACF.GunInaccuracyBias  = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
-	ACF.FuelRate           = 1 --multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate           = 1 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
-	ACF.CompFuelRate       = 27.8 -- Extra multiplier for fuel consumption on servers with ACF Gamemode set to Competitive
-	ACF.CompFuelFactor     = 1 -- Multiplier for ACF.CompFuelRate
-	ACF.TankVolumeMul      = 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance     = 300 --Distance in which ammo crate starts refilling.
+	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 end

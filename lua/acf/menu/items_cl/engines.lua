@@ -19,11 +19,6 @@ local ConsumptionText = [[
 	%s Consumption :
 	%s L/min - %s gal/min @ %s RPM]]
 
--- Fuel consumption is increased on competitive servers
-local function GetEfficiencyMult()
-	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
-end
-
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
 	local PeakTqRPM  = math.Round(Data.PeakTqRPM)
@@ -35,7 +30,7 @@ local function UpdateEngineStats(Label, Data)
 	local Torque     = math.Round(Data.Torque)
 	local TorqueFeet = math.Round(Data.Torque * 0.73)
 	local Type       = EngineTypes.Get(Data.Type)
-	local Efficiency = Type.Efficiency * GetEfficiencyMult()
+	local Efficiency = Type.Efficiency * ACF.FuelRate
 	local FuelList   = ""
 
 	for K in pairs(Data.Fuel) do
@@ -173,11 +168,11 @@ local function CreateMenu(Menu)
 		local TextFunc = self.Selected.FuelTankText
 		local FuelText = ""
 
-		local Wall		= 0.03937 --wall thickness in inches (1mm)
-		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
-		local EmptyMass	= FuelTank.SurfaceArea * Wall * 16.387 * 0.0079 -- total wall volume * cu in to cc * density of steel (kg/cc)
-		local Mass		= EmptyMass + Capacity * self.Selected.Density -- weight of tank + weight of fuel
+		local Wall		= 0.03937 -- Wall thickness in inches (1mm)
+		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 -- Internal volume available for fuel in liters, with magic realism number
+		local EmptyMass	= FuelTank.SurfaceArea * Wall * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
 
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
