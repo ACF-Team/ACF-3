@@ -187,7 +187,7 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local Fuel = Base:AddSlider("Fuel Factor", 0.01, 30, 2)
+		local Fuel = Base:AddSlider("Fuel Factor", 0.01, 2, 2)
 		Fuel:SetServerData("FuelFactor", "OnValueChanged")
 		Fuel:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)

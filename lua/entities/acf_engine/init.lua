@@ -307,7 +307,7 @@ do -- Spawn and Update functions
 		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
 		Entity.FuelType         = next(Engine.Fuel)
 		Entity.EngineType       = Type.ID
-		Entity.Efficiency       = Type.Efficiency * ACF.FuelRate
+		Entity.Efficiency       = Type.Efficiency
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)

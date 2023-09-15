@@ -122,7 +122,7 @@ do -- ACF global vars
 
 	-- Fuel
 	ACF.RequireFuel        = true -- Whether fuel usage should required for engines
-	ACF.FuelRate           = 1 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate           = 27.8 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter

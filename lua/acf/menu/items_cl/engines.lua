@@ -30,7 +30,7 @@ local function UpdateEngineStats(Label, Data)
 	local Torque     = math.Round(Data.Torque)
 	local TorqueFeet = math.Round(Data.Torque * 0.73)
 	local Type       = EngineTypes.Get(Data.Type)
-	local Efficiency = Type.Efficiency * ACF.FuelRate
+	local Efficiency = Type.Efficiency
 	local FuelList   = ""
 
 	for K in pairs(Data.Fuel) do

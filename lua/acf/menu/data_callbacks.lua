@@ -79,7 +79,7 @@ local Settings = {
 		Message("Info", "ACF Armor Mod changed to a factor of " .. Factor)
 	end,
 	FuelFactor = function(_, _, Value)
-		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 30)
+		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
 
 		if ACF.FuelFactor == Factor then return end
 
