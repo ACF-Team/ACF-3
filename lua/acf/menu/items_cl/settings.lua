@@ -147,7 +147,7 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local GunSmoke = Base:AddCheckBox("Allow guns to produce sound and particle effects.")
+		local GunSmoke = Base:AddCheckBox("Allow guns to produce sounds and particles.")
 		GunSmoke:SetServerData("GunsCanSmoke", "OnChange")
 		GunSmoke:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
