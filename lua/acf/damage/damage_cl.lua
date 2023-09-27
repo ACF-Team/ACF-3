@@ -27,10 +27,12 @@ do
 		cam_Start3D(EyePos(), EyeAngles())
 
 		for Entity, EntityTable in pairs(Damaged) do
-			render_ModelMaterialOverride(EntityTable.ACF_Material)
-			render_SetBlend(EntityTable.ACF_BlendAmount)
+			if IsValid(Entity) then
+				render_ModelMaterialOverride(EntityTable.ACF_Material)
+				render_SetBlend(EntityTable.ACF_BlendAmount)
 
-			Entity:DrawModel()
+				Entity:DrawModel()
+			end
 		end
 
 		render_ModelMaterialOverride()
