@@ -278,10 +278,10 @@ local function CreateMenu(Menu)
 		local FuelDescText = ""
 
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
-		local TankID = FuelTank.ID
+		local Shape = FuelTank.Shape
 		local Volume, Area
 
-		if TankID == "Box" then
+		if Shape == "Box" then
 			local InteriorVolume = (TankSize.x - Wall) * (TankSize.y - Wall) * (TankSize.z - Wall) -- Math degree
 			Area = (2 * TankSize.x * TankSize.y) + (2 * TankSize.y * TankSize.z) + (2 * TankSize.x * TankSize.z)
 
@@ -289,7 +289,7 @@ local function CreateMenu(Menu)
 
 			-- Preserving flavor text from older fuel tank sizes
 			FuelDescText = FuelDescSentences[math.random(33)]
-		elseif TankID == "Drum" then
+		elseif Shape == "Drum" then
 			local Radius = TankSize.x / 2
 			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (TankSize.z - Wall)
 			Area = 2 * math.pi * Radius * (Radius + TankSize.z)

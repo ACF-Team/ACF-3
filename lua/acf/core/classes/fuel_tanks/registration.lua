@@ -22,6 +22,14 @@ end
 function FuelTanks.RegisterItem(ID, ClassID, Data)
 	local Class = Classes.AddGroupItem(ID, ClassID, Entries, Data)
 
+	if Class.Model == nil then
+		Class.Model = "models/fueltank/fueltank_4x4x4.mdl"
+	end
+
+	if Class.Name == nil then
+		Class.Name = "Fuel Box"
+	end
+
 	if Class.IsExplosive == nil then
 		Class.IsExplosive = true
 	end

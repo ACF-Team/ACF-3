@@ -16,3 +16,12 @@ do
 		},
 	})
 end
+
+do -- Old drum tank compatibility
+	FuelTanks.RegisterItem("Fuel_Drum", "FTS_D", {
+		Name	= "Fuel Drum",
+		Size	= Vector(28, 28, 45),
+		Model	= "models/props_c17/oildrum001_explosive.mdl",
+		Shape	= "Drum"
+	})
+end

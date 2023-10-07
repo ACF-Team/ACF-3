@@ -2,7 +2,7 @@ local FuelTanks = ACF.Classes.FuelTanks
 
 FuelTanks.Register("FTS_M", {
 	Name		= "Miscellaneous",
-	Description	= "Random fuel tank models, some of them can only be used for refueling.",
+	Description	= "Random fuel tank models; some of them can only be used for refueling.",
 })
 
 do
@@ -24,7 +24,7 @@ do
 		Model		= "models/props_wasteland/horizontalcoolingtank04.mdl",
 		SurfaceArea	= 127505.5,
 		Volume		= 2102493.3,
-		Shape       = "Drum",
+		Shape       = "Elliptical",
 		IsExplosive	= false,
 		Unlinkable	= true,
 	})
@@ -35,7 +35,7 @@ do
 		Model		= "models/props_wasteland/coolingtank02.mdl",
 		SurfaceArea	= 144736.3,
 		Volume		= 2609960,
-		Shape       = "Drum",
+		Shape       = "Elliptical",
 		IsExplosive	= false,
 		Unlinkable	= true,
 		Preview = {

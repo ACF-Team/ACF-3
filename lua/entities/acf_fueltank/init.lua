@@ -49,34 +49,24 @@ do -- Spawn and Update functions
 	}
 
 	local function VerifyData(Data)
-		-- Updating pre-scalable update fuel tanks
-		if string.StartsWith(Data.FuelTank, "Tank_") then
-			-- Deriving box dimensions from the FuelTank string because there is no size
-			local SizeString = string.Split(Data.FuelTank, "_")
-			local SizeValues = string.Explode("x", SizeString[2])
-
-			-- The X and Y values are swapped on purpose to match old model shapes
-			local X = ACF.CheckNumber(SizeValues[2] * 10, 24)
-			local Y = ACF.CheckNumber(SizeValues[1] * 10, 24)
-			local Z = ACF.CheckNumber(SizeValues[3] * 10, 24)
-
-			Data.Size = Vector(X, Y, Z)
-			Data.FuelTank = "Box"
-		elseif Data.FuelTank == "Fuel_Drum" then
-			Data.Size = Vector(28, 28, 45) -- Matches oildrum001 model size
-			Data.FuelTank = "Drum"
-		end
-
 		if not isvector(Data.Size) then
-			local X = ACF.CheckNumber(Data.TankSizeX, 24)
-			local Y = ACF.CheckNumber(Data.TankSizeY, 24)
-			local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
+			local Group = Classes.GetGroup(FuelTanks, Data.FuelTank)
+			local Tank = FuelTanks.GetItem(Group.ID, Data.FuelTank)
 
-			if Data.FuelTank == "Drum" then
-				Y = X
+			if Tank.Size then -- Updating pre-scalable update fuel tanks
+				Data.Size = Vector(Tank.Size)
+				Data.Shape = Tank.Shape
+			else
+				local X = ACF.CheckNumber(Data.TankSizeX, 24)
+				local Y = ACF.CheckNumber(Data.TankSizeY, 24)
+				local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
+
+				if Data.FuelTank == "Drum" then
+					Y = X
+				end
+
+				Data.Size = Vector(X, Y, Z)
 			end
-
-			Data.Size = Vector(X, Y, Z)
 		end
 
 		do -- Clamping size
@@ -122,7 +112,7 @@ do -- Spawn and Update functions
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
 
-		if FuelTank.ID ~= "Box" and FuelTank.ID ~= "Drum" then
+		if FuelTank.Shape ~= "Box" and FuelTank.Shape ~= "Drum" then
 			Entity:SetModel(FuelTank.Model)
 			Entity:PhysicsInit(SOLID_VPHYSICS, true)
 			Entity:SetMoveType(MOVETYPE_VPHYSICS)
@@ -137,7 +127,7 @@ do -- Spawn and Update functions
 		local Volume, Area, NameType
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 
-		if FuelTank.ID == "Box" then
+		if FuelTank.Shape == "Box" then
 			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
 			Area = (2 * Size.x * Size.y) + (2 * Size.y * Size.z) + (2 * Size.x * Size.z)
 
@@ -146,7 +136,7 @@ do -- Spawn and Update functions
 			NameType = " Tank"
 
 			Entity:SetSize(Data.Size)
-		elseif FuelTank.ID == "Drum" then
+		elseif FuelTank.Shape == "Drum" then
 			local Radius = Size.x / 2
 			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
 			Area = 2 * math.pi * Radius * (Radius + Size.z)
@@ -174,6 +164,7 @@ do -- Spawn and Update functions
 		Entity.EmptyMass   = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		Entity.IsExplosive = FuelTank.IsExplosive
 		Entity.NoLinks     = FuelTank.Unlinkable
+		Entity.Shape       = FuelTank.Shape
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelTank, FuelType)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelTank, FuelType)
@@ -226,7 +217,7 @@ do -- Spawn and Update functions
 		if not IsValid(Tank) then return end
 
 		Tank:SetPlayer(Player)
-		if FuelTank.ID == "Box" or FuelTank.ID == "Drum" then
+		if FuelTank.Shape == "Box" or FuelTank.Shape == "Drum" then
 			Tank:SetScaledModel(Model)
 		end
 		Tank:SetAngles(Angle)
@@ -474,15 +465,16 @@ do -- Overlay Update
 			Status = self:CanConsume() and "Providing Fuel" or "Idle"
 		end
 
-		local FuelTank = self.FuelTank
-		if FuelTank == "Box" then
+		local Shape = self.Shape
+
+		if Shape == "Box" then
 			local X, Y, Z = self:GetSize():Unpack()
 			X = math.Round(X, 2)
 			Y = math.Round(Y, 2)
 			Z = math.Round(Z, 2)
 
 			Size = "Size: " .. X .. "x" .. Y .. "x" .. Z .. "\n\n"
-		elseif FuelTank == "Drum" then
+		elseif Shape == "Drum" then
 			local D, _, H = self:GetSize():Unpack()
 			D = math.Round(D, 2)
 			H = math.Round(H, 2)
