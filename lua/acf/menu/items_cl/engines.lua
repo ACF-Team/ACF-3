@@ -304,7 +304,7 @@ local function CreateMenu(Menu)
 			FuelDescText = ""
 		end
 
-		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 -- Internal volume available for fuel in liters, with magic realism number
+		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
 		local EmptyMass	= Area * Wall * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
 

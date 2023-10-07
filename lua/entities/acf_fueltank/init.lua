@@ -170,7 +170,7 @@ do -- Spawn and Update functions
 		Entity.EntType     = Class.Name
 		Entity.ClassData   = Class
 		Entity.FuelDensity = FuelType.Density
-		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 -- Internal volume available for fuel in liters, with magic realism number
+		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
 		Entity.EmptyMass   = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		Entity.IsExplosive = FuelTank.IsExplosive
 		Entity.NoLinks     = FuelTank.Unlinkable
