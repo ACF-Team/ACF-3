@@ -160,9 +160,7 @@ local function CreateMenu(Menu)
 		return Z
 	end)
 
-	--local FuelClass = Menu:AddComboBox()
 	local FuelList = Menu:AddComboBox()
-	--local FuelType = Menu:AddComboBox()
 	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
 	local FuelDesc = FuelBase:AddLabel()
 	local FuelPreview = FuelBase:AddModelPreview(nil, true)
@@ -267,9 +265,6 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelType", Data.ID)
 
-		--FuelPreview:UpdateModel(Data.Model or "models/fueltank/fueltank_4x4x4.mdl")
-		--FuelPreview:UpdateSettings({ FOV = 120 })
-
 		self:UpdateFuelText()
 	end
 
@@ -309,8 +304,6 @@ local function CreateMenu(Menu)
 			FuelDescText = ""
 		end
 
-		--local Wall		= ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
-		--local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
 		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 -- Internal volume available for fuel in liters, with magic realism number
 		local EmptyMass	= Area * Wall * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
