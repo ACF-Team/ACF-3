@@ -2,16 +2,15 @@ local FuelTanks = ACF.Classes.FuelTanks
 
 FuelTanks.Register("FTS_B", {
 	Name		= "Fuel Box",
-	Description = "Scalable fuel tank; required for engines to work."
+	Description	= "Scalable fuel tank; required for engines to work."
 })
 
 do
 	FuelTanks.RegisterItem("Box", "FTS_B", {
-		Name = "Fuel Box",
-		Description = "",
-		Model = "models/fueltank/fueltank_4x4x4.mdl",
-		--SurfaceArea = "1", -- TODO: FIX THIS FOR REAL
-		--Volume = "1", -- TODO: FIX THIS FOR REAL TOO
+		Name		= "Fuel Box",
+		Description	= "", -- Blank to allow for dynamic descriptions better
+		Model		= "models/fueltank/fueltank_4x4x4.mdl",
+		Shape		= "Box",
 		Preview = {
 			FOV = 120,
 		},
@@ -20,16 +19,15 @@ end
 
 FuelTanks.Register("FTS_D", {
 	Name		= "Fuel Drum",
-	Description = "Scalable fuel drum; required for engines to work."
+	Description	= "Scalable fuel drum; required for engines to work."
 })
 
 do
 	FuelTanks.RegisterItem("Drum", "FTS_D", {
-		Name = "Fuel Drum",
-		Description = "Tends to explode when shot.",
-		Model = "models/props_c17/oildrum001_explosive.mdl",
-		--SurfaceArea = "1", -- TODO: FIX THIS FOR REAL
-		--Volume = "1", -- TODO: FIX THIS FOR REAL TOO
+		Name		= "Fuel Drum",
+		Description	= "Tends to explode when shot.",
+		Model		= "models/props_c17/oildrum001_explosive.mdl",
+		Shape		= "Drum",
 		Preview = {
 			FOV = 120,
 		},
@@ -42,19 +40,6 @@ FuelTanks.Register("FTS_M", {
 })
 
 do
-
-	FuelTanks.RegisterItem("Fuel_Drum","FTS_M", {
-		Name		= "Fuel Drum",
-		Description	= "Tends to explode when shot.",
-		Model		= "models/props_c17/oildrum001_explosive.mdl",
-		SurfaceArea	= 5128.9,
-		Volume		= 26794.4,
-		Shape       = "Drum",
-		Preview = {
-			FOV = 120,
-		},
-	})
-
 	FuelTanks.RegisterItem("Jerry_Can","FTS_M", {
 		Name		= "Jerry Can",
 		Description	= "Handy portable fuel container.",
