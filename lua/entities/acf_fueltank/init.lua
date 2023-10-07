@@ -16,7 +16,6 @@ local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local HookRun     = hook.Run
-local Wall        = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 
 local function CanRefuel(Refill, Tank, Distance)
 	if Refill == Tank then return false end
@@ -50,6 +49,7 @@ do -- Spawn and Update functions
 	}
 
 	local function VerifyData(Data)
+		-- Updating pre-scalable update fuel tanks
 		if string.StartsWith(Data.FuelTank, "Tank_") then
 			-- Deriving box dimensions from the FuelTank string because there is no size
 			local SizeString = string.Split(Data.FuelTank, "_")
@@ -135,6 +135,7 @@ do -- Spawn and Update functions
 
 		local Size = Data.Size
 		local Volume, Area, NameType
+		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 
 		if FuelTank.ID == "Box" then
 			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
@@ -596,6 +597,8 @@ end
 function ENT:OnResized(Size)
 	do -- Calculate new empty mass
 		local Volume
+		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+
 		if self.FuelTank == "Drum" then
 			local Radius = Size.x / 2
 			local ExteriorVolume = math.pi * (Radius ^ 2) * Size.z
