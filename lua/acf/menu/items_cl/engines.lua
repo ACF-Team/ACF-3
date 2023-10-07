@@ -18,11 +18,44 @@ local PowerText  = [[
 local ConsumptionText = [[
 	%s Consumption :
 	%s L/min - %s gal/min @ %s RPM]]
+local TankSize    = Vector()
 
--- Fuel consumption is increased on competitive servers
-local function GetEfficiencyMult()
-	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
-end
+local FuelDescSentences = {
+	"Seriously consider walking.",
+	"Will keep a kart running all day.",
+	"Dinghy.",
+	"Outboard motor.",
+	"Clown car.",
+	"Fuel pancake.",
+	"Lawn tractors.",
+	"Small tractor tank.",
+	"Fuel. Will keep you going for awhile.",
+	"Gas stations? We don't need no stinking gas stations!",
+	"Beep beep.",
+	"Mini Cooper.",
+	"Good bit of go-juice.",
+	"Land boat.",
+	"Conformal fuel tank; fits narrow spaces.",
+	"Compact car.",
+	"Sedan.",
+	"Truck.",
+	"With great capacity, comes great responsibili--VROOOOM",
+	"Popular with arsonists.",
+	"Fire juice.",
+	"Trees are gay anyway.",
+	"Arson material.",
+	"What's a gas station?",
+	"\'MURRICA FUCKYEAH!",
+	"Got gas?",
+	"Drive across the desert without a fuck to give.",
+	"May contain Mesozoic ghosts.",
+	"Conformal fuel tank; does what all its friends do.",
+	"Certified 100% dinosaur juice.",
+	"Will last you a while.",
+	"Sloshy sloshy!",
+	"What's global warming?",
+	"Tank Tank.",
+}
 
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
@@ -35,7 +68,7 @@ local function UpdateEngineStats(Label, Data)
 	local Torque     = math.Round(Data.Torque)
 	local TorqueFeet = math.Round(Data.Torque * 0.73)
 	local Type       = EngineTypes.Get(Data.Type)
-	local Efficiency = Type.Efficiency * GetEfficiencyMult()
+	local Efficiency = Type.Efficiency --* ACF.FuelFactor--* ACF.FuelRate
 	local FuelList   = ""
 
 	for K in pairs(Data.Fuel) do
@@ -79,10 +112,57 @@ local function CreateMenu(Menu)
 	local EngineStats = EngineBase:AddLabel()
 
 	Menu:AddTitle("Fuel Tank Settings")
-
-	local FuelClass = Menu:AddComboBox()
-	local FuelList = Menu:AddComboBox()
 	local FuelType = Menu:AddComboBox()
+	local FuelClass = Menu:AddComboBox()
+
+	local Min = ACF.FuelMinSize
+	local Max = ACF.FuelMaxSize
+
+	local SizeX = Menu:AddSlider("Tank Length", Min, Max)
+	SizeX:SetClientData("TankSizeX", "OnValueChanged")
+	SizeX:DefineSetter(function(Panel, _, _, Value)
+		local X = math.Round(Value)
+
+		Panel:SetValue(X)
+
+		TankSize.x = X
+
+		FuelType:UpdateFuelText()
+
+		return X
+	end)
+
+	local SizeY = Menu:AddSlider("Tank Width", Min, Max)
+	SizeY:SetClientData("TankSizeY", "OnValueChanged")
+	SizeY:DefineSetter(function(Panel, _, _, Value)
+		local Y = math.Round(Value)
+
+		Panel:SetValue(Y)
+
+		TankSize.y = Y
+
+		FuelType:UpdateFuelText()
+
+		return Y
+	end)
+
+	local SizeZ = Menu:AddSlider("Tank Height", Min, Max)
+	SizeZ:SetClientData("TankSizeZ", "OnValueChanged")
+	SizeZ:DefineSetter(function(Panel, _, _, Value)
+		local Z = math.Round(Value)
+
+		Panel:SetValue(Z)
+
+		TankSize.z = Z
+
+		FuelType:UpdateFuelText()
+
+		return Z
+	end)
+
+	--local FuelClass = Menu:AddComboBox()
+	local FuelList = Menu:AddComboBox()
+	--local FuelType = Menu:AddComboBox()
 	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
 	local FuelDesc = FuelBase:AddLabel()
 	local FuelPreview = FuelBase:AddModelPreview(nil, true)
@@ -133,6 +213,31 @@ local function CreateMenu(Menu)
 		self.Selected = Data
 
 		ACF.LoadSortedList(FuelList, Data.Items, "ID")
+
+		if Data.ID == "FTS_B" then -- Scalable box tanks
+			SizeX:SetVisible(true)
+			SizeY:SetVisible(true)
+			SizeZ:SetVisible(true)
+			FuelList:SetVisible(false)
+
+			SizeX:SetText("Tank Length")
+			SizeZ:SetText("Tank Height")
+		elseif Data.ID == "FTS_D" then -- Scalable drum tanks
+			SizeX:SetVisible(true)
+			SizeY:SetVisible(false)
+			-- Purposely hide height slider before showing to prevent a minor visual bug when switching from box to drum
+			SizeZ:SetVisible(false)
+			SizeZ:SetVisible(true)
+			FuelList:SetVisible(false)
+
+			SizeX:SetText("Drum Diameter")
+			SizeZ:SetText("Drum Height")
+		else -- Non-scalable tanks
+			SizeX:SetVisible(false)
+			SizeY:SetVisible(false)
+			SizeZ:SetVisible(false)
+			FuelList:SetVisible(true)
+		end
 	end
 
 	function FuelList:OnSelect(Index, _, Data)
@@ -162,6 +267,9 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelType", Data.ID)
 
+		--FuelPreview:UpdateModel(Data.Model or "models/fueltank/fueltank_4x4x4.mdl")
+		--FuelPreview:UpdateSettings({ FOV = 120 })
+
 		self:UpdateFuelText()
 	end
 
@@ -172,21 +280,49 @@ local function CreateMenu(Menu)
 		local FuelTank = FuelList.Selected
 		local TextFunc = self.Selected.FuelTankText
 		local FuelText = ""
+		local FuelDescText = ""
 
-		local Wall		= 0.03937 --wall thickness in inches (1mm)
-		local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
-		local EmptyMass	= FuelTank.SurfaceArea * Wall * 16.387 * 0.0079 -- total wall volume * cu in to cc * density of steel (kg/cc)
-		local Mass		= EmptyMass + Capacity * self.Selected.Density -- weight of tank + weight of fuel
+		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+		local TankID = FuelTank.ID
+		local Volume, Area
+
+		if TankID == "Box" then
+			local InteriorVolume = (TankSize.x - Wall) * (TankSize.y - Wall) * (TankSize.z - Wall) -- Math degree
+			Area = (2 * TankSize.x * TankSize.y) + (2 * TankSize.y * TankSize.z) + (2 * TankSize.x * TankSize.z)
+
+			Volume = InteriorVolume - (Area * Wall)
+
+			-- Preserving flavor text from older fuel tank sizes
+			FuelDescText = FuelDescSentences[math.random(33)]
+		elseif TankID == "Drum" then
+			local Radius = TankSize.x / 2
+			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (TankSize.z - Wall)
+			Area = 2 * math.pi * Radius * (Radius + TankSize.z)
+
+			Volume = InteriorVolume - (Area * Wall)
+
+			FuelDescText = ""
+		else
+			Area = FuelTank.SurfaceArea
+			Volume = FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+
+			FuelDescText = ""
+		end
+
+		--local Wall		= ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+		--local Volume	= FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 -- Internal volume available for fuel in liters, with magic realism number
+		local EmptyMass	= Area * Wall * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
 
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
 		else
-			local Text = "Capacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s\n"
+			local Text = "Tank Armor : %s mm\nCapacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s"
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * 0.264172, 2)
 
-			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.GetProperMass(Mass), ACF.GetProperMass(EmptyMass))
+			FuelText = FuelText .. Text:format(ACF.FuelArmor, Liters, Gallons, ACF.GetProperMass(Mass), ACF.GetProperMass(EmptyMass))
 		end
 
 		if not FuelTank.IsExplosive then
@@ -197,7 +333,7 @@ local function CreateMenu(Menu)
 			FuelText = FuelText .. "\n\nThis fuel tank cannot be linked to other ACF entities."
 		end
 
-		FuelDesc:SetText(FuelList.Description)
+		FuelDesc:SetText(FuelList.Description .. FuelDescText)
 		FuelInfo:SetText(FuelText)
 	end
 

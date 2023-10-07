@@ -16,7 +16,7 @@ local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local HookRun     = hook.Run
-local Wall        = 0.03937 --wall thickness in inches (1mm)
+local Wall        = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 
 local function CanRefuel(Refill, Tank, Distance)
 	if Refill == Tank then return false end
@@ -50,10 +50,68 @@ do -- Spawn and Update functions
 	}
 
 	local function VerifyData(Data)
+		PrintTable(Data)
+		--[[
+		if Data.Id then -- Updating old fuel tanks
+			local Tank = FuelTanks.Get(Data.Id)
+
+			if Tank then -- Pre-scalable tank remnants
+				Data.Offset = Vector(Tank.Offset)
+				--Data.Size   = Vector(Tank.Size)
+				local SizeValues = string.Explode("x", string.Split(Data.FuelTank, "_"))
+				PrintTable(SizeValues)
+				local X = ACF.CheckNumber(SizeValues[1] * 10, 24)
+				local Y = ACF.CheckNumber(SizeValues[2] * 10, 24)
+				local Z = ACF.CheckNumber(SizeValues[3] * 10, 24)
+
+				Data.Size = Vector(X, Y, Z)
+				Data.NeedsOffset = true
+			end
+		]]
+		if string.StartsWith(Data.FuelTank, "Tank_") then
+			-- Deriving box dimensions from the FuelTank string because there is no size
+			local SizeString = string.Split(Data.FuelTank, "_")
+			local SizeValues = string.Explode("x", SizeString[2])
+			PrintTable(SizeValues)
+			-- The X and Y values are swapped on purpose to match old model shapes
+			local X = ACF.CheckNumber(SizeValues[2] * 10, 24)
+			local Y = ACF.CheckNumber(SizeValues[1] * 10, 24)
+			local Z = ACF.CheckNumber(SizeValues[3] * 10, 24)
+
+			Data.Size = Vector(X, Y, Z)
+			-- Data.NeedsOffset = true
+		--elseif OldTank == "Jerry_Can" then
+			--Data.Size = Vector(20, 8, 30) -- Matches gascan001a model size
+		elseif Data.FuelTank == "Fuel_Drum" then
+			Data.Size = Vector(28, 28, 45) -- Matches oildrum001 model size
+		end
+
+		if not isvector(Data.Size) then
+			local X = ACF.CheckNumber(Data.TankSizeX, 24)
+			local Y = ACF.CheckNumber(Data.TankSizeY, 24)
+			local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
+
+			if Data.FuelTank == "Drum" then
+				Y = X
+			end
+
+			Data.Size = Vector(X, Y, Z)
+		end
+
+		do -- Clamping size
+			local Min  = ACF.FuelMinSize
+			local Max  = ACF.FuelMaxSize
+			local Size = Data.Size
+
+			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
+			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
+			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+		end
+		--[[
 		if not Data.FuelTank then
 			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
 		end
-
+		]]
 		local Class = Classes.GetGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
@@ -82,46 +140,100 @@ do -- Spawn and Update functions
 
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
+		print(Entity.ACF.Model)
+		--Entity:SetSize(Data.Size)
+		--Entity:SetScaledModel(FuelTank.Model)
+		print(FuelTank.ID)
+		if FuelTank.ID ~= "Box" and FuelTank.ID ~= "Drum" then
+			Entity:SetModel(FuelTank.Model)
+			Entity:PhysicsInit(SOLID_VPHYSICS, true)
+			Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		end
 
-		Entity:SetModel(FuelTank.Model)
+		--Entity:PhysicsInit(SOLID_VPHYSICS)
+		--Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		local PhysObj = Entity:GetPhysicsObject()
-		local Area = PhysObj:GetSurfaceArea()
+		--local PhysObj = Entity:GetPhysicsObject()
+		--local Area = PhysObj:GetSurfaceArea()
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name        = FuelTank.Name
-		Entity.ShortName   = Entity.FuelTank
+		local Size = Data.Size
+
+		--local ExteriorVolume = Size.x * Size.y * Size.z
+		-- local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
+		-- local SurfaceArea = (2 * Size.x * Size.y) + (2 * Size.y * Size.z) + (2 * Size.x * Size.z)
+
+		-- local Volume = InteriorVolume - (SurfaceArea * Wall)
+		-- print(Volume)
+
+		local Volume, Area, NameType
+
+		if FuelTank.ID == "Box" then
+			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
+			Area = (2 * Size.x * Size.y) + (2 * Size.y * Size.z) + (2 * Size.x * Size.z)
+
+			Volume = InteriorVolume - (Area * Wall)
+
+			NameType = " Tank"
+
+			Entity:SetSize(Data.Size)
+		elseif FuelTank.ID == "Drum" then
+			--local ExteriorVolume = math.pi * (Size.x ^ 2) * Size.z
+			local Radius = Size.x / 2
+			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
+			Area = 2 * math.pi * Radius * (Radius + Size.z)
+
+			Volume = InteriorVolume - (Area * Wall)
+			print(Volume)
+			NameType = " Drum"
+
+			Entity:SetSize(Data.Size)
+		else
+			local PhysObj = Entity:GetPhysicsObject()
+			Area = PhysObj:GetSurfaceArea()
+
+			Volume = PhysObj:GetVolume() - (Area * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+
+			NameType = " " .. FuelTank.Name
+
+			--Entity.EmptyMass = (Area * Wall) * 16.387 * 0.0079 -- total wall volume * cu in to cc * density of steel (kg/cc)
+		end
+
+		Entity.Name        = Entity.FuelType .. NameType --FuelTank.Name
+		Entity.ShortName   = Entity.FuelType
 		Entity.EntType     = Class.Name
 		Entity.ClassData   = Class
 		Entity.FuelDensity = FuelType.Density
-		Entity.Volume      = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		Entity.Capacity    = Entity.Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
+		--Entity.Volume      = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
+		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774-- Entity.Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
 		Entity.EmptyMass   = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
 		Entity.IsExplosive = FuelTank.IsExplosive
 		Entity.NoLinks     = FuelTank.Unlinkable
+		--[[
 		Entity.HitBoxes = {
 			Main = {
 				Pos = Entity:OBBCenter(),
 				Scale = (Entity:OBBMaxs() - Entity:OBBMins()) - Vector(0.5, 0.5, 0.5),
 			}
 		}
+		]]
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelTank, FuelType)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelTank, FuelType)
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		--Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		if Entity.FuelType == "Electric" then
-			Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume
+			Entity.Name = "Electric Battery"
+			Entity.Liters = Entity.Capacity -- Batteries capacity is different from internal volume
 			Entity.Capacity = Entity.Capacity * ACF.LiIonED
 		end
+
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		Entity.Fuel = Percentage * Entity.Capacity
 
@@ -133,6 +245,23 @@ do -- Spawn and Update functions
 		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
+	hook.Add("ACF_CanUpdateEntity", "ACF Fuel Tank Size Update", function(Entity, Data)
+		if not Entity.IsACFFuelTank then return end
+		if Data.Size then return end -- The menu won't send it like this
+
+		Data.Size       = Entity:GetSize()
+		Data.TankSizeX = nil
+		Data.TankSizeY = nil
+		Data.TankSizeZ = nil
+	end)
+
+	hook.Add("PlayerSpawnedProp", "ACF Test", function(_, mdl, ent)
+		if mdl ~= "models/fueltank/fueltank_4x4x4.mdl" then return end
+		print("prop vol: " .. ent:GetPhysicsObject():GetVolume() - (ent:GetPhysicsObject():GetSurfaceArea() * Wall))
+		print("prop sa: " .. ent:GetPhysicsObject():GetSurfaceArea())
+	end)
+
+	--local TestOffset = Angle(0, -90, 90)
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
@@ -140,6 +269,7 @@ do -- Spawn and Update functions
 		local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
 		local FuelType = FuelTypes.Get(Data.FuelType)
 		local Limit    = Class.LimitConVar.Name
+		local Model    = FuelTank.Model --"models/holograms/hq_rcube_thick.mdl"
 
 		if not Player:CheckLimit(Limit) then return end
 
@@ -150,8 +280,19 @@ do -- Spawn and Update functions
 		local Tank = ents.Create("acf_fueltank")
 
 		if not IsValid(Tank) then return end
-
+		--[[
+		print(Data.NeedsOffset)
+		if Data.NeedsOffset then
+			Angle = Angle + TestOffset
+			Data.NeedsOffset = nil
+		end
+		]]
+		--Tank:SetMaterial("phoenix_storms/Future_vents")
 		Tank:SetPlayer(Player)
+		if FuelTank.ID == "Box" or FuelTank.ID == "Drum" then
+			Tank:SetScaledModel(Model)
+		end
+		--Tank:SetScaledModel(Model)
 		Tank:SetAngles(Angle)
 		Tank:SetPos(Pos)
 		Tank:Spawn()
@@ -270,7 +411,7 @@ end
 --===============================================================================================--
 
 function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
+	local PhysObj = self:GetPhysicsObject()
 	local Area    = PhysObj:GetSurfaceArea() * 6.45
 	local Armour  = self.EmptyMass * 1000 / Area / 0.78 * ACF.ArmorMod --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
 	local Health  = Area / ACF.Threshold
@@ -359,7 +500,7 @@ do -- Mass Update
 	local function UpdateMass(Entity)
 		local Fuel    = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
 		local Mass    = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
-		local PhysObj = Entity.ACF.PhysObj
+		local PhysObj = Entity:GetPhysicsObject() --Entity.ACF.PhysObj
 
 		if IsValid(PhysObj) then
 			Entity.ACF.Mass      = Mass
@@ -385,15 +526,38 @@ do -- Mass Update
 end
 
 do -- Overlay Update
-	local Text = "%s\n\nFuel Type: %s\n%s"
+	--local Text = "%s\n\nSize: %sx%sx%s\n\nFuel Type: %s\n%s"
+	local Text = "%s\n\n%sFuel Type: %s\n%s"
 
 	function ENT:UpdateOverlayText()
+		--local X, Y, Z = self:GetSize():Unpack()
+		local Size = ""
 		local Status, Content
+
+		--X = math.Round(X, 2)
+		--Y = math.Round(Y, 2)
+		--Z = math.Round(Z, 2)
 
 		if self.Leaking > 0 then
 			Status = "Leaking"
 		else
 			Status = self:CanConsume() and "Providing Fuel" or "Idle"
+		end
+
+		local FuelTank = self.FuelTank
+		if FuelTank == "Box" then
+			local X, Y, Z = self:GetSize():Unpack()
+			X = math.Round(X, 2)
+			Y = math.Round(Y, 2)
+			Z = math.Round(Z, 2)
+
+			Size = "Size: " .. X .. "x" .. Y .. "x" .. Z .. "\n\n"
+		elseif FuelTank == "Drum" then
+			local R, _, H = self:GetSize():Unpack()
+			R = math.Round(R, 2)
+			H = math.Round(H, 2)
+
+			Size = "Diameter: " .. R .. "\nHeight: " .. H .. "\n\n"
 		end
 
 		if self.FuelType == "Electric" then -- TODO: Replace hardcoded stuff
@@ -408,7 +572,7 @@ do -- Overlay Update
 			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
 
-		return Text:format(Status, self.FuelType, Content)
+		return Text:format(Status, Size, self.FuelType, Content)
 	end
 end
 
@@ -498,4 +662,33 @@ function ENT:OnRemove()
 	ActiveTanks[self] = nil
 
 	WireLib.Remove(self)
+end
+
+function ENT:OnResized(Size)
+	do -- Calculate new empty mass
+		local Volume
+		if self.FuelTank == "Drum" then
+			local Radius = Size.x / 2
+			local ExteriorVolume = math.pi * (Radius ^ 2) * Size.z
+			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
+
+			Volume = ExteriorVolume - InteriorVolume
+		else
+			local ExteriorVolume = Size.x * Size.y * Size.z
+			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
+
+			Volume = ExteriorVolume - InteriorVolume
+		end
+
+		local Mass = Volume * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+
+		self.EmptyMass = Mass
+	end
+
+	self.HitBoxes = {
+		Main = {
+			Pos = self:OBBCenter(),
+			Scale = Size, --(Entity:OBBMaxs() - Entity:OBBMins()) - Vector(0.5, 0.5, 0.5),
+		}
+	}
 end

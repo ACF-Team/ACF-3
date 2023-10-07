@@ -108,7 +108,10 @@ local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+local IsValid     = IsValid
+local Clamp       = math.Clamp
 local Round       = math.Round
+local Remap       = math.Remap
 local max         = math.max
 local min         = math.min
 local TimerCreate = timer.Create
@@ -116,14 +119,9 @@ local TimerSimple = timer.Simple
 local TimerRemove = timer.Remove
 local HookRun     = hook.Run
 
--- Fuel consumption is increased on competitive servers
-local function GetEfficiencyMult()
-	return ACF.Gamemode == 3 and ACF.CompFuelRate or 1
-end
-
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
-	local Pitch = math.Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
+	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
 	local Throttle = Engine.RevLimited and 0 or Engine.Throttle
 	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
@@ -309,7 +307,7 @@ do -- Spawn and Update functions
 		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
 		Entity.FuelType         = next(Engine.Fuel)
 		Entity.EngineType       = Type.ID
-		Entity.Efficiency       = Type.Efficiency * GetEfficiencyMult()
+		Entity.Efficiency       = Type.Efficiency --* ACF.FuelFactor--* ACF.FuelRate
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
@@ -546,7 +544,7 @@ function ENT:UpdateOverlayText()
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
-	Entity.Throttle = math.Clamp(Value, 0, 100) * 0.01
+	Entity.Throttle = Clamp(Value, 0, 100) * 0.01
 end)
 
 ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
@@ -557,7 +555,7 @@ function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
 	local Mass    = PhysObj:GetMass()
 	local Area    = PhysObj:GetSurfaceArea() * 6.45
-	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod --Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
 
@@ -577,8 +575,8 @@ end
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	--adjusting performance based on damage
-	local TorqueMult = math.Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	-- Adjusting performance based on damage
+	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 
@@ -687,7 +685,7 @@ function ENT:CalcRPM()
 	end
 	local Throttle = self.RevLimited and 0 or self.Throttle
 
-	--calculate fuel usage
+	-- Calculate fuel usage
 	if IsValid(FuelTank) then
 		self.FuelTank = FuelTank
 		self.FuelType = FuelTank.FuelType
@@ -697,7 +695,7 @@ function ENT:CalcRPM()
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		FuelTank:Consume(Consumption)
-	elseif ACF.Gamemode ~= 1 then -- Sandbox gamemode servers will require no fuel
+	elseif ACF.FuelUsage then -- Stay active if fuel consumption is disabled
 		SetActive(self, false)
 
 		self.FuelUsage = 0
@@ -706,7 +704,7 @@ function ENT:CalcRPM()
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	local Percent = math.Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
+	local Percent = Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
 	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
 	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - Throttle) / self.Inertia
 
@@ -730,7 +728,7 @@ function ENT:CalcRPM()
 	-- This is the presently available torque from the engine
 	local TorqueDiff = max(self.FlyRPM - self.IdleRPM, 0) * self.Inertia
 	-- Calculate the ratio of total requested torque versus what's available
-	local AvailRatio = math.min(TorqueDiff / TotalReqTq / Boxes, 1)
+	local AvailRatio = min(TorqueDiff / TotalReqTq / Boxes, 1)
 
 	-- Split the torque fairly between the gearboxes who need it
 	for Ent, Link in pairs(self.Gearboxes) do
@@ -739,7 +737,7 @@ function ENT:CalcRPM()
 		end
 	end
 
-	self.FlyRPM = self.FlyRPM - math.min(TorqueDiff, TotalReqTq) / self.Inertia
+	self.FlyRPM = self.FlyRPM - min(TorqueDiff, TotalReqTq) / self.Inertia
 	self.LastThink = Clock.CurTime
 
 	self:UpdateSound()

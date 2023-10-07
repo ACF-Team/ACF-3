@@ -1,7 +1,7 @@
 -- Variables that should be persisted between server restarts
 
 -- Settings
-ACF.PersistServerData("Gamemode", 2)
+ACF.PersistServerData("LegalChecks", true)
 ACF.PersistServerData("ServerDataAllowAdmin", false)
 ACF.PersistServerData("RestrictInfo", true)
 ACF.PersistServerData("GunsCanFire", true)
@@ -10,7 +10,6 @@ ACF.PersistServerData("RacksCanFire", true)
 ACF.PersistServerData("HealthFactor", 1)
 ACF.PersistServerData("ArmorFactor", 1)
 ACF.PersistServerData("FuelFactor", 1)
-ACF.PersistServerData("CompFuelFactor", 1)
 ACF.PersistServerData("MaxThickness", ACF.MaximumArmor)
 ACF.PersistServerData("HEPush", true)
 ACF.PersistServerData("KEPush", true)

@@ -1,28 +1,35 @@
 local ACF = ACF
 local GlobalFilter = ACF.GlobalFilter
-local Message = SERVER and ACF.PrintLog or ACF.PrintToChat
-
-local Names = {
-	[1] = "Sandbox",
-	[2] = "Classic",
-	[3] = "Competitive"
-}
+local Messages = ACF.Utilities.Messages
+local Message = SERVER and Messages.PrintLog or Messages.PrintChat
 
 local Settings = {
-	Gamemode = function(_, _, Value)
-		local Mode = math.Clamp(math.floor(tonumber(Value) or 2), 1, 3)
-
-		if Mode == ACF.Gamemode then return end
-
-		ACF.Gamemode = Mode
-
-		Message("Info", "ACF Gamemode has been changed to " .. Names[Mode])
-	end,
 	ServerDataAllowAdmin = function(_, _, Value)
-		ACF.AllowAdminData = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.AllowAdminData == Bool then return end
+
+		ACF.AllowAdminData = Bool
+
+		Message("Info", "Admin server data access has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	RestrictInfo = function(_, _, Value)
-		ACF.RestrictInfo = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.RestrictInfo == Bool then return end
+
+		ACF.RestrictInfo = Bool
+
+		Message("Info", "Entity information has been " .. (Bool and "restricted." or "unrestricted."))
+	end,
+	LegalChecks = function(_, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.LegalChecks == Bool then return end
+
+		ACF.LegalChecks = Bool
+
+		Message("Info", "Legality checks have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	GunsCanFire = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -31,7 +38,7 @@ local Settings = {
 
 		ACF.GunsCanFire = Bool
 
-		Message("Info", "ACF Gunfire has been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Gunfire has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	GunsCanSmoke = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -40,7 +47,7 @@ local Settings = {
 
 		ACF.GunsCanSmoke = Bool
 
-		Message("Info", "ACF Gun sound and particles have been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Gun sounds and particles have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	RacksCanFire = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -49,7 +56,16 @@ local Settings = {
 
 		ACF.RacksCanFire = Bool
 
-		Message("Info", "ACF Missile Racks have been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Missile racks have been " .. (Bool and "enabled." or "disabled."))
+	end,
+	FuelUsage = function(_, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.FuelUsage == Bool then return end
+
+		ACF.FuelUsage = Bool
+
+		Message("Info", "Engine fuel requirements have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	HealthFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -61,7 +77,7 @@ local Settings = {
 		ACF.HealthFactor = Factor
 		ACF.Threshold = ACF.Threshold / Old * Factor
 
-		Message("Info", "ACF Health Mod changed to a factor of " .. Factor)
+		Message("Info", "Health multiplier changed to a factor of " .. Factor .. ".")
 	end,
 	ArmorFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -73,7 +89,7 @@ local Settings = {
 		ACF.ArmorFactor = Factor
 		ACF.ArmorMod = ACF.ArmorMod / Old * Factor
 
-		Message("Info", "ACF Armor Mod changed to a factor of " .. Factor)
+		Message("Info", "Armor multiplier changed to a factor of " .. Factor .. ".")
 	end,
 	FuelFactor = function(_, _, Value)
 		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
@@ -85,36 +101,53 @@ local Settings = {
 		ACF.FuelFactor = Factor
 		ACF.FuelRate = ACF.FuelRate / Old * Factor
 
-		Message("Info", "ACF Fuel Rate changed to a factor of " .. Factor)
-	end,
-	CompFuelFactor = function(_, _, Value)
-		local Factor = math.Clamp(math.Round(tonumber(Value) or 1, 2), 0.01, 2)
-
-		if ACF.CompFuelFactor == Factor then return end
-
-		local Old = ACF.CompFuelFactor
-
-		ACF.CompFuelFactor = Factor
-		ACF.CompFuelRate = ACF.CompFuelRate / Old * Factor
-
-		Message("Info", "ACF Competitive Fuel Rate changed to a factor of " .. Factor)
+		Message("Info", "Fuel rate multiplier changed to a factor of " .. Factor .. ".")
 	end,
 	HEPush = function(_, _, Value)
-		ACF.HEPush = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.HEPush == Bool then return end
+
+		ACF.HEPush = Bool
+
+		Message("Info", "HE entity pushing has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	KEPush = function(_, _, Value)
-		ACF.KEPush = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.KEPush == Bool then return end
+
+		ACF.KEPush = Bool
+
+		Message("Info", "Kinetic energy entity pushing has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	RecoilPush = function(_, _, Value)
-		ACF.RecoilPush = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.RecoilPush == Bool then return end
+
+		ACF.RecoilPush = Bool
+
+		Message("Info", "Recoil entity pushing has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	AllowFunEnts = function(_, _, Value)
-		ACF.AllowFunEnts = tobool(Value)
+		local Bool = tobool(Value)
+
+		if ACF.AllowFunEnts == Bool then return end
+
+		ACF.AllowFunEnts = Bool
+
+		Message("Info", "Fun Entities have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	AllowProcArmor = function(_, _, Value)
-		local allowProcArmor = tobool(Value)
-		ACF.AllowProcArmor = allowProcArmor
-		GlobalFilter["acf_armor"] = not allowProcArmor
+		local Bool = tobool(Value)
+
+		if ACF.AllowProcArmor == Bool then return end
+
+		ACF.AllowProcArmor = Bool
+		GlobalFilter["acf_armor"] = not Bool
+
+		Message("Info", "Procedural armor has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	WorkshopContent = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -125,7 +158,7 @@ local Settings = {
 
 		if CLIENT then return end
 
-		Message("Info", "ACF Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Workshop content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
 	WorkshopExtras = function(_, _, Value)
 		local Bool = tobool(Value)
@@ -136,7 +169,7 @@ local Settings = {
 
 		if CLIENT then return end
 
-		Message("Info", "ACF Extra Workshop Content download has been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Extra Workshop content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
 }
 
