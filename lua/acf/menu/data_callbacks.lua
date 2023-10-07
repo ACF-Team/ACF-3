@@ -58,12 +58,12 @@ local Settings = {
 
 		Message("Info", "Missile racks have been " .. (Bool and "enabled." or "disabled."))
 	end,
-	FuelUsage = function(_, _, Value)
+	RequireFuel = function(_, _, Value)
 		local Bool = tobool(Value)
 
-		if ACF.FuelUsage == Bool then return end
+		if ACF.RequireFuel == Bool then return end
 
-		ACF.FuelUsage = Bool
+		ACF.RequireFuel = Bool
 
 		Message("Info", "Engine fuel requirements have been " .. (Bool and "enabled." or "disabled."))
 	end,

@@ -163,9 +163,9 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local FuelUsage = Base:AddCheckBox("Require fuel usage for engines.")
-		FuelUsage:SetServerData("FuelUsage", "OnChange")
-		FuelUsage:DefineSetter(function(Panel, _, _, Value)
+		local RequireFuel = Base:AddCheckBox("Require fuel usage for engines.")
+		RequireFuel:SetServerData("RequireFuel", "OnChange")
+		RequireFuel:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value

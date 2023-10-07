@@ -307,7 +307,7 @@ do -- Spawn and Update functions
 		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
 		Entity.FuelType         = next(Engine.Fuel)
 		Entity.EngineType       = Type.ID
-		Entity.Efficiency       = Type.Efficiency --* ACF.FuelFactor--* ACF.FuelRate
+		Entity.Efficiency       = Type.Efficiency
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
@@ -695,7 +695,7 @@ function ENT:CalcRPM()
 		self.FuelUsage = 60 * Consumption / DeltaTime
 
 		FuelTank:Consume(Consumption)
-	elseif ACF.FuelUsage then -- Stay active if fuel consumption is disabled
+	elseif ACF.RequireFuel then -- Stay active if fuel consumption is disabled
 		SetActive(self, false)
 
 		self.FuelUsage = 0

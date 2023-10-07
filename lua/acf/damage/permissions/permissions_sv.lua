@@ -98,8 +98,11 @@ end
 
 local function LoadMapDPM()
 	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
+	local mapmode = file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
 
-	return file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
+	if mapmode then return mapmode end
+
+	return file.Read(mapDPMDir .. "default.txt", "DATA")
 end
 
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
@@ -403,7 +406,7 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	this.ModeDefaultAction[name] = Either(defaultaction, nil, defaultaction)
 	local DPM = LoadMapDPM()
 
-	if DPM ~= nil then
+	if DPM then
 		if DPM == name then
 			this.DamagePermission = this.Modes[name]
 			this.DefaultCanDamage = this.ModeDefaultAction[name]
@@ -414,17 +417,15 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 				print("ACF: Setting permission mode to: " .. name)
 			end)
 		end
-	else
-		if default then
-			this.DamagePermission = this.Modes[name]
-			this.DefaultCanDamage = this.ModeDefaultAction[name]
-			this.DefaultPermission = name
+	elseif default then
+		this.DamagePermission = this.Modes[name]
+		this.DefaultCanDamage = this.ModeDefaultAction[name]
+		this.DefaultPermission = name
 
-			timer.Simple(1, function()
-				print("ACF: Map does not have default permission set, using default")
-				print("ACF: Setting permission mode to: " .. name)
-			end)
-		end
+		timer.Simple(1, function()
+			print("ACF: Map does not have default permission set, using default")
+			print("ACF: Setting permission mode to: " .. name)
+		end)
 	end
 	--Old method - can break on rare occasions!
 	--if LoadMapDPM() == name or default then 
