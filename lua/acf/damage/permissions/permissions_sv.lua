@@ -96,13 +96,23 @@ local function SaveMapDPM(mode)
 	file.Write(mapDPMDir .. mapname .. ".txt", mode)
 end
 
+-- Unix adds an extra newline character at the end of the files
+-- So we have to get rid of it, and everything after it
+local function ReadFile(Path)
+	local Contents = file.Read(Path, "DATA")
+
+	if Contents then
+		return string.gsub(Contents, "(\n.*)", "")
+	end
+end
+
 local function LoadMapDPM()
 	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
-	local mapmode = file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
+	local mapmode = ReadFile(mapDPMDir .. mapname .. ".txt")
 
 	if mapmode then return mapmode end
 
-	return file.Read(mapDPMDir .. "default.txt", "DATA")
+	return ReadFile(mapDPMDir .. "default.txt")
 end
 
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
