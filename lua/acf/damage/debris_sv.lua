@@ -165,9 +165,12 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is a
 end
 
 function ACF.APKill(Entity, Normal, Power, DmgInfo)
-	ACF.KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
+	if not IsValid(Entity) then return end
+
 	local Class = Entity:GetClass()
 	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
+
+	ACF.KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
 
 	if not CanBreak then DebrisNetter(Entity, Normal, Power, true, false) end -- if we can't break the prop into its own gibs, then use ACF's system
 

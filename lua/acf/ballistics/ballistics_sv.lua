@@ -315,7 +315,7 @@ do -- Terminal ballistics --------------------------
 			)
 		end
 
-		if HitRes.Kill and IsValid(Entity) then
+		if HitRes.Kill then
 			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic, DmgInfo)
 		end
 

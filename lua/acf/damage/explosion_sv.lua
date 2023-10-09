@@ -99,7 +99,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		util.ScreenShake(Position, Amp, Amp, Amp / 15, Radius * 10)
 	end
 
-	-- Quickly getting rid of all the entity we can't damage
+	-- Quickly getting rid of all the entities we can't damage
 	for Index, Entity in ipairs(Found) do
 		if Damage.isValidTarget(Entity) then
 			Targets[Entity] = true
