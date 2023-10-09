@@ -88,7 +88,6 @@ do -- Size 1 container compatibility
 	})
 
 	FuelTanks.RegisterItem("Tank_1x8x2", "FTS_B", {
-		--Model		= "models/fueltank/fueltank_4x4x4.mdl",
 		Size	= Vector(80, 10, 20),
 		Shape	= "Box"
 	})
