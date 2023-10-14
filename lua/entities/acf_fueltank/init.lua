@@ -49,46 +49,45 @@ do -- Spawn and Update functions
 	}
 
 	local function VerifyData(Data)
-		if not isvector(Data.Size) then
-			local Group = Classes.GetGroup(FuelTanks, Data.FuelTank)
-			local Tank = FuelTanks.GetItem(Group.ID, Data.FuelTank)
-
-			if Tank.Size then -- Updating pre-scalable update fuel tanks
-				Data.Size = Vector(Tank.Size)
-				Data.Shape = Tank.Shape
-			else
-				local X = ACF.CheckNumber(Data.TankSizeX, 24)
-				local Y = ACF.CheckNumber(Data.TankSizeY, 24)
-				local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
-
-				if Data.FuelTank == "Drum" then
-					Y = X
-				end
-
-				Data.Size = Vector(X, Y, Z)
-			end
-		end
-
-		do -- Clamping size
-			local Min  = ACF.FuelMinSize
-			local Max  = ACF.FuelMaxSize
-			local Size = Data.Size
-
-			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
-			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
-			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
-		end
-
-		if not Data.FuelTank then
-			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
+		if not isstring(Data.FuelTank) then
+			Data.FuelTank = Data.SizeId or Data.Id
 		end
 
 		local Class = Classes.GetGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
-			Data.FuelTank = "Jerry_Can"
+			Data.FuelTank = "Box"
 
-			Class = Classes.GetGroup(FuelTanks, "Jerry_Can")
+			Class = FuelTanks.Get("Box")
+		elseif FuelTanks.IsAlias(Data.FuelTank) then
+			Data.FuelTank = Class.ID
+		end
+
+		if Class.IsScalable then
+			local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
+
+			if FuelTank then
+				Data.FuelTank = Class.ID
+				Data.Size     = Vector(FuelTank.Size)
+			elseif not isvector(Data.Size) then
+				local X = ACF.CheckNumber(Data.TankSizeX, 24)
+				local Y = ACF.CheckNumber(Data.TankSizeY, 24)
+				local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
+
+				Data.Size = Vector(X, Y, Z)
+			end
+
+			do -- Clamping size
+				local Min  = ACF.FuelMinSize
+				local Max  = ACF.FuelMaxSize
+				local Size = Data.Size
+
+				Size.x = math.Clamp(math.Round(Size.x), Min, Max)
+				Size.y = math.Clamp(math.Round(Size.y), Min, Max)
+				Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+			end
+		else
+			Data.Size = nil
 		end
 
 		-- Making sure to provide a valid fuel type
@@ -263,7 +262,7 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType", "Size")
 
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
