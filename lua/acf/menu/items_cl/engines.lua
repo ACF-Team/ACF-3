@@ -247,12 +247,15 @@ local function CreateMenu(Menu)
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 
-		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description
+		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "")
+		if Data.Description then
+			self.Description = self.Description .. Data.Description
+		end
 
 		ACF.SetClientData("FuelTank", Data.ID)
 
-		FuelPreview:UpdateModel(Data.Model)
-		FuelPreview:UpdateSettings(Data.Preview)
+		FuelPreview:UpdateModel(ClassData.Model or Data.Model)
+		FuelPreview:UpdateSettings(ClassData.Preview or Data.Preview)
 
 		FuelType:UpdateFuelText()
 	end
@@ -278,29 +281,20 @@ local function CreateMenu(Menu)
 		local FuelDescText = ""
 
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
-		local Shape = FuelTank.Shape
+		local ClassData = FuelClass.Selected
 		local Volume, Area
 
-		if Shape == "Box" then
-			local InteriorVolume = (TankSize.x - Wall) * (TankSize.y - Wall) * (TankSize.z - Wall) -- Math degree
-			Area = (2 * TankSize.x * TankSize.y) + (2 * TankSize.y * TankSize.z) + (2 * TankSize.x * TankSize.z)
-
-			Volume = InteriorVolume - (Area * Wall)
-
-			-- Preserving flavor text from older fuel tank sizes
-			FuelDescText = FuelDescSentences[math.random(33)]
-		elseif Shape == "Drum" then
-			local Radius = TankSize.x / 2
-			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (TankSize.z - Wall)
-			Area = 2 * math.pi * Radius * (Radius + TankSize.z)
-
-			Volume = InteriorVolume - (Area * Wall)
-
-			FuelDescText = ""
+		if ClassData.CalcVolume then
+			Volume, Area = ClassData.CalcVolume(TankSize, Wall)
 		else
 			Area = FuelTank.SurfaceArea
 			Volume = FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+		end
 
+		if ClassData.ID == "FTS_B" then
+			-- Preserving flavor text from older fuel tank sizes
+			FuelDescText = FuelDescSentences[math.random(33)]
+		else
 			FuelDescText = ""
 		end
 

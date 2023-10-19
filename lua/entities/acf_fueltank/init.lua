@@ -66,7 +66,7 @@ do -- Spawn and Update functions
 		if Class.IsScalable then
 			local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
 
-			if FuelTank then
+			if FuelTank and FuelTank.Size then
 				Data.FuelTank = Class.ID
 				Data.Size     = Vector(FuelTank.Size)
 			elseif not isvector(Data.Size) then
@@ -109,10 +109,13 @@ do -- Spawn and Update functions
 		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
+		Entity.ACF.Model = Class.Model or FuelTank and FuelTank.Model -- Must be set before changing model
+		Entity.ClassData = Class
 
-		if FuelTank.Shape ~= "Box" and FuelTank.Shape ~= "Drum" then
-			Entity:SetModel(FuelTank.Model)
+		if Class.IsScalable then
+			Entity:SetSize(Data.Size)
+		else
+			Entity:SetModel(Entity.ACF.Model)
 			Entity:PhysicsInit(SOLID_VPHYSICS, true)
 			Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		end
@@ -122,48 +125,29 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		local Size = Data.Size
-		local Volume, Area, NameType
+		local Volume, Area
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 
-		if FuelTank.Shape == "Box" then
-			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
-			Area = (2 * Size.x * Size.y) + (2 * Size.y * Size.z) + (2 * Size.x * Size.z)
-
-			Volume = InteriorVolume - (Area * Wall)
-
-			NameType = " Tank"
-
-			Entity:SetSize(Data.Size)
-		elseif FuelTank.Shape == "Drum" then
-			local Radius = Size.x / 2
-			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
-			Area = 2 * math.pi * Radius * (Radius + Size.z)
-
-			Volume = InteriorVolume - (Area * Wall)
-
-			NameType = " Drum"
-
-			Entity:SetSize(Data.Size)
-		else
+		if Class.CalcVolume then
+			Volume, Area = Class.CalcVolume(Data.Size, Wall)
+		else -- Default to finding surface area/volume based off physics object instead
 			local PhysObj = Entity:GetPhysicsObject()
+
 			Area = PhysObj:GetSurfaceArea()
-
 			Volume = PhysObj:GetVolume() - (Area * Wall) -- Total volume of tank (cu in), reduced by wall thickness
-
-			NameType = " " .. FuelTank.Name
 		end
+
+		local NameType = " " .. (Class.NameType or FuelTank.Name)
 
 		Entity.Name        = Entity.FuelType .. NameType
 		Entity.ShortName   = Entity.FuelType
 		Entity.EntType     = Class.Name
-		Entity.ClassData   = Class
 		Entity.FuelDensity = FuelType.Density
 		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
 		Entity.EmptyMass   = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
-		Entity.IsExplosive = FuelTank.IsExplosive
-		Entity.NoLinks     = FuelTank.Unlinkable
-		Entity.Shape       = FuelTank.Shape
+		Entity.IsExplosive = FuelTank and FuelTank.IsExplosive or Class.IsExplosive
+		Entity.NoLinks     = FuelTank and FuelTank.Unlinkable or Class.Unlinkable
+		Entity.Shape       = FuelTank and FuelTank.Shape or Class.Shape
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelTank, FuelType)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelTank, FuelType)
@@ -203,7 +187,7 @@ do -- Spawn and Update functions
 		local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
 		local FuelType = FuelTypes.Get(Data.FuelType)
 		local Limit    = Class.LimitConVar.Name
-		local Model    = FuelTank.Model
+		local Model    = Class.Model or FuelTank and FuelTank.Model
 
 		if not Player:CheckLimit(Limit) then return end
 
@@ -216,7 +200,7 @@ do -- Spawn and Update functions
 		if not IsValid(Tank) then return end
 
 		Tank:SetPlayer(Player)
-		if FuelTank.Shape == "Box" or FuelTank.Shape == "Drum" then
+		if Class.IsScalable then
 			Tank:SetScaledModel(Model)
 		end
 		Tank:SetAngles(Angle)
@@ -452,6 +436,9 @@ do -- Mass Update
 end
 
 do -- Overlay Update
+	local Classes = ACF.Classes
+	local FuelTypes = Classes.FuelTypes
+
 	local Text = "%s\n\n%sFuel Type: %s\n%s"
 
 	function ENT:UpdateOverlayText()
@@ -464,31 +451,19 @@ do -- Overlay Update
 			Status = self:CanConsume() and "Providing Fuel" or "Idle"
 		end
 
-		local Shape = self.Shape
+		local Class = self.ClassData
 
-		if Shape == "Box" then
-			local X, Y, Z = self:GetSize():Unpack()
-			X = math.Round(X, 2)
-			Y = math.Round(Y, 2)
-			Z = math.Round(Z, 2)
-
-			Size = "Size: " .. X .. "x" .. Y .. "x" .. Z .. "\n\n"
-		elseif Shape == "Drum" then
-			local D, _, H = self:GetSize():Unpack()
-			D = math.Round(D, 2)
-			H = math.Round(H, 2)
-
-			Size = "Diameter: " .. D .. "\nHeight: " .. H .. "\n\n"
+		if Class and Class.CalcOverlaySize then
+			Size = Class.CalcOverlaySize(self)
 		end
 
-		if self.FuelType == "Electric" then -- TODO: Replace hardcoded stuff
-			local KiloWatt = math.Round(self.Fuel, 1)
-			local Joules = math.Round(self.Fuel * 3.6, 1)
+		local FuelType = FuelTypes.Get(self.FuelType)
 
-			Content = "Charge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+		if FuelType and FuelType.FuelTankOverlayText then
+			Content = FuelType.FuelTankOverlayText(self.Fuel)
 		else
-			local Liters = math.Round(self.Fuel, 1)
-			local Gallons = math.Round(self.Fuel * 0.264172, 1)
+			local Liters = math.Round(self.Fuel, 2)
+			local Gallons = math.Round(self.Fuel * 0.264172, 2)
 
 			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
@@ -587,23 +562,11 @@ end
 
 function ENT:OnResized(Size)
 	do -- Calculate new empty mass
-		local Volume
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+		local Class = self.ClassData
+		local _, Area = Class.CalcVolume(Size, Wall)
 
-		if self.FuelTank == "Drum" then
-			local Radius = Size.x / 2
-			local ExteriorVolume = math.pi * (Radius ^ 2) * Size.z
-			local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
-
-			Volume = ExteriorVolume - InteriorVolume
-		else
-			local ExteriorVolume = Size.x * Size.y * Size.z
-			local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
-
-			Volume = ExteriorVolume - InteriorVolume
-		end
-
-		local Mass = Volume * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local Mass = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 
 		self.EmptyMass = Mass
 	end

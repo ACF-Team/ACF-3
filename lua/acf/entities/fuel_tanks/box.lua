@@ -2,18 +2,38 @@ local FuelTanks = ACF.Classes.FuelTanks
 
 FuelTanks.Register("FTS_B", {
 	Name		= "Fuel Box",
-	Description	= "Scalable fuel tank; required for engines to work."
+	Description	= "Scalable fuel box; required for engines to work.",
+	IsScalable	= true,
+	Model		= "models/fueltank/fueltank_4x4x4.mdl",
+	Shape		= "Box",
+	NameType	= "Tank",
+	IsExplosive	= true,
+	Unlinkable	= false,
+	Preview = {
+		FOV = 120,
+	},
+	CalcVolume = function(Size, Wall)
+		local InteriorVolume = (Size.x - Wall) * (Size.y - Wall) * (Size.z - Wall) -- Math degree
+
+		local Area = (2 * Size.x * Size.y) + (2 * Size.y * Size.z) + (2 * Size.x * Size.z)
+		local Volume = InteriorVolume - (Area * Wall)
+
+		return Volume, Area
+	end,
+	CalcOverlaySize = function(Entity)
+		local X, Y, Z = Entity:GetSize():Unpack()
+		X = math.Round(X, 2)
+		Y = math.Round(Y, 2)
+		Z = math.Round(Z, 2)
+
+		return "Size: " .. X .. "x" .. Y .. "x" .. Z .. "\n\n"
+	end
 })
 
 do
 	FuelTanks.RegisterItem("Box", "FTS_B", {
 		Name		= "Fuel Box",
 		Description	= "", -- Blank to allow for dynamic descriptions better
-		Model		= "models/fueltank/fueltank_4x4x4.mdl",
-		Shape		= "Box",
-		Preview = {
-			FOV = 120,
-		},
 	})
 end
 

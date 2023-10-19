@@ -2,18 +2,41 @@ local FuelTanks = ACF.Classes.FuelTanks
 
 FuelTanks.Register("FTS_D", {
 	Name		= "Fuel Drum",
-	Description	= "Scalable fuel drum; required for engines to work."
+	Description	= "Scalable fuel drum; required for engines to work.",
+	IsScalable	= true,
+	Model		= "models/props_c17/oildrum001_explosive.mdl",
+	Shape		= "Drum",
+	NameType	= "Drum",
+	IsExplosive	= true,
+	Unlinkable	= false,
+	Preview = {
+		FOV = 120,
+	},
+	CalcVolume = function(Size, Wall)
+		local Radius = Size.x / 2
+		local InteriorVolume = math.pi * ((Radius - Wall) ^ 2) * (Size.z - Wall)
+
+		local Area = 2 * math.pi * Radius * (Radius + Size.z)
+		local Volume = InteriorVolume - (Area * Wall)
+
+		return Volume, Area
+	end,
+	CalcOverlaySize = function(Entity)
+		local D, _, H = Entity:GetSize():Unpack()
+		D = math.Round(D, 2)
+		H = math.Round(H, 2)
+
+		return "Diameter: " .. D .. "\nHeight: " .. H .. "\n\n"
+	end,
+	VerifyData = function(Data, _) -- Diameter needs to be made equal for the X and Y dimensions
+		Data.Size.y = Data.Size.x
+	end
 })
 
 do
 	FuelTanks.RegisterItem("Drum", "FTS_D", {
 		Name		= "Fuel Drum",
 		Description	= "Tends to explode when shot.",
-		Model		= "models/props_c17/oildrum001_explosive.mdl",
-		Shape		= "Drum",
-		Preview = {
-			FOV = 120,
-		},
 	})
 end
 
