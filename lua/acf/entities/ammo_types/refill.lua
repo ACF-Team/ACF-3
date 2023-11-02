@@ -1,6 +1,7 @@
-local ACF   = ACF
-local Types = ACF.Classes.AmmoTypes
-local Ammo  = Types.Register("Refill", "AP")
+local ACF    = ACF
+local Types  = ACF.Classes.AmmoTypes
+local Sounds = ACF.Utilities.Sounds
+local Ammo   = Types.Register("Refill", "AP")
 
 
 function Ammo:OnLoaded()
@@ -93,8 +94,8 @@ if SERVER then
 				Crate:Consume(-Transfer)
 				Refill:Consume(Transfer)
 
-				Crate:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.Volume)
-				Refill:EmitSound("items/ammo_pickup.wav", 70, 100, 0.5 * ACF.Volume)
+				Sounds.SendSound(Crate, "items/ammo_pickup.wav", 70, 100, 0.5)
+				Sounds.SendSound(Refill, "items/ammo_pickup.wav", 70, 100, 0.5)
 
 			elseif Refill.SupplyingTo[Crate] then
 				Refill.SupplyingTo[Crate] = nil

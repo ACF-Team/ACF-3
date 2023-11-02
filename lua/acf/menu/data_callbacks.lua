@@ -176,12 +176,3 @@ local Settings = {
 for Key, Function in pairs(Settings) do
 	ACF.AddServerDataCallback(Key, "Global Variable Callback", Function)
 end
-
-do -- Volume setting callback
-	local Realm = SERVER and "Server" or "Client"
-	local Callback = ACF["Add" .. Realm .. "DataCallback"]
-
-	Callback("Volume", "Volume Variable Callback", function(_, _, Value)
-		ACF.Volume = math.Clamp(tonumber(Value) or 1, 0, 1)
-	end)
-end

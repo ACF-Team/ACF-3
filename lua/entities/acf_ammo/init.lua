@@ -419,6 +419,7 @@ end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
 	local Clock   = Utilities.Clock
+	local Sounds  = Utilities.Sounds
 	local Damage  = ACF.Damage
 	local Objects = Damage.Objects
 
@@ -438,7 +439,7 @@ do -- ACF Activation and Damage -----------------
 				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency)
 				local Pitch = math.max(255 - BulletData.PropMass * 100,60)
 
-				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
+				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
 				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
