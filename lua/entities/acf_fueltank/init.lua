@@ -200,9 +200,7 @@ do -- Spawn and Update functions
 		if not IsValid(Tank) then return end
 
 		Tank:SetPlayer(Player)
-		if Class.IsScalable then
-			Tank:SetScaledModel(Model)
-		end
+		Tank:SetScaledModel(Model)
 		Tank:SetAngles(Angle)
 		Tank:SetPos(Pos)
 		Tank:Spawn()
