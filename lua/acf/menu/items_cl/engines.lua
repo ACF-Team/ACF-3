@@ -12,50 +12,13 @@ local RPMText = [[
 
 	%s
 	%s]]
-local PowerText  = [[
+local PowerText = [[
 	Peak Torque : %s Nm - %s ft-lb @ %s RPM
 	Peak Power : %s kW - %s HP @ %s RPM]]
 local ConsumptionText = [[
 	%s Consumption :
 	%s L/min - %s gal/min @ %s RPM]]
 local TankSize    = Vector()
-
-local FuelDescSentences = {
-	"Seriously consider walking.",
-	"Will keep a kart running all day.",
-	"Dinghy.",
-	"Outboard motor.",
-	"Clown car.",
-	"Fuel pancake.",
-	"Lawn tractors.",
-	"Small tractor tank.",
-	"Fuel. Will keep you going for awhile.",
-	"Gas stations? We don't need no stinking gas stations!",
-	"Beep beep.",
-	"Mini Cooper.",
-	"Good bit of go-juice.",
-	"Land boat.",
-	"Conformal fuel tank; fits narrow spaces.",
-	"Compact car.",
-	"Sedan.",
-	"Truck.",
-	"With great capacity, comes great responsibili--VROOOOM",
-	"Popular with arsonists.",
-	"Fire juice.",
-	"Trees are gay anyway.",
-	"Arson material.",
-	"What's a gas station?",
-	"\'MURRICA FUCKYEAH!",
-	"Got gas?",
-	"Drive across the desert without a fuck to give.",
-	"May contain Mesozoic ghosts.",
-	"Conformal fuel tank; does what all its friends do.",
-	"Certified 100% dinosaur juice.",
-	"Will last you a while.",
-	"Sloshy sloshy!",
-	"What's global warming?",
-	"Tank Tank.",
-}
 
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
@@ -212,25 +175,10 @@ local function CreateMenu(Menu)
 
 		ACF.LoadSortedList(FuelList, Data.Items, "ID")
 
-		if Data.ID == "FTS_B" then -- Scalable box tanks
-			SizeX:SetVisible(true)
-			SizeY:SetVisible(true)
-			SizeZ:SetVisible(true)
-			FuelList:SetVisible(false)
-
-			SizeX:SetText("Tank Length")
-			SizeZ:SetText("Tank Height")
-		elseif Data.ID == "FTS_D" then -- Scalable drum tanks
-			SizeX:SetVisible(true)
-			SizeY:SetVisible(false)
-			-- Purposely hide height slider before showing to prevent a minor visual bug when switching from box to drum
-			SizeZ:SetVisible(false)
-			SizeZ:SetVisible(true)
-			FuelList:SetVisible(false)
-
-			SizeX:SetText("Drum Diameter")
-			SizeZ:SetText("Drum Height")
-		else -- Non-scalable tanks
+		-- Set up fuel tank settings as specified by the class
+		if Data.MenuSettings then
+			Data.MenuSettings(SizeX, SizeY, SizeZ, FuelList)
+		else
 			SizeX:SetVisible(false)
 			SizeY:SetVisible(false)
 			SizeZ:SetVisible(false)
@@ -291,9 +239,8 @@ local function CreateMenu(Menu)
 			Volume = FuelTank.Volume - (FuelTank.SurfaceArea * Wall) -- Total volume of tank (cu in), reduced by wall thickness
 		end
 
-		if ClassData.ID == "FTS_B" then
-			-- Preserving flavor text from older fuel tank sizes
-			FuelDescText = FuelDescSentences[math.random(33)]
+		if ClassData.FuelDescText then
+			FuelDescText = ClassData.FuelDescText()
 		else
 			FuelDescText = ""
 		end

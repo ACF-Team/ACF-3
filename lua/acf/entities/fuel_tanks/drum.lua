@@ -30,6 +30,17 @@ FuelTanks.Register("FTS_D", {
 	end,
 	VerifyData = function(Data, _) -- Diameter needs to be made equal for the X and Y dimensions
 		Data.Size.y = Data.Size.x
+	end,
+	MenuSettings = function(SizeX, SizeY, SizeZ, FuelList)
+		SizeX:SetVisible(true)
+		SizeY:SetVisible(false)
+		-- Purposely hide height slider before showing to prevent a minor visual bug when switching from box to drum
+		SizeZ:SetVisible(false)
+		SizeZ:SetVisible(true)
+		FuelList:SetVisible(false)
+
+		SizeX:SetText("Drum Diameter")
+		SizeZ:SetText("Drum Height")
 	end
 })
 

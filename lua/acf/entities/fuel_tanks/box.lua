@@ -1,5 +1,43 @@
 local FuelTanks = ACF.Classes.FuelTanks
 
+-- Preserving flavor text from older fuel tank sizes
+local FuelDescSentences = {
+	"Seriously consider walking.",
+	"Will keep a kart running all day.",
+	"Dinghy.",
+	"Outboard motor.",
+	"Clown car.",
+	"Fuel pancake.",
+	"Lawn tractors.",
+	"Small tractor tank.",
+	"Fuel. Will keep you going for awhile.",
+	"Gas stations? We don't need no stinking gas stations!",
+	"Beep beep.",
+	"Mini Cooper.",
+	"Good bit of go-juice.",
+	"Land boat.",
+	"Conformal fuel tank; fits narrow spaces.",
+	"Compact car.",
+	"Sedan.",
+	"Truck.",
+	"With great capacity, comes great responsibili--VROOOOM",
+	"Popular with arsonists.",
+	"Fire juice.",
+	"Trees are gay anyway.",
+	"Arson material.",
+	"What's a gas station?",
+	"\'MURRICA FUCKYEAH!",
+	"Got gas?",
+	"Drive across the desert without a fuck to give.",
+	"May contain Mesozoic ghosts.",
+	"Conformal fuel tank; does what all its friends do.",
+	"Certified 100% dinosaur juice.",
+	"Will last you a while.",
+	"Sloshy sloshy!",
+	"What's global warming?",
+	"Tank Tank.",
+}
+
 FuelTanks.Register("FTS_B", {
 	Name		= "Fuel Box",
 	Description	= "Scalable fuel box; required for engines to work.",
@@ -27,6 +65,18 @@ FuelTanks.Register("FTS_B", {
 		Z = math.Round(Z, 2)
 
 		return "Size: " .. X .. "x" .. Y .. "x" .. Z .. "\n\n"
+	end,
+	MenuSettings = function(SizeX, SizeY, SizeZ, FuelList)
+		SizeX:SetVisible(true)
+		SizeY:SetVisible(true)
+		SizeZ:SetVisible(true)
+		FuelList:SetVisible(false)
+
+		SizeX:SetText("Tank Length")
+		SizeZ:SetText("Tank Height")
+	end,
+	FuelDescText = function()
+		return FuelDescSentences[math.random(33)]
 	end
 })
 
