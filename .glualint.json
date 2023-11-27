@@ -17,7 +17,7 @@
     "lint_unusedVars":                  true,
     "lint_unusedParameters":            true,
     "lint_unusedLoopVars":              true,
-    "lint_ignoreFiles":                 [],
+    "lint_ignoreFiles":                 ["lua/entities/gmod_wire_expression2/core/custom/*.lua"],
 
     "prettyprint_spaceAfterParens":     false,
     "prettyprint_spaceAfterBrackets":   false,
