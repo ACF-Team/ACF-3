@@ -47,7 +47,7 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
-	local Hitbox   = ACF.GetBestSquishyHitBox(Entity,DmgInfo:GetHitPos(),(DmgInfo:GetHitPos() - DmgInfo:GetOrigin()):GetNormalized())
+	local Hitbox = ACF.GetBestSquishyHitBox(Entity, DmgInfo:GetHitPos(), (DmgInfo:GetHitPos() - DmgInfo:GetOrigin()):GetNormalized())
 	local Size   = Entity:BoundingRadius()
 	local HitRes = DmgResult:GetBlank()
 	local Damage = 0
@@ -63,13 +63,13 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 		-- Using player armor for fake armor works decently, as even if you don't take actual damage, the armor takes 1 point of damage, so it can potentially wear off
 		-- These funcs are also done on a hierarchy sort of system, so if the helmet is penetrated, then DamageHead is called, same for Vest -> Chest
 		if Hitbox == "helmet" then
-			Damage,HitRes = ACF.SquishyFuncs.DamageHelmet(Entity,HitRes,DmgResult)
+			Damage, HitRes = ACF.SquishyFuncs.DamageHelmet(Entity, HitRes, DmgResult)
 		elseif Hitbox == "head" then
-			Damage,HitRes = ACF.SquishyFuncs.DamageHead(Entity,HitRes,DmgResult)
+			Damage, HitRes = ACF.SquishyFuncs.DamageHead(Entity, HitRes, DmgResult)
 		elseif Hitbox == "vest" then
-			Damage,HitRes = ACF.SquishyFuncs.DamageVest(Entity,HitRes,DmgResult)
+			Damage, HitRes = ACF.SquishyFuncs.DamageVest(Entity, HitRes, DmgResult)
 		elseif Hitbox == "chest" then
-			Damage,HitRes = ACF.SquishyFuncs.DamageChest(Entity,HitRes,DmgResult)
+			Damage, HitRes = ACF.SquishyFuncs.DamageChest(Entity, HitRes, DmgResult)
 		else
 			DmgResult:SetThickness(Size * 0.2 * 0.02)
 

@@ -130,6 +130,7 @@ if SERVER then
 
 	function Ammo:PropImpact(Bullet, Trace)
 		local Target = Trace.Entity
+		local Filter = Bullet.Filter
 
 		if ACF.Check(Target) then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
@@ -141,7 +142,7 @@ if SERVER then
 			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
 
 			if HitRes.Overkill > 0 then
-				table.insert(Bullet.Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
+				table.insert(Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
 
 				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
 
@@ -152,7 +153,7 @@ if SERVER then
 				return false
 			end
 		else
-			table.insert(Bullet.Filter, Target)
+			table.insert(Filter, Target)
 
 			return "Penetrated"
 		end

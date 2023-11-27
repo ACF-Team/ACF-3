@@ -312,9 +312,7 @@ if SERVER then
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Ent, Direction, 0, JetInfo)
-
-					table.insert(Filter , Debris)
+					ACF.APKill(Ent, Direction, 0, JetInfo)
 				end
 			end
 			-- Reduce the jet mass by the lost mass
@@ -387,9 +385,7 @@ if SERVER then
 				local JetResult = Damage.dealDamage(Entity, SpallDmg, SpallInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Entity, Direction, 0, SpallInfo)
-
-					table.insert(Filter , Debris)
+					ACF.APKill(Entity, Direction, 0, SpallInfo)
 				end
 			end
 

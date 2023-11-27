@@ -526,10 +526,11 @@ do -- ACF Activation and Damage -----------------
 		self.Exploding = true
 
 		local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
-		local Filler     = self.BulletData.FillerMass or 0
-		local Propellant = self.BulletData.PropMass or 0
+		local BulletData = self.BulletData
+		local Filler     = BulletData.FillerMass or 0
+		local Propellant = BulletData.PropMass or 0
 		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
-		local FragMass   = self.BulletData.ProjMass or Explosive * 0.5
+		local FragMass   = BulletData.ProjMass or Explosive * 0.5
 		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)
