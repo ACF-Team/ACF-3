@@ -81,7 +81,7 @@ FuelTanks.Register("FTS_B", {
 })
 
 do
-	FuelTanks.RegisterItem("Box", "FTS_B", {
+	FuelTanks.RegisterItem("Box_Scalable", "FTS_B", {
 		Name		= "Fuel Box",
 		Description	= "", -- Blank to allow for dynamic descriptions better
 	})
