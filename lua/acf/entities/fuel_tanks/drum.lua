@@ -45,7 +45,7 @@ FuelTanks.Register("FTS_D", {
 })
 
 do
-	FuelTanks.RegisterItem("Drum_Scalable", "FTS_D", {
+	FuelTanks.RegisterItem("Drum", "FTS_D", {
 		Name		= "Fuel Drum",
 		Description	= "Tends to explode when shot.",
 	})
