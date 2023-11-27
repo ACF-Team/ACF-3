@@ -11,7 +11,7 @@ Weapons.Register("AL", {
 	IsScalable  = true,
 	Mass        = 5630,
 	Spread      = 0.08,
-	MagSize     = 8,
+	MagSize     = 10,
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
@@ -30,8 +30,8 @@ Weapons.Register("AL", {
 		Max = 35,
 	},
 	Cyclic = {
-		Min = 25,
-		Max = 10,
+		Min = 28,
+		Max = 13,
 	},
 })
 
