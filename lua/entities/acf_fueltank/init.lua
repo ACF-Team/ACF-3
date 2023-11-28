@@ -109,7 +109,7 @@ do -- Spawn and Update functions
 		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = Class.Model or FuelTank and FuelTank.Model -- Must be set before changing model
+		Entity.ACF.Model = FuelTank and FuelTank.Model or Class.Model -- Must be set before changing model
 		Entity.ClassData = Class
 
 		if Class.IsScalable then
