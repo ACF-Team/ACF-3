@@ -237,7 +237,7 @@ if CLIENT then
 
 	end
 
-	-- clamp thickness if the change in ductility puts mass out of range
+	-- Clamp thickness if the change in ductility puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_ductility", function(_, _, value)
 
 		local area = ArmorProp_Area:GetFloat()
@@ -257,7 +257,7 @@ if CLIENT then
 		end
 	end)
 
-	-- clamp ductility if the change in thickness puts mass out of range
+	-- Clamp ductility and thickness if the change in thickness puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_thickness", function(_, _, value)
 
 		local area = ArmorProp_Area:GetFloat()
@@ -274,6 +274,9 @@ if CLIENT then
 
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
 			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
+
+			thickness = ACF_CalcArmor(area, ductility, mass)
+			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
 		end
 	end)
 
