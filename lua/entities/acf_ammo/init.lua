@@ -530,7 +530,8 @@ do -- ACF Activation and Damage -----------------
 		local BulletData = self.BulletData
 		local Filler     = BulletData.FillerMass or 0
 		local Propellant = BulletData.PropMass or 0
-		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
+		local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
+		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
 		local FragMass   = BulletData.ProjMass or Explosive * 0.5
 		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
 

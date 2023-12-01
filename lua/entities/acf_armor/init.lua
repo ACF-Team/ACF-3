@@ -56,8 +56,9 @@ do -- Spawning and Updating
 	end
 
 	local function UpdatePlate(Entity, Data, Armor)
+		Entity.ACF = Entity.ACF or {}
+
 		local Size = Data.Size
-		local Mass = Armor:GetMass(Size.x * Size.y * Size.z)
 
 		Entity.ArmorClass = Armor
 		Entity.Tensile    = Armor.Tensile
@@ -71,10 +72,9 @@ do -- Spawning and Updating
 			Entity[V] = Data[V]
 		end
 
-		ACF.Activate(Entity)
+		ACF.Activate(Entity, true)
 
-		Entity.ACF.Mass      = Mass
-		Entity.ACF.LegalMass = Mass
+		Entity:UpdateMass(true)
 	end
 
 	function MakeACF_Armor(Player, Pos, Angle, Data)
@@ -157,12 +157,6 @@ do -- Spawning and Updating
 
 		return true, "Armor plate updated successfully!"
 	end
-
-	function ENT:OnResized(Size)
-		local Mass = self.ArmorClass:GetMass(Size.x * Size.y * Size.z)
-
-		self:GetPhysicsObject():SetMass(Mass)
-	end
 end
 
 do -- ACF Activation and Damage
@@ -170,15 +164,15 @@ do -- ACF Activation and Damage
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-		local Volume  = PhysObj:GetVolume()
-		local Health  = Volume / ACF.Threshold * self.Tensile
+		local Area = PhysObj:GetSurfaceArea() * 6.45
+		local Health  = Area / ACF.Threshold * self.Tensile
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
 			Percent = self.ACF.Health / self.ACF.MaxHealth
 		end
 
-		self.ACF.Area      = PhysObj:GetVolume() * 6.45 -- NOTE: Is this really correct?
+		self.ACF.Area      = Area
 		self.ACF.Armour    = 1
 		self.ACF.MaxArmour = 1
 		self.ACF.Health    = Health * Percent
@@ -220,6 +214,38 @@ do -- ACF Activation and Damage
 			Overkill = math.max(Pen - MaxPen, 0),
 			Kill     = Damage > HP
 		}
+	end
+end
+
+do -- Mass Update
+	local TimerCreate = timer.Create
+	local TimerExists = timer.Exists
+
+	local function UpdateMass(Entity)
+		local Size = Entity.Size
+		local Mass = Entity.ArmorClass:GetMass(Size.x * Size.y * Size.z)
+		local PhysObj = Entity:GetPhysicsObject()
+
+		if IsValid(PhysObj) then
+			Entity.ACF.Mass      = Mass
+			Entity.ACF.LegalMass = Mass
+
+			PhysObj:SetMass(Mass)
+		end
+	end
+
+	function ENT:UpdateMass(Instant)
+		if Instant then
+			return UpdateMass(self)
+		end
+
+		if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
+
+		TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
+			if not IsValid(self) then return end
+
+			UpdateMass(self)
+		end)
 	end
 end
 
