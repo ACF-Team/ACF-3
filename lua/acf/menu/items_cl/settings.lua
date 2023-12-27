@@ -111,23 +111,6 @@ do -- Serverside settings
 	ACF.AddMenuItem(101, "Settings", "Serverside Settings", "server", ACF.GenerateServerSettings)
 
 	ACF.AddServerSettings(1, "General Settings", function(Base)
-		Base:AddLabel("ACF Gamemode for this server:")
-
-		local Gamemode = Base:AddComboBox()
-		Gamemode:AddChoice("Sandbox")
-		Gamemode:AddChoice("Classic")
-		Gamemode:AddChoice("Competitive")
-		Gamemode:SetServerData("Gamemode", "OnSelect")
-		Gamemode:DefineSetter(function(Panel, _, _, Value)
-			if Panel.selected == Value then return end -- God bless derma
-
-			Panel:ChooseOptionID(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Each gamemode has its own restrictions, Sandbox being the most relaxed and Competitive the most strict.")
-
 		local Admins = Base:AddCheckBox("Allow admins to control server data.")
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)
@@ -148,6 +131,14 @@ do -- Serverside settings
 
 		Base:AddHelp("You'll need the player's permissions in order to check relevant information on entities owned by them.")
 
+		local LegalChecks = Base:AddCheckBox("Enable legality checks on ACF entities.")
+		LegalChecks:SetServerData("LegalChecks", "OnChange")
+		LegalChecks:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
 		local GunFire = Base:AddCheckBox("Allow guns to fire.")
 		GunFire:SetServerData("GunsCanFire", "OnChange")
 		GunFire:DefineSetter(function(Panel, _, _, Value)
@@ -156,7 +147,7 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local GunSmoke = Base:AddCheckBox("Allow guns to produce sound and particle effects.")
+		local GunSmoke = Base:AddCheckBox("Allow guns to produce sounds and particles.")
 		GunSmoke:SetServerData("GunsCanSmoke", "OnChange")
 		GunSmoke:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
@@ -167,6 +158,14 @@ do -- Serverside settings
 		local RackFire = Base:AddCheckBox("Allow missiles and bombs to fire.")
 		RackFire:SetServerData("RacksCanFire", "OnChange")
 		RackFire:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local RequireFuel = Base:AddCheckBox("Require fuel usage for engines.")
+		RequireFuel:SetServerData("RequireFuel", "OnChange")
+		RequireFuel:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value
@@ -195,16 +194,6 @@ do -- Serverside settings
 
 			return Value
 		end)
-
-		local CompFuel = Base:AddSlider("Competitive Fuel Factor", 0.01, 2, 2)
-		CompFuel:SetServerData("CompFuelFactor", "OnValueChanged")
-		CompFuel:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Only applies to servers with their ACF Gamemode set to Competitive.")
 	end)
 
 	ACF.AddServerSettings(100, "Sound Volume", function(Base)
@@ -265,6 +254,14 @@ do -- Serverside settings
 		end)
 
 		Base:AddHelp("Changes on this option will only take effect once the players reload their menu.")
+
+		local AllowProcArmor = Base:AddCheckBox("Allow use of Procedural Armor.")
+		AllowProcArmor:SetServerData("AllowProcArmor", "OnChange")
+		AllowProcArmor:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
 	end)
 
 	ACF.AddServerSettings(301, "Workshop Content", function(Base)

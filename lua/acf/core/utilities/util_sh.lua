@@ -234,7 +234,7 @@ do -- Unit conversion
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
 	end
 end
-
+--[[
 -- Pretty much unused, should be moved into the ACF namespace or just removed
 function switch(cases, arg)
 	local Var = cases[arg]
@@ -243,7 +243,7 @@ function switch(cases, arg)
 
 	return cases.default
 end
-
+]]
 function ACF.RandomVector(Min, Max)
 	local X = math.Rand(Min.x, Max.x)
 	local Y = math.Rand(Min.y, Max.y)
@@ -259,12 +259,34 @@ do -- ACF.GetHitAngle
 
 	-- Whenever a trace starts inside an object, a ray-mesh intersection will be used to calculate the real hitNormal
 	-- Additionally, the trace.Normal is unreliable and rayNormal (bullet.Flight) will be used instead
-
 	local v0       = Vector()
 	local toDegree = math.deg
 	local acos     = math.acos
+	local abs      = math.abs
+	local clamp    = math.Clamp
+	local sqrt     = math.sqrt
+	local theta    = 0.001
 
-	local function rayMeshIntersect(ent, rayOrigin, rayDir)
+	local function raySphere(rayOrigin, rayDir, sphereOrigin, radius)
+		local a = 2 * rayDir:LengthSqr()
+		local b = 2 * rayDir:Dot(rayOrigin - sphereOrigin)
+		local c = sphereOrigin:LengthSqr() + rayOrigin:LengthSqr() - 2 * sphereOrigin:Dot(rayOrigin) - radius^2
+
+		local bac4 = b^2 - (2 * a * c)
+
+		if bac4 >= theta and b < theta then
+
+			local enter  = rayOrigin + ((-sqrt(bac4) - b) / a) * rayDir
+			--local exit   =  rayOrigin + ((sqrt(bac4) - b) / a) * rayDir
+			local normal = (enter - sphereOrigin):GetNormalized()
+
+			return normal
+		end
+
+		return rayDir
+	end
+
+	local function rayMesh(ent, rayOrigin, rayDir)
 		local mesh        = ent:GetPhysicsObject():GetMeshConvexes()
 		local minDistance = math.huge
 		local minNormal   = -rayDir
@@ -312,17 +334,24 @@ do -- ACF.GetHitAngle
 		return ent:LocalToWorldAngles(minNormal:Angle()):Forward()
 	end
 
+	local function rayIntersect(ent, rayOrigin, rayDir)
+		local mesh = ent:GetPhysicsObject():GetMesh()
+
+		if mesh then return rayMesh(ent, rayOrigin, rayDir) end
+		if not mesh then return raySphere(rayOrigin, rayDir, ent:GetPos(), abs(ent:GetCollisionBounds().x)) end -- Spherical collisions
+	end
+
 	function ACF.GetHitAngle(trace, rayNormal)
 		local hitNormal = trace.HitNormal
-		local rayNormal = -rayNormal:GetNormalized()
+		local rayNormal = rayNormal:GetNormalized()
 
-		if hitNormal == v0 then
+		if trace.Hit and hitNormal == v0 and trace.Entity ~= game.GetWorld() then
 			local rayOrigin = trace.HitPos - rayNormal * 5000
 
-			hitNormal = rayMeshIntersect(trace.Entity, rayOrigin, rayNormal)
+			hitNormal = rayIntersect(trace.Entity, rayOrigin, rayNormal)
 		end
 
-		return toDegree(acos(rayNormal:Dot(hitNormal)))
+		return toDegree(acos(clamp(-rayNormal:Dot(hitNormal), -1, 1)))
 	end
 end
 
@@ -701,38 +730,4 @@ do -- File creation
 
 		return util.JSONToTable(file.Read(FullPath, "DATA"))
 	end
-end
-
-do -- Entity metatable method overriding
-	-- One of the limitation of the entity __index metamethod is that you cannot override methods that exist on it
-	-- So having, for example, a custom ENT:SetPos method for a single class was impossible since it would never be called
-	-- With this hook, all you need to do is set the ENT.UseCustomIndex flag to true
-	-- You might still need to call the original function from the entity metatable inside yours.
-
-	local EntMeta = FindMetaTable("Entity")
-	local Index   = EntMeta.__index
-	local SENTs   = scripted_ents
-	local Custom  = {}
-
-	function EntMeta:__index(Key, ...)
-		local Class = Custom[self]
-
-		if Class and Key then
-			local Value = SENTs.GetMember(Class, Key)
-
-			if Value ~= nil then return Value end
-		end
-
-		return Index(self, Key, ...)
-	end
-
-	hook.Add("OnEntityCreated", "ACF Custom __index Metamethod", function(Entity)
-		if not Entity.UseCustomIndex then return end
-
-		Custom[Entity] = Entity:GetClass()
-
-		Entity:CallOnRemove("ACF Custom Index", function()
-			Custom[Entity] = nil
-		end)
-	end)
 end

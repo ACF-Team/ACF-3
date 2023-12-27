@@ -143,7 +143,7 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 
 		local Data = isstring(ID) and Group.Lookup[ID]
 
-		return Data and Data.ID == ID or false
+		return Data and Data.ID ~= ID or false
 	end
 end
 

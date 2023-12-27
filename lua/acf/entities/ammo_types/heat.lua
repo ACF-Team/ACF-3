@@ -13,7 +13,6 @@ function Ammo:OnLoaded()
 	self.Blacklist = {
 		AC = true,
 		MG = true,
-		SB = true,
 		SL = true,
 		LAC = true,
 		RAC = true,
@@ -152,7 +151,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.FillerEnergy  = OverEnergy * EquivFillVol * ACF.CompBDensity * 1e3 * ACF.TNTPower * ACF.CompBEquivalent * ACF.HEATEfficiency * FillerMul
 		local _FillerEnergy = Data.FillerEnergy
 		local _LinerAngle   = Data.ConeAng
-		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99) print("misle", _LinerAngle, _MinVelMult)
+		local _MinVelMult   = math.Remap(_LinerAngle, 0, 90, 0.5, 0.99)
 		local _JetMass      = LinerMass * math.Remap(_LinerAngle, 0, 90, 0.25, 1)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
@@ -236,7 +235,7 @@ if SERVER then
 		local Filler    = Bullet.BoomFillerMass
 		local Fragments = Bullet.CasingMass
 		local Filter    = Bullet.Filter
-		local DmgInfo   = Objects.DamageInfo(Bullet.Gun, Bullet.Owner)
+		local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
 		Damage.createExplosion(HitPos, Filler, Fragments, Filter, DmgInfo)
 
@@ -256,7 +255,6 @@ if SERVER then
 		local Direction = Bullet.Flight:GetNormalized()
 		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
 		local JetEnd    = HitPos + Direction * 3000
-		local Caliber   = Bullet.Diameter * 10
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
@@ -294,9 +292,9 @@ if SERVER then
 				-- Enable damage if a valid entity is hit
 				DamageDealt = 0
 			end
-			local SlopeFactor    = BaseArmor / Caliber
+
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
-			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)) ^ SlopeFactor)
+			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
 
 			-- Percentage of total jet mass lost to this penetration
 			local LostMassPct =  EffectiveArmor / Penetration
@@ -314,9 +312,7 @@ if SERVER then
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Ent, Direction, 0, JetInfo)
-
-					table.insert(Filter , Debris)
+					ACF.APKill(Ent, Direction, 0, JetInfo)
 				end
 			end
 			-- Reduce the jet mass by the lost mass
@@ -349,45 +345,47 @@ if SERVER then
 					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
 						debugoverlay.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
 
-						local DistSqr = (TargetRes.HitPos - PenHitPos):LengthSqr()
+						local DistSqr = math.max(1, (TargetRes.HitPos - PenHitPos):LengthSqr())
 						-- Calculate how much shrapnel will hit the target based on it's relative area
 						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
 						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
 						--  as a cube, good enough) one of the 6 faces is visible
-						local Area    = 0
-						if ACF.Check(SpallEnt) then Area = SpallEnt.ACF.Area else continue end
+						local Area    = SpallEnt.ACF.Area
 						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
+
 						AreaSum = AreaSum + RelArea
 						AvgDist = AvgDist + math.sqrt(DistSqr)
-						local EffArmor = (EffectiveArmor * 0.5 / (SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour or 0)) * 14 -- Magic multiplier to prevent nuking armored plates
+
+						local EntArmor = SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour
+						local EffArmor = (EffectiveArmor * 0.5 / EntArmor) * 14 -- Magic multiplier to prevent nuking armored plates
+
 						Damageables[#Damageables + 1] = { SpallEnt, RelArea * EffArmor, TargetRes }
 					end
 				end
 			end
+
 			AvgDist = AvgDist / #Damageables
 
 			local Radius  = AvgDist * SpallingSin
 			-- Minimum area is the base of the spalling cone, with the distance being the average squishy distance
 			-- Divided by the average distance squared so it's the same as the relative area
 			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
+
 			AreaSum = math.max(AreaSum, MinArea)
 
 			for _, v in ipairs(Damageables) do
-				local Entity, Area, TraceRes = unpack(v, 1, 3)
+				local Entity, Area, TraceRes = unpack(v)
+				local SpallDmg, SpallInfo    = Damage.getBulletDamage(Bullet, TraceRes)
 				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local SpallDamage  = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
-
-				local SpallDmg, SpallInfo = Damage.getBulletDamage(Bullet, TraceRes)
+				local SpallDamage = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
 
 				SpallInfo:SetType(DMG_BULLET)
 				SpallDmg:SetDamage(SpallDamage)
 
-				local JetResult = Damage.dealDamage(Ent, SpallDmg, SpallInfo)
+				local JetResult = Damage.dealDamage(Entity, SpallDmg, SpallInfo)
 
 				if JetResult.Kill then
-					local Debris = ACF.APKill(Entity, Direction, 0, SpallInfo)
-
-					table.insert(Filter , Debris)
+					ACF.APKill(Entity, Direction, 0, SpallInfo)
 				end
 			end
 

@@ -17,15 +17,13 @@ end
 -- @param Direction A vector referencing the direction at which the explosion will move towards.
 -- Leave this blank to create an upwards explosion effect.
 -- @param Filler The filler mass of the explosive in kilograms.
--- @param Caliber The diameter in milimeters of the projectile that created this effect.
 -- You can leave this blank if no projectile was involved on the creation of this effect.
-function Damage.explosionEffect(Position, Direction, Filler, Caliber)
+function Damage.explosionEffect(Position, Direction, Filler)
 	local Radius = math.max(1, Damage.getBlastRadius(Filler))
 
 	local Effect = EffectData()
 	Effect:SetOrigin(Position)
 	Effect:SetNormal(Direction or Down)
-	Effect:SetRadius(Caliber or 0)
 	Effect:SetScale(Radius)
 
 	util.Effect("ACF_Explosion", Effect)

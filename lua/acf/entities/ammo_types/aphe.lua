@@ -13,10 +13,17 @@ function Ammo:OnLoaded()
 	self.Blacklist = {
 		GL = true,
 		MG = true,
-		SB = true,
 		SL = true,
 		RAC = true,
 	}
+end
+
+function Ammo:GetPenetration(Bullet, Speed)
+	if not isnumber(Speed) then
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+	end
+
+	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
 end
 
 function Ammo:GetDisplayData(Data)
@@ -46,6 +53,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
+	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
 	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
 
@@ -133,9 +141,8 @@ else
 		local Position  = Bullet.SimPos
 		local Direction = Bullet.SimFlight
 		local Filler    = Bullet.FillerMass
-		local Caliber   = Bullet.Caliber
 
-		Damage.explosionEffect(Position, Direction, Filler, Caliber)
+		Damage.explosionEffect(Position, Direction, Filler)
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)

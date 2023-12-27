@@ -13,19 +13,32 @@ local Materials = {
 	})
 }
 
-local function RenderDamage()
-	cam.Start3D(EyePos(), EyeAngles())
+local RenderDamage
+do
+	local EyePos = EyePos
+	local EyeAngles = EyeAngles
+	local cam_End3D = cam.End3D
+	local cam_Start3D = cam.Start3D
+	local render_SetBlend = render.SetBlend
+	local render_ModelMaterialOverride = render.ModelMaterialOverride
 
-	for Entity in pairs(Damaged) do
-		render.ModelMaterialOverride(Entity.ACF_Material)
-		render.SetBlend(math.Clamp(1 - Entity.ACF_HealthPercent, 0, 0.8))
+	RenderDamage = function(bDrawingDepth, _, isDraw3DSkybox)
+		if bDrawingDepth or isDraw3DSkybox then return end
+		cam_Start3D(EyePos(), EyeAngles())
 
-		Entity:DrawModel()
+		for Entity, EntityTable in pairs(Damaged) do
+			if IsValid(Entity) then
+				render_ModelMaterialOverride(EntityTable.ACF_Material)
+				render_SetBlend(EntityTable.ACF_BlendAmount)
+
+				Entity:DrawModel()
+			end
+		end
+
+		render_ModelMaterialOverride()
+		render_SetBlend(1)
+		cam_End3D()
 	end
-
-	render.ModelMaterialOverride()
-	render.SetBlend(1)
-	cam.End3D()
 end
 
 local function Remove(Entity)
@@ -43,39 +56,46 @@ local function Add(Entity)
 		hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", RenderDamage)
 	end
 
-	Damaged[Entity] = true
+	Damaged[Entity] = Entity:GetTable()
 
 	Entity:CallOnRemove("ACF_RenderDamage", function()
 		Remove(Entity)
 	end)
 end
 
-Network.CreateReceiver("ACF_Damage", function(Data)
-	for Index, Percent in pairs(Data) do
-		local Entity = ents.GetByIndex(Index)
+do
+	local IsValid = IsValid
+	local math_Clamp = math.Clamp
 
-		if not IsValid(Entity) then continue end
+	Network.CreateReceiver("ACF_Damage", function(Data)
+		for Index, Percent in pairs(Data) do
+			local Entity = ents.GetByIndex(Index)
 
-		if Percent < 1 then
-			Entity.ACF_HealthPercent = Percent
+			if not IsValid(Entity) then continue end
 
-			if Percent > 0.7 then
-				Entity.ACF_Material = Materials[1]
-			elseif Percent > 0.3 then
-				Entity.ACF_Material = Materials[2]
+			if Percent < 1 then
+				Entity.ACF_HealthPercent = Percent
+				Entity.ACF_BlendAmount = math_Clamp(1 - Percent, 0, 0.8)
+
+				if Percent > 0.7 then
+					Entity.ACF_Material = Materials[1]
+				elseif Percent > 0.3 then
+					Entity.ACF_Material = Materials[2]
+				else
+					Entity.ACF_Material = Materials[3]
+				end
+
+				Add(Entity)
 			else
-				Entity.ACF_Material = Materials[3]
+				Remove(Entity)
+
+				Entity.ACF_HealthPercent = nil
+				Entity.ACF_Material      = nil
+				Entity.ACF_BlendAmount   = nil
 			end
-
-			Add(Entity)
-		else
-			Remove(Entity)
-
-			Entity.ACF_HealthPercent = nil
-			Entity.ACF_Material      = nil
 		end
-	end
-end)
+	end)
+end
 
 do -- Debris Effects ------------------------
 	local AllowDebris = GetConVar("acf_debris")

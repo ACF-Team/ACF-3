@@ -58,8 +58,6 @@ function Ballistics.RemoveBullet(Bullet)
 
 	Bullet.Removed = true
 
-	Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos) -- Kills the bullet on the clientside
-
 	if not next(Bullets) then
 		hook.Remove("ACF_OnClock", "ACF Iterate Bullets")
 	end

@@ -15,7 +15,7 @@ local Clock       = Utilities.Clock
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
-local Wall        = 0.03937 --wall thickness in inches (1mm)
+local HookRun     = hook.Run
 
 local function CanRefuel(Refill, Tank, Distance)
 	if Refill == Tank then return false end
@@ -49,16 +49,45 @@ do -- Spawn and Update functions
 	}
 
 	local function VerifyData(Data)
-		if not Data.FuelTank then
-			Data.FuelTank = Data.SizeId or Data.Id or "Jerry_Can"
+		if not isstring(Data.FuelTank) then
+			Data.FuelTank = Data.SizeId or Data.Id
 		end
 
 		local Class = Classes.GetGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
-			Data.FuelTank = "Jerry_Can"
+			Data.FuelTank = "Box"
 
-			Class = Classes.GetGroup(FuelTanks, "Jerry_Can")
+			Class = FuelTanks.Get("Box")
+		elseif FuelTanks.IsAlias(Data.FuelTank) then
+			Data.FuelTank = Class.ID
+		end
+
+		if Class.IsScalable then
+			local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
+
+			if FuelTank and FuelTank.Size then
+				Data.FuelTank = Class.ID
+				Data.Size     = Vector(FuelTank.Size)
+			elseif not isvector(Data.Size) then
+				local X = ACF.CheckNumber(Data.TankSizeX, 24)
+				local Y = ACF.CheckNumber(Data.TankSizeY, 24)
+				local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
+
+				Data.Size = Vector(X, Y, Z)
+			end
+
+			do -- Clamping size
+				local Min  = ACF.FuelMinSize
+				local Max  = ACF.FuelMaxSize
+				local Size = Data.Size
+
+				Size.x = math.Clamp(math.Round(Size.x), Min, Max)
+				Size.y = math.Clamp(math.Round(Size.y), Min, Max)
+				Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+			end
+		else
+			Data.Size = nil
 		end
 
 		-- Making sure to provide a valid fuel type
@@ -71,7 +100,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_fueltank", Data, Class)
+			HookRun("ACF_VerifyData", "acf_fueltank", Data, Class)
 		end
 	end
 
@@ -80,47 +109,56 @@ do -- Spawn and Update functions
 		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = FuelTank.Model -- Must be set before changing model
+		Entity.ACF.Model = FuelTank and FuelTank.Model or Class.Model -- Must be set before changing model
+		Entity.ClassData = Class
 
-		Entity:SetModel(FuelTank.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		local PhysObj = Entity:GetPhysicsObject()
-		local Area = PhysObj:GetSurfaceArea()
+		if Class.IsScalable then
+			Entity:SetSize(Data.Size)
+		else
+			Entity:SetModel(Entity.ACF.Model)
+			Entity:PhysicsInit(SOLID_VPHYSICS, true)
+			Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		end
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name        = FuelTank.Name
-		Entity.ShortName   = Entity.FuelTank
+		local Volume, Area
+		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+
+		if Class.CalcVolume then
+			Volume, Area = Class.CalcVolume(Data.Size, Wall)
+		else -- Default to finding surface area/volume based off physics object instead
+			local PhysObj = Entity:GetPhysicsObject()
+
+			Area = PhysObj:GetSurfaceArea()
+			Volume = PhysObj:GetVolume() - (Area * Wall) -- Total volume of tank (cu in), reduced by wall thickness
+		end
+
+		local NameType = " " .. (Class.NameType or FuelTank.Name)
+
+		Entity.Name        = Entity.FuelType .. NameType
+		Entity.ShortName   = Entity.FuelType
 		Entity.EntType     = Class.Name
-		Entity.ClassData   = Class
 		Entity.FuelDensity = FuelType.Density
-		Entity.Volume      = PhysObj:GetVolume() - (Area * Wall) -- total volume of tank (cu in), reduced by wall thickness
-		Entity.Capacity    = Entity.Volume * ACF.gCmToKgIn * ACF.TankVolumeMul * 0.4774 --internal volume available for fuel in liters, with magic realism number
-		Entity.EmptyMass   = (Area * Wall) * 16.387 * (7.9 / 1000) -- total wall volume * cu in to cc * density of steel (kg/cc)
-		Entity.IsExplosive = FuelTank.IsExplosive
-		Entity.NoLinks     = FuelTank.Unlinkable
-		Entity.HitBoxes = {
-			Main = {
-				Pos = Entity:OBBCenter(),
-				Scale = (Entity:OBBMaxs() - Entity:OBBMins()) - Vector(0.5, 0.5, 0.5),
-			}
-		}
+		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
+		Entity.EmptyMass   = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		Entity.IsExplosive = FuelTank and FuelTank.IsExplosive or Class.IsExplosive
+		Entity.NoLinks     = FuelTank and FuelTank.Unlinkable or Class.Unlinkable
+		Entity.Shape       = FuelTank and FuelTank.Shape or Class.Shape
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelTank, FuelType)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelTank, FuelType)
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-
 		if Entity.FuelType == "Electric" then
-			Entity.Liters = Entity.Capacity --batteries capacity is different from internal volume
+			Entity.Name = "Electric Battery"
+			Entity.Liters = Entity.Capacity -- Batteries capacity is different from internal volume
 			Entity.Capacity = Entity.Capacity * ACF.LiIonED
 		end
+
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		Entity.Fuel = Percentage * Entity.Capacity
 
@@ -132,6 +170,16 @@ do -- Spawn and Update functions
 		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
+	hook.Add("ACF_CanUpdateEntity", "ACF Fuel Tank Size Update", function(Entity, Data)
+		if not Entity.IsACFFuelTank then return end
+		if Data.Size then return end -- The menu won't send it like this
+
+		Data.Size      = Entity:GetSize()
+		Data.TankSizeX = nil
+		Data.TankSizeY = nil
+		Data.TankSizeZ = nil
+	end)
+
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
@@ -139,10 +187,11 @@ do -- Spawn and Update functions
 		local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
 		local FuelType = FuelTypes.Get(Data.FuelType)
 		local Limit    = Class.LimitConVar.Name
+		local Model    = Class.Model or FuelTank and FuelTank.Model
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
+		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
 
 		if CanSpawn == false then return end
 
@@ -151,6 +200,7 @@ do -- Spawn and Update functions
 		if not IsValid(Tank) then return end
 
 		Tank:SetPlayer(Player)
+		Tank:SetScaledModel(Model)
 		Tank:SetAngles(Angle)
 		Tank:SetPos(Pos)
 		Tank:Spawn()
@@ -172,7 +222,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
+		HookRun("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
 
 		Tank:UpdateOverlay(true)
 
@@ -194,7 +244,7 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType")
+	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType", "Size")
 
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
@@ -209,7 +259,7 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -217,7 +267,7 @@ do -- Spawn and Update functions
 			OldClass.OnLast(self, OldClass)
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_fueltank", self, OldClass)
+		HookRun("ACF_OnEntityLast", "acf_fueltank", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -229,7 +279,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, FuelTank)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		HookRun("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if next(self.Engines) then
 			local Fuel    = self.FuelType
@@ -270,9 +320,9 @@ end
 --===============================================================================================--
 
 function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
+	local PhysObj = self:GetPhysicsObject()
 	local Area    = PhysObj:GetSurfaceArea() * 6.45
-	local Armour  = self.EmptyMass * 1000 / Area / 0.78 * ACF.ArmorMod --So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
+	local Armour  = self.EmptyMass * 1000 / Area / 0.78 * ACF.ArmorMod -- So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
 
@@ -295,7 +345,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
-		local CanExplode = hook.Run("ACF_FuelCanExplode", self)
+		local CanExplode = HookRun("ACF_FuelCanExplode", self)
 
 		if not CanExplode then return HitRes end
 
@@ -310,19 +360,19 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		return HitRes
 	end
 
-	local Ratio = (HitRes.Damage / self.ACF.Health) ^ 0.75 --chance to explode from sheer damage, small shots = small chance
-	local ExplodeChance = (1 - (self.Fuel / self.Capacity)) ^ 0.75 --chance to explode from fumes in tank, less fuel = more explodey
+	local Ratio = (HitRes.Damage / self.ACF.Health) ^ 0.75 -- Chance to explode from sheer damage, small shots = small chance
+	local ExplodeChance = (1 - (self.Fuel / self.Capacity)) ^ 0.75 -- Chance to explode from fumes in tank, less fuel = more explodey
 
-	--it's gonna blow
+	-- It's gonna blow
 	if math.random() < (ExplodeChance + Ratio) then
-		local CanExplode = hook.Run("ACF_FuelCanExplode", self)
+		local CanExplode = HookRun("ACF_FuelCanExplode", self)
 
 		if not CanExplode then return HitRes end
 
 		self.Inflictor = Inflictor
 
 		self:Detonate()
-	else --spray some fuel around
+	else -- Spray some fuel around
 		self.Leaking = self.Leaking + self.Fuel * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
@@ -363,7 +413,7 @@ do -- Mass Update
 	local function UpdateMass(Entity)
 		local Fuel    = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
 		local Mass    = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
-		local PhysObj = Entity.ACF.PhysObj
+		local PhysObj = Entity:GetPhysicsObject()
 
 		if IsValid(PhysObj) then
 			Entity.ACF.Mass      = Mass
@@ -389,9 +439,13 @@ do -- Mass Update
 end
 
 do -- Overlay Update
-	local Text = "%s\n\nFuel Type: %s\n%s"
+	local Classes = ACF.Classes
+	local FuelTypes = Classes.FuelTypes
+
+	local Text = "%s\n\n%sFuel Type: %s\n%s"
 
 	function ENT:UpdateOverlayText()
+		local Size = ""
 		local Status, Content
 
 		if self.Leaking > 0 then
@@ -400,19 +454,24 @@ do -- Overlay Update
 			Status = self:CanConsume() and "Providing Fuel" or "Idle"
 		end
 
-		if self.FuelType == "Electric" then -- TODO: Replace hardcoded stuff
-			local KiloWatt = math.Round(self.Fuel, 1)
-			local Joules = math.Round(self.Fuel * 3.6, 1)
+		local Class = self.ClassData
 
-			Content = "Charge Level: " .. KiloWatt .. " kWh / " .. Joules .. " MJ"
+		if Class and Class.CalcOverlaySize then
+			Size = Class.CalcOverlaySize(self)
+		end
+
+		local FuelType = FuelTypes.Get(self.FuelType)
+
+		if FuelType and FuelType.FuelTankOverlayText then
+			Content = FuelType.FuelTankOverlayText(self.Fuel)
 		else
-			local Liters = math.Round(self.Fuel, 1)
-			local Gallons = math.Round(self.Fuel * 0.264172, 1)
+			local Liters = math.Round(self.Fuel, 2)
+			local Gallons = math.Round(self.Fuel * 0.264172, 2)
 
 			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
 
-		return Text:format(Status, self.FuelType, Content)
+		return Text:format(Status, Size, self.FuelType, Content)
 	end
 end
 
@@ -449,14 +508,14 @@ function ENT:Think()
 	if self.Leaking > 0 then
 		self:Consume(self.Leaking)
 
-		self.Leaking = math.Clamp(self.Leaking - (1 / math.max(self.Fuel, 1)) ^ 0.5, 0, self.Fuel) --fuel tanks are self healing
+		self.Leaking = math.Clamp(self.Leaking - (1 / math.max(self.Fuel, 1)) ^ 0.5, 0, self.Fuel) -- Fuel tanks are self healing
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
 
 		self:NextThink(Clock.CurTime + 0.25)
 	end
 
-	--refuelling
+	-- Refuelling
 	if self.SupplyFuel and self:CanConsume() then
 		local DeltaTime = Clock.CurTime - self.LastThink
 		local Position  = self:GetPos()
@@ -466,7 +525,7 @@ function ENT:Think()
 
 			if CanRefuel(self, Tank, Distance) then
 				local Exchange  = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
-				local CanRefill = hook.Run("ACF_FuelCanRefill", self, Tank, Exchange)
+				local CanRefill = HookRun("ACF_FuelCanRefill", self, Tank, Exchange)
 
 				if not CanRefill then continue end
 
@@ -496,7 +555,7 @@ function ENT:OnRemove()
 		Class.OnLast(self, Class)
 	end
 
-	hook.Run("ACF_OnEntityLast", "acf_fueltank", self, Class)
+	HookRun("ACF_OnEntityLast", "acf_fueltank", self, Class)
 
 	for Engine in pairs(self.Engines) do
 		self:Unlink(Engine)
@@ -505,4 +564,23 @@ function ENT:OnRemove()
 	ActiveTanks[self] = nil
 
 	WireLib.Remove(self)
+end
+
+function ENT:OnResized(Size)
+	do -- Calculate new empty mass
+		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
+		local Class = self.ClassData
+		local _, Area = Class.CalcVolume(Size, Wall)
+
+		local Mass = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+
+		self.EmptyMass = Mass
+	end
+
+	self.HitBoxes = {
+		Main = {
+			Pos = self:OBBCenter(),
+			Scale = Size,
+		}
+	}
 end

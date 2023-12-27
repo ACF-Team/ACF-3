@@ -72,7 +72,7 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 	function Namespace.IsAlias(ID)
 		local Data = isstring(ID) and Entries[ID]
 
-		return Data and Data.ID == ID or false
+		return Data and Data.ID ~= ID or false
 	end
 end
 

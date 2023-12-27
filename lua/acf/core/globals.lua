@@ -9,7 +9,7 @@ do -- ACF global vars
 	ACF.ModelData          = ACF.ModelData or { Models = {} }
 
 	-- General Settings
-	ACF.Gamemode           = 2 -- Gamemode of the server. 1 = Sandbox, 2 = Classic, 3 = Competitive
+	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
@@ -19,6 +19,7 @@ do -- ACF global vars
 	ACF.RecoilPush         = true -- Whether or not ACF guns apply recoil
 	ACF.Volume             = 1 -- Global volume for ACF sounds
 	ACF.AllowFunEnts       = true -- Allows entities listed under the Fun Stuff option to be used
+	ACF.AllowProcArmor     = false --Allows procedural armor entities to be used.
 	ACF.WorkshopContent    = true -- Enable workshop content download for clients
 	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
 	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
@@ -62,12 +63,13 @@ do -- ACF global vars
 		prop_vehicle_crane = true,
 		prop_dynamic = true,
 		npc_strider = true,
-		npc_dog = true
+		npc_dog = true,
+		phys_bone_follower = true,
 	}
 
 	-- Ammo
 	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
-	ACF.AmmoPadding        = 10 -- Millimeters of wasted space between rounds
+	ACF.AmmoPadding        = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
@@ -101,7 +103,7 @@ do -- ACF global vars
 	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
 
 	-- Debris
-	ACF.ChildDebris        = 50 -- higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
+	ACF.ChildDebris        = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
 	ACF.DebrisIgniteChance = 0.25
 	ACF.ValidDebris        = { -- Whitelist for things that can be turned into debris
 		acf_ammo = true,
@@ -119,13 +121,15 @@ do -- ACF global vars
 	ACF.GunInaccuracyBias  = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
-	ACF.FuelRate           = 1 --multiplier for fuel usage, 1.0 is approx real world
+	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
+	ACF.FuelRate           = 27.8 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
-	ACF.CompFuelRate       = 27.8 -- Extra multiplier for fuel consumption on servers with ACF Gamemode set to Competitive
-	ACF.CompFuelFactor     = 1 -- Multiplier for ACF.CompFuelRate
-	ACF.TankVolumeMul      = 1 -- multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelArmor          = 5 -- How many millimeters of armor fuel tanks have
+	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance     = 300 --Distance in which ammo crate starts refilling.
+	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 end

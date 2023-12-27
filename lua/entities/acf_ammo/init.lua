@@ -78,17 +78,19 @@ do -- Spawning and Updating --------------------
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
-		elseif Class.IsScalable then
+		elseif Source.IsAlias(Data.Weapon) then
+			Data.Weapon = Class.ID
+		end
+
+		-- Verifying and clamping caliber value
+		if Class.IsScalable then
 			local Weapon = Source.GetItem(Class.ID, Data.Weapon)
 
 			if Weapon then
 				Data.Weapon  = Class.ID
 				Data.Caliber = Weapon.Caliber
 			end
-		end
 
-		-- Verifying and clamping caliber value
-		if Class.IsScalable then
 			local Bounds  = Class.Caliber
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
 
@@ -283,7 +285,7 @@ do -- Spawning and Updating --------------------
 
 		Crate:SetMaterial("phoenix_storms/Future_vents")
 		Crate:SetPlayer(Player)
-		Crate:SetModel(Model)
+		Crate:SetScaledModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()
@@ -529,10 +531,12 @@ do -- ACF Activation and Damage -----------------
 		self.Exploding = true
 
 		local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
-		local Filler     = self.BulletData.FillerMass or 0
-		local Propellant = self.BulletData.PropMass or 0
-		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * self.Ammo
-		local FragMass   = self.BulletData.ProjMass or Explosive * 0.5
+		local BulletData = self.BulletData
+		local Filler     = BulletData.FillerMass or 0
+		local Propellant = BulletData.PropMass or 0
+		local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
+		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
+		local FragMass   = BulletData.ProjMass or Explosive * 0.5
 		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)

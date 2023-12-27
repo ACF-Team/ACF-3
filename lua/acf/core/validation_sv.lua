@@ -31,7 +31,7 @@ local NoCollision  = { -- These prevent ACF bullets from hitting an entity
 	end
 ]]--
 function ACF.IsLegal(Entity)
-	if ACF.Gamemode == 1 then return true end -- Gamemode is set to Sandbox, legal checks don't apply
+	if not ACF.LegalChecks then return true end -- Legal checks are disabled
 
 	local Phys = Entity:GetPhysicsObject()
 
@@ -103,7 +103,7 @@ function ACF.CheckLegal(Entity)
 		return false
 	end
 
-	if ACF.Gamemode ~= 1 then
+	if ACF.LegalChecks then
 		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
 			if not IsValid(Entity) then return end
 
@@ -212,7 +212,7 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 end
 
 function ACF.Activate(Entity, Recalc)
-	--Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+	-- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = Entity:GetPhysicsObject()
 
 	if not IsValid(PhysObj) then return end

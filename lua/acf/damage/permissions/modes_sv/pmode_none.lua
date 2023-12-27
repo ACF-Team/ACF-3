@@ -27,4 +27,4 @@ local function modepermission()
 	return
 end
 
-perms.RegisterMode(modepermission, modename, modedescription, true, nil, true)
+perms.RegisterMode(modepermission, modename, modedescription, true, nil)

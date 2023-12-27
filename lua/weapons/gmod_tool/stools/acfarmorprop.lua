@@ -1,4 +1,5 @@
 local ACF = ACF
+local IsValid = IsValid
 
 TOOL.Category	= (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name		= "#tool.acfarmorprop.name"
@@ -236,7 +237,7 @@ if CLIENT then
 
 	end
 
-	-- clamp thickness if the change in ductility puts mass out of range
+	-- Clamp thickness if the change in ductility puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_ductility", function(_, _, value)
 
 		local area = ArmorProp_Area:GetFloat()
@@ -256,7 +257,7 @@ if CLIENT then
 		end
 	end)
 
-	-- clamp ductility if the change in thickness puts mass out of range
+	-- Clamp ductility and thickness if the change in thickness puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_thickness", function(_, _, value)
 
 		local area = ArmorProp_Area:GetFloat()
@@ -273,19 +274,25 @@ if CLIENT then
 
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
 			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
+
+			thickness = ACF_CalcArmor(area, ductility, mass)
+			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
 		end
 	end)
 
 	local GreenSphere = Color(0, 200, 0, 50)
 	local GreenFrame = Color(0, 200, 0, 100)
 
-	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function()
+	hook.Add("PostDrawOpaqueRenderables", "Armor Tool Search Sphere", function(bDrawingDepth, _, isDraw3DSkybox)
+		if bDrawingDepth or isDraw3DSkybox then return end
 		local Player = LocalPlayer()
-		local Tool = Player:GetTool()
+		local Weapon = Player:GetActiveWeapon()
+		if not IsValid( Weapon ) then return end
+		if Weapon:GetClass() ~= "gmod_tool" then return end
 
+		local Tool = Player:GetTool()
 		if not Tool then return end -- Player has no toolgun
 		if Tool ~= Player:GetTool("acfarmorprop") then return end -- Current tool is not the armor tool
-		if Tool.Weapon ~= Player:GetActiveWeapon() then return end -- Player is not holding the toolgun
 		if not Sphere:GetBool() then return end
 
 		local Value = Radius:GetFloat()

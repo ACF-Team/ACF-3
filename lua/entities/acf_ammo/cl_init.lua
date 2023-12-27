@@ -109,7 +109,8 @@ do -- Resupply effect
 	local Yellow   = Color(255, 255, 0, 10)
 	local Distance = ACF.RefillDistance
 
-	local function DrawSpheres()
+	local function DrawSpheres(bDrawingDepth, _, isDraw3DSkybox)
+		if bDrawingDepth or isDraw3DSkybox then return end
 		render.SetColorMaterial()
 
 		for Entity in pairs(Refills) do

@@ -73,65 +73,86 @@ function ModelData.GetModelData(Model)
 	end
 end
 
+hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
+	local CheckEntity
 
-local CheckEntity
+	local function UpdateEntity(Entity)
+		ModelData.Entity = Entity
 
-local function UpdateEntity(Entity)
-	ModelData.Entity = Entity
+		for Model, Data in pairs(Standby) do
+			if Data == true then continue end -- Information hasn't been received yet
 
-	for Model, Data in pairs(Standby) do
-		if Data == true then continue end -- Information hasn't been received yet
+			Standby[Model] = nil
+			Models[Model]  = Data
 
-		Standby[Model] = nil
-		Models[Model]  = Data
+			hook.Run("ACF_OnReceivedModelData", Model, Data)
+		end
 
-		ModelData.RunCallbacks(Model)
+		Entity:CallOnRemove("ACF_ModelData", function()
+			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+		end)
+
+		hook.Remove("OnEntityCreated", "ACF_ModelData")
 	end
 
-	Entity:CallOnRemove("ACF_ModelData", function()
-		hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+	CheckEntity = function(Entity)
+		if Entity:EntIndex() ~= ModelData.EntIndex then return end
+
+		UpdateEntity(Entity)
+	end
+
+	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
+		local Index    = Data.Index
+		local ModelEnt = Entity(Index)
+
+		ModelData.EntIndex = Index
+
+		if not IsValid(ModelEnt) then
+			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+
+			return
+		end
+
+		UpdateEntity(ModelEnt)
 	end)
 
-	hook.Remove("OnEntityCreated", "ACF_ModelData")
-end
+	Network.CreateSender("ACF_ModelData", function(Queue, Model)
+		Standby[Model] = true
+		Queue[Model]   = true
 
-CheckEntity = function(Entity)
-	if Entity:EntIndex() ~= ModelData.EntIndex then return end
+		hook.Run("ACF_OnRequestedModelData", Model)
+	end)
 
-	UpdateEntity(Entity)
-end
+	Network.CreateReceiver("ACF_ModelData", function(Data)
+		local Exists = IsValid(ModelData.Entity)
 
-Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
-	local Index    = Data.Index
-	local ModelEnt = Entity(Index)
+		for Model, Info in pairs(Data) do
+			if not Exists then
+				Standby[Model] = Info
+			else
+				Standby[Model] = nil
+				Models[Model]  = Info
 
-	ModelData.EntIndex = Index
-
-	if not IsValid(ModelEnt) then
-		hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
-
-		return
-	end
-
-	UpdateEntity(ModelEnt)
-end)
-
-Network.CreateSender("ACF_ModelData", function(Queue, Model)
-	Standby[Model] = true
-	Queue[Model]   = true
-end)
-
-Network.CreateReceiver("ACF_ModelData", function(Data)
-	local Exists = IsValid(ModelData.Entity)
-
-	for Model, Info in pairs(Data) do
-		if not Exists then
-			Standby[Model] = Info
-		else
-			Standby[Model] = nil
-			Models[Model]  = Info
-
-			ModelData.RunCallbacks(Model)
+				hook.Run("ACF_OnReceivedModelData", Model, Info)
+			end
 		end
+	end)
+
+	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
+end)
+
+hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
+	local Data = Callbacks[Model]
+
+	if not Data then return end
+
+	for Object, Callback in pairs(Data) do
+		if IsValid(Object) then
+			Callback(Object, Model)
+		end
+
+		Data[Object] = nil
 	end
+
+	Callbacks[Model] = nil
 end)

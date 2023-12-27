@@ -112,7 +112,7 @@ do -- Model data getter method
 	end
 end
 
-do -- Network handlers
+hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
 		Queue.Index = Entity:EntIndex()
 	end)
@@ -126,4 +126,6 @@ do -- Network handlers
 	Network.CreateSender("ACF_ModelData", function(Queue, Model)
 		Queue[Model] = ModelData.GetModelData(Model)
 	end)
-end
+
+	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
+end)

@@ -248,10 +248,10 @@ local function LerpMatrix(A, B, t)
 
 	local Dot = A_Dir:Dot(B_Dir)
 	if Dot < 0.999999 then
-		RotAxis = A_Dir:Cross(B_Dir)
+		local RotAxis = A_Dir:Cross(B_Dir)
 		RotAxis:Normalize()
 
-		RotAngle = 180 / math.pi * math.acos(Dot)
+		local RotAngle = 180 / math.pi * math.acos(Dot)
 		Ang:RotateAroundAxis(RotAxis, RotAngle * t)
 	end
 

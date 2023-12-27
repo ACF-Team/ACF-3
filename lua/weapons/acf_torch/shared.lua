@@ -44,7 +44,7 @@ SWEP.MaxDistance = 64 * 64 -- Squared distance
 
 
 local function TeslaSpark(pos, magnitude)
-	zap = ents.Create("point_tesla")
+	local zap = ents.Create("point_tesla")
 	zap:SetKeyValue("targetname", "teslab")
 	zap:SetKeyValue("m_SoundName", "null")
 	zap:SetKeyValue("texture", "sprites/laser.spr")
@@ -281,31 +281,47 @@ function SWEP:SecondaryAttack()
 
 	if not ACF.Check(Entity) then return end
 
-	local DmgResult = self.DamageResult
-	local DmgInfo   = self.DamageInfo
-	local HitPos    = Trace.HitPos
+	if Entity:IsPlayer() or Entity:IsNPC() then
+		local damageInfo = DamageInfo()
+		damageInfo:SetDamage(1)
+		damageInfo:SetAttacker(Owner)
+		damageInfo:SetInflictor(self)
+		damageInfo:SetDamageType(DMG_DISSOLVE) -- Applies combine ball death effect
+		damageInfo:SetDamagePosition(Trace.HitPos)
+		Entity:TakeDamageInfo(damageInfo)
 
-	DmgResult:SetThickness(Entity.ACF.Armour)
-
-	DmgInfo:SetAttacker(Owner)
-	DmgInfo:SetOrigin(Trace.StartPos)
-	DmgInfo:SetHitPos(HitPos)
-	DmgInfo:SetHitGroup(Trace.HitGroup)
-
-	local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
-
-	if HitRes.Kill then
-		ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
+		local effect = EffectData()
+			effect:SetOrigin(Trace.HitPos)
+			effect:SetNormal(Trace.Normal)
+			effect:SetEntity(self)
+		util.Effect("BloodImpact", effect, true, true)
 	else
-		local Effect = EffectData()
-		Effect:SetMagnitude(1)
-		Effect:SetRadius(1)
-		Effect:SetScale(1)
-		Effect:SetStart(HitPos)
-		Effect:SetOrigin(HitPos)
+		local DmgResult = self.DamageResult
+		local DmgInfo   = self.DamageInfo
+		local HitPos    = Trace.HitPos
 
-		util.Effect("Sparks", Effect, true, true)
+		DmgResult:SetThickness(Entity.ACF.Armour)
 
-		Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)
+		DmgInfo:SetAttacker(Owner)
+		DmgInfo:SetOrigin(Trace.StartPos)
+		DmgInfo:SetHitPos(HitPos)
+		DmgInfo:SetHitGroup(Trace.HitGroup)
+
+		local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
+
+		if HitRes.Kill then
+			ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
+		else
+			local Effect = EffectData()
+			Effect:SetMagnitude(1)
+			Effect:SetRadius(1)
+			Effect:SetScale(1)
+			Effect:SetStart(HitPos)
+			Effect:SetOrigin(HitPos)
+
+			util.Effect("Sparks", Effect, true, true)
+
+			Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)
+		end
 	end
 end

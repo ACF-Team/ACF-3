@@ -30,15 +30,11 @@ local DefaultPermission = false
 		true if the entity should be damaged, false if the entity should be protected from the damage.
 //]]
 local function modepermission(owner, attacker, ent)
-	if IsValid(ent) and ent:IsPlayer() or ent:IsNPC() then return true end --print("is squishy")
+	if IsValid(ent) and ent:IsPlayer() or ent:IsNPC() then return end --print("is squishy")
 
 	if not (owner.SteamID or attacker.SteamID) then
 		--print("ACF ERROR: owner or attacker is not a player!", tostring(owner), tostring(attacker), "\n", debug.traceback())
-		if DefaultPermission then
-			return
-		else
-			return DefaultPermission
-		end
+		return DefaultPermission
 	end
 
 	local ownerid = owner:SteamID()

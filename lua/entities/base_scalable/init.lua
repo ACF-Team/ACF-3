@@ -99,18 +99,13 @@ do -- Network sender and receivers
 	end)
 end
 
-do -- ENT:SetModel override
-	local EntMeta = FindMetaTable("Entity")
+function ENT:SetScaledModel( Model )
+	self:SetModel( Model )
 
-	function ENT:SetModel(Model, ...)
-		local Data = self.ScaleData
-
-		if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then
-			self:SetScaleData("Model", Model)
-			self:Restore()
-		end
-
-		return EntMeta.SetModel(self, Model, ...)
+	local Data = self.ScaleData
+	if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then
+		self:SetScaleData("Model", Model )
+		self:Restore()
 	end
 end
 

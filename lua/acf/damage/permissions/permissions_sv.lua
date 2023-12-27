@@ -1,18 +1,21 @@
 -- This file defines damage permission with all ACF weaponry
-ACF.Permissions = {}
+local ACF = ACF
+ACF.Permissions = ACF.Permissions or {}
 local this = ACF.Permissions
+local Messages = ACF.Utilities.Messages
 --TODO: make player-customizable
 this.Selfkill = true
 this.Safezones = false
-this.Player = {}
-this.Modes = {}
-this.ModeDescs = {}
-this.ModeThinks = {}
-this.ModeDefaultAction = {}
+this.Player = this.Player or {}
+this.Modes = this.Modes or {}
+this.ModeDescs = this.ModeDescs or {}
+this.ModeThinks = this.ModeThinks or {}
+this.ModeDefaultAction = this.ModeDefaultAction or {}
 --TODO: convar this
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
+local curMap = game.GetMap()
 
 local function msgtoconsole(_, msg)
 	print(msg)
@@ -73,7 +76,7 @@ local function validateSZs(safetable)
 end
 
 local function getMapFilename()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 
 	return mapSZDir .. mapname .. ".txt"
 end
@@ -89,14 +92,27 @@ local function getMapSZs()
 end
 
 local function SaveMapDPM(mode)
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
 	file.Write(mapDPMDir .. mapname .. ".txt", mode)
 end
 
-local function LoadMapDPM()
-	local mapname = string.gsub(game.GetMap(), "[^%a%d-_]", "_")
+-- Unix adds an extra newline character at the end of the files
+-- So we have to get rid of it, and everything after it
+local function ReadFile(Path)
+	local Contents = file.Read(Path, "DATA")
 
-	return file.Read(mapDPMDir .. mapname .. ".txt", "DATA")
+	if Contents then
+		return string.gsub(Contents, "(\n.*)", "")
+	end
+end
+
+local function LoadMapDPM()
+	local mapname = string.gsub(curMap, "[^%a%d-_]", "_")
+	local mapmode = ReadFile(mapDPMDir .. mapname .. ".txt")
+
+	if mapmode then return mapmode end
+
+	return ReadFile(mapDPMDir .. "default.txt")
 end
 
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
@@ -108,7 +124,9 @@ end)
 local plyzones = {}
 
 hook.Add("Think", "ACF_DetectSZTransition", function()
-	for _, ply in pairs(player.GetAll()) do
+	if not this.Safezones then return end
+
+	for _, ply in ipairs(player.GetAll()) do
 		local sid = ply:SteamID()
 		local pos = ply:GetPos()
 		local oldzone = plyzones[sid]
@@ -356,11 +374,11 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		if this.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
 		this.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. game.GetMap() .. " set to: " .. mode)
+		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
 
-		for _, v in pairs(player.GetAll()) do
+		for _, v in ipairs(player.GetAll()) do
 			if v:IsAdmin() then
-				v:SendLua("chat.AddText(Color(255,0,0),\"Default permission mode for " .. game.GetMap() .. " has been set to " .. mode .. "!\")")
+				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
 			end
 		end
 
@@ -373,9 +391,7 @@ end)
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
-	for _, v in pairs(player.GetAll()) do
-		v:SendLua("chat.AddText(Color(255,0,0),\"Damage protection has been changed to " .. mode .. " mode!\")")
-	end
+	Messages.SendChat(_, "Info", "Damage protection has been changed to " .. mode .. " mode!")
 end
 
 hook.Add("ACF_ProtectionModeChanged", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
@@ -397,10 +413,10 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 	this.Modes[name] = mode
 	this.ModeDescs[name] = desc
 	this.ModeThinks[name] = think or function() end
-	this.ModeDefaultAction[name] = defaultaction or false
+	this.ModeDefaultAction[name] = Either(defaultaction, nil, defaultaction)
 	local DPM = LoadMapDPM()
 
-	if DPM ~= nil then
+	if DPM then
 		if DPM == name then
 			this.DamagePermission = this.Modes[name]
 			this.DefaultCanDamage = this.ModeDefaultAction[name]
@@ -411,17 +427,15 @@ function this.RegisterMode(mode, name, desc, default, think, defaultaction)
 				print("ACF: Setting permission mode to: " .. name)
 			end)
 		end
-	else
-		if default then
-			this.DamagePermission = this.Modes[name]
-			this.DefaultCanDamage = this.ModeDefaultAction[name]
-			this.DefaultPermission = name
+	elseif default then
+		this.DamagePermission = this.Modes[name]
+		this.DefaultCanDamage = this.ModeDefaultAction[name]
+		this.DefaultPermission = name
 
-			timer.Simple(1, function()
-				print("ACF: Map does not have default permission set, using default")
-				print("ACF: Setting permission mode to: " .. name)
-			end)
-		end
+		timer.Simple(1, function()
+			print("ACF: Map does not have default permission set, using default")
+			print("ACF: Setting permission mode to: " .. name)
+		end)
 	end
 	--Old method - can break on rare occasions!
 	--if LoadMapDPM() == name or default then 
@@ -439,20 +453,12 @@ function this.CanDamage(Entity, _, DmgInfo)
 		if IsValid(Entity) and Entity:IsPlayer() then
 			Owner = Entity
 		else
-			if this.DefaultCanDamage then
-				return
-			else
-				return this.DefaultCanDamage
-			end
+			return this.DefaultCanDamage
 		end
 	end
 
 	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
-		if this.DefaultCanDamage then
-			return
-		else
-			return this.DefaultCanDamage
-		end
+		return this.DefaultCanDamage
 	end
 
 	return this.DamagePermission(Owner, Attacker, Entity)
@@ -521,7 +527,7 @@ function this.PermissionsRaw(ownerid, attackerid, value)
 end
 
 local function onDisconnect(ply)
-	plyid = ply:SteamID()
+	local plyid = ply:SteamID()
 
 	if this.Player[plyid] then
 		this.Player[plyid] = nil
@@ -533,7 +539,7 @@ end
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
 local function plyBySID(steamid)
-	for _, v in pairs(player.GetAll()) do
+	for _, v in ipairs(player.GetAll()) do
 		if v:SteamID() == steamid then return v end
 	end
 
@@ -564,8 +570,9 @@ net.Receive("ACF_dmgfriends", function(_, ply)
 
 			if targ then
 				local note = v and "given you" or "removed your"
+				local nick = string.Trim(string.format("%q", ply:Nick()), "\"") -- Ensuring that the name is Lua safe
 				--Msg("Sending", targ, " ", note, "\n")
-				targ:SendLua(string.format("GAMEMODE:AddNotify(%q,%s,7)", ply:Nick() .. " has " .. note .. " permission to damage their objects with ACF!", "NOTIFY_GENERIC"))
+				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
 			end
 		end
 	end
@@ -607,7 +614,7 @@ net.Receive("ACF_refreshpermissions", function(_, ply)
 end)
 
 function this.ResendPermissionsOnChanged()
-	for _, ply in pairs(player.GetAll()) do
+	for _, ply in ipairs(player.GetAll()) do
 		this.SendPermissionsState(ply)
 	end
 end
@@ -620,5 +627,4 @@ local m = table.KeyFromValue(this.Modes, this.DamagePermission)
 if not m then
 	this.DamagePermission = function() end
 	hook.Run("ACF_ProtectionModeChanged", "default", nil)
-	mode = "default"
 end

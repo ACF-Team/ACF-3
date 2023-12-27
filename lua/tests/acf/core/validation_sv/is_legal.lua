@@ -24,17 +24,17 @@ return {
 
     cases = {
         {
-            name = "Is Legal when Gamemode is Sandbox",
+            name = "Is Legal when checks are disabled",
 
             func = function( State )
-                State.OriginalGamemode = ACF.Gamemode
-                ACF.Gamemode = 1
+                State.OriginalLegalChecks = ACF.LegalChecks
+                ACF.LegalChecks = false
 
                 expect( ACF.IsLegal() ).to.beTrue()
             end,
 
             cleanup = function( State )
-                ACF.Gamemode = State.OriginalGamemode
+                ACF.LegalChecks = State.OriginalLegalChecks
             end
         },
 

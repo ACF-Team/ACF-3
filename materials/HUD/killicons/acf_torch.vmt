@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "HUD/killicons/torch"
+	"$basetexture" "HUD/killicons/acf_torch"
 	"$vertexcolor" 		1
 	"$vertexalpha" 		1
 	"$nolod" 			1

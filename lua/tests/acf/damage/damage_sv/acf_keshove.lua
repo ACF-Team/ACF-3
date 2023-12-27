@@ -34,7 +34,7 @@ return {
 
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
-                expect( State.applyForceStub ).to.haveBeenCalled()
+                expect( State.applyForceStub ).was.called()
             end
         },
 
@@ -46,7 +46,7 @@ return {
 
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
-                expect( State.applyForceStub ).toNot.haveBeenCalled()
+                expect( State.applyForceStub ).wasNot.called()
             end
         },
         {
@@ -57,7 +57,7 @@ return {
 
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
-                expect( State.applyForceStub ).toNot.haveBeenCalled()
+                expect( State.applyForceStub ).wasNot.called()
             end,
 
             cleanup = function()
@@ -74,7 +74,7 @@ return {
                 local calcMass = stub( _G, "ACF_CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
-                expect( calcMass ).to.haveBeenCalled()
+                expect( calcMass ).was.called()
             end
         },
 
@@ -87,7 +87,7 @@ return {
                 local calcMass = stub( _G, "ACF_CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
-                expect( calcMass ).to.haveBeenCalled()
+                expect( calcMass ).was.called()
             end
         }
     }
