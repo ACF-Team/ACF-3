@@ -27,7 +27,7 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
             if not IsValid(Driver) then return end
             Driver:ExitVehicle()
         end
-        PrintTable(Entity:GetTable())
+
         if not ACF.VehicleLegalChecks then return end
 
         ACF.CheckLegal(Entity)
