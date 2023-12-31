@@ -10,6 +10,7 @@ do -- ACF global vars
 
 	-- General Settings
 	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
+	ACF.VehicleLegalChecks = true -- Whether or not IsLegal checks should be run on vehicle entities
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
