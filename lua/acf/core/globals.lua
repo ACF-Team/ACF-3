@@ -123,7 +123,7 @@ do -- ACF global vars
 
 	-- Fuel
 	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate           = 27.8 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate           = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
