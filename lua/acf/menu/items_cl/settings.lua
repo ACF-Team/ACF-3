@@ -139,6 +139,14 @@ do -- Serverside settings
 			return Value
 		end)
 
+		local VehicleLegalChecks = Base:AddCheckBox("Enable legality checks on vehicle entities.")
+		VehicleLegalChecks:SetServerData("VehicleLegalChecks", "OnChange")
+		VehicleLegalChecks:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
 		local GunFire = Base:AddCheckBox("Allow guns to fire.")
 		GunFire:SetServerData("GunsCanFire", "OnChange")
 		GunFire:DefineSetter(function(Panel, _, _, Value)

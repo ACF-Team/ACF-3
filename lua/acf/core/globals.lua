@@ -10,6 +10,7 @@ do -- ACF global vars
 
 	-- General Settings
 	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
+	ACF.VehicleLegalChecks = true -- Whether or not IsLegal checks should be run on vehicle entities
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
@@ -122,7 +123,7 @@ do -- ACF global vars
 
 	-- Fuel
 	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate           = 27.8 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate           = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
