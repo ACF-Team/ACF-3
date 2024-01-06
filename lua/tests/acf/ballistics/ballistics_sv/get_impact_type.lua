@@ -16,7 +16,24 @@ return {
             name = "Returns Prop if impacting a Player Entity",
             func = function()
                 local Trace = {}
-                local Entity = { IsPlayer = stub().returns( true ) }
+                local Entity = {
+                    IsPlayer = stub().returns( true ),
+                    IsNPC = stub().returns( false )
+                }
+
+                local Type = ACF.Ballistics.GetImpactType( Trace, Entity )
+                expect( Type ).to.equal( "Prop" )
+            end
+        },
+
+        {
+            name = "Returns Prop if impacting an NPC Entity",
+            func = function()
+                local Trace = {}
+                local Entity = {
+                    IsPlayer = stub().returns( false ),
+                    IsNPC = stub().returns( true )
+                }
 
                 local Type = ACF.Ballistics.GetImpactType( Trace, Entity )
                 expect( Type ).to.equal( "Prop" )
@@ -29,6 +46,7 @@ return {
                 local Trace = {}
                 local Entity = {
                     IsPlayer = stub().returns( false ),
+                    IsNPC = stub().returns( false ),
                     CPPIGetOwner = function()
                         return { IsValid = stub().returns( true ) }
                     end
@@ -45,6 +63,7 @@ return {
                 local Trace = {}
                 local Entity = {
                     IsPlayer = stub().returns( false ),
+                    IsNPC = stub().returns( false ),
                     CPPIGetOwner = function()
                         return { IsValid = stub().returns( false ) }
                     end
