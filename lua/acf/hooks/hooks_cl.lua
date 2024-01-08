@@ -194,4 +194,16 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	-- @param Trace The TraceResult from the player's eye trace.
 	function Gamemode:ACF_OnDrawBoxes()
 	end
+
+	--- Called after requesting a newly spawned model's data from the server.
+	-- Model data will always be invalid at this point.
+	-- @param Model The model that has had its data requested.
+	function Gamemode:ACF_OnRequestedModelData()
+	end
+
+	--- Called after receiving a newly spawned model's data from the server.
+	-- @param Model The model that has received new data.
+	-- @param Data The data about the model that was received from the server.
+	function Gamemode:ACF_OnReceivedModelData()
+	end
 end)
