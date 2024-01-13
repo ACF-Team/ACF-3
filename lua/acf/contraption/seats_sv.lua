@@ -5,6 +5,7 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
         if not IsValid(Entity) then return end
         if Entity:GetClass() ~= "prop_vehicle_prisoner_pod" then return end
         if Entity.fphysSeat then return end -- simfphys vehicles will make non-solid seats that should be ignored
+        if Entity.wac_ignore then return end -- WAC vehicles do this too
 
         local PhysObj = Entity:GetPhysicsObject()
         if not IsValid(PhysObj) then return end
@@ -38,7 +39,7 @@ hook.Add("CanPlayerEnterVehicle", "ACF_SeatLegality", function(Player, Entity)
     if not Entity.ACF then return end
 
     if not Entity.ACF.LegalSeat then
-        ACF.SendNotify(Player, false, "Seat is not legal and is currently disabled.")
+        ACF.SendNotify(Player, false, "[ACF] Seat is not legal and is currently disabled.")
         return false
     end
 end)
