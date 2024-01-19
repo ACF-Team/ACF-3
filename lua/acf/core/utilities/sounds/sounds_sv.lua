@@ -45,13 +45,19 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 	if not IsValid(Origin) then return end
 
 	ShouldStop = ShouldStop or false
+	local Time = CurTime()
+	Origin.ACF.SoundTimer = Origin.ACF.SoundTimer or Time
 
-	net.Start("ACF_Sounds_Adjustable")
-		net.WriteEntity(Origin)
-		net.WriteBool(ShouldStop)
-	if not ShouldStop then
-		net.WriteUInt(Pitch, 8)
-		net.WriteFloat(Volume)
+	-- Slowing down the rate of sending a bit
+	if Origin.ACF.SoundTimer <= Time or ShouldStop then
+		net.Start("ACF_Sounds_Adjustable")
+			net.WriteEntity(Origin)
+			net.WriteBool(ShouldStop)
+		if not ShouldStop then
+			net.WriteUInt(Pitch, 8)
+			net.WriteFloat(Volume)
+		end
+		net.SendPAS(Origin:GetPos())
+		Origin.ACF.SoundTimer = Time + 0.1
 	end
-	net.SendPAS(Origin:GetPos())
 end

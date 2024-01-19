@@ -245,7 +245,14 @@ function SWEP:PrimaryAttack()
 			Effect:SetEntity(self)
 		util.Effect("thruster_ring", Effect, true, true)
 
-		Sounds.SendSound(self, "items/medshot4.wav", nil, nil, 1)
+		-- Sound ratelimiting
+		local Time = CurTime()
+		self.SoundTimer = self.SoundTimer or Time
+
+		if self.SoundTimer <= Time then
+			Sounds.SendSound(self, "items/medshot4.wav", nil, nil, 1)
+			self.SoundTimer = Time + 0.1
+		end
 	else
 		local OldHealth = Entity.ACF.Health
 		local MaxHealth = Entity.ACF.MaxHealth
@@ -269,6 +276,15 @@ function SWEP:PrimaryAttack()
 
 		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
 		TeslaSpark(Trace.HitPos, 1)
+
+		-- Sound ratelimiting
+		local Time = CurTime()
+		self.SoundTimer = self.SoundTimer or Time
+
+		if self.SoundTimer <= Time then
+			Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
+			self.SoundTimer = Time + 0.1
+		end
 	end
 end
 
@@ -334,7 +350,14 @@ function SWEP:SecondaryAttack()
 
 			util.Effect("Sparks", Effect, true, true)
 
-			Sounds.SendSound(Entity, Zap:format(math.random(1, 4)), nil, nil, 1)
+			-- Sound ratelimiting
+			local Time = CurTime()
+			self.SoundTimer = self.SoundTimer or Time
+
+			if self.SoundTimer <= Time then
+				Sounds.SendSound(Entity, Zap:format(math.random(1, 4)), nil, nil, 1)
+				self.SoundTimer = Time + 0.1
+			end
 		end
 	end
 end
