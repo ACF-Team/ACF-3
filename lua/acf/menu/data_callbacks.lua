@@ -37,7 +37,18 @@ local Settings = {
 
 		if CLIENT and not IsValid(Player) then return end
 
-		Message("Info", "Legality checks have been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Legality checks for ACF entities have been " .. (Bool and "enabled." or "disabled."))
+	end,
+	VehicleLegalChecks = function(Player, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.VehicleLegalChecks == Bool then return end
+
+		ACF.VehicleLegalChecks = Bool
+
+		if CLIENT and not IsValid(Player) then return end
+
+		Message("Info", "Legality checks for vehicles have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	GunsCanFire = function(Player, _, Value)
 		local Bool = tobool(Value)
