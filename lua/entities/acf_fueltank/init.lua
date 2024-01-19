@@ -12,6 +12,7 @@ local Objects     = Damage.Objects
 local ActiveTanks = ACF.FuelTanks
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Sounds      = Utilities.Sounds
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
@@ -525,11 +526,11 @@ function ENT:Think()
 				Tank:Consume(-Exchange)
 
 				if self.FuelType == "Electric" then
-					self:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
-					Tank:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
+					Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+					Sounds.SendSound(Tank, "ambient/energy/newspark04.wav", 70, 100, 0.5)
 				else
-					self:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
-					Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
+					Sounds.SendSound(self, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+					Sounds.SendSound(Tank, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
 				end
 			end
 		end

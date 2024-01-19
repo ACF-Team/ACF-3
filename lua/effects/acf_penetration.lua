@@ -3,6 +3,7 @@ local TraceLine  = util.TraceLine
 local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetPenetrationDecal
 local GetScale   = ACF.GetDecalScale
+local Sounds     = ACF.Utilities.Sounds
 local Sound      = "acf_base/fx/penetration%s.mp3"
 local White      = Color(255, 255, 255)
 
@@ -38,7 +39,7 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
 
-	sound.Play(Sound:format(math.random(1, 6)), Trace.HitPos, Level, Pitch, ACF.Volume)
+	Sounds.PlaySound(Trace.HitPos, Sound:format(math.random(1, 6)), Level, Pitch, 1)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)

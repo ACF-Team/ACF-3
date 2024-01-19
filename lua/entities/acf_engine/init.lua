@@ -106,6 +106,7 @@ end
 local Damage      = ACF.Damage
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Sounds      = Utilities.Sounds
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local IsValid     = IsValid
@@ -125,7 +126,7 @@ local function GetPitchVolume(Engine)
 	local Throttle = Engine.RevLimited and 0 or Engine.Throttle
 	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
-	return Pitch, Volume * ACF.Volume
+	return Pitch, Volume * Engine.SoundVolume
 end
 
 local function GetNextFuelTank(Engine)
@@ -150,8 +151,8 @@ local function CheckDistantFuelTanks(Engine)
 		if EnginePos:DistToSqr(Tank:GetPos()) > MaxDistance then
 			local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Engine:EmitSound(Sound, 70, 100, ACF.Volume)
-			Tank:EmitSound(Sound, 70, 100, ACF.Volume)
+			Sounds.SendSound(Engine, Sound, 70, 100, 1)
+			Sounds.SendSound(Tank, Sound, 70, 100, 1)
 
 			Engine:Unlink(Tank)
 		end
@@ -289,6 +290,7 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundPitch       = Engine.Pitch or 1
+		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
@@ -593,36 +595,30 @@ function ENT:UpdateSound()
 	end
 
 	if Path == "" then return end
-
-	local Sound = self.Sound
-
-	if not Sound then
-		Sound = CreateSound(self, Path)
-
-		self.Sound = Sound
-	end
-
 	if not self.Active then return end
 
 	local Pitch, Volume = GetPitchVolume(self)
 
-	if Sound:IsPlaying() then
-		Sound:ChangePitch(Pitch, 0)
-		Sound:ChangeVolume(Volume, 0)
+	if Pitch == self.LastPitch or Volume == self.LastVolume then return end
+
+	self.LastPitch = Pitch
+	self.LastVolume = Volume
+
+	if self.Sound then
+		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
 	else
-		Sound:PlayEx(Volume, Pitch)
+		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+		self.Sound = true
 	end
 end
 
 function ENT:DestroySound()
-	local Current = self.Sound
+	Sounds.SendAdjustableSound(self, true)
 
-	if Current then
-		Current:Stop()
-	end
-
-	self.LastSound = nil
-	self.Sound     = nil
+	self.LastSound  = nil
+	self.LastPitch  = nil
+	self.LastVolume = nil
+	self.Sound      = nil
 end
 
 -- specialized calcmassratio for engines
