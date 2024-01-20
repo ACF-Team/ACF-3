@@ -441,7 +441,7 @@ do -- ACF Activation and Damage -----------------
 				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
-				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
+				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF.GetAncestor(Entity):GetVelocity()
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity
 				BulletData.Crate  = Entity:EntIndex()

@@ -1,9 +1,8 @@
 -- Contraption-aware functionality
 
--- Local Funcs ----------------------------------
--- These functions are used within this file and made global at the end
+local ACF = ACF
 
-local function GetAncestor(Ent)
+function ACF.GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
 	local Parent = Ent
@@ -17,7 +16,7 @@ local function GetAncestor(Ent)
 	return Parent, Last
 end
 
-function ACF.getAncestors(ent)
+function ACF.GetAncestors(ent)
 	local ancestors = {}
 	local parent    = ent:GetParent()
 	local count     = 0
@@ -32,7 +31,7 @@ function ACF.getAncestors(ent)
 	return ancestors
 end
 
-function ACF.hasAncestor(ent, ancestor)
+function ACF.HasAncestor(ent, ancestor)
 	if not IsValid(ent) then return false end
 	if not IsValid(ancestor) then return false end
 
@@ -49,7 +48,7 @@ function ACF.hasAncestor(ent, ancestor)
 	return false
 end
 
-local function GetAllPhysicalEntities(Ent, Tab)
+function ACF.GetAllPhysicalEntities(Ent, Tab)
 	local Res = Tab or {}
 
 	if IsValid(Ent) and not Res[Ent] then
@@ -63,8 +62,8 @@ local function GetAllPhysicalEntities(Ent, Tab)
 				end
 
 				if V.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
-					GetAllPhysicalEntities(V.Ent1, Res)
-					GetAllPhysicalEntities(V.Ent2, Res)
+					ACF.GetAllPhysicalEntities(V.Ent1, Res)
+					ACF.GetAllPhysicalEntities(V.Ent2, Res)
 				end
 			end
 		end
@@ -73,26 +72,26 @@ local function GetAllPhysicalEntities(Ent, Tab)
 	return Res
 end
 
-local function GetAllChildren(Ent, Tab)
+function ACF.GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
 		if not IsValid(V) or Res[V] then continue end
 
 		Res[V] = true
-		GetAllChildren(V, Res)
+		ACF.GetAllChildren(V, Res)
 	end
 
 	return Res
 end
 
-local function GetEnts(Ent)
-	local Ancestor 	= GetAncestor(Ent)
-	local Phys 		= GetAllPhysicalEntities(Ancestor)
+function ACF.GetEnts(Ent)
+	local Ancestor 	= ACF.GetAncestor(Ent)
+	local Phys 		= ACF.GetAllPhysicalEntities(Ancestor)
 	local Pare 		= {}
 
 	for K in pairs(Phys) do
-		GetAllChildren(K, Pare)
+		ACF.GetAllChildren(K, Pare)
 	end
 
 	for K in pairs(Phys) do -- Go through the all physical ents (There's probably less of those than the parented ones)
@@ -116,7 +115,7 @@ function ACF.HasConstraints(Ent)
 	return false
 end
 
-function ACF_CalcMassRatio(Ent, Tally)
+function ACF.CalcMassRatio(Ent, Tally)
 	local TotMass  = 0
 	local PhysMass = 0
 	local Time     = CurTime()
@@ -129,7 +128,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented = GetEnts(Ent)
+	local Physical, Parented = ACF.GetEnts(Ent)
 	local Constraints = {}
 
 	for K in pairs(Physical) do
@@ -290,9 +289,3 @@ do -- ASSUMING DIRECT CONTROL
 		end
 	end
 end
-
--- Globalize ------------------------------------
-ACF_GetAllPhysicalEntities 	= GetAllPhysicalEntities
-ACF_GetAllChildren 			= GetAllChildren
-ACF_GetEnts 				= GetEnts
-ACF_GetAncestor 			= GetAncestor

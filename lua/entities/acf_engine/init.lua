@@ -629,7 +629,7 @@ end
 function ENT:CalcMassRatio()
 	local PhysMass 	= 0
 	local TotalMass = 0
-	local Physical, Parented = ACF_GetEnts(self)
+	local Physical, Parented = ACF.GetEnts(self)
 
 	for K in pairs(Physical) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case

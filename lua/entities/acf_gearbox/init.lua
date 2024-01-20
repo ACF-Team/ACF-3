@@ -749,7 +749,7 @@ do -- Movement -----------------------------------------
 			self.InGear = true
 		end
 
-		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
+		local BoxPhys = ACF.GetAncestor(self):GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 
 		if self.CVT and self.Gear == 1 then
@@ -859,7 +859,7 @@ do -- Movement -----------------------------------------
 		end
 
 		if ReactTq ~= 0 then
-			local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
+			local BoxPhys = ACF.GetAncestor(self):GetPhysicsObject()
 
 			if IsValid(BoxPhys) then
 				BoxPhys:ApplyTorqueCenter(self:GetRight() * Clamp(2 * math.deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
@@ -897,7 +897,7 @@ do -- Braking ------------------------------------------
 		if not next(self.Wheels) then return end -- No brakes for the non-wheel users
 		if self.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
 
-		local BoxPhys = ACF_GetAncestor(self):GetPhysicsObject()
+		local BoxPhys = ACF.GetAncestor(self):GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 		local DeltaTime = Clock.DeltaTime
 

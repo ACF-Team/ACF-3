@@ -499,7 +499,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
-			local Velocity = ACF_GetAncestor(self):GetVelocity()
+			local Velocity = ACF.GetAncestor(self):GetVelocity()
 			local AmmoType = AmmoTypes.Get(self.BulletData.Type)
 
 			if self.BulletData.CanFuze and self.SetFuze then

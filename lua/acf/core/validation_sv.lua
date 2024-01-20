@@ -166,7 +166,7 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	end
 
 	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
-	local Armor = ACF_CalcArmor(Area, Ductility, Mass)
+	local Armor = ACF.CalcArmor(Area, Ductility, Mass)
 
 	if Mass ~= Entity.ACF.Mass then
 		Entity.ACF.Mass = Mass
@@ -242,8 +242,3 @@ function ACF.Activate(Entity, Recalc)
 	Entity.ACF.MaxArmour = Thickness
 	Entity.ACF.Ductility = Ductility
 end
-
--- Globalize ------------------------------------
-ACF_CheckLegal = ACF.CheckLegal
-ACF_Check      = ACF.Check
-ACF_Activate   = ACF.Activate

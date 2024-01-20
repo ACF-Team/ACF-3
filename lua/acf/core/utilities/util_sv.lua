@@ -9,8 +9,6 @@ do -- Networked notifications
 			net.WriteString(Message or "")
 		net.Send(Player)
 	end
-
-	ACF_SendNotify = ACF.SendNotify -- Backwards compatibility
 end
 
 do -- HTTP Request

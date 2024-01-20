@@ -42,7 +42,7 @@ end
 
 function ACF.KillChildProps(Entity, BlastPos, Energy)
 	local Explosives = {}
-	local Children 	 = ACF_GetAllChildren(Entity)
+	local Children 	 = ACF.GetAllChildren(Entity)
 	local Count		 = 0
 
 	-- do an initial processing pass on children, separating out explodey things to handle last
