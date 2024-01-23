@@ -12,16 +12,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Create Commit Version File
         shell: bash
         run: |
-        mkdir data_static
-        mkdir data_static/acf
-        cat > data_static/acf/acf-3-version.txt
-        ${{ github.sha }}
-        EOF
+        mkdir -p data_static/acf
+        echo "${{ github.sha }}" > data_static/acf/acf-3-version.txt
 
       - name: Upload to Workshop
         uses: CFC-Servers/gmod-upload@master
