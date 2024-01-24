@@ -188,6 +188,7 @@ do -- Spawn and Update functions
 		local FuelType = FuelTypes.Get(Data.FuelType)
 		local Limit    = Class.LimitConVar.Name
 		local Model    = Class.Model or FuelTank and FuelTank.Model
+		local Material = Class.Material or FuelTank and FuelTank.Model
 
 		if not Player:CheckLimit(Limit) then return end
 
@@ -201,6 +202,9 @@ do -- Spawn and Update functions
 
 		Tank:SetPlayer(Player)
 		Tank:SetScaledModel(Model)
+		if Material then
+			Tank:SetMaterial(Material)
+		end
 		Tank:SetAngles(Angle)
 		Tank:SetPos(Pos)
 		Tank:Spawn()
