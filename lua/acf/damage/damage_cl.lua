@@ -121,8 +121,8 @@ do -- Debris Effects ------------------------
 			Entity:StopAndDestroyParticles()
 		end)
 
-		if Smoke then Smoke:StopEmission() end
-		if Ember then Ember:StopEmission() end
+		if IsValid(Smoke) then Smoke:StopEmission() end
+		if IsValid(Ember) then Ember:StopEmission() end
 
 		timer.Simple(5, function()
 			if not IsValid(Entity) then return end
