@@ -94,8 +94,8 @@ local function Gib(Entity,DmgInfo)
 
 	local dmg = DamageInfo()
 	dmg:SetDamage(Entity:Health())
-	if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
-	if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
+	if DmgInfo and IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
+	if DmgInfo and IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
 	dmg:SetDamageType(DMG_ALWAYSGIB)
 
 	timer.Simple(0,function()
