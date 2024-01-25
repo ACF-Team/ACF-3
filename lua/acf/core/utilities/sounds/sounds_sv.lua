@@ -26,7 +26,7 @@ function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 		net.WriteString(Path)
 		net.WriteUInt(Level, 7)
 		net.WriteUInt(Pitch, 8)
-		net.WriteFloat(Volume)
+		net.WriteUInt(Volume * 100, 7)
 	net.SendPAS(Pos)
 end
 
@@ -55,7 +55,9 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 			net.WriteBool(ShouldStop)
 		if not ShouldStop then
 			net.WriteUInt(Pitch, 8)
-			net.WriteFloat(Volume)
+
+			Volume = Volume * 100 -- Sending the approximate volume as an int to reduce message size
+			net.WriteUInt(Volume, 7)
 		end
 		net.SendPAS(Origin:GetPos())
 		Origin.ACF.SoundTimer = Time + 0.1

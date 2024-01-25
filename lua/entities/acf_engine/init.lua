@@ -365,17 +365,18 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner     = Player -- MUST be stored on ent for PP
-		Entity.Active    = false
-		Entity.Gearboxes = {}
-		Entity.FuelTanks = {}
-		Entity.LastThink = 0
-		Entity.MassRatio = 1
-		Entity.FuelUsage = 0
-		Entity.Throttle  = 0
-		Entity.FlyRPM    = 0
-		Entity.SoundPath = Engine.Sound
-		Entity.DataStore = Entities.GetArguments("acf_engine")
+		Entity.Owner      = Player -- MUST be stored on ent for PP
+		Entity.Active     = false
+		Entity.Gearboxes  = {}
+		Entity.FuelTanks  = {}
+		Entity.LastThink  = 0
+		Entity.MassRatio  = 1
+		Entity.FuelUsage  = 0
+		Entity.Throttle   = 0
+		Entity.FlyRPM     = 0
+		Entity.SoundPath  = Engine.Sound
+		Entity.LastPitch  = 0
+		Entity.DataStore  = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
@@ -599,10 +600,9 @@ function ENT:UpdateSound()
 
 	local Pitch, Volume = GetPitchVolume(self)
 
-	if Pitch == self.LastPitch or Volume == self.LastVolume then return end
+	if math.abs(Pitch - self.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
 
 	self.LastPitch = Pitch
-	self.LastVolume = Volume
 
 	if self.Sound then
 		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
@@ -616,8 +616,7 @@ function ENT:DestroySound()
 	Sounds.SendAdjustableSound(self, true)
 
 	self.LastSound  = nil
-	self.LastPitch  = nil
-	self.LastVolume = nil
+	self.LastPitch  = 0
 	self.Sound      = nil
 end
 
