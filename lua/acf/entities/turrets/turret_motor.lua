@@ -36,7 +36,7 @@ do	-- Motor, should be parented to the turret ring, or share the same parent
 		Mass			= 60, -- Base mass, will be further modified by settings
 		Speed			= 720, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
 		Efficiency		= 0.9,
-		Accel			= 0.01, -- Time in seconds to reach full speed. Electric motors have instant response
+		Accel			= 2, -- Time in seconds to reach full speed. Electric motors have instant response
 
 		ScaleLimit		= { -- For scaling the motor size
 			Min		= 0.5,
@@ -67,7 +67,7 @@ do	-- Motor, should be parented to the turret ring, or share the same parent
 		Mass			= 80, -- Base mass, will be further modified by settings
 		Speed			= 360, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
 		Efficiency		= 0.98,
-		Accel			= 1, -- Time in seconds to reach full speed, hydraulic motors have a little spool time
+		Accel			= 8, -- Time in seconds to reach full speed, hydraulic motors have a little spool time
 
 		ScaleLimit		= { -- For scaling the motor size
 			Min		= 0.5,

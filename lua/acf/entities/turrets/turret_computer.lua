@@ -1,6 +1,9 @@
-local ACF = ACF
-local Turrets = ACF.Classes.Turrets
+--local ACF = ACF
+--local Turrets = ACF.Classes.Turrets
 
+-- I will eventually work on this. Eventually.
+
+--[[
 Turrets.Register("4-Computer",{
 	Name		= "Computers",
 	Description	= "Computer capable of calculating the optimal angle to hit a target.\nHas a delay between uses.",
@@ -12,15 +15,17 @@ Turrets.Register("4-Computer",{
 		Text	= "Maximum number of ACF turret computers a player can create."
 	},
 })
+]]
 
-do	-- Computers
-
-	--[[
+--[[
 		Ballistic computers that should be linked to a gun to gather bulletdata, and have a Calculate input
 		When Calculate is triggered, Thinking flag is set so only one run can occur at once
 
 		After calculation is done, output Firing Solution [ANGLE] (global), Flight Time [NUMBER]
 	]]
+--[[
+do	-- Computers
+
 
 	Turrets.RegisterItem("DIR-BalComp","4-Computer",{
 		Name			= "Direct Ballistics Computer",
@@ -47,4 +52,4 @@ do	-- Computers
 		ThinkTime		= 0.1,
 		CalcError		= 3,
 	})
-end
+end]]

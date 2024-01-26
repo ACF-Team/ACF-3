@@ -67,6 +67,7 @@ do	-- Spawn and Update funcs
 		Entity.CompSize		= Size
 		Entity.Motor		= Data.Motor
 		Entity.Active		= true
+		Entity.SoundPath	= Motor.Sound
 
 		Entity.Torque		= Class.GetTorque(Motor,Size)
 		Entity.Teeth		= Data.Teeth

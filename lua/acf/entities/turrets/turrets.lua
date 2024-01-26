@@ -39,11 +39,11 @@ Turrets.Register("1-Turret",{
 	end,
 
 	HandGear	= { -- Fallback incase a motor is unavailable
-		Teeth	= 16, -- For use in calculating end effective speed of a turret
-		Speed	= 180, -- deg/s
+		Teeth	= 12, -- For use in calculating end effective speed of a turret
+		Speed	= 220, -- deg/s
 		Torque	= 14, -- 0.1m * 140N * sin(90), torque to turn a small handwheel 90 degrees with slightly more than recommended force for a human
 		Efficiency	= 0.99, -- Gearbox efficiency, won't be too punishing for handcrank
-		Accel	= 0.5,
+		Accel	= 5,
 		Sound	= "acf_extra/turret/cannon_turn_loop_manual.wav",
 	},
 
@@ -114,7 +114,7 @@ Turrets.Register("1-Turret",{
 
 		local FinalAccel	= Accel * math.Clamp(MaxPower / ReqAccelPower,0,1) * 6 -- converting back to deg/s^2
 
-		return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed}
+		return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio}
 	end
 })
 

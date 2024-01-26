@@ -6,8 +6,10 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
+local Sounds		= Utilities.Sounds
 local Clock			= Utilities.Clock
 local HookRun		= hook.Run
 local TimerSimple	= timer.Simple
@@ -17,7 +19,7 @@ do	-- Spawn and Update funcs
 	local Entities	= Classes.Entities
 	local Turrets	= Classes.Turrets
 
-	ACF.AddParentDetour("acf_turret", "Rotator")
+	Contraption.AddParentDetour("acf_turret", "Rotator")
 
 	local Inputs	= {
 		"Active (Enables movement of the turret.)",
@@ -134,6 +136,15 @@ do	-- Spawn and Update funcs
 		Entity.MinDeg			= Data.MinDeg
 		Entity.MaxDeg			= Data.MaxDeg
 		Entity.HasArc			= not ((Data.MinDeg == -180) and (Data.MaxDeg == 180))
+
+		Entity.MotorMaxSpeed	= 1
+		Entity.MotorGearRatio	= 1
+
+		if Entity.SoundPlaying == true then
+			Sounds.SendAdjustableSound(Entity,true)
+		end
+		Entity.SoundPlaying		= false
+		Entity.SoundPath		= Entity.HandGear.Sound
 
 		local SizePerc = (Size - Turret.Size.Min) / (Turret.Size.Max - Turret.Size.Min)
 		Entity.ScaledArmor		= (Turret.Armor.Min * (1 - SizePerc)) + (Turret.Armor.Max * SizePerc)
@@ -253,8 +264,6 @@ do	-- Spawn and Update funcs
 		Entity.Rotator			= Rotator
 
 		UpdateTurret(Entity, Data, Class, Turret)
-
-		--WireLib.TriggerOutput(Entity, "", 0)
 
 		Entity:UpdateOverlay(true)
 
@@ -412,8 +421,8 @@ do	-- Spawn and Update funcs
 
 		Entity.DynamicCoM = CoM
 
-		debugoverlay.Line(Entity:GetPos(),Entity:LocalToWorld(Entity.DynamicCoM),5,Color(3,0,194),true)
-		debugoverlay.Cross(Entity:LocalToWorld(Entity.DynamicCoM),3,5,Color(3,0,194),true)
+		debugoverlay.Line(Entity.Rotator:GetPos(),Entity.Rotator:LocalToWorld(Entity.DynamicCoM),5,Color(3,0,194),true)
+		debugoverlay.Cross(Entity.Rotator:LocalToWorld(Entity.DynamicCoM),3,5,Color(3,0,194),true)
 
 		return CoM, Mass
 	end
@@ -444,8 +453,8 @@ do	-- Spawn and Update funcs
 
 		Entity.SubTurretCoM = CoM
 
-		debugoverlay.Line(Entity:GetPos(),Entity:LocalToWorld(Entity.SubTurretCoM),5,Color(0,211,81),true)
-		debugoverlay.Cross(Entity:LocalToWorld(Entity.SubTurretCoM),3,5,Color(0,211,81),true)
+		debugoverlay.Line(Entity.Rotator:GetPos(),Entity.Rotator:LocalToWorld(Entity.SubTurretCoM),5,Color(0,211,81),true)
+		debugoverlay.Cross(Entity.Rotator:LocalToWorld(Entity.SubTurretCoM),3,5,Color(0,211,81),true)
 
 		return CoM, Mass
 	end
@@ -454,11 +463,14 @@ do	-- Spawn and Update funcs
 		local SlewInput 	= self.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
+		local SoundPath		= SlewInput.Sound
 
 		if IsValid(self.Motor) and self.Motor:IsActive() then
 			SlewInput	= self.Motor:GetInfo()
 			Stabilized	= IsValid(self.Gyro) and self.Gyro:IsActive()
 			if Stabilized then StabilizeAmount = self.Gyro:GetInfo() end
+
+			SoundPath	= self.Motor.SoundPath
 		end
 
 		local SlewData		= self.ClassData.CalcSpeed(self.TurretData,SlewInput)
@@ -471,6 +483,10 @@ do	-- Spawn and Update funcs
 			Stabilized = true
 			StabilizeAmount = (1 - ((self.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) / (125 ^ 2))) * 0.25
 		end
+
+		self.MotorMaxSpeed		= SlewData.MotorMaxSpeed
+		self.MotorGearRatio		= SlewData.MotorGearRatio
+		self.SoundPath			= SoundPath
 
 		self.MaxSlewRate		= SlewData.MaxSlewRate
 		self.SlewAccel			= SlewData.SlewAccel
@@ -700,6 +716,18 @@ do -- Metamethods
 			return Angle(p,y,r)
 		end
 
+		function ENT:SetSoundState(State)
+			if State ~= self.SoundPlaying then
+				if State == true then
+					Sounds.CreateAdjustableSound(self,self.SoundPath,25,0)
+				else
+					Sounds.SendAdjustableSound(self,true)
+				end
+			end
+
+			self.SoundPlaying = State
+		end
+
 		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
 			self:CheckCoM(false)
 			local Tick		= Clock.DeltaTime
@@ -714,13 +742,17 @@ do -- Metamethods
 			if MaxImpulse == 0 then
 				self.LastRotatorAngle	= Rotator:GetAngles()
 
+				if self.SoundPlaying == true then
+					self:SetSoundState(false)
+				end
+
 				self:NextThink(Clock.CurTime + 0.1)
 				return true
 			end
 
 			if self.UseVector and (self.Manual == false) then self.DesiredAngle = (self.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
 
-			local AngDiff	= Rotator:WorldToLocalAngles(self.LastRotatorAngle) + Angle(0,-self.SlewRate / 2,0)
+			local AngDiff	= Rotator:WorldToLocalAngles(self.LastRotatorAngle) --+ Angle(0,-self.SlewRate / 2,0)
 			local StabAmt	= math.Clamp((self.Stabilized and self.Active) and (AngDiff.yaw * self.StabilizeAmount) or 0,-SlewMax,SlewMax)
 
 			local TargetBearing	= 0
@@ -763,6 +795,17 @@ do -- Metamethods
 			WireLib.TriggerOutput(self, "Degrees", -self.CurrentAngle.yaw)
 
 			Rotator:SetAngles(self:LocalToWorldAngles(self.CurrentAngle))
+
+			local MotorSpeed = math.Clamp(math.abs(Rotator:WorldToLocalAngles(self.LastRotatorAngle).yaw),0,SlewMax) / Tick
+
+			local MotorSpeedPerc = MotorSpeed / self.MotorMaxSpeed
+			if MotorSpeedPerc > 0.05 and (self.SoundPlaying == false) then
+				self:SetSoundState(true)
+			elseif MotorSpeedPerc <= 0.05 and (self.SoundPlaying == true) then
+				self:SetSoundState(false)
+			end
+
+			if self.SoundPlaying == true then Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 25 + math.ceil(MotorSpeedPerc * 25)) end
 
 			debugoverlay.Line(Rotator:GetPos(), Rotator:GetPos() + Rotator:GetForward() * 16384, 0.05, Color(255,0,0), false)
 
@@ -844,7 +887,7 @@ do -- Metamethods
 			if DmgInfo.Attacker and IsValid(DmgInfo.Attacker) then
 				local Attacker = DmgInfo.Attacker
 
-				if ((Attacker:GetClass() == "acf_ammo") or (Attacker:GetClass() == "acf_fueltank")) and (not ACF.HasAncestor(Attacker,self)) and (Attacker.Exploding == true and (HitRes.Damage >= self.ACF.Health) and (self.Disconnect == false)) then
+				if ((Attacker:GetClass() == "acf_ammo") or (Attacker:GetClass() == "acf_fueltank")) and (not Contraption.HasAncestor(Attacker,self)) and (Attacker.Exploding == true and (HitRes.Damage >= self.ACF.Health) and (self.Disconnect == false)) then
 					self.Disconnect	= true
 
 					self:SetParent(nil)
@@ -887,7 +930,7 @@ do -- Metamethods
 		local function ProxyACF_OnParented(self,Entity,Connected)
 			if not IsValid(Entity) then return end
 			if Entity:GetClass() ~= "acf_turret" then
-				if not (IsValid(self.ACF_TurretAncestor) or (ACF.HasAncestor(self,self.ACF_TurretAncestor))) then
+				if not (IsValid(self.ACF_TurretAncestor) or (Contraption.HasAncestor(self,self.ACF_TurretAncestor))) then
 					self.ACF_OnParented		= nil
 					self.ACF_OnMassChange	= nil
 					self.ACF_TurretAncestor	= nil

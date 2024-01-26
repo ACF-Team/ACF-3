@@ -1,6 +1,6 @@
 include("shared.lua")
 
-ACF.AddParentDetour("acf_turret_rotator", "turret")
+ACF.Contraption.AddParentDetour("acf_turret_rotator", "turret")
 
 function ENT:Initialize(turret)
 	self.turret = turret or self:GetParent()
