@@ -315,6 +315,7 @@ do -- Entity Overlay ----------------------------
 end ---------------------------------------------
 
 do -- Firing ------------------------------------
+	local Sounds = ACF.Utilities.Sounds
 	local Impact = "physics/metal/metal_barrel_impact_hard%s.wav"
 
 	-- The entity won't even attempt to shoot if this function returns false
@@ -343,8 +344,8 @@ do -- Firing ------------------------------------
 			local Sound  = self.SoundPath or Impact:format(math.random(5, 6))
 			local Bullet = self.BulletData
 
-			if Sound ~= "" and file.Exists("sound/" .. Sound, "GAME") then
-				self:EmitSound(Sound, 70, math.Rand(98, 102), ACF.Volume)
+			if Sound ~= "" then
+				Sounds.SendSound(self, Sound, 70, math.Rand(98, 102), 1)
 			end
 			self:SetSequence("load")
 
@@ -365,7 +366,7 @@ do -- Firing ------------------------------------
 				self:SetSequence("idle")
 			end)
 		else
-			self:EmitSound("weapons/pistol/pistol_empty.wav", 70, math.Rand(98, 102), ACF.Volume)
+			Sounds.SendSound(self, "weapons/pistol/pistol_empty.wav", 70, math.Rand(98, 102), 1)
 
 			Delay = 1
 		end

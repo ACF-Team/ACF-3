@@ -700,6 +700,8 @@ do -- Overlay Text -------------------------------------
 end ----------------------------------------------------
 
 do -- Gear Shifting ------------------------------------
+	local Sounds = Utilities.Sounds
+
 	-- Handles gearing for automatic gearboxes. 0 = Neutral, 1 = Drive, 2 = Reverse
 	function ENT:ChangeDrive(Value)
 		Value = Clamp(math.floor(Value), 0, 2)
@@ -721,8 +723,8 @@ do -- Gear Shifting ------------------------------------
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
-		if self.SoundPath ~= "" and file.Exists("sound/" .. self.SoundPath, "GAME") then
-			self:EmitSound(self.SoundPath, 70, 100, 0.5 * ACF.Volume)
+		if self.SoundPath ~= "" then
+			Sounds.SendSound(self, self.SoundPath, 70, 100, 0.5)
 		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
