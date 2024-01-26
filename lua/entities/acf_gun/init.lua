@@ -430,6 +430,8 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
+		local Contraption = ACF.Contraption
+
 		local TraceRes  = {} -- Output for traces
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
 
@@ -499,7 +501,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
-			local Velocity = ACF.GetAncestor(self):GetVelocity()
+			local Velocity = Contraption.GetAncestor(self):GetVelocity()
 			local AmmoType = AmmoTypes.Get(self.BulletData.Type)
 
 			if self.BulletData.CanFuze and self.SetFuze then

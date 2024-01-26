@@ -418,9 +418,10 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
-	local Clock   = Utilities.Clock
-	local Damage  = ACF.Damage
-	local Objects = Damage.Objects
+	local Clock       = Utilities.Clock
+	local Damage      = ACF.Damage
+	local Objects     = Damage.Objects
+	local Contraption = ACF.Contraption
 
 	local function CookoffCrate(Entity)
 		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
@@ -441,7 +442,7 @@ do -- ACF Activation and Damage -----------------
 				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
-				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF.GetAncestor(Entity):GetVelocity()
+				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + Contraption.GetAncestor(Entity):GetVelocity()
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity
 				BulletData.Crate  = Entity:EntIndex()

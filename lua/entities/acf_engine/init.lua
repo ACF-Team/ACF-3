@@ -106,6 +106,7 @@ end
 local Damage      = ACF.Damage
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Contraption = ACF.Contraption
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local IsValid     = IsValid
@@ -629,7 +630,7 @@ end
 function ENT:CalcMassRatio()
 	local PhysMass 	= 0
 	local TotalMass = 0
-	local Physical, Parented = ACF.GetEnts(self)
+	local Physical, Parented = Contraption.GetEnts(self)
 
 	for K in pairs(Physical) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
