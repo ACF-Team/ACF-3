@@ -446,7 +446,7 @@ do -- Metamethods --------------------------------
 			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity.IsACFEntity and not Entity.IsACFArmor then break end
+				if Entity.IsACFEntity and not (Entity.IsACFArmor or Entity.IsACFTurret) then break end
 				if Entity:CPPIGetOwner() ~= owner then break end
 
 				filter[#filter + 1] = Entity
