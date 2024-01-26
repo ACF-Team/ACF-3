@@ -3,6 +3,7 @@ local TraceLine  = util.TraceLine
 local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetRicochetDecal
 local GetScale   = ACF.GetDecalScale
+local Sounds     = ACF.Utilities.Sounds
 local Sound      = "acf_base/fx/ricochet%s.mp3"
 
 function EFFECT:Init(Data)
@@ -28,7 +29,7 @@ function EFFECT:Init(Data)
 	local Level = math.Clamp(Mass * 200, 65, 500)
 	local Pitch = math.Clamp(Velocity * 0.01, 25, 255)
 
-	sound.Play(Sound:format(math.random(1, 4)), Origin, Level, Pitch, ACF.Volume)
+	Sounds.PlaySound(Origin, Sound:format(math.random(1, 4)), Level, Pitch, 1)
 end
 
 function EFFECT:Think()

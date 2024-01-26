@@ -3,60 +3,77 @@ TOOL.Category = cat
 TOOL.Name = "#Tool.acfsound.name"
 TOOL.Command = nil
 TOOL.ConfigName = ""
-TOOL.ClientConVar["pitch"] = "1"
+TOOL.ClientConVar["pitch"]  = "1"
+TOOL.ClientConVar["volume"] = "1"
+TOOL.Information = {
+	{ name = "left" },
+	{ name = "right" },
+	{ name = "reload" },
+	{ name = "info" }
+}
 
 if CLIENT then
 	language.Add("Tool.acfsound.name", "ACF Sound Replacer")
-	language.Add("Tool.acfsound.desc", "Change sound of guns/engines.")
-	language.Add("Tool.acfsound.0", "Left click to apply sound. Right click to copy sound. Reload to set default sound. Use an empty sound path to disable sound.")
+	language.Add("Tool.acfsound.desc", "Change sounds of ACF entities")
+	language.Add("Tool.acfsound.left", "Apply sound")
+	language.Add("Tool.acfsound.right", "Copy sound")
+	language.Add("Tool.acfsound.reload", "Set default sound")
+	language.Add("Tool.acfsound.0", "Use an empty sound path to disable sound")
 end
 
 ACF.SoundToolSupport = ACF.SoundToolSupport or {}
 
 local Sounds   = ACF.SoundToolSupport
-local Messages = ACF.Utilities.Messages
 
 Sounds.acf_gun = {
 	GetSound = function(ent)
 		return {
-			Sound = ent.SoundPath
+			Sound  = ent.SoundPath,
+			Pitch  = ent.SoundPitch,
+			Volume = ent.SoundVolume
 		}
 	end,
 	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
+		ent.SoundPath   = soundData.Sound
+		ent.SoundPitch  = soundData.Pitch
+		ent.SoundVolume = soundData.Volume
+
 		ent:SetNWString("Sound", soundData.Sound)
+		ent:SetNWString("SoundPitch", soundData.Pitch)
+		ent:SetNWString("SoundVolume", soundData.Volume)
 	end,
 	ResetSound = function(ent)
-		ent.SoundPath = ent.DefaultSound
+		ent.SoundPath   = ent.DefaultSound
+		ent.SoundPitch  = 1
+		ent.SoundVolume = 1
+
 		ent:SetNWString("Sound", ent.DefaultSound)
+		ent:SetNWString("SoundPitch", 1)
+		ent:SetNWString("SoundVolume", 1)
 	end
 }
 
 Sounds.acf_engine = {
 	GetSound = function(ent)
 		return {
-			Sound = ent.SoundPath,
-			Pitch = ent.SoundPitch
+			Sound  = ent.SoundPath,
+			Pitch  = ent.SoundPitch,
+			Volume = ent.SoundVolume
 		}
 	end,
 	SetSound = function(ent, soundData)
-		local Sound     = soundData.Sound:Trim():lower()
-		local Extension = string.GetExtensionFromFilename(Sound)
+		local Sound = soundData.Sound:Trim():lower()
 
-		if (Sound ~= "" and not Extension) or not file.Exists("sound/" .. Sound, "GAME") then
-			local Owner = ent:GetPlayer()
-
-			return Messages.SendChat(Owner, "Error", "Couldn't change engine sound, does not exist on server: ", Sound)
-		end
-
-		ent.SoundPath = Sound
-		ent.SoundPitch = soundData.Pitch
+		ent.SoundPath   = Sound
+		ent.SoundPitch  = soundData.Pitch
+		ent.SoundVolume = soundData.Volume
 
 		ent:UpdateSound()
 	end,
 	ResetSound = function(ent)
-		ent.SoundPath  = ent.DefaultSound
-		ent.SoundPitch = 1
+		ent.SoundPath   = ent.DefaultSound
+		ent.SoundPitch  = 1
+		ent.SoundVolume = 1
 
 		ent:UpdateSound()
 	end
@@ -90,16 +107,17 @@ local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
 
 	local Support = Sounds[Entity:GetClass()]
-	local Sound, Pitch = unpack(Data)
+	local Sound, Pitch, Volume = unpack(Data)
 
 	if not Support then return end
 
 	Support.SetSound(Entity, {
-		Sound = Sound,
-		Pitch = Pitch or 1,
+		Sound  = Sound,
+		Pitch  = Pitch or 1,
+		Volume = Volume or 1,
 	})
 
-	duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1 })
+	duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1, Volume or 1 })
 end
 
 duplicator.RegisterEntityModifier("acf_replacesound", ReplaceSound)
@@ -125,25 +143,37 @@ end
 
 function TOOL:LeftClick(trace)
 	if CLIENT then return true end
-	if not IsReallyValid(trace, self:GetOwner()) then return false end
-	local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
-	local pitch = self:GetOwner():GetInfo("acfsound_pitch")
-	ReplaceSound(self:GetOwner(), trace.Entity, {sound, pitch})
+
+	local owner = self:GetOwner()
+
+	if not IsReallyValid(trace, owner) then return false end
+	local sound = owner:GetInfo("wire_soundemitter_sound")
+	local pitch = owner:GetInfo("acfsound_pitch")
+	local volume = owner:GetInfo("acfsound_volume")
+
+	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
 
 	return true
 end
 
 function TOOL:RightClick(trace)
 	if CLIENT then return true end
-	if not IsReallyValid(trace, self:GetOwner()) then return false end
+
+	local owner = self:GetOwner()
+
+	if not IsReallyValid(trace, owner) then return false end
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
 	local soundData = support.GetSound(trace.Entity)
-	self:GetOwner():ConCommand("wire_soundemitter_sound " .. soundData.Sound)
+	owner:ConCommand("wire_soundemitter_sound " .. soundData.Sound)
 
 	if soundData.Pitch then
-		self:GetOwner():ConCommand("acfsound_pitch " .. soundData.Pitch)
+		owner:ConCommand("acfsound_pitch " .. soundData.Pitch)
+	end
+
+	if soundData.Volume then
+		owner:ConCommand("acfsound_volume " .. soundData.Volume)
 	end
 
 	return true
@@ -205,7 +235,7 @@ function TOOL.BuildCPanel(panel)
 	SoundPreStop:SetVisible(true)
 
 	SoundPreStop.DoClick = function()
-		RunConsoleCommand("play", "common/NULL.wav") --Playing a silent sound will mute the preview but not the sound emitters.
+		RunConsoleCommand("play", "common/NULL.wav") -- Playing a silent sound will mute the preview but not the sound emitters.
 	end
 
 	panel:AddItem(SoundPre)
@@ -224,7 +254,16 @@ function TOOL.BuildCPanel(panel)
 		Type = "Float",
 		Min = "0.1",
 		Max = "2"
-	}):SetTooltip("Works only for engines.")
+	}):SetTooltip("Works only for guns and engines.")
+
+	panel:AddControl("Slider", {
+		Label = "Volume:",
+		Command = "acfsound_volume",
+		Type = "Float",
+		Min = "0.1",
+		Max = "2"
+	}):SetTooltip("Works only for guns and engines.")
+
 	--[[
 	local SoundPitch = vgui.Create("DNumSlider")
 	SoundPitch:SetMin( 0.1 )

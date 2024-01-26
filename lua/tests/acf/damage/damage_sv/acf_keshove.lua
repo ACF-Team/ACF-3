@@ -23,7 +23,7 @@ return {
         }
 
         -- For simplicity's sake, we'll pretend the ent's ancestor is itself
-        stub( ACF, "GetAncestor" ).returns( State.Ent )
+        stub( ACF.Contraption, "GetAncestor" ).returns( State.Ent )
     end,
 
     cases = {

@@ -74,28 +74,6 @@ do -- Panel helpers
 	end
 end
 
-do -- Valid sound check
-	local file     = file
-	local isstring = isstring
-	local Folder   = "sound/%s"
-	local Sounds   = {}
-
-	function ACF.IsValidSound(Name)
-		if not isstring(Name) then return false end
-
-		local Path  = Folder:format(Name:Trim())
-		local Valid = Sounds[Path]
-
-		if Valid == nil then
-			Valid = file.Exists(Path, "GAME")
-
-			Sounds[Path] = Valid
-		end
-
-		return Valid
-	end
-end
-
 do -- Default gearbox menus
 	local Values = {}
 

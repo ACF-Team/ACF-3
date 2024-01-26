@@ -443,6 +443,7 @@ function TOOL:RightClick(Trace)
 end
 
 do -- Armor readout
+	local Contraption = ACF.Contraption
 	local SendMessage = ACF.SendMessage
 
 	local Text1 = "--- Contraption Readout (Owner: %s) ---"
@@ -541,7 +542,7 @@ do -- Armor readout
 			end,
 			GetResult = function(_, Trace)
 				local Ent = Trace.Entity
-				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF.CalcMassRatio(Ent, true)
+				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = Contraption.CalcMassRatio(Ent, true)
 
 				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
 			end

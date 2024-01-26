@@ -202,7 +202,10 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelTank", Data.ID)
 
-		FuelPreview:UpdateModel(Data.Model or ClassData.Model)
+		local Model = Data.Model or ClassData.Model
+		local Material = Data.Material or ClassData.Material
+
+		FuelPreview:UpdateModel(Model, Material)
 		FuelPreview:UpdateSettings(Data.Preview or ClassData.Preview)
 
 		FuelType:UpdateFuelText()

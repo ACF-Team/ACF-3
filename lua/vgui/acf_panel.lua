@@ -320,7 +320,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self.NotDrawn = not Bool
 	end
 
-	function Panel:UpdateModel(Path)
+	function Panel:UpdateModel(Path, Material)
 		if not isstring(Path) then
 			return self:DrawEntity(false)
 		end
@@ -364,6 +364,12 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self:DrawEntity(true)
 		self:SetModel(Path)
 		self:SetCamPos(Center + Vector(-self.CamDistance, 0, 0))
+
+		if Material then
+			local Entity = self:GetEntity()
+
+			Entity:SetMaterial(Material)
+		end
 	end
 
 	function Panel:UpdateSettings(Data)

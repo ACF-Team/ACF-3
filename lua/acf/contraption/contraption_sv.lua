@@ -1,8 +1,9 @@
 -- Contraption-aware functionality
 
 local ACF = ACF
+local Contraption = ACF.Contraption
 
-function ACF.GetAncestor(Ent)
+function Contraption.GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
 	local Parent = Ent
@@ -16,39 +17,39 @@ function ACF.GetAncestor(Ent)
 	return Parent, Last
 end
 
-function ACF.GetAncestors(ent)
-	local ancestors = {}
-	local parent    = ent:GetParent()
-	local count     = 0
+function Contraption.GetAncestors(Ent)
+	local Ancestors = {}
+	local Parent    = Ent:GetParent()
+	local Count     = 0
 
-	while IsValid(parent) do
-		count            = count + 1
-		ancestors[count] = parent
+	while IsValid(Parent) do
+		Count            = Count + 1
+		Ancestors[Count] = Parent
 
-		parent = parent:GetParent()
+		Parent = Parent:GetParent()
 	end
 
-	return ancestors
+	return Ancestors
 end
 
-function ACF.HasAncestor(ent, ancestor)
-	if not IsValid(ent) then return false end
-	if not IsValid(ancestor) then return false end
+function Contraption.HasAncestor(Ent, Ancestor)
+	if not IsValid(Ent) then return false end
+	if not IsValid(Ancestor) then return false end
 
-	local parent = ent:GetParent()
+	local Parent = Ent:GetParent()
 
-	while IsValid(parent) do
-		if parent == ancestor then
+	while IsValid(Parent) do
+		if Parent == Ancestor then
 			return true
 		end
 
-		parent = parent:GetParent()
+		Parent = Parent:GetParent()
 	end
 
 	return false
 end
 
-function ACF.GetAllPhysicalEntities(Ent, Tab)
+function Contraption.GetAllPhysicalEntities(Ent, Tab)
 	local Res = Tab or {}
 
 	if IsValid(Ent) and not Res[Ent] then
@@ -62,8 +63,8 @@ function ACF.GetAllPhysicalEntities(Ent, Tab)
 				end
 
 				if V.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
-					ACF.GetAllPhysicalEntities(V.Ent1, Res)
-					ACF.GetAllPhysicalEntities(V.Ent2, Res)
+					Contraption.GetAllPhysicalEntities(V.Ent1, Res)
+					Contraption.GetAllPhysicalEntities(V.Ent2, Res)
 				end
 			end
 		end
@@ -72,26 +73,26 @@ function ACF.GetAllPhysicalEntities(Ent, Tab)
 	return Res
 end
 
-function ACF.GetAllChildren(Ent, Tab)
+function Contraption.GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
 		if not IsValid(V) or Res[V] then continue end
 
 		Res[V] = true
-		ACF.GetAllChildren(V, Res)
+		Contraption.GetAllChildren(V, Res)
 	end
 
 	return Res
 end
 
-function ACF.GetEnts(Ent)
-	local Ancestor 	= ACF.GetAncestor(Ent)
-	local Phys 		= ACF.GetAllPhysicalEntities(Ancestor)
+function Contraption.GetEnts(Ent)
+	local Ancestor 	= Contraption.GetAncestor(Ent)
+	local Phys 		= Contraption.GetAllPhysicalEntities(Ancestor)
 	local Pare 		= {}
 
 	for K in pairs(Phys) do
-		ACF.GetAllChildren(K, Pare)
+		Contraption.GetAllChildren(K, Pare)
 	end
 
 	for K in pairs(Phys) do -- Go through the all physical ents (There's probably less of those than the parented ones)
@@ -103,7 +104,7 @@ function ACF.GetEnts(Ent)
 	return Phys, Pare
 end
 -------------------------------------------------
-function ACF.HasConstraints(Ent)
+function Contraption.HasConstraints(Ent)
 	if Ent.Constraints then
 		for _, V in pairs(Ent.Constraints) do
 			if V.Type ~= "NoCollide" then
@@ -115,7 +116,7 @@ function ACF.HasConstraints(Ent)
 	return false
 end
 
-function ACF.CalcMassRatio(Ent, Tally)
+function Contraption.CalcMassRatio(Ent, Tally)
 	local TotMass  = 0
 	local PhysMass = 0
 	local Time     = CurTime()
@@ -128,7 +129,7 @@ function ACF.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented = ACF.GetEnts(Ent)
+	local Physical, Parented = Contraption.GetEnts(Ent)
 	local Constraints = {}
 
 	for K in pairs(Physical) do
@@ -214,7 +215,8 @@ end
 
 do -- ACF Parent Detouring
 	local Detours = {}
-	function ACF.AddParentDetour(Class, Variable)
+
+	function Contraption.AddParentDetour(Class, Variable)
 		if not Class then return end
 		if not Variable then return end
 
