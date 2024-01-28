@@ -271,7 +271,7 @@ do	-- Metamethods and other important stuff
 			end
 
 			local Turret = self.Turret
-			local LocPos	= Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
+			local LocPos	= Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
 			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.1) + 12) ^ 2
 			local LocDist	= Vector(LocPos.x,LocPos.y,0):Length2DSqr()
 

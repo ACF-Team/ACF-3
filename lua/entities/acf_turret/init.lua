@@ -139,6 +139,7 @@ do	-- Spawn and Update funcs
 
 		Entity.MotorMaxSpeed	= 1
 		Entity.MotorGearRatio	= 1
+		Entity.EffortScale		= 1
 
 		if Entity.SoundPlaying == true then
 			Sounds.SendAdjustableSound(Entity,true)
@@ -484,12 +485,13 @@ do	-- Spawn and Update funcs
 			StabilizeAmount = (1 - ((self.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) / (125 ^ 2))) * 0.25
 		end
 
-		self.MotorMaxSpeed		= SlewData.MotorMaxSpeed
-		self.MotorGearRatio		= SlewData.MotorGearRatio
+		self.MotorMaxSpeed		= SlewData.MotorMaxSpeed or 1 -- Both this and MotorGearRatio are used for sound calculations
+		self.MotorGearRatio		= SlewData.MotorGearRatio or 1
 		self.SoundPath			= SoundPath
 
 		self.MaxSlewRate		= SlewData.MaxSlewRate
 		self.SlewAccel			= SlewData.SlewAccel
+		self.EffortScale		= SlewData.EffortScale or 1 -- Sound scaling
 		self.Stabilized			= Stabilized
 		self.StabilizeAmount	= StabilizeAmount
 	end
@@ -719,7 +721,7 @@ do -- Metamethods
 		function ENT:SetSoundState(State)
 			if State ~= self.SoundPlaying then
 				if State == true then
-					Sounds.CreateAdjustableSound(self,self.SoundPath,25,0)
+					Sounds.CreateAdjustableSound(self,self.SoundPath,0,0)
 				else
 					Sounds.SendAdjustableSound(self,true)
 				end
@@ -796,16 +798,16 @@ do -- Metamethods
 
 			Rotator:SetAngles(self:LocalToWorldAngles(self.CurrentAngle))
 
-			local MotorSpeed = math.Clamp(math.abs(Rotator:WorldToLocalAngles(self.LastRotatorAngle).yaw),0,SlewMax) / Tick
+			local MotorSpeed = math.Clamp(math.abs(self.SlewRate + StabAmt),0,SlewMax) / Tick
 
 			local MotorSpeedPerc = MotorSpeed / self.MotorMaxSpeed
-			if MotorSpeedPerc > 0.05 and (self.SoundPlaying == false) then
+			if MotorSpeedPerc > 0.1 and (self.SoundPlaying == false) then
 				self:SetSoundState(true)
-			elseif MotorSpeedPerc <= 0.05 and (self.SoundPlaying == true) then
+			elseif MotorSpeedPerc <= 0.1 and (self.SoundPlaying == true) then
 				self:SetSoundState(false)
 			end
 
-			if self.SoundPlaying == true then Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 25 + math.ceil(MotorSpeedPerc * 25)) end
+			if self.SoundPlaying == true then Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9)) end
 
 			debugoverlay.Line(Rotator:GetPos(), Rotator:GetPos() + Rotator:GetForward() * 16384, 0.05, Color(255,0,0), false)
 

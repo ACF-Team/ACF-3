@@ -11,184 +11,373 @@ local InchToMm = ACF.InchToMm
 	https://qcbslewingrings.com/wp-content/uploads/2021/01/E1-SPOOLVALVE.pdf - Has info on hydraulic motors
 ]]
 
-Turrets.Register("1-Turret",{
-	Name		= "Turrets",
-	Description	= "The turret drives themselves.\nThese have a fallback handcrank that is used automatically if no motor is available.",
-	Entity		= "acf_turret",
-	CreateMenu	= ACF.CreateTurretMenu,
-	LimitConVar	= {
-		Name	= "_acf_turret",
-		Amount	= 20,
-		Text	= "Maximum number of ACF turrets a player can create."
-	},
-	GetMass		= function(Data, Size)
-		return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5), 1)
-	end,
-	GetTeethCount	= function(Data, Size)
-		local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
-		return math.Round((Data.Teeth.Min * (1 - SizePerc)) + (Data.Teeth.Max * SizePerc))
-	end,
-	GetRingHeight	= function(TurretData,Size)
-		local RingHeight = math.max(Size * TurretData.Ratio,4)
+-- Bunched all of the definitions together due to some loading issue
 
-		if (TurretData.Type == "Turret-H") and (Size < 12) then
-			return 12 -- sticc
+do	-- Turret drives
+	Turrets.Register("1-Turret",{
+		Name		= "Turrets",
+		Description	= "The turret drives themselves.\nThese have a fallback handcrank that is used automatically if no motor is available.",
+		Entity		= "acf_turret",
+		CreateMenu	= ACF.CreateTurretMenu,
+		LimitConVar	= {
+			Name	= "_acf_turret",
+			Amount	= 20,
+			Text	= "Maximum number of ACF turrets a player can create."
+		},
+		GetMass		= function(Data, Size)
+			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5), 1)
+		end,
+		GetTeethCount	= function(Data, Size)
+			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
+			return math.Round((Data.Teeth.Min * (1 - SizePerc)) + (Data.Teeth.Max * SizePerc))
+		end,
+		GetRingHeight	= function(TurretData,Size)
+			local RingHeight = math.max(Size * TurretData.Ratio,4)
+
+			if (TurretData.Type == "Turret-H") and (Size < 12) then
+				return 12 -- sticc
+			end
+
+			return RingHeight
+		end,
+
+		HandGear	= { -- Fallback incase a motor is unavailable
+			Teeth	= 12, -- For use in calculating end effective speed of a turret
+			Speed	= 220, -- deg/s
+			Torque	= 14, -- 0.1m * 140N * sin(90), torque to turn a small handwheel 90 degrees with slightly more than recommended force for a human
+			Efficiency	= 0.99, -- Gearbox efficiency, won't be too punishing for handcrank
+			Accel	= 5,
+			Sound	= "acf_base/fx/turret_handcrank.wav",
+		},
+
+		--[[
+			TurretData should include:
+				- TotalMass	: All of the mass (kg) on the turret
+				- LocalCoM	: Local vector (gmu) of center of mass
+				- RingSize	: Diameter of ring (gmu)
+				- RingHeight: Height of ring (gmu)
+				- Teeth		: Number of teeth of the turret ring
+
+			PowerData should include: (look at HandGear above for example, that can be directly fed to this function)
+				- Teeth		: Number of teeth of gear on input source
+				- Speed		: Maximum speed of input source (deg/s)
+				- Torque	: Maximum torque of input source (Nm)
+				- Efficiency: Efficiency of the gearbox
+				- Accel		: Time, in seconds, to reach Speed
+		]]
+
+		CalcSpeed	= function(TurretData, PowerData) -- Called whenever something on the turret changes, returns resistance from mass on the ring (overall, not inertial)
+			local Teeth		= TurretData.Teeth
+			local GearRatio	= PowerData.Teeth / Teeth
+			local TopSpeed	= GearRatio * (PowerData.Speed / 6) -- Converting deg/s to RPM, and adjusting by gear ratio
+			local MaxPower	= ((PowerData.Torque / GearRatio) * TopSpeed) / (9550 * PowerData.Efficiency)
+			local Diameter	= (TurretData.RingSize * InchToMm) -- Used for some of the formulas from the referenced page, needs to be in mm
+			local CoMDistance	= (TurretData.LocalCoM * Vector(1,1,0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
+			local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2),0),0)
+
+			-- Slewing ring friction moment caused by load (kNm)
+			-- 1kg weight (mass * gravity) is about 9.81N
+			-- 0.006 = fric coefficient for ball slewing rings
+			-- k = 4.4 = coefficient of load accommodation for ball slewing rings
+			local Weight	= (TurretData.TotalMass * 9.81) / 1000
+			local Mz		= 0 -- Nm resistance to torque
+
+			if TurretData.TurretClass == "Turret-H" then
+				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
+				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of axial dynamic forces (kN) (on balance load)
+				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4)) * (Diameter / 2000)
+			else
+				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
+
+				OffBaseDistance	= math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2),0),0)
+				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
+				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
+				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+			end
+
+			-- 9.55 is 1 rad/s to RPM
+			-- Required power to rotate at full speed
+			-- With this we can lower maximum attainable speed
+			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency)
+
+			if (math.max(1,ReqConstantPower) / math.max(MaxPower,1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
+
+			local FinalTopSpeed = TopSpeed * math.min(1,MaxPower / ReqConstantPower) * 6 -- converting back to deg/s
+
+			-- Moment from acceleration of rotating mass (kNm)
+			local RotInertia	= 0.01 * TurretData.TotalMass * (CoMDistance ^ 2)
+			local LoadInertia	= RotInertia * (1 / ((1 / GearRatio) ^ 2))
+			local Accel 	= (3.1415 * FinalTopSpeed) / (30 * PowerData.Accel)
+			local Mg 		= LoadInertia * Accel
+
+			-- 9.55 is 1 rad/s to RPM
+			local ReqAccelPower	= ((Mg + Mz) * Accel) / (9.55 * PowerData.Efficiency)
+
+			-- Kind of arbitrary, needed it to stop at some point
+			if (math.max(1,ReqAccelPower) / math.max(1,Accel)) > 5 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to accelerate, so we'll just stop here
+
+			local FinalAccel	= Accel * math.Clamp(MaxPower / ReqAccelPower,0,1) * 6 -- converting back to deg/s^2
+
+			return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio, EffortScale = math.min(1,1 / (MaxPower / ReqConstantPower))}
 		end
+	})
 
-		return RingHeight
-	end,
+	do	-- Horizontal turret component
+		Turrets.RegisterItem("Turret-H","1-Turret",{
+			Name			= "Horizontal Turret",
+			Description		= "The large stable base of a turret.",
+			Model			= "models/props_phx/construct/metal_plate_curve360.mdl",
+			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters < 12u, for RWS or other small turrets
+			Mass			= 200, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
-	HandGear	= { -- Fallback incase a motor is unavailable
-		Teeth	= 12, -- For use in calculating end effective speed of a turret
-		Speed	= 220, -- deg/s
-		Torque	= 14, -- 0.1m * 140N * sin(90), torque to turn a small handwheel 90 degrees with slightly more than recommended force for a human
-		Efficiency	= 0.99, -- Gearbox efficiency, won't be too punishing for handcrank
-		Accel	= 5,
-		Sound	= "acf_extra/turret/cannon_turn_loop_manual.wav",
-	},
+			Size = {
+				Base		= 60,	-- The default size for the menu
+				Min			= 2,	-- To accomodate itty bitty RWS turrets
+				Max			= 512,	-- To accomodate ship turrets
+				Ratio		= 0.05	-- Height modifier for total size
+			},
 
-	--[[
-		TurretData should include:
-			- TotalMass	: All of the mass (kg) on the turret
-			- LocalCoM	: Local vector (gmu) of center of mass
-			- RingSize	: Diameter of ring (gmu)
-			- RingHeight: Height of ring (gmu)
-			- Teeth		: Number of teeth of the turret ring
+			Teeth			= {		-- Used to give a final teeth count with size
+				Min			= 12,
+				Max			= 3072
+			},
 
-		PowerData should include: (look at HandGear above for example, that can be directly fed to this function)
-			- Teeth		: Number of teeth of gear on input source
-			- Speed		: Maximum speed of input source (deg/s)
-			- Torque	: Maximum torque of input source (Nm)
-			- Efficiency: Efficiency of the gearbox
-			- Accel		: Time, in seconds, to reach Speed
+			MassLimit = {
+				Min			= 50,		-- Max amount of mass this component can support at minimum size
+				Max			= 80000		-- Max amount of mass th is component can support at maximum size
+			},
+
+			Armor			= {
+				Min			= 5,
+				Max			= 175
+			},
+
+			SetupInputs		= function(_,List)
+				local Count = #List
+
+				List[Count + 1] = "Bearing (Local degrees from home angle)"
+			end
+		})
+	end
+
+	do	-- Vertical turret component
+		Turrets.RegisterItem("Turret-V","1-Turret",{
+			Name			= "Vertical Turret",
+			Description		= "The smaller part of a turret, usually has the weapon directly attached to it.\nCan be naturally stabilized up to 25% if there is no motor attached, but the mass must be balanced.",
+			Model			= "models/holograms/hq_cylinder.mdl",
+			Mass			= 100, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+
+			Size = {
+				Base		= 12,	-- The default size for the menu
+				Min			= 1,	-- To accomodate itty bitty RWS turrets
+				Max			= 36,	-- To accomodate ship turrets
+				Ratio		= 1.5	-- Height modifier for total size
+			},
+
+			Teeth			= {		-- Used to give a final teeth count with size
+				Min			= 8,
+				Max			= 288
+			},
+
+			MassLimit = {
+				Min			= 20,		-- Max amount of mass this component can support at minimum size
+				Max			= 40000		-- Max amount of mass th is component can support at maximum size
+			},
+
+			Armor			= {
+				Min			= 5,
+				Max			= 175
+			},
+
+			SetupInputs		= function(_,List)
+				local Count	= #List
+
+				List[Count + 1] = "Elevation (Local degrees from home angle)"
+			end
+		})
+	end
+end
+
+do	-- Turret motors
+	Turrets.Register("2-Motor",{
+		Name		= "Motors",
+		Description	= "Slewing drive motors, to increase operational speeds and get you on target.\nMust be parented to or share the parent with the linked turret drive.\nMust also be close to the linked turret (Within or close to diameter).",
+		Entity		= "acf_turret_motor",
+		CreateMenu	= ACF.CreateTurretMotorMenu,
+		LimitConVar	= {
+			Name	= "_acf_turret_motor",
+			Amount	= 20,
+			Text	= "Maximum number of ACF turret components a player can create."
+		},
+
+		GetTorque	= function(Data, CompSize)
+			local SizePerc = (CompSize - Data.ScaleLimit.Min) / (Data.ScaleLimit.Max - Data.ScaleLimit.Min)
+			return math.Round((Data.Torque.Min * (1 - SizePerc)) + (Data.Torque.Max * SizePerc))
+		end,
+
+		CalculateSpeed	= function(self)
+			if self.Active == false then return 0 end
+			return self.Speed * self.DamageScale
+		end,
+	})
+
+	do	-- Motor, should be parented to the turret ring, or share the same parent
+
+		-- Electric motor
+
+		Turrets.RegisterItem("Motor-ELC","2-Motor",{
+			Name			= "Electric Motor",
+			Description		= "A snappy responsive electric motor, can handle most uses cases but quickly falters under higher weights",
+			Model			= "models/engines/emotor-standalone-sml.mdl",
+			Sound			= "acf_base/fx/turret_electric.wav",
+
+			Mass			= 60, -- Base mass, will be further modified by settings
+			Speed			= 720, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
+			Efficiency		= 0.9,
+			Accel			= 2, -- Time in seconds to reach full speed. Electric motors have instant response
+
+			ScaleLimit		= { -- For scaling the motor size
+				Min		= 0.5,
+				Max		= 6
+			},
+
+			Teeth			= { -- Adjustable for speed versus torque
+				Base	= 12,
+
+				Min		= 8,
+				Max		= 24,
+			},
+
+			Torque			= {
+				Min		= 20,
+				Max		= 400
+			}
+		})
+
+		-- Hydraulic motor
+
+		Turrets.RegisterItem("Motor-HYD","2-Motor",{
+			Name			= "Hydraulic Motor",
+			Description		= "A strong but sluggish hydraulic motor, it'll turn the world over but takes a little bit to get to that point.",
+			Model			= "models/xqm/hydcontrolbox.mdl",
+			Sound			= "acf_base/fx/turret_hydraulic.wav",
+
+			Mass			= 80, -- Base mass, will be further modified by settings
+			Speed			= 360, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
+			Efficiency		= 0.98,
+			Accel			= 8, -- Time in seconds to reach full speed, hydraulic motors have a little spool time
+
+			ScaleLimit		= { -- For scaling the motor size
+				Min		= 0.5,
+				Max		= 6
+			},
+
+			Teeth			= { -- Adjustable for speed versus torque
+				Base	= 12,
+
+				Min		= 8,
+				Max		= 24,
+			},
+
+			Torque			= {
+				Min		= 40,
+				Max		= 800
+			}
+		})
+	end
+end
+
+do	-- Turret gyroscopes
+	Turrets.Register("3-Gyro",{
+		Name		= "Gyroscopes",
+		Description	= "Components that are used to stabilize turret drives.",
+		Entity		= "acf_turret_gyro",
+		CreateMenu	= ACF.CreateTurretGyroMenu,
+		LimitConVar	= {
+			Name	= "_acf_turret_gyro",
+			Amount	= 20,
+			Text	= "Maximum number of ACF turret gyros a player can create."
+		},
+	})
+
+	do	-- Gyro
+		--[[
+			Ideally takes some amount of space (big collection of computers but put into one bigger computer model)
+			Single-axis should be parented to or share the same parent as the linked turret drive (Can be linked to either turret drive, but only one)
+			Dual-axis should be parented to or share the same parent as the horizontal turret drive (MUST be linked to a vertical AND horizontal turret drive, can not mix types)
+		]]
+
+		Turrets.RegisterItem("1-Gyro","3-Gyro",{
+			Name			= "Single Axis Turret Gyro",
+			Description		= "A component that will stabilize one turret drive.\nMust be parented to or share the parent with the linked turret drive.\nMust have a motor linked to the turret drive.",
+			Model			= "models/bull/various/gyroscope.mdl",
+
+			Mass			= 75,
+			IsDual			= false,
+		})
+
+		Turrets.RegisterItem("2-Gyro","3-Gyro",{
+			Name			= "Dual Axis Turret Gyro",
+			Description		= "A component that will stabilize one vertical and horizontal turret drive.\nMust be parented to or share the parent with the horizontal turret drive.\nEach turret drive must have a motor linked.",
+			Model			= "models/kobilica/relay.mdl",
+
+			Mass			= 150,
+			IsDual			= true,
+		})
+	end
+end
+
+-- I will eventually work on this. Eventually.
+
+--[[
+do	-- Turret computers
+	Turrets.Register("4-Computer",{
+		Name		= "Computers",
+		Description	= "Computer capable of calculating the optimal angle to hit a target.\nHas a delay between uses.",
+		Entity		= "acf_turret_computer",
+		CreateMenu	= ACF.CreateTurretComputerMenu,
+		LimitConVar	= {
+			Name	= "_acf_turret_computer",
+			Amount	= 20,
+			Text	= "Maximum number of ACF turret computers a player can create."
+		},
+	})
 	]]
 
-	CalcSpeed	= function(TurretData, PowerData) -- Called whenever something on the turret changes, returns resistance from mass on the ring (overall, not inertial)
-		local Teeth		= TurretData.Teeth
-		local GearRatio	= PowerData.Teeth / Teeth
-		local TopSpeed	= GearRatio * (PowerData.Speed / 6) -- Converting deg/s to RPM, and adjusting by gear ratio
-		local MaxPower	= ((PowerData.Torque / GearRatio) * TopSpeed) / (9550 * PowerData.Efficiency)
-		local Diameter	= (TurretData.RingSize * InchToMm) -- Used for some of the formulas from the referenced page, needs to be in mm
-		local CoMDistance	= (TurretData.LocalCoM * Vector(1,1,0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
-		local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2),0),0)
+	--[[
+			Ballistic computers that should be linked to a gun to gather bulletdata, and have a Calculate input
+			When Calculate is triggered, Thinking flag is set so only one run can occur at once
 
-		-- Slewing ring friction moment caused by load (kNm)
-		-- 1kg weight (mass * gravity) is about 9.81N
-		-- 0.006 = fric coefficient for ball slewing rings
-		-- k = 4.4 = coefficient of load accommodation for ball slewing rings
-		local Weight	= (TurretData.TotalMass * 9.81) / 1000
-		local Mz		= 0 -- Nm resistance to torque
+			After calculation is done, output Firing Solution [ANGLE] (global), Flight Time [NUMBER]
+		]]
+	--[[
+	do	-- Computers
 
-		if TurretData.TurretClass == "Turret-H" then
-			Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-			Fa		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of axial dynamic forces (kN) (on balance load)
-			Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4)) * (Diameter / 2000)
-		else
-			local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
 
-			OffBaseDistance	= math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2),0),0)
-			Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-			Fr		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
-			Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
-		end
+		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
+			Name			= "Direct Ballistics Computer",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nHas a delay between uses.",
+			Model			= "",
 
-		-- 9.55 is 1 rad/s to RPM
-		-- Required power to rotate at full speed
-		-- With this we can lower maximum attainable speed
-		local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency)
+			Mass			= 100,
 
-		if (math.max(1,ReqConstantPower) / math.max(MaxPower,1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
+			Delay			= 3, -- Time after finishing before another calculation can run
+			MaxThinkTime	= 2, -- After this long the calculation will halt and return early, and return 0 on everything
+			ThinkTime		= 0.05,
+			CalcError		= 0.25, -- Lee-way in units per 100u of lateral distance
+		})
 
-		local FinalTopSpeed = TopSpeed * math.min(1,MaxPower / ReqConstantPower) * 6 -- converting back to deg/s
+		Turrets.RegisterItem("IND-BalComp","4-Computer",{
+			Name			= "Indirect Ballistics Computer",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a delay between uses.",
+			Model			= "",
 
-		-- Moment from acceleration of rotating mass (kNm)
-		local RotInertia	= 0.01 * TurretData.TotalMass * (CoMDistance ^ 2)
-		local LoadInertia	= RotInertia * (1 / ((1 / GearRatio) ^ 2))
-		local Accel 	= (3.1415 * FinalTopSpeed) / (30 * PowerData.Accel)
-		local Mg 		= LoadInertia * Accel
+			Mass			= 150,
 
-		-- 9.55 is 1 rad/s to RPM
-		local ReqAccelPower	= ((Mg + Mz) * Accel) / (9.55 * PowerData.Efficiency)
-
-		if (math.max(1,ReqAccelPower) / math.max(1,Accel)) > 4 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to accelerate, so we'll just stop here
-
-		local FinalAccel	= Accel * math.Clamp(MaxPower / ReqAccelPower,0,1) * 6 -- converting back to deg/s^2
-
-		return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio}
+			Delay			= 5,
+			MaxThinkTime	= 7.5,
+			ThinkTime		= 0.1,
+			CalcError		= 3,
+		})
 	end
-})
-
-do	-- Horizontal turret component
-	Turrets.RegisterItem("Turret-H","1-Turret",{
-		Name			= "Horizontal Turret",
-		Description		= "The large stable base of a turret.",
-		Model			= "models/props_phx/construct/metal_plate_curve360.mdl",
-		ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters < 12u, for RWS or other small turrets
-		Mass			= 200, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
-
-		Size = {
-			Base		= 60,	-- The default size for the menu
-			Min			= 2,	-- To accomodate itty bitty RWS turrets
-			Max			= 512,	-- To accomodate ship turrets
-			Ratio		= 0.05	-- Height modifier for total size
-		},
-
-		Teeth			= {		-- Used to give a final teeth count with size
-			Min			= 12,
-			Max			= 3072
-		},
-
-		MassLimit = {
-			Min			= 50,		-- Max amount of mass this component can support at minimum size
-			Max			= 80000		-- Max amount of mass th is component can support at maximum size
-		},
-
-		Armor			= {
-			Min			= 5,
-			Max			= 175
-		},
-
-		SetupInputs		= function(_,List)
-			local Count = #List
-
-			List[Count + 1] = "Bearing (Local degrees from home angle)"
-		end
-	})
-end
-
-do	-- Vertical turret component
-	Turrets.RegisterItem("Turret-V","1-Turret",{
-		Name			= "Vertical Turret",
-		Description		= "The smaller part of a turret, usually has the weapon directly attached to it.\nCan be naturally stabilized up to 25% if there is no motor attached, but the mass must be balanced.",
-		Model			= "models/holograms/hq_cylinder.mdl",
-		Mass			= 100, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
-
-		Size = {
-			Base		= 12,	-- The default size for the menu
-			Min			= 1,	-- To accomodate itty bitty RWS turrets
-			Max			= 36,	-- To accomodate ship turrets
-			Ratio		= 1.5	-- Height modifier for total size
-		},
-
-		Teeth			= {		-- Used to give a final teeth count with size
-			Min			= 8,
-			Max			= 288
-		},
-
-		MassLimit = {
-			Min			= 20,		-- Max amount of mass this component can support at minimum size
-			Max			= 40000		-- Max amount of mass th is component can support at maximum size
-		},
-
-		Armor			= {
-			Min			= 5,
-			Max			= 175
-		},
-
-		SetupInputs		= function(_,List)
-			local Count	= #List
-
-			List[Count + 1] = "Elevation (Local degrees from home angle)"
-		end
-	})
-end
+end]]
