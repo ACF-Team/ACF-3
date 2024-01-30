@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Damage		= ACF.Damage
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local HookRun		= hook.Run
@@ -223,12 +224,8 @@ do	-- Metamethods and other important stuff
 			self:UpdateOverlay()
 		end
 
-		function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-			local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
-
+		function ENT:ACF_PostDamage()
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
-
-			return HitRes
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
@@ -249,6 +246,8 @@ do	-- Metamethods and other important stuff
 		end
 
 		function ENT:IsActive()
+			if self.Disabled then return false end
+
 			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false,"") return false end
 
 			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then

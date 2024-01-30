@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Damage		= ACF.Damage
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local HookRun		= hook.Run
@@ -219,16 +220,16 @@ do	-- Metamethods and other important stuff
 			self:UpdateOverlay()
 		end
 
-		function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-			local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
-
+		function ENT:ACF_PostDamage()
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
 
-			return HitRes
+			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+
+			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
 
 		function ENT:ACF_Activate(Recalc)
@@ -253,8 +254,6 @@ do	-- Metamethods and other important stuff
 		function ENT:SetActive(Active,Reason)
 			self.Active = Active
 			self.InactiveReason = Reason
-
-			if IsValid(self.Turret) then self.Turret:UpdateTurretSlew() end
 
 			self:UpdateOverlay(true)
 		end
@@ -295,9 +294,10 @@ do	-- Metamethods and other important stuff
 		end
 
 		function ENT:IsActive()
+			if self.Disabled then return false end
 			if self.ValidPlacement == false then return false end
 
-			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.5 then
+			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
 				self:SetActive(false,"Too damaged!")
 				return false
 			end
@@ -307,7 +307,7 @@ do	-- Metamethods and other important stuff
 		end
 
 		function ENT:GetInfo()
-			return {Teeth = self.Teeth, Speed = self.Speed, Torque = self.Torque, Efficiency = self.Efficiency, Accel = self.Accel}
+			return {Teeth = self.Teeth, Speed = self.Speed, Torque = self.Torque * self.DamageScale, Efficiency = self.Efficiency, Accel = self.Accel}
 		end
 	end
 end

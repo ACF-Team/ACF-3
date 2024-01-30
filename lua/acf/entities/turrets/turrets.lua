@@ -14,6 +14,16 @@ local InchToMm = ACF.InchToMm
 -- Bunched all of the definitions together due to some loading issue
 
 do	-- Turret drives
+	local function ClampAngle(A,Amin,Amax)
+		local p,y,r
+
+		if A.p < Amin.p then p = Amin.p elseif A.p > Amax.p then p = Amax.p else p = A.p end
+		if A.y < Amin.y then y = Amin.y elseif A.y > Amax.y then y = Amax.y else y = A.y end
+		if A.r < Amin.r then r = Amin.r elseif A.r > Amax.r then r = Amax.r else r = A.r end
+
+		return Angle(p,y,r)
+	end
+
 	Turrets.Register("1-Turret",{
 		Name		= "Turrets",
 		Description	= "The turret drives themselves.\nThese have a fallback handcrank that is used automatically if no motor is available.",
@@ -25,7 +35,7 @@ do	-- Turret drives
 			Text	= "Maximum number of ACF turrets a player can create."
 		},
 		GetMass		= function(Data, Size)
-			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5), 1)
+			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5) ^ 1.5, 1)
 		end,
 		GetTeethCount	= function(Data, Size)
 			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
@@ -126,15 +136,15 @@ do	-- Turret drives
 		Turrets.RegisterItem("Turret-H","1-Turret",{
 			Name			= "Horizontal Turret",
 			Description		= "The large stable base of a turret.",
-			Model			= "models/props_phx/construct/metal_plate_curve360.mdl",
+			Model			= "models/acf/core/t_ring.mdl",
 			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters < 12u, for RWS or other small turrets
-			Mass			= 200, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
 				Base		= 60,	-- The default size for the menu
 				Min			= 2,	-- To accomodate itty bitty RWS turrets
 				Max			= 512,	-- To accomodate ship turrets
-				Ratio		= 0.05	-- Height modifier for total size
+				Ratio		= 0.1	-- Height modifier for total size
 			},
 
 			Teeth			= {		-- Used to give a final teeth count with size
@@ -142,13 +152,8 @@ do	-- Turret drives
 				Max			= 3072
 			},
 
-			MassLimit = {
-				Min			= 50,		-- Max amount of mass this component can support at minimum size
-				Max			= 80000		-- Max amount of mass th is component can support at maximum size
-			},
-
 			Armor			= {
-				Min			= 5,
+				Min			= 15,
 				Max			= 175
 			},
 
@@ -156,7 +161,35 @@ do	-- Turret drives
 				local Count = #List
 
 				List[Count + 1] = "Bearing (Local degrees from home angle)"
-			end
+			end,
+
+			SlewFuncs		= {
+				GetStab				= function(Turret)
+					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+
+					return (Turret.Stabilized and Turret.Active) and (AngDiff.yaw * Turret.StabilizeAmount) or 0
+				end,
+
+				GetTargetBearing	= function(Turret,StabAmt)
+					local Rotator = Turret.Rotator
+
+					if Turret.HasArc then
+						if Turret.Manual then
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, math.Clamp(-Turret.DesiredDeg,Turret.MinDeg,Turret.MaxDeg), 0))).yaw
+						else
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0,StabAmt,0),Angle(0,-Turret.MaxDeg,0),Angle(0,-Turret.MinDeg,0))
+
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).yaw
+						end
+					else
+						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -Turret.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).yaw - StabAmt)
+					end
+				end,
+
+				SetRotatorAngle		= function(Turret)
+					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(0, Turret.CurrentAngle, 0)))
+				end
+			}
 		})
 	end
 
@@ -164,36 +197,59 @@ do	-- Turret drives
 		Turrets.RegisterItem("Turret-V","1-Turret",{
 			Name			= "Vertical Turret",
 			Description		= "The smaller part of a turret, usually has the weapon directly attached to it.\nCan be naturally stabilized up to 25% if there is no motor attached, but the mass must be balanced.",
-			Model			= "models/holograms/hq_cylinder.mdl",
-			Mass			= 100, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Model			= "models/acf/core/t_trun.mdl",
+			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
 				Base		= 12,	-- The default size for the menu
-				Min			= 1,	-- To accomodate itty bitty RWS turrets
-				Max			= 36,	-- To accomodate ship turrets
-				Ratio		= 1.5	-- Height modifier for total size
+				Min			= 4,	-- To accomodate itty bitty RWS turrets
+				Max			= 48,	-- To accomodate ship turrets
+				Ratio		= 1	-- Height modifier for total size
 			},
 
 			Teeth			= {		-- Used to give a final teeth count with size
 				Min			= 8,
-				Max			= 288
-			},
-
-			MassLimit = {
-				Min			= 20,		-- Max amount of mass this component can support at minimum size
-				Max			= 40000		-- Max amount of mass th is component can support at maximum size
+				Max			= 384
 			},
 
 			Armor			= {
 				Min			= 5,
-				Max			= 175
+				Max			= 305
 			},
 
 			SetupInputs		= function(_,List)
 				local Count	= #List
 
 				List[Count + 1] = "Elevation (Local degrees from home angle)"
-			end
+			end,
+
+			SlewFuncs		= {
+				GetStab				= function(Turret)
+					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+
+					return (Turret.Stabilized and Turret.Active) and (AngDiff.pitch * Turret.StabilizeAmount) or 0
+				end,
+
+				GetTargetBearing	= function(Turret,StabAmt)
+					local Rotator = Turret.Rotator
+
+					if Turret.HasArc then
+						if Turret.Manual then
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(math.Clamp(-Turret.DesiredDeg,Turret.MinDeg,Turret.MaxDeg), 0, 0))).pitch
+						else
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(StabAmt,0,0),Angle(-Turret.MaxDeg,0,0),Angle(-Turret.MinDeg,0,0))
+
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).pitch
+						end
+					else
+						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-Turret.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).pitch - StabAmt)
+					end
+				end,
+
+				SetRotatorAngle		= function(Turret)
+					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(Turret.CurrentAngle, 0, 0)))
+				end
+			}
 		})
 	end
 end
@@ -245,7 +301,7 @@ do	-- Turret motors
 				Base	= 12,
 
 				Min		= 8,
-				Max		= 24,
+				Max		= 32,
 			},
 
 			Torque			= {
@@ -276,7 +332,7 @@ do	-- Turret motors
 				Base	= 12,
 
 				Min		= 8,
-				Max		= 24,
+				Max		= 32,
 			},
 
 			Torque			= {

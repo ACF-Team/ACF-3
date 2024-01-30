@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
@@ -60,7 +61,7 @@ do	-- Spawn and Update funcs
 	------------------
 
 	local function GetMass(Turret,Data)
-		return math.Round(math.max(Turret.Mass * (Data.RingSize / Turret.Size.Base),5), 1)
+		return math.Round(math.max(Turret.Mass * (Data.RingSize / Turret.Size.Base),5) ^ 1.5, 1)
 	end
 
 	local function UpdateTurret(Entity, Data, Class, Turret)
@@ -75,7 +76,11 @@ do	-- Spawn and Update funcs
 
 		local RingHeight = Class.GetRingHeight({Type = Data.Turret, Ratio = Turret.Size.Ratio}, Size)
 
-		Entity:SetSize(Vector(Size,Size,RingHeight))
+		if Data.Turret == "Turret-H" then
+			Entity:SetSize(Vector(Size,Size,RingHeight))
+		else
+			Entity:SetScale(Size / 20)
+		end
 
 		Entity.ACF.Model	= Model
 		Entity.Name			= math.Round(Size,2) .. "\" " .. Turret.Name
@@ -94,8 +99,11 @@ do	-- Spawn and Update funcs
 			LocalCoM	= Vector()
 		}
 
+		-- Type-specific functions that differ between horizontal and vertical turret components
+		Entity.SlewFuncs	= Turret.SlewFuncs
+
 		Entity.DesiredAngle	= Entity.DesiredAngle or Angle(0,0,0)
-		Entity.CurrentAngle	= Entity.CurrentAngle or Angle(0,0,0)
+		Entity.CurrentAngle	= Entity.CurrentAngle or 0
 
 		-- This is TRUE whenever the last used angle input is Elevation/Bearing
 		-- Otherwise this is FALSE and will attempt to rotate to the Angle input
@@ -193,7 +201,8 @@ do	-- Spawn and Update funcs
 				Mass		= math.Round(Entity.TurretData.TotalMass,1),
 				MinDeg		= Entity.MinDeg,
 				MaxDeg		= Entity.MaxDeg,
-				CoMDist		= math.Round(CoM:Length2D(),2)
+				CoMDist		= math.Round(CoM:Length2D(),2),
+				Type		= Entity.Turret
 			}
 
 			local DataString = util.TableToJSON(Data)
@@ -256,6 +265,8 @@ do	-- Spawn and Update funcs
 		Entity.HandGear			= Class.HandGear
 		Entity.Disconnect		= false
 
+		Entity:SetNWEntity("ACF.Rotator", Rotator)
+
 		Rotator:SetPos(Entity:GetPos())
 		Rotator:SetAngles(Entity:GetAngles())
 		Rotator:SetParent(Entity)
@@ -263,6 +274,7 @@ do	-- Spawn and Update funcs
 		Rotator:Spawn()
 
 		Entity.Rotator			= Rotator
+		Rotator.Turret			= Entity
 
 		UpdateTurret(Entity, Data, Class, Turret)
 
@@ -342,10 +354,37 @@ do	-- Spawn and Update funcs
 			if Parent == NULL then continue end -- somehow this shit is still a problem
 
 			List[V] = V
-			if V:GetClass() ~= FilterClass then GetFilteredChildren(V, List) end
+
+			if V:GetClass() == FilterClass then continue end
+
+			GetFilteredChildren(V, List, FilterClass)
 		end
 
 		return List
+	end
+
+	local function Proxy_ACF_OnParent(self, _, _)
+		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self,self.ACF_TurretAncestor)) then self.ACF_OnParented = nil self.ACF_TurretAncestor = nil return end
+
+		self.ACF_TurretAncestor:UpdateTurretMass(false)
+	end
+
+	local function Proxy_ACF_OnMassChange(self)
+		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self,self.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil self.ACF_TurretAncestor = nil return end
+
+		self.ACF_TurretAncestor:UpdateTurretMass(false)
+	end
+
+	local function ParentLink(Turret, Entity, Connect)
+		if Connect then
+			Entity.ACF_OnParented		= Proxy_ACF_OnParent
+			Entity.ACF_OnMassChange		= Proxy_ACF_OnMassChange
+			Entity.ACF_TurretAncestor	= Turret
+		else
+			Entity.ACF_OnParented		= nil
+			Entity.ACF_OnMassChange		= nil
+			Entity.ACF_TurretAncestor	= nil
+		end
 	end
 
 	local function BuildWatchlist(Entity) -- Potentially hot and heavy, should only be triggered after a (maximum) delay to catch large changes and not every single new entity
@@ -366,12 +405,19 @@ do	-- Spawn and Update funcs
 		for k in pairs(ChildList) do
 			local Class = k:GetClass()
 
+			k.ACF_TurretAncestor = nil
 			if Class == "acf_turret" then
 				Entity.SubTurrets[k] = true
+
+				k.ACF_TurretAncestor = Entity
 			elseif DynamicMassTypes[Class] then
 				Entity.DynamicEntities[k] = true
+
+				ParentLink(Entity,k,true)
 			else
 				if not IsValid(k) then continue end
+				ParentLink(Entity,k,true)
+
 				local PO = k:GetPhysicsObject()
 				if not IsValid(PO) then continue end
 
@@ -389,9 +435,6 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.StaticCoM = CoM
-
-		debugoverlay.Line(Entity:GetPos(),Entity:LocalToWorld(Entity.StaticCoM),5,Color(194,55,0),true)
-		debugoverlay.Cross(Entity:LocalToWorld(Entity.StaticCoM),3,5,Color(194,55,0),true)
 	end
 
 	local function GetDynamicMass(Entity) -- Returns mass center (local to rotator) and amount from all "dynamic" entities, should be triggered after a resettable delay (only delayable by so long) in order to reduce spammed calls
@@ -422,9 +465,6 @@ do	-- Spawn and Update funcs
 
 		Entity.DynamicCoM = CoM
 
-		debugoverlay.Line(Entity.Rotator:GetPos(),Entity.Rotator:LocalToWorld(Entity.DynamicCoM),5,Color(3,0,194),true)
-		debugoverlay.Cross(Entity.Rotator:LocalToWorld(Entity.DynamicCoM),3,5,Color(3,0,194),true)
-
 		return CoM, Mass
 	end
 
@@ -453,9 +493,6 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.SubTurretCoM = CoM
-
-		debugoverlay.Line(Entity.Rotator:GetPos(),Entity.Rotator:LocalToWorld(Entity.SubTurretCoM),5,Color(0,211,81),true)
-		debugoverlay.Cross(Entity.Rotator:LocalToWorld(Entity.SubTurretCoM),3,5,Color(0,211,81),true)
 
 		return CoM, Mass
 	end
@@ -550,9 +587,6 @@ do	-- Spawn and Update funcs
 			self:CheckCoM(Force)
 
 			self:UpdateOverlay()
-
-			debugoverlay.Line(self:GetPos(),self:LocalToWorld(self.TurretData.LocalCoM),5,Color(134,134,134),true)
-			debugoverlay.Cross(self:LocalToWorld(self.TurretData.LocalCoM),3,5,Color(134,134,134),true)
 		end)
 	end
 end
@@ -708,20 +742,11 @@ do -- Metamethods
 	end
 
 	do	-- Think
-		local function ClampAngle(A,Amin,Amax)
-			local p,y,r
-
-			if A.p < Amin.p then p = Amin.p elseif A.p > Amax.p then p = Amax.p else p = A.p end
-			if A.y < Amin.y then y = Amin.y elseif A.y > Amax.y then y = Amax.y else y = A.y end
-			if A.r < Amin.r then r = Amin.r elseif A.r > Amax.r then r = Amax.r else r = A.r end
-
-			return Angle(p,y,r)
-		end
-
 		function ENT:SetSoundState(State)
 			if State ~= self.SoundPlaying then
 				if State == true then
 					Sounds.CreateAdjustableSound(self,self.SoundPath,0,0)
+					self.CurrentSound = self.SoundPath
 				else
 					Sounds.SendAdjustableSound(self,true)
 				end
@@ -730,15 +755,53 @@ do -- Metamethods
 			self.SoundPlaying = State
 		end
 
+		function ENT:InputDirection(Direction)
+			if self.Disabled then return end
+
+			self.Manual		= true
+			self.UseVector	= false
+
+			if isnumber(Direction) then
+				self.DesiredDeg = Direction
+				return
+			end
+
+			self.Manual		= false
+
+			if isangle(Direction) then
+				Direction:Normalize()
+				self.DesiredAng = Direction
+
+				return
+			end
+			if isvector(Direction) then
+				self.UseVector = true
+				self.DesiredVector = Direction
+
+				return
+			end
+		end
+
 		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
+			if self.Disabled then
+				self:SetSoundState(false)
+				self:NextThink(Clock.CurTime + 0.1)
+
+				return true
+			end
+
 			self:CheckCoM(false)
 			local Tick		= Clock.DeltaTime
 			local Rotator	= self.Rotator
+			if not IsValid(Rotator) then self:Remove() return end
+
 			local Scale		= self.DamageScale * Tick
 
 			local SlewMax		= self.MaxSlewRate * Scale
 			local SlewAccel		= self.SlewAccel * Scale
 			local MaxImpulse	= math.min(SlewMax, SlewAccel)
+
+			local AngleChange	= self.CurrentAngle
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
 			if MaxImpulse == 0 then
@@ -754,21 +817,9 @@ do -- Metamethods
 
 			if self.UseVector and (self.Manual == false) then self.DesiredAngle = (self.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
 
-			local AngDiff	= Rotator:WorldToLocalAngles(self.LastRotatorAngle) --+ Angle(0,-self.SlewRate / 2,0)
-			local StabAmt	= math.Clamp((self.Stabilized and self.Active) and (AngDiff.yaw * self.StabilizeAmount) or 0,-SlewMax,SlewMax)
+			local StabAmt	= math.Clamp(self.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
 
-			local TargetBearing	= 0
-			if self.HasArc then
-				if self.Manual then
-					TargetBearing = Rotator:WorldToLocalAngles(self:LocalToWorldAngles(Angle(0, math.Clamp(-self.DesiredDeg,self.MinDeg,self.MaxDeg), 0))).yaw
-				else
-					local LocalDesiredAngle = ClampAngle(self:WorldToLocalAngles(self.DesiredAngle) - Angle(0,StabAmt,0),Angle(0,-self.MaxDeg,0),Angle(0,-self.MinDeg,0))
-
-					TargetBearing = Rotator:WorldToLocalAngles(self:LocalToWorldAngles(LocalDesiredAngle)).yaw
-				end
-			else
-				TargetBearing = self.Manual and (Rotator:WorldToLocalAngles(self:LocalToWorldAngles(Angle(0, -self.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(self.DesiredAngle).yaw - StabAmt)
-			end
+			local TargetBearing	= self.SlewFuncs.GetTargetBearing(self,StabAmt)
 
 			local sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math.abs(TargetBearing)
@@ -780,25 +831,25 @@ do -- Metamethods
 
 				if self.SlewRate ~= 0 and (Dist <= math.abs(FinalAccel)) and (self.SlewRate <= FinalAccel) then
 					self.SlewRate = 0
-					self.CurrentAngle = self.CurrentAngle + Angle(0, TargetBearing / 2, 0)
+					self.CurrentAngle = self.CurrentAngle + TargetBearing / 2
 				end
 			elseif not self.Active and self.SlewRate ~= 0 then
 				self.SlewRate = self.SlewRate - (math.min(SlewAccel, math.abs(self.SlewRate)) * (self.SlewRate >= 0 and 1 or -1))
 			end
 
-			self.CurrentAngle = self.CurrentAngle + Angle(0, math.Clamp(self.SlewRate + StabAmt,-SlewMax,SlewMax), 0)
+			self.CurrentAngle = self.CurrentAngle + math.Clamp(self.SlewRate + StabAmt,-SlewMax,SlewMax)
 
 			if self.HasArc then
-				self.CurrentAngle = Angle(0,math.Clamp(self.CurrentAngle.yaw,-self.MaxDeg,-self.MinDeg),0)
+				self.CurrentAngle = math.Clamp(self.CurrentAngle,-self.MaxDeg,-self.MinDeg)
 			end
 
-			self.CurrentAngle:Normalize()
+			self.CurrentAngle = math.NormalizeAngle(self.CurrentAngle)
 
-			WireLib.TriggerOutput(self, "Degrees", -self.CurrentAngle.yaw)
+			WireLib.TriggerOutput(self, "Degrees", -self.CurrentAngle)
 
-			Rotator:SetAngles(self:LocalToWorldAngles(self.CurrentAngle))
+			self.SlewFuncs.SetRotatorAngle(self)
 
-			local MotorSpeed = math.Clamp(math.abs(self.SlewRate + StabAmt),0,SlewMax) / Tick
+			local MotorSpeed = math.Clamp(math.abs(self.CurrentAngle - AngleChange),0,SlewMax) / Tick
 
 			local MotorSpeedPerc = MotorSpeed / self.MotorMaxSpeed
 			if MotorSpeedPerc > 0.1 and (self.SoundPlaying == false) then
@@ -807,9 +858,13 @@ do -- Metamethods
 				self:SetSoundState(false)
 			end
 
-			if self.SoundPlaying == true then Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9)) end
-
-			debugoverlay.Line(Rotator:GetPos(), Rotator:GetPos() + Rotator:GetForward() * 16384, 0.05, Color(255,0,0), false)
+			if self.SoundPlaying == true then
+				if self.SoundPath ~= (self.CurrentSound or "") then -- should only get set off if the motor is enabled/disabled while the sound is playing
+					self:SetSoundState(false)
+				else
+					Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9))
+				end
+			end
 
 			self.LastRotatorAngle	= Rotator:GetAngles()
 
@@ -820,32 +875,33 @@ do -- Metamethods
 
 	do	-- Input/Outputs/Eventually linking
 		ACF.AddInputAction("acf_turret", "Active", function(Entity,Value)
+			if Entity.Disabled then return end
+
 			Entity.Active = tobool(Value)
 		end)
 
 		ACF.AddInputAction("acf_turret", "Angle", function(Entity,Value)
 			local Ang = isangle(Value) and Value or Angle(0,0,0)
-			Entity.Manual = false
-			Entity.DesiredAngle		= Ang
+
+			Entity:InputDirection(Ang)
 		end)
 
 		ACF.AddInputAction("acf_turret", "Vector", function(Entity,Value)
 			local Pos = isvector(Value) and Value or Vector(0,0,0)
-			Entity.Manual = false
-			Entity.UseVector		= true
-			Entity.DesiredVector	= Pos
+
+			Entity:InputDirection(Pos)
 		end)
 
 		ACF.AddInputAction("acf_turret", "Bearing", function(Entity,Value) -- Only on horizontal drives
 			if not isnumber(Value) then return end
-			Entity.Manual = true
-			Entity.DesiredDeg = Value
+
+			Entity:InputDirection(Value)
 		end)
 
 		ACF.AddInputAction("acf_turret", "Elevation", function(Entity,Value) -- Only on vertical drives
 			if not isnumber(Value) then return end
-			Entity.Manual = true
-			Entity.DesiredDeg = Value
+
+			Entity:InputDirection(Value)
 		end)
 	end
 
@@ -929,85 +985,15 @@ do -- Metamethods
 			self:UpdateOverlay()
 		end
 
-		local function ProxyACF_OnParented(self,Entity,Connected)
-			if not IsValid(Entity) then return end
-			if Entity:GetClass() ~= "acf_turret" then
-				if not (IsValid(self.ACF_TurretAncestor) or (Contraption.HasAncestor(self,self.ACF_TurretAncestor))) then
-					self.ACF_OnParented		= nil
-					self.ACF_OnMassChange	= nil
-					self.ACF_TurretAncestor	= nil
-					return
-				end
-
-				self.ACF_TurretAncestor:UpdateTurretMass()
-
-				if Connected == true then
-					Entity.ACF_OnParented		= self.ACF_OnParented
-					Entity.ACF_OnMassChange		= self.ACF_OnMassChange
-					Entity.ACF_TurretAncestor	= self.ACF_TurretAncestor
-
-					for k in pairs(Entity:GetChildren()) do
-						if k:GetClass() == "acf_turret" then continue end
-						if not IsValid(k) then continue end
-
-						ProxyACF_OnParented(Entity,k,true)
-					end
-				else
-					Entity.ACF_OnParented		= nil
-					Entity.ACF_OnMassChange		= nil
-					Entity.ACF_TurretAncestor	= nil
-				end
-			end
-		end
-
-		function ENT:ACF_OnParented(Entity, Connected) -- Potentially called many times a second, so we won't force mass to update
+		function ENT:ACF_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
 			if Entity:GetClass() == "acf_turret_rotator" then return end
 
-			self:UpdateTurretMass()
-
-			if Entity:GetClass() == "acf_turret" then
-				if self:GetClass() == "acf_turret" then
-					if Connected == true then
-						Entity.ACF_TurretAncestor = self
-						self:UpdateTurretMass()
-					else
-						Entity.ACF_TurretAncestor = nil
-						if IsValid(Entity) then self:UpdateTurretMass() end
-					end
-				end
-				return
-			elseif IsValid(self.ACF_TurretAncestor) then
-				self.ACF_TurretAncestor:UpdateTurretMass()
-			end
+			self:UpdateTurretMass(false)
 
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
 			-- Shooouuld be using ACF_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Entity:GetClass() == "acf_turret_motor" then Entity:ValidatePlacement() end
 			if IsValid(self.Motor) then self.Motor:ValidatePlacement() end
-
-			if Connected then
-				Entity.ACF_TurretAncestor = self
-
-				Entity.ACF_OnMassChange = function(self)
-					if not IsValid(self.ACF_TurretAncestor) then self.ACF_OnMassChange = nil return end
-					if not IsValid(Entity) then return end
-
-					self.ACF_TurretAncestor:UpdateTurretMass()
-				end
-
-				Entity.ACF_OnParented = ProxyACF_OnParented
-
-				for k in pairs(Entity:GetChildren()) do
-					if k:GetClass() == "acf_turret" then continue end
-					if not IsValid(k) then continue end
-
-					ProxyACF_OnParented(Entity,k,true)
-				end
-			else
-				Entity.ACF_OnMassChange = nil
-				Entity.ACF_OnParented = nil
-				Entity.ACF_TurretAncestor = nil
-			end
 		end
 
 		function ENT:OnRemove()

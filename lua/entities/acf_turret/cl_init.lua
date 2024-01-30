@@ -24,6 +24,7 @@ do	-- NET SURFER
 		Entity.MinDeg	= Data.MinDeg
 		Entity.MaxDeg	= Data.MaxDeg
 		Entity.CoMDist	= Data.CoMDist
+		Entity.Type		= Data.Type
 
 		Entity.HasData	= true
 		Entity.Age		= Clock.CurTime + 5
@@ -39,6 +40,66 @@ do	-- NET SURFER
 		net.Start("ACF_RequestTurretInfo")
 			net.WriteEntity(self)
 		net.SendToServer()
+	end
+end
+
+do	-- Turret drive drawing
+	local DrawDist	= 1024 ^ 2
+	local HideInfo = ACF.HideInfoBubble
+
+	local function CSModel(Ent)
+		if not IsValid(Ent) then return end
+
+		if IsValid(Ent.CSModel) then
+			if Ent.CSModel:GetModel() ~= Ent:GetModel() then Ent.CSModel:Remove() return end
+
+			return Ent.CSModel
+		end
+
+		if not Ent.Matrix then return end
+
+		local CSModel	= ClientsideModel(Ent:GetModel())
+		CSModel:SetParent(Ent)
+		CSModel:SetPos(Ent:GetPos())
+		CSModel:SetAngles(Ent:GetAngles())
+		CSModel:SetMaterial(Ent:GetMaterial())
+		CSModel:SetColor(Ent:GetColor())
+
+		CSModel.Material = Ent:GetMaterial()
+		CSModel.Matrix = Ent.Matrix
+		CSModel:EnableMatrix("RenderMultiply", CSModel.Matrix)
+
+		Ent.CSModel	= CSModel
+
+		return Ent.CSModel
+	end
+
+	function ENT:Draw()
+
+		-- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
+		local looked_at = self:BeingLookedAtByLocalPlayer()
+
+		if looked_at then
+			self:DrawEntityOutline()
+			if not HideInfo() then self:AddWorldTip() end
+		end
+
+		local Rotator = self:GetNWEntity("ACF.Rotator")
+
+		if (not IsValid(Rotator)) or ((EyePos()):DistToSqr(self:GetPos()) > DrawDist) then self:DrawModel() return end
+
+		local CSM = CSModel(self)
+		if not IsValid(CSM) then self:DrawModel() return end
+
+		if CSM.Material ~= self:GetMaterial() then CSM:Remove() return end
+		if CSM:GetColor() ~= self:GetColor() then CSM:Remove() return end
+		if CSM.Matrix ~= self.Matrix then CSM:Remove() return end
+
+		CSM:SetAngles(Rotator:GetAngles())
+	end
+
+	function ENT:OnRemove()
+		if IsValid(self.CSModel) then self.CSModel:Remove() end
 	end
 end
 
@@ -61,12 +122,27 @@ do	-- Overlay
 		local X = self:OBBMaxs().x
 		local Pos = self:LocalToWorld(self:OBBCenter())
 
+		if self.Type == "Turret-V" then
+			UX = self:GetRight() * 0.5
+		end
+
 		render.DrawLine(Pos + UX,Pos + (self:GetForward() * X) + UX,orange,true)
 
 		if IsValid(self.Rotator) then render.DrawLine(Pos,Pos + self.Rotator:GetForward() * X,green,true) end
 
 		local LocPos = self:WorldToLocal(Trace.HitPos)
+		local AimAng = 0
+		local CurAng = 0
 		local LocDir = Vector(LocPos.x,LocPos.y,0):GetNormalized()
+
+		if self.Type == "Turret-V" then
+			LocDir = Vector(LocPos.x,0,LocPos.z):GetNormalized()
+			AimAng = -math.Round(self:WorldToLocalAngles(self:LocalToWorldAngles(LocDir:Angle())).pitch,2)
+			CurAng = -math.Round(self:WorldToLocalAngles(self.Rotator:GetAngles()).pitch,2)
+		else
+			AimAng = -math.Round(self:WorldToLocalAngles(self:LocalToWorldAngles(LocDir:Angle())).yaw,2)
+			CurAng = -math.Round(self:WorldToLocalAngles(self.Rotator:GetAngles()).yaw,2)
+		end
 
 		render.DrawLine(Pos - UX,self:LocalToWorld(self:OBBCenter() + LocDir * X * 2) - UX,magenta,true)
 
@@ -78,9 +154,16 @@ do	-- Overlay
 
 		if not ((self.MinDeg == -180) and (self.MaxDeg == 180)) then
 			local MinDir = Vector(X,0,0)
-			MinDir:Rotate(Angle(0,-self.MinDeg,0))
 			local MaxDir = Vector(X,0,0)
-			MaxDir:Rotate(Angle(0,-self.MaxDeg,0))
+
+			if self.Type == "Turret-V" then
+				MinDir:Rotate(Angle(-self.MinDeg,0,0))
+				MaxDir:Rotate(Angle(-self.MaxDeg,0,0))
+			else
+				MinDir:Rotate(Angle(0,-self.MinDeg,0))
+				MaxDir:Rotate(Angle(0,-self.MaxDeg,0))
+			end
+
 			render.DrawLine(Pos - UX,self:LocalToWorld(self:OBBCenter() + MinDir) - UX,red,true)
 			render.DrawLine(Pos - UX,self:LocalToWorld(self:OBBCenter() + MaxDir) - UX,green,true)
 		end
@@ -93,8 +176,8 @@ do	-- Overlay
 
 		cam.Start2D()
 			draw.SimpleTextOutlined("Zero","DermaDefault",HomePos.x,HomePos.y,orange,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
-			draw.SimpleTextOutlined("Current: " .. -math.Round(self:WorldToLocalAngles(self.Rotator:GetAngles()).yaw,2),"DermaDefault",CurPos.x,CurPos.y,green,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
-			draw.SimpleTextOutlined("Aim: " .. -math.Round(self:WorldToLocalAngles(self:LocalToWorldAngles(LocDir:Angle())).yaw,2),"DermaDefault",AimPos.x,AimPos.y,magenta,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			draw.SimpleTextOutlined("Current: " .. CurAng,"DermaDefault",CurPos.x,CurPos.y,green,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			draw.SimpleTextOutlined("Aim: " .. AimAng,"DermaDefault",AimPos.x,AimPos.y,magenta,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 
 			draw.SimpleTextOutlined("Mass: " .. self.Mass .. "kg","DermaDefault",CoMPos.x,CoMPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 			draw.SimpleTextOutlined("Lateral Distance: " .. self.CoMDist .. "u","DermaDefault",CoMPos.x,CoMPos.y + 16,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
