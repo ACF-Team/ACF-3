@@ -6,7 +6,6 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
-local Damage		= ACF.Damage
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local HookRun		= hook.Run
