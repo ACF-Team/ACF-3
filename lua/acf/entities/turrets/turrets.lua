@@ -165,9 +165,10 @@ do	-- Turret drives
 
 			SlewFuncs		= {
 				GetStab				= function(Turret)
+					if (not (Turret.Stabilized and Turret.Active)) or (Turret.Manual == true) then return 0 end
 					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
 
-					return (Turret.Stabilized and Turret.Active) and (AngDiff.yaw * Turret.StabilizeAmount) or 0
+					return (AngDiff.yaw * Turret.StabilizeAmount) or 0
 				end,
 
 				GetTargetBearing	= function(Turret,StabAmt)
@@ -225,9 +226,10 @@ do	-- Turret drives
 
 			SlewFuncs		= {
 				GetStab				= function(Turret)
+					if (not (Turret.Stabilized and Turret.Active)) or (Turret.Manual == true) then return 0 end
 					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
 
-					return (Turret.Stabilized and Turret.Active) and (AngDiff.pitch * Turret.StabilizeAmount) or 0
+					return (AngDiff.pitch * Turret.StabilizeAmount) or 0
 				end,
 
 				GetTargetBearing	= function(Turret,StabAmt)
@@ -284,7 +286,7 @@ do	-- Turret motors
 		Turrets.RegisterItem("Motor-ELC","2-Motor",{
 			Name			= "Electric Motor",
 			Description		= "A snappy responsive electric motor, can handle most uses cases but quickly falters under higher weights",
-			Model			= "models/engines/emotor-standalone-sml.mdl",
+			Model			= "models/acf/core/t_drive_e.mdl",
 			Sound			= "acf_base/fx/turret_electric.wav",
 
 			Mass			= 60, -- Base mass, will be further modified by settings
@@ -315,7 +317,7 @@ do	-- Turret motors
 		Turrets.RegisterItem("Motor-HYD","2-Motor",{
 			Name			= "Hydraulic Motor",
 			Description		= "A strong but sluggish hydraulic motor, it'll turn the world over but takes a little bit to get to that point.",
-			Model			= "models/xqm/hydcontrolbox.mdl",
+			Model			= "models/acf/core/t_drive_h.mdl",
 			Sound			= "acf_base/fx/turret_hydraulic.wav",
 
 			Mass			= 80, -- Base mass, will be further modified by settings
@@ -375,7 +377,7 @@ do	-- Turret gyroscopes
 		Turrets.RegisterItem("2-Gyro","3-Gyro",{
 			Name			= "Dual Axis Turret Gyro",
 			Description		= "A component that will stabilize one vertical and horizontal turret drive.\nMust be parented to or share the parent with the horizontal turret drive.\nEach turret drive must have a motor linked.",
-			Model			= "models/kobilica/relay.mdl",
+			Model			= "models/acf/core/t_gyro.mdl",
 
 			Mass			= 150,
 			IsDual			= true,
@@ -413,7 +415,7 @@ do	-- Turret computers
 		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
 			Name			= "Direct Ballistics Computer",
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nHas a delay between uses.",
-			Model			= "",
+			Model			= "models/acf/core/t_computer.mdl",
 
 			Mass			= 100,
 
@@ -426,7 +428,7 @@ do	-- Turret computers
 		Turrets.RegisterItem("IND-BalComp","4-Computer",{
 			Name			= "Indirect Ballistics Computer",
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a delay between uses.",
-			Model			= "",
+			Model			= "models/acf/core/t_computer.mdl",
 
 			Mass			= 150,
 

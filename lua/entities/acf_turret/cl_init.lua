@@ -95,6 +95,8 @@ do	-- Turret drive drawing
 		if CSM:GetColor() ~= self:GetColor() then CSM:Remove() return end
 		if CSM.Matrix ~= self.Matrix then CSM:Remove() return end
 
+		if CSM:GetParent() ~= self then CSM:Remove() return end
+
 		CSM:SetAngles(Rotator:GetAngles())
 	end
 
@@ -128,12 +130,13 @@ do	-- Overlay
 
 		render.DrawLine(Pos + UX,Pos + (self:GetForward() * X) + UX,orange,true)
 
-		if IsValid(self.Rotator) then render.DrawLine(Pos,Pos + self.Rotator:GetForward() * X,green,true) end
+		if IsValid(self.Rotator) then render.DrawLine(Pos,Pos + self.Rotator:GetForward() * X,color_white,true) end
 
 		local LocPos = self:WorldToLocal(Trace.HitPos)
 		local AimAng = 0
 		local CurAng = 0
 		local LocDir = Vector(LocPos.x,LocPos.y,0):GetNormalized()
+		local HasArc = not ((self.MinDeg == -180) and (self.MaxDeg == 180))
 
 		if self.Type == "Turret-V" then
 			LocDir = Vector(LocPos.x,0,LocPos.z):GetNormalized()
@@ -152,7 +155,9 @@ do	-- Overlay
 			render.DrawWireframeSphere(self.Rotator:LocalToWorld(self.LocalCoM),1.5,4,3,red)
 		render.OverrideDepthEnable(false,false)
 
-		if not ((self.MinDeg == -180) and (self.MaxDeg == 180)) then
+		local MinArcPos = {}
+		local MaxArcPos = {}
+		if HasArc then
 			local MinDir = Vector(X,0,0)
 			local MaxDir = Vector(X,0,0)
 
@@ -164,8 +169,11 @@ do	-- Overlay
 				MaxDir:Rotate(Angle(0,-self.MaxDeg,0))
 			end
 
-			render.DrawLine(Pos - UX,self:LocalToWorld(self:OBBCenter() + MinDir) - UX,red,true)
-			render.DrawLine(Pos - UX,self:LocalToWorld(self:OBBCenter() + MaxDir) - UX,green,true)
+			render.DrawLine(Pos - UX * 2,self:LocalToWorld(self:OBBCenter() + MinDir) - UX * 2,red,true)
+			render.DrawLine(Pos - UX * 2,self:LocalToWorld(self:OBBCenter() + MaxDir) - UX * 2,green,true)
+
+			MinArcPos = (self:LocalToWorld(self:OBBCenter() + MinDir) - UX * 2):ToScreen()
+			MaxArcPos = (self:LocalToWorld(self:OBBCenter() + MaxDir) - UX * 2):ToScreen()
 		end
 
 		local HomePos = (Pos + UX + self:GetForward() * X):ToScreen()
@@ -176,11 +184,16 @@ do	-- Overlay
 
 		cam.Start2D()
 			draw.SimpleTextOutlined("Zero","DermaDefault",HomePos.x,HomePos.y,orange,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
-			draw.SimpleTextOutlined("Current: " .. CurAng,"DermaDefault",CurPos.x,CurPos.y,green,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			draw.SimpleTextOutlined("Current: " .. CurAng,"DermaDefault",CurPos.x,CurPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 			draw.SimpleTextOutlined("Aim: " .. AimAng,"DermaDefault",AimPos.x,AimPos.y,magenta,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 
 			draw.SimpleTextOutlined("Mass: " .. self.Mass .. "kg","DermaDefault",CoMPos.x,CoMPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 			draw.SimpleTextOutlined("Lateral Distance: " .. self.CoMDist .. "u","DermaDefault",CoMPos.x,CoMPos.y + 16,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+
+			if HasArc then
+				draw.SimpleTextOutlined("Min: " .. self.MinDeg,"DermaDefault",MinArcPos.x,MinArcPos.y,red,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+				draw.SimpleTextOutlined("Max: " .. self.MaxDeg,"DermaDefault",MaxArcPos.x,MaxArcPos.y,green,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			end
 		cam.End2D()
 	end
 end

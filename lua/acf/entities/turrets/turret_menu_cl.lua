@@ -40,9 +40,9 @@ do	-- Turret ring
 			Panel:SetBGColor(Color(150,150,150))
 		end
 
-		local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 180, 1)
+		local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 0, 1)
 
-		local MaxDeg	= ArcSettings:AddSlider("Maximum Degrees", -180, 180, 1)
+		local MaxDeg	= ArcSettings:AddSlider("Maximum Degrees", 0, 180, 1)
 
 		local ArcDraw = vgui.Create("Panel",ArcSettings)
 		ArcDraw:SetSize(64,64)
@@ -99,7 +99,7 @@ do	-- Turret ring
 
 		MinDeg:SetClientData("MinDeg","OnValueChanged")
 		MinDeg:DefineSetter(function(Panel, _, _, Value)
-			local N = math.Clamp(math.Round(Value,1),-180,MaxDeg:GetValue())
+			local N = math.Clamp(math.Round(Value,1),-180,0)
 
 			Panel:SetValue(N)
 
@@ -110,7 +110,7 @@ do	-- Turret ring
 
 		MaxDeg:SetClientData("MaxDeg", "OnValueChanged")
 		MaxDeg:DefineSetter(function(Panel, _, _, Value)
-			local N = math.Clamp(math.Round(Value,1),MinDeg:GetValue(),180)
+			local N = math.Clamp(math.Round(Value,1),0,180)
 
 			Panel:SetValue(N)
 
@@ -118,6 +118,9 @@ do	-- Turret ring
 		end)
 		MaxDeg:SetValue(180)
 		MaxDeg:SetEnabled(false)
+
+		ACF.SetClientData("MinDeg",-180)
+		ACF.SetClientData("MaxDeg",180)
 
 		ArcToggle.OnChange = function(_, Value)
 			MinDeg:SetEnabled(Value)

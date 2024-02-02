@@ -418,6 +418,8 @@ do	-- Spawn and Update funcs
 				if not IsValid(k) then continue end
 				ParentLink(Entity,k,true)
 
+				if Class == "acf_turret_motor" then k:ValidatePlacement() end
+
 				local PO = k:GetPhysicsObject()
 				if not IsValid(PO) then continue end
 
@@ -762,7 +764,7 @@ do -- Metamethods
 			self.UseVector	= false
 
 			if isnumber(Direction) then
-				self.DesiredDeg = Direction
+				self.DesiredDeg = math.NormalizeAngle(Direction)
 				return
 			end
 
@@ -770,7 +772,7 @@ do -- Metamethods
 
 			if isangle(Direction) then
 				Direction:Normalize()
-				self.DesiredAng = Direction
+				self.DesiredAngle = Direction
 
 				return
 			end
@@ -819,7 +821,7 @@ do -- Metamethods
 
 			local StabAmt	= math.Clamp(self.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
 
-			local TargetBearing	= self.SlewFuncs.GetTargetBearing(self,StabAmt)
+			local TargetBearing	= math.Round(self.SlewFuncs.GetTargetBearing(self,StabAmt),8)
 
 			local sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math.abs(TargetBearing)
