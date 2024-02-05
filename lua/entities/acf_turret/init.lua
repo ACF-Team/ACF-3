@@ -96,7 +96,9 @@ do	-- Spawn and Update funcs
 			RingSize	= Size,
 			RingHeight	= RingHeight,
 			TotalMass	= 0,
-			LocalCoM	= Vector()
+			LocalCoM	= Vector(),
+			Tilt		= 1,
+			TurretClass	= Data.Turret
 		}
 
 		-- Type-specific functions that differ between horizontal and vertical turret components
@@ -270,8 +272,9 @@ do	-- Spawn and Update funcs
 		Rotator:SetPos(Entity:GetPos())
 		Rotator:SetAngles(Entity:GetAngles())
 		Rotator:SetParent(Entity)
-		--Rotator:SetModel("models/sprops/misc/origin.mdl")
 		Rotator:Spawn()
+		Rotator:SetRenderMode(RENDERMODE_NONE)
+		Rotator:DrawShadow(false)
 
 		Entity.Rotator			= Rotator
 		Rotator.Turret			= Entity
@@ -512,6 +515,16 @@ do	-- Spawn and Update funcs
 
 			SoundPath	= self.Motor.SoundPath
 		end
+
+		-- Scale for being off-axis, further affects friction
+		local Tilt = 1
+		if self.Turret == "Turret-V" then
+			Tilt = math.max(1 - self:GetRight():Dot(Vector(0,0,1)),0)
+		else
+			Tilt = math.max(self:GetUp():Dot(Vector(0,0,1)),0)
+		end
+
+		self.TurretData.Tilt = Tilt
 
 		local SlewData		= self.ClassData.CalcSpeed(self.TurretData,SlewInput)
 
@@ -947,7 +960,7 @@ do -- Metamethods
 			if DmgInfo.Attacker and IsValid(DmgInfo.Attacker) then
 				local Attacker = DmgInfo.Attacker
 
-				if ((Attacker:GetClass() == "acf_ammo") or (Attacker:GetClass() == "acf_fueltank")) and (not Contraption.HasAncestor(Attacker,self)) and (Attacker.Exploding == true and (HitRes.Damage >= self.ACF.Health) and (self.Disconnect == false)) then
+				if ((Attacker:GetClass() == "acf_ammo") or (Attacker:GetClass() == "acf_fueltank")) and (Attacker.Exploding == true and (HitRes.Damage >= self.ACF.Health) and (self.Disconnect == false)) then
 					self.Disconnect	= true
 
 					self:SetParent(nil)

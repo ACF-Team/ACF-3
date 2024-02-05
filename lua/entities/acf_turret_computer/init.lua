@@ -8,6 +8,7 @@ include("shared.lua")
 local ACF			= ACF
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
+local Clock			= Utilities.Clock
 local HookRun		= hook.Run
 
 do	-- Spawn and Update funcs
@@ -15,68 +16,67 @@ do	-- Spawn and Update funcs
 	local Entities	= Classes.Entities
 	local Turrets	= Classes.Turrets
 
+	local Inputs	= {
+		"Calculate (Starts the simulation, continues calculating if capable while enabled.)",
+		"Position (The position to calculate a trajectory for.) [VECTOR]",
+		"Velocity (The relative velocity to include in the calculation.) [VECTOR]",
+	}
+
 	local Outputs	= {
-		"Entity (The turret motor itself.) [ENTITY]"
+		"Angle (Angle the gun should point in to hit the target) [ANGLE]",
+		"Flight Time (The estimated time of arrival for the current round to hit the target.)",
+		"Entity (The computer itself.) [ENTITY]"
 	}
 
 	local function VerifyData(Data)
-		if not Data.Motor then Data.Motor = Data.Id end
+		if not Data.Computer then Data.Computer = Data.Id end
 
-		local Class = Classes.GetGroup(Turrets, Data.Motor)
+		local Class = Classes.GetGroup(Turrets, Data.Computer)
 
 		if not Class then
-			Class = Turrets.Get("2-Motor")
+			Class = Turrets.Get("4-Computer")
 
-			Data.Destiny		= "Motors"
-			Data.Motor			= "Motor-ELC"
+			Data.Destiny		= "Computers"
+			Data.Computer		= "DIR-BalComp"
 		end
 
-		local Motor = Turrets.GetItem(Class.ID, Data.Motor)
+		local Computer = Turrets.GetItem(Class.ID, Data.Computer)
 
-		if not Motor then
-			Motor = Turrets.GetItem(Class.ID, "Motor-ELC")
+		if not Computer then
+			Computer = Turrets.GetItem(Class.ID, "DIR-BalComp")
 		end
 
-		Data.ID		= Motor.ID
-
-		Data.CompSize	= math.Clamp(Data.CompSize, Motor.ScaleLimit.Min, Motor.ScaleLimit.Max)
-
-		Data.Teeth		= math.Clamp(math.Round(Data.Teeth), Motor.Teeth.Min, Motor.Teeth.Max)
+		Data.ID		= Computer.ID
 	end
 
 	------------------
 
-	local function GetMass(Motor,Data)
-		local SizePerc = Data.CompSize ^ 2
-		return math.Round(math.max(Motor.Mass * SizePerc,5), 1)
-	end
+	local function UpdateComputer(Entity, Data, Class, Computer)
+		local Model		= Computer.Model
 
-	local function UpdateMotor(Entity, Data, Class, Motor)
-		local Model		= Motor.Model
-		local Size		= Data.CompSize
+		Entity:SetModel(Model)
 
-		Entity:SetScaledModel(Model)
-		Entity:SetScale(Size)
+		Entity:PhysicsInit(SOLID_VPHYSICS)
+		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
 		Entity.ACF.Model	= Model
-		Entity.Name			= Motor.Name
-		Entity.ShortName	= Motor.ID
+		Entity.Name			= Computer.Name
+		Entity.ShortName	= Computer.ID
 		Entity.EntType		= Class.Name
 		Entity.ClassData	= Class
 		Entity.Class		= Class.ID
-		Entity.CompSize		= Size
-		Entity.Motor		= Data.Motor
+		Entity.Computer		= Data.Computer
 		Entity.Active		= true
 
-		Entity.Torque		= Class.GetTorque(Motor,Size)
-		Entity.Teeth		= Data.Teeth
-		Entity.Efficiency	= Motor.Efficiency
-		Entity.Speed		= Motor.Speed
-		Entity.Accel		= Motor.Accel
+		Entity.ComputerInfo	= Computer.ComputerInfo
+		Entity.Status		= ""
 
-		Entity.ScaledArmor	= math.max(math.Round(5 * (Size ^ 1.2),1),2)
+		Entity:HaltSimulation()
 
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Motor)
+		Entity.NextRun		= Clock.CurTime
+
+		WireIO.SetupInputs(Entity, Inputs, Data, Class, Computer)
+		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Computer)
 
 		Entity:SetNWString("WireName","ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
@@ -94,41 +94,37 @@ do	-- Spawn and Update funcs
 		local PhysObj = Entity:GetPhysicsObject()
 
 		if IsValid(PhysObj) then
-			local Mass = GetMass(Motor,Data)
+			local Mass = Computer.Mass
 
 			Entity.ACF.Mass			= Mass
 			Entity.ACF.LegalMass	= Mass
 
 			PhysObj:SetMass(Mass)
 		end
-
-		if IsValid(Entity.Turret) then
-			Entity.Turret:UpdateTurretSlew()
-		end
 	end
 
-	function MakeACF_TurretMotor(Player, Pos, Angle, Data)
+	function MakeACF_BallisticComputer(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = Classes.GetGroup(Turrets,Data.Motor)
+		local Class = Classes.GetGroup(Turrets,Data.Computer)
 		local Limit	= Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
+		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret_motor", Player, Data, Class, Motor)
+		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret_computer", Player, Data, Class, Computer)
 
 		if CanSpawn == false then return end
 
-		local Entity = ents.Create("acf_turret_motor")
+		local Entity = ents.Create("acf_turret_computer")
 
 		if not IsValid(Entity) then return end
 
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Motor.Model)
+		Entity:SetModel(Computer.Model)
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
@@ -136,41 +132,41 @@ do	-- Spawn and Update funcs
 
 		Entity.ACF				= {}
 		Entity.Owner			= Player
-		Entity.DataStore		= Entities.GetArguments("acf_turret_motor")
+		Entity.DataStore		= Entities.GetArguments("acf_turret_computer")
 
-		UpdateMotor(Entity, Data, Class, Motor)
+		UpdateComputer(Entity, Data, Class, Computer)
 
 		Entity:UpdateOverlay(true)
 
-		HookRun("ACF_OnEntitySpawn", "acf_turret_motor", Entity, Data, Class, Motor)
+		HookRun("ACF_OnEntitySpawn", "acf_turret_computer", Entity, Data, Class, Computer)
 
 		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	Entities.Register("acf_turret_motor", MakeACF_TurretMotor, "Motor", "CompSize")
+	Entities.Register("acf_turret_computer", MakeACF_BallisticComputer, "Computer")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Class = Classes.GetGroup(Turrets, Data.Motor)
-		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
+		local Class = Classes.GetGroup(Turrets, Data.Computer)
+		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret_motor", self, Data, Class, Motor)
+		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret_computer", self, Data, Class, Computer)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
-		HookRun("ACF_OnEntityLast", "acf_turret_motor", self, OldClass)
+		HookRun("ACF_OnEntityLast", "acf_turret_computer", self, OldClass)
 
 		ACF.SaveEntity(self)
 
-		UpdateMotor(self, Data, Class, Motor)
+		UpdateComputer(self, Data, Class, Computer)
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret_motor", self, Data, Class, Motor)
+		HookRun("ACF_OnEntityUpdate", "acf_turret_computer", self, Data, Class, Computer)
 
 		self:UpdateOverlay(true)
 
@@ -180,71 +176,421 @@ do	-- Spawn and Update funcs
 
 		--self:UpdateTurretMass()
 
-		return true, "Motor updated successfully!"
+		return true, "Computer updated successfully!"
 	end
 end
 
 do	-- Metamethods and other important stuff
-	do
-		local Text = "%s\n\n%GNm Torque\n%Gt"
+	do	-- Overlay stuff
 		function ENT:UpdateOverlayText()
 			local Status = ""
-			if IsValid(self.Turret) then
-				if self.Active then
-					Status = "Linked to " .. tostring(self.Turret)
-				else
-					Status = self.InactiveReason
-				end
+			if IsValid(self.Gun) then
+				Status = "Linked to " .. tostring(self.Gun)
 			else
-				Status = "Not linked to a turret drive!"
+				Status = "Not linked to a gun!"
 			end
 
-			return Text:format(Status,self.Torque,self.Teeth)
+			if self.Status then
+				Status = Status .. "\n" .. self.Status
+			end
+
+			return Status
+		end
+	end
+
+	do	-- Link/unlink
+		ACF.RegisterLinkSource("acf_turret_computer", "Guns")
+
+		-- Gun links
+
+		ACF.RegisterClassLink("acf_turret_computer", "acf_gun",function(This,Gun)
+			if IsValid(This.Gun) then return false, "This computer already has a gun linked!" end
+
+			This.Gun	= Gun
+
+			This:UpdateOverlay(true)
+
+			return true, "Ballistic Computer linked successfully."
+		end)
+
+		ACF.RegisterClassUnlink("acf_turret_computer", "acf_gun", function(This, Gun)
+			if not IsValid(This.Gun) then return false, "This computer doesn't have a gun linked!" end
+			if This.Gun ~= Gun then return false, "This computer isn't linked to this gun!" end
+
+			This.Gun	= nil
+
+			This:UpdateOverlay(true)
+
+			return true, "Ballistic Computer unlinked successfully."
+		end)
+	end
+
+	do	-- Wire stuff
+		ACF.AddInputAction("acf_turret_computer", "Calculate", function(Entity,Value)
+			if Entity.Disabled then return end
+
+			if tobool(Value) == true then
+				Entity:StartSimulation()
+			end
+		end)
+	end
+
+	do	-- Simulation stuff
+		-- Starts fresh simulation with fresh data
+		function ENT:StartSimulation()
+			if Clock.CurTime < self.NextRun then return end
+			if not IsValid(self.Gun) then return end
+
+			local Gun = self.Gun
+
+			if Gun.State ~= "Loaded" then return end
+
+			self.Status = "Calculating..."
+
+			local BD = Gun.BulletData
+
+			local LocalPosition = self.Inputs["Position"].Value - Gun:LocalToWorld(Gun.Muzzle)
+
+			local StartAngle	= Angle(0,0,0)
+
+			local AngleToTarget = LocalPosition:GetNormalized():Angle()
+			AngleToTarget:Normalize()
+
+			if self.ComputerInfo.HighArc then
+				StartAngle = Angle(math.Clamp(Lerp(0.25,-90,AngleToTarget.p),-89,-45),AngleToTarget.y,0)
+			else
+				StartAngle	= Angle(AngleToTarget.p,AngleToTarget.y,0)
+			end
+
+			StartAngle:Normalize()
+
+			debugoverlay.Line(Gun:LocalToWorld(Gun.Muzzle),Gun:LocalToWorld(Gun.Muzzle) + StartAngle:Forward() * 32,3,Color(255,0,0),true)
+
+			self.SimData	= {
+				MuzzleVel		= BD.MuzzleVel,
+				DragCoef		= BD.DragCoef,
+				DragDiv			= ACF.DragDiv,
+				Accel			= ACF.Gravity,
+
+				StartAngle		= StartAngle,
+				Flight			= StartAngle:Forward() * BD.MuzzleVel * 39.37,
+				Pos				= Vector(),
+				NextPos			= Vector(),
+				Error			= Vector(),
+				Spread			= Gun.Spread,
+
+				StartPos		= Gun:LocalToWorld(Gun.Muzzle),
+				TargetPos		= self.Inputs["Position"].Value,
+				AdjustedTargetPos	= self.Inputs["Position"].Value,
+				RelativeVel		= self.Inputs["Velocity"].Value,
+
+				FlightDistance	= 0,
+				FlightTime		= 0,
+				TotalTime		= 0,
+
+				DeltaTime		= self.ComputerInfo.DeltaTime,
+				EndTime			= Clock.CurTime + self.ComputerInfo.MaxThinkTime,
+				LastMaxTime		= self.ComputerInfo.MaxThinkTime,
+				StartTime		= Clock.CurTime
+			}
+
+			self.Thinking	= true
+
+			self:UpdateOverlay()
+		end
+
+		-- Adjusts simulation trajectory using data from the last iteration, then restarts
+		function ENT:AdjustSimulation()
+			local Sim = self.SimData
+
+			self.Thinking = false
+			self.Status = "Processing..."
+
+			self:UpdateOverlay()
+
+			local ElapsedTime		= Clock.CurTime - Sim.StartTime
+
+			if not self.ComputerInfo.HighArc then
+				if Sim.Pos:DistToSqr(Sim.AdjustedTargetPos - Sim.StartPos) < ((((Sim.FlightDistance + (Sim.RelativeVel * ElapsedTime):Length()) / 100) * self.ComputerInfo.CalcError) ^ 2) then
+
+					WireLib.TriggerOutput(self, "Angle", Sim.StartAngle)
+					WireLib.TriggerOutput(self, "Flight Time", Sim.FlightTime)
+
+					if self.ComputerInfo.Constant and tobool(self.Inputs["Calculate"].Value) and IsValid(self.Gun) then
+						local Gun = self.Gun
+
+						Sim.AdjustedTargetPos = Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
+
+						Sim.StartPos				= Gun:LocalToWorld(Gun.Muzzle)
+
+						Sim.Error = Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
+
+						local LocalPosition = (Sim.TargetPos - Sim.StartPos) + Sim.Error
+
+						local AngleToTarget = LocalPosition:GetNormalized():Angle()
+						AngleToTarget:Normalize()
+
+						local StartAngle			= Angle(AngleToTarget.p,AngleToTarget.y,0)
+
+						self.SimData.StartAngle		= StartAngle
+						self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+
+						self.SimData.TargetPosition	= LocalPosition
+						self.SimData.StraightDistance = LocalPosition:Length()
+
+						self.SimData.Pos			= Vector()
+
+						self.SimData.FlightDistance	= 0
+						self.SimData.FlightTime		= 0
+
+						self.SimData.LastMaxTime	= self.ComputerInfo.MaxThinkTime
+						self.SimData.EndTime		= Clock.CurTime + self.ComputerInfo.MaxThinkTime
+
+						self.Status = "Tracking"
+						self:UpdateOverlay()
+
+						self.Thinking = true
+
+						return true
+					else
+						self:HaltSimulation("Firing solution found!")
+
+						return false
+					end
+				else
+					Sim.AdjustedTargetPos = Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
+
+					Sim.Error = Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
+
+					local LocalPosition = (Sim.TargetPos - Sim.StartPos) + Sim.Error
+
+					local AngleToTarget = LocalPosition:GetNormalized():Angle()
+					AngleToTarget:Normalize()
+
+					local StartAngle			= Angle(AngleToTarget.p,AngleToTarget.y,0)
+
+					self.SimData.StartAngle		= StartAngle
+					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+
+					debugoverlay.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
+
+					self.SimData.Pos			= Vector()
+
+					self.SimData.FlightDistance	= 0
+					self.SimData.FlightTime		= 0
+
+					self.SimData.LastMaxTime	= self.SimData.LastMaxTime * 0.9
+					self.SimData.EndTime		= math.max(self.SimData.EndTime,Clock.CurTime + self.SimData.LastMaxTime)
+
+					self.Thinking = true
+
+					self.Status = "Adjusting..."
+					self:UpdateOverlay()
+
+					return true
+				end
+			else
+				if Sim.Pos:DistToSqr(Sim.AdjustedTargetPos - Sim.StartPos) < ((((Sim.FlightDistance + (Sim.RelativeVel * ElapsedTime):Length()) / 100) * self.ComputerInfo.CalcError) ^ 2) then
+
+					WireLib.TriggerOutput(self, "Angle", Sim.StartAngle)
+					WireLib.TriggerOutput(self, "Flight Time", Sim.FlightTime)
+
+					self:HaltSimulation("Firing solution found!")
+
+					return false
+				else
+					Sim.AdjustedTargetPos = Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
+
+					local CorrectLateralDistance	= Sim.StartPos:Distance2D(Sim.AdjustedTargetPos)
+
+					local LateralDistance	= Sim.StartPos:Distance2D(Sim.StartPos + Sim.Pos)
+
+					local ErrorDir2D	= ((Sim.TargetPos - (Sim.StartPos + Sim.Pos)) * Vector(1,1,0)):GetNormalized()
+					local ErrorDist		= (Sim.StartPos + Sim.Pos):Distance2D(Sim.TargetPos)
+
+					debugoverlay.Line(Sim.StartPos + Sim.Pos,(Sim.StartPos + Sim.Pos) + ErrorDir2D * ErrorDist, 3, Color(255,0,0), true)
+
+					local LocalPosition = (Sim.AdjustedTargetPos - Sim.StartPos)
+
+					local AngleToTarget = LocalPosition:GetNormalized():Angle()
+					AngleToTarget:Normalize()
+					local NextAngle			= -90 + (Sim.StartAngle.p - -90) * (CorrectLateralDistance / math.max(1,LateralDistance))
+					if NextAngle > -25 then self:HaltSimulation("Target unable to be reached!") return false end
+					AngleToTarget.p			= math.Clamp(NextAngle,-90,-25)
+
+					local StartAngle	= Angle(AngleToTarget.p,AngleToTarget.y,0)
+
+					self.SimData.StartAngle		= StartAngle
+					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+
+					debugoverlay.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
+
+					self.SimData.Pos			= Vector()
+
+					self.SimData.FlightDistance	= 0
+					self.SimData.FlightTime		= 0
+
+					self.SimData.LastMaxTime	= self.SimData.LastMaxTime * 0.9
+					self.SimData.EndTime		= math.max(self.SimData.EndTime,Clock.CurTime + self.SimData.LastMaxTime)
+
+					self.Thinking = true
+
+					self.Status = "Adjusting..."
+					self:UpdateOverlay()
+
+					return true
+				end
+
+			end
+		end
+
+		-- Stops the simulation in its tracks and begins cooldown
+		function ENT:HaltSimulation(Reason)
+			self.Thinking	= false
+			self.SimData	= nil
+
+			if Reason then
+				self.Status = Reason
+			else
+				self.Status = ""
+			end
+
+			self.NextRun = Clock.CurTime + self.ComputerInfo.Delay
+
+			self:UpdateOverlay()
+		end
+
+		-- Actually runs the simulation, can call AdjustSimulation if it thinks the target has been reached
+		function ENT:RunSimulation()
+			local Sim			= self.SimData
+
+			local DeltaTime		= Sim.DeltaTime
+			local Drag			= Sim.Flight:GetNormalized() * (Sim.DragCoef * Sim.Flight:LengthSqr()) / Sim.DragDiv
+			local Correction	= 0.5 * (Sim.Accel - Drag) * DeltaTime
+
+			Sim.NextPos			= Sim.Pos + ACF.Scale * DeltaTime * (Sim.Flight + Correction)
+			Sim.Flight			= Sim.Flight + (Sim.Accel - Drag) * DeltaTime
+
+			local FlightDistance	= Sim.Pos:Distance(Sim.NextPos)
+
+			Sim.FlightTime		= Sim.FlightTime + DeltaTime
+			Sim.TotalTime		= Sim.TotalTime + DeltaTime
+
+			debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,5,Color(255,0,0),true)
+
+			local Dir = (Sim.NextPos - Sim.Pos):GetNormalized()
+
+			if not self.ComputerInfo.HighArc then
+				-- Gets the closest point in a line segment (current step of the trajectory)
+				local Point = Sim.Pos + (((Sim.AdjustedTargetPos - Sim.StartPos) - Sim.Pos):Dot(Dir)) / (Dir:Dot(Dir)) * Dir
+
+				if (Dir:Dot(Point - Sim.Pos) >= 0) and (Dir:Dot(Point - Sim.NextPos) <= 0) then
+
+					local Ratio = (Sim.Pos:Distance(Point)) / FlightDistance
+
+					debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,8,Color(0,255,0),true)
+					debugoverlay.Cross(Sim.StartPos + Sim.Pos,15,8,Color(255,0,0),true)
+
+					Sim.Pos		= Point
+
+					Sim.FlightDistance = Sim.FlightDistance + (FlightDistance * Ratio)
+
+					debugoverlay.Cross(Sim.StartPos + Point,15,8,Color(255,255,255),true)
+					debugoverlay.Cross(Sim.StartPos + Sim.NextPos,15,8,Color(0,255,0),true)
+
+					return self:AdjustSimulation()
+				else
+					Sim.FlightDistance = Sim.FlightDistance + FlightDistance
+				end
+			else
+				local HighZ = (Sim.StartPos + Sim.Pos).z
+				local LowZ	= (Sim.StartPos + Sim.NextPos).z
+				local TargetZ	= Sim.AdjustedTargetPos.z
+
+				if (HighZ >= TargetZ) and (LowZ <= TargetZ) and (Dir:Dot(Vector(0,0,-1)) >= 0) then -- Falling down and near the Z target
+					local Ratio = 1 - ((TargetZ - LowZ) / (HighZ - LowZ))
+
+					Sim.Pos		= Sim.Pos + ((Sim.NextPos - Sim.Pos) * Ratio)
+
+					Sim.FlightDistance = Sim.FlightDistance + (FlightDistance * Ratio)
+
+					return self:AdjustSimulation()
+				else
+					Sim.FlightDistance = Sim.FlightDistance + FlightDistance
+				end
+			end
+
+			Sim.Pos				= Sim.NextPos
+			return true
+		end
+
+		function ENT:Think()
+			if self.Thinking == false then
+				self:NextThink(Clock.CurTime + 0.1)
+				return true
+			else
+				if Clock.CurTime > self.SimData.EndTime then
+					self:HaltSimulation("Took too long!")
+
+					self:NextThink(Clock.CurTime + 0.1)
+					return true
+				end
+			end
+
+			-- Run simulation
+
+			for _ = 1,self.ComputerInfo.Bulk do
+				if not self.Thinking then break end
+				if not self:RunSimulation() then break end
+			end
+
+			self:NextThink(Clock.CurTime + self.ComputerInfo.ThinkTime)
+			return true
+		end
+	end
+
+	do	-- Dupe support
+		function ENT:PreEntityCopy()
+			if self.Gun then
+				duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
+			end
+
+			-- Wire dupe info
+			self.BaseClass.PreEntityCopy(self)
+		end
+
+		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+			local EntMods = Ent.EntityMods
+
+			if EntMods.ACFGun then
+				self:Link(CreatedEntities[EntMods.ACFGun[1]])
+
+				EntMods.ACFGun = nil
+			end
+
+			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 
 	do	-- ACF Funcs
 		function ENT:Enable()
 			self.Active	= true
+			self:HaltSimulation()
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= true
+			self:HaltSimulation("Disabled")
 			self:UpdateOverlay()
 		end
 
-		function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-			local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
-
+		function ENT:ACF_PostDamage()
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
-
-			return HitRes
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
-
-			self:UpdateOverlay()
-		end
-
-		function ENT:ACF_Activate(Recalc)
-			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * 6.45
-			local Armour	= self.ScaledArmor
-			local Health	= Area / ACF.Threshold
-			local Percent	= 1
-
-			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-				Percent = self.ACF.Health / self.ACF.MaxHealth
-			end
-
-			self.ACF.Area		= Area
-			self.ACF.Health		= Health * Percent
-			self.ACF.MaxHealth	= Health
-			self.ACF.Armour		= Armour * (0.5 + Percent * 0.5)
-			self.ACF.MaxArmour	= Armour
-			self.ACF.Type		= "Prop"
 		end
 
 		function ENT:SetActive(Active,Reason)
@@ -258,47 +604,6 @@ do	-- Metamethods and other important stuff
 			end
 
 			if Trigger then self:UpdateOverlay(true) end
-		end
-
-		function ENT:IsActive()
-			if not IsValid(self.Turret) then self:SetActive(false,"") return false end
-			local Turret = self.Turret
-
-			local LocPos	= Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
-			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.1) + 12) ^ 2
-			local LocDist	= Vector(LocPos.x,LocPos.y,0):Length2DSqr()
-
-			if LocDist > MaxDist then
-				self:SetActive(false,"Too far from ring!")
-				return false
-			end
-
-			if math.abs(LocPos.z) > ((Turret.TurretData.RingHeight * 1.5) + 12) then
-				self:SetActive(false,"Too far above/below ring!")
-				return false
-			end
-
-			if not IsValid(self:GetParent()) then
-				self:SetActive(false,"Must be parented!")
-				return false
-			end
-
-			if (self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
-				self:SetActive(false,"Must be parented to (or share parent with) the ring!")
-				return false
-			end
-
-			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.5 then
-				self:SetActive(false,"Too damaged!")
-				return false
-			end
-
-			if self.Active == false then self:SetActive(true,"") end
-			return true
-		end
-
-		function ENT:GetInfo()
-			return {Teeth = self.Teeth, Speed = self.Speed, Torque = self.Torque, Efficiency = self.Efficiency, Accel = self.Accel}
 		end
 	end
 end

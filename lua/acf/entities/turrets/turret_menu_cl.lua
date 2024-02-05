@@ -23,7 +23,8 @@ do	-- Turret ring
 			TotalMass	= 0,
 			RingSize	= Data.Size.Base,
 			RingHeight	= TurretClass.GetRingHeight({Type = "Turret-H",Ratio = Data.Size.Ratio},Data.Size.Base),
-			LocalCoM	= Vector()
+			LocalCoM	= Vector(),
+			Tilt		= 1
 		}
 
 		local RingSize	= Menu:AddSlider("Ring diameter (gmu)", Data.Size.Min, Data.Size.Max, 2)
@@ -238,7 +239,7 @@ do	-- Turret Motors
 			if TurretData.Ready == false then return end
 
 			--local Info = TurretClass.CalcInfo({Mass = TurretData.Mass, Size = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, Distance = TurretData.Distance},TurretClass.HandGear)
-			local Info = TurretClass.CalcSpeed({TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
+			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
 			TurretClass.HandGear)
 
 			Panel:SetText(HandcrankText:format(math.Round(Info.MaxSlewRate,2),math.Round(Info.SlewAccel,4)))
@@ -251,7 +252,7 @@ do	-- Turret Motors
 			--local Info = TurretClass.CalcInfo({Mass = TurretData.Mass, Size = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, Distance = TurretData.Distance},
 			--{Teeth = TurretData.MotorTeeth, Speed = Data.Speed, Torque = TurretData.Torque, Efficiency = Data.Efficiency})
 
-			local Info = TurretClass.CalcSpeed({TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
+			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
 			{Teeth = TurretData.MotorTeeth, Speed = Data.Speed, Torque = TurretData.Torque, Efficiency = Data.Efficiency, Accel	= Data.Accel})
 
 			Panel:SetText(MotorText:format(math.Round(Info.MaxSlewRate,2),math.Round(Info.SlewAccel,4)))

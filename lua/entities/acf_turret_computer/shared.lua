@@ -1,8 +1,8 @@
-DEFINE_BASECLASS("acf_base_scalable")
+DEFINE_BASECLASS("acf_base_simple")
 
-ENT.PrintName     	= "ACF Turret Motor"
-ENT.WireDebugName 	= "ACF Turret Motor"
-ENT.PluralName    	= "ACF Turret Motors"
+ENT.PrintName     	= "ACF Ballistic Computer"
+ENT.WireDebugName 	= "ACF Ballistic Computer"
+ENT.PluralName    	= "ACF Ballistic Computers"
 ENT.IsACFEntity   	= true
 
-cleanup.Register("_acf_turret_motor")
+cleanup.Register("_acf_turret_computer")

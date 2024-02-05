@@ -67,6 +67,7 @@ do	-- Turret drives
 				- RingSize	: Diameter of ring (gmu)
 				- RingHeight: Height of ring (gmu)
 				- Teeth		: Number of teeth of the turret ring
+				- Tilt		: 1 - On axis, 0 - Off axis, scales between
 
 			PowerData should include: (look at HandGear above for example, that can be directly fed to this function)
 				- Teeth		: Number of teeth of gear on input source
@@ -92,10 +93,13 @@ do	-- Turret drives
 			local Weight	= (TurretData.TotalMass * 9.81) / 1000
 			local Mz		= 0 -- Nm resistance to torque
 
+			local Mk,Fa,Fr
+
 			if TurretData.TurretClass == "Turret-H" then
 				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of axial dynamic forces (kN) (on balance load)
-				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4)) * (Diameter / 2000)
+				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
+				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
+				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
 			else
 				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
 
@@ -138,7 +142,7 @@ do	-- Turret drives
 			Description		= "The large stable base of a turret.",
 			Model			= "models/acf/core/t_ring.mdl",
 			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters < 12u, for RWS or other small turrets
-			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
 				Base		= 60,	-- The default size for the menu
@@ -387,55 +391,64 @@ end
 
 -- I will eventually work on this. Eventually.
 
---[[
+
 do	-- Turret computers
 	Turrets.Register("4-Computer",{
 		Name		= "Computers",
-		Description	= "Computer capable of calculating the optimal angle to hit a target.\nHas a delay between uses.",
+		Description	= "Computer capable of calculating the optimal angle to hit a target.\nLinks to a weapon to get bullet data, required for ballistics calculations.",
 		Entity		= "acf_turret_computer",
 		CreateMenu	= ACF.CreateTurretComputerMenu,
 		LimitConVar	= {
 			Name	= "_acf_turret_computer",
-			Amount	= 20,
+			Amount	= 4,
 			Text	= "Maximum number of ACF turret computers a player can create."
 		},
 	})
-	]]
 
 	--[[
 			Ballistic computers that should be linked to a gun to gather bulletdata, and have a Calculate input
 			When Calculate is triggered, Thinking flag is set so only one run can occur at once
 
 			After calculation is done, output Firing Solution [ANGLE] (global), Flight Time [NUMBER]
-		]]
-	--[[
+	]]
+
 	do	-- Computers
-
-
 		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
 			Name			= "Direct Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nHas a delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nThis is capable of constantly calculating to track a target at a constant velocity, as long as Calculate is true.\nHas a 2s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Mass			= 100,
 
-			Delay			= 3, -- Time after finishing before another calculation can run
-			MaxThinkTime	= 2, -- After this long the calculation will halt and return early, and return 0 on everything
-			ThinkTime		= 0.05,
-			CalcError		= 0.25, -- Lee-way in units per 100u of lateral distance
+			ComputerInfo	= {
+				ThinkTime		= 0.04, 	-- Speed of the actual think time
+				MaxThinkTime	= 4,		-- Maximum time to spend on a simulation
+				DeltaTime		= 0.2,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
+				CalcError		= 0.25,		-- Lee-way in units per 100u of lateral distance
+				HighArc			= false,	-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
+				Constant		= true,		-- Will constantly run as long as Calculate is 1
+				Bulk			= 8,		-- Number of calculations to perform per tick
+				Delay			= 2			-- Time after finishing before another calculation can run
+			},
 		})
 
 		Turrets.RegisterItem("IND-BalComp","4-Computer",{
 			Name			= "Indirect Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 3s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Mass			= 150,
 
-			Delay			= 5,
-			MaxThinkTime	= 7.5,
-			ThinkTime		= 0.1,
-			CalcError		= 3,
+			ComputerInfo	= {
+				ThinkTime		= 0.04,		-- Speed of the actual think time
+				MaxThinkTime	= 6,		-- Maximum time to spend on a simulation
+				DeltaTime		= 0.06,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
+				CalcError		= 0.05,		-- Lee-way in units per 100u of lateral distance
+				HighArc			= true,		-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
+				Constant		= false,
+				Bulk			= 10,		-- Number of calculations to perform per tick
+				Delay			= 3,		-- Time after finishing before another calculation can run
+			},
 		})
 	end
-end]]
+end
