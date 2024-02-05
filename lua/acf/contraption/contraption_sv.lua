@@ -226,22 +226,54 @@ do -- ACF Parent Detouring
 	end
 
 	hook.Add("Initialize", "ACF Parent Detour", function()
-		local EntMeta = FindMetaTable("Entity")
-		local SetParent = EntMeta.SetParent
+		timer.Simple(1,function()
+			local EntMeta = FindMetaTable("Entity")
+			local SetParent = SetParent or EntMeta.SetParent
+			local GetParent = GetParent or EntMeta.GetParent
 
-		function EntMeta:SetParent(Entity, ...)
-			if IsValid(Entity) then
-				local Detour = Detours[Entity:GetClass()]
+			function EntMeta:SetParent(Entity, ...)
+				if not IsValid(self) then return end
+				local SavedParent
+				if (IsValid(self:GetParent()) and self:GetParent().ACF_OnParented) and not IsValid(Entity) then
+					self:GetParent():ACF_OnParented(self,false)
+				end
 
-				if Detour then
-					Entity = Detour(Entity)
+				if IsValid(Entity) then
+					local Detour = Detours[Entity:GetClass()]
+
+					if Entity.ACF_OnParented then
+						SavedParent = Entity
+					end
+
+					if Detour then
+						Entity = Detour(Entity) or Entity
+					end
+				end
+
+				SetParent(self, Entity, ...)
+
+				if IsValid(SavedParent) then
+					SavedParent:ACF_OnParented(self,true)
 				end
 			end
 
-			SetParent(self, Entity, ...)
-		end
+			function EntMeta:GetParent()
+				if not IsValid(self) then return end
+				local Parent = GetParent(self)
 
-		hook.Remove("Initialize", "ACF Parent Detour")
+				if IsValid(Parent) then
+					local Detour = Detours[Parent:GetClass()]
+
+					if Detour then
+						Parent = Detour(Parent) or Parent
+					end
+				end
+
+				return Parent
+			end
+
+			hook.Remove("Initialize", "ACF Parent Detour")
+		end)
 	end)
 end
 
@@ -259,6 +291,10 @@ do -- ASSUMING DIRECT CONTROL
 
 			if Ent.IsACFEntity and Ent.ACF and Number ~= Ent.ACF.LegalMass then
 				return
+			end
+
+			if Ent.ACF_OnMassChange then
+				Ent:ACF_OnMassChange(self:GetMass(), Number)
 			end
 
 			SetMass(self, Number)
