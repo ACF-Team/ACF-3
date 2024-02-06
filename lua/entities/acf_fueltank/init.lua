@@ -514,11 +514,11 @@ function ENT:Consume(Amount, SelfTbl)
 
 	if SelfTbl.LastFuel ~= Fuel then
 		SelfTbl.LastFuel = Fuel
-		WireLib.TriggerOutput(SelfTbl, "Fuel", Fuel)
+		WireLib.TriggerOutput(self, "Fuel", Fuel)
 	end
 	if SelfTbl.LastActivated ~= Activated then
 		SelfTbl.LastActivated = Activated
-		WireLib.TriggerOutput(SelfTbl, "Activated", Activated)
+		WireLib.TriggerOutput(self, "Activated", Activated)
 	end
 end
 
