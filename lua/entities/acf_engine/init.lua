@@ -546,19 +546,19 @@ function ENT:UpdateOutputs(SelfTbl)
 
 	if SelfTbl.LastFuelUsage ~= FuelUsage then
 		SelfTbl.LastFuelUsage = FuelUsage
-		WireLib.TriggerOutput(SelfTbl, "Fuel Use", FuelUsage)
+		WireLib.TriggerOutput(self, "Fuel Use", FuelUsage)
 	end
 	if SelfTbl.LastTorque ~= Torque then
 		SelfTbl.LastTorque = Torque
-		WireLib.TriggerOutput(SelfTbl, "Torque", Torque)
+		WireLib.TriggerOutput(self, "Torque", Torque)
 	end
 	if SelfTbl.LastPower ~= Power then
 		SelfTbl.LastPower = Power
-		WireLib.TriggerOutput(SelfTbl, "Power", Power)
+		WireLib.TriggerOutput(self, "Power", Power)
 	end
 	if SelfTbl.LastRPM ~= FlyRPM then
 		SelfTbl.LastRPM = FlyRPM
-		WireLib.TriggerOutput(SelfTbl, "RPM", FlyRPM)
+		WireLib.TriggerOutput(self, "RPM", FlyRPM)
 	end
 end
 
@@ -684,11 +684,11 @@ function ENT:CalcMassRatio(SelfTbl)
 
 	if SelfTbl.LastTotalMass ~= TotalMass then
 		SelfTbl.LastTotalMass = TotalMass
-		WireLib.TriggerOutput(SelfTbl, "Mass", Round(TotalMass, 2))
+		WireLib.TriggerOutput(self, "Mass", Round(TotalMass, 2))
 	end
 	if SelfTbl.LastPhysMass ~= PhysMass then
 		SelfTbl.LastPhysMass = PhysMass
-		WireLib.TriggerOutput(SelfTbl, "Physical Mass", Round(PhysMass, 2))
+		WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
 	end
 end
 
