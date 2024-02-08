@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF          = ACF
+local Contraption  = ACF.Contraption
 local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
@@ -423,7 +424,6 @@ do -- ACF Activation and Damage -----------------
 	local Sounds      = Utilities.Sounds
 	local Damage      = ACF.Damage
 	local Objects     = Damage.Objects
-	local Contraption = ACF.Contraption
 
 	local function CookoffCrate(Entity)
 		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
@@ -601,14 +601,8 @@ end ---------------------------------------------
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
 		local Mass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
-		local Phys = Ent:GetPhysicsObject()
 
-		if IsValid(Phys) then
-			Ent.ACF.Mass      = Mass
-			Ent.ACF.LegalMass = Mass
-
-			Phys:SetMass(Ent.ACF.LegalMass)
-		end
+		Contraption.SetMass(Ent,Mass)
 	end
 
 	-------------------------------------------------------------------------------

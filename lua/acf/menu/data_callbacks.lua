@@ -39,6 +39,19 @@ local Settings = {
 
 		Message("Info", "Legality checks for ACF entities have been " .. (Bool and "enabled." or "disabled."))
 	end,
+	NameAndShame = function(Player, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.NameAndShame == Bool then return end
+
+		ACF.NameAndShame = Bool
+
+		if CLIENT and not IsValid(Player) then return end
+
+		if not ACF.LegalChecks then return end
+
+		Message("Info", "Public shaming for illegal actions has been " .. (Bool and "enabled." or "disabled."))
+	end,
 	VehicleLegalChecks = function(Player, _, Value)
 		local Bool = tobool(Value)
 

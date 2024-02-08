@@ -8,6 +8,7 @@ include("shared.lua")
 --===============================================================================================--
 
 local Damage      = ACF.Damage
+local Contraption = ACF.Contraption
 local Objects     = Damage.Objects
 local ActiveTanks = ACF.FuelTanks
 local Utilities   = ACF.Utilities
@@ -118,7 +119,7 @@ do -- Spawn and Update functions
 		if Class.IsScalable then
 			Entity:SetSize(Data.Size)
 		else
-			Entity:SetModel(Entity.ACF.Model)
+			Contraption.SetModel(Entity, Entity.ACF.Model)
 			Entity:PhysicsInit(SOLID_VPHYSICS, true)
 			Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		end
@@ -202,6 +203,8 @@ do -- Spawn and Update functions
 		local Tank = ents.Create("acf_fueltank")
 
 		if not IsValid(Tank) then return end
+
+		Tank.ACF		= Tank.ACF or {}
 
 		Tank:SetPlayer(Player)
 		Tank:SetScaledModel(Model)
@@ -418,14 +421,8 @@ do -- Mass Update
 		SelfTbl = SelfTbl or Entity:GetTable()
 		local Fuel    = SelfTbl.FuelType == "Electric" and SelfTbl.Liters or SelfTbl.Fuel
 		local Mass    = math.floor(SelfTbl.EmptyMass + Fuel * SelfTbl.FuelDensity)
-		local PhysObj = Entity:GetPhysicsObject()
 
-		if IsValid(PhysObj) then
-			SelfTbl.ACF.Mass      = Mass
-			SelfTbl.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	function ENT:UpdateMass(Instant, SelfTbl)

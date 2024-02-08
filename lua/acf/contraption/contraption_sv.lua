@@ -278,52 +278,146 @@ do -- ACF Parent Detouring
 end
 
 do -- ASSUMING DIRECT CONTROL
-	local ENT = FindMetaTable("Entity")
-	local OBJ = FindMetaTable("PhysObj")
 
-	do -- SetMass
-		-- Reject any changes to mass on ACF entities
-		-- Mass can only be set to whatever Ent.ACF.LegalMass is
-		local SetMass = SetMass or OBJ.SetMass
+	local BlockedTools = {
+		proper_clipping	= true,
+		makespherical	= true
+	}
 
-		function OBJ:SetMass(Number)
-			local Ent = self:GetEntity()
+	local BlockedGroups = {
+		[COLLISION_GROUP_DEBRIS]		= true,
+		[COLLISION_GROUP_IN_VEHICLE]	= true,
+		[COLLISION_GROUP_VEHICLE_CLIP]	= true,
+		[COLLISION_GROUP_DOOR_BLOCKER]	= true
+	}
 
-			if Ent.IsACFEntity and Ent.ACF and Number ~= Ent.ACF.LegalMass then
-				return
+	-- If allowed, will remove existing makespherical dupe modifiers on ACF entities
+	hook.Add("OnEntityCreated", "ACF Exploitables Stubbing", function(Entity)
+		if not ACF.LegalChecks then return end
+		if not IsValid(Entity) then return end
+		if not Entity.IsACFEntity then return end
+
+		duplicator.ClearEntityModifier(Entity, "sphere")
+		duplicator.ClearEntityModifier(Entity, "MakeSphericalCollisions")
+	end)
+
+	-- This, if allowed, will prevent physical clips from happening on ACF entities, except for procedural armor
+	hook.Add("ProperClippingCanPhysicsClip", "ACF Block PhysicsClip", function(Entity)
+		if not ACF.LegalChecks then return true end
+		if Entity.IsACFArmor then return true end
+		if Entity.IsACFEntity then return false end
+	end)
+
+	-- This, if allowed, will block ProperClipping from putting clips on any ACF entities, except for procedural armor
+	hook.Add("CanTool", "ACF Block ProperClipping", function(_, Trace, Tool)
+		if not ACF.LegalChecks then return end
+
+		if not BlockedTools[Tool] then return end
+
+		-- Special case, allow this but block on everything else
+		if Trace.Entity.IsACFArmor and Tool == "proper_clipping" then return true end
+
+		if Trace.Entity.IsACFEntity then return false end
+	end)
+
+	hook.Add("Initialize", "ACF Meta Detour",function()
+		timer.Simple(1,function()
+			Contraption.Detours = Contraption.Detours or {
+				ENT			= {},
+				OBJ			= {},
+			}
+
+			local ENT = FindMetaTable("Entity")
+			local OBJ = FindMetaTable("PhysObj")
+
+			local EntDetours	= Contraption.Detours.ENT
+			local ObjDetours	= Contraption.Detours.OBJ
+
+			local SetMass		= OBJ.SetMass
+			ObjDetours.SetMass	= SetMass
+
+			local SetNoDraw					= ENT.SetNoDraw
+			local SetModel					= ENT.SetModel
+			local PhysicsInitSphere			= ENT.PhysicsInitSphere
+			local SetCollisionBounds		= ENT.SetCollisionBounds
+			local SetCollisionGroup			= ENT.SetCollisionGroup
+			local SetNotSolid				= ENT.SetNotSolid
+			EntDetours.SetNoDraw			= SetNoDraw
+			EntDetours.SetModel				= SetModel
+			EntDetours.PhysicsInitSphere	= PhysicsInitSphere
+			EntDetours.SetCollisionBounds	= SetCollisionBounds
+			EntDetours.SetCollisionGroup	= SetCollisionGroup
+			EntDetours.SetNotSolid			= SetNotSolid
+
+			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
+			function Contraption.SetMass(Entity, Mass)
+				Entity.ACF.Mass	=	 Mass
+
+				if Entity.ACF_OnMassChange then
+					Entity:ACF_OnMassChange(Entity:GetPhysicsObject():GetMass(), Mass)
+				end
+
+				SetMass(Entity:GetPhysicsObject(), Mass)
 			end
 
-			if Ent.ACF_OnMassChange then
-				Ent:ACF_OnMassChange(self:GetMass(), Number)
+			function Contraption.SetModel(Entity, Model)
+				Entity.ACF.Model	= Model
+
+				SetModel(Entity, Model)
 			end
 
-			SetMass(self, Number)
-		end
-	end
+			function OBJ:SetMass(Mass)
+				local Ent = self:GetEntity()
 
-	do -- SetModel
-		-- Reject any changes to the model on ACF entities
-		-- Models can only be set to whatever Ent.ACF.Model is
-		local SetModel = SetModel or ENT.SetModel
+				-- Required due for AD2 support, if this isn't present then entities will never get set to their required weight on dupe paste
+				if Ent.IsACFEntity then Contraption.SetMass(self, Ent.ACF.Mass) return end
 
-		function ENT:SetModel(String)
-			if self.IsACFEntity and self.ACF and String ~= self.ACF.Model then
-				return
+				if Ent.ACF_OnMassChange then
+					Ent:ACF_OnMassChange(self:GetMass(), Mass)
+				end
+
+				SetMass(self, Mass)
 			end
 
-			SetModel(self, String)
-		end
-	end
+			function ENT:SetModel(Model)
+				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
 
-	do -- SetNoDraw
-		local SetNoDraw = SetNoDraw or ENT.SetNoDraw
-
-		function ENT:SetNoDraw(Bool)
-			if Bool and self.IsACFEntity then
-				return
+				SetModel(self, Model)
 			end
 
-			SetNoDraw(self, Bool)
-		end
-	end
+			-- All of these should prevent the relevant functions from occurring on ACF entities, but only if LegalChecks are enabled
+			-- Will also call ACF.CheckLegal at the same time as preventing the function usage, because likely something else is amiss
+			function ENT:PhysicsInitSphere(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return false end
+
+				return PhysicsInitSphere(self, ...)
+			end
+
+			function ENT:SetCollisionBounds(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return end
+
+				SetCollisionBounds(self, ...)
+			end
+
+			function ENT:SetCollisionGroup(Group)
+				if self.IsACFEntity and ACF.LegalChecks and (BlockedGroups[Group] == true) then ACF.CheckLegal(self) return end
+
+				SetCollisionGroup(self, Group)
+			end
+
+			function ENT:SetNoDraw(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return end
+
+				SetNoDraw(self, ...)
+			end
+
+			function ENT:SetNotSolid(...)
+				if self.IsACFEntity then ACF.CheckLegal(self) end
+
+				SetNotSolid(self, ...)
+			end
+
+			hook.Remove("Initialize","ACF Meta Detour")
+		end)
+	end)
 end

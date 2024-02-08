@@ -8,6 +8,7 @@ include("shared.lua")
 -- Local variables ---------------------------------
 
 local ACF       = ACF
+local Contraption	= ACF.Contraption
 local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
 local Clamp     = math.Clamp
@@ -108,9 +109,8 @@ do -- Spawn and Update functions -----------------------
 		local Mass = Gearbox.Mass
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = Gearbox.Model -- Must be set before changing model
 
-		Entity:SetModel(Gearbox.Model)
+		Contraption.SetModel(Entity, Gearbox.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
@@ -143,14 +143,7 @@ do -- Spawn and Update functions -----------------------
 
 		ACF.Activate(Entity, true)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 
 		Entity:ChangeGear(1)
 
@@ -737,7 +730,6 @@ end ----------------------------------------------------
 
 do -- Movement -----------------------------------------
 	local deg         = math.deg
-	local Contraption = ACF.Contraption
 
 	local function ActWheel(Link, Wheel, Torque, DeltaTime)
 		local Phys = Wheel:GetPhysicsObject()

@@ -177,16 +177,9 @@ do	-- Spawn and Update funcs
 
 		Entity.DamageScale		= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
 
-		local PhysObj = Entity:GetPhysicsObject()
+		local Mass = GetMass(Turret,Data)
 
-		if IsValid(PhysObj) then
-			local Mass = GetMass(Turret,Data)
-
-			Entity.ACF.Mass			= Mass
-			Entity.ACF.LegalMass	= Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	------------------
@@ -252,13 +245,15 @@ do	-- Spawn and Update funcs
 			Model	= Turret.ModelSmall
 		end
 
-		Entity:SetModel(Model)
+		Entity.ACF				= {}
+
+		Contraption.SetModel(Entity, Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF				= {}
 		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret")
 		Entity.MassCheckDelay 	= 0
@@ -485,7 +480,7 @@ do	-- Spawn and Update funcs
 		for k in pairs(Entity.SubTurrets) do
 			if not IsValid(k) then continue end
 
-			Mass = Mass + k:GetTotalMass() + k.ACF.LegalMass
+			Mass = Mass + k:GetTotalMass() + k.ACF.Mass
 			AddCoM[k] = true
 		end
 
@@ -564,9 +559,9 @@ do	-- Spawn and Update funcs
 		local PhysObj = self:GetPhysicsObject()
 		if not IsValid(PhysObj) then return Vector() end
 
-		local MassTotal = self:GetTotalMass() + self.ACF.LegalMass
+		local MassTotal = self:GetTotalMass() + self.ACF.Mass
 
-		self.TurretData.LocalCoM = (PhysObj:GetMassCenter() * (self.ACF.LegalMass / MassTotal)) + (self.StaticCoM * (self.StaticMass / MassTotal)) + (self.DynamicCoM * (self.DynamicMass / MassTotal)) + (self.SubTurretCoM * (self.SubTurretMass / MassTotal))
+		self.TurretData.LocalCoM = (PhysObj:GetMassCenter() * (self.ACF.Mass / MassTotal)) + (self.StaticCoM * (self.StaticMass / MassTotal)) + (self.DynamicCoM * (self.DynamicMass / MassTotal)) + (self.SubTurretCoM * (self.SubTurretMass / MassTotal))
 
 		self:UpdateOverlay()
 		return self.TurretData.LocalCoM

@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local HookRun		= hook.Run
@@ -93,16 +94,7 @@ do	-- Spawn and Update funcs
 
 		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			local Mass = GetMass(Motor,Data)
-
-			Entity.ACF.Mass			= Mass
-			Entity.ACF.LegalMass	= Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, GetMass(Motor,Data))
 	end
 
 	function MakeACF_TurretMotor(Player, Pos, Angle, Data)
@@ -126,13 +118,15 @@ do	-- Spawn and Update funcs
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Motor.Model)
+		Entity.ACF				= {}
+
+		Contraption.SetModel(Entity, Motor.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF				= {}
 		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_motor")
 

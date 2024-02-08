@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF       = ACF
+local Contraption	= ACF.Contraption
 local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
 local hook      = hook
@@ -147,14 +148,7 @@ do -- Spawning and Updating --------------------
 
 		ACF.Activate(Entity, true)
 
-		local Phys = Entity:GetPhysicsObject()
-
-		if IsValid(Phys) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			Phys:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	-------------------------------------------------------------------------------
@@ -176,13 +170,15 @@ do -- Spawning and Updating --------------------
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Class.Model) -- NOTE: ENT:SetScale didn't work properly without this
+		Entity.ACF          = {}
+
+		Contraption.SetModel(Entity, Class.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.RoundData    = AmmoType()
 		Entity.LastThink    = Clock.CurTime

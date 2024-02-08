@@ -4,6 +4,7 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 local ACF = ACF
+local Contraption	= ACF.Contraption
 
 do -- Spawning and Updating
 	local Classes  = ACF.Classes
@@ -224,14 +225,8 @@ do -- Mass Update
 	local function UpdateMass(Entity)
 		local Size = Entity.Size
 		local Mass = Entity.ArmorClass:GetMass(Size.x * Size.y * Size.z)
-		local PhysObj = Entity:GetPhysicsObject()
 
-		if IsValid(PhysObj) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	function ENT:UpdateMass(Instant)

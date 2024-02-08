@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local Clock			= Utilities.Clock
@@ -52,14 +53,6 @@ do	-- Spawn and Update funcs
 	------------------
 
 	local function UpdateComputer(Entity, Data, Class, Computer)
-		local Model		= Computer.Model
-
-		Entity:SetModel(Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		Entity.ACF.Model	= Model
 		Entity.Name			= Computer.Name
 		Entity.ShortName	= Computer.ID
 		Entity.EntType		= Class.Name
@@ -91,16 +84,8 @@ do	-- Spawn and Update funcs
 
 		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			local Mass = Computer.Mass
-
-			Entity.ACF.Mass			= Mass
-			Entity.ACF.LegalMass	= Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		local Mass = Computer.Mass
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	function MakeACF_BallisticComputer(Player, Pos, Angle, Data)
@@ -124,13 +109,16 @@ do	-- Spawn and Update funcs
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Computer.Model)
+		Entity.ACF				= {}
+
+		Contraption.SetModel(Entity, Computer.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF				= {}
+
 		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_computer")
 

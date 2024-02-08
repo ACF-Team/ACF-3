@@ -276,9 +276,8 @@ do -- Spawn and Update functions
 		local Mass = Engine.Mass
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = Engine.Model
 
-		Entity:SetModel(Engine.Model)
+		Contraption.SetModel(Entity, Engine.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
@@ -333,14 +332,7 @@ do -- Spawn and Update functions
 
 		ACF.Activate(Entity, true)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	function MakeACF_Engine(Player, Pos, Angle, Data)

@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars
 
 local ACF			= ACF
+local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
 local HookRun		= hook.Run
@@ -44,14 +45,11 @@ do	-- Spawn and Update funcs
 	------------------
 
 	local function UpdateGyro(Entity, Data, Class, Gyro)
-		local Model			= Gyro.Model
-
-		Entity:SetModel(Model)
+		Contraption.SetModel(Entity, Gyro.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		Entity.ACF.Model	= Model
 		Entity.Name			= Gyro.Name
 		Entity.ShortName	= Gyro.ID
 		Entity.EntType		= Class.Name
@@ -76,16 +74,7 @@ do	-- Spawn and Update funcs
 
 		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			local Mass				= Gyro.Mass
-
-			Entity.ACF.Mass			= Mass
-			Entity.ACF.LegalMass	= Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Gyro.Mass)
 
 		if IsValid(Entity.Turret) then
 			Entity.Turret:UpdateTurretSlew()
@@ -113,13 +102,15 @@ do	-- Spawn and Update funcs
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Gyro.Model)
+		Entity.ACF				= {}
+
+		Contraption.SetModel(Entity, Gyro.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF				= {}
 		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_gyro")
 

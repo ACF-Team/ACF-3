@@ -1,4 +1,5 @@
 local ACF = ACF
+local Contraption	= ACF.Contraption
 local IsValid = IsValid
 
 TOOL.Category	= (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
@@ -40,9 +41,7 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	Entity.ACF.Ductility = Ductility * 0.01
 
 	if Mass ~= Entity.ACF.Mass then
-		Entity.ACF.Mass = Mass
-
-		PhysObj:SetMass(Mass)
+		Contraption.SetMass(Entity, Mass)
 	end
 end
 

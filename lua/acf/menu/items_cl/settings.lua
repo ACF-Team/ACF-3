@@ -76,6 +76,11 @@ do -- Clientside settings
 		Hints:SetConVar("acf_legalhints")
 	end)
 
+	ACF.AddClientSettings(251, "Legal Check Name and Shame", function(Base)
+		local Hints = Base:AddCheckBox("Enable receiving console messages for entities getting disabled.")
+		Hints:SetConVar("acf_legalshame")
+	end)
+
 	ACF.AddClientSettings(301, "Debris", function(Base)
 		local Debris = Base:AddCheckBox("Allow creation of clientside debris.")
 		Debris:SetConVar("acf_debris")
@@ -144,6 +149,14 @@ do -- Serverside settings
 		local VehicleLegalChecks = Base:AddCheckBox("Enable legality checks on vehicle entities.")
 		VehicleLegalChecks:SetServerData("VehicleLegalChecks", "OnChange")
 		VehicleLegalChecks:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
+		local LegalCheckNameAndShame = Base:AddCheckBox("Pubicly shame someone in everyone's console for a failed legal check.")
+		LegalCheckNameAndShame:SetServerData("NameAndShame", "OnChange")
+		LegalCheckNameAndShame:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value

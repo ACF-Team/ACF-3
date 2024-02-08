@@ -6,6 +6,7 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF         = ACF
+local Contraption = ACF.Contraption
 local Classes     = ACF.Classes
 local AmmoTypes   = Classes.AmmoTypes
 local Utilities   = ACF.Utilities
@@ -189,10 +190,7 @@ do -- Spawn and Update functions --------------------------------
 		if IsValid(PhysObj) then
 			local Mass = GetMass(Model, PhysObj, Class, Weapon)
 
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
+			Contraption.SetMass(Entity, Mass)
 		end
 	end
 
@@ -232,14 +230,15 @@ do -- Spawn and Update functions --------------------------------
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		-- The model isn't automatically updated, so this is required
-		Entity:SetModel(Weapon and Weapon.Model or Class.Model)
+		Entity.ACF			= {}
+
+		Contraption.SetModel(Entity, Weapon and Weapon.Model or Class.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.BarrelFilter = { Entity }
 		Entity.State        = "Empty"
@@ -435,8 +434,6 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
-		local Contraption = ACF.Contraption
-
 		local TraceRes  = {} -- Output for traces
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
 

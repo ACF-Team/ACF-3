@@ -2,6 +2,7 @@
 
 -- Settings
 ACF.PersistServerData("LegalChecks", true)
+ACF.PersistServerData("NameAndShame", false)
 ACF.PersistServerData("VehicleLegalChecks", true)
 ACF.PersistServerData("ServerDataAllowAdmin", false)
 ACF.PersistServerData("RestrictInfo", true)

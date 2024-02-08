@@ -1,4 +1,5 @@
 local ACF = ACF
+local ReceiveShame = GetConVar("acf_legalshame")
 
 do -- Custom fonts
 	surface.CreateFont("ACF_Title", {
@@ -33,6 +34,11 @@ do -- Networked notifications
 		end
 
 		notification.AddLegacy(net.ReadString(), Type, 7)
+	end)
+
+	net.Receive("ACF_NameAndShame", function()
+		if not ReceiveShame:GetBool() then return end
+		MsgN(net.ReadString())
 	end)
 end
 

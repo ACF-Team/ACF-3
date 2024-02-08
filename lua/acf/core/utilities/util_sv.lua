@@ -2,6 +2,20 @@ local ACF = ACF
 
 do -- Networked notifications
 	util.AddNetworkString("ACF_Notify")
+	util.AddNetworkString("ACF_NameAndShame")
+
+	function ACF.Shame(Entity, Message)
+		if not ACF.NameAndShame then return end
+		local Owner = Entity:CPPIGetOwner()
+
+		if not IsValid(Owner) then return end
+
+		MsgN("ACF Legal: " .. Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message)
+
+		net.Start("ACF_NameAndShame")
+			net.WriteString("ACF Legal: " .. Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message)
+		net.Broadcast()
+	end
 
 	function ACF.SendNotify(Player, Success, Message)
 		net.Start("ACF_Notify")
