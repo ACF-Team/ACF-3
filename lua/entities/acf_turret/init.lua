@@ -15,6 +15,9 @@ local Clock			= Utilities.Clock
 local HookRun		= hook.Run
 local TimerSimple	= timer.Simple
 
+local MaxLinkDistance = ACF.LinkDistance ^ 2
+local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+
 do	-- Spawn and Update funcs
 	local WireIO	= Utilities.WireIO
 	local Entities	= Classes.Entities
@@ -502,6 +505,23 @@ do	-- Spawn and Update funcs
 		local Stabilized	= false
 		local StabilizeAmount	= 0
 		local SoundPath		= SlewInput.Sound
+		local MaxDistance 	= (((self.TurretData.RingSize / 2) * 1.2) + 12) ^ 2
+
+		if IsValid(self.Motor) and self.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
+			local USound = UnlinkSound:format(math.random(1, 3))
+
+			Sounds.SendSound(self, USound, 70, 100, 1)
+			Sounds.SendSound(self.Motor, USound, 70, 100, 1)
+			self:Unlink(self.Motor)
+
+			-- No sense checking for this separately since it can't function without the motor anyway
+			-- Using separate link distance as gyros can be parented to other things
+			if IsValid(self.Gyro) and self.Gyro:GetPos():DistToSqr(self:GetPos()) > MaxLinkDistance then
+				Sounds.SendSound(self, USound, 70, 100, 1)
+				Sounds.SendSound(self.Gyro, USound, 70, 100, 1)
+				self:Unlink(self.Gyro)
+			end
+		end
 
 		if IsValid(self.Motor) and self.Motor:IsActive() then
 			SlewInput	= self.Motor:GetInfo()
@@ -636,6 +656,7 @@ do -- Metamethods
 			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
+			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12) ^ 2) then return false, "This motor is too far from the turret!" end
 
 			This.Motor		= Motor
 			Motor.Turret	= This
@@ -672,10 +693,12 @@ do -- Metamethods
 			if IsValid(This.Gyro) then return false, "This turret already has a gyro linked!" end
 			if Gyro.IsDual then
 				if IsValid(Gyro[This.ID]) then return false, "This gyro is already linked to this type of turret!" end
+				if This:GetPos():DistToSqr(Gyro:GetPos()) > MaxLinkDistance then return false, "This gyro is too far from the turret!" end
 
 				Gyro[This.ID]	= This
 			else
 				if IsValid(Gyro.Turret) and (Gyro.Turret ~= This) then return false, "This gyro is already linked to a turret!" end
+				if This:GetPos():DistToSqr(Gyro:GetPos()) > MaxLinkDistance then return false, "This gyro is too far from the turret!" end
 
 				Gyro.Turret		= This
 			end

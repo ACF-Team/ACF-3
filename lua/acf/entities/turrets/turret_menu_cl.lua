@@ -143,12 +143,47 @@ do	-- Turret ring
 		Menu:AddLabel("Approximation of speed of the turret, with a handcrank.")
 		local HandCrankLbl	= Menu:AddLabel(HandCrankText:format(0,0))
 
+		local Graph		= Menu:AddGraph()
+		local GraphSize	= Menu:GetParent():GetParent():GetWide()
+		Graph:SetSize(GraphSize, GraphSize / 2)
+		Graph:SetXLabel("Estimated Mass (kg)")
+		Graph:SetYLabel("Degrees/sec")
+		Graph:SetXRange(0,100000)
+		Graph:SetXSpacing(10000)
+		Graph:SetYSpacing(5)
+
 		HandCrankLbl.UpdateSim = function(Panel)
 			if TurretData.Ready == false then return end
 
 			local Info = TurretClass.CalcSpeed(TurretData,TurretClass.HandGear)
 
 			Panel:SetText(HandCrankText:format(math.Round(Info.MaxSlewRate,2),math.Round(Info.SlewAccel,4)))
+
+			local SimTurretData = {
+				LocalCoM	= TurretData.LocalCoM,
+				RingSize	= TurretData.RingSize,
+				RingHeight	= TurretData.RingHeight,
+				Teeth		= TurretData.Teeth,
+				Tilt		= 1,
+				TurretClass	= TurretData.TurretClass,
+				TotalMass	= 0
+			}
+
+			local Points	= {}
+
+			for I = 1, 101 do
+				local Mass = 1000 * (I - 1)
+				SimTurretData.TotalMass = Mass
+
+				Points[I] = {x = Mass, y = TurretClass.CalcSpeed(SimTurretData, TurretClass.HandGear).MaxSlewRate}
+			end
+
+			Graph:SetYRange(0, Points[1].y * 1.1)
+
+			Graph:Clear()
+			Graph:PlotTable("Slew Rate", Points, Color(65,65,200))
+
+			Graph:PlotPoint("Estimate", TurretData.TotalMass, Info.MaxSlewRate, Color(65,65,200))
 		end
 
 		RingSize:SetClientData("RingSize", "OnValueChanged")
@@ -179,7 +214,7 @@ do	-- Turret ring
 		end
 
 		EstDist.OnValueChanged = function(_, Value)
-			TurretData.LocalCoM = Vector(Value,0,0)
+			TurretData.LocalCoM = Vector(Value,0,Value)
 
 			HandCrankLbl:UpdateSim()
 		end
@@ -194,7 +229,17 @@ do	-- Turret ring
 end
 
 do	-- Turret Motors
-	local TurretData = {Ready = false, Mass = 0, TurretType = "Turret-H", TurretTeeth = 0, MotorTeeth = 0, Torque = 0, Distance = 0}
+	local TurretData = {
+		Ready		= false,
+		Mass		= 0,
+		TurretType	= "Turret-H",
+		TurretTeeth	= 0,
+		MotorTeeth	= 0,
+		Torque		= 0,
+		Distance	= 0,
+		HandSim		= 0,
+		MotorSim	= 0
+	}
 
 	local TorqText	= "%GNm Torque"
 	local HandcrankText = "--HANDCRANK--\nMax Speed: %G deg/s\nAccel: %G deg/s^2"
@@ -234,28 +279,80 @@ do	-- Turret Motors
 
 		local EstDist = TurretSim:AddSlider("Center of mass distance (gmu)", 0, 2, 2)
 
+		local Graph		= Menu:AddGraph()
+		local GraphSize	= Menu:GetParent():GetParent():GetWide()
+		Graph:SetSize(GraphSize, GraphSize / 2)
+		Graph:SetXLabel("Estimated Mass (kg)")
+		Graph:SetYLabel("Degrees/sec")
+		Graph:SetXRange(0,100000)
+		Graph:SetXSpacing(10000)
+		Graph:SetYSpacing(5)
+
+		Graph.Replot = function(self)
+			self:Clear()
+
+			local SimTurretData = {
+				LocalCoM	= Vector(TurretData.Distance,0,TurretData.Distance),
+				RingSize	= TurretData.Size,
+				RingHeight	= TurretData.RingHeight,
+				Teeth		= TurretData.TurretTeeth,
+				Tilt		= 1,
+				TurretClass	= TurretData.Type,
+				TotalMass	= 0
+			}
+
+			local SimMotorData = {
+				Teeth	= TurretData.MotorTeeth,
+				Speed	= Data.Speed,
+				Torque	= TurretData.Torque,
+				Efficiency	= Data.Efficiency,
+				Accel	= Data.Accel
+			}
+
+			local HandCrankPoints	= {}
+			local MotorPoints		= {}
+
+			for I = 1, 101 do
+				local Mass = 1000 * (I - 1)
+				SimTurretData.TotalMass = Mass
+
+				HandCrankPoints[I] = {x = Mass, y = TurretClass.CalcSpeed(SimTurretData, TurretClass.HandGear).MaxSlewRate}
+				MotorPoints[I] = {x = Mass, y = TurretClass.CalcSpeed(SimTurretData, SimMotorData).MaxSlewRate}
+			end
+
+			self:SetYRange(0, math.max(MotorPoints[1].y, HandCrankPoints[1].y) * 1.1)
+
+			self:PlotTable("Hand Rate", HandCrankPoints, Color(65,65,200))
+			self:PlotPoint("Hand Estimate", TurretData.Mass, TurretData.HandSim, Color(65,65,200))
+
+			self:PlotTable("Motor Rate", MotorPoints, Color(200,65,65))
+			self:PlotPoint("Motor Estimate", TurretData.Mass, TurretData.MotorSim, Color(200,65,65))
+		end
+
 		local HandcrankInfo	= TurretSim:AddLabel(HandcrankText:format(0,0))
 		HandcrankInfo.UpdateSim = function(Panel)
 			if TurretData.Ready == false then return end
 
-			--local Info = TurretClass.CalcInfo({Mass = TurretData.Mass, Size = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, Distance = TurretData.Distance},TurretClass.HandGear)
-			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
+			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
 			TurretClass.HandGear)
 
 			Panel:SetText(HandcrankText:format(math.Round(Info.MaxSlewRate,2),math.Round(Info.SlewAccel,4)))
+
+			TurretData.HandSim = Info.MaxSlewRate
+			Graph:Replot()
 		end
 
 		local MotorInfo	= TurretSim:AddLabel(MotorText:format(0,0))
 		MotorInfo.UpdateSim = function(Panel)
 			if TurretData.Ready == false then return end
 
-			--local Info = TurretClass.CalcInfo({Mass = TurretData.Mass, Size = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, Distance = TurretData.Distance},
-			--{Teeth = TurretData.MotorTeeth, Speed = Data.Speed, Torque = TurretData.Torque, Efficiency = Data.Efficiency})
-
-			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,0), RingHeight = TurretData.RingHeight},
+			local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
 			{Teeth = TurretData.MotorTeeth, Speed = Data.Speed, Torque = TurretData.Torque, Efficiency = Data.Efficiency, Accel	= Data.Accel})
 
 			Panel:SetText(MotorText:format(math.Round(Info.MaxSlewRate,2),math.Round(Info.SlewAccel,4)))
+
+			TurretData.MotorSim = Info.MaxSlewRate
+			Graph:Replot()
 		end
 
 		-- Updating functions
@@ -339,14 +436,6 @@ do	-- Turret Motors
 		end
 
 		ACF.LoadSortedList(TurretType, Turrets.GetItemEntries("1-Turret"), "ID")
-
-		-- Calculator for turret speed
-		--[[
-			Should include data from the motor
-
-			Should output top speed, acceleration of turret
-		]]
-
 	end
 end
 

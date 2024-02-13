@@ -9,6 +9,7 @@ local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
+local Sounds		= Utilities.Sounds
 local Clock			= Utilities.Clock
 local HookRun		= hook.Run
 
@@ -512,7 +513,28 @@ do	-- Metamethods and other important stuff
 			return true
 		end
 
+		local MaxDistance = ACF.LinkDistance ^ 2
+		local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+
 		function ENT:Think()
+			if IsValid(self.Gun) then
+				if self:GetPos():DistToSqr(self.Gun:GetPos()) > MaxDistance then
+					local USound = UnlinkSound:format(math.random(1, 3))
+
+					Sounds.SendSound(self, USound, 70, 100, 1)
+					Sounds.SendSound(self.Gun, USound, 70, 100, 1)
+					self:Unlink(self.Gun)
+
+					self:HaltSimulation("Gun unlinked!")
+
+					self:NextThink(Clock.CurTime + 0.1)
+					return true
+				end
+			else
+				self:NextThink(Clock.CurTime + 0.1)
+				return true
+			end
+
 			if self.Thinking == false then
 				self:NextThink(Clock.CurTime + 0.1)
 				return true
