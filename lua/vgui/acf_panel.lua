@@ -234,25 +234,25 @@ function PANEL:AddGraph()
 	Base:DockMargin(0, 5, 0, 5)
 	Base:SetMouseInputEnabled(true)
 
-	Base.BGColor = Color(255,255,255)
 	-- Color of the back pane of the graph
-	Base.SetBGColor	= function(self, Value) self.BGColor = Value end
+	AccessorFunc(Base, "BGColor", "BGColor", FORCE_COLOR)
+	AccessorFunc(Base, "FGColor", "FGColor", FORCE_COLOR)
+	AccessorFunc(Base, "GridColor", "GridColor", FORCE_COLOR)
 
-	Base.FGColor = Color(25,25,25)
-	-- Color of any foreground items
-	Base.SetFGColor = function(self, Value) self.FGColor = Value end
+	Base:SetBGColor(Color(255,255,255))	-- Back panel
+	Base:SetFGColor(Color(25,25,25))		-- Border lines, text
+	Base:SetGridColor(Color(175,175,175))	-- Grid lines
 
-	Base.GridColor = Color(175,175,175)
-	Base.SetGridColor = function(self,Value) self.GridColor = Value end
-
-	Base.Fidelity = 32
 	-- Number of pixels per sample for function-based plotting
 	-- Lower = more resolution (more lines), Higher = less resolution (less lines)
 	Base.SetFidelity = function(self, Value) self.Fidelity = math.max(1,math.floor(Value)) end
+	Base.GetFidelity = function(self) return self.Fidelity end
+	Base:SetFidelity(32)
 
-	Base.GridFidelity = 2
 	-- Multiplies resulting grid spacing by this amount, grid spacing is dependent on the range of each axis
 	Base.SetGridFidelity = function(self, Value) self.GridFidelity = math.max(0.1,math.floor(Value)) end
+	Base.GetGridFidelity = function(self) return self.GridFidelity end
+	Base:SetGridFidelity(2)
 
 	Base.SetXRange = function(self, Min, Max)
 		self.MinX = math.min(Min, Max)
@@ -260,9 +260,11 @@ function PANEL:AddGraph()
 
 		self.XRange = self.MaxX - self.MinX
 	end
+	Base.GetXRange = function(self) return self.XRange end
 	Base:SetXRange(0,100)
 
-	Base.SetXSpacing = function(self,Spacing) self.XSpacing = math.abs(Spacing) end
+	Base.SetXSpacing = function(self, Spacing) self.XSpacing = math.abs(Spacing) end
+	Base.GetXSpacing = function(self) return self.XSpacing end
 	Base:SetXSpacing(100)
 
 	Base.SetYRange = function(self, Min, Max)
@@ -271,15 +273,19 @@ function PANEL:AddGraph()
 
 		self.YRange = self.MaxY - self.MinY
 	end
+	Base.GetYRange = function(self) return self.YRange end
 	Base:SetYRange(0,100)
 
-	Base.SetYSpacing = function(self,Spacing) self.YSpacing = math.abs(Spacing) end
+	Base.SetYSpacing = function(self, Spacing) self.YSpacing = math.abs(Spacing) end
+	Base.GetYSpacing = function(self) return self.YSpacing end
 	Base:SetYSpacing(100)
 
 	Base.SetXLabel = function(self, Name) self.XLabel = Name end
+	Base.GetXLabel = function(self) return self.XLabel end
 	Base:SetXLabel("")
 
 	Base.SetYLabel = function(self, Name) self.YLabel = Name end
+	Base.GetYLabel = function(self) return self.YLabel end
 	Base:SetYLabel("")
 
 	Base.Functions	= {}
@@ -322,12 +328,14 @@ function PANEL:AddGraph()
 	Base.ClearLimitFunctions = function(self) self.LimitFunctions = {} end
 	Base.ClearLimitLines = function(self) self.Lines = {} end
 	Base.ClearPoints = function(self) self.Points = {} end
+	Base.ClearTables = function(self) self.Tables = {} end
 
 	Base.Clear = function(self)
 		self:ClearFunctions()
 		self:ClearLimitFunctions()
 		self:ClearLimitLines()
 		self:ClearPoints()
+		self:ClearTables()
 	end
 
 	Base.Paint = function(self, w, h)
