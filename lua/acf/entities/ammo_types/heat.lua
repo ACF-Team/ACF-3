@@ -110,10 +110,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local JetAvgVel  = (2 * FillerEnergy / JetMass) ^ 0.5  -- Average velocity of the copper jet
 	local JetMinVel  = JetAvgVel * MinVelMult              -- Minimum velocity of the jet (the rear)
 	-- Calculates the maximum velocity, considering the velocity distribution is linear from the rear to the tip (integrated this by hand, pain :) )
-	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) * ACF.HEATBreakUpMul -- Maximum velocity of the jet (the tip)
+	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) -- Maximum velocity of the jet (the tip)
 
 	-- Both the "magic numbers" are unitless, tuning constants that were used to fit the breakup time to real world values, I suggest they not be messed with
-	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333  -- Jet breakup time in seconds
+	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333 * ACF.HEATBreakUpMul -- Jet breakup time in seconds
 	local BreakupDist    = JetMaxVel * BreakupTime
 
 	GUIData.MinConeAng = MinConeAng
@@ -161,6 +161,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
 	end
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
