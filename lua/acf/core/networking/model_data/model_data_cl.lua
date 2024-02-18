@@ -85,7 +85,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 			Standby[Model] = nil
 			Models[Model]  = Data
 
-			hook.Run("ACF_OnReceivedModelData", Model, Data)
+			hook.Run("ACF_OnReceiveModelData", Model, Data)
 		end
 
 		Entity:CallOnRemove("ACF_ModelData", function()
@@ -120,7 +120,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 		Standby[Model] = true
 		Queue[Model]   = true
 
-		hook.Run("ACF_OnRequestedModelData", Model)
+		hook.Run("ACF_OnRequestModelData", Model)
 	end)
 
 	Network.CreateReceiver("ACF_ModelData", function(Data)
@@ -133,7 +133,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 				Standby[Model] = nil
 				Models[Model]  = Info
 
-				hook.Run("ACF_OnReceivedModelData", Model, Info)
+				hook.Run("ACF_OnReceiveModelData", Model, Info)
 			end
 		end
 	end)
@@ -141,7 +141,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
 end)
 
-hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
+hook.Add("ACF_OnReceiveModelData", "ACF_ModelData_PanelRefresh", function(Model)
 	local Data = Callbacks[Model]
 
 	if not Data then return end

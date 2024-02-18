@@ -198,12 +198,12 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	--- Called after requesting a newly spawned model's data from the server.
 	-- Model data will always be invalid at this point.
 	-- @param Model The model that has had its data requested.
-	function Gamemode:ACF_OnRequestedModelData()
+	function Gamemode:ACF_OnRequestModelData()
 	end
 
 	--- Called after receiving a newly spawned model's data from the server.
 	-- @param Model The model that has received new data.
 	-- @param Data The data about the model that was received from the server.
-	function Gamemode:ACF_OnReceivedModelData()
+	function Gamemode:ACF_OnReceiveModelData()
 	end
 end)
