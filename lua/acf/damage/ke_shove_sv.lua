@@ -6,7 +6,7 @@ local Clock = ACF.Utilities.Clock
 function ACF.KEShove(Target, Pos, Vec, KE)
 	if not IsValid(Target) then return end
 
-	if hook.Run("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
+	if hook.Run("ACF_OnPushEntity", Target, Pos, Vec, KE) == false then return end
 
 	local Ancestor = ACF_GetAncestor(Target)
 	local Phys = Ancestor:GetPhysicsObject()

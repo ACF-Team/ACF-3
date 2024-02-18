@@ -119,7 +119,7 @@ do -- Data syncronization
 		end
 	})
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF Data Var Syncronization", function(Player)
+	hook.Add("ACF_OnLoadPlayer", "ACF Data Var Syncronization", function(Player)
 		-- Server data var syncronization
 		for Key in pairs(Server) do
 			NetworkData(Key, Player)

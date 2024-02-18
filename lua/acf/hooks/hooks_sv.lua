@@ -5,7 +5,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- Called when the player has properly loaded onto the server.
 	-- It's possible to use network messages in this hook, unlike PlayerInitialSpawn.
 	-- @param Player The player entity that just finished loading.
-	function Gamemode:ACF_OnPlayerLoaded()
+	function Gamemode:ACF_OnLoadPlayer()
 	end
 
 	--- Called when the bullet will attempt to use the default flight behavior
@@ -24,7 +24,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	-- @return The reason why the entity is illegal. Not required if legal.
 	-- @return A short explanation on why the entity is illegal. Not required if legal.
 	-- @return Optionally, the amount of time in seconds the entity will remain illegal for. Not required if legal.
-	function Gamemode:ACF_IsLegal()
+	function Gamemode:ACF_OnCheckLegal()
 		return true
 	end
 
@@ -76,7 +76,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	-- @param Direction The direction in which the entity is attempting to be pushed.
 	-- @param Energy The kinetic energy that's attempting to be applied to the entity.
 	-- @return True if the entity should be pushed by kinetic energy, false otherwise.
-	function Gamemode:ACF_KEShove()
+	function Gamemode:ACF_OnPushEntity()
 		return true
 	end
 

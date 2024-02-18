@@ -170,7 +170,7 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 	return HitRes or DmgResult:GetBlank()
 end
 
-hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(Player)
+hook.Add("ACF_OnLoadPlayer", "ACF Render Damage", function(Player)
 	for _, Entity in ipairs(ents.GetAll()) do
 		local Data = Entity.ACF
 
