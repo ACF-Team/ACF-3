@@ -191,7 +191,7 @@ do -- Server data setter function
 		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
-			hook.Run("ACF_OnServerDataUpdate", nil, Key, Value)
+			hook.Run("ACF_OnUpdateServerData", nil, Key, Value)
 
 			NetworkData(Key)
 		end

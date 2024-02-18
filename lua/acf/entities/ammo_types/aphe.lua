@@ -35,7 +35,7 @@ function Ammo:GetDisplayData(Data)
 	Display.FragMass    = FragMass / Display.Fragments
 	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -55,7 +55,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

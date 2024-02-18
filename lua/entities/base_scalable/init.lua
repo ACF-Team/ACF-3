@@ -51,7 +51,7 @@ do -- Size and scale setter methods
 		if IsValid(PhysObj) then
 			if Entity.OnResized then Entity:OnResized(Size, Scale) end
 
-			hook.Run("ACF_OnEntityResized", Entity, PhysObj, Size, Scale)
+			hook.Run("ACF_OnResizeEntity", Entity, PhysObj, Size, Scale)
 		end
 
 		return true

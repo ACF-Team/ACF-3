@@ -27,7 +27,7 @@ function Classes.AddGroup(ID, Destiny, Data)
 		Group[K] = V
 	end
 
-	hook.Run("ACF_OnNewGroup", ID, Group)
+	hook.Run("ACF_OnCreateGroup", ID, Group)
 
 	return Group
 end
@@ -58,7 +58,7 @@ function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 		Class[K] = V
 	end
 
-	hook.Run("ACF_OnNewGroupItem", ID, Group, Class)
+	hook.Run("ACF_OnCreateGroupItem", ID, Group, Class)
 
 	return Class
 end
@@ -147,13 +147,13 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	end
 end
 
-hook.Add("ACF_OnNewGroup", "ACF Precache Model", function(_, Group)
+hook.Add("ACF_OnCreateGroup", "ACF Precache Model", function(_, Group)
 	if not isstring(Group.Model) then return end
 
 	util.PrecacheModel(Group.Model)
 end)
 
-hook.Add("ACF_OnNewGroupItem", "ACF Precache Model", function(_, _, Class)
+hook.Add("ACF_OnCreateGroupItem", "ACF Precache Model", function(_, _, Class)
 	if not isstring(Class.Model) then return end
 
 	util.PrecacheModel(Class.Model)

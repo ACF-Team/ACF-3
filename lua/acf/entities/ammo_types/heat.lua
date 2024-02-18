@@ -68,7 +68,7 @@ function Ammo:GetDisplayData(Data)
 		FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -137,7 +137,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	-- Recalculate the standoff for missiles
 	if Data.MissileStandoff then

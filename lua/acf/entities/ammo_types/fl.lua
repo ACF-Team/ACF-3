@@ -41,7 +41,7 @@ function Ammo:GetDisplayData(Data)
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -64,7 +64,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

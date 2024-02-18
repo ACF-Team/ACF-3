@@ -36,7 +36,7 @@ function Ammo:GetDisplayData(Data)
 		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -62,7 +62,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

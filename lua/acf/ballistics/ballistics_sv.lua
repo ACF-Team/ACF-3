@@ -59,7 +59,7 @@ function Ballistics.RemoveBullet(Bullet)
 	Bullet.Removed = true
 
 	if not next(Bullets) then
-		hook.Remove("ACF_OnClock", "ACF Iterate Bullets")
+		hook.Remove("ACF_OnTick", "ACF Iterate Bullets")
 	end
 end
 
@@ -144,7 +144,7 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	if not next(Bullets) then
-		hook.Add("ACF_OnClock", "ACF Iterate Bullets", Ballistics.IterateBullets)
+		hook.Add("ACF_OnTick", "ACF Iterate Bullets", Ballistics.IterateBullets)
 	end
 
 	Bullets[Index] = Bullet

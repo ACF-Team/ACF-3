@@ -10,7 +10,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	--- Called when a class group object is created, not necessarily for the first time.
 	-- @param ID The ID of the group that was registered.
 	-- @param Group The group object that was registered.
-	function Gamemode:ACF_OnNewGroup()
+	function Gamemode:ACF_OnCreateGroup()
 	end
 
 	--- Called when a grouped item object is created, not necessarily for the first time.
@@ -18,20 +18,20 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param ID The ID of the group item that was registered.
 	-- @param GroupID The ID of the group where the item was registered.
 	-- @param Item The item object that was registered.
-	function Gamemode:ACF_OnNewGroupItem()
+	function Gamemode:ACF_OnCreateGroupItem()
 	end
 
 	--- Called when a standalone item object is created, not necessarily for the first time.
 	-- @param ID The ID of the standalone item that was registered.
 	-- @param Group The item object that was registered.
-	function Gamemode:ACF_OnNewItem()
+	function Gamemode:ACF_OnCreateItem()
 	end
 
 	--- Called when a class object is fully created and loaded.
 	-- This will not be instant on startup since the object has to wait for the base objects to load.
 	-- @param ID The ID of the object class that has been loaded.
 	-- @param Class The object class that has been loaded.
-	function Gamemode:ACF_OnClassLoaded()
+	function Gamemode:ACF_OnLoadClass()
 	end
 
 	--- Called when a server data variable value gets updated.
@@ -40,7 +40,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- On the serverside, if the change was done by the server then this will always be nil.
 	-- @param Key The name of the affected server data variable.
 	-- @param Value The new value assigned to the server data variable.
-	function Gamemode:ACF_OnServerDataUpdate()
+	function Gamemode:ACF_OnUpdateServerData()
 	end
 
 	--- Called when a client data variable value gets updated.
@@ -50,7 +50,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param Player The player that triggered the client data variable change.
 	-- @param Key The name of the affected client data variable.
 	-- @param Value The new value assigned to the client data variable.
-	function Gamemode:ACF_OnClientDataUpdate()
+	function Gamemode:ACF_OnUpdateClientData()
 	end
 
 	--- Called after the Think hook is called.
@@ -58,7 +58,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param CurTime Returns the uptime of the server.
 	-- @param DeltaTime Returns the delay between this hook's call and the previous.
 	-- This value will usually be similar if not the same as the server tickrate.
-	function Gamemode:ACF_OnClock()
+	function Gamemode:ACF_OnTick()
 	end
 
 	--- Called when an ammo type has to provide its display information.
@@ -66,7 +66,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param AmmoType The ammo type object requesting its display information.
 	-- @param Bullet The bullet object being used to get display information.
 	-- @param GUIData The display information table itself.
-	function Gamemode:ACF_GetDisplayData()
+	function Gamemode:ACF_OnGetDisplayData()
 	end
 
 	--- Called when a bullet object is created or updated.
@@ -75,7 +75,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param Bullet The bullet object itself.
 	-- @param GUIData The table of information that's only required for the clientside, such as the menu.
 	-- On the serverside, this will be the same as the Bullet object.
-	function Gamemode:ACF_UpdateRoundData()
+	function Gamemode:ACF_OnUpdateRound()
 	end
 
 	--- Called every time a scalable entity is resized.
@@ -84,6 +84,6 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	-- @param Size The new size of the entity.
 	-- @param Scale The new scale of the entity.
 	-- This is based off the size of the model the entity it's using and the scale that was given.
-	function Gamemode:ACF_OnEntityResized()
+	function Gamemode:ACF_OnResizeEntity()
 	end
 end)

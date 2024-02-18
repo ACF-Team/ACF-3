@@ -24,7 +24,7 @@ function Classes.AddSimple(ID, Destiny, Data)
 		Class[K] = V
 	end
 
-	hook.Run("ACF_OnNewItem", ID, Class)
+	hook.Run("ACF_OnCreateItem", ID, Class)
 
 	return Class
 end
@@ -76,7 +76,7 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 	end
 end
 
-hook.Add("ACF_OnNewItem", "ACF Precache Model", function(_, Class)
+hook.Add("ACF_OnCreateItem", "ACF Precache Model", function(_, Class)
 	if not isstring(Class.Model) then return end
 
 	util.PrecacheModel(Class.Model)

@@ -354,7 +354,7 @@ end
 
 do -- Clientside Tool interaction
 	if SERVER then
-		hook.Add("ACF_OnClientDataUpdate", "ACF ToolMode", function(Player, Key, Value)
+		hook.Add("ACF_OnUpdateClientData", "ACF ToolMode", function(Player, Key, Value)
 			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
 
 			if Header ~= "ToolMode" then return end
