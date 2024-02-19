@@ -252,9 +252,7 @@ if CLIENT then
 			local Tall = SoundPre:GetTall()
 			SoundPrePlay:SetSize(HWide, Tall)
 			SoundPrePlay:Dock(LEFT)
-
-			SoundPreStop:SetSize(Tall, Tall)
-			SoundPreStop:Dock(FILL)
+			SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which previous button didnt.
 		end
 
 		local CopyButton = vgui.Create("DButton")
