@@ -34,13 +34,14 @@ function ACF.IsLegal(Entity)
 	if not ACF.LegalChecks then return true end -- Legal checks are disabled
 
 	local Phys = Entity:GetPhysicsObject()
-	local ValidPhys = IsValid(Entity.ACF.PhysObj)
+	local ValidatedPhys = false
 
-	if not ValidPhys then
+	if not IsValid(Entity.ACF.PhysObj) then
 		Entity.ACF.PhysObj = Phys
+		ValidatedPhys = true
 	end
 
-	if ValidPhys and Entity.ACF.PhysObj ~= Phys then
+	if ValidatedPhys or Entity.ACF.PhysObj ~= Phys then
 		if Phys:GetVolume() then
 			Entity.ACF.PhysObj = Phys -- Updated PhysObj
 		else
