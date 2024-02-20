@@ -187,6 +187,7 @@ local Settings = {
 
 		ACF.AllowProcArmor = Bool
 		GlobalFilter["acf_armor"] = not Bool
+		if GlobalFilter["acf_armor"] == true then print("globalfiler parmor") end
 
 		if CLIENT and not IsValid(Player) then return end
 
