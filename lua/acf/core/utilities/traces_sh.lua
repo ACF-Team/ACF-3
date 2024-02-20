@@ -56,7 +56,8 @@ do -- ACF.trace
 
 		util.TraceLine(traceData)
 
-		if Output.HitNonWorld and ACF.CheckClips(Output.Entity, Output.HitPos) then
+		-- Check for clips or to filter this entity
+		if Output.HitNonWorld and (ACF.CheckClips(Output.Entity, Output.HitPos) or ACF.GlobalFilter[Output.Entity:GetClass()]) then
 			local OldFilter = traceData.filter
 			local Filter    = { Output.Entity }
 

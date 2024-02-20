@@ -14,6 +14,7 @@ local TraceData    = {
 	filter = true,
 	mask   = MASK_SOLID,
 }
+local GlobalFilter = ACF.GlobalFilter
 
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
@@ -22,6 +23,7 @@ function Damage.isValidTarget(Entity)
 	local Type = ACF.Check(Entity)
 
 	if not Type then return false end
+	if GlobalFilter[Entity:GetClass()] then return false end
 	if Entity.Exploding then return false end
 	if Type ~= "Squishy" then return true end
 
