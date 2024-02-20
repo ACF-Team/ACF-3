@@ -2,7 +2,10 @@ return {
     groupName = "ACF.IsLegal",
 
     beforeEach = function( State )
-        local PhysObj = {}
+        local Volume = 1
+        local PhysObj = {
+            GetVolume = function() return Volume end,
+        }
 
         -- A technically Legal entity mock
         State.Ent = {
