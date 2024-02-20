@@ -2,10 +2,15 @@ local ACF = ACF
 local Contraption	= ACF.Contraption
 local IsValid = IsValid
 
-TOOL.Category	= (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
-TOOL.Name		= "#tool.acfarmorprop.name"
-TOOL.Command	= nil
-TOOL.ConfigName	= ""
+TOOL.Category	 = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
+TOOL.Name		 = "#tool.acfarmorprop.name"
+TOOL.Command	 = nil
+TOOL.ConfigName	 = ""
+TOOL.Information = {
+	{ name = "left" },
+	{ name = "right" },
+	{ name = "reload" }
+}
 
 TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
@@ -68,8 +73,10 @@ end)
 
 if CLIENT then
 	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
-	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility.")
-	language.Add("tool.acfarmorprop.0", "Left click to apply settings. Right click to copy settings. Reload to get the total mass of an object and all constrained objects.")
+	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility")
+	language.Add("tool.acfarmorprop.left", "Apply settings")
+	language.Add("tool.acfarmorprop.right", "Copy settings")
+	language.Add("tool.acfarmorprop.reload", "Get the total mass of an object and all constrained objects")
 
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
