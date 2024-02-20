@@ -204,7 +204,7 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 		end
 
 		ACF.Activate(Entity)
-	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= Phys) then
+	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= PhysObj) then
 		ACF.Activate(Entity, true)
 	end
 
