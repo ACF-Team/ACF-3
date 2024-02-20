@@ -187,7 +187,7 @@ local Settings = {
 
 		ACF.AllowProcArmor = Bool
 		GlobalFilter["acf_armor"] = not Bool
-		
+
 		if CLIENT and not IsValid(Player) then return end
 
 		Message("Info", "Procedural armor has been " .. (Bool and "enabled." or "disabled."))

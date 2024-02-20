@@ -23,7 +23,7 @@ function Damage.isValidTarget(Entity)
 	local Type = ACF.Check(Entity)
 
 	if not Type then return false end
-	if GlobalFilter[Entity:GetClass()] then print(Entity) return false end
+	if GlobalFilter[Entity:GetClass()] then return false end
 	if Entity.Exploding then return false end
 	if Type ~= "Squishy" then return true end
 
