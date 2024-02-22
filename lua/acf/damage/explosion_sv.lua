@@ -399,7 +399,7 @@ do -- Experimental HE code
 					local displacement  = targetPos - origin
 					local distance      = displacement:Length()
 					local sphereAtRange = 4 * 3.1415 * distance^2
-					local circleArea    = ent.ACF.Area / 6.45 / 4 -- Surface area converted to a circle
+					local circleArea    = ent.ACF.Area / ACF.InchToCmSq / 4 -- Surface area converted to a circle
 					local shadowArea    = circleArea / sphereAtRange * blastSurfaceArea
 
 					-- How much power goes to the target

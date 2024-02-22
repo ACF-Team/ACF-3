@@ -320,7 +320,7 @@ end
 
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self:GetPhysicsObject()
-	local Area    = PhysObj:GetSurfaceArea() * 6.45
+	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 	local Armour  = self.EmptyMass * 1000 / Area / 0.78 * ACF.ArmorMod -- So we get the equivalent thickness of that prop in mm if all it's weight was a steel plate
 	local Health  = Area / ACF.Threshold
 	local Percent = 1

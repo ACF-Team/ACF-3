@@ -249,7 +249,7 @@ end --------------------------------------------
 do -- Entity Activation ------------------------
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-		local Area    = PhysObj:GetSurfaceArea() * 6.45
+		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 		local Armour  = self.Caliber * ACF.ArmorMod
 		local Health  = Area / ACF.Threshold
 		local Percent = 1
