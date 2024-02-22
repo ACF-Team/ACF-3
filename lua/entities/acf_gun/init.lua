@@ -351,8 +351,8 @@ do -- Metamethods --------------------------------
 		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
 			local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Crate:EmitSound(Sound, 70, 100, ACF.Volume)
-			Gun:EmitSound(Sound, 70, 100, ACF.Volume)
+			Sounds.SendSound(Crate, Sound, 70, 100, 1)
+			Sounds.SendSound(Gun, Sound, 70, 100, 1)
 
 			CrateUnlinked = Gun:Unlink(Crate)
 		end
