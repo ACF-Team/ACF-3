@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 --===============================================================================================--
 -- Engine class setup
@@ -14,6 +15,7 @@ do
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
 		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
 
 		Engine.FuelTanks[Target] = true
 		Target.Engines[Engine] = true
@@ -106,7 +108,6 @@ end
 local Damage      = ACF.Damage
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
-local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local IsValid     = IsValid
 local Clamp       = math.Clamp

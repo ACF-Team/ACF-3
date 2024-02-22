@@ -337,6 +337,25 @@ do -- Spawn and Update functions --------------------------------
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
+	local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+	local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+
+	-- Used to determine if a crate should be unlinked or not
+	local function CheckCrate(Gun, Crate, GunPos)
+		local CrateUnlinked = false
+
+		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
+			local Sound = UnlinkSound:format(math.random(1, 3))
+
+			Sounds.SendSound(Crate, Sound, 70, 100, 1)
+			Sounds.SendSound(Gun, Sound, 70, 100, 1)
+
+			CrateUnlinked = Gun:Unlink(Crate)
+		end
+
+		return CrateUnlinked
+	end
+
 	do -- Inputs/Outputs/Linking ----------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
@@ -347,6 +366,7 @@ do -- Metamethods --------------------------------
 			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
+			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
 
@@ -500,9 +520,10 @@ do -- Metamethods --------------------------------
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
 			local Velocity = ACF_GetAncestor(self):GetVelocity()
-			local AmmoType = AmmoTypes.Get(self.BulletData.Type)
+			local BulletData = self.BulletData
+			local AmmoType = AmmoTypes.Get(BulletData.Type)
 
-			if self.BulletData.CanFuze and self.SetFuze then
+			if BulletData.CanFuze and self.SetFuze then
 				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - self.Caliber) * 0.01
 
 				self.Fuze = math.max(self.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
@@ -512,22 +533,22 @@ do -- Metamethods --------------------------------
 
 			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 
-			self.BulletData.Owner  = self.CurrentUser
-			self.BulletData.Gun	   = self -- because other guns share this table
-			self.BulletData.Pos    = self:BarrelCheck()
-			self.BulletData.Flight = Dir * self.BulletData.MuzzleVel * 39.37 + Velocity
-			self.BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
-			self.BulletData.Filter = self.BarrelFilter
+			BulletData.Owner  = self.CurrentUser
+			BulletData.Gun	   = self -- because other guns share this table
+			BulletData.Pos    = self:BarrelCheck()
+			BulletData.Flight = Dir * BulletData.MuzzleVel * 39.37 + Velocity
+			BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
+			BulletData.Filter = self.BarrelFilter
 
-			AmmoType:Create(self, self.BulletData) -- Spawn projectile
+			AmmoType:Create(self, BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
 			self:Recoil()
 
-			local Energy = ACF.Kinetic(self.BulletData.MuzzleVel * 39.37, self.BulletData.ProjMass).Kinetic
+			local Energy = ACF.Kinetic(BulletData.MuzzleVel * 39.37, BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
-				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, self.BulletData.Owner, self, self:GetForward(), 30)
+				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, BulletData.Owner, self, self:GetForward(), 30)
 			end
 
 			if self.MagSize then -- Mag-fed/Automatically loaded
@@ -568,7 +589,8 @@ do -- Metamethods --------------------------------
 			if not ACF.RecoilPush then return end
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
-			local Energy = self.BulletData.ProjMass * self.BulletData.MuzzleVel * 39.37 + self.BulletData.PropMass * 3000 * 39.37
+			local BulletData = self.BulletData
+			local Energy = BulletData.ProjMass * BulletData.MuzzleVel * 39.37 + BulletData.PropMass * 3000 * 39.37
 
 			ACF.KEShove(self, MassCenter, -self:GetForward(), Energy)
 		end
@@ -621,7 +643,7 @@ do -- Metamethods --------------------------------
 
 			local Crate = FindNextCrate(self)
 
-			if IsValid(Crate) then -- Have a crate, start loading
+			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
@@ -671,7 +693,10 @@ do -- Metamethods --------------------------------
 
 		function ENT:Load()
 			if self.Disabled then return false end
-			if not FindNextCrate(self) then -- Can't load without having ammo being provided
+
+			local Crate = FindNextCrate(self)
+
+			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
 
 				self.CurrentShot = 0
@@ -773,9 +798,6 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Misc ----------------------------------
-		local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
-		local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj
 			local Area    = PhysObj:GetSurfaceArea() * 6.45
@@ -807,18 +829,13 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Think()
-			if next(self.Crates) then
+			local Crates = self.Crates
+
+			if next(Crates) then
 				local Pos = self:GetPos()
 
-				for Crate in pairs(self.Crates) do
-					if Crate:GetPos():DistToSqr(Pos) > MaxDistance then
-						local Sound = UnlinkSound:format(math.random(1, 3))
-
-						Crate:EmitSound(Sound, 70, 100, ACF.Volume)
-						self:EmitSound(Sound, 70, 100, ACF.Volume)
-
-						self:Unlink(Crate)
-					end
+				for Crate in pairs(Crates) do
+					CheckCrate(self, Crate, Pos)
 				end
 			end
 
