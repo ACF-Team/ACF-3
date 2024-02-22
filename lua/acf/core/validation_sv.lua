@@ -119,15 +119,16 @@ function ACF.UpdateArea(Entity, PhysObj)
 	local Area = PhysObj:GetSurfaceArea()
 
 	if Area then -- Normal collisions
-		Area = Area * 6.45 * 0.52505066107
+		local AreaMult = 0.52505066107 -- This seems to be a conversion from cm to grid units on the architectural scale (approx. 1 / 1.905)
+		Area = Area * ACF.InchToCmSq * AreaMult
 	elseif PhysObj:GetMesh() then -- Box collisions
 		local Size = Entity:OBBMaxs() - Entity:OBBMins()
 
-		Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * 6.45
+		Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * ACF.InchToCmSq
 	else -- Spherical collisions
 		local Radius = Entity:BoundingRadius()
 
-		Area = 4 * 3.1415 * Radius * Radius * 6.45
+		Area = 4 * 3.1415 * Radius * Radius * ACF.InchToCmSq
 	end
 
 	Entity.ACF.Area = Area

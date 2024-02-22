@@ -165,7 +165,7 @@ do -- ACF Activation and Damage
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-		local Area = PhysObj:GetSurfaceArea() * 6.45
+		local Area = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 		local Health  = Area / ACF.Threshold * self.Tensile
 		local Percent = 1
 

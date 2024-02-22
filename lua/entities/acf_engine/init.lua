@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 --===============================================================================================--
 -- Engine class setup
@@ -14,6 +15,7 @@ do
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
 		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
 
 		Engine.FuelTanks[Target] = true
 		Target.Engines[Engine] = true
@@ -108,7 +110,6 @@ local Utilities    = ACF.Utilities
 local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
 local Contraption  = ACF.Contraption
-local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
 local IsValid      = IsValid
 local Clamp        = math.Clamp
@@ -578,7 +579,7 @@ end)
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
 	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * 6.45
+	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1

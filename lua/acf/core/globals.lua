@@ -39,6 +39,7 @@ do -- ACF global vars
 	ACF.gCmToKgIn          = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
 	ACF.MmToInch		   = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm           = 25.4 -- Inches to millimeters
+	ACF.InchToCmSq		   = 6.45 -- in² to cm²
 
 	-- Fuzes
 	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed
