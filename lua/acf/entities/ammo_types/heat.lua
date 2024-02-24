@@ -266,6 +266,8 @@ if SERVER then
 			local Ent       = TraceRes.Entity
 			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
 
+			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity print("Skipped",Ent) continue end
+
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
 			local Penetration = self:GetPenetration(Bullet, Standoff)

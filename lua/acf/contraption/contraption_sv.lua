@@ -390,6 +390,8 @@ do -- ASSUMING DIRECT CONTROL
 			function ENT:PhysicsInitSphere(...)
 				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return false end
 
+				self._IsSpherical	= true
+
 				return PhysicsInitSphere(self, ...)
 			end
 
