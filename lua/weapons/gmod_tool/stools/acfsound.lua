@@ -16,9 +16,9 @@ if CLIENT then
 	language.Add("Tool.acfsound.name", "ACF Sound Replacer")
 	language.Add("Tool.acfsound.desc", "Change sounds of ACF entities")
 
-	language.Add("Tool.acfsound.left", "Apply sound." )
-	language.Add("Tool.acfsound.right", "Copy sound." )
-	language.Add("Tool.acfsound.reload", "Set default sound." )
+	language.Add("Tool.acfsound.left", "Apply sound")
+	language.Add("Tool.acfsound.right", "Copy sound")
+	language.Add("Tool.acfsound.reload", "Set default sound")
 	language.Add("Tool.acfsound.0", "Use an empty sound path to disable sound")
 end
 
@@ -196,7 +196,7 @@ if CLIENT then
 	function TOOL.BuildCPanel(panel)
 		local wide = panel:GetWide()
 
-		local Desc = panel:Help( "Replace default sounds of certain ACF entities with this tool.\n" )
+		local Desc = panel:Help("Replace default sounds of certain ACF entities with this tool.\n")
 		Desc:SetFont("ACF_Control")
 
 		local SoundNameText = vgui.Create("DTextEntry", ValuePanel)
@@ -215,7 +215,7 @@ if CLIENT then
 		SoundBrowserButton:SetWide(wide)
 		SoundBrowserButton:SetTall(20)
 		SoundBrowserButton:SetVisible(true)
-		SoundBrowserButton:SetIcon( "icon16/application_view_list.png" )
+		SoundBrowserButton:SetIcon("icon16/application_view_list.png")
 		SoundBrowserButton.DoClick = function()
 			RunConsoleCommand("wire_sound_browser_open", SoundNameText:GetValue(), "1")
 		end
@@ -230,18 +230,18 @@ if CLIENT then
 		SoundPrePlay:SetText("Play")
 		SoundPrePlay:SetFont("ACF_Control")
 		SoundPrePlay:SetVisible(true)
-		SoundPrePlay:SetIcon( "icon16/sound.png" )
+		SoundPrePlay:SetIcon("icon16/sound.png")
 		SoundPrePlay.DoClick = function()
-			RunConsoleCommand("play",SoundNameText:GetValue())
+			RunConsoleCommand("play", SoundNameText:GetValue())
 		end
 
 		local SoundPreStop = vgui.Create("DButton", SoundPre)
 		SoundPreStop:SetText("Stop")
 		SoundPreStop:SetFont("ACF_Control")
 		SoundPreStop:SetVisible(true)
-		SoundPreStop:SetIcon( "icon16/sound_mute.png" )
+		SoundPreStop:SetIcon("icon16/sound_mute.png")
 		SoundPreStop.DoClick = function()
-			RunConsoleCommand("play", "common/NULL.WAV") --Playing a silent sound will mute the preview but not the sound emitters.
+			RunConsoleCommand("play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters.
 		end
 		panel:AddItem(SoundPre)
 
@@ -256,14 +256,14 @@ if CLIENT then
 		end
 
 		local CopyButton = vgui.Create("DButton")
-		CopyButton:SetText("Copy to clipboard")
+		CopyButton:SetText("Copy to Clipboard")
 		CopyButton:SetFont("ACF_Control")
 		CopyButton:SetWide(wide)
 		CopyButton:SetTall(20)
-		CopyButton:SetIcon( "icon16/page_copy.png" )
+		CopyButton:SetIcon("icon16/page_copy.png")
 		CopyButton:SetVisible(true)
 		CopyButton.DoClick = function()
-			SetClipboardText( SoundNameText:GetValue())
+			SetClipboardText(SoundNameText:GetValue())
 		end
 		panel:AddItem(CopyButton)
 
@@ -272,7 +272,7 @@ if CLIENT then
 		ClearButton:SetFont("ACF_Control")
 		ClearButton:SetWide(wide)
 		ClearButton:SetTall(20)
-		ClearButton:SetIcon( "icon16/cancel.png" )
+		ClearButton:SetIcon("icon16/cancel.png")
 		ClearButton:SetVisible(true)
 		ClearButton.DoClick = function()
 			SoundNameText:SetValue("")
@@ -280,10 +280,10 @@ if CLIENT then
 		end
 		panel:AddItem(ClearButton)
 
-		panel:NumSlider( "Volume", "acfsound_volume", 0.1, 2, 2 )
-		panel:NumSlider( "Pitch", "acfsound_pitch", 0.1, 2.55, 2 )
+		panel:NumSlider("Volume", "acfsound_volume", 0.1, 2, 2)
+		panel:NumSlider("Pitch", "acfsound_pitch", 0.1, 2, 2)
 
-		panel:ControlHelp( "Adjust the volume and pitch of the sound. Support available for guns and engines only." )
+		panel:ControlHelp("Adjust the volume and pitch of the sound. Support available for guns and engines only.")
 	end
 
 	--[[
@@ -296,21 +296,17 @@ if CLIENT then
 
 	spawnmenu.ActivateToolLegacy = spawnmenu.ActivateToolLegacy or spawnmenu.ActivateTool
 
-	function spawnmenu.ActivateTool( tool, bool_menu, ... )
-
+	function spawnmenu.ActivateTool(Tool, MenuBool, ...)
 		local CurTool = LocalPlayer():GetTool()
 
 		if CurTool and CurTool.Mode then
-
 			local CurMode = isstring(CurTool.Mode) and CurTool.Mode or ""
 
-			if tool == "wire_soundemitter" and CurMode == "acfsound" then
-				tool = CurMode
+			if Tool == "wire_soundemitter" and CurMode == "acfsound" then
+				Tool = CurMode
 			end
-
 		end
 
-		spawnmenu.ActivateToolLegacy( tool, bool_menu, ... )
+		spawnmenu.ActivateToolLegacy(Tool, MenuBool, ...)
 	end
-
 end
