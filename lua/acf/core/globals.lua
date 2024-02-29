@@ -94,11 +94,13 @@ do -- ACF global vars
 	ACF.HEATEfficiency     = 0.5     -- Efficiency of converting explosive energy to velocity
 	ACF.LinerThicknessMult = 0.04   -- Metal liner thickness multiplier
 	ACF.MaxChargeHeadLen   = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
-	ACF.HEATPenMul         = 0.85    -- Linear jet penetration multiplier
+	ACF.HEATPenMul         = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
 	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
 	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
+	ACF.HEATStandOffMul = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
+	ACF.HEATBreakUpMul = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
 
 	-- Material densities
 	ACF.SteelDensity       = 7.9e-3  -- kg/cm^3
