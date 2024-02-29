@@ -22,10 +22,6 @@ local function CreateMenu(Menu)
 	local ComponentName	= Base:AddTitle()
 	local ComponentDesc	= Base:AddLabel()
 
-	Base.ApplySchemeSettings = function(Panel)
-		Panel:SetBGColor(Color(175,175,175))
-	end
-
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 

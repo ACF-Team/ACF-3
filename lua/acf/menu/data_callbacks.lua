@@ -50,7 +50,7 @@ local Settings = {
 
 		if not ACF.LegalChecks then return end
 
-		Message("Info", "Public shaming for illegal actions has been " .. (Bool and "enabled." or "disabled."))
+		Message("Info", "Console messages for failed legal checks have been " .. (Bool and "enabled." or "disabled."))
 	end,
 	VehicleLegalChecks = function(Player, _, Value)
 		local Bool = tobool(Value)

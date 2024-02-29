@@ -1,6 +1,8 @@
 local ACF = ACF
 
 do -- Networked notifications
+	local Messages = ACF.Utilities.Messages
+
 	util.AddNetworkString("ACF_Notify")
 	util.AddNetworkString("ACF_NameAndShame")
 
@@ -10,10 +12,11 @@ do -- Networked notifications
 
 		if not IsValid(Owner) then return end
 
-		MsgN("ACF Legal: " .. Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message)
+		local ShameMsg = Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message
+		Messages.PrintLog("Error", ShameMsg)
 
 		net.Start("ACF_NameAndShame")
-			net.WriteString("ACF Legal: " .. Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message)
+			net.WriteString(ShameMsg)
 		net.Broadcast()
 	end
 

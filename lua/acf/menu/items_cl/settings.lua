@@ -74,11 +74,10 @@ do -- Clientside settings
 	ACF.AddClientSettings(201, "Legal Checks", function(Base)
 		local Hints = Base:AddCheckBox("Enable hints on entity disabling.")
 		Hints:SetConVar("acf_legalhints")
-	end)
 
-	ACF.AddClientSettings(251, "Legal Check Name and Shame", function(Base)
-		local Hints = Base:AddCheckBox("Enable receiving console messages for entities getting disabled.")
-		Hints:SetConVar("acf_legalshame")
+		local ShameMsgs = Base:AddCheckBox("Display failed legal checks in the console.")
+		ShameMsgs:SetConVar("acf_legalshame")
+		Base:AddHelp("Requires the matching setting to be enabled on the server as well.")
 	end)
 
 	ACF.AddClientSettings(301, "Debris", function(Base)
@@ -154,7 +153,7 @@ do -- Serverside settings
 			return Value
 		end)
 
-		local LegalCheckNameAndShame = Base:AddCheckBox("Pubicly shame someone in everyone's console for a failed legal check.")
+		local LegalCheckNameAndShame = Base:AddCheckBox("Display failed legal checks in the console.")
 		LegalCheckNameAndShame:SetServerData("NameAndShame", "OnChange")
 		LegalCheckNameAndShame:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)

@@ -289,7 +289,7 @@ do	-- Turret motors
 
 		Turrets.RegisterItem("Motor-ELC","2-Motor",{
 			Name			= "Electric Motor",
-			Description		= "A snappy responsive electric motor, can handle most uses cases but quickly falters under higher weights",
+			Description		= "A snappy responsive electric motor; can handle most use cases but quickly falters under higher weights.",
 			Model			= "models/acf/core/t_drive_e.mdl",
 			Sound			= "acf_base/fx/turret_electric.wav",
 
@@ -320,7 +320,7 @@ do	-- Turret motors
 
 		Turrets.RegisterItem("Motor-HYD","2-Motor",{
 			Name			= "Hydraulic Motor",
-			Description		= "A strong but sluggish hydraulic motor, it'll turn the world over but takes a little bit to get to that point.",
+			Description		= "A strong but sluggish hydraulic motor; it'll turn the world over but takes a little bit to get to that point.",
 			Model			= "models/acf/core/t_drive_h.mdl",
 			Sound			= "acf_base/fx/turret_hydraulic.wav",
 
