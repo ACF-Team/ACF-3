@@ -39,7 +39,7 @@ do -- Playing regular sounds
 		local Path = net.ReadString()
 		local Level = net.ReadUInt(7)
 		local Pitch = net.ReadUInt(8)
-		local Volume = net.ReadUInt(7) / 100
+		local Volume = net.ReadUInt(8) / 100
 
 		if not Sounds.IsValidSound(Path) then return end
 
@@ -97,7 +97,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 			Sounds.DestroyAdjustableSound(Origin)
 		else
 			local Pitch = net.ReadUInt(8)
-			local Volume = net.ReadUInt(7) / 100
+			local Volume = net.ReadUInt(8) / 100
 
 			Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 		end
