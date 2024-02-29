@@ -20,6 +20,7 @@ return {
                     ApplyForceOffset = State.applyForceStub
                 }
             end,
+            GetChildren = function() return {} end,
         }
 
         -- For simplicity's sake, we'll pretend the ent's ancestor is itself

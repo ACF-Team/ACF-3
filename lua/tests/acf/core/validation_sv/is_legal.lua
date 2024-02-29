@@ -69,7 +69,9 @@ return {
                 expect( Err ).to.equal( "Not Solid" )
             end
         },
-
+        --[[
+        -- This test is likely no longer needed because illegal collision groups cannot be set on entities at all,
+        -- but it could still be useful to keep around in case we decide to change how that works in the future.
         {
             name = "Is not Legal with an illegal collision group",
             func = function( State )
@@ -111,7 +113,7 @@ return {
                 expect( Err ).to.equal( "Invalid Collisions" )
             end
         },
-
+        ]]
         {
             name = "Is not Legal with not-empty ClipData",
             func = function( State )
