@@ -19,6 +19,7 @@ local ValidSeatModels = {
 	["models/vehicles/driver_pod.mdl"] = true,
 	["models/vehicles/pilot_seat.mdl"] = true,
 
+    -- Playerstart seats
 	["models/chairs_playerstart/airboatpose.mdl"] = true,
 	["models/chairs_playerstart/jeeppose.mdl"] = true,
 	["models/chairs_playerstart/podpose.mdl"] = true,
@@ -27,6 +28,7 @@ local ValidSeatModels = {
 	["models/chairs_playerstart/sitpose.mdl"] = true,
 	["models/chairs_playerstart/standingpose.mdl"] = true,
 	
+    -- Racing seats
 	["models/lubprops/seat/raceseat.mdl"] = true,
 	["models/lubprops/seat/raceseat2.mdl"] = true,
 }
