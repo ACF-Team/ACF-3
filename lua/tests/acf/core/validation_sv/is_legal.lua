@@ -19,6 +19,10 @@ return {
                 return true
             end,
 
+            IsVehicle = function()
+                return false
+            end,
+
             GetCollisionGroup = function()
                 return COLLISION_GROUP_NONE
             end
