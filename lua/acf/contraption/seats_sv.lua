@@ -47,7 +47,7 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
         Entity.ACF = {}
         Entity.ACF.PhysObj = PhysObj
         Entity.ACF.LegalMass = PhysObj:GetMass()
-        Entity.ACF.Model = Entity:GetModel()
+        Entity.ACF.Model = Entity.VehicleTable.Model or Entity:GetModel()
         Entity.ACF.LegalSeat = true
         Entity.WireDebugName = Entity.WireDebugName or Entity.VehicleTable.Name or "ACF Legal Vehicle"
 
@@ -70,7 +70,12 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
 end)
 
 hook.Add("ACF_IsLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
-    if ACF.VehicleLegalChecks and Entity:IsVehicle() and not ValidSeatModels[Entity:GetModel()] then
+    if not ACF.VehicleLegalChecks then return end
+    if not Entity:IsVehicle() then return end
+
+    local ModelPath = Entity:GetModel()
+
+    if not ValidSeatModels[ModelPath] and ModelPath ~= Entity.VehicleTable.Model then
         return false, "Bad Seat Model", "This seat model is not on the whitelist."
     end
 end)
