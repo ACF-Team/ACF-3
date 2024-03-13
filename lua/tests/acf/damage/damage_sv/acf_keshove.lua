@@ -17,7 +17,8 @@ return {
             GetPhysicsObject = function()
                 return {
                     IsValid = function() return true end,
-                    ApplyForceOffset = State.applyForceStub
+                    ApplyForceOffset = State.applyForceStub,
+                    GetMass = function() return 1 end,
                 }
             end,
             GetChildren = function() return {} end,
