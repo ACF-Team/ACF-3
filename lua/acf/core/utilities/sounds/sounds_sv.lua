@@ -60,6 +60,6 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 			net.WriteUInt(Volume, 8)
 		end
 		net.SendPAS(Origin:GetPos())
-		Origin.ACF.SoundTimer = Time + 0.1
+		Origin.ACF.SoundTimer = Time + 0.05
 	end
 end

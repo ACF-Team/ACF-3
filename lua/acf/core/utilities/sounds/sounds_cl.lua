@@ -59,8 +59,8 @@ do -- Processing adjustable sounds (for example, engine noises)
 		Volume = Volume * ACF.Volume
 
 		if Sound:IsPlaying() then
-			Sound:ChangePitch(Pitch, 0.1)
-			Sound:ChangeVolume(Volume, 0.1)
+			Sound:ChangePitch(Pitch, 0.05)
+			Sound:ChangeVolume(Volume, 0.05)
 		else
 			Sound:PlayEx(Volume, Pitch)
 		end
