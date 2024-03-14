@@ -24,7 +24,7 @@ jobs:
       - name: Upload to Workshop
         uses: CFC-Servers/gmod-upload@master
         with:
-          id: whatever the ID ends up being
+          id: 3182725803
           changelog: "${{ github.event.head_commit.message }}"
           title: "[ACF-3] Armored Combat Framework"
           type: "tool"
