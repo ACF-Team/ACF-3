@@ -205,6 +205,10 @@ do	-- Turret drives
 			Model			= "models/acf/core/t_trun.mdl",
 			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
+			Preview			= {
+				FOV = 105,
+			},
+
 			Size = {
 				Base		= 12,	-- The default size for the menu
 				Min			= 4,	-- To accomodate itty bitty RWS turrets
@@ -293,6 +297,10 @@ do	-- Turret motors
 			Model			= "models/acf/core/t_drive_e.mdl",
 			Sound			= "acf_base/fx/turret_electric.wav",
 
+			Preview			= {
+				FOV = 100,
+			},
+
 			Mass			= 60, -- Base mass, will be further modified by settings
 			Speed			= 720, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
 			Efficiency		= 0.9,
@@ -323,6 +331,10 @@ do	-- Turret motors
 			Description		= "A strong but sluggish hydraulic motor; it'll turn the world over but takes a little bit to get to that point.",
 			Model			= "models/acf/core/t_drive_h.mdl",
 			Sound			= "acf_base/fx/turret_hydraulic.wav",
+
+			Preview			= {
+				FOV = 100,
+			},
 
 			Mass			= 80, -- Base mass, will be further modified by settings
 			Speed			= 360, -- Base speed, this will/not/change, and is used in calculating the final speed after teeth calculation
@@ -374,6 +386,10 @@ do	-- Turret gyroscopes
 			Description		= "A component that will stabilize one turret drive.\nMust be parented to or share the parent with the linked turret drive.\nMust have a motor linked to the turret drive.",
 			Model			= "models/bull/various/gyroscope.mdl",
 
+			Preview			= {
+				FOV = 125,
+			},
+
 			Mass			= 75,
 			IsDual			= false,
 		})
@@ -382,6 +398,10 @@ do	-- Turret gyroscopes
 			Name			= "Dual Axis Turret Gyro",
 			Description		= "A component that will stabilize one vertical and horizontal turret drive.\nMust be parented to or share the parent with the horizontal turret drive.\nEach turret drive must have a motor linked.",
 			Model			= "models/acf/core/t_gyro.mdl",
+
+			Preview			= {
+				FOV = 90,
+			},
 
 			Mass			= 150,
 			IsDual			= true,
@@ -418,6 +438,10 @@ do	-- Turret computers
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nThis is capable of constantly calculating to track a target at a constant velocity, as long as Calculate is true.\nHas a 2s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
+			Preview			= {
+				FOV = 100,
+			},
+
 			Mass			= 100,
 
 			ComputerInfo	= {
@@ -436,6 +460,10 @@ do	-- Turret computers
 			Name			= "Indirect Ballistics Computer",
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 3s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
+
+			Preview			= {
+				FOV = 100,
+			},
 
 			Mass			= 150,
 

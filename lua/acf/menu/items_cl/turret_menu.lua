@@ -21,6 +21,7 @@ local function CreateMenu(Menu)
 	local Base			= Menu:AddCollapsible("Turret Components")
 	local ComponentName	= Base:AddTitle()
 	local ComponentDesc	= Base:AddLabel()
+	local ComponentPreview = Base:AddModelPreview(_, true)
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -45,6 +46,9 @@ local function CreateMenu(Menu)
 
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "No description provided.")
+
+		ComponentPreview:UpdateModel(Data.Model)
+		ComponentPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
