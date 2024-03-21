@@ -83,7 +83,7 @@ do -- Local repository version checking
 			local Code = string.sub(FileData, 1, 7)
 			local Date = file.Time(WorkshopPath, "GAME")
 
-			Data.Code = "Workshop-" .. Code
+			Data.Code = "Git-master-" .. Code
 			Data.Date = LocalToUTC(Date)
 		elseif file.Exists(Path .. "/LICENSE", "GAME") then
 			local Date = file.Time(Path .. "/LICENSE", "GAME")
