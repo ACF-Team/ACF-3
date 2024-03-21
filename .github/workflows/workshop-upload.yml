@@ -14,12 +14,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: project
 
       - name: Create Commit Version File
         shell: bash
         run: |
-          mkdir -p ~/data_static/acf
-          echo "${{ github.sha }}" > ~/data_static/acf/acf-3-version.txt
+          mkdir -p ${{ github.workspace }}/project/data_static/acf
+          echo "${{ github.sha }}" > ${{ github.workspace }}/project/data_static/acf/acf-3-version.txt
 
       - name: Upload to Workshop
         uses: CFC-Servers/gmod-upload@master
