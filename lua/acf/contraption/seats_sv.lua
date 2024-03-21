@@ -31,6 +31,9 @@ local ValidSeatModels = {
     -- Racing seats
     ["models/lubprops/seat/raceseat.mdl"] = true,
     ["models/lubprops/seat/raceseat2.mdl"] = true,
+
+    -- Crew Seats
+    ["models/liddul/crewseat.mdl"] = true,
 }
 
 ACF.ValidSeatModels = ValidSeatModels
