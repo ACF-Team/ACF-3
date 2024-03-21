@@ -18,8 +18,8 @@ jobs:
       - name: Create Commit Version File
         shell: bash
         run: |
-          mkdir -p ${{ github.workspace }}/data_static/acf
-          echo "${{ github.sha }}" > ${{ github.workspace }}/data_static/acf/acf-3-version.txt
+          mkdir -p ${{ github.workspace }}/project/data_static/acf
+          echo "${{ github.sha }}" > ${{ github.workspace }}/project/data_static/acf/acf-3-version.txt
 
       - name: Upload to Workshop
         uses: CFC-Servers/gmod-upload@master
