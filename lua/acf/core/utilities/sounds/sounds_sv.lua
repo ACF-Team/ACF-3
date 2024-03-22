@@ -50,7 +50,7 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 
 	-- Slowing down the rate of sending a bit
 	if Origin.ACF.SoundTimer <= Time or ShouldStop then
-		net.Start("ACF_Sounds_Adjustable")
+		net.Start("ACF_Sounds_Adjustable", true)
 			net.WriteEntity(Origin)
 			net.WriteBool(ShouldStop)
 		if not ShouldStop then
