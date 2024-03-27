@@ -1897,7 +1897,7 @@ if SERVER then
 
 		for Wheel in pairs(GetLinkedWheels(This)) do
 			Count = Count + 1
-			Wheels[Count] = Wheel
+			Wheels[Count] = wrap(Wheel)
 		end
 
 		return Wheels
