@@ -73,7 +73,7 @@ return {
                 local Ent = State.Ent
                 Ent.acflastupdatemass = nil
 
-                local calcMass = stub( ACF, "CalcMassRatio" )
+                local calcMass = stub( ACF.Contraption, "CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
                 expect( calcMass ).was.called()
@@ -86,7 +86,7 @@ return {
                 local Ent = State.Ent
                 Ent.acflastupdatemass = -math.huge
 
-                local calcMass = stub( ACF, "CalcMassRatio" )
+                local calcMass = stub( ACF.Contraption, "CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
                 expect( calcMass ).was.called()
