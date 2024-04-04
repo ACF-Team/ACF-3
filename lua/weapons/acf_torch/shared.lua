@@ -332,6 +332,7 @@ function SWEP:SecondaryAttack()
 		DmgResult:SetThickness(Entity.ACF.Armour)
 
 		DmgInfo:SetAttacker(Owner)
+		DmgInfo:SetInflictor(self)
 		DmgInfo:SetOrigin(Trace.StartPos)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
