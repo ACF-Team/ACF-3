@@ -39,6 +39,9 @@ local function GetReloadTime(Entity)
 	return (Unloading or NewLoad) and Entity.MagReload or Entity.ReloadTime or 0
 end
 
+---Returns a table of all the linked wheels of a given entity (usually gearbox?)
+---@param Target table Entity to get linked entities from
+---@return table<table,true> Linked The linked entities
 local function GetLinkedWheels(Target)
 	local Queued  = { [Target] = true }
 	local Checked = {}
@@ -52,9 +55,9 @@ local function GetLinkedWheels(Target)
 
 		Queued[Current] = nil
 		Checked[Current] = true
-
-		for Name, Action in pairs(Sources) do
-			for Entity in pairs(Action(Current)) do
+		
+		for Name, Action in pairs(Sources) do -- For all source types
+			for Entity in pairs(Action(Current)) do -- For all entities of this source type
 				if not (Checked[Entity] or Queued[Entity]) then
 					if Name == "Wheels" then
 						Checked[Entity] = true
@@ -76,7 +79,7 @@ end
 
 __e2setcost(2)
 
---returns current ACF drag divisor
+-- Returns current ACF drag divisor
 e2function number acfDragDiv()
 	return ACF.DragDiv
 end
