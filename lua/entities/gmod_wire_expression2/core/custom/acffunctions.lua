@@ -55,10 +55,10 @@ local function GetLinkedWheels(Target)
 
 		Queued[Current] = nil
 		Checked[Current] = true
-		
+
 		for Name, Action in pairs(Sources) do -- For all source types
 			for Entity in pairs(Action(Current)) do -- For all entities of this source type
-				if not (Checked[Entity] or Queued[Entity]) then
+				if not (Checked[Entity] or Queued[Entity]) then 
 					if Name == "Wheels" then
 						Checked[Entity] = true
 						Linked[Entity] = true

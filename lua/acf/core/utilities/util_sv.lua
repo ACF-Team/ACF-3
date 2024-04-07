@@ -144,6 +144,7 @@ do
 		end
 	end
 
+	-- Similar to constraint.RemoveAll
 	local function ClearConstraints(Entity)
 		local Constraints = Entity.Constraints
 
@@ -297,7 +298,7 @@ do -- Entity linking
 	---@param Entity table The entity to check
 	---@param VarName string The field of the entity that stores link sources (e.g. "Entity.FuelTanks" for engines)
 	---@param SingleEntry boolean | nil Whether the entity supports a single source link or multiple
-	---@return table<table, true> # A table whos keys are the link source entities and whos values are all true
+	---@return table<table, true> # A table whose keys are the link source entities and whose values are all true
 	---@see EntityLink
 	local function GetEntityLinks(Entity, VarName, SingleEntry)
 		if not Entity[VarName] then return {} end
@@ -355,7 +356,7 @@ do -- Entity linking
 		return Result
 	end
 
-	-- Returns the link source callable of a given class and VarName
+	---Returns the link source callable of a given class and VarName
 	---@param Class string The name of the class
 	---@param VarName string The varname for the given class
 	---@return fun(Entity:table):table # The link source callable
@@ -365,7 +366,9 @@ do -- Entity linking
 		return EntityLink[Class][VarName]
 	end
 
-	-- Returns a table of entities linked to the given entity.
+	---Returns a table of entities linked to the given entity.
+	---@param Entity The entity to get links from
+	---@return table<table,true> # A table mapping entities to true.
 	function ACF.GetLinkedEntities(Entity)
 		if not IsValid(Entity) then return {} end
 
