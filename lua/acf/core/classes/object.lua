@@ -6,10 +6,10 @@ local Classes  = ACF.Classes
 local Stored   = {}
 local Queued   = {}
 
----Creates a new instance of the provided class  
----If The class has an "OnCalled" method defined, it will run that.  
----@param Class table The class to create an instance of  
----@return table # The newly created instance 
+--- Creates a new instance of the provided class  
+--- If The class has an "OnCalled" method defined, it will run that.  
+--- @param Class table The class to create an instance of  
+--- @return table # The newly created instance 
 local function CreateInstance(Class)
 	local New = {}
 
@@ -23,9 +23,9 @@ local function CreateInstance(Class)
 	return New
 end
 
----Used to queue classes that are waiting for their base classes to be loaded
----@param ID string The id of the classs to queue
----@param Base table The base class 
+--- Used to queue classes that are waiting for their base classes to be loaded
+--- @param ID string The id of the classs to queue
+--- @param Base table The base class 
 local function QueueBaseClass(ID, Base)
 	if not Queued[Base] then
 		Queued[Base] = { [ID] = true }
@@ -34,9 +34,9 @@ local function QueueBaseClass(ID, Base)
 	end
 end
 
----Updates/Initializes a metatable for a class and "parents" it to a base class
----@param Class table The class to be initialized/updated
----@param Base string The base class of the provided class
+--- Updates/Initializes a metatable for a class and "parents" it to a base class
+--- @param Class table The class to be initialized/updated
+--- @param Base string The base class of the provided class
 local function AttachMetaTable(Class, Base)
 	local OldMeta = getmetatable(Class) or {}
 
@@ -70,11 +70,11 @@ local function AttachMetaTable(Class, Base)
 	end)
 end
 
----Creates a new object with the given ID, as a subclass of the Base class provided
----@param ID string The ID of the new sub class to add
----@param Base string The ID of the base class the sub class will inherit from
----@param Destiny table A table that the new object will be indexed into, with the ID as key
----@return table # The created class
+--- Creates a new object with the given ID, as a subclass of the Base class provided
+--- @param ID string The ID of the new sub class to add
+--- @param Base string The ID of the base class the sub class will inherit from
+--- @param Destiny table A table that the new object will be indexed into, with the ID as key
+--- @return table # The created class
 function Classes.AddObject(ID, Base, Destiny)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
