@@ -39,9 +39,9 @@ local function GetReloadTime(Entity)
 	return (Unloading or NewLoad) and Entity.MagReload or Entity.ReloadTime or 0
 end
 
---- Returns a table of all the linked wheels of a given entity (usually gearbox?)
+--- Returns a table of all the linked wheels of a given entity (usually a gearbox?)
 --- @param Target table Entity to get linked entities from
---- @return table<table,true> Linked The linked entities
+--- @return table<table, true> Linked The linked entities
 local function GetLinkedWheels(Target)
 	local Queued  = { [Target] = true }
 	local Checked = {}

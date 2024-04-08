@@ -7,9 +7,9 @@ local Stored   = {}
 local Queued   = {}
 
 --- Creates a new instance of the provided class  
---- If The class has an "OnCalled" method defined, it will run that.  
---- @param Class table The class to create an instance of  
---- @return table # The newly created instance 
+--- If the class has an "OnCalled" method defined, it will run that.
+--- @param Class table The class to create an instance of
+--- @return table # The newly created instance
 local function CreateInstance(Class)
 	local New = {}
 
@@ -24,8 +24,8 @@ local function CreateInstance(Class)
 end
 
 --- Used to queue classes that are waiting for their base classes to be loaded
---- @param ID string The id of the classs to queue
---- @param Base table The base class 
+--- @param ID string The id of the class to queue
+--- @param Base string The base class
 local function QueueBaseClass(ID, Base)
 	if not Queued[Base] then
 		Queued[Base] = { [ID] = true }
@@ -86,7 +86,7 @@ function Classes.AddObject(ID, Base, Destiny)
 
 	AttachMetaTable(Class, Base) -- Attach a metatable to "Class" with "Base" as parent
 
-	-- If this class is a base class for other class(es), Attach metatables to all its sub classes with itself as base class.
+	-- If this class is a base class for other class(es), attach metatables to all its sub classes with itself as base class.
 	if Queued[ID] then
 		for K in pairs(Queued[ID]) do
 			AttachMetaTable(Stored[K], ID)
