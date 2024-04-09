@@ -57,6 +57,13 @@ do -- HTTP Request
 		end
 	end
 
+	--- Sends a fetch request to the given url with the given headers.  
+	--- For further elaboration, please read this function's definition and SuccessfulRequest.  
+	--- To better understand the inputs, please check: https://wiki.facepunch.com/gmod/http.Fetch.
+	--- @param Link string The HTTP endpoint to send a fetch request to
+	--- @param Headers table Headers to use in the HTTP request
+	--- @param OnSuccess fun(Body:string,Data:table)
+	--- @param OnFailure fun(Error:string)
 	function ACF.StartRequest(Link, OnSuccess, OnFailure, Headers)
 		if not isstring(Link) then return end
 		if not isfunction(OnSuccess) then OnSuccess = nil end
@@ -116,7 +123,9 @@ do -- HTTP Request
 	end)
 end
 
-do -- Entity saving and restoring
+-- Entity saving and restoring
+-- Necessary because some components will update their physics object on update (e.g. ammo crates/scalable guns)
+do
 	local ConstraintTypes = duplicator.ConstraintType
 	local Entities = {}
 
@@ -226,7 +235,10 @@ do -- Entity saving and restoring
 	end
 
 	------------------------------------------------------------------------
-
+	--- Saves the physical properties/constraints/etc. of an entity to the "Entities" table.  
+	--- Should be used before calling Update functions on ACF entities. Call RestoreEntity after.  
+	--- Necessary because some components will update their physics object on update (e.g. ammo crates/scalable guns).
+	--- @param Entity table The entity to index
 	function ACF.SaveEntity(Entity)
 		if not IsValid(Entity) then return end
 
@@ -244,11 +256,16 @@ do -- Entity saving and restoring
 
 		ClearConstraints(Entity)
 
+		-- If for whatever reason the entity is removed before RestoreEntity is called,
+		-- Update the entity table
 		Entity:CallOnRemove("ACF_RestoreEntity", function()
 			Entities[Entity] = nil
 		end)
 	end
 
+	--- Sets the properties/constraints/etc of an entity from the "Entities" table.  
+	--- Should be used after calling Update functions on ACF entities.
+	--- @param Entity table The entity to restore
 	function ACF.RestoreEntity(Entity)
 		if not IsValid(Entity) then return end
 		if not Entities[Entity] then return end
@@ -267,12 +284,36 @@ do -- Entity saving and restoring
 
 		Entities[Entity] = nil
 
+		-- Disables the CallOnRemove callback from earlier
 		Entity:RemoveCallOnRemove("ACF_RestoreEntity")
 	end
 end
 
 do -- Entity linking
+	--[[
+	Example structure of EntityLink:
+	
+	EntityLink = {
+		["acf_engine"] = {
+			["FuelTanks"] = function(Entity)
+				return GetEntityLinks(Entity, "FuelTanks", nil)
+			end,
+			["Gearboxes"] = function(Entity)
+				return GetEntityLinks(Entity, "Gearboxes", nil)
+			end
+		}
+	}
+
+	This example demonstrates that any entity of the acf_engine class has the fields FuelTanks and Gearboxes in its entity table that reference their respective link sources.
+	This is done to localize the functions for optimization reasons.
+	]]--
 	local EntityLink = {}
+
+	--- Returns links to the entry.
+	--- @param Entity table The entity to check
+	--- @param VarName string The field of the entity that stores link sources (e.g. "Entity.FuelTanks" for engines)
+	--- @param SingleEntry boolean | nil Whether the entity supports a single source link or multiple
+	--- @return table<table, true> # A table whose keys are the link source entities and whose values are all true
 	local function GetEntityLinks(Entity, VarName, SingleEntry)
 		if not Entity[VarName] then return {} end
 
@@ -289,7 +330,13 @@ do -- Entity linking
 		return Result
 	end
 
-	-- If your entity can link/unlink other entities, you should use this
+	--- Registers that all entities of this class have a field which refers to its link source(s).  
+	--- If your entity can link/unlink other entities, you should use this.  
+	--- Certain E2/SF functions require this in order to function (e.g. getting linked wheels of a gearbox).  
+	--- Example usage: ACF.RegisterLinkSource("acf_engine", "FuelTanks")
+	--- @param Class string The name of the class
+	--- @param VarName string The field referencing one of the class's link source(s)
+	--- @param SingleEntry boolean | nil Whether the entity supports a single source link or multiple
 	function ACF.RegisterLinkSource(Class, VarName, SingleEntry)
 		local Data = EntityLink[Class]
 
@@ -306,6 +353,9 @@ do -- Entity linking
 		end
 	end
 
+	--- Returns all the link source callables for this entity.
+	--- @param Class string The name of the class
+	--- @return table<string, fun(Entity:table):table> # All the relevant link source callables
 	function ACF.GetAllLinkSources(Class)
 		if not EntityLink[Class] then return {} end
 
@@ -318,12 +368,19 @@ do -- Entity linking
 		return Result
 	end
 
+	--- Returns the link source callable of a given class and VarName.
+	--- @param Class string The name of the class
+	--- @param VarName string The varname for the given class
+	--- @return fun(Entity:table):table | nil # The link source callable, or nil if the class doesn't have one
 	function ACF.GetLinkSource(Class, VarName)
 		if not EntityLink[Class] then return end
 
 		return EntityLink[Class][VarName]
 	end
 
+	--- Returns a table of entities linked to the given entity.
+	--- @param Entity table The entity to get links from
+	--- @return table<table, true> # A table mapping entities to true
 	function ACF.GetLinkedEntities(Entity)
 		if not IsValid(Entity) then return {} end
 
@@ -342,7 +399,28 @@ do -- Entity linking
 		return Result
 	end
 
+	--[[
+		Example structure of ClassLink:
+
+		ClassLink = {
+			["Link"] = {
+				["acf_ammo"] = {
+					["acf_gun"] = function(Ent1, Ent2) -- Handles linking guns and ammo
+				}
+			},
+			["Unlink"] = {
+				["acf_ammo"] = {
+					["acf_gun"] = function(Ent1, Ent2) -- Handles unlinking guns and ammo
+				}
+			}
+		}
+	]]--
 	local ClassLink = { Link = {}, Unlink = {} }
+
+	--- Registers a link or unlink between two classes and how to handle them.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param Function fun(Entity1:table, Entity2:table)
 	local function RegisterNewLink(Action, Class1, Class2, Function)
 		if not isfunction(Function) then return end
 
@@ -378,20 +456,36 @@ do -- Entity linking
 		end
 	end
 
+	--- Registers that two classes can be linked, as well as how to handle entities of their class being linked.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param Function fun(Entity1:table, Entity2:table) The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
 	function ACF.RegisterClassLink(Class1, Class2, Function)
 		RegisterNewLink("Link", Class1, Class2, Function)
 	end
 
+	--- Returns the callback defined previously by ACF.RegisterClassLink between Class1 and Class2.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @return fun(Entity1:table, Entity2:table) | nil # The linking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no linking functions
 	function ACF.GetClassLink(Class1, Class2)
 		if not ClassLink.Link[Class1] then return end
 
 		return ClassLink.Link[Class1][Class2]
 	end
 
+	--- Registers that two classes can be unlinked, as well as how to handle entities of their class being unlinked.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param Function fun(Entity1:table, Entity2:table) The unlinking function defined between an entity of Class1 and an entity of Class2
 	function ACF.RegisterClassUnlink(Class1, Class2, Function)
 		RegisterNewLink("Unlink", Class1, Class2, Function)
 	end
 
+	--- Returns the callback defined previously by ACF.RegisterClassUnlink between Class1 and Class2.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @return fun(Entity1:table, Entity2:table) | nil # The unlinking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no unlinking functions
 	function ACF.GetClassUnlink(Class1, Class2)
 		if not ClassLink.Unlink[Class1] then return end
 
@@ -400,8 +494,20 @@ do -- Entity linking
 end
 
 do -- Entity inputs
+	--[[
+		Example structure of inputs:
+
+		Inputs = {
+			["acf_ammo"] = {
+				["Load"] = function(Entity, Value) -- Handles when the "Load" wire input is triggered
+			}
+		}
+	]]--
 	local Inputs = {}
 
+	--- Returns the table mapping a class's inputs to a function that handles them.
+	--- @param Class string The class to get data from
+	--- @return table<string,fun(Entity:table, Value:any)> # A table of input names to functions that handle them
 	local function GetClass(Class)
 		if not Inputs[Class] then
 			Inputs[Class] = {}
@@ -410,6 +516,10 @@ do -- Entity inputs
 		return Inputs[Class]
 	end
 
+	--- For a given class, add an input action for when an input is triggered.
+	--- @param Class string The class to apply to
+	--- @param Name string The wire input to trigger on
+	--- @param Action fun(Entity:table, Value:any) The function that gets called when the wire input is triggered
 	function ACF.AddInputAction(Class, Name, Action)
 		if not Class then return end
 		if not Name then return end
@@ -420,6 +530,10 @@ do -- Entity inputs
 		Data[Name] = Action
 	end
 
+	--- Returns the callback defined previously by ACF.AddInputAction for the given class and wire input name.
+	--- @param Class string The class to retrieve from
+	--- @param Name string The wire input retrieve from
+	--- @return fun(Entity:table, Value:any) | nil # The callback for the given class and wire input name, or nil if the arguments are invalid
 	function ACF.GetInputAction(Class, Name)
 		if not Class then return end
 		if not Name then return end
@@ -429,6 +543,9 @@ do -- Entity inputs
 		return Data[Name]
 	end
 
+	--- For a given class, returns a table of wire input names mapped to their handlers, defined previously by ACF.AddInputAction.
+	--- @param Class string The class to retrieve from
+	--- @return table<string,fun(Entity:table,Value:any)> | nil # A table of wire input names mapped to their handlers, or nil if Class is invalid
 	function ACF.GetInputActions(Class)
 		if not Class then return end
 
@@ -437,8 +554,24 @@ do -- Entity inputs
 end
 
 do -- Extra overlay text
+	--[[
+		Example structure of Classes:
+		
+		Classes = {
+			["acf_ammo"] = {
+				["Kinematic"] = function(Entity), -- Returns text containing muzzle vel, drag coef, etc.
+				["Explosive"] = function(Entity) -- Returns text containing explosive mass, blast radius, etc.
+			}
+		}
+
+		*Note that unlike most examples this isn't actually used anywhere at the time of writing.*
+	]]--
 	local Classes = {}
 
+	--- Registers a function that provides text for the overlay, with a given Identifier, for a given class.
+	--- @param ClassName string Name of the class to register for
+	--- @param Identifier string The identitifer to assosciate the function with
+	--- @param Function fun(Entity:table):string A function which takes the entity and returns some text for the identifier
 	function ACF.RegisterOverlayText(ClassName, Identifier, Function)
 		if not isstring(ClassName) then return end
 		if Identifier == nil then return end
@@ -455,6 +588,9 @@ do -- Extra overlay text
 		end
 	end
 
+	--- Removes an overlay callback defined previously by ACF.RegisterOverlayText.
+	--- @param ClassName string Name of the class to affect
+	--- @param Identifier string The identifier of the function to be removed
 	function ACF.RemoveOverlayText(ClassName, Identifier)
 		if not isstring(ClassName) then return end
 		if Identifier == nil then return end
@@ -466,6 +602,9 @@ do -- Extra overlay text
 		Class[Identifier] = nil
 	end
 
+	--- Given an entity, returns its overlay text, made by concatenating the overlay functions for its class.
+	--- @param Entity table The entity to generate overlay text for
+	--- @return string # The overlay text for this entity
 	function ACF.GetOverlayText(Entity)
 		local Class = Classes[Entity:GetClass()]
 
@@ -581,7 +720,7 @@ do -- Special squishy functions
 			DmgResult:SetThickness(0.01) -- squishy squishy brain matter, no resistance
 
 			HitRes = DmgResult:Compute()
-			Damage = Damage + (HitRes.Damage * 50 * math.max(1,HitRes.Overkill * 0.25)) -- yuge damage, yo brains just got scrambled by a BOOLET
+			Damage = Damage + (HitRes.Damage * 50 * math.max(1, HitRes.Overkill * 0.25)) -- yuge damage, yo brains just got scrambled by a BOOLET
 		end
 
 		return Damage, HitRes

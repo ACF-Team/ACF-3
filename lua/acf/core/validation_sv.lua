@@ -204,6 +204,8 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	return Entity.ACF.Type
 end
 
+--- Initializes the entity's armor properties. If ACF_Activate is defined by the entity, that method is called as well.
+--- @param Recalc boolean Whether or not to recalculate the health
 function ACF.Activate(Entity, Recalc)
 	-- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = Entity:GetPhysicsObject()
