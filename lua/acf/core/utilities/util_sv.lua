@@ -405,7 +405,7 @@ do -- Entity linking
 	--- Registers a link or unlink between two classes and how to handle them.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @param Function fun(Class1:table, Class2:table)
+	--- @param Function fun(Entity1:table, Entity2:table)
 	local function RegisterNewLink(Action, Class1, Class2, Function)
 		if not isfunction(Function) then return end
 
@@ -504,7 +504,7 @@ do -- Entity inputs
 	--- For a given class, add an input action for when an input is triggered.
 	--- @param Class string The class to apply to
 	--- @param Name string The wire input to trigger on
-	--- @param Action fun(Entity:table,Value:any) The function that gets called when the wire input is triggered
+	--- @param Action fun(Entity:table, Value:any) The function that gets called when the wire input is triggered
 	function ACF.AddInputAction(Class, Name, Action)
 		if not Class then return end
 		if not Name then return end
