@@ -4,7 +4,11 @@ local isstring = isstring
 local istable  = istable
 local Classes  = ACF.Classes
 
-
+--- Registers a group
+--- @param ID string The ID of the group
+--- @param Destiny table The table to store the group in
+--- @param Data table The data of the group
+--- @return table Group The created group
 function Classes.AddGroup(ID, Destiny, Data)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
@@ -32,6 +36,12 @@ function Classes.AddGroup(ID, Destiny, Data)
 	return Group
 end
 
+--- Registers a group item under a group
+--- @param ID string The ID of the item to add to the group
+--- @param GroupID string The ID of the group previously created using Class.AddGroup
+--- @param Destiny string The table to store the group item in (should be the same as the group)
+--- @param Data table The data of the group item
+--- @return table Class The created group item
 function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 	if not isstring(ID) then return end
 	if not isstring(GroupID) then return end
@@ -63,6 +73,10 @@ function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 	return Class
 end
 
+--- Gets a group or group item given its ID and the namespace it's stored in
+--- @param Namespace string The table to store the group in
+--- @param ID string The ID of the group
+--- @return table | nil # The group or group item if found
 function Classes.GetGroup(Namespace, ID)
 	if not istable(Namespace) then return end
 	if not isstring(ID) then return end
@@ -80,6 +94,9 @@ function Classes.GetGroup(Namespace, ID)
 	end
 end
 
+--- Indexes the groups stored in Entries into a new Namespace, with helper functions
+--- @param Namespace table The namespace to store the groups under
+--- @param Entries table The table storing groups
 function Classes.AddGroupedFunctions(Namespace, Entries)
 	if not istable(Namespace) then return end
 	if not istable(Entries) then return end
