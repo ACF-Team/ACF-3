@@ -611,9 +611,9 @@ end
 
 function ENT:UpdateSound(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
-	local Path = SelfTbl.SoundPath
+	local LastSound = SelfTbl.LastSound
 
-	if Path ~= SelfTbl.LastSound then
+	if Path ~= LastSound and LastSound ~= nil then
 		self:DestroySound()
 
 		SelfTbl.LastSound = Path
