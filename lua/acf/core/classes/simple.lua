@@ -5,11 +5,11 @@ local istable  = istable
 local Classes  = ACF.Classes
 
 --- Registers a simple class 
---- Similar to Classes.AddObject
+--- Similar to Classes.AddObject, except more intended to purely store data (e.g. fuel types) (try not to put methods in these).
 --- @param ID string The ID of the simple class to add
 --- @param Destiny table The table to store the simple class in
 --- @param Data table The data of the simple class
---- @return table Class The created simple class
+--- @return table | nil Class The created simple class
 function Classes.AddSimple(ID, Destiny, Data)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
@@ -35,7 +35,7 @@ function Classes.AddSimple(ID, Destiny, Data)
 end
 
 --- Indexes the simple classes stored in Entries into a new Namespace, with helper functions
---- @param Namespace table The namespace to store the simple classes under
+--- @param Namespace table The table that will receive the new functions
 --- @param Entries table The table storing simple classes
 function Classes.AddSimpleFunctions(Namespace, Entries)
 	if not istable(Namespace) then return end
