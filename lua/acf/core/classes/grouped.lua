@@ -76,7 +76,7 @@ end
 --- Gets a group given its ID and the namespace it's stored in
 --- @param Namespace string The namespace to lookup the group in
 --- @param ID string The ID of the group
---- @return table | nil # The group or group item if found
+--- @return table | nil # The group if found
 function Classes.GetGroup(Namespace, ID)
 	if not istable(Namespace) then return end
 	if not isstring(ID) then return end
