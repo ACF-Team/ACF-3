@@ -73,9 +73,10 @@ function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 	return Class
 end
 
---- Gets a group given its ID and the namespace it's stored in
+--- Gets a group given its ID and the namespace it's stored in  
+--- If no such group exists, it will instead check for a group that has a group item with the given ID
 --- @param Namespace string The namespace to lookup the group in
---- @param ID string The ID of the group
+--- @param ID string The ID of the group, or the ID of a group item
 --- @return table | nil # The group if found
 function Classes.GetGroup(Namespace, ID)
 	if not istable(Namespace) then return end
@@ -101,9 +102,15 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	if not istable(Namespace) then return end
 	if not istable(Entries) then return end
 
+	-- Note that all the functions for simple class namespaces apply too.
 	Classes.AddSimpleFunctions(Namespace, Entries)
 
 	-- Getters
+
+	--- Gets a group item from a group in the namespace
+	--- @param ClassID string The ID of the group
+	--- @param ID string The ID of the group item
+	--- @return table | nil # A group item
 	function Namespace.GetItem(ClassID, ID)
 		local Group = isstring(ClassID) and Entries[ClassID]
 
@@ -112,6 +119,10 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		return isstring(ID) and Group.Lookup[ID] or nil
 	end
 
+	--- Gets all the group items for a given group in the namespace  
+	--- If aliases exist in the namespace, they will be ignored in the returned table
+	--- @param ClassID string The ID of the group to explore
+	--- @return table<string,table> # A table mapping item's IDs to themselves
 	function Namespace.GetItemEntries(ClassID)
 		local Group = isstring(ClassID) and Entries[ClassID]
 
@@ -126,6 +137,10 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		return Result
 	end
 
+	--- Gets all the group items for a given group in the namespace  
+	--- If aliases exist in the namespace, they will be included in the returned table
+	--- @param ClassID string The ID of the group to explore
+	--- @return table<number, table> # An "array" (e.g. {class1,class2,...}) containing group items.
 	function Namespace.GetItemList(ClassID)
 		local Group = isstring(ClassID) and Entries[ClassID]
 
@@ -141,6 +156,11 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	end
 
 	-- Aliases
+
+	--- Adds an alias to a group item
+	--- @param GroupID string # The ID of the group the group item belongs to
+	--- @param ID string # The ID of the group item to make an alias of
+	--- @param Alias string # The alias to apply to the given group item
 	function Namespace.AddItemAlias(GroupID, ID, Alias)
 		local Group = isstring(GroupID) and Entries[GroupID]
 
@@ -153,6 +173,10 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		Lookup[Alias] = Lookup[ID]
 	end
 
+	--- Checks whether an ID is an alias of a group item
+	--- @param GroupID string # The ID of the group the group item belongs to
+	--- @param ID string # The ID to check
+	--- @return boolean # Whether the ID is an alias of a group item
 	function Namespace.IsItemAlias(GroupID, ID)
 		local Group = isstring(GroupID) and Entries[GroupID]
 

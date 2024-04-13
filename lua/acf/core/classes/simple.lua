@@ -41,11 +41,18 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 	if not istable(Namespace) then return end
 	if not istable(Entries) then return end
 
-	-- Getter
+	-- Getters
+
+	--- Gets the (object/simple class/group) from the namespace with the given ID
+	--- @param ID string The ID of the (object/simple class/group)
+	--- @return table | nil # The (object/simple class/group)
 	function Namespace.Get(ID)
 		return isstring(ID) and Entries[ID] or nil
 	end
 
+	--- Gets all the (objects/simple classes/groups) belonging to the namespace  
+	--- If aliases exist in the namespace, they will be ignored in the returned table
+	--- @return table<string,table> # A table mapping the an (object/simple class/group)'s ID to itself 
 	function Namespace.GetEntries()
 		local Result = {}
 
@@ -56,6 +63,9 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 		return Result
 	end
 
+	--- Gets all the (objects/simple classes/groups) belonging to the namespace  
+	--- If aliases exist in the namespace, they will be included in the returned table
+	--- @return table<number,table> # An "array" (e.g. {class1,class2,...}) containing (objects/simple classes/groups)
 	function Namespace.GetList()
 		local Result = {}
 		local Count  = 0
@@ -70,6 +80,10 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 	end
 
 	-- Aliases
+
+	--- Adds an alias to a (objects/simple classes/groups)
+	--- @param ID string The ID of the (objects/simple classes/groups) to apply an alias to
+	--- @param Alias string The Alias to map to the given ID
 	function Namespace.AddAlias(ID, Alias)
 		if not isstring(ID) then return end
 		if not isstring(Alias) then return end
@@ -77,6 +91,9 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 		Entries[Alias] = Entries[ID]
 	end
 
+	--- Checks whether an ID is an alias
+	--- @param ID string The ID to check
+	--- @return boolean # Whether the ID is an alias
 	function Namespace.IsAlias(ID)
 		local Data = isstring(ID) and Entries[ID]
 
