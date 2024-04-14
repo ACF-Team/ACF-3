@@ -181,7 +181,8 @@ end
 
 do	-- Metamethods and other important stuff
 	do
-		local Text = "%s\n\n%GNm Torque\nTeeth: %Gt"
+		local Text = "%s\n\nTorque: %G Nm\nTeeth: %G t"
+
 		function ENT:UpdateOverlayText()
 			local Status = ""
 
