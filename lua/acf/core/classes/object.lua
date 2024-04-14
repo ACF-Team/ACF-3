@@ -74,7 +74,7 @@ end
 --- @param ID string The ID of the new sub class to add
 --- @param Base string The ID of the base class the sub class will inherit from
 --- @param Destiny table A table that the new object will be indexed into, with the ID as key
---- @return table # The created class
+--- @return table | nil # The created object
 function Classes.AddObject(ID, Base, Destiny)
 	if not isstring(ID) then return end
 	if not istable(Destiny) then return end
