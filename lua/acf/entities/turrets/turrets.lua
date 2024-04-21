@@ -44,7 +44,7 @@ do	-- Turret drives
 		GetRingHeight	= function(TurretData,Size)
 			local RingHeight = math.max(Size * TurretData.Ratio,4)
 
-			if (TurretData.Type == "Turret-H") and (Size < 12) then
+			if (TurretData.Type == "Turret-H") and (Size <= 12.5) then
 				return 12 -- sticc
 			end
 
@@ -141,7 +141,7 @@ do	-- Turret drives
 			Name			= "Horizontal Turret",
 			Description		= "The large stable base of a turret.",
 			Model			= "models/acf/core/t_ring.mdl",
-			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters < 12u, for RWS or other small turrets
+			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
 			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
