@@ -372,6 +372,10 @@ do -- Clientside Tool interaction
 		local Key = "ToolMode:%s"
 		local Value = "%s:%s"
 
+		--- Sets and networks to the server, the current state of a tool, its stage and its operation. 
+		--- @param Tool string The name of the tool (e.g. "acf_menu"/"acf_copy")
+		--- @param Stage string The stage of the tool (e.g. "Spawner"/"Main")
+		--- @param Op string The operation of the tool (e.g. "Weapon"/"Sensor"/etc.)
 		function ACF.SetToolMode(Tool, Stage, Op)
 			if not isstring(Tool) then return end
 			if not isstring(Stage) then return end
@@ -593,6 +597,13 @@ do -- Generic Spawner/Linker operation creator
 		end
 	end
 
+	--- Creates a menu operation  
+	--- Mostly serves as a wrapper for (https://wiki.facepunch.com/gmod/Tool_Information_Display)  
+	--- Internally links the helpers SpawnEntity and SelectEntity to your left and right mouse  
+	--- To actually define an entity's linking or spawn behaviour, use the entity files (e.g. init.lua)  
+	--- @param Name string The name of the link type performed by the toolgun (e.g. Weapon, Engine, etc.)
+	--- @param Primary string The type of the entity to be spawned on left click (purely aesthetical)
+	--- @param Secondary string The type of entity to be spawned on shift + right click (purely aesthetical)
 	function ACF.CreateMenuOperation(Name, Primary, Secondary)
 		if not isstring(Name) then return end
 		if not isstring(Primary) then return end
@@ -600,6 +611,7 @@ do -- Generic Spawner/Linker operation creator
 		Secondary = ACF.CheckString(Secondary)
 
 		do -- Spawner stuff
+			-- These basically setup the tool information display you see on the top left of your screen
 			ACF.RegisterOperation("acf_menu", "Spawner", Name, {
 				OnLeftClick  = SpawnEntity,
 				OnRightClick = function(Tool, Trace)

@@ -178,11 +178,18 @@ do -- Client data getter functions
 		return ACF.CheckString(Value, "")
 	end
 
+	--- When called, returns all the table storing all of the client's datavars
 	ACF.GetClientData = GetData
 	ACF.GetClientRaw = GetData
 end
 
 do -- Server data setter function
+	--- Sets a server datavar and networks it to the client
+	--- The server cannot modify the client because we don't want ACF to natively support servers modifying the client
+	--- Internally calls the ACF_OnServerDataUpdate hook
+	--- @param Key string The key of the datavar
+	--- @param Value any The value the datavar
+	--- @param Forced boolean Whether to send regardless of difference checks
 	function ACF.SetServerData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
