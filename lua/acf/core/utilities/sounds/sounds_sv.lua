@@ -4,6 +4,12 @@ util.AddNetworkString("ACF_Sounds")
 util.AddNetworkString("ACF_Sounds_Adjustable")
 util.AddNetworkString("ACF_Sounds_AdjustableCreate")
 
+--- Sends a single, non-looping sound to all clients in the PAS.
+--- @param Origin table | vector The source to play the sound from
+--- @param Path string The path to the sound to be played local to the game's sound folder
+--- @param Level? integer The sound's level/attenuation from 0-127
+--- @param Pitch? integer The sound's pitch from 0-255
+--- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 	if not IsValid(Origin) then return end
 
@@ -30,6 +36,13 @@ function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 	net.SendPAS(Pos)
 end
 
+--- Creates a sound patch on all clients in the PAS.  
+--- This is intended to be used for self-looping sounds played on an entity that can be adjusted easily later.  
+--- This allows us to modify the pitch/volume of a looping sound (ex. engines) with minimal network usage.
+--- @param Origin table The entity to play the sound from
+--- @param Path string The path to the sound to be played local to the game's sound folder
+--- @param Pitch integer The sound's pitch from 0-255
+--- @param Volume number A float representing the sound's volume
 function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	if not IsValid(Origin) then return end
 
@@ -41,6 +54,13 @@ function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	net.SendPAS(Origin:GetPos())
 end
 
+--- Sends an update to an adjustable sound to all clients in the PAS.  
+--- If the adjustable sound was stopped on the client, it will begin playing again on the origin with the given parameters.  
+--- This function is ratelimited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time.
+--- @param Origin table The entity to update the sound on
+--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
+--- @param Pitch integer The sound's pitch from 0-255
+--- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 	if not IsValid(Origin) then return end
 

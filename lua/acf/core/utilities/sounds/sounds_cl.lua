@@ -6,6 +6,9 @@ do -- Valid sound check
 	local Folder   = "sound/%s"
 	local ValidSounds   = {}
 
+	--- Searches for the given sound path in the game folder to determine if it is usable.
+	--- @param Name string The path to the sound to be played local to the game's sound folder
+	--- @return boolean # Whether the sound exists clientside or not
 	function Sounds.IsValidSound(Name)
 		if not isstring(Name) then return false end
 
@@ -23,6 +26,12 @@ do -- Valid sound check
 end
 
 do -- Playing regular sounds
+	--- Plays a single, non-looping sound at the given origin.
+	--- @param Origin table | vector The source to play the sound from
+	--- @param Path string The path to the sound to be played local to the game's sound folder
+	--- @param Level? integer The sound's level/attenuation from 0-127
+	--- @param Pitch? integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume)
 		Volume = ACF.Volume * Volume
 
@@ -50,6 +59,12 @@ end
 do -- Processing adjustable sounds (for example, engine noises)
 	local IsValid = IsValid
 
+	--- Updates an adjustable sound on the origin with the given parameters.  
+	--- If the sound is not currently playing, it will be forced to do so.  
+	--- Updates are smoothed with a slight delta time due to ratelimiting of the server equivalent of this function.
+	--- @param Origin table The entity to update the sound on
+	--- @param Pitch integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 		if not IsValid(Origin) then return end
 
@@ -66,6 +81,12 @@ do -- Processing adjustable sounds (for example, engine noises)
 		end
 	end
 
+	--- Creates a sound patch with the given parameters on the origin entity.  
+	--- This is intended to be used for self-looping sounds played on an entity that can be adjusted easily later.
+	--- @param Origin table The entity to play the sound from
+	--- @param Path string The path to the sound to be played local to the game's sound folder
+	--- @param Pitch integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 		if not IsValid(Origin) then return end
 		if Origin.Sound then return end
@@ -81,6 +102,8 @@ do -- Processing adjustable sounds (for example, engine noises)
 		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 	end
 
+	--- Stops an existing adjustable sound on the origin.
+	--- @param Origin table The entity to stop the sound on
 	function Sounds.DestroyAdjustableSound(Origin)
 		local Current = Origin.Sound
 		if not Current then return end
