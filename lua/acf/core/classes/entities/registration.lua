@@ -1,5 +1,5 @@
 --[[
-The purpose of this class is to define a class that represents an entity, storing its spawn function as well as registering the arguments attached to the entity with adv dupe 2.
+The purpose of this class is to define a class that represents an entity, storing its spawn function as well as registering the arguments attached to the entity with duplicators.
 --]]
 
 local duplicator = duplicator
@@ -31,7 +31,7 @@ local function GetEntityTable(Class)
 	return Data
 end
 
---- Adds arguments to an entity for storage in advdupe2
+--- Adds arguments to an entity for storage in duplicators
 --- The Entity.Lookup, Entity.Count and Entity.List variables allow us to iterate over this information in different ways. 
 --- @param Entity entity The entity to add arguments to
 --- @param Arguments any[] # An array of arguments to attach to the entity (usually {...})
