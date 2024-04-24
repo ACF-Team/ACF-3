@@ -10,6 +10,10 @@ local CrateText = [[
 	Crate Mass : %s
 	Crate Capacity : %s round(s)]]
 
+---Quick copy helper function for menu settings.
+---@param Settings? table<string, boolean> Lookup table containing the keys for each menu aspect that has to be omitted.
+---This table can use the following keys: SuppressMenu, SuppressPreview, SuppressControls, SuppressTracer, SuppressInformation and SuppressCrateInformation.
+---@return table<string, boolean> Copy The copy of the original settings table.
 local function CopySettings(Settings)
 	local Copy = {}
 
@@ -22,6 +26,9 @@ local function CopySettings(Settings)
 	return Copy
 end
 
+---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
+---@param Class string The ammo type ID that will be checked.
+---@return table<string, table> Result The ammo type objects said weapon class can use.
 local function GetAmmoList(Class)
 	local Entries = AmmoTypes.GetEntries()
 	local Result  = {}
@@ -36,12 +43,19 @@ local function GetAmmoList(Class)
 	return Result
 end
 
+---Returns the weapon group object depending on what Destiny and Weapons a player has set on their client data variables.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
+---@return table<string, any> Group The weapon group object expected by the player's menu.
 local function GetWeaponClass(ToolData)
 	local Destiny = Classes[ToolData.Destiny or "Weapons"]
 
 	return Classes.GetGroup(Destiny, ToolData.Weapon)
 end
 
+---Returns the mass of a hollow box given the current size and armor thickness expected for it.
+---The size of the box will be defined by CrateSizeX, CrateSizeY and CrateSizeZ client data variables.
+---The thickness of the empty box will be defined by the ACF.AmmoArmor global variable.
+---@return number Mass The mass of the hollow box.
 local function GetEmptyMass()
 	local Armor          = ACF.AmmoArmor * 0.039 -- Millimeters to inches
 	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
@@ -50,6 +64,11 @@ local function GetEmptyMass()
 	return math.Round((ExteriorVolume - InteriorVolume) * 0.13, 2)
 end
 
+---Creates the entity preview panel on the ACF menu.
+---@param Base userdata The panel being populated with the preview.
+---@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
+---This function will only use SuppressPreview. If it's defined, this function will effectively do nothing.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
 local function AddPreview(Base, Settings, ToolData)
 	if Settings.SuppressPreview then return end
 
@@ -66,6 +85,13 @@ local function AddPreview(Base, Settings, ToolData)
 	Preview:UpdateSettings(Setup)
 end
 
+---Creates the ammunition control panels on the ACF menu.
+---@param Base userdata The panel being populated with the ammunition controls.
+---@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
+---This function makes use of SuppressControls and SuppressTracer.
+---If the first is defined, this function will effectively do nothing.
+---If the latter is defined, only the Tracer checkbox will be omitted and the Tracer client data variable will be set to false.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
 local function AddControls(Base, Settings, ToolData)
 	if Settings.SuppressControls then return end
 
@@ -145,6 +171,13 @@ local function AddControls(Base, Settings, ToolData)
 	end
 end
 
+---Creates the ammunition information panels on the ACF menu.
+---@param Base userdata The panel being populated with the ammunition information.
+---@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
+---This function makes use of SuppressInformation and SuppressCrateInformation
+---If the first is defined, this function will effectively do nothing.
+---If the latter is defined, only the information regarding the ammo crate (armor, mass and capacity by default) will be omitted.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
 local function AddInformation(Base, Settings, ToolData)
 	if Settings.SuppressInformation then return end
 
@@ -296,10 +329,15 @@ local function AddGraph(Base, ToolData)
 	end)
 end
 
+---Returns the client bullet data currently being used by the menu.
+---@return table<string, any> BulletData The client bullet data.
 function ACF.GetCurrentAmmoData()
 	return BulletData
 end
 
+---Updates and populates the current ammunition menu.
+---@param Menu userdata The panel in which the entire ACF menu is being placed on.
+---@param Settings? table<string, boolean> The lookup table containing all the settings for the menu.
 function ACF.UpdateAmmoMenu(Menu, Settings)
 	if not Ammo then return end
 
@@ -328,6 +366,9 @@ function ACF.UpdateAmmoMenu(Menu, Settings)
 	Menu:EndTemporal(Base)
 end
 
+---Creates the basic information and panels on the ammunition menu.
+---@param Menu userdata The panel in which the entire ACF menu is being placed on.
+---@param Settings? table<string, boolean> The lookup table containing all the settings for the menu.
 function ACF.CreateAmmoMenu(Menu, Settings)
 	Menu:AddTitle("Ammo Settings")
 
