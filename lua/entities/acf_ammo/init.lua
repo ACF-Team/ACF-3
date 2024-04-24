@@ -8,7 +8,7 @@ Data.Caliber (number) = Weapon caliber in mm (e.g. 10)
 Data.Size (vector) = Dimensions of crate (e.g. Vector(24,24,24))
 Data.AmmoType (string) = Weapon ammotype (e.g. "AP")
 Data.Offset (Vector) = Offset to use for backwards compatability with old crates
---]]
+]]
 
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
