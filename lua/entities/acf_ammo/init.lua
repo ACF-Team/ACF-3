@@ -1,3 +1,15 @@
+--[[
+This is the main server side file for the ammo entity.
+
+Notes on Structure of Data:
+Data.Weapon (string) = Weapon class (e.g. "AC", "MO", "HW", "C")
+Data.Destiny (string) = Weapon group (e.g. "Weapons"/"Missiles")
+Data.Caliber (number) = Weapon caliber in mm (e.g. 10)
+Data.Size (vector) = Dimensions of crate (e.g. Vector(24,24,24))
+Data.AmmoType (string) = Weapon ammotype (e.g. "AP")
+Data.Offset (Vector) = Offset to use for backwards compatability with old crates
+--]]
+
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -30,20 +42,26 @@ do -- Spawning and Updating --------------------
 	}
 
 	local function VerifyData(Data)
-		if Data.Id then -- Updating old crates
-			local Crate = Crates.Get(Data.Id)
-
-			if Crate then -- Pre scalable crate remnants
+		if Data.Id then
+			-- Deprecated ammo data formats
+			local Crate = Crates.Get(Data.Id) -- Id is the crate model type, Crate holds its offset, size and id.
+			if Crate then
+				-- Pre scalable crate remnants (ACF2?)
 				Data.Offset = Vector(Crate.Offset)
 				Data.Size   = Vector(Crate.Size)
 			else
+				-- Initial scaleables remnants (Early ACF3?)
 				local X = ACF.CheckNumber(Data.RoundData11, 24)
 				local Y = ACF.CheckNumber(Data.RoundData12, 24)
 				local Z = ACF.CheckNumber(Data.RoundData13, 24)
 
 				Data.Size = Vector(X, Y, Z)
 			end
-		elseif not isvector(Data.Size) then
+
+			Data.Weapon = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG", 
+			Data.AmmoType = Data.RoundType
+		elseif not isvector(Data.Size) then -- This could just be an else statement? Not sure though.
+			-- Current ammo data format
 			local X = ACF.CheckNumber(Data.CrateSizeX, 24)
 			local Y = ACF.CheckNumber(Data.CrateSizeY, 24)
 			local Z = ACF.CheckNumber(Data.CrateSizeZ, 24)
@@ -51,7 +69,9 @@ do -- Spawning and Updating --------------------
 			Data.Size = Vector(X, Y, Z)
 		end
 
-		do -- Clamping size
+		-- The rest under applies to all ammo data formats
+		do
+			-- Clamping size
 			local Min  = ACF.AmmoMinSize
 			local Max  = ACF.AmmoMaxSize
 			local Size = Data.Size
@@ -59,65 +79,60 @@ do -- Spawning and Updating --------------------
 			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
 			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
 			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
-		end
 
-		if not isstring(Data.Weapon) then
-			Data.Weapon = Data.RoundId
-		end
-
-		if not isstring(Data.Destiny) then
-			Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
-		end
-
-		local Source = Classes[Data.Destiny]
-		local Class  = Classes.GetGroup(Source, Data.Weapon)
-
-		if not Class then
-			Class = Weapons.Get("C")
-
-			Data.Destiny = "Weapons"
-			Data.Weapon  = "C"
-			Data.Caliber = 50
-		elseif Source.IsAlias(Data.Weapon) then
-			Data.Weapon = Class.ID
-		end
-
-		-- Verifying and clamping caliber value
-		if Class.IsScalable then
-			local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-
-			if Weapon then
-				Data.Weapon  = Class.ID
-				Data.Caliber = Weapon.Caliber
+			-- Destiny (string) may be already defined as "Weapons"/"Missiles", otherwise find the weapony source/"Weapons" 
+			if not isstring(Data.Destiny) then
+				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
 			end
 
-			local Bounds  = Class.Caliber
-			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
+			local Source = Classes[Data.Destiny]
 
-			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
-		end
+			-- Class (table) is the specific class within the missile/weapon groups (example IDs: "AAM", "AC", "MG")
+			local Class  = Classes.GetGroup(Source, Data.Weapon)
 
-		if not isstring(Data.AmmoType) then
-			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
-		end
+			-- E.g. happens if spawning a dupe that has a flare launcher on a server without acf missiles
+			-- Can also happen if Data.Weapon wasn't specified (e.g. creating ammo via ACF function)
+			if not Class then
+				Class = Weapons.Get("C") -- Use 50mmC as a replacement
 
-		local Ammo = AmmoTypes.Get(Data.AmmoType)
-
-		-- Making sure our ammo type exists and it's not blacklisted by the weapon
-		if not Ammo or Ammo.Blacklist[Class.ID] then
-			Data.AmmoType = Class.DefaultAmmo or "AP"
-
-			Ammo = AmmoTypes.Get(Data.AmmoType)
-		end
-
-		do -- External verifications
-			Ammo:VerifyData(Data, Class) -- All ammo types should come with this function
-
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class, Ammo)
+				Data.Destiny = "Weapons"
+				Data.Weapon  = "C"
+				Data.Caliber = Data.caliber or 50 -- If they somehow managed to specify caliber without specifying Weapon, otherwise use 50mm
+			elseif Source.IsAlias(Data.Weapon) then -- This happens on certain weapons like smoothbores which are aliases of cannons
+				Data.Weapon = Class.ID -- E.g. "SB"
 			end
 
-			HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+			-- Verifying and clamping caliber value
+			if Class.IsScalable then
+				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+				if Weapon then -- Happens on pre scaleable guns (e.g. Data.Weapon="14.5mmMG", Class.ID="MG")
+					Data.Weapon  = Class.ID -- E.g. "MG"
+					Data.Caliber = Weapon.Caliber
+				end
+
+				local Bounds  = Class.Caliber
+				local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
+
+				Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+			end
+
+			-- If our ammo type does not exist or is blacklisted by this weapon, use defaults
+			local Ammo = AmmoTypes.Get(Data.AmmoType)
+			if not Ammo or Ammo.Blacklist[Class.ID] then
+				Data.AmmoType = Class.DefaultAmmo or "AP"
+
+				Ammo = AmmoTypes.Get(Data.AmmoType)
+			end
+
+			do -- External verifications
+				Ammo:VerifyData(Data, Class) -- All ammo types should come with this function
+
+				if Class.VerifyData then
+					Class.VerifyData(Data, Class, Ammo)
+				end
+
+				HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+			end
 		end
 	end
 
@@ -178,7 +193,6 @@ do -- Spawning and Updating --------------------
 			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Class, Data, BulletData)
 
 			Entity.Capacity = Rounds
-			Entity.AmmoMass = math.floor(BulletData.CartMass * Entity.Capacity)
 			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
 
 			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
@@ -597,7 +611,7 @@ end ---------------------------------------------
 
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
-		local Mass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
+		local Mass = math.floor(Ent.EmptyMass + Ent.Ammo * Ent.BulletData.CartMass)
 		local Phys = Ent:GetPhysicsObject()
 
 		if IsValid(Phys) then
