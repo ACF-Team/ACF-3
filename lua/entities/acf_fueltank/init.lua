@@ -519,53 +519,74 @@ function ENT:Consume(Amount, SelfTbl)
 	end
 end
 
-function ENT:Think()
-	self:NextThink(Clock.CurTime + 1)
-
-	local Leaking = self.Leaking
-
-	if Leaking > 0 then
-		self:Consume(Leaking)
-
-		local Fuel = self.Fuel
-		Leaking = Clamp(Leaking - (1 / math.max(Fuel, 1)) ^ 0.5, 0, Fuel) -- Fuel tanks are self healing
-		self.Leaking = Leaking
-
-		WireLib.TriggerOutput(self, "Leaking", Leaking > 0 and 1 or 0)
-
-		self:NextThink(Clock.CurTime + 0.25)
+do
+	local function RefillEffect(Entity)
+		net.Start("ACF_RefillEffect")
+			net.WriteEntity(Entity)
+		net.Broadcast()
 	end
 
-	-- Refuelling
-	if self.SupplyFuel and self:CanConsume() then
-		local DeltaTime = Clock.CurTime - self.LastThink
-		local Position  = self:GetPos()
+	local function StopRefillEffect(Entity)
+		net.Start("ACF_StopRefillEffect")
+			net.WriteEntity(Entity)
+		net.Broadcast()
+	end
 
-		for Tank in pairs(ACF.FuelTanks) do
-			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
-				local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+	function ENT:Think()
+		self:NextThink(Clock.CurTime + 1)
 
-				if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+		local Leaking = self.Leaking
 
-				self:Consume(Exchange)
-				Tank:Consume(-Exchange)
+		if Leaking > 0 then
+			self:Consume(Leaking)
 
-				if self.FuelType == "Electric" then
-					Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
-					Sounds.SendSound(Tank, "ambient/energy/newspark04.wav", 70, 100, 0.5)
-				else
-					Sounds.SendSound(self, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
-					Sounds.SendSound(Tank, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+			local Fuel = self.Fuel
+			Leaking = Clamp(Leaking - (1 / math.max(Fuel, 1)) ^ 0.5, 0, Fuel) -- Fuel tanks are self healing
+			self.Leaking = Leaking
+
+			WireLib.TriggerOutput(self, "Leaking", Leaking > 0 and 1 or 0)
+
+			self:NextThink(Clock.CurTime + 0.25)
+		end
+
+		if self.Refilling then
+			StopRefillEffect(self)
+			self.Refilling = false
+		end
+
+		-- Refuelling
+		if self.SupplyFuel and self:CanConsume() then
+			local DeltaTime = Clock.CurTime - self.LastThink
+			local Position  = self:GetPos()
+
+			for Tank in pairs(ACF.FuelTanks) do
+				if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
+					local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+
+					if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+
+					self:Consume(Exchange)
+					Tank:Consume(-Exchange)
+
+					if self.FuelType == "Electric" then
+						Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+						Sounds.SendSound(Tank, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+					else
+						Sounds.SendSound(self, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+						Sounds.SendSound(Tank, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+					end
+
+					RefillEffect(self)
+					self.Refilling = true
 				end
 			end
 		end
+
+		self.LastThink = Clock.CurTime
+
+		return true
 	end
-
-	self.LastThink = Clock.CurTime
-
-	return true
 end
-
 function ENT:OnRemove()
 	local Class = self.ClassData
 

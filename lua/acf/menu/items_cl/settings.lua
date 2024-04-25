@@ -69,6 +69,26 @@ do -- Clientside settings
 		Particles:SetConVar("acf_cl_particlemul")
 
 		Base:AddHelp("Defines the clientside particle multiplier, reduce it if you're experiencing lag when ACF effects are created.")
+
+		Base:AddLabel("Ammo Refill Color")
+		local AmmoRefillColor = Base:AddPanel("DColorMixer")
+		AmmoRefillColor:SetColor(ACF.AmmoRefillColor)
+		AmmoRefillColor:SetClientData("AmmoRefillColor", "ValueChanged")
+		AmmoRefillColor:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoRefillColor = Value
+
+			return Value
+		end)
+
+		Base:AddLabel("Fuel Refill Color")
+		local FuelRefillColor = Base:AddPanel("DColorMixer")
+		FuelRefillColor:SetColor(ACF.FuelRefillColor)
+		FuelRefillColor:SetClientData("FuelRefillColor", "ValueChanged")
+		FuelRefillColor:DefineSetter(function(_, _, _, Value)
+			ACF.FuelRefillColor = Value
+
+			return Value
+		end)
 	end)
 
 	ACF.AddClientSettings(201, "Legal Checks", function(Base)

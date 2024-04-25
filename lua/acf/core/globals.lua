@@ -77,6 +77,7 @@ do -- ACF global vars
 	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoRefillColor    = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
 	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity           = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
@@ -133,6 +134,7 @@ do -- ACF global vars
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelArmor          = 5 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
 	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.

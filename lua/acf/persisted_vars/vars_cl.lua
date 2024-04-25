@@ -2,6 +2,8 @@
 
 -- Settings
 ACF.PersistClientData("Volume", 0.5)
+ACF.PersistClientData("AmmoRefillColor", Color(255, 255, 0, 10))
+ACF.PersistClientData("FuelRefillColor", Color(76, 201, 250, 10))
 
 -- Crate size
 ACF.PersistClientData("CrateSizeX", 24)

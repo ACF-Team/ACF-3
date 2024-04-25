@@ -1,6 +1,6 @@
 local ACF       = ACF
 local MaxRounds = GetConVar("acf_maxroundsdisplay")
-local Refills   = {}
+local Refills   = ACF.Utilities.Effects.Refills
 local Queued    = {}
 
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
@@ -101,61 +101,6 @@ function ENT:OnRemove()
 	Refills[self] = nil
 
 	cvars.RemoveChangeCallback("acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex())
-end
-
--- TODO: Resupply effect library, should apply for both ammo and fuel
-do -- Resupply effect
-	local render   = render
-	local Yellow   = Color(255, 255, 0, 10)
-	local Distance = ACF.RefillDistance
-
-	local function DrawSpheres(bDrawingDepth, _, isDraw3DSkybox)
-		if bDrawingDepth or isDraw3DSkybox then return end
-		render.SetColorMaterial()
-
-		for Entity in pairs(Refills) do
-			local Pos = Entity:GetPos()
-
-			render.DrawSphere(Pos, Distance, 50, 50, Yellow)
-			render.DrawSphere(Pos, -Distance, 50, 50, Yellow)
-		end
-	end
-
-	local function Remove(Entity)
-		if not IsValid(Entity) then return end
-
-		Refills[Entity] = nil
-
-		Entity:RemoveCallOnRemove("ACF_Refill")
-
-		if not next(Refills) then
-			hook.Remove("PostDrawOpaqueRenderables", "ACF_Refill")
-		end
-	end
-
-	local function Add(Entity)
-		if not IsValid(Entity) then return end
-
-		if not next(Refills) then
-			hook.Add("PostDrawOpaqueRenderables", "ACF_Refill", DrawSpheres)
-		end
-
-		Refills[Entity] = true
-
-		Entity:CallOnRemove("ACF_Refill", Remove)
-	end
-
-	net.Receive("ACF_RefillEffect", function()
-		local Entity = net.ReadEntity()
-
-		Add(Entity)
-	end)
-
-	net.Receive("ACF_StopRefillEffect", function()
-		local Entity = net.ReadEntity()
-
-		Remove(Entity)
-	end)
 end
 
 do -- Ammo overlay
