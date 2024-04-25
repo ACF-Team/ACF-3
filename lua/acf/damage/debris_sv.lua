@@ -1,5 +1,6 @@
 util.AddNetworkString("ACF_Debris")
 
+local Contraption = ACF.Contraption
 local ValidDebris = ACF.ValidDebris
 local ChildDebris = ACF.ChildDebris
 local Queue       = {}
@@ -42,7 +43,7 @@ end
 
 function ACF.KillChildProps(Entity, BlastPos, Energy)
 	local Explosives = {}
-	local Children 	 = ACF_GetAllChildren(Entity)
+	local Children 	 = Contraption.GetAllChildren(Entity)
 	local Count		 = 0
 
 	-- do an initial processing pass on children, separating out explodey things to handle last

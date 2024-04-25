@@ -17,13 +17,15 @@ return {
             GetPhysicsObject = function()
                 return {
                     IsValid = function() return true end,
-                    ApplyForceOffset = State.applyForceStub
+                    ApplyForceOffset = State.applyForceStub,
+                    GetMass = function() return 1 end,
                 }
             end,
+            GetChildren = function() return {} end,
         }
 
         -- For simplicity's sake, we'll pretend the ent's ancestor is itself
-        stub( _G, "ACF_GetAncestor" ).returns( State.Ent )
+        stub( ACF.Contraption, "GetAncestor" ).returns( State.Ent )
     end,
 
     cases = {
@@ -71,7 +73,7 @@ return {
                 local Ent = State.Ent
                 Ent.acflastupdatemass = nil
 
-                local calcMass = stub( _G, "ACF_CalcMassRatio" )
+                local calcMass = stub( ACF.Contraption, "CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
                 expect( calcMass ).was.called()
@@ -84,7 +86,7 @@ return {
                 local Ent = State.Ent
                 Ent.acflastupdatemass = -math.huge
 
-                local calcMass = stub( _G, "ACF_CalcMassRatio" )
+                local calcMass = stub( ACF.Contraption, "CalcMassRatio" )
                 ACF.KEShove( Ent, Ones, Ones, 1 )
 
                 expect( calcMass ).was.called()

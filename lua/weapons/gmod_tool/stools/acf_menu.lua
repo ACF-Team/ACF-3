@@ -3,8 +3,6 @@ ACF.LoadToolFunctions(TOOL)
 TOOL.Name = "ACF Menu"
 
 if CLIENT then
-	local DrawBoxes = GetConVar("acf_drawboxes")
-
 	-- "Hitbox" colors
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
@@ -17,14 +15,18 @@ if CLIENT then
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity
 
-		cam.Start3D()
-		render.SetColorMaterial()
+		if not IsValid(Entity) then return end
+		if not Entity.DrawOverlay then return end
+		if Entity.CanDrawOverlay and Entity:CanDrawOverlay() == false then return end
 
-		if DrawBoxes:GetBool() and IsValid(Entity) and Distance <= 65536 then
-			hook.Run("ACF_DrawBoxes", Entity, Trace)
+		if Distance <= 65536 then
+			cam.Start3D()
+			render.SetColorMaterial()
+
+			Entity:DrawOverlay(Trace)
+
+			cam.End3D()
 		end
-
-		cam.End3D()
 	end
 
 	TOOL.BuildCPanel = ACF.CreateSpawnMenu

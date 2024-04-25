@@ -1,0 +1,24 @@
+VertexLitGeneric
+{
+	$basetexture "models/acf/core/turret"
+	$bumpmap "models/acf/core/turret_normal"
+	$surfaceprop canister
+
+	$envmap "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.04 0.03 0.01]"
+	$envmapfresnel 1
+	$envmapanisotropy 1
+	$envmapanisotropyscale 1
+	
+	$phong 2
+	$phongfresnelranges "[1 1 2]"
+	$phongtint "[0.6 0.6 0.8]"
+	$phongexponent 3
+	$phongboost 1
+	$phongalbedoboost 0
+
+	$blendtintbybasealpha 1
+	
+	$model 1
+}

@@ -22,6 +22,7 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF          = ACF
+local Contraption  = ACF.Contraption
 local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
@@ -252,6 +253,7 @@ do -- Spawning and Updating --------------------
 		Entity:UpdateMass(true)
 	end
 
+	util.PrecacheModel("models/holograms/hq_cylinder.mdl")
 	util.AddNetworkString("ACF_RequestAmmoData")
 
 	-- Whenever a player requests ammo data, we'll send it to them
@@ -435,9 +437,10 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
-	local Clock   = Utilities.Clock
-	local Damage  = ACF.Damage
-	local Objects = Damage.Objects
+	local Clock       = Utilities.Clock
+	local Sounds      = Utilities.Sounds
+	local Damage      = ACF.Damage
+	local Objects     = Damage.Objects
 
 	local function CookoffCrate(Entity)
 		if Entity.Ammo < 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
@@ -455,10 +458,11 @@ do -- ACF Activation and Damage -----------------
 				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency) -- Half weight projectile?
 				local Pitch = math.max(255 - BulletData.PropMass * 100,60) -- Pitch based on propellant mass
 
-				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
+				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5) -- Random position in the ammo crate
 				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity() -- Random direction including baseplate speed
+
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity
 				BulletData.Crate  = Entity:EntIndex()
@@ -615,14 +619,8 @@ end ---------------------------------------------
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
 		local Mass = math.floor(Ent.EmptyMass + Ent.Ammo * Ent.BulletData.CartMass)
-		local Phys = Ent:GetPhysicsObject()
-
-		if IsValid(Phys) then
-			Ent.ACF.Mass      = Mass
-			Ent.ACF.LegalMass = Mass
-
-			Phys:SetMass(Ent.ACF.LegalMass)
-		end
+    
+		Contraption.SetMass(Ent,Mass)
 	end
 
 	-------------------------------------------------------------------------------

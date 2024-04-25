@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local AmmoTypes = ACF.Classes.AmmoTypes
+local Sounds    = ACF.Utilities.Sounds
 
 SWEP.AutoSwitchTo = false
 SWEP.AutoSwitchFrom = false
@@ -30,7 +31,7 @@ end
 
 function SWEP:Reload()
 	if (self:Clip1() < self.Primary.ClipSize and self:GetOwner():GetAmmoCount(self.Primary.Ammo) > 0) then
-		self:EmitSound("weapons/AMR/sniper_reload.wav", 70, 110, ACF.Volume)
+		Sounds.SendSound(self, "weapons/AMR/sniper_reload.wav", 70, 110, 1)
 		self:DefaultReload(ACT_VM_RELOAD)
 	end
 end
@@ -49,7 +50,7 @@ end
 function SWEP:MuzzleEffect()
 	local Owner = self:GetOwner()
 
-	self:EmitSound("weapons/AMR/sniper_fire.wav", nil, nil, ACF.Volume)
+	Sounds.SendSound(self, "weapons/AMR/sniper_fire.wav", nil, nil, 1)
 
 	Owner:MuzzleFlash()
 	Owner:SetAnimation(PLAYER_ATTACK1)
