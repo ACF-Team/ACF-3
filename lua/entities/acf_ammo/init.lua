@@ -619,7 +619,7 @@ end ---------------------------------------------
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
 		local Mass = math.floor(Ent.EmptyMass + Ent.Ammo * Ent.BulletData.CartMass)
-    
+
 		Contraption.SetMass(Ent,Mass)
 	end
 
