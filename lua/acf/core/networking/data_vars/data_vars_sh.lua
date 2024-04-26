@@ -1,5 +1,8 @@
 local ACF = ACF
 
+--- Returns whether a client is allowed to set a server datavars
+--- @param Player table The player entity to check
+--- @return boolean # Whether the player can set server datavars
 function ACF.CanSetServerData(Player)
 	if not IsValid(Player) then return true end -- No player, probably the server
 	if Player:IsSuperAdmin() then return true end

@@ -356,12 +356,20 @@ do -- ACF.GetHitAngle
 end
 
 do -- Native type verification functions
+	--- Returns the numerical representation of a value or a default of this type
+	--- @param Value number The input to be converted to a number
+	--- @param Default number The default value if the input canno tbe made into a number
+	--- @return number # The numerical result
 	function ACF.CheckNumber(Value, Default)
 		if not Value then return Default end
 
 		return tonumber(Value) or Default
 	end
 
+	--- Returns the string representation of a value or a default of this type
+	--- @param Value string The input to be converted to a string
+	--- @param Default string The default value if the input cannot be made into a string
+	--- @return string # The string result
 	function ACF.CheckString(Value, Default)
 		if Value == nil then return Default end
 
