@@ -216,6 +216,7 @@ function ACF.Activate(Entity, Recalc)
 	Entity.ACF.Type    = ACF.GetEntityType(Entity)
 	Entity.ACF.PhysObj = PhysObj
 
+	-- Note that if the entity has its own ENT:ACF_Activate(Recalc) function, the rest of the code after this block won't be ran (instead the function should specify the rest)
 	if Entity.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
