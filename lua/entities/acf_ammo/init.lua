@@ -49,6 +49,7 @@ do -- Spawning and Updating --------------------
 	local function VerifyData(Data)
 		if Data.Id then -- Deprecated ammo data formats
 			local Crate = Crates.Get(Data.Id) -- Id is the crate model type, Crate holds its offset, size and id.
+
 			if Crate then -- Pre scalable crate remnants (ACF2?)
 				Data.Offset = Vector(Crate.Offset)
 				Data.Size   = Vector(Crate.Size)
@@ -60,7 +61,7 @@ do -- Spawning and Updating --------------------
 				Data.Size = Vector(X, Y, Z)
 			end
 
-			Data.Weapon = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG", 
+			Data.Weapon   = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG", 
 			Data.AmmoType = Data.RoundType
 		elseif not isvector(Data.Size) then -- This could just be an else statement? Not sure though.
 			-- Current ammo data format
@@ -107,22 +108,24 @@ do -- Spawning and Updating --------------------
 			-- TODO: FIX
 			do -- Verifying and clamping caliber value
 				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+
 				if Weapon then -- Happens on pre scaleable guns (e.g. Data.Weapon="14.5mmMG", Class.ID="MG")
 					if Class.IsScalable then -- If the class is scalable, set the weapon to the class' ID and bound its caliber
-						Data.Weapon  = Class.ID -- E.g. "MG"
-
 						local Bounds  = Class.Caliber
 						local Caliber = ACF.CheckNumber(Weapon.Caliber, Bounds.Base)
-						Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
-					end
 
-					-- If the class isn't scalable then this weapon is a registered item (e.g. 14.mmMG) and we use its caliber
-					Data.Caliber = Weapon.Caliber
+						Data.Weapon  = Class.ID -- E.g. "MG"
+						Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+					else
+						-- If the class isn't scalable then this weapon is a registered item (e.g. 14.mmMG) and we use its caliber
+						Data.Caliber = ACF.CheckNumber(Weapon.Caliber, 50)
+					end
 				end
 			end
 
 			-- If our ammo type does not exist or is blacklisted by this weapon, use defaults
 			local Ammo = AmmoTypes.Get(Data.AmmoType)
+
 			if not Ammo or Ammo.Blacklist[Class.ID] then
 				Data.AmmoType = Class.DefaultAmmo or "AP"
 
@@ -143,9 +146,10 @@ do -- Spawning and Updating --------------------
 
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
-		local Caliber     = Weapon and Weapon.Caliber or Data.Caliber
-		local WeaponName  = Weapon and Weapon.Name or Caliber .. "mm " .. Class.Name
-		local WeaponShort = Weapon and Weapon.ID or Caliber .. "mm" .. Class.ID
+		local Scalable    = Class.IsScalable
+		local Caliber     = Either(Scalable, Data.Caliber, Weapon.Caliber)
+		local WeaponName  = Either(Scalable, Caliber .. "mm " .. Class.Name, Weapon.Name)
+		local WeaponShort = Either(Scalable, Caliber .. "mm" .. Class.ID, Weapon.ID)
 
 		Entity:SetSize(Data.Size)
 
@@ -184,7 +188,6 @@ do -- Spawning and Updating --------------------
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
 		Entity.Class      = Class.ID -- Needed for custom killicons
-		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
