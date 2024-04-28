@@ -147,9 +147,9 @@ do -- Spawning and Updating --------------------
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
 		local Scalable    = Class.IsScalable
-		local Caliber     = Either(Scalable, Data.Caliber, Weapon.Caliber)
-		local WeaponName  = Either(Scalable, Caliber .. "mm " .. Class.Name, Weapon.Name)
-		local WeaponShort = Either(Scalable, Caliber .. "mm" .. Class.ID, Weapon.ID)
+		local Caliber     = Scalable and Data.Caliber or Weapon.Caliber
+		local WeaponName  = Scalable and Caliber .. "mm " .. Class.Name or Weapon.Name
+		local WeaponShort = Scalable and Caliber .. "mm" .. Class.ID or Weapon.ID
 
 		Entity:SetSize(Data.Size)
 
