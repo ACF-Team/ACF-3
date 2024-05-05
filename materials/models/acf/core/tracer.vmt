@@ -1,0 +1,7 @@
+VertexLitGeneric
+{
+	$basetexture "models\tracer.vtf"
+	$selfillum 1
+	$translucent 1
+	$additive 1
+}
