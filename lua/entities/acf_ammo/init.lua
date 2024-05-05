@@ -188,6 +188,7 @@ do -- Spawning and Updating --------------------
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
 		Entity.Class      = Class.ID -- Needed for custom killicons
+		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
