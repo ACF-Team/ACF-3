@@ -1,12 +1,8 @@
-local ACF        = ACF
-local Network    = ACF.Networking
-local Sender     = Network.Sender
-local Receiver   = Network.Receiver
-local ToJSON     = util.TableToJSON
-local ToTable    = util.JSONToTable
-local Compress   = util.Compress
-local Decompress = util.Decompress
-local Messages   = {}
+local ACF      = ACF
+local Network  = ACF.Networking
+local Sender   = Network.Sender
+local Receiver = Network.Receiver
+local Messages = {}
 local IsQueued
 
 local function PrepareQueue(Name)
@@ -20,7 +16,7 @@ end
 -- NOTE: Consider the overflow size
 local function SendMessages()
 	if next(Messages) then
-		local Compressed = Compress(ToJSON(Messages))
+		local Compressed = Network.Compress(Messages)
 
 		net.Start("ACF_Networking")
 			net.WriteUInt(#Compressed, 16)
@@ -52,14 +48,15 @@ function Network.Send(Name, ...)
 end
 
 net.Receive("ACF_Networking", function(Bits)
-	local Bytes   = net.ReadUInt(16)
-	local String  = Decompress(net.ReadData(Bytes))
-	local Message = ToTable(String)
+	local Bytes    = net.ReadUInt(16)
+	local Received = net.ReadData(Bytes)
+	local Message  = Network.Decompress(Received)
 
 	if not Message then
-		local Error = "ACF Networking: Failed to parse message. Report this to the ACF Team.\nMessage size: %sB\nTotal size: %sB\nMessage: %s"
-		local Total = Bits * 0.125 -- Bits to bytes
-		local JSON  = String ~= "" and String or "Empty, possible overflow."
+		local Error  = "ACF Networking: Failed to parse message. Report this to the ACF Team.\nMessage size: %sB\nTotal size: %sB\nMessage: %s"
+		local Total  = Bits * 0.125 -- Bits to bytes
+		local String = util.Decompress(Received)
+		local JSON   = String ~= "" and String or "Empty, possible overflow."
 
 		ErrorNoHalt(Error:format(Bytes, Total, JSON))
 
