@@ -138,8 +138,8 @@ else
 	ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:ImpactEffect(_, Bullet)
-		local Position  = Bullet.SimPos
-		local Direction = Bullet.SimFlight
+		local Position  = Bullet.Pos
+		local Direction = Bullet.Flight
 		local Filler    = Bullet.FillerMass
 
 		Damage.explosionEffect(Position, Direction, Filler)

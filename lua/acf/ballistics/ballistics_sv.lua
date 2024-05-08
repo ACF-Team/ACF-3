@@ -41,7 +41,7 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 		Effect:SetScale(0)
 	end
 
-	util.Effect("ACF_Bullet_Effect", Effect, true, true)
+	util.Effect("ACF_Projectile", Effect, true, true)
 end
 
 function Ballistics.RemoveBullet(Bullet)

@@ -175,8 +175,8 @@ else
 		local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
 
 		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+		Effect:SetOrigin(Bullet.Pos)
+		Effect:SetNormal(Bullet.Flight:GetNormalized())
 		Effect:SetScale(math.max(Bullet.FillerMass * 8 * 39.37, 0))
 		Effect:SetMagnitude(math.max(Bullet.WPMass * 8 * 39.37, 0))
 		Effect:SetStart(Vector(Color.r, Color.g, Color.b))

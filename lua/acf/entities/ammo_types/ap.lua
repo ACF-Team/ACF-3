@@ -202,8 +202,8 @@ else
 
 	function Ammo:ImpactEffect(_, Bullet)
 		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
+		Effect:SetOrigin(Bullet.Pos)
+		Effect:SetNormal(Bullet.Flight:GetNormalized())
 		Effect:SetRadius(Bullet.Caliber)
 		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 
@@ -212,10 +212,10 @@ else
 
 	function Ammo:PenetrationEffect(_, Bullet)
 		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(Bullet.SimFlight:Length())
-		Effect:SetMagnitude(Bullet.RoundMass)
+		Effect:SetOrigin(Bullet.Pos)
+		Effect:SetNormal(Bullet.Flight:GetNormalized())
+		Effect:SetScale(Bullet.Flight:Length())
+		Effect:SetMagnitude(Bullet.ProjMass)
 		Effect:SetRadius(Bullet.Caliber)
 		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 
@@ -224,10 +224,10 @@ else
 
 	function Ammo:RicochetEffect(_, Bullet)
 		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(Bullet.SimFlight:Length())
-		Effect:SetMagnitude(Bullet.RoundMass)
+		Effect:SetOrigin(Bullet.Pos)
+		Effect:SetNormal(Bullet.Flight:GetNormalized())
+		Effect:SetScale(Bullet.Flight:Length())
+		Effect:SetMagnitude(Bullet.ProjMass)
 		Effect:SetRadius(Bullet.Caliber)
 		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
 

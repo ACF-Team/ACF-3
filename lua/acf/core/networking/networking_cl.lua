@@ -67,6 +67,11 @@ net.Receive("ACF_Networking", function(Bits)
 		local Handler = Receiver[Name]
 
 		if Handler then
+			if Name == "ACF_Projectile" then
+				print("Received bytes", Bits * 0.125)
+				print("Received bullets", table.Count(Data))
+			end
+
 			Handler(Data)
 		end
 	end
