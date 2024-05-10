@@ -182,12 +182,14 @@ do	-- Turret drives
 						if Turret.Manual then
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, math.Clamp(-Turret.DesiredDeg,Turret.MinDeg,Turret.MaxDeg), 0))).yaw
 						else
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0,StabAmt,0),Angle(0,-Turret.MaxDeg,0),Angle(0,-Turret.MinDeg,0))
+							local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0,StabAmt,0) - AngDiff,Angle(0,-Turret.MaxDeg,0),Angle(0,-Turret.MinDeg,0))
 
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).yaw
 						end
 					else
-						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -Turret.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).yaw - StabAmt)
+						local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -Turret.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle + AngDiff).yaw - StabAmt)
 					end
 				end,
 

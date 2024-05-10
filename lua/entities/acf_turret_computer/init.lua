@@ -462,7 +462,6 @@ do	-- Metamethods and other important stuff
 
 			local FlightDistance	= Sim.Pos:Distance(Sim.NextPos)
 
-			Sim.FlightTime		= Sim.FlightTime + DeltaTime
 			Sim.TotalTime		= Sim.TotalTime + DeltaTime
 
 			debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,5,Color(255,0,0),true)
@@ -476,6 +475,7 @@ do	-- Metamethods and other important stuff
 				if (Dir:Dot(Point - Sim.Pos) >= 0) and (Dir:Dot(Point - Sim.NextPos) <= 0) then
 
 					local Ratio = (Sim.Pos:Distance(Point)) / FlightDistance
+					Sim.FlightTime	= Sim.FlightTime + (DeltaTime * Ratio)
 
 					debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,8,Color(0,255,0),true)
 					debugoverlay.Cross(Sim.StartPos + Sim.Pos,15,8,Color(255,0,0),true)
@@ -489,6 +489,7 @@ do	-- Metamethods and other important stuff
 
 					return self:AdjustSimulation()
 				else
+					Sim.FlightTime = Sim.FlightTime + DeltaTime
 					Sim.FlightDistance = Sim.FlightDistance + FlightDistance
 				end
 			else
@@ -501,10 +502,12 @@ do	-- Metamethods and other important stuff
 
 					Sim.Pos		= Sim.Pos + ((Sim.NextPos - Sim.Pos) * Ratio)
 
-					Sim.FlightDistance = Sim.FlightDistance + (FlightDistance * Ratio)
+					Sim.FlightTime		= Sim.FlightTime + (DeltaTime * Ratio)
+					Sim.FlightDistance	= Sim.FlightDistance + (FlightDistance * Ratio)
 
 					return self:AdjustSimulation()
 				else
+					Sim.FlightTime = Sim.FlightTime + DeltaTime
 					Sim.FlightDistance = Sim.FlightDistance + FlightDistance
 				end
 			end
