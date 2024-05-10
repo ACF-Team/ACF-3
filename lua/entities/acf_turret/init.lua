@@ -789,27 +789,28 @@ do -- Metamethods
 		end
 
 		function ENT:InputDirection(Direction)
-			if self.Disabled then return end
+			local SelfTbl = self:GetTable()
+			if SelfTbl.Disabled then return end
 
-			self.Manual		= true
-			self.UseVector	= false
+			SelfTbl.Manual		= true
+			SelfTbl.UseVector	= false
 
 			if isnumber(Direction) then
-				self.DesiredDeg = math.NormalizeAngle(Direction)
+				SelfTbl.DesiredDeg = math.NormalizeAngle(Direction)
 				return
 			end
 
-			self.Manual		= false
+			SelfTbl.Manual		= false
 
 			if isangle(Direction) then
 				Direction:Normalize()
-				self.DesiredAngle = Direction
+				SelfTbl.DesiredAngle = Direction
 
 				return
 			end
 			if isvector(Direction) then
-				self.UseVector = true
-				self.DesiredVector = Direction
+				SelfTbl.UseVector = true
+				SelfTbl.DesiredVector = Direction
 
 				return
 			end
