@@ -365,13 +365,13 @@ do	-- Spawn and Update funcs
 	end
 
 	local function Proxy_ACF_OnParent(self, _, _)
-		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self,self.ACF_TurretAncestor)) then self.ACF_OnParented = nil self.ACF_TurretAncestor = nil return end
+		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.ACF_OnParented = nil self.ACF_TurretAncestor = nil return end
 
 		self.ACF_TurretAncestor:UpdateTurretMass(false)
 	end
 
 	local function Proxy_ACF_OnMassChange(self)
-		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self,self.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil self.ACF_TurretAncestor = nil return end
+		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil self.ACF_TurretAncestor = nil return end
 
 		self.ACF_TurretAncestor:UpdateTurretMass(false)
 	end
@@ -401,7 +401,7 @@ do	-- Spawn and Update funcs
 		Entity.DynamicEntities	= {}
 		Entity.SubTurrets		= {}
 
-		local ChildList = GetFilteredChildren(Entity,{},"acf_turret")
+		local ChildList = GetFilteredChildren(Entity, {}, "acf_turret")
 
 		for k in pairs(ChildList) do
 			local Class = k:GetClass()
@@ -534,9 +534,9 @@ do	-- Spawn and Update funcs
 		-- Scale for being off-axis, further affects friction
 		local Tilt = 1
 		if self.Turret == "Turret-V" then
-			Tilt = math.max(1 - self:GetRight():Dot(Vector(0,0,1)),0)
+			Tilt = math.max(1 - self:GetRight():Dot(vector_up), 0)
 		else
-			Tilt = math.max(self:GetUp():Dot(Vector(0,0,1)),0)
+			Tilt = math.max(self:GetUp():Dot(vector_up), 0)
 		end
 
 		self.TurretData.Tilt = Tilt
@@ -778,10 +778,10 @@ do -- Metamethods
 		function ENT:SetSoundState(State)
 			if State ~= self.SoundPlaying then
 				if State == true then
-					Sounds.CreateAdjustableSound(self,self.SoundPath,0,0)
+					Sounds.CreateAdjustableSound(self, self.SoundPath, 0, 0)
 					self.CurrentSound = self.SoundPath
 				else
-					Sounds.SendAdjustableSound(self,true)
+					Sounds.SendAdjustableSound(self, true)
 				end
 			end
 
@@ -816,7 +816,9 @@ do -- Metamethods
 		end
 
 		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
-			if self.Disabled then
+			local SelfTbl = self:GetTable()
+
+			if SelfTbl.Disabled then
 				self:SetSoundState(false)
 				self:NextThink(Clock.CurTime + 0.1)
 
@@ -828,19 +830,19 @@ do -- Metamethods
 			local Rotator	= self.Rotator
 			if not IsValid(Rotator) then self:Remove() return end
 
-			local Scale		= self.DamageScale * Tick
+			local Scale		= SelfTbl.DamageScale * Tick
 
-			local SlewMax		= self.MaxSlewRate * Scale
-			local SlewAccel		= self.SlewAccel * Scale
+			local SlewMax		= SelfTbl.MaxSlewRate * Scale
+			local SlewAccel		= SelfTbl.SlewAccel * Scale
 			local MaxImpulse	= math.min(SlewMax, SlewAccel)
 
-			local AngleChange	= self.CurrentAngle
+			local AngleChange	= SelfTbl.CurrentAngle
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
 			if MaxImpulse == 0 then
-				self.LastRotatorAngle	= Rotator:GetAngles()
+				SelfTbl.LastRotatorAngle	= Rotator:GetAngles()
 
-				if self.SoundPlaying == true then
+				if SelfTbl.SoundPlaying == true then
 					self:SetSoundState(false)
 				end
 
@@ -848,60 +850,61 @@ do -- Metamethods
 				return true
 			end
 
-			if self.UseVector and (self.Manual == false) then self.DesiredAngle = (self.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
+			if SelfTbl.UseVector and (SelfTbl.Manual == false) then SelfTbl.DesiredAngle = (SelfTbl.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
 
-			local StabAmt	= math.Clamp(self.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
+			local StabAmt	= math.Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
 
-			local TargetBearing	= math.Round(self.SlewFuncs.GetTargetBearing(self,StabAmt),8)
+			local TargetBearing	= math.Round(SelfTbl.SlewFuncs.GetTargetBearing(self, StabAmt), 8)
 
 			local sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math.abs(TargetBearing)
 			local FinalAccel	= math.Clamp(TargetBearing, -MaxImpulse, MaxImpulse)
-			local BrakingDist	= self.SlewRate ^ 2 / math.abs(FinalAccel) / 2
+			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math.abs(FinalAccel) / 2
 
-			if self.Active then
-				self.SlewRate = math.Clamp(self.SlewRate + (math.abs(FinalAccel) * ((Dist + (self.SlewRate * 2 * -sign)) >= BrakingDist and sign or -sign)), -SlewMax, SlewMax)
+			if SelfTbl.Active then
+				SelfTbl.SlewRate = math.Clamp(SelfTbl.SlewRate + (math.abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -sign)) >= BrakingDist and sign or -sign)), -SlewMax, SlewMax)
 
-				if self.SlewRate ~= 0 and (Dist <= math.abs(FinalAccel)) and (self.SlewRate <= FinalAccel) then
-					self.SlewRate = 0
-					self.CurrentAngle = self.CurrentAngle + TargetBearing / 2
+				if SelfTbl.SlewRate ~= 0 and (Dist <= math.abs(FinalAccel)) and (SelfTbl.SlewRate <= FinalAccel) then
+					SelfTbl.SlewRate = 0
+					SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + TargetBearing / 2
 				end
-			elseif not self.Active and self.SlewRate ~= 0 then
-				self.SlewRate = self.SlewRate - (math.min(SlewAccel, math.abs(self.SlewRate)) * (self.SlewRate >= 0 and 1 or -1))
+			elseif not SelfTbl.Active and SelfTbl.SlewRate ~= 0 then
+				SelfTbl.SlewRate = SelfTbl.SlewRate - (math.min(SlewAccel, math.abs(SelfTbl.SlewRate)) * (SelfTbl.SlewRate >= 0 and 1 or -1))
 			end
 
-			self.CurrentAngle = self.CurrentAngle + math.Clamp(self.SlewRate + StabAmt,-SlewMax,SlewMax)
+			SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + math.Clamp(SelfTbl.SlewRate + StabAmt, -SlewMax, SlewMax)
 
-			if self.HasArc then
-				self.CurrentAngle = math.Clamp(self.CurrentAngle,-self.MaxDeg,-self.MinDeg)
+			if SelfTbl.HasArc then
+				SelfTbl.CurrentAngle = math.Clamp(SelfTbl.CurrentAngle, -SelfTbl.MaxDeg, -SelfTbl.MinDeg)
 			end
 
-			self.CurrentAngle = math.NormalizeAngle(self.CurrentAngle)
+			SelfTbl.CurrentAngle = math.NormalizeAngle(SelfTbl.CurrentAngle)
 
-			WireLib.TriggerOutput(self, "Degrees", -self.CurrentAngle)
+			WireLib.TriggerOutput(self, "Degrees", -SelfTbl.CurrentAngle)
 
-			self.SlewFuncs.SetRotatorAngle(self)
+			SelfTbl.SlewFuncs.SetRotatorAngle(self)
 
-			local MotorSpeed = math.Clamp(math.abs(self.CurrentAngle - AngleChange),0,SlewMax) / Tick
+			local MotorSpeed = math.Clamp(math.abs(SelfTbl.CurrentAngle - AngleChange), 0, SlewMax) / Tick
 
-			local MotorSpeedPerc = MotorSpeed / self.MotorMaxSpeed
-			if MotorSpeedPerc > 0.1 and (self.SoundPlaying == false) then
+			local MotorSpeedPerc = MotorSpeed / SelfTbl.MotorMaxSpeed
+			if MotorSpeedPerc > 0.1 and SelfTbl.SoundPlaying == false then
 				self:SetSoundState(true)
-			elseif MotorSpeedPerc <= 0.1 and (self.SoundPlaying == true) then
+			elseif MotorSpeedPerc <= 0.1 and SelfTbl.SoundPlaying == true then
 				self:SetSoundState(false)
 			end
 
-			if self.SoundPlaying == true then
-				if self.SoundPath ~= (self.CurrentSound or "") then -- should only get set off if the motor is enabled/disabled while the sound is playing
+			if SelfTbl.SoundPlaying == true then
+				if SelfTbl.SoundPath ~= (SelfTbl.CurrentSound or "") then -- should only get set off if the motor is enabled/disabled while the sound is playing
 					self:SetSoundState(false)
 				else
-					Sounds.SendAdjustableSound(self,false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9))
+					Sounds.SendAdjustableSound(self, false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9))
 				end
 			end
 
-			self.LastRotatorAngle	= Rotator:GetAngles()
+			SelfTbl.LastRotatorAngle	= Rotator:GetAngles()
 
 			self:NextThink(Clock.CurTime)
+
 			return true
 		end
 	end
@@ -914,13 +917,13 @@ do -- Metamethods
 		end)
 
 		ACF.AddInputAction("acf_turret", "Angle", function(Entity,Value)
-			local Ang = isangle(Value) and Value or Angle(0,0,0)
+			local Ang = isangle(Value) and Value or angle_zero
 
 			Entity:InputDirection(Ang)
 		end)
 
 		ACF.AddInputAction("acf_turret", "Vector", function(Entity,Value)
-			local Pos = isvector(Value) and Value or Vector(0,0,0)
+			local Pos = isvector(Value) and Value or vector_origin
 
 			Entity:InputDirection(Pos)
 		end)
@@ -987,10 +990,10 @@ do -- Metamethods
 						PO:EnableMotion(true)
 						local Mass = PO:GetMass()
 
-						PO:ApplyForceOffset((self:GetPos() - Attacker:GetPos()):GetNormalized() * Mass * (Mass / (Mass + self.TurretData.TotalMass)),self:GetPos() + VectorRand(-self.RingSize / 2,self.RingSize / 2))
+						PO:ApplyForceOffset((self:GetPos() - Attacker:GetPos()):GetNormalized() * Mass * (Mass / (Mass + self.TurretData.TotalMass)), self:GetPos() + VectorRand(-self.RingSize / 2, self.RingSize / 2))
 					end
 
-					TimerSimple(7.5,function()
+					TimerSimple(7.5, function()
 						if not IsValid(self) then return end
 						self:Remove()
 					end)
@@ -999,7 +1002,7 @@ do -- Metamethods
 
 			HitRes.Kill = false
 
-			local NewHealth = math.max(0,Health - HitRes.Damage)
+			local NewHealth = math.max(0, Health - HitRes.Damage)
 
 			self.ACF.Health = NewHealth
 			self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
@@ -1019,13 +1022,15 @@ do -- Metamethods
 		end
 
 		function ENT:ACF_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
-			if Entity:GetClass() == "acf_turret_rotator" then return end
+			local Class = Entity:GetClass()
+
+			if Class == "acf_turret_rotator" then return end
 
 			self:UpdateTurretMass(false)
 
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
 			-- Shooouuld be using ACF_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
-			if Entity:GetClass() == "acf_turret_motor" then Entity:ValidatePlacement() end
+			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
 			if IsValid(self.Motor) then self.Motor:ValidatePlacement() end
 		end
 
