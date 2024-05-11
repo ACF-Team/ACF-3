@@ -72,12 +72,6 @@ function EFFECT:Create(Index, Data)
 
 	self.Bullet = Bullet
 
-	--TODO: Add an index delay on the serverside to prevent this, how long though.
-	if Bullets[Index] then
-		Bullets[Index].Removed = true
-		print("WARNING: #" .. Index .. " ALREADY EXISTS.")
-	end
-
 	Bullets[Index] = Bullet
 end
 

@@ -4,13 +4,11 @@ local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
-Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
 Ballistics.HighestIndex    = Ballistics.HighestIndex or 0
 Ballistics.SkyboxGraceZone = 100
 
 local Bullets      = Ballistics.Bullets
-local Unused       = Ballistics.UnusedIndexes
-local IndexLimit   = 2000
+local IndexLimit   = 4096
 local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
@@ -50,7 +48,6 @@ function Ballistics.RemoveBullet(Bullet)
 	local Index = Bullet.Index
 
 	Bullets[Index] = nil
-	Unused[Index]  = true
 
 	if Bullet.OnRemoved then
 		Bullet:OnRemoved()
@@ -92,17 +89,8 @@ function Ballistics.CalcBulletFlight(Bullet)
 end
 
 function Ballistics.GetBulletIndex()
-	if next(Unused) then
-		local Index = next(Unused)
-
-		Unused[Index] = nil
-
-		return Index
-	end
-
-	local Index = Ballistics.HighestIndex + 1
-
-	if Index > IndexLimit then return end
+	local Highest = Ballistics.HighestIndex
+	local Index   = Highest % IndexLimit + 1
 
 	Ballistics.HighestIndex = Index
 
