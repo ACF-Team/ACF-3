@@ -37,15 +37,16 @@ end
 function ENT:Think()
 	BaseClass.Think(self)
 
-	local SinceFire = Clock.CurTime - self.LastFire
+	local SelfTbl = self:GetTable()
+	local SinceFire = Clock.CurTime - SelfTbl.LastFire
 
-	self:SetCycle(SinceFire * self.Rate / self.RateScale)
+	self:SetCycle(SinceFire * SelfTbl.Rate / SelfTbl.RateScale)
 
-	if Clock.CurTime > self.LastFire + self.CloseTime and self.CloseAnim then
-		self:ResetSequence(self.CloseAnim)
-		self:SetCycle((SinceFire - self.CloseTime) * self.Rate / self.RateScale)
-		self.Rate = 1 / (self.Reload - self.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
-		self:SetPlaybackRate(self.Rate)
+	if Clock.CurTime > SelfTbl.LastFire + SelfTbl.CloseTime and SelfTbl.CloseAnim then
+		self:ResetSequence(SelfTbl.CloseAnim)
+		self:SetCycle((SinceFire - SelfTbl.CloseTime) * SelfTbl.Rate / SelfTbl.RateScale)
+		SelfTbl.Rate = 1 / (SelfTbl.Reload - SelfTbl.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
+		self:SetPlaybackRate(SelfTbl.Rate)
 	end
 end
 
