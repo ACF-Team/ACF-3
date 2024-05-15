@@ -646,11 +646,13 @@ end ---------------------------------------------
 
 do -- Ammo Consumption -------------------------
 	function ENT:CanConsume()
-		if self.Disabled then return false end
-		if not self.Load then return false end
-		if self.Damaged then return false end
+		local SelfTbl = self:GetTable()
 
-		return self.Ammo > 0
+		if SelfTbl.Disabled then return false end
+		if not SelfTbl.Load then return false end
+		if SelfTbl.Damaged then return false end
+
+		return SelfTbl.Ammo > 0
 	end
 
 	function ENT:Consume(Num)
