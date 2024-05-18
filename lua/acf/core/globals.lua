@@ -155,8 +155,9 @@ if SERVER then
 
 	hook.Add("PlayerConnect", "ACF Workshop Content", function()
 		if ACF.WorkshopContent then
-			resource.AddWorkshop("2183798463") -- Playermodel seats
-			resource.AddWorkshop("2782411885") -- ACF-3 Content for Players
+			resource.AddWorkshop("2183798463") -- Playermodel Seats
+			resource.AddWorkshop("3248769144") -- ACF-3 Base
+			resource.AddWorkshop("3248769787") -- ACF-3 Missiles
 		end
 
 		if ACF.WorkshopExtras then
