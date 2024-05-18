@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF       = ACF
+local Contraption	= ACF.Contraption
 local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
 local hook      = hook
@@ -147,14 +148,7 @@ do -- Spawning and Updating --------------------
 
 		ACF.Activate(Entity, true)
 
-		local Phys = Entity:GetPhysicsObject()
-
-		if IsValid(Phys) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			Phys:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	-------------------------------------------------------------------------------
@@ -176,13 +170,15 @@ do -- Spawning and Updating --------------------
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity:SetModel(Class.Model) -- NOTE: ENT:SetScale didn't work properly without this
+		Entity.ACF          = {}
+
+		Contraption.SetModel(Entity, Class.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.RoundData    = AmmoType()
 		Entity.LastThink    = Clock.CurTime
@@ -315,6 +311,7 @@ do -- Entity Overlay ----------------------------
 end ---------------------------------------------
 
 do -- Firing ------------------------------------
+	local Sounds = ACF.Utilities.Sounds
 	local Impact = "physics/metal/metal_barrel_impact_hard%s.wav"
 
 	-- The entity won't even attempt to shoot if this function returns false
@@ -343,8 +340,8 @@ do -- Firing ------------------------------------
 			local Sound  = self.SoundPath or Impact:format(math.random(5, 6))
 			local Bullet = self.BulletData
 
-			if Sound ~= "" and file.Exists("sound/" .. Sound, "GAME") then
-				self:EmitSound(Sound, 70, math.Rand(98, 102), ACF.Volume)
+			if Sound ~= "" then
+				Sounds.SendSound(self, Sound, 70, math.Rand(98, 102), 1)
 			end
 			self:SetSequence("load")
 
@@ -365,7 +362,7 @@ do -- Firing ------------------------------------
 				self:SetSequence("idle")
 			end)
 		else
-			self:EmitSound("weapons/pistol/pistol_empty.wav", 70, math.Rand(98, 102), ACF.Volume)
+			Sounds.SendSound(self, "weapons/pistol/pistol_empty.wav", 70, math.Rand(98, 102), 1)
 
 			Delay = 1
 		end

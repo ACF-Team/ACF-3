@@ -1,4 +1,5 @@
 local ACF = ACF
+local Contraption	= ACF.Contraption
 local IsValid = IsValid
 
 TOOL.Category	 = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
@@ -20,7 +21,7 @@ local MaximumArmor = ACF.MaximumArmor
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor(Area, Ductility, Thickness)
 	local mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
-	local armor = ACF_CalcArmor(Area, Ductility, mass)
+	local armor = ACF.CalcArmor(Area, Ductility, mass)
 	local health = (Area / ACF.Threshold) * (1 + Ductility)
 
 	return mass, armor, health
@@ -45,9 +46,7 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	Entity.ACF.Ductility = Ductility * 0.01
 
 	if Mass ~= Entity.ACF.Mass then
-		Entity.ACF.Mass = Mass
-
-		PhysObj:SetMass(Mass)
+		Contraption.SetMass(Entity, Mass)
 	end
 end
 
@@ -227,7 +226,7 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
 				end
 
-				draw.SimpleTextOutlined("Armour", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("Armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 				draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- health bar
@@ -259,7 +258,7 @@ if CLIENT then
 		if mass > 50000 or mass < 0.1 then
 			mass = math.Clamp(mass, 0.1, 50000)
 
-			thickness = ACF_CalcArmor(area, ductility, mass)
+			thickness = ACF.CalcArmor(area, ductility, mass)
 			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
 		end
 	end)
@@ -282,7 +281,7 @@ if CLIENT then
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
 			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
 
-			thickness = ACF_CalcArmor(area, ductility, mass)
+			thickness = ACF.CalcArmor(area, ductility, mass)
 			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
 		end
 	end)
@@ -354,7 +353,7 @@ else -- Serverside-only stuff
 		local Area      = Entity.ACF.Area
 		local Mass      = MassMod and MassMod.Mass or PhysObj:GetMass()
 		local Ductility = math.Clamp(Data.Ductility or 0, -80, 80) * 0.01
-		local Thickness = ACF_CalcArmor(Area, Ductility, Mass)
+		local Thickness = ACF.CalcArmor(Area, Ductility, Mass)
 
 		duplicator.ClearEntityModifier(Entity, "mass")
 		duplicator.ClearEntityModifier(Entity, "acfsettings")
@@ -450,6 +449,7 @@ function TOOL:RightClick(Trace)
 end
 
 do -- Armor readout
+	local Contraption = ACF.Contraption
 	local SendMessage = ACF.SendMessage
 
 	local Text1 = "--- Contraption Readout (Owner: %s) ---"
@@ -457,7 +457,7 @@ do -- Armor readout
 	local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
 	local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
 
-	-- Emulates the stuff done by ACF_CalcMassRatio except with a given set of entities
+	-- Emulates the stuff done by ACF.CalcMassRatio except with a given set of entities
 	local function ProcessList(Entities)
 		local Constraints = {}
 
@@ -548,7 +548,7 @@ do -- Armor readout
 			end,
 			GetResult = function(_, Trace)
 				local Ent = Trace.Entity
-				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = ACF_CalcMassRatio(Ent, true)
+				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = Contraption.CalcMassRatio(Ent, true)
 
 				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
 			end

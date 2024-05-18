@@ -2,7 +2,7 @@ local function HandleACFPodAnimation( _, player )
 	return player:LookupSequence("drive_pd")
 end
 
-local Category = "Armoured Combat Framework"
+local Category = "Armored Combat Framework"
 
 list.Set( "Vehicles", "acf_pod", {
 	Name = "Standard Driver Pod",

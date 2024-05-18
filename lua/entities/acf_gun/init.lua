@@ -6,10 +6,12 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF         = ACF
+local Contraption = ACF.Contraption
 local Classes     = ACF.Classes
 local AmmoTypes   = Classes.AmmoTypes
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
@@ -96,12 +98,12 @@ do -- Spawn and Update functions --------------------------------
 
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
-		local Sounds = Class.Sounds
+		local ClassSounds = Class.Sounds
 
-		if Sounds then
+		if ClassSounds then
 			local Lowest = math.huge
 
-			for Current, Sound in pairs(Sounds) do
+			for Current, Sound in pairs(ClassSounds) do
 				if Caliber <= Current and Current <= Lowest then
 					Lowest = Current
 					Result = Sound
@@ -152,6 +154,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Spread       = Class.Spread
 		Entity.DefaultSound = GetSound(Caliber, Class)
 		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
+		Entity.SoundPitch   = Entity.SoundPitch or 1
+		Entity.SoundVolume  = Entity.SoundVolume or 1
 		Entity.HitBoxes     = ACF.GetHitboxes(Model, Scale)
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
@@ -163,6 +167,8 @@ do -- Spawn and Update functions --------------------------------
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Sound", Entity.SoundPath)
+		Entity:SetNWString("SoundPitch", Entity.SoundPitch)
+		Entity:SetNWString("SoundVolume", Entity.SoundVolume)
 		Entity:SetNWString("Class", Entity.Class)
 
 		-- Adjustable barrel length
@@ -184,10 +190,7 @@ do -- Spawn and Update functions --------------------------------
 		if IsValid(PhysObj) then
 			local Mass = GetMass(Model, PhysObj, Class, Weapon)
 
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
+			Contraption.SetMass(Entity, Mass)
 		end
 	end
 
@@ -227,14 +230,15 @@ do -- Spawn and Update functions --------------------------------
 		Player:AddCleanup(Class.Cleanup, Entity)
 		Player:AddCount(Limit, Entity)
 
-		-- The model isn't automatically updated, so this is required
-		Entity:SetModel(Weapon and Weapon.Model or Class.Model)
+		Entity.ACF			= {}
+
+		Contraption.SetModel(Entity, Weapon and Weapon.Model or Class.Model)
+
 		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.ACF          = {}
 		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.BarrelFilter = { Entity }
 		Entity.State        = "Empty"
@@ -347,8 +351,8 @@ do -- Metamethods --------------------------------
 		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
 			local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Crate:EmitSound(Sound, 70, 100, ACF.Volume)
-			Gun:EmitSound(Sound, 70, 100, ACF.Volume)
+			Sounds.SendSound(Crate, Sound, 70, 100, 1)
+			Sounds.SendSound(Gun, Sound, 70, 100, 1)
 
 			CrateUnlinked = Gun:Unlink(Crate)
 		end
@@ -466,7 +470,7 @@ do -- Metamethods --------------------------------
 			while TraceRes.HitNonWorld do
 				local Entity = TraceRes.Entity
 
-				if Entity.IsACFEntity and not Entity.IsACFArmor then break end
+				if Entity.IsACFEntity and not (Entity.IsACFArmor or Entity.IsACFTurret) then break end
 				if Entity:CPPIGetOwner() ~= owner then break end
 
 				filter[#filter + 1] = Entity
@@ -484,7 +488,7 @@ do -- Metamethods --------------------------------
 			if self.State ~= "Loaded" then -- Weapon is not loaded
 				if self.State == "Empty" and not self.Retry then
 					if not self:Load() then
-						self:EmitSound("weapons/pistol/pistol_empty.wav", 70, 100, ACF.Volume) -- Click!
+						Sounds.SendSound(self, "weapons/pistol/pistol_empty.wav", 70, 100, 1) -- Click!
 					end
 
 					self.Retry = true
@@ -519,7 +523,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
-			local Velocity = ACF_GetAncestor(self):GetVelocity()
+			local Velocity = Contraption.GetAncestor(self):GetVelocity()
 			local BulletData = self.BulletData
 			local AmmoType = AmmoTypes.Get(BulletData.Type)
 
@@ -620,7 +624,7 @@ do -- Metamethods --------------------------------
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
-			self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
+			Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 			self.CurrentShot = 0
 			self.BulletData  = EMPTY
 
@@ -711,7 +715,7 @@ do -- Metamethods --------------------------------
 			self:SetState("Loading")
 
 			if self.MagReload then -- Mag-fed/Automatically loaded
-				self:EmitSound("weapons/357/357_reload4.wav", 70, 100, ACF.Volume)
+				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				self.NextFire = Clock.CurTime + self.MagReload
 

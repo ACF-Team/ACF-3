@@ -40,8 +40,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 	local BreakupT      = Bullet.BreakupTime
 	local MaxVel        = Bullet.JetMaxVel
 	local PenMul        = Bullet.PenMul or 1
-	local TargetDensity = ACF.RHADensity -- Assuming RHA
-	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
+	local Gamma         = 1 --math.sqrt(TargetDensity / ACF.CopperDensity) (Set to 1 to maintain continuity)
 
 	local Penetration = 0
 	if Standoff < Bullet.BreakupDist then
@@ -82,7 +81,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local BodyLength      = Data.ProjLength - CapLength
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
 	-- Considering most of the cap gets crushed (early HEAT suffered from this)
-	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
+	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 * ACF.HEATStandOffMul -- cm to m
 	local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
 	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
 	local WarheadDiameter = 2 * FreeRadius
@@ -114,7 +113,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) -- Maximum velocity of the jet (the tip)
 
 	-- Both the "magic numbers" are unitless, tuning constants that were used to fit the breakup time to real world values, I suggest they not be messed with
-	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333  -- Jet breakup time in seconds
+	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333 * ACF.HEATBreakUpMul -- Jet breakup time in seconds
 	local BreakupDist    = JetMaxVel * BreakupTime
 
 	GUIData.MinConeAng = MinConeAng
@@ -141,7 +140,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	-- Recalculate the standoff for missiles
 	if Data.MissileStandoff then
-		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
+		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2 * ACF.HEATStandOffMul
 	end
 	-- God weeped when this spaghetto was written (for missile roundinject)
 	if Data.FillerMul or Data.LinerMassMul then
@@ -156,12 +155,13 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
 		local _JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * _JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
-		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333 * ACF.HEATBreakUpMul
 		Data.BreakupDist   = _JetMaxVel * Data.BreakupTime
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
 	end
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
@@ -265,6 +265,8 @@ if SERVER then
 			local PenHitPos = TraceRes.HitPos
 			local Ent       = TraceRes.Entity
 			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+
+			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity print("Skipped",Ent) continue end
 
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m

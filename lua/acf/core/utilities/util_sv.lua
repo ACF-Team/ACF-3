@@ -1,7 +1,24 @@
 local ACF = ACF
 
 do -- Networked notifications
+	local Messages = ACF.Utilities.Messages
+
 	util.AddNetworkString("ACF_Notify")
+	util.AddNetworkString("ACF_NameAndShame")
+
+	function ACF.Shame(Entity, Message)
+		if not ACF.NameAndShame then return end
+		local Owner = Entity:CPPIGetOwner()
+
+		if not IsValid(Owner) then return end
+
+		local ShameMsg = Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message
+		Messages.PrintLog("Error", ShameMsg)
+
+		net.Start("ACF_NameAndShame")
+			net.WriteString(ShameMsg)
+		net.Broadcast()
+	end
 
 	function ACF.SendNotify(Player, Success, Message)
 		net.Start("ACF_Notify")
@@ -9,8 +26,6 @@ do -- Networked notifications
 			net.WriteString(Message or "")
 		net.Send(Player)
 	end
-
-	ACF_SendNotify = ACF.SendNotify -- Backwards compatibility
 end
 
 do -- HTTP Request

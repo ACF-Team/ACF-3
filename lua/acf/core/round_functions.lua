@@ -127,13 +127,9 @@ function ACF.Kinetic(Speed, Mass)
 end
 
 -- changes here will be automatically reflected in the armor properties tool
-function ACF_CalcArmor(Area, Ductility, Mass)
+function ACF.CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
-
--- Backwards compatibility
-ACF_MuzzleVelocity = ACF.MuzzleVelocity
-ACF_Kinetic        = ACF.Kinetic
 
 local Weaponry = {
 	Piledrivers = Classes.Piledrivers,

@@ -8,13 +8,17 @@ include("shared.lua")
 --===============================================================================================--
 
 local Damage      = ACF.Damage
+local Contraption = ACF.Contraption
 local Objects     = Damage.Objects
 local ActiveTanks = ACF.FuelTanks
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Sounds      = Utilities.Sounds
 local RefillDist  = ACF.RefillDistance * ACF.RefillDistance
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
+local Clamp       = math.Clamp
+local Round       = math.Round
 local HookRun     = hook.Run
 
 local function CanRefuel(Refill, Tank, Distance)
@@ -82,9 +86,9 @@ do -- Spawn and Update functions
 				local Max  = ACF.FuelMaxSize
 				local Size = Data.Size
 
-				Size.x = math.Clamp(math.Round(Size.x), Min, Max)
-				Size.y = math.Clamp(math.Round(Size.y), Min, Max)
-				Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+				Size.x = Clamp(Round(Size.x), Min, Max)
+				Size.y = Clamp(Round(Size.y), Min, Max)
+				Size.z = Clamp(Round(Size.z), Min, Max)
 			end
 		else
 			Data.Size = nil
@@ -115,7 +119,7 @@ do -- Spawn and Update functions
 		if Class.IsScalable then
 			Entity:SetSize(Data.Size)
 		else
-			Entity:SetModel(Entity.ACF.Model)
+			Contraption.SetModel(Entity, Entity.ACF.Model)
 			Entity:PhysicsInit(SOLID_VPHYSICS, true)
 			Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		end
@@ -188,6 +192,7 @@ do -- Spawn and Update functions
 		local FuelType = FuelTypes.Get(Data.FuelType)
 		local Limit    = Class.LimitConVar.Name
 		local Model    = Class.Model or FuelTank and FuelTank.Model
+		local Material = Class.Material or FuelTank and FuelTank.Model
 
 		if not Player:CheckLimit(Limit) then return end
 
@@ -199,8 +204,13 @@ do -- Spawn and Update functions
 
 		if not IsValid(Tank) then return end
 
+		Tank.ACF		= Tank.ACF or {}
+
 		Tank:SetPlayer(Player)
 		Tank:SetScaledModel(Model)
+		if Material then
+			Tank:SetMaterial(Material)
+		end
 		Tank:SetAngles(Angle)
 		Tank:SetPos(Pos)
 		Tank:Spawn()
@@ -208,11 +218,13 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_fueltank", Tank)
 		Player:AddCount(Limit, Tank)
 
-		Tank.Owner     = Player -- MUST be stored on ent for PP
-		Tank.Engines   = {}
-		Tank.Leaking   = 0
-		Tank.LastThink = 0
-		Tank.DataStore = Entities.GetArguments("acf_fueltank")
+		Tank.Owner         = Player -- MUST be stored on ent for PP
+		Tank.Engines       = {}
+		Tank.Leaking       = 0
+		Tank.LastThink     = 0
+		Tank.LastFuel      = 0
+		Tank.LastActivated = 0
+		Tank.DataStore     = Entities.GetArguments("acf_fueltank")
 
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
@@ -405,22 +417,18 @@ function ENT:Disable()
 end
 
 do -- Mass Update
-	local function UpdateMass(Entity)
-		local Fuel    = Entity.FuelType == "Electric" and Entity.Liters or Entity.Fuel
-		local Mass    = math.floor(Entity.EmptyMass + Fuel * Entity.FuelDensity)
-		local PhysObj = Entity:GetPhysicsObject()
+	local function UpdateMass(Entity, SelfTbl)
+		SelfTbl = SelfTbl or Entity:GetTable()
+		local Fuel    = SelfTbl.FuelType == "Electric" and SelfTbl.Liters or SelfTbl.Fuel
+		local Mass    = math.floor(SelfTbl.EmptyMass + Fuel * SelfTbl.FuelDensity)
 
-		if IsValid(PhysObj) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
-	function ENT:UpdateMass(Instant)
+	function ENT:UpdateMass(Instant, SelfTbl)
+		SelfTbl = SelfTbl or self:GetTable()
 		if Instant then
-			return UpdateMass(self)
+			return UpdateMass(self, SelfTbl)
 		end
 
 		if TimerExists("ACF Mass Buffer" .. self:EntIndex()) then return end
@@ -428,7 +436,7 @@ do -- Mass Update
 		TimerCreate("ACF Mass Buffer" .. self:EntIndex(), 1, 1, function()
 			if not IsValid(self) then return end
 
-			UpdateMass(self)
+			UpdateMass(self, SelfTbl)
 		end)
 	end
 end
@@ -455,18 +463,20 @@ do -- Overlay Update
 			Size = Class.CalcOverlaySize(self)
 		end
 
-		local FuelType = FuelTypes.Get(self.FuelType)
+		local FuelTypeID = self.FuelType
+		local FuelType = FuelTypes.Get(FuelTypeID)
+		local Fuel = self.Fuel
 
 		if FuelType and FuelType.FuelTankOverlayText then
-			Content = FuelType.FuelTankOverlayText(self.Fuel)
+			Content = FuelType.FuelTankOverlayText(Fuel)
 		else
-			local Liters = math.Round(self.Fuel, 2)
-			local Gallons = math.Round(self.Fuel * 0.264172, 2)
+			local Liters = Round(Fuel, 2)
+			local Gallons = Round(Fuel * 0.264172, 2)
 
 			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
 
-		return Text:format(Status, Size, self.FuelType, Content)
+		return Text:format(Status, Size, FuelTypeID, Content)
 	end
 end
 
@@ -480,66 +490,103 @@ ACF.AddInputAction("acf_fueltank", "Refuel Duty", function(Entity, Value)
 	Entity.SupplyFuel = tobool(Value) or nil
 end)
 
-function ENT:CanConsume()
-	if self.Disabled then return false end
-	if not self.Active then return false end
+function ENT:CanConsume(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+	if SelfTbl.Disabled then return false end
+	if not SelfTbl.Active then return false end
 
-	return self.Fuel > 0
+	return SelfTbl.Fuel > 0
 end
 
-function ENT:Consume(Amount)
-	self.Fuel = math.Clamp(self.Fuel - Amount, 0, self.Capacity)
+function ENT:Consume(Amount, SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+	local Fuel = Clamp(SelfTbl.Fuel - Amount, 0, SelfTbl.Capacity)
+	SelfTbl.Fuel = Fuel
 
 	self:UpdateOverlay()
-	self:UpdateMass()
+	self:UpdateMass(_, SelfTbl)
 
-	WireLib.TriggerOutput(self, "Fuel", self.Fuel)
-	WireLib.TriggerOutput(self, "Activated", self:CanConsume() and 1 or 0)
+	Fuel = Round(Fuel, 2)
+	local Activated = self:CanConsume(SelfTbl) and 1 or 0
+
+	if SelfTbl.LastFuel ~= Fuel then
+		SelfTbl.LastFuel = Fuel
+		WireLib.TriggerOutput(self, "Fuel", Fuel)
+	end
+	if SelfTbl.LastActivated ~= Activated then
+		SelfTbl.LastActivated = Activated
+		WireLib.TriggerOutput(self, "Activated", Activated)
+	end
 end
 
-function ENT:Think()
-	self:NextThink(Clock.CurTime + 1)
-
-	if self.Leaking > 0 then
-		self:Consume(self.Leaking)
-
-		self.Leaking = math.Clamp(self.Leaking - (1 / math.max(self.Fuel, 1)) ^ 0.5, 0, self.Fuel) -- Fuel tanks are self healing
-
-		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
-
-		self:NextThink(Clock.CurTime + 0.25)
+do
+	local function RefillEffect(Entity)
+		net.Start("ACF_RefillEffect")
+			net.WriteEntity(Entity)
+		net.Broadcast()
 	end
 
-	-- Refuelling
-	if self.SupplyFuel and self:CanConsume() then
-		local DeltaTime = Clock.CurTime - self.LastThink
-		local Position  = self:GetPos()
+	local function StopRefillEffect(Entity)
+		net.Start("ACF_StopRefillEffect")
+			net.WriteEntity(Entity)
+		net.Broadcast()
+	end
 
-		for Tank in pairs(ACF.FuelTanks) do
-			if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
-				local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+	function ENT:Think()
+		self:NextThink(Clock.CurTime + 1)
 
-				if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+		local Leaking = self.Leaking
 
-				self:Consume(Exchange)
-				Tank:Consume(-Exchange)
+		if Leaking > 0 then
+			self:Consume(Leaking)
 
-				if self.FuelType == "Electric" then
-					self:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
-					Tank:EmitSound("ambient/energy/newspark04.wav", 70, 100, 0.5 * ACF.Volume)
-				else
-					self:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
-					Tank:EmitSound("vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5 * ACF.Volume)
+			local Fuel = self.Fuel
+			Leaking = Clamp(Leaking - (1 / math.max(Fuel, 1)) ^ 0.5, 0, Fuel) -- Fuel tanks are self healing
+			self.Leaking = Leaking
+
+			WireLib.TriggerOutput(self, "Leaking", Leaking > 0 and 1 or 0)
+
+			self:NextThink(Clock.CurTime + 0.25)
+		end
+
+		if self.Refilling then
+			StopRefillEffect(self)
+			self.Refilling = false
+		end
+
+		-- Refuelling
+		if self.SupplyFuel and self:CanConsume() then
+			local DeltaTime = Clock.CurTime - self.LastThink
+			local Position  = self:GetPos()
+
+			for Tank in pairs(ACF.FuelTanks) do
+				if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
+					local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+
+					if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+
+					self:Consume(Exchange)
+					Tank:Consume(-Exchange)
+
+					if self.FuelType == "Electric" then
+						Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+						Sounds.SendSound(Tank, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+					else
+						Sounds.SendSound(self, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+						Sounds.SendSound(Tank, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+					end
+
+					RefillEffect(self)
+					self.Refilling = true
 				end
 			end
 		end
+
+		self.LastThink = Clock.CurTime
+
+		return true
 	end
-
-	self.LastThink = Clock.CurTime
-
-	return true
 end
-
 function ENT:OnRemove()
 	local Class = self.ClassData
 

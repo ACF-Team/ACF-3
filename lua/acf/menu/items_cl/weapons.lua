@@ -2,7 +2,7 @@ local ACF       = ACF
 local Weapons   = ACF.Classes.Weapons
 local ModelData = ACF.ModelData
 local NameText  = "%smm %s"
-local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s\n\nThis entity can be fully parented."
+local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s"
 local MagText   = "\nRounds : %s rounds\nReload : %s seconds"
 local Current   = {}
 local CreateControl, IsScalable

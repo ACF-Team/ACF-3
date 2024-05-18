@@ -10,6 +10,7 @@ do -- ACF global vars
 
 	-- General Settings
 	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
+	ACF.NameAndShame       = false -- Whether or not IsLegal checks should message everyone* about ACF entities getting disabled
 	ACF.VehicleLegalChecks = true -- Whether or not IsLegal checks should be run on vehicle entities
 	ACF.Year               = 1945
 	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
@@ -76,6 +77,7 @@ do -- ACF global vars
 	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoRefillColor    = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
 	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity           = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
@@ -93,11 +95,13 @@ do -- ACF global vars
 	ACF.HEATEfficiency     = 0.5     -- Efficiency of converting explosive energy to velocity
 	ACF.LinerThicknessMult = 0.04   -- Metal liner thickness multiplier
 	ACF.MaxChargeHeadLen   = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
-	ACF.HEATPenMul         = 0.85    -- Linear jet penetration multiplier
+	ACF.HEATPenMul         = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
 	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
 	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
+	ACF.HEATStandOffMul = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
+	ACF.HEATBreakUpMul = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
 
 	-- Material densities
 	ACF.SteelDensity       = 7.9e-3  -- kg/cm^3
@@ -130,6 +134,7 @@ do -- ACF global vars
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelArmor          = 5 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
 	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
@@ -150,8 +155,9 @@ if SERVER then
 
 	hook.Add("PlayerConnect", "ACF Workshop Content", function()
 		if ACF.WorkshopContent then
-			resource.AddWorkshop("2183798463") -- Playermodel seats
-			resource.AddWorkshop("2782411885") -- ACF-3 Content for Players
+			resource.AddWorkshop("2183798463") -- Playermodel Seats
+			resource.AddWorkshop("3248769144") -- ACF-3 Base
+			resource.AddWorkshop("3248769787") -- ACF-3 Missiles
 		end
 
 		if ACF.WorkshopExtras then
@@ -168,6 +174,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
+	CreateClientConVar("acf_legalshame", 0, true, true, "If enabled, you will get a message in console from the server if someone else has an ACF entity get disabled, but only when the server has that logging enabled.", 0, 1)
 	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
 	CreateClientConVar("acf_debris_collision", 0, true, false, "Toggles debris collisions with other entities.", 0, 1)
 	CreateClientConVar("acf_debris_gibmultiplier", 1, true, false, "The amount of gibs spawned when created by ACF debris.", 0, 1)

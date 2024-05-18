@@ -2,6 +2,7 @@ local TraceData = { start = true, endpos = true, mask = MASK_SOLID }
 local TraceLine = util.TraceLine
 local GetIndex  = ACF.GetAmmoDecalIndex
 local GetDecal  = ACF.GetRicochetDecal
+local Sounds    = ACF.Utilities.Sounds
 local White     = Color(255, 255, 255)
 local Yellow    = Color(255, 255, 0)
 
@@ -60,10 +61,9 @@ end
 
 function EFFECT:Core(Origin, Radius)
 	local Pitch  = math.Clamp(123 - Radius * 3, 60, 120)
-	local Volume = ACF.Volume
 
-	sound.Play("ambient/explosions/explode_9.wav", Origin, 105, Pitch, Volume)
-	sound.Play("ambient/levels/streetwar/city_battle19.wav", Origin, 105, Pitch, Volume)
+	Sounds.PlaySound(Origin, "ambient/explosions/explode_9.wav", 105, Pitch, 1)
+	Sounds.PlaySound(Origin, "ambient/levels/streetwar/city_battle19.wav", 105, Pitch, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)

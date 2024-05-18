@@ -1,3 +1,19 @@
+--[[
+This is the main server side file for the ammo entity.
+
+Notes on Structure of Data:
+- Data.Weapon (string) = Weapon class (e.g. "AC", "MO", "HW", "C")
+- Data.Destiny (string) = Weapon group (e.g. "Weapons"/"Missiles")
+- Data.Caliber (number) = Weapon caliber in mm (e.g. 10)
+- Data.Size (vector) = Dimensions of crate (e.g. Vector(24,24,24))
+- Data.AmmoType (string) = Weapon ammotype (e.g. "AP")
+- Data.Offset (Vector) = Offset to use for backwards compatability with old crates
+
+Methods exposed to the user for use with other files:
+- ENT:CanConsume()
+- ENT:Consume(Num)
+]]
+
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -6,6 +22,7 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF          = ACF
+local Contraption  = ACF.Contraption
 local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
@@ -30,20 +47,24 @@ do -- Spawning and Updating --------------------
 	}
 
 	local function VerifyData(Data)
-		if Data.Id then -- Updating old crates
-			local Crate = Crates.Get(Data.Id)
+		if Data.Id then -- Deprecated ammo data formats
+			local Crate = Crates.Get(Data.Id) -- Id is the crate model type, Crate holds its offset, size and id.
 
-			if Crate then -- Pre scalable crate remnants
+			if Crate then -- Pre scalable crate remnants (ACF2?)
 				Data.Offset = Vector(Crate.Offset)
 				Data.Size   = Vector(Crate.Size)
-			else
+			else -- Initial scaleables remnants (Early ACF3?)
 				local X = ACF.CheckNumber(Data.RoundData11, 24)
 				local Y = ACF.CheckNumber(Data.RoundData12, 24)
 				local Z = ACF.CheckNumber(Data.RoundData13, 24)
 
 				Data.Size = Vector(X, Y, Z)
 			end
-		elseif not isvector(Data.Size) then
+
+			Data.Weapon   = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG", 
+			Data.AmmoType = Data.RoundType
+		elseif not isvector(Data.Size) then -- This could just be an else statement? Not sure though.
+			-- Current ammo data format
 			local X = ACF.CheckNumber(Data.CrateSizeX, 24)
 			local Y = ACF.CheckNumber(Data.CrateSizeY, 24)
 			local Z = ACF.CheckNumber(Data.CrateSizeZ, 24)
@@ -51,7 +72,8 @@ do -- Spawning and Updating --------------------
 			Data.Size = Vector(X, Y, Z)
 		end
 
-		do -- Clamping size
+		do -- The rest under applies to all ammo data formats
+			-- Clamping size
 			local Min  = ACF.AmmoMinSize
 			local Max  = ACF.AmmoMaxSize
 			local Size = Data.Size
@@ -59,73 +81,75 @@ do -- Spawning and Updating --------------------
 			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
 			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
 			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
-		end
 
-		if not isstring(Data.Weapon) then
-			Data.Weapon = Data.RoundId
-		end
-
-		if not isstring(Data.Destiny) then
-			Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
-		end
-
-		local Source = Classes[Data.Destiny]
-		local Class  = Classes.GetGroup(Source, Data.Weapon)
-
-		if not Class then
-			Class = Weapons.Get("C")
-
-			Data.Destiny = "Weapons"
-			Data.Weapon  = "C"
-			Data.Caliber = 50
-		elseif Source.IsAlias(Data.Weapon) then
-			Data.Weapon = Class.ID
-		end
-
-		-- Verifying and clamping caliber value
-		if Class.IsScalable then
-			local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-
-			if Weapon then
-				Data.Weapon  = Class.ID
-				Data.Caliber = Weapon.Caliber
+			-- Destiny (string) may be already defined as "Weapons"/"Missiles", otherwise find the weapony source/"Weapons" 
+			if not isstring(Data.Destiny) then
+				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
 			end
 
-			local Bounds  = Class.Caliber
-			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
+			-- Source (table) is a group representing weapons or missiles
+			local Source = Classes[Data.Destiny]
 
-			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
-		end
+			-- Class (table) is the specific class within the missile/weapon groups (example IDs: "AAM", "AC", "MG")
+			local Class  = Classes.GetGroup(Source, Data.Weapon)
 
-		if not isstring(Data.AmmoType) then
-			Data.AmmoType = Data.RoundType or Class.DefaultAmmo or "AP"
-		end
+			-- E.g. happens if spawning a dupe that has a flare launcher on a server without acf missiles
+			-- Can also happen if Data.Weapon wasn't specified (e.g. creating ammo via ACF function)
+			if not Class then
+				Class = Weapons.Get("C") -- Use 50mmC as a replacement
 
-		local Ammo = AmmoTypes.Get(Data.AmmoType)
-
-		-- Making sure our ammo type exists and it's not blacklisted by the weapon
-		if not Ammo or Ammo.Blacklist[Class.ID] then
-			Data.AmmoType = Class.DefaultAmmo or "AP"
-
-			Ammo = AmmoTypes.Get(Data.AmmoType)
-		end
-
-		do -- External verifications
-			Ammo:VerifyData(Data, Class) -- All ammo types should come with this function
-
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class, Ammo)
+				Data.Destiny = "Weapons"
+				Data.Weapon  = "C"
+				Data.Caliber = Data.caliber or 50 -- If they somehow managed to specify caliber without specifying Weapon, otherwise use 50mm
+			elseif Source.IsAlias(Data.Weapon) then -- This happens on certain weapons like smoothbores which are aliases of cannons
+				Data.Weapon = Class.ID -- E.g. "SB"
 			end
 
-			HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+			-- TODO: FIX
+			do -- Verifying and clamping caliber value
+				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+
+				if Weapon then -- Happens on pre scaleable guns (e.g. Data.Weapon="14.5mmMG", Class.ID="MG")
+					if Class.IsScalable then -- If the class is scalable, set the weapon to the class' ID and bound its caliber
+						local Bounds  = Class.Caliber
+						local Caliber = ACF.CheckNumber(Weapon.Caliber, Bounds.Base)
+
+						Data.Weapon  = Class.ID -- E.g. "MG"
+						Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+					else
+						-- If the class isn't scalable then this weapon is a registered item (e.g. 14.mmMG) and we use its caliber
+						Data.Caliber = ACF.CheckNumber(Weapon.Caliber, 50)
+					end
+				end
+			end
+
+			-- If our ammo type does not exist or is blacklisted by this weapon, use defaults
+			local Ammo = AmmoTypes.Get(Data.AmmoType)
+
+			if not Ammo or Ammo.Blacklist[Class.ID] then
+				Data.AmmoType = Class.DefaultAmmo or "AP"
+
+				Ammo = AmmoTypes.Get(Data.AmmoType)
+			end
+
+			do -- External verifications
+				Ammo:VerifyData(Data, Class) -- Custom verification function defined by each ammo type class
+
+				if Class.VerifyData then -- Custom verification function possibly defined by a weapon class
+					Class.VerifyData(Data, Class, Ammo)
+				end
+
+				HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+			end
 		end
 	end
 
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
-		local Caliber     = Weapon and Weapon.Caliber or Data.Caliber
-		local WeaponName  = Weapon and Weapon.Name or Caliber .. "mm " .. Class.Name
-		local WeaponShort = Weapon and Weapon.ID or Caliber .. "mm" .. Class.ID
+		local Scalable    = Class.IsScalable
+		local Caliber     = Scalable and Data.Caliber or Weapon.Caliber
+		local WeaponName  = Scalable and Caliber .. "mm " .. Class.Name or Weapon.Name
+		local WeaponShort = Scalable and Caliber .. "mm" .. Class.ID or Weapon.ID
 
 		Entity:SetSize(Data.Size)
 
@@ -141,7 +165,7 @@ do -- Spawning and Updating --------------------
 			end
 
 			Entity.RoundData  = Ammo
-			Entity.BulletData = Ammo:ServerConvert(Data)
+			Entity.BulletData = Ammo:ServerConvert(Data) -- This helps sanitize and initialize the bullet data
 			Entity.BulletData.Crate = Entity:EntIndex()
 
 			if Ammo.OnFirst then
@@ -153,11 +177,12 @@ do -- Spawning and Updating --------------------
 			Ammo:Network(Entity, Entity.BulletData)
 		end
 
-		-- Storing all the relevant information on the entity for duping
+		-- Storing onto the entity's table, all the relevant information that the entity saves when duping
 		for _, V in ipairs(Entity.DataStore) do
 			Entity[V] = Data[V]
 		end
 
+		-- Initialize some of the entity properties
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
 		Entity.ShortName  = ShortName or WeaponShort .. " " .. Ammo.ID
 		Entity.EntType    = "Ammo Crate"
@@ -178,12 +203,11 @@ do -- Spawning and Updating --------------------
 			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Class, Data, BulletData)
 
 			Entity.Capacity = Rounds
-			Entity.AmmoMass = math.floor(BulletData.CartMass * Entity.Capacity)
 			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
 
 			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
 
-			Entity:SetNWInt("Ammo", Entity.Ammo)
+			Entity:SetNWInt("Ammo", Entity.Ammo) -- Sent to client for use in overlay
 
 			if ExtraData then
 				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
@@ -202,6 +226,7 @@ do -- Spawning and Updating --------------------
 
 			Entity.CrateData = util.TableToJSON(ExtraData)
 
+			-- Send over the crate and ExtraData to the client to render the overlay
 			net.Start("ACF_RequestAmmoData")
 				net.WriteEntity(Entity)
 				net.WriteString(Entity.CrateData)
@@ -209,7 +234,7 @@ do -- Spawning and Updating --------------------
 		end
 
 		-- Linked weapon unloading
-		if next(Entity.Weapons) then
+		if next(Entity.Weapons) then -- Check if there are weapons linked to this entity
 			local Unloaded
 
 			for K in pairs(Entity.Weapons) do
@@ -232,6 +257,7 @@ do -- Spawning and Updating --------------------
 		Entity:UpdateMass(true)
 	end
 
+	util.PrecacheModel("models/holograms/hq_cylinder.mdl")
 	util.AddNetworkString("ACF_RequestAmmoData")
 
 	-- Whenever a player requests ammo data, we'll send it to them
@@ -246,6 +272,7 @@ do -- Spawning and Updating --------------------
 		end
 	end)
 
+	-- Called when checking if an entity can be spawned. 
 	hook.Add("ACF_CanUpdateEntity", "ACF Crate Size Update", function(Entity, Data)
 		if not Entity.IsACFAmmoCrate then return end
 		if Data.Size then return end -- The menu won't send it like this
@@ -259,27 +286,28 @@ do -- Spawning and Updating --------------------
 	-------------------------------------------------------------------------------
 
 	function MakeACF_Ammo(Player, Pos, Ang, Data)
-		if not Player:CheckLimit("_acf_ammo") then return end
+		if not Player:CheckLimit("_acf_ammo") then return end -- Check sbox limits
 
 		VerifyData(Data)
 
-		local Source = Classes[Data.Destiny]
-		local Class  = Classes.GetGroup(Source, Data.Weapon)
-		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-		local Ammo   = AmmoTypes.Get(Data.AmmoType)
+		local Source = Classes[Data.Destiny] -- A group representing weapons or missiles
+		local Class  = Classes.GetGroup(Source, Data.Weapon) -- The class representing a weapon type (example IDs: "AC", "HW", etc.)
+		local Weapon = Source.GetItem(Class.ID, Data.Weapon) -- This is (unintentionally?) always nil due to Class.ID == Data.Weapon after verification
+		local Ammo   = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
 		local Model  = "models/holograms/rcube_thin.mdl"
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 
 		if CanSpawn == false then return false end
 
-		local Crate = ents.Create("acf_ammo")
+		local Crate = ents.Create("acf_ammo") -- Create the crate entity (still need to setup its properties below)
 
 		if not IsValid(Crate) then return end
 
 		Player:AddCleanup("acf_ammo", Crate)
 		Player:AddCount("_acf_ammo", Crate)
 
+		-- The entity's individual ACF table is used in things like storing the armor
 		Crate.ACF       = Crate.ACF or {}
 		Crate.ACF.Model = Model
 
@@ -323,18 +351,10 @@ do -- Spawning and Updating --------------------
 			end
 		end
 
-		do -- Mass entity mod removal
-			local EntMods = Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
-
 		-- Crates should be ready to load by default
 		Crate:TriggerInput("Load", 1)
 
-		ActiveCrates[Crate] = true
+		ActiveCrates[Crate] = true -- ActiveCrates is a table stored globally that holds all the active crates
 
 		ACF.CheckLegal(Crate)
 
@@ -347,17 +367,18 @@ do -- Spawning and Updating --------------------
 
 	------------------- Updating ---------------------
 
+	-- Entity method for ammo's specific behaviour when updating
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		local Source     = Classes[Data.Destiny]
-		local Class      = Classes.GetGroup(Source, Data.Weapon)
-		local Weapon     = Source.GetItem(Class.ID, Data.Weapon)
+		local Source = Classes[Data.Destiny] -- A group representing weapons or missiles
+		local Class  = Classes.GetGroup(Source, Data.Weapon) -- The class representing a weapon type (example IDs: "AC", "HW", etc.)
+		local Weapon = Source.GetItem(Class.ID, Data.Weapon) -- This is (unintentionally?) always nil due to Class.ID == Data.Weapon after verification
 		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
-		local OldClass   = self.ClassData
+		local OldClass   = self.ClassData -- (The same as "Class" above, just the previous weapon type)
 		local OldWeapon  = self.Weapon
 		local OldCaliber = self.Caliber
-		local Ammo       = AmmoTypes.Get(Data.AmmoType)
+		local Ammo       = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
@@ -383,14 +404,16 @@ do -- Spawning and Updating --------------------
 		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
 		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
+			-- Unlink if the weapon type or caliber has changed
 			for Entity in pairs(self.Weapons) do
 				self:Unlink(Entity)
 			end
 
 			Extra = " All weapons have been unlinked."
 		else
+			-- Unlink and unload all currently linked weapons that blacklist the new ammotype
+			-- This will not do anything if all linked weapons accept the new ammotype
 			local Count = 0
-
 			for Entity in pairs(self.Weapons) do
 				if Blacklist[Entity.Class] then
 					self:Unlink(Entity)
@@ -401,7 +424,6 @@ do -- Spawning and Updating --------------------
 				end
 			end
 
-			-- Note: Wouldn't this just unlink all weapons anyway?
 			if Count > 0 then
 				Extra = " Unlinked " .. Count .. " weapons from this crate."
 			end
@@ -409,6 +431,7 @@ do -- Spawning and Updating --------------------
 
 		self:UpdateOverlay(true)
 
+		-- Let the client know that we've updated this entity
 		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)
 		net.Broadcast()
@@ -418,12 +441,13 @@ do -- Spawning and Updating --------------------
 end ---------------------------------------------
 
 do -- ACF Activation and Damage -----------------
-	local Clock   = Utilities.Clock
-	local Damage  = ACF.Damage
-	local Objects = Damage.Objects
+	local Clock       = Utilities.Clock
+	local Sounds      = Utilities.Sounds
+	local Damage      = ACF.Damage
+	local Objects     = Damage.Objects
 
 	local function CookoffCrate(Entity)
-		if Entity.Ammo <= 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
+		if Entity.Ammo < 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
 			timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
 
 			Entity.Damaged = nil
@@ -431,17 +455,18 @@ do -- ACF Activation and Damage -----------------
 			Entity:Detonate()
 		elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
 			local BulletData = Entity.BulletData
-			local VolumeRoll = math.Rand(0, 150) > BulletData.RoundVolume ^ 0.5
-			local AmmoRoll   = math.Rand(0, 1) < Entity.Ammo / math.max(Entity.Capacity, 1)
+			local VolumeRoll = math.Rand(0, 150) > math.min(BulletData.RoundVolume ^ 0.5, 150 * 0.25) -- The larger the round volume, the less the chance of detonation (25% chance at minimum)
+			local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
 
 			if VolumeRoll and AmmoRoll then
-				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency)
-				local Pitch = math.max(255 - BulletData.PropMass * 100,60)
+				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency) -- Half weight projectile?
+				local Pitch = math.max(255 - BulletData.PropMass * 100,60) -- Pitch based on propellant mass
 
-				Entity:EmitSound("ambient/explosions/explode_4.wav", 140, Pitch, ACF.Volume)
+				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
-				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5)
-				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity()
+				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5) -- Random position in the ammo crate
+				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + ACF_GetAncestor(Entity):GetVelocity() -- Random direction including baseplate speed
+
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity
 				BulletData.Crate  = Entity:EntIndex()
@@ -502,7 +527,7 @@ do -- ACF Activation and Damage -----------------
 			self.Inflictor = Inflictor
 
 			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
-				self.Damaged = Clock.CurTime + (5 - Ratio * 3)
+				self.Damaged = Clock.CurTime + (5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 
@@ -525,7 +550,7 @@ do -- ACF Activation and Damage -----------------
 
 		self.Exploding = true
 
-		local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5)
+		local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5) -- Random position within the crate
 		local BulletData = self.BulletData
 		local Filler     = BulletData.FillerMass or 0
 		local Propellant = BulletData.PropMass or 0
@@ -597,15 +622,9 @@ end ---------------------------------------------
 
 do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
-		local Mass = math.floor(Ent.EmptyMass + (Ent.AmmoMass * (Ent.Ammo / math.max(Ent.Capacity, 1))))
-		local Phys = Ent:GetPhysicsObject()
+		local Mass = math.floor(Ent.EmptyMass + Ent.Ammo * Ent.BulletData.CartMass)
 
-		if IsValid(Phys) then
-			Ent.ACF.Mass      = Mass
-			Ent.ACF.LegalMass = Mass
-
-			Phys:SetMass(Ent.ACF.LegalMass)
-		end
+		Contraption.SetMass(Ent,Mass)
 	end
 
 	-------------------------------------------------------------------------------

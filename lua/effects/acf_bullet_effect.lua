@@ -98,7 +98,7 @@ end
 function EFFECT:Think()
 	local Bullet = Bullets[self.Index]
 
-	if Bullet and not self.Kill and self.CreateTime > Clock.CurTime - 30 then return true end
+	if Bullet and not self.Kill and self.CreateTime > Clock.CurTime - 45 then return true end
 
 	if Bullet then
 		if IsValid(Bullet.Tracer) then

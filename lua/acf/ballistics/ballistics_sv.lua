@@ -191,6 +191,18 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 	end
 end
 
+function Ballistics.TestFilter(Entity, Bullet)
+	if not IsValid(Entity) then return true end
+
+	if GlobalFilter[Entity:GetClass()] then return false end
+
+	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+
+	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+
+	return true
+end
+
 function Ballistics.DoBulletsFlight(Bullet)
 	if HookRun("ACF Bullet Flight", Bullet) == false then return end
 
@@ -260,7 +272,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 		else
 			local Entity = traceRes.Entity
 
-			if GlobalFilter[Entity:GetClass()] then return end
+			if Ballistics.TestFilter(Entity, Bullet) == false then
+				table.insert(Bullet.Filter, Entity)
+				Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter, important incase something is embedded in something that shouldn't be hit
+
+				return
+			end
 
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
 

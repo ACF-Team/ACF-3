@@ -229,6 +229,285 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
+function PANEL:AddGraph()
+	local Base = self:AddPanel("Panel")
+	Base:DockMargin(0, 5, 0, 5)
+	Base:SetMouseInputEnabled(true)
+
+	-- Color of the back pane of the graph
+	AccessorFunc(Base, "BGColor", "BGColor", FORCE_COLOR)
+	AccessorFunc(Base, "FGColor", "FGColor", FORCE_COLOR)
+	AccessorFunc(Base, "GridColor", "GridColor", FORCE_COLOR)
+
+	Base:SetBGColor(Color(255,255,255))	-- Back panel
+	Base:SetFGColor(Color(25,25,25))		-- Border lines, text
+	Base:SetGridColor(Color(175,175,175))	-- Grid lines
+
+	-- Number of pixels per sample for function-based plotting
+	-- Lower = more resolution (more lines), Higher = less resolution (less lines)
+	Base.SetFidelity = function(self, Value) self.Fidelity = math.max(1,math.floor(Value)) end
+	Base.GetFidelity = function(self) return self.Fidelity end
+	Base:SetFidelity(32)
+
+	-- Multiplies resulting grid spacing by this amount, grid spacing is dependent on the range of each axis
+	Base.SetGridFidelity = function(self, Value) self.GridFidelity = math.max(0.1,math.floor(Value)) end
+	Base.GetGridFidelity = function(self) return self.GridFidelity end
+	Base:SetGridFidelity(2)
+
+	Base.SetXRange = function(self, Min, Max)
+		self.MinX = math.min(Min, Max)
+		self.MaxX = math.max(Min, Max)
+
+		self.XRange = self.MaxX - self.MinX
+	end
+	Base.GetXRange = function(self) return self.XRange end
+	Base:SetXRange(0,100)
+
+	Base.SetXSpacing = function(self, Spacing) self.XSpacing = math.abs(Spacing) end
+	Base.GetXSpacing = function(self) return self.XSpacing end
+	Base:SetXSpacing(100)
+
+	Base.SetYRange = function(self, Min, Max)
+		self.MinY = math.min(Min, Max)
+		self.MaxY = math.max(Min, Max)
+
+		self.YRange = self.MaxY - self.MinY
+	end
+	Base.GetYRange = function(self) return self.YRange end
+	Base:SetYRange(0,100)
+
+	Base.SetYSpacing = function(self, Spacing) self.YSpacing = math.abs(Spacing) end
+	Base.GetYSpacing = function(self) return self.YSpacing end
+	Base:SetYSpacing(100)
+
+	Base.SetXLabel = function(self, Name) self.XLabel = Name end
+	Base.GetXLabel = function(self) return self.XLabel end
+	Base:SetXLabel("")
+
+	Base.SetYLabel = function(self, Name) self.YLabel = Name end
+	Base.GetYLabel = function(self) return self.YLabel end
+	Base:SetYLabel("")
+
+	Base.Functions	= {}
+	Base.LimitFunctions = {}
+	Base.Points		= {}
+	Base.Lines		= {}
+	Base.Tables		= {}
+
+	-- Any functions passed here will be provided X as an argument, using the X range of the graph, and is expected to return a value for Y
+	Base.PlotFunction = function(self, Label, Col, Func)
+		self.Functions[Label] = {func = Func, col = Col or Color(255,0,255)}
+	end
+
+	-- Same as above, but with limits built in
+	Base.PlotLimitFunction = function(self, Label, Min, Max, Col, Func)
+		local NMin = math.min(Min, Max)
+		local NMax = math.max(Min, Max)
+		local Range = NMax - NMin
+		self.LimitFunctions[Label] = {func = Func, min = NMin, max = NMax, range = Range, col = Col or Color(255,0,255)}
+	end
+
+	-- Directly plot a point
+	Base.PlotPoint = function(self, Label, X, Y, Col)
+		self.Points[Label] = {x = X, y = Y, col = Col or Color(255,0,255)}
+	end
+
+	-- Places a line that is either vertical or horizontal, to represent a limit
+	Base.PlotLimitLine = function(self, Label, Vertical, Value, Col)
+		self.Lines[Label] = {isvert = Vertical, val = Value, col = Col or Color(255,0,255)}
+	end
+
+	-- Directly plot a specific line on the table
+	-- Should be numerically and sequentially indexed from 1 to max
+	-- Table should be populated with table(x = X, y = Y)
+	Base.PlotTable = function(self, Label, Table, Col)
+		self.Tables[Label] = {tbl = Table, col = Col or Color(255,0,255)}
+	end
+
+	Base.ClearFunctions = function(self) self.Functions = {} end
+	Base.ClearLimitFunctions = function(self) self.LimitFunctions = {} end
+	Base.ClearLimitLines = function(self) self.Lines = {} end
+	Base.ClearPoints = function(self) self.Points = {} end
+	Base.ClearTables = function(self) self.Tables = {} end
+
+	Base.Clear = function(self)
+		self:ClearFunctions()
+		self:ClearLimitFunctions()
+		self:ClearLimitLines()
+		self:ClearPoints()
+		self:ClearTables()
+	end
+
+	Base.Paint = function(self, w, h)
+		surface.SetDrawColor(self.BGColor)
+		surface.DrawRect(0, 0, w, h)
+
+		local GridX		= self.XRange / self.XSpacing
+		local GridY		= self.YRange / self.YSpacing
+
+		local Hovering	= self:IsHovered()
+		local LocalMouseX, LocalMouseY		= 0,0
+		local ScaledMouseX, ScaledMouseY	= 0,0
+		if Hovering then
+			local PanelPosX,PanelPosY	= Base:LocalToScreen(0,0)
+			local MouseX, MouseY	= input.GetCursorPos()
+			LocalMouseX		= math.Clamp(MouseX - PanelPosX,0,w)
+			LocalMouseY		= h - math.Clamp(MouseY - PanelPosY,0,h)
+
+			ScaledMouseX	= (LocalMouseX / w) * self.XRange
+			ScaledMouseY	= (LocalMouseY / h) * self.YRange
+		end
+
+		surface.SetDrawColor(self.GridColor)
+		for I = 1, math.floor(GridX) do
+			local xpos	= I * (w / GridX)
+			surface.DrawLine(xpos,0,xpos,h)
+		end
+
+		for I = 1, math.floor(GridY) do
+			local ypos	= h - (I * (h / GridY))
+			surface.DrawLine(0,ypos,w,ypos)
+		end
+
+		-- Limit lines, e.g. idle/minimum RPM for engines
+		for _,v in pairs(self.Lines) do
+			surface.SetDrawColor(v.col)
+
+			if v.isvert then
+				local pos	= h - ((v.val / self.YRange) * h)
+				surface.DrawLine(0, pos, w, pos)
+			else
+				local pos	= (v.val / self.XRange) * w
+				surface.DrawLine(pos, 0, pos, h)
+			end
+		end
+
+		-- Border
+		surface.SetDrawColor(self.FGColor)
+		surface.DrawRect(0, h - 2, w, 2)
+		surface.DrawRect(0, 2, 2, h - 2)
+
+		draw.SimpleText(self.XLabel,"ACF_Label",w,h - 2,self.FGColor,TEXT_ALIGN_RIGHT,TEXT_ALIGN_BOTTOM)
+		draw.SimpleText(self.YLabel,"ACF_Label",2,0,self.FGColor,TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+
+		local PosText = "(" .. math.floor(ScaledMouseX) .. "," .. math.floor(ScaledMouseY) ..  ")"
+		if Hovering then
+			if LocalMouseY < (h / 2) then
+				draw.SimpleText(PosText,"ACF_Label",w,0,self.FGColor,TEXT_ALIGN_RIGHT,TEXT_ALIGN_TOP)
+			else
+				draw.SimpleText(PosText,"ACF_Label",2,h - 2,self.FGColor,TEXT_ALIGN_LEFT,TEXT_ALIGN_BOTTOM)
+			end
+		end
+
+		-- Points directly plotted
+		for k,v in pairs(self.Points) do
+			surface.SetDrawColor(v.col)
+
+			local xp	= (w * (v.x / self.XRange))
+			local yp	= (h - (h * (v.y / self.YRange)))
+
+			surface.DrawRect(xp - 2,yp - 2, 4, 4)
+			draw.SimpleText(k,"ACF_Label",xp,yp + 6,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_TOP)
+		end
+
+		-- Lines directly plotted -- HERE
+		for k,v in pairs(self.Tables) do
+
+			surface.SetDrawColor(v.col)
+			for I = 2, #v.tbl do
+				local P1	= v.tbl[I - 1]
+				local P2	= v.tbl[I]
+
+				local xp1	= w * (P1.x / self.XRange)
+				local yp1	= h - (h * (P1.y / self.YRange))
+
+				local xp2	= w * (P2.x / self.XRange)
+				local yp2	= h - (h * (P2.y / self.YRange))
+
+				surface.DrawLine(xp1, yp1, xp2, yp2)
+
+				if (ScaledMouseX >= P1.x) and (ScaledMouseX <= P2.x) and Hovering then
+					local Range	= P2.x - P1.x
+					local Scale	= (ScaledMouseX - P1.x) / Range
+
+					local Val	= Lerp(Scale, P1.y, P2.y)
+					local yp	= h - (h * (Val / self.YRange))
+
+					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(Val,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+				end
+			end
+		end
+
+		-- Limitless functions
+		local Points = self.XRange / self.Fidelity
+		local Spacing = self.XRange / Points
+		for k,v in pairs(self.Functions) do
+			surface.SetDrawColor(v.col)
+
+			for I = 1, Points do
+				local In	= v.func((I - 1) * Spacing)
+				local In2	= v.func(I * Spacing)
+
+				local xp1	= (((I - 1) * self.Fidelity) / self.XRange) * w
+				local yp1	= h - (h * (In / self.YRange))
+
+				local xp2	= ((I * self.Fidelity) / self.XRange) * w
+				local yp2	= h - (h * (In2 / self.YRange))
+
+				surface.DrawLine(xp1, yp1, xp2, yp2)
+			end
+
+			if Hovering then
+				local In	= v.func(ScaledMouseX)
+				local Check	= h * (In / self.YRange)
+				local yp	= (h - (h * (In / self.YRange)))
+
+				if LocalMouseY >= (Check - 16) and LocalMouseY <= (Check + 16) then
+					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(In,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+				end
+			end
+		end
+
+		-- Limited functions
+		for k,v in pairs(self.LimitFunctions) do
+			local GridRange		= (w * (v.range / self.XRange))
+			local LinePoints	= GridRange / self.Fidelity
+			local LineSpacing	= v.range / LinePoints
+
+			local LineStart		= w * (v.min / self.XRange)
+
+			surface.SetDrawColor(v.col)
+			for I = 1, LinePoints do
+				local In	= v.func(v.min + ((I - 1) * LineSpacing))
+				local In2	= v.func(math.min(v.max,v.min + (I * LineSpacing)))
+
+				local xp1	= LineStart + ((I - 1) * self.Fidelity)
+				local yp1	= (h - (h * (In / self.YRange)))
+
+				local xp2	= LineStart + (I * self.Fidelity)
+				local yp2	= (h - (h * (In2 / self.YRange)))
+
+				surface.DrawLine(xp1, yp1, xp2, yp2)
+			end
+
+			if (ScaledMouseX >= v.min) and (ScaledMouseX <= v.max) then
+				local In	= v.func(ScaledMouseX)
+				local Check	= h * (In / self.YRange)
+				local yp	= (h - (h * (In / self.YRange)))
+
+				if LocalMouseY >= (Check - 16) and LocalMouseY <= (Check + 16) then
+					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(In,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+				end
+			end
+		end
+	end
+
+	return Base
+end
+
 -- Lerps linearly between two matrices
 -- This is in no way correct, but works fine for this purpose
 -- Matrices need to be affine, shear is not preserved
@@ -320,7 +599,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self.NotDrawn = not Bool
 	end
 
-	function Panel:UpdateModel(Path)
+	function Panel:UpdateModel(Path, Material)
 		if not isstring(Path) then
 			return self:DrawEntity(false)
 		end
@@ -330,7 +609,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 		if not Center then
 			if ModelData.IsOnStandby(Path) then
 				ModelData.QueueRefresh(Path, self, function()
-					self:UpdateModel(Path)
+					self:UpdateModel(Path, Material)
 				end)
 			end
 
@@ -364,6 +643,12 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self:DrawEntity(true)
 		self:SetModel(Path)
 		self:SetCamPos(Center + Vector(-self.CamDistance, 0, 0))
+
+		if Material then
+			local Entity = self:GetEntity()
+
+			Entity:SetMaterial(Material)
+		end
 	end
 
 	function Panel:UpdateSettings(Data)

@@ -20,6 +20,7 @@ Ammunition is customizable with varying ballistic performance along with armor b
     ACF Requires these to work
 
 Wiremod ([Workshop](https://steamcommunity.com/workshop/filedetails/?id=160250458) or [Github](https://github.com/wiremod))
+Contraption Framework ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3154971187) or [Github](https://github.com/ACF-Team/CFW))
 
 Prop Protection with [CPPI](http://ulyssesmod.net/archive/CPPI_v1-3.pdf) is not required, but highly recommended. We'd recommend Nadmod PP ([Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=159298542) or [Github](https://github.com/Nebual/NadmodPP)).
 
