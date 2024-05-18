@@ -23,7 +23,7 @@ do	-- Spawn and Update funcs
 	local Entities	= Classes.Entities
 	local Turrets	= Classes.Turrets
 
-	Contraption.AddParentDetour("acf_turret", "Rotator")
+	CFW.addParentDetour("acf_turret", "Rotator")
 
 	local Inputs	= {
 		"Active (Enables movement of the turret.)",
@@ -365,7 +365,7 @@ do	-- Spawn and Update funcs
 	end
 
 	local function Proxy_ACF_OnParent(self, _, _)
-		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.ACF_OnParented = nil self.ACF_TurretAncestor = nil return end
+		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.CFW_OnParented = nil self.ACF_TurretAncestor = nil return end
 
 		self.ACF_TurretAncestor:UpdateTurretMass(false)
 	end
@@ -378,11 +378,11 @@ do	-- Spawn and Update funcs
 
 	local function ParentLink(Turret, Entity, Connect)
 		if Connect then
-			Entity.ACF_OnParented		= Proxy_ACF_OnParent
+			Entity.CFW_OnParented		= Proxy_ACF_OnParent
 			Entity.ACF_OnMassChange		= Proxy_ACF_OnMassChange
 			Entity.ACF_TurretAncestor	= Turret
 		else
-			Entity.ACF_OnParented		= nil
+			Entity.CFW_OnParented		= nil
 			Entity.ACF_OnMassChange		= nil
 			Entity.ACF_TurretAncestor	= nil
 		end
@@ -1022,7 +1022,7 @@ do -- Metamethods
 			self:UpdateOverlay()
 		end
 
-		function ENT:ACF_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
+		function ENT:CFW_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
 			local Class = Entity:GetClass()
 
 			if Class == "acf_turret_rotator" then return end
@@ -1030,7 +1030,7 @@ do -- Metamethods
 			self:UpdateTurretMass(false)
 
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
-			-- Shooouuld be using ACF_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
+			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
 			if IsValid(self.Motor) then self.Motor:ValidatePlacement() end
 		end
