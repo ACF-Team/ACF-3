@@ -1,6 +1,6 @@
 VertexLitGeneric
 {
-	$basetexture "models\tracer.vtf"
+	$basetexture "models/acf/core/tracer.vtf"
 	$selfillum 1
 	$translucent 1
 	$additive 1
