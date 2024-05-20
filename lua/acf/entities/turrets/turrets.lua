@@ -53,10 +53,10 @@ do	-- Turret drives
 
 		HandGear	= { -- Fallback incase a motor is unavailable
 			Teeth	= 12, -- For use in calculating end effective speed of a turret
-			Speed	= 220, -- deg/s
-			Torque	= 14, -- 0.1m * 140N * sin(90), torque to turn a small handwheel 90 degrees with slightly more than recommended force for a human
+			Speed	= 420, -- deg/s
+			Torque	= 10, -- 0.1m * 100N * sin(90), torque to turn a small handwheel 90 degrees
 			Efficiency	= 0.99, -- Gearbox efficiency, won't be too punishing for handcrank
-			Accel	= 5,
+			Accel	= 4,
 			Sound	= "acf_base/fx/turret_handcrank.wav",
 		},
 
@@ -356,8 +356,8 @@ do	-- Turret motors
 			},
 
 			Torque			= {
-				Min		= 40,
-				Max		= 800
+				Min		= 50,
+				Max		= 1000
 			}
 		})
 	end
@@ -446,15 +446,27 @@ do	-- Turret computers
 
 			Mass			= 100,
 
+			SetupInputs		= function(_,List)
+				local Count	= #List
+
+				List[Count + 1] = "Calculate Superelevation (One-time calculation to collect super-elevation)"
+			end,
+
+			SetupOutputs		= function(_,List)
+				local Count	= #List
+
+				List[Count + 1] = "Elevation (Super-elevation, set global pitch to this for automatic ranging)"
+			end,
+
 			ComputerInfo	= {
-				ThinkTime		= 0.04, 	-- Speed of the actual think time
+				ThinkTime		= 0.03, 	-- Speed of the actual think time
 				MaxThinkTime	= 4,		-- Maximum time to spend on a simulation
 				DeltaTime		= 0.2,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
 				CalcError		= 0.25,		-- Lee-way in units per 100u of lateral distance
 				HighArc			= false,	-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= true,		-- Will constantly run as long as Calculate is 1
 				Bulk			= 8,		-- Number of calculations to perform per tick
-				Delay			= 2			-- Time after finishing before another calculation can run
+				Delay			= 0.2		-- Time after finishing before another calculation can run
 			},
 		})
 
@@ -470,14 +482,14 @@ do	-- Turret computers
 			Mass			= 150,
 
 			ComputerInfo	= {
-				ThinkTime		= 0.04,		-- Speed of the actual think time
+				ThinkTime		= 0.03,		-- Speed of the actual think time
 				MaxThinkTime	= 6,		-- Maximum time to spend on a simulation
 				DeltaTime		= 0.06,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
 				CalcError		= 0.05,		-- Lee-way in units per 100u of lateral distance
 				HighArc			= true,		-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= false,
 				Bulk			= 10,		-- Number of calculations to perform per tick
-				Delay			= 3,		-- Time after finishing before another calculation can run
+				Delay			= 1,		-- Time after finishing before another calculation can run
 			},
 		})
 	end

@@ -494,9 +494,8 @@ do -- Default turret menus
 			local RingStats	= Menu:AddLabel(TurretText:format(0,0))
 			local MassLbl	= Menu:AddLabel(MassText:format(0))
 
-			Menu:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.\nUnchecking this will disable the limits as well.")
+			Menu:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.")
 
-			local ArcToggle	= Menu:AddCheckBox("Use Arc Settings")
 			local ArcSettings	= Menu:AddCollapsible("Arc Settings")
 
 			local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 0, 1)
@@ -563,7 +562,6 @@ do -- Default turret menus
 				return N
 			end)
 			MinDeg:SetValue(-180)
-			MinDeg:SetEnabled(false)
 
 			MaxDeg:SetClientData("MaxDeg", "OnValueChanged")
 			MaxDeg:DefineSetter(function(Panel, _, _, Value)
@@ -574,22 +572,19 @@ do -- Default turret menus
 				return N
 			end)
 			MaxDeg:SetValue(180)
-			MaxDeg:SetEnabled(false)
 
-			ACF.SetClientData("MinDeg", -180)
-			ACF.SetClientData("MaxDeg", 180)
+			if Data.ID == "Turret-V" then
+				MinDeg:SetMin(-85)
+				MaxDeg:SetMax(85)
 
-			ArcToggle.OnChange = function(_, Value)
-				MinDeg:SetEnabled(Value)
-				MaxDeg:SetEnabled(Value)
+				MinDeg:SetValue(-85)
+				MaxDeg:SetValue(85)
 
-				if Value == true then
-					ACF.SetClientData("MinDeg", MinDeg:GetValue())
-					ACF.SetClientData("MaxDeg", MaxDeg:GetValue())
-				else
-					ACF.SetClientData("MinDeg", -180)
-					ACF.SetClientData("MaxDeg", 180)
-				end
+				ACF.SetClientData("MinDeg", -85)
+				ACF.SetClientData("MaxDeg", 85)
+			else
+				ACF.SetClientData("MinDeg", -180)
+				ACF.SetClientData("MaxDeg", 180)
 			end
 
 			local EstMass	= Menu:AddSlider("Est. Mass (kg)", 0, 100000, 0)

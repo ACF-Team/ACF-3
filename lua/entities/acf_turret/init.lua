@@ -146,9 +146,15 @@ do	-- Spawn and Update funcs
 		Entity.MaxSlewRate		= 0
 		Entity.SlewAccel		= 0
 
-		Entity.MinDeg			= Data.MinDeg
-		Entity.MaxDeg			= Data.MaxDeg
-		Entity.HasArc			= not ((Data.MinDeg == -180) and (Data.MaxDeg == 180))
+		if Data.Turret == "Turret-H" then
+			Entity.MinDeg			= Data.MinDeg
+			Entity.MaxDeg			= Data.MaxDeg
+			Entity.HasArc			= not ((Data.MinDeg == -180) and (Data.MaxDeg == 180))
+		else
+			Entity.MinDeg			= math.max(Data.MinDeg,-85)
+			Entity.MaxDeg			= math.min(Data.MaxDeg,85)
+			Entity.HasArc			= true
+		end
 
 		Entity.MotorMaxSpeed	= 1
 		Entity.MotorGearRatio	= 1
@@ -778,7 +784,7 @@ do -- Metamethods
 		function ENT:SetSoundState(State)
 			if State ~= self.SoundPlaying then
 				if State == true then
-					Sounds.CreateAdjustableSound(self, self.SoundPath, 0, 0)
+					Sounds.CreateAdjustableSound(self, self.SoundPath, 100, 0)
 					self.CurrentSound = self.SoundPath
 				else
 					Sounds.SendAdjustableSound(self, true)
