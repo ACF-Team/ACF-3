@@ -20,7 +20,7 @@ function EFFECT:Init(Data)
 
 		if Remove then self:Remove() end
 	else
-		print("Invalid action for bullet #" .. Index .. ", removing.")
+		print("Invalid action for bullet #" .. Index .. ", ignoring.")
 
 		self:Remove()
 	end
@@ -50,27 +50,15 @@ function EFFECT:Create(Index, Data)
 		DragCoef   = Crate:GetNW2Float("DragCoef", 1),
 		AmmoType   = Crate:GetNW2String("AmmoType", "AP"),
 		Accel      = Crate:GetNW2Vector("Accel", ACF.Gravity),
-		Color      = Color,
-		LastThink  = Clock.CurTime,
 		Effect     = self,
 	}
 
-	if Color then
-		self:ManipulateBoneScale(0, Vector(Caliber * 4, Caliber * 2, Caliber * 2))
-		self:SetModel("models/acf/core/tracer.mdl")
-		self:SetColor(Color)
-
-		self.IsTracer = true
-	else
-		self:SetModel("models/munitions/round_100mm_shot.mdl")
-		self:SetModelScale(Caliber * 0.1, 0)
-	end
+	self.Bullet = Bullet
 
 	self:SetNoDraw(Data:GetAttachment() == 0)
 	self:SetAngles(Bullet.Flight:Angle())
 	self:SetPos(Bullet.Pos)
-
-	self.Bullet = Bullet
+	self:SetTracer(Color)
 
 	Bullets[Index] = Bullet
 end
@@ -139,6 +127,23 @@ function EFFECT:Ricochet(Index, Data)
 	AmmoType:RicochetEffect(Effect, Bullet)
 
 	return true
+end
+
+function EFFECT:SetTracer(Color)
+	local IsTracer = Color and true or false
+	local Bullet   = self.Bullet
+	local Caliber  = Bullet.Caliber
+
+	if IsTracer then
+		self:ManipulateBoneScale(0, Vector(Caliber * 4, Caliber * 2, Caliber * 2))
+		self:SetModel("models/tracer.mdl")
+		self:SetColor(Color)
+	else
+		self:SetModel("models/munitions/round_100mm_shot.mdl")
+		self:SetModelScale(Caliber * 0.1, 0)
+	end
+
+	self.IsTracer = IsTracer
 end
 
 function EFFECT:Think()
