@@ -40,8 +40,8 @@ Sounds.acf_gun = {
 		ent.SoundVolume = soundData.Volume
 
 		ent:SetNWString("Sound", soundData.Sound)
-		ent:SetNWString("SoundPitch", soundData.Pitch)
-		ent:SetNWString("SoundVolume", soundData.Volume)
+		ent:SetNWFloat("SoundPitch", soundData.Pitch)
+		ent:SetNWFloat("SoundVolume", soundData.Volume)
 	end,
 	ResetSound = function(ent)
 		ent.SoundPath   = ent.DefaultSound
@@ -49,8 +49,8 @@ Sounds.acf_gun = {
 		ent.SoundVolume = 1
 
 		ent:SetNWString("Sound", ent.DefaultSound)
-		ent:SetNWString("SoundPitch", 1)
-		ent:SetNWString("SoundVolume", 1)
+		ent:SetNWFloat("SoundPitch", 1)
+		ent:SetNWFloat("SoundVolume", 1)
 	end
 }
 

@@ -167,8 +167,8 @@ do -- Spawn and Update functions --------------------------------
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Sound", Entity.SoundPath)
-		Entity:SetNWString("SoundPitch", Entity.SoundPitch)
-		Entity:SetNWString("SoundVolume", Entity.SoundVolume)
+		Entity:SetNWFloat("SoundPitch", Entity.SoundPitch)
+		Entity:SetNWFloat("SoundVolume", Entity.SoundVolume)
 		Entity:SetNWString("Class", Entity.Class)
 
 		-- Adjustable barrel length
