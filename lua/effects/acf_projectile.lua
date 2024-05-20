@@ -1,7 +1,8 @@
+local util      = util
 local ACF       = ACF
 local Bullets   = ACF.BulletEffect
 local AmmoTypes = ACF.Classes.AmmoTypes
-local Clock     = ACF.Utilities.Clock
+local Trace     = { collisiongroup = COLLISION_GROUP_WORLD }
 
 local Actions = {
 	[0] = "Create",
@@ -9,6 +10,13 @@ local Actions = {
 	[2] = "Penetrate",
 	[3] = "Ricochet"
 }
+
+function EFFECT.HasLeftWorld(Position)
+	Trace.start  = Position
+	Trace.endpos = Position
+
+	return util.TraceLine(Trace).HitWorld
+end
 
 function EFFECT:Init(Data)
 	local Index  = Data:GetDamageType()
@@ -157,15 +165,13 @@ end
 function EFFECT:ApplyMovement(Bullet)
 	local Position = Bullet.Pos
 
-	--TODO: Replace this logic, map bounds might not be compliant with this in all cases
-	if math.abs(Position.x) > 16380 or math.abs(Position.y) > 16380 or Position.z < -16380 then
+	if self.HasLeftWorld(Position) then
+		--print("Bullet #" .. Bullet.Index .. " has left the world, removing.")
 		return false
 	end
 
-	if Position.z < 16380 then
-		self:SetAngles(Bullet.Flight:Angle())
-		self:SetPos(Position)
-	end
+	self:SetAngles(Bullet.Flight:Angle())
+	self:SetPos(Position)
 
 	return true
 end
