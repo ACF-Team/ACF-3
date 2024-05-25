@@ -92,7 +92,7 @@ do	-- Turret drives
 			local OverweightMod	= 1
 
 			if TurretData.TotalMass > TurretData.MaxMass then
-				OverweightMod = 1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2)
+				OverweightMod = math.max(0,1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2))
 			end
 
 			-- Slewing ring friction moment caused by load (kNm)
@@ -150,7 +150,7 @@ do	-- Turret drives
 			Name			= "Horizontal Turret",
 			Description		= "The large stable base of a turret.",
 			Model			= "models/acf/core/t_ring.mdl",
-			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
+			ModelSmall		= "models/holograms/cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
 			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
@@ -207,6 +207,14 @@ do	-- Turret drives
 					end
 				end,
 
+				GetWorldTarget		= function(Turret)
+					if Turret.Manual then
+						return Turret:LocalToWorldAngles(Angle(0, Turret.DesiredDeg, 0))
+					else
+						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
+					end
+				end,
+
 				SetRotatorAngle		= function(Turret)
 					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(0, Turret.CurrentAngle, 0)))
 				end
@@ -234,7 +242,7 @@ do	-- Turret drives
 
 			Teeth			= {		-- Used to give a final teeth count with size
 				Min			= 8,
-				Max			= 384
+				Max			= 768
 			},
 
 			Armor			= {
@@ -274,6 +282,14 @@ do	-- Turret drives
 						end
 					else
 						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-Turret.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).pitch - StabAmt)
+					end
+				end,
+
+				GetWorldTarget		= function(Turret)
+					if Turret.Manual then
+						return Turret:LocalToWorldAngles(Angle(Turret.DesiredDeg, 0, 0))
+					else
+						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
 					end
 				end,
 

@@ -298,6 +298,7 @@ do	-- Spawn and Update funcs
 
 		Entity.Rotator			= Rotator
 		Rotator.Turret			= Entity
+		Rotator.Owner			= Entity
 
 		UpdateTurret(Entity, Data, Class, Turret)
 

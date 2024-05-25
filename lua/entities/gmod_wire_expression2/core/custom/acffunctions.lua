@@ -149,7 +149,7 @@ e2function number entity:acfIsGun()
 end
 
 -- Returns 1 if the entity is an ACF turret
-e2function number entity:acfIsGun()
+e2function number entity:acfIsTurret()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
@@ -1179,6 +1179,25 @@ e2function number entity:acfGetTurretAngle()
 	return math.Round(-this.CurrentAngle,4)
 end
 
+-- Returns the turret's forward (using the rotator)
+e2function vector entity:acfGetTurretForward()
+	if not this.IsACFTurret then return Vector() end
+	if RestrictInfo(self, this) then return Vector() end
+
+	if not IsValid(this.Rotator) then return this:GetForward() end
+
+	return this.Rotator:GetForward()
+end
+
+e2function entity entity:acfGetTurretRotator()
+	if not this.IsACFTurret then return end
+	if RestrictInfo(self, this) then return end
+
+	if not IsValid(this.Rotator) then return end
+
+	return this.Rotator
+end
+
 -- Returns the turret's linked gyroscope
 e2function entity entity:acfGetTurretGyro()
 	if not this.IsACFTurret then return end
@@ -1197,48 +1216,48 @@ end
 
 -- Returns the turret's loaded mass, in kg
 e2function number entity:acfGetTurretMass()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return 0 end
+	if RestrictInfo(self, this) then return 0 end
 
 	return math.Round(this.TurretData.TotalMass,2)
 end
 
 -- Returns the turret's center of mass, local to the turret
 e2function vector entity:acfGetTurretMassCenter()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return Vector() end
+	if RestrictInfo(self, this) then return Vector() end
 
 	return this:WorldToLocal(this.Rotator:LocalToWorld(this.TurretData.LocalCoM))
 end
 
 -- Returns the turret's current slew rate, in degrees/second
 e2function number entity:acfGetTurretSlewRate()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return 0 end
+	if RestrictInfo(self, this) then return 0 end
 
 	return math.Round(-this.SlewRate / Clock.DeltaTime,2)
 end
 
 -- Returns the turret's top slew rate, in degrees/second
 e2function number entity:acfGetTurretMaxSlewRate()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return 0 end
+	if RestrictInfo(self, this) then return 0 end
 
 	return math.Round(this.MaxSlewRate,2)
 end
 
 -- Returns the turret's acceleration, in degrees/second ^ 2
 e2function number entity:acfGetTurretSlewAccel()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return 0 end
+	if RestrictInfo(self, this) then return 0 end
 
 	return math.Round(this.SlewAccel,4)
 end
 
 -- Returns whether or not the turret is stabilized, and the percentage (0-1)
 e2function number entity:acfGetTurretStabilized()
-	if not this.IsACFTurret then return end
-	if RestrictInfo(self, this) then return end
+	if not this.IsACFTurret then return 0 end
+	if RestrictInfo(self, this) then return 0 end
 
 	return this.Stabilized and this.StabilizeAmount or 0
 end

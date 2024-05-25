@@ -121,6 +121,8 @@ E2Desc["acfTotalAmmoCount(e:)"] = "Returns the number of rounds in all ammo crat
 
 -- Turret functions
 E2Desc["acfGetTurretAngle(e:)"] = "Returns the turret's current angle, relative to home."
+E2Desc["acfGetTurretForward(e:)"] = "Returns the turret's forward direction."
+E2Desc["acfGetTurretRotator(e:)"] = "Returns the turret's rotator."
 E2Desc["acfGetTurretGyro(e:)"] = "Returns the turret's linked gyroscope, if available."
 E2Desc["acfGetTurretMotor(e:)"] = "Returns the turret's linked motor, if available."
 E2Desc["acfGetTurretMass(e:)"] = "Returns the turret's loaded mass, in kg."

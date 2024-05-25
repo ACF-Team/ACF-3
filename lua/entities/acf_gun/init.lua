@@ -246,6 +246,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.CurrentShot  = 0
 		Entity.TotalAmmo    = 0
 		Entity.BulletData   = EMPTY
+		Entity.TurretLink	= false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 
 		UpdateWeapon(Entity, Data, Class, Weapon)
@@ -413,6 +414,20 @@ do -- Metamethods --------------------------------
 			return false, "This weapon is not linked to this crate."
 		end)
 
+		ACF.RegisterClassLink("acf_gun", "acf_turret", function(This, Turret)
+			This.TurretLink = true
+			This.Turret	= Turret
+
+			return true, "Weapon linked successfully."
+		end)
+
+		ACF.RegisterClassUnlink("acf_gun", "acf_turret", function(This, _)
+			This.TurretLink	= false
+			This.Turret	= nil
+
+			return true, "Weapon unlinked successfully."
+		end)
+
 		ACF.AddInputAction("acf_gun", "Fire", function(Entity, Value)
 			local Bool = tobool(Value)
 
@@ -505,6 +520,12 @@ do -- Metamethods --------------------------------
 				end
 
 				return false
+			end
+			if self.TurretLink and IsValid(self.Turret) then -- Special link to a turret, will block the gun from firing if the gun is not aligned with the turret's target angle
+				local Turret = self.Turret
+				if not Turret.Active then return false end
+
+				if self:GetForward():Dot(Turret.SlewFuncs.GetWorldTarget(Turret):Forward()) < 0.9961 then return false end
 			end
 			if HookRun("ACF_FireShell", self) == false then return false end -- Something hooked into ACF_FireShell said no
 
@@ -746,6 +767,10 @@ do -- Metamethods --------------------------------
 				duplicator.StoreEntityModifier(self, "ACFCrates", Entities)
 			end
 
+			if IsValid(self.Turret) then
+				duplicator.StoreEntityModifier(self, "ACFTurret", {self.Turret:EntIndex()})
+			end
+
 			-- Wire dupe info
 			self.BaseClass.PreEntityCopy(self)
 		end
@@ -770,6 +795,10 @@ do -- Metamethods --------------------------------
 				end
 
 				EntMods.ACFCrates = nil
+			end
+
+			if EntMods.ACFTurret and next(EntMods.ACFTurret) then
+				self:Link(CreatedEntities[EntMods.ACFTurret[1]])
 			end
 
 			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
