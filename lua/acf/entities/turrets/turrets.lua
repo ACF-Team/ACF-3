@@ -37,6 +37,10 @@ do	-- Turret drives
 		GetMass		= function(Data, Size)
 			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5) ^ 1.5, 1)
 		end,
+		GetMaxMass	= function(Data, Size)
+			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
+			return math.Round(((Data.MassLimit.Min * (1 - SizePerc)) + (Data.MassLimit.Max * SizePerc)) ^ 2, 1)
+		end,
 		GetTeethCount	= function(Data, Size)
 			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
 			return math.Round((Data.Teeth.Min * (1 - SizePerc)) + (Data.Teeth.Max * SizePerc))
@@ -85,6 +89,11 @@ do	-- Turret drives
 			local Diameter	= (TurretData.RingSize * InchToMm) -- Used for some of the formulas from the referenced page, needs to be in mm
 			local CoMDistance	= (TurretData.LocalCoM * Vector(1,1,0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
 			local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2),0),0)
+			local OverweightMod	= 1
+
+			if TurretData.TotalMass > TurretData.MaxMass then
+				OverweightMod = 1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2)
+			end
 
 			-- Slewing ring friction moment caused by load (kNm)
 			-- 1kg weight (mass * gravity) is about 9.81N
@@ -112,7 +121,7 @@ do	-- Turret drives
 			-- 9.55 is 1 rad/s to RPM
 			-- Required power to rotate at full speed
 			-- With this we can lower maximum attainable speed
-			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency)
+			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency * OverweightMod)
 
 			if (math.max(1,ReqConstantPower) / math.max(MaxPower,1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
 
@@ -157,8 +166,13 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 15,
-				Max			= 175
+				Min			= 50,
+				Max			= 300
+			},
+
+			MassLimit		= {
+				Min			= 12,
+				Max			= 960
 			},
 
 			SetupInputs		= function(_,List)
@@ -224,8 +238,13 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 5,
-				Max			= 305
+				Min			= 50,
+				Max			= 300
+			},
+
+			MassLimit		= {
+				Min			= 16,
+				Max			= 256
 			},
 
 			SetupInputs		= function(_,List)

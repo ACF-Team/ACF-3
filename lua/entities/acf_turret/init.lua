@@ -94,6 +94,10 @@ do	-- Spawn and Update funcs
 		Entity.Turret		= Data.Turret
 		Entity.ID			= Turret.ID
 
+		local SizePerc = (Size - Turret.Size.Min) / (Turret.Size.Max - Turret.Size.Min)
+		local MaxMass		= ((Turret.MassLimit.Min * (1 - SizePerc)) + (Turret.MassLimit.Max * SizePerc)) ^ 2
+		Entity.MaxMass		= MaxMass
+
 		Entity.TurretData	= {
 			Teeth		= Class.GetTeethCount(Turret,Size),
 			RingSize	= Size,
@@ -101,7 +105,8 @@ do	-- Spawn and Update funcs
 			TotalMass	= 0,
 			LocalCoM	= Vector(),
 			Tilt		= 1,
-			TurretClass	= Data.Turret
+			TurretClass	= Data.Turret,
+			MaxMass		= MaxMass
 		}
 
 		-- Type-specific functions that differ between horizontal and vertical turret components
@@ -159,6 +164,11 @@ do	-- Spawn and Update funcs
 		Entity.MotorMaxSpeed	= 1
 		Entity.MotorGearRatio	= 1
 		Entity.EffortScale		= 1
+		Entity.Complexity		= 1
+
+		local MaxSpeed	= Data.MaxSpeed or 0
+		Entity.SpeedLimited		= MaxSpeed > 0
+		Entity.MaxSpeed			= MaxSpeed
 
 		if Entity.SoundPlaying == true then
 			Sounds.SendAdjustableSound(Entity,true)
@@ -166,7 +176,6 @@ do	-- Spawn and Update funcs
 		Entity.SoundPlaying		= false
 		Entity.SoundPath		= Entity.HandGear.Sound
 
-		local SizePerc = (Size - Turret.Size.Min) / (Turret.Size.Max - Turret.Size.Min)
 		Entity.ScaledArmor		= (Turret.Armor.Min * (1 - SizePerc)) + (Turret.Armor.Max * SizePerc)
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Turret)
@@ -194,6 +203,13 @@ do	-- Spawn and Update funcs
 	------------------
 
 	util.AddNetworkString("ACF_RequestTurretInfo")
+	util.AddNetworkString("ACF_InvalidateTurretInfo")
+
+	function ENT:InvalidateClientInfo()
+		net.Start("ACF_InvalidateTurretInfo")
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
 
 	net.Receive("ACF_RequestTurretInfo",function(_, Player)
 		local Entity = net.ReadEntity()
@@ -294,7 +310,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret", MakeACF_Turret, "Turret", "RingSize", "MinDeg", "MaxDeg")
+	Entities.Register("acf_turret", MakeACF_Turret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
@@ -371,13 +387,15 @@ do	-- Spawn and Update funcs
 	end
 
 	local function Proxy_ACF_OnParent(self, _, _)
-		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.CFW_OnParented = nil self.ACF_TurretAncestor = nil return end
+		local SelfTbl = self:GetTable()
+		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.CFW_OnParented = nil self.ACF_TurretAncestor = nil return end
 
 		self.ACF_TurretAncestor:UpdateTurretMass(false)
 	end
 
 	local function Proxy_ACF_OnMassChange(self)
-		if (not IsValid(self.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, self.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil self.ACF_TurretAncestor = nil return end
+		local SelfTbl = self:GetTable()
+		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil self.ACF_TurretAncestor = nil return end
 
 		self.ACF_TurretAncestor:UpdateTurretMass(false)
 	end
@@ -391,6 +409,10 @@ do	-- Spawn and Update funcs
 			Entity.CFW_OnParented		= nil
 			Entity.ACF_OnMassChange		= nil
 			Entity.ACF_TurretAncestor	= nil
+		end
+
+		if IsValid(Turret) then
+			Turret:InvalidateClientInfo()
 		end
 	end
 
@@ -480,6 +502,8 @@ do	-- Spawn and Update funcs
 	local function GetSubTurretMass(Entity) -- Returns mass center (local to rotator) and amount from all subturrets
 		if not IsValid(Entity) then return end
 
+		Entity.Complexity = 1
+
 		if next(Entity.SubTurrets) == nil then return Vector(), 0 end
 
 		local Mass = 0
@@ -488,6 +512,10 @@ do	-- Spawn and Update funcs
 
 		for k in pairs(Entity.SubTurrets) do
 			if not IsValid(k) then continue end
+
+			if (k.Turret == Entity.Turret) and (k.TurretData.RingSize > (Entity.TurretData.RingSize * 0.5)) then
+				Entity.Complexity = Entity.Complexity * math.Clamp(((Entity.TurretData.RingSize * 0.5) / k.TurretData.RingSize) ^ 2, 0, 1)
+			end
 
 			Mass = Mass + k:GetTotalMass() + k.ACF.Mass
 			AddCoM[k] = true
@@ -506,40 +534,48 @@ do	-- Spawn and Update funcs
 		return CoM, Mass
 	end
 
+	function ENT:UpdateSound()
+		local SoundPath = self.HandGear.Sound
+
+		if IsValid(self.Motor) then
+			SoundPath = self.Motor.SoundPath
+		end
+
+		self.SoundPath = SoundPath
+	end
+
 	function ENT:UpdateTurretSlew()
-		local SlewInput 	= self.HandGear
+		local SelfTbl		= self:GetTable()
+		local SlewInput 	= SelfTbl.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
-		local SoundPath		= SlewInput.Sound
-		local MaxDistance 	= (((self.TurretData.RingSize / 2) * 1.2) + 12) ^ 2
+		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12) ^ 2
 
-		if IsValid(self.Motor) and self.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
+		if IsValid(SelfTbl.Motor) and SelfTbl.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
 			local USound = UnlinkSound:format(math.random(1, 3))
 
 			Sounds.SendSound(self, USound, 70, 100, 1)
-			Sounds.SendSound(self.Motor, USound, 70, 100, 1)
-			self:Unlink(self.Motor)
+			Sounds.SendSound(SelfTbl.Motor, USound, 70, 100, 1)
+			self:Unlink(SelfTbl.Motor)
 
 			-- No sense checking for this separately since it can't function without the motor anyway
 			-- Using separate link distance as gyros can be parented to other things
-			if IsValid(self.Gyro) and self.Gyro:GetPos():DistToSqr(self:GetPos()) > MaxLinkDistance then
+			if IsValid(SelfTbl.Gyro) and SelfTbl.Gyro:GetPos():DistToSqr(self:GetPos()) > MaxLinkDistance then
 				Sounds.SendSound(self, USound, 70, 100, 1)
-				Sounds.SendSound(self.Gyro, USound, 70, 100, 1)
-				self:Unlink(self.Gyro)
+				Sounds.SendSound(SelfTbl.Gyro, USound, 70, 100, 1)
+				self:Unlink(SelfTbl.Gyro)
 			end
 		end
 
-		if IsValid(self.Motor) and self.Motor:IsActive() then
-			SlewInput	= self.Motor:GetInfo()
-			Stabilized	= IsValid(self.Gyro) and self.Gyro:IsActive()
-			if Stabilized then StabilizeAmount = self.Gyro:GetInfo() end
-
-			SoundPath	= self.Motor.SoundPath
+		if IsValid(self.Motor) and SelfTbl.Motor:IsActive() then
+			SlewInput	= SelfTbl.Motor:GetInfo()
+			Stabilized	= IsValid(SelfTbl.Gyro) and SelfTbl.Gyro:IsActive()
+			if Stabilized then StabilizeAmount = SelfTbl.Gyro:GetInfo() end
 		end
 
 		-- Scale for being off-axis, further affects friction
 		local Tilt = 1
-		if self.Turret == "Turret-V" then
+		if SelfTbl.Turret == "Turret-V" then
 			Tilt = math.max(1 - self:GetRight():Dot(vector_up), 0)
 		else
 			Tilt = math.max(self:GetUp():Dot(vector_up), 0)
@@ -547,23 +583,25 @@ do	-- Spawn and Update funcs
 
 		self.TurretData.Tilt = Tilt
 
-		local SlewData		= self.ClassData.CalcSpeed(self.TurretData,SlewInput)
+		local SlewData		= self.ClassData.CalcSpeed(SelfTbl.TurretData,SlewInput)
 
 		-- Allowing vertical turret drives to have a small amount of stabilization, but only if they aren't powered and the mass is well balanced
 		-- Think about certain turrets in WW2 where the gun was vertically aimed by the gunner with his shoulder
 		-- Only going to allow at most 25% so it's always better to motorize the drive and link a gyro to it
 		-- Also limited to 125mm distance from center of drive, where it will be strongest at the center
-		if (self.ID == "Turret-V") and ((self.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) < (125 ^ 2)) and not IsValid(self.Motor) then
+		if (SelfTbl.ID == "Turret-V") and ((SelfTbl.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) < (125 ^ 2)) and not IsValid(SelfTbl.Motor) then
 			Stabilized = true
-			StabilizeAmount = (1 - ((self.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) / (125 ^ 2))) * 0.25
+			StabilizeAmount = (1 - ((SelfTbl.TurretData.LocalCoM:Length2DSqr() * ACF.InchToMm) / (125 ^ 2))) * 0.25
 		end
 
 		self.MotorMaxSpeed		= SlewData.MotorMaxSpeed or 1 -- Both this and MotorGearRatio are used for sound calculations
 		self.MotorGearRatio		= SlewData.MotorGearRatio or 1
-		self.SoundPath			= SoundPath
 
-		self.MaxSlewRate		= SlewData.MaxSlewRate
-		self.SlewAccel			= SlewData.SlewAccel
+		self:UpdateSound()
+
+		self.MaxSlewRate		= SlewData.MaxSlewRate * SelfTbl.Complexity
+		if SelfTbl.SpeedLimited then self.MaxSlewRate = math.min(self.MaxSlewRate, SelfTbl.MaxSpeed) end
+		self.SlewAccel			= SlewData.SlewAccel * SelfTbl.Complexity
 		self.EffortScale		= SlewData.EffortScale or 1 -- Sound scaling
 		self.Stabilized			= Stabilized
 		self.StabilizeAmount	= StabilizeAmount
@@ -594,11 +632,16 @@ do	-- Spawn and Update funcs
 	end
 
 	function ENT:CheckCoM(Force)
-		if (Force == false) and (Clock.CurTime < self.CoMCheckDelay) then return end
+		local SelfTbl	= self:GetTable()
+		if (Force == false) and (Clock.CurTime < SelfTbl.CoMCheckDelay) then return end
 		self.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1,2)
 
 		GetDynamicMass(self)
 		GetSubTurretMass(self)
+
+		if SelfTbl.ACF_TurretAncestor then
+			self.Complexity = (SelfTbl.Complexity or 1) * SelfTbl.ACF_TurretAncestor.Complexity
+		end
 
 		self:GetTotalMass()
 		self:GetTurretMassCenter()
@@ -629,22 +672,24 @@ end
 
 do -- Overlay
 	function ENT:UpdateOverlayText()
-		local SlewMax = math.Round(self.MaxSlewRate * self.DamageScale, 2)
-		local SlewAccel = math.Round(self.SlewAccel * self.DamageScale, 4)
-		local TotalMass = math.Round(self.TurretData.TotalMass, 1)
+		local SelfTbl	= self:GetTable()
+		local SlewMax	= math.Round(SelfTbl.MaxSlewRate * SelfTbl.DamageScale, 2)
+		local SlewAccel	= math.Round(SelfTbl.SlewAccel * SelfTbl.DamageScale, 4)
+		local TotalMass	= math.Round(SelfTbl.TurretData.TotalMass, 1)
+		local MaxMass	= math.Round(SelfTbl.MaxMass,1)
 
-		local Text = "Max " .. SlewMax .. " deg/s\nAccel: " .. SlewAccel .. " deg/s^2\nTeeth: " .. self.TurretData.Teeth .. " t\nCurrent Mass: " .. TotalMass .. " kg"
+		local Text = "Max " .. SlewMax .. " deg/s\nAccel: " .. SlewAccel .. " deg/s^2\nTeeth: " .. SelfTbl.TurretData.Teeth .. " t\nCurrent Mass: " .. TotalMass .. " kg / " .. MaxMass .. " kg max"
 
-		if self.HasArc then Text = Text .. "\nArc: " .. self.MinDeg .. "/" .. self.MaxDeg end
+		if SelfTbl.HasArc then Text = Text .. "\nArc: " .. SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg end
 
-		if IsValid(self.Motor) then Text = Text .. "\nMotor: " .. tostring(self.Motor) end
+		if IsValid(SelfTbl.Motor) then Text = Text .. "\nMotor: " .. tostring(SelfTbl.Motor) end
 
-		if IsValid(self.Gyro) then Text = Text .. "\nGyro: " .. tostring(self.Gyro) end
+		if IsValid(SelfTbl.Gyro) then Text = Text .. "\nGyro: " .. tostring(SelfTbl.Gyro) end
 
-		if self.Stabilized and IsValid(self.Gyro) and IsValid(self.Motor) then
-			Text = Text .. "\n\nMotor stabilized at " .. math.Round(self.StabilizeAmount * 100,1) .. "%"
-		elseif self.Stabilized then
-			Text = Text .. "\n\nNaturally stabilized at " .. math.Round(self.StabilizeAmount * 100,1) .. "%"
+		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
+			Text = Text .. "\n\nMotor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100,1) .. "%"
+		elseif SelfTbl.Stabilized then
+			Text = Text .. "\n\nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100,1) .. "%"
 		end
 
 		return Text

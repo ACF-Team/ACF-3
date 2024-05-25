@@ -104,6 +104,22 @@ Sounds.acf_piledriver = {
 	end
 }
 
+Sounds.acf_turret_motor = {
+	GetSound = function(ent)
+		return { Sound = ent.SoundPath or ent.DefaultSound }
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+
+		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
+	end,
+	ResetSound = function(ent)
+		ent.SoundPath = ent.DefaultSound
+
+		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
+	end
+}
+
 local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
 

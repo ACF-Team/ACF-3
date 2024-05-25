@@ -80,6 +80,8 @@ do
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
+		Engine:InvalidateClientInfo()
+
 		return true, "Engine linked successfully!"
 	end)
 
@@ -97,6 +99,8 @@ do
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
+
+		Engine:InvalidateClientInfo()
 
 		return true, "Engine unlinked successfully!"
 	end)
@@ -900,4 +904,38 @@ function ENT:OnRemove()
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
+end
+
+do	-- NET SURFER 2.0
+	util.AddNetworkString("ACF_RequestEngineInfo")
+	util.AddNetworkString("ACF_InvalidateEngineInfo")
+
+	function ENT:InvalidateClientInfo()
+		net.Start("ACF_InvalidateEngineInfo")
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
+
+	net.Receive("ACF_RequestEngineInfo",function(_,Ply)
+		local Entity = net.ReadEntity()
+
+		if IsValid(Entity) then
+			local Outputs = {}
+			local Data = {
+				Driveshaft	= Entity.Out
+			}
+
+			if next(Entity.Gearboxes) then
+				for E in pairs(Entity.Gearboxes) do
+					Outputs[#Outputs + 1] = E:EntIndex()
+				end
+			end
+
+			net.Start("ACF_RequestEngineInfo")
+				net.WriteEntity(Entity)
+				net.WriteString(util.TableToJSON(Data))
+				net.WriteString(util.TableToJSON(Outputs))
+			net.Send(Ply)
+		end
+	end)
 end

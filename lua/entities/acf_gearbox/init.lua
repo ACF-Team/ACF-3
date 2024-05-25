@@ -608,6 +608,8 @@ do -- Linking ------------------------------------------
 			end
 		end)
 
+		Gearbox:InvalidateClientInfo()
+
 		return true, "Wheel linked successfully!"
 	end
 
@@ -622,6 +624,8 @@ do -- Linking ------------------------------------------
 
 		Gearbox.GearboxOut[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
+
+		Gearbox:InvalidateClientInfo()
 
 		return true, "Gearbox linked successfully!"
 	end
@@ -644,6 +648,8 @@ do -- Unlinking ----------------------------------------
 
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
+			Gearbox:InvalidateClientInfo()
+
 			return true, "Wheel unlinked successfully!"
 		end
 
@@ -660,6 +666,8 @@ do -- Unlinking ----------------------------------------
 
 			Gearbox.GearboxOut[Target] = nil
 			Target.GearboxIn[Gearbox]  = nil
+
+			Gearbox:InvalidateClientInfo()
 
 			return true, "Gearbox unlinked successfully!"
 		end
@@ -998,6 +1006,72 @@ do -- Duplicator Support -------------------------------
 		BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 end ----------------------------------------------------
+
+do	-- NET SURFER 2.0
+	util.AddNetworkString("ACF_RequestGearboxInfo")
+	util.AddNetworkString("ACF_InvalidateGearboxInfo")
+
+	function ENT:InvalidateClientInfo()
+		net.Start("ACF_InvalidateGearboxInfo")
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
+
+	net.Receive("ACF_RequestGearboxInfo",function(_,Ply)
+		local Entity = net.ReadEntity()
+
+		if IsValid(Entity) then
+			local Inputs = {}
+			local OutputL = {}
+			local OutputR = {}
+			local Data = {
+				In = Entity.In,
+				OutL = Entity.OutL,
+				OutR = Entity.OutR
+			}
+
+			if next(Entity.GearboxIn) then
+				for E in pairs(Entity.GearboxIn) do
+					Inputs[#Inputs + 1] = E:EntIndex()
+				end
+			end
+
+			if next(Entity.Engines) then
+				for E in pairs(Entity.Engines) do
+					Inputs[#Inputs + 1] = E:EntIndex()
+				end
+			end
+
+			if next(Entity.GearboxOut) then
+				for E,L in pairs(Entity.GearboxOut) do
+					if L.Side == 0 then
+						OutputL[#OutputL + 1] = E:EntIndex()
+					else
+						OutputR[#OutputR + 1] = E:EntIndex()
+					end
+				end
+			end
+
+			if next(Entity.Wheels) then
+				for E,L in pairs(Entity.Wheels) do
+					if L.Side == 0 then
+						OutputL[#OutputL + 1] = E:EntIndex()
+					else
+						OutputR[#OutputR + 1] = E:EntIndex()
+					end
+				end
+			end
+
+			net.Start("ACF_RequestGearboxInfo")
+				net.WriteEntity(Entity)
+				net.WriteString(util.TableToJSON(Data))
+				net.WriteString(util.TableToJSON(Inputs))
+				net.WriteString(util.TableToJSON(OutputL))
+				net.WriteString(util.TableToJSON(OutputR))
+			net.Send(Ply)
+		end
+	end)
+end
 
 do -- Miscellaneous ------------------------------------
 	function ENT:Enable()
