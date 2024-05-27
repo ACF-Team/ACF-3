@@ -16,7 +16,7 @@ Gearboxes.Register("Transfer", {
 
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("2Gear-L-S", "Transfer", {
-		Name		= "Transfer case, Inline, Small",
+		Name		= "Transfer Case, Inline, Small",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_s.mdl",
 		Mass		= Gear2SW,
@@ -29,7 +29,7 @@ do -- Inline Gearboxes
 	})
 
 	Gearboxes.RegisterItem("2Gear-L-M", "Transfer", {
-		Name		= "Transfer case, Inline, Medium",
+		Name		= "Transfer Case, Inline, Medium",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_m.mdl",
 		Mass		= Gear2MW,
@@ -42,7 +42,7 @@ do -- Inline Gearboxes
 	})
 
 	Gearboxes.RegisterItem("2Gear-L-L", "Transfer", {
-		Name		= "Transfer case, Inline, Large",
+		Name		= "Transfer Case, Inline, Large",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/linear_l.mdl",
 		Mass		= Gear2LW,
@@ -57,7 +57,7 @@ end
 
 do -- Transaxial Gearboxes
 	Gearboxes.RegisterItem("2Gear-T-S", "Transfer", {
-		Name		= "Transfer case, Small",
+		Name		= "Transfer Case, Small",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_s.mdl",
 		Mass		= Gear2SW,
@@ -70,7 +70,7 @@ do -- Transaxial Gearboxes
 	})
 
 	Gearboxes.RegisterItem("2Gear-T-M", "Transfer", {
-		Name		= "Transfer case, Medium",
+		Name		= "Transfer Case, Medium",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_m.mdl",
 		Mass		= Gear2MW,
@@ -83,7 +83,7 @@ do -- Transaxial Gearboxes
 	})
 
 	Gearboxes.RegisterItem("2Gear-T-L", "Transfer", {
-		Name		= "Transfer case, Large",
+		Name		= "Transfer Case, Large",
 		Description	= "2 speed gearbox, useful for low/high range and tank turning",
 		Model		= "models/engines/transaxial_l.mdl",
 		Mass		= Gear2LW,
