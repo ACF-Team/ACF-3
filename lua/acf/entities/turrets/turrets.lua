@@ -472,7 +472,7 @@ do	-- Turret computers
 	do	-- Computers
 		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
 			Name			= "Direct Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nThis is capable of constantly calculating to track a target at a constant velocity, as long as Calculate is true.\nHas a 2s delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nAs long as Calculate is true, this will continue to track in a straight line from the initial position and velocity.\nHas a 0.2s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {
@@ -507,7 +507,7 @@ do	-- Turret computers
 
 		Turrets.RegisterItem("IND-BalComp","4-Computer",{
 			Name			= "Indirect Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 3s delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 1s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {
