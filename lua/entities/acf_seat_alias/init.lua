@@ -55,6 +55,7 @@ do	-- Spawn functions
 		Ent:EnableCustomCollisions()
 
 		local Ply		= Vehicle:GetDriver()
+		Ent.Driver		= Ply
 		Ent.Seat		= Vehicle
 		Ent.AliasInfo	= AliasInfo
 		Ent.Owner		= Ply
@@ -101,9 +102,8 @@ do	-- Metamethods
 		if not IsValid(SelfTbl.Seat) then self:Remove() end
 		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() end
 
-		local Driver = SelfTbl.Seat:GetDriver()
-		if self:GetParent() ~= SelfTbl.Seat then if IsValid(Driver) then SelfTbl.Seat:GetDriver():ExitVehicle() else self:Remove() end end
-		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then if IsValid(Driver) then SelfTbl.Seat:GetDriver():ExitVehicle() else self:Remove() end end
+		if self:GetParent() ~= SelfTbl.Seat then self:Remove() end
+		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then self:Remove() end
 
 		self:NextThink(CurTime() + 15)
 		return true
@@ -126,8 +126,8 @@ do	-- Metamethods
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-		local Ply = self:GetOwner()
-		if not (IsValid(Ply) and IsValid(self.Seat) and (Ply == self.Seat:GetDriver())) then print("Bullet hit alias with no valid player/seat, removing") self:Remove() return HitRes end
+		local Ply = self.Driver
+		if not (IsValid(Ply) and IsValid(self.Seat)) then self:Remove() return HitRes end
 		local HitRes = Damage.doSquishyDamage(Ply, DmgResult, DmgInfo)
 
 		return HitRes
@@ -136,8 +136,12 @@ do	-- Metamethods
 	function ENT:OnRemove()
 		if IsValid(self.Seat) and (self.Seat.AliasEnt == self) then
 			self.Seat.AliasEnt = nil
+		end
 
-			if IsValid(self.Seat:GetDriver()) then self.Seat:GetDriver():ExitVehicle() end
+		if IsValid(self.Driver) then
+			local Seat = self.Seat
+			local Driver = self.Driver
+			timer.Simple(0,function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat,Driver) end end)
 		end
 	end
 end

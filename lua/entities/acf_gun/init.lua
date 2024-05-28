@@ -830,6 +830,27 @@ do -- Metamethods --------------------------------
 		end
 	end -----------------------------------------
 
+	do	-- Other networking
+		util.AddNetworkString("ACF.RequestGunInfo")
+		net.Receive("ACF.RequestGunInfo",function(_,Ply)
+			local Gun = net.ReadEntity()
+			if not IsValid(Gun) then return end
+
+			local AmmoCrates = {}
+
+			if next(Gun.Crates) then
+				for Crate in pairs(Gun.Crates) do
+					AmmoCrates[#AmmoCrates + 1] = Crate:EntIndex()
+				end
+			end
+
+			net.Start("ACF.RequestGunInfo")
+				net.WriteEntity(Gun)
+				net.WriteString(util.TableToJSON(AmmoCrates))
+			net.Send(Ply)
+		end)
+	end
+
 	do -- Misc ----------------------------------
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj = self.ACF.PhysObj

@@ -25,17 +25,31 @@ do	-- NET SURFER 2.0
 		local Engine	= net.ReadEntity()
 		local Data		= util.JSONToTable(net.ReadString())
 		local Outputs	= util.JSONToTable(net.ReadString())
+		local Fuel		= util.JSONToTable(net.ReadString())
 
 		local OutEnts	= {}
+		local FuelTanks	= {}
 
 		for _,E in ipairs(Outputs) do
 			local Ent = Entity(E)
-			local Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
 
-			OutEnts[#OutEnts + 1] = {Ent = Ent, Pos = Pos}
+			if IsValid(Ent) then
+				local Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
+
+				OutEnts[#OutEnts + 1] = {Ent = Ent, Pos = Pos}
+			end
+		end
+
+		for _,E in ipairs(Fuel) do
+			local Ent = Entity(E)
+
+			if IsValid(Ent) then
+				FuelTanks[#FuelTanks + 1] = {Ent = Ent}
+			end
 		end
 
 		Engine.Outputs	= OutEnts
+		Engine.FuelTanks	= FuelTanks
 
 		Engine.Driveshaft	= Data.Driveshaft
 
@@ -61,7 +75,7 @@ end
 do	-- Overlay
 	-- Rendered is used to prevent re-rendering as part of the extended link rendering
 
-	local red = Color(255,0,0)
+	local source = Color(255,255,0)
 	local orange = Color(255,127,0)
 	function ENT:DrawLinks(Rendered)
 		if Rendered[self] then return end
@@ -78,6 +92,7 @@ do	-- Overlay
 
 		-- draw links to gearboxes
 		local Perc = (Clock.CurTime / 2) % 1
+		local Rad = TimedCos(0.5, 2, 3, 0)
 
 		local OutPos = self:LocalToWorld(SelfTbl.Driveshaft)
 		for _,T in ipairs(SelfTbl.Outputs) do
@@ -86,11 +101,10 @@ do	-- Overlay
 			if IsValid(E) then
 
 				local Pos = E:LocalToWorld(T.Pos)
-				--render.DrawLine(OutPos, Pos, color_white, true)
 				render.DrawBeam(OutPos, Pos, 2, 0, 0, color_black)
 				render.DrawBeam(OutPos, Pos, 1.5, 0, 0, color_white)
 				local SpherePos = LerpVector(Perc, OutPos, Pos)
-				render.DrawSphere(SpherePos, 2, 4, 3, orange)
+				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
 				if E.DrawLinks then
 					E:DrawLinks(Rendered,false)
@@ -98,9 +112,10 @@ do	-- Overlay
 			end
 		end
 
-		render.DrawSphere(OutPos, 2, 4, 3, red)
+		render.DrawSphere(OutPos, Rad, 4, 3, source)
 	end
 
+	local FuelColor	= Color(255,255,0,25)
 	function ENT:DrawOverlay()
 		local SelfTbl = self:GetTable()
 
@@ -113,11 +128,21 @@ do	-- Overlay
 
 		render.SetColorMaterial()
 
+		if next(SelfTbl.FuelTanks) then
+			for _,T in ipairs(SelfTbl.FuelTanks) do
+				local E = T.Ent
+				if IsValid(E) then
+					render.DrawWireframeBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),FuelColor,true)
+					render.DrawBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),FuelColor)
+				end
+			end
+		end
+
 		self:DrawLinks({self = true}, true)
 
 		local OutTextPos = self:LocalToWorld(SelfTbl.Driveshaft):ToScreen()
 		cam.Start2D()
-			draw.SimpleTextOutlined("Output","ACF_Title",OutTextPos.x,OutTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			draw.SimpleTextOutlined("Power Source","ACF_Title",OutTextPos.x,OutTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
 		cam.End2D()
 	end
 end

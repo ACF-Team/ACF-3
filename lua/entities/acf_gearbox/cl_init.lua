@@ -35,28 +35,36 @@ do	-- NET SURFER 2.0
 		for _,E in ipairs(Inputs) do
 			local Ent = Entity(E)
 
-			InEnts[#InEnts + 1] = {Ent = Ent}
+			if IsValid(Ent) then
+				InEnts[#InEnts + 1] = {Ent = Ent}
+			end
 		end
 
 		for _,E in ipairs(OutL) do
 			local Ent = Entity(E)
-			local Pos = Vector()
 
-			if Ent:GetClass() == "acf_gearbox" then
-				Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
+			if IsValid(Ent) then
+				local Pos = Vector()
+
+				if Ent:GetClass() == "acf_gearbox" then
+					Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
+				end
+
+				OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos}
 			end
-
-			OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos}
 		end
 		for _,E in ipairs(OutR) do
 			local Ent = Entity(E)
-			local Pos = Vector()
 
-			if Ent:GetClass() == "acf_gearbox" then
-				Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
+			if IsValid(Ent) then
+				local Pos = Vector()
+
+				if Ent:GetClass() == "acf_gearbox" then
+					Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
+				end
+
+				OutREnts[#OutREnts + 1] = {Ent = Ent, Pos = Pos}
 			end
-
-			OutREnts[#OutREnts + 1] = {Ent = Ent, Pos = Pos}
 		end
 
 		Gearbox.Inputs		= InEnts
@@ -66,6 +74,7 @@ do	-- NET SURFER 2.0
 		Gearbox.In		= Data.In
 		Gearbox.OutL	= Data.OutL
 		Gearbox.OutR	= Data.OutR
+		Gearbox.Mid		= (Data.OutL + Data.OutR) / 2
 
 		Gearbox.IsStraight = (Data.OutL == Data.OutR)
 
@@ -96,6 +105,8 @@ do	-- Overlay
 	local teal = Color(0,195,255)
 	local red = Color(255,0,0)
 	local green = Color(0,255,0)
+	local innerConnection = Color(127,127,127)
+	local outerConnection = Color(255,255,255)
 	function ENT:DrawLinks(Rendered)
 		if Rendered[self] then return end
 		local SelfTbl = self:GetTable()
@@ -114,6 +125,7 @@ do	-- Overlay
 		local InPos		= self:LocalToWorld(SelfTbl.In)
 		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
 		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
+		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
 
 		-- Rendering more along the chain
 		for _,T in ipairs(SelfTbl.Inputs) do
@@ -124,6 +136,27 @@ do	-- Overlay
 			end
 		end
 
+
+		if not SelfTbl.IsStraight then
+			render.DrawBeam(LeftPos, RightPos, 2, 0, 0, color_black)
+			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(InPos, MidPoint, 2, 0, 0, color_black)
+			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, innerConnection)
+
+			local SpherePos1 = LerpVector(Perc, InPos, MidPoint)
+			render.DrawSphere(SpherePos1, 1.5, 4, 3, orange)
+			local SpherePos2 = LerpVector(Perc, MidPoint, LeftPos)
+			render.DrawSphere(SpherePos2, 1.5, 4, 3, orange)
+			local SpherePos3 = LerpVector(Perc, MidPoint, RightPos)
+			render.DrawSphere(SpherePos3, 1.5, 4, 3, orange)
+		else
+			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
+			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, innerConnection)
+
+			local SpherePos1 = LerpVector(Perc, InPos, LeftPos)
+			render.DrawSphere(SpherePos1, 1.5, 4, 3, orange)
+		end
+
 		for _,T in ipairs(SelfTbl.OutputsL) do
 			local E = T.Ent
 
@@ -131,9 +164,9 @@ do	-- Overlay
 
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(LeftPos, Pos, 2, 0, 0, color_black)
-				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, color_white)
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, outerConnection)
 				local SpherePos = LerpVector(Perc, LeftPos, Pos)
-				render.DrawSphere(SpherePos, 2, 4, 3, orange)
+				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
 				if E.DrawLinks then
 					E:DrawLinks(Rendered,false)
@@ -150,9 +183,9 @@ do	-- Overlay
 
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(RightPos, Pos, 2, 0, 0, color_black)
-				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, color_white)
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, outerConnection)
 				local SpherePos = LerpVector(Perc, RightPos, Pos)
-				render.DrawSphere(SpherePos, 2, 4, 3, orange)
+				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
 				if E.DrawLinks then
 					E:DrawLinks(Rendered,false)

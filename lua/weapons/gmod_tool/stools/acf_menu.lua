@@ -32,7 +32,7 @@ if CLIENT then
 		if (IsValid(Entity) and Entity.CleanupOverlay) or IsValid(self.LastEntity) then
 			if IsValid(self.LastEntity) and self.LastEntity ~= Entity then self.LastEntity:CleanupOverlay() end
 
-			self.LastEntity	= Entity
+			if Entity.CleanupOverlay then self.LastEntity = Entity else self.LastEntity = nil end
 		end
 
 		if not IsValid(Entity) then return end

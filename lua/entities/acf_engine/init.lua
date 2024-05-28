@@ -921,6 +921,7 @@ do	-- NET SURFER 2.0
 
 		if IsValid(Entity) then
 			local Outputs = {}
+			local FuelTanks = {}
 			local Data = {
 				Driveshaft	= Entity.Out
 			}
@@ -931,10 +932,17 @@ do	-- NET SURFER 2.0
 				end
 			end
 
+			if next(Entity.FuelTanks) then
+				for E in pairs(Entity.FuelTanks) do
+					FuelTanks[#FuelTanks + 1] = E:EntIndex()
+				end
+			end
+
 			net.Start("ACF_RequestEngineInfo")
 				net.WriteEntity(Entity)
 				net.WriteString(util.TableToJSON(Data))
 				net.WriteString(util.TableToJSON(Outputs))
+				net.WriteString(util.TableToJSON(FuelTanks))
 			net.Send(Ply)
 		end
 	end)
