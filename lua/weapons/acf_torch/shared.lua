@@ -168,7 +168,12 @@ function SWEP:Think()
 	if CLIENT then return end
 
 	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	local Trace = Owner:GetEyeTrace()
+	--local Trace = Owner:GetEyeTrace()
+	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID + CONTENTS_AUX, filter = {Owner}}
+	if Owner:InVehicle() and IsValid(Owner:GetVehicle().Alias) then
+		TraceData.filter[2] = Owner:GetVehicle().Alias
+	end
+	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
