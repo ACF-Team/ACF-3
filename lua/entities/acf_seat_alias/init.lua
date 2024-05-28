@@ -97,10 +97,13 @@ do	-- Metamethods
 	end
 
 	function ENT:Think()
-		if not IsValid(self.Seat) then print("removing invalid alias") self:Remove() end
-		if self.Seat.AliasEnt ~= self then print("removing duplicate alias") self:Remove() end
-		if self:GetParent() ~= self.Seat then print("Somehow the alias has been detached") self.Seat:GetDriver():ExitVehicle() end
-		if self.Seat:GetModel() ~= self.Seat._Alias.SeatModel then print("Model mismatch") self.Seat:GetDriver():ExitVehicle() end
+		local SelfTbl = self:GetTable()
+		if not IsValid(SelfTbl.Seat) then self:Remove() end
+		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() end
+
+		local Driver = SelfTbl.Seat:GetDriver()
+		if self:GetParent() ~= SelfTbl.Seat then if IsValid(Driver) then SelfTbl.Seat:GetDriver():ExitVehicle() else self:Remove() end end
+		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then if IsValid(Driver) then SelfTbl.Seat:GetDriver():ExitVehicle() else self:Remove() end end
 
 		self:NextThink(CurTime() + 15)
 		return true
@@ -133,6 +136,8 @@ do	-- Metamethods
 	function ENT:OnRemove()
 		if IsValid(self.Seat) and (self.Seat.AliasEnt == self) then
 			self.Seat.AliasEnt = nil
+
+			if IsValid(self.Seat:GetDriver()) then self.Seat:GetDriver():ExitVehicle() end
 		end
 	end
 end
