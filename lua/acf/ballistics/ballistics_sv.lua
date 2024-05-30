@@ -137,7 +137,7 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
-	if IsValid(Bullet.Owner) and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
 	end
