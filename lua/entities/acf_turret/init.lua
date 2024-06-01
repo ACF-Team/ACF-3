@@ -641,7 +641,7 @@ do	-- Spawn and Update funcs
 		GetSubTurretMass(self)
 
 		if SelfTbl.ACF_TurretAncestor then
-			self.Complexity = (SelfTbl.Complexity or 1) * SelfTbl.ACF_TurretAncestor.Complexity
+			self.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
 		end
 
 		self:GetTotalMass()
