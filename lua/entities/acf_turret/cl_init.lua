@@ -102,7 +102,7 @@ do	-- Turret drive drawing
 		if looked_at and not HideInfo() then
 			self:AddWorldTip()
 
-			if LocalPlayer():GetActiveWeapon():GetClass() == "weapon_physgun" and not LocalPlayer():InVehicle() then
+			if (not LocalPlayer():InVehicle()) and (IsValid(LocalPlayer():GetActiveWeapon()) and LocalPlayer():GetActiveWeapon():GetClass() == "weapon_physgun") then
 				self:DrawHome()
 			end
 		end

@@ -906,6 +906,7 @@ do -- Metamethods
 			if SelfTbl.UseVector and (SelfTbl.Manual == false) then SelfTbl.DesiredAngle = (SelfTbl.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
 
 			local StabAmt	= math.Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
+			local StabSign	= -StabAmt < 0 and -1 or 1
 
 			local TargetBearing	= math.Round(SelfTbl.SlewFuncs.GetTargetBearing(self, StabAmt), 8)
 
@@ -913,6 +914,10 @@ do -- Metamethods
 			local Dist			= math.abs(TargetBearing)
 			local FinalAccel	= math.Clamp(TargetBearing, -MaxImpulse, MaxImpulse)
 			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math.abs(FinalAccel) / 2
+
+			if (StabSign == sign) then
+				StabAmt = StabAmt * math.min(math.max(0,1 - (math.abs(StabAmt) / MaxImpulse) ^ 2),1)
+			end
 
 			if SelfTbl.Active then
 				SelfTbl.SlewRate = math.Clamp(SelfTbl.SlewRate + (math.abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -sign)) >= BrakingDist and sign or -sign)), -SlewMax, SlewMax)
