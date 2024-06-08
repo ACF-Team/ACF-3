@@ -46,6 +46,7 @@ do
 
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In)

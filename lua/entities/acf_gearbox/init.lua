@@ -7,14 +7,15 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
-local ACF       = ACF
-local Contraption	= ACF.Contraption
-local Utilities = ACF.Utilities
-local Clock     = Utilities.Clock
-local Clamp     = math.Clamp
-local abs       = math.abs
-local min       = math.min
-local HookRun   = hook.Run
+local ACF         = ACF
+local Contraption = ACF.Contraption
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
+local Clamp       = math.Clamp
+local abs         = math.abs
+local min         = math.min
+local HookRun     = hook.Run
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
@@ -591,6 +592,7 @@ do -- Linking ------------------------------------------
 
 	local function LinkWheel(Gearbox, Wheel)
 		if Gearbox.Wheels[Wheel] then return false, "This wheel is already linked to this gearbox!" end
+		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then return false, "This wheel is too far away from this gearbox!" end
 
 		local Link = GenerateLinkTable(Gearbox, Wheel)
 
@@ -616,6 +618,7 @@ do -- Linking ------------------------------------------
 	local function LinkGearbox(Gearbox, Target)
 		if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked to each other!" end
 		if Target.GearboxIn[Gearbox] then return false, "These gearboxes are already linked to each other!" end
+		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "These gearboxes are too far away from each other!" end
 		if CheckLoopedGearbox(Gearbox, Target) then return false, "You cannot link gearboxes in a loop!" end
 
 		local Link = GenerateLinkTable(Gearbox, Target)
