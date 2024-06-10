@@ -131,7 +131,12 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask        = (Bullet.Caliber < 3 and bit.band(MASK_SOLID,MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+	if Bullet.Caliber then
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID,MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+	else
+		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+	end
+
 	Bullet.Ricochets   = 0
 	Bullet.GroundRicos = 0
 	Bullet.Color       = ColorRand(100, 255)
