@@ -351,7 +351,7 @@ if SERVER then
 					local SpallEnt    = TargetRes.Entity
 					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
 					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
-						debugoverlay.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
+						Debug.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
 
 						local DistSqr = math.max(1, (TargetRes.HitPos - PenHitPos):LengthSqr())
 						-- Calculate how much shrapnel will hit the target based on it's relative area
