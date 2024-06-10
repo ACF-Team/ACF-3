@@ -145,8 +145,6 @@ do	-- Overlay
 		local Pos = self:LocalToWorld(self:OBBCenter())
 		local Origin = Pos + (FWD * X * 1.1)
 
-		--debugoverlay.Text(Origin, tostring(Axis), 0.015, false)
-
 		render.DrawQuad(Pos, Pos, Pos + (FWD * X * 1.1) + (WorldRightDir * -UX / 4), Pos + (FWD * X * 1.1) + (WorldRightDir * UX / 4), orange)
 		render.DrawQuad(Origin + FWD * UX, Origin + WorldRightDir * UX + FWD * (-UX / 2), Origin, Origin + WorldRightDir * -UX + FWD * (-UX / 2), orange)
 	end

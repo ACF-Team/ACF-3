@@ -3,6 +3,7 @@ local TraceLine = util.TraceLine
 local GetIndex  = ACF.GetAmmoDecalIndex
 local GetDecal  = ACF.GetRicochetDecal
 local Sounds    = ACF.Utilities.Sounds
+local Debug		= ACF.Debug
 local White     = Color(255, 255, 255)
 local Yellow    = Color(255, 255, 0)
 
@@ -29,8 +30,8 @@ function EFFECT:Init(Data)
 	local Emitter = ParticleEmitter(Origin)
 	local Mult    = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
 
-	debugoverlay.Cross(Origin, 15, 15, Yellow, true)
-	--debugoverlay.Sphere(Origin, Size, 15, Yellow, true)
+	Debug.Cross(Origin, 15, 15, Yellow, true)
+	--Debug.Sphere(Origin, Size, 15, Yellow, true)
 
 	TraceData.start  = Origin - Normal * 5
 	TraceData.endpos = Origin + Normal * Radius

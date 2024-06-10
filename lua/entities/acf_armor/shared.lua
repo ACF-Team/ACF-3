@@ -5,6 +5,8 @@ ENT.WireDebugName = "ACF Armor"
 ENT.PluralName    = "ACF Armor"
 ENT.IsACFArmor    = true
 
+local Debug		= ACF.Debug
+
 local function FindOtherSide(Ent, Origin, Dire)
     local Mesh = Ent:GetPhysicsObject():GetMeshConvexes()
     local Min  = math.huge
@@ -77,9 +79,9 @@ function ENT:GetArmor(Trace)
     local Enter        = Trace.HitPos
     local Length, Exit = TraceThroughObject(Trace)
 
-    debugoverlay.Cross(Enter, 3, 0.015, Color(0, 255, 0), true)
-    debugoverlay.Cross(Exit, 3, 0.015, Color(255, 0, 0), true)
-    debugoverlay.Line(Enter, Exit, 0.015, Color(0, 255, 255), true)
+    Debug.Cross(Enter, 3, 0.015, Color(0, 255, 0), true)
+    Debug.Cross(Exit, 3, 0.015, Color(255, 0, 0), true)
+    Debug.Line(Enter, Exit, 0.015, Color(0, 255, 255), true)
 
     return ACF.RHAe(Length, self.Density)
 end

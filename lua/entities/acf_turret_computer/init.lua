@@ -9,6 +9,7 @@ local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
 local Utilities		= ACF.Utilities
+local Debug			= ACF.Debug
 local Sounds		= Utilities.Sounds
 local Clock			= Utilities.Clock
 local HookRun		= hook.Run
@@ -262,7 +263,7 @@ do	-- Metamethods and other important stuff
 
 			StartAngle:Normalize()
 
-			debugoverlay.Line(Gun:LocalToWorld(Gun.Muzzle),Gun:LocalToWorld(Gun.Muzzle) + StartAngle:Forward() * 32,3,Color(255,0,0),true)
+			Debug.Line(Gun:LocalToWorld(Gun.Muzzle),Gun:LocalToWorld(Gun.Muzzle) + StartAngle:Forward() * 32,3,Color(255,0,0),true)
 
 			self.SimData	= {
 				MuzzleVel		= BD.MuzzleVel,
@@ -379,7 +380,7 @@ do	-- Metamethods and other important stuff
 					self.SimData.StartAngle		= StartAngle
 					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
 
-					debugoverlay.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
+					Debug.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
 
 					self.SimData.Pos			= Vector()
 
@@ -415,7 +416,7 @@ do	-- Metamethods and other important stuff
 					local ErrorDir2D	= ((Sim.TargetPos - (Sim.StartPos + Sim.Pos)) * Vector(1,1,0)):GetNormalized()
 					local ErrorDist		= (Sim.StartPos + Sim.Pos):Distance2D(Sim.TargetPos)
 
-					debugoverlay.Line(Sim.StartPos + Sim.Pos,(Sim.StartPos + Sim.Pos) + ErrorDir2D * ErrorDist, 3, Color(255,0,0), true)
+					Debug.Line(Sim.StartPos + Sim.Pos,(Sim.StartPos + Sim.Pos) + ErrorDir2D * ErrorDist, 3, Color(255,0,0), true)
 
 					local LocalPosition = (Sim.AdjustedTargetPos - Sim.StartPos)
 
@@ -430,7 +431,7 @@ do	-- Metamethods and other important stuff
 					self.SimData.StartAngle		= StartAngle
 					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
 
-					debugoverlay.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
+					Debug.Cross(Sim.StartPos + LocalPosition,3,5,Color(0,0,255),true)
 
 					self.SimData.Pos			= Vector()
 
@@ -482,7 +483,7 @@ do	-- Metamethods and other important stuff
 
 			Sim.TotalTime		= Sim.TotalTime + DeltaTime
 
-			debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,5,Color(255,0,0),true)
+			Debug.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,5,Color(255,0,0),true)
 
 			local Dir = (Sim.NextPos - Sim.Pos):GetNormalized()
 
@@ -495,15 +496,15 @@ do	-- Metamethods and other important stuff
 					local Ratio = (Sim.Pos:Distance(Point)) / FlightDistance
 					Sim.FlightTime	= Sim.FlightTime + (DeltaTime * Ratio)
 
-					debugoverlay.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,8,Color(0,255,0),true)
-					debugoverlay.Cross(Sim.StartPos + Sim.Pos,15,8,Color(255,0,0),true)
+					Debug.Line(Sim.StartPos + Sim.Pos,Sim.StartPos + Sim.NextPos,8,Color(0,255,0),true)
+					Debug.Cross(Sim.StartPos + Sim.Pos,15,8,Color(255,0,0),true)
 
 					Sim.Pos		= Point
 
 					Sim.FlightDistance = Sim.FlightDistance + (FlightDistance * Ratio)
 
-					debugoverlay.Cross(Sim.StartPos + Point,15,8,Color(255,255,255),true)
-					debugoverlay.Cross(Sim.StartPos + Sim.NextPos,15,8,Color(0,255,0),true)
+					Debug.Cross(Sim.StartPos + Point,15,8,Color(255,255,255),true)
+					Debug.Cross(Sim.StartPos + Sim.NextPos,15,8,Color(0,255,0),true)
 
 					return self:AdjustSimulation()
 				else

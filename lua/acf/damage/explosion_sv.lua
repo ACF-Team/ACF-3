@@ -1,7 +1,6 @@
 local ents         = ents
 local math         = math
 local util         = util
-local debugoverlay = debugoverlay
 local ACF          = ACF
 local Damage       = ACF.Damage
 local Objects      = Damage.Objects
@@ -12,9 +11,10 @@ local TraceData    = {
 	start  = true,
 	endpos = true,
 	filter = true,
-	mask   = MASK_SOLID,
+	mask   = MASK_SOLID + CONTENTS_AUX,
 }
 local Ballistics	= ACF.Ballistics
+local Debug			= ACF.Debug
 
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
@@ -93,8 +93,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	if not Filter then Filter = {} end
 
-	debugoverlay.Cross(Position, 15, 15, White, true)
-	--debugoverlay.Sphere(Position, Radius, 15, White, true)
+	Debug.Cross(Position, 15, 15, White, true)
+	--Debug.Sphere(Position, Radius, 15, White, true)
 
 	do -- Screen shaking
 		local Amp = math.min(Power * 0.0005, 50)
@@ -154,7 +154,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
 					local BlastResult, FragResult, Losses
 
-					debugoverlay.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
+					Debug.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
 
 					DmgInfo:SetHitPos(HitPos)
 					DmgInfo:SetHitGroup(Trace.HitGroup)
@@ -196,7 +196,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						local Min = HitEnt:OBBMins()
 						local Max = HitEnt:OBBMaxs()
 
-						debugoverlay.BoxAngles(HitEnt:GetPos(), Min, Max, HitEnt:GetAngles(), 15, Red) -- Red box on destroyed entities
+						Debug.BoxAngles(HitEnt:GetPos(), Min, Max, HitEnt:GetAngles(), 15, Red) -- Red box on destroyed entities
 
 						Filter[#Filter + 1] = HitEnt -- Filter from traces
 						Targets[HitEnt]     = nil -- Remove from list
@@ -218,14 +218,14 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
 				elseif not Damaged[HitEnt] then
-					debugoverlay.Line(Position, HitPos, 15, Blue, true) -- Blue line for an invalid entity
+					Debug.Line(Position, HitPos, 15, Blue, true) -- Blue line for an invalid entity
 
 					Filter[#Filter + 1] = HitEnt -- Filter from traces
 					Targets[HitEnt]     = nil -- Remove from list
 				end
 			else
 				-- Not removed from future damage sweeps so as to provide multiple chances to be hit
-				debugoverlay.Line(Position, HitPos, 15, White, true) -- White line for a miss.
+				Debug.Line(Position, HitPos, 15, White, true) -- White line for a miss.
 			end
 		end
 

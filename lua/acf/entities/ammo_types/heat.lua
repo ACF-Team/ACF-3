@@ -1,6 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 local Damage    = ACF.Damage
+local Debug		= ACF.Debug
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("HEAT", "AP")
 
@@ -232,12 +233,14 @@ if SERVER then
 
 	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
+		if Bullet.Detonated then return end	-- Prevents GLATGM spawned HEAT projectiles from detonating twice, or for that matter this running twice at all
+		Bullet.Detonated = true
+
 		local Filler    = Bullet.BoomFillerMass
 		local Fragments = Bullet.CasingMass
-		local Filter    = Bullet.Filter
 		local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
-		Damage.createExplosion(HitPos, Filler, Fragments, Filter, DmgInfo)
+		Damage.createExplosion(HitPos, Filler, Fragments, nil, DmgInfo)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
 		local FoundEnts = ents.FindInSphere(HitPos, 250)
@@ -252,9 +255,14 @@ if SERVER then
 		end
 
 		-- Move the jet start to the impact point and back it up by the passive standoff
+		local Start		= Bullet.Standoff * 39.37
+		local End		= Bullet.BreakupDist * 10 * 39.37
 		local Direction = Bullet.Flight:GetNormalized()
-		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
-		local JetEnd    = HitPos + Direction * 3000
+		local JetStart  = HitPos - Direction * Start
+		local JetEnd    = HitPos + Direction * End
+
+		Debug.Cross(JetStart, 15, 15, Color(0,255,0), true)
+		Debug.Cross(JetEnd, 15, 15, Color(255,0,0), true)
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
@@ -264,13 +272,16 @@ if SERVER then
 			local TraceRes  = ACF.trace(TraceData)
 			local PenHitPos = TraceRes.HitPos
 			local Ent       = TraceRes.Entity
-			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+
+			if TraceRes.Fraction == 1 and not IsValid(Ent) then break end
+
+			Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
 
 			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity print("Skipped",Ent) continue end
 
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
-			local Penetration = self:GetPenetration(Bullet, Standoff)
+			local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
 
@@ -321,11 +332,6 @@ if SERVER then
 			JetMassPct = JetMassPct - LostMassPct
 
 			if JetMassPct < 0 then break end
-
-			-- If the target is explosive and the armor is penetrated, detonate
-			if Ent.Detonate then
-				Ent:Detonate()
-			end
 
 			-- Filter the hit entity
 			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end

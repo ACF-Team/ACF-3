@@ -2,6 +2,7 @@ local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
+local Debug		 = ACF.Debug
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -245,7 +246,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
