@@ -37,6 +37,10 @@ do	-- Turret drives
 		GetMass		= function(Data, Size)
 			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5) ^ 1.5, 1)
 		end,
+		GetMaxMass	= function(Data, Size)
+			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
+			return math.Round(((Data.MassLimit.Min * (1 - SizePerc)) + (Data.MassLimit.Max * SizePerc)) ^ 2, 1)
+		end,
 		GetTeethCount	= function(Data, Size)
 			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
 			return math.Round((Data.Teeth.Min * (1 - SizePerc)) + (Data.Teeth.Max * SizePerc))
@@ -53,10 +57,10 @@ do	-- Turret drives
 
 		HandGear	= { -- Fallback incase a motor is unavailable
 			Teeth	= 12, -- For use in calculating end effective speed of a turret
-			Speed	= 220, -- deg/s
-			Torque	= 14, -- 0.1m * 140N * sin(90), torque to turn a small handwheel 90 degrees with slightly more than recommended force for a human
+			Speed	= 420, -- deg/s
+			Torque	= 10, -- 0.1m * 100N * sin(90), torque to turn a small handwheel 90 degrees
 			Efficiency	= 0.99, -- Gearbox efficiency, won't be too punishing for handcrank
-			Accel	= 5,
+			Accel	= 4,
 			Sound	= "acf_base/fx/turret_handcrank.wav",
 		},
 
@@ -85,6 +89,11 @@ do	-- Turret drives
 			local Diameter	= (TurretData.RingSize * InchToMm) -- Used for some of the formulas from the referenced page, needs to be in mm
 			local CoMDistance	= (TurretData.LocalCoM * Vector(1,1,0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
 			local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2),0),0)
+			local OverweightMod	= 1
+
+			if TurretData.TotalMass > TurretData.MaxMass then
+				OverweightMod = math.max(0,1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2))
+			end
 
 			-- Slewing ring friction moment caused by load (kNm)
 			-- 1kg weight (mass * gravity) is about 9.81N
@@ -112,7 +121,7 @@ do	-- Turret drives
 			-- 9.55 is 1 rad/s to RPM
 			-- Required power to rotate at full speed
 			-- With this we can lower maximum attainable speed
-			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency)
+			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency * OverweightMod)
 
 			if (math.max(1,ReqConstantPower) / math.max(MaxPower,1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
 
@@ -141,7 +150,7 @@ do	-- Turret drives
 			Name			= "Horizontal Turret",
 			Description		= "The large stable base of a turret.",
 			Model			= "models/acf/core/t_ring.mdl",
-			ModelSmall		= "models/holograms/hq_cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
+			ModelSmall		= "models/holograms/cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
 			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
@@ -157,8 +166,13 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 15,
-				Max			= 175
+				Min			= 50,
+				Max			= 300
+			},
+
+			MassLimit		= {
+				Min			= 12,
+				Max			= 960
 			},
 
 			SetupInputs		= function(_,List)
@@ -193,6 +207,14 @@ do	-- Turret drives
 					end
 				end,
 
+				GetWorldTarget		= function(Turret)
+					if Turret.Manual then
+						return Turret:LocalToWorldAngles(Angle(0, Turret.DesiredDeg, 0))
+					else
+						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
+					end
+				end,
+
 				SetRotatorAngle		= function(Turret)
 					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(0, Turret.CurrentAngle, 0)))
 				end
@@ -220,12 +242,17 @@ do	-- Turret drives
 
 			Teeth			= {		-- Used to give a final teeth count with size
 				Min			= 8,
-				Max			= 384
+				Max			= 768
 			},
 
 			Armor			= {
-				Min			= 5,
-				Max			= 305
+				Min			= 50,
+				Max			= 300
+			},
+
+			MassLimit		= {
+				Min			= 16,
+				Max			= 256
 			},
 
 			SetupInputs		= function(_,List)
@@ -255,6 +282,14 @@ do	-- Turret drives
 						end
 					else
 						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-Turret.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).pitch - StabAmt)
+					end
+				end,
+
+				GetWorldTarget		= function(Turret)
+					if Turret.Manual then
+						return Turret:LocalToWorldAngles(Angle(Turret.DesiredDeg, 0, 0))
+					else
+						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
 					end
 				end,
 
@@ -356,8 +391,8 @@ do	-- Turret motors
 			},
 
 			Torque			= {
-				Min		= 40,
-				Max		= 800
+				Min		= 50,
+				Max		= 1000
 			}
 		})
 	end
@@ -437,7 +472,7 @@ do	-- Turret computers
 	do	-- Computers
 		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
 			Name			= "Direct Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nThis is capable of constantly calculating to track a target at a constant velocity, as long as Calculate is true.\nHas a 2s delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nAs long as Calculate is true, this will continue to track in a straight line from the initial position and velocity.\nHas a 0.2s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {
@@ -446,21 +481,33 @@ do	-- Turret computers
 
 			Mass			= 100,
 
+			SetupInputs		= function(_,List)
+				local Count	= #List
+
+				List[Count + 1] = "Calculate Superelevation (One-time calculation to collect super-elevation)"
+			end,
+
+			SetupOutputs		= function(_,List)
+				local Count	= #List
+
+				List[Count + 1] = "Elevation (Super-elevation, set global pitch to this for automatic ranging)"
+			end,
+
 			ComputerInfo	= {
-				ThinkTime		= 0.04, 	-- Speed of the actual think time
+				ThinkTime		= 0.03, 	-- Speed of the actual think time
 				MaxThinkTime	= 4,		-- Maximum time to spend on a simulation
 				DeltaTime		= 0.2,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
 				CalcError		= 0.25,		-- Lee-way in units per 100u of lateral distance
 				HighArc			= false,	-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= true,		-- Will constantly run as long as Calculate is 1
 				Bulk			= 8,		-- Number of calculations to perform per tick
-				Delay			= 2			-- Time after finishing before another calculation can run
+				Delay			= 0.2		-- Time after finishing before another calculation can run
 			},
 		})
 
 		Turrets.RegisterItem("IND-BalComp","4-Computer",{
 			Name			= "Indirect Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 3s delay between uses.",
+			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 1s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {
@@ -470,14 +517,14 @@ do	-- Turret computers
 			Mass			= 150,
 
 			ComputerInfo	= {
-				ThinkTime		= 0.04,		-- Speed of the actual think time
+				ThinkTime		= 0.03,		-- Speed of the actual think time
 				MaxThinkTime	= 6,		-- Maximum time to spend on a simulation
 				DeltaTime		= 0.06,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
 				CalcError		= 0.05,		-- Lee-way in units per 100u of lateral distance
 				HighArc			= true,		-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= false,
 				Bulk			= 10,		-- Number of calculations to perform per tick
-				Delay			= 3,		-- Time after finishing before another calculation can run
+				Delay			= 1,		-- Time after finishing before another calculation can run
 			},
 		})
 	end

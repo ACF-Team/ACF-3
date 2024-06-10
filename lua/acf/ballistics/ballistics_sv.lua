@@ -131,10 +131,21 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask        = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
+	if Bullet.Caliber then
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID,MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+	else
+		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+	end
+
 	Bullet.Ricochets   = 0
 	Bullet.GroundRicos = 0
 	Bullet.Color       = ColorRand(100, 255)
+
+	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
+		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
+	end
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()

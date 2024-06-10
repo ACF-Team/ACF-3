@@ -217,26 +217,35 @@ do	-- Metamethods and other important stuff
 	do	-- Wire stuff
 		ACF.AddInputAction("acf_turret_computer", "Calculate", function(Entity,Value)
 			if Entity.Disabled then return end
+			if Entity.Thinking then return end
 
 			if tobool(Value) == true then
-				Entity:StartSimulation()
+				Entity:StartSimulation(false)
+			end
+		end)
+
+		ACF.AddInputAction("acf_turret_computer", "Calculate Superelevation", function(Entity,Value)
+			if Entity.Disabled then return end
+			if Entity.Thinking then return end
+
+			if tobool(Value) == true then
+				Entity:StartSimulation(true)
 			end
 		end)
 	end
 
 	do	-- Simulation stuff
 		-- Starts fresh simulation with fresh data
-		function ENT:StartSimulation()
+		function ENT:StartSimulation(OneShot)
 			if Clock.CurTime < self.NextRun then return end
 			if not IsValid(self.Gun) then return end
 
 			local Gun = self.Gun
+			local BD = Gun.BulletData
 
-			if Gun.State ~= "Loaded" then return end
+			if BD.Type == "Empty" then return end
 
 			self.Status = "Calculating..."
-
-			local BD = Gun.BulletData
 
 			local LocalPosition = self.Inputs["Position"].Value - Gun:LocalToWorld(Gun.Muzzle)
 
@@ -280,7 +289,8 @@ do	-- Metamethods and other important stuff
 				DeltaTime		= self.ComputerInfo.DeltaTime,
 				EndTime			= Clock.CurTime + self.ComputerInfo.MaxThinkTime,
 				LastMaxTime		= self.ComputerInfo.MaxThinkTime,
-				StartTime		= Clock.CurTime
+				StartTime		= Clock.CurTime,
+				IsOneShot		= OneShot
 			}
 
 			self.Thinking	= true
@@ -302,8 +312,16 @@ do	-- Metamethods and other important stuff
 			if not self.ComputerInfo.HighArc then
 				if Sim.Pos:DistToSqr(Sim.AdjustedTargetPos - Sim.StartPos) < ((((Sim.FlightDistance + (Sim.RelativeVel * ElapsedTime):Length()) / 100) * self.ComputerInfo.CalcError) ^ 2) then
 
-					WireLib.TriggerOutput(self, "Angle", Sim.StartAngle)
+					WireLib.TriggerOutput(self, "Elevation", Sim.StartAngle.p)
 					WireLib.TriggerOutput(self, "Flight Time", Sim.FlightTime)
+
+					if Sim.IsOneShot then
+						self:HaltSimulation("Super elevation calculated!")
+
+						return false
+					end
+
+					WireLib.TriggerOutput(self, "Angle", Sim.StartAngle)
 
 					if self.ComputerInfo.Constant and tobool(self.Inputs["Calculate"].Value) and IsValid(self.Gun) then
 						local Gun = self.Gun
@@ -312,11 +330,11 @@ do	-- Metamethods and other important stuff
 
 						Sim.StartPos				= Gun:LocalToWorld(Gun.Muzzle)
 
-						Sim.Error = Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
+						Sim.Error					= Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
 
-						local LocalPosition = (Sim.TargetPos - Sim.StartPos) + Sim.Error
+						local LocalPosition			= (Sim.TargetPos - Sim.StartPos) + Sim.Error
 
-						local AngleToTarget = LocalPosition:GetNormalized():Angle()
+						local AngleToTarget			= LocalPosition:GetNormalized():Angle()
 						AngleToTarget:Normalize()
 
 						local StartAngle			= Angle(AngleToTarget.p,AngleToTarget.y,0)
@@ -347,13 +365,13 @@ do	-- Metamethods and other important stuff
 						return false
 					end
 				else
-					Sim.AdjustedTargetPos = Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
+					Sim.AdjustedTargetPos		= Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
 
-					Sim.Error = Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
+					Sim.Error					= Sim.Error + (Sim.AdjustedTargetPos - (Sim.StartPos + Sim.Pos))
 
-					local LocalPosition = (Sim.TargetPos - Sim.StartPos) + Sim.Error
+					local LocalPosition			= (Sim.TargetPos - Sim.StartPos) + Sim.Error
 
-					local AngleToTarget = LocalPosition:GetNormalized():Angle()
+					local AngleToTarget			= LocalPosition:GetNormalized():Angle()
 					AngleToTarget:Normalize()
 
 					local StartAngle			= Angle(AngleToTarget.p,AngleToTarget.y,0)
@@ -371,7 +389,7 @@ do	-- Metamethods and other important stuff
 					self.SimData.LastMaxTime	= self.SimData.LastMaxTime * 0.9
 					self.SimData.EndTime		= math.max(self.SimData.EndTime,Clock.CurTime + self.SimData.LastMaxTime)
 
-					self.Thinking = true
+					self.Thinking				= true
 
 					self.Status = "Adjusting..."
 					self:UpdateOverlay()

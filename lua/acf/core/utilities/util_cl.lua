@@ -462,6 +462,7 @@ end
 
 do -- Default turret menus
 	local Turrets	= ACF.Classes.Turrets
+	local TurretMassText	= "Drive Mass : %s kg, %s kg max capacity"
 	local MassText	= "Mass : %s kg"
 
 	do	-- Turret ring
@@ -483,6 +484,7 @@ do -- Default turret menus
 				TurretClass	= Data.ID,
 				Teeth		= TurretClass.GetTeethCount(Data,Data.Size.Base),
 				TotalMass	= 0,
+				MaxMass		= 0,
 				RingSize	= Data.Size.Base,
 				RingHeight	= TurretClass.GetRingHeight({Type = "Turret-H",Ratio = Data.Size.Ratio},Data.Size.Base),
 				LocalCoM	= Vector(),
@@ -491,13 +493,16 @@ do -- Default turret menus
 
 			local RingSize	= Menu:AddSlider("Ring Diameter", Data.Size.Min, Data.Size.Max, 2)
 
+			local MaxSpeed	= Menu:AddSlider("Max Speed (deg/s)", 0, 120, 2)
+
+			Menu:AddLabel("If the Max Speed slider is lower than the calculated max speed of the turret, this will be the new limit. If 0, it will default to the actual max speed.")
+
 			local RingStats	= Menu:AddLabel(TurretText:format(0,0))
-			local MassLbl	= Menu:AddLabel(MassText:format(0))
+			local MassLbl	= Menu:AddLabel(MassText:format(0,0))
 
-			Menu:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.\nUnchecking this will disable the limits as well.")
-
-			local ArcToggle	= Menu:AddCheckBox("Use Arc Settings")
 			local ArcSettings	= Menu:AddCollapsible("Arc Settings")
+
+			ArcSettings:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.")
 
 			local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 0, 1)
 			local MaxDeg	= ArcSettings:AddSlider("Maximum Degrees", 0, 180, 1)
@@ -563,7 +568,6 @@ do -- Default turret menus
 				return N
 			end)
 			MinDeg:SetValue(-180)
-			MinDeg:SetEnabled(false)
 
 			MaxDeg:SetClientData("MaxDeg", "OnValueChanged")
 			MaxDeg:DefineSetter(function(Panel, _, _, Value)
@@ -574,22 +578,19 @@ do -- Default turret menus
 				return N
 			end)
 			MaxDeg:SetValue(180)
-			MaxDeg:SetEnabled(false)
 
-			ACF.SetClientData("MinDeg", -180)
-			ACF.SetClientData("MaxDeg", 180)
+			if Data.ID == "Turret-V" then
+				MinDeg:SetMin(-85)
+				MaxDeg:SetMax(85)
 
-			ArcToggle.OnChange = function(_, Value)
-				MinDeg:SetEnabled(Value)
-				MaxDeg:SetEnabled(Value)
+				MinDeg:SetValue(-85)
+				MaxDeg:SetValue(85)
 
-				if Value == true then
-					ACF.SetClientData("MinDeg", MinDeg:GetValue())
-					ACF.SetClientData("MaxDeg", MaxDeg:GetValue())
-				else
-					ACF.SetClientData("MinDeg", -180)
-					ACF.SetClientData("MaxDeg", 180)
-				end
+				ACF.SetClientData("MinDeg", -85)
+				ACF.SetClientData("MaxDeg", 85)
+			else
+				ACF.SetClientData("MinDeg", -180)
+				ACF.SetClientData("MaxDeg", 180)
 			end
 
 			local EstMass	= Menu:AddSlider("Est. Mass (kg)", 0, 100000, 0)
@@ -622,7 +623,8 @@ do -- Default turret menus
 					Teeth		= TurretData.Teeth,
 					Tilt		= 1,
 					TurretClass	= TurretData.TurretClass,
-					TotalMass	= 0
+					TotalMass	= 0,
+					MaxMass		= TurretData.MaxMass,
 				}
 
 				local Points	= {}
@@ -650,15 +652,27 @@ do -- Default turret menus
 
 				local Teeth = TurretClass.GetTeethCount(Data,N)
 				RingStats:SetText(TurretText:format(Teeth))
-				MassLbl:SetText(MassText:format(TurretClass.GetMass(Data,N)))
+				local MaxMass = TurretClass.GetMaxMass(Data,N)
+				MassLbl:SetText(TurretMassText:format(TurretClass.GetMass(Data,N), MaxMass))
 
 				TurretData.Teeth		= Teeth
 				TurretData.RingSize		= N
 				TurretData.RingHeight	= TurretClass.GetRingHeight({Type = Data.ID,Ratio = Data.Size.Ratio},N)
+				TurretData.MaxMass		= MaxMass
 
 				EstDist:SetMinMax(0,math.max(N * 2,24))
+				MaxSpeed:SetValue(0)
 
 				HandCrankLbl:UpdateSim()
+
+				return N
+			end)
+
+			MaxSpeed:SetClientData("MaxSpeed", "OnValueChanged")
+			MaxSpeed:DefineSetter(function(Panel, _, _, Value)
+				local N = Value
+
+				Panel:SetValue(N)
 
 				return N
 			end)
@@ -678,6 +692,7 @@ do -- Default turret menus
 			RingSize:SetValue(Data.Size.Base)
 			EstMass:SetValue(0)
 			EstDist:SetValue(0)
+			MaxSpeed:SetValue(0)
 
 			TurretData.Ready	= true
 			HandCrankLbl:UpdateSim()
@@ -716,7 +731,7 @@ do -- Default turret menus
 			Menu:AddLabel("Determines the number of teeth of the gear on the motor.")
 			local TeethAmt	= Menu:AddSlider("Gear Teeth (" .. Data.Teeth.Min .. "-" .. Data.Teeth.Max .. ")", Data.Teeth.Min, Data.Teeth.Max, 0)
 
-			local MassLbl	= Menu:AddLabel(MassText:format(0))
+			local MassLbl	= Menu:AddLabel(TurretMassText:format(0,0))
 			local TorqLbl	= Menu:AddLabel(TorqText:format(0))
 
 			-- Simulation
@@ -731,6 +746,8 @@ do -- Default turret menus
 			local EstMass = TurretSim:AddSlider("Est. Mass (kg)", 0, 100000, 1)
 
 			local EstDist = TurretSim:AddSlider("Mass Center Dist.", 0, 2, 2)
+
+			local MaxMassLbl	= TurretSim:AddLabel("Max mass: 0kg")
 
 			local Graph		= Menu:AddGraph()
 			local GraphSize	= Menu:GetParent():GetParent():GetWide()
@@ -751,7 +768,8 @@ do -- Default turret menus
 					Teeth		= TurretData.TurretTeeth,
 					Tilt		= 1,
 					TurretClass	= TurretData.Type,
-					TotalMass	= 0
+					TotalMass	= 0,
+					MaxMass		= TurretData.MaxMass,
 				}
 
 				local SimMotorData = {
@@ -786,7 +804,7 @@ do -- Default turret menus
 			HandcrankInfo.UpdateSim = function(Panel)
 				if TurretData.Ready == false then return end
 
-				local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
+				local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, MaxMass = TurretData.MaxMass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
 				TurretClass.HandGear)
 
 				Panel:SetText(HandcrankText:format(math.Round(Info.MaxSlewRate, 2), math.Round(Info.SlewAccel, 4)))
@@ -799,7 +817,7 @@ do -- Default turret menus
 			MotorInfo.UpdateSim = function(Panel)
 				if TurretData.Ready == false then return end
 
-				local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
+				local Info = TurretClass.CalcSpeed({Tilt = 1, TotalMass = TurretData.Mass, MaxMass = TurretData.MaxMass, RingSize = TurretData.Size, Teeth = TurretData.TurretTeeth, TurretClass = TurretData.Type, LocalCoM = Vector(TurretData.Distance,0,TurretData.Distance), RingHeight = TurretData.RingHeight},
 				{Teeth = TurretData.MotorTeeth, Speed = Data.Speed, Torque = TurretData.Torque, Efficiency = Data.Efficiency, Accel	= Data.Accel})
 
 				Panel:SetText(MotorText:format(math.Round(Info.MaxSlewRate, 2), math.Round(Info.SlewAccel, 4)))
@@ -846,8 +864,10 @@ do -- Default turret menus
 				TurretData.Size			= Value
 				TurretData.RingHeight	= TurretClass.GetRingHeight({Type = TurretData.Turret, Ratio = TurretData.Turret.Size.Ratio},Value)
 				TurretData.TurretTeeth	= TurretClass.GetTeethCount(TurretData.Turret,Value)
+				TurretData.MaxMass		= TurretClass.GetMaxMass(TurretData.Turret,Value)
 
 				EstDist:SetMinMax(0,math.max(Value * 2,24))
+				MaxMassLbl:SetText("Max mass: " .. math.Round(TurretData.MaxMass,1) .. "kg")
 
 				MotorInfo:UpdateSim()
 				HandcrankInfo:UpdateSim()

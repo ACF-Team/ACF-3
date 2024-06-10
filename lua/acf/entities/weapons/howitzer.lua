@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("HW", {
 	Name        = "Howitzer",
-	Description = "Analog of cannons, except it's intended to fire explosive and chemical rounds where its bigger round size a exceels at.",
+	Description = "Analog of cannons, except it's intended to fire explosive and chemical rounds where the bigger round size excels.",
 	Sound       = "acf_base/weapons/howitzer_new2.mp3",
 	Model       = "models/howitzer/howitzer_105mm.mdl",
 	MuzzleFlash = "howie_muzzleflash_noscale",

@@ -2498,6 +2498,22 @@ if SERVER then
 		return math.Round(-This.CurrentAngle,4)
 	end
 
+	--- Returns the turret's rotator
+	-- @server
+	-- @return Entity The turret's rotator
+	function ents_methods:acfGetTurretRotator()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return IsValid(This.Rotator) and This.Rotator or nil
+	end
+
 	--- Returns the gyroscope linked to the turret
 	-- @server
 	-- @return Entity? The gyroscope linked to the turret, if available, nil if not

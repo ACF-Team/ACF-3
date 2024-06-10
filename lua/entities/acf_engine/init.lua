@@ -46,6 +46,7 @@ do
 
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In)
@@ -80,6 +81,8 @@ do
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
+		Engine:InvalidateClientInfo()
+
 		return true, "Engine linked successfully!"
 	end)
 
@@ -97,6 +100,8 @@ do
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
+
+		Engine:InvalidateClientInfo()
 
 		return true, "Engine unlinked successfully!"
 	end)
@@ -900,4 +905,46 @@ function ENT:OnRemove()
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
+end
+
+do	-- NET SURFER 2.0
+	util.AddNetworkString("ACF_RequestEngineInfo")
+	util.AddNetworkString("ACF_InvalidateEngineInfo")
+
+	function ENT:InvalidateClientInfo()
+		net.Start("ACF_InvalidateEngineInfo")
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
+
+	net.Receive("ACF_RequestEngineInfo",function(_,Ply)
+		local Entity = net.ReadEntity()
+
+		if IsValid(Entity) then
+			local Outputs = {}
+			local FuelTanks = {}
+			local Data = {
+				Driveshaft	= Entity.Out
+			}
+
+			if next(Entity.Gearboxes) then
+				for E in pairs(Entity.Gearboxes) do
+					Outputs[#Outputs + 1] = E:EntIndex()
+				end
+			end
+
+			if next(Entity.FuelTanks) then
+				for E in pairs(Entity.FuelTanks) do
+					FuelTanks[#FuelTanks + 1] = E:EntIndex()
+				end
+			end
+
+			net.Start("ACF_RequestEngineInfo")
+				net.WriteEntity(Entity)
+				net.WriteString(util.TableToJSON(Data))
+				net.WriteString(util.TableToJSON(Outputs))
+				net.WriteString(util.TableToJSON(FuelTanks))
+			net.Send(Ply)
+		end
+	end)
 end
