@@ -7,6 +7,7 @@ if CLIENT then
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
+	-- Name and descriptions if need to be changed
 	language.Add("Tool.acf_menu.name", "Armored Combat Framework")
 	language.Add("Tool.acf_menu.desc", "Main menu tool for the ACF addon")
 

@@ -2,10 +2,74 @@ local ACF = ACF
 
 ACF.Tools = ACF.Tools or {}
 
+-- DISCLAIMER
+-- Usually you have a few operations, and each operation has its own set of stages.
+-- For whatever reason, the reverse is done here. So each stage has its own set of operations.
+
+--- Special datatype annotations -----------------------------------------------------------
+
+--- This represents the actual tool class gmod uses, with the propperties we add
+--- @class Tool
+--- @field Mode string The Mode of the tool (kind of like the name) (e.g. "acf_menu"/"acf_copy")
+--- @field Stage number The current stage index of the tool
+--- @field Operation number The current operation index of the tool
+--- @field StageData Stage The data for the current stage TODO:
+--- @field OpData Operation The data for the current operation TODO:
+
+--- Represents an entry in the tool information display for a given operation in a given stage of a given tool  
+--- (see https://wiki.facepunch.com/gmod/Tool_Information_Display)  
+--- name text, icon1 and icon2 are the only things that actually end up displayed in the tool binds display
+--- PLEASE read the wiki page on name (the way it interacts with the icons is not intuitive)
+--- @class ToolInfo
+--- @field name string A unique? name for the entry (READ THE WIKI TO SEE HOW IT WORKS) (e.g. "left"/"right_shift")
+--- @field text string The description to display (e.g. "Left click to select.")
+--- @field icon string A path to the first icon (e.g. "gui/lmb.png")
+--- @field icon2 string A second icon path, for key combination icons (e.g. "gui/info.png")
+--- @field stage number The index of the stage in the tool
+--- @field op number The index of the operation in the stage above
+
+--- A table representing a tool.
+--- @class ToolData
+--- @field Stages table<string, Stage> A table to hold stages by name
+--- @field Indexed table<number, Stage> A table to hold indexed stages
+--- @field Information table<number, ToolInfo> A table holding information entries for the tool TODO: Figure out this
+--- @field InfoLookup table<string, ToolInfo> A lookup table for information entries by name
+--- @field InfoCount number A counter to keep track of the number of information entries
+--- @field Count number A counter to keep track of the number of stages
+
+--- Represents a stage within a tool.
+--- @class Stage
+--- @field Name string The name of the stage
+--- @field Index number The index of the stage within the tool
+--- @field Ops table<string, Operation> A table to hold operations by name
+--- @field Indexed table<number, Operation> A table to hold indexed operations
+--- @field Count number A counter to keep track of the number of operations
+
+
+--- Represents an operation within a stage of a tool.
+--- @class Operation
+--- @field Name string The name of the operation.
+--- @field Index number The index of the operation within the stage.
+--- @field OnLeftClick function A function to handle the left click action.
+--- @field OnRightClick function A function to handle the right click action.
+--- @field OnReload function A function to handle the reload action.
+--- @field OnDeploy function A function to handle the deploy action.
+--- @field OnHolster function A function to handle the holster action.
+--- @field OnThink function A function to handle the think action.
+
+--------------------------------------------------------------------------------------------
+
+--- A table to manage the data and behavior of tools.
+--- @type table<string, ToolData>
 local Tools = ACF.Tools
 
+--- Retrieves or initializes the data structure for a given tool.
+--- Ensures that the tool has a consistent data structure and registers default operations and information.
+--- @param Tool string The name of the tool. (e.g. "acf_copy"/"acf_menu")
+--- @return ToolData # The data structure for the specified tool.
 local function GetToolData(Tool)
 	if not Tools[Tool] then
+		-- Partial initialization?
 		Tools[Tool] = {
 			Indexed = {},
 			Stages = {},
@@ -22,7 +86,12 @@ local function GetToolData(Tool)
 	return Tools[Tool]
 end
 
+
 do -- Tool Stage/Operation Registration function
+	--- Registers a stage for a tool.
+	--- @param Data ToolData The data structure for the tool.
+	--- @param Name string The name of the stage.
+	--- @return Stage Stage The stage data structure.
 	local function RegisterStage(Data, Name)
 		local Stage = Data.Stages[Name]
 
@@ -30,22 +99,29 @@ do -- Tool Stage/Operation Registration function
 			local Count = Data.Count
 
 			Stage = {
-				Ops = {},
-				Count = 0,
-				Name = Name,
-				Indexed = {},
-				Index = Count,
+				Ops = {}, -- Stores operations
+				Count = 0, -- Stores count of operations
+				Name = Name, -- Name of stage
+				Indexed = {}, -- Array version of Ops
+				Index = Count, -- Current index of this stage within the tool
 			}
 
+			-- Index new stage in the tool data
 			Data.Stages[Name] = Stage
 			Data.Indexed[Count] = Stage
 
-			Data.Count = Count + 1
+			Data.Count = Count + 1 -- Track # of stages
 		end
 
 		return Stage
 	end
 
+	--- Registers and returns (if successful), an operation for a tool within a specific stage.
+	--- @param Tool string The name of the tool.
+	--- @param StageName string The name of the stage.
+	--- @param OpName string The name of the operation.
+	--- @param ToolFuncs table<string, function> A table of functions representing the operation.
+	--- @return Operation | nil Operation The registered operation
 	function ACF.RegisterOperation(Tool, StageName, OpName, ToolFuncs)
 		if not Tool then return end
 		if not OpName then return end
@@ -77,9 +153,13 @@ do -- Tool Stage/Operation Registration function
 end
 
 do -- Tool Information Registration function
+	--- Retrieves the information table for a tool, initializing it if necessary.
+	--- @param Tool string The name of the tool.
+	--- @return table Information The information table for the specified tool.
 	local function GetInformation(Tool)
 		local Data = Tools[Tool]
 
+		-- If the tool information doesn't exist, initialize it (Partial initialization?)
 		if not Data.Information then
 			Data.Information = {}
 			Data.InfoLookup = {}
@@ -89,10 +169,16 @@ do -- Tool Information Registration function
 		return Data.Information
 	end
 
-	-- This function will add entries to the tool's Information table
-	-- For more reference about the values you can give it see:
-	-- https://wiki.facepunch.com/gmod/Tool_Information_Display
-	-- Note: name, stage and op will be assigned automatically
+	--- This function will add entries to the tool's Information table  
+	--- This function is only intended to work on the client  
+	--- For more reference about the values you can give it see:  
+	--- https://wiki.facepunch.com/gmod/Tool_Information_Display  
+	--- Note: name, stage and op will be assigned automatically for the returned ToolInfo
+	--- @param Tool string # The name of the tool 
+	--- @param Stage string # The name of the stage
+	--- @param Op string # The name of the operation
+	--- @param Info table # The information for the tool
+	--- @return ToolInfo | nil New # The updated/newly created tool info
 	function ACF.RegisterToolInfo(Tool, Stage, Op, Info)
 		if SERVER then return end
 		if not Tool then return end
@@ -105,17 +191,21 @@ do -- Tool Information Registration function
 		local Data = GetToolData(Tool)
 		local Stages = Data.Stages[Stage]
 
+		-- Do nothing if a stage wasn't already defined
 		if not Stages then return end
 
 		local Ops = Stages.Ops[Op]
 
+		-- Do nothing if the operation wasn't already defined for this stage
 		if not Ops then return end
 
+		-- Gather tool information
 		local StageIdx, OpIdx = Stages.Index, Ops.Index
 		local Name = Info.name .. "_" .. StageIdx .. "_" .. OpIdx
-		local ToolInfo = GetInformation(Tool)
-		local New = Data.InfoLookup[Name]
+		local ToolInfo = GetInformation(Tool) -- Equivalent to Data.Information (?) TODO: check this
+		local New = Data.InfoLookup[Name] -- Preexisting info entry
 
+		-- If an information entry didn't already exist for this stage and operation, make one.
 		if not New then
 			local Count = Data.InfoCount + 1
 
@@ -127,6 +217,7 @@ do -- Tool Information Registration function
 			ToolInfo[Count] = New
 		end
 
+		-- Update the information entry based on Info (This is done so we can partially update it multiple times)
 		for K, V in pairs(Info) do
 			New[K] = V
 		end
@@ -140,11 +231,15 @@ do -- Tool Information Registration function
 end
 
 do -- Tool Functions Loader
+	-- If you have `acf_tool_category 0` in console (default), the ACF tools go under the "Construction" tool category.
+	-- If you have `acf_tool_category 1` in console, the ACF tools go under a new "ACF" tool category
 	local Category = GetConVar("acf_tool_category")
 
 	if SERVER then
 		util.AddNetworkString("ACF_ToolNetVars")
 
+		-- If the player picks up a gmod tool, restore the mode of every tool (e.g. "acf_menu"/"acf_copy")
+		-- Why is this done???
 		hook.Add("PlayerCanPickupWeapon", "ACF Tools", function(Player, Weapon)
 			if Weapon:GetClass() ~= "gmod_tool" then return end
 
@@ -156,8 +251,10 @@ do -- Tool Functions Loader
 				end
 			end
 		end)
-	else
+	elseif CLIENT then
+		-- When the client receives tool net vars, update the 
 		net.Receive("ACF_ToolNetVars", function()
+			-- Check UpdateNetVar below for what these mean
 			local ToolName = net.ReadString()
 			local Name = net.ReadString()
 			local Value = net.ReadInt(8)
@@ -181,6 +278,12 @@ do -- Tool Functions Loader
 		end)
 	end
 
+	--- Sends any new tool net var updates over the network
+	--- Mainly used to convey operation or stage changes
+	--- Example values:
+	--- @param Tool Tool The tool instance, used to get the mode and owner
+	--- @param Name string The name of the net var (e.g. "Stage"/"Operation")
+	--- @param Value any The value of the net var (e.g. 0/1/2/3/...)
 	local function UpdateNetvar(Tool, Name, Value)
 		net.Start("ACF_ToolNetVars")
 			net.WriteString(Tool.Mode)
@@ -189,6 +292,8 @@ do -- Tool Functions Loader
 		net.Send(Tool:GetOwner())
 	end
 
+	--- Loads tool functions onto a tool. Used by the acf menu tool and acf copy tool
+	--- @param Tool Tool The tool to load functions onto
 	function ACF.LoadToolFunctions(Tool)
 		if not Tool then return end
 		if not Tools[Tool.Mode] then return end
@@ -197,23 +302,35 @@ do -- Tool Functions Loader
 		local Data = Tools[Mode]
 		Data.Tool = Tool
 
+		--- Sets the stage of the tool (also resets the operation to 0)  
+		--- Only available on client
+		--- @param self Tool The tool
+		--- @param Stage number The index of the stage (see ToolData.Indexed)
 		function Tool:SetStage(Stage)
 			if CLIENT then return end
 			if not Stage then return end
 			if not Data.Indexed[Stage] then return end
 
+			-- Set the tool's stage and stage data, then network to client
 			self.Stage = Stage
 			self.StageData = Data.Indexed[Stage]
 
 			UpdateNetvar(self, "Stage", Stage)
 
+			-- Resets the operation to 0 because we switched to a new stage
 			self:SetOperation(0)
 		end
 
+		--- Gets the current stage of the tool
+		--- @param self Tool
+		--- @return number
 		function Tool:GetStage()
 			return self.Stage
 		end
 
+		--- Sets the operation of the tool
+		--- @param self Tool
+		--- @param Op any
 		function Tool:SetOperation(Op)
 			if CLIENT then return end
 			if not Op then return end
@@ -221,6 +338,8 @@ do -- Tool Functions Loader
 
 			self.Operation = Op
 			self.OpData = self.StageData.Indexed[Op]
+			-- print(("OpData for stage [%s]"):format(self:GetStage()))
+			-- PrintTable(self.OpData)
 
 			UpdateNetvar(self, "Operation", Op)
 		end
@@ -242,6 +361,8 @@ do -- Tool Functions Loader
 				end
 			end
 
+			--- Handle tool binds and dont apply effect if you're aiming at the sky
+
 			function Tool:LeftClick(Trace)
 				return not Trace.HitSky
 			end
@@ -256,9 +377,11 @@ do -- Tool Functions Loader
 		else
 			-- Helper function, allows you to set both stage and op at the same time with their names
 			function Tool:SetMode(StageName, OpName)
+				-- Both must be specified strings
 				if not StageName then return end
 				if not OpName then return end
 
+				-- Look up the stage and operation by name if they exist. Then access their indices and set stage and operation.
 				local Stage = Data.Stages[StageName]
 
 				if not Stage then return end
@@ -267,20 +390,31 @@ do -- Tool Functions Loader
 
 				if not Op then return end
 
+				-- TODO: do we realy need to use indices? figure this out later lol...
 				self:SetStage(Stage.Index)
 				self:SetOperation(Op.Index)
 			end
 
+			--- Restores the tool's mode to its last known state.
+			--- This includes setting the appropriate stage and operation based on previously saved client data.
 			function Tool:RestoreMode()
+				--- The ToolMode variable is in the format "Stage:Op", where Stage and Op are the current stage and operation.
+				--- self.Mode is the current acf tool itself (e.g. "acf_menu"/"acf_copy")
 				local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
 
 				if ToolMode then
+					-- Explode the ToolMode string to get stage and operation as an array, then unpack as a vararg
 					local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
 
 					self:SetMode(Stage, Op)
 				end
 			end
 
+			--- The rest of these bind into tool hooks (https://wiki.facepunch.com/gmod/TOOL_Hooks)
+
+			--- Handles left clicks and calls the "OnLeftClick" method for the current operation if defined.
+			--- @param Trace any The eye trace to pass to the callback
+			--- @return boolean # Used to block tool from being used when no valid operation exists.
 			function Tool:LeftClick(Trace)
 				if self.OpData then
 					local OnLeftClick = self.OpData.OnLeftClick
@@ -293,6 +427,7 @@ do -- Tool Functions Loader
 				return false
 			end
 
+			--- Handles right clicks and calls the "OnRightClick" method for the current operation if defined.
 			function Tool:RightClick(Trace)
 				if self.OpData then
 					local OnRightClick = self.OpData.OnRightClick
@@ -305,6 +440,7 @@ do -- Tool Functions Loader
 				return false
 			end
 
+			--- Handles reloads (usually "r" key) and calls the "OnReload" method for the current operation if defined.
 			function Tool:Reload(Trace)
 				if self.OpData then
 					local OnReload = self.OpData.OnReload
@@ -317,6 +453,7 @@ do -- Tool Functions Loader
 				return false
 			end
 
+			--- Handles deploys (when you switch to the acf tool or start using it) and calls the "OnDeploy" method if defined.
 			function Tool:Deploy()
 				self:RestoreMode()
 
@@ -329,6 +466,7 @@ do -- Tool Functions Loader
 				end
 			end
 
+			--- Handles deploys (when you switch to another tool and holster the acf tool) and calls the "OnDeploy" method if defined.
 			function Tool:Holster()
 				if self.OpData then
 					local OnHolster = self.OpData.OnHolster
@@ -339,6 +477,7 @@ do -- Tool Functions Loader
 				end
 			end
 
+			--- Handles thinks (happen repeatedly while the tool is equipped) and calls the "OnThink" method if defined.
 			function Tool:Think()
 				if self.OpData then
 					local OnThink = self.OpData.OnThink
@@ -354,9 +493,10 @@ end
 
 do -- Clientside Tool interaction
 	if SERVER then
+		-- When the client specifies a new tool mode, switch to the new stage and operation.
 		hook.Add("ACF_OnClientDataUpdate", "ACF ToolMode", function(Player, Key, Value)
+			--- Check if the key is of the form (e.g. "ToolMode:acf_menu"/"ToolMode:acf_copy")
 			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
-
 			if Header ~= "ToolMode" then return end
 
 			local Tool = Player:GetTool(Name)
@@ -364,15 +504,17 @@ do -- Clientside Tool interaction
 			if not Tool then return end
 			if not Tool.SetMode then return end
 
+			--- Set the stage and operation (if you're curious, check Tool:RestoreMode above.)
 			local Stage, Op = unpack(string.Explode(":", Value), 1, 2)
 
 			Tool:SetMode(Stage, Op)
 		end)
-	else
-		local Key = "ToolMode:%s"
-		local Value = "%s:%s"
+	elseif CLIENT then
+		-- Format of tool data for use with SetClientData
+		local Key = "ToolMode:%s" -- (e.g. "ToolMode:acf_menu")
+		local Value = "%s:%s" -- (e.g. "Spawner":"Weapon")
 
-		--- Sets and networks to the server, the current state of a tool, its stage and its operation. 
+		--- Used by the client to network the current state of a tool, its stage and its operation. 
 		--- @param Tool string The name of the tool (e.g. "acf_menu"/"acf_copy")
 		--- @param Stage string The stage of the tool (e.g. "Spawner"/"Main")
 		--- @param Op string The operation of the tool (e.g. "Weapon"/"Sensor"/etc.)
