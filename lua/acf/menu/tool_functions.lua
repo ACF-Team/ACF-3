@@ -30,7 +30,8 @@ ACF.Tools = ACF.Tools or {}
 --- @field stage number The index of the stage in the tool
 --- @field op number The index of the operation in the stage above
 
---- A table representing the data a tool can have.
+--- A table representing the data a tool can have.  
+--- Initialized in GetToolData
 --- @class ToolData
 --- @field Stages table<string, Stage> A table to hold stages by name
 --- @field Indexed table<number, Stage> Array counterpart to the Stages field
@@ -64,17 +65,20 @@ ACF.Tools = ACF.Tools or {}
 --- @type table<string, ToolData>
 local Tools = ACF.Tools
 
---- Retrieves or initializes the data structure for a given tool.
---- Ensures that the tool has a consistent data structure and registers default operations and information.
+--- Retrieves the tool data for a given tool.  
+--- If the tool data doesn't already exist, it will initialize it.
+--- USE THIS TO INITIALIZE YOUR TOOL DATA.
 --- @param Tool string The name of the tool. (e.g. "acf_copy"/"acf_menu")
 --- @return ToolData # The data structure for the specified tool.
 local function GetToolData(Tool)
 	if not Tools[Tool] then
-		-- Partial initialization?
 		Tools[Tool] = {
 			Indexed = {},
 			Stages = {},
 			Count = 0,
+			InfoLookup = {},
+			Information = {},
+			InfoCount = 0,
 		}
 
 		ACF.RegisterOperation(Tool, "Main", "Idle", {})
@@ -86,7 +90,6 @@ local function GetToolData(Tool)
 
 	return Tools[Tool]
 end
-
 
 do -- Tool Stage/Operation Registration function
 	--- Registers and returns a state for a tool.,If the state already existed, it uses that.
@@ -154,22 +157,6 @@ do -- Tool Stage/Operation Registration function
 end
 
 do -- Tool Information Registration function
-	--- Retrieves the information table for a tool, initializing it if necessary.
-	--- @param Tool string The name of the tool.
-	--- @return table Information The information table for the specified tool.
-	local function GetInformation(Tool)
-		local Data = Tools[Tool]
-
-		-- If the tool information doesn't exist, initialize it (Partial initialization?)
-		if not Data.Information then
-			Data.Information = {}
-			Data.InfoLookup = {}
-			Data.InfoCount = 0
-		end
-
-		return Data.Information
-	end
-
 	--- This function will add entries to the tool's Information table  
 	--- This function is only intended to work on the client  
 	--- For more reference about the values you can give it see:  
@@ -203,7 +190,6 @@ do -- Tool Information Registration function
 		-- Gather tool information
 		local StageIdx, OpIdx = Stages.Index, Ops.Index
 		local Name = Info.name .. "_" .. StageIdx .. "_" .. OpIdx -- (e.g. "info_0_1")
-		local ToolInfo = GetInformation(Tool) -- Equivalent to Data.Information (?) TODO: check this
 		local New = Data.InfoLookup[Name] -- Preexisting info entry
 
 		-- If an information entry didn't already exist for this stage and operation, make one.
@@ -214,8 +200,7 @@ do -- Tool Information Registration function
 
 			Data.InfoLookup[Name] = New
 			Data.InfoCount = Count
-
-			ToolInfo[Count] = New
+			Data.Information[Count] = New
 		end
 
 		-- Update the information entry based on Info (This is done so we can partially update it multiple times)
@@ -391,7 +376,6 @@ do -- Tool Functions Loader
 
 				if not Op then return end
 
-				-- TODO: do we realy need to use indices? figure this out later lol...
 				self:SetStage(Stage.Index)
 				self:SetOperation(Op.Index)
 			end
