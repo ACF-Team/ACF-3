@@ -8,13 +8,14 @@ ACF.Tools = ACF.Tools or {}
 
 --- Special datatype annotations -----------------------------------------------------------
 
---- This represents the actual tool class gmod uses, with the propperties we add
+--- This represents the actual tool class gmod uses, with some additional propperties we set
+--- Pretty much represents the current state of the tool (like the current stage and operation)
 --- @class Tool
 --- @field Mode string The Mode of the tool (kind of like the name) (e.g. "acf_menu"/"acf_copy")
 --- @field Stage number The current stage index of the tool
 --- @field Operation number The current operation index of the tool
---- @field StageData Stage The data for the current stage TODO:
---- @field OpData Operation The data for the current operation TODO:
+--- @field StageData Stage The data for the current stage
+--- @field OpData Operation The data for the current operation
 
 --- Represents an entry in the tool information display for a given operation in a given stage of a given tool  
 --- (see https://wiki.facepunch.com/gmod/Tool_Information_Display)  
@@ -23,19 +24,20 @@ ACF.Tools = ACF.Tools or {}
 --- @class ToolInfo
 --- @field name string A unique? name for the entry (READ THE WIKI TO SEE HOW IT WORKS) (e.g. "left"/"right_shift")
 --- @field text string The description to display (e.g. "Left click to select.")
---- @field icon string A path to the first icon (e.g. "gui/lmb.png")
---- @field icon2 string A second icon path, for key combination icons (e.g. "gui/info.png")
+--- @field icon string | nil A path to the first icon (e.g. "gui/lmb.png")
+--- @field icon2 string | nil A second icon path, for key combination icons (e.g. "gui/info.png")
+--- @field DrawToolScreen function | nil Replaces the tool's DrawToolScreen method (see https://wiki.facepunch.com/gmod/TOOL:DrawToolScreen)
 --- @field stage number The index of the stage in the tool
 --- @field op number The index of the operation in the stage above
 
---- A table representing a tool.
+--- A table representing the data a tool can have.
 --- @class ToolData
 --- @field Stages table<string, Stage> A table to hold stages by name
---- @field Indexed table<number, Stage> A table to hold indexed stages
---- @field Information table<number, ToolInfo> A table holding information entries for the tool TODO: Figure out this
---- @field InfoLookup table<string, ToolInfo> A lookup table for information entries by name
---- @field InfoCount number A counter to keep track of the number of information entries
---- @field Count number A counter to keep track of the number of stages
+--- @field Indexed table<number, Stage> Array counterpart to the Stages field
+--- @field Count number The number of stages
+--- @field InfoLookup table<string, ToolInfo> A lookup table for information entries by name (stage and operation)
+--- @field Information table<number, ToolInfo> Array counterpart to the InfoLookup field
+--- @field InfoCount number The number of information entries
 
 --- Represents a stage within a tool.
 --- @class Stage
@@ -44,7 +46,6 @@ ACF.Tools = ACF.Tools or {}
 --- @field Ops table<string, Operation> A table to hold operations by name
 --- @field Indexed table<number, Operation> A table to hold indexed operations
 --- @field Count number A counter to keep track of the number of operations
-
 
 --- Represents an operation within a stage of a tool.
 --- @class Operation
@@ -88,7 +89,7 @@ end
 
 
 do -- Tool Stage/Operation Registration function
-	--- Registers a stage for a tool.
+	--- Registers and returns a state for a tool.,If the state already existed, it uses that.
 	--- @param Data ToolData The data structure for the tool.
 	--- @param Name string The name of the stage.
 	--- @return Stage Stage The stage data structure.
@@ -201,7 +202,7 @@ do -- Tool Information Registration function
 
 		-- Gather tool information
 		local StageIdx, OpIdx = Stages.Index, Ops.Index
-		local Name = Info.name .. "_" .. StageIdx .. "_" .. OpIdx
+		local Name = Info.name .. "_" .. StageIdx .. "_" .. OpIdx -- (e.g. "info_0_1")
 		local ToolInfo = GetInformation(Tool) -- Equivalent to Data.Information (?) TODO: check this
 		local New = Data.InfoLookup[Name] -- Preexisting info entry
 
@@ -413,6 +414,7 @@ do -- Tool Functions Loader
 			--- The rest of these bind into tool hooks (https://wiki.facepunch.com/gmod/TOOL_Hooks)
 
 			--- Handles left clicks and calls the "OnLeftClick" method for the current operation if defined.
+			--- @param self Tool
 			--- @param Trace any The eye trace to pass to the callback
 			--- @return boolean # Used to block tool from being used when no valid operation exists.
 			function Tool:LeftClick(Trace)
