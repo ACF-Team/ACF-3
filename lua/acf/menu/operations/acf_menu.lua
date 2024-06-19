@@ -1,3 +1,4 @@
+-- Please see lua\acf\menu\tool_functions.lua for more information on how this ACF tool works
 local ACF = ACF
 
 do -- Generic Spawner/Linker operation creator
@@ -231,6 +232,7 @@ do -- Generic Spawner/Linker operation creator
 				OnRightClick = function(Tool, Trace)
 					local Entity = Trace.Entity
 
+					-- The call to SelectEntity will switch the mode to the linker
 					return SelectEntity(Entity, Name, Tool)
 				end,
 			})

@@ -33,6 +33,7 @@ ACF.Tools = ACF.Tools or {}
 --- A table representing the data a tool can have.  
 --- Initialized in GetToolData
 --- @class ToolData
+--- @field Tool Tool|nil The tool this tooldata belongs to
 --- @field Stages table<string, Stage> A table to hold stages by name
 --- @field Indexed table<number, Stage> Array counterpart to the Stages field
 --- @field Count number The number of stages
@@ -58,6 +59,7 @@ ACF.Tools = ACF.Tools or {}
 --- @field OnDeploy function A function to handle the deploy action.
 --- @field OnHolster function A function to handle the holster action.
 --- @field OnThink function A function to handle the think action.
+--- @field DrawToolScreen function | nil A function to handle what should be drawn on the tool's screen (see https://wiki.facepunch.com/gmod/TOOL:DrawToolScreen)
 
 --------------------------------------------------------------------------------------------
 
