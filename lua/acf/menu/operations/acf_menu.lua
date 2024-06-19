@@ -33,7 +33,7 @@ do -- Generic Spawner/Linker operation creator
 		if not SecondaryClass then return PrimaryClass end
 		if SecondaryClass == "N/A" then return PrimaryClass end
 
-		local OnKeybind = Player:KeyDown(IN_SPEED) or Player:KeyDown(IN_RELOAD)
+		local OnKeybind = Player:KeyDown(IN_SPEED)
 
 		return OnKeybind and SecondaryClass or PrimaryClass
 	end
@@ -218,7 +218,7 @@ do -- Generic Spawner/Linker operation creator
 	--- To actually define an entity's linking or spawn behaviour, use the entity files (e.g. init.lua)  
 	--- @param Name string The name of the link type performed by the toolgun (e.g. Weapon, Engine, etc.)
 	--- @param Primary string The type of the entity to be spawned on left click (purely aesthetical)
-	--- @param Secondary string The type of entity to be spawned on shift + right click (purely aesthetical)
+	--- @param Secondary string | nil The type of entity to be spawned on shift + right click (purely aesthetical)
 	function ACF.CreateMenuOperation(Name, Primary, Secondary)
 		if not isstring(Name) then return end
 		if not isstring(Primary) then return end
@@ -327,3 +327,10 @@ ACF.CreateMenuOperation("Engine", "engine", "fuel tank")
 ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
+
+-- Extra ammo logic
+ACF.RegisterOperation("acf_menu", "Spawner", "Weapon", {
+	OnLeftClick = function() 
+		print("ropey")
+	end
+})

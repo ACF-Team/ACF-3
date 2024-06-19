@@ -16,6 +16,7 @@ ACF.Tools = ACF.Tools or {}
 --- @field Operation number The current operation index of the tool
 --- @field StageData Stage The data for the current stage
 --- @field OpData Operation The data for the current operation
+--- @field Information table<number, ToolInfo>
 
 --- Represents an entry in the tool information display for a given operation in a given stage of a given tool  
 --- (see https://wiki.facepunch.com/gmod/Tool_Information_Display)  
