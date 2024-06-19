@@ -327,10 +327,3 @@ ACF.CreateMenuOperation("Engine", "engine", "fuel tank")
 ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
-
--- Extra ammo logic
-ACF.RegisterOperation("acf_menu", "Spawner", "Weapon", {
-	OnLeftClick = function() 
-		print("ropey")
-	end
-})
