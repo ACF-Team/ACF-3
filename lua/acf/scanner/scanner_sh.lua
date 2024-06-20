@@ -1151,12 +1151,16 @@ if CLIENT then
         if not IsValid(ent) then return end
         local mi, ma
         if not IsValid(ent:GetPhysicsObject()) then
-            mi = ent2bp[ent][1]
-            ma = ent2bp[ent][2]
-            if mi == nil or ma == nil then return end
+            if ent2bp[ent] then
+                mi = ent2bp[ent][1]
+                ma = ent2bp[ent][2]
+            end
         else
             mi, ma = ent:GetPhysicsObject():GetAABB()
         end
+
+        if mi == nil or ma == nil then return end
+
         render.SetColorMaterial()
         render.DepthRange(0, 0.01)
             render.DrawBox(ent:GetPos(), ent:GetAngles(), mi, ma, scanDef.colorBoundsInside)
