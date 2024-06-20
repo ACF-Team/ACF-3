@@ -327,8 +327,6 @@ do -- Tool Functions Loader
 
 			self.Operation = Op
 			self.OpData = self.StageData.Indexed[Op]
-			-- print(("OpData for stage [%s]"):format(self:GetStage()))
-			-- PrintTable(self.OpData)
 
 			UpdateNetvar(self, "Operation", Op)
 		end
