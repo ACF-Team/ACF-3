@@ -190,9 +190,6 @@ end)
 local IsValid = IsValid
 
 if SERVER then
-    -- This is to fix my testing server not updating, for whatever damn reason
-    -- It may also help with servers that haven't updated since this is just the same code from the Garry's Mod repo
-    -- I wish mandatory server updates were more frequent...
     local ents_Iterator = ents.Iterator
 
     util.AddNetworkString("ACF_Scanning_NetworkPacket")
