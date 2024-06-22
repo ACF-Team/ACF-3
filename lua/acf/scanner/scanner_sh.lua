@@ -193,23 +193,7 @@ if SERVER then
     -- This is to fix my testing server not updating, for whatever damn reason
     -- It may also help with servers that haven't updated since this is just the same code from the Garry's Mod repo
     -- I wish mandatory server updates were more frequent...
-    local ents_Iterator
-    if not ents.Iterator then
-        local inext = ipairs({})
-        local EntityCache = nil
-
-        function ents.Iterator()
-            if ( EntityCache == nil ) then EntityCache = ents.GetAll() end
-            return inext, EntityCache, 0
-        end
-        local function InvalidateEntityCache(_)
-            EntityCache = nil
-        end
-
-        hook.Add( "OnEntityCreated", "ents.Iterator", InvalidateEntityCache )
-        hook.Add( "EntityRemoved", "ents.Iterator", InvalidateEntityCache )
-    end
-    ents_Iterator = ents.Iterator
+    local ents_Iterator = ents.Iterator
 
     util.AddNetworkString("ACF_Scanning_NetworkPacket")
     util.AddNetworkString("ACF_Scanning_PlayerListChanged")
@@ -990,7 +974,7 @@ if CLIENT then
         posOffset = posOffset + (
             (ang:Forward() * xMove) +
             (ang:Right() * -yMove) +
-            Vector(0, 0, 1) * zMove
+            vector_up * zMove
         )
 
         pos = scanningPlayer:GetPos() + posOffset
@@ -1122,6 +1106,9 @@ if CLIENT then
         m:SetAngles(ent:GetAngles())
         cam.PushModelMatrix(m)
 
+        -- This renders the physical mesh as a solid mass using stencils. 
+        -- The stencil operations are so it can render the physmesh with color as other methods didnt work for me.
+        -- Basically just draws the model to a stencil mask and that model renders with the color given to this method
         render.SetStencilWriteMask(0xFF)
         render.SetStencilTestMask(0xFF)
         render.SetStencilReferenceValue(0)
@@ -1196,6 +1183,8 @@ if CLIENT then
         return tr
     end
 
+    local baseplateColorVC = Color(50, 255, 50, 70)
+    local baseplateConnectionColor = Color(215, 255, 215)
     local function VisualizeClips(ent)
         if not IsValid(ent) then return end
         local clips = getClips(ent)
@@ -1216,37 +1205,36 @@ if CLIENT then
                     angles,
                     Vector(-0.02, -clipR, -clipR),
                     Vector(0.02, clipR, clipR),
-                    Color(50, 255, 50, 70)
+                    baseplateColorVC
                     )
 
-                local c1 = LocalToWorld(Vector(0, -clipR, -clipR), Angle(0, 0, 0), origin, angles)
-                local c2 = LocalToWorld(Vector(0, -clipR, clipR), Angle(0, 0, 0), origin, angles)
-                local c3 = LocalToWorld(Vector(0, clipR, clipR), Angle(0, 0, 0), origin, angles)
-                local c4 = LocalToWorld(Vector(0, clipR, -clipR), Angle(0, 0, 0), origin, angles)
-                local c5 = LocalToWorld(Vector(24, -clipR / 4, 0), Angle(0, 0, 0), origin, angles)
-                local c6 = LocalToWorld(Vector(24, clipR / 4, 0), Angle(0, 0, 0), origin, angles)
+                local c1 = LocalToWorld(Vector(0, -clipR, -clipR), angle_zero, origin, angles)
+                local c2 = LocalToWorld(Vector(0, -clipR, clipR),  angle_zero, origin, angles)
+                local c3 = LocalToWorld(Vector(0, clipR, clipR),   angle_zero, origin, angles)
+                local c4 = LocalToWorld(Vector(0, clipR, -clipR),  angle_zero, origin, angles)
+                local c5 = LocalToWorld(Vector(24, -clipR / 4, 0), angle_zero, origin, angles)
+                local c6 = LocalToWorld(Vector(24, clipR / 4, 0),  angle_zero, origin, angles)
 
                 render.SetColorMaterial()
                 local function drawOutlineBeam(startP, endP, width, color)
-                    render.DrawBeam(startP, endP, width + 0.5, 0, 1, Color(0, 0, 0, 255))
+                    render.DrawBeam(startP, endP, width + 0.5, 0, 1, color_black)
                     render.DrawBeam(startP, endP, width, 0, 1, color)
                 end
                 if isLocalEntValid then
                     local p = localEnt:GetPos()
-                    local c = Color(215, 255, 215)
-                    drawOutlineBeam(c1, p, 0.5, c)
-                    drawOutlineBeam(c2, p, 0.5, c)
-                    drawOutlineBeam(c3, p, 0.5, c)
-                    drawOutlineBeam(c4, p, 0.5, c)
+                    drawOutlineBeam(c1, p, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c2, p, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c3, p, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c4, p, 0.5, baseplateConnectionColor)
 
-                    drawOutlineBeam(c1, c2, 0.5, c)
-                    drawOutlineBeam(c2, c3, 0.5, c)
-                    drawOutlineBeam(c3, c4, 0.5, c)
-                    drawOutlineBeam(c4, c1, 0.5, c)
+                    drawOutlineBeam(c1, c2, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c2, c3, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c3, c4, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(c4, c1, 0.5, baseplateConnectionColor)
 
-                    drawOutlineBeam(origin, origin + (normal * 32), 0.5, c)
-                    drawOutlineBeam(origin + (normal * 32), c5, 0.5, c)
-                    drawOutlineBeam(origin + (normal * 32), c6, 0.5, c)
+                    drawOutlineBeam(origin, origin + (normal * 32), 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(origin + (normal * 32), c5, 0.5, baseplateConnectionColor)
+                    drawOutlineBeam(origin + (normal * 32), c6, 0.5, baseplateConnectionColor)
                 end
                 render.DepthRange(0, 1)
             end
