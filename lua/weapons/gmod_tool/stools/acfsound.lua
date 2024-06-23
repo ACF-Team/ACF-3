@@ -130,8 +130,8 @@ local function ReplaceSound(_, Entity, Data)
 
 	Support.SetSound(Entity, {
 		Sound  = Sound,
-		Pitch  = Pitch or 1,
-		Volume = Volume or 1,
+		Pitch  = ACF.CheckNumber(Pitch, 1),
+		Volume = ACF.CheckNumber(Volume, 1),
 	})
 
 	duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1, Volume or 1 })
@@ -165,8 +165,8 @@ function TOOL:LeftClick(trace)
 
 	if not IsReallyValid(trace, owner) then return false end
 	local sound = owner:GetInfo("wire_soundemitter_sound")
-	local pitch = owner:GetInfo("acfsound_pitch")
-	local volume = owner:GetInfo("acfsound_volume")
+	local pitch = owner:GetInfoNum("acfsound_pitch", 1)
+	local volume = owner:GetInfoNum("acfsound_volume", 1)
 
 	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
 
