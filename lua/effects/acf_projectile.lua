@@ -2,7 +2,7 @@ local util      = util
 local ACF       = ACF
 local Bullets   = ACF.BulletEffect
 local AmmoTypes = ACF.Classes.AmmoTypes
-local Trace     = { collisiongroup = COLLISION_GROUP_WORLD }
+
 
 local Actions = {
 	[0] = "Create",
@@ -12,10 +12,9 @@ local Actions = {
 }
 
 function EFFECT.HasLeftWorld(Position)
-	Trace.start  = Position
-	Trace.endpos = Position
+	local Contents = util.PointContents(Position)
 
-	return util.TraceLine(Trace).HitWorld
+	return bit.band(Contents, 1) == 1 -- CONTENTS_SOLID = 1
 end
 
 function EFFECT:Init(Data)
