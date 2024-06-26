@@ -126,7 +126,7 @@ do -- Spawn and Update functions --------------------------------
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
 		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
-		local Scale   = Weapon and 1 or Caliber / Class.Caliber.Base
+		local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)) -- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
 		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
