@@ -52,7 +52,7 @@ do	-- Spawn functions
 		Ent:Spawn()
 
 		Ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-		Ent:EnableCustomCollisions()
+		Ent:SetSolidFlags(FSOLID_CUSTOMRAYTEST)
 
 		local Ply		= Vehicle:GetDriver()
 		Ent.Driver		= Ply
@@ -99,11 +99,11 @@ do	-- Metamethods
 
 	function ENT:Think()
 		local SelfTbl = self:GetTable()
-		if not IsValid(SelfTbl.Seat) then self:Remove() end
-		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() end
+		if not IsValid(SelfTbl.Seat) then self:Remove() return end
+		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() return end
 
-		if self:GetParent() ~= SelfTbl.Seat then self:Remove() end
-		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then self:Remove() end
+		if self:GetParent() ~= SelfTbl.Seat then self:Remove() return end
+		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then self:Remove() return end
 
 		self:NextThink(CurTime() + 15)
 		return true
@@ -134,6 +134,8 @@ do	-- Metamethods
 	end
 
 	function ENT:OnRemove()
+		Ent:SetSolidFlags(FSOLID_NOT_SOLID)
+
 		if IsValid(self.Seat) and (self.Seat.AliasEnt == self) then
 			self.Seat.AliasEnt = nil
 		end
