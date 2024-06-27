@@ -225,6 +225,7 @@ if SERVER then
     function scanning.BeginScanning(playerScanning, targetPlayer)
         if not IsValid(playerScanning) then return end
         if not IsValid(targetPlayer) then scanning.EndScanning() return end
+        if hook.Run("ACF_PreBeginScanning", playerScanning) == false then return end
         if playerScanning:InVehicle() then return end
 
         scanningPlayers[playerScanning] = {
@@ -861,6 +862,10 @@ if CLIENT then
     function scanning.BeginScanning(target)
         if LocalPlayer():InVehicle() then
             Derma_Message("You cannot scan a target while being in a vehicle. Exit the vehicle, then try again.", "Scanning Blocked", "OK")
+        return end
+        local canScan, whyNot = hook.Run("ACF_PreBeginScanning", LocalPlayer())
+        if not canScan then
+            Derma_Message("Scanning has been blocked by the server: " .. (whyNot or "<no reason provided>"), "Scanning Blocked", "OK")
         return end
 
         NetStart("UpdatePlayer")
