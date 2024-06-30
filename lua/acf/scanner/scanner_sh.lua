@@ -346,10 +346,6 @@ if SERVER then
 
                             writeEntityPacket(selectedAncestor, mi, ma, v, nil)
                         end
-
-                        print("Contraption with " .. #v .. " ents")
-                        print("Entity picked for baseplate check:", v[1])
-                        print("Baseplate picked: ", selectedAncestor)
                     end
 
                     net_WriteUInt(#ammoCrates, 14)
