@@ -15,6 +15,7 @@ local net_ReadBool = net.ReadBool
 local net_ReadEntity = net.ReadEntity
 local net_ReadString = net.ReadString
 local net_ReadUInt = net.ReadUInt
+local net_ReadFloat = net.ReadFloat
 local net_ReadVector = net.ReadVector
 local net_Send = net.Send
 local net_Broadcast = net.Broadcast
@@ -24,6 +25,7 @@ local net_WriteBool = net.WriteBool
 local net_WriteEntity = net.WriteEntity
 local net_WriteString = net.WriteString
 local net_WriteUInt = net.WriteUInt
+local net_WriteFloat = net.WriteFloat
 local net_WriteVector = net.WriteVector
 
 -- Color helpers
@@ -196,6 +198,62 @@ if SERVER then
     util.AddNetworkString("ACF_Scanning_PlayerListChanged")
     local scanningPlayers = {}
 
+    local scanner_blockedFromACFDamage = {}
+    local scanner_damageCooldown = 60 -- in seconds
+    local scanner_acfDamage_lastTick = 0
+    local scanner_acfDamage_notifiedThisTick = {}
+
+    function scanning.BlockACFDamage(playerScanning)
+        scanner_blockedFromACFDamage[playerScanning] = true
+    end
+    function scanning.StartUnblockACFDamage(playerScanning)
+        if scanner_blockedFromACFDamage[playerScanning] == true then
+            scanner_blockedFromACFDamage[playerScanning] = CurTime()
+        end
+    end
+    function scanning.UnblockACFDamage(playerScanning)
+        scanner_blockedFromACFDamage[playerScanning] = nil
+    end
+
+    hook.Add("ACF_PreDamageEntity", "ACF_Scanning_BlockDamageAfterScanner", function(ent, _, _)
+        if not IsValid(ent) then return end
+        local owner = ent:CPPIGetOwner()
+        if not IsValid(owner) then return end
+
+        local tickNow = engine.TickCount()
+        local doNotNotify = false
+
+        if tickNow ~= scanner_acfDamage_lastTick then
+            scanner_acfDamage_lastTick = tickNow
+            table.Empty(scanner_acfDamage_notifiedThisTick)
+        else
+            if scanner_acfDamage_notifiedThisTick[owner] then
+                doNotNotify = true
+            end
+        end
+
+        local started = scanner_blockedFromACFDamage[owner]
+
+        if started then -- started is boolean true if active, number started (in curtime) if left scanning
+            local now = CurTime()
+
+            if started == true or (now - started < scanner_damageCooldown) then
+                if not doNotNotify then
+                    NetStart("DamageBlocked")
+                    net_WriteBool(started == true)
+                    if started ~= true then
+                        net_WriteFloat(scanner_damageCooldown - (now - started))
+                    end
+                    net.Send(owner)
+                end
+                scanner_acfDamage_notifiedThisTick[owner] = true
+                return false
+            else -- No longer blocked by scanner, time-delta > cooldown
+                scanning.UnblockACFDamage(owner)
+            end
+        end
+    end)
+
     NetReceive("UpdatePlayer", function(ply)
         scanning.BeginScanning(ply, net_ReadEntity())
     end)
@@ -241,12 +299,14 @@ if SERVER then
                 return r
             end
         }
+        scanning.BlockACFDamage(playerScanning)
     end
 
     function scanning.EndScanning(playerScanning)
         if not IsValid(playerScanning) then return end
 
         scanningPlayers[playerScanning] = nil
+        scanning.StartUnblockACFDamage(playerScanning)
     end
 
     hook.Add("PlayerEnteredVehicle", "ACF_Scanning_PlayerEnteredVehicle", function(ply)
@@ -913,6 +973,17 @@ if CLIENT then
         end
         return isValid
     end
+
+    NetReceive("DamageBlocked", function()
+        local started, timeLeft = net_ReadBool(), not started and net_ReadFloat()
+
+        if started then
+            notification.AddLegacy("ACF damage is currently blocked due to current use of the contraption scanner.", NOTIFY_ERROR, 5)
+        else
+            notification.AddLegacy("ACF damage is currently blocked due to recent use of the contraption scanner. Please try again in " .. math.Round(timeLeft, 2) .. " seconds.", NOTIFY_ERROR, 7)
+        end
+        surface.PlaySound("buttons/button10.wav")
+    end)
 
     local ent2bp = {}
 
