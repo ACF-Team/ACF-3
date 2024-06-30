@@ -316,18 +316,40 @@ if SERVER then
                     net_WriteUInt(table.Count(contraption2entlist), 16)
 
                     for _, v in pairs(contraption2entlist) do
-                        local bp = v[1] or NULL
-                        if IsValid(bp) then
-                            bp = bp:GetAncestor()
+                        -- Baseplate determination
+                        local bpC = {}
+                        for _, e in ipairs(v) do
+                            local ancestor = e:GetAncestor()
+                            if e ~= ancestor then
+                                if bpC[ancestor] == nil then
+                                    bpC[ancestor] = 1
+                                else
+                                    bpC[ancestor] = bpC[ancestor] + 1
+                                end
+                            end
+                        end
 
-                            local po = bp:GetPhysicsObject()
+                        local selectedAncestor, selectedCount = NULL, 0
+                        for ancestor, count in pairs(bpC) do
+                            if count > selectedCount then
+                                selectedAncestor = ancestor
+                                selectedCount = count
+                            end
+                        end
+
+                        if IsValid(selectedAncestor) then
+                            local po = selectedAncestor:GetPhysicsObject()
                             local mi, ma
                             if IsValid(po) then
                                 mi, ma = po:GetAABB()
                             end
 
-                            writeEntityPacket(bp, mi, ma, v, nil)
+                            writeEntityPacket(selectedAncestor, mi, ma, v, nil)
                         end
+
+                        print("Contraption with " .. #v .. " ents")
+                        print("Entity picked for baseplate check:", v[1])
+                        print("Baseplate picked: ", selectedAncestor)
                     end
 
                     net_WriteUInt(#ammoCrates, 14)
