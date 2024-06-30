@@ -864,7 +864,7 @@ if CLIENT then
             Derma_Message("You cannot scan a target while being in a vehicle. Exit the vehicle, then try again.", "Scanning Blocked", "OK")
         return end
         local canScan, whyNot = hook.Run("ACF_PreBeginScanning", LocalPlayer())
-        if not canScan then
+        if canScan == false then
             Derma_Message("Scanning has been blocked by the server: " .. (whyNot or "<no reason provided>"), "Scanning Blocked", "OK")
         return end
 
