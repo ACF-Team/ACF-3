@@ -827,6 +827,9 @@ do	-- Seat alias system
 		if Vehicle._Alias ~= nil then return end
 		local Alias	= {}
 
+		-- Since this list is not always available in the same state, we'll need to get it over and over
+		local VT = list.Get("Vehicles")
+
 		-- Every playermodel is a little different, so this has to be done on a per-player basis
 		local SeqList = {
 			[Ply:LookupSequence("sit_rollercoaster")] = 1,
@@ -837,18 +840,26 @@ do	-- Seat alias system
 		}
 
 		local Seq = -1
-		if Vehicle.HandleAnimation and isfunction(Vehicle.HandleAnimation) then
-			Seq = Vehicle:HandleAnimation(Ply)
 
-			if not SeqList[Seq] then
-				print("Unhandled sequence, defaulting to sit_rollercoaster")
-				Seq = -1
+		if VT[Vehicle.VehicleName] then
+			local VTD = VT[Vehicle.VehicleName]
+
+			if VTD.Members and VTD.Members.HandleAnimation and isfunction(VTD.Members.HandleAnimation) then
+				Seq = VTD.Members.HandleAnimation(Vehicle, Ply)
 			end
 		else
-			local Class = Vehicle:GetClass()
+			if Vehicle.HandleAnimation and isfunction(Vehicle.HandleAnimation) then
+				Seq = Vehicle:HandleAnimation(Ply)
 
-			if ClassList[Class] then
-				Seq = ClassList[Class](Ply,Vehicle)
+				if not SeqList[Seq] then
+					Seq = -1
+				end
+			else
+				local Class = Vehicle:GetClass()
+
+				if ClassList[Class] then
+					Seq = ClassList[Class](Ply,Vehicle)
+				end
 			end
 		end
 
@@ -1022,13 +1033,13 @@ do -- Special squishy functions
 		local Mass   = Entity:GetPhysicsObject():GetMass() or 100
 		local Damage = 0
 
-		DmgResult:SetThickness(Mass * 0.075) -- skull is around 7-8mm on average for humans, but this gets thicker with bigger creatures
+		DmgResult:SetThickness(Mass * 0.075 * 0.18) -- skull is around 7-8mm on average for humans, but this gets thicker with bigger creatures; further modified by bone density compared to steel
 
 		HitRes = DmgResult:Compute()
 		Damage = Damage + HitRes.Damage * 10
 
 		if HitRes.Overkill > 0 then -- Went through skull
-			DmgResult:SetThickness(0.01) -- squishy squishy brain matter, no resistance
+			DmgResult:SetThickness(0.001) -- squishy squishy brain matter, no resistance
 
 			HitRes = DmgResult:Compute()
 			Damage = Damage + (HitRes.Damage * 50 * math.max(1, HitRes.Overkill * 0.25)) -- yuge damage, yo brains just got scrambled by a BOOLET
@@ -1053,7 +1064,7 @@ do -- Special squishy functions
 		local Size   = Entity:BoundingRadius()
 		local Damage = 0
 
-		DmgResult:SetThickness(Size * 0.25 * 0.02) -- the SKIN and SKELETON, just some generic trashy "armor"
+		DmgResult:SetThickness(Size * 0.2) -- the SKIN and SKELETON, just some generic trashy "armor"
 
 		HitRes = DmgResult:Compute()
 		Damage = Damage + HitRes.Damage * 10

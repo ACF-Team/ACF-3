@@ -134,7 +134,7 @@ do	-- Metamethods
 	end
 
 	function ENT:OnRemove()
-		Ent:SetSolidFlags(FSOLID_NOT_SOLID)
+		self:SetSolidFlags(FSOLID_NOT_SOLID)
 
 		if IsValid(self.Seat) and (self.Seat.AliasEnt == self) then
 			self.Seat.AliasEnt = nil
