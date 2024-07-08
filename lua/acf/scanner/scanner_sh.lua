@@ -316,17 +316,35 @@ if SERVER then
                     net_WriteUInt(table.Count(contraption2entlist), 16)
 
                     for _, v in pairs(contraption2entlist) do
-                        local bp = v[1] or NULL
-                        if IsValid(bp) then
-                            bp = bp:GetAncestor()
+                        -- Baseplate determination
+                        local bpC = {}
+                        for _, e in ipairs(v) do
+                            local ancestor = e:GetAncestor()
+                            if e ~= ancestor then
+                                if bpC[ancestor] == nil then
+                                    bpC[ancestor] = 1
+                                else
+                                    bpC[ancestor] = bpC[ancestor] + 1
+                                end
+                            end
+                        end
 
-                            local po = bp:GetPhysicsObject()
+                        local selectedAncestor, selectedCount = NULL, 0
+                        for ancestor, count in pairs(bpC) do
+                            if count > selectedCount then
+                                selectedAncestor = ancestor
+                                selectedCount = count
+                            end
+                        end
+
+                        if IsValid(selectedAncestor) then
+                            local po = selectedAncestor:GetPhysicsObject()
                             local mi, ma
                             if IsValid(po) then
                                 mi, ma = po:GetAABB()
                             end
 
-                            writeEntityPacket(bp, mi, ma, v, nil)
+                            writeEntityPacket(selectedAncestor, mi, ma, v, nil)
                         end
                     end
 
@@ -864,7 +882,7 @@ if CLIENT then
             Derma_Message("You cannot scan a target while being in a vehicle. Exit the vehicle, then try again.", "Scanning Blocked", "OK")
         return end
         local canScan, whyNot = hook.Run("ACF_PreBeginScanning", LocalPlayer())
-        if not canScan then
+        if canScan == false then
             Derma_Message("Scanning has been blocked by the server: " .. (whyNot or "<no reason provided>"), "Scanning Blocked", "OK")
         return end
 
