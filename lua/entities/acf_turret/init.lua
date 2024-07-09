@@ -445,7 +445,7 @@ do	-- Spawn and Update funcs
 
 				ParentLink(Entity,k,true)
 			else
-				if not IsValid(k) then continue end
+				if not ACF.Check(k) then continue end
 				ParentLink(Entity,k,true)
 
 				if Class == "acf_turret_motor" then k:ValidatePlacement() end
