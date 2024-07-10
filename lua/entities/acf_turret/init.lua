@@ -289,11 +289,14 @@ do	-- Spawn and Update funcs
 
 		Entity:SetNWEntity("ACF.Rotator", Rotator)
 
+		Rotator:SetModel("models/hunter/plates/plate.mdl")
 		Rotator:SetPos(Entity:GetPos())
 		Rotator:SetAngles(Entity:GetAngles())
 		Rotator:SetParent(Entity)
 		Rotator:Spawn()
+		Rotator:PhysicsInit(SOLID_VPHYSICS)
 		Rotator:SetRenderMode(RENDERMODE_NONE)
+		Rotator:SetNotSolid(true)
 		Rotator:DrawShadow(false)
 
 		Entity.Rotator			= Rotator
