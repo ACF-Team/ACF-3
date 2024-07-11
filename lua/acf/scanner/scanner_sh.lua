@@ -237,7 +237,14 @@ if SERVER then
 
             if started == true or (now - started < scanner_damageCooldown) then
                 if not doNotNotify then
-                    ACF.SendNotify(owner, false, started == true and "ACF damage is currently blocked due to current use of the contraption scanner." or "ACF damage is currently blocked due to recent use of the contraption scanner. Please try again in " .. math.Round(scanner_damageCooldown - (now - started), 2) .. " seconds.")
+                    local msg
+                    if started then
+                        msg = "ACF damage is currently blocked due to current use of the contraption scanner."
+                    else
+                        msg = "ACF damage is currently blocked due to recent use of the contraption scanner. Please try again in " .. math.Round(scanner_damageCooldown - (now - started), 2) .. " seconds."
+                    end
+
+                    ACF.SendNotify(owner, false, msg)
                 end
                 scanner_acfDamage_notifiedThisTick[owner] = true
                 return false
