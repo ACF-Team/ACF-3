@@ -132,6 +132,8 @@ E2Desc["acfGetTurretMaxSlewRate(e:)"] = "Returns the turret's top slew rate, in 
 E2Desc["acfGetTurretSlewAccel(e:)"] = "Returns the turret's slew acceleration rate, in degrees/second ^ 2."
 E2Desc["acfGetTurretStabilized(e:)"] = "Returns the turret's stabilizer percentage, if stabilized."
 E2Desc["acfGetTurretData(e:)"] = "Returns the turret's data."
+E2Desc["acfGetTurretNitirData(e:)"] = "Returns the turret motor's data."
+E2Desc["acfIsGyroDual(e:)"] = "Returns whether or not the given gyroscope is dual or not."
 
 E2Desc["acfCenterTurret(e:)"] = "Sets the turret to return to the home angle."
 E2Desc["acfAimTurret(e:n)"] = "Sets the turret to attempt to aim at the input degree."

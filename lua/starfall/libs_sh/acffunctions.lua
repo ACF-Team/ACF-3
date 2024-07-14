@@ -2659,10 +2659,13 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
+		local td = This.TurretData
 		local Data = {
 			MaxSlewRate		= math.Round(This.MaxSlewRate,2),
 			SlewAccel		= math.Round(This.SlewAccel,4),
 			Angle			= -This.CurrentAngle,
+			RingSize		= td.RingSize,
+			Teeth			= td.Teeth,
 
 			Stabilized		= This.Stabilized,
 			StabilizeAmount	= This.StabilizeAmount,
@@ -2671,7 +2674,7 @@ if SERVER then
 			Minimum			= This.MinDeg,
 			Maximum			= This.MaxDeg,
 
-			TotalMass		= This.TurretData.TotalMass,
+			TotalMass		= td.TotalMass,
 			LocalMassCenter	= IsValid(This.Rotator) and This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM)) or Vector(),
 
 			Motor			= IsValid(This.Motor) and This.Motor or nil,
@@ -2679,6 +2682,43 @@ if SERVER then
 		}
 
 		return Data
+	end
+
+	--- Returns the turret motor's data
+	-- @server
+	-- @return table The turret motor's data
+	function ents_methods:acfGetTurretMotorData()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This:GetClass() == "acf_turret_motor")) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		local Data = {
+			Torque		= This.Torque,
+			Speed		= This.Speed,
+			CompSize	= This.CompSize,
+			Teeth		= This.Teeth
+		}
+
+		return Data
+	end
+
+	--- Returns if the gyroscope is dual or not
+	-- @server
+	-- @return boolean Whether or not the gyroscope is dual
+	function ents_methods:acfIsGyroDual()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This:GetClass() == "acf_turret_gyro") then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		return This.IsDual
 	end
 
 	-- Setters
