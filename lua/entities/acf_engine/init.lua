@@ -10,101 +10,104 @@ local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 -- Engine class setup
 --===============================================================================================--
 do
-	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
-		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
-		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
-		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
-		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
-
-		Engine.FuelTanks[Target] = true
-		Target.Engines[Engine] = true
-
-		Engine:UpdateOverlay()
-		Target:UpdateOverlay()
-
-		return true, "Engine linked successfully!"
-	end)
-
-	ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
-		if Engine.FuelTanks[Target] or Target.Engines[Engine] then
-			if Engine.FuelTank == Target then
-				Engine.FuelTank = next(Engine.FuelTanks, Target)
-			end
-
-			Engine.FuelTanks[Target] = nil
-			Target.Engines[Engine]	 = nil
-
+	ACF.RegisterClassLink("acf_engine", "acf_fueltank", {
+		Link = function(Engine, Target)
+			if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
+			if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
+			if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
+			if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+			if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
+	
+			Engine.FuelTanks[Target] = true
+			Target.Engines[Engine] = true
+	
 			Engine:UpdateOverlay()
 			Target:UpdateOverlay()
+	
+			return true, "Engine linked successfully!"
+		end,
+		Unlink = function(Engine, Target)
+			if Engine.FuelTanks[Target] or Target.Engines[Engine] then
+				if Engine.FuelTank == Target then
+					Engine.FuelTank = next(Engine.FuelTanks, Target)
+				end
+	
+				Engine.FuelTanks[Target] = nil
+				Target.Engines[Engine]	 = nil
+	
+				Engine:UpdateOverlay()
+				Target:UpdateOverlay()
+	
+				return true, "Engine unlinked successfully!"
+			end
+	
+			return false, "This engine is not linked to this fuel tank."
+		end
+	})
 
+
+	ACF.RegisterClassLink("acf_engine", "acf_gearbox", {
+		function(Engine, Target)
+			if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+			if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
+	
+			-- make sure the angle is not excessive
+			local InPos = Target:LocalToWorld(Target.In)
+			local OutPos = Engine:LocalToWorld(Engine.Out)
+			local Direction
+	
+			if Engine.IsTrans then
+				Direction = -Engine:GetRight()
+			else
+				Direction = Engine:GetForward()
+			end
+	
+			if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+				return false, "Cannot link due to excessive driveshaft angle!"
+			end
+	
+			local Rope
+	
+			if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
+				Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
+			end
+	
+			local Link = {
+				Rope = Rope,
+				RopeLen = (OutPos - InPos):Length(),
+				ReqTq = 0
+			}
+	
+			Engine.Gearboxes[Target] = Link
+			Target.Engines[Engine]	 = true
+	
+			Engine:UpdateOverlay()
+			Target:UpdateOverlay()
+	
+			Engine:InvalidateClientInfo()
+	
+			return true, "Engine linked successfully!"
+		end,
+		Unlink = function(Engine, Target)
+			if not Engine.Gearboxes[Target] then
+				return false, "This engine is not linked to this gearbox."
+			end
+	
+			local Rope = Engine.Gearboxes[Target].Rope
+	
+			if IsValid(Rope) then Rope:Remove() end
+	
+			Engine.Gearboxes[Target] = nil
+			Target.Engines[Engine]	 = nil
+	
+			Engine:UpdateOverlay()
+			Target:UpdateOverlay()
+	
+			Engine:InvalidateClientInfo()
+	
 			return true, "Engine unlinked successfully!"
 		end
-
-		return false, "This engine is not linked to this fuel tank."
-	end)
-
-	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
-		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
-		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
-
-		-- make sure the angle is not excessive
-		local InPos = Target:LocalToWorld(Target.In)
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local Direction
-
-		if Engine.IsTrans then
-			Direction = -Engine:GetRight()
-		else
-			Direction = Engine:GetForward()
-		end
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
-			return false, "Cannot link due to excessive driveshaft angle!"
-		end
-
-		local Rope
-
-		if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
-			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
-		end
-
-		local Link = {
-			Rope = Rope,
-			RopeLen = (OutPos - InPos):Length(),
-			ReqTq = 0
-		}
-
-		Engine.Gearboxes[Target] = Link
-		Target.Engines[Engine]	 = true
-
-		Engine:UpdateOverlay()
-		Target:UpdateOverlay()
-
-		Engine:InvalidateClientInfo()
-
-		return true, "Engine linked successfully!"
-	end)
-
-	ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
-		if not Engine.Gearboxes[Target] then
-			return false, "This engine is not linked to this gearbox."
-		end
-
-		local Rope = Engine.Gearboxes[Target].Rope
-
-		if IsValid(Rope) then Rope:Remove() end
-
-		Engine.Gearboxes[Target] = nil
-		Target.Engines[Engine]	 = nil
-
-		Engine:UpdateOverlay()
-		Target:UpdateOverlay()
-
-		Engine:InvalidateClientInfo()
-
-		return true, "Engine unlinked successfully!"
-	end)
+	})
 end
 --===============================================================================================--
 -- Local Funcs and Vars

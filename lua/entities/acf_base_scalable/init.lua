@@ -83,7 +83,7 @@ do -- Entity linking and unlinking --------------
 		if self == Target then return false, "Can't unlink an entity from itself." end
 
 		local Class    = Target:GetClass()
-		local Function = ACF.GetClassUnlink(self:GetClass(), Class)
+		local Function = ACF.GetClassLinkData(self:GetClass(), Class).Link
 
 		if Function then
 			return Function(self, Target)

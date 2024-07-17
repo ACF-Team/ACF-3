@@ -414,83 +414,80 @@ do -- Entity linking
 				}
 			}
 		}
+
+		ClassLink = {
+			acf_ammo = {
+				acf_guns = {
+
+				}
+			},
+
+			acf_			
+		}
 	]]--
-	local ClassLink = { Link = {}, Unlink = {} }
+
+	--- @class LinkFunction
+	--- @field Ent1 table The first entity in the link
+	--- @field Ent2 table The second entity in the link
+	--- @field FromChip boolean If the link is from a chip
+	--- @return boolean? Success Whether the link was successful
+	--- @return string? Message A message about the link status
+	
+	--- @class LinkOptions
+	--- @field Link LinkFunction The function to handle linking
+	--- @field Unlink LinkFunction The function to handle unlinking
+	--- @field Check LinkFunction The function to check the link status
+	--- @field Delay number The delay associated with the link
+
+	local ClassLink = { }
 
 	--- Registers a link or unlink between two classes and how to handle them.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table)
-	local function RegisterNewLink(Action, Class1, Class2, Function)
-		if not isfunction(Function) then return end
+	--- @param Options LinkOptions The options for handling the link
+	local function RegisterClassLink(Class1, Class2, Options)
+		-- Safely initialize tables
+		if not ClassLink[Class1] then ClassLink[Class1] = {} end
+		if not ClassLink[Class1][Class2] then ClassLink[Class1][Class2] = {} end
 
-		local Target = ClassLink[Action]
-		local Data1 = Target[Class1]
+		if not ClassLink[Class2] then ClassLink[Class2] = {} end
+		if not ClassLink[Class2][Class1] then ClassLink[Class2][Class1] = {} end
 
-		if not Data1 then
-			Target[Class1] = {
-				[Class2] = function(Ent1, Ent2)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data1[Class2] = function(Ent1, Ent2)
-				return Function(Ent1, Ent2)
-			end
+		for k,v in pairs(Options) do
+			ClassLink[Class1][Class2][k] = v
 		end
 
+		-- If Class1 == Class2, the operations below are a duplicate of those above. Avoid that.
 		if Class1 == Class2 then return end
 
-		local Data2 = Target[Class2]
-
-		if not Data2 then
-			Target[Class2] = {
-				[Class1] = function(Ent2, Ent1)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data2[Class1] = function(Ent2, Ent1)
-				return Function(Ent1, Ent2)
-			end
+		for k,v in pairs(Options) do
+			ClassLink[Class2][Class1][k] = v
 		end
 	end
 
-	--- Registers that two classes can be linked, as well as how to handle entities of their class being linked.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table) The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
-	function ACF.RegisterClassLink(Class1, Class2, Function)
-		RegisterNewLink("Link", Class1, Class2, Function)
+	function ACF.GetClassLinkData(Class1, Class2)
+		if not ClassLink[Class1] then return end
+		return ClassLink[Class1][Class2]
 	end
 
-	--- Returns the callback defined previously by ACF.RegisterClassLink between Class1 and Class2.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @return fun(Entity1:table, Entity2:table) | nil # The linking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no linking functions
-	function ACF.GetClassLink(Class1, Class2)
-		if not ClassLink.Link[Class1] then return end
+	-- --- Returns the callback defined previously by ACF.RegisterClassUnlink between Class1 and Class2.
+	-- --- @param Class1 string The first class in the link
+	-- --- @param Class2 string The other class in the link
+	-- --- @return fun(Entity1:table, Entity2:table) | nil # The unlinking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no unlinking functions
+	-- function ACF.GetClassUnlink(Class1, Class2)
+	-- 	if not ClassLink.Unlink[Class1] then return end
 
-		return ClassLink.Link[Class1][Class2]
-	end
+	-- 	return ClassLink.Unlink[Class1][Class2]
+	-- end
 
-	--- Registers that two classes can be unlinked, as well as how to handle entities of their class being unlinked.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table) The unlinking function defined between an entity of Class1 and an entity of Class2
-	function ACF.RegisterClassUnlink(Class1, Class2, Function)
-		RegisterNewLink("Unlink", Class1, Class2, Function)
-	end
+	-- --- Returns the callback defined previously by ACF.RegisterClassLink between Class1 and Class2.
+	-- --- @param Class1 string The first class in the link
+	-- --- @param Class2 string The other class in the link
+	-- function ACF.GetClassLink(Class1, Class2)
+	-- 	if not ClassLink.Link[Class1] then return end
 
-	--- Returns the callback defined previously by ACF.RegisterClassUnlink between Class1 and Class2.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @return fun(Entity1:table, Entity2:table) | nil # The unlinking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no unlinking functions
-	function ACF.GetClassUnlink(Class1, Class2)
-		if not ClassLink.Unlink[Class1] then return end
-
-		return ClassLink.Unlink[Class1][Class2]
-	end
+	-- 	return ClassLink.Link[Class1][Class2]
+	-- end
 end
 
 do -- Entity inputs
