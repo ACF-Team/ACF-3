@@ -62,7 +62,7 @@ do -- Spawn and Update functions
 		if not Class then
 			Data.FuelTank = "Box"
 
-			Class = FuelTanks.Get("Box")
+			Class = FuelTanks.Get("FTS_B")
 		elseif FuelTanks.IsAlias(Data.FuelTank) then
 			Data.FuelTank = Class.ID
 		end
