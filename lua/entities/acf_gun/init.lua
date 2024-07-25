@@ -544,7 +544,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
-			local Velocity = Contraption.GetAncestor(self):GetVelocity()
+			local Velocity = self:GetAncestor():GetVelocity()
 			local BulletData = self.BulletData
 			local AmmoType = AmmoTypes.Get(BulletData.Type)
 

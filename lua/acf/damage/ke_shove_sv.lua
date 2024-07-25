@@ -9,7 +9,7 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 
 	if hook.Run("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
 
-	local Ancestor = Contraption.GetAncestor(Target)
+	local Ancestor = Target:GetAncestor()
 	local Phys = Ancestor:GetPhysicsObject()
 
 	if IsValid(Phys) then

@@ -87,7 +87,7 @@ function Contraption.GetAllChildren(Ent, Tab)
 end
 
 function Contraption.GetEnts(Ent)
-	local Ancestor 	= Contraption.GetAncestor(Ent)
+	local Ancestor 	= Ent:GetAncestor()
 	local Phys 		= Contraption.GetAllPhysicalEntities(Ancestor)
 	local Pare 		= {}
 
