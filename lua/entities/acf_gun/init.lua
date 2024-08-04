@@ -161,7 +161,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
 
-		Entity:CanProperty(Entity:GetOwner(), "bodygroups")
+		Entity:CanProperty(nil, "bodygroups")
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
