@@ -161,8 +161,6 @@ do -- Spawn and Update functions --------------------------------
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
 
-		Entity:CanProperty(nil, "bodygroups")
-
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
 
@@ -179,6 +177,8 @@ do -- Spawn and Update functions --------------------------------
 
 			Entity.LongMuzzle = Attachment and Entity:WorldToLocal(Attachment.Pos)
 		end
+
+		Entity:CanProperty(nil, "bodygroups")
 
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
 			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
