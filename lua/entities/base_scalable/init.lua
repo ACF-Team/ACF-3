@@ -6,6 +6,7 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 local ACF     = ACF
+local Contraption	= ACF.Contraption
 local Network = ACF.Networking
 
 function ENT:GetOriginalSize()
@@ -100,7 +101,8 @@ do -- Network sender and receivers
 end
 
 function ENT:SetScaledModel( Model )
-	self:SetModel( Model )
+	if not self.ACF then self.ACF = {} end
+	Contraption.SetModel(self, Model)
 
 	local Data = self.ScaleData
 	if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then

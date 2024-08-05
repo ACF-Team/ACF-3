@@ -20,8 +20,8 @@ local function AddVehicle(Class, Data)
 	list.Set("Vehicles", Class, Entry)
 end
 
-local function HandleRollercoasterAnimation(_, Player)
-	return Player:SelectWeightedSequence(ACT_GMOD_SIT_ROLLERCOASTER)
+local function HandlePHXSeatAnimation(_, Player)
+	return Player:SelectWeightedSequence(ACT_HL2MP_SIT)
 end
 
 local function HandlePHXVehicleAnimation(_, Player)
@@ -51,7 +51,7 @@ AddVehicle("playerstart_chairs_airboat", {
 AddVehicle("playerstart_chairs_seated", {
 	Name      = "Sitting Pose",
 	Model     = "models/chairs_playerstart/sitposealt.mdl",
-	Animation = HandleRollercoasterAnimation,
+	Animation = HandlePHXSeatAnimation,
 })
 
 AddVehicle("playerstart_chairs_podpose", {
@@ -68,7 +68,7 @@ Category = "Playerstart Chairs (Experimental)"
 AddVehicle("playerstart_chairs_seated_alt", {
 	Name      = "Sitting Pose (Alt Physics)",
 	Model     = "models/chairs_playerstart/sitpose.mdl",
-	Animation = HandleRollercoasterAnimation,
+	Animation = HandlePHXSeatAnimation,
 })
 
 AddVehicle("playerstart_chairs_standing", {

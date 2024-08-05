@@ -1,5 +1,6 @@
 util.AddNetworkString("ACF_Debris")
 
+local Contraption = ACF.Contraption
 local ValidDebris = ACF.ValidDebris
 local ChildDebris = ACF.ChildDebris
 local Queue       = {}
@@ -42,7 +43,7 @@ end
 
 function ACF.KillChildProps(Entity, BlastPos, Energy)
 	local Explosives = {}
-	local Children 	 = ACF_GetAllChildren(Entity)
+	local Children 	 = Contraption.GetAllChildren(Entity)
 	local Count		 = 0
 
 	-- do an initial processing pass on children, separating out explodey things to handle last
@@ -94,8 +95,8 @@ local function Gib(Entity,DmgInfo)
 
 	local dmg = DamageInfo()
 	dmg:SetDamage(Entity:Health())
-	if IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
-	if IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
+	if DmgInfo and IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
+	if DmgInfo and IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
 	dmg:SetDamageType(DMG_ALWAYSGIB)
 
 	timer.Simple(0,function()

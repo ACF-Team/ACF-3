@@ -65,6 +65,7 @@ do -- Local repository version checking
 		if not Data then return end
 
 		local Path = Data.Path
+		local WorkshopPath = "data_static/acf/" .. string.lower(Name) .. "-version.txt"
 
 		if not Path then
 			Data.Code    = "Not Installed"
@@ -76,6 +77,13 @@ do -- Local repository version checking
 			UpdateOwner(Path, Data)
 
 			Data.Code = "Git-" .. Code
+			Data.Date = LocalToUTC(Date)
+		elseif file.Exists(WorkshopPath, "GAME") then
+			local FileData = file.Read(WorkshopPath, "GAME"):Trim()
+			local Code = string.sub(FileData, 1, 7)
+			local Date = file.Time(WorkshopPath, "GAME")
+
+			Data.Code = "Git-master-" .. Code
 			Data.Date = LocalToUTC(Date)
 		elseif file.Exists(Path .. "/LICENSE", "GAME") then
 			local Date = file.Time(Path .. "/LICENSE", "GAME")

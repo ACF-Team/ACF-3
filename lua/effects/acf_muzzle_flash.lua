@@ -1,4 +1,5 @@
 local Weapons = ACF.Classes.Weapons
+local Sounds = ACF.Utilities.Sounds
 
 function EFFECT:Init(Data)
 	local Gun = Data:GetEntity()
@@ -8,6 +9,8 @@ function EFFECT:Init(Data)
 	local Propellant = Data:GetScale()
 	local ReloadTime = Data:GetMagnitude()
 	local Sound      = Gun:GetNWString("Sound")
+	local Pitch      = Gun:GetNWFloat("SoundPitch")
+	local Volume     = Gun:GetNWFloat("SoundVolume")
 	local Class      = Gun:GetNWString("Class")
 	local ClassData  = Weapons.Get(Class)
 	if not ClassData then return end
@@ -18,7 +21,7 @@ function EFFECT:Init(Data)
 		Attachment = LongBarrel.NewPos
 	end
 
-	if not ACF.IsValidSound(Sound) then
+	if not Sounds.IsValidSound(Sound) then
 		Sound = ClassData.Sound
 	end
 
@@ -27,15 +30,16 @@ function EFFECT:Init(Data)
 
 		if Sound ~= "" then
 			local SoundPressure = (Propellant * 1000) ^ 0.5
+			Pitch = math.Clamp(Pitch * 100, 1, 255)
 
 			-- NOTE: Wiki documents level tops out at 180, but seems to fall off past 127
-			sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100, ACF.Volume)
+			Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
 			if not (Class == "MG" or Class == "RAC") then
-				sound.Play(Sound, GunPos, math.Clamp(SoundPressure, 75, 127), 100, ACF.Volume)
+				Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
 				if SoundPressure > 127 then
-					sound.Play(Sound, GunPos, math.Clamp(SoundPressure - 127, 1, 127), 100, ACF.Volume)
+					Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure - 127, 1, 127), Pitch, Volume)
 				end
 			end
 		end

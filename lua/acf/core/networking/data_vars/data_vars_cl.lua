@@ -122,6 +122,11 @@ do -- Client data getter functions
 end
 
 do -- Client data setter function
+	--- Sets a client data var and networks it to the server.
+	--- Internally calls the ACF_OnClientDataUpdate hook
+	--- @param Key string The key of the datavar
+	--- @param Value any The value the datavar
+	--- @param Forced boolean Whether to send regardless of if the value has changed
 	function ACF.SetClientData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
@@ -138,11 +143,18 @@ do -- Client data setter function
 end
 
 do -- Server data setter function
+	--- Proposes changes to server datavars and networks them to server.
+	--- Internally calls the ACF_OnServerDataUpdate hook.
+	--- @param Key string The key of the datavar
+	--- @param Value any The value of the datavar
+	--- @param Forced boolean Whether to send regardless of if the value has changed
 	function ACF.SetServerData(Key, Value, Forced)
 		if not isstring(Key) then return end
 
 		local Player = LocalPlayer()
 
+		-- Check if the client is allowed to set things on the server
+		-- (Usually restricted to super admins and server owners)
 		if not ACF.CanSetServerData(Player) then return end
 
 		Value = Value or false

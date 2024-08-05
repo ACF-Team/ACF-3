@@ -92,12 +92,15 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-	local Driver = Entity:GetDriver()
 
-	if IsValid(Driver) then
-		DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
+	if not IsValid(Entity.Alias) then
+		local Driver = Entity:GetDriver()
 
-		Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
+		if IsValid(Driver) then
+			DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
+
+			Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
+		end
 	end
 
 	return Damage.doPropDamage(Entity, DmgResult, DmgInfo) -- We'll just damage it like a regular prop

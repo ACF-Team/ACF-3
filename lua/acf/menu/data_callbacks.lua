@@ -39,6 +39,19 @@ local Settings = {
 
 		Message("Info", "Legality checks for ACF entities have been " .. (Bool and "enabled." or "disabled."))
 	end,
+	NameAndShame = function(Player, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.NameAndShame == Bool then return end
+
+		ACF.NameAndShame = Bool
+
+		if CLIENT and not IsValid(Player) then return end
+
+		if not ACF.LegalChecks then return end
+
+		Message("Info", "Console messages for failed legal checks have been " .. (Bool and "enabled." or "disabled."))
+	end,
 	VehicleLegalChecks = function(Player, _, Value)
 		local Bool = tobool(Value)
 
@@ -218,13 +231,4 @@ local Settings = {
 
 for Key, Function in pairs(Settings) do
 	ACF.AddServerDataCallback(Key, "Global Variable Callback", Function)
-end
-
-do -- Volume setting callback
-	local Realm = SERVER and "Server" or "Client"
-	local Callback = ACF["Add" .. Realm .. "DataCallback"]
-
-	Callback("Volume", "Volume Variable Callback", function(_, _, Value)
-		ACF.Volume = math.Clamp(tonumber(Value) or 1, 0, 1)
-	end)
 end

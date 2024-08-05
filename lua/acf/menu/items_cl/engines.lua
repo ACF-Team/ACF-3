@@ -74,6 +74,16 @@ local function CreateMenu(Menu)
 	local EnginePreview = EngineBase:AddModelPreview(nil, true)
 	local EngineStats = EngineBase:AddLabel()
 
+	local PowerGraph = Menu:AddGraph()
+	local PGWidth = Menu:GetWide()
+	PowerGraph:SetSize(PGWidth,PGWidth / 2)
+
+	PowerGraph:SetXLabel("RPM")
+	PowerGraph:SetYLabel("x100")
+	PowerGraph:SetXSpacing(1000)
+	PowerGraph:SetYSpacing(100)
+	PowerGraph:SetFidelity(24)
+
 	Menu:AddTitle("Fuel Tank Settings")
 	local FuelType = Menu:AddComboBox()
 	local FuelClass = Menu:AddComboBox()
@@ -164,6 +174,24 @@ local function CreateMenu(Menu)
 
 		UpdateEngineStats(EngineStats, Data)
 
+		PowerGraph:SetXRange(0,Data.RPM.Limit)
+		PowerGraph:SetYRange(0,math.max(math.ceil(Data.PeakPower * 1.34), Data.Torque) * 1.1)
+		PowerGraph:SetFidelity(10)
+
+		PowerGraph:Clear()
+		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * 1.34), Color(255,65,65))
+		PowerGraph:PlotPoint("Peak Nm", Data.PeakTqRPM, math.Round(Data.Torque), Color(65,65,255))
+
+		PowerGraph:PlotLimitFunction("Tq", Data.RPM.Idle, Data.RPM.Limit, Color(65,65,255), function(X)
+			return ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque
+		end)
+
+		PowerGraph:PlotLimitFunction("HP", Data.RPM.Idle, Data.RPM.Limit, Color(255,65,65), function(X)
+			return (ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque * X) * 1.34 / 9548.8
+		end)
+
+		PowerGraph:PlotLimitLine("Idle RPM", false, Data.RPM.Idle, Color(127,0,0))
+
 		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
 	end
 
@@ -202,7 +230,10 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("FuelTank", Data.ID)
 
-		FuelPreview:UpdateModel(Data.Model or ClassData.Model)
+		local Model = Data.Model or ClassData.Model
+		local Material = Data.Material or ClassData.Material
+
+		FuelPreview:UpdateModel(Model, Material)
 		FuelPreview:UpdateSettings(Data.Preview or ClassData.Preview)
 
 		FuelType:UpdateFuelText()

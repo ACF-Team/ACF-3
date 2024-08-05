@@ -3,6 +3,7 @@ AddCSLuaFile("shared.lua")
 
 local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
+local Sounds  = ACF.Utilities.Sounds
 local Network = ACF.Networking
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
@@ -114,7 +115,11 @@ end
 
 function SWEP:Deploy()
 	self:SetCurrentAnim("none") -- Prevents nil anim value
-	self:EmitSound("ambient/energy/zap2.wav", nil, nil, ACF.Volume)
+
+	if CLIENT then
+		Sounds.PlaySound(self, "ambient/energy/zap2.wav", nil, nil, 1)
+	end
+
 	return true
 end
 
@@ -163,7 +168,12 @@ function SWEP:Think()
 	if CLIENT then return end
 
 	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	local Trace = Owner:GetEyeTrace()
+	--local Trace = Owner:GetEyeTrace()
+	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID + CONTENTS_AUX, filter = {Owner}}
+	if Owner:InVehicle() and IsValid(Owner:GetVehicle().Alias) then
+		TraceData.filter[2] = Owner:GetVehicle().Alias
+	end
+	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
@@ -207,10 +217,14 @@ function SWEP:PrimaryAttack()
 		self:SetAnim("fire_windup", true, 3)
 	end
 	self:SetAnim("fire_loop", true, 2)
-	self:EmitSound(Zap:format(math.random(1, 3)), nil, 115, ACF.Volume)
 	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
 
-	if CLIENT then return end
+	if CLIENT then
+		Sounds.PlaySound(self, Zap:format(math.random(1, 3)), nil, 115, 1)
+
+		return
+	end
+
 	if self.LastDistance > self.MaxDistance then return end
 
 	local Entity = self.LastEntity
@@ -236,7 +250,14 @@ function SWEP:PrimaryAttack()
 			Effect:SetEntity(self)
 		util.Effect("thruster_ring", Effect, true, true)
 
-		Entity:EmitSound("items/medshot4.wav", nil, nil, ACF.Volume)
+		-- Sound ratelimiting
+		local Time = CurTime()
+		self.SoundTimer = self.SoundTimer or Time
+
+		if self.SoundTimer <= Time then
+			Sounds.SendSound(self, "items/medshot4.wav", nil, nil, 1)
+			self.SoundTimer = Time + 0.1
+		end
 	else
 		local OldHealth = Entity.ACF.Health
 		local MaxHealth = Entity.ACF.MaxHealth
@@ -258,8 +279,17 @@ function SWEP:PrimaryAttack()
 			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
 		end
 
-		Entity:EmitSound(Spark:format(math.random(3, 5)), nil, nil, ACF.Volume)
+		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
 		TeslaSpark(Trace.HitPos, 1)
+
+		-- Sound ratelimiting
+		local Time = CurTime()
+		self.SoundTimer = self.SoundTimer or Time
+
+		if self.SoundTimer <= Time then
+			Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
+			self.SoundTimer = Time + 0.1
+		end
 	end
 end
 
@@ -270,10 +300,14 @@ function SWEP:SecondaryAttack()
 		self:SetAnim("fire_windup", true, 3)
 	end
 	self:SetAnim("fire_loop", true, 2)
-	self:EmitSound(Zap:format(math.random(1, 2)), nil, nil, ACF.Volume)
 	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
 
-	if CLIENT then return end
+	if CLIENT then
+		Sounds.PlaySound(self, Zap:format(math.random(1, 2)), nil, nil, 1)
+
+		return
+	end
+
 	if self.LastDistance > self.MaxDistance then return end
 
 	local Entity = self.LastEntity
@@ -303,6 +337,7 @@ function SWEP:SecondaryAttack()
 		DmgResult:SetThickness(Entity.ACF.Armour)
 
 		DmgInfo:SetAttacker(Owner)
+		DmgInfo:SetInflictor(self)
 		DmgInfo:SetOrigin(Trace.StartPos)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
@@ -321,7 +356,14 @@ function SWEP:SecondaryAttack()
 
 			util.Effect("Sparks", Effect, true, true)
 
-			Entity:EmitSound(Zap:format(math.random(1, 4)), nil, nil, ACF.Volume)
+			-- Sound ratelimiting
+			local Time = CurTime()
+			self.SoundTimer = self.SoundTimer or Time
+
+			if self.SoundTimer <= Time then
+				Sounds.SendSound(Entity, Zap:format(math.random(1, 4)), nil, nil, 1)
+				self.SoundTimer = Time + 0.1
+			end
 		end
 	end
 end

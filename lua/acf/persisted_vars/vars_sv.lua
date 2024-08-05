@@ -2,6 +2,7 @@
 
 -- Settings
 ACF.PersistServerData("LegalChecks", true)
+ACF.PersistServerData("NameAndShame", false)
 ACF.PersistServerData("VehicleLegalChecks", true)
 ACF.PersistServerData("ServerDataAllowAdmin", false)
 ACF.PersistServerData("RestrictInfo", true)
@@ -12,7 +13,7 @@ ACF.PersistServerData("RequireFuel", true)
 ACF.PersistServerData("HealthFactor", 1)
 ACF.PersistServerData("ArmorFactor", 1)
 ACF.PersistServerData("FuelFactor", 1)
-ACF.PersistServerData("MaxThickness", ACF.MaximumArmor)
+ACF.PersistServerData("MaxThickness", 300)
 ACF.PersistServerData("HEPush", true)
 ACF.PersistServerData("KEPush", true)
 ACF.PersistServerData("RecoilPush", true)

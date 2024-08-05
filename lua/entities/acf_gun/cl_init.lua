@@ -1,5 +1,6 @@
 local ACF   = ACF
 local Clock = ACF.Utilities.Clock
+local Queued	= {}
 
 DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
 
@@ -37,15 +38,16 @@ end
 function ENT:Think()
 	BaseClass.Think(self)
 
-	local SinceFire = Clock.CurTime - self.LastFire
+	local SelfTbl = self:GetTable()
+	local SinceFire = Clock.CurTime - SelfTbl.LastFire
 
-	self:SetCycle(SinceFire * self.Rate / self.RateScale)
+	self:SetCycle(SinceFire * SelfTbl.Rate / SelfTbl.RateScale)
 
-	if Clock.CurTime > self.LastFire + self.CloseTime and self.CloseAnim then
-		self:ResetSequence(self.CloseAnim)
-		self:SetCycle((SinceFire - self.CloseTime) * self.Rate / self.RateScale)
-		self.Rate = 1 / (self.Reload - self.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
-		self:SetPlaybackRate(self.Rate)
+	if Clock.CurTime > SelfTbl.LastFire + SelfTbl.CloseTime and SelfTbl.CloseAnim then
+		self:ResetSequence(SelfTbl.CloseAnim)
+		self:SetCycle((SinceFire - SelfTbl.CloseTime) * SelfTbl.Rate / SelfTbl.RateScale)
+		SelfTbl.Rate = 1 / (SelfTbl.Reload - SelfTbl.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
+		self:SetPlaybackRate(SelfTbl.Rate)
 	end
 end
 
@@ -70,4 +72,65 @@ function ENT:Animate(ReloadTime, LoadOnly)
 	self:SetPlaybackRate(self.Rate)
 	self.LastFire = Clock.CurTime
 	self.Reload = ReloadTime
+end
+
+do	-- Overlay/networking for that
+
+	function ENT:RequestGunInfo()
+		if Queued[self] then return end
+
+		Queued[self] = true
+
+		timer.Simple(5, function() Queued[self] = nil end)
+
+		net.Start("ACF.RequestGunInfo")
+			net.WriteEntity(self)
+		net.SendToServer()
+	end
+
+	net.Receive("ACF.RequestGunInfo",function()
+		local Gun = net.ReadEntity()
+		if not IsValid(Gun) then return end
+
+		Queued[Gun] = nil
+
+		local Crates = util.JSONToTable(net.ReadString())
+		local CrateEnts = {}
+
+		for _,E in ipairs(Crates) do
+			local Ent = Entity(E)
+
+			if IsValid(Ent) then
+				local Col = ColorAlpha(Ent:GetColor(),25)
+				CrateEnts[#CrateEnts + 1] = {Ent = Ent, Col = Col}
+			end
+		end
+
+		Gun.Crates	= CrateEnts
+		Gun.Age	= Clock.CurTime + 5
+		Gun.HasData	= true
+	end)
+
+	function ENT:DrawOverlay()
+		local SelfTbl = self:GetTable()
+
+		if not SelfTbl.HasData then
+			self:RequestGunInfo()
+			return
+		elseif Clock.CurTime > SelfTbl.Age then
+			self:RequestGunInfo()
+		end
+
+		render.SetColorMaterial()
+
+		if next(SelfTbl.Crates) then
+			for _,T in ipairs(SelfTbl.Crates) do
+				local E = T.Ent
+				if IsValid(E) then
+					render.DrawWireframeBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),T.Col,true)
+					render.DrawBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),T.Col)
+				end
+			end
+		end
+	end
 end

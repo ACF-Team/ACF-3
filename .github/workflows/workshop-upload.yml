@@ -1,0 +1,38 @@
+name: Deploy to Workshop
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.repository == 'ACF-Team/ACF-3'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: project
+
+      - name: Create Commit Version File
+        shell: bash
+        run: |
+          mkdir -p ${{ github.workspace }}/project/data_static/acf
+          echo "${{ github.sha }}" > ${{ github.workspace }}/project/data_static/acf/acf-3-version.txt
+
+      - name: Upload to Workshop
+        uses: CFC-Servers/gmod-upload@master
+        with:
+          id: 3248769144
+          changelog: "${{ github.event.head_commit.message }}"
+          title: "[ACF-3] Armored Combat Framework"
+          type: "tool"
+          tag1: "build"
+          tag2: "fun"
+          tag3: "realism"
+        env:
+          STEAM_USERNAME: ${{ secrets.ACF_STEAM_ACCOUNT }}
+          STEAM_PASSWORD: ${{ secrets.ACF_STEAM_PASSWORD }}

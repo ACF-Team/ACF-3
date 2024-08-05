@@ -3,28 +3,61 @@ ACF.LoadToolFunctions(TOOL)
 TOOL.Name = "ACF Menu"
 
 if CLIENT then
-	local DrawBoxes = GetConVar("acf_drawboxes")
-
 	-- "Hitbox" colors
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
+	-- Name and descriptions if need to be changed
 	language.Add("Tool.acf_menu.name", "Armored Combat Framework")
 	language.Add("Tool.acf_menu.desc", "Main menu tool for the ACF addon")
+
+	local Queued = {}
+
+	local function RequestVehicleInfo(Vehicle)
+		if Queued[Vehicle] then return end
+
+		Queued[Vehicle] = true
+
+		timer.Simple(5,function() if IsValid(Vehicle) and Queued[Vehicle] then Queued[Vehicle] = nil end end)
+
+		net.Start("ACF.RequestVehicleInfo")
+			net.WriteEntity(Vehicle)
+		net.SendToServer()
+	end
 
 	function TOOL:DrawHUD()
 		local Trace = LocalPlayer():GetEyeTrace()
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity
 
-		cam.Start3D()
-		render.SetColorMaterial()
+		if (IsValid(Entity) and Entity.CleanupOverlay) or IsValid(self.LastEntity) then
+			if IsValid(self.LastEntity) and self.LastEntity ~= Entity then self.LastEntity:CleanupOverlay() end
 
-		if DrawBoxes:GetBool() and IsValid(Entity) and Distance <= 65536 then
-			hook.Run("ACF_OnDrawBoxes", Entity, Trace)
+			if Entity.CleanupOverlay then self.LastEntity = Entity else self.LastEntity = nil end
 		end
 
-		cam.End3D()
+		if not IsValid(Entity) then return end
+		if not Entity.DrawOverlay then
+			if Entity:IsVehicle() then RequestVehicleInfo(Entity) end
+
+			return
+		end
+
+		if Entity.CanDrawOverlay and Entity:CanDrawOverlay() == false then return end
+
+		if Distance <= 65536 then
+			cam.Start3D()
+			render.SetColorMaterial()
+
+			Entity:DrawOverlay(Trace)
+
+			cam.End3D()
+		end
+	end
+
+	-- Will be called clientside when switching weapons, but not different tools (that requires it to be serverside)
+	function TOOL:Holster()
+		if IsValid(self.LastEntity) then self.LastEntity:CleanupOverlay() end
 	end
 
 	TOOL.BuildCPanel = ACF.CreateSpawnMenu

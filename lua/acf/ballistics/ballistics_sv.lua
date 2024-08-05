@@ -3,6 +3,7 @@ local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
+local Debug		 = ACF.Debug
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -131,10 +132,21 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
-	Bullet.Mask        = MASK_SOLID -- Note: MASK_SHOT removed for smaller projectiles as it ignores armor
+	if Bullet.Caliber then
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID,MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+	else
+		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+	end
+
 	Bullet.Ricochets   = 0
 	Bullet.GroundRicos = 0
 	Bullet.Color       = ColorRand(100, 255)
+
+	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
+		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
+	end
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
@@ -191,6 +203,18 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 	end
 end
 
+function Ballistics.TestFilter(Entity, Bullet)
+	if not IsValid(Entity) then return true end
+
+	if GlobalFilter[Entity:GetClass()] then return false end
+
+	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+
+	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+
+	return true
+end
+
 function Ballistics.DoBulletsFlight(Bullet)
 	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
 
@@ -224,7 +248,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	debugoverlay.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -262,7 +286,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 		else
 			local Entity = traceRes.Entity
 
-			if GlobalFilter[Entity:GetClass()] then return end
+			if Ballistics.TestFilter(Entity, Bullet) == false then
+				table.insert(Bullet.Filter, Entity)
+				Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter, important incase something is embedded in something that shouldn't be hit
+
+				return
+			end
 
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
 

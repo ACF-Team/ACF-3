@@ -1,6 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 local Damage    = ACF.Damage
+local Debug		= ACF.Debug
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("HEAT", "AP")
 
@@ -40,8 +41,7 @@ function Ammo:GetPenetration(Bullet, Standoff)
 	local BreakupT      = Bullet.BreakupTime
 	local MaxVel        = Bullet.JetMaxVel
 	local PenMul        = Bullet.PenMul or 1
-	local TargetDensity = ACF.RHADensity -- Assuming RHA
-	local Gamma         = math.sqrt(TargetDensity / ACF.CopperDensity)
+	local Gamma         = 1 --math.sqrt(TargetDensity / ACF.CopperDensity) (Set to 1 to maintain continuity)
 
 	local Penetration = 0
 	if Standoff < Bullet.BreakupDist then
@@ -82,7 +82,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local BodyLength      = Data.ProjLength - CapLength
 	local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
 	-- Considering most of the cap gets crushed (early HEAT suffered from this)
-	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 -- cm to m
+	local Standoff        = (0.3 * CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 * ACF.HEATStandOffMul -- cm to m
 	local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
 	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
 	local WarheadDiameter = 2 * FreeRadius
@@ -114,7 +114,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local JetMaxVel  = 0.5 * (3 ^ 0.5 * (8 * FillerEnergy - JetMass * JetMinVel ^ 2) ^ 0.5 / JetMass ^ 0.5 - JetMinVel) -- Maximum velocity of the jet (the tip)
 
 	-- Both the "magic numbers" are unitless, tuning constants that were used to fit the breakup time to real world values, I suggest they not be messed with
-	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333  -- Jet breakup time in seconds
+	local BreakupTime    = 1.6e-6 * (5e9 * JetMass / (JetMaxVel - JetMinVel)) ^ 0.3333 * ACF.HEATBreakUpMul -- Jet breakup time in seconds
 	local BreakupDist    = JetMaxVel * BreakupTime
 
 	GUIData.MinConeAng = MinConeAng
@@ -141,7 +141,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	-- Recalculate the standoff for missiles
 	if Data.MissileStandoff then
-		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2
+		Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2 * ACF.HEATStandOffMul
 	end
 	-- God weeped when this spaghetto was written (for missile roundinject)
 	if Data.FillerMul or Data.LinerMassMul then
@@ -156,12 +156,13 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		local _JetAvgVel    = (2 * _FillerEnergy / _JetMass) ^ 0.5
 		local _JetMinVel    = _JetAvgVel * _MinVelMult
 		local _JetMaxVel    = 0.5 * (3 ^ 0.5 * (8 * _FillerEnergy - _JetMass * _JetMinVel ^ 2) ^ 0.5 / _JetMass ^ 0.5 - JetMinVel)
-		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333
+		Data.BreakupTime   = 1.6e-6 * (5e9 * _JetMass / (_JetMaxVel - _JetMinVel)) ^ 0.3333 * ACF.HEATBreakUpMul
 		Data.BreakupDist   = _JetMaxVel * Data.BreakupTime
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
 	end
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
@@ -232,12 +233,14 @@ if SERVER then
 
 	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
+		if Bullet.Detonated then return end	-- Prevents GLATGM spawned HEAT projectiles from detonating twice, or for that matter this running twice at all
+		Bullet.Detonated = true
+
 		local Filler    = Bullet.BoomFillerMass
 		local Fragments = Bullet.CasingMass
-		local Filter    = Bullet.Filter
 		local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
-		Damage.createExplosion(HitPos, Filler, Fragments, Filter, DmgInfo)
+		Damage.createExplosion(HitPos, Filler, Fragments, nil, DmgInfo)
 
 		-- Find ACF entities in the range of the damage (or simplify to like 6m)
 		local FoundEnts = ents.FindInSphere(HitPos, 250)
@@ -252,9 +255,14 @@ if SERVER then
 		end
 
 		-- Move the jet start to the impact point and back it up by the passive standoff
+		local Start		= Bullet.Standoff * 39.37
+		local End		= Bullet.BreakupDist * 10 * 39.37
 		local Direction = Bullet.Flight:GetNormalized()
-		local JetStart  = HitPos - Direction * Bullet.Standoff * 39.37
-		local JetEnd    = HitPos + Direction * 3000
+		local JetStart  = HitPos - Direction * Start
+		local JetEnd    = HitPos + Direction * End
+
+		Debug.Cross(JetStart, 15, 15, Color(0,255,0), true)
+		Debug.Cross(JetEnd, 15, 15, Color(255,0,0), true)
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
@@ -264,11 +272,16 @@ if SERVER then
 			local TraceRes  = ACF.trace(TraceData)
 			local PenHitPos = TraceRes.HitPos
 			local Ent       = TraceRes.Entity
-			debugoverlay.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+
+			if TraceRes.Fraction == 1 and not IsValid(Ent) then break end
+
+			Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+
+			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity print("Skipped",Ent) continue end
 
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
-			local Penetration = self:GetPenetration(Bullet, Standoff)
+			local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
 
@@ -320,11 +333,6 @@ if SERVER then
 
 			if JetMassPct < 0 then break end
 
-			-- If the target is explosive and the armor is penetrated, detonate
-			if Ent.Detonate then
-				Ent:Detonate()
-			end
-
 			-- Filter the hit entity
 			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end
 
@@ -343,7 +351,7 @@ if SERVER then
 					local SpallEnt    = TargetRes.Entity
 					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
 					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
-						debugoverlay.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
+						Debug.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
 
 						local DistSqr = math.max(1, (TargetRes.HitPos - PenHitPos):LengthSqr())
 						-- Calculate how much shrapnel will hit the target based on it's relative area

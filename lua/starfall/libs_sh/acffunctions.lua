@@ -829,6 +829,20 @@ if SERVER then
 		return This.IsACFWeapon or false
 	end
 
+	--- Returns true if the entity is an ACF turret
+	-- @server
+	-- @return boolean True if the entity is an ACF turret
+	function ents_methods:acfIsTurret()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return false end
+
+		return This.IsACFTurret or false
+	end
+
 	--- Returns true if the entity is an ACF ammo crate
 	-- @server
 	-- @return boolean True if the entity is an ACF ammo crate
@@ -1897,7 +1911,7 @@ if SERVER then
 
 		for Wheel in pairs(GetLinkedWheels(This)) do
 			Count = Count + 1
-			Wheels[Count] = Wheel
+			Wheels[Count] = wrap(Wheel)
 		end
 
 		return Wheels
@@ -2460,6 +2474,279 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		This.revLimiterEnabled = not tobool(bool)
+	end
+
+	--===============================================================================================--
+	-- Turret Functions
+	--===============================================================================================--
+
+	-- Getters
+
+	--- Returns the turret's current angle, relative to home
+	-- @server
+	-- @return number The turret's current angle, relative to home, in degrees
+	function ents_methods:acfGetTurretAngle()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return math.Round(-This.CurrentAngle,4)
+	end
+
+	--- Returns the turret's rotator
+	-- @server
+	-- @return Entity The turret's rotator
+	function ents_methods:acfGetTurretRotator()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return IsValid(This.Rotator) and This.Rotator or nil
+	end
+
+	--- Returns the gyroscope linked to the turret
+	-- @server
+	-- @return Entity? The gyroscope linked to the turret, if available, nil if not
+	function ents_methods:acfGetTurretGyro()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return IsValid(This.Gyro) and This.Gyro or nil
+	end
+
+	--- Returns the motor linked to the turret
+	-- @server
+	-- @return Entity? The motor linked to the turret, if available, nil if not
+	function ents_methods:acfGetTurretMotor()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return IsValid(This.Motor) and This.Motor or nil
+	end
+
+	--- Returns the turret's current loaded mass, in kg
+	-- @server
+	-- @return number The turret's current loaded mass, in kg
+	function ents_methods:acfGetTurretMass()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return math.Round(This.TurretData.TotalMass,2)
+	end
+
+	--- Returns the turret's mass center
+	-- @server
+	-- @return Vector The turret's mass center, local to the turret
+	function ents_methods:acfGetTurretMassCenter()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+		if not IsValid(This.Rotator) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM))
+	end
+
+	--- Returns the turret's current slew rate, in degrees/second
+	-- @server
+	-- @return number The turret's current slew rate, in degrees/second
+	function ents_methods:acfGetTurretSlewRate()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return math.Round(This.SlewRate / Clock.DeltaTime,2)
+	end
+
+	--- Returns the turret's maximum slew rate, in degrees/second
+	-- @server
+	-- @return number The turret's maximum slew rate, in degrees/second
+	function ents_methods:acfGetTurretMaxSlewRate()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return math.Round(This.MaxSlewRate,2)
+	end
+
+	--- Returns the turret's slew acceleration, in degrees/second ^ 2
+	-- @server
+	-- @return number The turret's slew acceleration, in degrees/second ^ 2
+	function ents_methods:acfGetTurretSlewAccel()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		return math.Round(This.SlewAccel,4)
+	end
+
+	--- Returns whether or not the turret is stabilized, and by how much
+	-- @server
+	-- @return boolean If the turret is stabilized or not
+	-- @return number Percentage of stabilization (0-1)
+	function ents_methods:acfGetTurretStabilization()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		local Stabilized = This.Stabilized
+
+		return Stabilized, Stabilized and This.StabilizeAmount or 0
+	end
+
+	--- Returns the turret's data
+	-- @server
+	-- @return table The turret's data
+	function ents_methods:acfGetTurretData()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		local Data = {
+			MaxSlewRate		= math.Round(This.MaxSlewRate,2),
+			SlewAccel		= math.Round(This.SlewAccel,4),
+			Angle			= -This.CurrentAngle,
+
+			Stabilized		= This.Stabilized,
+			StabilizeAmount	= This.StabilizeAmount,
+
+			HasArc			= This.HasArc,
+			Minimum			= This.MinDeg,
+			Maximum			= This.MaxDeg,
+
+			TotalMass		= This.TurretData.TotalMass,
+			LocalMassCenter	= IsValid(This.Rotator) and This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM)) or Vector(),
+
+			Motor			= IsValid(This.Motor) and This.Motor or nil,
+			Gyro			= IsValid(This.Gyro) and This.Gyro or nil,
+		}
+
+		return Data
+	end
+
+	-- Setters
+
+	--- Returns the turret to home (0 degrees), disabling any active stabilization
+	-- @server
+	function ents_methods:acfCenterTurret()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:InputDirection(0)
+	end
+
+	--- Makes the turret attempt to aim at the input degree, disabling any active stabilization
+	-- @server
+	-- @param number degree The degree relative to home angle for the turret to attempt to aim at
+	function ents_methods:acfSetTurretDegree(degree)
+		CheckType(self, ents_metatable)
+		CheckLuaType(degree, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:InputDirection(degree)
+	end
+
+	--- Makes the turret attempt to aim at the input angle, enabling any active stabilization
+	-- @server
+	-- @param Angle degree The angle for the turret to attempt to aim at
+	function ents_methods:acfSetTurretAngle(angle)
+		CheckType(self, ents_metatable)
+		CheckType(angle, ang_meta)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:InputDirection(Angle(angle[1],angle[2],angle[3]))
+	end
+
+	--- Makes the turret attempt to aim at the input position, enabling any active stabilization
+	-- @server
+	-- @param Vector position The position for the turret to attempt to aim at
+	function ents_methods:acfSetTurretTargetPosition(position)
+		CheckType(self, ents_metatable)
+		CheckType(position, vec_meta)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This.IsACFTurret or false)) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:InputDirection(Vector(position[1],position[2],position[3]))
 	end
 
 	end

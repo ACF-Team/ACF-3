@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 --===============================================================================================--
 -- Engine class setup
@@ -14,6 +15,7 @@ do
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
 		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
 
 		Engine.FuelTanks[Target] = true
 		Target.Engines[Engine] = true
@@ -44,6 +46,7 @@ do
 
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In)
@@ -78,6 +81,8 @@ do
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
+		Engine:InvalidateClientInfo()
+
 		return true, "Engine linked successfully!"
 	end)
 
@@ -96,6 +101,8 @@ do
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
+		Engine:InvalidateClientInfo()
+
 		return true, "Engine unlinked successfully!"
 	end)
 end
@@ -103,40 +110,44 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local Damage      = ACF.Damage
-local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
-local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-local IsValid     = IsValid
-local Clamp       = math.Clamp
-local Round       = math.Round
-local Remap       = math.Remap
-local max         = math.max
-local min         = math.min
-local TimerCreate = timer.Create
-local TimerSimple = timer.Simple
-local TimerRemove = timer.Remove
+local Damage       = ACF.Damage
+local Utilities    = ACF.Utilities
+local Clock        = Utilities.Clock
+local Sounds       = Utilities.Sounds
+local Contraption  = ACF.Contraption
+local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local IsValid      = IsValid
+local Clamp        = math.Clamp
+local Round        = math.Round
+local Remap        = math.Remap
+local max          = math.max
+local min          = math.min
+local TimerCreate  = timer.Create
+local TimerSimple  = timer.Simple
+local TimerRemove  = timer.Remove
+local TickInterval = engine.TickInterval
 
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
-	local Throttle = Engine.RevLimited and 0 or Engine.Throttle
+	-- Rev limiter code disabled because it has issues with the volume delta time, but it's still here if we need it
+	local Throttle = Engine.Throttle -- Engine.RevLimited and 0 or Engine.Throttle
 	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
-	return Pitch, Volume * ACF.Volume
+	return Pitch, Volume * Engine.SoundVolume
 end
 
 local function GetNextFuelTank(Engine)
-	if not next(Engine.FuelTanks) then return end
+	local FuelTanks = Engine.FuelTanks
+	if not next(FuelTanks) then return end
 
-	local Select = next(Engine.FuelTanks, Engine.FuelTank) or next(Engine.FuelTanks)
+	local Select = next(FuelTanks, Engine.FuelTank) or next(FuelTanks)
 	local Start = Select
 
 	repeat
 		if Select:CanConsume() then return Select end
 
-		Select = next(Engine.FuelTanks, Select) or next(Engine.FuelTanks)
+		Select = next(FuelTanks, Select) or next(FuelTanks)
 	until Select == Start
 
 	return Select:CanConsume() and Select or nil
@@ -149,8 +160,8 @@ local function CheckDistantFuelTanks(Engine)
 		if EnginePos:DistToSqr(Tank:GetPos()) > MaxDistance then
 			local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Engine:EmitSound(Sound, 70, 100, ACF.Volume)
-			Tank:EmitSound(Sound, 70, 100, ACF.Volume)
+			Sounds.SendSound(Engine, Sound, 70, 100, 1)
+			Sounds.SendSound(Tank, Sound, 70, 100, 1)
 
 			Engine:Unlink(Tank)
 		end
@@ -177,24 +188,25 @@ local function CheckGearboxes(Engine)
 	end
 end
 
-local function SetActive(Entity, Value)
-	if Entity.Active == tobool(Value) then return end
+local function SetActive(Entity, Value, EntTbl)
+	EntTbl = EntTbl or Entity:GetTable()
+	if EntTbl.Active == tobool(Value) then return end
 
-	if not Entity.Active then -- Was off, turn on
-		Entity.Active = true
+	if not EntTbl.Active then -- Was off, turn on
+		EntTbl.Active = true
 
-		Entity:CalcMassRatio()
+		Entity:CalcMassRatio(EntTbl)
 
-		Entity.LastThink = Clock.CurTime
-		Entity.Torque    = Entity.PeakTorque
-		Entity.FlyRPM    = Entity.IdleRPM * 1.5
+		EntTbl.LastThink = Clock.CurTime
+		EntTbl.Torque    = EntTbl.PeakTorque
+		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		Entity:UpdateSound()
+		Entity:UpdateSound(EntTbl)
 
-		TimerSimple(engine.TickInterval(), function()
+		TimerSimple(TickInterval(), function()
 			if not IsValid(Entity) then return end
 
-			Entity:CalcRPM()
+			Entity:CalcRPM(EntTbl)
 		end)
 
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
@@ -203,12 +215,12 @@ local function SetActive(Entity, Value)
 			CheckGearboxes(Entity)
 			CheckDistantFuelTanks(Entity)
 
-			Entity:CalcMassRatio()
+			Entity:CalcMassRatio(EntTbl)
 		end)
 	else
-		Entity.Active = false
-		Entity.FlyRPM = 0
-		Entity.Torque = 0
+		EntTbl.Active = false
+		EntTbl.FlyRPM = 0
+		EntTbl.Torque = 0
 
 		Entity:DestroySound()
 
@@ -216,7 +228,7 @@ local function SetActive(Entity, Value)
 	end
 
 	Entity:UpdateOverlay()
-	Entity:UpdateOutputs()
+	Entity:UpdateOutputs(EntTbl)
 end
 
 --===============================================================================================--
@@ -270,9 +282,8 @@ do -- Spawn and Update functions
 		local Mass = Engine.Mass
 
 		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = Engine.Model
 
-		Entity:SetModel(Engine.Model)
+		Contraption.SetModel(Entity, Engine.Model)
 
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
@@ -288,6 +299,7 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundPitch       = Engine.Pitch or 1
+		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
@@ -326,14 +338,7 @@ do -- Spawn and Update functions
 
 		ACF.Activate(Entity, true)
 
-		local PhysObj = Entity:GetPhysicsObject()
-
-		if IsValid(PhysObj) then
-			Entity.ACF.Mass      = Mass
-			Entity.ACF.LegalMass = Mass
-
-			PhysObj:SetMass(Mass)
-		end
+		Contraption.SetMass(Entity, Mass)
 	end
 
 	function MakeACF_Engine(Player, Pos, Angle, Data)
@@ -362,17 +367,24 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner     = Player -- MUST be stored on ent for PP
-		Entity.Active    = false
-		Entity.Gearboxes = {}
-		Entity.FuelTanks = {}
-		Entity.LastThink = 0
-		Entity.MassRatio = 1
-		Entity.FuelUsage = 0
-		Entity.Throttle  = 0
-		Entity.FlyRPM    = 0
-		Entity.SoundPath = Engine.Sound
-		Entity.DataStore = Entities.GetArguments("acf_engine")
+		Entity.Owner         = Player -- MUST be stored on ent for PP
+		Entity.Active        = false
+		Entity.Gearboxes     = {}
+		Entity.FuelTanks     = {}
+		Entity.LastThink     = 0
+		Entity.MassRatio     = 1
+		Entity.FuelUsage     = 0
+		Entity.Throttle      = 0
+		Entity.FlyRPM        = 0
+		Entity.SoundPath     = Engine.Sound
+		Entity.LastPitch     = 0
+		Entity.LastTorque    = 0
+		Entity.LastFuelUsage = 0
+		Entity.LastPower     = 0
+		Entity.LastRPM       = 0
+		Entity.LastTotalMass = 0
+		Entity.LastPhysMass  = 0
+		Entity.DataStore     = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
@@ -507,26 +519,45 @@ function ENT:Enable()
 		Active = true
 	end
 
-	SetActive(self, Active)
+	SetActive(self, Active, self:GetTable())
 
 	self:UpdateOverlay()
 end
 
 function ENT:Disable()
-	SetActive(self, false) -- Turn off the engine
+	SetActive(self, false, self:GetTable()) -- Turn off the engine
 
 	self:UpdateOverlay()
 end
 
-function ENT:UpdateOutputs()
+function ENT:UpdateOutputs(SelfTbl)
 	if not IsValid(self) then return end
 
-	local Power = self.Torque * self.FlyRPM / 9548.8
+	SelfTbl = SelfTbl or self:GetTable()
+	local FuelUsage = Round(SelfTbl.FuelUsage)
+	local Torque    = SelfTbl.Torque
+	local FlyRPM    = SelfTbl.FlyRPM
+	local Power     = Round(Torque * FlyRPM / 9548.8)
 
-	WireLib.TriggerOutput(self, "Fuel Use", self.FuelUsage)
-	WireLib.TriggerOutput(self, "Torque", Round(self.Torque))
-	WireLib.TriggerOutput(self, "Power", Round(Power))
-	WireLib.TriggerOutput(self, "RPM", Round(self.FlyRPM))
+	Torque = Round(Torque)
+	FlyRPM = Round(FlyRPM)
+
+	if SelfTbl.LastFuelUsage ~= FuelUsage then
+		SelfTbl.LastFuelUsage = FuelUsage
+		WireLib.TriggerOutput(self, "Fuel Use", FuelUsage)
+	end
+	if SelfTbl.LastTorque ~= Torque then
+		SelfTbl.LastTorque = Torque
+		WireLib.TriggerOutput(self, "Torque", Torque)
+	end
+	if SelfTbl.LastPower ~= Power then
+		SelfTbl.LastPower = Power
+		WireLib.TriggerOutput(self, "Power", Power)
+	end
+	if SelfTbl.LastRPM ~= FlyRPM then
+		SelfTbl.LastRPM = FlyRPM
+		WireLib.TriggerOutput(self, "RPM", FlyRPM)
+	end
 end
 
 local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
@@ -547,13 +578,13 @@ ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
 end)
 
 ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
-	SetActive(Entity, tobool(Value))
+	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
 	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * 6.45
+	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
@@ -582,53 +613,49 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:UpdateSound()
-	local Path = self.SoundPath
+function ENT:UpdateSound(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
 
-	if Path ~= self.LastSound then
+	local Path      = SelfTbl.SoundPath
+	local LastSound = SelfTbl.LastSound
+
+	if Path ~= LastSound and LastSound ~= nil then
 		self:DestroySound()
 
-		self.LastSound = Path
+		SelfTbl.LastSound = Path
 	end
 
 	if Path == "" then return end
+	if not SelfTbl.Active then return end
 
-	local Sound = self.Sound
+	local Pitch, Volume = GetPitchVolume(SelfTbl)
 
-	if not Sound then
-		Sound = CreateSound(self, Path)
+	if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
 
-		self.Sound = Sound
-	end
+	SelfTbl.LastPitch = Pitch
 
-	if not self.Active then return end
-
-	local Pitch, Volume = GetPitchVolume(self)
-
-	if Sound:IsPlaying() then
-		Sound:ChangePitch(Pitch, 0)
-		Sound:ChangeVolume(Volume, 0)
+	if SelfTbl.Sound then
+		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
 	else
-		Sound:PlayEx(Volume, Pitch)
+		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+		SelfTbl.Sound = true
 	end
 end
 
 function ENT:DestroySound()
-	local Current = self.Sound
+	Sounds.SendAdjustableSound(self, true)
 
-	if Current then
-		Current:Stop()
-	end
-
-	self.LastSound = nil
-	self.Sound     = nil
+	self.LastSound  = nil
+	self.LastPitch  = 0
+	self.Sound      = nil
 end
 
 -- specialized calcmassratio for engines
-function ENT:CalcMassRatio()
+function ENT:CalcMassRatio(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
 	local PhysMass 	= 0
 	local TotalMass = 0
-	local Physical, Parented = ACF_GetEnts(self)
+	local Physical, Parented = Contraption.GetEnts(self)
 
 	for K in pairs(Physical) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
@@ -651,101 +678,137 @@ function ENT:CalcMassRatio()
 		end
 	end
 
-	self.MassRatio = PhysMass / TotalMass
+	SelfTbl.MassRatio = PhysMass / TotalMass
+	TotalMass = Round(TotalMass, 2)
+	PhysMass = Round(PhysMass, 2)
 
-	WireLib.TriggerOutput(self, "Mass", Round(TotalMass, 2))
-	WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
-end
-
-function ENT:GetConsumption(Throttle, RPM)
-	if not IsValid(self.FuelTank) then return 0 end
-
-	if self.FuelType == "Electric" then
-		return Throttle * self.FuelUse * self.Torque * RPM * 1.05e-4
-	else
-		local IdleConsumption = self.PeakPower * 5e2
-		return self.FuelUse * (IdleConsumption + Throttle * self.Torque * RPM) / self.FuelTank.FuelDensity
+	if SelfTbl.LastTotalMass ~= TotalMass then
+		SelfTbl.LastTotalMass = TotalMass
+		WireLib.TriggerOutput(self, "Mass", Round(TotalMass, 2))
+	end
+	if SelfTbl.LastPhysMass ~= PhysMass then
+		SelfTbl.LastPhysMass = PhysMass
+		WireLib.TriggerOutput(self, "Physical Mass", Round(PhysMass, 2))
 	end
 end
 
-function ENT:CalcRPM()
-	if not self.Active then return end
+function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+	FuelTank = FuelTank or SelfTbl.FuelTank
+	if not IsValid(FuelTank) then return 0 end
 
-	local DeltaTime = Clock.CurTime - self.LastThink
-	local FuelTank 	= GetNextFuelTank(self)
+	if SelfTbl.FuelType == "Electric" then
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
+	else
+		local IdleConsumption = SelfTbl.PeakPower * 5e2
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
+	end
+end
+
+function ENT:CalcRPM(SelfTbl)
+	-- Reusing these entity table pointers helps us cut down on __index calls
+	-- This helps to massively improve performance throughout the entire drivetrain
+	SelfTbl = SelfTbl or self:GetTable()
+	if not SelfTbl.Active then return end
+
+	local ClockTime  = Clock.CurTime
+	local DeltaTime  = ClockTime - SelfTbl.LastThink
+	local FuelTank   = GetNextFuelTank(SelfTbl)
+	local IsElectric = SelfTbl.IsElectric
+	local LimitRPM   = SelfTbl.LimitRPM
+	local FlyRPM     = SelfTbl.FlyRPM
 
 	-- Determine if the rev limiter will engage or disengage
-	if self.revLimiterEnabled and not self.IsElectric then
-		if self.FlyRPM > self.LimitRPM * 0.99 then
-			self.RevLimited = true
-		elseif self.FlyRPM < self.LimitRPM * 0.95 then
-			self.RevLimited = false
+	local RevLimited = false
+	if SelfTbl.revLimiterEnabled and not IsElectric then
+		if FlyRPM > LimitRPM * 0.99 then
+			RevLimited = true
+		elseif FlyRPM < LimitRPM * 0.95 then
+			RevLimited = false
 		end
+
+		SelfTbl.RevLimited = RevLimited
 	end
-	local Throttle = self.RevLimited and 0 or self.Throttle
+	local Throttle = RevLimited and 0 or SelfTbl.Throttle
 
 	-- Calculate fuel usage
 	if IsValid(FuelTank) then
-		self.FuelTank = FuelTank
-		self.FuelType = FuelTank.FuelType
+		SelfTbl.FuelTank = FuelTank
+		SelfTbl.FuelType = FuelTank.FuelType
 
-		local Consumption = self:GetConsumption(Throttle, self.FlyRPM) * DeltaTime
+		local Consumption = self:GetConsumption(Throttle, FlyRPM, FuelTank, SelfTbl) * DeltaTime
 
-		self.FuelUsage = 60 * Consumption / DeltaTime
+		SelfTbl.FuelUsage = 60 * Consumption / DeltaTime
 
-		FuelTank:Consume(Consumption)
+		FuelTank:Consume(Consumption, FuelTank:GetTable())
 	elseif ACF.RequireFuel then -- Stay active if fuel consumption is disabled
-		SetActive(self, false)
+		SetActive(self, false, SelfTbl)
 
-		self.FuelUsage = 0
+		SelfTbl.FuelUsage = 0
 
 		return 0
 	end
 
 	-- Calculate the current torque from flywheel RPM
-	local Percent = Remap(self.FlyRPM, self.IdleRPM, self.LimitRPM, 0, 1)
-	local PeakRPM = self.IsElectric and self.FlywheelOverride or self.PeakMaxRPM
-	local Drag    = self.PeakTorque * (max(self.FlyRPM - self.IdleRPM, 0) / PeakRPM) * (1 - Throttle) / self.Inertia
+	local IdleRPM    = SelfTbl.IdleRPM
+	local PeakRPM    = IsElectric and SelfTbl.FlywheelOverride or SelfTbl.PeakMaxRPM
+	local Inertia    = SelfTbl.Inertia
+	local PeakTorque = SelfTbl.PeakTorque
+	local Drag       = PeakTorque * (max(FlyRPM - IdleRPM, 0) / PeakRPM) * (1 - Throttle) / Inertia
 
-	self.Torque = Throttle * ACF.GetTorque(self.TorqueCurve, Percent) * self.PeakTorque * (self.FlyRPM < self.LimitRPM and 1 or 0)
+	local Torque = 0
+
+	if Throttle ~= 0 and FlyRPM < LimitRPM then
+		local Percent = Remap(FlyRPM, IdleRPM, LimitRPM, 0, 1)
+		Torque = Throttle * ACF.GetTorque(SelfTbl.TorqueCurve, Percent) * PeakTorque -- * (FlyRPM < LimitRPM and 1 or 0)
+	end
+
+	SelfTbl.Torque = Torque
+
 	-- Let's accelerate the flywheel based on that torque
-	self.FlyRPM = min(max(self.FlyRPM + self.Torque / self.Inertia - Drag, 0), self.LimitRPM)
+	FlyRPM = min(max(FlyRPM + Torque / Inertia - Drag, 0), LimitRPM)
 
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	local Boxes      = 0
 	local TotalReqTq = 0
 
-	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
-	for Ent, Link in pairs(self.Gearboxes) do
-		if not Ent.Disabled then
-			Boxes = Boxes + 1
-			Link.ReqTq = Ent:Calc(self.FlyRPM, self.Inertia)
-			TotalReqTq = TotalReqTq + Link.ReqTq
-		end
-	end
-
 	-- This is the presently available torque from the engine
-	local TorqueDiff = max(self.FlyRPM - self.IdleRPM, 0) * self.Inertia
-	-- Calculate the ratio of total requested torque versus what's available
-	local AvailRatio = min(TorqueDiff / TotalReqTq / Boxes, 1)
+	local TorqueDiff = max(FlyRPM - IdleRPM, 0) * Inertia
 
-	-- Split the torque fairly between the gearboxes who need it
-	for Ent, Link in pairs(self.Gearboxes) do
-		if not Ent.Disabled then
-			Ent:Act(Link.ReqTq * AvailRatio * self.MassRatio, DeltaTime, self.MassRatio)
+	-- The resulting torque output would be 0 when there's no throttle anyways, so we'll just skip the calculations entirely
+	if Throttle ~= 0 then
+		local BoxesTbl = SelfTbl.Gearboxes
+
+		-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
+		for Ent, Link in pairs(BoxesTbl) do
+			if not Ent.Disabled then
+				Boxes = Boxes + 1
+				Link.ReqTq = Ent:Calc(FlyRPM, Inertia)
+				TotalReqTq = TotalReqTq + Link.ReqTq
+			end
+		end
+
+		-- Calculate the ratio of total requested torque versus what's available
+		local AvailRatio = min(TorqueDiff / TotalReqTq / Boxes, 1)
+
+		local MassRatio = SelfTbl.MassRatio
+
+		-- Split the torque fairly between the gearboxes who need it
+		for Ent, Link in pairs(BoxesTbl) do
+			Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
 		end
 	end
 
-	self.FlyRPM = self.FlyRPM - min(TorqueDiff, TotalReqTq) / self.Inertia
-	self.LastThink = Clock.CurTime
+	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
+	SelfTbl.LastThink = ClockTime
 
-	self:UpdateSound()
-	self:UpdateOutputs()
+	self:UpdateSound(SelfTbl)
+	self:UpdateOutputs(SelfTbl)
 
-	TimerSimple(engine.TickInterval(), function()
+	TimerSimple(TickInterval(), function()
 		if not IsValid(self) then return end
 
-		self:CalcRPM()
+		self:CalcRPM(SelfTbl)
 	end)
 end
 
@@ -841,4 +904,46 @@ function ENT:OnRemove()
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
+end
+
+do	-- NET SURFER 2.0
+	util.AddNetworkString("ACF_RequestEngineInfo")
+	util.AddNetworkString("ACF_InvalidateEngineInfo")
+
+	function ENT:InvalidateClientInfo()
+		net.Start("ACF_InvalidateEngineInfo")
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
+
+	net.Receive("ACF_RequestEngineInfo",function(_,Ply)
+		local Entity = net.ReadEntity()
+
+		if IsValid(Entity) then
+			local Outputs = {}
+			local FuelTanks = {}
+			local Data = {
+				Driveshaft	= Entity.Out
+			}
+
+			if next(Entity.Gearboxes) then
+				for E in pairs(Entity.Gearboxes) do
+					Outputs[#Outputs + 1] = E:EntIndex()
+				end
+			end
+
+			if next(Entity.FuelTanks) then
+				for E in pairs(Entity.FuelTanks) do
+					FuelTanks[#FuelTanks + 1] = E:EntIndex()
+				end
+			end
+
+			net.Start("ACF_RequestEngineInfo")
+				net.WriteEntity(Entity)
+				net.WriteString(util.TableToJSON(Data))
+				net.WriteString(util.TableToJSON(Outputs))
+				net.WriteString(util.TableToJSON(FuelTanks))
+			net.Send(Ply)
+		end
+	end)
 end

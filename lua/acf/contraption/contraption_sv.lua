@@ -1,9 +1,9 @@
 -- Contraption-aware functionality
 
--- Local Funcs ----------------------------------
--- These functions are used within this file and made global at the end
+local ACF = ACF
+local Contraption = ACF.Contraption
 
-local function GetAncestor(Ent)
+function Contraption.GetAncestor(Ent)
 	if not IsValid(Ent) then return nil end
 
 	local Parent = Ent
@@ -17,39 +17,39 @@ local function GetAncestor(Ent)
 	return Parent, Last
 end
 
-function ACF.getAncestors(ent)
-	local ancestors = {}
-	local parent    = ent:GetParent()
-	local count     = 0
+function Contraption.GetAncestors(Ent)
+	local Ancestors = {}
+	local Parent    = Ent:GetParent()
+	local Count     = 0
 
-	while IsValid(parent) do
-		count            = count + 1
-		ancestors[count] = parent
+	while IsValid(Parent) do
+		Count            = Count + 1
+		Ancestors[Count] = Parent
 
-		parent = parent:GetParent()
+		Parent = Parent:GetParent()
 	end
 
-	return ancestors
+	return Ancestors
 end
 
-function ACF.hasAncestor(ent, ancestor)
-	if not IsValid(ent) then return false end
-	if not IsValid(ancestor) then return false end
+function Contraption.HasAncestor(Ent, Ancestor)
+	if not IsValid(Ent) then return false end
+	if not IsValid(Ancestor) then return false end
 
-	local parent = ent:GetParent()
+	local Parent = Ent:GetParent()
 
-	while IsValid(parent) do
-		if parent == ancestor then
+	while IsValid(Parent) do
+		if Parent == Ancestor then
 			return true
 		end
 
-		parent = parent:GetParent()
+		Parent = Parent:GetParent()
 	end
 
 	return false
 end
 
-local function GetAllPhysicalEntities(Ent, Tab)
+function Contraption.GetAllPhysicalEntities(Ent, Tab)
 	local Res = Tab or {}
 
 	if IsValid(Ent) and not Res[Ent] then
@@ -63,8 +63,8 @@ local function GetAllPhysicalEntities(Ent, Tab)
 				end
 
 				if V.Type ~= "NoCollide" then -- NoCollides aren't a real constraint
-					GetAllPhysicalEntities(V.Ent1, Res)
-					GetAllPhysicalEntities(V.Ent2, Res)
+					Contraption.GetAllPhysicalEntities(V.Ent1, Res)
+					Contraption.GetAllPhysicalEntities(V.Ent2, Res)
 				end
 			end
 		end
@@ -73,26 +73,26 @@ local function GetAllPhysicalEntities(Ent, Tab)
 	return Res
 end
 
-local function GetAllChildren(Ent, Tab)
+function Contraption.GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
 		if not IsValid(V) or Res[V] then continue end
 
 		Res[V] = true
-		GetAllChildren(V, Res)
+		Contraption.GetAllChildren(V, Res)
 	end
 
 	return Res
 end
 
-local function GetEnts(Ent)
-	local Ancestor 	= GetAncestor(Ent)
-	local Phys 		= GetAllPhysicalEntities(Ancestor)
+function Contraption.GetEnts(Ent)
+	local Ancestor 	= Contraption.GetAncestor(Ent)
+	local Phys 		= Contraption.GetAllPhysicalEntities(Ancestor)
 	local Pare 		= {}
 
 	for K in pairs(Phys) do
-		GetAllChildren(K, Pare)
+		Contraption.GetAllChildren(K, Pare)
 	end
 
 	for K in pairs(Phys) do -- Go through the all physical ents (There's probably less of those than the parented ones)
@@ -104,7 +104,7 @@ local function GetEnts(Ent)
 	return Phys, Pare
 end
 -------------------------------------------------
-function ACF.HasConstraints(Ent)
+function Contraption.HasConstraints(Ent)
 	if Ent.Constraints then
 		for _, V in pairs(Ent.Constraints) do
 			if V.Type ~= "NoCollide" then
@@ -116,7 +116,7 @@ function ACF.HasConstraints(Ent)
 	return false
 end
 
-function ACF_CalcMassRatio(Ent, Tally)
+function Contraption.CalcMassRatio(Ent, Tally)
 	local TotMass  = 0
 	local PhysMass = 0
 	local Time     = CurTime()
@@ -129,7 +129,7 @@ function ACF_CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented = GetEnts(Ent)
+	local Physical, Parented = Contraption.GetEnts(Ent)
 	local Constraints = {}
 
 	for K in pairs(Physical) do
@@ -213,86 +213,149 @@ function ACF_CalcMassRatio(Ent, Tally)
 	end
 end
 
-do -- ACF Parent Detouring
-	local Detours = {}
-	function ACF.AddParentDetour(Class, Variable)
-		if not Class then return end
-		if not Variable then return end
+do -- ASSUMING DIRECT CONTROL
 
-		Detours[Class] = function(Entity)
-			return Entity[Variable]
-		end
-	end
+	local BlockedTools = {
+		proper_clipping	= true,
+		makespherical	= true
+	}
 
-	hook.Add("Initialize", "ACF Parent Detour", function()
-		local EntMeta = FindMetaTable("Entity")
-		local SetParent = EntMeta.SetParent
+	local BlockedGroups = {
+		[COLLISION_GROUP_DEBRIS]		= true,
+		[COLLISION_GROUP_IN_VEHICLE]	= true,
+		[COLLISION_GROUP_VEHICLE_CLIP]	= true,
+		[COLLISION_GROUP_DOOR_BLOCKER]	= true
+	}
 
-		function EntMeta:SetParent(Entity, ...)
-			if IsValid(Entity) then
-				local Detour = Detours[Entity:GetClass()]
+	-- If allowed, will remove existing makespherical dupe modifiers on ACF entities
+	hook.Add("OnEntityCreated", "ACF Exploitables Stubbing", function(Entity)
+		if not ACF.LegalChecks then return end
+		if not IsValid(Entity) then return end
+		if not Entity.IsACFEntity then return end
 
-				if Detour then
-					Entity = Detour(Entity)
+		duplicator.ClearEntityModifier(Entity, "sphere")
+		duplicator.ClearEntityModifier(Entity, "MakeSphericalCollisions")
+	end)
+
+	-- This, if allowed, will prevent physical clips from happening on ACF entities, except for procedural armor
+	hook.Add("ProperClippingCanPhysicsClip", "ACF Block PhysicsClip", function(Entity)
+		if not ACF.LegalChecks then return true end
+		if Entity.IsACFArmor then return true end
+		if Entity.IsACFEntity then return false end
+	end)
+
+	-- This, if allowed, will block ProperClipping from putting clips on any ACF entities, except for procedural armor
+	hook.Add("CanTool", "ACF Block ProperClipping", function(_, Trace, Tool)
+		if not ACF.LegalChecks then return end
+
+		if not BlockedTools[Tool] then return end
+
+		-- Special case, allow this but block on everything else
+		if Trace.Entity.IsACFArmor and Tool == "proper_clipping" then return true end
+
+		if Trace.Entity.IsACFEntity then return false end
+	end)
+
+	hook.Add("Initialize", "ACF Meta Detour",function()
+		timer.Simple(1,function()
+			Contraption.Detours = Contraption.Detours or {
+				ENT			= {},
+				OBJ			= {},
+			}
+
+			local ENT = FindMetaTable("Entity")
+			local OBJ = FindMetaTable("PhysObj")
+
+			local EntDetours	= Contraption.Detours.ENT
+			local ObjDetours	= Contraption.Detours.OBJ
+
+			local SetMass		= OBJ.SetMass
+			ObjDetours.SetMass	= SetMass
+
+			local SetNoDraw					= ENT.SetNoDraw
+			local SetModel					= ENT.SetModel
+			local PhysicsInitSphere			= ENT.PhysicsInitSphere
+			local SetCollisionBounds		= ENT.SetCollisionBounds
+			local SetCollisionGroup			= ENT.SetCollisionGroup
+			local SetNotSolid				= ENT.SetNotSolid
+			EntDetours.SetNoDraw			= SetNoDraw
+			EntDetours.SetModel				= SetModel
+			EntDetours.PhysicsInitSphere	= PhysicsInitSphere
+			EntDetours.SetCollisionBounds	= SetCollisionBounds
+			EntDetours.SetCollisionGroup	= SetCollisionGroup
+			EntDetours.SetNotSolid			= SetNotSolid
+
+			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
+			function Contraption.SetMass(Entity, Mass)
+				Entity.ACF.Mass	=	 Mass
+
+				if Entity.ACF_OnMassChange then
+					Entity:ACF_OnMassChange(Entity:GetPhysicsObject():GetMass(), Mass)
 				end
+
+				SetMass(Entity:GetPhysicsObject(), Mass)
 			end
 
-			SetParent(self, Entity, ...)
-		end
+			function Contraption.SetModel(Entity, Model)
+				Entity.ACF.Model	= Model
 
-		hook.Remove("Initialize", "ACF Parent Detour")
+				SetModel(Entity, Model)
+			end
+
+			function OBJ:SetMass(Mass)
+				local Ent = self:GetEntity()
+
+				-- Required due for AD2 support, if this isn't present then entities will never get set to their required weight on dupe paste
+				if Ent.IsACFEntity then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
+
+				if Ent.ACF_OnMassChange then
+					Ent:ACF_OnMassChange(self:GetMass(), Mass)
+				end
+
+				SetMass(self, Mass)
+			end
+
+			function ENT:SetModel(Model)
+				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
+
+				SetModel(self, Model)
+			end
+
+			-- All of these should prevent the relevant functions from occurring on ACF entities, but only if LegalChecks are enabled
+			-- Will also call ACF.CheckLegal at the same time as preventing the function usage, because likely something else is amiss
+			function ENT:PhysicsInitSphere(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return false end
+
+				self._IsSpherical	= true
+
+				return PhysicsInitSphere(self, ...)
+			end
+
+			function ENT:SetCollisionBounds(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return end
+
+				SetCollisionBounds(self, ...)
+			end
+
+			function ENT:SetCollisionGroup(Group)
+				if self.IsACFEntity and ACF.LegalChecks and (BlockedGroups[Group] == true) then ACF.CheckLegal(self) return end
+
+				SetCollisionGroup(self, Group)
+			end
+
+			function ENT:SetNoDraw(...)
+				if self.IsACFEntity and ACF.LegalChecks then ACF.CheckLegal(self) return end
+
+				SetNoDraw(self, ...)
+			end
+
+			function ENT:SetNotSolid(...)
+				if self.IsACFEntity then ACF.CheckLegal(self) end
+
+				SetNotSolid(self, ...)
+			end
+
+			hook.Remove("Initialize","ACF Meta Detour")
+		end)
 	end)
 end
-
-do -- ASSUMING DIRECT CONTROL
-	local ENT = FindMetaTable("Entity")
-	local OBJ = FindMetaTable("PhysObj")
-
-	do -- SetMass
-		-- Reject any changes to mass on ACF entities
-		-- Mass can only be set to whatever Ent.ACF.LegalMass is
-		local SetMass = SetMass or OBJ.SetMass
-
-		function OBJ:SetMass(Number)
-			local Ent = self:GetEntity()
-
-			if Ent.IsACFEntity and Ent.ACF and Number ~= Ent.ACF.LegalMass then
-				return
-			end
-
-			SetMass(self, Number)
-		end
-	end
-
-	do -- SetModel
-		-- Reject any changes to the model on ACF entities
-		-- Models can only be set to whatever Ent.ACF.Model is
-		local SetModel = SetModel or ENT.SetModel
-
-		function ENT:SetModel(String)
-			if self.IsACFEntity and self.ACF and String ~= self.ACF.Model then
-				return
-			end
-
-			SetModel(self, String)
-		end
-	end
-
-	do -- SetNoDraw
-		local SetNoDraw = SetNoDraw or ENT.SetNoDraw
-
-		function ENT:SetNoDraw(Bool)
-			if Bool and self.IsACFEntity then
-				return
-			end
-
-			SetNoDraw(self, Bool)
-		end
-	end
-end
-
--- Globalize ------------------------------------
-ACF_GetAllPhysicalEntities 	= GetAllPhysicalEntities
-ACF_GetAllChildren 			= GetAllChildren
-ACF_GetEnts 				= GetEnts
-ACF_GetAncestor 			= GetAncestor

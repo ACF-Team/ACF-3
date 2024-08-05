@@ -51,12 +51,14 @@ do -- Clientside settings
 		local Volume = Base:AddSlider("Client Sound Volume", 0, 1, 2)
 		Volume:SetClientData("Volume", "OnValueChanged")
 		Volume:DefineSetter(function(Panel, _, _, Value)
+			Value = math.Clamp(tonumber(Value) or 1, 0, 1)
+
 			Panel:SetValue(Value)
+
+			ACF.Volume = Value
 
 			return Value
 		end)
-
-		Base:AddHelp("For the moment, this will only affect sounds that are played from the clientside.")
 	end)
 
 	ACF.AddClientSettings(101, "Effects and Visual Elements", function(Base)
@@ -67,11 +69,35 @@ do -- Clientside settings
 		Particles:SetConVar("acf_cl_particlemul")
 
 		Base:AddHelp("Defines the clientside particle multiplier, reduce it if you're experiencing lag when ACF effects are created.")
+
+		Base:AddLabel("Ammo Refill Color")
+		local AmmoRefillColor = Base:AddPanel("DColorMixer")
+		AmmoRefillColor:SetColor(ACF.AmmoRefillColor)
+		AmmoRefillColor:SetClientData("AmmoRefillColor", "ValueChanged")
+		AmmoRefillColor:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoRefillColor = Value
+
+			return Value
+		end)
+
+		Base:AddLabel("Fuel Refill Color")
+		local FuelRefillColor = Base:AddPanel("DColorMixer")
+		FuelRefillColor:SetColor(ACF.FuelRefillColor)
+		FuelRefillColor:SetClientData("FuelRefillColor", "ValueChanged")
+		FuelRefillColor:DefineSetter(function(_, _, _, Value)
+			ACF.FuelRefillColor = Value
+
+			return Value
+		end)
 	end)
 
 	ACF.AddClientSettings(201, "Legal Checks", function(Base)
 		local Hints = Base:AddCheckBox("Enable hints on entity disabling.")
 		Hints:SetConVar("acf_legalhints")
+
+		local ShameMsgs = Base:AddCheckBox("Display failed legal checks in the console.")
+		ShameMsgs:SetConVar("acf_legalshame")
+		Base:AddHelp("Requires the matching setting to be enabled on the server as well.")
 	end)
 
 	ACF.AddClientSettings(301, "Debris", function(Base)
@@ -147,6 +173,14 @@ do -- Serverside settings
 			return Value
 		end)
 
+		local LegalCheckNameAndShame = Base:AddCheckBox("Display failed legal checks in the console.")
+		LegalCheckNameAndShame:SetServerData("NameAndShame", "OnChange")
+		LegalCheckNameAndShame:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+
+			return Value
+		end)
+
 		local GunFire = Base:AddCheckBox("Allow guns to fire.")
 		GunFire:SetServerData("GunsCanFire", "OnChange")
 		GunFire:DefineSetter(function(Panel, _, _, Value)
@@ -202,18 +236,6 @@ do -- Serverside settings
 
 			return Value
 		end)
-	end)
-
-	ACF.AddServerSettings(100, "Sound Volume", function(Base)
-		local Volume = Base:AddSlider("Server Sound Volume", 0, 1, 2)
-		Volume:SetServerData("Volume", "OnValueChanged")
-		Volume:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("Will affect a handful of sounds that are played from the serverside. This will be deprecated in the future.")
 	end)
 
 	ACF.AddServerSettings(101, "Entity Pushing", function(Base)
