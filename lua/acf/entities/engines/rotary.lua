@@ -18,6 +18,8 @@ do
 		Mass		 = 50,
 		Torque		 = 97,
 		FlywheelMass = 0.06,
+		FlywheelMassUpdate = 3,
+		Displacement = 0.9,
 		RPM = {
 			Idle	= 950,
 			Limit	= 9200,
@@ -37,6 +39,8 @@ do
 		Mass		 = 140,
 		Torque		 = 155,
 		FlywheelMass = 0.06,
+		FlywheelMassUpdate = 4,
+		Displacement = 1.3,
 		RPM = {
 			Idle	= 950,
 			Limit	= 9000,
@@ -56,6 +60,8 @@ do
 		Mass		 = 200,
 		Torque		 = 235,
 		FlywheelMass = 0.1,
+		FlywheelMassUpdate = 5,
+		Displacement = 2.0,
 		RPM = {
 			Idle	= 950,
 			Limit	= 9500,

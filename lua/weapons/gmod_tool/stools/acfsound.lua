@@ -24,7 +24,7 @@ end
 
 ACF.SoundToolSupport = ACF.SoundToolSupport or {}
 
-local Sounds   = ACF.SoundToolSupport
+local Sounds = ACF.SoundToolSupport
 
 Sounds.acf_gun = {
 	GetSound = function(ent)
@@ -80,7 +80,45 @@ Sounds.acf_engine = {
 	end
 }
 
+Sounds.acf_engine_update = {
+	GetSound = function(ent)
+		return {
+			Sound  = ent.SoundPath,
+			Pitch  = ent.SoundPitch,
+			Volume = ent.SoundVolume
+		}
+	end,
+	SetSound = function(ent, soundData)
+		local Sound = soundData.Sound:Trim():lower()
+
+		ent.SoundPath   = Sound
+		ent.SoundPitch  = soundData.Pitch
+		ent.SoundVolume = soundData.Volume
+
+		ent:UpdateSound()
+	end,
+	ResetSound = function(ent)
+		ent.SoundPath   = ent.DefaultSound
+		ent.SoundPitch  = 1
+		ent.SoundVolume = 1
+
+		ent:UpdateSound()
+	end
+}
+
 Sounds.acf_gearbox = {
+	GetSound = function(ent)
+		return { Sound = ent.SoundPath }
+	end,
+	SetSound = function(ent, soundData)
+		ent.SoundPath = soundData.Sound
+	end,
+	ResetSound = function(ent)
+		ent.SoundPath = ent.DefaultSound
+	end
+}
+
+Sounds.acf_gearbox_update = {
 	GetSound = function(ent)
 		return { Sound = ent.SoundPath }
 	end,

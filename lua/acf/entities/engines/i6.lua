@@ -17,6 +17,8 @@ do -- Petrol Engines
 		Mass		 = 120,
 		Torque		 = 169,
 		FlywheelMass = 0.1,
+		FlywheelMassUpdate = 8,
+		Displacement = 2.2,
 		RPM = {
 			Idle	= 800,
 			Limit	= 7500,
@@ -36,6 +38,8 @@ do -- Petrol Engines
 		Mass		 = 300,
 		Torque		 = 460,
 		FlywheelMass = 0.2,
+		FlywheelMassUpdate = 18,
+		Displacement = 4.8,
 		RPM = {
 			Idle	= 900,
 			Limit	= 5500,
@@ -55,6 +59,8 @@ do -- Petrol Engines
 		Mass		 = 850,
 		Torque		 = 1760,
 		FlywheelMass = 2.5,
+		FlywheelMassUpdate = 130,
+		Displacement = 17.2,
 		RPM = {
 			Idle	= 800,
 			Limit	= 2700,
@@ -76,6 +82,8 @@ do -- Diesel Engines
 		Mass		 = 150,
 		Torque		 = 250,
 		FlywheelMass = 0.5,
+		FlywheelMassUpdate = 14,
+		Displacement = 3.0,
 		RPM = {
 			Idle	= 650,
 			Limit	= 4900,
@@ -95,6 +103,8 @@ do -- Diesel Engines
 		Mass		 = 450,
 		Torque		 = 700,
 		FlywheelMass = 1.5,
+		FlywheelMassUpdate = 30,
+		Displacement = 6.5,
 		RPM = {
 			Idle	= 600,
 			Limit	= 4000,
@@ -114,6 +124,8 @@ do -- Diesel Engines
 		Mass		 = 1200,
 		Torque		 = 2490,
 		FlywheelMass = 8,
+		FlywheelMassUpdate = 200,
+		Displacement = 20,
 		RPM = {
 			Idle	= 400,
 			Limit	= 2350,

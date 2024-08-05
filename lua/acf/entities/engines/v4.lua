@@ -17,6 +17,8 @@ do -- Diesel Engines
 		Mass		 = 110,
 		Torque		 = 206,
 		FlywheelMass = 0.3,
+		FlywheelMassUpdate = 8,
+		Displacement = 1.9,
 		RPM = {
 			Idle	= 650,
 			Limit	= 4000,
@@ -36,6 +38,8 @@ do -- Diesel Engines
 		Mass		 = 275,
 		Torque		 = 600,
 		FlywheelMass = 1.05,
+		FlywheelMassUpdate = 20,
+		Displacement = 3.3,
 		RPM = {
 			Idle	= 600,
 			Limit	= 3900,

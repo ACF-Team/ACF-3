@@ -97,6 +97,21 @@ do -- Default gearbox menus
 				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
+			ACF.SetClientData("PrimaryClass","acf_gearbox")
+
+			if Data.ClassID ~= "DoubleDiff" then
+				local MobilityUpdate = Base:AddCheckBox("[BETA] Enables new mobility logic")
+				MobilityUpdate:SetClientData("MobilityUpdate", "OnChange")
+				MobilityUpdate:DefineSetter(function(Panel, _, _, Value)
+					Panel:SetValue(Value)
+					if Value then
+						ACF.SetClientData("PrimaryClass","acf_gearbox_update")
+					else
+						ACF.SetClientData("PrimaryClass","acf_gearbox")
+					end
+					return Value
+				end)
+			end
 			-----------------------------------
 
 			local GearBase = Menu:AddCollapsible("Gear Settings")
@@ -117,7 +132,7 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local Control = GearBase:AddSlider("Gear " .. I, -10, 10, 3)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -136,7 +151,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
+			local FinalDrive = GearBase:AddSlider("Final Drive", -10, 10, 3)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -147,6 +162,46 @@ do -- Default gearbox menus
 
 				return Value
 			end)
+
+			local RatioConverter = GearBase:AddButton("Convert Ratios")
+			function RatioConverter:DoClickInternal()
+				if ValuesData.FinalDrive ~= 0 then
+					local FinalDrive = 1 / ValuesData.FinalDrive
+					ValuesData.FinalDrive = FinalDrive
+					ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
+				end
+
+				for I = 1, Gears.Max do
+					local Variable = "Gear" .. I
+					if ValuesData[Variable] ~= 0 then
+						local Ratio = 1 / ValuesData[Variable]
+						ValuesData[Variable] = Ratio
+						ACF.SetClientData(Variable, Ratio)
+					end
+
+				end
+			end
+
+			local PasteCopiedData = GearBase:AddButton("Paste Copied Ratios")
+			function PasteCopiedData:DoClickInternal()
+				if ACF.GetClientString("CopiedGearboxData","No Data") == "No Data" then return end
+				local CopiedData = util.JSONToTable(ACF.GetClientString("CopiedGearboxData","No Data"))
+				table.SortByMember(CopiedData, "Key", true)
+
+				local Ratios = CopiedData[3]["Value"]
+				local FinalDrive = CopiedData[1]["Value"]
+
+				for I = 1, Gears.Max do
+					if Ratios[I] ~= nil then
+						local Variable = "Gear" .. I
+						ValuesData[Variable] = Ratios[I]
+						ACF.SetClientData(Variable, ValuesData[Variable])
+					end
+				end
+
+				ValuesData["FinalDrive"] = FinalDrive
+				ACF.SetClientData("FinalDrive",ValuesData["FinalDrive"])
+			end
 		end
 	end
 
@@ -155,9 +210,9 @@ do -- Default gearbox menus
 			{
 				Name = "Gear 2",
 				Variable = "Gear2",
-				Min = -1,
-				Max = 1,
-				Decimals = 2,
+				Min = -10,
+				Max = 10,
+				Decimals = 3,
 				Default = -0.1,
 			},
 			{
@@ -172,16 +227,16 @@ do -- Default gearbox menus
 				Name = "Max Target RPM",
 				Variable = "MaxRPM",
 				Min = 101,
-				Max = 10000,
+				Max = 12000,
 				Decimals = 0,
 				Default = 5000,
 			},
 			{
 				Name = "Final Drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
-				Decimals = 2,
+				Min = -10,
+				Max = 10,
+				Decimals = 3,
 				Default = 1,
 			},
 		}
@@ -190,13 +245,28 @@ do -- Default gearbox menus
 			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
 			local Mass = ACF.GetProperMass(Data.Mass)
 			local Torque = math.floor(Data.MaxTorque * 0.73)
-
+			local Gears = Class.Gears
 			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
 
 			if Data.DualClutch then
 				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
+			ACF.SetClientData("PrimaryClass","acf_gearbox")
+
+			local MobilityUpdate = Base:AddCheckBox("[BETA] Enables new mobility logic")
+			MobilityUpdate:SetClientData("MobilityUpdate", "OnChange")
+			MobilityUpdate:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetValue(Value)
+				if Value then
+					ACF.SetClientData("PrimaryClass","acf_gearbox_update")
+				else
+					ACF.SetClientData("PrimaryClass","acf_gearbox")
+				end
+				return Value
+			end)
+
+			Base:AddLabel("With the mobility update enabled \"Max Target RPM\" is unused.")
 			-----------------------------------
 
 			local GearBase = Menu:AddCollapsible("Gear Settings")
@@ -205,7 +275,7 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[Class.ID]
 
-			ACF.SetClientData("Gear1", 0.01)
+			ACF.SetClientData("Gear1", 0.001)
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
@@ -230,6 +300,39 @@ do -- Default gearbox menus
 
 					return Value
 				end)
+			end
+
+			local RatioConverter = GearBase:AddButton("Convert Ratios")
+			function RatioConverter:DoClickInternal()
+				if ValuesData.FinalDrive ~= 0 then
+					local FinalDrive = 1 / ValuesData.FinalDrive
+					ValuesData.FinalDrive = FinalDrive
+					ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
+				end
+				local Gear2 = 1 / ValuesData.Gear2
+				ValuesData.Gear2 = Gear2
+				ACF.SetClientData("Gear2",Gear2)
+			end
+
+			local PasteCopiedData = GearBase:AddButton("Paste Copied Ratios")
+			function PasteCopiedData:DoClickInternal()
+				if ACF.GetClientString("CopiedGearboxData","No Data") == "No Data" then return end
+				local CopiedData = util.JSONToTable(ACF.GetClientString("CopiedGearboxData","No Data"))
+				table.SortByMember(CopiedData, "Key", true)
+
+				local Ratios = CopiedData[3]["Value"]
+				local FinalDrive = CopiedData[1]["Value"]
+
+				for I = 1, Gears.Max do
+					if Ratios[I] ~= nil then
+						local Variable = "Gear" .. I
+						ValuesData[Variable] = Ratios[I]
+						ACF.SetClientData(Variable, ValuesData[Variable])
+					end
+				end
+
+				ValuesData["FinalDrive"] = FinalDrive
+				ACF.SetClientData("FinalDrive",ValuesData["FinalDrive"])
 			end
 		end
 	end
@@ -297,6 +400,7 @@ do -- Default gearbox menus
 				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
 			end
 
+			ACF.SetClientData("PrimaryClass","acf_gearbox")
 			-----------------------------------
 
 			local GearBase = Menu:AddCollapsible("Gear Settings")
@@ -455,6 +559,27 @@ do -- Default gearbox menus
 
 					ACF.SetClientData("Shift" .. I, Gear * Multiplier)
 				end
+			end
+
+			local PasteCopiedData = GearBase:AddButton("Paste Copied Ratios")
+			function PasteCopiedData:DoClickInternal()
+				if ACF.GetClientString("CopiedGearboxData","No Data") == "No Data" then return end
+				local CopiedData = util.JSONToTable(ACF.GetClientString("CopiedGearboxData","No Data"))
+				table.SortByMember(CopiedData, "Key", true)
+
+				local Ratios = CopiedData[3]["Value"]
+				local FinalDrive = CopiedData[1]["Value"]
+
+				for I = 1, Gears.Max do
+					if Ratios[I] ~= nil then
+						local Variable = "Gear" .. I
+						ValuesData[Variable] = Ratios[I]
+						ACF.SetClientData(Variable, ValuesData[Variable])
+					end
+				end
+
+				ValuesData["FinalDrive"] = FinalDrive
+				ACF.SetClientData("FinalDrive",ValuesData["FinalDrive"])
 			end
 		end
 	end

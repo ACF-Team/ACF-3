@@ -227,6 +227,17 @@ local Settings = {
 
 		Message("Info", "Extra Workshop content download has been " .. (Bool and "enabled." or "disabled."))
 	end,
+	MobilityUpdate = function(Player, _, Value)
+		local Bool = tobool(Value)
+
+		if ACF.MobilityUpdate == Bool then return end
+
+		ACF.MobilityUpdate = Bool
+
+		if CLIENT and not IsValid(Player) then return end
+
+		Message("Info", "Mobility update has been " .. (Bool and "enabled." or "disabled."))
+	end,
 }
 
 for Key, Function in pairs(Settings) do

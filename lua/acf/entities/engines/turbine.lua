@@ -18,6 +18,8 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 200,
 		Torque		 = 589,
 		FlywheelMass = 2.9,
+		FlywheelMassUpdate = math.Round(589 / 1.5, 3),
+		Displacement = math.Round(589 / 200, 3),
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 1400,
@@ -39,6 +41,8 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 400,
 		Torque		 = 1312,
 		FlywheelMass = 4.3,
+		FlywheelMassUpdate = math.Round(1312 / 2, 3),
+		Displacement = math.Round(1312 / 200, 3),
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 1800,
@@ -60,6 +64,8 @@ do -- Forward-facing Gas Turbines
 		Mass		 = 1100,
 		Torque		 = 2500,
 		FlywheelMass = 10.5,
+		FlywheelMassUpdate = math.Round(2500 / 1.75, 3),
+		Displacement = math.Round(2500 / 200, 3),
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 2000,
@@ -83,6 +89,8 @@ do -- Transaxial Gas Turbines
 		Mass		 = 160,
 		Torque		 = 387,
 		FlywheelMass = 2.3,
+		FlywheelMassUpdate = math.Round(387 / 1.25, 3),
+		Displacement = math.Round(387 / 200, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -105,6 +113,8 @@ do -- Transaxial Gas Turbines
 		Mass		 = 320,
 		Torque		 = 750,
 		FlywheelMass = 3.4,
+		FlywheelMassUpdate = math.Round(750 / 1.5, 3),
+		Displacement = math.Round(750 / 200, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -127,6 +137,8 @@ do -- Transaxial Gas Turbines
 		Mass		 = 880,
 		Torque		 = 1710,
 		FlywheelMass = 8.4,
+		FlywheelMassUpdate = math.Round(1710 / 1.5, 3),
+		Displacement = math.Round(1710 / 200, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -156,6 +168,8 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 220,
 		Torque		 = 1860,
 		FlywheelMass = 35.5,
+		FlywheelMassUpdate = math.Round(1860 * 3, 3),
+		Displacement = math.Round(1860 / 20, 3),
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 450,
@@ -177,6 +191,8 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 440,
 		Torque		 = 3540,
 		FlywheelMass = 38.7,
+		FlywheelMassUpdate = math.Round(1860 * 3, 3),
+		Displacement = math.Round(1860 / 20, 3),
 		IsElectric	 = true,
 		Pitch		 = 1.15,
 		RPM = {
@@ -199,6 +215,8 @@ do -- Forward-facing Ground Gas Turbines
 		Mass		 = 1300,
 		Torque		 = 9000,
 		FlywheelMass = 168,
+		FlywheelMassUpdate = math.Round(9000 * 3, 3),
+		Displacement = math.Round(9000 / 20, 3),
 		IsElectric	 = true,
 		Pitch		 = 1.35,
 		RPM = {
@@ -223,6 +241,8 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 200,
 		Torque		 = 1040,
 		FlywheelMass = 20.7,
+		FlywheelMassUpdate = math.Round(1040 * 2, 3),
+		Displacement = math.Round(1040 / 20, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		RPM = {
@@ -245,6 +265,8 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 480,
 		Torque		 = 1123,
 		FlywheelMass = 23.7,
+		FlywheelMassUpdate = math.Round(1123 * 4, 3),
+		Displacement = math.Round(1123 / 40, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		Pitch		 = 1.15,
@@ -268,6 +290,8 @@ do -- Transaxial Ground Gas Turbines
 		Mass		 = 1100,
 		Torque		 = 4600,
 		FlywheelMass = 75.6,
+		FlywheelMassUpdate = math.Round(4600 * 3.5, 3),
+		Displacement = math.Round(4600 / 40, 3),
 		IsElectric	 = true,
 		IsTrans		 = true,
 		Pitch		 = 1.35,

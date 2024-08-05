@@ -17,6 +17,8 @@ do -- Petrol Engines
 		Mass		 = 30,
 		Torque		 = 62,
 		FlywheelMass = 0.01,
+		FlywheelMassUpdate = 2,
+		Displacement = 0.6,
 		RPM = {
 			Idle	= 900,
 			Limit	= 7000,
@@ -36,6 +38,8 @@ do -- Petrol Engines
 		Mass		 = 50,
 		Torque		 = 106,
 		FlywheelMass = 0.02,
+		FlywheelMassUpdate = 3,
+		Displacement = 1.2,
 		RPM = {
 			Idle	= 725,
 			Limit	= 6250,
@@ -55,6 +59,8 @@ do -- Petrol Engines
 		Mass		 = 100,
 		Torque		 = 200,
 		FlywheelMass = 0.075,
+		FlywheelMassUpdate = 6,
+		Displacement = 2.4,
 		RPM = {
 			Idle	= 900,
 			Limit	= 6000,

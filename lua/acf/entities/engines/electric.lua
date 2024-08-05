@@ -18,6 +18,8 @@ do -- Electric Motors
 		Mass		 = 250,
 		Torque		 = 480,
 		FlywheelMass = 0.3,
+		FlywheelMassUpdate = math.Round(480 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -39,6 +41,8 @@ do -- Electric Motors
 		Mass		 = 850,
 		Torque		 = 1440,
 		FlywheelMass = 1.5,
+		FlywheelMassUpdate = math.Round(1440 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -60,6 +64,8 @@ do -- Electric Motors
 		Mass		 = 1900,
 		Torque		 = 4200,
 		FlywheelMass = 11.2,
+		FlywheelMassUpdate = math.Round(4200 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -85,6 +91,8 @@ do -- Electric Standalone Motors
 		Mass		 = 50,
 		Torque		 = 40,
 		FlywheelMass = 0.025,
+		FlywheelMassUpdate = math.Round(40 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -106,6 +114,8 @@ do -- Electric Standalone Motors
 		Mass		 = 125,
 		Torque		 = 384,
 		FlywheelMass = 0.3,
+		FlywheelMassUpdate = math.Round(384 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -127,6 +137,8 @@ do -- Electric Standalone Motors
 		Mass		 = 575,
 		Torque		 = 1152,
 		FlywheelMass = 1.5,
+		FlywheelMassUpdate = math.Round(1152 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,
@@ -148,6 +160,8 @@ do -- Electric Standalone Motors
 		Mass		 = 1500,
 		Torque		 = 3360,
 		FlywheelMass = 11.2,
+		FlywheelMassUpdate = math.Round(3360 / 25, 3),
+		Displacement = 1.4,
 		IsElectric	 = true,
 		RPM = {
 			Idle	 = 0,

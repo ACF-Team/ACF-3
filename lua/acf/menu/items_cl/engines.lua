@@ -74,6 +74,8 @@ local function CreateMenu(Menu)
 	local EnginePreview = EngineBase:AddModelPreview(nil, true)
 	local EngineStats = EngineBase:AddLabel()
 
+	local MobilityUpdate = nil
+
 	local PowerGraph = Menu:AddGraph()
 	local PGWidth = Menu:GetWide()
 	PowerGraph:SetSize(PGWidth,PGWidth / 2)
@@ -160,6 +162,28 @@ local function CreateMenu(Menu)
 
 		self.ListData.Index = Index
 		self.Selected = Data
+
+		if Data.FlywheelMassUpdate == nil or Data.Displacement == nil then
+			ACF.SetClientData("PrimaryClass","acf_engine")
+			if MobilityUpdate ~= nil then
+				MobilityUpdate:Remove()
+				MobilityUpdate = nil
+			end
+		else
+			if MobilityUpdate == nil then
+				MobilityUpdate = EngineBase:AddCheckBox("[BETA] Enables new mobility logic")
+				MobilityUpdate:SetClientData("MobilityUpdate", "OnChange")
+				MobilityUpdate:DefineSetter(function(Panel, _, _, Value)
+					Panel:SetValue(Value)
+					if Value then
+						ACF.SetClientData("PrimaryClass","acf_engine_update")
+					else
+						ACF.SetClientData("PrimaryClass","acf_engine")
+					end
+					return Value
+				end)
+			end
+		end
 
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description

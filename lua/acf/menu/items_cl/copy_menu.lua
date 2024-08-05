@@ -4,7 +4,8 @@ local Selected
 
 net.Receive("ACF_SendCopyData", function(_, Player)
 	local Class = net.ReadString()
-	local List = util.JSONToTable(net.ReadString())
+	local JSON = net.ReadString()
+	local List = util.JSONToTable(JSON)
 
 	if IsValid(Player) then return end -- Trust nobody, not even net messages
 
@@ -12,6 +13,10 @@ net.Receive("ACF_SendCopyData", function(_, Player)
 
 	CopiedData[Class] = List
 	Selected = Class
+
+	if Class == "acf_gearbox" or Class == "acf_gearbox_update" then
+		ACF.SetClientData("CopiedGearboxData",JSON)
+	end
 
 	if not Disabled[Class] then
 		Disabled[Class] = {}
