@@ -178,6 +178,8 @@ do -- Spawn and Update functions --------------------------------
 			Entity.LongMuzzle = Attachment and Entity:WorldToLocal(Attachment.Pos)
 		end
 
+		Entity:CanProperty(nil, "bodygroups")
+
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
 			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
 			WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)
