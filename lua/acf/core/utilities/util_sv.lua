@@ -700,7 +700,7 @@ do	-- Seat alias system
 				Vic:GetModel() == "models/vehicles/driver_pod.mdl" or
 				Vic:GetModel() == "models/chairs_playerstart/pronepose.mdl" or
 				Vic:GetModel() == "models/chairs_playerstart/standingpose.mdl" then
-				
+
 				return Ply:LookupSequence("drive_pd")
 			else
 				return Ply:LookupSequence("sit_rollercoaster")
