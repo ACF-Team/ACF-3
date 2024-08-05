@@ -695,9 +695,9 @@ do	-- Seat alias system
 		["prop_vehicle_prisoner_pod"] = function(Ply,Vic)
 			-- Using the same shitty hack that whoever wrote however long ago in garrysmod/gamemodes/base/gamemode/animations.lua #171
 
-			if Vic:GetModel() == "models/vehicles/prisoner_pod_inner.mdl" or 
-				Vic:GetModel() == "models/chairs_playerstart/podpose.mdl" or 
-				Vic:GetModel() == "models/vehicles/driver_pod.mdl" or 
+			if Vic:GetModel() == "models/vehicles/prisoner_pod_inner.mdl" or
+				Vic:GetModel() == "models/chairs_playerstart/podpose.mdl" or
+				Vic:GetModel() == "models/vehicles/driver_pod.mdl" or
 				Vic:GetModel() == "models/chairs_playerstart/pronepose.mdl" or
 				Vic:GetModel() == "models/chairs_playerstart/standingpose.mdl" then
 				
