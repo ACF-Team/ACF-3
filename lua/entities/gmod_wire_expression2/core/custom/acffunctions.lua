@@ -348,7 +348,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 		return 0
 	end
 
-	local Sucess, Message = this:Link(Target)
+	local Sucess, Message = this:Link(Target, true)
 
 	if Notify ~= 0 then
 		ACF.SendNotify(self.player, Sucess, Message)
