@@ -22,10 +22,8 @@ return {
                 }
             end,
             GetChildren = function() return {} end,
+            GetAncestor = function() return State.Ent end, -- For simplicity's sake, we'll pretend the ent's ancestor is itself
         }
-
-        -- For simplicity's sake, we'll pretend the ent's ancestor is itself
-        stub( ACF.Contraption, "GetAncestor" ).returns( State.Ent )
     end,
 
     cases = {
