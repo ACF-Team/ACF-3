@@ -1,11 +1,8 @@
 ACF.LoadToolFunctions(TOOL)
 
-TOOL.Name = "ACF Copy Tool"
+TOOL.Name = "#tool.acfcopy.name"
 
 if CLIENT then
-	language.Add("Tool.acfcopy.name", "Armored Combat Framework")
-	language.Add("Tool.acfcopy.desc", "Copy information from one ACF entity to another")
-
 	TOOL.BuildCPanel = ACF.CreateCopyMenu
 
 	concommand.Add("acf_reload_copy_menu", function()
