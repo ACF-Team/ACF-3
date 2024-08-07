@@ -1,5 +1,13 @@
 local ACF = ACF
 
+local PodModels = {
+		["models/vehicles/prisoner_pod_inner.mdl"] = 1,
+		["models/chairs_playerstart/podpose.mdl"] = 1,
+		["models/vehicles/driver_pod.mdl"] = 1,
+		["models/chairs_playerstart/pronepose.mdl"] = 1,
+		["models/chairs_playerstart/standingpose.mdl"] = 1
+}
+
 do -- Networked notifications
 	local Messages = ACF.Utilities.Messages
 
@@ -694,13 +702,7 @@ do	-- Seat alias system
 		["prop_vehicle_airboat"] = function(Ply) return Ply:LookupSequence("drive_airboat") end,
 		["prop_vehicle_prisoner_pod"] = function(Ply,Vic)
 			-- Using the same shitty hack that whoever wrote however long ago in garrysmod/gamemodes/base/gamemode/animations.lua #171
-
-			if Vic:GetModel() == "models/vehicles/prisoner_pod_inner.mdl" or
-				Vic:GetModel() == "models/chairs_playerstart/podpose.mdl" or
-				Vic:GetModel() == "models/vehicles/driver_pod.mdl" or
-				Vic:GetModel() == "models/chairs_playerstart/pronepose.mdl" or
-				Vic:GetModel() == "models/chairs_playerstart/standingpose.mdl" then
-
+			if PodModels[Vic:GetModel()] == 1 then
 				return Ply:LookupSequence("drive_pd")
 			else
 				return Ply:LookupSequence("sit_rollercoaster")
