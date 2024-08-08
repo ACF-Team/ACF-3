@@ -256,8 +256,8 @@ do -- ASSUMING DIRECT CONTROL
 		if Trace.Entity.IsACFEntity then return false end
 	end)
 
-	hook.Add("Initialize", "ACF Meta Detour",function()
-		timer.Simple(1,function()
+	hook.Add("Initialize", "ACF Meta Detour", function()
+		timer.Simple(1, function()
 			Contraption.Detours = Contraption.Detours or {
 				ENT			= {},
 				OBJ			= {},
@@ -355,7 +355,7 @@ do -- ASSUMING DIRECT CONTROL
 				SetNotSolid(self, ...)
 			end
 
-			hook.Remove("Initialize","ACF Meta Detour")
+			hook.Remove("Initialize", "ACF Meta Detour")
 		end)
 	end)
 end

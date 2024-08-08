@@ -76,7 +76,7 @@ end
 local function shallowCopy(tbl)
 	local copy = {}
 	if type(tbl) == "table" then
-		for k,v in pairs(tbl) do
+		for k, v in pairs(tbl) do
 			if type(v) ~= "table" then copy[k] = v end
 		end
 	else
@@ -2495,7 +2495,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(-This.CurrentAngle,4)
+		return math.Round(-This.CurrentAngle, 4)
 	end
 
 	--- Returns the turret's rotator
@@ -2559,7 +2559,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.TurretData.TotalMass,2)
+		return math.Round(This.TurretData.TotalMass, 2)
 	end
 
 	--- Returns the turret's mass center
@@ -2592,7 +2592,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.SlewRate / Clock.DeltaTime,2)
+		return math.Round(This.SlewRate / Clock.DeltaTime, 2)
 	end
 
 	--- Returns the turret's maximum slew rate, in degrees/second
@@ -2608,7 +2608,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.MaxSlewRate,2)
+		return math.Round(This.MaxSlewRate, 2)
 	end
 
 	--- Returns the turret's slew acceleration, in degrees/second ^ 2
@@ -2624,7 +2624,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.SlewAccel,4)
+		return math.Round(This.SlewAccel, 4)
 	end
 
 	--- Returns whether or not the turret is stabilized, and by how much
@@ -2661,8 +2661,8 @@ if SERVER then
 
 		local td = This.TurretData
 		local Data = {
-			MaxSlewRate		= math.Round(This.MaxSlewRate,2),
-			SlewAccel		= math.Round(This.SlewAccel,4),
+			MaxSlewRate		= math.Round(This.MaxSlewRate, 2),
+			SlewAccel		= math.Round(This.SlewAccel, 4),
 			Angle			= -This.CurrentAngle,
 			RingSize		= td.RingSize,
 			Teeth			= td.Teeth,
@@ -2769,7 +2769,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		This:InputDirection(Angle(angle[1],angle[2],angle[3]))
+		This:InputDirection(Angle(angle[1], angle[2], angle[3]))
 	end
 
 	--- Makes the turret attempt to aim at the input position, enabling any active stabilization
@@ -2786,7 +2786,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		This:InputDirection(Vector(position[1],position[2],position[3]))
+		This:InputDirection(Vector(position[1], position[2], position[3]))
 	end
 
 	end

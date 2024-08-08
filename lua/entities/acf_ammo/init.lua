@@ -460,7 +460,7 @@ do -- ACF Activation and Damage -----------------
 
 			if VolumeRoll and AmmoRoll then
 				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency) -- Half weight projectile?
-				local Pitch = math.max(255 - BulletData.PropMass * 100,60) -- Pitch based on propellant mass
+				local Pitch = math.max(255 - BulletData.PropMass * 100, 60) -- Pitch based on propellant mass
 
 				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
@@ -624,7 +624,7 @@ do -- Mass Update -------------------------------
 	local function UpdateMass(Ent)
 		local Mass = math.floor(Ent.EmptyMass + Ent.Ammo * Ent.BulletData.CartMass)
 
-		Contraption.SetMass(Ent,Mass)
+		Contraption.SetMass(Ent, Mass)
 	end
 
 	-------------------------------------------------------------------------------

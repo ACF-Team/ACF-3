@@ -261,8 +261,8 @@ if SERVER then
 		local JetStart  = HitPos - Direction * Start
 		local JetEnd    = HitPos + Direction * End
 
-		Debug.Cross(JetStart, 15, 15, Color(0,255,0), true)
-		Debug.Cross(JetEnd, 15, 15, Color(255,0,0), true)
+		Debug.Cross(JetStart, 15, 15, Color(0, 255, 0), true)
+		Debug.Cross(JetEnd, 15, 15, Color(255, 0, 0), true)
 
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
@@ -277,7 +277,7 @@ if SERVER then
 
 			Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
 
-			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity print("Skipped",Ent) continue end
+			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m

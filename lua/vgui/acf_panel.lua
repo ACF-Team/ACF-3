@@ -239,18 +239,18 @@ function PANEL:AddGraph()
 	AccessorFunc(Base, "FGColor", "FGColor", FORCE_COLOR)
 	AccessorFunc(Base, "GridColor", "GridColor", FORCE_COLOR)
 
-	Base:SetBGColor(Color(255,255,255))	-- Back panel
-	Base:SetFGColor(Color(25,25,25))		-- Border lines, text
-	Base:SetGridColor(Color(175,175,175))	-- Grid lines
+	Base:SetBGColor(Color(255, 255, 255))	-- Back panel
+	Base:SetFGColor(Color(25, 25, 25))		-- Border lines, text
+	Base:SetGridColor(Color(175, 175, 175))	-- Grid lines
 
 	-- Number of pixels per sample for function-based plotting
 	-- Lower = more resolution (more lines), Higher = less resolution (less lines)
-	Base.SetFidelity = function(self, Value) self.Fidelity = math.max(1,math.floor(Value)) end
+	Base.SetFidelity = function(self, Value) self.Fidelity = math.max(1, math.floor(Value)) end
 	Base.GetFidelity = function(self) return self.Fidelity end
 	Base:SetFidelity(32)
 
 	-- Multiplies resulting grid spacing by this amount, grid spacing is dependent on the range of each axis
-	Base.SetGridFidelity = function(self, Value) self.GridFidelity = math.max(0.1,math.floor(Value)) end
+	Base.SetGridFidelity = function(self, Value) self.GridFidelity = math.max(0.1, math.floor(Value)) end
 	Base.GetGridFidelity = function(self) return self.GridFidelity end
 	Base:SetGridFidelity(2)
 
@@ -261,7 +261,7 @@ function PANEL:AddGraph()
 		self.XRange = self.MaxX - self.MinX
 	end
 	Base.GetXRange = function(self) return self.XRange end
-	Base:SetXRange(0,100)
+	Base:SetXRange(0, 100)
 
 	Base.SetXSpacing = function(self, Spacing) self.XSpacing = math.abs(Spacing) end
 	Base.GetXSpacing = function(self) return self.XSpacing end
@@ -274,7 +274,7 @@ function PANEL:AddGraph()
 		self.YRange = self.MaxY - self.MinY
 	end
 	Base.GetYRange = function(self) return self.YRange end
-	Base:SetYRange(0,100)
+	Base:SetYRange(0, 100)
 
 	Base.SetYSpacing = function(self, Spacing) self.YSpacing = math.abs(Spacing) end
 	Base.GetYSpacing = function(self) return self.YSpacing end
@@ -296,7 +296,7 @@ function PANEL:AddGraph()
 
 	-- Any functions passed here will be provided X as an argument, using the X range of the graph, and is expected to return a value for Y
 	Base.PlotFunction = function(self, Label, Col, Func)
-		self.Functions[Label] = {func = Func, col = Col or Color(255,0,255)}
+		self.Functions[Label] = {func = Func, col = Col or Color(255, 0, 255)}
 	end
 
 	-- Same as above, but with limits built in
@@ -304,24 +304,24 @@ function PANEL:AddGraph()
 		local NMin = math.min(Min, Max)
 		local NMax = math.max(Min, Max)
 		local Range = NMax - NMin
-		self.LimitFunctions[Label] = {func = Func, min = NMin, max = NMax, range = Range, col = Col or Color(255,0,255)}
+		self.LimitFunctions[Label] = {func = Func, min = NMin, max = NMax, range = Range, col = Col or Color(255, 0, 255)}
 	end
 
 	-- Directly plot a point
 	Base.PlotPoint = function(self, Label, X, Y, Col)
-		self.Points[Label] = {x = X, y = Y, col = Col or Color(255,0,255)}
+		self.Points[Label] = {x = X, y = Y, col = Col or Color(255, 0, 255)}
 	end
 
 	-- Places a line that is either vertical or horizontal, to represent a limit
 	Base.PlotLimitLine = function(self, Label, Vertical, Value, Col)
-		self.Lines[Label] = {isvert = Vertical, val = Value, col = Col or Color(255,0,255)}
+		self.Lines[Label] = {isvert = Vertical, val = Value, col = Col or Color(255, 0, 255)}
 	end
 
 	-- Directly plot a specific line on the table
 	-- Should be numerically and sequentially indexed from 1 to max
 	-- Table should be populated with table(x = X, y = Y)
 	Base.PlotTable = function(self, Label, Table, Col)
-		self.Tables[Label] = {tbl = Table, col = Col or Color(255,0,255)}
+		self.Tables[Label] = {tbl = Table, col = Col or Color(255, 0, 255)}
 	end
 
 	Base.ClearFunctions = function(self) self.Functions = {} end
@@ -346,13 +346,13 @@ function PANEL:AddGraph()
 		local GridY		= self.YRange / self.YSpacing
 
 		local Hovering	= self:IsHovered()
-		local LocalMouseX, LocalMouseY		= 0,0
-		local ScaledMouseX, ScaledMouseY	= 0,0
+		local LocalMouseX, LocalMouseY		= 0, 0
+		local ScaledMouseX, ScaledMouseY	= 0, 0
 		if Hovering then
-			local PanelPosX,PanelPosY	= Base:LocalToScreen(0,0)
+			local PanelPosX, PanelPosY	= Base:LocalToScreen(0, 0)
 			local MouseX, MouseY	= input.GetCursorPos()
-			LocalMouseX		= math.Clamp(MouseX - PanelPosX,0,w)
-			LocalMouseY		= h - math.Clamp(MouseY - PanelPosY,0,h)
+			LocalMouseX		= math.Clamp(MouseX - PanelPosX, 0, w)
+			LocalMouseY		= h - math.Clamp(MouseY - PanelPosY, 0, h)
 
 			ScaledMouseX	= (LocalMouseX / w) * self.XRange
 			ScaledMouseY	= (LocalMouseY / h) * self.YRange
@@ -361,16 +361,16 @@ function PANEL:AddGraph()
 		surface.SetDrawColor(self.GridColor)
 		for I = 1, math.floor(GridX) do
 			local xpos	= I * (w / GridX)
-			surface.DrawLine(xpos,0,xpos,h)
+			surface.DrawLine(xpos, 0, xpos, h)
 		end
 
 		for I = 1, math.floor(GridY) do
 			local ypos	= h - (I * (h / GridY))
-			surface.DrawLine(0,ypos,w,ypos)
+			surface.DrawLine(0, ypos, w, ypos)
 		end
 
 		-- Limit lines, e.g. idle/minimum RPM for engines
-		for _,v in pairs(self.Lines) do
+		for _, v in pairs(self.Lines) do
 			surface.SetDrawColor(v.col)
 
 			if v.isvert then
@@ -387,31 +387,31 @@ function PANEL:AddGraph()
 		surface.DrawRect(0, h - 2, w, 2)
 		surface.DrawRect(0, 2, 2, h - 2)
 
-		draw.SimpleText(self.XLabel,"ACF_Label",w,h - 2,self.FGColor,TEXT_ALIGN_RIGHT,TEXT_ALIGN_BOTTOM)
-		draw.SimpleText(self.YLabel,"ACF_Label",2,0,self.FGColor,TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+		draw.SimpleText(self.XLabel, "ACF_Label", w, h - 2, self.FGColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+		draw.SimpleText(self.YLabel, "ACF_Label", 2, 0, self.FGColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
 		local PosText = "(" .. math.floor(ScaledMouseX) .. "," .. math.floor(ScaledMouseY) ..  ")"
 		if Hovering then
 			if LocalMouseY < (h / 2) then
-				draw.SimpleText(PosText,"ACF_Label",w,0,self.FGColor,TEXT_ALIGN_RIGHT,TEXT_ALIGN_TOP)
+				draw.SimpleText(PosText, "ACF_Label", w, 0, self.FGColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 			else
-				draw.SimpleText(PosText,"ACF_Label",2,h - 2,self.FGColor,TEXT_ALIGN_LEFT,TEXT_ALIGN_BOTTOM)
+				draw.SimpleText(PosText, "ACF_Label", 2, h - 2, self.FGColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 			end
 		end
 
 		-- Points directly plotted
-		for k,v in pairs(self.Points) do
+		for k, v in pairs(self.Points) do
 			surface.SetDrawColor(v.col)
 
 			local xp	= (w * (v.x / self.XRange))
 			local yp	= (h - (h * (v.y / self.YRange)))
 
-			surface.DrawRect(xp - 2,yp - 2, 4, 4)
-			draw.SimpleText(k,"ACF_Label",xp,yp + 6,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_TOP)
+			surface.DrawRect(xp - 2, yp - 2, 4, 4)
+			draw.SimpleText(k, "ACF_Label", xp, yp + 6, v.col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 		end
 
 		-- Lines directly plotted -- HERE
-		for k,v in pairs(self.Tables) do
+		for k, v in pairs(self.Tables) do
 
 			surface.SetDrawColor(v.col)
 			for I = 2, #v.tbl do
@@ -433,8 +433,8 @@ function PANEL:AddGraph()
 					local Val	= Lerp(Scale, P1.y, P2.y)
 					local yp	= h - (h * (Val / self.YRange))
 
-					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
-					draw.SimpleText(k .. ": " .. math.Round(Val,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+					surface.DrawRect(LocalMouseX - 2, yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(Val, 1), "ACF_Label", LocalMouseX, yp - 2, v.col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 				end
 			end
 		end
@@ -442,7 +442,7 @@ function PANEL:AddGraph()
 		-- Limitless functions
 		local Points = self.XRange / self.Fidelity
 		local Spacing = self.XRange / Points
-		for k,v in pairs(self.Functions) do
+		for k, v in pairs(self.Functions) do
 			surface.SetDrawColor(v.col)
 
 			for I = 1, Points do
@@ -464,14 +464,14 @@ function PANEL:AddGraph()
 				local yp	= (h - (h * (In / self.YRange)))
 
 				if LocalMouseY >= (Check - 16) and LocalMouseY <= (Check + 16) then
-					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
-					draw.SimpleText(k .. ": " .. math.Round(In,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+					surface.DrawRect(LocalMouseX - 2, yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(In, 1), "ACF_Label", LocalMouseX, yp - 2, v.col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 				end
 			end
 		end
 
 		-- Limited functions
-		for k,v in pairs(self.LimitFunctions) do
+		for k, v in pairs(self.LimitFunctions) do
 			local GridRange		= (w * (v.range / self.XRange))
 			local LinePoints	= GridRange / self.Fidelity
 			local LineSpacing	= v.range / LinePoints
@@ -481,7 +481,7 @@ function PANEL:AddGraph()
 			surface.SetDrawColor(v.col)
 			for I = 1, LinePoints do
 				local In	= v.func(v.min + ((I - 1) * LineSpacing))
-				local In2	= v.func(math.min(v.max,v.min + (I * LineSpacing)))
+				local In2	= v.func(math.min(v.max, v.min + (I * LineSpacing)))
 
 				local xp1	= LineStart + ((I - 1) * self.Fidelity)
 				local yp1	= (h - (h * (In / self.YRange)))
@@ -498,8 +498,8 @@ function PANEL:AddGraph()
 				local yp	= (h - (h * (In / self.YRange)))
 
 				if LocalMouseY >= (Check - 16) and LocalMouseY <= (Check + 16) then
-					surface.DrawRect(LocalMouseX - 2,yp - 2, 4, 4)
-					draw.SimpleText(k .. ": " .. math.Round(In,1),"ACF_Label",LocalMouseX,yp - 2,v.col,TEXT_ALIGN_CENTER,TEXT_ALIGN_BOTTOM)
+					surface.DrawRect(LocalMouseX - 2, yp - 2, 4, 4)
+					draw.SimpleText(k .. ": " .. math.Round(In, 1), "ACF_Label", LocalMouseX, yp - 2, v.col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 				end
 			end
 		end

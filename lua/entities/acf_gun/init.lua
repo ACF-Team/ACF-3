@@ -834,7 +834,7 @@ do -- Metamethods --------------------------------
 
 	do	-- Other networking
 		util.AddNetworkString("ACF.RequestGunInfo")
-		net.Receive("ACF.RequestGunInfo",function(_,Ply)
+		net.Receive("ACF.RequestGunInfo", function(_, Ply)
 			local Gun = net.ReadEntity()
 			if not IsValid(Gun) then return end
 

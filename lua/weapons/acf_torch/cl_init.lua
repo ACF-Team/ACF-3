@@ -39,7 +39,7 @@ function SWEP:PostDrawViewModel()
 
 	render.SetRenderTarget(RT)
 	render.SetViewPort(0, 0, 256, 256)
-	render.Clear(0,0,0,255)
+	render.Clear(0, 0, 0, 255)
 
 	cam.Start2D()
 		surface.SetTexture(Texture)

@@ -223,7 +223,7 @@ local function AddGraph(Base, ToolData)
 	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
 	Graph:SetSize(MenuSizeX, MenuSizeX * 0.5)
 
-	Graph:SetXRange(0,1000)
+	Graph:SetXRange(0, 1000)
 	Graph:SetXLabel("Distance (m)")
 	Graph:SetYLabel("Pen (mm)")
 
@@ -253,19 +253,19 @@ local function AddGraph(Base, ToolData)
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			local BreakupDistPen = Ammo:GetPenetration(BulletData, BulletData.BreakupDist)
 
-			Panel:SetYRange(0,math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
-			Panel:SetXRange(0,BulletData.BreakupDist * 1000 * 2.5) -- HEAT/HEATFS doesn't care how long the shell has been flying for penetration, just the instant it detonates
+			Panel:SetYRange(0, math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
+			Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT/HEATFS doesn't care how long the shell has been flying for penetration, just the instant it detonates
 			--Panel:SetXRange(0,60000)
 
 			Panel:SetXLabel("Standoff (mm)")
 
-			--Panel:PlotLimitLine("Passive", false, BulletData.Standoff * 1000, Color(65,65,200))
-			--Panel:PlotLimitLine("Breakup", false, BulletData.BreakupDist * 1000, Color(200,65,65))
+			--Panel:PlotLimitLine("Passive", false, BulletData.Standoff * 1000, Color(65, 65, 200))
+			--Panel:PlotLimitLine("Breakup", false, BulletData.BreakupDist * 1000, Color(200, 65, 65))
 
-			Panel:PlotPoint("Passive", BulletData.Standoff * 1000, PassiveStandoffPen, Color(65,65,200))
-			Panel:PlotPoint("Breakup", BulletData.BreakupDist * 1000, BreakupDistPen, Color(200,65,65))
+			Panel:PlotPoint("Passive", BulletData.Standoff * 1000, PassiveStandoffPen, Color(65, 65, 200))
+			Panel:PlotPoint("Breakup", BulletData.BreakupDist * 1000, BreakupDistPen, Color(200, 65, 65))
 
-			Panel:PlotFunction("mm Pen", Color(255,65,65), function(X)
+			Panel:PlotFunction("mm Pen", Color(255, 65, 65), function(X)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
 		elseif ToolData.AmmoType == "HE" then
@@ -274,12 +274,12 @@ local function AddGraph(Base, ToolData)
 
 			Panel:SetYSpacing(10)
 
-			Panel:SetXRange(0,10)
-			Panel:SetYRange(0,BulletData.BlastRadius * 2)
+			Panel:SetXRange(0, 10)
+			Panel:SetYRange(0, BulletData.BlastRadius * 2)
 
-			Panel:PlotLimitLine("Blast Radius", true, BulletData.BlastRadius, Color(200,65,65))
+			Panel:PlotLimitLine("Blast Radius", true, BulletData.BlastRadius, Color(200, 65, 65))
 
-			Panel:PlotFunction("Blast Radius", Color(200,65,65), function(_)
+			Panel:PlotFunction("Blast Radius", Color(200, 65, 65), function(_)
 				return BulletData.BlastRadius
 			end)
 		elseif ToolData.AmmoType == "SM" then
@@ -298,31 +298,31 @@ local function AddGraph(Base, ToolData)
 			local MinSF = BulletData.SMRadiusMin or 0
 			local MaxSF = BulletData.SMRadiusMax or 0
 
-			Panel:SetXRange(0,math.max(WPTime,SFTime) * 1.1)
-			Panel:SetYRange(0,math.max(MaxWP,MaxSF) * 1.1)
+			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
+			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
 
 			if WPTime > 0 then
-				Panel:PlotLimitFunction("WP Filler", 0, WPTime, Color(65,65,200), function(X)
+				Panel:PlotLimitFunction("WP Filler", 0, WPTime, Color(65, 65, 200), function(X)
 					return Lerp(X / WPTime, MinWP, MaxWP)
 				end)
 
-				Panel:PlotPoint("WP Max Radius", WPTime, MaxWP, Color(65,65,200))
+				Panel:PlotPoint("WP Max Radius", WPTime, MaxWP, Color(65, 65, 200))
 			end
 
 			if SFTime > 0 then
-				Panel:PlotLimitFunction("Smoke Filler", 0, SFTime, Color(200,65,65), function(X)
+				Panel:PlotLimitFunction("Smoke Filler", 0, SFTime, Color(200, 65, 65), function(X)
 					return Lerp(X / SFTime, MinSF, MaxSF)
 				end)
 
-				Panel:PlotPoint("SM Max Radius", SFTime, MaxSF, Color(200,65,65))
+				Panel:PlotPoint("SM Max Radius", SFTime, MaxSF, Color(200, 65, 65))
 			end
 		else
-			Panel:SetYRange(0,math.ceil(BulletData.MaxPen or 0) * 1.1)
+			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
 
-			Panel:PlotPoint("300m", 300, Ammo:GetRangedPenetration(BulletData, 300), Color(65,65,200))
-			Panel:PlotPoint("800m", 800, Ammo:GetRangedPenetration(BulletData, 800), Color(65,65,200))
+			Panel:PlotPoint("300m", 300, Ammo:GetRangedPenetration(BulletData, 300), Color(65, 65, 200))
+			Panel:PlotPoint("800m", 800, Ammo:GetRangedPenetration(BulletData, 800), Color(65, 65, 200))
 
-			Panel:PlotFunction("Pen", Color(255,65,65), function(X)
+			Panel:PlotFunction("Pen", Color(255, 65, 65), function(X)
 				return Ammo:GetRangedPenetration(BulletData, X)
 			end)
 		end

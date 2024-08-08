@@ -1018,7 +1018,7 @@ do	-- NET SURFER 2.0
 		net.Broadcast()
 	end
 
-	net.Receive("ACF_RequestGearboxInfo",function(_,Ply)
+	net.Receive("ACF_RequestGearboxInfo", function(_, Ply)
 		local Entity = net.ReadEntity()
 
 		if IsValid(Entity) then
@@ -1044,7 +1044,7 @@ do	-- NET SURFER 2.0
 			end
 
 			if next(Entity.GearboxOut) then
-				for E,L in pairs(Entity.GearboxOut) do
+				for E, L in pairs(Entity.GearboxOut) do
 					if L.Side == 0 then
 						OutputL[#OutputL + 1] = E:EntIndex()
 					else
@@ -1054,7 +1054,7 @@ do	-- NET SURFER 2.0
 			end
 
 			if next(Entity.Wheels) then
-				for E,L in pairs(Entity.Wheels) do
+				for E, L in pairs(Entity.Wheels) do
 					if L.Side == 0 then
 						OutputL[#OutputL + 1] = E:EntIndex()
 					else

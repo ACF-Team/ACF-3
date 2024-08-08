@@ -61,18 +61,18 @@ do	-- Spawn and Update funcs
 
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gyro)
 
-		Entity:SetNWString("WireName","ACF " .. Entity.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
-		for _,v in ipairs(Entity.DataStore) do
+		for _, v in ipairs(Entity.DataStore) do
 			Entity[v] = Data[v]
 		end
 
 		ACF.Activate(Entity, true)
 
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 		Contraption.SetMass(Entity, Gyro.Mass)
 
@@ -84,7 +84,7 @@ do	-- Spawn and Update funcs
 	function MakeACF_TurretGyro(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = Classes.GetGroup(Turrets,Data.Gyro)
+		local Class = Classes.GetGroup(Turrets, Data.Gyro)
 		local Limit	= Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
@@ -204,25 +204,25 @@ do	-- Metamethods and other important stuff
 
 	do	-- ACF Funcs
 		function ENT:Enable()
-			self:SetActive(true,"")
+			self:SetActive(true, "")
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= false
-			self:SetActive(false,"")
+			self:SetActive(false, "")
 			self:UpdateOverlay()
 		end
 
 		function ENT:ACF_PostDamage()
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 		end
 
-		function ENT:SetActive(Active,Reason)
+		function ENT:SetActive(Active, Reason)
 			local Trigger = (self.Active ~= Active) or (self.InactiveReason ~= Reason)
 			if not Active then
 				self.InactiveReason = Reason
@@ -238,14 +238,14 @@ do	-- Metamethods and other important stuff
 		function ENT:IsActive()
 			if self.Disabled then return false end
 
-			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false,"") return false end
+			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false, "") return false end
 
 			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
-				self:SetActive(false,"Too damaged!")
+				self:SetActive(false, "Too damaged!")
 				return false
 			end
 
-			if self.Active == false then self:SetActive(true,"") end
+			if self.Active == false then self:SetActive(true, "") end
 			return true
 		end
 

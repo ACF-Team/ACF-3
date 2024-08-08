@@ -674,7 +674,7 @@ if CLIENT then
 
             local realTabInside = tab:Add("DScrollPanel")
             realTabInside:Dock(FILL)
-            realTabInside:DockMargin(8,4,8,4)
+            realTabInside:DockMargin(8, 4, 8, 4)
 
             function tab:AddLabel(lblTxt)
                 local lbl = realTabInside:Add("DLabel")

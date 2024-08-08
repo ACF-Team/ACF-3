@@ -47,9 +47,9 @@ do	-- Spawn and Update funcs
 
 	------------------
 
-	local function GetMass(Motor,Data)
+	local function GetMass(Motor, Data)
 		local SizePerc = Data.CompSize ^ 2
-		return math.Round(math.max(Motor.Mass * SizePerc,5), 1)
+		return math.Round(math.max(Motor.Mass * SizePerc, 5), 1)
 	end
 
 	local function UpdateMotor(Entity, Data, Class, Motor)
@@ -71,37 +71,37 @@ do	-- Spawn and Update funcs
 		Entity.SoundPath	= Motor.Sound
 		Entity.DefaultSound	= Motor.Sound
 
-		Entity.Torque		= Class.GetTorque(Motor,Size)
+		Entity.Torque		= Class.GetTorque(Motor, Size)
 		Entity.Teeth		= Data.Teeth
 		Entity.Efficiency	= Motor.Efficiency
 		Entity.Speed		= Motor.Speed
 		Entity.Accel		= Motor.Accel
 		Entity.ValidPlacement	= false
 
-		Entity.ScaledArmor	= math.max(math.Round(5 * (Size ^ 1.2),1),2)
+		Entity.ScaledArmor	= math.max(math.Round(5 * (Size ^ 1.2), 1), 2)
 
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Motor)
 
-		Entity:SetNWString("WireName","ACF " .. Entity.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
-		for _,v in ipairs(Entity.DataStore) do
+		for _, v in ipairs(Entity.DataStore) do
 			Entity[v] = Data[v]
 		end
 
 		ACF.Activate(Entity, true)
 
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
-		Contraption.SetMass(Entity, GetMass(Motor,Data))
+		Contraption.SetMass(Entity, GetMass(Motor, Data))
 	end
 
 	function MakeACF_TurretMotor(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
-		local Class = Classes.GetGroup(Turrets,Data.Motor)
+		local Class = Classes.GetGroup(Turrets, Data.Motor)
 		local Limit	= Class.LimitConVar.Name
 
 		if not Player:CheckLimit(Limit) then return end
@@ -199,30 +199,30 @@ do	-- Metamethods and other important stuff
 				Status = "Inactive: Not linked to a turret drive!"
 			end
 
-			return Text:format(Status,self.Torque,self.Teeth)
+			return Text:format(Status, self.Torque, self.Teeth)
 		end
 	end
 
 	do	-- ACF Funcs
 		function ENT:Enable()
-			self:SetActive(true,"")
+			self:SetActive(true, "")
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= false
-			self:SetActive(false,"")
+			self:SetActive(false, "")
 			self:UpdateOverlay()
 		end
 
 		function ENT:ACF_PostDamage()
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
@@ -246,7 +246,7 @@ do	-- Metamethods and other important stuff
 			self.ACF.Type		= "Prop"
 		end
 
-		function ENT:SetActive(Active,Reason)
+		function ENT:SetActive(Active, Reason)
 			self.Active = Active
 			self.InactiveReason = Reason
 
@@ -256,34 +256,34 @@ do	-- Metamethods and other important stuff
 		function ENT:ValidatePlacement()
 			self.ValidPlacement = true
 
-			if not IsValid(self.Turret) then self.ValidPlacement = false self:SetActive(false,"") return end
+			if not IsValid(self.Turret) then self.ValidPlacement = false self:SetActive(false, "") return end
 
 			if not IsValid(self:GetParent()) then
 				self.ValidPlacement = false
-				self:SetActive(false,"Must be parented!")
+				self:SetActive(false, "Must be parented!")
 				return
 			end
 
 			local Turret = self.Turret
 			local LocPos	= Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
 			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.1) + 12) ^ 2
-			local LocDist	= Vector(LocPos.x,LocPos.y,0):Length2DSqr()
+			local LocDist	= Vector(LocPos.x, LocPos.y, 0):Length2DSqr()
 
 			if LocDist > MaxDist then
 				self.ValidPlacement = false
-				self:SetActive(false,"Too far from ring!")
+				self:SetActive(false, "Too far from ring!")
 				return
 			end
 
 			if math.abs(LocPos.z) > ((Turret.TurretData.RingHeight * 1.5) + 12) then
 				self.ValidPlacement = false
-				self:SetActive(false,"Too far above/below ring!")
+				self:SetActive(false, "Too far above/below ring!")
 				return
 			end
 
 			if (self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
 				self.ValidPlacement = false
-				self:SetActive(false,"Must be parented to (or share parent with) the ring!")
+				self:SetActive(false, "Must be parented to (or share parent with) the ring!")
 				return
 			end
 		end
@@ -293,11 +293,11 @@ do	-- Metamethods and other important stuff
 			if self.ValidPlacement == false then return false end
 
 			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
-				self:SetActive(false,"Too damaged!")
+				self:SetActive(false, "Too damaged!")
 				return false
 			end
 
-			if self.Active == false then self:SetActive(true,"") end
+			if self.Active == false then self:SetActive(true, "") end
 			return true
 		end
 

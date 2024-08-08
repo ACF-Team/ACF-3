@@ -20,7 +20,7 @@ do	-- Netsurfing!
 
 		Queued[Vehicle] = true
 
-		timer.Simple(5,function() if IsValid(Vehicle) and Queued[Vehicle] then Queued[Vehicle] = nil end end)
+		timer.Simple(5, function() if IsValid(Vehicle) and Queued[Vehicle] then Queued[Vehicle] = nil end end)
 
 		net.Start("ACF.RequestVehicleInfo")
 			net.WriteEntity(Vehicle)
@@ -47,7 +47,7 @@ do	-- Netsurfing!
 		end
 	end
 
-	net.Receive("ACF.RequestVehicleInfo",function()
+	net.Receive("ACF.RequestVehicleInfo", function()
 		local Ent = net.ReadEntity()
 		if not IsValid(Ent) then return end
 
@@ -64,7 +64,7 @@ do	-- Netsurfing!
 		if Queued[Ent] then Queued[Ent] = nil end
 	end)
 
-	net.Receive("ACF.VehicleSpawned",function()
+	net.Receive("ACF.VehicleSpawned", function()
 		local Ent	= net.ReadEntity()
 		if not IsValid(Ent) then return end
 

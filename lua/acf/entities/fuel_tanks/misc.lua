@@ -6,7 +6,7 @@ FuelTanks.Register("FTS_M", {
 })
 
 do
-	FuelTanks.RegisterItem("Jerry_Can","FTS_M", {
+	FuelTanks.RegisterItem("Jerry_Can", "FTS_M", {
 		Name		= "Jerry Can",
 		Description	= "Handy portable fuel container.",
 		Model		= "models/props_junk/gascan001a.mdl",
@@ -18,7 +18,7 @@ do
 		},
 	})
 
-	FuelTanks.RegisterItem("Transport_Tank","FTS_M", {
+	FuelTanks.RegisterItem("Transport_Tank", "FTS_M", {
 		Name		= "Transport Tank",
 		Description	= "Disappointingly non-explosive.",
 		Model		= "models/props_wasteland/horizontalcoolingtank04.mdl",
@@ -29,7 +29,7 @@ do
 		Unlinkable	= true,
 	})
 
-	FuelTanks.RegisterItem("Storage_Tank","FTS_M", {
+	FuelTanks.RegisterItem("Storage_Tank", "FTS_M", {
 		Name		= "Storage Tank",
 		Description	= "Disappointingly non-explosive.",
 		Model		= "models/props_wasteland/coolingtank02.mdl",

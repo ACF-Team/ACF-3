@@ -133,7 +133,7 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
-		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID,MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
 	else
 		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
 	end
@@ -369,7 +369,7 @@ do -- Terminal ballistics --------------------------
 	function Ballistics.DoRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		local Speed    = Bullet.Flight:Length() / ACF.Scale
-		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20,89.9) -- Making the chance of a ricochet get higher as the speeds increase
+		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
 		local Ricochet = 0
 
 		if HitAngle < 89.9 and HitAngle > math.random(MinAngle, 90) then -- Checking for ricochet

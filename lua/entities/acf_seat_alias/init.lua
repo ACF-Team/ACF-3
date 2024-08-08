@@ -14,7 +14,7 @@ local Contraption	= ACF.Contraption
 local Damage		= ACF.Damage
 
 do	-- Spawn functions
-	local function UpdateClient(Vehicle,Ply)
+	local function UpdateClient(Vehicle, Ply)
 		if not Vehicle._Alias then return end
 		local AliasInfo = Vehicle._Alias
 
@@ -69,12 +69,12 @@ do	-- Spawn functions
 	end
 
 	util.AddNetworkString("ACF.RequestVehicleInfo")
-	net.Receive("ACF.RequestVehicleInfo",function(_,Ply)
+	net.Receive("ACF.RequestVehicleInfo", function(_, Ply)
 		local Ent = net.ReadEntity()
 		if not IsValid(Ent) then return end
-		if not Ent._Alias then ACF.PrepareAlias(Ent,Ply) end
+		if not Ent._Alias then ACF.PrepareAlias(Ent, Ply) end
 
-		UpdateClient(Ent,Ply)
+		UpdateClient(Ent, Ply)
 	end)
 end
 
@@ -89,7 +89,7 @@ do	-- Metamethods
 	}
 
 	-- Important for preventing everything except ACF traces from hitting this
-	function ENT:TestCollision(_,_,_,_,Mask)
+	function ENT:TestCollision(_, _, _, _, Mask)
 		if Hit[Mask] then
 			return true
 		end
@@ -143,21 +143,21 @@ do	-- Metamethods
 		if IsValid(self.Driver) then
 			local Seat = self.Seat
 			local Driver = self.Driver
-			timer.Simple(0,function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat,Driver) end end)
+			timer.Simple(0, function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat, Driver) end end)
 		end
 	end
 end
 
 do	-- Arrr, there be hooks
 	-- This runs BEFORE GM:HandlePlayerDriving has any effect on player animation, so the work is on us
-	hook.Add("PlayerEnteredVehicle","ACF.CreateSeatAlias",function(Ply,Vic)
+	hook.Add("PlayerEnteredVehicle", "ACF.CreateSeatAlias", function(Ply, Vic)
 		if not IsValid(Ply) then return end
 		if not IsValid(Vic) then return end
 
-		ACF.ApplyAlias(Vic,Ply)
+		ACF.ApplyAlias(Vic, Ply)
 	end)
 
-	hook.Add("PlayerLeaveVehicle","ACF.RemoveSeatAlias",function(_,Vic)
+	hook.Add("PlayerLeaveVehicle", "ACF.RemoveSeatAlias", function(_, Vic)
 		if not IsValid(Vic) then return end
 		if not IsValid(Vic.AliasEnt) then return end
 
@@ -165,8 +165,8 @@ do	-- Arrr, there be hooks
 	end)
 
 	util.AddNetworkString("ACF.VehicleSpawned")
-	hook.Add("PlayerSpawnedVehicle","ACF.SpawnedVehicle",function(_,Vic)
-		timer.Simple(0.2,function()
+	hook.Add("PlayerSpawnedVehicle", "ACF.SpawnedVehicle", function(_, Vic)
+		timer.Simple(0.2, function()
 			net.Start("ACF.VehicleSpawned")
 				net.WriteEntity(Vic)
 			net.Broadcast()

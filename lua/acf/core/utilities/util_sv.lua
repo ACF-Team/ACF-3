@@ -635,23 +635,23 @@ do	-- Seat alias system
 	local SeatModel = {
 		[1] = {
 			model	= "models/chairs_playerstart/sitpose.mdl",
-			pos		= Vector(0,-19.6,20),
-			ang		= Angle(0,90,0)
+			pos		= Vector(0, -19.6, 20),
+			ang		= Angle(0, 90, 0)
 		},
 		[2] = {
 			model	= "models/chairs_playerstart/jeeppose.mdl",
-			pos		= Vector(0,-39.5,5),
-			ang		= Angle(0,90,0)
+			pos		= Vector(0, -39.5, 5),
+			ang		= Angle(0, 90, 0)
 		},
 		[3] = {
 			model	= "models/chairs_playerstart/airboatpose.mdl",
-			pos		= Vector(0,-35.4,9.3),
-			ang		= Angle(0,90,0)
+			pos		= Vector(0, -35.4, 9.3),
+			ang		= Angle(0, 90, 0)
 		},
 		[4] = {
 			model	= "models/chairs_playerstart/podpose.mdl",
-			pos		= Vector(0,5,6),
-			ang		= Angle(0,90,0)
+			pos		= Vector(0, 5, 6),
+			ang		= Angle(0, 90, 0)
 		},
 	}
 
@@ -661,7 +661,7 @@ do	-- Seat alias system
 		["models/airboat.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
 
-			return Vic:WorldToLocal(SeatPos) - Vector(0.1,-24,-25.5), Vic:WorldToLocalAngles(SeatAng), true
+			return Vic:WorldToLocal(SeatPos) - Vector(0.1, -24, -25.5), Vic:WorldToLocalAngles(SeatAng), true
 		end,
 		["models/vehicle.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
@@ -676,30 +676,30 @@ do	-- Seat alias system
 		["models/vehicles/prisoner_pod_inner.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
 
-			return Vic:WorldToLocal(SeatPos) - Vector(5,0,6), Vic:WorldToLocalAngles(SeatAng) + Angle(0,-90,0), true
+			return Vic:WorldToLocal(SeatPos) - Vector(5, 0, 6), Vic:WorldToLocalAngles(SeatAng) + Angle(0, -90, 0), true
 		end,
 		["models/vehicles/driver_pod.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
 
-			return Vic:WorldToLocal(SeatPos) - Vector(5,0,6), Vic:WorldToLocalAngles(SeatAng) + Angle(0,-90,0), true
+			return Vic:WorldToLocal(SeatPos) - Vector(5, 0, 6), Vic:WorldToLocalAngles(SeatAng) + Angle(0, -90, 0), true
 		end,
 		["models/chairs_playerstart/pronepose.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
 
-			return Vic:WorldToLocal(SeatPos) - Vector(0,42,-5), Vic:WorldToLocalAngles(SeatAng) + Angle(0,0,-85), true
+			return Vic:WorldToLocal(SeatPos) - Vector(0, 42, -5), Vic:WorldToLocalAngles(SeatAng) + Angle(0, 0, -85), true
 		end,
 		["models/lubprops/seat/raceseat2.mdl"] = function(Vic)
 			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
 
 			-- Close enough, I hate this seat in particular because of the weird offset everything *just has to have*
-			return Vic:WorldToLocal(SeatPos) + Vector(0,24,-6), Vic:WorldToLocalAngles(SeatAng) + Angle(20,-90,22.5), true
+			return Vic:WorldToLocal(SeatPos) + Vector(0, 24, -6), Vic:WorldToLocalAngles(SeatAng) + Angle(20, -90, 22.5), true
 		end,
 	}
 
 	local ClassList = {
 		["prop_vehicle_jeep"] = function(Ply) return Ply:LookupSequence("drive_jeep") end,
 		["prop_vehicle_airboat"] = function(Ply) return Ply:LookupSequence("drive_airboat") end,
-		["prop_vehicle_prisoner_pod"] = function(Ply,Vic)
+		["prop_vehicle_prisoner_pod"] = function(Ply, Vic)
 			-- Using the same shitty hack that whoever wrote however long ago in garrysmod/gamemodes/base/gamemode/animations.lua #171
 
 			if Vic:GetModel() == "models/vehicles/prisoner_pod_inner.mdl" then
@@ -713,58 +713,58 @@ do	-- Seat alias system
 	local Hitboxes	= {
 		[1] = {
 			["head"] = {
-				pos	= Vector(0,-18,46),
-				ang	= Angle(0,0,-10),
-				min	= Vector(-4,-6,-6),
-				max	= Vector(4,6,6)
+				pos	= Vector(0, -18, 46),
+				ang	= Angle(0, 0, -10),
+				min	= Vector(-4, -6, -6),
+				max	= Vector(4, 6, 6)
 			},
 			["chest"] = {
-				pos	= Vector(0,-22,30),
-				ang	= Angle(0,0,0),
-				min	= Vector(-8,-5.5,-12),
-				max	= Vector(8,6,12)
+				pos	= Vector(0, -22, 30),
+				ang	= Angle(0, 0, 0),
+				min	= Vector(-8, -5.5, -12),
+				max	= Vector(8, 6, 12)
 			},
 		},
 		[2] = {
 			["head"] = {
-				pos	= Vector(0,-34,38),
-				ang	= Angle(0,0,0),
-				min	= Vector(-4,-6,-6),
-				max	= Vector(4,6,6)
+				pos	= Vector(0, -34, 38),
+				ang	= Angle(0, 0, 0),
+				min	= Vector(-4, -6, -6),
+				max	= Vector(4, 6, 6)
 			},
 			["chest"] = {
-				pos	= Vector(0,-32,20),
-				ang	= Angle(0,0,15),
-				min	= Vector(-8,-5.5,-12),
-				max	= Vector(8,6,12)
+				pos	= Vector(0, -32, 20),
+				ang	= Angle(0, 0, 15),
+				min	= Vector(-8, -5.5, -12),
+				max	= Vector(8, 6, 12)
 			},
 		},
 		[3] = {
 			["head"] = {
-				pos	= Vector(0,-31,39),
-				ang	= Angle(0,0,0),
-				min	= Vector(-4,-6,-6),
-				max	= Vector(4,6,6)
+				pos	= Vector(0, -31, 39),
+				ang	= Angle(0, 0, 0),
+				min	= Vector(-4, -6, -6),
+				max	= Vector(4, 6, 6)
 			},
 			["chest"] = {
-				pos	= Vector(0,-33,22),
-				ang	= Angle(0,0,10),
-				min	= Vector(-8,-5.5,-12),
-				max	= Vector(8,6,12)
+				pos	= Vector(0, -33, 22),
+				ang	= Angle(0, 0, 10),
+				min	= Vector(-8, -5.5, -12),
+				max	= Vector(8, 6, 12)
 			},
 		},
 		[4] = {
 			["head"] = {
-				pos	= Vector(0,-3,73),
-				ang	= Angle(0,0,20),
-				min	= Vector(-4,-6,-6),
-				max	= Vector(4,6,6)
+				pos	= Vector(0, -3, 73),
+				ang	= Angle(0, 0, 20),
+				min	= Vector(-4, -6, -6),
+				max	= Vector(4, 6, 6)
 			},
 			["chest"] = {
-				pos	= Vector(0,-0.5,54),
-				ang	= Angle(0,0,0),
-				min	= Vector(-8,-5.5,-12),
-				max	= Vector(8,6,12)
+				pos	= Vector(0, -0.5, 54),
+				ang	= Angle(0, 0, 0),
+				min	= Vector(-8, -5.5, -12),
+				max	= Vector(8, 6, 12)
 			},
 		}
 	}
@@ -773,59 +773,59 @@ do	-- Seat alias system
 		[1] = {
 			["helmet"] = {
 				parent	= "head",
-				min	= Vector(-4.5,-6.5,3),
-				max	= Vector(4.5,6.5,6.5)
+				min	= Vector(-4.5, -6.5, 3),
+				max	= Vector(4.5, 6.5, 6.5)
 			},
 			["vest"] = {
 				parent	= "chest",
-				min	= Vector(-7.5,-6,-11),
-				max	= Vector(7.5,6.5,11)
+				min	= Vector(-7.5, -6, -11),
+				max	= Vector(7.5, 6.5, 11)
 			},
 		},
 		[2] = {
 			["helmet"] = {
 				parent	= "head",
-				min	= Vector(-4.5,-6.5,3),
-				max	= Vector(4.5,6.5,6.5)
+				min	= Vector(-4.5, -6.5, 3),
+				max	= Vector(4.5, 6.5, 6.5)
 			},
 			["vest"] = {
 				parent	= "chest",
-				min	= Vector(-7.5,-6,-11),
-				max	= Vector(7.5,6.5,11)
+				min	= Vector(-7.5, -6, -11),
+				max	= Vector(7.5, 6.5, 11)
 			},
 		},
 		[3] = {
 			["helmet"] = {
 				parent	= "head",
-				min	= Vector(-4.5,-6.5,3),
-				max	= Vector(4.5,6.5,6.5)
+				min	= Vector(-4.5, -6.5, 3),
+				max	= Vector(4.5, 6.5, 6.5)
 			},
 			["vest"] = {
 				parent	= "chest",
-				min	= Vector(-7.5,-6,-11),
-				max	= Vector(7.5,6.5,11)
+				min	= Vector(-7.5, -6, -11),
+				max	= Vector(7.5, 6.5, 11)
 			},
 		},
 		[4] = {
 			["helmet"] = {
 				parent	= "head",
-				min	= Vector(-4.5,-6.5,3),
-				max	= Vector(4.5,6.5,6.5)
+				min	= Vector(-4.5, -6.5, 3),
+				max	= Vector(4.5, 6.5, 6.5)
 			},
 			["vest"] = {
 				parent	= "chest",
-				min	= Vector(-7.5,-6,-11),
-				max	= Vector(7.5,6.5,11)
+				min	= Vector(-7.5, -6, -11),
+				max	= Vector(7.5, 6.5, 11)
 			},
 		}
 	}
 
 	local function RoundVector(Vec, Dec)
-		return Vector(math.Round(Vec.x,Dec),math.Round(Vec.y,Dec),math.Round(Vec.z,Dec))
+		return Vector(math.Round(Vec.x, Dec), math.Round(Vec.y, Dec), math.Round(Vec.z, Dec))
 	end
 
 	local function RoundAngle(Ang, Dec)
-		return Angle(math.Round(Ang.p,Dec),math.Round(Ang.y,Dec),math.Round(Ang.r,Dec))
+		return Angle(math.Round(Ang.p, Dec), math.Round(Ang.y, Dec), math.Round(Ang.r, Dec))
 	end
 
 	function ACF.PrepareAlias(Vehicle, Ply)
@@ -900,11 +900,11 @@ do	-- Seat alias system
 		end
 
 		if Override then
-			Alias.Pos	= RoundVector(AttachmentPos,2)
-			Alias.Ang	= RoundAngle(AttachmentAng,2)
+			Alias.Pos	= RoundVector(AttachmentPos, 2)
+			Alias.Ang	= RoundAngle(AttachmentAng, 2)
 		else
-			Alias.Pos	= RoundVector(AttachmentPos - Pos,2)
-			Alias.Ang	= RoundAngle(AttachmentAng - Ang,2)
+			Alias.Pos	= RoundVector(AttachmentPos - Pos, 2)
+			Alias.Ang	= RoundAngle(AttachmentAng - Ang, 2)
 		end
 
 		Alias.Hitboxes	= Hitboxes[Pose]
@@ -914,8 +914,8 @@ do	-- Seat alias system
 		Vehicle._Alias = Alias
 	end
 
-	function ACF.ApplyAlias(Vehicle,Ply)
-		ACF.PrepareAlias(Vehicle,Ply)
+	function ACF.ApplyAlias(Vehicle, Ply)
+		ACF.PrepareAlias(Vehicle, Ply)
 
 		MakeACF_SeatAlias(Vehicle)
 	end
@@ -923,20 +923,20 @@ end
 
 do -- Special squishy functions
 	local BoneList = {
-		head = {boneName = "ValveBiped.Bip01_Head1",group = "head",min = Vector(-6,-6,-4),max = Vector(8,4,4)},
+		head = {boneName = "ValveBiped.Bip01_Head1", group = "head", min = Vector(-6, -6, -4), max = Vector(8, 4, 4)},
 
-		chest = {boneName = "ValveBiped.Bip01_Spine",group = "chest",min = Vector(-6,-4,-9),max = Vector(18,10,9)},
+		chest = {boneName = "ValveBiped.Bip01_Spine", group = "chest", min = Vector(-6, -4, -9), max = Vector(18, 10, 9)},
 
-		lthigh = {boneName = "ValveBiped.Bip01_L_Thigh",group = "limb",min = Vector(0,-4,-4),max = Vector(18,4,4)},
-		lcalf = {boneName = "ValveBiped.Bip01_L_Calf",group = "limb",min = Vector(0,-4,-4),max = Vector(18,4,4)},
+		lthigh = {boneName = "ValveBiped.Bip01_L_Thigh", group = "limb", min = Vector(0, -4, -4), max = Vector(18, 4, 4)},
+		lcalf = {boneName = "ValveBiped.Bip01_L_Calf", group = "limb", min = Vector(0, -4, -4), max = Vector(18, 4, 4)},
 
-		rthigh = {boneName = "ValveBiped.Bip01_R_Thigh",group = "limb",min = Vector(0,-3,-3),max = Vector(18,3,3)},
-		rcalf = {boneName = "ValveBiped.Bip01_R_Calf",group = "limb",min = Vector(0,-3,-3),max = Vector(18,3,3)},
+		rthigh = {boneName = "ValveBiped.Bip01_R_Thigh", group = "limb", min = Vector(0, -3, -3), max = Vector(18, 3, 3)},
+		rcalf = {boneName = "ValveBiped.Bip01_R_Calf", group = "limb", min = Vector(0, -3, -3), max = Vector(18, 3, 3)},
 	}
 
 	local ArmorHitboxes = { -- only applied if the entity has armor greater than 0
-		helmet = {boneName = "ValveBiped.Bip01_Head1",group = "helmet",min = Vector(4.5,-6.5,-4.5),max = Vector(8.5,4.5,4.5)},
-		vest = {boneName = "ValveBiped.Bip01_Spine",group = "vest",min = Vector(-5,-5,-8),max = Vector(17,11,8)},
+		helmet = {boneName = "ValveBiped.Bip01_Head1", group = "helmet", min = Vector(4.5, -6.5, -4.5), max = Vector(8.5, 4.5, 4.5)},
+		vest = {boneName = "ValveBiped.Bip01_Spine", group = "vest", min = Vector(-5, -5, -8), max = Vector(17, 11, 8)},
 	}
 
 	-- The goal of this is to provide a much sturdier way to get the part of a player that got hit with a bullet
@@ -945,19 +945,19 @@ do -- Special squishy functions
 		local CheckList = {}
 		local Bones     = {}
 
-		for k,v in pairs(BoneList) do
+		for k, v in pairs(BoneList) do
 			CheckList[k] = v
 		end
 
 		if Entity:IsPlayer() and Entity:Armor() > 0 then
-			for k,v in pairs(ArmorHitboxes) do
+			for k, v in pairs(ArmorHitboxes) do
 				CheckList[k] = v
 			end
 		end
 
 		--if true then return "none" end
 
-		for k,v in pairs(CheckList) do
+		for k, v in pairs(CheckList) do
 			local bone = Entity:LookupBone(v.boneName)
 			if bone then Bones[k] = bone end
 		end
@@ -973,8 +973,8 @@ do -- Special squishy functions
 			local LocalRay = Alias:WorldToLocal(RayStart)
 			local LocalRayDir = Alias:WorldToLocal(RayDir + Alias:GetPos())
 
-			for k,v in pairs(AliasInfo.Hitboxes) do
-				local HitPos = util.IntersectRayWithOBB(LocalRay,LocalRayDir * 64, v.pos, v.ang, v.min, v.max)
+			for k, v in pairs(AliasInfo.Hitboxes) do
+				local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, v.pos, v.ang, v.min, v.max)
 
 				--debugoverlay.Text(Alias:LocalToWorld(v.pos),k,10,false)
 				--debugoverlay.BoxAngles(Alias:LocalToWorld(v.pos),v.min,v.max,Alias:LocalToWorldAngles(v.ang),10,Color(255,0,0,50))
@@ -985,10 +985,10 @@ do -- Special squishy functions
 			end
 
 			if Entity:Armor() > 0 then
-				for k,v in pairs(AliasInfo.ArmorHitboxes) do
+				for k, v in pairs(AliasInfo.ArmorHitboxes) do
 					local parentBox = AliasInfo.Hitboxes[v.parent]
 
-					local HitPos = util.IntersectRayWithOBB(LocalRay,LocalRayDir * 64, parentBox.pos, parentBox.ang, v.min, v.max)
+					local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, parentBox.pos, parentBox.ang, v.min, v.max)
 
 					--debugoverlay.Text(Alias:LocalToWorld(parentBox.pos),k,10,false)
 					--debugoverlay.BoxAngles(Alias:LocalToWorld(parentBox.pos),v.min,v.max,Alias:LocalToWorldAngles(parentBox.ang),10,Color(0,0,255,50))
@@ -999,9 +999,9 @@ do -- Special squishy functions
 				end
 			end
 		else
-			for k,v in pairs(Bones) do
+			for k, v in pairs(Bones) do
 				local BoneData = CheckList[k]
-				local BonePos,BoneAng = Entity:GetBonePosition(v)
+				local BonePos, BoneAng = Entity:GetBonePosition(v)
 
 				local HitPos = util.IntersectRayWithOBB(RayStart, RayDir * 64, BonePos, BoneAng, BoneData.min, BoneData.max)
 
@@ -1020,7 +1020,7 @@ do -- Special squishy functions
 		local BestChoice = next(HitBones)
 		local BestDist = HitBones[BestChoice]:DistToSqr(RayStart)
 
-		for k,_ in pairs(HitBones) do
+		for k, _ in pairs(HitBones) do
 			if BestChoice == k then continue end
 			local BoxPosDist = HitBones[k]:DistToSqr(RayStart)
 			if BoxPosDist < BestDist then BestChoice = k BestDist = BoxPosDist end

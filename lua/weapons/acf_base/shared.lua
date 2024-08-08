@@ -41,10 +41,10 @@ SWEP.Irons = false
 SWEP.IronsDelay = 1
 SWEP.ViewModelFOV = 90
 
-SWEP.FreeaimSightsPos 		= Vector(0,0,0)		--Lateral, Depth, Vertical
-SWEP.FreeaimSightsAng 		= Vector(0,0,0)				--Pitch, Yaw, Roll
-SWEP.IronSightsPos 			= Vector(0,0,0)		--Lateral, Depth, Vertical
-SWEP.IronSightsAng 			= Vector(0,0,0)				--Pitch, Yaw, Roll
+SWEP.FreeaimSightsPos 		= Vector(0, 0, 0)		--Lateral, Depth, Vertical
+SWEP.FreeaimSightsAng 		= Vector(0, 0, 0)				--Pitch, Yaw, Roll
+SWEP.IronSightsPos 			= Vector(0, 0, 0)		--Lateral, Depth, Vertical
+SWEP.IronSightsAng 			= Vector(0, 0, 0)				--Pitch, Yaw, Roll
 
 function SWEP:SetupDataTables()
 
@@ -57,8 +57,8 @@ function SWEP:PrimaryAttack()
 
 	if not self:CanPrimaryAttack() then return end
 
-	if ( CLIENT ) then
-		self:ApplyRecoil(math.min(Recoil,50))
+	if CLIENT then
+		self:ApplyRecoil(math.min(Recoil, 50))
 		self:MuzzleEffect()
 	else
 		local Owner = self:GetOwner()
@@ -89,12 +89,11 @@ function SWEP:PrimaryAttack()
 end
 
 function SWEP:SecondaryAttack()
-
 	if self.LastIrons + 1 < CurTime() then
 		if self:GetDTBool(0) then
-			self:SetDTBool(0,false )
+			self:SetDTBool(0, false)
 		else
-			self:SetDTBool(0,true )
+			self:SetDTBool(0, true)
 		end
 		self.LastIrons = CurTime()
 	end
@@ -113,7 +112,9 @@ function SWEP:CalculateModifiers()
 
 	if not Owner:IsOnGround() then
 		modifier = modifier * 2 --You can't be jumping and crouching at the same time, so return here
-	return modifier end
+
+		return modifier
+	end
 
 	if Owner:Crouching() then
 		modifier = modifier * 0.5
