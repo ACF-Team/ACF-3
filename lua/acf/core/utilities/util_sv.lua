@@ -820,15 +820,15 @@ do	-- Seat alias system
 		}
 	}
 
-	local function RoundVector(Vec,Dec)
+	local function RoundVector(Vec, Dec)
 		return Vector(math.Round(Vec.x,Dec),math.Round(Vec.y,Dec),math.Round(Vec.z,Dec))
 	end
 
-	local function RoundAngle(Ang,Dec)
+	local function RoundAngle(Ang, Dec)
 		return Angle(math.Round(Ang.p,Dec),math.Round(Ang.y,Dec),math.Round(Ang.r,Dec))
 	end
 
-	function ACF.PrepareAlias(Vehicle,Ply)
+	function ACF.PrepareAlias(Vehicle, Ply)
 		if not IsValid(Vehicle) then return end
 		if not IsValid(Ply) then return end
 		if Vehicle._Alias ~= nil then return end
@@ -853,6 +853,12 @@ do	-- Seat alias system
 
 			if VTD.Members and VTD.Members.HandleAnimation and isfunction(VTD.Members.HandleAnimation) then
 				Seq = VTD.Members.HandleAnimation(Vehicle, Ply)
+			else
+				local Class = Vehicle:GetClass()
+
+				if ClassList[Class] then
+					Seq = ClassList[Class](Ply, Vehicle)
+				end
 			end
 		else
 			if Vehicle.HandleAnimation and isfunction(Vehicle.HandleAnimation) then
@@ -865,7 +871,7 @@ do	-- Seat alias system
 				local Class = Vehicle:GetClass()
 
 				if ClassList[Class] then
-					Seq = ClassList[Class](Ply,Vehicle)
+					Seq = ClassList[Class](Ply, Vehicle)
 				end
 			end
 		end
