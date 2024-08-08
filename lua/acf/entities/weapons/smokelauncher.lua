@@ -16,7 +16,7 @@ Weapons.Register("SL", {
 	Mass        = 3.77,
 	Cyclic      = 600,
 	MagSize     = 1,
-	ScaleFactor = 0.96, -- Corrective factor to account for impropperly scaled base models
+	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,

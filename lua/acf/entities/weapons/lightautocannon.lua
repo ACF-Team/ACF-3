@@ -11,7 +11,7 @@ Weapons.Register("LAC", {
 	IsScalable  = true,
 	Mass        = 301,
 	Spread      = 0.48,
-	ScaleFactor = 0.81, -- Corrective factor to account for impropperly scaled base models
+	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 32,
 		PropLength = 26,
