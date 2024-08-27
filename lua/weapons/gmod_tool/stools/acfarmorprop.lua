@@ -360,41 +360,6 @@ else -- Serverside-only stuff
 
 		UpdateArmor(_, Entity, { Thickness = Thickness, Ductility = Ductility * 100 })
 	end)
-
-	-- ProperClipping compatibility
-
-	if ProperClipping then
-		local Override = {
-			AddClip = true,
-			RemoveClip = true,
-			RemoveClips = true,
-		}
-
-		for Name in pairs(Override) do
-			local Old = ProperClipping[Name]
-
-			ProperClipping[Name] = function(Entity, ...)
-				local EntMods = Entity.EntityMods
-				local MassMod = EntMods and EntMods.mass
-				local Result  = Old(Entity, ...)
-
-				if not EntMods then return Result end
-
-				local Armor = EntMods.ACF_Armor
-
-				if Armor and Armor.Thickness then
-					if MassMod then
-						duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-						duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Armor.Ductility })
-					else
-						duplicator.ClearEntityModifier(Entity, "mass")
-					end
-				end
-
-				return Result
-			end
-		end
-	end
 end
 
 do -- Allowing everyone to read contraptions
