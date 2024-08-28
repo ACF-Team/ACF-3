@@ -61,31 +61,18 @@ end ---------------------------------------------
 do -- Entity linking and unlinking --------------
 	local LinkText   = "%s can't be linked to %s."
 	local UnlinkText = "%s can't be unlinked from %s."
-	local timer   = timer
 
-	function ENT:Link(Target, FromChip)
+	function ENT:Link(Target)
 		if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
 		if self == Target then return false, "Can't link an entity to itself." end
 
 		local Class    = Target:GetClass()
-		local LinkData = ACF.GetLinkDataSafe(self:GetClass(), Class)
-		local Function = LinkData.Link
-		local Check = LinkData.Check
-		local ChipDelay = LinkData.ChipDelay
+		local Function = ACF.GetClassLink(self:GetClass(), Class)
 
 		if Function then
-			if Check then
-				local result, message = Check(self, Target)
-				if result then
-					if FromChip and ChipDelay then
-						timer.Simple(ChipDelay,function()
-							if Check(self, Target) then	Function(self, Target) end
-						end)
-					else Function(self,Target) end
-				end
-				return result, message
-			end
 			return Function(self, Target)
+		elseif self.DefaultLink then
+			return self:DefaultLink(Target)
 		end
 
 		return false, LinkText:format(self.PluralName, Target.PluralName or Class)
@@ -96,10 +83,12 @@ do -- Entity linking and unlinking --------------
 		if self == Target then return false, "Can't unlink an entity from itself." end
 
 		local Class    = Target:GetClass()
-		local Function = ACF.GetLinkDataSafe(self:GetClass(), Class).Unlink
+		local Function = ACF.GetClassLinkData(self:GetClass(), Class).Link
 
 		if Function then
 			return Function(self, Target)
+		elseif self.DefaultUnlink then
+			return self:DefaultUnlink(Target)
 		end
 
 		return false, UnlinkText:format(self.PluralName, Target.PluralName or Class)

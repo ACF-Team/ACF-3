@@ -1105,7 +1105,7 @@ if SERVER then
 		CheckPerms(instance, This, "entities.acf")
 		CheckPerms(instance, Target, "entities.acf")
 
-		local Success, Message = This:Link(Target, true)
+		local Success, Message = This:Link(Target)
 
 		if notify then
 			ACF.SendNotify(instance.player, Success, Message)

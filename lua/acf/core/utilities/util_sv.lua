@@ -399,151 +399,95 @@ do -- Entity linking
 		return Result
 	end
 
+	--[[
+		Example structure of ClassLink:
+
+		ClassLink = {
+			["Link"] = {
+				["acf_ammo"] = {
+					["acf_gun"] = function(Ent1, Ent2) -- Handles linking guns and ammo
+				}
+			},
+			["Unlink"] = {
+				["acf_ammo"] = {
+					["acf_gun"] = function(Ent1, Ent2) -- Handles unlinking guns and ammo
+				}
+			}
+		}
+
+		ClassLink = {
+			acf_ammo = {
+				acf_guns = {
+
+				}
+			},
+
+			acf_			
+		}
+	]]--
+
 	--- @class LinkFunction
 	--- @field Ent1 table The first entity in the link
 	--- @field Ent2 table The second entity in the link
 	--- @field FromChip boolean If the link is from a chip
 	--- @return boolean? Success Whether the link was successful
 	--- @return string? Message A message about the link status
-
-	--- Represents information about storing the link on an entity
-	--- @class LinkStore
-	--- @field StoreName string Any entity of this class will store references to the other class in this attribute
-	--- @field Ordered boolean If true, maintains the link as an array rather than a lookup table
-
+	
 	--- @class LinkOptions
 	--- @field Link LinkFunction The function to handle linking
 	--- @field Unlink LinkFunction The function to handle unlinking
 	--- @field Check LinkFunction The function to check the link status
-	--- @field ChipDelay number The delay associated with the link if done via chip
-	--- @field LinkStore1 LinkStore Information about this class stores links to the other class
-	--- @field LinkStore2 LinkStore Information about how the other class stores links to this class
+	--- @field Delay number The delay associated with the link
 
 	local ClassLink = { }
 
-	function ACF.GetLinkDataSafe(Class1, Class2)
+	--- Registers a link or unlink between two classes and how to handle them.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param Options LinkOptions The options for handling the link
+	local function RegisterClassLink(Class1, Class2, Options)
+		-- Safely initialize tables
 		if not ClassLink[Class1] then ClassLink[Class1] = {} end
 		if not ClassLink[Class1][Class2] then ClassLink[Class1][Class2] = {} end
+
+		if not ClassLink[Class2] then ClassLink[Class2] = {} end
+		if not ClassLink[Class2][Class1] then ClassLink[Class2][Class1] = {} end
+
+		for k,v in pairs(Options) do
+			ClassLink[Class1][Class2][k] = v
+		end
+
+		-- If Class1 == Class2, the operations below are a duplicate of those above. Avoid that.
+		if Class1 == Class2 then return end
+
+		for k,v in pairs(Options) do
+			ClassLink[Class2][Class1][k] = v
+		end
+	end
+
+	function ACF.GetClassLinkData(Class1, Class2)
+		if not ClassLink[Class1] then return end
 		return ClassLink[Class1][Class2]
 	end
 
-	--- Adds a link to this entity's list of links of this LinkData
-	local function AddLink(Ent, LinkEnt, LinkData)
-		local StoreName, Ordered = LinkData.StoreName, LinkData.Ordered
-		if not Ent[StoreName] then Ent[StoreName] = {} end
-		if Ordered then table.insert(Ent[StoreName], LinkEnt)
-		else Ent[StoreName][LinkEnt] = true end
-	end
+	-- --- Returns the callback defined previously by ACF.RegisterClassUnlink between Class1 and Class2.
+	-- --- @param Class1 string The first class in the link
+	-- --- @param Class2 string The other class in the link
+	-- --- @return fun(Entity1:table, Entity2:table) | nil # The unlinking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no unlinking functions
+	-- function ACF.GetClassUnlink(Class1, Class2)
+	-- 	if not ClassLink.Unlink[Class1] then return end
 
-	--- Removes a link from this entity's list of links of this LinkData
-	local function RemoveLink(Ent, LinkEnt, LinkData)
-		local StoreName, Ordered = LinkData.StoreName, LinkData.Ordered
-		if not Ent[StoreName] then Ent[StoreName] = {} end
-		if Ordered then	table.RemoveByValue(Ent[StoreName], LinkEnt)
-		else Ent[StoreName][LinkEnt] = nil end
-	end
+	-- 	return ClassLink.Unlink[Class1][Class2]
+	-- end
 
-	--- Registers that two classes can be linked, as well as how to handle entities of their class being linked.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table, FromChip:boolean) The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
-	function ACF.RegisterClassLink(Class1, Class2, Function)
-		local LinkData1 = ACF.GetLinkDataSafe(Class1,Class2)
-		LinkData1.Link = function(Ent1, Ent2, FromChip)
-			if LinkData1.LinkStore1 then AddLink(Ent1, Ent2, LinkData1.LinkStore1) end
-			if LinkData1.LinkStore2 then AddLink(Ent1, Ent2, LinkData1.LinkStore2) end
-			return Function(Ent1, Ent2, FromChip)
-		end
-		if Class1 == Class2 then return end
-		local LinkData2 = ACF.GetLinkDataSafe(Class1,Class2)
-		LinkData2.Link = function(Ent2, Ent1, FromChip)
-			if LinkData2.LinkStore1 then AddLink(Ent1, Ent2, LinkData2.LinkStore1) end
-			if LinkData1.LinkStore2 then AddLink(Ent1, Ent2, LinkData1.LinkStore2) end
-			return Function(Ent1, Ent2, FromChip)
-		end
-	end
+	-- --- Returns the callback defined previously by ACF.RegisterClassLink between Class1 and Class2.
+	-- --- @param Class1 string The first class in the link
+	-- --- @param Class2 string The other class in the link
+	-- function ACF.GetClassLink(Class1, Class2)
+	-- 	if not ClassLink.Link[Class1] then return end
 
-	--- Registers that two classes can be unlinked, as well as how to handle entities of their class being unlinked.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table, FromChip:boolean) The unlinking function defined between an entity of Class1 and an entity of Class2
-	function ACF.RegisterClassUnlink(Class1, Class2, Function)
-		local LinkData1 = ACF.GetLinkDataSafe(Class1,Class2)
-		LinkData1.Unlink = function(Ent1, Ent2, FromChip)
-			if LinkData1.LinkStore1 then RemoveLink(Ent1, Ent2, LinkData1.LinkStore1) end
-			if LinkData1.LinkStore2 then RemoveLink(Ent1, Ent2, LinkData1.LinkStore2) end
-			return Function(Ent1, Ent2, FromChip)
-		end
-		if Class1 == Class2 then return end
-		local LinkData2 = ACF.GetLinkDataSafe(Class1,Class2)
-		LinkData2.Unlink = function(Ent2, Ent1, FromChip)
-			if LinkData2.LinkStore1 then RemoveLink(Ent1, Ent2, LinkData2.LinkStore1) end
-			if LinkData1.LinkStore2 then RemoveLink(Ent1, Ent2, LinkData1.LinkStore2) end
-			return Function(Ent1, Ent2, FromChip)
-		end
-	end
-
-	--- Registers a validation check between two classes.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table, FromChip:boolean) The checking function defined between an entity of Class1 and an entity of Class2
-	function ACF.RegisterClassCheck(Class1, Class2, Function)
-		ACF.GetLinkDataSafe(Class1,Class2).Check = function(Ent1, Ent2, FromChip) return Function(Ent1, Ent2, FromChip) end
-		if Class1 == Class2 then return end
-		ACF.GetLinkDataSafe(Class2,Class1).Check = function(Ent2, Ent1, FromChip) return Function(Ent1, Ent2, FromChip) end
-	end
-
-	--- Registers a chip delay between two classes.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @param ChipDelay number If the link happens from the chip, then delay it by this amount
-	function ACF.RegisterClassDelay(Class1, Class2, ChipDelay)
-		ACF.GetLinkDataSafe(Class1,Class2).ChipDelay = ChipDelay
-		if Class1 == Class2 then return end
-		ACF.GetLinkDataSafe(Class2,Class1).ChipDelay = ChipDelay
-	end
-
-	function ACF.RegisterClassStore1(Class1, Class2, LinkStore)
-		ACF.GetLinkDataSafe(Class1,Class2).LinkStore1 = LinkStore
-		if Class1 == Class2 then return end
-		ACF.GetLinkDataSafe(Class2,Class1).LinkStore2 = LinkStore
-	end
-
-	function ACF.RegisterClassStore2(Class1, Class2, LinkStore)
-		ACF.GetLinkDataSafe(Class1,Class2).LinkStore2 = LinkStore
-		if Class1 == Class2 then return end
-		ACF.GetLinkDataSafe(Class2,Class1).LinkStore1 = LinkStore
-	end
-
-	--- Saves a link in an entity's AD2 entity modifiers
-	function ACF.AD2SaveLinks(Entity, StoreName, SaveName)
-		local tbl = {}
-
-		if table.IsSequential(Entity[StoreName]) then
-			for _,ent in ipairs(Entity[StoreName]) do table.insert(tbl,ent:EntIndex()) end
-		else
-			for ent,_ in pairs(Entity[StoreName]) do table.insert(tbl,ent:EntIndex()) end
-		end
-
-		duplicator.StoreEntityModifier(Entity, SaveName, tbl)
-	end
-
-	--- Loads a link from an entity's AD2 entity modifiers
-	function ACF.AD2LoadLinks(Entity, SaveName, EntMods, CreatedEntities)
-		if EntMods[SaveName] then
-			for _, id in ipairs(EntMods[SaveName]) do Entity:Link(CreatedEntities[id]) end
-			EntMods[SaveName] = nil
-		end
-	end
-
-	--- Unlinks every entity from this entity of this link type
-	function ACF.UnlinkAll(Entity, StoreName)
-		if table.IsSequential(Entity[StoreName]) then
-			for _, ent in ipairs(Entity[StoreName]) do Entity:Unlink(ent) end
-		else
-			for ent, _ in pairs(Entity[StoreName]) do Entity:Unlink(ent) end
-		end
-	end
+	-- 	return ClassLink.Link[Class1][Class2]
+	-- end
 end
 
 do -- Entity inputs
