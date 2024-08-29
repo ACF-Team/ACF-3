@@ -61,6 +61,7 @@ end ---------------------------------------------
 do -- Entity linking and unlinking --------------
 	local LinkText   = "%s can't be linked to %s."
 	local UnlinkText = "%s can't be unlinked from %s."
+	local timer   = timer
 
 	function ENT:Link(Target, FromChip)
 		if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
@@ -83,10 +84,10 @@ do -- Entity linking and unlinking --------------
 				local result, message = Check(A, B)
 				if result then
 					if FromChip and ChipDelay then
-						timer.Simple(ChipDelay,function()
+						timer.Simple(ChipDelay, function()
 							if Check(A, B) then Function(A, B) end
 						end)
-					else Function(A,B) end
+					else Function(A, B) end
 				end
 				return result, message
 			end

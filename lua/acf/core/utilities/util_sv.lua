@@ -458,7 +458,7 @@ do -- Entity linking
 	--- @param Class2 string The other class in the link
 	--- @param Function LinkFunction The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
 	function ACF.RegisterClassLink(Class1, Class2, Function)
-		local LinkData = ACF.InitLink(Class1,Class2)
+		local LinkData = ACF.InitLink(Class1, Class2)
 		LinkData.Link = Function
 	end
 
