@@ -1,8 +1,8 @@
-local math   = math
-local util   = util
-local ACF    = ACF
-local Damage = ACF.Damage
-local Down   = Vector(0, 0, -1)
+local math    = math
+local ACF     = ACF
+local Damage  = ACF.Damage
+local Effects = ACF.Utilities.Effects
+local Down    = Vector(0, 0, -1)
 
 --- Returns the blast radius based on a given amount of filler mass
 -- Note: Scaling law found on the net, based on 1PSI overpressure from 1 kg of TNT at 15m
@@ -21,10 +21,11 @@ end
 function Damage.explosionEffect(Position, Direction, Filler)
 	local Radius = math.max(1, Damage.getBlastRadius(Filler))
 
-	local Effect = EffectData()
-	Effect:SetOrigin(Position)
-	Effect:SetNormal(Direction or Down)
-	Effect:SetScale(Radius)
+	local EffectTable = {
+		Origin = Position,
+		Normal = Direction or Down,
+		Scale  = Radius,
+	}
 
-	util.Effect("ACF_Explosion", Effect)
+	Effects.CreateEffect("ACF_Explosion", EffectTable)
 end

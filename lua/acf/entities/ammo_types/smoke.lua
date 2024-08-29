@@ -168,21 +168,24 @@ if SERVER then
 		return false
 	end
 else
+	local Effects = ACF.Utilities.Effects
+
 	ACF.RegisterAmmoDecal("SM", "damage/he_pen", "damage/he_rico")
 
 	function Ammo:ImpactEffect(_, Bullet)
 		local Crate = Bullet.Crate
 		local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
 
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(math.max(Bullet.FillerMass * 8 * 39.37, 0))
-		Effect:SetMagnitude(math.max(Bullet.WPMass * 8 * 39.37, 0))
-		Effect:SetStart(Vector(Color.r, Color.g, Color.b))
-		Effect:SetRadius(Bullet.Caliber)
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Scale = math.max(Bullet.FillerMass * 8 * 39.37, 0),
+			Magnitude = math.max(Bullet.WPMass * 8 * 39.37, 0),
+			Start = Vector(Color.r, Color.g, Color.b),
+			Radius = Bullet.Caliber,
+		}
 
-		util.Effect("ACF_Smoke", Effect)
+		Effects.CreateEffect("ACF_Smoke", EffectTable)
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)

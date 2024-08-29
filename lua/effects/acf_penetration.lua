@@ -4,6 +4,7 @@ local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetPenetrationDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
+local Effects    = ACF.Utilities.Effects
 local Sound      = "acf_base/fx/penetration%s.mp3"
 local White      = Color(255, 255, 255)
 
@@ -43,13 +44,15 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
-	local Sparks = EffectData()
-		Sparks:SetOrigin(Origin)
-		Sparks:SetNormal(HitNormal)
-		Sparks:SetMagnitude(Scale)
-		Sparks:SetScale(Scale)
-		Sparks:SetRadius(Scale)
-	util.Effect("Sparks", Sparks)
+	local EffectTable = {
+		Origin = Origin,
+		Normal = HitNormal,
+		Magnitude = Scale,
+		Scale = Scale,
+		Radius = Scale,
+	}
+
+	Effects.CreateEffect("Sparks", EffectTable)
 
 	if not IsValid(Emitter) then return end
 
@@ -97,13 +100,15 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
 end
 
 function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
-	local Sparks = EffectData()
-		Sparks:SetOrigin(Origin)
-		Sparks:SetNormal(HitNormal)
-		Sparks:SetMagnitude(Scale)
-		Sparks:SetScale(Scale)
-		Sparks:SetRadius(Scale)
-	util.Effect("Sparks", Sparks)
+	local EffectTable = {
+		Origin = Origin,
+		Normal = HitNormal,
+		Magnitude = Scale,
+		Scale = Scale,
+		Radius = Scale,
+	}
+
+	Effects.CreateEffect("Sparks", EffectTable)
 
 	if not IsValid(Emitter) then return end
 

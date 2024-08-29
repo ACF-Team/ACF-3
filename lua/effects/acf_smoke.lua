@@ -1,5 +1,6 @@
 local TraceData = { start = true, endpos = true, mask = true }
 local TraceLine = util.TraceLine
+local Effects   = ACF.Utilities.Effects
 local GetIndex  = ACF.GetAmmoDecalIndex
 local GetDecal  = ACF.GetRicochetDecal
 local White     = Color(255, 255, 255)
@@ -37,12 +38,13 @@ function EFFECT:Init(Data)
 			util.DecalEx(GetDecal(Type), Impact.Entity, Impact.HitPos, Impact.HitNormal, White, Size, Size)
 		end
 
-		local Effect = EffectData()
-		Effect:SetOrigin(Origin)
-		Effect:SetNormal(Normal)
-		Effect:SetRadius(Caliber)
+		local EffectTable = {
+			Origin = Origin,
+			Normal = Normal,
+			Radius = Caliber,
+		}
 
-		util.Effect("acf_impact", Effect)
+		Effects.CreateEffect("acf_impact", EffectTable)
 	end
 
 	if not IsValid(Emitter) then return end

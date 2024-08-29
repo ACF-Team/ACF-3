@@ -1,15 +1,18 @@
+local Effects = ACF.Utilities.Effects
+
 function EFFECT:Init(Data)
 	local Origin  = Data:GetOrigin()
 	local Normal  = Data:GetNormal()
 	local Radius  = math.max(Data:GetRadius() * 0.02, 1)
 	local Emitter = ParticleEmitter(Origin)
 
-	local Effect = EffectData()
-		Effect:SetOrigin(Origin)
-		Effect:SetNormal(Normal)
-		Effect:SetScale(Radius * 50)
+	local EffectTable = {
+		Origin = Origin,
+		Normal = Normal,
+		Scale = Radius * 50,
+	}
 
-	util.Effect("ACF_Explosion", Effect)
+	Effects.CreateEffect("ACF_Explosion", EffectTable)
 
 	if not IsValid(Emitter) then return end
 

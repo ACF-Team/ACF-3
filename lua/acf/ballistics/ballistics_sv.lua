@@ -2,6 +2,7 @@ local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
 local Clock      = ACF.Utilities.Clock
+local Effects    = ACF.Utilities.Effects
 local Debug		 = ACF.Debug
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
@@ -23,26 +24,17 @@ local HookRun      = hook.Run
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
 
-	local Effect = EffectData()
-	Effect:SetDamageType(Bullet.Index)
-	Effect:SetStart(Bullet.Flight * 0.1)
-	Effect:SetAttachment(Bullet.Hide and 0 or 1)
+	local IsUpdate = Type == "Update"
+	local EffectTable = {
+		DamageType = Bullet.Index,
+		Start = Bullet.Flight * 0.1,
+		Attachment = Bullet.Hide and 0 or 1,
+		Origin = (IsUpdate and Hit > 0) and HitPos or Bullet.Pos,
+		Scale = IsUpdate and Hit or 0,
+		EntIndex = not IsUpdate and Bullet.Crate or nil,
+	}
 
-	if Type == "Update" then
-		if Hit > 0 then
-			Effect:SetOrigin(HitPos)
-		else
-			Effect:SetOrigin(Bullet.Pos)
-		end
-
-		Effect:SetScale(Hit)
-	else
-		Effect:SetOrigin(Bullet.Pos)
-		Effect:SetEntIndex(Bullet.Crate)
-		Effect:SetScale(0)
-	end
-
-	util.Effect("ACF_Bullet_Effect", Effect, true, true)
+	Effects.CreateEffect("ACF_Bullet_Effect", EffectTable, true, true)
 end
 
 function Ballistics.RemoveBullet(Bullet)

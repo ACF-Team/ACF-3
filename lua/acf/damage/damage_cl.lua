@@ -98,6 +98,7 @@ do
 end
 
 do -- Debris Effects ------------------------
+	local Effects     = ACF.Utilities.Effects
 	local AllowDebris = GetConVar("acf_debris")
 	local CollideAll  = GetConVar("acf_debris_collision")
 	local DebrisLife  = GetConVar("acf_debris_lifetime")
@@ -252,10 +253,12 @@ do -- Debris Effects ------------------------
 			end
 		end
 
-		local Effect = EffectData()
-			Effect:SetOrigin(Data.Position) -- TODO: Change this to the hit vector, but we need to redefine HitVec as HitNorm
-			Effect:SetScale(20)
-		util.Effect("cball_explode", Effect)
+		local EffectTable = {
+			Origin = Data.Position, -- TODO: Change this to the hit vector, but we need to redefine HitVec as HitNorm
+			Scale = 20,
+		}
+
+		Effects.CreateEffect("cball_explode", EffectTable)
 	end)
 
 	game.AddParticles("particles/fire_01.pcf")

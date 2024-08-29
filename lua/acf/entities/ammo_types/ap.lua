@@ -171,6 +171,8 @@ if SERVER then
 		Ballistics.RemoveBullet(Bullet)
 	end
 else
+	local Effects = ACF.Utilities.Effects
+
 	ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")
 
 	local DecalIndex = ACF.GetAmmoDecalIndex
@@ -201,37 +203,40 @@ else
 	end
 
 	function Ammo:ImpactEffect(_, Bullet)
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Radius = Bullet.Caliber,
+			DamageType = DecalIndex(Bullet.AmmoType),
+		}
 
-		util.Effect("ACF_Impact", Effect)
+		Effects.CreateEffect("ACF_Impact", EffectTable)
 	end
 
 	function Ammo:PenetrationEffect(_, Bullet)
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(Bullet.SimFlight:Length())
-		Effect:SetMagnitude(Bullet.RoundMass)
-		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Scale = Bullet.SimFlight:Length(),
+			Magnitude = Bullet.RoundMass,
+			Radius = Bullet.Caliber,
+			DamageType = DecalIndex(Bullet.AmmoType),
+		}
 
-		util.Effect("ACF_Penetration", Effect)
+		Effects.CreateEffect("ACF_Penetration", EffectTable)
 	end
 
 	function Ammo:RicochetEffect(_, Bullet)
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(Bullet.SimFlight:Length())
-		Effect:SetMagnitude(Bullet.RoundMass)
-		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Scale = Bullet.SimFlight:Length(),
+			Magnitude = Bullet.RoundMass,
+			Radius = Bullet.Caliber,
+			DamageType = DecalIndex(Bullet.AmmoType),
+		}
 
-		util.Effect("ACF_Ricochet", Effect)
+		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
 	function Ammo:AddCrateDataTrackers(Trackers)

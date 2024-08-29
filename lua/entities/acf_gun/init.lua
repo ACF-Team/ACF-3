@@ -471,6 +471,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
+		local Effects   = Utilities.Effects
 		local TraceRes  = {} -- Output for traces
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
 
@@ -595,21 +596,23 @@ do -- Metamethods --------------------------------
 		function ENT:MuzzleEffect()
 			if not ACF.GunsCanSmoke then return end
 
-			local Effect = EffectData()
-				Effect:SetEntity(self)
-				Effect:SetScale(self.BulletData.PropMass)
-				Effect:SetMagnitude(self.ReloadTime)
+			local EffectTable = {
+				Entity    = self,
+				Scale     = self.BulletData.PropMass,
+				Magnitude = self.ReloadTime,
+			}
 
-			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
+			Effects.CreateEffect("ACF_Muzzle_Flash", EffectTable, true, true)
 		end
 
 		function ENT:ReloadEffect(Time)
-			local Effect = EffectData()
-				Effect:SetEntity(self)
-				Effect:SetScale(0)
-				Effect:SetMagnitude(Time)
+			local EffectTable = {
+				Entity = self,
+				Scale = 0,
+				Magnitude = Time,
+			}
 
-			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
+			Effects.CreateEffect("ACF_Muzzle_Flash", EffectTable, true, true)
 		end
 
 		function ENT:Recoil()

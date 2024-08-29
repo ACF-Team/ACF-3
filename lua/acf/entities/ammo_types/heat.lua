@@ -446,6 +446,7 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 	local DecalIndex = ACF.GetAmmoDecalIndex
+	local Effects    = ACF.Utilities.Effects
 
 	function Ammo:ImpactEffect(Effect, Bullet)
 		if not Bullet.Detonated then
@@ -456,24 +457,21 @@ else
 	end
 
 	function Ammo:PenetrationEffect(Effect, Bullet)
-		if Bullet.Detonated then
-			local Data = EffectData()
-			Data:SetOrigin(Bullet.SimPos)
-			Data:SetNormal(Bullet.SimFlight:GetNormalized())
-			Data:SetScale(Bullet.SimFlight:Length())
-			Data:SetMagnitude(Bullet.RoundMass)
-			Data:SetRadius(Bullet.Caliber)
-			Data:SetDamageType(DecalIndex(Bullet.AmmoType))
+		local Detonated   = Bullet.Detonated
+		local EffectName  = Detonated and "ACF_Penetration" or "ACF_HEAT_Explosion"
+		local Radius      = Detonated and Bullet.Caliber or math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1)
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Radius = Radius,
+			Magnitude = Detonated and Bullet.RoundMass or nil,
+			Scale = Detonated and Bullet.SimFlight:Length() or nil,
+			DamageType = Detonated and DecalIndex(Bullet.AmmoType) or nil,
+		}
 
-			util.Effect("ACF_Penetration", Data)
-		else
-			local Data = EffectData()
-			Data:SetOrigin(Bullet.SimPos)
-			Data:SetNormal(Bullet.SimFlight:GetNormalized())
-			Data:SetRadius(math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1))
+		Effects.CreateEffect(EffectName, EffectTable)
 
-			util.Effect("ACF_HEAT_Explosion", Data)
-
+		if not Detonated then
 			Bullet.Detonated = true
 			Bullet.LimitVel  = 999999
 
@@ -482,14 +480,16 @@ else
 	end
 
 	function Ammo:RicochetEffect(_, Bullet)
-		local Effect = EffectData()
-		Effect:SetOrigin(Bullet.SimPos)
-		Effect:SetNormal(Bullet.SimFlight:GetNormalized())
-		Effect:SetScale(Bullet.SimFlight:Length())
-		Effect:SetMagnitude(Bullet.RoundMass)
-		Effect:SetRadius(Bullet.Caliber)
-		Effect:SetDamageType(DecalIndex(Bullet.AmmoType))
-		util.Effect("ACF_Ricochet", Effect)
+		local EffectTable = {
+			Origin = Bullet.SimPos,
+			Normal = Bullet.SimFlight:GetNormalized(),
+			Scale = Bullet.SimFlight:Length(),
+			Magnitude = Bullet.RoundMass,
+			Radius = Bullet.Caliber,
+			DamageType = DecalIndex(Bullet.AmmoType),
+		}
+
+		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
 	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
