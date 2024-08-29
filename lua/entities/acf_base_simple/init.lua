@@ -87,7 +87,7 @@ do -- Entity linking and unlinking --------------
 						timer.Simple(ChipDelay, function()
 							if Check(A, B) then Function(A, B) end
 						end)
-					else Function(A,B) end
+					else Function(A, B) end
 				end
 				return result, message
 			end
