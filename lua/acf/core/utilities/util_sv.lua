@@ -448,8 +448,8 @@ do -- Entity linking
 	--- @return LinkData? LinkData The returned link
 	--- @return boolean Reversed Whether you should reverse your entity arguments when calling with entities
 	function ACF.GetClassLink(Class1, Class2)
-		if ClassLink[Class1] ~= nil and ClassLink[Class1][Class2] ~= nil then return ClassLink[Class1][Class2], false end
-		if ClassLink[Class2] ~= nil and ClassLink[Class2][Class1] ~= nil then return ClassLink[Class2][Class1], true end
+		if ClassLink[Class1] and ClassLink[Class1][Class2] then return ClassLink[Class1][Class2], false end
+		if ClassLink[Class2] and ClassLink[Class2][Class1] then return ClassLink[Class2][Class1], true end
 		return nil, false
 	end
 
