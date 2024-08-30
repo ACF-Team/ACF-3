@@ -72,7 +72,7 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
     end)
 end)
 
-hook.Add("ACF_IsLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
+hook.Add("ACF_OnCheckLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
     if not ACF.VehicleLegalChecks then return end
     if not Entity:IsVehicle() then return end
 
