@@ -70,7 +70,7 @@ do -- Entity linking and unlinking --------------
 		local Class    = Target:GetClass()
 		local LinkData, Reversed = ACF.GetClassLink(self:GetClass(), Class)
 
-		if not LnkData then return false, "Links between these two entities are impossible" end
+		if not LinkData then return false, "Links between these two entities are impossible" end
 
 		local Function = LinkData.Link
 		local Check = LinkData.Check
