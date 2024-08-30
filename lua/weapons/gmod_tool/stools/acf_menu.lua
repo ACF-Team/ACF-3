@@ -18,7 +18,7 @@ if CLIENT then
 
 		Queued[Vehicle] = true
 
-		timer.Simple(5,function() if IsValid(Vehicle) and Queued[Vehicle] then Queued[Vehicle] = nil end end)
+		timer.Simple(5, function() if IsValid(Vehicle) and Queued[Vehicle] then Queued[Vehicle] = nil end end)
 
 		net.Start("ACF.RequestVehicleInfo")
 			net.WriteEntity(Vehicle)

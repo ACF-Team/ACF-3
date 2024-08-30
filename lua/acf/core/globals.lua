@@ -133,7 +133,7 @@ do -- ACF global vars
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor          = 5 -- How many millimeters of armor fuel tanks have
+	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
 	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
 	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter

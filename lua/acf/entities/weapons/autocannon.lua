@@ -11,6 +11,7 @@ Weapons.Register("AC", {
 	IsScalable  = true,
 	Mass        = 1953, -- Relative to the model's volume
 	Spread      = 0.2,
+	ScaleFactor = 0.86, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
 		PropLength = 32.5, -- Relative to the Base caliber, in cm

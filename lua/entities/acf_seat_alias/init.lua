@@ -14,7 +14,7 @@ local Contraption	= ACF.Contraption
 local Damage		= ACF.Damage
 
 do	-- Spawn functions
-	local function UpdateClient(Vehicle,Ply)
+	local function UpdateClient(Vehicle, Ply)
 		if not Vehicle._Alias then return end
 		local AliasInfo = Vehicle._Alias
 
@@ -52,7 +52,7 @@ do	-- Spawn functions
 		Ent:Spawn()
 
 		Ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-		Ent:EnableCustomCollisions()
+		Ent:SetSolidFlags(FSOLID_CUSTOMRAYTEST)
 
 		local Ply		= Vehicle:GetDriver()
 		Ent.Driver		= Ply
@@ -69,12 +69,12 @@ do	-- Spawn functions
 	end
 
 	util.AddNetworkString("ACF.RequestVehicleInfo")
-	net.Receive("ACF.RequestVehicleInfo",function(_,Ply)
+	net.Receive("ACF.RequestVehicleInfo", function(_, Ply)
 		local Ent = net.ReadEntity()
 		if not IsValid(Ent) then return end
-		if not Ent._Alias then ACF.PrepareAlias(Ent,Ply) end
+		if not Ent._Alias then ACF.PrepareAlias(Ent, Ply) end
 
-		UpdateClient(Ent,Ply)
+		UpdateClient(Ent, Ply)
 	end)
 end
 
@@ -89,7 +89,7 @@ do	-- Metamethods
 	}
 
 	-- Important for preventing everything except ACF traces from hitting this
-	function ENT:TestCollision(_,_,_,_,Mask)
+	function ENT:TestCollision(_, _, _, _, Mask)
 		if Hit[Mask] then
 			return true
 		end
@@ -99,11 +99,11 @@ do	-- Metamethods
 
 	function ENT:Think()
 		local SelfTbl = self:GetTable()
-		if not IsValid(SelfTbl.Seat) then self:Remove() end
-		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() end
+		if not IsValid(SelfTbl.Seat) then self:Remove() return end
+		if SelfTbl.Seat.AliasEnt ~= self then self:Remove() return end
 
-		if self:GetParent() ~= SelfTbl.Seat then self:Remove() end
-		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then self:Remove() end
+		if self:GetParent() ~= SelfTbl.Seat then self:Remove() return end
+		if SelfTbl.Seat:GetModel() ~= SelfTbl.Seat._Alias.SeatModel then self:Remove() return end
 
 		self:NextThink(CurTime() + 15)
 		return true
@@ -134,6 +134,8 @@ do	-- Metamethods
 	end
 
 	function ENT:OnRemove()
+		self:SetSolidFlags(FSOLID_NOT_SOLID)
+
 		if IsValid(self.Seat) and (self.Seat.AliasEnt == self) then
 			self.Seat.AliasEnt = nil
 		end
@@ -141,21 +143,21 @@ do	-- Metamethods
 		if IsValid(self.Driver) then
 			local Seat = self.Seat
 			local Driver = self.Driver
-			timer.Simple(0,function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat,Driver) end end)
+			timer.Simple(0, function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat, Driver) end end)
 		end
 	end
 end
 
 do	-- Arrr, there be hooks
 	-- This runs BEFORE GM:HandlePlayerDriving has any effect on player animation, so the work is on us
-	hook.Add("PlayerEnteredVehicle","ACF.CreateSeatAlias",function(Ply,Vic)
+	hook.Add("PlayerEnteredVehicle", "ACF.CreateSeatAlias", function(Ply, Vic)
 		if not IsValid(Ply) then return end
 		if not IsValid(Vic) then return end
 
-		ACF.ApplyAlias(Vic,Ply)
+		ACF.ApplyAlias(Vic, Ply)
 	end)
 
-	hook.Add("PlayerLeaveVehicle","ACF.RemoveSeatAlias",function(_,Vic)
+	hook.Add("PlayerLeaveVehicle", "ACF.RemoveSeatAlias", function(_, Vic)
 		if not IsValid(Vic) then return end
 		if not IsValid(Vic.AliasEnt) then return end
 
@@ -163,8 +165,8 @@ do	-- Arrr, there be hooks
 	end)
 
 	util.AddNetworkString("ACF.VehicleSpawned")
-	hook.Add("PlayerSpawnedVehicle","ACF.SpawnedVehicle",function(_,Vic)
-		timer.Simple(0.2,function()
+	hook.Add("PlayerSpawnedVehicle", "ACF.SpawnedVehicle", function(_, Vic)
+		timer.Simple(0.2, function()
 			net.Start("ACF.VehicleSpawned")
 				net.WriteEntity(Vic)
 			net.Broadcast()

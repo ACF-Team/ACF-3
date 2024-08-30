@@ -60,7 +60,7 @@ function Menu.MakePanel(Panel)
 		list:AddColumn("Active")
 		list:AddColumn("Map Default")
 		list:SetMultiSelect(false)
-		list:SetSize(30,100)
+		list:SetSize(30, 100)
 
 		for permission in pairs(PermissionModes) do
 			list:AddLine(permission, "", "")
@@ -68,10 +68,10 @@ function Menu.MakePanel(Panel)
 
 		for id, line in pairs(list:GetLines()) do
 			if line:GetValue(1) == CurrentPermission then
-				list:GetLine(id):SetValue(2,"Yes")
+				list:GetLine(id):SetValue(2, "Yes")
 			end
 			if line:GetValue(1) == DefaultPermission then
-				list:GetLine(id):SetValue(3,"Yes")
+				list:GetLine(id):SetValue(3, "Yes")
 			end
 		end
 
@@ -109,7 +109,7 @@ function Menu.MakePanel(Panel)
 			end
 
 			local mode = line and line:GetValue(1)
-			RunConsoleCommand("ACF_setpermissionmode",mode)
+			RunConsoleCommand("ACF_setpermissionmode", mode)
 		end
 
 		Panel:AddItem(button)
@@ -123,7 +123,7 @@ function Menu.MakePanel(Panel)
 			end
 
 			local mode = line and line:GetValue(1)
-			RunConsoleCommand("ACF_setdefaultpermissionmode",mode)
+			RunConsoleCommand("ACF_setdefaultpermissionmode", mode)
 		end
 
 		Panel:AddItem(button2)
@@ -134,14 +134,14 @@ function Permissions:Update()
 	if list then
 		for id, line in pairs(list:GetLines()) do
 			if line:GetValue(1) == CurrentPermission then
-				list:GetLine(id):SetValue(2,"Yes")
+				list:GetLine(id):SetValue(2, "Yes")
 			else
-				list:GetLine(id):SetValue(2,"")
+				list:GetLine(id):SetValue(2, "")
 			end
 			if line:GetValue(1) == DefaultPermission then
-				list:GetLine(id):SetValue(3,"Yes")
+				list:GetLine(id):SetValue(3, "Yes")
 			else
-				list:GetLine(id):SetValue(3,"")
+				list:GetLine(id):SetValue(3, "")
 			end
 		end
 	end
@@ -169,7 +169,7 @@ local item = Menu.Name
 local var  = Menu.Command
 local open = Menu.OnSpawnmenuOpen
 local panel = Menu.MakePanel
-local hookname = string.Replace(item," ","_")
+local hookname = string.Replace(item, " ", "_")
 
 hook.Add("SpawnMenuOpen", "ACF.SpawnMenuOpen." .. hookname, open)
 

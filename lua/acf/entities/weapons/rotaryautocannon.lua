@@ -12,6 +12,7 @@ Weapons.Register("RAC", {
 	Spread      = 0.48,
 	Mass        = 212,
 	Cyclic      = 2000,
+	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,

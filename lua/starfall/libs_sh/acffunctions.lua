@@ -76,7 +76,7 @@ end
 local function shallowCopy(tbl)
 	local copy = {}
 	if type(tbl) == "table" then
-		for k,v in pairs(tbl) do
+		for k, v in pairs(tbl) do
 			if type(v) ~= "table" then copy[k] = v end
 		end
 	else
@@ -2495,7 +2495,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(-This.CurrentAngle,4)
+		return math.Round(-This.CurrentAngle, 4)
 	end
 
 	--- Returns the turret's rotator
@@ -2511,7 +2511,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Rotator) and This.Rotator or nil
+		return IsValid(This.Rotator) and wrap(This.Rotator) or nil
 	end
 
 	--- Returns the gyroscope linked to the turret
@@ -2527,7 +2527,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Gyro) and This.Gyro or nil
+		return IsValid(This.Gyro) and wrap(This.Gyro) or nil
 	end
 
 	--- Returns the motor linked to the turret
@@ -2543,7 +2543,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Motor) and This.Motor or nil
+		return IsValid(This.Motor) and wrap(This.Motor) or nil
 	end
 
 	--- Returns the turret's current loaded mass, in kg
@@ -2559,7 +2559,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.TurretData.TotalMass,2)
+		return math.Round(This.TurretData.TotalMass, 2)
 	end
 
 	--- Returns the turret's mass center
@@ -2592,7 +2592,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.SlewRate / Clock.DeltaTime,2)
+		return math.Round(This.SlewRate / Clock.DeltaTime, 2)
 	end
 
 	--- Returns the turret's maximum slew rate, in degrees/second
@@ -2608,7 +2608,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.MaxSlewRate,2)
+		return math.Round(This.MaxSlewRate, 2)
 	end
 
 	--- Returns the turret's slew acceleration, in degrees/second ^ 2
@@ -2624,7 +2624,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return math.Round(This.SlewAccel,4)
+		return math.Round(This.SlewAccel, 4)
 	end
 
 	--- Returns whether or not the turret is stabilized, and by how much
@@ -2659,10 +2659,13 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
+		local td = This.TurretData
 		local Data = {
-			MaxSlewRate		= math.Round(This.MaxSlewRate,2),
-			SlewAccel		= math.Round(This.SlewAccel,4),
+			MaxSlewRate		= math.Round(This.MaxSlewRate, 2),
+			SlewAccel		= math.Round(This.SlewAccel, 4),
 			Angle			= -This.CurrentAngle,
+			RingSize		= td.RingSize,
+			Teeth			= td.Teeth,
 
 			Stabilized		= This.Stabilized,
 			StabilizeAmount	= This.StabilizeAmount,
@@ -2671,14 +2674,51 @@ if SERVER then
 			Minimum			= This.MinDeg,
 			Maximum			= This.MaxDeg,
 
-			TotalMass		= This.TurretData.TotalMass,
+			TotalMass		= td.TotalMass,
 			LocalMassCenter	= IsValid(This.Rotator) and This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM)) or Vector(),
 
-			Motor			= IsValid(This.Motor) and This.Motor or nil,
-			Gyro			= IsValid(This.Gyro) and This.Gyro or nil,
+			Motor			= IsValid(This.Motor) and wrap(This.Motor) or nil,
+			Gyro			= IsValid(This.Gyro) and wrap(This.Gyro) or nil,
 		}
 
 		return Data
+	end
+
+	--- Returns the turret motor's data
+	-- @server
+	-- @return table The turret motor's data
+	function ents_methods:acfGetTurretMotorData()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and (This:GetClass() == "acf_turret_motor")) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		local Data = {
+			Torque		= This.Torque,
+			Speed		= This.Speed,
+			CompSize	= This.CompSize,
+			Teeth		= This.Teeth
+		}
+
+		return Data
+	end
+
+	--- Returns if the gyroscope is dual or not
+	-- @server
+	-- @return boolean Whether or not the gyroscope is dual
+	function ents_methods:acfIsGyroDual()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This:GetClass() == "acf_turret_gyro") then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		return This.IsDual
 	end
 
 	-- Setters
@@ -2729,7 +2769,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		This:InputDirection(Angle(angle[1],angle[2],angle[3]))
+		This:InputDirection(Angle(angle[1], angle[2], angle[3]))
 	end
 
 	--- Makes the turret attempt to aim at the input position, enabling any active stabilization
@@ -2746,7 +2786,7 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		This:InputDirection(Vector(position[1],position[2],position[3]))
+		This:InputDirection(Vector(position[1], position[2], position[3]))
 	end
 
 	end

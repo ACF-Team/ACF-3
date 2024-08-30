@@ -125,7 +125,7 @@ do -- Spawn and Update functions --------------------------------
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
 		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
-		local Scale   = Weapon and 1 or Caliber / Class.Caliber.Base
+		local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)) -- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
 		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
@@ -176,6 +176,8 @@ do -- Spawn and Update functions --------------------------------
 
 			Entity.LongMuzzle = Attachment and Entity:WorldToLocal(Attachment.Pos)
 		end
+
+		Entity:CanProperty(nil, "bodygroups")
 
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
 			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
@@ -545,7 +547,7 @@ do -- Metamethods --------------------------------
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
 			local Dir = (self:GetForward() + Spread):GetNormalized()
-			local Velocity = Contraption.GetAncestor(self):GetVelocity()
+			local Velocity = self:GetAncestor():GetVelocity()
 			local BulletData = self.BulletData
 			local AmmoType = AmmoTypes.Get(BulletData.Type)
 
@@ -833,7 +835,7 @@ do -- Metamethods --------------------------------
 
 	do	-- Other networking
 		util.AddNetworkString("ACF.RequestGunInfo")
-		net.Receive("ACF.RequestGunInfo",function(_,Ply)
+		net.Receive("ACF.RequestGunInfo", function(_, Ply)
 			local Gun = net.ReadEntity()
 			if not IsValid(Gun) then return end
 

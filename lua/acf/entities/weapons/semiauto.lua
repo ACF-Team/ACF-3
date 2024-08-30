@@ -13,6 +13,7 @@ Weapons.Register("SA", {
 	Spread      = 0.12,
 	Mass        = 453,
 	MagSize     = 5,
+	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 36,
 		PropLength = 29.25,

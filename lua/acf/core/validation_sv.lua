@@ -33,12 +33,12 @@ function ACF.IsLegal(Entity)
 		if Phys:GetVolume() then
 			Entity.ACF.PhysObj = Phys -- Updated PhysObj
 		else
-			ACF.Shame(Entity,"having a custom physics object (spherical).")
+			ACF.Shame(Entity, "having a custom physics object (spherical).")
 			return false, "Invalid Physics", "Custom physics objects cannot be applied to ACF entities."
 		end
 	end
-	if not Entity:IsSolid() then ACF.Shame(Entity,"not being solid.") return false, "Not Solid", "The entity is invisible to projectiles." end
-	if Entity.ClipData and next(Entity.ClipData) then ACF.Shame(Entity,"having visclips.") return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
+	if not Entity:IsSolid() then ACF.Shame(Entity, "not being solid.") return false, "Not Solid", "The entity is invisible to projectiles." end
+	if Entity.ClipData and next(Entity.ClipData) then ACF.Shame(Entity, "having visclips.") return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 

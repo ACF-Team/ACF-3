@@ -82,7 +82,7 @@ ACF.AddHitboxes("models/engines/wankel_4_med.mdl", {
 ACF.AddHitboxes("models/engines/wankel_3_med.mdl", {
 	Main = {
 		Pos       = Vector(10.25),
-		Scale     = Vector(22,13,17),
+		Scale     = Vector(22, 13, 17),
 		Sensitive = true
 	}
 })

@@ -76,7 +76,7 @@ local function CreateMenu(Menu)
 
 	local PowerGraph = Menu:AddGraph()
 	local PGWidth = Menu:GetWide()
-	PowerGraph:SetSize(PGWidth,PGWidth / 2)
+	PowerGraph:SetSize(PGWidth, PGWidth / 2)
 
 	PowerGraph:SetXLabel("RPM")
 	PowerGraph:SetYLabel("x100")
@@ -174,23 +174,23 @@ local function CreateMenu(Menu)
 
 		UpdateEngineStats(EngineStats, Data)
 
-		PowerGraph:SetXRange(0,Data.RPM.Limit)
-		PowerGraph:SetYRange(0,math.max(math.ceil(Data.PeakPower * 1.34), Data.Torque) * 1.1)
+		PowerGraph:SetXRange(0, Data.RPM.Limit)
+		PowerGraph:SetYRange(0, math.max(math.ceil(Data.PeakPower * 1.34), Data.Torque) * 1.1)
 		PowerGraph:SetFidelity(10)
 
 		PowerGraph:Clear()
-		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * 1.34), Color(255,65,65))
-		PowerGraph:PlotPoint("Peak Nm", Data.PeakTqRPM, math.Round(Data.Torque), Color(65,65,255))
+		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * 1.34), Color(255, 65, 65))
+		PowerGraph:PlotPoint("Peak Nm", Data.PeakTqRPM, math.Round(Data.Torque), Color(65, 65, 255))
 
-		PowerGraph:PlotLimitFunction("Tq", Data.RPM.Idle, Data.RPM.Limit, Color(65,65,255), function(X)
+		PowerGraph:PlotLimitFunction("Tq", Data.RPM.Idle, Data.RPM.Limit, Color(65, 65, 255), function(X)
 			return ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque
 		end)
 
-		PowerGraph:PlotLimitFunction("HP", Data.RPM.Idle, Data.RPM.Limit, Color(255,65,65), function(X)
+		PowerGraph:PlotLimitFunction("HP", Data.RPM.Idle, Data.RPM.Limit, Color(255, 65, 65), function(X)
 			return (ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque * X) * 1.34 / 9548.8
 		end)
 
-		PowerGraph:PlotLimitLine("Idle RPM", false, Data.RPM.Idle, Color(127,0,0))
+		PowerGraph:PlotLimitLine("Idle RPM", false, Data.RPM.Idle, Color(127, 0, 0))
 
 		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
 	end

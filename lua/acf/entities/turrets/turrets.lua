@@ -14,17 +14,17 @@ local InchToMm = ACF.InchToMm
 -- Bunched all of the definitions together due to some loading issue
 
 do	-- Turret drives
-	local function ClampAngle(A,Amin,Amax)
-		local p,y,r
+	local function ClampAngle(A, Amin, Amax)
+		local p, y, r
 
 		if A.p < Amin.p then p = Amin.p elseif A.p > Amax.p then p = Amax.p else p = A.p end
 		if A.y < Amin.y then y = Amin.y elseif A.y > Amax.y then y = Amax.y else y = A.y end
 		if A.r < Amin.r then r = Amin.r elseif A.r > Amax.r then r = Amax.r else r = A.r end
 
-		return Angle(p,y,r)
+		return Angle(p, y, r)
 	end
 
-	Turrets.Register("1-Turret",{
+	Turrets.Register("1-Turret", {
 		Name		= "Turrets",
 		Description	= "The turret drives themselves.\nThese have a fallback handcrank that is used automatically if no motor is available.",
 		Entity		= "acf_turret",
@@ -35,7 +35,7 @@ do	-- Turret drives
 			Text	= "Maximum number of ACF turrets a player can create."
 		},
 		GetMass		= function(Data, Size)
-			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base),5) ^ 1.5, 1)
+			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base), 5) ^ 1.5, 1)
 		end,
 		GetMaxMass	= function(Data, Size)
 			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
@@ -45,8 +45,8 @@ do	-- Turret drives
 			local SizePerc = (Size - Data.Size.Min) / (Data.Size.Max - Data.Size.Min)
 			return math.Round((Data.Teeth.Min * (1 - SizePerc)) + (Data.Teeth.Max * SizePerc))
 		end,
-		GetRingHeight	= function(TurretData,Size)
-			local RingHeight = math.max(Size * TurretData.Ratio,4)
+		GetRingHeight	= function(TurretData, Size)
+			local RingHeight = math.max(Size * TurretData.Ratio, 4)
 
 			if (TurretData.Type == "Turret-H") and (Size <= 12.5) then
 				return 12 -- sticc
@@ -87,12 +87,12 @@ do	-- Turret drives
 			local TopSpeed	= GearRatio * (PowerData.Speed / 6) -- Converting deg/s to RPM, and adjusting by gear ratio
 			local MaxPower	= ((PowerData.Torque / GearRatio) * TopSpeed) / (9550 * PowerData.Efficiency)
 			local Diameter	= (TurretData.RingSize * InchToMm) -- Used for some of the formulas from the referenced page, needs to be in mm
-			local CoMDistance	= (TurretData.LocalCoM * Vector(1,1,0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
-			local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2),0),0)
+			local CoMDistance	= (TurretData.LocalCoM * Vector(1, 1, 0)):Length() * (InchToMm / 1000) -- (Lateral) Distance of center of mass from center of axis, in meters for calculation
+			local OffBaseDistance	= math.max(CoMDistance - math.max(CoMDistance - (Diameter / 2), 0), 0)
 			local OverweightMod	= 1
 
 			if TurretData.TotalMass > TurretData.MaxMass then
-				OverweightMod = math.max(0,1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2))
+				OverweightMod = math.max(0, 1 - (((TurretData.TotalMass - TurretData.MaxMass) / TurretData.MaxMass) / 2))
 			end
 
 			-- Slewing ring friction moment caused by load (kNm)
@@ -102,19 +102,19 @@ do	-- Turret drives
 			local Weight	= (TurretData.TotalMass * 9.81) / 1000
 			local Mz		= 0 -- Nm resistance to torque
 
-			local Mk,Fa,Fr
+			local Mk, Fa, Fr
 
 			if TurretData.TurretClass == "Turret-H" then
 				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
-				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
+				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
+				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
 				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
 			else
 				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
 
-				OffBaseDistance	= math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2),0),0)
+				OffBaseDistance	= math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
 				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2),0,1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
+				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
 				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
 			end
 
@@ -123,9 +123,9 @@ do	-- Turret drives
 			-- With this we can lower maximum attainable speed
 			local ReqConstantPower	= (Mz * TopSpeed) / (9.55 * PowerData.Efficiency * OverweightMod)
 
-			if (math.max(1,ReqConstantPower) / math.max(MaxPower,1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
+			if (math.max(1, ReqConstantPower) / math.max(MaxPower, 1)) > 1 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to rotate, so we'll just stop here
 
-			local FinalTopSpeed = TopSpeed * math.min(1,MaxPower / ReqConstantPower) * 6 -- converting back to deg/s
+			local FinalTopSpeed = TopSpeed * math.min(1, MaxPower / ReqConstantPower) * 6 -- converting back to deg/s
 
 			-- Moment from acceleration of rotating mass (kNm)
 			local RotInertia	= 0.01 * TurretData.TotalMass * (CoMDistance ^ 2)
@@ -137,16 +137,16 @@ do	-- Turret drives
 			local ReqAccelPower	= ((Mg + Mz) * Accel) / (9.55 * PowerData.Efficiency)
 
 			-- Kind of arbitrary, needed it to stop at some point
-			if (math.max(1,ReqAccelPower) / math.max(1,Accel)) > 5 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to accelerate, so we'll just stop here
+			if (math.max(1, ReqAccelPower) / math.max(1, Accel)) > 5 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to accelerate, so we'll just stop here
 
-			local FinalAccel	= Accel * math.Clamp(MaxPower / ReqAccelPower,0,1) * 6 -- converting back to deg/s^2
+			local FinalAccel	= Accel * math.Clamp(MaxPower / ReqAccelPower, 0, 1) * 6 -- converting back to deg/s^2
 
-			return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio, EffortScale = math.min(1,1 / (MaxPower / ReqConstantPower))}
+			return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio, EffortScale = math.min(1, 1 / (MaxPower / ReqConstantPower))}
 		end
 	})
 
 	do	-- Horizontal turret component
-		Turrets.RegisterItem("Turret-H","1-Turret",{
+		Turrets.RegisterItem("Turret-H", "1-Turret", {
 			Name			= "Horizontal Turret",
 			Description		= "The large stable base of a turret.",
 			Model			= "models/acf/core/t_ring.mdl",
@@ -175,7 +175,7 @@ do	-- Turret drives
 				Max			= 960
 			},
 
-			SetupInputs		= function(_,List)
+			SetupInputs		= function(_, List)
 				local Count = #List
 
 				List[Count + 1] = "Bearing (Local degrees from home angle)"
@@ -189,15 +189,15 @@ do	-- Turret drives
 					return (AngDiff.yaw * Turret.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing	= function(Turret,StabAmt)
+				GetTargetBearing	= function(Turret, StabAmt)
 					local Rotator = Turret.Rotator
 
 					if Turret.HasArc then
 						if Turret.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, math.Clamp(-Turret.DesiredDeg,Turret.MinDeg,Turret.MaxDeg), 0))).yaw
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, math.Clamp(-Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0))).yaw
 						else
 							local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0,StabAmt,0) - AngDiff,Angle(0,-Turret.MaxDeg,0),Angle(0,-Turret.MinDeg,0))
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0, StabAmt, 0) - AngDiff, Angle(0, -Turret.MaxDeg, 0), Angle(0, -Turret.MinDeg, 0))
 
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).yaw
 						end
@@ -223,7 +223,7 @@ do	-- Turret drives
 	end
 
 	do	-- Vertical turret component
-		Turrets.RegisterItem("Turret-V","1-Turret",{
+		Turrets.RegisterItem("Turret-V", "1-Turret", {
 			Name			= "Vertical Turret",
 			Description		= "The smaller part of a turret, usually has the weapon directly attached to it.\nCan be naturally stabilized up to 25% if there is no motor attached, but the mass must be balanced.",
 			Model			= "models/acf/core/t_trun.mdl",
@@ -255,7 +255,7 @@ do	-- Turret drives
 				Max			= 256
 			},
 
-			SetupInputs		= function(_,List)
+			SetupInputs		= function(_, List)
 				local Count	= #List
 
 				List[Count + 1] = "Elevation (Local degrees from home angle)"
@@ -269,14 +269,14 @@ do	-- Turret drives
 					return (AngDiff.pitch * Turret.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing	= function(Turret,StabAmt)
+				GetTargetBearing	= function(Turret, StabAmt)
 					local Rotator = Turret.Rotator
 
 					if Turret.HasArc then
 						if Turret.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(math.Clamp(-Turret.DesiredDeg,Turret.MinDeg,Turret.MaxDeg), 0, 0))).pitch
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(math.Clamp(-Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0, 0))).pitch
 						else
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(StabAmt,0,0),Angle(-Turret.MaxDeg,0,0),Angle(-Turret.MinDeg,0,0))
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(StabAmt, 0, 0), Angle(-Turret.MaxDeg, 0, 0), Angle(-Turret.MinDeg, 0, 0))
 
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).pitch
 						end
@@ -302,7 +302,7 @@ do	-- Turret drives
 end
 
 do	-- Turret motors
-	Turrets.Register("2-Motor",{
+	Turrets.Register("2-Motor", {
 		Name		= "Motors",
 		Description	= "Slewing drive motors, to increase operational speeds and get you on target.\nMust be parented to or share the parent with the linked turret drive.\nMust also be close to the linked turret (Within or close to diameter).",
 		Entity		= "acf_turret_motor",
@@ -328,7 +328,7 @@ do	-- Turret motors
 
 		-- Electric motor
 
-		Turrets.RegisterItem("Motor-ELC","2-Motor",{
+		Turrets.RegisterItem("Motor-ELC", "2-Motor", {
 			Name			= "Electric Motor",
 			Description		= "A snappy responsive electric motor; can handle most use cases but quickly falters under higher weights.",
 			Model			= "models/acf/core/t_drive_e.mdl",
@@ -363,7 +363,7 @@ do	-- Turret motors
 
 		-- Hydraulic motor
 
-		Turrets.RegisterItem("Motor-HYD","2-Motor",{
+		Turrets.RegisterItem("Motor-HYD", "2-Motor", {
 			Name			= "Hydraulic Motor",
 			Description		= "A strong but sluggish hydraulic motor; it'll turn the world over but takes a little bit to get to that point.",
 			Model			= "models/acf/core/t_drive_h.mdl",
@@ -399,7 +399,7 @@ do	-- Turret motors
 end
 
 do	-- Turret gyroscopes
-	Turrets.Register("3-Gyro",{
+	Turrets.Register("3-Gyro", {
 		Name		= "Gyroscopes",
 		Description	= "Components that are used to stabilize turret drives.",
 		Entity		= "acf_turret_gyro",
@@ -418,7 +418,7 @@ do	-- Turret gyroscopes
 			Dual-axis should be parented to or share the same parent as the horizontal turret drive (MUST be linked to a vertical AND horizontal turret drive, can not mix types)
 		]]
 
-		Turrets.RegisterItem("1-Gyro","3-Gyro",{
+		Turrets.RegisterItem("1-Gyro", "3-Gyro", {
 			Name			= "Single Axis Turret Gyro",
 			Description		= "A component that will stabilize one turret drive.\nMust be parented to or share the parent with the linked turret drive.\nMust have a motor linked to the turret drive.",
 			Model			= "models/bull/various/gyroscope.mdl",
@@ -431,7 +431,7 @@ do	-- Turret gyroscopes
 			IsDual			= false,
 		})
 
-		Turrets.RegisterItem("2-Gyro","3-Gyro",{
+		Turrets.RegisterItem("2-Gyro", "3-Gyro", {
 			Name			= "Dual Axis Turret Gyro",
 			Description		= "A component that will stabilize one vertical and horizontal turret drive.\nMust be parented to or share the parent with the horizontal turret drive.\nEach turret drive must have a motor linked.",
 			Model			= "models/acf/core/t_gyro.mdl",
@@ -450,7 +450,7 @@ end
 
 
 do	-- Turret computers
-	Turrets.Register("4-Computer",{
+	Turrets.Register("4-Computer", {
 		Name		= "Computers",
 		Description	= "Computer capable of calculating the optimal angle to hit a target.\nLinks to a weapon to get bullet data, required for ballistics calculations.",
 		Entity		= "acf_turret_computer",
@@ -470,7 +470,7 @@ do	-- Turret computers
 	]]
 
 	do	-- Computers
-		Turrets.RegisterItem("DIR-BalComp","4-Computer",{
+		Turrets.RegisterItem("DIR-BalComp", "4-Computer", {
 			Name			= "Direct Ballistics Computer",
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nAs long as Calculate is true, this will continue to track in a straight line from the initial position and velocity.\nHas a 0.2s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",
@@ -481,13 +481,13 @@ do	-- Turret computers
 
 			Mass			= 100,
 
-			SetupInputs		= function(_,List)
+			SetupInputs		= function(_, List)
 				local Count	= #List
 
 				List[Count + 1] = "Calculate Superelevation (One-time calculation to collect super-elevation)"
 			end,
 
-			SetupOutputs		= function(_,List)
+			SetupOutputs		= function(_, List)
 				local Count	= #List
 
 				List[Count + 1] = "Elevation (Super-elevation, set global pitch to this for automatic ranging)"
@@ -505,7 +505,7 @@ do	-- Turret computers
 			},
 		})
 
-		Turrets.RegisterItem("IND-BalComp","4-Computer",{
+		Turrets.RegisterItem("IND-BalComp", "4-Computer", {
 			Name			= "Indirect Ballistics Computer",
 			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 1s delay between uses.",
 			Model			= "models/acf/core/t_computer.mdl",

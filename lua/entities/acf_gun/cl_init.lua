@@ -88,7 +88,7 @@ do	-- Overlay/networking for that
 		net.SendToServer()
 	end
 
-	net.Receive("ACF.RequestGunInfo",function()
+	net.Receive("ACF.RequestGunInfo", function()
 		local Gun = net.ReadEntity()
 		if not IsValid(Gun) then return end
 
@@ -97,11 +97,11 @@ do	-- Overlay/networking for that
 		local Crates = util.JSONToTable(net.ReadString())
 		local CrateEnts = {}
 
-		for _,E in ipairs(Crates) do
+		for _, E in ipairs(Crates) do
 			local Ent = Entity(E)
 
 			if IsValid(Ent) then
-				local Col = ColorAlpha(Ent:GetColor(),25)
+				local Col = ColorAlpha(Ent:GetColor(), 25)
 				CrateEnts[#CrateEnts + 1] = {Ent = Ent, Col = Col}
 			end
 		end
@@ -124,11 +124,11 @@ do	-- Overlay/networking for that
 		render.SetColorMaterial()
 
 		if next(SelfTbl.Crates) then
-			for _,T in ipairs(SelfTbl.Crates) do
+			for _, T in ipairs(SelfTbl.Crates) do
 				local E = T.Ent
 				if IsValid(E) then
-					render.DrawWireframeBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),T.Col,true)
-					render.DrawBox(E:GetPos(),E:GetAngles(),E:OBBMins(),E:OBBMaxs(),T.Col)
+					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
+					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
 				end
 			end
 		end

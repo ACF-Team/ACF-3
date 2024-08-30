@@ -12,6 +12,7 @@ Weapons.Register("MG", {
 	IsBoxed     = true,
 	Spread      = 0.16,
 	Mass        = 53,
+	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,

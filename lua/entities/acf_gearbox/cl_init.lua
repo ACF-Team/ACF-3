@@ -13,7 +13,7 @@ function ENT:Update()
 end
 
 do	-- NET SURFER 2.0
-	net.Receive("ACF_InvalidateGearboxInfo",function()
+	net.Receive("ACF_InvalidateGearboxInfo", function()
 		local Gearbox	= net.ReadEntity()
 
 		if not IsValid(Gearbox) then return end
@@ -21,7 +21,7 @@ do	-- NET SURFER 2.0
 		Gearbox.HasData	= false
 	end)
 
-	net.Receive("ACF_RequestGearboxInfo",function()
+	net.Receive("ACF_RequestGearboxInfo", function()
 		local Gearbox	= net.ReadEntity()
 		local Data		= util.JSONToTable(net.ReadString())
 		local Inputs	= util.JSONToTable(net.ReadString())
@@ -32,7 +32,7 @@ do	-- NET SURFER 2.0
 		local OutLEnts	= {}
 		local OutREnts	= {}
 
-		for _,E in ipairs(Inputs) do
+		for _, E in ipairs(Inputs) do
 			local Ent = Entity(E)
 
 			if IsValid(Ent) then
@@ -40,7 +40,7 @@ do	-- NET SURFER 2.0
 			end
 		end
 
-		for _,E in ipairs(OutL) do
+		for _, E in ipairs(OutL) do
 			local Ent = Entity(E)
 
 			if IsValid(Ent) then
@@ -53,7 +53,7 @@ do	-- NET SURFER 2.0
 				OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos}
 			end
 		end
-		for _,E in ipairs(OutR) do
+		for _, E in ipairs(OutR) do
 			local Ent = Entity(E)
 
 			if IsValid(Ent) then
@@ -101,12 +101,12 @@ do	-- Overlay
 	-- Rendered is used to prevent re-rendering as part of the extended link rendering
 	-- Focus will render links different to show what is linked
 
-	local orange = Color(255,127,0)
-	local teal = Color(0,195,255)
-	local red = Color(255,0,0)
-	local green = Color(0,255,0)
-	local innerConnection = Color(127,127,127)
-	local outerConnection = Color(255,255,255)
+	local orange = Color(255, 127, 0)
+	local teal = Color(0, 195, 255)
+	local red = Color(255, 0, 0)
+	local green = Color(0, 255, 0)
+	local innerConnection = Color(127, 127, 127)
+	local outerConnection = Color(255, 255, 255)
 	function ENT:DrawLinks(Rendered)
 		if Rendered[self] then return end
 		local SelfTbl = self:GetTable()
@@ -128,11 +128,11 @@ do	-- Overlay
 		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
 
 		-- Rendering more along the chain
-		for _,T in ipairs(SelfTbl.Inputs) do
+		for _, T in ipairs(SelfTbl.Inputs) do
 			local E = T.Ent
 
 			if IsValid(E) and E.DrawLinks then
-				E:DrawLinks(Rendered,false)
+				E:DrawLinks(Rendered, false)
 			end
 		end
 
@@ -157,7 +157,7 @@ do	-- Overlay
 			render.DrawSphere(SpherePos1, 1.5, 4, 3, orange)
 		end
 
-		for _,T in ipairs(SelfTbl.OutputsL) do
+		for _, T in ipairs(SelfTbl.OutputsL) do
 			local E = T.Ent
 
 			if IsValid(E) then
@@ -169,14 +169,14 @@ do	-- Overlay
 				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
 				if E.DrawLinks then
-					E:DrawLinks(Rendered,false)
+					E:DrawLinks(Rendered, false)
 				else -- prop
 					render.DrawSphere(Pos, 2, 4, 3, teal)
 				end
 			end
 		end
 
-		for _,T in ipairs(SelfTbl.OutputsR) do
+		for _, T in ipairs(SelfTbl.OutputsR) do
 			local E = T.Ent
 
 			if IsValid(E) then
@@ -188,7 +188,7 @@ do	-- Overlay
 				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
 				if E.DrawLinks then
-					E:DrawLinks(Rendered,false)
+					E:DrawLinks(Rendered, false)
 				else -- prop
 					render.DrawSphere(Pos, 2, 4, 3, teal)
 				end
@@ -221,13 +221,13 @@ do	-- Overlay
 		local OutRTextPos = self:LocalToWorld(SelfTbl.OutR):ToScreen()
 
 		cam.Start2D()
-			draw.SimpleTextOutlined("Input","ACF_Title",InTextPos.x,InTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+			draw.SimpleTextOutlined("Input", "ACF_Title", InTextPos.x, InTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 
 			if SelfTbl.IsStraight then
-				draw.SimpleTextOutlined("Output","ACF_Title",OutLTextPos.x,OutLTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+				draw.SimpleTextOutlined("Output", "ACF_Title", OutLTextPos.x, OutLTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 			else
-				draw.SimpleTextOutlined("Left Output","ACF_Title",OutLTextPos.x,OutLTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
-				draw.SimpleTextOutlined("Right Output","ACF_Title",OutRTextPos.x,OutRTextPos.y,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
+				draw.SimpleTextOutlined("Left Output", "ACF_Title", OutLTextPos.x, OutLTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+				draw.SimpleTextOutlined("Right Output", "ACF_Title", OutRTextPos.x, OutRTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 			end
 		cam.End2D()
 	end

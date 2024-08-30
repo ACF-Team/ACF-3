@@ -215,6 +215,10 @@ do -- Tool Information Registration function
 		New.stage = StageIdx
 		New.op = OpIdx
 
+		if string.StartsWith(New.text, "#") then
+			New.text = language.GetPhrase(New.text)
+		end
+
 		return New
 	end
 end

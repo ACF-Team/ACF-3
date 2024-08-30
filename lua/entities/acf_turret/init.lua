@@ -63,8 +63,8 @@ do	-- Spawn and Update funcs
 
 	------------------
 
-	local function GetMass(Turret,Data)
-		return math.Round(math.max(Turret.Mass * (Data.RingSize / Turret.Size.Base),5) ^ 1.5, 1)
+	local function GetMass(Turret, Data)
+		return math.Round(math.max(Turret.Mass * (Data.RingSize / Turret.Size.Base), 5) ^ 1.5, 1)
 	end
 
 	local function UpdateTurret(Entity, Data, Class, Turret)
@@ -80,14 +80,14 @@ do	-- Spawn and Update funcs
 		local RingHeight = Class.GetRingHeight({Type = Data.Turret, Ratio = Turret.Size.Ratio}, Size)
 
 		if Data.Turret == "Turret-H" then
-			Entity:SetSize(Vector(Size,Size,RingHeight))
+			Entity:SetSize(Vector(Size, Size, RingHeight))
 		else
 			Entity:SetScale(Size / 20)
 		end
 
 		Entity.ACF.Model	= Model
-		Entity.Name			= math.Round(Size,2) .. "\" " .. Turret.Name
-		Entity.ShortName	= math.Round(Size,2) .. "\" " .. Turret.ID
+		Entity.Name			= math.Round(Size, 2) .. "\" " .. Turret.Name
+		Entity.ShortName	= math.Round(Size, 2) .. "\" " .. Turret.ID
 		Entity.EntType		= Class.Name
 		Entity.ClassData	= Class
 		Entity.Class		= Class.ID
@@ -99,7 +99,7 @@ do	-- Spawn and Update funcs
 		Entity.MaxMass		= MaxMass
 
 		Entity.TurretData	= {
-			Teeth		= Class.GetTeethCount(Turret,Size),
+			Teeth		= Class.GetTeethCount(Turret, Size),
 			RingSize	= Size,
 			RingHeight	= RingHeight,
 			TotalMass	= 0,
@@ -112,7 +112,7 @@ do	-- Spawn and Update funcs
 		-- Type-specific functions that differ between horizontal and vertical turret components
 		Entity.SlewFuncs	= Turret.SlewFuncs
 
-		Entity.DesiredAngle	= Entity.DesiredAngle or Angle(0,0,0)
+		Entity.DesiredAngle	= Entity.DesiredAngle or Angle(0, 0, 0)
 		Entity.CurrentAngle	= Entity.CurrentAngle or 0
 
 		-- This is TRUE whenever the last used angle input is Elevation/Bearing
@@ -156,8 +156,8 @@ do	-- Spawn and Update funcs
 			Entity.MaxDeg			= Data.MaxDeg
 			Entity.HasArc			= not ((Data.MinDeg == -180) and (Data.MaxDeg == 180))
 		else
-			Entity.MinDeg			= math.max(Data.MinDeg,-85)
-			Entity.MaxDeg			= math.min(Data.MaxDeg,85)
+			Entity.MinDeg			= math.max(Data.MinDeg, -85)
+			Entity.MaxDeg			= math.min(Data.MaxDeg, 85)
 			Entity.HasArc			= true
 		end
 
@@ -171,7 +171,7 @@ do	-- Spawn and Update funcs
 		Entity.MaxSpeed			= MaxSpeed
 
 		if Entity.SoundPlaying == true then
-			Sounds.SendAdjustableSound(Entity,true)
+			Sounds.SendAdjustableSound(Entity, true)
 		end
 		Entity.SoundPlaying		= false
 		Entity.SoundPath		= Entity.HandGear.Sound
@@ -181,21 +181,21 @@ do	-- Spawn and Update funcs
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Turret)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Turret)
 
-		Entity:SetNWString("WireName","ACF " .. Entity.Name)
+		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Mass", 0)
 
-		for _,v in ipairs(Entity.DataStore) do
+		for _, v in ipairs(Entity.DataStore) do
 			Entity[v] = Data[v]
 		end
 
 		ACF.Activate(Entity, true)
 
-		Entity.DamageScale		= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+		Entity.DamageScale		= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
-		local Mass = GetMass(Turret,Data)
+		local Mass = GetMass(Turret, Data)
 
 		Contraption.SetMass(Entity, Mass)
 	end
@@ -211,17 +211,17 @@ do	-- Spawn and Update funcs
 		net.Broadcast()
 	end
 
-	net.Receive("ACF_RequestTurretInfo",function(_, Player)
+	net.Receive("ACF_RequestTurretInfo", function(_, Player)
 		local Entity = net.ReadEntity()
 
 		if IsValid(Entity) then
 			local CoM = Entity.TurretData.LocalCoM
 			local Data = {
-				LocalCoM	= Vector(math.Round(CoM.x,1),math.Round(CoM.y,1),math.Round(CoM.z,1)),
-				Mass		= math.Round(Entity.TurretData.TotalMass,1),
+				LocalCoM	= Vector(math.Round(CoM.x, 1), math.Round(CoM.y, 1), math.Round(CoM.z, 1)),
+				Mass		= math.Round(Entity.TurretData.TotalMass, 1),
 				MinDeg		= Entity.MinDeg,
 				MaxDeg		= Entity.MaxDeg,
-				CoMDist		= math.Round(CoM:Length2D(),2),
+				CoMDist		= math.Round(CoM:Length2D(), 2),
 				Type		= Entity.Turret
 			}
 
@@ -289,11 +289,14 @@ do	-- Spawn and Update funcs
 
 		Entity:SetNWEntity("ACF.Rotator", Rotator)
 
+		Rotator:SetModel("models/hunter/plates/plate.mdl")
 		Rotator:SetPos(Entity:GetPos())
 		Rotator:SetAngles(Entity:GetAngles())
 		Rotator:SetParent(Entity)
 		Rotator:Spawn()
+		Rotator:PhysicsInit(SOLID_VPHYSICS)
 		Rotator:SetRenderMode(RENDERMODE_NONE)
+		Rotator:SetNotSolid(true)
 		Rotator:DrawShadow(false)
 
 		Entity.Rotator			= Rotator
@@ -443,10 +446,10 @@ do	-- Spawn and Update funcs
 			elseif DynamicMassTypes[Class] then
 				Entity.DynamicEntities[k] = true
 
-				ParentLink(Entity,k,true)
+				ParentLink(Entity, k, true)
 			else
-				if not IsValid(k) then continue end
-				ParentLink(Entity,k,true)
+				if not ACF.Check(k) then continue end
+				ParentLink(Entity, k, true)
 
 				if Class == "acf_turret_motor" then k:ValidatePlacement() end
 
@@ -490,7 +493,7 @@ do	-- Spawn and Update funcs
 		Entity.DynamicMass = Mass
 
 		local Rotator = Entity.Rotator
-		for Ent,PhysObj in pairs(AddCoM) do
+		for Ent, PhysObj in pairs(AddCoM) do
 			local Shift = Rotator:WorldToLocal(Ent:LocalToWorld(PhysObj:GetMassCenter())) * (PhysObj:GetMass() / Mass)
 			CoM = CoM + Shift
 		end
@@ -584,7 +587,7 @@ do	-- Spawn and Update funcs
 
 		self.TurretData.Tilt = Tilt
 
-		local SlewData		= self.ClassData.CalcSpeed(SelfTbl.TurretData,SlewInput)
+		local SlewData		= self.ClassData.CalcSpeed(SelfTbl.TurretData, SlewInput)
 
 		-- Allowing vertical turret drives to have a small amount of stabilization, but only if they aren't powered and the mass is well balanced
 		-- Think about certain turrets in WW2 where the gun was vertically aimed by the gunner with his shoulder
@@ -635,7 +638,7 @@ do	-- Spawn and Update funcs
 	function ENT:CheckCoM(Force)
 		local SelfTbl	= self:GetTable()
 		if (Force == false) and (Clock.CurTime < SelfTbl.CoMCheckDelay) then return end
-		self.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1,2)
+		self.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
 
 		GetDynamicMass(self)
 		GetSubTurretMass(self)
@@ -654,9 +657,9 @@ do	-- Spawn and Update funcs
 	function ENT:UpdateTurretMass(Force) -- Will call the other parts above, this should be triggered after a parent (safe to call multiple times e.g. on dupe paste, as it has an internal delay to prevent spamming)
 		if (Force == false) and (Clock.CurTime < self.MassCheckDelay) then return end
 
-		self.MassCheckDelay = Clock.CurTime + 2 + math.Rand(1,2)
+		self.MassCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
 
-		TimerSimple(Force and 0 or 3,function()
+		TimerSimple(Force and 0 or 3, function()
 			if not IsValid(self) then return end
 
 			if IsValid(self.ACF_TurretAncestor) then
@@ -677,7 +680,7 @@ do -- Overlay
 		local SlewMax	= math.Round(SelfTbl.MaxSlewRate * SelfTbl.DamageScale, 2)
 		local SlewAccel	= math.Round(SelfTbl.SlewAccel * SelfTbl.DamageScale, 4)
 		local TotalMass	= math.Round(SelfTbl.TurretData.TotalMass, 1)
-		local MaxMass	= math.Round(SelfTbl.MaxMass,1)
+		local MaxMass	= math.Round(SelfTbl.MaxMass, 1)
 
 		local Text = "Max " .. SlewMax .. " deg/s\nAccel: " .. SlewAccel .. " deg/s^2\nTeeth: " .. SelfTbl.TurretData.Teeth .. " t\nCurrent Mass: " .. TotalMass .. " kg / " .. MaxMass .. " kg max"
 
@@ -688,9 +691,9 @@ do -- Overlay
 		if IsValid(SelfTbl.Gyro) then Text = Text .. "\nGyro: " .. tostring(SelfTbl.Gyro) end
 
 		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
-			Text = Text .. "\n\nMotor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100,1) .. "%"
+			Text = Text .. "\n\nMotor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%"
 		elseif SelfTbl.Stabilized then
-			Text = Text .. "\n\nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100,1) .. "%"
+			Text = Text .. "\n\nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%"
 		end
 
 		return Text
@@ -704,7 +707,7 @@ do -- Metamethods
 
 		-- Motor links
 
-		ACF.RegisterClassLink("acf_turret","acf_turret_motor",function(This,Motor)
+		ACF.RegisterClassLink("acf_turret", "acf_turret_motor", function(This, Motor)
 			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
@@ -741,7 +744,7 @@ do -- Metamethods
 
 		-- Gyro links
 
-		ACF.RegisterClassLink("acf_turret","acf_turret_gyro",function(This,Gyro)
+		ACF.RegisterClassLink("acf_turret", "acf_turret_gyro", function(This, Gyro)
 			if IsValid(This.Gyro) then return false, "This turret already has a gyro linked!" end
 			if Gyro.IsDual then
 				if IsValid(Gyro[This.ID]) then return false, "This gyro is already linked to this type of turret!" end
@@ -916,7 +919,7 @@ do -- Metamethods
 			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math.abs(FinalAccel) / 2
 
 			if (StabSign == sign) then
-				StabAmt = StabAmt * math.min(math.max(0,1 - (math.abs(StabAmt) / MaxImpulse) ^ 2),1)
+				StabAmt = StabAmt * math.min(math.max(0, 1 - (math.abs(StabAmt) / MaxImpulse) ^ 2), 1)
 			end
 
 			if SelfTbl.Active then
@@ -968,31 +971,31 @@ do -- Metamethods
 	end
 
 	do	-- Input/Outputs/Eventually linking
-		ACF.AddInputAction("acf_turret", "Active", function(Entity,Value)
+		ACF.AddInputAction("acf_turret", "Active", function(Entity, Value)
 			if Entity.Disabled then return end
 
 			Entity.Active = tobool(Value)
 		end)
 
-		ACF.AddInputAction("acf_turret", "Angle", function(Entity,Value)
+		ACF.AddInputAction("acf_turret", "Angle", function(Entity, Value)
 			local Ang = isangle(Value) and Value or angle_zero
 
 			Entity:InputDirection(Ang)
 		end)
 
-		ACF.AddInputAction("acf_turret", "Vector", function(Entity,Value)
+		ACF.AddInputAction("acf_turret", "Vector", function(Entity, Value)
 			local Pos = isvector(Value) and Value or vector_origin
 
 			Entity:InputDirection(Pos)
 		end)
 
-		ACF.AddInputAction("acf_turret", "Bearing", function(Entity,Value) -- Only on horizontal drives
+		ACF.AddInputAction("acf_turret", "Bearing", function(Entity, Value) -- Only on horizontal drives
 			if not isnumber(Value) then return end
 
 			Entity:InputDirection(Value)
 		end)
 
-		ACF.AddInputAction("acf_turret", "Elevation", function(Entity,Value) -- Only on vertical drives
+		ACF.AddInputAction("acf_turret", "Elevation", function(Entity, Value) -- Only on vertical drives
 			if not isnumber(Value) then return end
 
 			Entity:InputDirection(Value)
@@ -1065,14 +1068,14 @@ do -- Metamethods
 			self.ACF.Health = NewHealth
 			self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
 
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 			self:UpdateOverlay()
 
 			return HitRes
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
-			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75,0)
+			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 			self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 

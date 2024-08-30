@@ -14,6 +14,7 @@ Weapons.Register("GL", {
 	Mass		= 101,
 	Spread      = 0.28,
 	Cyclic      = 250,
+	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 10,
 		PropLength = 1,

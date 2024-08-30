@@ -916,7 +916,7 @@ do	-- NET SURFER 2.0
 		net.Broadcast()
 	end
 
-	net.Receive("ACF_RequestEngineInfo",function(_,Ply)
+	net.Receive("ACF_RequestEngineInfo", function(_, Ply)
 		local Entity = net.ReadEntity()
 
 		if IsValid(Entity) then

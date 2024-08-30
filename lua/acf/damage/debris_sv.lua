@@ -67,7 +67,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 	-- HE kill the children of this ent, instead of disappearing them by removing parent
 	if next(Children) then
 		local DebrisChance 	= math.Clamp(ChildDebris / Count, 0, 1)
-		local Power 		= Energy / math.min(Count,3)
+		local Power 		= Energy / math.min(Count, 3)
 
 		for Ent in pairs( Children ) do
 			if math.random() < DebrisChance then
@@ -90,7 +90,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 	end
 end
 
-local function Gib(Entity,DmgInfo)
+local function Gib(Entity, DmgInfo)
 	Entity:PrecacheGibs()
 
 	local dmg = DamageInfo()
@@ -99,7 +99,7 @@ local function Gib(Entity,DmgInfo)
 	if DmgInfo and IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
 	dmg:SetDamageType(DMG_ALWAYSGIB)
 
-	timer.Simple(0,function()
+	timer.Simple(0, function()
 		if not IsValid(Entity) then return end
 		Entity:TakeDamageInfo(dmg)
 	end)
@@ -157,7 +157,7 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is a
 	constraint.RemoveAll(Entity)
 
 	if CanBreak then
-		Gib(Entity,DmgInfo)
+		Gib(Entity, DmgInfo)
 	else
 		Entity:Remove()
 	end
@@ -178,7 +178,7 @@ function ACF.APKill(Entity, Normal, Power, DmgInfo)
 	constraint.RemoveAll(Entity)
 
 	if CanBreak then
-		Gib(Entity,DmgInfo)
+		Gib(Entity, DmgInfo)
 	else
 		Entity:Remove()
 	end

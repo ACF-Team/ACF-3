@@ -38,14 +38,14 @@ local function PopulateTree(Tree, Data)
 		local Type  = type(Value)
 		local Size  = 3
 
-		local TypeNode = Node:AddNode("Type:  " .. Type, "icon16/cog.png")
+		local TypeNode = Node:AddNode(language.GetPhrase("tool.acfcopy.type") .. " " .. Type, "icon16/cog.png")
 		TypeNode.RootNode = Node
 
 		if Type ~= "table" then
-			local Base = Node:AddNode("Value: " .. tostring(Value), "icon16/information.png")
+			local Base = Node:AddNode(language.GetPhrase("tool.acfcopy.value") .. " " .. tostring(Value), "icon16/information.png")
 			Base.RootNode = Node
 		else
-			local Base = Node:AddNode("Value:", "icon16/information.png")
+			local Base = Node:AddNode("#tool.acfcopy.value", "icon16/information.png")
 			Base.RootNode = Node
 
 			for K, V in pairs(Value) do
@@ -97,8 +97,8 @@ function ACF.CreateCopyMenu(Panel)
 		Menu:ClearAll()
 	end
 
-	local Reload = Menu:AddButton("Reload Menu")
-	Reload:SetTooltip("You can also type 'acf_reload_copy_menu' in console.")
+	local Reload = Menu:AddButton("#tool.acfcopy.reload")
+	Reload:SetTooltip("#tool.acfcopy.reload_desc")
 	function Reload:DoClickInternal()
 		RunConsoleCommand("acf_reload_copy_menu")
 	end
@@ -106,7 +106,7 @@ function ACF.CreateCopyMenu(Panel)
 	ACF.SetToolMode("acfcopy", "Main", "CopyPaste")
 
 	if not Selected then
-		return Menu:AddLabel("Right click an ACF entity to copy its data.")
+		return Menu:AddLabel("#tool.acfcopy.unselected")
 	end
 
 	local ClassList = Menu:AddComboBox()
@@ -146,4 +146,3 @@ function ACF.CreateCopyMenu(Panel)
 
 	UpdateComboBox(ClassList)
 end
-
