@@ -61,18 +61,37 @@ end ---------------------------------------------
 do -- Entity linking and unlinking --------------
 	local LinkText   = "%s can't be linked to %s."
 	local UnlinkText = "%s can't be unlinked from %s."
+	local timer   = timer
 
-	function ENT:Link(Target)
+	function ENT:Link(Target, FromChip)
 		if not IsValid(Target) then return false, "Attempted to link an invalid entity." end
 		if self == Target then return false, "Can't link an entity to itself." end
 
 		local Class    = Target:GetClass()
-		local Function = ACF.GetClassLink(self:GetClass(), Class)
+		local LinkData, Reversed = ACF.GetClassLink(self:GetClass(), Class)
+
+		if not LinkData then return false, "Links between these two entities are impossible" end
+
+		local Function = LinkData.Link
+		local Check = LinkData.Check
+		local ChipDelay = LinkData.ChipDelay
+
+		local A, B = self, Target -- Default argument order
+		if Reversed then A, B = Target, self end -- If reversed, reverse argument order
 
 		if Function then
-			return Function(self, Target)
-		elseif self.DefaultLink then
-			return self:DefaultLink(Target)
+			if Check then
+				local Result, Message = Check(A, B)
+				if Result then
+					if FromChip and ChipDelay then
+						timer.Simple(ChipDelay, function()
+							if Check(A, B) then Function(A, B) end
+						end)
+					else Function(A, B) end
+				end
+				return Result, Message
+			end
+			return Function(A, B)
 		end
 
 		return false, LinkText:format(self.PluralName, Target.PluralName or Class)
@@ -83,12 +102,16 @@ do -- Entity linking and unlinking --------------
 		if self == Target then return false, "Can't unlink an entity from itself." end
 
 		local Class    = Target:GetClass()
-		local Function = ACF.GetClassUnlink(self:GetClass(), Class)
+		local LinkData, Reversed = ACF.GetClassLink(self:GetClass(), Class)
+		local Function = LinkData.Unlink
+
+		if LinkData == nil then return false, "Links between these two entities are impossible" end
+
+		local A, B = self, Target -- Default argument order
+		if Reversed then A, B = Target, self end -- If reversed, reverse argument order
 
 		if Function then
-			return Function(self, Target)
-		elseif self.DefaultUnlink then
-			return self:DefaultUnlink(Target)
+			return Function(A, B)
 		end
 
 		return false, UnlinkText:format(self.PluralName, Target.PluralName or Class)

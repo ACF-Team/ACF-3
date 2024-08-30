@@ -422,81 +422,78 @@ do -- Entity linking
 			}
 		}
 	]]--
-	local ClassLink = { Link = {}, Unlink = {} }
+	--- @class LinkFunction
+	--- @field Ent1 table The first entity in the link
+	--- @field Ent2 table The second entity in the link
+	--- @field FromChip boolean If the link is from a chip
+	--- @return boolean? Success Whether the link was successful
+	--- @return string? Message A message about the link status
 
-	--- Registers a link or unlink between two classes and how to handle them.
+	--- @class LinkData
+	--- @field Link LinkFunction? The function to handle linking
+	--- @field Unlink LinkFunction? The function to handle unlinking
+	--- @field Check LinkFunction? The function to check the link status
+	--- @field ChipDelay number? The delay associated with the link if done via chip
+
+	--- @type table<string,table<string,LinkData>>
+	local ClassLink = { }
+
+	--- Initializes a link in the ClassLink table if it doesn't already exist and returns the result.
+	--- The Link is initialized directionally (InitLink(Class1,Class2) != InitLink(Class2,Class1))
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table)
-	local function RegisterNewLink(Action, Class1, Class2, Function)
-		if not isfunction(Function) then return end
+	--- @return LinkData? LinkData The returned link
+	function ACF.InitLink(Class1, Class2)
+		if not ClassLink[Class1] then ClassLink[Class1] = {} end
+		if not ClassLink[Class1][Class2] then ClassLink[Class1][Class2] = {} end
+		return ClassLink[Class1][Class2]
+	end
 
-		local Target = ClassLink[Action]
-		local Data1 = Target[Class1]
-
-		if not Data1 then
-			Target[Class1] = {
-				[Class2] = function(Ent1, Ent2)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data1[Class2] = function(Ent1, Ent2)
-				return Function(Ent1, Ent2)
-			end
-		end
-
-		if Class1 == Class2 then return end
-
-		local Data2 = Target[Class2]
-
-		if not Data2 then
-			Target[Class2] = {
-				[Class1] = function(Ent2, Ent1)
-					return Function(Ent1, Ent2)
-				end
-			}
-		else
-			Data2[Class1] = function(Ent2, Ent1)
-				return Function(Ent1, Ent2)
-			end
-		end
+	--- Attempts to retrieve link information from Class 1 to Class2, otherwise tries Class 2 to Class1. If link exists in either direction, return nil.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @return LinkData? LinkData The returned link
+	--- @return boolean Reversed Whether you should reverse your entity arguments when calling with entities
+	function ACF.GetClassLink(Class1, Class2)
+		if ClassLink[Class1] and ClassLink[Class1][Class2] then return ClassLink[Class1][Class2], false end
+		if ClassLink[Class2] and ClassLink[Class2][Class1] then return ClassLink[Class2][Class1], true end
+		return nil, false
 	end
 
 	--- Registers that two classes can be linked, as well as how to handle entities of their class being linked.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table) The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
+	--- @param Function LinkFunction The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
 	function ACF.RegisterClassLink(Class1, Class2, Function)
-		RegisterNewLink("Link", Class1, Class2, Function)
-	end
-
-	--- Returns the callback defined previously by ACF.RegisterClassLink between Class1 and Class2.
-	--- @param Class1 string The first class in the link
-	--- @param Class2 string The other class in the link
-	--- @return fun(Entity1:table, Entity2:table) | nil # The linking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no linking functions
-	function ACF.GetClassLink(Class1, Class2)
-		if not ClassLink.Link[Class1] then return end
-
-		return ClassLink.Link[Class1][Class2]
+		local LinkData = ACF.InitLink(Class1, Class2)
+		LinkData.Link = Function
 	end
 
 	--- Registers that two classes can be unlinked, as well as how to handle entities of their class being unlinked.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @param Function fun(Entity1:table, Entity2:table) The unlinking function defined between an entity of Class1 and an entity of Class2
+	--- @param Function LinkFunction The unlinking function defined between an entity of Class1 and an entity of Class2
 	function ACF.RegisterClassUnlink(Class1, Class2, Function)
-		RegisterNewLink("Unlink", Class1, Class2, Function)
+		local LinkData = ACF.InitLink(Class1, Class2)
+		LinkData.Unlink = Function
 	end
 
-	--- Returns the callback defined previously by ACF.RegisterClassUnlink between Class1 and Class2.
+	--- Registers a validation check between two classes.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
-	--- @return fun(Entity1:table, Entity2:table) | nil # The unlinking function defined between an entity of Class1 and an entity of Class2, or nil if Class1 has no unlinking functions
-	function ACF.GetClassUnlink(Class1, Class2)
-		if not ClassLink.Unlink[Class1] then return end
+	--- @param Function LinkFunction The checking function defined between an entity of Class1 and an entity of Class2
+	function ACF.RegisterClassCheck(Class1, Class2, Function)
+		local LinkData = ACF.InitLink(Class1, Class2)
+		LinkData.Check = Function
+	end
 
-		return ClassLink.Unlink[Class1][Class2]
+	--- Registers a chip delay between two classes.
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param ChipDelay number If the link happens from the chip, then delay it by this amount
+	function ACF.RegisterClassDelay(Class1, Class2, ChipDelay)
+		local LinkData = ACF.InitLink(Class1, Class2)
+		LinkData.ChipDelay = ChipDelay
 	end
 end
 
