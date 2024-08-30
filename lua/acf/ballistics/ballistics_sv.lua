@@ -208,7 +208,7 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
-	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+	if hook.Run("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
 
 	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
 

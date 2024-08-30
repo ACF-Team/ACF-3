@@ -138,7 +138,7 @@ do -- Spawning and Updating --------------------
 					Class.VerifyData(Data, Class, Ammo)
 				end
 
-				HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+				hook.Run("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
 			end
 		end
 	end
