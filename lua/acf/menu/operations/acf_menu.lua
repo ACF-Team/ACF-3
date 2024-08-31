@@ -219,7 +219,8 @@ do -- Generic Spawner/Linker operation creator
 	--- @param Name string The name of the link type performed by the toolgun (e.g. Weapon, Engine, etc.)
 	--- @param Primary string The type of the entity to be spawned on left click (purely aesthetical)
 	--- @param Secondary string | nil The type of entity to be spawned on shift + right click (purely aesthetical)
-	function ACF.CreateMenuOperation(Name, Primary, Secondary)
+	--- @param OnRightClick table | nil If provided, a table with a Text and Func parameter for when right clicking
+	function ACF.CreateMenuOperation(Name, Primary, Secondary, OnRightClick)
 		if not isstring(Name) then return end
 		if not isstring(Primary) then return end
 
@@ -229,12 +230,12 @@ do -- Generic Spawner/Linker operation creator
 			-- These basically setup the tool information display you see on the top left of your screen
 			ACF.RegisterOperation("acf_menu", "Spawner", Name, {
 				OnLeftClick  = SpawnEntity,
-				OnRightClick = function(Tool, Trace)
+				OnRightClick = OnRightClick and OnRightClick.Func or function(Tool, Trace)
 					local Entity = Trace.Entity
 
 					-- The call to SelectEntity will switch the mode to the linker
 					return SelectEntity(Entity, Name, Tool)
-				end,
+				end
 			})
 
 			ACF.RegisterToolInfo("acf_menu", "Spawner", Name, {
@@ -252,7 +253,7 @@ do -- Generic Spawner/Linker operation creator
 
 			ACF.RegisterToolInfo("acf_menu", "Spawner", Name, {
 				name = "right",
-				text = "Select the entity you want to link or unlink.",
+				text = OnRightClick and OnRightClick.Text or "Select the entity you want to link or unlink."
 			})
 		end
 
@@ -326,9 +327,17 @@ ACF.CreateMenuOperation("Missile", "rack", "ammo crate")
 ACF.CreateMenuOperation("Engine", "engine", "fuel tank")
 ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
-ACF.CreateMenuOperation("Sensor", "sensor")ACF.CreateMenuOperation("Sensor", "sensor")
+ACF.CreateMenuOperation("Sensor", "sensor")
 
 ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
+
+ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
+	Text = "Convert the target entity into a baseplate. Works best on SProps rectangles (either normal, thin, or superthin). Other models not supported.",
+	Func = function(Tool, Trace)
+		if CLIENT then return end
+		ACF.ConvertEntityToBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
+	end
+})
