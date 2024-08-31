@@ -58,7 +58,7 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 		DmgResult:SetThickness(Size * 0.1)
 
 		HitRes = DmgResult:Compute()
-		Damage = HitRes.Damage * 5
+		Damage = HitRes.Damage * 15
 	else
 		-- Using player armor for fake armor works decently, as even if you don't take actual damage, the armor takes 1 point of damage, so it can potentially wear off
 		-- These funcs are also done on a hierarchy sort of system, so if the helmet is penetrated, then DamageHead is called, same for Vest -> Chest
@@ -74,7 +74,7 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 			DmgResult:SetThickness(Size * 0.1)
 
 			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 5
+			Damage = HitRes.Damage * 15
 		end
 	end
 

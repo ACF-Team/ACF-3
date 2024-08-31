@@ -920,7 +920,7 @@ end
 
 do -- Special squishy functions
 	local BoneList = {
-		head = {boneName = "ValveBiped.Bip01_Head1", group = "head", min = Vector(-6, -6, -4), max = Vector(8, 4, 4)},
+		head = {boneName = "ValveBiped.Bip01_Head1", group = "head", min = Vector(-6, -6, -6), max = Vector(8, 4, 6)},
 
 		chest = {boneName = "ValveBiped.Bip01_Spine", group = "chest", min = Vector(-6, -4, -9), max = Vector(18, 10, 9)},
 
@@ -932,7 +932,7 @@ do -- Special squishy functions
 	}
 
 	local ArmorHitboxes = { -- only applied if the entity has armor greater than 0
-		helmet = {boneName = "ValveBiped.Bip01_Head1", group = "helmet", min = Vector(4.5, -6.5, -4.5), max = Vector(8.5, 4.5, 4.5)},
+		helmet = {boneName = "ValveBiped.Bip01_Head1", group = "helmet", min = Vector(4.5, -6.5, -6.5), max = Vector(8.5, 4.5, 6.5)},
 		vest = {boneName = "ValveBiped.Bip01_Spine", group = "vest", min = Vector(-5, -5, -8), max = Vector(17, 11, 8)},
 	}
 
@@ -974,7 +974,7 @@ do -- Special squishy functions
 				local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, v.pos, v.ang, v.min, v.max)
 
 				--debugoverlay.Text(Alias:LocalToWorld(v.pos),k,10,false)
-				--debugoverlay.BoxAngles(Alias:LocalToWorld(v.pos),v.min,v.max,Alias:LocalToWorldAngles(v.ang),10,Color(255,0,0,50))
+				--debugoverlay.BoxAngles(Alias:LocalToWorld(v.pos), v.min, v.max, Alias:LocalToWorldAngles(v.ang), 10, Color(255, 0, 0, 50))
 
 				if HitPos ~= nil then
 					HitBones[k] = HitPos
@@ -988,12 +988,27 @@ do -- Special squishy functions
 					local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, parentBox.pos, parentBox.ang, v.min, v.max)
 
 					--debugoverlay.Text(Alias:LocalToWorld(parentBox.pos),k,10,false)
-					--debugoverlay.BoxAngles(Alias:LocalToWorld(parentBox.pos),v.min,v.max,Alias:LocalToWorldAngles(parentBox.ang),10,Color(0,0,255,50))
+					--debugoverlay.BoxAngles(Alias:LocalToWorld(parentBox.pos), v.min, v.max, Alias:LocalToWorldAngles(parentBox.ang), 10, Color(0, 0, 255, 50))
 
 					if HitPos ~= nil then
 						HitBones[k] = HitPos
 					end
 				end
+			end
+
+			if table.IsEmpty(HitBones) then
+				local nearest, nearestdist = "none", 16384
+
+				for k, v in pairs(AliasInfo.Hitboxes) do
+					local DistToLine = util.DistanceToLine(LocalRay, LocalRay + LocalRayDir * 64, Alias:LocalToWorld(v.pos))
+
+					if DistToLine < nearestdist then
+						nearest = k
+						nearestdist = DistToLine
+					end
+				end
+
+				return CheckList[nearest].group
 			end
 		else
 			for k, v in pairs(Bones) do
@@ -1003,15 +1018,31 @@ do -- Special squishy functions
 				local HitPos = util.IntersectRayWithOBB(RayStart, RayDir * 64, BonePos, BoneAng, BoneData.min, BoneData.max)
 
 				--debugoverlay.Text(BonePos,k,5,false)
-				--debugoverlay.BoxAngles(BonePos,BoneData.min,BoneData.max,BoneAng,5,Color(255,0,0,50))
+				--debugoverlay.BoxAngles(BonePos, BoneData.min, BoneData.max, BoneAng, 5, Color(255, 0, 0, 50))
 
 				if HitPos ~= nil then
 					HitBones[k] = HitPos
 				end
 			end
+
+			if table.IsEmpty(HitBones) then
+				local nearest, nearestdist = "none", 16384
+
+				for k, v in pairs(Bones) do
+					local BonePos = Entity:GetBonePosition(v)
+
+					local DistToLine = util.DistanceToLine(RayStart, RayStart + RayDir * 64, BonePos)
+
+					if DistToLine < nearestdist then
+						nearest = k
+						nearestdist = DistToLine
+					end
+				end
+
+				return CheckList[nearest].group
+			end
 		end
 
-		if table.IsEmpty(HitBones) then return "none" end -- No boxes got hit, so return the default
 		if table.Count(HitBones) == 1 then return CheckList[next(HitBones)].group end -- Single box got hit, just return that
 
 		local BestChoice = next(HitBones)
