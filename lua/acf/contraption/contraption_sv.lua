@@ -308,7 +308,14 @@ do -- ASSUMING DIRECT CONTROL
 				local Ent = self:GetEntity()
 
 				-- Required due for AD2 support, if this isn't present then entities will never get set to their required weight on dupe paste
-				if Ent.IsACFEntity then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
+				if Ent.IsACFEntity then
+					if Ent.IsACFBaseplate then
+						Ent.ACF.Mass = Mass
+					end
+
+					Contraption.SetMass(Ent, Ent.ACF.Mass)
+					return
+				end
 
 				if Ent.ACF_OnMassChange then
 					Ent:ACF_OnMassChange(self:GetMass(), Mass)
