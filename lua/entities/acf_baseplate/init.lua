@@ -19,9 +19,12 @@ function ENT:ACF_PreSpawn(_, _, _, _)
     self:SetScaledModel("models/holograms/cube.mdl")
     self:SetMaterial("sprops/sprops_grid_12x12")
 end
+
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
     local EntMods = ClientData.EntityMods
-    if EntMods and EntMods.mass then self:GetPhysicsObject():SetMass(EntMods.mass.Mass) end
+    if EntMods and EntMods.mass then
+        ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
+    end
 end
 
 Entities.Register()
