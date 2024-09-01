@@ -8,19 +8,6 @@ local gridMaterial = CreateMaterial("acf_bp_vis_spropgrid1", "VertexLitGeneric",
 	["$vertexcolor"] = 1
 })
 
-local color_thick = Color(255, 255, 255, 0)
-local color_thin = Color(255, 255, 0, 0)
-local color_superthin = Color(255, 127, 0, 0)
-
-local function LerpColor(a, b, t)
-	return Color(
-		Lerp(t, a.r, b.r),
-		Lerp(t, a.g, b.g),
-		Lerp(t, a.b, b.b),
-		Lerp(t, a.a, b.a)
-	)
-end
-
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
 	ACF.SetClientData("PrimaryClass", "acf_baseplate")
@@ -39,16 +26,9 @@ local function CreateMenu(Menu)
 	function Vis:PreDrawModel(_)
 		local w, h, t = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
 		self.CamDistance = math.max(w, h, 60) * 1
-		local c
-		if t > 2 then
-			c = LerpColor(color_thin, color_thick, t - 2)
-		else
-			c = LerpColor(color_superthin, color_thin, t - 1)
-		end
 
 		render.SetMaterial(gridMaterial)
-		render.DrawBox(Vector(0, 0, 0), Angle(0, 0, 0), Vector(-h / 2, -w / 2, -t / 2), Vector(h / 2, w / 2, t / 2), c)
-
+		render.DrawBox(Vector(0, 0, 0), Angle(0, 0, 0), Vector(-h / 2, -w / 2, -t / 2), Vector(h / 2, w / 2, t / 2), color_white)
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")
