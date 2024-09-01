@@ -59,7 +59,7 @@ local function CreateMenu(Menu)
 	end)
 
 	Menu:AddLabel("You can hold SHIFT while left-clicking to replace an existing entity with an ACF Baseplate. " ..
-		"This will, to the best of its abilities (given you're using a cubical prop, with the long side facing forwards), replace the targetted entity with " ..
+		"This will, to the best of its abilities (given you're using a cubical prop, with the long side facing forwards), replace the entity you're looking at with " ..
 		"a new ACF baseplate.\n\nIt works by taking an Advanced Duplicator 2 copy of the entire contraption from the target entity, replacing the target entity " ..
 		"in the dupe's class to acf_baseplate, setting the size based off the physical size of the target entity, then removing all entities and re-pasting the dupe. " ..
 		"\n\nYou will need to manually re-copy the contraption with the Adv. Dupe 2 tool before using it again, but after that, everything should be converted. This is " ..
