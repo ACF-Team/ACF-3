@@ -64,9 +64,3 @@ function Network.WriteGrainyAngle(Angle, Grain, Base)
     net.WriteUInt(Y, Grain)
     net.WriteUInt(Z, Grain)
 end
-
-local stage1 = 10000
-local stage2 = SourceUnitsToGrain(stage1, maxSUEdge, 12)
-local stage3 = GrainToSourceUnits(stage2, maxSUEdge, 12)
-
-print(stage1, stage2, stage3)
