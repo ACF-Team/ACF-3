@@ -26,7 +26,6 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
         ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
     else
         ACF.Contraption.SetMass(self, 1000)
-        print(self:GetPhysicsObject():GetMass())
     end
 end
 
