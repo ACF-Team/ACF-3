@@ -15,6 +15,8 @@ local function SendQueue()
 		Network.WriteGrainyAngle(Data.Angles, 8)
 		Network.WriteGrainyVector(Data.Normal, 8, 1)
 		net.WriteUInt(Data.Power, 16)
+		net.WriteBool(Data.CanGib)
+		net.WriteBool(Data.Ignite)
 
 		net.SendPVS(Data.Position)
 
@@ -37,9 +39,6 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 		ID       = Entity:EntIndex(),
 		Position = Entity:GetPos(),
 		Angles   = Entity:GetAngles(),
-		Material = Entity:GetMaterial(),
-		Model    = Entity:GetModel(),
-		Color    = Color(New.x, New.y, New.z, Current.a),
 		Normal   = Normal,
 		Power    = Power,
 		CanGib   = CanGib or nil,
