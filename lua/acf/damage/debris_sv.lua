@@ -1,16 +1,21 @@
 util.AddNetworkString("ACF_Debris")
 
 local Contraption = ACF.Contraption
+local Network     = ACF.Networking
 local ValidDebris = ACF.ValidDebris
 local ChildDebris = ACF.ChildDebris
 local Queue       = {}
 
 local function SendQueue()
 	for Entity, Data in pairs(Queue) do
-		local JSON = util.TableToJSON(Data)
-
 		net.Start("ACF_Debris")
-			net.WriteString(JSON)
+
+		net.WriteUInt(Data.ID, 14)
+		Network.WriteGrainyVector(Data.Position, 12)
+		Network.WriteGrainyAngle(Data.Angles, 8)
+		Network.WriteGrainyVector(Data.Normal, 8, 1)
+		net.WriteUInt(Data.Power, 16)
+
 		net.SendPVS(Data.Position)
 
 		Queue[Entity] = nil
@@ -29,6 +34,7 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	end
 
 	Queue[Entity] = {
+		ID       = Entity:EntIndex(),
 		Position = Entity:GetPos(),
 		Angles   = Entity:GetAngles(),
 		Material = Entity:GetMaterial(),
