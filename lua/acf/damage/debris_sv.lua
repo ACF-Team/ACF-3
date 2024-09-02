@@ -28,9 +28,6 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	if not ACF.GetServerBool("CreateDebris") then return end
 	if Queue[Entity] then return end
 
-	local Current = Entity:GetColor()
-	local New     = Vector(Current.r, Current.g, Current.b) * math.Rand(0.3, 0.6)
-
 	if not next(Queue) then
 		timer.Create("ACF_DebrisQueue", 0, 1, SendQueue)
 	end
