@@ -11,7 +11,7 @@ local gridMaterial = CreateMaterial("acf_bp_vis_spropgrid1", "VertexLitGeneric",
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
 	ACF.SetClientData("PrimaryClass", "acf_baseplate")
-	ACF.SetClientData("SecondaryClass", "acf_baseplate_replace")
+	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("Baseplate Settings")
 

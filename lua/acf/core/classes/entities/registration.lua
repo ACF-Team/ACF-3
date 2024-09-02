@@ -169,7 +169,7 @@ function Entities.AutoRegister(ENT)
 		ACF.RestoreEntity(self)
 
 		hook.Run("ACF_OnEntityUpdate", Class, self, ClientData)
-
+		if self.UpdateOverlay then self:UpdateOverlay(true) end
 		net.Start("ACF_UpdateEntity")
 		net.WriteEntity(self)
 		net.Broadcast()
@@ -214,7 +214,7 @@ function Entities.AutoRegister(ENT)
 		end
 
 		New:ACF_UpdateEntityData(ClientData)
-
+		if New.UpdateOverlay then New:UpdateOverlay(true) end
 		ACF.CheckLegal(New)
 
 		return New

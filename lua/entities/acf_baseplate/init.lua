@@ -24,7 +24,16 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
     local EntMods = ClientData.EntityMods
     if EntMods and EntMods.mass then
         ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
+    else
+        ACF.Contraption.SetMass(self, 1000)
+        print(self:GetPhysicsObject():GetMass())
     end
+end
+
+local Text = "Baseplate Size: %dx%dx%d"
+
+function ENT:UpdateOverlayText()
+    return Text:format(self.Size[1], self.Size[2], self.Size[3])
 end
 
 Entities.Register()
