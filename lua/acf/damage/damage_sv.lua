@@ -40,6 +40,45 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	return DmgResult, DmgInfo
 end
+
+util.AddNetworkString("ACF_SquishyKill")
+
+--- Used to kill and fling the player because it's funny.
+--- Returns true if the damage has killed the player, false if it has not.
+function Damage.doSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, Direction, Explosive)
+	local Health = Entity:Health()
+
+	if Damage > Health then
+		local SourceDamage = DamageInfo()
+		SourceDamage:SetAttacker(Attacker)
+		SourceDamage:SetInflictor(Inflictor)
+		SourceDamage:SetDamage(Damage)
+		SourceDamage:SetDamageForce(Direction * 200000000)
+		if Explosive then
+			SourceDamage:SetDamageType(DMG_BLAST)
+		end
+		Entity:TakeDamageInfo(SourceDamage)
+
+		local E1 = EffectData()
+		E1:SetOrigin(HitPos)
+		E1:SetNormal(Direction)
+		E1:SetFlags(3)
+		E1:SetScale(14)
+		util.Effect("bloodspray", E1, true, true)
+
+		local E2 = EffectData()
+		E2:SetOrigin(HitPos)
+		E2:SetNormal(Direction)
+		E2:SetFlags(3)
+		E2:SetScale(14)
+		util.Effect("BloodImpact", E2, true, true)
+
+		return true
+	end
+
+	return false
+end
+
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
 -- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
@@ -78,8 +117,11 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 		end
 	end
 
-	Entity:TakeDamage(Damage, DmgInfo:GetAttacker(), DmgInfo:GetInflictor())
+	local Attacker, Inflictor = DmgInfo:GetAttacker(), DmgInfo:GetInflictor()
 
+	if not ACF.Damage.doSquishyFlingKill(Entity, Damage, DmgInfo.HitPos, Attacker, Inflictor, (DmgInfo.HitPos - DmgInfo.Origin):GetNormalized(), DmgInfo.Type == DMG_BLAST) then
+		Entity:TakeDamage(Damage, Attacker, Inflictor)
+	end
 	HitRes.Kill = false
 
 	return HitRes
