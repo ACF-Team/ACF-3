@@ -41,8 +41,6 @@ function Damage.getBulletDamage(Bullet, Trace)
 	return DmgResult, DmgInfo
 end
 
-util.AddNetworkString("ACF_SquishyKill")
-
 --- Used to kill and fling the player because it's funny.
 --- Returns true if the damage has killed the player, false if it has not.
 function Damage.doSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, Direction, Explosive)
