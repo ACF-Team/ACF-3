@@ -1,7 +1,6 @@
 util.AddNetworkString("ACF_Debris")
 
 local Contraption = ACF.Contraption
-local Network     = ACF.Networking
 local ValidDebris = ACF.ValidDebris
 local ChildDebris = ACF.ChildDebris
 local Queue       = {}
@@ -10,10 +9,10 @@ local function SendQueue()
 	for Entity, Data in pairs(Queue) do
 		net.Start("ACF_Debris")
 
-		net.WriteUInt(Data.ID, 14)
-		Network.WriteGrainyVector(Data.Position, 12)
-		Network.WriteGrainyAngle(Data.Angles, 8)
-		Network.WriteGrainyVector(Data.Normal, 8, 1)
+		net.WriteUInt(Data.ID, 13)
+		net.WriteInt(Data.Normal.x * 100, 8)
+		net.WriteInt(Data.Normal.y * 100, 8)
+		net.WriteInt(Data.Normal.z * 100, 8)
 		net.WriteUInt(Data.Power, 16)
 		net.WriteBool(Data.CanGib)
 		net.WriteBool(Data.Ignite)
@@ -35,7 +34,6 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	Queue[Entity] = {
 		ID       = Entity:EntIndex(),
 		Position = Entity:GetPos(),
-		Angles   = Entity:GetAngles(),
 		Normal   = Normal,
 		Power    = Power,
 		CanGib   = CanGib or nil,

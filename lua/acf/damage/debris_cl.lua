@@ -1,5 +1,4 @@
 local ACF     = ACF
-local Network = ACF.Networking
 
 local Effects     = ACF.Utilities.Effects
 local AllowDebris = GetConVar("acf_debris")
@@ -57,7 +56,7 @@ local function Ignite(Entity, Lifetime, IsGib)
     end
 end
 
-local function CreateDebris(Model, Position, Angles, Normal, Power, ShouldIgnite)
+local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite)
     local Debris = ents.CreateClientProp(Model)
 
     if not IsValid(Debris) then return end
@@ -66,7 +65,8 @@ local function CreateDebris(Model, Position, Angles, Normal, Power, ShouldIgnite
 
     Debris:SetPos(Position)
     Debris:SetAngles(Angles)
-    Debris:SetMaterial("models/props_pipes/GutterMetal01a")
+    Debris:SetMaterial(Material)
+    Debris:SetColor(Color)
 
     if not CollideAll:GetBool() then
         Debris:SetCollisionGroup(COLLISION_GROUP_WORLD)
@@ -95,7 +95,7 @@ local function CreateDebris(Model, Position, Angles, Normal, Power, ShouldIgnite
     return Debris
 end
 
-local function CreateGib(Position, Angles, Normal, Power, Min, Max)
+local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max)
     local Gib = ents.CreateClientProp(GibModel:format(math.random(1, 5)))
 
     if not IsValid(Gib) then return end
@@ -108,7 +108,8 @@ local function CreateGib(Position, Angles, Normal, Power, Min, Max)
     Gib:SetPos(Position + Offset)
     Gib:SetAngles(AngleRand(-180, 180))
     Gib:SetModelScale(math.Rand(0.5, 2))
-    Gib:SetMaterial("models/props_pipes/GutterMetal01a")
+    Gib:SetMaterial(Material)
+    Gib:SetColor(Color)
     Gib:Spawn()
 
     Gib.SmokeParticle = Particle(Gib, "smoke_gib_01")
@@ -130,11 +131,11 @@ local function CreateGib(Position, Angles, Normal, Power, Min, Max)
     return true
 end
 
-function ACF.CreateDebris(Model, Position, Angles, Normal, Power, CanGib, Ignite)
+function ACF.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
     if not AllowDebris:GetBool() then return end
     if not Model then return end
 
-    local Debris = CreateDebris(Model, Position, Angles, Normal, Power, CanGib, Ignite)
+    local Debris = CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
 
     if IsValid(Debris) then
         local Multiplier = GibMult:GetFloat()
@@ -146,7 +147,7 @@ function ACF.CreateDebris(Model, Position, Angles, Normal, Power, CanGib, Ignite
             local GibCount = math.Clamp(Radius * 0.1, 1, math.max(10 * Multiplier, 1))
 
             for _ = 1, GibCount do
-                if not CreateGib(Position, Angles, Normal, Power, Min, Max) then
+                if not CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max) then
                     break
                 end
             end
@@ -163,38 +164,50 @@ end
 
 local EntData = {}
 
--- Models MIGHT change, but aren't likely to, especially in combat, so rather than running some intensive model checker on entities
--- it would be better to just store it on creation. It's worth a model or two being wrong every now and then for reducing 40+ bytes 
--- into just two bytes when writing the model part of debris
-hook.Add("OnEntityCreated", "ACF_Debris_TrackEnts", function(ent)
-    timer.Simple(0.001, function()
-        if IsValid(ent) then
-            local id = ent:EntIndex()
-            if id ~= -1 then
-                EntData[ent:EntIndex()] = ent:GetModel()
-            end
-        end
+-- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
+hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent)
+    local EntID = Ent:EntIndex()
+    if EntID == -1 then return end
+
+    EntData[EntID] = {
+        Model = Ent:GetModel(),
+        Material = Ent:GetMaterial(),
+        Color = Ent:GetColor(),
+        Position = Ent:GetPos(),
+        Angles = Ent:GetAngles(),
+    }
+
+    timer.Simple(2, function()
+        if not EntData[EntID] then return end
+        EntData[EntID] = nil
     end)
 end)
 
 net.Receive("ACF_Debris", function()
-    local EntID    = net.ReadUInt(14)
-    local Position = Network.ReadGrainyVector(12)
-    local Angles   = Network.ReadGrainyAngle(8)
-    local Normal   = Network.ReadGrainyVector(8, 1)
+    local EntID    = net.ReadUInt(13)
+    local Normal   = Vector(net.ReadInt(8) / 100, net.ReadInt(8) / 100, net.ReadInt(8) / 100)
     local Power    = net.ReadUInt(16)
     local CanGib   = net.ReadBool()
     local Ignite   = net.ReadBool()
 
-    ACF.CreateDebris(
-        EntData[EntID],
-        Position,
-        Angles,
-        Normal,
-        Power,
-        CanGib,
-        Ignite
-    )
+    timer.Simple(0, function()
+        local EntInfo  = EntData[EntID]
+        local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
+
+        ACF.CreateDebris(
+            EntInfo.Model,
+            EntInfo.Position,
+            EntInfo.Angles,
+            EntInfo.Material,
+            NewColor:ToColor(),
+            Normal,
+            Power,
+            CanGib,
+            Ignite
+        )
+
+        EntData[EntID] = nil
+    end)
 end)
 
 game.AddParticles("particles/fire_01.pcf")
