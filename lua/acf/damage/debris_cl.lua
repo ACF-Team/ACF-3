@@ -190,7 +190,7 @@ net.Receive("ACF_Debris", function()
     local CanGib   = net.ReadBool()
     local Ignite   = net.ReadBool()
 
-    timer.Simple(0, function()
+    timer.Simple(0.01, function()
         local EntInfo  = EntData[EntID]
         local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
 
