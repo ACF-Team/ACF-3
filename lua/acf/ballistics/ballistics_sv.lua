@@ -267,7 +267,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	if traceRes.Hit then
 		if traceRes.HitSky then
-			if traceRes.HitNormal == Vector(0, 0, -1) then
+			if traceRes.HitNormal == -vector_up then
 				Bullet.SkyLvL = traceRes.HitPos.z
 				Bullet.LifeTime = Clock.CurTime
 			else

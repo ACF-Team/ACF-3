@@ -753,47 +753,54 @@ do -- Movement -----------------------------------------
 	end
 
 	function ENT:Calc(InputRPM, InputInertia)
-		if self.Disabled then return 0 end
-		if self.LastActive == Clock.CurTime then return self.TorqueOutput end
+		local SelfTbl = self:GetTable()
+		if SelfTbl.Disabled then return 0 end
+		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
-		if self.ChangeFinished < Clock.CurTime then
-			self.InGear = true
+		if SelfTbl.ChangeFinished < Clock.CurTime then
+			SelfTbl.InGear = true
 		end
 
 		local BoxPhys = self:GetAncestor():GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
-		local Gear = self.Gear
+		local Gear = SelfTbl.Gear
 
-		if self.CVT and Gear == 1 then
-			if self.CVTRatio > 0 then
-				self.Gears[1] = Clamp(self.CVTRatio, 0.01, 1)
+		if SelfTbl.CVT and Gear == 1 then
+			local Gears = SelfTbl.Gears
+
+			if SelfTbl.CVTRatio > 0 then
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
 			else
-				local MinRPM  = self.MinRPM
-				self.Gears[1] = Clamp((InputRPM - MinRPM) / (self.MaxRPM - MinRPM), 0.05, 1)
+				local MinRPM  = SelfTbl.MinRPM
+				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
 
-			self.GearRatio = self.Gears[1] * self.FinalDrive
+			local GearRatio = Gears[1] * SelfTbl.FinalDrive
+			SelfTbl.GearRatio = GearRatio
 
-			WireLib.TriggerOutput(self, "Ratio", self.GearRatio)
+			if SelfTbl.LastRatio ~= GearRatio then
+				SelfTbl.LastRatio = GearRatio
+				WireLib.TriggerOutput(self, "Ratio", GearRatio)
+			end
 		end
 
-		if self.Automatic and self.Drive == 1 and self.InGear then
+		if SelfTbl.Automatic and SelfTbl.Drive == 1 and SelfTbl.InGear then
 			local PhysVel = BoxPhys:GetVelocity():Length()
 
-			if not self.Hold and Gear ~= self.MaxGear and PhysVel > (self.ShiftPoints[Gear] * self.ShiftScale) then
+			if not SelfTbl.Hold and Gear ~= SelfTbl.MaxGear and PhysVel > (SelfTbl.ShiftPoints[Gear] * SelfTbl.ShiftScale) then
 				self:ChangeGear(Gear + 1)
-			elseif PhysVel < (self.ShiftPoints[Gear - 1] * self.ShiftScale) then
+			elseif PhysVel < (SelfTbl.ShiftPoints[Gear - 1] * SelfTbl.ShiftScale) then
 				self:ChangeGear(Gear - 1)
 			end
 		end
 
 		local TorqueOutput = 0
 		local TotalReqTq = 0
-		local LClutch = self.LClutch
-		local RClutch = self.RClutch
-		local GearRatio = self.GearRatio
+		local LClutch = SelfTbl.LClutch
+		local RClutch = SelfTbl.RClutch
+		local GearRatio = SelfTbl.GearRatio
 
-		for Ent, Link in pairs(self.GearboxOut) do
+		for Ent, Link in pairs(SelfTbl.GearboxOut) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
 			Link.ReqTq = 0
@@ -810,7 +817,10 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		for Wheel, Link in pairs(self.Wheels) do
+		local DoubleDiff = SelfTbl.DoubleDiff
+		local SteerRate  = SelfTbl.SteerRate
+
+		for Wheel, Link in pairs(SelfTbl.Wheels) do
 			Link.ReqTq = 0
 
 			if GearRatio ~= 0 then
@@ -821,8 +831,8 @@ do -- Movement -----------------------------------------
 				if Clutch > 0 and OnRPM then
 					local Multiplier = 1
 
-					if self.DoubleDiff and self.SteerRate ~= 0 then
-						local Rate = self.SteerRate * 2
+					if DoubleDiff and SteerRate ~= 0 then
+						local Rate = SteerRate * 2
 
 						-- this actually controls the RPM of the wheels, so the steering rate is correct
 						if Link.Side == 0 then
@@ -839,9 +849,9 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.TotalReqTq = TotalReqTq
-		TorqueOutput = min(TotalReqTq, self.MaxTorque)
-		self.TorqueOutput = TorqueOutput
+		SelfTbl.TotalReqTq = TotalReqTq
+		TorqueOutput = min(TotalReqTq, SelfTbl.MaxTorque)
+		SelfTbl.TorqueOutput = TorqueOutput
 
 		self:UpdateOverlay()
 
