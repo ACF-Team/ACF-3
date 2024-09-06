@@ -165,7 +165,7 @@ end
 local EntData = {}
 
 local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
-    timer.Simple(0, function()
+    timer.Simple(0.005, function()
         local EntInfo = EntData[EntID]
         if not EntInfo then return SpawnDebris(EntID, Normal, Power, CanGib, Ignite) end
 
@@ -188,7 +188,9 @@ local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
 end
 
 -- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
-hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent)
+hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent, IsFullUpdate)
+    if IsFullUpdate then return end
+
     local EntID = Ent:EntIndex()
     if EntID == -1 then return end
 

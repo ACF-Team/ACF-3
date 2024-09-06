@@ -77,7 +77,7 @@ function Contraption.GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
-		if not IsValid(V) or Res[V] then continue end
+		if Res[V] or not IsValid(V) then continue end
 
 		Res[V] = true
 		Contraption.GetAllChildren(V, Res)
@@ -143,7 +143,6 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 		if not IsValid(Phys) then
 			Physical[K] = nil
-
 			OthN = OthN + 1
 		else
 			if Tally then
