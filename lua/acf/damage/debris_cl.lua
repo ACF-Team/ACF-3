@@ -164,34 +164,11 @@ end
 
 local EntData = {}
 
--- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
-hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent)
-    local EntID = Ent:EntIndex()
-    if EntID == -1 then return end
+local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
+    timer.Simple(0, function()
+        local EntInfo = EntData[EntID]
+        if not EntInfo then return SpawnDebris(EntID, Normal, Power, CanGib, Ignite) end
 
-    EntData[EntID] = {
-        Model = Ent:GetModel(),
-        Material = Ent:GetMaterial(),
-        Color = Ent:GetColor(),
-        Position = Ent:GetPos(),
-        Angles = Ent:GetAngles(),
-    }
-
-    timer.Simple(2, function()
-        if not EntData[EntID] then return end
-        EntData[EntID] = nil
-    end)
-end)
-
-net.Receive("ACF_Debris", function()
-    local EntID    = net.ReadUInt(13)
-    local Normal   = Vector(net.ReadInt(8) / 100, net.ReadInt(8) / 100, net.ReadInt(8) / 100)
-    local Power    = net.ReadUInt(16)
-    local CanGib   = net.ReadBool()
-    local Ignite   = net.ReadBool()
-
-    timer.Simple(0.01, function()
-        local EntInfo  = EntData[EntID]
         local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
 
         ACF.CreateDebris(
@@ -208,6 +185,35 @@ net.Receive("ACF_Debris", function()
 
         EntData[EntID] = nil
     end)
+end
+
+-- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
+hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent)
+    local EntID = Ent:EntIndex()
+    if EntID == -1 then return end
+
+    EntData[EntID] = {
+        Model = Ent:GetModel(),
+        Material = Ent:GetMaterial(),
+        Color = Ent:GetColor(),
+        Position = Ent:GetPos(),
+        Angles = Ent:GetAngles(),
+    }
+
+    timer.Simple(10, function()
+        if not EntData[EntID] then return end
+        EntData[EntID] = nil
+    end)
+end)
+
+net.Receive("ACF_Debris", function()
+    local EntID    = net.ReadUInt(13)
+    local Normal   = Vector(net.ReadInt(8) / 100, net.ReadInt(8) / 100, net.ReadInt(8) / 100)
+    local Power    = net.ReadUInt(16)
+    local CanGib   = net.ReadBool()
+    local Ignite   = net.ReadBool()
+
+    SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
 end)
 
 game.AddParticles("particles/fire_01.pcf")
