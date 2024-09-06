@@ -1,5 +1,3 @@
-local ACF       = ACF
-local Network   = ACF.Networking
 local Damaged   = {}
 local Materials = {
 	CreateMaterial("ACF_Damaged1", "VertexLitGeneric", {
@@ -67,32 +65,31 @@ do
 	local IsValid = IsValid
 	local math_Clamp = math.Clamp
 
-	Network.CreateReceiver("ACF_Damage", function(Data)
-		for Index, Percent in pairs(Data) do
-			local Entity = ents.GetByIndex(Index)
+	net.Receive("ACF_Damage", function()
+		local Entity  = Entity(net.ReadUInt(13))
+		local Percent = net.ReadUInt(7) / 100
 
-			if not IsValid(Entity) then continue end
+		if not IsValid(Entity) then return end
 
-			if Percent < 1 then
-				Entity.ACF_HealthPercent = Percent
-				Entity.ACF_BlendAmount = math_Clamp(1 - Percent, 0, 0.8)
+		if Percent < 1 then
+			Entity.ACF_HealthPercent = Percent
+			Entity.ACF_BlendAmount = math_Clamp(1 - Percent, 0, 0.8)
 
-				if Percent > 0.7 then
-					Entity.ACF_Material = Materials[1]
-				elseif Percent > 0.3 then
-					Entity.ACF_Material = Materials[2]
-				else
-					Entity.ACF_Material = Materials[3]
-				end
-
-				Add(Entity)
+			if Percent > 0.7 then
+				Entity.ACF_Material = Materials[1]
+			elseif Percent > 0.3 then
+				Entity.ACF_Material = Materials[2]
 			else
-				Remove(Entity)
-
-				Entity.ACF_HealthPercent = nil
-				Entity.ACF_Material      = nil
-				Entity.ACF_BlendAmount   = nil
+				Entity.ACF_Material = Materials[3]
 			end
+
+			Add(Entity)
+		else
+			Remove(Entity)
+
+			Entity.ACF_HealthPercent = nil
+			Entity.ACF_Material      = nil
+			Entity.ACF_BlendAmount   = nil
 		end
 	end)
 end
