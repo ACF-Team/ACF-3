@@ -3,10 +3,12 @@ return {
 
     beforeEach = function( State )
         local PhysObj = { IsValid = function() return true end }
+        local EntTable = {}
 
         State.Ent = {
             ACF = {},
-            GetPhysicsObject = function() return PhysObj end
+            GetPhysicsObject = function() return PhysObj end,
+            GetTable = function() return EntTable end,
         }
     end,
 
