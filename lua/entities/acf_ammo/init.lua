@@ -294,7 +294,7 @@ do -- Spawning and Updating --------------------
 		local Class  = Classes.GetGroup(Source, Data.Weapon) -- The class representing a weapon type (example IDs: "AC", "HW", etc.)
 		local Weapon = Source.GetItem(Class.ID, Data.Weapon) -- This is (unintentionally?) always nil due to Class.ID == Data.Weapon after verification
 		local Ammo   = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
-		local Model  = "models/holograms/rcube_thin.mdl"
+		local Model  = "models/holograms/hq_rcube_thin.mdl"
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 
