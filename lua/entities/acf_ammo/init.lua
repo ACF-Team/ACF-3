@@ -272,17 +272,6 @@ do -- Spawning and Updating --------------------
 		end
 	end)
 
-	-- Called when checking if an entity can be spawned. 
-	hook.Add("ACF_CanUpdateEntity", "ACF Crate Size Update", function(Entity, Data)
-		if not Entity.IsACFAmmoCrate then return end
-		if Data.Size then return end -- The menu won't send it like this
-
-		Data.Size       = Entity:GetSize()
-		Data.CrateSizeX = nil
-		Data.CrateSizeY = nil
-		Data.CrateSizeZ = nil
-	end)
-
 	-------------------------------------------------------------------------------
 
 	function MakeACF_Ammo(Player, Pos, Ang, Data)

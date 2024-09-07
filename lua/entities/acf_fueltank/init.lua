@@ -174,16 +174,6 @@ do -- Spawn and Update functions
 		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
-	hook.Add("ACF_CanUpdateEntity", "ACF Fuel Tank Size Update", function(Entity, Data)
-		if not Entity.IsACFFuelTank then return end
-		if Data.Size then return end -- The menu won't send it like this
-
-		Data.Size      = Entity:GetSize()
-		Data.TankSizeX = nil
-		Data.TankSizeY = nil
-		Data.TankSizeZ = nil
-	end)
-
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
