@@ -137,9 +137,10 @@ function ACF.UpdateArea(Entity, PhysObj)
 end
 
 function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
-	local Thickness = Entity.ACF.Thickness
-	local EntMods = Entity.EntityMods
-	local MassMod = EntMods and EntMods.mass
+	local EntMods  = Entity.EntityMods
+	local ArmorMod = EntMods.ACF_Armor
+	local MassMod  = EntMods and EntMods.mass
+	local Thickness = ArmorMod and ArmorMod.Thickness
 
 	if Thickness then
 		if not MassMod then
@@ -152,8 +153,6 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 
 			return Thickness
 		end
-
-		Entity.ACF.Thickness = nil
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
 		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })

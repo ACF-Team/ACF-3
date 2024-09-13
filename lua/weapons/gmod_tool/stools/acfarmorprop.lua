@@ -42,7 +42,6 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 		Mass = MassMod and MassMod.Mass or PhysObj:GetMass()
 	end
 
-	Entity.ACF.Thickness = Thickness
 	Entity.ACF.Ductility = Ductility * 0.01
 
 	if Mass ~= Entity.ACF.Mass then
