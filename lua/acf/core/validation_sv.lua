@@ -137,10 +137,10 @@ function ACF.UpdateArea(Entity, PhysObj)
 end
 
 function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
-	local EntMods  = Entity.EntityMods
-	local ArmorMod = EntMods.ACF_Armor
-	local MassMod  = EntMods and EntMods.mass
+	local EntMods   = Entity.EntityMods
+	local ArmorMod  = EntMods and EntMods.ACF_Armor
 	local Thickness = ArmorMod and ArmorMod.Thickness
+	local MassMod   = EntMods and EntMods.mass
 
 	if Thickness then
 		if not MassMod then
