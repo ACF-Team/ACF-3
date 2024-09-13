@@ -264,6 +264,8 @@ do -- Spawn and Update functions -----------------------
 		Entity.RClutch        = 1
 		Entity.DataStore      = Entities.GetArguments("acf_gearbox")
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateGearbox(Entity, Data, Class, Gearbox)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
@@ -275,14 +277,6 @@ do -- Spawn and Update functions -----------------------
 		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		ACF.CheckLegal(Entity)
 

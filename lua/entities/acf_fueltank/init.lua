@@ -216,6 +216,8 @@ do -- Spawn and Update functions
 		Tank.LastActivated = 0
 		Tank.DataStore     = Entities.GetArguments("acf_fueltank")
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
@@ -227,14 +229,6 @@ do -- Spawn and Update functions
 		HookRun("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
 
 		Tank:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		-- Fuel tanks should be active by default
 		Tank:TriggerInput("Active", 1)

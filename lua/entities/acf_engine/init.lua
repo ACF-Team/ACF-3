@@ -388,6 +388,8 @@ do -- Spawn and Update functions
 		Entity.DataStore     = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateEngine(Entity, Data, Class, Engine, Type)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
@@ -399,14 +401,6 @@ do -- Spawn and Update functions
 		HookRun("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		ACF.CheckLegal(Entity)
 
