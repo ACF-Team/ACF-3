@@ -216,7 +216,7 @@ do -- Spawn and Update functions
 		Tank.LastActivated = 0
 		Tank.DataStore     = Entities.GetArguments("acf_fueltank")
 
-		duplicator.ClearEntityModifier(Entity, "mass")
+		duplicator.ClearEntityModifier(Tank, "mass")
 
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
