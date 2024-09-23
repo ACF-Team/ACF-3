@@ -139,7 +139,7 @@ do -- Data persisting
 			SetFunction(Key, Default)
 		end
 
-		hook.Run("ACF_PersistedData_Loaded")
+		hook.Run("ACF_OnLoadPersistedData")
 		hook.Remove("Initialize", "ACF Load Persisted Data")
 	end)
 end
