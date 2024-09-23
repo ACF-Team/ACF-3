@@ -16,16 +16,21 @@ local TraceData    = {
 local Ballistics	= ACF.Ballistics
 local Debug			= ACF.Debug
 
+local InchToCm = 2.54
+
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
 -- @return True if the entity can be affected by explosions, false otherwise.
 function Damage.isValidTarget(Entity)
-	local Type = ACF.Check(Entity)
+	local EntTbl = Entity:GetTable()
+	if EntTbl.ACF_Killed or EntTbl.Exploding then return false end
+
+	local EntACF = EntTbl.ACF
+	local Type = EntACF and EntACF.Type or ACF.Check(Entity)
 
 	if not Type then return false end
 	if Ballistics.TestFilter(Entity) == false then return false end
 
-	if Entity.Exploding then return false end
 	if Type ~= "Squishy" then return true end
 
 	return Entity:Health() > 0
@@ -48,7 +53,9 @@ function Damage.getRandomPos(Entity)
 		return Entity:LocalToWorld(Vector(X, Y, Z))
 	end
 
-	local Mesh = Entity:GetPhysicsObject():GetMesh()
+	local PhysObj   = Entity:GetPhysicsObject()
+	local ValidPhys = IsValid(PhysObj)
+	local Mesh      = ValidPhys and PhysObj:GetMesh() or nil
 
 	if not Mesh then -- Spherical collisions
 		local Mins = Entity:OBBMins()
@@ -81,7 +88,7 @@ end
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local MaxSphere   = 4 * math.pi * (Radius * 2.54) ^ 2 -- Surface Area of the sphere at maximum radius
+	local MaxSphere   = 4 * math.pi * (Radius * InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
 	local FragMass    = FragMass / Fragments
 	local BaseFragV   = (Power * 50000 / FragMass / Fragments) ^ 0.5
@@ -145,10 +152,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			if Trace.HitNonWorld then
 				local HitEnt = Trace.Entity
 
-				if Damage.isValidTarget(HitEnt) and not Damaged[HitEnt] then
+				if not Damaged[HitEnt] and Damage.isValidTarget(HitEnt) then
 					local Distance      = Position:Distance(HitPos)
-					local Sphere        = math.max(4 * math.pi * (Distance * 2.54) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
+					local Sphere        = math.max(4 * math.pi * (Distance * InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 					local EntArea       = HitEnt.ACF.Area
+					local EntArmor      = HitEnt.ACF.Armour
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 					local AreaFraction  = Area / MaxSphere
 					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
@@ -164,7 +172,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						local BlastArea   = EntArea / ACF.Threshold * Feathering
 						local BlastEnergy = PowerFraction ^ 0.3 * BlastArea -- 0.3 was ACF.HEBlastPen
 						local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
-						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, HitEnt.ACF.Armour)
+						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
 
 						DmgInfo:SetType(DMG_BLAST)
 
@@ -179,7 +187,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 							local Loss    = BaseFragV * Distance / Radius
 							local FragVel = math.max(BaseFragV - Loss, 0) * 0.0254
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local FragDmg = Objects.DamageResult(FragArea, FragPen, HitEnt.ACF.Armour, nil, nil, Fragments)
+							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 
 							DmgInfo:SetType(DMG_BULLET)
 
@@ -188,15 +196,15 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						end
 					end
 
-					Damaged[HitEnt] = true -- This entity can no longer recieve damage from this explosion
+					Damaged[HitEnt] = true -- This entity can no longer receive damage from this explosion
 
 					local FragKill = FragResult and FragResult.Kill
 
 					if BlastResult.Kill or FragKill then
-						local Min = HitEnt:OBBMins()
-						local Max = HitEnt:OBBMaxs()
+						-- local Min = HitEnt:OBBMins()
+						-- local Max = HitEnt:OBBMaxs()
 
-						Debug.BoxAngles(HitEnt:GetPos(), Min, Max, HitEnt:GetAngles(), 15, Red) -- Red box on destroyed entities
+						-- Debug.BoxAngles(HitEnt:GetPos(), Min, Max, HitEnt:GetAngles(), 15, Red) -- Red box on destroyed entities
 
 						Filter[#Filter + 1] = HitEnt -- Filter from traces
 						Targets[HitEnt]     = nil -- Remove from list

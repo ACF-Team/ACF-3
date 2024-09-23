@@ -105,6 +105,8 @@ do -- Spawning and Updating
 		Plate.Owner     = Player -- MUST be stored on ent for PP
 		Plate.DataStore = Entities.GetArguments("acf_armor")
 
+		duplicator.ClearEntityModifier(Plate, "mass")
+
 		UpdatePlate(Plate, Data, Armor)
 
 		if Armor.OnSpawn then
@@ -112,14 +114,6 @@ do -- Spawning and Updating
 		end
 
 		hook.Run("ACF_OnEntitySpawn", "acf_armor", Plate, Data, Armor)
-
-		do -- Mass entity mod removal
-			local EntMods = Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		return Plate
 	end

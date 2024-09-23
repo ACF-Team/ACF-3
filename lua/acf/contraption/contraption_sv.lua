@@ -52,7 +52,7 @@ end
 function Contraption.GetAllPhysicalEntities(Ent, Tab)
 	local Res = Tab or {}
 
-	if ACF.Check(Ent) and not Res[Ent] then
+	if IsValid(Ent) and not Res[Ent] then
 		Res[Ent] = true
 
 		if Ent.Constraints then
@@ -77,7 +77,7 @@ function Contraption.GetAllChildren(Ent, Tab)
 	local Res = Tab or {}
 
 	for _, V in pairs(Ent:GetChildren()) do
-		if not ACF.Check(V) or Res[V] then continue end
+		if Res[V] or not IsValid(V) then continue end
 
 		Res[V] = true
 		Contraption.GetAllChildren(V, Res)
@@ -87,17 +87,23 @@ function Contraption.GetAllChildren(Ent, Tab)
 end
 
 function Contraption.GetEnts(Ent)
-	local Ancestor 	= Ent:GetAncestor()
-	local Phys 		= Contraption.GetAllPhysicalEntities(Ancestor)
-	local Pare 		= {}
+	local Con      = Ent:GetContraption()
+	local ConEnts  = Con and Con.ents or {[Ent] = true}
+	local Children = Ent:GetFamilyChildren()
+	local Phys     = {}
+	local Pare     = {}
 
-	for K in pairs(Phys) do
-		Contraption.GetAllChildren(K, Pare)
-	end
+	for K in pairs(ConEnts) do
+		if Children[K] then
+			Pare[K] = true
+		else
+			local CurFamily = K:GetFamily()
 
-	for K in pairs(Phys) do -- Go through the all physical ents (There's probably less of those than the parented ones)
-		if Pare[K] then -- Remove them from parented table
-			Pare[K] = nil
+			if CurFamily and CurFamily:GetRoot() ~= K then
+				Pare[K] = true
+			else
+				Phys[K] = true
+			end
 		end
 	end
 
@@ -117,7 +123,7 @@ function Contraption.HasConstraints(Ent)
 end
 
 function Contraption.CalcMassRatio(Ent, Tally)
-	local TotMass  = 0
+	local Con      = Ent:GetContraption()
 	local PhysMass = 0
 	local Time     = CurTime()
 
@@ -137,7 +143,6 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 		if not IsValid(Phys) then
 			Physical[K] = nil
-
 			OthN = OthN + 1
 		else
 			if Tally then
@@ -161,10 +166,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				PhysN = PhysN + 1
 			end
 
-
 			local Mass = Phys:GetMass()
-
-			TotMass  = TotMass + Mass
 			PhysMass = PhysMass + Mass
 		end
 	end
@@ -188,11 +190,10 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 				ParN = ParN + 1
 			end
-
-			TotMass = TotMass + Phys:GetMass()
-
 		end
 	end
+
+	local TotMass = Con and Con.totalMass or PhysMass
 
 	for K in pairs(Physical) do
 		K.acfphystotal      = PhysMass
@@ -209,7 +210,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	if Tally then
 		local Owner = Ent:CPPIGetOwner()
 
-		return Power, Fuel, PhysN, ParN, ConN, IsValid(Owner) and Owner:Name() or "Unknown", OthN
+		return Power, Fuel, PhysN, ParN, ConN, IsValid(Owner) and Owner:Name() or "Unknown", OthN, TotMass, PhysMass
 	end
 end
 

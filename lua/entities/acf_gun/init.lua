@@ -250,6 +250,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.TurretLink	= false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
 		WireLib.TriggerOutput(Entity, "Status", "Empty")
@@ -265,14 +267,6 @@ do -- Spawn and Update functions --------------------------------
 		hook.Run("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end
@@ -470,6 +464,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
+		local Effects   = Utilities.Effects
 		local TraceRes  = {} -- Output for traces
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
 
@@ -596,21 +591,23 @@ do -- Metamethods --------------------------------
 		function ENT:MuzzleEffect()
 			if not ACF.GunsCanSmoke then return end
 
-			local Effect = EffectData()
-				Effect:SetEntity(self)
-				Effect:SetScale(self.BulletData.PropMass)
-				Effect:SetMagnitude(self.ReloadTime)
+			local EffectTable = {
+				Entity    = self,
+				Scale     = self.BulletData.PropMass,
+				Magnitude = self.ReloadTime,
+			}
 
-			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
+			Effects.CreateEffect("ACF_Muzzle_Flash", EffectTable, true, true)
 		end
 
 		function ENT:ReloadEffect(Time)
-			local Effect = EffectData()
-				Effect:SetEntity(self)
-				Effect:SetScale(0)
-				Effect:SetMagnitude(Time)
+			local EffectTable = {
+				Entity = self,
+				Scale = 0,
+				Magnitude = Time,
+			}
 
-			util.Effect("ACF_Muzzle_Flash", Effect, true, true)
+			Effects.CreateEffect("ACF_Muzzle_Flash", EffectTable, true, true)
 		end
 
 		function ENT:Recoil()

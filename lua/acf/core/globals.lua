@@ -153,7 +153,7 @@ end
 if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
 
-	hook.Add("PlayerConnect", "ACF Workshop Content", function()
+	hook.Add("ACF_OnLoadPersistedData", "ACF Workshop Content", function()
 		if ACF.WorkshopContent then
 			resource.AddWorkshop("2183798463") -- Playermodel Seats
 			resource.AddWorkshop("3248769144") -- ACF-3 Base
@@ -164,8 +164,6 @@ if SERVER then
 			resource.AddWorkshop("2099387099") -- ACF-3 Removed Sounds
 			resource.AddWorkshop("2782407502") -- ACF-3 Removed Models
 		end
-
-		hook.Remove("PlayerConnect", "ACF Workshop Content")
 	end)
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)

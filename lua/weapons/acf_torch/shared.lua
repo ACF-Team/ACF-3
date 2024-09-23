@@ -4,7 +4,7 @@ AddCSLuaFile("shared.lua")
 local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
 local Sounds  = ACF.Utilities.Sounds
-local Network = ACF.Networking
+local Effects = ACF.Utilities.Effects
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
@@ -244,11 +244,13 @@ function SWEP:PrimaryAttack()
 		Entity:SetHealth(Health)
 
 		local AngPos = Owner:GetAttachment(4)
-		local Effect = EffectData()
-			Effect:SetOrigin(AngPos.Pos + Trace.Normal * 10)
-			Effect:SetNormal(Trace.Normal)
-			Effect:SetEntity(self)
-		util.Effect("thruster_ring", Effect, true, true)
+		local EffectTable = {
+			Origin = AngPos.Pos + Trace.Normal * 10,
+			Normal = Trace.Normal,
+			Entity = self,
+		}
+
+		Effects.CreateEffect("thruster_ring", EffectTable, true, true)
 
 		-- Sound ratelimiting
 		local Time = CurTime()
@@ -273,7 +275,7 @@ function SWEP:PrimaryAttack()
 		Entity.ACF.Health = Health
 		Entity.ACF.Armour = Armor
 
-		Network.Broadcast("ACF_Damage", Entity) -- purely to update the damage material on props
+		Damage.Network(Entity, _, Health, MaxHealth) -- purely to update the damage material on props
 
 		if Entity.ACF_OnRepaired then
 			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
@@ -324,11 +326,13 @@ function SWEP:SecondaryAttack()
 		damageInfo:SetDamagePosition(Trace.HitPos)
 		Entity:TakeDamageInfo(damageInfo)
 
-		local effect = EffectData()
-			effect:SetOrigin(Trace.HitPos)
-			effect:SetNormal(Trace.Normal)
-			effect:SetEntity(self)
-		util.Effect("BloodImpact", effect, true, true)
+		local EffectTable = {
+			Origin = Trace.HitPos,
+			Normal = Trace.Normal,
+			Entity = self,
+		}
+
+		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
 	else
 		local DmgResult = self.DamageResult
 		local DmgInfo   = self.DamageInfo
@@ -347,14 +351,15 @@ function SWEP:SecondaryAttack()
 		if HitRes.Kill then
 			ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
 		else
-			local Effect = EffectData()
-			Effect:SetMagnitude(1)
-			Effect:SetRadius(1)
-			Effect:SetScale(1)
-			Effect:SetStart(HitPos)
-			Effect:SetOrigin(HitPos)
+			local EffectTable = {
+				Magnitude = 1,
+				Radius = 1,
+				Scale = 1,
+				Start = HitPos,
+				Origin = HitPos,
+			}
 
-			util.Effect("Sparks", Effect, true, true)
+			Effects.CreateEffect("Sparks", EffectTable, true, true)
 
 			-- Sound ratelimiting
 			local Time = CurTime()

@@ -387,6 +387,8 @@ do -- Spawn and Update functions
 		Entity.DataStore     = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateEngine(Entity, Data, Class, Engine, Type)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
@@ -398,14 +400,6 @@ do -- Spawn and Update functions
 		hook.Run("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		ACF.CheckLegal(Entity)
 
@@ -652,31 +646,22 @@ end
 
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
-	local PhysMass 	= 0
-	local TotalMass = 0
-	local Physical, Parented = Contraption.GetEnts(self)
+	SelfTbl        = SelfTbl or self:GetTable()
+	local Con      = self:GetContraption()
+	local PhysMass = 0
+
+	local Physical = Contraption.GetEnts(self)
 
 	for K in pairs(Physical) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
 
 		if IsValid(Phys) then
 			local Mass = Phys:GetMass()
-
-			TotalMass = TotalMass + Mass
-			PhysMass  = PhysMass + Mass
+			PhysMass   = PhysMass + Mass
 		end
 	end
 
-	for K in pairs(Parented) do
-		if not Physical[K] then
-			local Phys = K:GetPhysicsObject()
-
-			if IsValid(Phys) then
-				TotalMass = TotalMass + Phys:GetMass()
-			end
-		end
-	end
+	local TotalMass = Con and Con.totalMass or PhysMass
 
 	SelfTbl.MassRatio = PhysMass / TotalMass
 	TotalMass = Round(TotalMass, 2)

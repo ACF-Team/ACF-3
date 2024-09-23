@@ -1,11 +1,12 @@
 local ACF     = ACF
-local Refills = {}
-
-ACF.Utilities.Effects.Refills = Refills
+local Effects = ACF.Utilities.Effects
 
 do -- Resupply effect (applies to ammo and fuel)
 	local render   = render
 	local Distance = ACF.RefillDistance
+
+	local Refills = {}
+	Effects.Refills = Refills
 
 	local function DrawSpheres(bDrawingDepth, _, isDraw3DSkybox)
 		if bDrawingDepth or isDraw3DSkybox then return end
