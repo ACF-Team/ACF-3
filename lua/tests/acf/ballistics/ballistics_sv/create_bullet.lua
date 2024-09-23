@@ -19,7 +19,7 @@ return {
 
     afterEach = function()
         table.Empty( ACF.Ballistics.Bullets )
-        hook.Remove( "ACF_OnClock", "ACF Iterate Bullets" )
+        hook.Remove( "ACF_OnTick", "ACF Iterate Bullets" )
     end,
 
     afterAll = function( State )

@@ -256,6 +256,7 @@ do -- Spawn and Update functions
 		local Feedback = ""
 
 		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -340,7 +341,9 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
-		if HookRun("ACF_FuelExplode", self) == false then return HitRes end
+		local CanExplode = HookRun("ACF_FuelCanExplode", self)
+
+		if not CanExplode then return HitRes end
 
 		local Inflictor = DmgInfo:GetInflictor()
 
@@ -358,7 +361,9 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	-- It's gonna blow
 	if math.random() < (ExplodeChance + Ratio) then
-		if HookRun("ACF_FuelExplode", self) == false then return HitRes end
+		local CanExplode = HookRun("ACF_FuelCanExplode", self)
+
+		if not CanExplode then return HitRes end
 
 		self.Inflictor = Inflictor
 
@@ -544,10 +549,13 @@ do
 			local Position  = self:GetPos()
 
 			for Tank in pairs(ACF.FuelTanks) do
-				if CanRefuel(self, Tank, Position:DistToSqr(Tank:GetPos())) then
-					local Exchange = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+				local Distance = Position:DistToSqr(Tank:GetPos())
 
-					if HookRun("ACF_CanRefuel", self, Tank, Exchange) == false then continue end
+				if CanRefuel(self, Tank, Distance) then
+					local Exchange  = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
+					local CanRefill = hook.Run("ACF_FuelCanRefill", self, Tank, Exchange)
+
+					if not CanRefill then continue end
 
 					self:Consume(Exchange)
 					Tank:Consume(-Exchange)

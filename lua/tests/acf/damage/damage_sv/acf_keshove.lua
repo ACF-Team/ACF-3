@@ -52,7 +52,7 @@ return {
         {
             name = "Does not shove the entity if ACF_KEShove hook returns false",
             func = function( State )
-                hook.Add( "ACF_KEShove", "Test", function() return false end )
+                hook.Add( "ACF_OnPushEntity", "Test", function() return false end )
                 local Ent = State.Ent
 
                 ACF.KEShove( Ent, Ones, Ones, 1 )
@@ -61,7 +61,7 @@ return {
             end,
 
             cleanup = function()
-                hook.Remove( "ACF_KEShove", "Test" )
+                hook.Remove( "ACF_OnPushEntity", "Test" )
             end
         },
 

@@ -43,7 +43,7 @@ do -- Pointer entity creation
 		hook.Remove("InitPostEntity", "ACF_ModelData")
 	end)
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
+	hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(Player)
 		Network.Send("ACF_ModelData_Entity", Player, ModelData.Entity)
 	end)
 
