@@ -200,7 +200,7 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
-	if hook.Run("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+	if not hook.Run("ACF_OnFilterBullet", Entity, Bullet) then return false end
 
 	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
 
@@ -278,7 +278,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		else
 			local Entity = traceRes.Entity
 
-			if Ballistics.TestFilter(Entity, Bullet) == false then
+			if not Ballistics.TestFilter(Entity, Bullet) then
 				table.insert(Bullet.Filter, Entity)
 				Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter, important incase something is embedded in something that shouldn't be hit
 

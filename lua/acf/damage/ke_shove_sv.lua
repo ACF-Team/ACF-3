@@ -8,7 +8,7 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 	if not IsValid(Target) then return end
 	if Target.ACF_Killed then return end
 
-	if hook.Run("ACF_OnPushEntity", Target, Pos, Vec, KE) == false then return end
+	if not hook.Run("ACF_OnPushEntity", Target, Pos, Vec, KE) then return end
 
 	local Ancestor = Target:GetAncestor()
 	local Phys = Ancestor:GetPhysicsObject()
