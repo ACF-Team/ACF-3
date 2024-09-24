@@ -4,7 +4,7 @@ local Turrets	= ACF.Classes.Turrets
 local function CreateMenu(Menu)
 	local Entries = Turrets.GetEntries()
 
-	ACF.SetToolMode("acf_menu", "Spawner", "Component")
+	ACF.SetToolMode("acf_menu", "Spawner", "Turret")
 
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -31,6 +31,7 @@ local function CreateMenu(Menu)
 
 		ClassDesc:SetText(Data.Description or "No description provided.")
 
+		ACF.SetToolMode("acf_menu", "Spawner", Data.ID)
 		ACF.LoadSortedList(ComponentClass, Data.Items, "Name")
 	end
 
