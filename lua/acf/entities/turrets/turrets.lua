@@ -495,13 +495,13 @@ do	-- Turret computers
 
 			ComputerInfo	= {
 				ThinkTime		= 0.03, 	-- Speed of the actual think time
-				MaxThinkTime	= 4,		-- Maximum time to spend on a simulation
+				MaxThinkTime	= 6,		-- Maximum time to spend on a simulation
 				DeltaTime		= 0.2,		-- Simulation speed (affects calculations directly, higher numbers mean the simulation runs faster but will be less accurate)
 				CalcError		= 0.25,		-- Lee-way in units per 100u of lateral distance
 				HighArc			= false,	-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= true,		-- Will constantly run as long as Calculate is 1
 				Bulk			= 8,		-- Number of calculations to perform per tick
-				Delay			= 0.2		-- Time after finishing before another calculation can run
+				Delay			= 0.1		-- Time after finishing before another calculation can run
 			},
 		})
 
@@ -524,7 +524,7 @@ do	-- Turret computers
 				HighArc			= true,		-- Starts with simulation pointed directly at target if false, otherwise starts pointing up and moves down
 				Constant		= false,
 				Bulk			= 10,		-- Number of calculations to perform per tick
-				Delay			= 1,		-- Time after finishing before another calculation can run
+				Delay			= 0.1,		-- Time after finishing before another calculation can run
 			},
 		})
 	end
