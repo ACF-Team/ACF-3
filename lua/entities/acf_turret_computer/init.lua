@@ -512,7 +512,7 @@ do	-- Metamethods and other important stuff
 					Debug.Cross(Sim.StartPos + Sim.NextPos, 15, 8, Color(0, 255, 0), true)
 
 					return self:AdjustSimulation()
-				elseif Dir:Dot((Point - Sim.NextPos):GetNormalized()) < 0 then
+				elseif Dir:Dot((Point - Sim.Pos):GetNormalized()) < 0 then
 					Debug.Cross(Sim.StartPos + Sim.Pos, 30, 8, Color(255, 0, 0), true)
 
 					return self:AdjustSimulation()
