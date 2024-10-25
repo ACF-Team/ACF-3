@@ -57,7 +57,9 @@ function Ballistics.RemoveBullet(Bullet)
 end
 
 function Ballistics.CalcBulletFlight(Bullet)
-	if Bullet.KillTime and Clock.CurTime > Bullet.KillTime then
+	local ClockTime = Clock.CurTime
+
+	if Bullet.KillTime and ClockTime > Bullet.KillTime then
 		return Ballistics.RemoveBullet(Bullet)
 	end
 
@@ -65,14 +67,15 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PreCalcFlight()
 	end
 
-	local DeltaTime  = Clock.CurTime - Bullet.LastThink
-	local Drag       = Bullet.Flight:GetNormalized() * (Bullet.DragCoef * Bullet.Flight:LengthSqr()) / ACF.DragDiv
+	local DeltaTime  = ClockTime - Bullet.LastThink
+	local Flight     = Bullet.Flight
+	local Drag       = Flight:GetNormalized() * (Bullet.DragCoef * Flight:LengthSqr()) / ACF.DragDiv
 	local Accel      = Bullet.Accel or ACF.Gravity
 	local Correction = 0.5 * (Accel - Drag) * DeltaTime
 
-	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Bullet.Flight + Correction)
-	Bullet.Flight    = Bullet.Flight + (Accel - Drag) * DeltaTime
-	Bullet.LastThink = Clock.CurTime
+	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Flight + Correction)
+	Bullet.Flight    = Flight + (Accel - Drag) * DeltaTime
+	Bullet.LastThink = ClockTime
 	Bullet.DeltaTime = DeltaTime
 
 	Ballistics.DoBulletsFlight(Bullet)
@@ -278,7 +281,9 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 			if Ballistics.TestFilter(Entity, Bullet) == false then
 				table.insert(Bullet.Filter, Entity)
-				Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter, important incase something is embedded in something that shouldn't be hit
+				timer.Simple(0, function()
+					Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter; important in case something is embedded in something that shouldn't be hit
+				end)
 
 				return
 			end
