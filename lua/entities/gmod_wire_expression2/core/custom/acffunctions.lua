@@ -348,13 +348,13 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 		return 0
 	end
 
-	local Sucess, Message = this:Link(Target,true)
+	local Success, Message = this:Link(Target, true)
 
 	if Notify ~= 0 then
-		ACF.SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Success, Message)
 	end
 
-	return Sucess and 1 or 0
+	return Success and 1 or 0
 end
 
 --allows e2 to perform ACF unlinks
@@ -377,13 +377,13 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 		return 0
 	end
 
-	local Sucess, Message = this:Unlink(Target)
+	local Success, Message = this:Unlink(Target)
 
 	if Notify > 0 then
-		ACF.SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Success, Message)
 	end
 
-	return Sucess and 1 or 0
+	return Success and 1 or 0
 end
 
 --===============================================================================================--

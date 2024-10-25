@@ -2,6 +2,7 @@
 
 -- Local Vars -----------------------------------
 local ACF          = ACF
+local Contraption  = ACF.Contraption
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
@@ -147,23 +148,21 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
 
 			if Mass ~= Entity.ACF.Mass then
-				Entity.ACF.Mass = Mass
-				PhysObj:SetMass(Mass)
+				Contraption.SetMass(Entity, Mass)
 			end
 
 			return Thickness
 		end
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })
+		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Thickness, Ductility = Ductility * 100 })
 	end
 
 	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
 	local Armor = ACF.CalcArmor(Area, Ductility, Mass)
 
 	if Mass ~= Entity.ACF.Mass then
-		Entity.ACF.Mass = Mass
-		PhysObj:SetMass(Mass)
+		Contraption.SetMass(Entity, Mass)
 
 		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
 	end
