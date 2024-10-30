@@ -52,9 +52,9 @@ end
 do
 	local EntMeta = FindMetaTable("Entity")
 
-	function ENT:PhysicsInit(Solid, Bypass, ...)
+	function ENT:PhysicsInit(Solid, MassCenter, Bypass, ...)
 		if Bypass then
-			return EntMeta.PhysicsInit(self, Solid, Bypass, ...)
+			return EntMeta.PhysicsInit(self, Solid, MassCenter, Bypass, ...)
 		end
 
 		local Init = self.FirstInit

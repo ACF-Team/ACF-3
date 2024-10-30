@@ -111,18 +111,15 @@ do -- Spawn and Update functions
 	local function UpdateFuelTank(Entity, Data, Class, FuelTank, FuelType)
 		-- If updating, keep the same fuel level
 		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
+		local Material = Class.Material or FuelTank and FuelTank.Model
 
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank and FuelTank.Model or Class.Model -- Must be set before changing model
 		Entity.ClassData = Class
 
-		if Class.IsScalable then
-			Entity:SetSize(Data.Size)
-		else
-			Contraption.SetModel(Entity, Entity.ACF.Model)
-			Entity:PhysicsInit(SOLID_VPHYSICS, true)
-			Entity:SetMoveType(MOVETYPE_VPHYSICS)
-		end
+		Entity:SetScaledModel(Entity.ACF.Model)
+		Entity:SetSize(Class.IsScalable and Data.Size or Entity:GetOriginalSize())
+		Entity:SetMaterial(Material or "")
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -593,7 +590,14 @@ function ENT:OnResized(Size)
 	do -- Calculate new empty mass
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 		local Class = self.ClassData
-		local _, Area = Class.CalcVolume(Size, Wall)
+		local _, Area
+
+		if Class.CalcVolume then
+			_, Area = Class.CalcVolume(Size, Wall)
+		else -- Default to finding surface area/volume based off physics object instead
+			local PhysObj = self:GetPhysicsObject()
+			Area = PhysObj:GetSurfaceArea()
+		end
 
 		local Mass = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 
