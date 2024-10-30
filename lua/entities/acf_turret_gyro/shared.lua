@@ -6,4 +6,4 @@ ENT.PluralName    	= "ACF Turret Gyros"
 ENT.IsACFEntity   	= true
 ENT.IsACFGyro		= true
 
-cleanup.Register("_acf_turret_gyro")
+cleanup.Register("acf_turret_gyro")
