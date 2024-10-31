@@ -31,8 +31,8 @@ end
 --- @param NewHealth? number The entity's new amount of health.
 --- @param MaxHealth? number The entity's maximum amount of health.
 function Damage.Network(Entity, Target, NewHealth, MaxHealth)
-	NewHealth = NewHealth or Entity.ACF.NewHealth
-	MaxHealth = MaxHealth or Entity.ACF.MaxHealth
+	NewHealth = NewHealth or Entity.ACF.NewHealth or 0
+	MaxHealth = MaxHealth or Entity.ACF.MaxHealth or 0
 
 	local Value = math.Round(NewHealth / MaxHealth, 2)
 
