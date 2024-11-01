@@ -35,7 +35,7 @@ local function CreateMenu(Menu)
 		local Link = Base:AddButton("Report an Issue")
 
 		function Link:DoClickInternal()
-			gui.OpenURL("https://github.com/Stooberton/ACF-3/issues/new/choose")
+			gui.OpenURL("https://github.com/ACF-Team/ACF-3/issues/new/choose")
 		end
 	end
 
@@ -47,7 +47,7 @@ local function CreateMenu(Menu)
 		local Link = Base:AddButton("Contributing to ACF")
 
 		function Link:DoClickInternal()
-			gui.OpenURL("https://github.com/Stooberton/ACF-3/blob/master/CONTRIBUTING.md")
+			gui.OpenURL("https://github.com/ACF-Team/ACF-3/blob/master/CONTRIBUTING.md")
 		end
 	end
 end
