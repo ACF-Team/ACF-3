@@ -416,6 +416,7 @@ e2function number entity:acfMaxPower()
 	return this.PeakPower and math.Round(this.PeakPower) or 0
 end
 
+[deprecated = "Use acfMaxTorque instead"]
 e2function number entity:acfMaxTorqueWithFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
@@ -424,6 +425,7 @@ e2function number entity:acfMaxTorqueWithFuel()
 	return this.PeakTorque
 end
 
+[deprecated = "Use acfMaxPower instead"]
 e2function number entity:acfMaxPowerWithFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end

@@ -1189,7 +1189,7 @@ if SERVER then
 		return This.PeakPower and math.Round(This.PeakPower) or 0
 	end
 
-	--- (DEPRECATED) Returns the torque in N⋅m of an ACF engine. Use Entity:acfMaxTorque()
+	--- Deprecated. Returns the torque in N⋅m of an ACF engine. Use Entity:acfMaxTorque() instead.
 	-- @server
 	-- @return number The torque in N⋅m
 	function ents_methods:acfMaxTorqueWithFuel()
@@ -1203,7 +1203,7 @@ if SERVER then
 		return This.PeakTorque or 0
 	end
 
-	--- (DEPRECATED) Returns the power in kW of an ACF engine. Use Entity:acfMaxPower()
+	--- Deprecated. Returns the power in kW of an ACF engine. Use Entity:acfMaxPower() instead.
 	-- @server
 	-- @return number The power in kW
 	function ents_methods:acfMaxPowerWithFuel()
