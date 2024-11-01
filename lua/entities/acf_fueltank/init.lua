@@ -484,19 +484,21 @@ function ENT:Consume(Amount, SelfTbl)
 	local Fuel = Clamp(SelfTbl.Fuel - Amount, 0, SelfTbl.Capacity)
 	SelfTbl.Fuel = Fuel
 
-	self:UpdateOverlay()
-	self:UpdateMass(_, SelfTbl)
-
 	Fuel = Round(Fuel, 2)
 	local Activated = self:CanConsume(SelfTbl) and 1 or 0
 
 	if SelfTbl.LastFuel ~= Fuel then
 		SelfTbl.LastFuel = Fuel
 		WireLib.TriggerOutput(self, "Fuel", Fuel)
+
+		self:UpdateOverlay()
+		self:UpdateMass(_, SelfTbl)
 	end
 	if SelfTbl.LastActivated ~= Activated then
 		SelfTbl.LastActivated = Activated
 		WireLib.TriggerOutput(self, "Activated", Activated)
+
+		self:UpdateOverlay()
 	end
 end
 
@@ -568,6 +570,7 @@ do
 		return true
 	end
 end
+
 function ENT:OnRemove()
 	local Class = self.ClassData
 

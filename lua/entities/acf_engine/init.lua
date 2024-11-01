@@ -4,7 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
-local Mobility	  = ACF.Mobility
+local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
@@ -67,7 +67,7 @@ do
 
 		local Rope
 
-		if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
+		if tobool(Engine:CPPIGetOwner():GetInfoNum("ACF_MobilityRopeLinks", 1)) then
 			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
 		end
 
@@ -77,11 +77,11 @@ do
 		Link:SetTargetPos(Target.In)
 		Link:SetAxis(Direction)
 
-		Link.Rope	= Rope
-		Link.RopeLen	= (OutPos - InPos):Length()
+		Link.Rope    = Rope
+		Link.RopeLen = (OutPos - InPos):Length()
 
 		Engine.Gearboxes[Target] = Link
-		Target.Engines[Engine]	 = true
+		Target.Engines[Engine]   = true
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -111,6 +111,7 @@ do
 		return true, "Engine unlinked successfully!"
 	end)
 end
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -531,8 +532,6 @@ function ENT:Disable()
 end
 
 function ENT:UpdateOutputs(SelfTbl)
-	if not IsValid(self) then return end
-
 	SelfTbl = SelfTbl or self:GetTable()
 	local FuelUsage = Round(SelfTbl.FuelUsage)
 	local Torque    = SelfTbl.Torque
@@ -686,7 +685,7 @@ end
 function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	FuelTank = FuelTank or SelfTbl.FuelTank
-	if not IsValid(FuelTank) then return 0 end
+	if not FuelTank and not IsValid(FuelTank) then return 0 end
 
 	if SelfTbl.FuelType == "Electric" then
 		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
