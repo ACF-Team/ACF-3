@@ -71,42 +71,66 @@ Sounds.acf_engine = {
 }
 
 Sounds.acf_gearbox = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath }
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent.SoundPath,
+			Pitch  = Ent.SoundPitch,
+			Volume = Ent.SoundVolume,
+		}
 	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
+	SetSound = function(Ent, SoundData)
+		Ent.SoundPath   = SoundData.Sound
+		Ent.SoundPitch  = SoundData.Pitch
+		Ent.SoundVolume = SoundData.Volume
 	end,
-	ResetSound = function(ent)
-		ent.SoundPath = ent.DefaultSound
+	ResetSound = function(Ent)
+		Ent.SoundPath   = Ent.DefaultSound
+		Ent.SoundPitch  = nil
+		Ent.SoundVolume = nil
 	end
 }
 
 Sounds.acf_piledriver = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath or "" }
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent.SoundPath or "",
+			Pitch  = Ent.SoundPitch or 1,
+			Volume = Ent.SoundVolume or 0.5,
+		}
 	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
+	SetSound = function(Ent, SoundData)
+		Ent.SoundPath   = SoundData.Sound
+		Ent.SoundPitch  = SoundData.Pitch
+		Ent.SoundVolume = SoundData.Volume
 	end,
-	ResetSound = function(ent)
-		ent.SoundPath = nil
+	ResetSound = function(Ent)
+		Ent.SoundPath   = nil
+		Ent.SoundPitch  = nil
+		Ent.SoundVolume = nil
 	end
 }
 
 Sounds.acf_turret_motor = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath or ent.DefaultSound }
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent.SoundPath or Ent.DefaultSound,
+			Pitch  = Ent.SoundPitch or 0.7,
+			Volume = Ent.SoundVolume or 0.1,
+		}
 	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
+	SetSound = function(Ent, SoundData)
+		Ent.SoundPath   = SoundData.Sound
+		Ent.SoundPitch  = SoundData.Pitch
+		Ent.SoundVolume = SoundData.Volume
 
-		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
+		if IsValid(Ent.Turret) then Ent.Turret:UpdateSound() end
 	end,
-	ResetSound = function(ent)
-		ent.SoundPath = ent.DefaultSound
+	ResetSound = function(Ent)
+		Ent.SoundPath   = Ent.DefaultSound
+		Ent.SoundPitch  = nil
+		Ent.SoundVolume = nil
 
-		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
+		if IsValid(Ent.Turret) then Ent.Turret:UpdateSound() end
 	end
 }
 
@@ -288,9 +312,6 @@ if CLIENT then
 
 		panel:NumSlider("#tool.acfsound.volume", "acfsound_volume", 0.1, 2, 2)
 		panel:NumSlider("#tool.acfsound.pitch", "acfsound_pitch", 0.1, 2, 2)
-
-		local SettingsHelp = panel:ControlHelp("#tool.acfsound.settings_help")
-		SettingsHelp:SetFont("ACF_Control")
 	end
 
 	--[[
