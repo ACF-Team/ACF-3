@@ -23,7 +23,7 @@ local function SendMessages()
 		local Compressed = Compress(ToJSON(Messages))
 
 		net.Start("ACF_Networking")
-			net.WriteUInt(#Compressed, 16)
+			net.WriteUInt(#Compressed, 12)
 			net.WriteData(Compressed)
 		net.SendToServer()
 
@@ -52,7 +52,7 @@ function Network.Send(Name, ...)
 end
 
 net.Receive("ACF_Networking", function(Bits)
-	local Bytes   = net.ReadUInt(16)
+	local Bytes   = net.ReadUInt(12)
 	local String  = Decompress(net.ReadData(Bytes))
 	local Message = ToTable(String)
 
