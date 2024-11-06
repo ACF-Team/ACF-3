@@ -685,7 +685,7 @@ end
 function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	FuelTank = FuelTank or SelfTbl.FuelTank
-	if not FuelTank and not IsValid(FuelTank) then return 0 end
+	if not IsValid(FuelTank) then return 0 end
 
 	if SelfTbl.FuelType == "Electric" then
 		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
