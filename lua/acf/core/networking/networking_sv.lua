@@ -90,7 +90,7 @@ end
 net.Receive("ACF_Networking", function(_, Player)
 	local Bytes   = net.ReadUInt(12)
 	-- This decompression limit should only be as high as it absolutely needs to be
-	local String  = Decompress(net.ReadData(Bytes), 256)
+	local String  = Decompress(net.ReadData(Bytes), 1024)
 	if not String then return end
 
 	local Message = ToTable(String)
