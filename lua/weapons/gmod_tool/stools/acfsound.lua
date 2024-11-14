@@ -12,103 +12,7 @@ TOOL.Information = {
 	{ name = "info" }
 }
 
-ACF.SoundToolSupport = ACF.SoundToolSupport or {}
-
-local Sounds   = ACF.SoundToolSupport
-
-Sounds.acf_gun = {
-	GetSound = function(ent)
-		return {
-			Sound  = ent.SoundPath,
-			Pitch  = ent.SoundPitch,
-			Volume = ent.SoundVolume
-		}
-	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath   = soundData.Sound
-		ent.SoundPitch  = soundData.Pitch
-		ent.SoundVolume = soundData.Volume
-
-		ent:SetNWString("Sound", soundData.Sound)
-		ent:SetNWFloat("SoundPitch", soundData.Pitch)
-		ent:SetNWFloat("SoundVolume", soundData.Volume)
-	end,
-	ResetSound = function(ent)
-		ent.SoundPath   = ent.DefaultSound
-		ent.SoundPitch  = 1
-		ent.SoundVolume = 1
-
-		ent:SetNWString("Sound", ent.DefaultSound)
-		ent:SetNWFloat("SoundPitch", 1)
-		ent:SetNWFloat("SoundVolume", 1)
-	end
-}
-
-Sounds.acf_engine = {
-	GetSound = function(ent)
-		return {
-			Sound  = ent.SoundPath,
-			Pitch  = ent.SoundPitch,
-			Volume = ent.SoundVolume
-		}
-	end,
-	SetSound = function(ent, soundData)
-		local Sound = soundData.Sound:Trim():lower()
-
-		ent.SoundPath   = Sound
-		ent.SoundPitch  = soundData.Pitch
-		ent.SoundVolume = soundData.Volume
-
-		ent:UpdateSound()
-	end,
-	ResetSound = function(ent)
-		ent.SoundPath   = ent.DefaultSound
-		ent.SoundPitch  = 1
-		ent.SoundVolume = 1
-
-		ent:UpdateSound()
-	end
-}
-
-Sounds.acf_gearbox = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath }
-	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
-	end,
-	ResetSound = function(ent)
-		ent.SoundPath = ent.DefaultSound
-	end
-}
-
-Sounds.acf_piledriver = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath or "" }
-	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
-	end,
-	ResetSound = function(ent)
-		ent.SoundPath = nil
-	end
-}
-
-Sounds.acf_turret_motor = {
-	GetSound = function(ent)
-		return { Sound = ent.SoundPath or ent.DefaultSound }
-	end,
-	SetSound = function(ent, soundData)
-		ent.SoundPath = soundData.Sound
-
-		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
-	end,
-	ResetSound = function(ent)
-		ent.SoundPath = ent.DefaultSound
-
-		if IsValid(ent.Turret) then ent.Turret:UpdateSound() end
-	end
-}
+local Sounds = ACF.SoundToolSupport
 
 local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
@@ -288,9 +192,6 @@ if CLIENT then
 
 		panel:NumSlider("#tool.acfsound.volume", "acfsound_volume", 0.1, 2, 2)
 		panel:NumSlider("#tool.acfsound.pitch", "acfsound_pitch", 0.1, 2, 2)
-
-		local SettingsHelp = panel:ControlHelp("#tool.acfsound.settings_help")
-		SettingsHelp:SetFont("ACF_Control")
 	end
 
 	--[[

@@ -7,7 +7,7 @@ local function CreateMenu(Menu)
 	local Wiki = Menu:AddButton("Open the Wiki")
 
 	function Wiki:DoClickInternal()
-		gui.OpenURL("https://github.com/Stooberton/ACF-3/wiki")
+		gui.OpenURL("https://github.com/ACF-Team/ACF-3/wiki")
 	end
 
 	Menu:AddHelp("The wiki is still a work in progress, it'll get populated as time passes.")

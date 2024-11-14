@@ -2,12 +2,20 @@ return {
     groupName = "ACF.Activate",
 
     beforeEach = function( State )
-        local PhysObj = { IsValid = function() return true end }
+        local PhysObj = {
+            IsValid = function() return true end,
+            GetSurfaceArea = function() return 1 end,
+        }
 
         State.Ent = {
             ACF = {},
-            GetPhysicsObject = function() return PhysObj end
+            GetPhysicsObject = function() return PhysObj end,
+            GetTable = function() return State.Ent end,
         }
+
+        stub( ACF.Contraption, "SetMass" ).with( function( e, mass )
+            e.ACF.Mass = mass
+        end )
     end,
 
     cases = {

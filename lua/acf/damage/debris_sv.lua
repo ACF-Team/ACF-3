@@ -7,10 +7,16 @@ local Queue       = {}
 
 local function SendQueue()
 	for Entity, Data in pairs(Queue) do
-		local JSON = util.TableToJSON(Data)
-
 		net.Start("ACF_Debris")
-			net.WriteString(JSON)
+
+		net.WriteUInt(Data.ID, 13)
+		net.WriteInt(Data.Normal.x * 100, 8)
+		net.WriteInt(Data.Normal.y * 100, 8)
+		net.WriteInt(Data.Normal.z * 100, 8)
+		net.WriteUInt(Data.Power, 16)
+		net.WriteBool(Data.CanGib)
+		net.WriteBool(Data.Ignite)
+
 		net.SendPVS(Data.Position)
 
 		Queue[Entity] = nil
@@ -21,19 +27,13 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	if not ACF.GetServerBool("CreateDebris") then return end
 	if Queue[Entity] then return end
 
-	local Current = Entity:GetColor()
-	local New     = Vector(Current.r, Current.g, Current.b) * math.Rand(0.3, 0.6)
-
 	if not next(Queue) then
 		timer.Create("ACF_DebrisQueue", 0, 1, SendQueue)
 	end
 
 	Queue[Entity] = {
+		ID       = Entity:EntIndex(),
 		Position = Entity:GetPos(),
-		Angles   = Entity:GetAngles(),
-		Material = Entity:GetMaterial(),
-		Model    = Entity:GetModel(),
-		Color    = Color(New.x, New.y, New.z, Current.a),
 		Normal   = Normal,
 		Power    = Power,
 		CanGib   = CanGib or nil,

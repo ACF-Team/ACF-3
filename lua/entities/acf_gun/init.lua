@@ -251,6 +251,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.TurretLink	= false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
 		WireLib.TriggerOutput(Entity, "Status", "Empty")
@@ -266,14 +268,6 @@ do -- Spawn and Update functions --------------------------------
 		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end

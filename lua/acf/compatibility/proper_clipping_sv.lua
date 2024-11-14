@@ -1,5 +1,6 @@
-local hook = hook
-local ACF  = ACF
+local duplicator = duplicator
+local hook       = hook
+local ACF        = ACF
 
 do -- Triggers an ACF.Activate update whenever a new physical clip is created or removed
 	local timer = timer
@@ -7,12 +8,21 @@ do -- Triggers an ACF.Activate update whenever a new physical clip is created or
 	local function Update(Entity)
 		if Entity._ACF_Physclip_Update then return end
 
+		local EntMods = Entity.EntityMods
+
 		Entity._ACF_Physclip_Update = true
+		Entity._ACF_HasMassEntmod   = EntMods and EntMods.mass
 
 		timer.Simple(0, function()
 			if not IsValid(Entity) then return end
 
 			Entity._ACF_Physclip_Update = nil
+
+			if not Entity._ACF_HasMassEntmod then
+				duplicator.ClearEntityModifier(Entity, "mass")
+			else
+				Entity._ACF_HasMassEntmod = nil
+			end
 
 			ACF.Activate(Entity, true)
 		end)
@@ -23,8 +33,6 @@ do -- Triggers an ACF.Activate update whenever a new physical clip is created or
 end
 
 do -- Forces an ACF armored entity to get rid of their mass entity modifier and use the ACF_Armor one instead
-	local duplicator = duplicator
-
 	local function UpdateMass(Entity)
 		local EntMods = Entity.EntityMods
 

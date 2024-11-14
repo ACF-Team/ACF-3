@@ -6,8 +6,8 @@ DEFINE_BASECLASS("acf_base_scalable")
 
 include("shared.lua")
 
-language.Add("Cleanup__acf_turret", "ACF Turrets")
-language.Add("Cleanup__acf_turret", "Cleaned up all ACF turrets!")
+language.Add("Cleanup_acf_turret", "ACF Turrets")
+language.Add("Cleaned_acf_turret", "Cleaned up all ACF turrets!")
 language.Add("SBoxLimit__acf_turret", "You've reached the ACF turrets limit!")
 
 do	-- NET SURFER
@@ -84,25 +84,29 @@ do	-- Turret drive drawing
 
 	function ENT:Draw()
 		-- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
-		local looked_at = self:BeingLookedAtByLocalPlayer()
+		local LookedAt = self:BeingLookedAtByLocalPlayer()
 
-		if looked_at then
+		if LookedAt then
 			self:DrawEntityOutline()
 		end
 
 		local Rotator = self:GetNWEntity("ACF.Rotator")
+		local RenderMatrix = self.Matrix
 
-		if IsValid(Rotator) and self.Matrix then
-			self.Matrix:SetAngles(self:WorldToLocalAngles(Rotator:GetAngles()))
-			self:EnableMatrix("RenderMultiply", self.Matrix)
+		if IsValid(Rotator) and RenderMatrix then
+			RenderMatrix:SetAngles(self:WorldToLocalAngles(Rotator:GetAngles()))
+			self:EnableMatrix("RenderMultiply", RenderMatrix)
 		end
 
 		self:DrawModel()
 
-		if looked_at and not HideInfo() then
+		if LookedAt and not HideInfo() then
+			local LocalPly = LocalPlayer()
+			local Weapon = LocalPly:GetActiveWeapon()
+
 			self:AddWorldTip()
 
-			if (not LocalPlayer():InVehicle()) and (IsValid(LocalPlayer():GetActiveWeapon()) and LocalPlayer():GetActiveWeapon():GetClass() == "weapon_physgun") then
+			if (not LocalPly:InVehicle()) and (IsValid(Weapon) and Weapon:GetClass() == "weapon_physgun") then
 				self:DrawHome()
 			end
 		end

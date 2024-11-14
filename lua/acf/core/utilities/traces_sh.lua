@@ -1,28 +1,31 @@
 local ACF = ACF
 
 do -- Visual clip compatibility
-	local function checkClip(entity, clip, Center, pos)
-		if clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway
+	local function CheckClip(Entity, Clip, Center, Pos)
+		if Clip.physics then return false end -- Physical clips will be ignored, we can't hit them anyway
 
-		local normal = entity:LocalToWorldAngles(clip.n or clip[1]):Forward()
-		local origin = Center + normal * (clip.d or clip[2])
+		local Normal = Entity:LocalToWorldAngles(Clip.n or Clip[1]):Forward()
+		local Origin = Center + Normal * (Clip.d or Clip[2])
 
-		return normal:Dot((origin - pos):GetNormalized()) > 0
+		return Normal:Dot((Origin - Pos):GetNormalized()) > 0
 	end
 
-	function ACF.CheckClips(ent, pos)
-		if not IsValid(ent) then return false end
-		if not ent.ClipData then return false end -- Doesn't have clips
-		if ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
-		if SERVER and not ent:GetPhysicsObject():GetVolume() then return false end -- Spherical collisions applied to it
+	function ACF.CheckClips(Ent, Pos)
+		if not IsValid(Ent) then return false end
+
+		local ClipData = Ent.ClipData
+
+		if not ClipData then return false end -- Doesn't have clips
+		if Ent:GetClass() ~= "prop_physics" then return false end -- Only care about props
+		if SERVER and not Ent:GetPhysicsObject():GetVolume() then return false end -- Spherical collisions applied to it
 
 		-- Compatibility with Proper Clipping tool: https://github.com/DaDamRival/proper_clipping
 		-- The bounding box center will change if the entity is physically clipped
 		-- That's why we'll use the original OBBCenter that was stored on the entity
-		local center = ent:LocalToWorld(ent.OBBCenterOrg or ent:OBBCenter())
+		local Center = Ent:LocalToWorld(Ent.OBBCenterOrg or Ent:OBBCenter())
 
-		for _, clip in ipairs(ent.ClipData) do
-			if checkClip(ent, clip, center, pos) then return true end
+		for _, Clip in ipairs(ClipData) do
+			if CheckClip(Ent, Clip, Center, Pos) then return true end
 		end
 
 		return false
@@ -57,7 +60,7 @@ do -- ACF.trace
 		util.TraceLine(traceData)
 
 		-- Check for clips or to filter this entity
-		if Output.HitNonWorld and (ACF.CheckClips(Output.Entity, Output.HitPos) or ACF.GlobalFilter[Output.Entity:GetClass()]) then
+		if Output.HitNonWorld and (ACF.GlobalFilter[Output.Entity:GetClass()] or ACF.CheckClips(Output.Entity, Output.HitPos)) then
 			local OldFilter = traceData.filter
 			local Filter    = { Output.Entity }
 

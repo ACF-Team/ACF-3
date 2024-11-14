@@ -6,6 +6,7 @@ local Contraption = ACF.Contraption
 
 function ACF.KEShove(Target, Pos, Vec, KE)
 	if not IsValid(Target) then return end
+	if Target.ACF_Killed then return end
 
 	if hook.Run("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
 
