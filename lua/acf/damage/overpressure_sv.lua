@@ -5,7 +5,7 @@ local ACF  = ACF
 ACF.Squishies = ACF.Squishies or {}
 
 local Squishies = ACF.Squishies
-
+local HitPosOffset = Vector(0, 0, 30)
 
 -- InVehicle and GetVehicle are only for players, we have NPCs too!
 local function GetVehicle(Entity)
@@ -57,7 +57,7 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 					if CanSee(V, Data) then
 						local Damage = Energy * 175000 * (1 / D^3)
 
-						if not ACF.Damage.doSquishyFlingKill(V, Damage, V:GetPos() + Vector(0, 0, 30), Inflictor, Source, Direction, true) then
+						if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
 							V:TakeDamage(Damage, Inflictor, Source)
 						end
 					end
@@ -77,8 +77,9 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 
 					if CanSee(V, Data) then
 						local Damage = Energy * 150000 * (1 / D^3)
+						local Direction = (Source:GetPos() - V:GetPos()):GetNormalized()
 
-						if not ACF.Damage.doSquishyFlingKill(V, Damage, V:GetPos() + Vector(0, 0, 30), Inflictor, Source, (Source:GetPos() - V:GetPos()):GetNormalized(), true) then
+						if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
 							V:TakeDamage(Damage, Inflictor, Source)
 						end
 					end

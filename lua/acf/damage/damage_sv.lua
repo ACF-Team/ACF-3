@@ -1,6 +1,7 @@
 local ACF     = ACF
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
+local Effects = ACF.Utilities.Effects
 local Queue   = {}
 
 util.AddNetworkString("ACF_Damage")
@@ -87,34 +88,41 @@ function Damage.getBulletDamage(Bullet, Trace)
 end
 
 --- Used to kill and fling the player because it's funny.
---- Returns true if the damage has killed the player, false if it has not.
-function Damage.doSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, Direction, Explosive)
+--- @param Entity entity The entity to attempt to kill
+--- @param Damage number The amount of damage to be dealt to the entity
+--- @param HitPos vector The world position to display blood effects at
+--- @param Attacker entity The entity that dealt the damage
+--- @param Inflictor entity The entity that was used to deal the damage
+--- @param Direction vector The normalized direction that the damage is pointing towards
+--- @param Explosive boolean Whether this damage should be explosive or not
+--- @return boolean # Returns true if the damage has killed the player, false if it has not
+function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, Direction, Explosive)
+	if not Entity:IsPlayer() and not Entity:IsNPC() and not Entity:IsNextBot() then return false end
+
 	local Health = Entity:Health()
 
 	if Damage > Health then
 		local SourceDamage = DamageInfo()
+		local ForceMult = 25000 -- Arbitrary force multiplier; just change this to whatever feels the best
+
 		SourceDamage:SetAttacker(Attacker)
 		SourceDamage:SetInflictor(Inflictor)
 		SourceDamage:SetDamage(Damage)
-		SourceDamage:SetDamageForce(Direction * 200000000)
+		SourceDamage:SetDamageForce(Direction * ForceMult)
 		if Explosive then
 			SourceDamage:SetDamageType(DMG_BLAST)
 		end
 		Entity:TakeDamageInfo(SourceDamage)
 
-		local E1 = EffectData()
-		E1:SetOrigin(HitPos)
-		E1:SetNormal(Direction)
-		E1:SetFlags(3)
-		E1:SetScale(14)
-		util.Effect("bloodspray", E1, true, true)
+		local EffectTable = {
+			Origin = HitPos,
+			Normal = Direction,
+			Flags = 3,
+			Scale = 14,
+		}
 
-		local E2 = EffectData()
-		E2:SetOrigin(HitPos)
-		E2:SetNormal(Direction)
-		E2:SetFlags(3)
-		E2:SetScale(14)
-		util.Effect("BloodImpact", E2, true, true)
+		Effects.CreateEffect("bloodspray", EffectTable, true, true)
+		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
 
 		return true
 	end
@@ -161,10 +169,12 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 	end
 
 	local Attacker, Inflictor = DmgInfo:GetAttacker(), DmgInfo:GetInflictor()
+	local Direction = (DmgInfo.HitPos - DmgInfo.Origin):GetNormalized()
 
-	if not ACF.Damage.doSquishyFlingKill(Entity, Damage, DmgInfo.HitPos, Attacker, Inflictor, (DmgInfo.HitPos - DmgInfo.Origin):GetNormalized(), DmgInfo.Type == DMG_BLAST) then
+	if not ACF.Damage.DoSquishyFlingKill(Entity, Damage, DmgInfo.HitPos, Attacker, Inflictor, Direction, DmgInfo.Type == DMG_BLAST) then
 		Entity:TakeDamage(Damage, Attacker, Inflictor)
 	end
+
 	HitRes.Kill = false
 
 	return HitRes
