@@ -52,9 +52,9 @@ function Network.Send(Name, ...)
 end
 
 net.Receive("ACF_Networking", function(Bits)
-	local String  = Decompress(net.ReadData(Bytes * 8))
+	local String  = Decompress(net.ReadData(Bits * 8))
 	if not String then return end
-	
+
 	local Message = ToTable(String)
 
 	if not Message then
@@ -62,7 +62,7 @@ net.Receive("ACF_Networking", function(Bits)
 		local Total = Bits * 0.125 -- Bits to bytes
 		local JSON  = String ~= "" and String or "Empty, possible overflow."
 
-		ErrorNoHalt(Error:format(Bytes, Total, JSON))
+		ErrorNoHalt(Error:format(Bits * 8, Total, JSON))
 
 		return
 	end
