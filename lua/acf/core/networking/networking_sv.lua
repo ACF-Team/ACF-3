@@ -28,11 +28,8 @@ local function SendMessages()
 	local All = Messages.All
 
 	if All and next(All) then
-		local Compressed = Compress(ToJSON(All))
-
 		net.Start("ACF_Networking")
-			net.WriteUInt(#Compressed, 12)
-			net.WriteData(Compressed)
+			net.WriteData(Compress(ToJSON(All)))
 		net.Broadcast()
 
 		Messages.All = nil
@@ -40,11 +37,8 @@ local function SendMessages()
 
 	if next(Messages) then
 		for Target, Data in pairs(Messages) do
-			local Compressed = Compress(ToJSON(Data))
-
 			net.Start("ACF_Networking")
-				net.WriteUInt(#Compressed, 12)
-				net.WriteData(Compressed)
+				net.WriteData(Compress(ToJSON(Data)))
 			net.Send(Target)
 
 			Messages[Target] = nil

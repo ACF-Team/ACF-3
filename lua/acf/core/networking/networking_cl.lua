@@ -52,8 +52,9 @@ function Network.Send(Name, ...)
 end
 
 net.Receive("ACF_Networking", function(Bits)
-	local Bytes   = net.ReadUInt(12)
-	local String  = Decompress(net.ReadData(Bytes))
+	local String  = Decompress(net.ReadData(Bytes * 8))
+	if not String then return end
+	
 	local Message = ToTable(String)
 
 	if not Message then
