@@ -109,8 +109,16 @@ function ACF.CheckLegal(Entity)
 	return true
 end
 
+--- Determines the type of damage that should be dealt to the given entity.
+--- @param Entity entity The entity to be checked
+--- @return string # The type of damage that ACF should deal to the entity
 function ACF.GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
+
+	-- Explicitly handle support for LVS/simfphys/WAC
+	local EntTbl = Entity:GetTable()
+	if EntTbl.LVS or EntTbl.IsSimfphyscar or EntTbl.isWacAircraft then return "Squishy" end
+
 	if Entity:IsVehicle() then return "Vehicle" end
 
 	return "Prop"
