@@ -45,8 +45,6 @@ do -- Piledrivers menu
 
 			Ammo = AmmoType()
 
-			Caliber:SetMinMax(Min, Max)
-
 			ClassDesc:SetText(Data.Description)
 
 			ClassPreview:UpdateModel(Data.Model)
@@ -54,6 +52,8 @@ do -- Piledrivers menu
 
 			ACF.SetClientData("Weapon", Data.ID)
 			ACF.SetClientData("Caliber", Current, true)
+
+			Caliber:SetMinMax(Min, Max)
 		end
 
 		Caliber:SetClientData("Caliber", "OnValueChanged")

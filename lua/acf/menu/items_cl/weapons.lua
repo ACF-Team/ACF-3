@@ -35,10 +35,10 @@ local function UpdateControl(Base)
 		local Bounds  = Class.Caliber
 		local Caliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 
-		Base.Slider:SetMinMax(Bounds.Min, Bounds.Max)
-
 		ACF.SetClientData("Weapon", Class.ID)
 		ACF.SetClientData("Caliber", Caliber, true)
+
+		Base.Slider:SetMinMax(Bounds.Min, Bounds.Max)
 
 		UpdatePreview(Base, Class)
 	else
