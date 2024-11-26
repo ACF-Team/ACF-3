@@ -750,8 +750,9 @@ do -- Movement -----------------------------------------
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+		local TorqueMult = 2 -- NOTE: Arbitrary torque multiplier; we ought to have a better means of implementing this
 
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * TorqueMult) * DeltaTime, -500000, 500000))
 	end
 
 	function ENT:Calc(InputRPM, InputInertia)
