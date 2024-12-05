@@ -6,7 +6,8 @@ return {
             IsPlayer = function() return false end,
             IsNPC = function() return false end,
             IsNextBot = function() return false end,
-            IsVehicle = function() return false end
+            IsVehicle = function() return false end,
+            GetTable = function() return State.Ent end,
         }
     end,
 

@@ -9,11 +9,14 @@ include("shared.lua")
 
 local ACF         = ACF
 local Contraption = ACF.Contraption
+local Mobility	  = ACF.Mobility
+local MobilityObj = Mobility.Objects
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
+local max         = math.max
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
@@ -157,7 +160,7 @@ do -- Spawn and Update functions -----------------------
 		if not next(Ropes) then return end
 
 		for Ent, Link in pairs(Ropes) do
-			local OutPos = Entity:LocalToWorld(Link.Output)
+			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
 			local InPos = Ent.In and Ent:LocalToWorld(Ent.In) or Ent:GetPos()
 
 			-- make sure it is not stretched too far
@@ -167,7 +170,7 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- make sure the angle is not excessive
-			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link.Output.y):GetNormalized())
+			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link:GetOrigin().y):GetNormalized())
 
 			if DrvAngle < 0.7 then
 				Entity:Unlink(Ent)
@@ -572,15 +575,15 @@ do -- Linking ------------------------------------------
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
 
-		return {
-			Side = Side,
-			Axis = Axis,
-			Rope = Rope,
-			RopeLen = (OutPosWorld - InPosWorld):Length(),
-			Output = OutPos,
-			ReqTq = 0,
-			Vel = 0
-		}
+		local Link	= MobilityObj.Link(Entity, Target)
+		Link:SetOrigin(OutPos)
+		Link:SetTargetPos(InPos)
+		Link:SetAxis(Axis)
+		Link.Side = Side
+		Link.Rope = Rope
+		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
+
+		return Link
 	end
 
 	local function LinkWheel(Gearbox, Wheel)
@@ -723,8 +726,13 @@ do -- Gear Shifting ------------------------------------
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
-		if self.SoundPath ~= "" then
-			Sounds.SendSound(self, self.SoundPath, 70, 100, 0.5)
+		local SoundPath  = self.SoundPath
+
+		if SoundPath ~= "" then
+			local Pitch = self.SoundPitch and math.Clamp(self.SoundPitch * 100, 0, 255) or 100
+			local Volume = self.SoundVolume or 0.5
+
+			Sounds.SendSound(self, SoundPath, 70, Pitch, Volume)
 		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
@@ -741,8 +749,9 @@ do -- Movement -----------------------------------------
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+		local TorqueMult = 2 -- NOTE: Arbitrary torque multiplier; we ought to have a better means of implementing this
 
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * TorqueMult) * DeltaTime, -500000, 500000))
 	end
 
 	function ENT:Calc(InputRPM, InputInertia)
@@ -793,6 +802,8 @@ do -- Movement -----------------------------------------
 		local RClutch = SelfTbl.RClutch
 		local GearRatio = SelfTbl.GearRatio
 
+		if GearRatio == 0 then return 0 end
+
 		for Ent, Link in pairs(SelfTbl.GearboxOut) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
@@ -831,7 +842,7 @@ do -- Movement -----------------------------------------
 						if Link.Side == 0 then
 							Multiplier = min(0, Rate) + 1
 						else
-							Multiplier = -math.max(0, Rate) + 1
+							Multiplier = -max(0, Rate) + 1
 						end
 					end
 
@@ -871,6 +882,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do
+			Link:Transfer(Link.ReqTq * AvailTq)
 			Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
@@ -882,6 +894,7 @@ do -- Movement -----------------------------------------
 				local WheelTorque = Link.ReqTq * AvailTq
 				ReactTq = ReactTq + WheelTorque
 
+				Link:Transfer(WheelTorque)
 				ActWheel(Link, Ent, WheelTorque, DeltaTime)
 			end
 		end

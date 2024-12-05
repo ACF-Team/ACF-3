@@ -4,6 +4,8 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local Mobility    = ACF.Mobility
+local MobilityObj = Mobility.Objects
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 --===============================================================================================--
@@ -63,20 +65,24 @@ do
 			return false, "Cannot link due to excessive driveshaft angle!"
 		end
 
+		local Owner = Engine:CPPIGetOwner()
 		local Rope
 
-		if tobool(Engine.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
+		if IsValid(Owner) and tobool(Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
 			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
 		end
 
-		local Link = {
-			Rope = Rope,
-			RopeLen = (OutPos - InPos):Length(),
-			ReqTq = 0
-		}
+		local Link = MobilityObj.Link(Engine, Target)
+
+		Link:SetOrigin(Engine.Out)
+		Link:SetTargetPos(Target.In)
+		Link:SetAxis(Direction)
+
+		Link.Rope    = Rope
+		Link.RopeLen = (OutPos - InPos):Length()
 
 		Engine.Gearboxes[Target] = Link
-		Target.Engines[Engine]	 = true
+		Target.Engines[Engine]   = true
 
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -106,6 +112,7 @@ do
 		return true, "Engine unlinked successfully!"
 	end)
 end
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -525,8 +532,6 @@ function ENT:Disable()
 end
 
 function ENT:UpdateOutputs(SelfTbl)
-	if not IsValid(self) then return end
-
 	SelfTbl = SelfTbl or self:GetTable()
 	local FuelUsage = Round(SelfTbl.FuelUsage)
 	local Torque    = SelfTbl.Torque
@@ -780,6 +785,7 @@ function ENT:CalcRPM(SelfTbl)
 
 		-- Split the torque fairly between the gearboxes who need it
 		for Ent, Link in pairs(BoxesTbl) do
+			Link:Transfer(Link.ReqTq * AvailRatio * MassRatio)
 			Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
 		end
 	end

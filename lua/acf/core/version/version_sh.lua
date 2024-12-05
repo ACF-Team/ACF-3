@@ -166,7 +166,7 @@ do -- Repository functions
 		return Data and Data[Realm]
 	end
 
-	ACF.AddRepository("Stooberton", "ACF-3", "lua/autorun/acf_loader.lua")
+	ACF.AddRepository("ACF-Team", "ACF-3", "lua/autorun/acf_loader.lua")
 end
 
 do -- Branch functions

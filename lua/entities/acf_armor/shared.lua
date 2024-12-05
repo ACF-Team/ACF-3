@@ -5,6 +5,8 @@ ENT.WireDebugName = "ACF Armor"
 ENT.PluralName    = "ACF Armor"
 ENT.IsACFArmor    = true
 
+cleanup.Register("acf_armor")
+
 local Debug		= ACF.Debug
 
 local function FindOtherSide(Ent, Origin, Dire)

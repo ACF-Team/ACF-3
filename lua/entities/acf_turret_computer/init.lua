@@ -28,6 +28,7 @@ do	-- Spawn and Update funcs
 	local Outputs	= {
 		"Angle (Angle the gun should point in to hit the target) [ANGLE]",
 		"Flight Time (The estimated time of arrival for the current round to hit the target.)",
+		"Status (The current status of the computer) [STRING]",
 		"Entity (The computer itself.) [ENTITY]"
 	}
 
@@ -64,7 +65,7 @@ do	-- Spawn and Update funcs
 		Entity.Active		= true
 
 		Entity.ComputerInfo	= Computer.ComputerInfo
-		Entity.Status		= ""
+		Entity.Status		= "Ready"
 
 		Entity:HaltSimulation()
 
@@ -184,6 +185,8 @@ do	-- Metamethods and other important stuff
 				Status = Status .. "\n" .. self.Status
 			end
 
+			WireLib.TriggerOutput(self, "Status", self.Status)
+
 			return Status
 		end
 	end
@@ -218,19 +221,21 @@ do	-- Metamethods and other important stuff
 	do	-- Wire stuff
 		ACF.AddInputAction("acf_turret_computer", "Calculate", function(Entity, Value)
 			if Entity.Disabled then return end
-			if Entity.Thinking then return end
 
 			if tobool(Value) == true then
-				Entity:StartSimulation(false)
+				if not Entity.Thinking then Entity:StartSimulation(false) end
+			else
+				Entity:HaltSimulation("Halted by user")
 			end
 		end)
 
 		ACF.AddInputAction("acf_turret_computer", "Calculate Superelevation", function(Entity, Value)
 			if Entity.Disabled then return end
-			if Entity.Thinking then return end
 
 			if tobool(Value) == true then
-				Entity:StartSimulation(true)
+				if not Entity.Thinking then Entity:StartSimulation(true) end
+			else
+				Entity:HaltSimulation("Halted by user")
 			end
 		end)
 	end
@@ -460,7 +465,7 @@ do	-- Metamethods and other important stuff
 			if Reason then
 				self.Status = Reason
 			else
-				self.Status = ""
+				self.Status = "Ready"
 			end
 
 			self.NextRun = Clock.CurTime + self.ComputerInfo.Delay
@@ -483,7 +488,7 @@ do	-- Metamethods and other important stuff
 
 			Sim.TotalTime		= Sim.TotalTime + DeltaTime
 
-			Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 5, Color(255, 0, 0), true)
+			Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 5, ColorRand(false), true)
 
 			local Dir = (Sim.NextPos - Sim.Pos):GetNormalized()
 
@@ -505,6 +510,10 @@ do	-- Metamethods and other important stuff
 
 					Debug.Cross(Sim.StartPos + Point, 15, 8, Color(255, 255, 255), true)
 					Debug.Cross(Sim.StartPos + Sim.NextPos, 15, 8, Color(0, 255, 0), true)
+
+					return self:AdjustSimulation()
+				elseif Dir:Dot((Point - Sim.Pos):GetNormalized()) < 0 then
+					Debug.Cross(Sim.StartPos + Sim.Pos, 30, 8, Color(255, 0, 0), true)
 
 					return self:AdjustSimulation()
 				else
@@ -549,22 +558,22 @@ do	-- Metamethods and other important stuff
 
 					self:HaltSimulation("Gun unlinked!")
 
-					self:NextThink(Clock.CurTime + 0.1)
+					self:NextThink(Clock.CurTime + 0.05)
 					return true
 				end
 			else
-				self:NextThink(Clock.CurTime + 0.1)
+				self:NextThink(Clock.CurTime + 0.05)
 				return true
 			end
 
 			if self.Thinking == false then
-				self:NextThink(Clock.CurTime + 0.1)
+				self:NextThink(Clock.CurTime + 0.05)
 				return true
 			else
 				if Clock.CurTime > self.SimData.EndTime then
 					self:HaltSimulation("Took too long!")
 
-					self:NextThink(Clock.CurTime + 0.1)
+					self:NextThink(Clock.CurTime + self.ComputerInfo.Delay)
 					return true
 				end
 			end

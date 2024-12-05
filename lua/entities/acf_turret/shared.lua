@@ -6,4 +6,4 @@ ENT.PluralName    	= "ACF Turret Drives"
 ENT.IsACFEntity   	= true
 ENT.IsACFTurret		= true
 
-cleanup.Register("_acf_turret")
+cleanup.Register("acf_turret")

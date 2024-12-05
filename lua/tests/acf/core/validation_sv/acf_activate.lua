@@ -12,6 +12,10 @@ return {
             GetPhysicsObject = function() return PhysObj end,
             GetTable = function() return State.Ent end,
         }
+
+        stub( ACF.Contraption, "SetMass" ).with( function( e, mass )
+            e.ACF.Mass = mass
+        end )
     end,
 
     cases = {
