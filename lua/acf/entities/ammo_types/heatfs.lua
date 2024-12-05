@@ -80,7 +80,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	-- Recalculate the standoff for missiles
 	if Data.MissileStandoff then
@@ -120,7 +120,7 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")

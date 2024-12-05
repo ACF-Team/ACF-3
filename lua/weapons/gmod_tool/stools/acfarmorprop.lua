@@ -65,7 +65,7 @@ local function UpdateArmor(_, Entity, Data)
 	duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Data.Thickness, Ductility = Ductility })
 end
 
-hook.Add("ACF_OnServerDataUpdate", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
+hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
 	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))

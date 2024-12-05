@@ -132,7 +132,7 @@ do -- Spawning and Updating
 			OldArmor:OnLast(self)
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldArmor)
 
 		ACF.SaveEntity(self)
 
