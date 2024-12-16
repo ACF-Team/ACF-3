@@ -57,6 +57,7 @@ local function Ignite(Entity, Lifetime, IsGib)
 end
 
 local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite)
+    if not util.IsValidModel(Model) then return end
     local Debris = ents.CreateClientProp(Model)
 
     if not IsValid(Debris) then return end
