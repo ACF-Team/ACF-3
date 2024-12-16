@@ -57,6 +57,9 @@ local function Ignite(Entity, Lifetime, IsGib)
 end
 
 local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite)
+    -- TODO: This fixes a crashing bug, but the underlying issue that Model can sometimes be blank ("") isn't fixed yet
+    if not util.IsValidModel(Model) then return end
+
     local Debris = ents.CreateClientProp(Model)
 
     if not IsValid(Debris) then return end
