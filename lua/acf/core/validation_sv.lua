@@ -43,9 +43,9 @@ function ACF.IsLegal(Entity)
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 
-	local Legal, Reason, Message, Timeout = hook.Run("ACF_IsLegal", Entity)
+	local Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity)
 
-	if Legal ~= nil then return Legal, Reason, Message, Timeout end
+	if not Legal then return Legal, Reason, Message, Timeout end
 
 	return true
 end
@@ -178,7 +178,7 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
 end
 
-hook.Add("ACF_OnServerDataUpdate", "ACF_MaxThickness", function(_, Key, Value)
+hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
 	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
