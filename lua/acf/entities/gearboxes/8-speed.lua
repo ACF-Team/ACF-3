@@ -1,3 +1,4 @@
+--[[
 local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
@@ -24,36 +25,39 @@ Gearboxes.Register("8-Speed", {
 
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("8Gear-L-S", "8-Speed", {
-		Name		= "8-Speed, Inline, Small",
-		Description	= "A small and light 8 speed gearbox.",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear8SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear8ST,
+		Name			= "8-Speed, Inline, Small",
+		Description		= "A small and light 8 speed gearbox.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear8SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear8ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("8Gear-L-M", "8-Speed", {
-		Name		= "8-Speed, Inline, Medium",
-		Description	= "A medium duty 8 speed gearbox..",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear8MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear8MT,
+		Name			= "8-Speed, Inline, Medium",
+		Description		= "A medium duty 8 speed gearbox..",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= Gear8MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear8MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("8Gear-L-L", "8-Speed", {
-		Name		= "8-Speed, Inline, Large",
-		Description	= "Heavy duty 8 speed gearbox, however rather heavy.",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear8LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear8LT,
+		Name			= "8-Speed, Inline, Large",
+		Description		= "Heavy duty 8 speed gearbox, however rather heavy.",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= Gear8LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear8LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
@@ -72,6 +76,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("8Gear-LD-M", "8-Speed", {
@@ -85,6 +90,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("8Gear-LD-L", "8-Speed", {
@@ -98,41 +104,45 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.RegisterItem("8Gear-T-S", "8-Speed", {
-		Name		= "8-Speed, Transaxial, Small",
-		Description	= "A small and light 8 speed gearbox..",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear8SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear8ST,
+		Name			= "8-Speed, Transaxial, Small",
+		Description		= "A small and light 8 speed gearbox..",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear8SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear8ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("8Gear-T-M", "8-Speed", {
-		Name		= "8-Speed, Transaxial, Medium",
-		Description	= "A medium duty 8 speed gearbox..",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear8MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear8MT,
+		Name			= "8-Speed, Transaxial, Medium",
+		Description		= "A medium duty 8 speed gearbox..",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= Gear8MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear8MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("8Gear-T-L", "8-Speed", {
-		Name		= "8-Speed, Transaxial, Large",
-		Description	= "Heavy duty 8 speed gearbox, however rather heavy.",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear8LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear8LT,
+		Name			= "8-Speed, Transaxial, Large",
+		Description		= "Heavy duty 8 speed gearbox, however rather heavy.",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= Gear8LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear8LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
@@ -151,6 +161,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("8Gear-TD-M", "8-Speed", {
@@ -164,6 +175,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("8Gear-TD-L", "8-Speed", {
@@ -177,6 +189,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 end
 
@@ -217,3 +230,4 @@ do -- Straight-through Gearboxes
 		},
 	})
 end
+]]

@@ -54,6 +54,8 @@ do -- Panel helpers
 			local Count = 0
 
 			for _, Value in pairs(List) do
+				if Value.SuppressLoad then continue end
+
 				Count = Count + 1
 
 				Choices[Count] = Value
@@ -85,27 +87,15 @@ do -- Default gearbox menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.ManualGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local Variable = "Gear" .. I
 				local Default = ValuesData[Variable]
 
@@ -186,19 +176,7 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.CVTGearboxMenu(Class, _, Menu, _)
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
@@ -285,20 +263,8 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
@@ -319,7 +285,7 @@ do -- Default gearbox menus
 
 				local Delta = UnitMult / Mult
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Var = "Shift" .. I
 					local Old = ACF.GetClientNumber(Var)
 
@@ -331,7 +297,7 @@ do -- Default gearbox menus
 				UnitMult = Mult
 			end
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local GearVar = "Gear" .. I
 				local DefGear = ValuesData[GearVar]
 
@@ -450,7 +416,7 @@ do -- Default gearbox menus
 				local WheelDiameter = ValuesData.WheelDiameter
 				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
 
 					ACF.SetClientData("Shift" .. I, Gear * Multiplier)

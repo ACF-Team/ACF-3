@@ -9,7 +9,90 @@ language.Add("Cleaned_acf_gearbox", "Cleaned up all ACF Gearboxes")
 language.Add("SBoxLimit__acf_gearbox", "You've reached the ACF Gearboxes limit!")
 
 function ENT:Update()
-	self.HitBoxes = ACF.GetHitboxes(self:GetModel())
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
+end
+
+function ENT:OnResized()
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
+end
+
+local testMat = Material("cable/cable2")
+
+	local innerConnection = Color(127, 127, 127)
+	local outerConnection = Color(255, 255, 255)
+
+function ENT:DrawRopes(Rendered)
+	if Rendered[self] then return end
+		local SelfTbl = self:GetTable()
+
+		Rendered[self] = true
+
+		if not SelfTbl.HasData then
+			self:RequestGearboxInfo()
+			return
+		elseif Clock.CurTime > SelfTbl.Age then
+			self:RequestGearboxInfo()
+		end
+
+		local Perc = (Clock.CurTime / 2) % 1
+
+		local InPos		= self:LocalToWorld(SelfTbl.In)
+		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
+		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
+		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
+
+		-- Rendering more along the chain
+		for _, T in ipairs(SelfTbl.Inputs) do
+			local E = T.Ent
+
+			if IsValid(E) and E.DrawRopes then
+				E:DrawRopes(Rendered, false)
+			end
+		end
+
+
+		if not SelfTbl.IsStraight then
+			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, innerConnection)
+		else
+			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
+			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, innerConnection)
+		end
+
+		for _, T in ipairs(SelfTbl.OutputsL) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, outerConnection)
+
+				if E.DrawRopes then
+					E:DrawRopes(Rendered, false)
+				end
+			end
+		end
+
+		for _, T in ipairs(SelfTbl.OutputsR) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, outerConnection)
+
+				if E.DrawRopes then
+					E:DrawRopes(Rendered, false)
+				end
+			end
+		end
+end
+
+function ENT:Draw()
+	self.BaseClass.Draw(self)
+
+	render.SetMaterial(testMat)
+	self:DrawRopes({self = true}, true)
 end
 
 do	-- NET SURFER 2.0

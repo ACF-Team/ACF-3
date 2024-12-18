@@ -161,7 +161,8 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	--- @param GroupID string # The ID of the group the group item belongs to
 	--- @param ID string # The ID of the group item to make an alias of
 	--- @param Alias string # The alias to apply to the given group item
-	function Namespace.AddItemAlias(GroupID, ID, Alias)
+	--- @param Overrides? table # An optional table of overrides to alter the behavior of the alias
+	function Namespace.AddItemAlias(GroupID, ID, Alias, Overrides)
 		local Group = isstring(GroupID) and Entries[GroupID]
 
 		if not Group then return end
@@ -170,7 +171,21 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 
 		local Lookup = Group.Lookup
 
-		Lookup[Alias] = Lookup[ID]
+		--Lookup[Alias] = Lookup[ID]
+
+		if istable(Overrides) then
+			Lookup[Alias] = {} --table.Copy(Lookup[ID])
+
+			for Key, Value in pairs(Lookup[ID]) do
+				Lookup[Alias][Key] = Value
+			end
+
+			for Key, Value in pairs(Overrides) do
+				Lookup[Alias][Key] = Value
+			end
+		else
+			Lookup[Alias] = Lookup[ID]
+		end
 	end
 
 	--- Checks whether an ID is an alias of a group item

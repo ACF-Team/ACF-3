@@ -1,3 +1,4 @@
+--[[
 local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
@@ -129,36 +130,39 @@ Gearboxes.Register("7-Auto", {
 
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("7Gear-A-L-S", "7-Auto", {
-		Name		= "7-Speed Auto, Inline, Small",
-		Description	= "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear7SW,
-		Switch		= ShiftS,
-		MaxTorque	= Gear7ST,
+		Name			= "7-Speed Auto, Inline, Small",
+		Description		= "A small, and light 7 speed automatic inline gearbox, with a somewhat limited max torque rating",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear7SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear7ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-L-M", "7-Auto", {
-		Name		= "7-Speed Auto, Inline, Medium",
-		Description	= "A medium sized, 7 speed automatic inline gearbox",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear7MW,
-		Switch		= ShiftM,
-		MaxTorque	= Gear7MT,
+		Name			= "7-Speed Auto, Inline, Medium",
+		Description		= "A medium sized, 7 speed automatic inline gearbox",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= Gear7MW,
+		Switch			= ShiftM,
+		MaxTorque		= Gear7MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-L-L", "7-Auto", {
-		Name		= "7-Speed Auto, Inline, Large",
-		Description	= "A large, heavy and sturdy 7 speed inline gearbox",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear7LW,
-		Switch		= ShiftL,
-		MaxTorque	= Gear7LT,
+		Name			= "7-Speed Auto, Inline, Large",
+		Description		= "A large, heavy and sturdy 7 speed inline gearbox",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= Gear7LW,
+		Switch			= ShiftL,
+		MaxTorque		= Gear7LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
@@ -177,6 +181,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-LD-M", "7-Auto", {
@@ -190,6 +195,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-LD-L", "7-Auto", {
@@ -203,41 +209,45 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.RegisterItem("7Gear-A-T-S", "7-Auto", {
-		Name		= "7-Speed Auto, Transaxial, Small",
-		Description	= "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear7SW,
-		Switch		= ShiftS,
-		MaxTorque	= Gear7ST,
+		Name			= "7-Speed Auto, Transaxial, Small",
+		Description		= "A small, and light 7 speed automatic gearbox, with a somewhat limited max torque rating",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear7SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear7ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-T-M", "7-Auto", {
-		Name		= "7-Speed Auto, Transaxial, Medium",
-		Description	= "A medium sized, 7 speed automatic gearbox",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear7MW,
-		Switch		= ShiftM,
-		MaxTorque	= Gear7MT,
+		Name			= "7-Speed Auto, Transaxial, Medium",
+		Description		= "A medium sized, 7 speed automatic gearbox",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= Gear7MW,
+		Switch			= ShiftM,
+		MaxTorque		= Gear7MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-T-L", "7-Auto", {
-		Name		= "7-Speed Auto, Transaxial, Large",
-		Description	= "A large, heavy and sturdy 7 speed automatic gearbox",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear7LW,
-		Switch		= ShiftL,
-		MaxTorque	= Gear7LT,
+		Name			= "7-Speed Auto, Transaxial, Large",
+		Description		= "A large, heavy and sturdy 7 speed automatic gearbox",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= Gear7LW,
+		Switch			= ShiftL,
+		MaxTorque		= Gear7LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
@@ -256,6 +266,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-TD-M", "7-Auto", {
@@ -269,6 +280,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("7Gear-A-TD-L", "7-Auto", {
@@ -282,6 +294,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 end
 
@@ -322,3 +335,4 @@ do -- Straight-through Gearboxes
 		},
 	})
 end
+]]

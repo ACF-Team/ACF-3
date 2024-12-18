@@ -1,18 +1,23 @@
 local ACF = ACF
 local Gearboxes = ACF.Classes.Gearboxes
+local Current = {}
+local StatsText = language.GetPhrase("acf.menu.gearboxes.stats")
 
 local function CreateMenu(Menu)
 	local Entries = Gearboxes.GetEntries()
 
-	Menu:AddTitle("Gearbox Settings")
+	Menu:AddTitle("#acf.menu.gearboxes.settings")
 
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("Gearbox Information")
+	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview(nil, true)
+	local GearboxStats = Base:AddLabel()
+	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 1, 3, 2)
+	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 8, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -36,27 +41,102 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local ClassData = GearboxClass.Selected
-
 		ACF.SetClientData("Gearbox", Data.ID)
 
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
 
+		Current.Mass = Data.Mass
+		Current.MaxTorque = Data.MaxTorque
+		Current.Scale = Current.Scale or 1
+		Current.GearCount = Current.GearCount or 3
+
+		local Mass = ACF.GetProperMass(math.floor((Data.Mass * (Current.Scale ^ 2)) / 5) * 5)
+		local Torque = math.floor(Data.MaxTorque * 0.73 * Current.Scale)
+		GearboxStats:SetText(StatsText:format(Mass, Data.MaxTorque * Current.Scale, Torque))
+
 		GearboxPreview:UpdateModel(Data.Model)
 		GearboxPreview:UpdateSettings(Data.Preview)
+		self:UpdateSettings()
+	end
+
+	function GearboxList:UpdateSettings()
+		local ClassData = GearboxClass.Selected
+		local ListData  = GearboxList.Selected
+		if not ClassData or not ListData then return end
+
+		GearAmount:SetVisible(ClassData.CanSetGears)
+
+		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Current.Scale ^ 2)) / 5) * 5)
+
+		-- Torque calculations
+		local EfficiencyLossMult = 0.99
+		local TorqueLoss = Current.MaxTorque * (EfficiencyLossMult ^ Current.GearCount)
+		local ScalingCurve = Current.Scale ^ 3
+		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
+		--local Torque = math.floor(Current.MaxTorque * 0.73 * Scale)
+		GearboxStats:SetText(StatsText:format(Mass, MaxTorque * Current.Scale, MaxTorque))
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
 
+		if ListData.CanDualClutch then
+			local DualClutch = Base:AddCheckBox("#acf.menu.gearboxes.dual_clutch")
+			DualClutch:SetClientData("DualClutch", "OnChange")
+			DualClutch:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetValue(Value)
+				GearboxPreview:GetEntity():SetBodygroup(1, Value and 1 or 0)
+
+				return Value
+			end)
+			Base:AddHelp("#acf.menu.gearboxes.dual_clutch_desc")
+		else
+			ACF.SetClientData("DualClutch", false)
+			GearboxPreview:GetEntity():SetBodygroup(1, 0)
+		end
+
 		if ClassData.CreateMenu then
-			ClassData:CreateMenu(Data, Menu, Base)
+			ClassData:CreateMenu(ListData, Menu, Base)
 		end
 
 		Menu:EndTemporal(Base)
 	end
 
+	GearboxScale:SetClientData("GearboxScale", "OnValueChanged")
+	GearboxScale:DefineSetter(function(Panel, _, _, Value)
+		local Scale = math.Round(Value, 2)
+
+		Panel:SetValue(Scale)
+		Current.Scale = Scale
+		--[[
+		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Scale ^ 2)) / 5) * 5)
+
+		-- Torque calculations
+		local EfficiencyLossMult = 0.99
+		local TorqueLoss = Current.MaxTorque * (EfficiencyLossMult ^ Current.GearCount)
+		local ScalingCurve = Scale ^ 3
+		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
+		--local Torque = math.floor(Current.MaxTorque * 0.73 * Scale)
+		GearboxStats:SetText(StatsText:format(Mass, MaxTorque * Scale, MaxTorque))
+		]]
+		GearboxList:UpdateSettings()
+		return Scale
+	end)
+
+	GearAmount:SetClientData("GearAmount", "OnValueChanged")
+	GearAmount:DefineSetter(function(Panel, _, _, Value)
+		local Count = math.Round(Value, 0)
+		if Count == Panel.Selected then return Count end
+
+		Current.GearCount = Count
+		Panel.Selected = Count
+		Panel:SetValue(Count)
+		GearboxList:UpdateSettings()
+
+		return Count
+	end)
+
 	ACF.LoadSortedList(GearboxClass, Entries, "ID")
 end
 
-ACF.AddMenuItem(301, "Entities", "Gearboxes", "cog", CreateMenu)
+ACF.AddMenuItem(301, "Entities", "#acf.menu.gearboxes", "cog", CreateMenu)

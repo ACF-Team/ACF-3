@@ -1,16 +1,17 @@
+--[[
 local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
-local wmul = 1.5
-local Gear3SW = 60 * wmul
-local Gear3MW = 120 * wmul
-local Gear3LW = 240 * wmul
+--local wmul = 1.5
+local Gear3SW = 60 --* wmul
+--local Gear3MW = 120 * wmul
+--local Gear3LW = 240 * wmul
 
 -- Torque Rating
 local Gear3ST = 675
-local Gear3MT = 2125
-local Gear3LT = 10000
+--local Gear3MT = 2125
+--local Gear3LT = 10000
 
 -- Straight through bonuses
 local StWB = 0.75 --straight weight bonus mulitplier
@@ -18,8 +19,13 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Shift Time
 local ShiftS = 0.25
-local ShiftM = 0.35
-local ShiftL = 0.5
+--local ShiftM = 0.35
+--local ShiftL = 0.5
+
+-- Old gearbox scales
+local ScaleS = 1
+local ScaleM = 1.5
+local ScaleL = 2.5
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
@@ -128,45 +134,120 @@ Gearboxes.Register("3-Auto", {
 	end,
 })
 
-do -- Inline Gearboxes
-	Gearboxes.RegisterItem("3Gear-A-L-S", "3-Auto", {
-		Name		= "3-Speed Auto, Inline, Small",
-		Description	= "A small, and light 3 speed automatic inline gearbox, with a somewhat limited max torque rating",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear3SW,
+do -- Scalable Gearboxes
+	Gearboxes.RegisterItem("3Gear-A-L", "3-Auto", {
+		Name			= "3-Speed Auto, Inline",
+		Description		= "A large, heavy and sturdy 3 speed inline gearbox",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear3SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear3ST,
+		CanDualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
+	})
+
+	Gearboxes.RegisterItem("3Gear-A-T", "3-Auto", {
+		Name			= "3-Speed Auto, Transaxial",
+		Description		= "A large, heavy and sturdy 3 speed automatic gearbox",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear3SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear3ST,
+		CanDualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
+	})
+
+	Gearboxes.RegisterItem("3Gear-A-ST", "3-Auto", {
+		Name		= "3-Speed Auto, Straight",
+		Description	= "A large sized, 3 speed automatic straight-through gearbox.",
+		Model		= "models/engines/t5small.mdl",
+		Mass		= math.floor(Gear3SW * StWB),
 		Switch		= ShiftS,
-		MaxTorque	= Gear3ST,
+		MaxTorque	= math.floor(Gear3ST * StTB),
+		Preview = {
+			FOV = 105,
+		},
+	})
+end
+
+do -- Inline Gearboxes
+	--Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-L-S", {
+		--Scale = ScaleS,
+	--})
+
+	--Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-L-M", {
+		--Scale = ScaleM,
+	--})
+
+	--Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-L-L", {
+		--Scale = ScaleL,
+	--})
+
+	/*
+	Gearboxes.RegisterItem("3Gear-A-L-S", "3-Auto", {
+		Name			= "3-Speed Auto, Inline, Small",
+		Description		= "A small, and light 3 speed automatic inline gearbox, with a somewhat limited max torque rating",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear3SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear3ST,
+		CanDualClutch	= true,
+		Scale			= 0.4,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-L-M", "3-Auto", {
-		Name		= "3-Speed Auto, Inline, Medium",
-		Description	= "A medium sized, 3 speed automatic inline gearbox",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear3MW,
-		Switch		= ShiftM,
-		MaxTorque	= Gear3MT,
+		Name			= "3-Speed Auto, Inline, Medium",
+		Description		= "A medium sized, 3 speed automatic inline gearbox",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= Gear3MW,
+		Switch			= ShiftM,
+		MaxTorque		= Gear3MT,
+		CanDualClutch	= true,
+		Scale			= 0.6,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-L-L", "3-Auto", {
-		Name		= "3-Speed Auto, Inline, Large",
-		Description	= "A large, heavy and sturdy 3 speed inline gearbox",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear3LW,
-		Switch		= ShiftL,
-		MaxTorque	= Gear3LT,
+		Name			= "3-Speed Auto, Inline, Large",
+		Description		= "A large, heavy and sturdy 3 speed inline gearbox",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= Gear3LW,
+		Switch			= ShiftL,
+		MaxTorque		= Gear3LT,
+		CanDualClutch	= true,
+		Scale			= 1.0,
 		Preview = {
 			FOV = 125,
 		},
 	})
+	*/
 end
 
 do -- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-LD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-LD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-L", "3Gear-A-LD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+	/*
 	Gearboxes.RegisterItem("3Gear-A-LD-S", "3-Auto", {
 		Name		= "3-Speed Auto, Inline, Small, Dual Clutch",
 		Description	= "A small, and light 3 speed automatic inline gearbox, with a somewhat limited max torque rating",
@@ -178,6 +259,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-LD-M", "3-Auto", {
@@ -191,6 +273,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-LD-L", "3-Auto", {
@@ -204,48 +287,81 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
+	*/
 end
 
 do -- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-T-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-T-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-T-L", {
+		Scale = ScaleL,
+	})
+	/*
 	Gearboxes.RegisterItem("3Gear-A-T-S", "3-Auto", {
-		Name		= "3-Speed Auto, Transaxial, Small",
-		Description	= "A small, and light 3 speed automatic gearbox, with a somewhat limited max torque rating",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear3SW,
-		Switch		= ShiftS,
-		MaxTorque	= Gear3ST,
+		Name			= "3-Speed Auto, Transaxial, Small",
+		Description		= "A small, and light 3 speed automatic gearbox, with a somewhat limited max torque rating",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear3SW,
+		Switch			= ShiftS,
+		MaxTorque		= Gear3ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-T-M", "3-Auto", {
-		Name		= "3-Speed Auto, Transaxial, Medium",
-		Description	= "A medium sized, 3 speed automatic gearbox",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear3MW,
-		Switch		= ShiftM,
-		MaxTorque	= Gear3MT,
+		Name			= "3-Speed Auto, Transaxial, Medium",
+		Description		= "A medium sized, 3 speed automatic gearbox",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= Gear3MW,
+		Switch			= ShiftM,
+		MaxTorque		= Gear3MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-T-L", "3-Auto", {
-		Name		= "3-Speed Auto, Transaxial, Large",
-		Description	= "A large, heavy and sturdy 3 speed automatic gearbox",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear3LW,
-		Switch		= ShiftL,
-		MaxTorque	= Gear3LT,
+		Name			= "3-Speed Auto, Transaxial, Large",
+		Description		= "A large, heavy and sturdy 3 speed automatic gearbox",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= Gear3LW,
+		Switch			= ShiftL,
+		MaxTorque		= Gear3LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
+	*/
 end
 
 do -- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-TD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-TD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-T", "3Gear-A-TD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+	/*
 	Gearboxes.RegisterItem("3Gear-A-TD-S", "3-Auto", {
 		Name		= "3-Speed Auto, Transaxial, Small, Dual Clutch",
 		Description	= "A small, and light 3 speed automatic gearbox, with a somewhat limited max torque rating",
@@ -257,6 +373,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-TD-M", "3-Auto", {
@@ -270,6 +387,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("3Gear-A-TD-L", "3-Auto", {
@@ -283,10 +401,24 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
+	*/
 end
 
 do -- Straight-through Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-ST", "3Gear-A-ST-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-ST", "3Gear-A-ST-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "3Gear-A-ST", "3Gear-A-ST-L", {
+		Scale = ScaleL,
+	})
+
 	Gearboxes.RegisterItem("3Gear-A-ST-S", "3-Auto", {
 		Name		= "3-Speed Auto, Straight, Small",
 		Description	= "A small straight-through automatic gearbox",
@@ -298,7 +430,7 @@ do -- Straight-through Gearboxes
 			FOV = 105,
 		},
 	})
-
+	/*
 	Gearboxes.RegisterItem("3Gear-A-ST-M", "3-Auto", {
 		Name		= "3-Speed Auto, Straight, Medium",
 		Description	= "A medium sized, 3 speed automatic straight-through gearbox.",
@@ -322,4 +454,6 @@ do -- Straight-through Gearboxes
 			FOV = 105,
 		},
 	})
+	*/
 end
+]]

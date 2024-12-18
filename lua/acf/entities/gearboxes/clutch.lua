@@ -25,6 +25,20 @@ Gearboxes.Register("Clutch", {
 	}
 })
 
+do
+	Gearboxes.RegisterItem("Clutch-S", "Clutch", {
+		Name		= "Clutch, Straight",
+		Description	= CDesc,
+		Model		= "models/engines/flywheelclutchs.mdl",
+		Mass		= CSW,
+		Switch		= 0.15,
+		MaxTorque	= CST,
+		Preview = {
+			FOV = 115,
+		},
+	})
+end
+
 do -- Straight-through Gearboxes
 	Gearboxes.RegisterItem("Clutch-S-T", "Clutch", {
 		Name		= "Clutch, Straight, Tiny",

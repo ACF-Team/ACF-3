@@ -1,3 +1,4 @@
+--[[
 local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
@@ -24,36 +25,39 @@ Gearboxes.Register("4-Speed", {
 
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("4Gear-L-S", "4-Speed", {
-		Name		= "4-Speed, Inline, Small",
-		Description	= "A small, and light 4 speed inline gearbox, with a somewhat limited max torque rating.",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear4SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear4ST,
+		Name			= "4-Speed, Inline, Small",
+		Description		= "A small, and light 4 speed inline gearbox, with a somewhat limited max torque rating.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear4SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear4ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("4Gear-L-M", "4-Speed", {
-		Name		= "4-Speed, Inline, Medium",
-		Description	= "A medium sized, 4 speed inline gearbox.",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear4MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear4MT,
+		Name			= "4-Speed, Inline, Medium",
+		Description		= "A medium sized, 4 speed inline gearbox.",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= Gear4MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear4MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("4Gear-L-L", "4-Speed", {
-		Name		= "4-Speed, Inline, Large",
-		Description	= "A large, heavy and sturdy 4 speed inline gearbox.",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear4LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear4LT,
+		Name			= "4-Speed, Inline, Large",
+		Description		= "A large, heavy and sturdy 4 speed inline gearbox.",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= Gear4LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear4LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
@@ -72,6 +76,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("4Gear-LD-M", "4-Speed", {
@@ -85,6 +90,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("4Gear-LD-L", "4-Speed", {
@@ -98,41 +104,45 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.RegisterItem("4Gear-T-S", "4-Speed", {
-		Name		= "4-Speed, Transaxial, Small",
-		Description	= "A small, and light 4 speed gearbox, with a somewhat limited max torque rating.",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear4SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear4ST,
+		Name			= "4-Speed, Transaxial, Small",
+		Description		= "A small, and light 4 speed gearbox, with a somewhat limited max torque rating.",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear4SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear4ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("4Gear-T-M", "4-Speed", {
-		Name		= "4-Speed, Transaxial, Medium",
-		Description	= "A medium sized, 4 speed gearbox.",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear4MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear4MT,
+		Name			= "4-Speed, Transaxial, Medium",
+		Description		= "A medium sized, 4 speed gearbox.",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= Gear4MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear4MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("4Gear-T-L", "4-Speed", {
-		Name		= "4-Speed, Transaxial, Large",
-		Description	= "A large, heavy and sturdy 4 speed gearbox.",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear4LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear4LT,
+		Name			= "4-Speed, Transaxial, Large",
+		Description		= "A large, heavy and sturdy 4 speed gearbox.",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= Gear4LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear4LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
@@ -151,6 +161,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("4Gear-TD-M", "4-Speed", {
@@ -164,6 +175,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("4Gear-TD-L", "4-Speed", {
@@ -177,6 +189,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 end
 
@@ -217,3 +230,4 @@ do -- Straight-through Gearboxes
 		},
 	})
 end
+]]

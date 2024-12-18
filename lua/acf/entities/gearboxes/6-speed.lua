@@ -1,3 +1,4 @@
+--[[
 local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
@@ -24,36 +25,39 @@ Gearboxes.Register("6-Speed", {
 
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("6Gear-L-S", "6-Speed", {
-		Name		= "6-Speed, Inline, Small",
-		Description	= "A small and light 6 speed inline gearbox, with a limited max torque rating.",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear6SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear6ST,
+		Name			= "6-Speed, Inline, Small",
+		Description		= "A small and light 6 speed inline gearbox, with a limited max torque rating.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear6SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear6ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("6Gear-L-M", "6-Speed", {
-		Name		= "6-Speed, Inline, Medium",
-		Description	= "A medium duty 6 speed inline gearbox with a limited torque rating.",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear6MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear6MT,
+		Name			= "6-Speed, Inline, Medium",
+		Description		= "A medium duty 6 speed inline gearbox with a limited torque rating.",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= Gear6MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear6MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("6Gear-L-L", "6-Speed", {
-		Name		= "6-Speed, Inline, Large",
-		Description	= "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed.",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear6LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear6LT,
+		Name			= "6-Speed, Inline, Large",
+		Description		= "Heavy duty 6 speed inline gearbox, however not as resilient as a 4 speed.",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= Gear6LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear6LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
@@ -72,6 +76,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("6Gear-LD-M", "6-Speed", {
@@ -85,6 +90,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("6Gear-LD-L", "6-Speed", {
@@ -98,41 +104,45 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.RegisterItem("6Gear-T-S", "6-Speed", {
-		Name		= "6-Speed, Transaxial, Small",
-		Description	= "A small and light 6 speed gearbox, with a limited max torque rating.",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear6SW,
-		Switch		= 0.15,
-		MaxTorque	= Gear6ST,
+		Name			= "6-Speed, Transaxial, Small",
+		Description		= "A small and light 6 speed gearbox, with a limited max torque rating.",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear6SW,
+		Switch			= 0.15,
+		MaxTorque		= Gear6ST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("6Gear-T-M", "6-Speed", {
-		Name		= "6-Speed, Transaxial, Medium",
-		Description	= "A medium duty 6 speed gearbox with a limited torque rating.",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear6MW,
-		Switch		= 0.2,
-		MaxTorque	= Gear6MT,
+		Name			= "6-Speed, Transaxial, Medium",
+		Description		= "A medium duty 6 speed gearbox with a limited torque rating.",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= Gear6MW,
+		Switch			= 0.2,
+		MaxTorque		= Gear6MT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("6Gear-T-L", "6-Speed", {
-		Name		= "6-Speed, Transaxial, Large",
-		Description	= "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed.",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear6LW,
-		Switch		= 0.3,
-		MaxTorque	= Gear6LT,
+		Name			= "6-Speed, Transaxial, Large",
+		Description		= "Heavy duty 6 speed gearbox, however not as resilient as a 4 speed.",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= Gear6LW,
+		Switch			= 0.3,
+		MaxTorque		= Gear6LT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
@@ -151,6 +161,7 @@ do -- Transaxial Dual Clutch
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("6Gear-TD-M", "6-Speed", {
@@ -164,6 +175,7 @@ do -- Transaxial Dual Clutch
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("6Gear-TD-L", "6-Speed", {
@@ -177,6 +189,7 @@ do -- Transaxial Dual Clutch
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 end
 
@@ -217,3 +230,4 @@ do -- Straight-through Gearboxes
 		},
 	})
 end
+]]

@@ -4,14 +4,19 @@ local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
 local GearCVTSW = 65
-local GearCVTMW = 180
-local GearCVTLW = 500
+--local GearCVTMW = 180
+--local GearCVTLW = 500
 local StWB = 0.75 --straight weight bonus mulitplier
 -- Torque Rating
 local GearCVTST = 175
-local GearCVTMT = 650
-local GearCVTLT = 6000
+--local GearCVTMT = 650
+--local GearCVTLT = 6000
 local StTB = 1.25 --straight torque bonus multiplier
+
+-- Old gearbox scales
+--local ScaleS = 1
+--local ScaleM = 1.5
+--local ScaleL = 2.5
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
@@ -76,45 +81,116 @@ Gearboxes.Register("CVT", {
 	end,
 })
 
-do -- Inline Gearboxes
-	Gearboxes.RegisterItem("CVT-L-S", "CVT", {
-		Name		= "CVT, Inline, Small",
-		Description	= "A light duty inline CVT.",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= GearCVTSW,
+do -- Scalable gearboxes
+	Gearboxes.RegisterItem("CVT-L", "CVT", {
+		Name			= "CVT, Inline",
+		Description		= "A massive inline CVT designed for high torque applications.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= GearCVTSW,
+		Switch			= 0.15,
+		MaxTorque		= GearCVTST,
+		CanDualClutch	= true,
+		Preview = {
+			FOV = 125,
+		},
+	})
+
+	Gearboxes.RegisterItem("CVT-T", "CVT", {
+		Name			= "CVT, Transaxial",
+		Description		= "A massive CVT designed for high torque applications.",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= GearCVTSW,
+		Switch			= 0.15,
+		MaxTorque		= GearCVTST,
+		CanDualClutch	= true,
+		Preview = {
+			FOV = 85,
+		},
+	})
+
+	Gearboxes.RegisterItem("CVT-ST", "CVT", {
+		Name		= "CVT, Straight",
+		Description	= "A massive straight-through CVT designed for high torque applications.",
+		Model		= "models/engines/t5small.mdl",
+		Mass		= math.floor(GearCVTSW * StWB),
 		Switch		= 0.15,
-		MaxTorque	= GearCVTST,
+		MaxTorque	= math.floor(GearCVTST * StTB),
+		Preview = {
+			FOV = 105,
+		},
+	})
+end
+
+do -- Inline Gearboxes
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-L", {
+		Scale = ScaleL,
+	})
+	/*
+	Gearboxes.RegisterItem("CVT-L-S", "CVT", {
+		Name			= "CVT, Inline, Small",
+		Description		= "A light duty inline CVT.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= GearCVTSW,
+		Switch			= 0.15,
+		MaxTorque		= GearCVTST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("CVT-L-M", "CVT", {
-		Name		= "CVT, Inline, Medium",
-		Description	= "A medium inline CVT.",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= GearCVTMW,
-		Switch		= 0.2,
-		MaxTorque	= GearCVTMT,
+		Name			= "CVT, Inline, Medium",
+		Description		= "A medium inline CVT.",
+		Model			= "models/engines/linear_m.mdl",
+		Mass			= GearCVTMW,
+		Switch			= 0.2,
+		MaxTorque		= GearCVTMT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
 	Gearboxes.RegisterItem("CVT-L-L", "CVT", {
-		Name		= "CVT, Inline, Large",
-		Description	= "A massive inline CVT designed for high torque applications.",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= GearCVTLW,
-		Switch		= 0.3,
-		MaxTorque	= GearCVTLT,
+		Name			= "CVT, Inline, Large",
+		Description		= "A massive inline CVT designed for high torque applications.",
+		Model			= "models/engines/linear_l.mdl",
+		Mass			= GearCVTLW,
+		Switch			= 0.3,
+		MaxTorque		= GearCVTLT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
+	*/
 end
 
 do -- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+	/*
 	Gearboxes.RegisterItem("CVT-LD-S", "CVT", {
 		Name		= "CVT, Inline, Small, Dual Clutch",
 		Description	= "A light duty inline CVT. The dual clutch allows you to apply power and brake each side independently.",
@@ -126,6 +202,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("CVT-LD-M", "CVT", {
@@ -139,6 +216,7 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("CVT-LD-L", "CVT", {
@@ -152,48 +230,81 @@ do -- Inline Dual Clutch Gearboxes
 		Preview = {
 			FOV = 125,
 		},
+		SuppressLoad = true,
 	})
+	*/
 end
 
 do -- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-L", {
+		Scale = ScaleL,
+	})
+	/*
 	Gearboxes.RegisterItem("CVT-T-S", "CVT", {
-		Name		= "CVT, Transaxial, Small",
-		Description	= "A light duty CVT.",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= GearCVTSW,
-		Switch		= 0.15,
-		MaxTorque	= GearCVTST,
+		Name			= "CVT, Transaxial, Small",
+		Description		= "A light duty CVT.",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= GearCVTSW,
+		Switch			= 0.15,
+		MaxTorque		= GearCVTST,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("CVT-T-M", "CVT", {
-		Name		= "CVT, Transaxial, Medium",
-		Description	= "A medium CVT.",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= GearCVTMW,
-		Switch		= 0.2,
-		MaxTorque	= GearCVTMT,
+		Name			= "CVT, Transaxial, Medium",
+		Description		= "A medium CVT.",
+		Model			= "models/engines/transaxial_m.mdl",
+		Mass			= GearCVTMW,
+		Switch			= 0.2,
+		MaxTorque		= GearCVTMT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 
 	Gearboxes.RegisterItem("CVT-T-L", "CVT", {
-		Name		= "CVT, Transaxial, Large",
-		Description	= "A massive CVT designed for high torque applications.",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= GearCVTLW,
-		Switch		= 0.3,
-		MaxTorque	= GearCVTLT,
+		Name			= "CVT, Transaxial, Large",
+		Description		= "A massive CVT designed for high torque applications.",
+		Model			= "models/engines/transaxial_l.mdl",
+		Mass			= GearCVTLW,
+		Switch			= 0.3,
+		MaxTorque		= GearCVTLT,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
+	*/
 end
 
 do -- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+	/*
 	Gearboxes.RegisterItem("CVT-TD-S", "CVT", {
 		Name		= "CVT, Transaxial, Small, Dual Clutch",
 		Description	= "A light duty CVT. The dual clutch allows you to apply power and brake each side independently.",
@@ -205,6 +316,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("CVT-TD-M", "CVT", {
@@ -218,6 +330,7 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
 
 	Gearboxes.RegisterItem("CVT-TD-L", "CVT", {
@@ -231,10 +344,24 @@ do -- Transaxial Dual Clutch Gearboxes
 		Preview = {
 			FOV = 85,
 		},
+		SuppressLoad = true,
 	})
+	*/
 end
 
 do -- Straight-through Gearboxes
+	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-L", {
+		Scale = ScaleL,
+	})
+	/*
 	Gearboxes.RegisterItem("CVT-ST-S", "CVT", {
 		Name		= "CVT, Straight, Small",
 		Description	= "A light duty straight-through CVT.",
@@ -270,6 +397,7 @@ do -- Straight-through Gearboxes
 			FOV = 105,
 		},
 	})
+	*/
 end
 
 ACF.SetCustomAttachments("models/engines/t5large.mdl", {

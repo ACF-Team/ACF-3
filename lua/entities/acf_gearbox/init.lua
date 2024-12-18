@@ -1,5 +1,3 @@
-DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
-
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -9,14 +7,13 @@ include("shared.lua")
 
 local ACF         = ACF
 local Contraption = ACF.Contraption
-local Mobility	  = ACF.Mobility
+local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
-local max         = math.max
 local HookRun     = hook.Run
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
@@ -53,15 +50,25 @@ do -- Spawn and Update functions -----------------------
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
-			Data.Gearbox = Data.Id or "2Gear-T-S"
+			Data.Gearbox = Data.Id or "2Gear-T"
 		end
-
+		--PrintTable(Data)
 		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
 		if not Class then
-			Data.Gearbox = "2Gear-T-S"
+			Data.Gearbox = "2Gear-T"
 
-			Class = Classes.GetGroup(Gearboxes, "2Gear-T-S")
+			Class = Classes.GetGroup(Gearboxes, "2Gear-T")
+		end
+
+		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
+
+		do -- Scale verification
+			local GearboxScale = Gearbox.Scale
+			PrintTable(Gearbox)
+			if GearboxScale then
+				Data.GearboxScale = GearboxScale
+			end
 		end
 
 		do -- Gears table verification
@@ -75,7 +82,9 @@ do -- Spawn and Update functions -----------------------
 				Gears[0] = 0
 			end
 
-			for I = 1, Class.Gears.Max do
+			local MaxGears = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
+
+			for I = 1, MaxGears do
 				local Gear = ACF.CheckNumber(Gears[I])
 
 				if not Gear then
@@ -109,15 +118,36 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
+	local function GetMass(Model, PhysObj, Class, Gearbox, Scale)
+		if Gearbox then return math.floor((Gearbox.Mass * (Scale ^ 2)) / 5) * 5 end -- Gearbox.Mass
+
+		local Volume = PhysObj:GetVolume()
+		local Factor = Volume / ModelData.GetModelVolume(Model)
+
+		return math.Round(Class.Mass * Factor)
+	end
+
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
-		local Mass = Gearbox.Mass
+		local CanDualClutch = Gearbox.CanDualClutch
+		local Scale = Data.GearboxScale or 1
+		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
+
+		-- Torque calculations
+		local EfficiencyLossMult = 0.99
+		local TorqueLoss = Gearbox.MaxTorque * (EfficiencyLossMult ^ MaxGear)
+		local ScalingCurve = Scale ^ 3
+		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
 
 		Entity.ACF = Entity.ACF or {}
 
-		Contraption.SetModel(Entity, Gearbox.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		--if Class.IsScalable then
+			Entity:SetScaledModel(Gearbox.Model)
+			Entity:SetScale(Scale)
+		--else
+			--Contraption.SetModel(Entity, Gearbox.Model)
+			--Entity:PhysicsInit(SOLID_VPHYSICS, true)
+			--Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		--end
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -130,15 +160,19 @@ do -- Spawn and Update functions -----------------------
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Class.Sound
 		Entity.SwitchTime   = Gearbox.Switch
-		Entity.MaxTorque    = Gearbox.MaxTorque
+		Entity.MaxTorque    = MaxTorque
 		Entity.MinGear      = Class.Gears.Min
-		Entity.MaxGear      = Class.Gears.Max
+		Entity.MaxGear      = MaxGear
 		Entity.GearCount    = Entity.MaxGear
-		Entity.DualClutch   = Gearbox.DualClutch
+		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
 		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
 		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
 		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
-		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model)
+		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model, Scale)
+
+		if CanDualClutch and Entity.DualClutch then
+			Entity.Name = Entity.Name .. ", Dual Clutch"
+		end
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Gearbox)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gearbox)
@@ -147,7 +181,13 @@ do -- Spawn and Update functions -----------------------
 
 		ACF.Activate(Entity, true)
 
-		Contraption.SetMass(Entity, Mass)
+		local PhysObj = Entity.ACF.PhysObj
+
+		if IsValid(PhysObj) then
+			local Mass = GetMass(Model, PhysObj, Class, Gearbox, Scale)
+
+			Contraption.SetMass(Entity, Mass)
+		end
 
 		Entity:ChangeGear(1)
 
@@ -564,18 +604,19 @@ do -- Linking ------------------------------------------
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
 		local DrvAngle = (OutPosWorld - InPosWorld):GetNormalized():Dot((Entity:GetRight() * OutPos.y):GetNormalized())
-
+		--print("out world " .. tostring(OutPosWorld) .. " out " .. tostring(OutPos))
 		if DrvAngle < 0.7 then return end
 
 		local Rope
 
-		if Entity.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1) ~= 0 then
-			Rope = constraint.CreateKeyframeRope(OutPosWorld, 1, "cable/cable2", nil, Entity, OutPos, 0, Target, InPos, 0)
-		end
+		--if Entity:CPPIGetOwner():GetInfoNum("ACF_MobilityRopeLinks", 1) ~= 0 then
+			--print("made rope " .. tostring(Entity))
+			--Rope = constraint.CreateKeyframeRope(OutPosWorld, 1, "cable/cable2", nil, Entity, OutPos, 0, Target, InPos, 0)
+		--end
 
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
-
+		--print("out world " .. tostring(OutPosWorld) .. " in world " .. tostring(InPosWorld))
 		local Link	= MobilityObj.Link(Entity, Target)
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
@@ -988,7 +1029,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		--Wire dupe info
-		BaseClass.PreEntityCopy(self)
+		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -1021,7 +1062,7 @@ do -- Duplicator Support -------------------------------
 			EntMods.ACFGearboxes = nil
 		end
 
-		BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 end ----------------------------------------------------
 
