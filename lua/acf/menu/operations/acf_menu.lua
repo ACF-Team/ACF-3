@@ -334,10 +334,12 @@ ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
 
-ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
-	Text = "Convert the target entity into a baseplate. Works best on SProps rectangles (either normal, thin, or superthin). Other models not supported.",
-	Func = function(Tool, Trace)
-		if CLIENT then return end
-		ACF.ConvertEntityToBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
-	end
-})
+if AdvDupe2 then
+	ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
+		Text = "Convert the target entity into a baseplate. Works best on SProps rectangles (either normal, thin, or superthin). Other models not supported.",
+		Func = function(Tool, Trace)
+			if CLIENT then return end
+			ACF.ConvertEntityToBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
+		end
+	})
+end
