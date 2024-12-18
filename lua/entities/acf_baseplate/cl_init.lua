@@ -16,9 +16,9 @@ function ENT:DrawGizmos()
 
     render.SetColorMaterial()
     render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 2, 0, 1, COLOR_Black)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1, 0, 1, COLOR_Red)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1, 0, 1, COLOR_Green)
     render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 2, 0, 1, COLOR_Black)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1, 0, 1, COLOR_Green)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1, 0, 1, COLOR_Red)
 
     cam.IgnoreZ(false)
 end
