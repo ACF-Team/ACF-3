@@ -17,7 +17,7 @@ end
 
 function ENT:ACF_PreSpawn(_, _, _, _)
     self:SetScaledModel("models/holograms/cube.mdl")
-    self:SetMaterial("sprops/sprops_grid_12x12")
+    self:SetMaterial("hunter/myplastic")
 end
 
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
