@@ -1,7 +1,7 @@
 local ACF        = ACF
 
 local gridMaterial = CreateMaterial("acf_bp_vis_spropgrid1", "VertexLitGeneric", {
-	["$basetexture"] = "sprops/sprops_grid_12x12",
+	["$basetexture"] = "hunter/myplastic",
 	["$model"] = 1,
 	["$translucent"] = 1,
 	["$vertexalpha"] = 1,
