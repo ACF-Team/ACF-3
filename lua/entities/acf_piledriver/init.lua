@@ -338,10 +338,12 @@ do -- Firing ------------------------------------
 
 		if self:CanShoot() then
 			local Sound  = self.SoundPath or Impact:format(math.random(5, 6))
+			local Pitch  = self.SoundPitch and math.Clamp(self.SoundPitch * 100, 0, 255) or math.Rand(98, 102)
+			local Volume = self.SoundVolume or 1
 			local Bullet = self.BulletData
 
 			if Sound ~= "" then
-				Sounds.SendSound(self, Sound, 70, math.Rand(98, 102), 1)
+				Sounds.SendSound(self, Sound, 70, Pitch, Volume)
 			end
 			self:SetSequence("load")
 

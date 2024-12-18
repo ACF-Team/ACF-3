@@ -111,18 +111,15 @@ do -- Spawn and Update functions
 	local function UpdateFuelTank(Entity, Data, Class, FuelTank, FuelType)
 		-- If updating, keep the same fuel level
 		local Percentage = Entity.Capacity and Entity.Fuel / Entity.Capacity or 1
+		local Material = Class.Material or FuelTank and FuelTank.Model
 
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = FuelTank and FuelTank.Model or Class.Model -- Must be set before changing model
 		Entity.ClassData = Class
 
-		if Class.IsScalable then
-			Entity:SetSize(Data.Size)
-		else
-			Contraption.SetModel(Entity, Entity.ACF.Model)
-			Entity:PhysicsInit(SOLID_VPHYSICS, true)
-			Entity:SetMoveType(MOVETYPE_VPHYSICS)
-		end
+		Entity:SetScaledModel(Entity.ACF.Model)
+		Entity:SetSize(Class.IsScalable and Data.Size or Entity:GetOriginalSize())
+		Entity:SetMaterial(Material or "")
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -174,16 +171,6 @@ do -- Spawn and Update functions
 		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
-	hook.Add("ACF_CanUpdateEntity", "ACF Fuel Tank Size Update", function(Entity, Data)
-		if not Entity.IsACFFuelTank then return end
-		if Data.Size then return end -- The menu won't send it like this
-
-		Data.Size      = Entity:GetSize()
-		Data.TankSizeX = nil
-		Data.TankSizeY = nil
-		Data.TankSizeZ = nil
-	end)
-
 	function MakeACF_FuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
@@ -226,6 +213,8 @@ do -- Spawn and Update functions
 		Tank.LastActivated = 0
 		Tank.DataStore     = Entities.GetArguments("acf_fueltank")
 
+		duplicator.ClearEntityModifier(Tank, "mass")
+
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
 		WireLib.TriggerOutput(Tank, "Entity", Tank)
@@ -237,14 +226,6 @@ do -- Spawn and Update functions
 		HookRun("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
 
 		Tank:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		-- Fuel tanks should be active by default
 		Tank:TriggerInput("Active", 1)
@@ -503,19 +484,21 @@ function ENT:Consume(Amount, SelfTbl)
 	local Fuel = Clamp(SelfTbl.Fuel - Amount, 0, SelfTbl.Capacity)
 	SelfTbl.Fuel = Fuel
 
-	self:UpdateOverlay()
-	self:UpdateMass(_, SelfTbl)
-
 	Fuel = Round(Fuel, 2)
 	local Activated = self:CanConsume(SelfTbl) and 1 or 0
 
 	if SelfTbl.LastFuel ~= Fuel then
 		SelfTbl.LastFuel = Fuel
 		WireLib.TriggerOutput(self, "Fuel", Fuel)
+
+		self:UpdateOverlay()
+		self:UpdateMass(_, SelfTbl)
 	end
 	if SelfTbl.LastActivated ~= Activated then
 		SelfTbl.LastActivated = Activated
 		WireLib.TriggerOutput(self, "Activated", Activated)
+
+		self:UpdateOverlay()
 	end
 end
 
@@ -587,6 +570,7 @@ do
 		return true
 	end
 end
+
 function ENT:OnRemove()
 	local Class = self.ClassData
 
@@ -609,7 +593,14 @@ function ENT:OnResized(Size)
 	do -- Calculate new empty mass
 		local Wall = ACF.FuelArmor * ACF.MmToInch -- Wall thickness in inches
 		local Class = self.ClassData
-		local _, Area = Class.CalcVolume(Size, Wall)
+		local _, Area
+
+		if Class.CalcVolume then
+			_, Area = Class.CalcVolume(Size, Wall)
+		else -- Default to finding surface area/volume based off physics object instead
+			local PhysObj = self:GetPhysicsObject()
+			Area = PhysObj:GetSurfaceArea()
+		end
 
 		local Mass = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
 

@@ -5,7 +5,6 @@ local ACF     = ACF
 local Clock   = ACF.Utilities.Clock
 local Sounds  = ACF.Utilities.Sounds
 local Effects = ACF.Utilities.Effects
-local Network = ACF.Networking
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
@@ -276,7 +275,7 @@ function SWEP:PrimaryAttack()
 		Entity.ACF.Health = Health
 		Entity.ACF.Armour = Armor
 
-		Network.Broadcast("ACF_Damage", Entity) -- purely to update the damage material on props
+		Damage.Network(Entity, _, Health, MaxHealth) -- purely to update the damage material on props
 
 		if Entity.ACF_OnRepaired then
 			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)

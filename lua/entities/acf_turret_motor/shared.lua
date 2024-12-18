@@ -6,4 +6,4 @@ ENT.PluralName    	= "ACF Turret Motors"
 ENT.IsACFEntity   	= true
 ENT.IsACFMotor		= true
 
-cleanup.Register("_acf_turret_motor")
+cleanup.Register("acf_turret_motor")

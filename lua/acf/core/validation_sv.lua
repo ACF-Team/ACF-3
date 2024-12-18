@@ -2,6 +2,7 @@
 
 -- Local Vars -----------------------------------
 local ACF          = ACF
+local Contraption  = ACF.Contraption
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
@@ -108,8 +109,16 @@ function ACF.CheckLegal(Entity)
 	return true
 end
 
+--- Determines the type of damage that should be dealt to the given entity.
+--- @param Entity entity The entity to be checked
+--- @return string # The type of damage that ACF should deal to the entity
 function ACF.GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
+
+	-- Explicitly handle support for LVS/simfphys/WAC
+	local EntTbl = Entity:GetTable()
+	if EntTbl.LVS or EntTbl.IsSimfphyscar or EntTbl.isWacAircraft then return "Squishy" end
+
 	if Entity:IsVehicle() then return "Vehicle" end
 
 	return "Prop"
@@ -137,34 +146,31 @@ function ACF.UpdateArea(Entity, PhysObj)
 end
 
 function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
-	local Thickness = Entity.ACF.Thickness
-	local EntMods = Entity.EntityMods
-	local MassMod = EntMods and EntMods.mass
+	local EntMods   = Entity.EntityMods
+	local ArmorMod  = EntMods and EntMods.ACF_Armor
+	local Thickness = ArmorMod and ArmorMod.Thickness
+	local MassMod   = EntMods and EntMods.mass
 
 	if Thickness then
 		if not MassMod then
 			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
 
 			if Mass ~= Entity.ACF.Mass then
-				Entity.ACF.Mass = Mass
-				PhysObj:SetMass(Mass)
+				Contraption.SetMass(Entity, Mass)
 			end
 
 			return Thickness
 		end
 
-		Entity.ACF.Thickness = nil
-
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Ductility * 100 })
+		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Thickness, Ductility = Ductility * 100 })
 	end
 
 	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
 	local Armor = ACF.CalcArmor(Area, Ductility, Mass)
 
 	if Mass ~= Entity.ACF.Mass then
-		Entity.ACF.Mass = Mass
-		PhysObj:SetMass(Mass)
+		Contraption.SetMass(Entity, Mass)
 
 		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
 	end
@@ -189,7 +195,9 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	local PhysObj = Entity:GetPhysicsObject()
 	if not IsValid(PhysObj) then return false end
 
-	if not Entity.ACF then
+	local EntACF = Entity.ACF
+
+	if not EntACF then
 		if Entity:IsWorld() or Entity:IsWeapon() or StringFind(Class, "func_") then
 			Baddies[Class] = true
 
@@ -197,11 +205,12 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 		end
 
 		ACF.Activate(Entity)
-	elseif ForceUpdate or Entity.ACF.Mass ~= PhysObj:GetMass() or (not IsValid(Entity.ACF.PhysObj) or Entity.ACF.PhysObj ~= PhysObj) then
+		EntACF = Entity.ACF
+	elseif ForceUpdate or EntACF.Mass ~= PhysObj:GetMass() or (not IsValid(EntACF.PhysObj) or EntACF.PhysObj ~= PhysObj) then
 		ACF.Activate(Entity, true)
 	end
 
-	return Entity.ACF.Type
+	return EntACF.Type
 end
 
 --- Initializes the entity's armor properties. If ACF_Activate is defined by the entity, that method is called as well.
@@ -209,32 +218,33 @@ end
 function ACF.Activate(Entity, Recalc)
 	-- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local PhysObj = Entity:GetPhysicsObject()
+	local EntTbl  = Entity:GetTable()
 
 	if not IsValid(PhysObj) then return end
-	if not Entity.ACF then Entity.ACF = {} end
+	if not EntTbl.ACF then EntTbl.ACF = {} end
 
-	Entity.ACF.Type    = ACF.GetEntityType(Entity)
-	Entity.ACF.PhysObj = PhysObj
+	EntTbl.ACF.Type    = ACF.GetEntityType(Entity)
+	EntTbl.ACF.PhysObj = PhysObj
 
 	-- Note that if the entity has its own ENT:ACF_Activate(Recalc) function, the rest of the code after this block won't be ran (instead the function should specify the rest)
-	if Entity.ACF_Activate then
+	if EntTbl.ACF_Activate then
 		Entity:ACF_Activate(Recalc)
 		return
 	end
 
 	local Area      = ACF.UpdateArea(Entity, PhysObj)
-	local Ductility = math.Clamp(Entity.ACF.Ductility or 0, -0.8, 0.8)
+	local Ductility = math.Clamp(EntTbl.ACF.Ductility or 0, -0.8, 0.8)
 	local Thickness = ACF.UpdateThickness(Entity, PhysObj, Area, Ductility) * ACF.ArmorMod
 	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
 	local Percent   = 1
 
-	if Recalc and Entity.ACF.Health and Entity.ACF.MaxHealth then
-		Percent = Entity.ACF.Health / Entity.ACF.MaxHealth
+	if Recalc and EntTbl.ACF.Health and EntTbl.ACF.MaxHealth then
+		Percent = EntTbl.ACF.Health / EntTbl.ACF.MaxHealth
 	end
 
-	Entity.ACF.Health    = Health * Percent
-	Entity.ACF.MaxHealth = Health
-	Entity.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
-	Entity.ACF.MaxArmour = Thickness
-	Entity.ACF.Ductility = Ductility
+	EntTbl.ACF.Health    = Health * Percent
+	EntTbl.ACF.MaxHealth = Health
+	EntTbl.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
+	EntTbl.ACF.MaxArmour = Thickness
+	EntTbl.ACF.Ductility = Ductility
 end

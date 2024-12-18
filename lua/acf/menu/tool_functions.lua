@@ -352,18 +352,18 @@ do -- Tool Functions Loader
 				end
 			end
 
-			--- Handle tool binds and dont apply effect if you're aiming at the sky
+			-- Handle tool binds and don't apply effect if the tool doesn't have the right functions
 
-			function Tool:LeftClick(Trace)
-				return not Trace.HitSky
+			function Tool:LeftClick()
+				return self.OpData and isfunction(self.OpData.OnLeftClick)
 			end
 
-			function Tool:RightClick(Trace)
-				return not Trace.HitSky
+			function Tool:RightClick()
+				return self.OpData and isfunction(self.OpData.OnRightClick)
 			end
 
-			function Tool:Reload(Trace)
-				return not Trace.HitSky
+			function Tool:Reload()
+				return self.OpData and isfunction(self.OpData.OnReload)
 			end
 		else
 			-- Helper function, allows you to set both stage and op at the same time with their names

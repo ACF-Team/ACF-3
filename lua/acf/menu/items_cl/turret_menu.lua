@@ -10,8 +10,6 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("Procedural Turrets")
-	Menu:AddLabel("Warning: Experimental!\nTurret entities are a work in progress, and may lead to some strange events!\nReport any crashes or other issues if you come across them!")
-
 	Menu:AddLabel("Typically, place the horizontal turret, and then parent a vertical turret to it to make a fully functional turret. You can parent anything directly to the turret pieces and they will be attached and rotate correctly.")
 
 	local ClassList		= Menu:AddComboBox()

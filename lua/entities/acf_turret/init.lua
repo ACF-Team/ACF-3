@@ -539,13 +539,20 @@ do	-- Spawn and Update funcs
 	end
 
 	function ENT:UpdateSound()
-		local SoundPath = self.HandGear.Sound
+		local Motor       = self.Motor
+		local SoundPath   = self.HandGear.Sound
+		local SoundPitch  = 70
+		local SoundVolume = 0.1
 
-		if IsValid(self.Motor) then
-			SoundPath = self.Motor.SoundPath
+		if IsValid(Motor) then
+			SoundPath  = Motor.SoundPath
+			SoundPitch = Motor.SoundPitch and math.Clamp(Motor.SoundPitch * 100, 0, 255) or SoundPitch
+			SoundVolume = Motor.SoundVolume or SoundVolume
 		end
 
-		self.SoundPath = SoundPath
+		self.SoundPath   = SoundPath
+		self.SoundPitch  = SoundPitch
+		self.SoundVolume = SoundVolume
 	end
 
 	function ENT:UpdateTurretSlew()
@@ -958,7 +965,10 @@ do -- Metamethods
 				if SelfTbl.SoundPath ~= (SelfTbl.CurrentSound or "") then -- should only get set off if the motor is enabled/disabled while the sound is playing
 					self:SetSoundState(false)
 				else
-					Sounds.SendAdjustableSound(self, false, 70 + math.ceil(MotorSpeedPerc * 30), 0.1 + (self.EffortScale * 0.9))
+					local SoundPitch = math.Clamp(self.SoundPitch + math.ceil(MotorSpeedPerc * 30), 0, 255)
+					local SoundVolume = self.SoundVolume + (self.EffortScale * 0.9)
+
+					Sounds.SendAdjustableSound(self, false, SoundPitch, SoundVolume)
 				end
 			end
 

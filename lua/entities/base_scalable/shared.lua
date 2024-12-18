@@ -4,7 +4,6 @@ ENT.PrintName      = "Base Scalable Entity"
 ENT.WireDebugName  = "Base Scalable Entity"
 ENT.Contact        = "Don't"
 ENT.IsScalable     = true
-ENT.UseCustomIndex = true
 ENT.ScaleData      = { Type = false, Path = false }
 
 function ENT:SetScaleData(Type, Path)
@@ -53,9 +52,9 @@ end
 do
 	local EntMeta = FindMetaTable("Entity")
 
-	function ENT:PhysicsInit(Solid, Bypass, ...)
+	function ENT:PhysicsInit(Solid, MassCenter, Bypass, ...)
 		if Bypass then
-			return EntMeta.PhysicsInit(self, Solid, Bypass, ...)
+			return EntMeta.PhysicsInit(self, Solid, MassCenter, Bypass, ...)
 		end
 
 		local Init = self.FirstInit

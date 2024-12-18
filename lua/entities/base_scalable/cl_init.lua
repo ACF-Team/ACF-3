@@ -201,33 +201,6 @@ do -- Dealing with visual clip's bullshit
 end
 
 do -- Scalable entity related hooks
-	hook.Add("Initialize", "ACF Scalable Decals", function()
-		-- Detour decals to scale better on scaled entities
-		local DecalEx = util.DecalEx
-
-		util.DecalEx = function(Mat, Entity, Pos, Normal, Color, W, H, ...)
-			if Entity.IsScalable and Entity:GetSize() then -- If entity is scaled, offset decal pos
-				local Offset = Pos - Entity:GetPos()
-
-				-- Thank you, Garry. Very cool.
-				local O 	 = Entity:GetOriginalSize()
-				local C 	 = Entity:GetSize()
-				local Scaler = Vector(O[1] / C[1], O[2] / C[2], O[3] / C[3])
-
-				Pos = Entity:GetPos() + Offset * Scaler
-
-				local Max = math.max(Scaler[1], Scaler[2], Scaler[3])
-
-				W = W * Max
-				H = H * Max
-			end
-
-			DecalEx(Mat, Entity, Pos, Normal, Color, W, H, ...)
-		end
-
-		hook.Remove("Initialize", "Scalable Entities")
-	end)
-
 	-- NOTE: Someone reported this could maybe be causing crashes. Please confirm.
 	hook.Add("PhysgunPickup", "Scalable Entity Physgun", function(_, Entity)
 		if Entity.IsScalable then return false end

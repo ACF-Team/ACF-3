@@ -52,7 +52,7 @@ do	-- Spawn functions
 		Ent:Spawn()
 
 		Ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-		Ent:SetSolidFlags(FSOLID_CUSTOMRAYTEST)
+		Ent:SetSolidFlags(bit.bor(FSOLID_CUSTOMRAYTEST, FSOLID_NOT_STANDABLE, FSOLID_CUSTOMBOXTEST))
 
 		local Ply		= Vehicle:GetDriver()
 		Ent.Driver		= Ply
@@ -64,6 +64,8 @@ do	-- Spawn functions
 
 		Ent:CPPISetOwner(Ply)
 		Ent:SetOwner(Ply)
+
+		Contraption.SetMass(Ent, 0.0001)
 
 		UpdateClient(Vehicle)
 	end
@@ -142,8 +144,7 @@ do	-- Metamethods
 
 		if IsValid(self.Driver) then
 			local Seat = self.Seat
-			local Driver = self.Driver
-			timer.Simple(0, function() if IsValid(Seat) and IsValid(Driver) then ACF.ApplyAlias(Seat, Driver) end end)
+			timer.Simple(0, function() if IsValid(Seat) and IsValid(Seat:GetDriver()) then ACF.ApplyAlias(Seat, Seat:GetDriver()) end end)
 		end
 	end
 end

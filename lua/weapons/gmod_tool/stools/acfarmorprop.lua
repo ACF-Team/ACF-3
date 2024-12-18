@@ -342,7 +342,22 @@ else -- Serverside-only stuff
 		self.AimEntity = Ent
 	end
 
-	duplicator.RegisterEntityModifier("ACF_Armor", UpdateArmor)
+	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
+		if Entity.IsPrimitive then return end
+		UpdateArmor(_, Entity, Data)
+	end)
+
+	-- Specifically handling Primitives separately so that we can ensure that their stats are not impacted by a race condition
+	hook.Add("Primitive_PostRebuildPhysics", "ACF", function(Entity, Properties)
+		local EntMods   = Entity.EntityMods
+		local ArmorMod  = EntMods and EntMods.ACF_Armor
+
+		UpdateArmor(_, Entity, ArmorMod)
+
+		local EntACF    = Entity.ACF
+		Properties.mass = EntACF and EntACF.Mass -- Don't let the primitive reset its own mass, use ACF mass instead
+	end)
+
 	duplicator.RegisterEntityModifier("acfsettings", function(_, Entity, Data)
 		if CLIENT then return end
 		if not ACF.Check(Entity, true) then return end

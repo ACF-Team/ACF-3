@@ -9,11 +9,14 @@ include("shared.lua")
 
 local ACF         = ACF
 local Contraption = ACF.Contraption
+local Mobility	  = ACF.Mobility
+local MobilityObj = Mobility.Objects
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
+local max         = math.max
 local HookRun     = hook.Run
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
@@ -158,7 +161,7 @@ do -- Spawn and Update functions -----------------------
 		if not next(Ropes) then return end
 
 		for Ent, Link in pairs(Ropes) do
-			local OutPos = Entity:LocalToWorld(Link.Output)
+			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
 			local InPos = Ent.In and Ent:LocalToWorld(Ent.In) or Ent:GetPos()
 
 			-- make sure it is not stretched too far
@@ -168,7 +171,7 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- make sure the angle is not excessive
-			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link.Output.y):GetNormalized())
+			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link:GetOrigin().y):GetNormalized())
 
 			if DrvAngle < 0.7 then
 				Entity:Unlink(Ent)
@@ -264,6 +267,8 @@ do -- Spawn and Update functions -----------------------
 		Entity.RClutch        = 1
 		Entity.DataStore      = Entities.GetArguments("acf_gearbox")
 
+		duplicator.ClearEntityModifier(Entity, "mass")
+
 		UpdateGearbox(Entity, Data, Class, Gearbox)
 
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
@@ -275,14 +280,6 @@ do -- Spawn and Update functions -----------------------
 		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		Entity:UpdateOverlay(true)
-
-		do -- Mass entity mod removal
-			local EntMods = Data and Data.EntityMods
-
-			if EntMods and EntMods.mass then
-				EntMods.mass = nil
-			end
-		end
 
 		ACF.CheckLegal(Entity)
 
@@ -579,15 +576,15 @@ do -- Linking ------------------------------------------
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
 
-		return {
-			Side = Side,
-			Axis = Axis,
-			Rope = Rope,
-			RopeLen = (OutPosWorld - InPosWorld):Length(),
-			Output = OutPos,
-			ReqTq = 0,
-			Vel = 0
-		}
+		local Link	= MobilityObj.Link(Entity, Target)
+		Link:SetOrigin(OutPos)
+		Link:SetTargetPos(InPos)
+		Link:SetAxis(Axis)
+		Link.Side = Side
+		Link.Rope = Rope
+		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
+
+		return Link
 	end
 
 	local function LinkWheel(Gearbox, Wheel)
@@ -730,8 +727,13 @@ do -- Gear Shifting ------------------------------------
 		self.GearRatio      = self.Gears[Value] * self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
-		if self.SoundPath ~= "" then
-			Sounds.SendSound(self, self.SoundPath, 70, 100, 0.5)
+		local SoundPath  = self.SoundPath
+
+		if SoundPath ~= "" then
+			local Pitch = self.SoundPitch and math.Clamp(self.SoundPitch * 100, 0, 255) or 100
+			local Volume = self.SoundVolume or 0.5
+
+			Sounds.SendSound(self, SoundPath, 70, Pitch, Volume)
 		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
@@ -748,52 +750,62 @@ do -- Movement -----------------------------------------
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+		local TorqueMult = 2 -- NOTE: Arbitrary torque multiplier; we ought to have a better means of implementing this
 
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * 1.5) * DeltaTime, -500000, 500000))
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * TorqueMult) * DeltaTime, -500000, 500000))
 	end
 
 	function ENT:Calc(InputRPM, InputInertia)
-		if self.Disabled then return 0 end
-		if self.LastActive == Clock.CurTime then return self.TorqueOutput end
+		local SelfTbl = self:GetTable()
+		if SelfTbl.Disabled then return 0 end
+		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
-		if self.ChangeFinished < Clock.CurTime then
-			self.InGear = true
+		if SelfTbl.ChangeFinished < Clock.CurTime then
+			SelfTbl.InGear = true
 		end
 
 		local BoxPhys = self:GetAncestor():GetPhysicsObject()
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
-		local Gear = self.Gear
+		local Gear = SelfTbl.Gear
 
-		if self.CVT and Gear == 1 then
-			if self.CVTRatio > 0 then
-				self.Gears[1] = Clamp(self.CVTRatio, 0.01, 1)
+		if SelfTbl.CVT and Gear == 1 then
+			local Gears = SelfTbl.Gears
+
+			if SelfTbl.CVTRatio > 0 then
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
 			else
-				local MinRPM  = self.MinRPM
-				self.Gears[1] = Clamp((InputRPM - MinRPM) / (self.MaxRPM - MinRPM), 0.05, 1)
+				local MinRPM  = SelfTbl.MinRPM
+				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
 
-			self.GearRatio = self.Gears[1] * self.FinalDrive
+			local GearRatio = Gears[1] * SelfTbl.FinalDrive
+			SelfTbl.GearRatio = GearRatio
 
-			WireLib.TriggerOutput(self, "Ratio", self.GearRatio)
+			if SelfTbl.LastRatio ~= GearRatio then
+				SelfTbl.LastRatio = GearRatio
+				WireLib.TriggerOutput(self, "Ratio", GearRatio)
+			end
 		end
 
-		if self.Automatic and self.Drive == 1 and self.InGear then
+		if SelfTbl.Automatic and SelfTbl.Drive == 1 and SelfTbl.InGear then
 			local PhysVel = BoxPhys:GetVelocity():Length()
 
-			if not self.Hold and Gear ~= self.MaxGear and PhysVel > (self.ShiftPoints[Gear] * self.ShiftScale) then
+			if not SelfTbl.Hold and Gear ~= SelfTbl.MaxGear and PhysVel > (SelfTbl.ShiftPoints[Gear] * SelfTbl.ShiftScale) then
 				self:ChangeGear(Gear + 1)
-			elseif PhysVel < (self.ShiftPoints[Gear - 1] * self.ShiftScale) then
+			elseif PhysVel < (SelfTbl.ShiftPoints[Gear - 1] * SelfTbl.ShiftScale) then
 				self:ChangeGear(Gear - 1)
 			end
 		end
 
 		local TorqueOutput = 0
 		local TotalReqTq = 0
-		local LClutch = self.LClutch
-		local RClutch = self.RClutch
-		local GearRatio = self.GearRatio
+		local LClutch = SelfTbl.LClutch
+		local RClutch = SelfTbl.RClutch
+		local GearRatio = SelfTbl.GearRatio
 
-		for Ent, Link in pairs(self.GearboxOut) do
+		if GearRatio == 0 then return 0 end
+
+		for Ent, Link in pairs(SelfTbl.GearboxOut) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
 			Link.ReqTq = 0
@@ -810,7 +822,10 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		for Wheel, Link in pairs(self.Wheels) do
+		local DoubleDiff = SelfTbl.DoubleDiff
+		local SteerRate  = SelfTbl.SteerRate
+
+		for Wheel, Link in pairs(SelfTbl.Wheels) do
 			Link.ReqTq = 0
 
 			if GearRatio ~= 0 then
@@ -821,14 +836,14 @@ do -- Movement -----------------------------------------
 				if Clutch > 0 and OnRPM then
 					local Multiplier = 1
 
-					if self.DoubleDiff and self.SteerRate ~= 0 then
-						local Rate = self.SteerRate * 2
+					if DoubleDiff and SteerRate ~= 0 then
+						local Rate = SteerRate * 2
 
 						-- this actually controls the RPM of the wheels, so the steering rate is correct
 						if Link.Side == 0 then
 							Multiplier = min(0, Rate) + 1
 						else
-							Multiplier = -math.max(0, Rate) + 1
+							Multiplier = -max(0, Rate) + 1
 						end
 					end
 
@@ -839,9 +854,9 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.TotalReqTq = TotalReqTq
-		TorqueOutput = min(TotalReqTq, self.MaxTorque)
-		self.TorqueOutput = TorqueOutput
+		SelfTbl.TotalReqTq = TotalReqTq
+		TorqueOutput = min(TotalReqTq, SelfTbl.MaxTorque)
+		SelfTbl.TorqueOutput = TorqueOutput
 
 		self:UpdateOverlay()
 
@@ -868,6 +883,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do
+			Link:Transfer(Link.ReqTq * AvailTq)
 			Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
@@ -879,6 +895,7 @@ do -- Movement -----------------------------------------
 				local WheelTorque = Link.ReqTq * AvailTq
 				ReactTq = ReactTq + WheelTorque
 
+				Link:Transfer(WheelTorque)
 				ActWheel(Link, Ent, WheelTorque, DeltaTime)
 			end
 		end

@@ -1,7 +1,53 @@
 local ACF     = ACF
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
-local Network = ACF.Networking
+local Effects = ACF.Utilities.Effects
+local Queue   = {}
+
+util.AddNetworkString("ACF_Damage")
+
+local function SendQueue(Target)
+	for Entity, Percent in pairs(Queue) do
+		timer.Simple(0, function()
+			if not IsValid(Entity) then return end
+
+			net.Start("ACF_Damage")
+			net.WriteUInt(Entity:EntIndex(), 13)
+			net.WriteUInt(Percent * 100, 7)
+
+			if Target then
+				net.Send(Target)
+			else
+				net.Broadcast()
+			end
+		end)
+
+		Queue[Entity] = nil
+	end
+end
+
+--- Helper function used to efficiently network visual damage updates on props.
+--- @param Entity entity The entity to update damage on.
+--- @param Target? entity The specific player to send the update to; leave this empty to send to all players.
+--- @param NewHealth? number The entity's new amount of health.
+--- @param MaxHealth? number The entity's maximum amount of health.
+function Damage.Network(Entity, Target, NewHealth, MaxHealth)
+	NewHealth = NewHealth or Entity.ACF.NewHealth or 0
+	MaxHealth = MaxHealth or Entity.ACF.MaxHealth or 0
+
+	local Value = math.Round(NewHealth / MaxHealth, 2)
+
+	if Value == 0 then return end
+	if Value ~= Value then return end
+
+	if not next(Queue) then
+		timer.Create("ACF_DamageQueue", 0, 1, function()
+			SendQueue(Target)
+		end)
+	end
+
+	Queue[Entity] = Value
+end
 
 --- Returns the penetration of a blast.
 -- @param Energy The energy of the blast in KJ.
@@ -40,6 +86,50 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	return DmgResult, DmgInfo
 end
+
+--- Used to kill and fling the player because it's funny.
+--- @param Entity entity The entity to attempt to kill
+--- @param Damage number The amount of damage to be dealt to the entity
+--- @param HitPos vector The world position to display blood effects at
+--- @param Attacker entity The entity that dealt the damage
+--- @param Inflictor entity The entity that was used to deal the damage
+--- @param Direction vector The normalized direction that the damage is pointing towards
+--- @param Explosive boolean Whether this damage should be explosive or not
+--- @return boolean # Returns true if the damage has killed the player, false if it has not
+function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, Direction, Explosive)
+	if not Entity:IsPlayer() and not Entity:IsNPC() and not Entity:IsNextBot() then return false end
+
+	local Health = Entity:Health()
+
+	if Damage > Health then
+		local SourceDamage = DamageInfo()
+		local ForceMult = 25000 -- Arbitrary force multiplier; just change this to whatever feels the best
+
+		SourceDamage:SetAttacker(Attacker)
+		SourceDamage:SetInflictor(Inflictor)
+		SourceDamage:SetDamage(Damage)
+		SourceDamage:SetDamageForce(Direction * ForceMult)
+		if Explosive then
+			SourceDamage:SetDamageType(DMG_BLAST)
+		end
+		Entity:TakeDamageInfo(SourceDamage)
+
+		local EffectTable = {
+			Origin = HitPos,
+			Normal = Direction,
+			Flags = 3,
+			Scale = 14,
+		}
+
+		Effects.CreateEffect("bloodspray", EffectTable, true, true)
+		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
+
+		return true
+	end
+
+	return false
+end
+
 --- Used to inflict damage to any entity that was tagged as "Squishy" by ACF.Check.
 -- This function will be internally used by ACF.Damage.dealDamage, you're not expected to use it.
 -- @param Entity The entity that will get damaged.
@@ -58,7 +148,7 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 		DmgResult:SetThickness(Size * 0.1)
 
 		HitRes = DmgResult:Compute()
-		Damage = HitRes.Damage * 5
+		Damage = HitRes.Damage * 15
 	else
 		-- Using player armor for fake armor works decently, as even if you don't take actual damage, the armor takes 1 point of damage, so it can potentially wear off
 		-- These funcs are also done on a hierarchy sort of system, so if the helmet is penetrated, then DamageHead is called, same for Vest -> Chest
@@ -74,11 +164,16 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 			DmgResult:SetThickness(Size * 0.1)
 
 			HitRes = DmgResult:Compute()
-			Damage = HitRes.Damage * 5
+			Damage = HitRes.Damage * 15
 		end
 	end
 
-	Entity:TakeDamage(Damage, DmgInfo:GetAttacker(), DmgInfo:GetInflictor())
+	local Attacker, Inflictor = DmgInfo:GetAttacker(), DmgInfo:GetInflictor()
+	local Direction = (DmgInfo.HitPos - DmgInfo.Origin):GetNormalized()
+
+	if not ACF.Damage.DoSquishyFlingKill(Entity, Damage, DmgInfo.HitPos, Attacker, Inflictor, Direction, DmgInfo.Type == DMG_BLAST) then
+		Entity:TakeDamage(Damage, Attacker, Inflictor)
+	end
 
 	HitRes.Kill = false
 
@@ -92,7 +187,6 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-
 	if not IsValid(Entity.Alias) then
 		local Driver = Entity:GetDriver()
 
@@ -113,18 +207,20 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult)
-	local Health = Entity.ACF.Health
+	local EntACF = Entity.ACF
+	local Health = EntACF.Health
 	local HitRes = DmgResult:Compute()
 
 	if HitRes.Damage >= Health then
 		HitRes.Kill = true
 	else
 		local NewHealth = Health - HitRes.Damage
+		local MaxHealth = EntACF.MaxHealth
 
-		Entity.ACF.Health = NewHealth
-		Entity.ACF.Armour = Entity.ACF.MaxArmour * (0.5 + NewHealth / Entity.ACF.MaxHealth * 0.5) -- Simulating the plate weakening after a hit
+		EntACF.Health = NewHealth
+		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
-		Network.Broadcast("ACF_Damage", Entity)
+		Damage.Network(Entity, _, NewHealth, MaxHealth)
 	end
 
 	return HitRes
@@ -174,20 +270,11 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 end
 
 hook.Add("ACF_OnPlayerLoaded", "ACF Render Damage", function(Player)
-	for _, Entity in ipairs(ents.GetAll()) do
+	for _, Entity in ents.Iterator() do
 		local Data = Entity.ACF
 
 		if not Data or Data.Health == Data.MaxHealth then continue end
 
-		Network.Send("ACF_Damage", Player, Entity)
+		Damage.Network(Entity, Player)
 	end
-end)
-
-Network.CreateSender("ACF_Damage", function(Queue, Entity)
-	local Value = math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
-
-	if Value == 0 then return end
-	if Value ~= Value then return end
-
-	Queue[Entity:EntIndex()] = Value
 end)

@@ -6,6 +6,9 @@ timer.Simple(1, function()
     local Entities = {}
     local Backup   = {}
 
+    CPPI_NOTIMPLEMENTED = -1
+    CPPI_DEFER          = -2
+
     function CPPI:GetName() return "CPPI for ACF3" end
     function CPPI:GetVersion() return "ACF3" end
     function CPPI:GetInterfaceVersion() return 1.3 end
@@ -24,7 +27,7 @@ timer.Simple(1, function()
     function ENTITY:CPPIGetOwner()
         local Owner = SERVER and self.CPPIOwner or self:GetNWEntity("CPPIOwner")
 
-        if not IsValid(Owner) then return end
+        if not IsValid(Owner) then return game.GetWorld(), 0 end
 
         return Owner, Owner:UniqueID()
     end

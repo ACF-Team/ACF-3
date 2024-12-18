@@ -348,13 +348,13 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 		return 0
 	end
 
-	local Sucess, Message = this:Link(Target,true)
+	local Success, Message = this:Link(Target, true)
 
 	if Notify ~= 0 then
-		ACF.SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Success, Message)
 	end
 
-	return Sucess and 1 or 0
+	return Success and 1 or 0
 end
 
 --allows e2 to perform ACF unlinks
@@ -377,13 +377,13 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 		return 0
 	end
 
-	local Sucess, Message = this:Unlink(Target)
+	local Success, Message = this:Unlink(Target)
 
 	if Notify > 0 then
-		ACF.SendNotify(self.player, Sucess, Message)
+		ACF.SendNotify(self.player, Success, Message)
 	end
 
-	return Sucess and 1 or 0
+	return Success and 1 or 0
 end
 
 --===============================================================================================--
@@ -416,6 +416,7 @@ e2function number entity:acfMaxPower()
 	return this.PeakPower and math.Round(this.PeakPower) or 0
 end
 
+[deprecated = "Use acfMaxTorque instead"]
 e2function number entity:acfMaxTorqueWithFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
@@ -424,6 +425,7 @@ e2function number entity:acfMaxTorqueWithFuel()
 	return this.PeakTorque
 end
 
+[deprecated = "Use acfMaxPower instead"]
 e2function number entity:acfMaxPowerWithFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end

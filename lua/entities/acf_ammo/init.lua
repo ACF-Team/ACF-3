@@ -272,17 +272,6 @@ do -- Spawning and Updating --------------------
 		end
 	end)
 
-	-- Called when checking if an entity can be spawned. 
-	hook.Add("ACF_CanUpdateEntity", "ACF Crate Size Update", function(Entity, Data)
-		if not Entity.IsACFAmmoCrate then return end
-		if Data.Size then return end -- The menu won't send it like this
-
-		Data.Size       = Entity:GetSize()
-		Data.CrateSizeX = nil
-		Data.CrateSizeY = nil
-		Data.CrateSizeZ = nil
-	end)
-
 	-------------------------------------------------------------------------------
 
 	function MakeACF_Ammo(Player, Pos, Ang, Data)
@@ -294,7 +283,7 @@ do -- Spawning and Updating --------------------
 		local Class  = Classes.GetGroup(Source, Data.Weapon) -- The class representing a weapon type (example IDs: "AC", "HW", etc.)
 		local Weapon = Source.GetItem(Class.ID, Data.Weapon) -- This is (unintentionally?) always nil due to Class.ID == Data.Weapon after verification
 		local Ammo   = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
-		local Model  = "models/holograms/rcube_thin.mdl"
+		local Model  = "models/holograms/hq_rcube_thin.mdl"
 
 		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 

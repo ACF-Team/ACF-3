@@ -33,7 +33,7 @@ timer.Simple(1, function()
                 local PrintFunc = CLIENT and Messages.PrintChat or Messages.PrintLog
                 PrintFunc("Warning", "Contraption Framework is not installed! ACF will not work correctly! Install it at https://steamcommunity.com/sharedfiles/filedetails/?id=3154971187")
 
-                hook.Remove("CreateMove", "ACF Version Conflict")
+                hook.Remove("CreateMove", "ACF CFW Requirement")
             end
         end)
     end
