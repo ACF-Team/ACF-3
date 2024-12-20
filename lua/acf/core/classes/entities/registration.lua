@@ -103,6 +103,9 @@ function Entities.AddStrictArguments(Class, DataKeys)
 	return List
 end
 
+-- Automatically registers an entity. This MUST be the last line in entity/init.lua for everything to work properly
+-- Can be passed with an ENT table if you have some weird usecase, but auto defaults to _G.ENT
+--- @param ENT table A scripted entity class definition (see https://wiki.facepunch.com/gmod/Structures/ENT)
 function Entities.AutoRegister(ENT)
 	if ENT == nil then ENT = _G.ENT end
 	if not ENT then error("Called Entities.AutoRegister(), but no entity was in the process of being created.") end
