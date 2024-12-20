@@ -115,9 +115,9 @@ end
 function ACF.GetEntityType(Entity)
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Squishy" end
 
-	-- Explicitly handle support for LVS/simfphys/WAC
+	-- Explicitly handle support for LVS/simfphys/WAC/Glide
 	local EntTbl = Entity:GetTable()
-	if EntTbl.LVS or EntTbl.IsSimfphyscar or EntTbl.isWacAircraft then return "Squishy" end
+	if EntTbl.LVS or EntTbl.IsSimfphyscar or EntTbl.isWacAircraft or EntTbl.IsGlideVehicle then return "Squishy" end
 
 	if Entity:IsVehicle() then return "Vehicle" end
 
