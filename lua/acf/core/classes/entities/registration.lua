@@ -100,10 +100,7 @@ function Entities.AddStrictArguments(Class, DataKeys)
 	local Arguments = table.GetKeys(DataKeys)
 	local List      = AddArguments(Entity, Arguments)
 	AddArgumentRestrictions(Entity, DataKeys)
-
-	if Entity.Spawn then
-		duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(List))
-	end
+	return List
 end
 
 function Entities.AutoRegister(ENT)
@@ -114,7 +111,7 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_Class = Class
 
 	local Entity = GetEntityTable(Class)
-	Entities.AddStrictArguments(Class, ENT.ACF_DataKeys or {})
+	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_DataKeys or {})
 
 	if CLIENT then return end
 
@@ -177,11 +174,12 @@ function Entities.AutoRegister(ENT)
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
 
+	local ACF_Limit = ENT.ACF_Limit
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
-		if ENT.ACF_Limit then
-			if isfunction(ENT.ACF_Limit) then
-				if not ENT.ACF_Limit() then return end
-			elseif isnumber(ENT.ACF_Limit) then
+		if ACF_Limit then
+			if isfunction(ACF_Limit) then
+				if not ACF_Limit() then return end
+			elseif isnumber(ACF_Limit) then
 				if not Player:CheckLimit("_" .. Class) then return false end
 			end
 		end
@@ -222,6 +220,8 @@ function Entities.AutoRegister(ENT)
 
 	ENT.ACF_VerifyClientData = VerifyClientData
 	ENT.ACF_UpdateEntityData = UpdateEntityData
+
+	duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(ArgsList))
 end
 
 --- Registers a class as a spawnable entity class

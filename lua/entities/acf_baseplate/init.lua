@@ -7,10 +7,12 @@ local Classes  = ACF.Classes
 local Entities = Classes.Entities
 
 ENT.ACF_Limit = 16
+ENT.ACF_UserWeighable = true
 
 function ENT.ACF_OnVerifyClientData(ClientData)
     ClientData.Size = Vector(ClientData.Width, ClientData.Length, ClientData.Thickness)
 end
+
 function ENT:ACF_PostUpdateEntityData(ClientData)
     self:SetSize(ClientData.Size)
 end
@@ -30,7 +32,6 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 end
 
 local Text = "Baseplate Size: %dx%dx%d"
-
 function ENT:UpdateOverlayText()
     return Text:format(self.Size[1], self.Size[2], self.Size[3])
 end
