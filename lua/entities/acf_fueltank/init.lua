@@ -104,7 +104,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_fueltank", Data, Class)
+			HookRun("ACF_OnVerifyData", "acf_fueltank", Data, Class)
 		end
 	end
 
@@ -338,7 +338,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	if HitRes.Kill then
-		local CanExplode = HookRun("ACF_FuelCanExplode", self)
+		local CanExplode = HookRun("ACF_PreExplodeFuel", self)
 
 		if not CanExplode then return HitRes end
 
@@ -358,7 +358,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	-- It's gonna blow
 	if math.random() < (ExplodeChance + Ratio) then
-		local CanExplode = HookRun("ACF_FuelCanExplode", self)
+		local CanExplode = HookRun("ACF_PreExplodeFuel", self)
 
 		if not CanExplode then return HitRes end
 
@@ -552,7 +552,7 @@ do
 
 				if CanRefuel(self, Tank, Distance) then
 					local Exchange  = math.min(DeltaTime * ACF.RefuelSpeed * ACF.FuelRate, self.Fuel, Tank.Capacity - Tank.Fuel)
-					local CanRefill = hook.Run("ACF_FuelCanRefill", self, Tank, Exchange)
+					local CanRefill = hook.Run("ACF_PreRefillFuel", self, Tank, Exchange)
 
 					if not CanRefill then continue end
 

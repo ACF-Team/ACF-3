@@ -91,7 +91,7 @@ do -- Spawn and Update functions --------------------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_gun", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_gun", Data, Class)
 		end
 	end
 
@@ -525,7 +525,7 @@ do -- Metamethods --------------------------------
 				if self:GetForward():Dot(Turret.SlewFuncs.GetWorldTarget(Turret):Forward()) < 0.9961 then return false end
 			end
 
-			local CanFire = hook.Run("ACF_WeaponCanFire", self)
+			local CanFire = hook.Run("ACF_PreFireWeapon", self)
 
 			return CanFire
 		end

@@ -57,7 +57,7 @@ do -- Spawning and Updating --------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_piledriver", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_piledriver", Data, Class)
 		end
 	end
 
@@ -328,7 +328,7 @@ do -- Firing ------------------------------------
 		if not ACF.AllowFunEnts then return false end
 		if self.CurrentShot == 0 then return false end
 
-		local CanFire = hook.Run("ACF_WeaponCanFire", self)
+		local CanFire = hook.Run("ACF_PreFireWeapon", self)
 
 		return CanFire
 	end

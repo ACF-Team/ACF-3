@@ -76,7 +76,7 @@ if SERVER then
 			if CanRefillCrate(Refill, Crate, Distance) then
 				local Supply    = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
 				local Transfer  = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
-				local CanRefill = hook.Run("ACF_AmmoCanRefill", Refill, Crate, Transfer)
+				local CanRefill = hook.Run("ACF_PreRefillAmmo", Refill, Crate, Transfer)
 
 				if not CanRefill then continue end
 

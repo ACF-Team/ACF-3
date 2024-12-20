@@ -281,7 +281,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class, Engine)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_engine", Data, Class, Engine)
+			hook.Run("ACF_OnVerifyData", "acf_engine", Data, Class, Engine)
 		end
 	end
 

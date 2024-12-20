@@ -115,7 +115,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Class string The entity class that's being verified.
 	--- @param Data table The table of entity information that's being verified.
 	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
-	function Gamemode:ACF_VerifyData()
+	function Gamemode:ACF_OnVerifyData()
 	end
 
 	--- Called before an entity is attempted to be spawned.  
@@ -183,21 +183,21 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Crate entity The ammo crate that will get replenished.
 	--- @param Amount number The quantity of ammunition that will get replenished.
 	--- @return boolean # True if the crate can be replenished by the refill with the given amount, false otherwise.
-	function Gamemode:ACF_AmmoCanRefill()
+	function Gamemode:ACF_PreRefillAmmo()
 		return true
 	end
 
 	--- Called any time an ammo crate gets damaged and is about to start burning its ammunition.
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can start burning, false otherwise.
-	function Gamemode:ACF_AmmoCanBurn()
+	function Gamemode:ACF_PreBurnAmmo()
 		return true
 	end
 
 	--- Called when an ammo crate attempts to create an explosion, usually due to damage.
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can explode, false otherwise.
-	function Gamemode:ACF_AmmoCanExplode()
+	function Gamemode:ACF_PreExplodeAmmo()
 		return true
 	end
 
@@ -206,21 +206,21 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param FuelTank entity The tank that will be replenished.
 	--- @param Amount number The quantity of fuel that will get replenished.
 	--- @return boolean # True if the FuelTank can be replenished by the Refill with the given amount, false otherwise.
-	function Gamemode:ACF_FuelCanRefill()
+	function Gamemode:ACF_PreRefillFuel()
 		return true
 	end
 
 	--- Called when a fuel tank attempts to create an explosion, usually due to damage.
 	--- @param Entity entity The affected fuel tank.
 	--- @return boolean # True if the fuel tank can explode, false otherwise.
-	function Gamemode:ACF_FuelCanExplode()
+	function Gamemode:ACF_PreExplodeFuel()
 		return true
 	end
 
 	--- Called when a weapon attempts to fire a projectile.
 	--- @param Entity entity The weapon attempting to fire.
 	--- @return boolean # True if the weapon can be fired, false otherwise.
-	function Gamemode:ACF_WeaponCanFire()
+	function Gamemode:ACF_PreFireWeapon()
 		return true
 	end
 
@@ -228,12 +228,12 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Player entity The affected player.
 	--- @param Zone? string | nil The zone which the player moved into, could be nil.
 	--- @param OldZone? string | nil The zone which the player moved from, could be nil.
-	function Gamemode:ACF_PlayerChangedZone()
+	function Gamemode:ACF_OnPlayerChangeZone()
 	end
 
 	--- Called when the active protection mode is changed on the server.
 	--- @param Mode string The currently active protection mode.
 	--- @param OldMode? string | nil The protection mode that was being used before, will be nil on startup.
-	function Gamemode:ACF_ProtectionModeChanged()
+	function Gamemode:ACF_OnChangeProtectionMode()
 	end
 end)

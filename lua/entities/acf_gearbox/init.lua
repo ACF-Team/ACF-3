@@ -104,7 +104,7 @@ do -- Spawn and Update functions -----------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_gearbox", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_gearbox", Data, Class)
 		end
 	end
 

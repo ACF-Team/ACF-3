@@ -138,7 +138,7 @@ do -- Spawning and Updating --------------------
 					Class.VerifyData(Data, Class, Ammo)
 				end
 
-				hook.Run("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+				hook.Run("ACF_OnVerifyData", "acf_ammo", Data, Class, Ammo)
 			end
 		end
 	end
@@ -512,7 +512,7 @@ do -- ACF Activation and Damage -----------------
 		local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
 		if (Ratio * self.Capacity / self.Ammo) > math.random() then
-			local CanBurn = hook.Run("ACF_AmmoCanBurn", self)
+			local CanBurn = hook.Run("ACF_PreBurnAmmo", self)
 
 			self.Inflictor = Inflictor
 
@@ -537,7 +537,7 @@ do -- ACF Activation and Damage -----------------
 	function ENT:Detonate()
 		if self.Exploding then return end
 
-		local CanExplode = hook.Run("ACF_AmmoCanExplode", self)
+		local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
 
 		if not CanExplode then return end
 
