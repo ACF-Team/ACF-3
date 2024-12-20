@@ -25,7 +25,7 @@ do -- Server syncronization and status printing
 
 			ACF.CheckLocalStatus(Name)
 
-			hook.Run("ACF_UpdatedRepository", Name, Repos[Name])
+			hook.Run("ACF_OnFetchRepository", Name, Repos[Name])
 		end
 	end)
 

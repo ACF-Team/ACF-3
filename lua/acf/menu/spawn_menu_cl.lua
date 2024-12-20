@@ -1,9 +1,12 @@
+local hook = hook
+local ACF  = ACF
+
 ACF.MenuOptions = ACF.MenuOptions or {}
-ACF.MenuLookup = ACF.MenuLookup or {}
-ACF.MenuCount = ACF.MenuCount or 0
+ACF.MenuLookup  = ACF.MenuLookup or {}
+ACF.MenuCount   = ACF.MenuCount or 0
 
 local Options = ACF.MenuOptions
-local Lookup = ACF.MenuLookup
+local Lookup  = ACF.MenuLookup
 
 do -- Menu population functions
 	local function DefaultAction(Menu)
@@ -98,13 +101,17 @@ do -- ACF Menu context panel
 	local function AllowOption(Option)
 		if Option.IsEnabled and not Option:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuOption", Option.Index, Option.Name) ~= false
+		local Allow = hook.Run("ACF_OnEnableMenuOption", Option.Name)
+
+		return Allow
 	end
 
 	local function AllowItem(Item)
 		if Item.IsEnabled and not Item:IsEnabled() then return false end
 
-		return hook.Run("ACF_AllowMenuItem", Item.Index, Item.Option, Item.Name) ~= false
+		local Allow = hook.Run("ACF_OnEnableMenuItem", Item.Option, Item.Name)
+
+		return Allow
 	end
 
 	local function UpdateTree(Tree, Old, New)
@@ -246,9 +253,42 @@ do -- Client and server settings
 	-- ACF.RemoveServerSettings(Name)
 	-- ACF.GenerateServerSettings(MenuPanel)
 
+	--- Uses the following hooks:
+	-- ACF_PreLoadServerSettings
+	-- ACF_OnLoadServerSettings
+	-- ACF_PostLoadServerSettings
+	-- ACF_PreLoadClientSettings
+	-- ACF_OnLoadClientSettings
+	-- ACF_PostLoadClientSettings
+
 	for Realm, Destiny in pairs(Settings) do
-		local Hook    = "ACF_On" .. Realm .. "SettingsLoaded"
-		local Message = "No %sside settings have been registered."
+		local PreHook  = "ACF_PreLoad" .. Realm .. "Settings"
+		local OnHook   = "ACF_OnLoad" .. Realm .. "Settings"
+		local PostHook = "ACF_PostLoad" .. Realm .. "Settings"
+		local Message  = "No %sside settings have been registered."
+
+		local function CreateSection(Menu, Name, Data)
+			local Result = hook.Run(PreHook, Name)
+
+			if not Result then return end
+
+			local Base, Section = Menu:AddCollapsible(Name, false)
+
+			function Section:OnToggle(Bool)
+				if not Bool then return end
+				if self.Created then return end
+
+				local Result = hook.Run(OnHook, Name, Base)
+
+				if not Result then
+					Data.Create(Base)
+				end
+
+				hook.Run(PostHook, Name, Base)
+
+				self.Created = true
+			end
+		end
 
 		ACF["Add" .. Realm .. "Settings"] = function(Index, Name, Function)
 			if not isnumber(Index) then return end
@@ -273,22 +313,12 @@ do -- Client and server settings
 			if not next(Destiny) then
 				Menu:AddTitle("Nothing to see here.")
 				Menu:AddLabel(Message:format(Realm))
+
 				return
 			end
 
 			for Name, Data in SortedPairsByMemberValue(Destiny, "Index") do
-				local Base, Section = Menu:AddCollapsible(Name, false)
-
-				function Section:OnToggle(Bool)
-					if not Bool then return end
-					if self.Created then return end
-
-					Data.Create(Base)
-
-					hook.Run(Hook, Name, Base)
-
-					self.Created = true
-				end
+				CreateSection(Menu, Name, Data)
 			end
 		end
 	end

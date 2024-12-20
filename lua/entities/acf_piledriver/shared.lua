@@ -7,7 +7,7 @@ ENT.IsACFPiledriver = true
 
 cleanup.Register("acf_piledriver")
 
-hook.Add("ACF_UpdateRoundData", "ACF Piledriver Ammo", function(Ammo, _, Data, GUIData)
+hook.Add("ACF_OnUpdateRound", "ACF Piledriver Ammo", function(Ammo, _, Data, GUIData)
 	if not Ammo.SpikeLength then return end
 
 	local Cavity   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)

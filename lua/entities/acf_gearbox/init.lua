@@ -17,7 +17,6 @@ local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
 local max         = math.max
-local HookRun     = hook.Run
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
@@ -105,7 +104,7 @@ do -- Spawn and Update functions -----------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_gearbox", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_gearbox", Data, Class)
 		end
 	end
 
@@ -232,7 +231,7 @@ do -- Spawn and Update functions -----------------------
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, Gearbox)
+		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, Gearbox)
 
 		if CanSpawn == false then return false end
 
@@ -277,7 +276,7 @@ do -- Spawn and Update functions -----------------------
 			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
+		hook.Run("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		Entity:UpdateOverlay(true)
 
@@ -312,14 +311,14 @@ do -- Spawn and Update functions -----------------------
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gearbox", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -331,7 +330,7 @@ do -- Spawn and Update functions -----------------------
 			Class.OnUpdate(self, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		hook.Run("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
 
 		if next(self.Engines) then
 			local Count, Total = 0, 0
@@ -1128,7 +1127,7 @@ do -- Miscellaneous ------------------------------------
 			Class.OnLast(self, Class)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gearbox", self, Class)
+		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, Class)
 
 		for Engine in pairs(self.Engines) do
 			self:Unlink(Engine)
