@@ -7,7 +7,6 @@ local Classes  = ACF.Classes
 local Entities = Classes.Entities
 
 ENT.ACF_Limit = 16
-ENT.ACF_Weighable = true
 
 function ENT.ACF_OnVerifyClientData(ClientData)
     ClientData.Size = Vector(ClientData.Width, ClientData.Length, ClientData.Thickness)
@@ -21,7 +20,13 @@ function ENT:ACF_PreSpawn(_, _, _, _)
     self:SetMaterial("hunter/myplastic")
 end
 
-function ENT:ACF_OnMassChange(_, NewMass)
+function ENT:ACF_PostSpawn(_, _, _, ClientData)
+    local EntMods = ClientData.EntityMods
+    if EntMods and EntMods.mass then
+        ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
+    else
+        ACF.Contraption.SetMass(self, 1000)
+    end
 end
 
 local Text = "Baseplate Size: %dx%dx%d"
