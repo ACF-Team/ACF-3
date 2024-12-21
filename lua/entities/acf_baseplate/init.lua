@@ -10,7 +10,7 @@ ENT.ACF_Limit = 16
 ENT.ACF_UserWeighable = true
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-    ClientData.Size = Vector(ClientData.Width, ClientData.Length, ClientData.Thickness)
+    ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
