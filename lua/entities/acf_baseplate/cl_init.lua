@@ -35,13 +35,18 @@ function ENT:Draw()
 
     self:DrawModel()
 
-    if LookedAt and not HideInfo() then
-        self:AddWorldTip()
+    if not LookedAt then return end
+    if HideInfo() then return end
 
-        if not LocalPlayer:InVehicle() and IsValid(Weapon) and Weapon:GetClass() == "weapon_physgun" then
-            self:DrawGizmos()
-        end
-    end
+    self:AddWorldTip()
+
+    if LocalPlayer:InVehicle() then return end
+    if not IsValid(Weapon) then return end
+
+    local class = Weapon:GetClass()
+    if class ~= "weapon_physgun" and (class ~= "gmod_tool" or Weapon.current_mode ~= "acf_menu") then return end
+
+    self:DrawGizmos()
 end
 
 ACF.Classes.Entities.Register()
