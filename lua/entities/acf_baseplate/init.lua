@@ -31,7 +31,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
     end
 end
 
-local Text = "Baseplate Size: %dx%dx%d"
+local Text = "Baseplate Size: %.1f x %.1f x %.1f"
 function ENT:UpdateOverlayText()
     return Text:format(self.Size[1], self.Size[2], self.Size[3])
 end

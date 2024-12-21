@@ -18,7 +18,7 @@ local function CreateMenu(Menu)
 	Menu:AddLabel("The root entity of all ACF contraptions.")
 	local SizeX     = Menu:AddSlider("Plate Width (gmu)", 36, 96, 2)
 	local SizeY     = Menu:AddSlider("Plate Length (gmu)", 36, 420, 2)
-	local SizeZ     = Menu:AddSlider("Plate Thickness (gmu)", 1, 3, 2)
+	local SizeZ     = Menu:AddSlider("Plate Thickness (gmu)", 0.5, 3, 2)
 
 	Menu:AddLabel("Comparing the current dimensions with a 105mm Howitzer:")
 	local Vis       = Menu:AddModelPreview("models/howitzer/howitzer_105mm.mdl", true)

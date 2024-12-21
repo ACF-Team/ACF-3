@@ -35,8 +35,8 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     -- Setup the dupe table to convert it to a baseplate
     local w, l, t = BoxSize.x, BoxSize.y, BoxSize.z
     Baseplate.Class = "acf_baseplate"
-    Baseplate.Width = w
-    Baseplate.Length = l
+    Baseplate.Length = w
+    Baseplate.Width = l
     Baseplate.Thickness = t
 
     -- Delete everything now
