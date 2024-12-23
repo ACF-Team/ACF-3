@@ -16,7 +16,7 @@ local function CreateMenu(Menu)
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview(nil, true)
 	local GearboxStats = Base:AddLabel()
-	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 1, 3, 2)
+	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 0.75, 3, 2)
 	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 8, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
@@ -51,9 +51,10 @@ local function CreateMenu(Menu)
 		Current.Scale = Current.Scale or 1
 		Current.GearCount = Current.GearCount or 3
 
-		local Mass = ACF.GetProperMass(math.floor((Data.Mass * (Current.Scale ^ 2)) / 5) * 5)
-		local Torque = math.floor(Data.MaxTorque * 0.73 * Current.Scale)
-		GearboxStats:SetText(StatsText:format(Mass, Data.MaxTorque * Current.Scale, Torque))
+		local Mass = ACF.GetProperMass(math.floor((Data.Mass * (Current.Scale ^ ACF.GearboxMassScale)) / 5) * 5)
+		local TorqueRating = Data.MaxTorque * Current.Scale * ACF.TorqueMult
+		local Torque = math.floor(Data.MaxTorque * 0.73 * Current.Scale) * ACF.TorqueMult
+		GearboxStats:SetText(StatsText:format(Mass, TorqueRating, Torque))
 
 		GearboxPreview:UpdateModel(Data.Model)
 		GearboxPreview:UpdateSettings(Data.Preview)
@@ -67,12 +68,11 @@ local function CreateMenu(Menu)
 
 		GearAmount:SetVisible(ClassData.CanSetGears)
 
-		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Current.Scale ^ 2)) / 5) * 5)
+		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Current.Scale ^ ACF.GearboxMassScale)) / 5) * 5)
 
 		-- Torque calculations
-		local EfficiencyLossMult = 0.99
-		local TorqueLoss = Current.MaxTorque * (EfficiencyLossMult ^ Current.GearCount)
-		local ScalingCurve = Current.Scale ^ 3
+		local TorqueLoss = Current.MaxTorque * (ACF.GearEfficiency ^ Current.GearCount)
+		local ScalingCurve = Current.Scale ^ ACF.GearboxTorqueScale
 		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
 		--local Torque = math.floor(Current.MaxTorque * 0.73 * Scale)
 		GearboxStats:SetText(StatsText:format(Mass, MaxTorque * Current.Scale, MaxTorque))
@@ -85,7 +85,9 @@ local function CreateMenu(Menu)
 			DualClutch:SetClientData("DualClutch", "OnChange")
 			DualClutch:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetValue(Value)
-				GearboxPreview:GetEntity():SetBodygroup(1, Value and 1 or 0)
+				timer.Simple(0, function()
+					GearboxPreview:GetEntity():SetBodygroup(1, Value and 1 or 0)
+				end)
 
 				return Value
 			end)
@@ -109,12 +111,11 @@ local function CreateMenu(Menu)
 		Panel:SetValue(Scale)
 		Current.Scale = Scale
 		--[[
-		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Scale ^ 2)) / 5) * 5)
+		local Mass = ACF.GetProperMass(math.floor((Current.Mass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5)
 
 		-- Torque calculations
-		local EfficiencyLossMult = 0.99
-		local TorqueLoss = Current.MaxTorque * (EfficiencyLossMult ^ Current.GearCount)
-		local ScalingCurve = Scale ^ 3
+		local TorqueLoss = Current.MaxTorque * (ACF.GearEfficiency ^ Current.GearCount)
+		local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
 		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
 		--local Torque = math.floor(Current.MaxTorque * 0.73 * Scale)
 		GearboxStats:SetText(StatsText:format(Mass, MaxTorque * Scale, MaxTorque))

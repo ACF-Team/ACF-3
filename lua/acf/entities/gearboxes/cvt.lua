@@ -14,9 +14,9 @@ local GearCVTST = 175
 local StTB = 1.25 --straight torque bonus multiplier
 
 -- Old gearbox scales
---local ScaleS = 1
---local ScaleM = 1.5
---local ScaleL = 2.5
+local ScaleS = 1
+local ScaleM = 1.5
+local ScaleL = 2.5
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears

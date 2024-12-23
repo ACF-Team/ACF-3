@@ -16,85 +16,6 @@ function ENT:OnResized()
 	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
 end
 
-local testMat = Material("cable/cable2")
-
-	local innerConnection = Color(127, 127, 127)
-	local outerConnection = Color(255, 255, 255)
-
-function ENT:DrawRopes(Rendered)
-	if Rendered[self] then return end
-		local SelfTbl = self:GetTable()
-
-		Rendered[self] = true
-
-		if not SelfTbl.HasData then
-			self:RequestGearboxInfo()
-			return
-		elseif Clock.CurTime > SelfTbl.Age then
-			self:RequestGearboxInfo()
-		end
-
-		local Perc = (Clock.CurTime / 2) % 1
-
-		local InPos		= self:LocalToWorld(SelfTbl.In)
-		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
-		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
-		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
-
-		-- Rendering more along the chain
-		for _, T in ipairs(SelfTbl.Inputs) do
-			local E = T.Ent
-
-			if IsValid(E) and E.DrawRopes then
-				E:DrawRopes(Rendered, false)
-			end
-		end
-
-
-		if not SelfTbl.IsStraight then
-			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, innerConnection)
-			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, innerConnection)
-		else
-			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
-			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, innerConnection)
-		end
-
-		for _, T in ipairs(SelfTbl.OutputsL) do
-			local E = T.Ent
-
-			if IsValid(E) then
-
-				local Pos = E:LocalToWorld(T.Pos)
-				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, outerConnection)
-
-				if E.DrawRopes then
-					E:DrawRopes(Rendered, false)
-				end
-			end
-		end
-
-		for _, T in ipairs(SelfTbl.OutputsR) do
-			local E = T.Ent
-
-			if IsValid(E) then
-
-				local Pos = E:LocalToWorld(T.Pos)
-				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, outerConnection)
-
-				if E.DrawRopes then
-					E:DrawRopes(Rendered, false)
-				end
-			end
-		end
-end
-
-function ENT:Draw()
-	self.BaseClass.Draw(self)
-
-	render.SetMaterial(testMat)
-	self:DrawRopes({self = true}, true)
-end
-
 do	-- NET SURFER 2.0
 	net.Receive("ACF_InvalidateGearboxInfo", function()
 		local Gearbox	= net.ReadEntity()
@@ -190,6 +111,7 @@ do	-- Overlay
 	local green = Color(0, 255, 0)
 	local innerConnection = Color(127, 127, 127)
 	local outerConnection = Color(255, 255, 255)
+
 	function ENT:DrawLinks(Rendered)
 		if Rendered[self] then return end
 		local SelfTbl = self:GetTable()
@@ -218,7 +140,6 @@ do	-- Overlay
 				E:DrawLinks(Rendered, false)
 			end
 		end
-
 
 		if not SelfTbl.IsStraight then
 			render.DrawBeam(LeftPos, RightPos, 2, 0, 0, color_black)
@@ -313,5 +234,88 @@ do	-- Overlay
 				draw.SimpleTextOutlined("Right Output", "ACF_Title", OutRTextPos.x, OutRTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 			end
 		cam.End2D()
+	end
+end
+
+do -- Rendering mobility links
+	local RopesCvar = GetConVar("acf_mobilityropelinks")
+	local RopeMat = Material("cable/cable2")
+	local innerConnection = Color(127, 127, 127)
+	local outerConnection = Color(255, 255, 255)
+
+	function ENT:Draw()
+		self.BaseClass.Draw(self)
+
+		if RopesCvar:GetBool() then
+			self:DrawRopes({self = true}, true)
+		end
+	end
+
+	function ENT:DrawRopes(Rendered)
+		if Rendered[self] then return end
+
+		local SelfTbl = self:GetTable()
+
+		render.SetMaterial(RopeMat)
+		Rendered[self] = true
+
+		if not SelfTbl.HasData then
+			self:RequestGearboxInfo()
+			return
+		elseif Clock.CurTime > SelfTbl.Age then
+			self:RequestGearboxInfo()
+		end
+
+		--local Perc = (Clock.CurTime / 2) % 1
+
+		local InPos		= self:LocalToWorld(SelfTbl.In)
+		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
+		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
+		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
+
+		-- Rendering more along the chain
+		for _, T in ipairs(SelfTbl.Inputs) do
+			local E = T.Ent
+
+			if IsValid(E) and E.DrawRopes then
+				E:DrawRopes(Rendered, false)
+			end
+		end
+
+		if not SelfTbl.IsStraight then
+			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, innerConnection)
+		else
+			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
+			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, innerConnection)
+		end
+
+		for _, T in ipairs(SelfTbl.OutputsL) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, outerConnection)
+
+				if E.DrawRopes then
+					E:DrawRopes(Rendered, false)
+				end
+			end
+		end
+
+		for _, T in ipairs(SelfTbl.OutputsR) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, outerConnection)
+
+				if E.DrawRopes then
+					E:DrawRopes(Rendered, false)
+				end
+			end
+		end
 	end
 end

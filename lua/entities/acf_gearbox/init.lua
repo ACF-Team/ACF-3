@@ -52,7 +52,7 @@ do -- Spawn and Update functions -----------------------
 		if not Data.Gearbox then
 			Data.Gearbox = Data.Id or "2Gear-T"
 		end
-		--PrintTable(Data)
+
 		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
 		if not Class then
@@ -65,7 +65,7 @@ do -- Spawn and Update functions -----------------------
 
 		do -- Scale verification
 			local GearboxScale = Gearbox.Scale
-			PrintTable(Gearbox)
+
 			if GearboxScale then
 				Data.GearboxScale = GearboxScale
 			end
@@ -119,7 +119,7 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	local function GetMass(Model, PhysObj, Class, Gearbox, Scale)
-		if Gearbox then return math.floor((Gearbox.Mass * (Scale ^ 2)) / 5) * 5 end -- Gearbox.Mass
+		if Gearbox then return math.floor((Gearbox.Mass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 end -- Gearbox.Mass
 
 		local Volume = PhysObj:GetVolume()
 		local Factor = Volume / ModelData.GetModelVolume(Model)
@@ -133,9 +133,8 @@ do -- Spawn and Update functions -----------------------
 		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
 
 		-- Torque calculations
-		local EfficiencyLossMult = 0.99
-		local TorqueLoss = Gearbox.MaxTorque * (EfficiencyLossMult ^ MaxGear)
-		local ScalingCurve = Scale ^ 3
+		local TorqueLoss = Gearbox.MaxTorque * (ACF.GearEfficiency ^ MaxGear)
+		local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
 		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
 
 		Entity.ACF = Entity.ACF or {}
