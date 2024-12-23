@@ -84,14 +84,14 @@ hook.Add("ACF_IsLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
 end)
 
 hook.Add("CanPlayerEnterVehicle", "ACF_SeatLegality", function(Player, Entity)
-    if not Entity.ACF then return end
+    if not ACF.VehicleLegalChecks or not Entity.ACF then return end
 
-    if not Entity.ACF.LegalSeat then
-        local IsLegal, Reason = ACF.IsLegal(Entity)
-        Reason = not IsLegal and Reason or "Reason not found."
+    local IsLegal, Reason = ACF.IsLegal(Entity)
+    if IsLegal then return end
 
-        ACF.SendNotify(Player, false, "[ACF] Seat is not legal and is currently disabled. (" .. Reason .. ")")
+    Reason = Reason or "Reason not found."
 
-        return false
-    end
+    ACF.SendNotify(Player, false, "[ACF] Seat is not legal and is currently disabled. (" .. Reason .. ")")
+
+    return false
 end)
