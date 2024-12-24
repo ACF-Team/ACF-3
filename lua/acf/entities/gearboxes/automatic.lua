@@ -15,6 +15,11 @@ local StTB = 1.25 --straight torque bonus multiplier
 -- Shift Time
 local ShiftS = 0.25
 
+-- Old gearbox scales
+local ScaleS = 1
+local ScaleM = 1.5
+local ScaleL = 2.5
+
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
 
@@ -161,5 +166,275 @@ do -- Scalable Gearboxes
 		Preview = {
 			FOV = 105,
 		},
+	})
+end
+
+do -- 3-Speed Automatic Gearboxes
+	Gearboxes.AddAlias("Auto", "3-Auto")
+
+	-- Inline Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-L-S", {
+		MaxGear = 3,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-L-M", {
+		MaxGear = 3,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-L-L", {
+		MaxGear = 3,
+		Scale = ScaleL,
+	})
+
+	-- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-LD-S", {
+		MaxGear = 3,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-LD-M", {
+		MaxGear = 3,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-L", "3Gear-A-LD-L", {
+		MaxGear = 3,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-T-S", {
+		MaxGear = 3,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-T-M", {
+		MaxGear = 3,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-T-L", {
+		MaxGear = 3,
+		Scale = ScaleL,
+	})
+
+	-- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-TD-S", {
+		MaxGear = 3,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-TD-M", {
+		MaxGear = 3,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-T", "3Gear-A-TD-L", {
+		MaxGear = 3,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Straight-through Gearboxes
+	Gearboxes.AddItemAlias("3-Auto", "Auto-ST", "3Gear-A-ST-S", {
+		MaxGear = 3,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-ST", "3Gear-A-ST-M", {
+		MaxGear = 3,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("3-Auto", "Auto-ST", "3Gear-A-ST-L", {
+		MaxGear = 3,
+		Scale = ScaleL,
+	})
+end
+
+do -- 5-Speed Automatic Gearboxes
+	Gearboxes.AddAlias("Auto", "5-Auto")
+
+	-- Inline Gearboxes
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-L-S", {
+		MaxGear = 5,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-L-M", {
+		MaxGear = 5,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-L-L", {
+		MaxGear = 5,
+		Scale = ScaleL,
+	})
+
+	-- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-LD-S", {
+		MaxGear = 5,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-LD-M", {
+		MaxGear = 5,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-L", "5Gear-A-LD-L", {
+		MaxGear = 5,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-T-S", {
+		MaxGear = 5,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-T-M", {
+		MaxGear = 5,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-T-L", {
+		MaxGear = 5,
+		Scale = ScaleL,
+	})
+
+	-- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-TD-S", {
+		MaxGear = 5,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-TD-M", {
+		MaxGear = 5,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-T", "5Gear-A-TD-L", {
+		MaxGear = 5,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Straight-through Gearboxes
+	Gearboxes.AddItemAlias("5-Auto", "Auto-ST", "5Gear-A-ST-S", {
+		MaxGear = 5,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-ST", "5Gear-A-ST-M", {
+		MaxGear = 5,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("5-Auto", "Auto-ST", "5Gear-A-ST-L", {
+		MaxGear = 5,
+		Scale = ScaleL,
+	})
+end
+
+do -- 7-Speed Automatic Gearboxes
+	Gearboxes.AddAlias("Auto", "7-Auto")
+
+	-- Inline Gearboxes
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-L-S", {
+		MaxGear = 7,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-L-M", {
+		MaxGear = 7,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-L-L", {
+		MaxGear = 7,
+		Scale = ScaleL,
+	})
+
+	-- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-LD-S", {
+		MaxGear = 7,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-LD-M", {
+		MaxGear = 7,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-L", "7Gear-A-LD-L", {
+		MaxGear = 7,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-T-S", {
+		MaxGear = 7,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-T-M", {
+		MaxGear = 7,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-T-L", {
+		MaxGear = 7,
+		Scale = ScaleL,
+	})
+
+	-- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-TD-S", {
+		MaxGear = 7,
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-TD-M", {
+		MaxGear = 7,
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-T", "7Gear-A-TD-L", {
+		MaxGear = 7,
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Straight-through Gearboxes
+	Gearboxes.AddItemAlias("7-Auto", "Auto-ST", "7Gear-A-ST-S", {
+		MaxGear = 7,
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-ST", "7Gear-A-ST-M", {
+		MaxGear = 7,
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("7-Auto", "Auto-ST", "7Gear-A-ST-L", {
+		MaxGear = 7,
+		Scale = ScaleL,
 	})
 end
