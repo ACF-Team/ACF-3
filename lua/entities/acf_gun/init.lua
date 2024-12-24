@@ -114,14 +114,13 @@ do -- Spawn and Update functions --------------------------------
 		return Result
 	end
 
-	local function GetMass(Model, PhysObj, Class, Weapon)
-		if Weapon then return Weapon.Mass end
-
-		local Volume = PhysObj:GetVolume()
-		local Factor = Volume / ModelData.GetModelVolume(Model)
-
-		return math.Round(Class.Mass * Factor)
-	end
+	local function GetMass(Caliber, Class, Weapon)
+	        if Weapon then return Weapon.Mass end
+		
+	        local Factor = Caliber / Class.Caliber.Base
+		
+		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
+    	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
@@ -190,7 +189,7 @@ do -- Spawn and Update functions --------------------------------
 		local PhysObj = Entity.ACF.PhysObj
 
 		if IsValid(PhysObj) then
-			local Mass = GetMass(Model, PhysObj, Class, Weapon)
+			local Mass = GetMass(Caliber, Class, Weapon)
 
 			Contraption.SetMass(Entity, Mass)
 		end
