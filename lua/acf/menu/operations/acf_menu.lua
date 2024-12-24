@@ -335,9 +335,12 @@ ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
 
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
-	Text = "Convert the target entity into a baseplate. Works best on SProps rectangles (either normal, thin, or superthin). Other models not supported.",
+	Text = "Attempts to convert the target entity into a baseplate.",
 	Func = function(Tool, Trace)
 		if CLIENT then return end
-		ACF.ConvertEntityToBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
+		local success, msg = ACF.ConvertEntityToBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
+		if not success then
+			ACF.SendNotify(Tool:GetOwner(), err, "[ACF] Could not convert baseplate: " .. msg)
+		end
 	end
 })

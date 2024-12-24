@@ -1,6 +1,6 @@
 local ACF        = ACF
 
-local gridMaterial = CreateMaterial("acf_bp_vis_spropgrid1", "VertexLitGeneric", {
+local gridMaterial = CreateMaterial("acf_bp_vis_grid1", "VertexLitGeneric", {
 	["$basetexture"] = "hunter/myplastic",
 	["$model"] = 1,
 	["$translucent"] = 1,
@@ -16,9 +16,10 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("Baseplate Settings")
 
 	Menu:AddLabel("The root entity of all ACF contraptions.")
-	local SizeX     = Menu:AddSlider("Plate Width (gmu)", 36, 96, 2)
-	local SizeY     = Menu:AddSlider("Plate Length (gmu)", 36, 420, 2)
-	local SizeZ     = Menu:AddSlider("Plate Thickness (gmu)", 0.5, 3, 2)
+	local BaseplateBase = Menu:AddCollapsible("Baseplate Information")
+	local SizeX     = BaseplateBase:AddSlider("Plate Width (gmu)", 36, 96, 2)
+	local SizeY     = BaseplateBase:AddSlider("Plate Length (gmu)", 36, 420, 2)
+	local SizeZ     = BaseplateBase:AddSlider("Plate Thickness (gmu)", 0.5, 3, 2)
 
 	Menu:AddLabel("Comparing the current dimensions with a 105mm Howitzer:")
 	local Vis       = Menu:AddModelPreview("models/howitzer/howitzer_105mm.mdl", true)
@@ -28,7 +29,7 @@ local function CreateMenu(Menu)
 		self.CamDistance = math.max(w, h, 60) * 1
 
 		render.SetMaterial(gridMaterial)
-		render.DrawBox(Vector(0, 0, 0), Angle(0, 0, 0), Vector(-h / 2, -w / 2, -t / 2), Vector(h / 2, w / 2, t / 2), color_white)
+		render.DrawBox(vector_origin, angle_zero, Vector(-h / 2, -w / 2, -t / 2), Vector(h / 2, w / 2, t / 2), color_white)
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")

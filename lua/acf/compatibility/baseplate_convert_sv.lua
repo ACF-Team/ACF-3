@@ -12,22 +12,43 @@ function RecursiveEntityRemove(ent, track)
     end
 end
 
+local bpConvertibleModelPaths = {
+    {
+        startWith = "models/sprops/rectangles",
+        addAngles = Angle(0, 0, 0)
+    }
+}
+
 function ACF.ConvertEntityToBaseplate(Player, Target)
-    if not IsValid(Target) then return end
+    if not AdvDupe2 then return false, "Advanced Duplicator 2 is not installed" end
+
+    if not IsValid(Target) then return false, "Invalid target" end
 
     local Owner = Target:CPPIGetOwner()
-    if not IsValid(Owner) or Owner ~= Player then return end
+    if not IsValid(Owner) or Owner ~= Player then return false, "You do not own this entity" end
 
     local PhysObj = Target:GetPhysicsObject()
-    if not IsValid(PhysObj) then return end
+    if not IsValid(PhysObj) then return false, "Entity is not physical" end
 
-    if Target:GetClass() ~= "prop_physics" then return end
+    if Target:GetClass() ~= "prop_physics" then return false, "Entity must be typeof 'prop_physics'" end
+
+    local foundTranslation
+    local targetModel = Target:GetModel()
+
+    for _, v in ipairs(bpConvertibleModelPaths) do
+        if string.StartsWith(targetModel, v.startWith) then
+            foundTranslation = v
+            break
+        end
+    end
+
+    if not foundTranslation then return false, "Incompatible model '" .. targetModel .. "'" end
 
     local AMi, AMa = PhysObj:GetAABB()
     local BoxSize = AMa - AMi
 
     -- Duplicate the entire thing
-    local Entities, Constraints = AdvDupe2.duplicator.Copy(Player, Target, {}, {}, Vector(0, 0, 0))
+    local Entities, Constraints = AdvDupe2.duplicator.Copy(Player, Target, {}, {}, vector_origin)
 
     -- Find the baseplate
     local Baseplate = Entities[Target:EntIndex()]
@@ -38,6 +59,7 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     Baseplate.Length = w
     Baseplate.Width = l
     Baseplate.Thickness = t
+    Baseplate.PhysicsObjects[0].Angle = Baseplate.PhysicsObjects[0].Angle + foundTranslation.addAngles
 
     -- Delete everything now
     for k, _ in pairs(Entities) do
@@ -46,7 +68,7 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     end
 
     -- Paste the stuff back to the dupe
-    local Ents = AdvDupe2.duplicator.Paste(Owner, Entities, Constraints, Vector(0, 0, 0), Angle(0, 0, 0), Vector(0, 0, 0), true)
+    local Ents = AdvDupe2.duplicator.Paste(Owner, Entities, Constraints, vector_origin, angle_zero, vector_origin, true)
     -- Try to find the baseplate
     local NewBaseplate
     for _, v in pairs(Ents) do
@@ -61,5 +83,5 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     undo.SetPlayer(Player)
     undo.Finish()
 
-    return NewBaseplate
+    return true, NewBaseplate
 end
