@@ -67,7 +67,7 @@ do -- Spawn and Update functions -----------------------
 			local GearboxScale = Gearbox.Scale
 
 			if GearboxScale then
-				Data.GearboxScale = GearboxScale
+				Data.GearboxScale = math.Clamp(GearboxScale, 0.75, 3)
 			end
 		end
 
@@ -119,7 +119,7 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	local function GetMass(Model, PhysObj, Class, Gearbox, Scale)
-		if Gearbox then return math.floor((Gearbox.Mass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 end -- Gearbox.Mass
+		if Gearbox then return Gearbox.Mass * (Scale ^ ACF.GearboxMassScale) end
 
 		local Volume = PhysObj:GetVolume()
 		local Factor = Volume / ModelData.GetModelVolume(Model)
@@ -131,11 +131,7 @@ do -- Spawn and Update functions -----------------------
 		local CanDualClutch = Gearbox.CanDualClutch
 		local Scale = Data.GearboxScale or 1
 		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
-
-		-- Torque calculations
-		local TorqueLoss = Gearbox.MaxTorque * (ACF.GearEfficiency ^ MaxGear)
-		local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
-		local MaxTorque = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
+		local _, _, TorqueRating = ACF.GetGearboxStats(0, Scale, Gearbox.MaxTorque, MaxGear)
 
 		Entity.ACF = Entity.ACF or {}
 
@@ -159,7 +155,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Class.Sound
 		Entity.SwitchTime   = Gearbox.Switch
-		Entity.MaxTorque    = MaxTorque
+		Entity.MaxTorque    = TorqueRating
 		Entity.MinGear      = Class.Gears.Min
 		Entity.MaxGear      = MaxGear
 		Entity.GearCount    = Entity.MaxGear
@@ -603,7 +599,7 @@ do -- Linking ------------------------------------------
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
 		local DrvAngle = (OutPosWorld - InPosWorld):GetNormalized():Dot((Entity:GetRight() * OutPos.y):GetNormalized())
-		--print("out world " .. tostring(OutPosWorld) .. " out " .. tostring(OutPos))
+
 		if DrvAngle < 0.7 then return end
 
 		local Rope
@@ -615,8 +611,8 @@ do -- Linking ------------------------------------------
 
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
-		--print("out world " .. tostring(OutPosWorld) .. " in world " .. tostring(InPosWorld))
 		local Link	= MobilityObj.Link(Entity, Target)
+
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
 		Link:SetAxis(Axis)
@@ -911,10 +907,10 @@ do -- Movement -----------------------------------------
 			return
 		end
 
-		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) --internal torque loss from damaged
-		local Slop = self.Automatic and 0.9 or 1 --internal torque loss from inefficiency
+		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local Slop = self.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
 		local ReactTq = 0
-		-- Calculate the ratio of total requested torque versus what's avaliable, and then multiply it but the current gearratio
+		-- Calculate the ratio of total requested torque versus what's available, and then multiply it by the current gear ratio
 		local AvailTq = 0
 		local GearRatio = self.GearRatio
 

@@ -4,13 +4,9 @@ local Gearboxes = ACF.Classes.Gearboxes
 -- Weight
 --local wmul = 1.5
 local Gear3SW = 60 --* wmul
---local Gear3MW = 120 * wmul
---local Gear3LW = 240 * wmul
 
 -- Torque Rating
 local Gear3ST = 675
---local Gear3MT = 2125
---local Gear3LT = 10000
 
 -- Straight through bonuses
 local StWB = 0.75 --straight weight bonus mulitplier
@@ -18,13 +14,6 @@ local StTB = 1.25 --straight torque bonus multiplier
 
 -- Shift Time
 local ShiftS = 0.25
---local ShiftM = 0.35
---local ShiftL = 0.5
-
--- Old gearbox scales
---local ScaleS = 1
---local ScaleM = 1.5
---local ScaleL = 2.5
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
