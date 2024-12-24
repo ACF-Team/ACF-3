@@ -140,6 +140,12 @@ do -- ACF global vars
 	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Gearboxes
+	ACF.GearEfficiency     = 0.99 -- The percentage of RPM efficiency kept when increasing the gear count
+	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
+	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
+	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
 end
 
 do -- ACF Convars & Particles

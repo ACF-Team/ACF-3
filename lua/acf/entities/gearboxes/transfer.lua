@@ -2,8 +2,13 @@ local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
 local Gear2SW = 20
-local Gear2MW = 40
-local Gear2LW = 80
+--local Gear2MW = 40
+--local Gear2LW = 80
+
+-- Old gearbox scales
+local ScaleS = 1
+local ScaleM = 1.5
+local ScaleL = 2.5
 
 Gearboxes.Register("Transfer", {
 	Name		= "Transfer Case",
@@ -14,6 +19,62 @@ Gearboxes.Register("Transfer", {
 	}
 })
 
+do -- Scalable gearboxes
+	Gearboxes.RegisterItem("2Gear-L", "Transfer", {
+		Name			= "Transfer Case, Inline",
+		Description		= "2 speed gearbox. Useful for low/high range and tank turning.",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear2SW,
+		Switch			= 0.3,
+		MaxTorque		= 25000,
+		DualClutch		= true,
+		Preview = {
+			FOV = 125,
+		},
+	})
+
+	Gearboxes.RegisterItem("2Gear-T", "Transfer", {
+		Name			= "Transfer Case",
+		Description		= "2 speed gearbox. Useful for low/high range and tank turning.",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear2SW,
+		Switch			= 0.3,
+		MaxTorque		= 25000,
+		DualClutch		= true,
+		Preview = {
+			FOV = 85,
+		},
+	})
+end
+
+do -- Inline Gearboxes
+	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-L", {
+		Scale = ScaleL,
+	})
+end
+
+do
+	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-L", {
+		Scale = ScaleL,
+	})
+end
+--[[
 do -- Inline Gearboxes
 	Gearboxes.RegisterItem("2Gear-L-S", "Transfer", {
 		Name		= "Transfer Case, Inline, Small",
@@ -95,3 +156,4 @@ do -- Transaxial Gearboxes
 		},
 	})
 end
+]]

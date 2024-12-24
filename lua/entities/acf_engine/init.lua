@@ -65,13 +65,14 @@ do
 			return false, "Cannot link due to excessive driveshaft angle!"
 		end
 
-		local Owner = Engine:CPPIGetOwner()
 		local Rope
+		--[[
+		local Owner = Engine:CPPIGetOwner()
 
 		if IsValid(Owner) and tobool(Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
 			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
 		end
-
+		]]
 		local Link = MobilityObj.Link(Engine, Target)
 
 		Link:SetOrigin(Engine.Out)

@@ -45,7 +45,7 @@ do -- Spawn and Update functions --------------------------------
 	local Outputs = {
 		"Ready (Returns 1 if the weapon can be fired.)",
 		"Status (Returns the current state of the weapon.) [STRING]",
-		"Ammo Type (Returns  the name of the currently loaded ammo type.) [STRING]",
+		"Ammo Type (Returns the name of the currently loaded ammo type.) [STRING]",
 		"Shots Left (Returns the amount of rounds left in the breech or magazine.)",
 		"Total Ammo (Returns the amount of rounds available for this weapon.)",
 		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
