@@ -51,7 +51,7 @@ local function tellPlyAboutZones(ply, zone)
 	Messages.SendChat(ply, zone and "Normal" or "Warning", "You have entered the " .. (zone and zone .. " safezone." or "battlefield!"))
 end
 
-hook.Add("ACF_PlayerChangedZone", "ACF_TellPlyAboutSafezoneBattle", tellPlyAboutZones)
+hook.Add("ACF_OnPlayerChangeZone", "ACF_TellPlyAboutSafezoneBattle", tellPlyAboutZones)
 
 local function DisableNoclipPressInBattle(ply, wantsNoclipOn)
 	if not (ShouldDisableNoclip and wantsNoclipOn and table.KeyFromValue(perms.Modes, perms.DamagePermission) == modename) then return end

@@ -64,7 +64,7 @@ local function AttachMetaTable(Class, Base)
 			Class:OnLoaded()
 		end
 
-		hook.Run("ACF_OnClassLoaded", Class.ID, Class)
+		hook.Run("ACF_OnLoadClass", Class.ID, Class)
 
 		Class.Loaded = true
 	end)
@@ -102,7 +102,7 @@ function Classes.AddObject(ID, Base, Destiny)
 	return Class
 end
 
-hook.Add("ACF_OnClassLoaded", "ACF Model Precache", function(_, Class)
+hook.Add("ACF_OnLoadClass", "ACF Model Precache", function(_, Class)
 	if not isstring(Class.Model) then return end
 
 	util.PrecacheModel(Class.Model)

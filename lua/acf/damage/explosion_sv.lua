@@ -29,7 +29,7 @@ function Damage.isValidTarget(Entity)
 	local Type = EntACF and EntACF.Type or ACF.Check(Entity)
 
 	if not Type then return false end
-	if Ballistics.TestFilter(Entity) == false then return false end
+	if not Ballistics.TestFilter(Entity) then return false end
 
 	if Type ~= "Squishy" then return true end
 

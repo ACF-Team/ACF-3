@@ -87,11 +87,7 @@ function EFFECT:Init(Data)
 
 		self.DrawEffect = CanDraw
 
-		local CustomEffect = hook.Run("ACF_BulletEffect", BulletData.AmmoType)
-
-		if CustomEffect then
-			self.ApplyMovement = CustomEffect
-		end
+		hook.Run("ACF_OnCreateBulletEffect", self, BulletData)
 	end
 end
 

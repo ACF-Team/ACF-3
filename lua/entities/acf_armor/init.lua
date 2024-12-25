@@ -52,7 +52,7 @@ do -- Spawning and Updating
 				Armor:VerifyData(Data)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_armor", Data, Armor)
+			hook.Run("ACF_OnVerifyData", "acf_armor", Data, Armor)
 		end
 	end
 
@@ -132,7 +132,7 @@ do -- Spawning and Updating
 			OldArmor:OnLast(self)
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldArmor)
 
 		ACF.SaveEntity(self)
 
