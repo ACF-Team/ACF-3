@@ -32,7 +32,6 @@ local function UpdateTotalAmmo(Entity)
 end
 
 do -- Spawn and Update functions --------------------------------
-	local ModelData = ACF.ModelData
 	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
 	local Weapons   = Classes.Weapons
@@ -116,11 +115,11 @@ do -- Spawn and Update functions --------------------------------
 
 	local function GetMass(Caliber, Class, Weapon)
 	        if Weapon then return Weapon.Mass end
-		
+
 	        local Factor = Caliber / Class.Caliber.Base
-		
+
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
-    	end
+		end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
