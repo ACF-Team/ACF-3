@@ -1129,7 +1129,7 @@ do -- Bulletdata related
 		if not Data2 then return false end
 
 		-- Only check fields all rounds share...
-		-- Note: We are trying to fail as early as possible so check constraints in order of rarity
+		-- Note: We are trying to fail as early as possible so check constraints from most to least common
 		if Data1.Type ~= Data2.Type then return false end
 		if Data1.Caliber ~= Data2.Caliber then return false end
 		if Data1.Diameter ~= Data2.Diameter then return false end
@@ -1140,3 +1140,4 @@ do -- Bulletdata related
 		return true
 	end
 end
+

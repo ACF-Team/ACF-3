@@ -234,7 +234,6 @@ do
 	-- TODO: Determine sources
 	ACF.RegisterLinkSource("acf_gun", "Crew")
 	ACF.RegisterLinkSource("acf_engine", "Crew")
-	ACF.RegisterLinkSource("acf_turret", "Crew")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

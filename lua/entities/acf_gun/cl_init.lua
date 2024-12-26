@@ -133,8 +133,8 @@ do	-- Overlay/networking for that
 				local E = T.Ent
 				if IsValid(E) then
 					-- Double outline selected crate for visibility
-					if E == temp then 
-						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins()*1.1, E:OBBMaxs()*1.1, T.Col, true)
+					if E == temp then
+						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins() * 1.1, E:OBBMaxs() * 1.1, T.Col, true)
 					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
