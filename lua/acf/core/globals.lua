@@ -46,8 +46,8 @@ do -- ACF global vars
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.2 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.MassToTime         = 0.4 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime       = 0.3 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv            = 80 --Drag fudge factor
@@ -140,6 +140,23 @@ do -- ACF global vars
 	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Crew
+	ACF.CrewRepTimeBase = 3 		-- Base time to replace a crew member
+	ACF.CrewRepDistToTime = 0.01 	-- Time it takes for crew to move one inch during replacement
+
+	ACF.CrewArmor = 5 				-- How many millimeters of armor crew members have
+	ACF.CrewHealth = 50 			-- How much health crew members have
+
+	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"}
+
+	ACF.CrewOxygen = 10				-- How many seconds can crew hold their breath for
+	ACF.CrewBreatheRate = 2			-- Multiplier for how fast crew regain their breath
+
+	ACF.AmmoStageMin = 1			-- Minimum stage index for ammo stowages
+	ACF.AmmoStageMax = 5			-- Maximum stage index for ammo stowages
+
+	ACF.AmmoRestockInterval = 1		-- How often a crate may be restocked
 end
 
 do -- ACF Convars & Particles

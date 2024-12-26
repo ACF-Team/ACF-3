@@ -1120,3 +1120,23 @@ do -- Special squishy functions
 		return Damage, HitRes
 	end
 end
+
+do -- Bulletdata related
+	-- Checks the two bullet datas are equal
+	-- TODO: Probably find a better way to do this via the ammo classes...
+	function ACF.BulletEquality(Data1, Data2)
+		if not Data1 then return false end
+		if not Data2 then return false end
+
+		-- Only check fields all rounds share...
+		-- Note: We are trying to fail as early as possible so check constraints in order of rarity
+		if Data1.Type ~= Data2.Type then return false end
+		if Data1.Caliber ~= Data2.Caliber then return false end
+		if Data1.Diameter ~= Data2.Diameter then return false end
+		if Data1.ProjArea ~= Data2.ProjArea then return false end
+		if Data1.PropArea ~= Data2.PropArea then return false end
+		if Data1.Efficiency ~= Data2.Efficiency then return false end
+
+		return true
+	end
+end

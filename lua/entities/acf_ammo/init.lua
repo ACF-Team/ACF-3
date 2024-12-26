@@ -132,6 +132,11 @@ do -- Spawning and Updating --------------------
 				Ammo = AmmoTypes.Get(Data.AmmoType)
 			end
 
+			if not isnumber(Data.AmmoStage) then -- Ammo priority is used to deliniate different stages
+				Data.AmmoStage = 1
+			end
+			Data.AmmoStage = math.Clamp(Data.AmmoStage, ACF.AmmoStageMin, ACF.AmmoStageMax)
+
 			do -- External verifications
 				Ammo:VerifyData(Data, Class) -- Custom verification function defined by each ammo type class
 
@@ -190,6 +195,7 @@ do -- Spawning and Updating --------------------
 		Entity.Class      = Class.ID -- Needed for custom killicons
 		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
+		Entity.AmmoStage = Data.AmmoStage
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon, Ammo)
@@ -215,7 +221,7 @@ do -- Spawning and Updating --------------------
 				-- for future use in reloading
 				--Entity.IsBoxed = ExtraData.IsBoxed -- Ammunition is boxed
 				--Entity.IsTwoPiece = ExtraData.IsTwoPiece -- Ammunition is broken down to two pieces
-
+				ExtraData.AmmoStage = Data.AmmoStage
 				ExtraData.MagSize = ExtraData.IsBoxed and MagSize or 0
 				ExtraData.IsRound = not (ExtraData.IsBoxed or ExtraData.IsTwoPiece or ExtraData.IsRacked)
 				ExtraData.Capacity = Entity.Capacity
@@ -225,6 +231,7 @@ do -- Spawning and Updating --------------------
 			end
 
 			Entity.CrateData = util.TableToJSON(ExtraData)
+			Entity.ExtraData = ExtraData
 
 			-- Send over the crate and ExtraData to the client to render the overlay
 			net.Start("ACF_RequestAmmoData")
@@ -350,7 +357,7 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size")
+	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
@@ -428,6 +435,32 @@ do -- Spawning and Updating --------------------
 		return true, "Crate updated successfully." .. Extra
 	end
 end ---------------------------------------------
+
+-- CFW Integration
+do
+	-- Maintain a record in the contraption of
+	hook.Add("cfw.contraption.entityAdded", "ammoindex", function(contraption, ent)
+		if ent:GetClass() == "acf_ammo" then
+			contraption.Ammos = contraption.Ammos or {}
+			contraption.Ammos[ent] = true
+
+			contraption.AmmosByStage = contraption.AmmosByStage or {}
+			contraption.AmmosByStage[ent.AmmoStage] = contraption.AmmosByStage[ent.AmmoStage] or {}
+			contraption.AmmosByStage[ent.AmmoStage][ent] = true
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "ammoindex", function(contraption, ent)
+		if ent:GetClass() == "acf_ammo" then
+			contraption.Ammos = contraption.Ammos or {}
+			contraption.Ammos[ent] = nil
+
+			contraption.AmmosByStage = contraption.AmmosByStage or {}
+			contraption.AmmosByStage[ent.AmmoStage] = contraption.AmmosByStage[ent.AmmoStage] or {}
+			contraption.AmmosByStage[ent.AmmoStage][ent] = nil
+		end
+	end)
+end
 
 do -- ACF Activation and Damage -----------------
 	local Clock       = Utilities.Clock
@@ -634,6 +667,41 @@ do -- Mass Update -------------------------------
 end ---------------------------------------------
 
 do -- Ammo Consumption -------------------------
+	-- Searches
+	-- Finds all crates at a specific stage
+	local function FindCratesAtStage(contraption, stage)
+		local AmmosByStage = contraption and contraption.AmmosByStage or {}
+		return AmmosByStage[stage] or {}
+	end
+
+	-- Finds the first stage with ammo
+	-- Returns the LUT of all crates at that stage
+	local function FindFirstStage(contraption)
+		for i = ACF.AmmoStageMin, ACF.AmmoStageMax do
+			local temp = FindCratesAtStage(contraption, i) or {}
+			for v, _ in pairs(temp) do
+				if IsValid(v) then return temp end
+			end
+		end
+		return {}
+	end
+
+	-- Finds a crate that meets a check criteria starting from stage start with varargs fed to check
+	local function FindCrate(contraption, start, check, ...)
+		local start = start or ACF.AmmoStageMin
+		for i = start, ACF.AmmoStageMax do
+			local StageCrates = FindCratesAtStage(contraption, i)
+			for v, _ in pairs(StageCrates) do
+				if check(v, ...) then return v end
+			end
+		end
+		return nil
+	end
+
+	ACF.FindCratesAtStage = FindCratesAtStage
+	ACF.FindFirstStage = FindFirstStage
+	ACF.FindCrate = FindCrate
+
 	function ENT:CanConsume()
 		local SelfTbl = self:GetTable()
 
@@ -642,6 +710,16 @@ do -- Ammo Consumption -------------------------
 		if SelfTbl.Damaged then return false end
 
 		return SelfTbl.Ammo > 0
+	end
+
+	function ENT:CanRestock()
+		local SelfTbl = self:GetTable()
+
+		if SelfTbl.Disabled then return false end
+		if not SelfTbl.Load then return false end
+		if SelfTbl.Damaged then return false end
+
+		return SelfTbl.Ammo < SelfTbl.Capacity
 	end
 
 	function ENT:Consume(Num)
@@ -661,9 +739,39 @@ do -- Ammo Consumption -------------------------
 			self:SetNWInt("Ammo", self.Ammo)
 		end)
 	end
+
+	--- Restocks the ammocrate if appropriate
+	function ENT:Restock()
+		if not self.LastStockTime then self.LastStockTime = 0 end
+		local ClipSize = math.max(self.ExtraData.MagSize or 1, 1)
+		local AmmoCheck = self.Capacity - self.Ammo >= ClipSize
+		local TimeCheck = (CurTime() - self.LastStockTime) > ACF.AmmoRestockInterval
+		if AmmoCheck and TimeCheck then
+			self.LastStockTime = CurTime()
+			local crate = FindCrate(
+				self:GetContraption(),
+				self.AmmoStage + 1,
+				function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
+			)
+
+			if crate then
+				local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
+				local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself
+				local Transfer = math.min(ClipSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
+				crate:Consume(Transfer) 								-- Take 1 from resupplier
+				self:Consume(-Transfer) 								-- Give 1 to self
+			end
+		end
+	end
+
 end ---------------------------------------------
 
 do -- Misc --------------------------------------
+	function ENT:Think()
+		self:NextThink(CurTime() + 1)
+		return true
+	end
+
 	function ENT:Enable()
 		WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 

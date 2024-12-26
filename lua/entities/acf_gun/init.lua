@@ -31,6 +31,14 @@ local function UpdateTotalAmmo(Entity)
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
 end
 
+local function CheckConsumable(v, Gun)
+	return IsValid(v) and v.Weapons[Gun] and v:CanConsume()
+end
+
+local function CheckRestockable(v, Gun)
+	return IsValid(v) and v.Weapons[Gun] and v:CanRestock()
+end
+
 do -- Spawn and Update functions --------------------------------
 	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
@@ -392,12 +400,14 @@ do -- Metamethods --------------------------------
 
 		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] or Crate.Weapons[This] then
-				if This.CurrentCrate == Crate then
-					This.CurrentCrate = next(This.Crates, Crate)
-				end
-
 				This.Crates[Crate]  = nil
 				Crate.Weapons[This] = nil
+
+				-- Since we removed the references, this should ignore the removed crate.
+				if This.CurrentCrate == Crate then
+					This.CurrentCrate = This:FindNextCrate(nil, CheckConsumable, This)
+					This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex())
+				end
 
 				This:UpdateOverlay(true)
 				Crate:UpdateOverlay(true)
@@ -619,24 +629,20 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
-		local function FindNextCrate(Gun)
-			if not next(Gun.Crates) then return end
+		function ENT:FindNextCrate(Current, Check, ...)
+			if not next(self.Crates) then return end
 
-			-- Find the next available crate to pull ammo from --
-			local Select = next(Gun.Crates, Gun.CurrentCrate) or next(Gun.Crates)
-			local Start  = Select
+			if Current and Check(Current, ...) then return Current end
 
-			repeat
-				if Select:CanConsume() then return Select end -- Return select
+			local crate = ACF.FindCrate(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
-				Select = next(Gun.Crates, Select) or next(Gun.Crates)
-			until
-				Select == Start
+			return crate
 		end
 
 		function ENT:Unload(Reload)
 			if self.Disabled then return end
-			if IsValid(self.CurrentCrate) then self.CurrentCrate:Consume(-1) end -- Put a shell back in the crate, if possible
+			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckRestockable, self)
+			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
 			local Time = self.MagReload or self.ReloadTime
 
@@ -663,7 +669,7 @@ do -- Metamethods --------------------------------
 		function ENT:Chamber(TimeOverride)
 			if self.Disabled then return end
 
-			local Crate = FindNextCrate(self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
 			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
@@ -673,6 +679,8 @@ do -- Metamethods --------------------------------
 				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime * 0.666) + (BulletData.ProjLength * ACF.LengthToTime * 0.333)) -- Mass contributes 2/3 of the reload time with length contributing 1/3
 
 				self.CurrentCrate = Crate
+				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
+
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
 				self.NextFire 	  = Clock.CurTime + Time
@@ -716,7 +724,7 @@ do -- Metamethods --------------------------------
 		function ENT:Load()
 			if self.Disabled then return false end
 
-			local Crate = FindNextCrate(self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
@@ -887,6 +895,14 @@ do -- Metamethods --------------------------------
 
 				for Crate in pairs(Crates) do
 					CheckCrate(self, Crate, Pos)
+				end
+			end
+
+			-- for each crate in the first stage, if it's restockable, restock it
+			local FirstStage = ACF.FindFirstStage(self:GetContraption())
+			for v, _ in pairs(FirstStage) do
+				if CheckRestockable(v, self) then
+					v:Restock()
 				end
 			end
 

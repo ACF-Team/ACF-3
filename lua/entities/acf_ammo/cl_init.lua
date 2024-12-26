@@ -47,6 +47,7 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.Spacing = Data.Spacing
 		Entity.MagSize = Data.MagSize
 		Entity.HasBoxedAmmo = Data.MagSize > 0
+		Entity.AmmoStage = Data.AmmoStage
 	end
 
 	if Queued[Entity] then
@@ -144,6 +145,16 @@ do -- Ammo overlay
 		return DrawBoxes:GetBool()
 	end
 
+	local orange = Color(255, 127, 0)
+	function ENT:DrawStage()
+		local CratePos = self:GetPos():ToScreen()
+		cam.Start2D()
+			-- TODO: REMOVE AMMO COUNT WHEN DONE DEVELOPMENT
+			draw.SimpleTextOutlined("S: " .. (self.AmmoStage or -1), "ACF_Title", CratePos.x, CratePos.y, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined("A: " .. (self.Ammo or -1), "ACF_Title", CratePos.x, CratePos.y+15, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+		cam.End2D()
+	end
+
 	function ENT:DrawOverlay() -- Trace is passed as first argument, but not needed
 		if not self.HasData then
 			if self.HasData == nil and self.RequestAmmoData then
@@ -171,5 +182,6 @@ do -- Ammo overlay
 
 			render.DrawWireframeBox(Center + Offset, RoundAngle, -BulkSize, BulkSize, Red)
 		end
+		self:DrawStage()
 	end
 end

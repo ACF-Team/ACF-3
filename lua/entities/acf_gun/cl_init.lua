@@ -123,12 +123,20 @@ do	-- Overlay/networking for that
 
 		render.SetColorMaterial()
 
+		local CrateID = self:GetNW2Int("CurCrate", 0)
+		local temp = Entity(CrateID)
+
 		if next(SelfTbl.Crates) then
 			for _, T in ipairs(SelfTbl.Crates) do
 				local E = T.Ent
 				if IsValid(E) then
+					-- Double outline selected crate for visibility
+					if E == temp then 
+						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins()*1.1, E:OBBMaxs()*1.1, T.Col, true)
+					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
+					E:DrawStage()
 				end
 			end
 		end

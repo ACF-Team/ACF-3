@@ -169,6 +169,11 @@ local function AddControls(Base, Settings, ToolData)
 	else
 		ACF.SetClientData("Tracer", false) -- Disabling the tracer, as it takes up spaces on ammo.
 	end
+
+	-- Control for the stowage stage (priority) of the ammo
+	local Priority = Base:AddNumberWang("Priority", ACF.AmmoStageMin, ACF.AmmoStageMax)
+	Priority:SetClientData("AmmoStage", "OnValueChanged")
+	Priority:SetValue(1)
 end
 
 ---Creates the ammunition information panels on the ACF menu.
