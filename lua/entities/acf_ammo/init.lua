@@ -674,7 +674,7 @@ do -- Ammo Consumption -------------------------
 		return AmmosByStage[stage] or {}
 	end
 
-	-- Finds the first stage with ammo
+	-- Finds the first stage with valid ammo
 	-- Returns the LUT of all crates at that stage
 	local function FindFirstStage(contraption)
 		for i = ACF.AmmoStageMin, ACF.AmmoStageMax do

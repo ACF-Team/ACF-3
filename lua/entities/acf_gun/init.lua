@@ -406,7 +406,7 @@ do -- Metamethods --------------------------------
 				-- Since we removed the references, this should ignore the removed crate.
 				if This.CurrentCrate == Crate then
 					This.CurrentCrate = This:FindNextCrate(nil, CheckConsumable, This)
-					This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex())
+					if IsValid(This.CurrentCrate) then This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex()) end
 				end
 
 				This:UpdateOverlay(true)
@@ -634,6 +634,9 @@ do -- Metamethods --------------------------------
 
 			if Current and Check(Current, ...) then return Current end
 
+			local Next = next(self.FirstStage or {}, self.CurrentCrate)
+			if Next and Check(Next, ...) then return Next end
+
 			local crate = ACF.FindCrate(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
 			return crate
@@ -669,7 +672,7 @@ do -- Metamethods --------------------------------
 		function ENT:Chamber(TimeOverride)
 			if self.Disabled then return end
 
-			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
+			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
 
 			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
@@ -724,7 +727,7 @@ do -- Metamethods --------------------------------
 		function ENT:Load()
 			if self.Disabled then return false end
 
-			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
+			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
@@ -899,8 +902,8 @@ do -- Metamethods --------------------------------
 			end
 
 			-- for each crate in the first stage, if it's restockable, restock it
-			local FirstStage = ACF.FindFirstStage(self:GetContraption())
-			for v, _ in pairs(FirstStage) do
+			self.FirstStage = self.FirstStage or ACF.FindFirstStage(self:GetContraption())
+			for v, _ in pairs(self.FirstStage) do
 				if CheckRestockable(v, self) then
 					v:Restock()
 				end

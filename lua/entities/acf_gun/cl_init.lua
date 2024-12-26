@@ -123,6 +123,8 @@ do	-- Overlay/networking for that
 
 		render.SetColorMaterial()
 
+		-- TODO: Determine if NW2 Usage here is undesireable
+		-- Get the currently selected crate
 		local CrateID = self:GetNW2Int("CurCrate", 0)
 		local temp = Entity(CrateID)
 
@@ -136,7 +138,7 @@ do	-- Overlay/networking for that
 					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
-					E:DrawStage()
+					if E.DrawStage then E:DrawStage() end
 				end
 			end
 		end
