@@ -62,28 +62,9 @@ ACF.SetCustomAttachments("models/engines/flywheelclutchs.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 3), Ang = Angle(0, 180, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, 3), Ang = Angle(0, 180, 90) },
 })
---[[
-ACF.SetCustomAttachments("models/engines/flywheelclutchb.mdl", {
-	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
-	{ Name = "driveshaftR", Pos = Vector(0, 6), Ang = Angle(0, 180, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, 6), Ang = Angle(0, 180, 90) },
-})
-ACF.SetCustomAttachments("models/engines/flywheelclutchm.mdl", {
-	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
-	{ Name = "driveshaftR", Pos = Vector(0, 4), Ang = Angle(0, 180, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, 4), Ang = Angle(0, 180, 90) },
-})
-ACF.SetCustomAttachments("models/engines/flywheelclutcht.mdl", {
-	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
-	{ Name = "driveshaftR", Pos = Vector(0, 2), Ang = Angle(0, 180, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, 2), Ang = Angle(0, 180, 90) },
-})
-]]
+
 local Models = {
-	-- { Model = "models/engines/flywheelclutchb.mdl", Scale = 3 },
-	-- { Model = "models/engines/flywheelclutchm.mdl", Scale = 2 },
 	{ Model = "models/engines/flywheelclutchs.mdl", Scale = 1.5 },
-	-- { Model = "models/engines/flywheelclutcht.mdl", Scale = 1 },
 }
 
 for _, Data in ipairs(Models) do

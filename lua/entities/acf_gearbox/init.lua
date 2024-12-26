@@ -135,14 +135,8 @@ do -- Spawn and Update functions -----------------------
 
 		Entity.ACF = Entity.ACF or {}
 
-		--if Class.IsScalable then
-			Entity:SetScaledModel(Gearbox.Model)
-			Entity:SetScale(Scale)
-		--else
-			--Contraption.SetModel(Entity, Gearbox.Model)
-			--Entity:PhysicsInit(SOLID_VPHYSICS, true)
-			--Entity:SetMoveType(MOVETYPE_VPHYSICS)
-		--end
+		Entity:SetScaledModel(Gearbox.Model)
+		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -602,13 +596,6 @@ do -- Linking ------------------------------------------
 
 		if DrvAngle < 0.7 then return end
 
-		local Rope
-
-		--if Entity:CPPIGetOwner():GetInfoNum("ACF_MobilityRopeLinks", 1) ~= 0 then
-			--print("made rope " .. tostring(Entity))
-			--Rope = constraint.CreateKeyframeRope(OutPosWorld, 1, "cable/cable2", nil, Entity, OutPos, 0, Target, InPos, 0)
-		--end
-
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
 		local Link	= MobilityObj.Link(Entity, Target)
@@ -617,7 +604,6 @@ do -- Linking ------------------------------------------
 		Link:SetTargetPos(InPos)
 		Link:SetAxis(Axis)
 		Link.Side = Side
-		Link.Rope = Rope
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
 
 		return Link

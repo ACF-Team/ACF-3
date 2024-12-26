@@ -2,8 +2,7 @@ local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
---local wmul = 1.5
-local Gear3SW = 60 --* wmul
+local Gear3SW = 60
 
 -- Torque Rating
 local Gear3ST = 675
@@ -40,7 +39,7 @@ Gearboxes.Register("Auto", {
 	CanSetGears = true,
 	Gears = {
 		Min	= 0,
-		Max	= 8,
+		Max	= 9,
 	},
 	IsScalable = true,
 	OnSpawn = InitGearbox,

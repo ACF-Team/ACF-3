@@ -20,7 +20,7 @@ Gearboxes.Register("Manual", {
 	CanSetGears = true,
 	Gears = {
 		Min	= 0,
-		Max	= 8,
+		Max	= 9,
 	},
 	IsScalable	= true,
 })

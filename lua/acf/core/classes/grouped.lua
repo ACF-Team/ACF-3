@@ -171,10 +171,13 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 
 		local Lookup = Group.Lookup
 
-		--Lookup[Alias] = Lookup[ID]
+		-- NOTE: This is commented out to prevent cyclic references with the regular duplicator
+		-- Try to add this back in if it seems to be useful for something
+		-- Lookup[Alias] = Lookup[ID]
 
 		if istable(Overrides) then
-			Lookup[Alias] = {} --table.Copy(Lookup[ID])
+			-- Make a shallow copy of the table, then apply overrides
+			Lookup[Alias] = {}
 
 			for Key, Value in pairs(Lookup[ID]) do
 				Lookup[Alias][Key] = Value

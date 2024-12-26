@@ -193,18 +193,7 @@ do -- Straight-through Gearboxes
 		Scale = ScaleL,
 	})
 end
---[[
-ACF.SetCustomAttachments("models/engines/t5large.mdl", {
-	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
-	{ Name = "driveshaftR", Pos = Vector(0, 30), Ang = Angle(0, -180, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, 30), Ang = Angle(0, -180, 90) },
-})
-ACF.SetCustomAttachments("models/engines/t5med.mdl", {
-	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
-	{ Name = "driveshaftR", Pos = Vector(0, 25), Ang = Angle(0, -180, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, 25), Ang = Angle(0, -180, 90) },
-})
-]]
+
 ACF.SetCustomAttachments("models/engines/t5small.mdl", {
 	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
 	{ Name = "driveshaftR", Pos = Vector(0, 20), Ang = Angle(0, -180, 90) },
@@ -212,8 +201,6 @@ ACF.SetCustomAttachments("models/engines/t5small.mdl", {
 })
 
 local Models = {
-	-- { Model = "models/engines/t5large.mdl", Scale = 2 },
-	-- { Model = "models/engines/t5med.mdl", Scale = 1.5 },
 	{ Model = "models/engines/t5small.mdl", Scale = 1 },
 }
 

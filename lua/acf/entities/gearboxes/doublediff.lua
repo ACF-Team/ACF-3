@@ -3,12 +3,9 @@ local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
 local GearDDSW = 45
---local GearDDMW = 85
---local GearDDLW = 180
+
 -- Torque Rating
 local GearDDST = 20000
---local GearDDMT = 45000
---local GearDDLT = 100000
 
 -- Old gearbox scales
 local ScaleS = 1
@@ -67,44 +64,4 @@ do -- Transaxial Gearboxes
 	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-L", {
 		Scale = ScaleL,
 	})
-	--[[
-	Gearboxes.RegisterItem("DoubleDiff-T-S", "DoubleDiff", {
-		Name		= "Double Differential, Small",
-		Description	= "A light duty regenerative steering transmission.",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= GearDDSW,
-		Switch		= 0.2,
-		MaxTorque	= GearDDST,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
-	})
-
-	Gearboxes.RegisterItem("DoubleDiff-T-M", "DoubleDiff", {
-		Name		= "Double Differential, Medium",
-		Description	= "A medium regenerative steering transmission.",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= GearDDMW,
-		Switch		= 0.35,
-		MaxTorque	= GearDDMT,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
-	})
-
-	Gearboxes.RegisterItem("DoubleDiff-T-L", "DoubleDiff", {
-		Name		= "Double Differential, Large",
-		Description	= "A heavy regenerative steering transmission.",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= GearDDLW,
-		Switch		= 0.5,
-		MaxTorque	= GearDDLT,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
-	})
-	]]
 end

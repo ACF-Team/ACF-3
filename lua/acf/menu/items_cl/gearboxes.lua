@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 	local GearboxPreview = Base:AddModelPreview(nil, true)
 	local GearboxStats = Base:AddLabel()
 	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 0.75, 3, 2)
-	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 8, 0)
+	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 9, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -81,7 +81,7 @@ local function CreateMenu(Menu)
 			DualClutch:SetClientData("DualClutch", "OnChange")
 			DualClutch:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetValue(Value)
-				timer.Simple(0, function()
+				timer.Simple(0.05, function()
 					GearboxPreview:GetEntity():SetBodygroup(1, Value and 1 or 0)
 				end)
 
@@ -91,7 +91,7 @@ local function CreateMenu(Menu)
 		else
 			ACF.SetClientData("DualClutch", false)
 
-			timer.Simple(0, function()
+			timer.Simple(0.05, function()
 				GearboxPreview:GetEntity():SetBodygroup(1, 0)
 			end)
 		end
@@ -110,8 +110,8 @@ local function CreateMenu(Menu)
 		Panel:SetValue(Scale)
 		Current.Scale = Scale
 
-		--GearboxList:UpdateSettings()
 		SetStatsText(GearboxStats)
+
 		return Scale
 	end)
 
