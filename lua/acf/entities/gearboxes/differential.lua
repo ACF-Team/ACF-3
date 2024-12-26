@@ -2,8 +2,11 @@ local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
 local Gear1SW = 10
-local Gear1MW = 20
-local Gear1LW = 40
+
+-- Old gearbox scales
+local ScaleS = 1
+local ScaleM = 1.5
+local ScaleL = 2.5
 
 Gearboxes.Register("Differential", {
 	Name		= "Differential",
@@ -14,161 +17,91 @@ Gearboxes.Register("Differential", {
 	}
 })
 
-do -- Inline Gearboxes
-	Gearboxes.RegisterItem("1Gear-L-S", "Differential", {
-		Name		= "Differential, Inline, Small",
-		Description	= "Small differential, used to connect power from gearbox to wheels",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear1SW,
-		Switch		= 0.3,
-		MaxTorque	= 25000,
+do -- Scalable Gearboxes
+	Gearboxes.RegisterItem("1Gear-L", "Differential", {
+		Name			= "Differential, Inline",
+		Description		= "Small differential, used to connect power from gearbox to wheels",
+		Model			= "models/engines/linear_s.mdl",
+		Mass			= Gear1SW,
+		Switch			= 0.3,
+		MaxTorque		= 25000,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
 		},
 	})
 
-	Gearboxes.RegisterItem("1Gear-L-M", "Differential", {
-		Name		= "Differential, Inline, Medium",
-		Description	= "Medium duty differential",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear1MW,
-		Switch		= 0.4,
-		MaxTorque	= 50000,
-		Preview = {
-			FOV = 125,
-		},
-	})
-
-	Gearboxes.RegisterItem("1Gear-L-L", "Differential", {
-		Name		= "Differential, Inline, Large",
-		Description	= "Heavy duty differential, for the heaviest of engines",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear1LW,
-		Switch		= 0.6,
-		MaxTorque	= 100000,
-		Preview = {
-			FOV = 125,
-		},
-	})
-end
-
-do -- Inline Dual Clutch Gearboxes
-	Gearboxes.RegisterItem("1Gear-LD-S", "Differential", {
-		Name		= "Differential, Inline, Small, Dual Clutch",
-		Description	= "Small differential, used to connect power from gearbox to wheels",
-		Model		= "models/engines/linear_s.mdl",
-		Mass		= Gear1SW,
-		Switch		= 0.3,
-		MaxTorque	= 25000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 125,
-		},
-	})
-
-	Gearboxes.RegisterItem("1Gear-LD-M", "Differential", {
-		Name		= "Differential, Inline, Medium, Dual Clutch",
-		Description	= "Medium duty differential",
-		Model		= "models/engines/linear_m.mdl",
-		Mass		= Gear1MW,
-		Switch		= 0.4,
-		MaxTorque	= 50000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 125,
-		},
-	})
-
-	Gearboxes.RegisterItem("1Gear-LD-L", "Differential", {
-		Name		= "Differential, Inline, Large, Dual Clutch",
-		Description	= "Heavy duty differential, for the heaviest of engines",
-		Model		= "models/engines/linear_l.mdl",
-		Mass		= Gear1LW,
-		Switch		= 0.6,
-		MaxTorque	= 100000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 125,
-		},
-	})
-end
-
-do -- Transaxial Gearboxes
-	Gearboxes.RegisterItem("1Gear-T-S", "Differential", {
-		Name		= "Differential, Small",
-		Description	= "Small differential, used to connect power from gearbox to wheels",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear1SW,
-		Switch		= 0.3,
-		MaxTorque	= 25000,
-		Preview = {
-			FOV = 85,
-		},
-	})
-
-	Gearboxes.RegisterItem("1Gear-T-M", "Differential", {
-		Name		= "Differential, Medium",
-		Description	= "Medium duty differential",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear1MW,
-		Switch		= 0.4,
-		MaxTorque	= 50000,
-		Preview = {
-			FOV = 85,
-		},
-	})
-
-	Gearboxes.RegisterItem("1Gear-T-L", "Differential", {
-		Name		= "Differential, Large",
-		Description	= "Heavy duty differential, for the heaviest of engines",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear1LW,
-		Switch		= 0.6,
-		MaxTorque	= 100000,
+	Gearboxes.RegisterItem("1Gear-T", "Differential", {
+		Name			= "Differential, Transaxial",
+		Description		= "Small differential, used to connect power from gearbox to wheels",
+		Model			= "models/engines/transaxial_s.mdl",
+		Mass			= Gear1SW,
+		Switch			= 0.3,
+		MaxTorque		= 25000,
+		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,
 		},
 	})
 end
 
-do -- Transaxial Dual Clutch Gearboxes
-	Gearboxes.RegisterItem("1Gear-TD-S", "Differential", {
-		Name		= "Differential, Small, Dual Clutch",
-		Description	= "Small differential, used to connect power from gearbox to wheels",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= Gear1SW,
-		Switch		= 0.3,
-		MaxTorque	= 25000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
+do -- Pre-Scalable Gearboxes
+	-- Inline Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-S", {
+		Scale = ScaleS,
 	})
 
-	Gearboxes.RegisterItem("1Gear-TD-M", "Differential", {
-		Name		= "Differential, Medium, Dual Clutch",
-		Description	= "Medium duty differential",
-		Model		= "models/engines/transaxial_m.mdl",
-		Mass		= Gear1MW,
-		Switch		= 0.4,
-		MaxTorque	= 50000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-M", {
+		Scale = ScaleM,
 	})
 
-	Gearboxes.RegisterItem("1Gear-TD-L", "Differential", {
-		Name		= "Differential, Large, Dual Clutch",
-		Description	= "Heavy duty differential, for the heaviest of engines",
-		Model		= "models/engines/transaxial_l.mdl",
-		Mass		= Gear1LW,
-		Switch		= 0.6,
-		MaxTorque	= 100000,
-		DualClutch	= true,
-		Preview = {
-			FOV = 85,
-		},
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-L", {
+		Scale = ScaleL,
+	})
+
+	-- Inline Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
+	})
+
+	-- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-S", {
+		Scale = ScaleS,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-M", {
+		Scale = ScaleM,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-L", {
+		Scale = ScaleL,
+	})
+
+	-- Transaxial Dual Clutch Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-S", {
+		Scale = ScaleS,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-M", {
+		Scale = ScaleM,
+		DualClutch = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-L", {
+		Scale = ScaleL,
+		DualClutch = true,
 	})
 end
 

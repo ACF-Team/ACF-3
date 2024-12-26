@@ -140,6 +140,12 @@ do -- ACF global vars
 	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Gearboxes
+	ACF.GearEfficiency     = 0.99 -- The percentage of RPM efficiency kept when increasing the gear count
+	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
+	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
+	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
 end
 
 do -- ACF Convars & Particles
@@ -168,7 +174,7 @@ if SERVER then
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
-	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
+	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)

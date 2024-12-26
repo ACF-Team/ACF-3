@@ -187,6 +187,30 @@ do -- Mobility functions
 		Class.RPM.PeakMin  = math.Round(PowerbandMinRPM, -1)
 		Class.RPM.PeakMax  = math.Round(PowerbandMaxRPM, -1)
 	end
+
+	--- Processes the stats of a gearbox into formatted mass and torque formats.
+	--- @param BaseMass number The mass value as a number to be formatted into a string
+	--- @param Scale number The scale value of the gearbox
+	--- @param MaxTorque number The maximum torque value of the gearbox
+	--- @param GearCount number The number of gears present in the gearbox
+	--- @return string # The mass of the gearbox formatted cleanly with units
+	--- @return number # The torque value of the gearbox in fl-lb
+	--- @return number # The torque rating of the gearbox in N/m
+	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
+		local Mass = ACF.GetProperMass(BaseMass * (Scale ^ ACF.GearboxMassScale))
+
+		-- Torque calculations
+		local Torque, TorqueRating = 0, 0
+
+		if MaxTorque and GearCount then
+			local TorqueLoss = MaxTorque * (ACF.GearEfficiency ^ GearCount)
+			local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
+			TorqueRating = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
+			Torque = math.Round(TorqueRating * 0.73)
+		end
+
+		return Mass, Torque, TorqueRating
+	end
 end
 
 do -- Unit conversion
