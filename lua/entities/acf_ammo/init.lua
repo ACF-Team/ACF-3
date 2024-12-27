@@ -753,7 +753,6 @@ do -- Ammo Consumption -------------------------
 				self.AmmoStage + 1,
 				function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
 			)
-
 			if crate then
 				local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
 				local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself

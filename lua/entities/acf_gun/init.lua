@@ -31,12 +31,20 @@ local function UpdateTotalAmmo(Entity)
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
 end
 
+local function CheckValid(v, Gun)
+	return IsValid(v) and v.Weapons[Gun]
+end
+
 local function CheckConsumable(v, Gun)
-	return IsValid(v) and v.Weapons[Gun] and v:CanConsume()
+	return CheckValid(v, Gun) and v:CanConsume()
 end
 
 local function CheckRestockable(v, Gun)
-	return IsValid(v) and v.Weapons[Gun] and v:CanRestock()
+	return CheckValid(v, Gun) and v:CanRestock()
+end
+
+local function CheckUnloadable(v, Gun)
+	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
 end
 
 do -- Spawn and Update functions --------------------------------
@@ -634,8 +642,10 @@ do -- Metamethods --------------------------------
 
 			if Current and Check(Current, ...) then return Current end
 
-			local Next = next(self.FirstStage or {}, self.CurrentCrate)
-			if Next and Check(Next, ...) then return Next end
+			if self.FirstStage[self.CurrentCrate] then
+				local Next = next(self.FirstStage, self.CurrentCrate)
+				if Next and Check(Next, ...) then return Next end
+			end
 
 			local crate = ACF.FindCrate(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
@@ -644,7 +654,7 @@ do -- Metamethods --------------------------------
 
 		function ENT:Unload(Reload)
 			if self.Disabled then return end
-			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckRestockable, self)
+			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
 			local Time = self.MagReload or self.ReloadTime
