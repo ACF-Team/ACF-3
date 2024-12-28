@@ -6,11 +6,6 @@ if CLIENT then
         size = 13,
         weight = 900
     })
-    surface.CreateFont("ACF.ToolMenu.Text", {
-        font = "Tahoma",
-        size = 14,
-        weight = 900
-    })
 end
 local function SetupMenu()
     local gmod_tool = weapons.GetStored "gmod_tool"
@@ -24,15 +19,7 @@ local function SetupMenu()
 
     ACF.Tool.Instructions = {
         {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "input", Combo = {"E", "lmb"}}, {Type = "text", Text = "Select an option from the spawn-menu."}},
     }
     ACF.Tool.IconCache = {}
 
@@ -84,7 +71,7 @@ local function SetupMenu()
                     for i2, key in ipairs(renderPiece.Combo) do
                         if i2 ~= 1 then
                             xO = xO + 8
-                            draw.TextShadow({text = "+", font = "ACF.ToolMenu.Text", pos = {xO, yO}, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_TOP, color = color_white}, 1, 50)
+                            draw.TextShadow({text = "+", font = "ACF.ToolMenu.Key", pos = {xO, yO}, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_TOP, color = color_white}, 1, 50)
                             xO = xO + 8
                         end
                         if __mousebuttons[key] then
@@ -113,7 +100,7 @@ local function SetupMenu()
                     end
                     xO = xO + 8
                 elseif renderPiece.Type == "text" then
-                    local tX, _ = draw.TextShadow({text = renderPiece.Text, font = "GModToolHelp", pos = {xO, yO},color = color_white}, 1)
+                    local tX, _ = draw.TextShadow({text = language.GetPhrase(renderPiece.Text), font = "GModToolHelp", pos = {xO, yO},color = color_white}, 1)
                     xO = xO + tX
                 end
             end
