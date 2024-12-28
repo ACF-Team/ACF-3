@@ -1,6 +1,6 @@
-ACF.Tool = {}
+ACF.Tool = ACF.Tool or {}
 
-ACF.Tool.ToolDirectory = {}
+ACF.Tool.ToolDirectory = ACF.Tool.ToolDirectory or {}
 
 function ACF.Tool:AddToolMenu(name, icon, order)
     local obj = {}
@@ -280,10 +280,5 @@ local function SetupMenu(Refreshed)
     end
 end
 
-if ACF.InitPostEntityCalled then
-    SetupMenu(true)
-end
-hook.Add("InitPostEntity", "ACF_InitPostEntity_ToolSetup", function()
-    SetupMenu(false)
-    ACF.InitPostEntityCalled = true -- eh
-end)
+SetupMenu(true)
+-- TO DO: HOW TO MAKE THE STOOL ACTUALLY WORK ON SPAWN....
