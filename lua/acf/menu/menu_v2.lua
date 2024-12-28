@@ -34,34 +34,6 @@ end
 
 -- Note; unlike the last time, these would get defined in their own files, not all in the same place
 
-ACF.Tool:AddToolCategory("About the Addon", "icon16/information.png", 0)
-ACF.Tool:AddToolCategory("Settings",        "icon16/wrench.png", 1000)
-ACF.Tool:AddToolCategory("Entities",        "icon16/brick.png", 2000)
-ACF.Tool:AddToolCategory("Fun Stuff",       "icon16/bricks.png", 3000)
-ACF.Tool:AddToolMenu("Armor Tool", "icon16/shield.png", 4000)
-ACF.Tool:AddToolMenu("Copy Tool", "icon16/page_copy.png", 4001)
-ACF.Tool:AddToolMenu("Sound Replacer", "icon16/sound.png", 4002)
-ACF.Tool:AddToolMenu("Scanner", "icon16/magnifier.png", 4003)
-
-ACF.Tool:AddToolMenu("About the Addon/Updates",     "icon16/newspaper.png", 100)
-ACF.Tool:AddToolMenu("About the Addon/Online Wiki", "icon16/book_open.png", 1000)
-ACF.Tool:AddToolMenu("About the Addon/Contact Us",  "icon16/feed.png", 2000)
-
-ACF.Tool:AddToolMenu("Settings/Clientside Settings", "icon16/user.png", 0)
-ACF.Tool:AddToolMenu("Settings/Serverside Settings", "icon16/server.png", 1000)
-ACF.Tool:AddToolMenu("Settings/Damage Permissions", "icon16/user_edit.png", 2000)
-
-ACF.Tool:AddToolMenu("Entities/Baseplates", "icon16/shape_square.png", 0)
-ACF.Tool:AddToolMenu("Entities/Weapons",    "icon16/gun.png", 1000)
-ACF.Tool:AddToolMenu("Entities/Turrets",    "icon16/shape_align_center.png", 2000)
-ACF.Tool:AddToolMenu("Entities/Engines",    "icon16/car.png", 3000)
-ACF.Tool:AddToolMenu("Entities/Gearboxes",  "icon16/cog.png", 4000)
-ACF.Tool:AddToolMenu("Entities/Sensors",    "icon16/transmit.png", 5000)
-ACF.Tool:AddToolMenu("Entities/Components", "icon16/drive.png", 6000)
-
-ACF.Tool:AddToolMenu("Fun Stuff/Piledrivers", "icon16/pencil.png", 0)
-ACF.Tool:AddToolMenu("Fun Stuff/Armor",       "icon16/brick.png", 1000)
-
 if CLIENT then
     surface.CreateFont("ACF.ToolMenu.Key", {
         font = "Tahoma",
@@ -203,7 +175,7 @@ local function SetupMenu(Refreshed)
             end
 
             local Tree = Menu:AddPanel("DTree")
-            Tree:SetSize(0, 450)
+            Tree:SetSize(0, 470)
             function Tree:OnNodeSelected(Node)
                 if self.Selected == Node then return end
                 if Node.Data.Type == "Category" then
@@ -308,7 +280,10 @@ local function SetupMenu(Refreshed)
     end
 end
 
-SetupMenu(false)
-hook.Add("InitPostEntity", "ACF_InitPostEntity_ToolSetup", function()
+if ACF.InitPostEntityCalled then
     SetupMenu(true)
+end
+hook.Add("InitPostEntity", "ACF_InitPostEntity_ToolSetup", function()
+    SetupMenu(false)
+    ACF.InitPostEntityCalled = true -- eh
 end)

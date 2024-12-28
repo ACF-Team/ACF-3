@@ -1,0 +1,1 @@
+ACF.Tool:AddToolCategory("About the Addon", "icon16/information.png", 0)

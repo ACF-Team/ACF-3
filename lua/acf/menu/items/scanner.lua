@@ -1,0 +1,1 @@
+ACF.Tool:AddToolMenu("Scanner", "icon16/magnifier.png", 6000)

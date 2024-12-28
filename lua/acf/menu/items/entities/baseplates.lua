@@ -1,0 +1,1 @@
+local menu = ACF.Tool:AddToolMenu("Entities/Baseplates", "icon16/shape_square.png", 0)

@@ -1,0 +1,1 @@
+local menu = ACF.Tool:AddToolMenu("Settings/Serverside Settings", "icon16/server.png", 1000)

@@ -1,0 +1,1 @@
+ACF.Tool:AddToolMenu("Armor Tool", "icon16/shield.png", 4000)
