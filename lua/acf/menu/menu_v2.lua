@@ -53,15 +53,18 @@ if CLIENT then
         weight = 900
     })
 end
-local function SetupMenu(Refreshed)
-    local gmod_tool = weapons.GetStored "gmod_tool"
-    if not gmod_tool then return end
+local function SetupMenu(TOOL)
+    if TOOL == nil then
+        local gmod_tool = weapons.GetStored "gmod_tool"
+        if not gmod_tool then return end
 
-    local acf_menu_v2 = gmod_tool.Tool.acf_menu_v2
-    if not acf_menu_v2 then return end
+        local acf_menu_v2 = gmod_tool.Tool.acf_menu_v2
+        if not acf_menu_v2 then return end
 
-    print("OK; found both")
-    local TOOL = acf_menu_v2
+        TOOL = acf_menu_v2
+    end
+
+    print("loading menu...")
 
     ACF.Tool.Instructions = {
         {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawnmenu."}}
@@ -94,8 +97,24 @@ local function SetupMenu(Refreshed)
     end
 
     if CLIENT then
+        function TOOL:DrawToolScreen(w, h)
+            surface.SetDrawColor(0, 0, 0, 255)
+            surface.DrawRect(0, 0, w, h)
+            draw.SimpleText("ACF Tool Prototype", "DermaLarge", w / 2, 16, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+            draw.SimpleText(ACF.Tool.Selected or "No tool selected.", "DermaLarge", w / 2, 48, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+            surface.SetDrawColor(255, 255, 255, 255)
+            local tW, tH = w * .9, h * .55
+            local tX, tY = (w / 2) - (tW / 2), (h - tH) - 24
+            surface.DrawOutlinedRect(tX, tY, tW, tH, 2)
+            if ACF.Tool.Selected then
+                
+            else
+                
+            end
+        end
         function TOOL:DrawHUD()
-            local gradient = gmod_tool.Gradient
+            local gradient = surface.GetTextureID "gui/gradient"
             local y = 160
 
             draw.TexturedQuad({texture = gradient, x = 0, y = y, w = ScrW() / 3, h = #ACF.Tool.Instructions * 26, color = Color(0, 0, 0, 230)})
@@ -249,9 +268,37 @@ local function SetupMenu(Refreshed)
                     for _, child in ipairs(node.ChildrenList) do
                         local nodeControl = to:AddNode(child.Name, child.Icon)
                         AddNode(child, nodeControl)
+
+                        -- These lines are to try to force the nodes text to appear correctly
+                        function nodeControl:AnimSlide( anim, delta, data )
+                            if not IsValid(self.ChildNodes) then anim:Stop() return end
+
+                            if anim.Started then
+                                data.To = self:GetTall()
+                                data.Visible = self.ChildNodes:IsVisible()
+                            end
+
+                            if anim.Finished then
+                                self:InvalidateLayout()
+                                self.ChildNodes:SetVisible( data.Visible )
+                                self:SetTall( data.To )
+                                self:GetParentNode():ChildExpanded()
+                                return
+                            end
+                            self:SetTall(Lerp(math.ease.InOutSine(delta), data.From, data.To))
+
+                            self.ChildNodes:SetVisible(true)
+                            self.ChildNodes:SetWide(20000)
+                            self.Label:SetWide(20000)
+
+                            self:GetParentNode():ChildExpanded()
+                        end
+                        nodeControl.animSlide = Derma_Anim("Anim", nodeControl, nodeControl.AnimSlide)
+
                         nodeControl:SetExpanded(true)
                         nodeControl.Data = child
                         nodeControl:SetDoubleClickToOpen(false)
+
                         if node.Root then
                             nodeControl.Label:SetFont("ACF.ToolMenu.LargeNode")
                         else
@@ -272,13 +319,19 @@ local function SetupMenu(Refreshed)
         end
     end
     -- Lifehack
-    if CLIENT and Refreshed then
+    if CLIENT then
         local instance = ACF.Tool:GetInstance()
-        for k, v in pairs(TOOL) do
-            instance[k] = v
+        if instance ~= nil then
+            for k, v in pairs(TOOL) do
+                instance[k] = v
+            end
         end
     end
+    print("loaded menu")
 end
 
-SetupMenu(true)
--- TO DO: HOW TO MAKE THE STOOL ACTUALLY WORK ON SPAWN....
+function ACF.Tool:Setup(TOOL)
+    SetupMenu(TOOL)
+end
+
+SetupMenu()
