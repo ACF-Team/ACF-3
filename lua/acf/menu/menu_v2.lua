@@ -39,8 +39,9 @@ ACF.Tool:AddToolCategory("Settings",        "icon16/wrench.png", 1000)
 ACF.Tool:AddToolCategory("Entities",        "icon16/brick.png", 2000)
 ACF.Tool:AddToolCategory("Fun Stuff",       "icon16/bricks.png", 3000)
 ACF.Tool:AddToolMenu("Armor Tool", "icon16/shield.png", 4000)
-ACF.Tool:AddToolMenu("Copy Tool", "icon16/page_copy.png", 4000)
-ACF.Tool:AddToolMenu("Sound Replacer", "icon16/sound.png", 5000)
+ACF.Tool:AddToolMenu("Copy Tool", "icon16/page_copy.png", 4001)
+ACF.Tool:AddToolMenu("Sound Replacer", "icon16/sound.png", 4002)
+ACF.Tool:AddToolMenu("Scanner", "icon16/magnifier.png", 4003)
 
 ACF.Tool:AddToolMenu("About the Addon/Updates",     "icon16/newspaper.png", 100)
 ACF.Tool:AddToolMenu("About the Addon/Online Wiki", "icon16/book_open.png", 1000)
@@ -48,6 +49,7 @@ ACF.Tool:AddToolMenu("About the Addon/Contact Us",  "icon16/feed.png", 2000)
 
 ACF.Tool:AddToolMenu("Settings/Clientside Settings", "icon16/user.png", 0)
 ACF.Tool:AddToolMenu("Settings/Serverside Settings", "icon16/server.png", 1000)
+ACF.Tool:AddToolMenu("Settings/Damage Permissions", "icon16/user_edit.png", 2000)
 
 ACF.Tool:AddToolMenu("Entities/Baseplates", "icon16/shape_square.png", 0)
 ACF.Tool:AddToolMenu("Entities/Weapons",    "icon16/gun.png", 1000)
@@ -59,8 +61,6 @@ ACF.Tool:AddToolMenu("Entities/Components", "icon16/drive.png", 6000)
 
 ACF.Tool:AddToolMenu("Fun Stuff/Piledrivers", "icon16/pencil.png", 0)
 ACF.Tool:AddToolMenu("Fun Stuff/Armor",       "icon16/brick.png", 1000)
-
-ACF.Tool:AddToolMenu("Scanner", "icon16/magnifier.png", 4000)
 
 if CLIENT then
     surface.CreateFont("ACF.ToolMenu.Key", {
