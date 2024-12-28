@@ -38,6 +38,9 @@ ACF.Tool:AddToolCategory("About the Addon", "icon16/information.png", 0)
 ACF.Tool:AddToolCategory("Settings",        "icon16/wrench.png", 1000)
 ACF.Tool:AddToolCategory("Entities",        "icon16/brick.png", 2000)
 ACF.Tool:AddToolCategory("Fun Stuff",       "icon16/bricks.png", 3000)
+ACF.Tool:AddToolMenu("Armor Tool", "icon16/shield.png", 4000)
+ACF.Tool:AddToolMenu("Copy Tool", "icon16/page_copy.png", 4000)
+ACF.Tool:AddToolMenu("Sound Replacer", "icon16/sound.png", 5000)
 
 ACF.Tool:AddToolMenu("About the Addon/Updates",     "icon16/newspaper.png", 100)
 ACF.Tool:AddToolMenu("About the Addon/Online Wiki", "icon16/book_open.png", 1000)
@@ -200,7 +203,7 @@ local function SetupMenu(Refreshed)
             end
 
             local Tree = Menu:AddPanel("DTree")
-            Tree:SetSize(0, 384)
+            Tree:SetSize(0, 450)
             function Tree:OnNodeSelected(Node)
                 if self.Selected == Node then return end
                 if Node.Data.Type == "Category" then
@@ -227,6 +230,8 @@ local function SetupMenu(Refreshed)
                 ChildrenLookup = {},
                 ChildrenList = {}
             }
+
+            -- Fun little recursive thing to resolve the strings from menu calls
             local Unacknowledged = {}
             for k, v in pairs(self.ToolDirectory) do Unacknowledged[k] = v end
             for _ = 1, 30 do
