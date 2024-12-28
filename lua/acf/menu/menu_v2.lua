@@ -24,10 +24,15 @@ local function SetupMenu()
 
     ACF.Tool.Instructions = {
         {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "icon", Icon = "error"}, {Type = "text", Text = "This menu TOO fire"}},
-        {{Type = "input", Combo = {"E", "lmb"}}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "input", Combo = {"CTRL", "SHIFT", "rmb"}}, {Type = "text", Text = "Select an option from the spawn-menu."}},
-        {{Type = "input", Combo = {"SHIFT", "lmb"}}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
+        {{Type = "icon", Icon = "information"}, {Type = "text", Text = "Select an option from the spawn-menu."}},
     }
     ACF.Tool.IconCache = {}
 
@@ -60,10 +65,10 @@ local function SetupMenu()
         local gradient = gmod_tool.Gradient
         local y = 160
 
-        draw.TexturedQuad({texture = gradient, x = 0, y = y, w = ScrW() / 3, h = #ACF.Tool.Instructions * 28, color = Color(0, 0, 0, 230)})
+        draw.TexturedQuad({texture = gradient, x = 0, y = y, w = ScrW() / 3, h = #ACF.Tool.Instructions * 26, color = Color(0, 0, 0, 230)})
 
         for i, v in ipairs(ACF.Tool.Instructions) do
-            local yO = (y + ((i - 1) * 26)) + 6
+            local yO = (y + ((i - 1) * 26)) + 2
             local xO = 64
 
 
