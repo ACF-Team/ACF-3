@@ -47,6 +47,28 @@ local function CheckUnloadable(v, Gun)
 	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
 end
 
+do -- Random timer crew stuff
+	local function GetReloadEff(Crew, Gun, Ammo)
+		local D1 = Crew:GetPos():Distance(Gun:GetPos())
+		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
+	end
+
+	function ENT:UpdateLoadMod(LastTime)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
+		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+	end
+
+	function ENT:UpdateAccuracyMod(LastTime)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+	end
+end
+
 do -- Spawn and Update functions --------------------------------
 	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
@@ -130,9 +152,9 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function GetMass(Caliber, Class, Weapon)
-	        if Weapon then return Weapon.Mass end
+			if Weapon then return Weapon.Mass end
 
-	        local Factor = Caliber / Class.Caliber.Base
+			local Factor = Caliber / Class.Caliber.Base
 
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
 		end
@@ -279,6 +301,9 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLoadMod(LastTime) end, function() return IsValid(Entity) end, 0.5, 1)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateAccuracyMod(LastTime) end, function() return IsValid(Entity) end, 0.5, 1)
+
 		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
@@ -396,7 +421,7 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
-				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
+				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
 					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate:CanConsume() then
 						This:Load()
 					end
@@ -549,7 +574,9 @@ do -- Metamethods --------------------------------
 			local SpreadScale = ACF.SpreadScale
 			local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
 
-			return self.Spread * ACF.GunInaccuracyScale * IaccMult
+			self:UpdateAccuracyMod()
+
+			return self.Spread * ACF.GunInaccuracyScale * IaccMult * (1 - self.AccuracyCrewMod)
 		end
 
 		function ENT:Shoot()
@@ -637,6 +664,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
+	
 		function ENT:FindNextCrate(Current, Check, ...)
 			if not next(self.Crates) then return end
 
@@ -647,7 +675,7 @@ do -- Metamethods --------------------------------
 				if Next and Check(Next, ...) then return Next end
 			end
 
-			local crate = ACF.FindCrate(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
+			local crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
 			return crate
 		end
@@ -688,11 +716,17 @@ do -- Metamethods --------------------------------
 				self:SetState("Loading") -- Set our state to loading
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
+				self.CurrentCrate = Crate
+				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
+
 				local BulletData = Crate.BulletData
 				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime * 0.666) + (BulletData.ProjLength * ACF.LengthToTime * 0.333)) -- Mass contributes 2/3 of the reload time with length contributing 1/3
 
-				self.CurrentCrate = Crate
-				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
+				-- If not automatic, consider the affect of crew
+				if not TimeOverride then
+					self:UpdateLoadMod()
+					Time = Time * (2 - self.LoadCrewMod)
+				end
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData

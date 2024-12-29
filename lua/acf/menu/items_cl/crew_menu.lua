@@ -54,7 +54,7 @@ local function CreateMenu(Menu)
 		CrewModelDesc:SetText(Data.Description or "No description provided.")
 
 		-- TODO: FIX ONCE TWISTED'S DONE
-		CrewPreview:UpdateModel("models/props_borealis/bluebarrel001.mdl")
+		CrewPreview:UpdateModel("models/chairs_playerstart/standingpose.mdl")
 		CrewPreview:UpdateSettings({FOV = 100})
 
 		ACF.SetClientData("CrewModelID", Data.ID)

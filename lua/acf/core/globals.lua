@@ -141,22 +141,32 @@ do -- ACF global vars
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 
-	-- Crew
-	ACF.CrewRepTimeBase = 3 		-- Base time to replace a crew member
-	ACF.CrewRepDistToTime = 0.01 	-- Time it takes for crew to move one inch during replacement
+	-- Crew 
+	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, CrewFallBackCoef, 1)
+	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
+	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
+	ACF.CrewSelfCoef 		= 0.5	-- Portion of a crew's efficiency they provide
 
-	ACF.CrewArmor = 5 				-- How many millimeters of armor crew members have
-	ACF.CrewHealth = 50 			-- How much health crew members have
+	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
+	ACF.CrewRepDistToTime 	= 0.01 	-- Time it takes for crew to move one inch during replacement
+	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"} -- Order of crew replacement priorities (Highest priority on the left, lowest on the right)
 
-	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"}
+	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
+	ACF.CrewHealth 			= 50	-- How much health crew members have
 
-	ACF.CrewOxygen = 10				-- How many seconds can crew hold their breath for
-	ACF.CrewBreatheRate = 2			-- Multiplier for how fast crew regain their breath
+	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
+	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath
+	ACF.CrewOxygenGainRate 	= 2		-- Multiplier for how fast crew regain their breath
 
-	ACF.AmmoStageMin = 1			-- Minimum stage index for ammo stowages
-	ACF.AmmoStageMax = 5			-- Maximum stage index for ammo stowages
-
+	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
+	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
 	ACF.AmmoRestockInterval = 1		-- How often a crate may be restocked
+
+	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
+	ACF.LoaderWorstDist 	= 600	-- Distance after which loaders are least effective
+	ACF.LoaderMaxBonus 		= 3		-- Maximum bonus loaders can give to reload time
+
+	ACF.NetMessageSizeLimit = 13	-- Maximum size of a net message in bytes
 end
 
 do -- ACF Convars & Particles

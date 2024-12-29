@@ -13,9 +13,10 @@ net.Receive("ACF_Crew_Links",function()
     local State = net.ReadBool()
 
     local Ent = Entity(EntIndex1)
-    Ent.TargetLinks = Ent.TargetLinks or {}
+    Ent.Targets = Ent.Targets or {}
 
-    if State then Ent.TargetLinks[EntIndex2] = true else Ent.TargetLinks[EntIndex2] = nil end
+    if Ent.Targets == nil then return end
+    if State then Ent.Targets[EntIndex2] = true else Ent.Targets[EntIndex2] = nil end
 end)
 
 function ENT:Initialize(...)
@@ -28,8 +29,8 @@ end
 
 local green = Color(0,255,0,100)
 function ENT:DrawOverlay()
-    if self.TargetLinks then
-        for k, _ in pairs(self.TargetLinks) do
+    if self.Targets then
+        for k, _ in pairs(self.Targets) do
             local k = Entity(k)
             if not IsValid(k) then continue end
             render.DrawWireframeBox(k:GetPos(), k:GetAngles(), k:OBBMins(), k:OBBMaxs(), green, true)

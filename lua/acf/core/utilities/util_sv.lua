@@ -1122,8 +1122,11 @@ do -- Special squishy functions
 end
 
 do -- Bulletdata related
-	-- Checks the two bullet datas are equal
-	-- TODO: Probably find a better way to do this via the ammo classes...
+	--- Checks the two bullet datas are equal
+	--- TODO: Probably find a better way to do this via the ammo classes...
+	--- @param Data1 any -- The first bullet data
+	--- @param Data2 any -- The second bullet data
+	--- @return boolean -- Whether the two bullet datas are equal
 	function ACF.BulletEquality(Data1, Data2)
 		if not Data1 then return false end
 		if not Data2 then return false end
@@ -1141,3 +1144,78 @@ do -- Bulletdata related
 	end
 end
 
+do -- Crew related
+	--- Computes the weighted sum of a LUT (often representing links) using a weighting function.
+	--- @param LUT any -- The lookup table to sum
+	--- @param Weighter function -- The function to compute the weight of each entry
+	--- @param ... unknown -- Additional arguments to pass to the weighter
+	--- @return integer -- The weighted sum of the LUT
+	--- @return integer -- The count of entries in the LUT
+	function ACF.WeightedLinkSum(LUT, Weighter, ...)
+		if not LUT then return 0, 0 end
+
+		local Sum = 0
+		local Count = 0
+		for v, _ in pairs(LUT) do
+			if not IsValid(v) then continue end -- Skip invalids
+			Sum = Sum + Weighter(v, ...)
+			Count = Count + 1
+		end
+		return Sum, Count
+	end
+
+	--- Normalizes a value from [inMin,inMax] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param value number The value to normalize
+	--- @param inMin number The minimum value of the input range
+	--- @param inMax number The maximum value of the input range
+	--- @return number # The normalized value
+	function ACF.Normalize(value, inMin, inMax)
+		return math.Clamp((value - inMin) / (inMax - inMin), 0, 1)
+	end
+
+	--- Assuming every item in "array" is in [0,1] (e.g. crew efficiencies)...
+	--- This property holds: sum(array) * Falloff(#array, Limit) < Limit
+	--- @param count number The number of items in the array
+	--- @param limit number The asymptotic limit to stay under
+	--- @return number # The asymptotic falloff multiplier
+	function ACF.AsymptoticFalloff(count, limit)
+		return limit / (count + limit - 1)
+	end
+
+	--- Maps a value from [inMin,inMax] to [outMin,outMax] using a transformation that maps [0,1] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param value number The value to remap
+	--- @param inMin number The minimum value of the input range
+	--- @param inMax number The maximum value of the input range
+	--- @param outMin number The minimum value of the output range
+	--- @param outMax number The maximum value of the output range
+	--- @param transform function(value:number):number
+	--- @return number # The remapped value
+	function ACF.RemapAdv(value, inMin, inMax, outMin, outMax, transform)
+		return outMin + (transform(ACF.Normalize(value, inMin, inMax)) * (outMax - outMin))
+	end
+end
+
+do -- Entity property system
+	local Utilities   = ACF.Utilities
+	local Clock = Utilities.Clock
+
+	function ACF.RandomizedDependentTimer(loop, depends, minTime, maxTime, delay)
+		local realLoop
+		local lastTime = Clock.CurTime
+		function realLoop()
+			if not depends() then return end
+
+			loop(lastTime)
+			lastTime = Clock.CurTime
+			timer.Simple(math.random(minTime, maxTime), realLoop)
+		end
+
+		if not delay then
+		   realLoop()
+		else
+			timer.Simple(delay, realLoop)
+		end
+	end
+end

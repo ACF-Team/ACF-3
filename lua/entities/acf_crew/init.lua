@@ -94,6 +94,89 @@ local function iterScan(ent, reps)
 	return sum / count
 end
 
+do -- Random timer stuff
+	function ENT:UpdateLowFreq(LastTime)
+		local DeltaTime = Clock.CurTime - LastTime
+
+		-- Update health ergonomics
+		self.HealthEff = math.Round(self.ACF.Health / self.ACF.MaxHealth, 2)
+		WireLib.TriggerOutput(self, "HealthEff", self.HealthEff * 100)
+
+		-- Update oxygen levels
+		local MouthPos = self:LocalToWorld(self:OBBCenter()) -- Probably well underwater at this point
+		if ( bit.band( util.PointContents( MouthPos ), CONTENTS_WATER ) == CONTENTS_WATER ) then
+			self.Oxygen = self.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
+		else
+			self.Oxygen = self.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
+		end
+		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
+		if self.Oxygen <= 0 and self.ACF.Health > 0 then
+			self:KillCrew( "player/pl_drown1.wav")
+		end
+		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
+
+		-- Update crew focus
+		if self.CrewType.UpdateFocus then
+			self.CrewType.UpdateFocus(self)
+		end
+	end
+
+	function ENT:UpdateMedFreq(LastTime)
+		-- Update space ergonomics if needed
+		if self.CrewType.ShouldScan then
+			self.SpaceEff = math.Round(iterScan(self, self.CrewType.ScanStep or 1), 2)
+			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
+		end
+	end
+
+	function ENT:UpdateHighFreq(LastTime)
+		local DeltaTime = Clock.CurTime - LastTime
+
+		-- Check world lean angle and update ergonomics
+		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
+		self.LeanAngle = math.Round(math.deg(math.acos(LeanDot)), 2)
+		self.LeanEff = math.Round(1 - ACF.Normalize(self.LeanAngle, 0, 90))
+		WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
+
+		if DeltaTime > 0 and self.IsAlive then
+			-- Check G forces
+			-- print("DFA", DeltaTime)
+			self.Pos = self.Pos or self:GetPos()
+			self.Vel = self.Vel or self:GetVel()
+			-- print(self.Pos, self.Vel)
+
+			-- print("---")
+
+			local pos = self:GetPos()
+			local vel = (pos - self.Pos) / DeltaTime
+			local accel = (vel - self.Vel) / DeltaTime
+
+			self.Pos = pos
+			self.Vel = vel
+			self.Accel = accel
+			-- print(self.Pos, self.Vel)
+			-- print(self.Accel, accel:Length())
+			-- print("End")
+
+			if self.CrewType.GLimitEff then
+				-- Update move ergonomics
+				local GLimitEffSU = self.CrewType.GLimitEff * 39.37 * 9.8 -- Convert Gs to in/s^2		
+				self.MoveEff = math.Round(math.Clamp(1 - math.abs(accel:Length() / GLimitEffSU), 0, 1), 2)
+				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
+			end
+
+			local GLimitSU = self.CrewType.GLimit * 39.37 * 9.8 -- Convert Gs to in/s^2
+			if accel:Length() > GLimitSU then
+				self:KillCrew("player/pl_fallpain3.wav")
+			end
+		end
+
+		-- Update total ergonomics
+		self.TotalEff = math.Clamp(self.ModelEff * self.LeanEff * self.SpaceEff * self.MoveEff * self.HealthEff, 0, 1)
+		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
+	end
+end
+
 do
 	util.AddNetworkString("ACF_Crew_Links")
 
@@ -145,6 +228,7 @@ do
 		end
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
+		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
 
@@ -191,7 +275,7 @@ do
 		Entity.Owner = Player
 		Entity.DataStore = Entities.GetArguments("acf_crew")
 
-		Entity.TargetLinks = {} -- Targets linked to this crew (LUT)
+		Entity.Targets = {} -- Targets linked to this crew (LUT)
 
 		Entity.LeanAngle = 0
 
@@ -215,6 +299,10 @@ do
 		Entity.LastThink = Clock.CurTime
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
+
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLowFreq(LastTime) end, function() return IsValid(Entity) end, 1, 2, 3)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateMedFreq(LastTime) end, function() return IsValid(Entity) end, 0.5, 1, 3)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateHighFreq(LastTime) end, function() return IsValid(Entity) end, 0.05, 0.5, 3)
 
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
 
@@ -271,10 +359,10 @@ do
 
 	function ENT:Think()
 		-- Check links on this entity
-		local TargetLinks = self.TargetLinks
-		if next(TargetLinks) then
+		local Targets = self.Targets
+		if next(Targets) then
 			local Pos = self:GetPos()
-			for Link in pairs(TargetLinks) do
+			for Link in pairs(Targets) do
 				if not IsValid(Link) then self:Unlink(Link) continue end			-- If the link is invalid, remove it and skip it
 
 				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance		-- Check distance limit and common ancestry
@@ -290,56 +378,6 @@ do
 				end
 			end
 		end
-
-		local DeltaTime = Clock.CurTime - self.LastThink
-
-		-- Handle drowning
-		local MouthPos = self:LocalToWorld(self:OBBCenter()) -- Probably well underwater at this point
-		if ( bit.band( util.PointContents( MouthPos ), CONTENTS_WATER ) == CONTENTS_WATER ) then
-			self.Oxygen = self.Oxygen - DeltaTime
-		else
-			self.Oxygen = self.Oxygen + DeltaTime * ACF.CrewBreatheRate
-		end
-		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
-		if self.Oxygen <= 0 and self.ACF.Health > 0 then
-			self:KillCrew( "player/pl_drown1.wav")
-		end
-		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
-
-		-- Check world lean angle and update ergonomics
-		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
-		self.LeanAngle = math.Round(math.deg(math.acos(LeanDot)), 2)
-		self.LeanEff = math.Round(math.Clamp(1 - (self.LeanAngle / 90), 0, 1), 2)
-
-		-- Update space ergonomics if needed
-		if self.CrewType.ShouldScan then
-			self.SpaceEff = math.Round(iterScan(self, self.CrewType.ScanStep or 1), 2)
-		end
-
-		-- Update move ergonomics
-		local pos = self:GetPos()
-		local vel = (pos - self.Pos) / DeltaTime
-		local accel = (vel - self.Vel) / DeltaTime
-
-		self.Pos = pos
-		self.Vel = vel
-		self.Accel = accel
-
-		local GLimitSU = self.CrewType.GLimit * 39.37 * 9.8 -- Convert Gs to in/s^2
-		self.MoveEff = math.Round(math.Clamp(1 - math.abs(accel:Length() / GLimitSU), 0, 1), 2)
-
-		-- Update health ergonomics
-		self.HealthEff = math.Round(self.ACF.Health / self.ACF.MaxHealth, 2)
-
-		-- Update total ergonomics
-		self.TotalEff = math.Clamp(self.ModelEff * self.LeanEff * self.SpaceEff * self.MoveEff * self.HealthEff, 0, 1)
-
-		WireLib.TriggerOutput(self, "ModelEff", self.ModelEff * 100)
-		WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
-		WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
-		WireLib.TriggerOutput(self, "HealthEff", self.HealthEff * 100)
-		WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
-		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
 
 		self.LastThink = Clock.CurTime
 
@@ -505,32 +543,45 @@ do
 
 	--- Register basic linkages from crew to non crew entities
 	local function CanLinkCrew(Target, Crew)
-		if not Target.Crew then Target.Crew = {} end -- Safely make sure the link target has a crew list
-		if Target.Crew[Crew] then return false, "This entity is already linked to this crewmate!" end
-		if Crew.TargetLinks[Target] then return false, "This entity is already linked to this crewmate!" end
+		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link target has a crew list
+		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
+		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
 		if not Crew.CrewType.Whitelist[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 		return true, "Crew linked."
 	end
 
 	local function LinkCrew(Target, Crew)
 		if not CanLinkCrew(Target, Crew) then return end
-		Target.Crew[Crew] = true
-		Crew.TargetLinks[Target] = true
+
+		Crew.Targets[Target] = true
+		Crew.TargetsByType = Crew.TargetsByType or {}
+		Crew.TargetsByType[Target:GetClass()] = Crew.TargetsByType[Target:GetClass()] or {}
+		Crew.TargetsByType[Target:GetClass()][Target] = true
+
+		Target.Crews[Crew] = true
+		Target.CrewsByType = Target.CrewsByType or {}
+		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
+		Target.CrewsByType[Crew.CrewTypeID][Crew] = true
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, true)
 
-		if Target.CheckCrew then Target:CheckCrew() end
 		if Target.UpdateOverlay then Target:UpdateOverlay() end
 		Crew:UpdateOverlay()
 	end
 
 	local function UnlinkCrew(Target, Crew)
-		Target.Crew[Crew] = nil
-		Crew.TargetLinks[Target] = nil
+		Crew.Targets[Target] = nil
+		Crew.TargetsByType = Crew.TargetsByType or {}
+		Crew.TargetsByType[Target:GetClass()] = Crew.TargetsByType[Target:GetClass()] or {}
+		Crew.TargetsByType[Target:GetClass()][Target] = nil
+
+		Target.Crews[Crew] = nil
+		Target.CrewsByType = Target.CrewsByType or {}
+		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
+		Target.CrewsByType[Crew.CrewTypeID][Crew] = nil
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, false)
 
-		if Target.CheckCrew then Target:CheckCrew() end
 		if Target.UpdateOverlay then Target:UpdateOverlay() end
 		Crew:UpdateOverlay()
 	end
@@ -546,7 +597,7 @@ do
 		end)
 
 		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew, FromChip)
-			if not Target.Crew[Crew] or not Crew.TargetLinks[Target] then return false, "This acf entity is not linked to this crewmate."	end
+			if not Target.Crews[Crew] or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
 			UnlinkCrew(Target, Crew)
 
@@ -558,12 +609,12 @@ end
 -- Adv Dupe 2 Related
 do
 	function ENT:PreEntityCopy()
-		if next(self.TargetLinks) then
+		if next(self.Targets) then
 			local Entities = {}
-			for Ent in pairs(self.TargetLinks) do
+			for Ent in pairs(self.Targets) do
 				Entities[#Entities + 1] = Ent:EntIndex()
 			end
-			duplicator.StoreEntityModifier(self, "CrewTargetLinks", Entities)
+			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
 		end
 
 		-- Wire dupe info
@@ -573,11 +624,11 @@ do
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
-		if EntMods.CrewTargetLinks then
-			for _, EntID in pairs(EntMods.CrewTargetLinks) do
+		if EntMods.CrewTargets then
+			for _, EntID in pairs(EntMods.CrewTargets) do
 				self:Link(CreatedEntities[EntID])
 			end
-			EntMods.CrewTargetLinks = nil
+			EntMods.CrewTargets = nil
 		end
 
 		--Wire dupe info
@@ -593,7 +644,7 @@ do
 		HookRemove("AdvDupe_FinishPasting", "crewdupefinished" .. self:EntIndex())
 
 		-- Unlink target entities
-		for v,_ in pairs(self.TargetLinks) do
+		for v,_ in pairs(self.Targets) do
 			if IsValid(v) then self:Unlink(v) end
 		end
 

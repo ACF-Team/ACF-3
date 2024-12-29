@@ -687,7 +687,7 @@ do -- Ammo Consumption -------------------------
 	end
 
 	-- Finds a crate that meets a check criteria starting from stage start with varargs fed to check
-	local function FindCrate(contraption, start, check, ...)
+	local function FindCrateByStage(contraption, start, check, ...)
 		local start = start or ACF.AmmoStageMin
 		for i = start, ACF.AmmoStageMax do
 			local StageCrates = FindCratesAtStage(contraption, i)
@@ -700,7 +700,7 @@ do -- Ammo Consumption -------------------------
 
 	ACF.FindCratesAtStage = FindCratesAtStage
 	ACF.FindFirstStage = FindFirstStage
-	ACF.FindCrate = FindCrate
+	ACF.FindCrateByStage = FindCrateByStage
 
 	function ENT:CanConsume()
 		local SelfTbl = self:GetTable()
@@ -748,7 +748,7 @@ do -- Ammo Consumption -------------------------
 		local TimeCheck = (CurTime() - self.LastStockTime) > ACF.AmmoRestockInterval
 		if AmmoCheck and TimeCheck then
 			self.LastStockTime = CurTime()
-			local crate = FindCrate(
+			local crate = FindCrateByStage(
 				self:GetContraption(),
 				self.AmmoStage + 1,
 				function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
@@ -767,6 +767,14 @@ end ---------------------------------------------
 
 do -- Misc --------------------------------------
 	function ENT:Think()
+		-- The crew of this crate is the crews of all the weapons linked to it
+		self.Crews = self.Crews or {}
+		for weapon, _ in pairs(self.Weapons or {}) do
+			for crew, _ in pairs(weapon.Crews or {}) do
+				self.Crews[crew] = true
+			end
+		end
+
 		self:NextThink(CurTime() + 1)
 		return true
 	end
