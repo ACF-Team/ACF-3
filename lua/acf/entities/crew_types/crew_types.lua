@@ -9,22 +9,33 @@ CrewTypes.Register("Loader", {
 		Amount	= 4,
 		Text	= "Maximum number of loaders a player can have."
 	},
-	Whitelist = {		-- What entities can this crew type can link to and affect
-		acf_gun = true, -- Loaders affect gun reload rates
+	Whitelist = {			-- What entities can this crew type can link to and affect
+		acf_gun = true, 	-- Loaders affect gun reload rates
 	},
-	Mass = 80,			-- Mass (kg) of a single crew member
+	Mass = 80,				-- Mass (kg) of a single crew member
 	GForces = {
-		Efficiencies = {
-			Min = 0,	-- Minimum Gs before efficiency starts dropping
-			Max = 3,	-- Maximum Gs before efficiency is 0
+		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
+			Min = 0,		-- Best efficiency before this (Gs)
+			Max = 3,		-- Worst efficiency after this (Gs)
 		},
-		Damages = {
-			Min = 3,	-- Minimum Gs before damage starts being applied
-			Max = 6,	-- Maximum Gs before instant death
+		Damages = {			-- Specifying this table enables G force damage calculations
+			Min = 6,		-- Damage starts being applied after this (Gs)
+			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
-	ShouldScan = true,	-- Whether to check space around the crew
-	ScanStep = 3,		-- How many parts of a scan to update each time
+	SpaceScans = {			-- Specifying this table enables spatial scans (if linked to a gun)
+		ScanStep = 3,		-- How many parts of a scan to update each time
+	},
+	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		Crew.ShouldScan = true
+	end,
+	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+			Crew.ShouldScan = false
+		end
+	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and 1 / Count or 1
@@ -46,15 +57,28 @@ CrewTypes.Register("Gunner", {
 	Mass = 80,
 	GForces = {
 		Efficiencies = {
-			Min = 0,	-- Minimum Gs before efficiency starts dropping
-			Max = 3,	-- Maximum Gs before efficiency is 0
+			Min = 0,	-- Best efficiency before this (Gs)
+			Max = 3,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 3,	-- Minimum Gs before damage starts being applied
-			Max = 6,	-- Maximum Gs before instant death
+			Min = 6,	-- Damage starts being applied after this (Gs)
+			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	ShouldScan = false,
+	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+		if Crew.GunName and Target.Name ~= Crew.GunName then return false, "Gunners can only be linked to one type of gun" end
+		return true, "Crew linked."
+	end,
+	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		Crew.GunName = Target.Name
+	end,
+	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+			Crew.GunName = nil
+		end
+	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end
@@ -74,15 +98,14 @@ CrewTypes.Register("Driver", {
 	Mass = 80,
 	GForces = {
 		Efficiencies = {
-			Min = 0,	-- Minimum Gs before efficiency starts dropping
-			Max = 3,	-- Maximum Gs before efficiency is 0
+			Min = 0,	-- Best efficiency before this (Gs)
+			Max = 3,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 3,	-- Minimum Gs before damage starts being applied
-			Max = 6,	-- Maximum Gs before instant death
+			Min = 6,	-- Damage starts being applied after this (Gs)
+			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	ShouldScan = false,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end
@@ -92,7 +115,7 @@ CrewTypes.Register("Commander", {
 	Name        = "Commander",
 	Description = "Commanders coordinate the crew. They prefer sitting.",
 	Whitelist = {
-		acf_gun = true, -- Only to support RWS
+		acf_gun = true, 	-- Only to support RWS
 	},
 	LimitConVar	= {
 		Name	= "_acf_crew_commander",
@@ -102,15 +125,33 @@ CrewTypes.Register("Commander", {
 	Mass = 80,
 	GForces = {
 		Efficiencies = {
-			Min = 0,	-- Minimum Gs before efficiency starts dropping
-			Max = 3,	-- Maximum Gs before efficiency is 0
+			Min = 0,		-- Best efficiency before this (Gs)
+			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 3,	-- Minimum Gs before damage starts being applied
-			Max = 6,	-- Maximum Gs before instant death
+			Min = 6,		-- Damage starts being applied after this (Gs)
+			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
-	ShouldScan = false,
+	SpaceScans = {			-- Specifying this table enables spatial scans (if linked to a gun)
+		ScanStep = 3,		-- How many parts of a scan to update each time
+	},
+	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+		if Crew.GunName and Target.Name ~= Crew.GunName then return false, "Commanders can only be linked to one type of gun" end
+		return true, "Crew linked."
+	end,
+	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		Crew.GunName = Target.Name
+		Crew.ShouldScan = true
+	end,
+	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+		if Target:GetClass() ~= "acf_gun" then return end
+		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+			Crew.GunName = nil
+			Crew.ShouldScan = false
+		end
+	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets) + 1 -- +1 for commanding the crew
 		Crew.Focus = (Count > 0) and 1 / Count or 1
@@ -129,14 +170,13 @@ CrewTypes.Register("Pilot", {
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
 	GForces = {
 		Efficiencies = {
-			Min = 0,	-- Minimum Gs before efficiency starts dropping
-			Max = 3,	-- Maximum Gs before efficiency is 0
+			Min = 0,	-- Best efficiency before this (Gs)
+			Max = 3,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 3,	-- Minimum Gs before damage starts being applied
-			Max = 6,	-- Maximum Gs before instant death
+			Min = 6,	-- Damage starts being applied after this (Gs)
+			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	ShouldScan = false,
 	UpdateFocus = function(Crew) return 1 end
 })

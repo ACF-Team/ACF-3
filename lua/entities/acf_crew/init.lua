@@ -109,15 +109,14 @@ do -- Random timer stuff
 		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
 
 		-- Update crew focus
-		if self.CrewType.UpdateFocus then
-			self.CrewType.UpdateFocus(self)
-		end
+		if self.CrewType.UpdateFocus then self.CrewType.UpdateFocus(self) end
 	end
 
 	function ENT:UpdateMedFreq(LastTime)
 		-- Update space ergonomics if needed
-		if self.CrewType.ShouldScan then
-			self.SpaceEff = math.Round(iterScan(self, self.CrewType.ScanStep or 1), 2)
+		local SpaceScans = self.CrewType.SpaceScans
+		if SpaceScans and self.ShouldScan then
+			self.SpaceEff = math.Round(iterScan(self, SpaceScans.ScanStep), 2)
 			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
 		end
 	end
@@ -144,22 +143,19 @@ do -- Random timer stuff
 			self.Vel = vel
 			self.Accel = accel
 
+			local GForce = accel:Length() / 600
+
 			-- If the crew's efficiency is affected by G forces
 			local Effs = self.CrewType.GForces.Efficiencies
 			if Effs then
-				local Min = Effs.Min * 600
-				local Max = Effs.Max * 600
-				self.MoveEff = math.Round(1 - ACF.Normalize(accel:Length(), Min, Max), 2)
+				self.MoveEff = math.Round(1 - ACF.Normalize(GForce, Effs.Min, Effs.Max), 2)
 				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
 			end
 
-			-- If the crew takes damage from gforces (futureproofing)
 			local Damages = self.CrewType.GForces.Damages
-			if Damages then
-				local Min = Damages.Min * 600
-				local Max = Damages.Max * 600
-
-				if accel:Length() > Max then self:KillCrew("player/pl_fallpain3.wav") end
+			if Damages and GForce > Damages.Min then -- If we should apply damage
+				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * 100
+				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 			end
 		end
 
@@ -213,7 +209,7 @@ do
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
 
-		if Entity.CrewType.ShouldScan then
+		if Entity.CrewType.SpaceScans then
 			Entity.ScanDisplacements, Entity.ScanLengths, Entity.ScanCount = GenerateScanSetup()
 			Entity.ScanIndex = 1
 			Entity.SpaceEff = iterScan(Entity, Entity.ScanCount)
@@ -283,6 +279,8 @@ do
 		Entity.HealthEff = 1
 		Entity.TotalEff = 1
 
+		Entity.ShouldScan = false
+
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 
 		Entity.IsAlive = true
@@ -334,6 +332,14 @@ do
 
 		HookRun("ACF_OnEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
 
+		if next(self.Targets) then
+			for Target in pairs(self.Targets) do
+				self:Unlink(Target)
+			end
+		end
+
+		self:UpdateOverlay(true)
+
 		return true, "Crew updated successfully!"
 	end
 
@@ -355,12 +361,10 @@ do
 		if next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
-				if not IsValid(Link) then self:Unlink(Link) continue end			-- If the link is invalid, remove it and skip it
+				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
-				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance		-- Check distance limit and common ancestry
-
-				-- #TODO: Address once done development
-				-- local DiffAncestors = self:GetAncestor() ~= Link:GetAncestor()
+				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
+				local DiffAncestors = self:GetContraption() ~= Link:GetContraption()	-- Check same contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					Link:EmitSound(Sound, 70, 100, ACF.Volume)
@@ -399,12 +403,15 @@ do
 	end
 
 	function ENT:ReplaceCrew()
+		if not self:GetContraption() then return end 				-- No contraption to replace crew in
+		if not self:GetContraption().CrewsByType then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
 			self.ToBeReplaced = true
 
 			local start = false
+			local CrewsByType = self:GetContraption().CrewsByType
 			for _, CrewType in ipairs(ACF.CrewPriorities) do						-- For each crew type in the replacement hierarchy
-				local OtherCrews = self:GetContraption().crewsByType[CrewType] or {}
+				local OtherCrews = CrewsByType[CrewType] or {}
 
 				-- Ignore all classes before our own
 				if CrewType == self.CrewTypeID then start = true end
@@ -434,22 +441,6 @@ do
 		end
 	end
 
-	-- Handles crew death
-	-- sound is the sound to play when the crew dies
-	function ENT:KillCrew(sound)
-		-- print("Kill Crew: ", self)
-		EmitSound( sound, self:GetPos())
-		self:SetMaterial( "models/flesh" )
-		self:SetColor( Color(255, 255, 255, 255) )
-
-		self.IsAlive = false
-		self.ACF.Health = 0
-		self.ACF.HealthEff = 0
-
-		self:UpdateOverlay()
-		self:ReplaceCrew()
-	end
-
 	-- Handles swapping crew during replacement. Assumes self has died.
 	function ENT:SwapCrew(Other)
 		local mat1, mat2 = self:GetMaterial(), Other:GetMaterial()
@@ -468,22 +459,39 @@ do
 		Other:UpdateOverlay()
 	end
 
-	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-		local Health = self.ACF.Health
-		local HitRes = DmgResult:Compute()
-
-		HitRes.Kill = false
-
+	-- Somewhat internal function to handle crew damage
+	function ENT:DamageCrew(Damage, sound)
 		-- Prevent entity from being destroyed (clamp health)
-		local NewHealth = math.max(0, Health - HitRes.Damage)
+		local NewHealth = math.max(0, self.ACF.Health - Damage)
 
 		self.ACF.Health = NewHealth
 		self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
 
 		-- If we reach 0, replace the crew with the next one
 		if NewHealth == 0 and self.IsAlive then
-			self:KillCrew("player/pl_pain7.wav")
+			self:KillCrew(sound)
 		end
+	end
+
+	-- sound is the sound to play when the crew dies
+	function ENT:KillCrew(sound)
+		EmitSound( sound, self:GetPos())
+		self:SetMaterial( "models/flesh" )
+		self:SetColor( Color(255, 255, 255, 255) )
+
+		self.IsAlive = false
+		self.ACF.Health = 0
+
+		self:UpdateOverlay()
+		self:ReplaceCrew()
+	end
+
+	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+		local HitRes = DmgResult:Compute()
+
+		HitRes.Kill = false
+
+		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
 
 		return HitRes
 	end
@@ -493,6 +501,7 @@ do
 		if OldArmor == 0 then self.ACF.Armour = 0 end
 		if OldHealth == 0 then self.ACF.Health = 0 end
 
+		if self.ACF.Health == self.ACF.MaxHealth then EmitSound("items/medshot4.wav", self:GetPos()) end
 		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 		self:UpdateOverlay()
 	end
@@ -543,6 +552,7 @@ do
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
 		if not Crew.CrewType.Whitelist[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
+		if Crew.CrewType.CanLink then return Crew.CrewType.CanLink(Crew, Target) end
 		return true, "Crew linked."
 	end
 
@@ -558,6 +568,8 @@ do
 		Target.CrewsByType = Target.CrewsByType or {}
 		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
 		Target.CrewsByType[Crew.CrewTypeID][Crew] = true
+
+		if Crew.CrewType.OnLink then Crew.CrewType.OnLink(Crew, Target) end
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, true)
 
@@ -575,6 +587,8 @@ do
 		Target.CrewsByType = Target.CrewsByType or {}
 		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
 		Target.CrewsByType[Crew.CrewTypeID][Crew] = nil
+
+		if Crew.CrewType.OnUnlink then Crew.CrewType.OnUnlink(Crew, Target) end
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, false)
 

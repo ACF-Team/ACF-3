@@ -56,14 +56,18 @@ do -- Random timer crew stuff
 
 	function ENT:UpdateLoadMod(LastTime)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum, Count = Sum1 + Sum2 * 0.25, Count1 + Count2 -- Commanders are 25% as effective as loaders
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 	end
 
 	function ENT:UpdateAccuracyMod(LastTime)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
+		local Sum, Count = Sum1 + Sum2 * 0.25, Count1 + Count2 -- Commanders are 25% as effective as gunners
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 	end
@@ -363,6 +367,12 @@ do -- Spawn and Update functions --------------------------------
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
+			end
+		end
+
+		if next(self.Crews) then
+			for Crew in pairs(self.Crews) do
+				self:Unlink(Crew)
 			end
 		end
 
