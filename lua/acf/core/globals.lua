@@ -166,7 +166,7 @@ do -- ACF global vars
 	ACF.LoaderWorstDist 	= 600	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 3		-- Maximum bonus loaders can give to reload time
 
-	ACF.NetMessageSizeLimit = 13	-- Maximum size of a net message in bytes
+	ACF.NetMessageSizeLimit = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MENUS WILL BREAK)
 end
 
 do -- ACF Convars & Particles

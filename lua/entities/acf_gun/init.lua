@@ -664,7 +664,21 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
-	
+		function ENT:FindNextCrateOld(Current, Check, ...)
+			if not next(self.Crates) then return end
+
+			-- Find the next available crate to pull ammo from --
+			local Select = next(self.Crates, self.CurrentCrate) or next(self.Crates)
+			local Start  = Select
+
+			repeat
+				if Check(Select, ...) then return Select end -- Return select
+
+				Select = next(self.Crates, Select) or next(self.Crates)
+			until
+				Select == Start
+		end
+
 		function ENT:FindNextCrate(Current, Check, ...)
 			if not next(self.Crates) then return end
 
@@ -676,6 +690,11 @@ do -- Metamethods --------------------------------
 			end
 
 			local crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
+
+			-- backwards compatibility i kneel
+			if not crate then
+				crate = self:FindNextCrateOld(Current, Check, ...)
+			end
 
 			return crate
 		end

@@ -13,8 +13,16 @@ CrewTypes.Register("Loader", {
 		acf_gun = true, -- Loaders affect gun reload rates
 	},
 	Mass = 80,			-- Mass (kg) of a single crew member
-	GLimit = 6, 		-- Maximum Gs before damage happens
-	GLimitEff = 2, 		-- Maximum Gs before loaders cannot load
+	GForces = {
+		Efficiencies = {
+			Min = 0,	-- Minimum Gs before efficiency starts dropping
+			Max = 3,	-- Maximum Gs before efficiency is 0
+		},
+		Damages = {
+			Min = 3,	-- Minimum Gs before damage starts being applied
+			Max = 6,	-- Maximum Gs before instant death
+		}
+	},
 	ShouldScan = true,	-- Whether to check space around the crew
 	ScanStep = 3,		-- How many parts of a scan to update each time
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
@@ -36,8 +44,16 @@ CrewTypes.Register("Gunner", {
 		acf_turret = true,
 	},
 	Mass = 80,
-	GLimit = 6,
-	GLimitEff = 2,
+	GForces = {
+		Efficiencies = {
+			Min = 0,	-- Minimum Gs before efficiency starts dropping
+			Max = 3,	-- Maximum Gs before efficiency is 0
+		},
+		Damages = {
+			Min = 3,	-- Minimum Gs before damage starts being applied
+			Max = 6,	-- Maximum Gs before instant death
+		}
+	},
 	ShouldScan = false,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
@@ -49,14 +65,23 @@ CrewTypes.Register("Driver", {
 	Description = "Drivers affect the fuel efficiency of your engines. They prefer sitting",
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
-		Amount	= 4,
+		Amount	= 2,
 		Text	= "Maximum number of drivers a player can have."
 	},
 	Whitelist = {
 		acf_engine = true, -- Drivers affect engine fuel efficiency
 	},
 	Mass = 80,
-	GLimit = 6,
+	GForces = {
+		Efficiencies = {
+			Min = 0,	-- Minimum Gs before efficiency starts dropping
+			Max = 3,	-- Maximum Gs before efficiency is 0
+		},
+		Damages = {
+			Min = 3,	-- Minimum Gs before damage starts being applied
+			Max = 6,	-- Maximum Gs before instant death
+		}
+	},
 	ShouldScan = false,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
@@ -71,14 +96,23 @@ CrewTypes.Register("Commander", {
 	},
 	LimitConVar	= {
 		Name	= "_acf_crew_commander",
-		Amount	= 4,
-		Text	= "Maximum number of drivers a player can have."
+		Amount	= 1,
+		Text	= "Maximum number of commanders a player can have."
 	},
 	Mass = 80,
-	GLimit = 6,
+	GForces = {
+		Efficiencies = {
+			Min = 0,	-- Minimum Gs before efficiency starts dropping
+			Max = 3,	-- Maximum Gs before efficiency is 0
+		},
+		Damages = {
+			Min = 3,	-- Minimum Gs before damage starts being applied
+			Max = 6,	-- Maximum Gs before instant death
+		}
+	},
 	ShouldScan = false,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets)
+		local Count = table.Count(Crew.Targets) + 1 -- +1 for commanding the crew
 		Crew.Focus = (Count > 0) and 1 / Count or 1
 	end
 })
@@ -93,7 +127,16 @@ CrewTypes.Register("Pilot", {
 		Text	= "Maximum number of pilots a player can have."
 	},
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
-	GLimit = 9,			-- Pilots can sustain higher Gs
+	GForces = {
+		Efficiencies = {
+			Min = 0,	-- Minimum Gs before efficiency starts dropping
+			Max = 3,	-- Maximum Gs before efficiency is 0
+		},
+		Damages = {
+			Min = 3,	-- Minimum Gs before damage starts being applied
+			Max = 6,	-- Maximum Gs before instant death
+		}
+	},
 	ShouldScan = false,
 	UpdateFocus = function(Crew) return 1 end
 })

@@ -23,13 +23,6 @@ local CheckLegal = ACF.CheckLegal
 local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
 
-CreateConVar(
-	"sbox_max_acf_crew",
-	8,
-	FCVAR_ARCHIVE + FCVAR_NOTIFY,
-	"Maximum amount of " .. "ACF crew members" .. " a player can create."
-)
-
 local function GenerateScanSetup()
 	local directions = {}
 	local lengths = {}
@@ -110,7 +103,7 @@ do -- Random timer stuff
 			self.Oxygen = self.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
 		end
 		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
-		if self.Oxygen <= 0 and self.ACF.Health > 0 then
+		if self.Oxygen <= 0 and self.IsAlive then
 			self:KillCrew( "player/pl_drown1.wav")
 		end
 		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
@@ -135,17 +128,13 @@ do -- Random timer stuff
 		-- Check world lean angle and update ergonomics
 		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
 		self.LeanAngle = math.Round(math.deg(math.acos(LeanDot)), 2)
-		self.LeanEff = math.Round(1 - ACF.Normalize(self.LeanAngle, 0, 90))
+		self.LeanEff = math.Round(1 - ACF.Normalize(self.LeanAngle, 0, 90), 2)
 		WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
 
 		if DeltaTime > 0 and self.IsAlive then
-			-- Check G forces
-			-- print("DFA", DeltaTime)
+			-- Calculate current G force on crew
 			self.Pos = self.Pos or self:GetPos()
-			self.Vel = self.Vel or self:GetVel()
-			-- print(self.Pos, self.Vel)
-
-			-- print("---")
+			self.Vel = self.Vel or self:GetVelocity()
 
 			local pos = self:GetPos()
 			local vel = (pos - self.Pos) / DeltaTime
@@ -154,20 +143,23 @@ do -- Random timer stuff
 			self.Pos = pos
 			self.Vel = vel
 			self.Accel = accel
-			-- print(self.Pos, self.Vel)
-			-- print(self.Accel, accel:Length())
-			-- print("End")
 
-			if self.CrewType.GLimitEff then
-				-- Update move ergonomics
-				local GLimitEffSU = self.CrewType.GLimitEff * 39.37 * 9.8 -- Convert Gs to in/s^2		
-				self.MoveEff = math.Round(math.Clamp(1 - math.abs(accel:Length() / GLimitEffSU), 0, 1), 2)
+			-- If the crew's efficiency is affected by G forces
+			local Effs = self.CrewType.GForces.Efficiencies
+			if Effs then
+				local Min = Effs.Min * 600
+				local Max = Effs.Max * 600
+				self.MoveEff = math.Round(1 - ACF.Normalize(accel:Length(), Min, Max), 2)
 				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
 			end
 
-			local GLimitSU = self.CrewType.GLimit * 39.37 * 9.8 -- Convert Gs to in/s^2
-			if accel:Length() > GLimitSU then
-				self:KillCrew("player/pl_fallpain3.wav")
+			-- If the crew takes damage from gforces (futureproofing)
+			local Damages = self.CrewType.GForces.Damages
+			if Damages then
+				local Min = Damages.Min * 600
+				local Max = Damages.Max * 600
+
+				if accel:Length() > Max then self:KillCrew("player/pl_fallpain3.wav") end
 			end
 		end
 
@@ -228,7 +220,6 @@ do
 		end
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
-		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
 
@@ -250,8 +241,11 @@ do
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
 		local CrewType = CrewTypes.Get(Data.CrewTypeID)
 
-		local Limit = "_acf_crew" -- TODO: unhardcode this later
+		local Limit = "_acf_crew"
 		if not Player:CheckLimit(Limit) then return false end
+
+		local JobLimit = CrewType.LimitConVar.Name
+		if not Player:CheckLimit(JobLimit) then return false end
 
 		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_crew", Player, Data, CrewModel, CrewType)
 		if CanSpawn == false then return false end
@@ -267,6 +261,7 @@ do
 
 		Player:AddCleanup("acf_crew", Entity)
 		Player:AddCount(Limit, Entity)
+		Player:AddCount(JobLimit, Entity)
 
 		Entity.Name = "Crew Member"
 		Entity.ShortName = "Crew Member"
@@ -276,6 +271,7 @@ do
 		Entity.DataStore = Entities.GetArguments("acf_crew")
 
 		Entity.Targets = {} -- Targets linked to this crew (LUT)
+		Entity.TargetsByType = {} -- Targets linked to this crew by type (LUT)
 
 		Entity.LeanAngle = 0
 
@@ -289,25 +285,21 @@ do
 
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 
-		-- DFA like move efficiency
-		Entity.Pos = Pos
-		Entity.Vel = Vector(0, 0, 0)
-		Entity.Accel = Vector(0, 0, 0)
-
 		Entity.IsAlive = true
 
 		Entity.LastThink = Clock.CurTime
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLowFreq(LastTime) end, function() return IsValid(Entity) end, 1, 2, 3)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateMedFreq(LastTime) end, function() return IsValid(Entity) end, 0.5, 1, 3)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateHighFreq(LastTime) end, function() return IsValid(Entity) end, 0.05, 0.5, 3)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLowFreq(LastTime) end, function() return IsValid(Entity) end, 1, 2, 0.1)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateMedFreq(LastTime) end, function() return IsValid(Entity) end, 0.5, 1, 0.1)
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateHighFreq(LastTime) end, function() return IsValid(Entity) end, 0.1, 0.5, 0.1)
 
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
 
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
+		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
 		WireLib.TriggerOutput(Entity, "Entity", Entity)
 
 		Entity:UpdateOverlay(true)
@@ -406,9 +398,46 @@ do
 		self.ACF.Type      = "Prop"
 	end
 
+	function ENT:ReplaceCrew()
+		if not self.ToBeReplaced and self.ReplaceSelf then
+			self.ToBeReplaced = true
+
+			local start = false
+			for _, CrewType in ipairs(ACF.CrewPriorities) do						-- For each crew type in the replacement hierarchy
+				local OtherCrews = self:GetContraption().crewsByType[CrewType] or {}
+
+				-- Ignore all classes before our own
+				if CrewType == self.CrewTypeID then start = true end
+				if not start then continue end
+
+				for Other, _ in pairs(OtherCrews) do									-- For each crew of that type
+					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
+					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
+					local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
+					local Replaceable = Other.ReplaceOthers								-- Other can be replaced
+					if NotMe and NotBusy and Alive and Replaceable then
+						Other.ToReplace = true -- Other will replace us
+
+						local ReplacementDist = self:GetPos():Distance(Other:GetPos())
+						local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
+						TimerSimple(ReplacementTime, function()
+							-- Swap the crews visually and health wise
+							Other.ToReplace = false
+							self.ToBeReplaced = false
+
+							self:SwapCrew(Other)
+						end)
+						return HitRes -- Early return to break out of nested loop
+					end
+				end
+			end
+		end
+	end
+
 	-- Handles crew death
 	-- sound is the sound to play when the crew dies
 	function ENT:KillCrew(sound)
+		-- print("Kill Crew: ", self)
 		EmitSound( sound, self:GetPos())
 		self:SetMaterial( "models/flesh" )
 		self:SetColor( Color(255, 255, 255, 255) )
@@ -418,6 +447,7 @@ do
 		self.ACF.HealthEff = 0
 
 		self:UpdateOverlay()
+		self:ReplaceCrew()
 	end
 
 	-- Handles swapping crew during replacement. Assumes self has died.
@@ -452,41 +482,7 @@ do
 
 		-- If we reach 0, replace the crew with the next one
 		if NewHealth == 0 and self.IsAlive then
-			-- TODO: Remove hardcode
 			self:KillCrew("player/pl_pain7.wav")
-			if not self.ToBeReplaced and self.ReplaceSelf then
-				self.ToBeReplaced = true
-
-				local start = false
-				for _, CrewType in ipairs(ACF.CrewPriorities) do						-- For each crew type in the replacement hierarchy
-					local OtherCrews = self:GetContraption().crewsByType[CrewType] or {}
-
-					-- Ignore all classes before our own
-					if CrewType == self.CrewTypeID then start = true end
-					if not start then continue end
-
-					for Other, _ in pairs(OtherCrews) do									-- For each crew of that type
-						local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
-						local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
-						local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
-						local Replaceable = Other.ReplaceOthers								-- Other can be replaced
-						if NotMe and NotBusy and Alive and Replaceable then
-							Other.ToReplace = true -- Other will replace us
-
-							local ReplacementDist = self:GetPos():Distance(Other:GetPos())
-							local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
-							TimerSimple(ReplacementTime, function()
-								-- Swap the crews visually and health wise
-								Other.ToReplace = false
-								self.ToBeReplaced = false
-
-								self:SwapCrew(Other)
-							end)
-							return HitRes -- Early return to break out of nested loop
-						end
-					end
-				end
-			end
 		end
 
 		return HitRes

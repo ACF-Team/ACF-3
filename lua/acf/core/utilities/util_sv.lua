@@ -1209,7 +1209,7 @@ do -- Entity property system
 
 			loop(lastTime)
 			lastTime = Clock.CurTime
-			timer.Simple(math.random(minTime, maxTime), realLoop)
+			timer.Simple(minTime + (maxTime - minTime) * math.random(), realLoop)
 		end
 
 		if not delay then

@@ -6,6 +6,12 @@ language.Add("Cleanup_acf_crew", "ACF Crewmates")
 language.Add("Cleaned_acf_crew", "Cleaned up all ACF Crewmates")
 language.Add("SBoxLimit__acf_crew", "You've reached the ACF Crewmate limit!")
 
+language.Add("SBoxLimit__acf_crew_loader", "You've reached the ACF Loader limit!")
+language.Add("SBoxLimit__acf_crew_gunner", "You've reached the ACF Gunner limit!")
+language.Add("SBoxLimit__acf_crew_driver", "You've reached the ACF Driver limit!")
+language.Add("SBoxLimit__acf_crew_commander", "You've reached the ACF Commander limit!")
+language.Add("SBoxLimit__acf_crew_pilot", "You've reached the ACF Pilot limit!")
+
 -- Deals with crew linking to non crew entities
 net.Receive("ACF_Crew_Links",function()
     local EntIndex1 = net.ReadUInt(16)
