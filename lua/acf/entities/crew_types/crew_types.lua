@@ -4,7 +4,7 @@ local CrewTypes = ACF.Classes.CrewTypes
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
 	Description = "Loaders affect the reload rate of your guns. They prefer standing. To a limit, the more space you have the faster they reload.",
-	LimitConVar	= {
+	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
 		Amount	= 4,
 		Text	= "Maximum number of loaders a player can have."
@@ -13,6 +13,10 @@ CrewTypes.Register("Loader", {
 		acf_gun = true, 	-- Loaders affect gun reload rates
 	},
 	Mass = 80,				-- Mass (kg) of a single crew member
+	Leans = {				-- Specifying this table enables leaning efficiency calculations
+		Min = 10,			-- Best efficiency before this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
+	},
 	GForces = {
 		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
 			Min = 0,		-- Best efficiency before this (Gs)
@@ -36,6 +40,29 @@ CrewTypes.Register("Loader", {
 			Crew.ShouldScan = false
 		end
 	end,
+	UpdateLowFreq = function(Crew)
+		-- Go through every bullet linked to the gun, and find the longest shell
+		local LongestLength = 0
+		local LongestBullet = nil
+		for Gun in pairs(Crew.TargetsByType["acf_gun"] or {}) do
+			if not IsValid(Gun) then continue end
+			for Crate in pairs(Gun.Crates) do
+				local BulletData = Crate.BulletData
+				local Length = BulletData.PropLength + BulletData.ProjLength
+				if Length > LongestLength then
+					LongestLength = Length
+					LongestBullet = BulletData
+				end
+			end
+		end
+
+		if LongestBullet then
+			local Length = LongestLength / 2.54 -- CM to inches
+			local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
+			Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
+			Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
+		end
+	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and 1 / Count or 1
@@ -55,6 +82,10 @@ CrewTypes.Register("Gunner", {
 		acf_turret = true,
 	},
 	Mass = 80,
+	Leans = {				-- Specifying this table enables leaning efficiency calculations
+		Min = 10,			-- Best efficiency before this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
+	},
 	GForces = {
 		Efficiencies = {
 			Min = 0,	-- Best efficiency before this (Gs)
@@ -123,6 +154,10 @@ CrewTypes.Register("Commander", {
 		Text	= "Maximum number of commanders a player can have."
 	},
 	Mass = 80,
+	Leans = {				-- Specifying this table enables leaning efficiency calculations
+		Min = 10,			-- Best efficiency before this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
+	},
 	GForces = {
 		Efficiencies = {
 			Min = 0,		-- Best efficiency before this (Gs)

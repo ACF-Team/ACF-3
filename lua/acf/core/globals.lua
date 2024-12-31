@@ -145,7 +145,7 @@ do -- ACF global vars
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, CrewFallBackCoef, 1)
 	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
-	ACF.CrewSelfCoef 		= 0.5	-- Portion of a crew's efficiency they provide
+	ACF.CrewSelfCoef 		= 0.8	-- Portion of a crew's efficiency they provide
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.01 	-- Time it takes for crew to move one inch during replacement

@@ -29,6 +29,23 @@ local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
+do -- Random timer crew stuff
+	local function GetReloadEff(Crew, Gun, Ammo)
+		local D1 = Crew:GetPos():Distance(Gun:GetPos())
+		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
+	end
+
+	function ENT:UpdateStockMod(LastTime)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
+		local Sum, Count = Sum1 + Sum2 * 0.25, Count1 + Count2 -- Commanders are 25% as effective as loaders
+		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
+		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+	end
+end
+
 do -- Spawning and Updating --------------------
 	local Classes   = ACF.Classes
 	local WireIO    = Utilities.WireIO
@@ -605,7 +622,7 @@ end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
 	local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg"
+	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nLength: %s cm"
 
 	function ENT:UpdateOverlayText()
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
@@ -630,8 +647,9 @@ do -- Entity Overlay ----------------------------
 			local Projectile = math.Round(self.BulletData.ProjMass, 2)
 			local Propellant = math.Round(self.BulletData.PropMass, 2)
 			local Cartridge  = math.Round(self.BulletData.CartMass, 2)
+			local Length	 = math.Round(self.BulletData.PropLength + self.BulletData.ProjLength, 2)
 
-			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant)
+			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length)
 		end
 
 		if AmmoInfo and AmmoInfo ~= "" then
@@ -745,20 +763,28 @@ do -- Ammo Consumption -------------------------
 		if not self.LastStockTime then self.LastStockTime = 0 end
 		local ClipSize = math.max(self.ExtraData.MagSize or 1, 1)
 		local AmmoCheck = self.Capacity - self.Ammo >= ClipSize
-		local TimeCheck = (CurTime() - self.LastStockTime) > ACF.AmmoRestockInterval
-		if AmmoCheck and TimeCheck then
-			self.LastStockTime = CurTime()
+		local StockCheck = not self.IsRestocking
+		if AmmoCheck and StockCheck then
+			self.IsRestocking = true
 			local crate = FindCrateByStage(
 				self:GetContraption(),
 				self.AmmoStage + 1,
 				function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
 			)
+
 			if crate then
-				local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
-				local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself
-				local Transfer = math.min(ClipSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
-				crate:Consume(Transfer) 								-- Take 1 from resupplier
-				self:Consume(-Transfer) 								-- Give 1 to self
+				local Time = ACF.BaseReload + (self.BulletData.CartMass * ACF.MassToTime * 0.666) + (self.BulletData.ProjLength * ACF.LengthToTime * 0.333)
+				self:UpdateStockMod()
+				Time = Time * (2 - self.StockCrewMod)
+
+				timer.Simple(Time, function()
+					self.IsRestocking = false
+					local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
+					local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself
+					local Transfer = math.min(ClipSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
+					crate:Consume(Transfer) 								-- Take 1 from resupplier
+					self:Consume(-Transfer) 								-- Give 1 to self
+				end)
 			end
 		end
 	end
@@ -769,9 +795,12 @@ do -- Misc --------------------------------------
 	function ENT:Think()
 		-- The crew of this crate is the crews of all the weapons linked to it
 		self.Crews = self.Crews or {}
+		self.CrewsByType = self.CrewsByType or {}
 		for weapon, _ in pairs(self.Weapons or {}) do
 			for crew, _ in pairs(weapon.Crews or {}) do
 				self.Crews[crew] = true
+				self.CrewsByType[crew.CrewTypeID] = self.CrewsByType[crew.CrewTypeID] or {}
+				self.CrewsByType[crew.CrewTypeID][crew] = true
 			end
 		end
 

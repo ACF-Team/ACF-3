@@ -52,13 +52,12 @@ local function traceVisHullCube(pos1, pos2, boxsize, filter)
 end
 
 local function iterScan(ent, reps)
-	local localoffset = ent.CrewModel.OffsetL
+	local localoffset = ent.CrewModel.ScanOffsetL
 	local center = ent:LocalToWorld(localoffset)
 	local count = ent.ScanCount
 
-	local Length = 1 * 39.3701
-	local Caliber = 0.125 * 39.3701
-	local LoadBox = (ent:OBBMaxs() - ent:OBBMins()) + Vector(Length/2,Length/2,Caliber)
+	local Box = ent.ScanBoxBase + ent.ScanBox
+	local Hull = ent.ScanHull
 
 	-- Iterate reps times and iterate over time
 	for i = 1, reps do
@@ -66,9 +65,9 @@ local function iterScan(ent, reps)
 		local disp = ent.ScanDisplacements[index]
 		local p1 = center
 
-		local corner = Vector(disp.x * LoadBox.x/2, disp.y * LoadBox.y/2, disp.z * LoadBox.z/2)
+		local corner = Vector(disp.x * Box.x/2, disp.y * Box.y/2, disp.z * Box.z/2)
 		local p2 = ent:LocalToWorld(localoffset + corner)
-		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Vector(Caliber, Caliber, Caliber), ent)
+		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, ent)
 		debugoverlay.Line(p1, hitpos, 1, Color(255, 0, 0))
 		debugoverlay.Line(hitpos, p2, 1, Color(0, 255, 0))
 		ent.ScanLengths[index] = frac
@@ -77,7 +76,7 @@ local function iterScan(ent, reps)
 		if index > count then index = 1 end
 		ent.ScanIndex = index
 	end
-	debugoverlay.BoxAngles( ent:LocalToWorld(localoffset), -LoadBox/2, LoadBox/2, ent:GetAngles(), 1, Color(0,0,255,100) )
+	debugoverlay.BoxAngles( ent:LocalToWorld(localoffset), -Box/2, Box/2, ent:GetAngles(), 1, Color(0,0,255,100) )
 
 	-- Update based on old values
 	local sum = 0
@@ -88,6 +87,10 @@ local function iterScan(ent, reps)
 end
 
 do -- Random timer stuff
+	function ENT:UpdateUltraLowFreq(LastTime)
+		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, LastTime) end
+	end
+
 	function ENT:UpdateLowFreq(LastTime)
 		local DeltaTime = Clock.CurTime - LastTime
 
@@ -96,7 +99,7 @@ do -- Random timer stuff
 		WireLib.TriggerOutput(self, "HealthEff", self.HealthEff * 100)
 
 		-- Update oxygen levels
-		local MouthPos = self:LocalToWorld(self:OBBCenter()) -- Probably well underwater at this point
+		local MouthPos = self:LocalToWorld(self.CrewModel.MouthOffsetL) -- Probably well underwater at this point
 		if ( bit.band( util.PointContents( MouthPos ), CONTENTS_WATER ) == CONTENTS_WATER ) then
 			self.Oxygen = self.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
@@ -110,6 +113,8 @@ do -- Random timer stuff
 
 		-- Update crew focus
 		if self.CrewType.UpdateFocus then self.CrewType.UpdateFocus(self) end
+
+		if self.CrewType.UpdateLowFreq then self.CrewType.UpdateLowFreq(self, LastTime) end
 	end
 
 	function ENT:UpdateMedFreq(LastTime)
@@ -119,18 +124,24 @@ do -- Random timer stuff
 			self.SpaceEff = math.Round(iterScan(self, SpaceScans.ScanStep), 2)
 			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
 		end
+
+		if self.CrewType.UpdateMedFreq then self.CrewType.UpdateMedFreq(self, LastTime) end
 	end
 
 	function ENT:UpdateHighFreq(LastTime)
 		local DeltaTime = Clock.CurTime - LastTime
 
 		-- Check world lean angle and update ergonomics
-		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
-		self.LeanAngle = math.Round(math.deg(math.acos(LeanDot)), 2)
-		self.LeanEff = math.Round(1 - ACF.Normalize(self.LeanAngle, 0, 90), 2)
-		WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
+		local Leans = self.CrewType.Leans
+		if Leans then
+			-- Calculate lean angle
+			local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
+			self.LeanAngle = math.Round(math.deg(math.acos(LeanDot)), 2)
+			self.LeanEff = math.Round(1 - ACF.Normalize(self.LeanAngle, Leans.Min, Leans.Max), 2)
+			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
+		end
 
-		if DeltaTime > 0 and self.IsAlive then
+		if DeltaTime > 0 then
 			-- Calculate current G force on crew
 			self.Pos = self.Pos or self:GetPos()
 			self.Vel = self.Vel or self:GetVelocity()
@@ -153,15 +164,26 @@ do -- Random timer stuff
 			end
 
 			local Damages = self.CrewType.GForces.Damages
-			if Damages and GForce > Damages.Min then -- If we should apply damage
+			if Damages and GForce > Damages.Min and self.IsAlive then -- If we should apply damage
 				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * 100
 				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 			end
 		end
 
 		-- Update total ergonomics
-		self.TotalEff = math.Clamp(self.ModelEff * self.LeanEff * self.SpaceEff * self.MoveEff * self.HealthEff, 0, 1)
+		local MyEff = self.ModelEff * self.LeanEff * self.SpaceEff * self.MoveEff * self.HealthEff * self.Focus
+
+		-- TODO: Clean this shit up man
+		local Contraption = self:GetContraption() or {}
+		local CrewsByType = Contraption.CrewsByType or {}
+		local Commanders = CrewsByType["Commander"] or {}
+		local Commander = next(Commanders)
+		local CommanderEff = Commander and Commander.TotalEff or 0
+
+		self.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef or MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
+
+		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, LastTime) end
 	end
 end
 
@@ -210,6 +232,9 @@ do
 		Entity.ReplaceSelf = Data.ReplaceSelf
 
 		if Entity.CrewType.SpaceScans then
+			Entity.ScanBoxBase = Entity:OBBMaxs() - Entity:OBBMins()
+			Entity.ScanBox = Vector()
+			Entity.ScanHull = Vector(6, 6, 6)
 			Entity.ScanDisplacements, Entity.ScanLengths, Entity.ScanCount = GenerateScanSetup()
 			Entity.ScanIndex = 1
 			Entity.SpaceEff = iterScan(Entity, Entity.ScanCount)
@@ -229,6 +254,8 @@ do
 		end
 
 		Entity:UpdateOverlay(true)
+
+		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
 	end
 
 	function MakeCrew(Player, Pos, Angle, Data)
@@ -278,6 +305,7 @@ do
 		Entity.MoveEff = 1
 		Entity.HealthEff = 1
 		Entity.TotalEff = 1
+		Entity.Focus = 1
 
 		Entity.ShouldScan = false
 
@@ -289,6 +317,7 @@ do
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
+		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateUltraLowFreq(LastTime) end, function() return IsValid(Entity) end, 3, 5, 0.1)
 		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLowFreq(LastTime) end, function() return IsValid(Entity) end, 1, 2, 0.1)
 		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateMedFreq(LastTime) end, function() return IsValid(Entity) end, 0.5, 1, 0.1)
 		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateHighFreq(LastTime) end, function() return IsValid(Entity) end, 0.1, 0.5, 0.1)
@@ -303,6 +332,8 @@ do
 		Entity:UpdateOverlay(true)
 
 		CheckLegal(Entity)
+
+		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
 
 		return Entity
 	end
@@ -403,8 +434,8 @@ do
 	end
 
 	function ENT:ReplaceCrew()
-		if not self:GetContraption() then return end 				-- No contraption to replace crew in
-		if not self:GetContraption().CrewsByType then return end 	-- No crew to replace with
+		if self:GetContraption() == nil then return end 				-- No contraption to replace crew in
+		if self:GetContraption().CrewsByType == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
 			self.ToBeReplaced = true
 
@@ -453,7 +484,7 @@ do
 		self.ACF.Health, Other.ACF.Health = Other.ACF.Health, self.ACF.Health
 		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 		Other.ACF.Armour = Other.ACF.MaxArmour * (Other.ACF.Health / Other.ACF.MaxHealth)
-		self.IsAlive = self.ACF.Health > 0
+		self.IsAlive, Other.IsAlive = Other.IsAlive, self.IsAlive
 
 		self:UpdateOverlay()
 		Other:UpdateOverlay()
@@ -484,6 +515,18 @@ do
 
 		self:UpdateOverlay()
 		self:ReplaceCrew()
+
+		local Contraption = self:GetContraption() or {}
+		local Crews = Contraption.Crews or {}
+		local Alive = 0
+		for crew, _ in pairs(Crews) do
+			if crew.IsAlive then Alive = Alive + 1 end
+		end
+
+		if Alive == 0 then
+			print(self, self:GetOwner())
+			self:CPPIGetOwner():Kill()
+		end
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -513,24 +556,24 @@ do
 	hook.Add("cfw.contraption.entityAdded", "crewaddindex", function(contraption, ent)
 		if ent:GetClass() == "acf_crew" then
 			-- LUT of crews
-			contraption.crews = contraption.crews or {}
-			contraption.crews[ent] = true
+			contraption.Crews = contraption.Crews or {}
+			contraption.Crews[ent] = true
 
 			-- LUT of crews by type
-			contraption.crewsByType = contraption.crewsByType or {}
-			contraption.crewsByType[ent.CrewTypeID] = contraption.crewsByType[ent.CrewTypeID] or {}
-			contraption.crewsByType[ent.CrewTypeID][ent] = true
+			contraption.CrewsByType = contraption.CrewsByType or {}
+			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
+			contraption.CrewsByType[ent.CrewTypeID][ent] = true
 		end
 	end)
 
 	hook.Add("cfw.contraption.entityRemoved", "crewremoveindex", function(contraption, ent)
 		if ent:GetClass() == "acf_crew" then
-			contraption.crews = contraption.crews or {}
-			contraption.crews[ent] = nil
+			contraption.Crews = contraption.Crews or {}
+			contraption.Crews[ent] = nil
 
-			contraption.crewsByType = contraption.crewsByType or {}
-			contraption.crewsByType[ent.CrewTypeID] = contraption.crewsByType[ent.CrewTypeID] or {}
-			contraption.crewsByType[ent.CrewTypeID][ent] = nil
+			contraption.CrewsByType = contraption.CrewsByType or {}
+			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
+			contraption.CrewsByType[ent.CrewTypeID][ent] = nil
 		end
 	end)
 end
