@@ -1,3 +1,11 @@
+--[[
+Most of the crew type specific properties and logic is specified here.
+
+Must be specified:
+Name, Description, LimitConVar, Whitelist, Mass, UpdateFocus, UpdateEfficiency
+]]--
+
+
 local ACF         = ACF
 local CrewTypes = ACF.Classes.CrewTypes
 
@@ -13,11 +21,11 @@ CrewTypes.Register("Loader", {
 		acf_gun = true, 	-- Loaders affect gun reload rates
 	},
 	Mass = 80,				-- Mass (kg) of a single crew member
-	Leans = {				-- Specifying this table enables leaning efficiency calculations
-		Min = 10,			-- Best efficiency before this angle (Degs)
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
-	GForces = {
+	GForceInfo = {
 		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
 			Min = 0,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
@@ -27,7 +35,7 @@ CrewTypes.Register("Loader", {
 			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
-	SpaceScans = {			-- Specifying this table enables spatial scans (if linked to a gun)
+	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
 		ScanStep = 3,		-- How many parts of a scan to update each time
 	},
 	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
@@ -56,12 +64,18 @@ CrewTypes.Register("Loader", {
 			end
 		end
 
+		-- If we find such a bullet, set the scan box and hull to match it
 		if LongestBullet then
 			local Length = LongestLength / 2.54 -- CM to inches
 			local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
 			Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
 			Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
 		end
+	end,
+	UpdateEfficiency = function(Crew, Commander)
+		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local CommanderEff = Commander and Commander.TotalEff or 1
+		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
@@ -82,11 +96,11 @@ CrewTypes.Register("Gunner", {
 		acf_turret = true,
 	},
 	Mass = 80,
-	Leans = {				-- Specifying this table enables leaning efficiency calculations
-		Min = 10,			-- Best efficiency before this angle (Degs)
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
-	GForces = {
+	GForceInfo = {
 		Efficiencies = {
 			Min = 0,	-- Best efficiency before this (Gs)
 			Max = 3,	-- Worst efficiency after this (Gs)
@@ -110,6 +124,11 @@ CrewTypes.Register("Gunner", {
 			Crew.GunName = nil
 		end
 	end,
+	UpdateEfficiency = function(Crew, Commander)
+		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local CommanderEff = Commander and Commander.TotalEff or 1
+		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
+	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end
@@ -127,7 +146,7 @@ CrewTypes.Register("Driver", {
 		acf_engine = true, -- Drivers affect engine fuel efficiency
 	},
 	Mass = 80,
-	GForces = {
+	GForceInfo = {
 		Efficiencies = {
 			Min = 0,	-- Best efficiency before this (Gs)
 			Max = 3,	-- Worst efficiency after this (Gs)
@@ -137,6 +156,11 @@ CrewTypes.Register("Driver", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
+	UpdateEfficiency = function(Crew, Commander)
+		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local CommanderEff = Commander and Commander.TotalEff or 1
+		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
+	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end
@@ -154,11 +178,11 @@ CrewTypes.Register("Commander", {
 		Text	= "Maximum number of commanders a player can have."
 	},
 	Mass = 80,
-	Leans = {				-- Specifying this table enables leaning efficiency calculations
-		Min = 10,			-- Best efficiency before this angle (Degs)
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
-	GForces = {
+	GForceInfo = {
 		Efficiencies = {
 			Min = 0,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
@@ -168,7 +192,7 @@ CrewTypes.Register("Commander", {
 			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
-	SpaceScans = {			-- Specifying this table enables spatial scans (if linked to a gun)
+	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
 		ScanStep = 3,		-- How many parts of a scan to update each time
 	},
 	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
@@ -187,6 +211,10 @@ CrewTypes.Register("Commander", {
 			Crew.ShouldScan = false
 		end
 	end,
+	UpdateEfficiency = function(Crew, Commander)
+		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
+	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets) + 1 -- +1 for commanding the crew
 		Crew.Focus = (Count > 0) and 1 / Count or 1
@@ -203,7 +231,7 @@ CrewTypes.Register("Pilot", {
 		Text	= "Maximum number of pilots a player can have."
 	},
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
-	GForces = {
+	GForceInfo = {
 		Efficiencies = {
 			Min = 0,	-- Best efficiency before this (Gs)
 			Max = 3,	-- Worst efficiency after this (Gs)
@@ -213,5 +241,9 @@ CrewTypes.Register("Pilot", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
+	UpdateEfficiency = function(Crew, Commander)
+		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
+	end,
 	UpdateFocus = function(Crew) return 1 end
 })

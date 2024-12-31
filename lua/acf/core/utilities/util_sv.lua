@@ -1121,29 +1121,6 @@ do -- Special squishy functions
 	end
 end
 
-do -- Bulletdata related
-	--- Checks the two bullet datas are equal
-	--- TODO: Probably find a better way to do this via the ammo classes...
-	--- @param Data1 any -- The first bullet data
-	--- @param Data2 any -- The second bullet data
-	--- @return boolean -- Whether the two bullet datas are equal
-	function ACF.BulletEquality(Data1, Data2)
-		if not Data1 then return false end
-		if not Data2 then return false end
-
-		-- Only check fields all rounds share...
-		-- Note: We are trying to fail as early as possible so check constraints from most to least common
-		if Data1.Type ~= Data2.Type then return false end
-		if Data1.Caliber ~= Data2.Caliber then return false end
-		if Data1.Diameter ~= Data2.Diameter then return false end
-		if Data1.ProjArea ~= Data2.ProjArea then return false end
-		if Data1.PropArea ~= Data2.PropArea then return false end
-		if Data1.Efficiency ~= Data2.Efficiency then return false end
-
-		return true
-	end
-end
-
 do -- Crew related
 	--- Computes the weighted sum of a LUT (often representing links) using a weighting function.
 	--- @param LUT any -- The lookup table to sum
@@ -1195,12 +1172,16 @@ do -- Crew related
 	function ACF.RemapAdv(value, inMin, inMax, outMin, outMax, transform)
 		return outMin + (transform(ACF.Normalize(value, inMin, inMax)) * (outMax - outMin))
 	end
-end
 
-do -- Entity property system
 	local Utilities   = ACF.Utilities
 	local Clock = Utilities.Clock
 
+	--- Creates a timer that runs a loop function at random intervals, with a delay before the first run.
+	--- @param loop function The function to run at random intervals
+	--- @param depends function The function to check if the loop should run (usually a valid check)
+	--- @param minTime number The minimum time between runs
+	--- @param maxTime number The maximum time between runs
+	--- @param delay number The delay before the first run
 	function ACF.RandomizedDependentTimer(loop, depends, minTime, maxTime, delay)
 		local realLoop
 		local lastTime = Clock.CurTime
@@ -1217,5 +1198,26 @@ do -- Entity property system
 		else
 			timer.Simple(delay, realLoop)
 		end
+	end
+
+	--- Checks the two bullet datas are equal
+	--- TODO: Probably find a better way to do this via the ammo classes...
+	--- @param Data1 any -- The first bullet data
+	--- @param Data2 any -- The second bullet data
+	--- @return boolean -- Whether the two bullet datas are equal
+	function ACF.BulletEquality(Data1, Data2)
+		if not Data1 then return false end
+		if not Data2 then return false end
+
+		-- Only check fields all rounds share...
+		-- Note: We are trying to fail as early as possible so check constraints from most to least common
+		if Data1.Type ~= Data2.Type then return false end
+		if Data1.Caliber ~= Data2.Caliber then return false end
+		if Data1.Diameter ~= Data2.Diameter then return false end
+		if Data1.ProjArea ~= Data2.ProjArea then return false end
+		if Data1.PropArea ~= Data2.PropArea then return false end
+		if Data1.Efficiency ~= Data2.Efficiency then return false end
+
+		return true
 	end
 end

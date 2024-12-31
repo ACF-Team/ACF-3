@@ -11,6 +11,7 @@ Notes on Structure of Data:
 
 Methods exposed to the user for use with other files:
 - ENT:CanConsume()
+- ENT:Restock()
 - ENT:Consume(Num)
 ]]
 
@@ -455,7 +456,7 @@ end ---------------------------------------------
 
 -- CFW Integration
 do
-	-- Maintain a record in the contraption of
+	-- Maintain a record in the contraption of ammocrates
 	hook.Add("cfw.contraption.entityAdded", "ammoindex", function(contraption, ent)
 		if ent:GetClass() == "acf_ammo" then
 			contraption.Ammos = contraption.Ammos or {}
@@ -685,15 +686,14 @@ do -- Mass Update -------------------------------
 end ---------------------------------------------
 
 do -- Ammo Consumption -------------------------
-	-- Searches
-	-- Finds all crates at a specific stage
+	--- Returns all crates at the given stage
 	local function FindCratesAtStage(contraption, stage)
 		local AmmosByStage = contraption and contraption.AmmosByStage or {}
 		return AmmosByStage[stage] or {}
 	end
 
-	-- Finds the first stage with valid ammo
-	-- Returns the LUT of all crates at that stage
+	--- Returns all crates in the first stage with a valid crate
+	--- Needed in case your first stage crates get destroyed 
 	local function FindFirstStage(contraption)
 		for i = ACF.AmmoStageMin, ACF.AmmoStageMax do
 			local temp = FindCratesAtStage(contraption, i) or {}
@@ -704,7 +704,12 @@ do -- Ammo Consumption -------------------------
 		return {}
 	end
 
-	-- Finds a crate that meets a check criteria starting from stage start with varargs fed to check
+	--- Finds a crate that meets a check criteria starting from stage start with varargs fed to check
+	--- @param contraption any The relevant contraption
+	--- @param start any The stage to start from
+	--- @param check any The function to check if the crate is satisfactory
+	--- @param ... unknown The arguments to feed to the check function after the crate
+	--- @return unknown The crate that meets the check criteria
 	local function FindCrateByStage(contraption, start, check, ...)
 		local start = start or ACF.AmmoStageMin
 		for i = start, ACF.AmmoStageMax do
@@ -761,17 +766,20 @@ do -- Ammo Consumption -------------------------
 	--- Restocks the ammocrate if appropriate
 	function ENT:Restock()
 		if not self.LastStockTime then self.LastStockTime = 0 end
-		local ClipSize = math.max(self.ExtraData.MagSize or 1, 1)
-		local AmmoCheck = self.Capacity - self.Ammo >= ClipSize
-		local StockCheck = not self.IsRestocking
+		local MagSize = math.max(self.ExtraData.MagSize or 1, 1)			-- Attempt to transfer the mag size or a single shell
+		local AmmoCheck = self.Capacity - self.Ammo >= MagSize				-- We should only restock if we are short on shells
+		local StockCheck = not self.IsRestocking							-- We should only restock if we are not already restocking
 		if AmmoCheck and StockCheck then
 			self.IsRestocking = true
+
+			-- Try to find a crate that can be consumed with the same bullet data
 			local crate = FindCrateByStage(
 				self:GetContraption(),
 				self.AmmoStage + 1,
 				function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
 			)
 
+			-- If we found a crate, we can start the restocking process
 			if crate then
 				local Time = ACF.BaseReload + (self.BulletData.CartMass * ACF.MassToTime * 0.666) + (self.BulletData.ProjLength * ACF.LengthToTime * 0.333)
 				self:UpdateStockMod()
@@ -781,7 +789,7 @@ do -- Ammo Consumption -------------------------
 					self.IsRestocking = false
 					local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
 					local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself
-					local Transfer = math.min(ClipSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
+					local Transfer = math.min(MagSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
 					crate:Consume(Transfer) 								-- Take 1 from resupplier
 					self:Consume(-Transfer) 								-- Give 1 to self
 				end)

@@ -1,3 +1,7 @@
+--[[
+Most of the crew model specific properties and logic is specified here.
+]]--
+
 local ACF         = ACF
 local CrewModels = ACF.Classes.CrewModels
 

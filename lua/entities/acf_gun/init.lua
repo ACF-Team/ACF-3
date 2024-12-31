@@ -1,3 +1,12 @@
+--[[
+This is the main server side file for the gun entity.
+
+Crew relevant functions:
+- ENT:UpdateLoadMod(LastTime) -- Updates the load modifier for the gun
+- ENT:UpdateAccuracyMod(LastTime) -- Updates the accuracy modifier for the gun
+- ENT:FindNextCrate(Current, Check, ...) -- Finds the next crate that can be used for the gun
+]]--
+
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -16,7 +25,7 @@ local TimerCreate = timer.Create
 local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
--- TODO: Replace with CFrame as soon as it's available
+-- Helper functions
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
@@ -31,6 +40,7 @@ local function UpdateTotalAmmo(Entity)
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
 end
 
+-- TODO: Maybe move this logic to crates?
 local function CheckValid(v, Gun)
 	return IsValid(v) and v.Weapons[Gun]
 end
@@ -161,7 +171,7 @@ do -- Spawn and Update functions --------------------------------
 			local Factor = Caliber / Class.Caliber.Base
 
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
-		end
+	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
@@ -674,6 +684,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
+		--- SOLELY to support guns functioning if they're do not share a contraption with ammo (idk for test rigs ig)
 		function ENT:FindNextCrateOld(Current, Check, ...)
 			if not next(self.Crates) then return end
 
@@ -689,19 +700,28 @@ do -- Metamethods --------------------------------
 				Select == Start
 		end
 
+		--- Finds the next crate
+		--- @param Current any Optionally specified current crate to check against (optimization measure)
+		--- @param Check any Function used to check if a crate meets our criteria
+		--- @param ... unknown Varargs passed to the check function after the crew entity
+		--- @return any # The next crate that matches the check function or nil if none are found
 		function ENT:FindNextCrate(Current, Check, ...)
 			if not next(self.Crates) then return end
 
+			-- If the current crate is still satisfactory, why bother searching?
 			if Current and Check(Current, ...) then return Current end
 
+			-- If the current crate is in the first stage and is valid, iterate to the next crate in the first stage
+			-- If you're quirked up and use mixed belts...
 			if self.FirstStage[self.CurrentCrate] then
 				local Next = next(self.FirstStage, self.CurrentCrate)
 				if Next and Check(Next, ...) then return Next end
 			end
 
+			-- Search crates by their stage level
 			local crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
-			-- backwards compatibility i kneel
+			-- This is not performant... but people may be unhappy if I don't do this
 			if not crate then
 				crate = self:FindNextCrateOld(Current, Check, ...)
 			end
@@ -771,7 +791,7 @@ do -- Metamethods --------------------------------
 
 				local Name = "ACF_Gun_Load_Timer" .. self:EntIndex() .. CurTime()
 				self.CurTimerID = Name
-				timer.Create(Name, Time, 1, function()
+				timer.Create(Name, Time, 0, function()
 					if IsValid(self) then
 						if self.CurrentShot == 0 then
 							self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)

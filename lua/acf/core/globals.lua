@@ -34,6 +34,8 @@ do -- ACF global vars
 	ACF.GunsCanSmoke       = true
 	ACF.RacksCanFire       = true
 
+	ACF.NetMessageSizeLimit = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
+
 	-- Unit Conversion
 	ACF.MeterToInch        = 39.3701 -- Meters to inches
 	ACF.gCmToKgIn          = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
@@ -142,7 +144,7 @@ do -- ACF global vars
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 
 	-- Crew 
-	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, CrewFallBackCoef, 1)
+	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
 	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 0.8	-- Portion of a crew's efficiency they provide
@@ -160,13 +162,10 @@ do -- ACF global vars
 
 	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
-	ACF.AmmoRestockInterval = 1		-- How often a crate may be restocked
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 600	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 3		-- Maximum bonus loaders can give to reload time
-
-	ACF.NetMessageSizeLimit = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MENUS WILL BREAK)
 end
 
 do -- ACF Convars & Particles
