@@ -380,7 +380,7 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		if next(self.Crews) then
+		if next(self.Crews or {}) then
 			for Crew in pairs(self.Crews) do
 				self:Unlink(Crew)
 			end

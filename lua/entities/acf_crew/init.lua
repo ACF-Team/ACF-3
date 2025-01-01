@@ -386,6 +386,16 @@ do
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self)
 
+		-- Unlink crews if their type changes
+		if self.CrewTypeID ~= Data.CrewTypeID then
+			ACF.SendNotify(self.Owner, false, "Crew updated with different occupation. All links removed, please relink.")
+			if next(self.Targets) then
+				for Target in pairs(self.Targets) do
+					self:Unlink(Target)
+				end
+			end
+		end
+
 		ACF.SaveEntity(self)
 
 		UpdateCrew(self, Data, CrewModel, CrewType)
@@ -393,13 +403,6 @@ do
 		ACF.RestoreEntity(self)
 
 		HookRun("ACF_OnEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
-
-		-- If the crew is updated, unlink from everything
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
-				self:Unlink(Target)
-			end
-		end
 
 		self:UpdateOverlay(true)
 
@@ -581,7 +584,8 @@ do
 
 	function ENT:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
 		-- Dead crew should not be revivable
-		if OldArmor == 0 or OldHealth == 0 then return end
+		if OldArmor == 0 then self.ACF.Armor = 0 end
+		if OldHealth == 0 then self.ACF.Health = 0 end
 
 		if self.ACF.Health == self.ACF.MaxHealth then EmitSound("items/medshot4.wav", self:GetPos()) end
 		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)

@@ -42,9 +42,9 @@ CrewTypes.Register("Loader", {
 		if Target:GetClass() ~= "acf_gun" then return end
 		Crew.ShouldScan = true
 	end,
-	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
 		if Target:GetClass() ~= "acf_gun" then return end
-		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
 			Crew.ShouldScan = false
 		end
 	end,
@@ -118,9 +118,9 @@ CrewTypes.Register("Gunner", {
 		if Target:GetClass() ~= "acf_gun" then return end
 		Crew.GunName = Target.Name
 	end,
-	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
 		if Target:GetClass() ~= "acf_gun" then return end
-		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
 			Crew.GunName = nil
 		end
 	end,
@@ -204,9 +204,9 @@ CrewTypes.Register("Commander", {
 		Crew.GunName = Target.Name
 		Crew.ShouldScan = true
 	end,
-	OnUnLink = function(Crew, Target) -- Called when a crew member unlinks from an entity
+	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
 		if Target:GetClass() ~= "acf_gun" then return end
-		if table.count(Crew.TargetsByType["acf_gun"]) == 0 then
+		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
 			Crew.GunName = nil
 			Crew.ShouldScan = false
 		end
