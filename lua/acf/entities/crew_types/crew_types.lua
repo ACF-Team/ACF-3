@@ -23,7 +23,7 @@ CrewTypes.Register("Loader", {
 	Mass = 80,				-- Mass (kg) of a single crew member
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 90,			-- Worst efficiency after this angle (Degs)
+		Max = 45,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
@@ -100,7 +100,7 @@ CrewTypes.Register("Gunner", {
 	Mass = 80,
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 90,			-- Worst efficiency after this angle (Degs)
+		Max = 45,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {
@@ -182,7 +182,7 @@ CrewTypes.Register("Commander", {
 	Mass = 80,
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 90,			-- Worst efficiency after this angle (Degs)
+		Max = 45,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {
