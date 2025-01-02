@@ -41,7 +41,7 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
-		local Sum, Count = Sum1 + Sum2 * 0.25, Count1 + Count2 -- Commanders are 25% as effective as loaders
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 	end
@@ -623,7 +623,7 @@ end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
 	local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nLength: %s cm"
+	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nCartridge Length: %s cm\nIdeal Reload: %s s"
 
 	function ENT:UpdateOverlayText()
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
@@ -649,8 +649,9 @@ do -- Entity Overlay ----------------------------
 			local Propellant = math.Round(self.BulletData.PropMass, 2)
 			local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 			local Length	 = math.Round(self.BulletData.PropLength + self.BulletData.ProjLength, 2)
+			local Ideal = math.Round(ACF.CalcReloadTime(self.BulletData, 1, 1, 1), 2)
 
-			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length)
+			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length, Ideal)
 		end
 
 		if AmmoInfo and AmmoInfo ~= "" then
@@ -780,18 +781,19 @@ do -- Ammo Consumption -------------------------
 			)
 
 			-- If we found a crate, we can start the restocking process
+			-- Self will take from crate, crate will give to self
 			if crate then
-				local Time = ACF.BaseReload + (self.BulletData.CartMass * ACF.MassToTime * 0.666) + (self.BulletData.ProjLength * ACF.LengthToTime * 0.333)
+				-- At most, you can transfer the mag size, the ammo left in the giver, or the space left in the receiver
+				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
+
 				self:UpdateStockMod()
-				Time = Time * (2 - self.StockCrewMod)
+				local Time = ACF.CalcReloadTime(self.BulletData, self.StockCrewMod, 1, Transfer)
 
 				timer.Simple(Time, function()
 					self.IsRestocking = false
-					local ToEmpty = crate.Ammo								-- Shells left that can be removed from the target
-					local ToFill = self.Capacity - self.Ammo				-- Shells left that can be added to ourself
-					local Transfer = math.min(MagSize, ToEmpty, ToFill)	-- We can't exceed any limit, so we take the minimum of all
-					crate:Consume(Transfer) 								-- Take 1 from resupplier
-					self:Consume(-Transfer) 								-- Give 1 to self
+					local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) -- Recalculate
+					crate:Consume(Transfer) 								-- Give
+					self:Consume(-Transfer) 								-- Take
 				end)
 			end
 		end

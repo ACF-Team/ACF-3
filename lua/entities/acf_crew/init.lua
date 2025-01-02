@@ -96,6 +96,7 @@ local function iterScan(crew, reps)
 
 		debugoverlay.Line(p1, hitpos, 1, Color(255, 0, 0))
 		debugoverlay.Line(hitpos, p2, 1, Color(0, 255, 0))
+		debugoverlay.Box( hitpos, -Hull/2, Hull/2, 10, Color(0,255,255,100) )
 
 		-- Save the index for the next iteration. Loop around if needed.
 		index = index  + 1

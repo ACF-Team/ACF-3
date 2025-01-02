@@ -9,6 +9,7 @@ Weapons.Register("AC", {
 	Sound       = "acf_base/weapons/ac_fire4.mp3",
 	MuzzleFlash = "auto_muzzleflash_noscale",
 	IsScalable  = true,
+	IsBeltfed = true,
 	Mass        = 1953, -- Relative to the model's volume
 	Spread      = 0.2,
 	ScaleFactor = 0.86, -- Corrective factor to account for improperly scaled base models

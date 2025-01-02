@@ -10,6 +10,7 @@ Weapons.Register("MG", {
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	IsBoxed     = true,
+	IsBeltfed = true,
 	Spread      = 0.16,
 	Mass        = 53,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models

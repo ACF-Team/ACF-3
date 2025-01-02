@@ -36,7 +36,7 @@ CrewTypes.Register("Loader", {
 		}
 	},
 	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
-		ScanStep = 3,		-- How many parts of a scan to update each time
+		ScanStep = 27,		-- How many parts of a scan to update each time
 	},
 	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
 		if Target:GetClass() ~= "acf_gun" then return end
@@ -68,13 +68,15 @@ CrewTypes.Register("Loader", {
 		if LongestBullet then
 			local Length = LongestLength / 2.54 -- CM to inches
 			local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
-			Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
+			Crew.ScanBox = Vector(Length, Length, Caliber)
 			Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
 		end
 	end,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
-		local CommanderEff = Commander and Commander.TotalEff or 1
+		local CommanderEff = Commander and Commander.TotalEff or 0
+		-- print("Loader Commander Eff: ", CommanderEff * ACF.CrewCommanderCoef)
+		-- print("Loader Self Eff: ", MyEff * ACF.CrewSelfCoef)
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities

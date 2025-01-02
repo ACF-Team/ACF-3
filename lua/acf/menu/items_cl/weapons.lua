@@ -130,7 +130,7 @@ local function GetReloadTime()
 
 	if not BulletData then return 60 end
 
-	return ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime
+	return ACF.CalcReloadTime(BulletData, 1, 1, 1)
 end
 
 ---Returns a string with the magazine capacity and reload time of a given weapon entry object.

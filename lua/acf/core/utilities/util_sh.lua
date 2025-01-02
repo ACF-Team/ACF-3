@@ -739,3 +739,16 @@ do -- File creation
 		return util.JSONToTable(file.Read(FullPath, "DATA"))
 	end
 end
+
+do
+	--- Calculates the time it takes for a gun to reload
+	--- Also used in stocking logic
+	--- @param BulletData table The bullet data of the shell
+	--- @--- @param Efficiency number The efficiency of the gun, impacted by crew
+	--- @param MassMul number 
+	--- @param CountMul number The number of shells
+	function ACF.CalcReloadTime(BulletData, Efficiency, MassMul, CountMul)
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * MassMul * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		return BaseTime * CountMul / Efficiency
+	end
+end

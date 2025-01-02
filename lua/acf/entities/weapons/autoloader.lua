@@ -26,10 +26,6 @@ Weapons.Register("AL", {
 		Min  = 75,
 		Max  = 170,
 	},
-	MagReload = {
-		Min = 15,
-		Max = 35,
-	},
 	Cyclic = {
 		Min = 28,
 		Max = 13,

@@ -48,8 +48,8 @@ do -- ACF global vars
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.4 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.3 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv            = 80 --Drag fudge factor
@@ -131,7 +131,7 @@ do -- ACF global vars
 
 	-- Fuel
 	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate           = 15 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelRate           = 10 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
@@ -145,12 +145,12 @@ do -- ACF global vars
 
 	-- Crew 
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
-	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
+	ACF.CrewFallbackCoef 	= 0.05	-- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
-	ACF.CrewSelfCoef 		= 0.8	-- Portion of a crew's efficiency they provide
+	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
-	ACF.CrewRepDistToTime 	= 0.01 	-- Time it takes for crew to move one inch during replacement
+	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
 	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"} -- Order of crew replacement priorities (Highest priority on the left, lowest on the right)
 
 	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
@@ -164,7 +164,7 @@ do -- ACF global vars
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
-	ACF.LoaderWorstDist 	= 600	-- Distance after which loaders are least effective
+	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 3		-- Maximum bonus loaders can give to reload time
 end
 
