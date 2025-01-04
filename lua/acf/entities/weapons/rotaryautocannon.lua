@@ -9,7 +9,7 @@ Weapons.Register("RAC", {
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
-	IsBeltfed = true,
+	IsAutomatic = true,
 	Spread      = 0.48,
 	Mass        = 212,
 	Cyclic      = 2000,

@@ -11,7 +11,7 @@ Weapons.Register("GL", {
 	DefaultAmmo = "HE",
 	IsScalable  = true,
 	IsBoxed     = true,
-	IsBeltfed = true,
+	IsAutomatic = true,
 	Mass		= 101,
 	Spread      = 0.28,
 	Cyclic      = 250,

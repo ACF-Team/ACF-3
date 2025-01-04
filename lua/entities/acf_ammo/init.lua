@@ -31,16 +31,10 @@ local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
 do -- Random timer crew stuff
-	local function GetReloadEff(Crew, Gun, Ammo)
-		local D1 = Crew:GetPos():Distance(Gun:GetPos())
-		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
-		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
-	end
-
 	function ENT:UpdateStockMod(LastTime)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.RestockCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.RestockCrate or self)
 		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
@@ -213,6 +207,7 @@ do -- Spawning and Updating --------------------
 		Entity.Class      = Class.ID -- Needed for custom killicons
 		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
+
 		Entity.AmmoStage = Data.AmmoStage
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
@@ -225,9 +220,11 @@ do -- Spawning and Updating --------------------
 			local BulletData = Entity.BulletData
 			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
 			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Class, Data, BulletData)
+			local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
 			Entity.Capacity = Rounds
 			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
+			Entity.MagSize  = MagSize
 
 			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
 
@@ -623,7 +620,7 @@ end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
 	local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nCartridge Length: %s cm\nIdeal Reload: %s s"
+	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nCartridge Length: %s cm\nIdeal Shot Reload: %s s\nIdeal Mag Reload: %s s\nMag Mass: %s kg"
 
 	function ENT:UpdateOverlayText()
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
@@ -649,9 +646,12 @@ do -- Entity Overlay ----------------------------
 			local Propellant = math.Round(self.BulletData.PropMass, 2)
 			local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 			local Length	 = math.Round(self.BulletData.PropLength + self.BulletData.ProjLength, 2)
-			local Ideal = math.Round(ACF.CalcReloadTime(self.BulletData, 1, 1, 1), 2)
 
-			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length, Ideal)
+			local Ideal = math.Round(ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, self.BulletData), 2)
+			local IdealMag = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData), 2)
+
+			local MagMass = math.Round(self.BulletData.CartMass * self.MagSize, 2)
+			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length, Ideal, IdealMag, MagMass)
 		end
 
 		if AmmoInfo and AmmoInfo ~= "" then
@@ -767,7 +767,7 @@ do -- Ammo Consumption -------------------------
 	--- Restocks the ammocrate if appropriate
 	function ENT:Restock()
 		if not self.LastStockTime then self.LastStockTime = 0 end
-		local MagSize = math.max(self.ExtraData.MagSize or 1, 1)			-- Attempt to transfer the mag size or a single shell
+		local MagSize = math.max(self.MagSize or 1, 1)						-- Attempt to transfer the mag size or a single shell
 		local AmmoCheck = self.Capacity - self.Ammo >= MagSize				-- We should only restock if we are short on shells
 		local StockCheck = not self.IsRestocking							-- We should only restock if we are not already restocking
 		if AmmoCheck and StockCheck then
@@ -783,11 +783,11 @@ do -- Ammo Consumption -------------------------
 			-- If we found a crate, we can start the restocking process
 			-- Self will take from crate, crate will give to self
 			if crate then
-				-- At most, you can transfer the mag size, the ammo left in the giver, or the space left in the receiver
+				-- At most, you can transfer the smallest of: mag size, the ammo left in the giver, or the space left in the receiver
 				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
 
 				self:UpdateStockMod()
-				local Time = ACF.CalcReloadTime(self.BulletData, self.StockCrewMod, 1, Transfer)
+				local Time = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = Transfer}) / self.StockCrewMod
 
 				timer.Simple(Time, function()
 					self.IsRestocking = false

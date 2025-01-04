@@ -10,7 +10,6 @@ Weapons.Register("SA", {
 	MuzzleFlash = "semi_muzzleflash_noscale",
 	IsScalable  = true,
 	IsBoxed     = true,
-	IsBeltFed   = true,
 	Spread      = 0.12,
 	Mass        = 453,
 	MagSize     = 5,

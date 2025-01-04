@@ -58,18 +58,11 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
-	local function GetReloadEff(Crew, Gun, Ammo)
-		local D1 = Crew:GetPos():Distance(Gun:GetPos())
-		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
-		-- print("Dist: ", ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist))
-		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
-	end
-
 	function ENT:UpdateLoadMod(LastTime)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		-- print("LoadCrewMod: ", Val, Sum, Count)
 		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
@@ -79,7 +72,7 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as gunners
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 	end
@@ -168,9 +161,9 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function GetMass(Caliber, Class, Weapon)
-			if Weapon then return Weapon.Mass end
+		if Weapon then return Weapon.Mass end
 
-			local Factor = Caliber / Class.Caliber.Base
+		local Factor = Caliber / Class.Caliber.Base
 
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
 	end
@@ -197,12 +190,13 @@ do -- Spawn and Update functions --------------------------------
 		Entity.EntType      = Class.Name
 		Entity.ClassData    = Class
 		Entity.Class        = Class.ID -- Needed for custom killicons
+		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
-		Entity.BaseCyclic   = Cyclic and 60 / Cyclic
+		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
-		Entity.ReloadTime   = Entity.Cyclic or 1
+		Entity.ReloadTime   = Entity.Cyclic and 60 / Entity.Cyclic or 1
 		Entity.Spread       = Class.Spread
 		Entity.DefaultSound = GetSound(Caliber, Class)
 		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
@@ -212,7 +206,6 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
-		Entity.IsBeltFed 	= Class.IsBeltFed or false
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
@@ -234,8 +227,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity:CanProperty(nil, "bodygroups")
 
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
-			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
-			WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Reload Time", 60 / Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Rate of Fire", Entity.Cyclic)
 		end
 
 		ACF.Activate(Entity, true)
@@ -521,10 +514,8 @@ do -- Metamethods --------------------------------
 		ACF.AddInputAction("acf_gun", "Rate of Fire", function(Entity, Value)
 			if not Entity.BaseCyclic then return end
 
-			local Delay = 60 / math.max(Value, 1)
-
-			Entity.Cyclic     = math.Clamp(Delay, Entity.BaseCyclic, 2)
-			Entity.ReloadTime = Entity.Cyclic
+			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic)
+			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
 	end -----------------------------------------
 
@@ -599,7 +590,7 @@ do -- Metamethods --------------------------------
 
 			self:UpdateAccuracyMod()
 
-			return self.Spread * ACF.GunInaccuracyScale * IaccMult * (1 - self.AccuracyCrewMod)
+			return self.Spread * ACF.GunInaccuracyScale * IaccMult / self.AccuracyCrewMod
 		end
 
 		function ENT:Shoot()
@@ -643,7 +634,7 @@ do -- Metamethods --------------------------------
 				self.CurrentShot = self.CurrentShot - 1
 
 				if self.CurrentShot > 0 then -- Not empty
-					self:Chamber(self.Cyclic)
+					self:Chamber()
 				else -- Reload the magazine
 					self:Load()
 				end
@@ -737,7 +728,7 @@ do -- Metamethods --------------------------------
 			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
-			local Time = self.MagReload or ACF.CalcReloadTime(self.BulletData, self.LoadCrewMod, 1, self.MagSize)
+			local Time = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self) / self.LoadCrewMod
 			print("Mag Reload", Time)
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
@@ -760,7 +751,7 @@ do -- Metamethods --------------------------------
 			end)
 		end
 
-		function ENT:Chamber(TimeOverride)
+		function ENT:Chamber()
 			if self.Disabled then return end
 
 			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
@@ -773,16 +764,16 @@ do -- Metamethods --------------------------------
 				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
 
 				local BulletData = Crate.BulletData
-				local Time		 = TimeOverride or ACF.CalcReloadTime(self.BulletData, self.LoadCrewMod, 1, 1)
-				print("Chamber:" .. Time .. ", " .. (TimeOverride or 0))
+				local Time, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
+				if Manual then Time = Time / self.LoadCrewMod end
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
 				self.NextFire 	  = Clock.CurTime + Time
 
-				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
-					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
-					WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
+				if Manual then -- Automatics don't change their rate of fire
+					WireLib.TriggerOutput(self, "Reload Time", Time)
+					WireLib.TriggerOutput(self, "Rate of Fire", 60 / Time)
 				end
 
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
@@ -844,14 +835,16 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				local Time = ACF.CalcReloadTime(self.BulletData, self.LoadCrewMod, 1, self.MagSize)
+				self:UpdateLoadMod()
+				local Time, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+				if Manual then Time = Time / self.LoadCrewMod end
 				print("Mag Reload: " .. Time)
 
 				self.NextFire = Clock.CurTime + Time
 
 				timer.Simple(Time, function() -- Reload timer
 					if IsValid(self) then
-						self:Chamber(self.Cyclic) -- One last timer to chamber the round
+						self:Chamber() -- One last timer to chamber the round
 					end
 				end)
 			else -- Single-shot/Manually loaded

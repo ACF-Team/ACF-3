@@ -11,7 +11,7 @@ CreateConVar(
 
 function CrewTypes.Register(ID, Data)
 	local Simple = Classes.AddSimple(ID, Entries, Data)
-	Classes.AddSboxLimit(Simple.LimitConVar)
+	if Simple.LimitConVar then Classes.AddSboxLimit(Simple.LimitConVar) end
 	return Simple
 end
 

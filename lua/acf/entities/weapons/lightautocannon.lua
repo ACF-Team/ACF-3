@@ -9,7 +9,7 @@ Weapons.Register("LAC", {
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
-	IsBeltfed = true,
+	IsAutomatic = true,
 	Mass        = 301,
 	Spread      = 0.48,
 	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models

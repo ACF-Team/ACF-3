@@ -23,7 +23,7 @@ CrewTypes.Register("Loader", {
 	Mass = 80,				-- Mass (kg) of a single crew member
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 45,			-- Worst efficiency after this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
@@ -64,12 +64,20 @@ CrewTypes.Register("Loader", {
 			end
 		end
 
-		-- If we find such a bullet, set the scan box and hull to match it
-		if LongestBullet then
+		-- If we find such a bullet and it's longer than we've seen before, set the scan box and hull to match it
+		if LongestLength > 0 and Crew.LongestLength ~= LongestLength then
 			local Length = LongestLength / 2.54 -- CM to inches
 			local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
-			Crew.ScanBox = Vector(Length, Length, Caliber)
+			Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
 			Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
+			Crew.LongestLength = LongestLength
+
+			-- Network the scan box to clients
+			net.Start("ACF_Crew_Space")
+			net.WriteUInt(Crew:EntIndex(), 16)
+			net.WriteVector(Crew.ScanBox)
+			net.WriteVector(Crew.CrewModel.ScanOffsetL)
+			net.Broadcast()
 		end
 	end,
 	UpdateEfficiency = function(Crew, Commander)
@@ -100,7 +108,7 @@ CrewTypes.Register("Gunner", {
 	Mass = 80,
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 45,			-- Worst efficiency after this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {
@@ -182,7 +190,7 @@ CrewTypes.Register("Commander", {
 	Mass = 80,
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
-		Max = 45,			-- Worst efficiency after this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
 		Efficiencies = {
@@ -248,4 +256,21 @@ CrewTypes.Register("Pilot", {
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) return 1 end
+})
+
+CrewTypes.Register("Unemployed", {
+	Name        = "Unemployed",
+	Description = "Unemployed crew members do nothing. They can be updated with an occupation. Easier to build with.",
+	Whitelist = {},
+	Mass = 80,			-- Pilots weigh more due to life support systems and G suits
+	GForceInfo = {
+		Damages = {
+			Min = 999,	-- Damage starts being applied after this (Gs)
+			Max = 999,	-- Instant death after this (Gs)
+		}
+	},
+	UpdateEfficiency = function(Crew, Commander)
+		Crew.TotalEff = ACF.CrewFallbackCoef
+	end,
+	UpdateFocus = function(Crew) return 0 end
 })

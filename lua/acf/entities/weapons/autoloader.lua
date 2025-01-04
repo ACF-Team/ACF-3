@@ -9,9 +9,10 @@ Weapons.Register("AL", {
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
+	IsAutomatic = true,
 	Mass        = 2985,
 	Spread      = 0.08,
-	MagSize     = 10,
+	MagSize     = 8,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 80,

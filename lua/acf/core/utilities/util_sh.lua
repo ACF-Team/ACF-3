@@ -740,15 +740,152 @@ do -- File creation
 	end
 end
 
-do
+do -- Crew related
+	--- Computes the weighted sum of a LUT (often representing links) using a weighting function.
+	--- @param LUT any -- The lookup table to sum
+	--- @param Weighter function -- The function to compute the weight of each entry
+	--- @param ... unknown -- Additional arguments to pass to the weighter
+	--- @return integer -- The weighted sum of the LUT
+	--- @return integer -- The count of entries in the LUT
+	function ACF.WeightedLinkSum(LUT, Weighter, ...)
+		if not LUT then return 0, 0 end
+
+		local Sum = 0
+		local Count = 0
+		for v, _ in pairs(LUT) do
+			if not IsValid(v) then continue end -- Skip invalids
+			Sum = Sum + Weighter(v, ...)
+			Count = Count + 1
+		end
+		return Sum, Count
+	end
+
+	--- Normalizes a value from [inMin,inMax] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param value number The value to normalize
+	--- @param inMin number The minimum value of the input range
+	--- @param inMax number The maximum value of the input range
+	--- @return number # The normalized value
+	function ACF.Normalize(value, inMin, inMax)
+		return math.Clamp((value - inMin) / (inMax - inMin), 0, 1)
+	end
+
+	--- Assuming every item in "array" is in [0,1] (e.g. crew efficiencies)...
+	--- This property holds: sum(array) * Falloff(#array, Limit) < Limit
+	--- @param count number The number of items in the array
+	--- @param limit number The asymptotic limit to stay under
+	--- @return number # The asymptotic falloff multiplier
+	function ACF.AsymptoticFalloff(count, limit)
+		return limit / (count + limit - 1)
+	end
+
+	--- Maps a value from [inMin,inMax] to [outMin,outMax] using a transformation that maps [0,1] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param value number The value to remap
+	--- @param inMin number The minimum value of the input range
+	--- @param inMax number The maximum value of the input range
+	--- @param outMin number The minimum value of the output range
+	--- @param outMax number The maximum value of the output range
+	--- @param transform function(value:number):number
+	--- @return number # The remapped value
+	function ACF.RemapAdv(value, inMin, inMax, outMin, outMax, transform)
+		return outMin + (transform(ACF.Normalize(value, inMin, inMax)) * (outMax - outMin))
+	end
+
+	local Utilities   = ACF.Utilities
+	local Clock = Utilities.Clock
+
+	--- Creates a timer that runs a loop function at random intervals, with a delay before the first run.
+	--- @param loop function The function to run at random intervals
+	--- @param depends function The function to check if the loop should run (usually a valid check)
+	--- @param minTime number The minimum time between runs
+	--- @param maxTime number The maximum time between runs
+	--- @param delay number The delay before the first run
+	function ACF.RandomizedDependentTimer(loop, depends, minTime, maxTime, delay)
+		local realLoop
+		local lastTime = Clock.CurTime
+		function realLoop()
+			if not depends() then return end
+
+			loop(lastTime)
+			lastTime = Clock.CurTime
+			timer.Simple(minTime + (maxTime - minTime) * math.random(), realLoop)
+		end
+
+		if not delay then
+		   realLoop()
+		else
+			timer.Simple(delay, realLoop)
+		end
+	end
+
+	--- Checks the two bullet datas are equal
+	--- TODO: Probably find a better way to do this via the ammo classes...
+	--- @param Data1 any -- The first bullet data
+	--- @param Data2 any -- The second bullet data
+	--- @return boolean -- Whether the two bullet datas are equal
+	function ACF.BulletEquality(Data1, Data2)
+		if not Data1 then return false end
+		if not Data2 then return false end
+
+		-- Only check fields all rounds share...
+		-- Note: We are trying to fail as early as possible so check constraints from most to least common
+		if Data1.Type ~= Data2.Type then return false end
+		if Data1.Caliber ~= Data2.Caliber then return false end
+		if Data1.Diameter ~= Data2.Diameter then return false end
+		if Data1.ProjArea ~= Data2.ProjArea then return false end
+		if Data1.PropArea ~= Data2.PropArea then return false end
+		if Data1.Efficiency ~= Data2.Efficiency then return false end
+
+		return true
+	end
+end
+
+do -- Reload related
 	--- Calculates the time it takes for a gun to reload
-	--- Also used in stocking logic
-	--- @param BulletData table The bullet data of the shell
-	--- @--- @param Efficiency number The efficiency of the gun, impacted by crew
-	--- @param MassMul number 
-	--- @param CountMul number The number of shells
-	function ACF.CalcReloadTime(BulletData, Efficiency, MassMul, CountMul)
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * MassMul * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * CountMul / Efficiency
+	--- It is recommended to use Override with an entity which has "Cyclic" set to a value to reduce usage
+	--- @param Caliber number The caliber of the weapon
+	--- @param Class table Weapon class group
+	--- @param Weapon table Weapon class item
+	--- @param BulletData table Bullet data
+	--- @param Override table Override data, either from an entity or a table
+	function ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData, Override)
+		-- If the weapon has a cyclic rate, use it, otherwise calculate the reload time based on the bullet data
+		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
+		if Cyclic then return 60 / Cyclic, false end
+
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		return BaseTime, true
+	end
+
+	--- Calculates the time it takes for a gun to reload its magazine
+	--- It is recommended to use Override with an entity which has "MagSize" set to a value to reduce usage
+	--- @param Caliber number The caliber of the weapon
+	--- @param Class table Weapon class group
+	--- @param Weapon table Weapon class item
+	--- @param BulletData table Bullet data
+	--- @param Override table Override data, either from an entity or a table
+	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
+		-- Use the override if possible
+		local MagSize = Override and Override.MagSize
+
+		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
+		if not MagSize then
+			local Boxed = ACF.GetWeaponValue("IsBoxed", Caliber, Class, Weapon)
+			local Belted = ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
+			MagSize = (Boxed or Belted) and ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+		end
+
+		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		return BaseTime, true
+	end
+
+	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
+	function ACF.GetReloadEff(Crew, Gun, Ammo)
+		local D1 = Crew:GetPos():Distance(Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))) -- Breach relative to coordinate center?
+		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
+		-- print("Dist: ", D1 + D2, ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist))
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 end

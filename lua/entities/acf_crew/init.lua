@@ -83,6 +83,8 @@ local function iterScan(crew, reps)
 	local Box = crew.ScanBoxBase + crew.ScanBox
 	local Hull = crew.ScanHull
 
+	local filter = function(x) return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer()) end
+
 	-- Update reps hull traces
 	for i = 1, reps do
 		-- Perform hull trace from scan center to corner of box
@@ -91,7 +93,8 @@ local function iterScan(crew, reps)
 		local p1 = center
 		local corner = Vector(disp.x * Box.x / 2, disp.y * Box.y / 2, disp.z * Box.z / 2)
 		local p2 = crew:LocalToWorld(localoffset + corner)
-		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, crew)
+
+		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, filter)
 		crew.ScanLengths[index] = frac
 
 		debugoverlay.Line(p1, hitpos, 1, Color(255, 0, 0))
@@ -170,7 +173,8 @@ do -- Random timer stuff
 			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
 		end
 
-		if DeltaTime > 0 then
+		-- Avoid G force calculation on crew during building...
+		if DeltaTime > 0 and self:GetContraption() ~= nil then
 			-- Calculate current G force on crew
 			self.Pos = self.Pos or self:GetPos()
 			self.Vel = self.Vel or self:GetVelocity()
@@ -215,6 +219,7 @@ end
 
 do
 	util.AddNetworkString("ACF_Crew_Links")
+	util.AddNetworkString("ACF_Crew_Space")
 
 	local Outputs = {
 		"ModelEff",
@@ -296,8 +301,7 @@ do
 		local Limit = "_acf_crew"
 		if not Player:CheckLimit(Limit) then return false end
 
-		local TypeLimit = CrewType.LimitConVar.Name
-		if not Player:CheckLimit(TypeLimit) then return false end
+		if CrewType.LimitConVar and not Player:CheckLimit(CrewType.LimitConVar.Name) then return false end
 
 		-- Creating the entity
 		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_crew", Player, Data, CrewModel, CrewType)
@@ -314,7 +318,7 @@ do
 
 		Player:AddCleanup("acf_crew", Entity)
 		Player:AddCount(Limit, Entity)
-		Player:AddCount(TypeLimit, Entity)
+		if CrewType.LimitConVar then Player:AddCount(CrewType.LimitConVar.Name, Entity) end
 
 		Entity.Name = "Crew Member"
 		Entity.ShortName = "Crew Member"
@@ -341,6 +345,7 @@ do
 		Entity.LeanAngle = 0
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 		Entity.IsAlive = true
+
 		Entity.LastThink = Clock.CurTime
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -431,7 +436,7 @@ do
 
 	function ENT:Think()
 		-- Check links on this entity
-		local Targets = self.Targets
+		local Targets = self.Targets or {}
 		if next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
@@ -636,6 +641,7 @@ do
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
+		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same contraption as this crewmate!" end
 		if not Crew.CrewType.Whitelist[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 		if Crew.CrewType.CanLink then return Crew.CrewType.CanLink(Crew, Target) end
 		return true, "Crew linked."
@@ -739,8 +745,6 @@ do
 		local CrewType = self.CrewType
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self, CrewModel, CrewType)
-
-		HookRemove("AdvDupe_FinishPasting", "crewdupefinished" .. self:EntIndex())
 
 		-- Unlink target entities
 		for v,_ in pairs(self.Targets) do
