@@ -69,6 +69,7 @@ do -- ACF global vars
 		npc_dog = true,
 		phys_bone_follower = true,
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
+		starfall_prop = true
 	}
 
 	-- Ammo
