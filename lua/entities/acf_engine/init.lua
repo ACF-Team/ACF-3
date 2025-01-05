@@ -6,7 +6,7 @@ include("shared.lua")
 local ACF = ACF
 local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
-local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+local MaxDistance = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
 
 --===============================================================================================--
 -- Engine class setup
