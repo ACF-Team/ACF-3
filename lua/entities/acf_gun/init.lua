@@ -779,10 +779,8 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				local Name = "ACF_Gun_Load_Timer" .. self:EntIndex() .. CurTime()
-				self.CurTimerID = Name
-				timer.Create(Name, Time, 0, function()
-					if IsValid(self) then
+				timer.Simple(Time, function()
+					if IsValid(self) and self.BulletData then
 						if self.CurrentShot == 0 then
 							self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
 						end
@@ -797,7 +795,6 @@ do -- Metamethods --------------------------------
 
 						if self:CanFire() then self:Shoot() end
 					end
-					timer.Remove(Name)
 				end)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")

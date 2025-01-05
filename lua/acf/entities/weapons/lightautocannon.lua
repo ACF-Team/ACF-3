@@ -10,6 +10,7 @@ Weapons.Register("LAC", {
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	IsAutomatic = true,
+	IsBelted	= true,
 	Mass        = 301,
 	Spread      = 0.48,
 	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models

@@ -10,6 +10,7 @@ Weapons.Register("RAC", {
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
 	IsAutomatic = true,
+	IsBelted	= true,
 	Spread      = 0.48,
 	Mass        = 212,
 	Cyclic      = 2000,
