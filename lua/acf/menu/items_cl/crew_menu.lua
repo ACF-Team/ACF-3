@@ -27,9 +27,10 @@ local function CreateMenu(Menu)
 	EffFocusInfo:AddLabel("The exact efficiencies affecting each crew type or the way their focuses work can be found below.")
 
 	local EffTypesInfo = Menu:AddCollapsible("Efficiency Types", false)
-	EffTypesInfo:AddLabel("For each combination of crew occupation and crew model, there is an ergonomic efficiency score, shown further below.")
+	EffTypesInfo:AddLabel("Model efficiency is based on the posture of the crew model for a given occupation. You can find the multiplier below.")
 	EffTypesInfo:AddLabel("Movement efficiency is based on the G forces the crew experiences. Avoid accelerating too fast or crashing into things.")
-	EffTypesInfo:AddLabel("Lean angle efficiency is based on the angle of the crew relative to the world. Try to keep your crew upright.")
+	EffTypesInfo:AddLabel("Lean angle efficiency is based on the angle of the crew relative to the world. Try to keep them upright.")
+	EffTypesInfo:AddLabel("Health efficiency is based on how damaged your crew are. Try to protect them from harm.")
 	EffTypesInfo:AddLabel("Space efficiency only applies to loaders and is based on the amount of surrounding open space they have. Try to give them the most room.")
 
 	local CrewJob		= Menu:AddComboBox()
