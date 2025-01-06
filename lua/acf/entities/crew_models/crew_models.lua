@@ -15,6 +15,8 @@ CrewModels.Register("Standing", {
         Gunner = 0.85,
         Loader = 1,
         Driver = 0.5,
+        Commander = 1,
+        Pilot = 0.1,
     },
     Preview = {
         FOV = 100,
@@ -31,6 +33,8 @@ CrewModels.Register("Sitting", {
         Gunner = 1,
         Loader = 0.85,
         Driver = 1,
+        Commander = 1,
+        Pilot = 1,
     },
     Preview = {
         FOV = 100,

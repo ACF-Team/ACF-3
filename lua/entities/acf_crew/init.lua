@@ -241,6 +241,8 @@ do
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
+		if CrewType.LimitConVar and not Player:CheckLimit(CrewType.LimitConVar.Name) then return false end
+
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = CrewModel.Model

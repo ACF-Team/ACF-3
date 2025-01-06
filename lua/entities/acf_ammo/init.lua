@@ -800,6 +800,9 @@ do -- Ammo Consumption -------------------------
 					end,
 					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
+			else
+				-- Didn't find a crate... try again later.
+				self.IsRestocking = false
 			end
 		end
 	end

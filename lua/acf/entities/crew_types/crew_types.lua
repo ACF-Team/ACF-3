@@ -11,7 +11,8 @@ local CrewTypes = ACF.Classes.CrewTypes
 
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
-	Description = "Loaders affect the reload rate of your guns. They prefer standing. To a limit, the more space you have the faster they reload.",
+	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
+	ExtraNotes 	= "Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
 	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
 		Amount	= 4,
@@ -95,7 +96,7 @@ CrewTypes.Register("Loader", {
 
 CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
-	Description = "Gunners affect the accuracy of your gun. They prefer sitting.",
+	Description = "Gunners affect the accuracy of your gun. Link them to gun(s). They prefer sitting.",
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
 		Amount	= 4,
@@ -146,7 +147,7 @@ CrewTypes.Register("Gunner", {
 
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
-	Description = "Drivers affect the fuel efficiency of your engines. They prefer sitting",
+	Description = "Drivers affect the fuel efficiency of your engines. Link them to engine(s). They prefer sitting.",
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
 		Amount	= 2,
@@ -178,8 +179,9 @@ CrewTypes.Register("Driver", {
 
 CrewTypes.Register("Commander", {
 	Name        = "Commander",
-	Description = "Commanders coordinate the crew. They prefer sitting.",
-	Whitelist = {
+	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
+	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. This reduces their focus and their ability to command the other crew.",
+	Whitelist 	= {
 		acf_gun = true, 	-- Only to support RWS
 	},
 	LimitConVar	= {

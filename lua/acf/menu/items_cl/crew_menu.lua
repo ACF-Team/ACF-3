@@ -11,9 +11,20 @@ local function CreateMenu(Menu)
 
 	Menu:AddTitle("Crews")
 
-	local Instructions = Menu:AddCollapsible("Instructions", false)
+	local Instructions = Menu:AddCollapsible("General Instructions", false)
 	Instructions:AddLabel("Crews will be necessary for a well functioning vehichle. Place them in your vehichle for protection and parent them.")
-	Instructions:AddLabel("Test")
+	Instructions:AddLabel("It is recommended to have a commander, driver, gunner, and loader in your vehichle.")
+	Instructions:AddLabel("Please read the crew specific instructions and the stats below for more information.")
+
+	local EffFocusInfo = Menu:AddCollapsible("Efficy/Focus Info", false)
+	EffFocusInfo:AddLabel("Each crew has a total efficiency which ranges from 0 to 1. This represents how well they can perform their job.")
+	EffFocusInfo:AddLabel("The total efficiency is the product of multiple factors such as lean angle, G-Forces, and model posture efficiency.")
+	EffFocusInfo:AddLabel("Different occupations are affected by different efficiencies. For example a loader is affected by load angle while a loader is not.")
+	EffFocusInfo:AddLabel("")
+	EffFocusInfo:AddLabel("Each crew also has a focus which ranges from 0 to 1. This represnets how much effort/focus they can apply to each of their tasks.")
+	EffFocusInfo:AddLabel("For example, one loader loading two guns will have a focus of 0.5, since they load each half as fast.")
+	EffFocusInfo:AddLabel("")
+	EffFocusInfo:AddLabel("The exact behaviours for each crew type and their efficiencies/focuses can be found at the very bottom.")
 
 	local CrewJob		= Menu:AddComboBox()
 	local CrewJobDesc	= Menu:AddLabel()
@@ -22,8 +33,8 @@ local function CreateMenu(Menu)
 
 	local Base			= Menu:AddCollapsible("Crew Information")
 	local CrewPreview = Base:AddModelPreview(nil, true)
-	local ReplaceOthers = Base:AddCheckBox("Can Replace Others")
-	local ReplaceSelf = Base:AddCheckBox("Can Be Replaced")
+	local ReplaceOthers = Base:AddCheckBox("I can replace other crew")
+	local ReplaceSelf = Base:AddCheckBox("Other crew can replace me")
 
 	ReplaceOthers:SetClientData("ReplaceOthers", "OnChange")
 	ReplaceSelf:SetClientData("ReplaceSelf", "OnChange")
@@ -34,6 +45,15 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("ReplaceOthers", true)
 	ACF.SetClientData("ReplaceSelf", true)
 
+	local Limits = Base:AddLabel()
+	local Whitelist = Base:AddLabel()
+	local Pose = Base:AddLabel()
+	local Mass = Base:AddLabel()
+	local Leans = Base:AddLabel()
+	local GEfficiencies = Base:AddLabel()
+	local GDamages = Base:AddLabel()
+	local ExtraNotes = Base:AddLabel()
+
 	function CrewJob:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
@@ -41,6 +61,38 @@ local function CreateMenu(Menu)
 		self.Selected		= Data
 
 		CrewJobDesc:SetText(Data.Description or "No description provided.")
+
+		Limits:SetText("Max Per Contraption: " .. Data.LimitConVar.Amount)
+
+		local str = "Links to: "
+		local counter = table.Count(Data.Whitelist)
+		for k, _ in pairs(Data.Whitelist) do
+			str = str .. k
+			counter = counter - 1
+			if counter > 0 then str = str .. ", " end
+		end
+		Whitelist:SetText(str)
+
+		Mass:SetText("Mass: " .. Data.Mass .. " kg")
+
+		if not Data.LeanInfo then Leans:SetText("Efficiency unaffected by Lean angle")
+		else
+			Leans:SetText("Best efficiency before: " .. Data.LeanInfo.Min .. " degrees lean\nWorst efficiency after: " .. Data.LeanInfo.Max .. " degrees lean")
+		end
+
+		if not Data.GForceInfo.Efficiencies then GEfficiencies:SetText("Efficiency unaffected by G-Forces")
+		else
+			GEfficiencies:SetText("Best Efficiency before: " .. Data.GForceInfo.Efficiencies.Min .. " G\nWorst Efficiency after: " .. Data.GForceInfo.Efficiencies.Max .. " G")
+		end
+
+		if not Data.GForceInfo.Damages then GDamages:SetText("Damage not applied by G-Forces")
+		else
+			GDamages:SetText("Damage starts at: " .. Data.GForceInfo.Damages.Min .. " G\nInstant death at: " .. Data.GForceInfo.Damages.Max .. " G")
+		end
+
+		ExtraNotes:SetText(Data.ExtraNotes or "No extra notes provided.")
+
+		if CrewModel.Selected and CrewJob.Selected then Pose:SetText("Model Efficiency Multiplier: " .. (CrewModel.Selected.BaseErgoScores[CrewJob.Selected.ID] or 1)) end
 
 		ACF.SetClientData("CrewTypeID", Data.ID)
 	end
@@ -55,6 +107,8 @@ local function CreateMenu(Menu)
 
 		CrewPreview:UpdateModel(Data.Model)
 		CrewPreview:UpdateSettings(Data.Preview)
+
+		if CrewModel.Selected and CrewJob.Selected then Pose:SetText("Model Efficiency Multiplier: " .. (CrewModel.Selected.BaseErgoScores[CrewJob.Selected.ID] or 1)) end
 
 		ACF.SetClientData("CrewModelID", Data.ID)
 	end
