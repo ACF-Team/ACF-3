@@ -12,7 +12,7 @@ local CrewTypes = ACF.Classes.CrewTypes
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
 	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
-	ExtraNotes 	= "Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
+	ExtraNotes 	= "Loaders can be linked to any gun, but their focus is split between each. Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
 	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
 		Amount	= 4,
@@ -97,6 +97,7 @@ CrewTypes.Register("Loader", {
 CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
 	Description = "Gunners affect the accuracy of your gun. Link them to gun(s). They prefer sitting.",
+	ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change.",
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
 		Amount	= 4,
@@ -148,6 +149,7 @@ CrewTypes.Register("Gunner", {
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
 	Description = "Drivers affect the fuel efficiency of your engines. Link them to engine(s). They prefer sitting.",
+	ExtraNotes	= "Drivers can be linked to any engine and their focus does not change.",
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
 		Amount	= 2,
@@ -180,7 +182,7 @@ CrewTypes.Register("Driver", {
 CrewTypes.Register("Commander", {
 	Name        = "Commander",
 	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
-	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. This reduces their focus and their ability to command the other crew.",
+	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew.",
 	Whitelist 	= {
 		acf_gun = true, 	-- Only to support RWS
 	},
@@ -235,7 +237,8 @@ CrewTypes.Register("Commander", {
 
 CrewTypes.Register("Pilot", {
 	Name        = "Pilot",
-	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft, ",
+	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft.",
+	ExtraNotes 	= "Pilots do not affect anything at the moment.",
 	Whitelist = {},
 	LimitConVar	= {
 		Name	= "_acf_crew_pilot",
@@ -244,10 +247,6 @@ CrewTypes.Register("Pilot", {
 	},
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
 	GForceInfo = {
-		Efficiencies = {
-			Min = 0,	-- Best efficiency before this (Gs)
-			Max = 3,	-- Worst efficiency after this (Gs)
-		},
 		Damages = {
 			Min = 6,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
