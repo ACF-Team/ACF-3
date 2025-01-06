@@ -115,12 +115,12 @@ local function iterScan(crew, reps)
 end
 
 do -- Random timer stuff
-	function ENT:UpdateUltraLowFreq(LastTime)
-		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, LastTime) end
+	function ENT:UpdateUltraLowFreq(cfg)
+		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, cfg) end
 	end
 
-	function ENT:UpdateLowFreq(LastTime)
-		local DeltaTime = Clock.CurTime - LastTime
+	function ENT:UpdateLowFreq(cfg)
+		local DeltaTime = cfg.DeltaTime
 
 		-- Update health ergonomics
 		self.HealthEff = self.ACF.Health / self.ACF.MaxHealth
@@ -142,10 +142,10 @@ do -- Random timer stuff
 		-- Update crew focus
 		self.CrewType.UpdateFocus(self)
 
-		if self.CrewType.UpdateLowFreq then self.CrewType.UpdateLowFreq(self, LastTime) end
+		if self.CrewType.UpdateLowFreq then self.CrewType.UpdateLowFreq(self, cfg) end
 	end
 
-	function ENT:UpdateMedFreq(LastTime)
+	function ENT:UpdateMedFreq(cfg)
 		-- If specified, affect crew ergonomics based on space 
 		local SpaceInfo = self.CrewType.SpaceInfo
 		if SpaceInfo and self.ShouldScan then
@@ -156,11 +156,11 @@ do -- Random timer stuff
 			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
 		end
 
-		if self.CrewType.UpdateMedFreq then self.CrewType.UpdateMedFreq(self, LastTime) end
+		if self.CrewType.UpdateMedFreq then self.CrewType.UpdateMedFreq(self, cfg) end
 	end
 
-	function ENT:UpdateHighFreq(LastTime)
-		local DeltaTime = Clock.CurTime - LastTime
+	function ENT:UpdateHighFreq(cfg)
+		local DeltaTime = cfg.DeltaTime
 
 		-- Check world lean angle and update ergonomics
 		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
@@ -213,7 +213,7 @@ do -- Random timer stuff
 		self.CrewType.UpdateEfficiency(self, Commander)
 		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
 
-		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, LastTime) end
+		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
 	end
 end
 
@@ -351,10 +351,11 @@ do
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
 		-- Run randomized timers
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateUltraLowFreq(LastTime) end, function() return IsValid(Entity) end, 3, 5, 0.1)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLowFreq(LastTime) end, function() return IsValid(Entity) end, 1, 2, 0.1)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateMedFreq(LastTime) end, function() return IsValid(Entity) end, 0.5, 1, 0.1)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateHighFreq(LastTime) end, function() return IsValid(Entity) end, 0.1, 0.5, 0.1)
+		-- TODO: Fix args
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateUltraLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateMedFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 
 		-- Finish setting up the entity
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)

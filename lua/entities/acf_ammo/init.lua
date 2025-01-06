@@ -38,6 +38,7 @@ do -- Random timer crew stuff
 		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.StockCrewMod
 	end
 end
 
@@ -786,15 +787,19 @@ do -- Ammo Consumption -------------------------
 				-- At most, you can transfer the smallest of: mag size, the ammo left in the giver, or the space left in the receiver
 				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
 
-				self:UpdateStockMod()
-				local Time = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = Transfer}) / self.StockCrewMod
+				local IdealTime = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = Transfer})
 
-				timer.Simple(Time, function()
-					self.IsRestocking = false
-					local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) -- Recalculate
-					crate:Consume(Transfer) 								-- Give
-					self:Consume(-Transfer) 								-- Take
-				end)
+				ACF.ProgressTimer(
+					self,
+					function(cfg) return self:UpdateStockMod() end,
+					function(cfg)
+						self.IsRestocking = false
+						local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) 	-- Recalculate
+						crate:Consume(Transfer) 													-- Give
+						self:Consume(-Transfer)
+					end,
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+				)
 			end
 		end
 	end

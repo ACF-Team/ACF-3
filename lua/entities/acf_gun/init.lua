@@ -58,7 +58,7 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
-	function ENT:UpdateLoadMod(LastTime)
+	function ENT:UpdateLoadMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
@@ -66,15 +66,18 @@ do -- Random timer crew stuff
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		-- print("LoadCrewMod: ", Val, Sum, Count)
 		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+
+		return self.LoadCrewMod
 	end
 
-	function ENT:UpdateAccuracyMod(LastTime)
+	function ENT:UpdateAccuracyMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
 		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
 	end
 end
 
@@ -96,6 +99,7 @@ do -- Spawn and Update functions --------------------------------
 		"Total Ammo (Returns the amount of rounds available for this weapon.)",
 		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
 		"Reload Time (Returns the amount of time in seconds it'll take to reload the weapon.)",
+		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
 		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
 		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
 		"Entity (The weapon itself.) [ENTITY]",
@@ -229,6 +233,7 @@ do -- Spawn and Update functions --------------------------------
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
 			WireLib.TriggerOutput(Entity, "Reload Time", 60 / Entity.Cyclic)
 			WireLib.TriggerOutput(Entity, "Rate of Fire", Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Mag Reload Time", Entity.MagReload)
 		end
 
 		ACF.Activate(Entity, true)
@@ -311,8 +316,8 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateLoadMod(LastTime) end, function() return IsValid(Entity) end, 0.5, 1)
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateAccuracyMod(LastTime) end, function() return IsValid(Entity) end, 0.5, 1)
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateLoadMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 
 		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
 
@@ -728,7 +733,8 @@ do -- Metamethods --------------------------------
 			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
-			local Time = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self) / self.LoadCrewMod
+			local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+			Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 			print("Mag Reload", Time)
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
@@ -740,15 +746,22 @@ do -- Metamethods --------------------------------
 			WireLib.TriggerOutput(self, "Ammo Type", "Empty")
 			WireLib.TriggerOutput(self, "Shots Left", 0)
 
-			timer.Simple(Time, function()
-				if IsValid(self) then
-					if Reload then
-						self:Load()
-					else
-						self:SetState("Empty")
+			ACF.ProgressTimer(
+				self,
+				function(cfg)
+					return self:UpdateLoadMod()
+				end,
+				function(cfg)
+					if IsValid(self) then
+						if Reload then
+							self:Load()
+						else
+							self:SetState("Empty")
+						end
 					end
-				end
-			end)
+				end,
+				{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+			)
 		end
 
 		function ENT:Chamber()
@@ -764,38 +777,45 @@ do -- Metamethods --------------------------------
 				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
 
 				local BulletData = Crate.BulletData
-				local Time, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
-				if Manual then Time = Time / self.LoadCrewMod end
+				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
+				if Manual then Time = IdealTime / self.LoadCrewMod end
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
 				self.NextFire 	  = Clock.CurTime + Time
 
-				if Manual then -- Automatics don't change their rate of fire
-					WireLib.TriggerOutput(self, "Reload Time", Time)
-					WireLib.TriggerOutput(self, "Rate of Fire", 60 / Time)
-				end
-
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				timer.Simple(Time, function()
-					if IsValid(self) and self.BulletData then
-						if self.CurrentShot == 0 then
-							self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
+				ACF.ProgressTimer(
+					self,
+					function(cfg)
+						local eff = self:UpdateLoadMod()
+						if Manual then -- Automatics don't change their rate of fire
+							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
+							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
 						end
+						return eff
+					end,
+					function(cfg)
+						if IsValid(self) and self.BulletData then
+							if self.CurrentShot == 0 then
+								self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
+							end
 
-						self.NextFire = nil
+							self.NextFire = nil
 
-						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-						WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
-						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
+							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+							WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
+							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
 
-						self:SetState("Loaded")
+							self:SetState("Loaded")
 
-						if self:CanFire() then self:Shoot() end
-					end
-				end)
+							if self:CanFire() then self:Shoot() end
+						end
+					end,
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
 
@@ -833,17 +853,24 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
 				self:UpdateLoadMod()
-				local Time, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
-				if Manual then Time = Time / self.LoadCrewMod end
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 				print("Mag Reload: " .. Time)
 
 				self.NextFire = Clock.CurTime + Time
 
-				timer.Simple(Time, function() -- Reload timer
-					if IsValid(self) then
-						self:Chamber() -- One last timer to chamber the round
-					end
-				end)
+				ACF.ProgressTimer(
+					self,
+					function(cfg) 
+						local eff = self:UpdateLoadMod()
+						if Manual then
+							WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff)
+						end
+						return eff
+					end,
+					function(cfg) self:Chamber() end,
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+				)
 			else -- Single-shot/Manually loaded
 				self:Chamber()
 			end

@@ -240,7 +240,7 @@ local function SetActive(Entity, Value, EntTbl)
 end
 
 do -- Random timer crew stuff
-	function ENT:UpdateFuelMod(LastTime)
+	function ENT:UpdateFuelMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
 		local Val = (Count > 0) and (Sum / Count) or 0
@@ -413,7 +413,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
-		ACF.RandomizedDependentTimer(function(LastTime) Entity:UpdateFuelMod(LastTime) end, function() return IsValid(Entity) end, 1, 2)
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		HookRun("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
 

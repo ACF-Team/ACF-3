@@ -792,31 +792,63 @@ do -- Crew related
 		return outMin + (transform(ACF.Normalize(value, inMin, inMax)) * (outMax - outMin))
 	end
 
-	local Utilities   = ACF.Utilities
-	local Clock = Utilities.Clock
+	local function UpdateDelta(cfg)
+		cfg.DeltaTime = (CurTime() - cfg.LastTime)
+		cfg.LastTime = CurTime()
+		cfg.Elapsed = cfg.Elapsed + cfg.DeltaTime
+	end
 
-	--- Creates a timer that runs a loop function at random intervals, with a delay before the first run.
-	--- @param loop function The function to run at random intervals
-	--- @param depends function The function to check if the loop should run (usually a valid check)
-	--- @param minTime number The minimum time between runs
-	--- @param maxTime number The maximum time between runs
-	--- @param delay number The delay before the first run
-	function ACF.RandomizedDependentTimer(loop, depends, minTime, maxTime, delay)
+	local function InitFields(cfg)
+		cfg.DeltaTime = 0
+		cfg.Elapsed = 0
+		cfg.LastTime = CurTime()
+	end
+
+	--- Initializes and runs a random recursive timer
+	--- @param loop any
+	--- @param depends any
+	--- @param finish any
+	--- @param cfg any
+	function ACF.AugmentedTimer(loop, depends, finish, cfg)
+		InitFields(cfg)
+
 		local realLoop
-		local lastTime = Clock.CurTime
 		function realLoop()
-			if not depends() then return end
+			if depends and not depends(cfg) then return end
 
-			loop(lastTime)
-			lastTime = Clock.CurTime
-			timer.Simple(minTime + (maxTime - minTime) * math.random(), realLoop)
+			UpdateDelta(cfg)
+			local left = loop(cfg)
+			local rand = cfg.MinTime + (cfg.MaxTime - cfg.MinTime) * math.random()
+
+			--Random step or finishing step, whichever is faster.
+			local timeleft = left and math.min(left, rand) or rand
+			-- print(timeleft, cfg.Elapsed)
+			-- If time left then recurse, otherwise call finish
+			if timeleft > 0 then
+				timer.Simple(timeleft, realLoop)
+			else
+				if finish then finish(cfg) end
+				return
+			end
 		end
 
-		if not delay then
-		   realLoop()
-		else
-			timer.Simple(delay, realLoop)
-		end
+		if not cfg.Delay then realLoop()
+		else timer.Simple(cfg.Delay, realLoop) end
+	end
+
+	function ACF.ProgressTimer(ent, loop, finish, cfg)
+		ACF.AugmentedTimer(
+			function(cfg)
+				local eff = loop(cfg)
+				cfg.Progress = cfg.Progress + cfg.DeltaTime * eff
+				return (cfg.Goal - cfg.Progress) / eff
+			end,
+			function(cfg)
+				return IsValid(ent) and cfg.Progress < cfg.Goal
+			end,
+			finish,
+			cfg
+		)
 	end
 
 	--- Checks the two bullet datas are equal
