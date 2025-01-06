@@ -863,9 +863,7 @@ do -- Metamethods --------------------------------
 					self,
 					function(cfg) 
 						local eff = self:UpdateLoadMod()
-						if Manual then
-							WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff)
-						end
+						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
 						return eff
 					end,
 					function(cfg) self:Chamber() end,
@@ -1018,7 +1016,7 @@ do -- Metamethods --------------------------------
 			end
 
 			-- for each crate in the first stage, if it's restockable, restock it
-			self.FirstStage = self.FirstStage or ACF.FindFirstStage(self:GetContraption())
+			self.FirstStage = ACF.FindFirstStage(self:GetContraption())
 			for v, _ in pairs(self.FirstStage) do
 				if CheckRestockable(v, self) then
 					v:Restock()

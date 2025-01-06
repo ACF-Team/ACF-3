@@ -917,7 +917,6 @@ do -- Reload related
 	function ACF.GetReloadEff(Crew, Gun, Ammo)
 		local D1 = Crew:GetPos():Distance(Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))) -- Breach relative to coordinate center?
 		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
-		-- print("Dist: ", D1 + D2, ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist))
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 end
