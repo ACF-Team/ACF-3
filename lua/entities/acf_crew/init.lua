@@ -114,6 +114,24 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
+--- Check other crews of the same type and enforce convar limits
+local function EnforceLimits(crew)
+	local CrewType = crew.CrewType
+	local CrewTypeID = crew.CrewTypeID
+
+	local Contraption = crew:GetContraption() or {}
+	local CrewsByType = Contraption.CrewsByType or {}
+
+	local Limit = CrewType.LimitConVar
+	if Limit then
+		local Count = table.Count(CrewsByType[CrewTypeID] or {})
+		if Count > Limit.Amount then
+			ACF.SendNotify(crew.Owner, false, "You have reached the " .. CrewType.Name .. "limit for this contraption.")
+			crew:Remove()
+		end
+	end
+end
+
 do -- Random timer stuff
 	function ENT:UpdateUltraLowFreq(cfg)
 		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, cfg) end
@@ -241,8 +259,6 @@ do
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
-		if CrewType.LimitConVar and not Player:CheckLimit(CrewType.LimitConVar.Name) then return false end
-
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = CrewModel.Model
@@ -302,8 +318,6 @@ do
 		-- Enforcing limits
 		local Limit = "_acf_crew"
 		if not Player:CheckLimit(Limit) then return false end
-
-		if CrewType.LimitConVar and not Player:CheckLimit(CrewType.LimitConVar.Name) then return false end
 
 		-- Creating the entity
 		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_crew", Player, Data, CrewModel, CrewType)
@@ -458,6 +472,8 @@ do
 		end
 
 		self.LastThink = Clock.CurTime
+
+		EnforceLimits(self)
 
 		self:UpdateOverlay()
 		self:NextThink(Clock.CurTime + math.Rand(1, 2))

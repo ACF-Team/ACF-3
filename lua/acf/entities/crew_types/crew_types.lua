@@ -258,20 +258,3 @@ CrewTypes.Register("Pilot", {
 	end,
 	UpdateFocus = function(Crew) return 1 end
 })
-
-CrewTypes.Register("Unemployed", {
-	Name        = "Unemployed",
-	Description = "Unemployed crew members do nothing. They can be updated with an occupation. Easier to build with.",
-	Whitelist = {},
-	Mass = 80,			-- Pilots weigh more due to life support systems and G suits
-	GForceInfo = {
-		Damages = {
-			Min = 999,	-- Damage starts being applied after this (Gs)
-			Max = 999,	-- Instant death after this (Gs)
-		}
-	},
-	UpdateEfficiency = function(Crew, Commander)
-		Crew.TotalEff = ACF.CrewFallbackCoef
-	end,
-	UpdateFocus = function(Crew) return 0 end
-})
