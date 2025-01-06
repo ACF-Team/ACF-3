@@ -240,8 +240,7 @@ end
 do -- Rendering mobility links
 	local RopesCvar = GetConVar("acf_mobilityropelinks")
 	local RopeMat = Material("cable/cable2")
-	local InnerRopeColor = Color(127, 127, 127)
-	local OuterRopeColor = Color(255, 255, 255)
+	local RopeColor = Color(127, 127, 127)
 
 	function ENT:Draw()
 		self.BaseClass.Draw(self)
@@ -266,27 +265,8 @@ do -- Rendering mobility links
 			self:RequestGearboxInfo()
 		end
 
-		local InPos		= self:LocalToWorld(SelfTbl.In)
 		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
 		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
-		local MidPoint	= self:LocalToWorld(SelfTbl.Mid)
-
-		-- Rendering more along the chain
-		for _, T in ipairs(SelfTbl.Inputs) do
-			local E = T.Ent
-
-			if IsValid(E) and E.DrawRopes then
-				E:DrawRopes(Rendered, false)
-			end
-		end
-
-		if not SelfTbl.IsStraight then
-			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, InnerRopeColor)
-			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, InnerRopeColor)
-		else
-			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
-			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, InnerRopeColor)
-		end
 
 		for _, T in ipairs(SelfTbl.OutputsL) do
 			local E = T.Ent
@@ -294,11 +274,7 @@ do -- Rendering mobility links
 			if IsValid(E) then
 
 				local Pos = E:LocalToWorld(T.Pos)
-				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, OuterRopeColor)
-
-				if E.DrawRopes then
-					E:DrawRopes(Rendered, false)
-				end
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, RopeColor)
 			end
 		end
 
@@ -308,11 +284,7 @@ do -- Rendering mobility links
 			if IsValid(E) then
 
 				local Pos = E:LocalToWorld(T.Pos)
-				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, OuterRopeColor)
-
-				if E.DrawRopes then
-					E:DrawRopes(Rendered, false)
-				end
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, RopeColor)
 			end
 		end
 	end

@@ -184,10 +184,6 @@ do -- Rendering mobility links
 				local Pos = E:LocalToWorld(T.Pos)
 
 				render.DrawBeam(OutPos, Pos, 1.5, 0, 0, RopeColor)
-
-				if E.DrawRopes then
-					E:DrawRopes(Rendered, false)
-				end
 			end
 		end
 	end
