@@ -767,7 +767,6 @@ do -- Ammo Consumption -------------------------
 
 	--- Restocks the ammocrate if appropriate
 	function ENT:Restock()
-		if not self.LastStockTime then self.LastStockTime = 0 end
 		local MagSize = math.max(self.MagSize or 1, 1)						-- Attempt to transfer the mag size or a single shell
 		local AmmoCheck = self.Capacity - self.Ammo >= MagSize				-- We should only restock if we are short on shells
 		local StockCheck = not self.IsRestocking							-- We should only restock if we are not already restocking

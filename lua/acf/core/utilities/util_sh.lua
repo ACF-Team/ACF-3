@@ -804,11 +804,13 @@ do -- Crew related
 		cfg.LastTime = CurTime()
 	end
 
-	--- Initializes and runs a random recursive timer
-	--- @param loop any
-	--- @param depends any
-	--- @param finish any
-	--- @param cfg any
+	--- Similar to a mix of timer.create and timer.simple but with random steps.
+	--- Every iteration it asks loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
+	--- Its principal use case is in dynamic reloading where the time until a loader finishes loading changes during loading and must be checked at random.
+	--- @param loop function A function that returns the time left until the next iteration
+	--- @param depends function A function that returns whether the timer should continue
+	--- @param finish function A function that is called when the timer finishes
+	--- @param cfg table A table with the fields: MinTime, MaxTime, Delay
 	function ACF.AugmentedTimer(loop, depends, finish, cfg)
 		InitFields(cfg)
 
@@ -836,6 +838,12 @@ do -- Crew related
 		else timer.Simple(cfg.Delay, realLoop) end
 	end
 
+	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
+	--- Progress increases at the rate determined by loop, until it reaches "goal"
+	--- @param ent any The entity to attach the timer to (checks its validity)
+	--- @param loop any	A function that returns the efficiency of the process
+	--- @param finish any A function that is called when the timer finishes
+	--- @param cfg any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(ent, loop, finish, cfg)
 		ACF.AugmentedTimer(
 			function(cfg)

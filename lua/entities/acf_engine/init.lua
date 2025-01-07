@@ -245,6 +245,7 @@ do -- Random timer crew stuff
 		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.FuelCrewMod
 	end
 end
 --===============================================================================================--
