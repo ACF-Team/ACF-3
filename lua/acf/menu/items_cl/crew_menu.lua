@@ -14,6 +14,7 @@ local function CreateMenu(Menu)
 	local Instructions = Menu:AddCollapsible("General Instructions", false)
 	Instructions:AddLabel("Crews will be necessary for a well functioning vehichle. Place them in your vehichle for protection and parent them.")
 	Instructions:AddLabel("It is recommended to have a commander, driver, gunner, and loader in your vehichle.")
+	Instructions:AddLabel("Linking your seat (singular) to an acf_baseplate makes it immune to damage.")
 	Instructions:AddLabel("Please read the crew specific instructions and the stats below for more information.")
 
 	local EffFocusInfo = Menu:AddCollapsible("Efficy/Focus Info", false)
