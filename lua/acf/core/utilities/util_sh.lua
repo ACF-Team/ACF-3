@@ -937,20 +937,6 @@ do -- Reload related
 		return BaseTime * ReloadMod, true
 	end
 
-	--- Calculates the time it takes for a restock of a shell of a certain gun
-	--- @param Caliber number The caliber of the weapon
-	--- @param Class table Weapon class group
-	--- @param Weapon table Weapon class item
-	--- @param BulletData table Bullet data
-	--- @param Override table Override data, either from an entity or a table
-	function ACF.CalcReloadTimeStock(Caliber, Class, Weapon, BulletData, Override)
-		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
-		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
-
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * ReloadMod, true
-	end
-
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	function ACF.GetReloadEff(Crew, Gun, Ammo)
 		local D1 = Crew:GetPos():Distance(Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))) -- Breach relative to coordinate center?
