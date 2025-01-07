@@ -886,8 +886,11 @@ do -- Reload related
 		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		if Cyclic then return 60 / Cyclic, false end
 
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
+
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime, true
+		return BaseTime * ReloadMod, true
 	end
 
 	--- Calculates the time it takes for a gun to reload its magazine
@@ -901,6 +904,9 @@ do -- Reload related
 		-- Use the override if possible
 		local MagSize = Override and Override.MagSize
 
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
+
 		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
 		if not MagSize then
 			local Boxed = ACF.GetWeaponValue("IsBoxed", Caliber, Class, Weapon)
@@ -910,7 +916,7 @@ do -- Reload related
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime, true
+		return BaseTime * ReloadMod, true
 	end
 
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate

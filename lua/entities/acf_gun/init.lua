@@ -790,7 +790,7 @@ do -- Metamethods --------------------------------
 				ACF.ProgressTimer(
 					self,
 					function(cfg)
-						local eff = self:UpdateLoadMod()
+						local eff = Manual and self:UpdateLoadMod() or 1
 						if Manual then -- Automatics don't change their rate of fire
 							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
 							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))

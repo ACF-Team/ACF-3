@@ -167,10 +167,18 @@ do -- Random timer stuff
 		-- If specified, affect crew ergonomics based on space 
 		local SpaceInfo = self.CrewType.SpaceInfo
 		if SpaceInfo and self.ShouldScan then
-			self.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
-			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
-		else
-			self.SpaceEff = 1
+			if not self.ScanIndex then
+				-- If we haven't ran an initial scan, setup relevant information
+				self.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
+				self.ScanBox = Vector()
+				self.ScanHull = Vector(6, 6, 6)
+				self.ScanDisplacements, self.ScanLengths, self.ScanCount = GenerateScanSetup()
+				self.ScanIndex = 1
+				self.SpaceEff = iterScan(self, self.ScanCount)
+			else
+				-- Routine scan run in a loop
+				self.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
+			end
 			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
 		end
 
@@ -281,15 +289,7 @@ do
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
 
-		-- Initialize spatial scan with 
-		if Entity.CrewType.SpaceInfo then
-			Entity.ScanBoxBase = Entity:OBBMaxs() - Entity:OBBMins()
-			Entity.ScanBox = Vector()
-			Entity.ScanHull = Vector(6, 6, 6)
-			Entity.ScanDisplacements, Entity.ScanLengths, Entity.ScanCount = GenerateScanSetup()
-			Entity.ScanIndex = 1
-			Entity.SpaceEff = iterScan(Entity, Entity.ScanCount)
-		end
+
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 

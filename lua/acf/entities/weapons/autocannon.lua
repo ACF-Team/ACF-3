@@ -14,6 +14,7 @@ Weapons.Register("AC", {
 	Mass        = 1953, -- Relative to the model's volume
 	Spread      = 0.2,
 	ScaleFactor = 0.86, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	Round = {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
 		PropLength = 32.5, -- Relative to the Base caliber, in cm

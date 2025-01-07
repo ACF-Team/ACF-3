@@ -14,6 +14,7 @@ Weapons.Register("LAC", {
 	Mass        = 301,
 	Spread      = 0.48,
 	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	Round = {
 		MaxLength  = 32,
 		PropLength = 26,

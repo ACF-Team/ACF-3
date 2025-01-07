@@ -15,6 +15,7 @@ Weapons.Register("RAC", {
 	Mass        = 212,
 	Cyclic      = 2000,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,
