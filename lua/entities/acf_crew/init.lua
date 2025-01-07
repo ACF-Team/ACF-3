@@ -467,6 +467,7 @@ do
 					self:EmitSound(Sound, 70, 100, ACF.Volume)
 					self:Unlink(Link)
 					Link:Unlink(self)
+					ACF.SendNotify(self.Owner, false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
 				end
 			end
 		end

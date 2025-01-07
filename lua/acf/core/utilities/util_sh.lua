@@ -375,6 +375,16 @@ do -- Native type verification functions
 
 		return tostring(Value) or Default
 	end
+
+	--- Returns the entity representation of a value or a default of this type
+	--- @param Value Entity The input to be converted to an entity
+	--- @param Default Entity The default value if the input cannot be made into an entity
+	--- @return Entity # The entity result
+	function ACF.CheckEntity(Value, Default)
+		if Value == nil then return Default end
+
+		return IsValid(Value) and Value or Default
+	end
 end
 
 do -- Hitbox storing and retrieval functions

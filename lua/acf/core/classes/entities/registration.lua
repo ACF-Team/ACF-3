@@ -90,6 +90,12 @@ Entities.AddArgumentType("Number", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddArgumentType("Entity", function(Value, Specs)
+	if not isentity(Value) then Value = ACF.CheckEntity(Value, Specs.Default or NULL) end
+
+	return Value
+end)
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
