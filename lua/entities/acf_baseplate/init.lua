@@ -40,8 +40,11 @@ do
         This.Seat = Seat
 
         Seat._IsInvincible = true
-        hook.Add("PlayerShouldTakeDamage", "BaseplateSeatInvincibility" .. This:EntIndex(), function(ply, attacker)
-            if ply == Seat:GetDriver() then return false end -- Block damage if they're in the seat
+        hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex(), function(ply, veh, role)
+            if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
+        end)
+        hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. This:EntIndex(), function(ply, veh)
+            if veh == Seat then ply:GodDisable() end -- Block damage if they're in the seat
         end)
 
         return true, "Seat linked successfully"
@@ -52,12 +55,23 @@ do
             This.Seat = nil
 
             Seat._IsInvincible = false
-            hook.Remove("PlayerShouldTakeDamage", "BaseplateSeatInvincibility" .. This:EntIndex())
+            hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex())
+            hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. This:EntIndex())
+            This:CPPIGetOwner():GodDisable()
+
             return true, "Seat unlinked successfully"
         end
 
         return false, "This seat is not linked to this baseplate"
     end)
+
+    local Clock       = ACF.Utilities.Clock
+    function ENT:Think()
+        if IsValid(self) and IsValid(self.Seat) and self:GetContraption() ~= self.Seat:GetContraption() then self:Unlink(self.Seat) end
+
+        self:NextThink(Clock.CurTime + 0.5 + math.random())
+        return true
+    end
 end
 
 local Text = "Baseplate Size: %.1f x %.1f x %.1f"
