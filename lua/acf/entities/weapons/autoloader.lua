@@ -10,6 +10,7 @@ Weapons.Register("AL", {
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
 	IsAutomatic = true,
+	AutoReload  = true,
 	Mass        = 2985,
 	Spread      = 0.08,
 	MagSize     = 8,
@@ -26,6 +27,10 @@ Weapons.Register("AL", {
 		Base = 100,
 		Min  = 75,
 		Max  = 170,
+	},
+	MagReload = {
+		Min = 15,
+		Max = 35,
 	},
 	Cyclic = {
 		Min = 28,

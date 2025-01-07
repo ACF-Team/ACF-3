@@ -593,9 +593,7 @@ do
 			if crew.IsAlive then Alive = Alive + 1 end
 		end
 
-		if Alive == 0 then
-			self:CPPIGetOwner():Kill()
-		end
+		if Alive == 0 then self:CPPIGetOwner():Kill() end
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)

@@ -198,6 +198,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
+		Entity.AutoReload	= ACF.GetWeaponValue("AutoReload", Caliber, Class, Weapon) or false -- whether the weapon should passively restock its magazine (just drum loaders?)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
 		Entity.ReloadTime   = Entity.Cyclic and 60 / Entity.Cyclic or 1
@@ -830,6 +831,7 @@ do -- Metamethods --------------------------------
 		function ENT:Load()
 			if self.Disabled then return false end
 
+			-- Autoreloading doesn't load the entire mag... detour to restocking.
 			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
@@ -845,55 +847,60 @@ do -- Metamethods --------------------------------
 			end
 
 			self.BulletData = Crate.BulletData
-			self:SetState("Loading")
 
-			if self.MagReload then -- Mag-fed/Automatically loaded
-				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
+			if self.AutoReload then
+				if self.IsRestocking then return true end
+				if self.CurrentShot == self.MagSize then return true end
 
-				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-
-				self:UpdateLoadMod()
-				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+				self.IsRestocking = true
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = 1})
 				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-				print("Mag Reload: " .. Time)
 
-				self.NextFire = Clock.CurTime + Time
+				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				ACF.ProgressTimer(
 					self,
-					function(cfg) 
-						local eff = self:UpdateLoadMod()
-						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
-						return eff
+					function(cfg) return self:UpdateLoadMod() end,
+					function(cfg)
+						self.IsRestocking = false
+						self.CurrentShot = math.min(self.CurrentShot + 1, self.MagSize, self.TotalAmmo)
+						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+						if not self.NextFire then print("Chambering") self:Chamber() end -- Make sure there's a bullet at any one time
 					end,
-					function(cfg) self:Chamber() end,
 					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
-			else -- Single-shot/Manually loaded
-				self:Chamber()
+
+			else
+				self:SetState("Loading")
+				if self.MagReload then -- Mag-fed/Automatically loaded
+					Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
+
+					WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+
+					self:UpdateLoadMod()
+					local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+					Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+					print("Mag Reload: " .. Time)
+
+					self.NextFire = Clock.CurTime + Time
+
+					ACF.ProgressTimer(
+						self,
+						function(cfg)
+							local eff = self:UpdateLoadMod()
+							if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+							return eff
+						end,
+						function(cfg) self:Chamber() end,
+						{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+					)
+
+				else -- Single-shot/Manually loaded
+					self:Chamber()
+				end
 			end
 
 			return true
-		end
-
-		function ENT:Restock()
-			if self.Disabled then return end
-			if self.IsRestocking then return end
-
-			self.IsRestocking = true
-
-			local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
-			Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-
-			ACF.ProgressTimer(
-				self,
-				function(cfg) 
-					local eff = self:UpdateLoadMod()
-					return eff
-				end,
-				function(cfg) self:Chamber() end,
-				{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
-			)
 		end
 	end -----------------------------------------
 
@@ -1042,6 +1049,8 @@ do -- Metamethods --------------------------------
 					v:Restock()
 				end
 			end
+
+			if self.AutoReload then self:Load() end
 
 			self:NextThink(Clock.CurTime + 0.5 + math.random())
 
