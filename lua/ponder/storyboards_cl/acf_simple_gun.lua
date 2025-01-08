@@ -1,5 +1,6 @@
-local Storyboard = Ponder.API.NewStoryboard(language.GetPhrase("acf.storyboards.addon"), language.GetPhrase("acf.storyboards.weapons"), language.GetPhrase("acf.storyboard.weapons.simple_gun"))
-Storyboard:WithSpawnIcon("models/machinegun/machinegun_20mm.mdl")
+local Storyboard = Ponder.API.NewStoryboard("acf", "weapons", "simple-gun")
+Storyboard:WithName("acf.storyboard.weapons.simple_gun")
+Storyboard:WithModelIcon("models/machinegun/machinegun_20mm.mdl")
 Storyboard:WithDescription("#acf.storyboards.weapons.simple_gun.desc")
 
 local Chapter1 = Storyboard:Chapter("#acf.storyboards.weapons.simple_gun.chapter1")

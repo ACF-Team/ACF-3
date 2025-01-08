@@ -1,5 +1,6 @@
-local Storyboard = Ponder.API.NewStoryboard(language.GetPhrase("acf.storyboards.addon"), language.GetPhrase("acf.storyboards.turrets"), language.GetPhrase("acf.storyboards.turrets.turret_parenting"))
-Storyboard:WithSpawnIcon("models/acf/core/t_ring.mdl")
+local Storyboard = Ponder.API.NewStoryboard("acf", "turrets", "turret-parenting")
+Storyboard:WithName("acf.storyboard.weapons.simple_gun")
+Storyboard:WithModelIcon("models/acf/core/t_ring.mdl")
 Storyboard:WithDescription(language.GetPhrase("acf.storyboards.turrets.turret_parenting.desc"))
 
 local Chapter1 = Storyboard:Chapter()
