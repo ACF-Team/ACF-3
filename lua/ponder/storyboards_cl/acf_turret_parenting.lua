@@ -1,5 +1,5 @@
 local Storyboard = Ponder.API.NewStoryboard("acf", "turrets", "turret-parenting")
-Storyboard:WithName("acf.storyboard.weapons.simple_gun")
+Storyboard:WithName("acf.storyboard.turrets.turret_parenting")
 Storyboard:WithModelIcon("models/acf/core/t_ring.mdl")
 Storyboard:WithDescription(language.GetPhrase("acf.storyboards.turrets.turret_parenting.desc"))
 
