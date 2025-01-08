@@ -779,6 +779,7 @@ do -- Metamethods --------------------------------
 				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
 				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+				print("Chamber", Time, self.LoadCrewMod)
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
@@ -874,26 +875,6 @@ do -- Metamethods --------------------------------
 			end
 
 			return true
-		end
-
-		function ENT:Restock()
-			if self.Disabled then return end
-			if self.IsRestocking then return end
-
-			self.IsRestocking = true
-
-			local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
-			Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-
-			ACF.ProgressTimer(
-				self,
-				function(cfg) 
-					local eff = self:UpdateLoadMod()
-					return eff
-				end,
-				function(cfg) self:Chamber() end,
-				{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
-			)
 		end
 	end -----------------------------------------
 

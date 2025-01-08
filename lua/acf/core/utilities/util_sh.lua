@@ -929,7 +929,8 @@ do -- Reload related
 		if not MagSize then
 			local Boxed = ACF.GetWeaponValue("IsBoxed", Caliber, Class, Weapon)
 			local Belted = ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
-			MagSize = (Boxed or Belted) and ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+			-- MagSize = (Boxed or Belted) and ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+			MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 		end
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine

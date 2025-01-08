@@ -12,7 +12,7 @@ Weapons.Register("AL", {
 	IsAutomatic = true,
 	Mass        = 2985,
 	Spread      = 0.08,
-	MagSize     = 8,
+	MagSize     = 6,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 80,
@@ -32,8 +32,8 @@ Weapons.Register("AL", {
 		Max = 35,
 	},
 	Cyclic = {
-		Min = 28,
-		Max = 13,
+		Min = 15,
+		Max = 8,
 	},
 })
 
