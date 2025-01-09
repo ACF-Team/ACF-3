@@ -760,11 +760,7 @@ do -- Metamethods --------------------------------
 			)
 		end
 
-		Counter2 = 0
 		function ENT:Chamber()
-			-- Counter2 = Counter2 + 1
-			-- print("Chamber", Counter2)
-			print("Chamber")
 			if self.Disabled then return end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
