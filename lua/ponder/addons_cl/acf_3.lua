@@ -20,3 +20,10 @@ Ponder.API.RegisterAddonCategory("acf", "turrets", {
     ModelIcon = "models/acf/core/t_ring.mdl",
     Description = "acf.storyboards.turrets.desc"
 })
+
+Ponder.API.RegisterAddonCategory("acf", "mobility", {
+    Name = "acf.storyboards.mobility",
+    Order = 2,
+    ModelIcon = "models/props_phx/wheels/trucktire.mdl",
+    Description = "acf.storyboards.mobility.desc"
+})
