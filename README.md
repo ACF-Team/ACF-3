@@ -12,7 +12,8 @@ Armored Combat Framework (ACF) is an addon for Garry's Mod that implements a dam
 
 Ammunition is customizable with varying ballistic performance along with armor being customizable for protection against various threats. ACF is intended to be balanced for multiplayer and competitive use but there is, of course, nothing wrong with blasting some NPCs.
 
-![ACF Logo](acf-logo.png)
+![ACF Logo](acf-logo-light.png#gh-light-mode-only)
+![ACF Logo](acf-logo-dark.png#gh-dark-mode-only)
 
 ## Installation
 
