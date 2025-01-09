@@ -834,9 +834,8 @@ do -- Crew related
 
 			--Random step or finishing step, whichever is faster.
 			local timeleft = left and math.min(left, rand) or rand
-			-- print(timeleft, cfg.Elapsed)
 			-- If time left then recurse, otherwise call finish
-			if timeleft > 0 then
+			if timeleft > 0.001 then
 				timer.Simple(timeleft, realLoop)
 			else
 				if finish then finish(cfg) end
