@@ -683,31 +683,12 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
-		--- SOLELY to support guns functioning if they're do not share a contraption with ammo (idk for test rigs ig)
-		function ENT:FindNextCrateOld(Current, Check, ...)
-			if not next(self.Crates) then return end
-
-			-- Find the next available crate to pull ammo from --
-			local Select = next(self.Crates, self.CurrentCrate) or next(self.Crates)
-			local Start  = Select
-
-			repeat
-				if Check(Select, ...) then return Select end -- Return select
-
-				Select = next(self.Crates, Select) or next(self.Crates)
-			until
-				Select == Start
-		end
-
-		WhyDoesThisWork = 0
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
 		--- @param ... unknown Varargs passed to the check function after the crew entity
 		--- @return any # The next crate that matches the check function or nil if none are found
 		function ENT:FindNextCrate(Current, Check, ...)
-			WhyDoesThisWork = WhyDoesThisWork + 1
-			print("FindNextCrate", WhyDoesThisWork)
 			if not next(self.Crates) then return end
 
 			-- If the current crate is still satisfactory, why bother searching?
@@ -718,7 +699,7 @@ do -- Metamethods --------------------------------
 
 			-- This is not performant... but people may be unhappy if I don't do this
 			if not crate then
-				crate = self:FindNextCrateOld(Current, Check, ...)
+				crate = next(self.Crates)
 			end
 
 			return crate
