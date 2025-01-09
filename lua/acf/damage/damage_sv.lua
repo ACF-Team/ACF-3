@@ -220,7 +220,7 @@ function Damage.doPropDamage(Entity, DmgResult)
 		EntACF.Health = NewHealth
 		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
-		Damage.Network(Entity, _, NewHealth, MaxHealth)
+		Damage.Network(Entity, nil, NewHealth, MaxHealth)
 	end
 
 	return HitRes
