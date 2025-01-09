@@ -699,23 +699,19 @@ do -- Metamethods --------------------------------
 				Select == Start
 		end
 
+		WhyDoesThisWork = 0
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
 		--- @param ... unknown Varargs passed to the check function after the crew entity
 		--- @return any # The next crate that matches the check function or nil if none are found
 		function ENT:FindNextCrate(Current, Check, ...)
+			WhyDoesThisWork = WhyDoesThisWork + 1
+			print("FindNextCrate", WhyDoesThisWork)
 			if not next(self.Crates) then return end
 
 			-- If the current crate is still satisfactory, why bother searching?
 			if Current and Check(Current, ...) then return Current end
-
-			-- If the current crate is in the first stage and is valid, iterate to the next crate in the first stage
-			-- If you're quirked up and use mixed belts...
-			if self.FirstStage[self.CurrentCrate] then
-				local Next = next(self.FirstStage, self.CurrentCrate)
-				if Next and Check(Next, ...) then return Next end
-			end
 
 			-- Search crates by their stage level
 			local crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
@@ -764,10 +760,15 @@ do -- Metamethods --------------------------------
 			)
 		end
 
+		Counter2 = 0
 		function ENT:Chamber()
+			-- Counter2 = Counter2 + 1
+			-- print("Chamber", Counter2)
+			print("Chamber")
 			if self.Disabled then return end
 
-			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
+			-- print("Chambering: ", Crate)
 
 			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
@@ -788,6 +789,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
+				
 				ACF.ProgressTimer(
 					self,
 					function(cfg)
@@ -831,7 +833,7 @@ do -- Metamethods --------------------------------
 		function ENT:Load()
 			if self.Disabled then return false end
 
-			local Crate = self:FindNextCrate(nil, CheckConsumable, self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
