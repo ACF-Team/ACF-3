@@ -15,7 +15,7 @@ local function SendQueue(Target)
 			net.WriteUInt(Entity:EntIndex(), 13)
 			net.WriteUInt(Percent * 100, 7)
 
-			if Target then
+			if isentity(Target) and IsValid(Target) then
 				net.Send(Target)
 			else
 				net.Broadcast()

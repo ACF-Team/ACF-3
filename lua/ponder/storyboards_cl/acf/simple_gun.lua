@@ -1,5 +1,5 @@
 local Storyboard = Ponder.API.NewStoryboard("acf", "weapons", "simple-gun")
-Storyboard:WithName("acf.storyboard.weapons.simple_gun")
+Storyboard:WithName("acf.storyboards.weapons.simple_gun")
 Storyboard:WithModelIcon("models/machinegun/machinegun_20mm.mdl")
 Storyboard:WithDescription("#acf.storyboards.weapons.simple_gun.desc")
 
