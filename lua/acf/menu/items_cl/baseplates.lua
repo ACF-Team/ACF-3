@@ -1,6 +1,6 @@
-local ACF        = ACF
+local ACF = ACF
 
-local gridMaterial = CreateMaterial("acf_bp_vis_grid1", "VertexLitGeneric", {
+local GridMaterial = CreateMaterial("acf_bp_vis_grid1", "VertexLitGeneric", {
 	["$basetexture"] = "hunter/myplastic",
 	["$model"] = 1,
 	["$translucent"] = 1,
@@ -14,22 +14,24 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("Baseplate Settings")
-
 	Menu:AddLabel("The root entity of all ACF contraptions.")
+
+	local SizeX         = Menu:AddSlider("Plate Width (gmu)", 36, 96, 2)
+	local SizeY         = Menu:AddSlider("Plate Length (gmu)", 36, 420, 2)
+	local SizeZ         = Menu:AddSlider("Plate Thickness (gmu)", 0.5, 3, 2)
+
 	local BaseplateBase = Menu:AddCollapsible("Baseplate Information")
-	local SizeX     = BaseplateBase:AddSlider("Plate Width (gmu)", 36, 96, 2)
-	local SizeY     = BaseplateBase:AddSlider("Plate Length (gmu)", 36, 420, 2)
-	local SizeZ     = BaseplateBase:AddSlider("Plate Thickness (gmu)", 0.5, 3, 2)
+	BaseplateBase:AddLabel("Comparing the current dimensions with a 105mm Howitzer:")
 
-	Menu:AddLabel("Comparing the current dimensions with a 105mm Howitzer:")
-	local Vis       = Menu:AddModelPreview("models/howitzer/howitzer_105mm.mdl", true)
+	local Vis = BaseplateBase:AddModelPreview("models/howitzer/howitzer_105mm.mdl", true)
 	Vis:SetSize(30, 300)
-	function Vis:PreDrawModel(_)
-		local w, h, t = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
-		self.CamDistance = math.max(w, h, 60) * 1
 
-		render.SetMaterial(gridMaterial)
-		render.DrawBox(vector_origin, angle_zero, Vector(-h / 2, -w / 2, -t / 2), Vector(h / 2, w / 2, t / 2), color_white)
+	function Vis:PreDrawModel(_)
+		local W, H, T = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
+		self.CamDistance = math.max(W, H, 60) * 1
+
+		render.SetMaterial(GridMaterial)
+		render.DrawBox(vector_origin, angle_zero, Vector(-H / 2, -W / 2, -T / 2), Vector(H / 2, W / 2, T / 2), color_white)
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")
@@ -59,7 +61,7 @@ local function CreateMenu(Menu)
 		return Z
 	end)
 
-	Menu:AddLabel("You can right click on an entity to replace an existing entity with an ACF Baseplate. " ..
+	BaseplateBase:AddLabel("You can right click on an entity to replace an existing entity with an ACF Baseplate. " ..
 		"This will, to the best of its abilities (given you're using a cubical prop, with the long side facing forwards, ex. a SProps plate), replace the entity you're looking at with " ..
 		"a new ACF baseplate.\n\nIt works by taking an Advanced Duplicator 2 copy of the entire contraption from the target entity, replacing the target entity " ..
 		"in the dupe's class to acf_baseplate, setting the size based off the physical size of the target entity, then removing all entities and re-pasting the dupe. " ..
