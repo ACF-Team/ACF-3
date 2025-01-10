@@ -41,7 +41,6 @@ do
 		This.Seat = Seat
 
 		Seat._IsInvisible = true
-		print(Seat._IsInvisible)
 		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex(), function(ply, veh, role)
 			if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
 		end)

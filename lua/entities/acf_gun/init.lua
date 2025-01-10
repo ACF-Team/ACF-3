@@ -995,12 +995,12 @@ do -- Metamethods --------------------------------
 			end
 
 			-- for each crate in the first stage, if it's restockable, restock it
-			-- self.FirstStage = ACF.FindFirstStage(self:GetContraption())
-			-- for v, _ in pairs(self.FirstStage) do
-			-- 	if CheckRestockable(v, self) then
-			-- 		v:Restock()
-			-- 	end
-			-- end
+			self.FirstStage = ACF.FindFirstStage(self:GetContraption())
+			for v, _ in pairs(self.FirstStage) do
+				if CheckRestockable(v, self) then
+					v:Restock()
+				end
+			end
 
 			self:NextThink(Clock.CurTime + 0.5 + math.random())
 
