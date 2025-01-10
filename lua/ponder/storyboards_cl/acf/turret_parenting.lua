@@ -93,5 +93,3 @@ Chapter2:AddInstruction("TransformModel", {Target = "TurretRing", Rotation = Ang
 Chapter2:AddInstruction("TransformModel", {Target = "TurretTrun", Rotation = Angle(-25, 0, 0), Length = 0.75})
 
 Chapter2:AddInstruction("HideText",    {Name = "ExplainGun", Time = 1})
-Chapter2:AddInstruction("RemoveModel", {Name = "Gun", Time = 1})
-Chapter2:AddInstruction("RemoveModel", {Name = "TurretTrun", Time = 1})
