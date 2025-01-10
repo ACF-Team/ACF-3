@@ -40,7 +40,8 @@ do
 
 		This.Seat = Seat
 
-		Seat._IsInvincible = true
+		Seat._IsInvisible = true
+		print(Seat._IsInvisible)
 		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex(), function(ply, veh, role)
 			if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
 		end)
@@ -55,7 +56,7 @@ do
 		if This.Seat then
 			This.Seat = nil
 
-			Seat._IsInvincible = false
+			Seat._IsInvisible = false
 			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex())
 			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. This:EntIndex())
 			This:CPPIGetOwner():GodDisable()

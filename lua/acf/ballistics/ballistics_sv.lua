@@ -205,7 +205,7 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
 
-	if Entity._IsInvincible then return false end -- For ACF baseplate linked seat invincibility
+	if Entity._IsInvisible then return false end -- For ACF baseplate linked seat invisibility
 	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
 
 	return true
