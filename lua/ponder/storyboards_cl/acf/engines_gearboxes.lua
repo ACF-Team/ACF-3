@@ -320,7 +320,7 @@ Chapter5:AddInstruction("ShowText", {
     Time = 0,
     ParentTo = "Button"
 })
-Chapter5:AddInstruction("HideToolgun", {Time = 5.5})
-Chapter5:AddInstruction("PlaySound", {Time = 6.5, Sound = "acf_base/engines/v8_petrolsmall.wav", Length = 4})
-Chapter5:AddInstruction("TransformModel", {Time = 6.5, Target = "Wheel", Rotation = Angle(7000, 0, 0), Length = 4})
-Chapter5:AddInstruction("HideText", {Name = "ExplainWiring7", Time = 8.5})
+Chapter5:AddInstruction("HideToolgun", {Time = 2.5})
+Chapter5:AddInstruction("PlaySound", {Time = 3.5, Sound = "acf_base/engines/v8_petrolsmall.wav", Length = 4, Volume = 0.75})
+Chapter5:AddInstruction("TransformModel", {Time = 3.5, Target = "Wheel", Rotation = Angle(7000, 0, 0), Length = 4})
+Chapter5:AddInstruction("HideText", {Name = "ExplainWiring7", Time = 7.5})
