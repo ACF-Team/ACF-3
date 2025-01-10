@@ -553,11 +553,7 @@ do -- Metamethods --------------------------------
 			return TraceRes.HitPos
 		end
 
-		local CanFireCount = 0
 		function ENT:CanFire()
-			CanFireCount = CanFireCount + 1
-			print("CanFire", CanFireCount)
-			file.Append("testlog.txt", "CanFire\n")
 			if not ACF.GunsCanFire then return false end -- Disabled by the server
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
@@ -603,7 +599,6 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Shoot()
-			file.Append("testlog.txt", "shoot1\n")
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
@@ -620,7 +615,6 @@ do -- Metamethods --------------------------------
 				self.Fuze = nil
 			end
 
-			file.Append("testlog.txt", "shoot2\n")
 			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 
 			BulletData.Owner  = self.CurrentUser
@@ -630,7 +624,6 @@ do -- Metamethods --------------------------------
 			BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			BulletData.Filter = self.BarrelFilter
 
-			file.Append("testlog.txt", "shoot3\n")
 			AmmoType:Create(self, BulletData) -- Spawn projectile
 
 			self:MuzzleEffect()
@@ -638,17 +631,14 @@ do -- Metamethods --------------------------------
 
 			local Energy = ACF.Kinetic(BulletData.MuzzleVel * 39.37, BulletData.ProjMass).Kinetic
 
-			file.Append("testlog.txt", "shoot4\n")
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
 				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, BulletData.Owner, self, self:GetForward(), 30)
 			end
 
 			if self.MagSize then -- Mag-fed/Automatically loaded
-				file.Append("testlog.txt", "shoot5\n")
 				self.CurrentShot = self.CurrentShot - 1
 
 				if self.CurrentShot > 0 then -- Not empty
-					file.Append("testlog.txt", "shoot6\n")
 					self:Chamber()
 				else -- Reload the magazine
 					self:Load()
@@ -693,16 +683,12 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
-		local FindNextCrateCounter = 0
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
 		--- @param ... unknown Varargs passed to the check function after the crew entity
 		--- @return any # The next crate that matches the check function or nil if none are found
 		function ENT:FindNextCrate(Current, Check, ...)
-			FindNextCrateCounter = FindNextCrateCounter + 1
-			print("FindNextCrate", FindNextCrateCounter)
-			file.Append("testlog.txt", "findnextcrate\n")
 			if not next(self.Crates) then return end
 
 			-- If the current crate is still satisfactory, why bother searching?
@@ -759,7 +745,6 @@ do -- Metamethods --------------------------------
 			if self.Disabled then return end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
-			file.Append("testlog.txt", "chamber1\n")
 
 			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
@@ -772,7 +757,6 @@ do -- Metamethods --------------------------------
 				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
 				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 				print("Chamber", Time, self.LoadCrewMod)
-				file.Append("testlog.txt", "chamber2\n")
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
@@ -781,13 +765,10 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				local timestamp = CurTime()
 				ACF.ProgressTimer(
 					self,
 					function(cfg)
 						local eff = Manual and self:UpdateLoadMod() or 1
-						print("Manual, self", Manual, self)
-						file.Append("testlog.txt", "chamber4 -> " .. timestamp .. " | " .. cfg.DeltaTime .. "|" .. CurTime() .. "\n")
 						if Manual then -- Automatics don't change their rate of fire
 							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
 							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
@@ -795,29 +776,24 @@ do -- Metamethods --------------------------------
 						return eff
 					end,
 					function(cfg)
-						file.Append("testlog.txt", "chamber5\n")
 						if IsValid(self) and self.BulletData then
-							file.Append("testlog.txt", "chamber6\n")
 							if self.CurrentShot == 0 then
 								self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
 							end
 
 							self.NextFire = nil
 
-							file.Append("testlog.txt", "chamber7\n")
 							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 							WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
 							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
 
 							self:SetState("Loaded")
-							file.Append("testlog.txt", "chamber8\n")
 
 							if self:CanFire() then self:Shoot() end
 						end
 					end,
 					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
-				file.Append("testlog.txt", "chamber3\n")
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
 

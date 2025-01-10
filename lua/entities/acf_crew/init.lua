@@ -17,6 +17,11 @@ lua/acf/entities/acf_crew/shared.lua			(SH crew code)
 lua/entities/acf_gun/init.lua					(Gunner/loader/commander interaction with guns)
 lua/entities/acf_ammo/init.lua					(Loader interaction with ammo for restocking)
 lua/entities/acf_engine/init.lua				(Driver interaction with engines)
+
+Note on common contraption checks:
+When checks that verify two entities are a part of the same contraption have a vacuous case.
+If both entities don't have a contraption (aren't linked) then the check passes. 
+This is for normal building QOL and since CFW doesn't have a notion of when a contraption is "finished" being built.
 ]]--
 
 AddCSLuaFile("cl_init.lua")
@@ -593,7 +598,8 @@ do
 			if crew.IsAlive then Alive = Alive + 1 end
 		end
 
-		if Alive == 0 then
+		-- Crew death at 1 left
+		if Alive <= 1 then
 			self:CPPIGetOwner():Kill()
 		end
 	end
