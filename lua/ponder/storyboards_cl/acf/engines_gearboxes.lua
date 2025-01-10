@@ -321,6 +321,6 @@ Chapter5:AddInstruction("ShowText", {
     ParentTo = "Button"
 })
 Chapter5:AddInstruction("HideToolgun", {Time = 5.5})
-Chapter5:AddInstruction("PlaySound3D", {Time = 6.5, Sound = "acf_base/engines/v8_petrolsmall.wav", Target = "Wheel", Length = 4})
+Chapter5:AddInstruction("PlaySound", {Time = 6.5, Sound = "acf_base/engines/v8_petrolsmall.wav", Length = 4})
 Chapter5:AddInstruction("TransformModel", {Time = 6.5, Target = "Wheel", Rotation = Angle(7000, 0, 0), Length = 4})
 Chapter5:AddInstruction("HideText", {Name = "ExplainWiring7", Time = 8.5})

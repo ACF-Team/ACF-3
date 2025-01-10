@@ -142,5 +142,5 @@ Chapter3:AddInstruction("ShowText", {
 })
 Chapter3:AddInstruction("HideToolgun", {Time = 5.5})
 Chapter3:AddInstruction("SetSequence", {Time = 6.5, Name = "Gun", Sequence = "shoot"})
-Chapter3:AddInstruction("PlaySound2D", {Time = 6.5, Sound = "acf_base/weapons/cannon_new.mp3"})
+Chapter3:AddInstruction("PlaySound", {Time = 6.5, Sound = "acf_base/weapons/cannon_new.mp3"})
 Chapter3:AddInstruction("HideText", {Name = "ExplainWiring5", Time = 9})
