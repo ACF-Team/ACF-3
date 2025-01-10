@@ -1,5 +1,5 @@
+-- NOTE: Make sure that all hooks obey the naming convention "ACF_[Pre/On/Post][ACTION][ACTOR]"!
 local Hooks = ACF.Utilities.Hooks
-
 
 Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- Called when the player has properly loaded onto the server.  

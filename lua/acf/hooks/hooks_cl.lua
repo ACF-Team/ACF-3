@@ -1,5 +1,5 @@
+-- NOTE: Make sure that all hooks obey the naming convention "ACF_[Pre/On/Post][ACTION][ACTOR]"!
 local Hooks = ACF.Utilities.Hooks
-
 
 Hooks.Add("ACF_Base_Client", function(Gamemode)
 	--- Called when the information about a repository is received and updated.

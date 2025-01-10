@@ -1,5 +1,5 @@
+-- NOTE: Make sure that all hooks obey the naming convention "ACF_[Pre/On/Post][ACTION][ACTOR]"!
 local Hooks = ACF.Utilities.Hooks
-
 
 Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	--- Called when ACF is loaded and every time it's reloaded with the acf_reload console command.
@@ -102,5 +102,9 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	--- @return string? # A new name for the effect to be created with.
 	--- @return table? # A new table of effect attributes for the effect to be created with.
 	function Gamemode:ACF_PreCreateEffect()
+	end
+
+	--- Called after all persisted data variables have been loaded.
+	function Gamemode:ACF_OnLoadPersistedData()
 	end
 end)
