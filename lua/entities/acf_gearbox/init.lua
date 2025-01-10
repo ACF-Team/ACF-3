@@ -17,7 +17,7 @@ local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
 local max         = math.max
-local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+local MaxDistance = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()

@@ -15,7 +15,7 @@ local function SendQueue(Target)
 			net.WriteUInt(Entity:EntIndex(), 13)
 			net.WriteUInt(Percent * 100, 7)
 
-			if Target then
+			if isentity(Target) and IsValid(Target) then
 				net.Send(Target)
 			else
 				net.Broadcast()
@@ -220,7 +220,7 @@ function Damage.doPropDamage(Entity, DmgResult)
 		EntACF.Health = NewHealth
 		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
-		Damage.Network(Entity, _, NewHealth, MaxHealth)
+		Damage.Network(Entity, nil, NewHealth, MaxHealth)
 	end
 
 	return HitRes

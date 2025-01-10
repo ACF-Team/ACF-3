@@ -71,6 +71,23 @@ hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key
 	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
 end)
 
+function TOOL:CheckForReload()
+	local isFirstTimePredicted = IsFirstTimePredicted()
+	if not isFirstTimePredicted then return end
+
+	local Player = self:GetOwner()
+	if Player:KeyPressed(IN_RELOAD) then
+		local Trace = Player:GetEyeTrace()
+
+		local ran = self:GetContraptionReadout(Trace)
+		if ran then
+			-- Get tool entity
+			local Weapon = self.Weapon
+			Weapon:DoShootEffect( Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, isFirstTimePredicted )
+		end
+	end
+end
+
 if CLIENT then
 	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
 	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility")
@@ -311,10 +328,16 @@ if CLIENT then
 		render.DrawSphere(Pos, Value, 20, 20, GreenSphere)
 		render.DrawWireframeSphere(Pos, Value, 20, 20, GreenFrame, true)
 	end)
+
+	function TOOL:Think()
+		self:CheckForReload()
+	end
 else -- Serverside-only stuff
 	function TOOL:Think()
 		local Player = self:GetOwner()
 		local Ent = Player:GetEyeTrace().Entity
+
+		self:CheckForReload()
 
 		if Ent == self.AimEntity then return end
 
@@ -375,18 +398,6 @@ else -- Serverside-only stuff
 
 		UpdateArmor(_, Entity, { Thickness = Thickness, Ductility = Ductility * 100 })
 	end)
-end
-
-do -- Allowing everyone to read contraptions
-	local HookCall = hook.Call
-
-	function hook.Call(Name, Gamemode, Player, Entity, Tool, ...)
-		if Name == "CanTool" and Tool == "acfarmorprop" and Player:KeyPressed(IN_RELOAD) then
-			return true
-		end
-
-		return HookCall(Name, Gamemode, Player, Entity, Tool, ...)
-	end
 end
 
 -- Apply settings to prop
@@ -552,7 +563,7 @@ do -- Armor readout
 	end
 
 	-- Total up mass of constrained ents
-	function TOOL:Reload(Trace)
+	function TOOL:GetContraptionReadout(Trace)
 		local Mode = GetReadoutMode(self)
 
 		if not Mode.CanCheck(self, Trace) then return false end

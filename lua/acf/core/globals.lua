@@ -1,62 +1,63 @@
 local ACF = ACF
 
 do -- ACF global vars
-	ACF.AmmoCrates         = ACF.AmmoCrates or {}
-	ACF.FuelTanks          = ACF.FuelTanks or {}
-	ACF.Repositories       = ACF.Repositories or {}
-	ACF.ClientData         = ACF.ClientData or {}
-	ACF.ServerData         = ACF.ServerData or {}
-	ACF.ModelData          = ACF.ModelData or { Models = {} }
+	ACF.AmmoCrates           = ACF.AmmoCrates or {}
+	ACF.FuelTanks            = ACF.FuelTanks or {}
+	ACF.Repositories         = ACF.Repositories or {}
+	ACF.ClientData           = ACF.ClientData or {}
+	ACF.ServerData           = ACF.ServerData or {}
+	ACF.ModelData            = ACF.ModelData or { Models = {} }
 
 	-- General Settings
-	ACF.LegalChecks        = true -- Whether or not IsLegal checks should be run on ACF entities
-	ACF.NameAndShame       = false -- Whether or not IsLegal checks should message everyone* about ACF entities getting disabled
-	ACF.VehicleLegalChecks = true -- Whether or not IsLegal checks should be run on vehicle entities
-	ACF.Year               = 1945
-	ACF.IllegalDisableTime = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
-	ACF.RestrictInfo       = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
-	ACF.AllowAdminData     = false -- Allows admins to mess with a few server settings and data variables
-	ACF.HEPush             = true -- Whether or not HE pushes on entities
-	ACF.KEPush             = true -- Whether or not kinetic force pushes on entities
-	ACF.RecoilPush         = true -- Whether or not ACF guns apply recoil
-	ACF.Volume             = 1 -- Global volume for ACF sounds
-	ACF.AllowFunEnts       = true -- Allows entities listed under the Fun Stuff option to be used
-	ACF.AllowProcArmor     = false --Allows procedural armor entities to be used.
-	ACF.WorkshopContent    = true -- Enable workshop content download for clients
-	ACF.WorkshopExtras     = false -- Enable extra workshop content download for clients
-	ACF.SmokeWind          = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
-	ACF.LinkDistance       = 650 -- Maximum distance, on inches, at which components will remain linked with each other
-	ACF.MinimumArmor       = 1 -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor       = 5000 -- Maximum possible armor that can be given to an entity
-	ACF.KillIconColor      = Color(200, 200, 48)
+	ACF.LegalChecks          = true -- Whether or not IsLegal checks should be run on ACF entities
+	ACF.NameAndShame         = false -- Whether or not IsLegal checks should message everyone* about ACF entities getting disabled
+	ACF.VehicleLegalChecks   = true -- Whether or not IsLegal checks should be run on vehicle entities
+	ACF.Year                 = 1945
+	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
+	ACF.RestrictInfo         = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
+	ACF.AllowAdminData       = false -- Allows admins to mess with a few server settings and data variables
+	ACF.HEPush               = true -- Whether or not HE pushes on entities
+	ACF.KEPush               = true -- Whether or not kinetic force pushes on entities
+	ACF.RecoilPush           = true -- Whether or not ACF guns apply recoil
+	ACF.Volume               = 1 -- Global volume for ACF sounds
+	ACF.AllowFunEnts         = true -- Allows entities listed under the Fun Stuff option to be used
+	ACF.AllowProcArmor       = false --Allows procedural armor entities to be used.
+	ACF.WorkshopContent      = true -- Enable workshop content download for clients
+	ACF.WorkshopExtras       = false -- Enable extra workshop content download for clients
+	ACF.SmokeWind            = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
+	ACF.MobilityLinkDistance = 325 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
+	ACF.LinkDistance         = 200 -- Maximum distance, in inches, at which components will remain linked with each other
+	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
+	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.KillIconColor        = Color(200, 200, 48)
 
-	ACF.GunsCanFire        = true
-	ACF.GunsCanSmoke       = true
-	ACF.RacksCanFire       = true
+	ACF.GunsCanFire          = true
+	ACF.GunsCanSmoke         = true
+	ACF.RacksCanFire         = true
 
 	-- Unit Conversion
-	ACF.MeterToInch        = 39.3701 -- Meters to inches
-	ACF.gCmToKgIn          = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
-	ACF.MmToInch		   = 0.0393701 -- Millimeters to inches
-	ACF.InchToMm           = 25.4 -- Inches to millimeters
-	ACF.InchToCmSq		   = 6.45 -- in² to cm²
+	ACF.MeterToInch          = 39.3701 -- Meters to inches
+	ACF.gCmToKgIn            = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
+	ACF.MmToInch		     = 0.0393701 -- Millimeters to inches
+	ACF.InchToMm             = 25.4 -- Inches to millimeters
+	ACF.InchToCmSq		     = 6.45 -- in² to cm²
 
 	-- Fuzes
-	ACF.MinFuzeCaliber     = 20 -- Minimum caliber in millimeters that can be fuzed
+	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
-	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.2 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.BaseReload           = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.MassToTime           = 0.2 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime         = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
-	ACF.DragDiv            = 80 --Drag fudge factor
-	ACF.Scale              = 1 --Scale factor for ACF in the game world
-	ACF.HealthFactor       = 1
-	ACF.Threshold          = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
-	ACF.ArmorMod           = 1
-	ACF.ArmorFactor        = 1 -- Multiplier for ACF.ArmorMod
-	ACF.Gravity            = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
+	ACF.DragDiv              = 80 --Drag fudge factor
+	ACF.Scale                = 1 --Scale factor for ACF in the game world
+	ACF.HealthFactor         = 1
+	ACF.Threshold            = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
+	ACF.ArmorMod             = 1
+	ACF.ArmorFactor          = 1 -- Multiplier for ACF.ArmorMod
+	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
 		acf_debris = true,
@@ -69,50 +70,51 @@ do -- ACF global vars
 		npc_dog = true,
 		phys_bone_follower = true,
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
+		starfall_prop = true
 	}
 
 	-- Ammo
-	ACF.AmmoArmor          = 5 -- How many millimeters of armor ammo crates have
-	ACF.AmmoPadding        = 0.3 -- Ratio of wasted space to projectile case diameter
-	ACF.AmmoCaseScale      = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
-	ACF.AmmoMinSize        = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
-	ACF.AmmoMaxSize        = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
-	ACF.AmmoRefillColor    = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
-	ACF.PropImpetus        = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
-	ACF.PDensity           = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.AmmoArmor            = 5 -- How many millimeters of armor ammo crates have
+	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
+	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
+	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoMaxSize          = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoRefillColor      = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
+	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
+	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
 	-- HE
-	ACF.HEPower            = 8000 --HE Filler power per KG in KJ
-	ACF.HEDensity          = 1.65e-3 -- Density of TNT in kg/cm3
-	ACF.HEFrag             = 1000 --Mean fragment number for equal weight TNT and casing
+	ACF.HEPower              = 8000 --HE Filler power per KG in KJ
+	ACF.HEDensity            = 1.65e-3 -- Density of TNT in kg/cm3
+	ACF.HEFrag               = 1000 --Mean fragment number for equal weight TNT and casing
 
 	-- HEAT
-	ACF.TNTPower           = 4184    -- J/g
-	ACF.CompBDensity       = 1.72e-3 -- kg/cm^3
-	ACF.CompBEquivalent    = 1.33    -- Relative to TNT
-	ACF.OctolDensity       = 1.83e-3 -- kg/cm^3
-	ACF.OctolEquivalent    = 1.54    -- Relative to TNT
-	ACF.HEATEfficiency     = 0.5     -- Efficiency of converting explosive energy to velocity
-	ACF.LinerThicknessMult = 0.04   -- Metal liner thickness multiplier
-	ACF.MaxChargeHeadLen   = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
-	ACF.HEATPenMul         = 0.85 * 8    -- Linear jet penetration multiplier
-	ACF.HEATMinPenVel      = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATCavityMul      = 1.2     -- Size of the penetration cavity in penetrator volume expended
-	ACF.HEATSpallingArc    = 0.5     -- Cossine of the HEAT spalling angle
-	ACF.HEATBoomConvert    = 1 / 3   -- Percentage of filler that creates HE damage at detonation
-	ACF.HEATStandOffMul = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
-	ACF.HEATBreakUpMul = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
+	ACF.TNTPower             = 4184    -- J/g
+	ACF.CompBDensity         = 1.72e-3 -- kg/cm^3
+	ACF.CompBEquivalent      = 1.33    -- Relative to TNT
+	ACF.OctolDensity         = 1.83e-3 -- kg/cm^3
+	ACF.OctolEquivalent      = 1.54    -- Relative to TNT
+	ACF.HEATEfficiency       = 0.5     -- Efficiency of converting explosive energy to velocity
+	ACF.LinerThicknessMult   = 0.04   -- Metal liner thickness multiplier
+	ACF.MaxChargeHeadLen     = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
+	ACF.HEATPenMul           = 0.85 * 8    -- Linear jet penetration multiplier
+	ACF.HEATMinPenVel        = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
+	ACF.HEATCavityMul        = 1.2     -- Size of the penetration cavity in penetrator volume expended
+	ACF.HEATSpallingArc      = 0.5     -- Cossine of the HEAT spalling angle
+	ACF.HEATBoomConvert      = 1 / 3   -- Percentage of filler that creates HE damage at detonation
+	ACF.HEATStandOffMul      = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
+	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
 
 	-- Material densities
-	ACF.SteelDensity       = 7.9e-3  -- kg/cm^3
-	ACF.RHADensity         = 7.84e-3 -- kg/cm^3
-	ACF.AluminumDensity    = 2.7e-3  -- kg/cm^3
-	ACF.CopperDensity      = 8.96e-3 -- kg/cm^3
+	ACF.SteelDensity         = 7.9e-3  -- kg/cm^3
+	ACF.RHADensity           = 7.84e-3 -- kg/cm^3
+	ACF.AluminumDensity      = 2.7e-3  -- kg/cm^3
+	ACF.CopperDensity        = 8.96e-3 -- kg/cm^3
 
 	-- Debris
-	ACF.ChildDebris        = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
-	ACF.DebrisIgniteChance = 0.25
-	ACF.ValidDebris        = { -- Whitelist for things that can be turned into debris
+	ACF.ChildDebris          = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
+	ACF.DebrisIgniteChance   = 0.25
+	ACF.ValidDebris          = { -- Whitelist for things that can be turned into debris
 		acf_ammo = true,
 		acf_gun = true,
 		acf_gearbox = true,
@@ -123,23 +125,23 @@ do -- ACF global vars
 	}
 
 	-- Weapon Accuracy
-	ACF.SpreadScale        = 4 -- The maximum amount that damage can decrease a gun"s accuracy. Default 4x
-	ACF.GunInaccuracyScale = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
-	ACF.GunInaccuracyBias  = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
+	ACF.SpreadScale          = 4 -- The maximum amount that damage can decrease a gun"s accuracy. Default 4x
+	ACF.GunInaccuracyScale   = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
+	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
-	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate           = 15 -- Multiplier for fuel usage, 1.0 is approx real world
-	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
-	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
-	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
-	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
-	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
-	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+	ACF.RequireFuel          = true -- Whether or not fuel usage should be required for engines
+	ACF.FuelRate             = 15 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelFactor           = 1 -- Multiplier for ACF.FuelRate
+	ACF.FuelMinSize          = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelMaxSize          = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelArmor            = 1 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor      = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
+	ACF.TankVolumeMul        = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.LiIonED              = 0.458 -- li-ion energy density: kw hours / liter
+	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
+	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
+	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
 end
 
 do -- ACF Convars & Particles
