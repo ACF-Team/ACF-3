@@ -5,14 +5,16 @@ Storyboard:WithDescription(language.GetPhrase("acf.storyboards.turrets.turret_pa
 
 local Chapter1 = Storyboard:Chapter()
 Chapter1:AddInstruction("PlaceModel", {
-    Name  = "TurretRing",
+    Name = "TurretRing",
+    IdentifyAs = "acf_turret",
     Model = "models/acf/core/t_ring.mdl",
     Position = Vector(0, 0, 10),
     ComeFrom = Vector(0, 0, 32)
 })
 Chapter1:AddInstruction("Delay", {Length = 0.5})
 Chapter1:AddInstruction("PlaceModel", {
-    Name  = "TurretTrun",
+    Name = "TurretTrun",
+    IdentifyAs = "acf_turret",
     Model = "models/acf/core/t_trun.mdl",
     Position = Vector(0, 20, 48),
     ComeFrom = Vector(0, 0, 32),
@@ -59,7 +61,8 @@ local Chapter2 = Storyboard:Chapter()
 Chapter2:AddInstruction("MoveCameraLookAt", {Time = 0, Length = 1.6, Target = Vector(70, 0, 36), Angle = 30, Distance = 1700, Height = 250})
 Chapter2:AddInstruction("Delay", {Length = 0.3})
 Chapter2:AddInstruction("PlaceModel", {
-    Name  = "Gun",
+    Name = "Gun",
+    IdentifyAs = "acf_gun",
     Model = "models/tankgun_new/tankgun_100mm.mdl",
     Position = Vector(0, 0, 48),
     ComeFrom = Vector(500, 0, 0),

@@ -19,7 +19,8 @@ Chapter1:AddInstruction("ShowToolgun", {Length = .75, Tool = language.GetPhrase(
 Chapter1:AddInstruction("ClickToolgun", {Time = 1})
 Chapter1:AddInstruction("Delay", {Length = 1})
 Chapter1:AddInstruction("PlaceModel", {
-    Name  = "Gun",
+    Name = "Gun",
+    IdentifyAs = "acf_gun",
     Model = "models/tankgun_new/tankgun_100mm.mdl",
     Position = Vector(0, 0, 10),
 })
@@ -43,7 +44,8 @@ Chapter1:AddInstruction("MoveToolgunTo", {Time = 0.75, Position = AmmoPos})
 Chapter1:AddInstruction("ClickToolgun", {Time = 1.25})
 Chapter1:AddInstruction("Delay", {Length = 1})
 Chapter1:AddInstruction("PlaceModel", {
-    Name  = "Ammo",
+    Name = "Ammo",
+    IdentifyAs = "acf_ammo",
     Model = "models/holograms/hq_rcube_thin.mdl",
     Position = AmmoPos + Vector(0, 0, 10),
     Scale = Vector(1.5, 1.5, 1.5)
@@ -101,7 +103,8 @@ Chapter3:AddInstruction("Delay", {Length = 0.75})
 Chapter3:AddInstruction("ClickToolgun", {Time = 1})
 Chapter3:AddInstruction("Delay", {Length = 1})
 Chapter3:AddInstruction("PlaceModel", {
-    Name  = "Button",
+    Name = "Button",
+    IdentifyAs = "gmod_wire_button",
     Model = "models/cheeze/buttons/button_fire.mdl",
     Position = ButtonPos,
 })

@@ -241,7 +241,8 @@ Chapter4:AddInstruction("Delay", {Length = 0.75})
 Chapter4:AddInstruction("ClickToolgun", {Time = 1})
 Chapter4:AddInstruction("Delay", {Length = 1})
 Chapter4:AddInstruction("PlaceModel", {
-    Name  = "Button",
+    Name = "Button",
+    IdentifyAs = "gmod_wire_button",
     Model = "models/cheeze/buttons/button_start.mdl",
     Position = ButtonPos,
 })
@@ -265,7 +266,8 @@ Chapter4:AddInstruction("Delay", {Length = 0.75})
 Chapter4:AddInstruction("ClickToolgun", {Time = 1})
 Chapter4:AddInstruction("Delay", {Length = 1})
 Chapter4:AddInstruction("PlaceModel", {
-    Name  = "ConstantValue",
+    Name = "ConstantValue",
+    IdentifyAs = "gmod_wire_value",
     Model = "models/kobilica/value.mdl",
     Position = ConstantPos,
 })
