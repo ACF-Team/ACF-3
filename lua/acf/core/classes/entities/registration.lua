@@ -109,7 +109,6 @@ Classes.AddSimpleFunctions(Entities, Entries)
 if CLIENT then return end
 
 do -- Spawning and updating
-	local hook = hook
 	local undo = undo
 
 	--- Spawns an entity with the given parameters
@@ -128,10 +127,6 @@ do -- Spawning and updating
 
 		if not ClassData then return false, Class .. " is not a registered ACF entity class." end
 		if not ClassData.Spawn then return false, Class .. " doesn't have a spawn function assigned to it." end
-
-		local HookResult, HookMessage = hook.Run("ACF_CanCreateEntity", Class, Player, Position, Angles, Data)
-
-		if not HookResult then return false, HookMessage end
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
@@ -160,12 +155,6 @@ do -- Spawning and updating
 		if not isfunction(Entity.Update) then return false, "This entity does not support updating." end
 
 		Data = istable(Data) and Data or {}
-
-		local HookResult, HookMessage = hook.Run("ACF_CanUpdateEntity", Entity, Data)
-
-		if HookResult == false then
-			return false, "Couldn't update entity: " .. (HookMessage or "No reason provided.")
-		end
 
 		local Result, Message = Entity:Update(Data)
 

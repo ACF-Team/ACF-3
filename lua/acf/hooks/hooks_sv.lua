@@ -36,29 +36,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
-	--- Called before an ACF entity is attempted to be spawned.  
-	--- This will only be called if the class has been registered and has a spawn function assigned to it.
-	--- @param Class string The entity class that is trying to be spawned.
-	--- @param Player entity The player attempting to spawn the entity.
-	--- @param Position vector The position where the entity is attempting to be spawned.
-	--- @param Angles angle The angles at which the entity is attempting to be spawned.
-	--- @param Data table A table with all the information required for the entity to set itself up.
-	--- @return boolean # True if the entity can be spawned, false otherwise.
-	--- @return string # A short explanation on why the entity can't be spawned. Not required if the entity is spawned.
-	function Gamemode:ACF_CanCreateEntity()
-		return true
-	end
-
-	--- Called before an ACF entity is attempted to be spawned.  
-	--- This will only be called if the entity is valid and has an ENT:Update method assigned to it.
-	--- @param Entity entity The entity that is trying to be updated.
-	--- @param Data table A table with all the information required for the entity to set itself up.
-	--- @return boolean # True if the entity can be updated, false otherwise.
-	--- @return string # A short explanation on why the entity can't be updated. Not required if the entity is updated.
-	function Gamemode:ACF_CanUpdateEntity()
-		return true
-	end
-
 	--- Called when an ACF entity creates or updates its Wire inputs.  
 	--- It's recommended to just push entries into the List parameter.
 	--- @param Entity entity The entity to create or update Wire inputs on.
