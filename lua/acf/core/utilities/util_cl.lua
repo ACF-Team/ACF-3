@@ -941,6 +941,14 @@ end
 do
 	local EntGizmoDifferences = {}
 
+
+	local COLOR_Black               = Color(0, 0, 0, 255)
+	local COLOR_Link_OK             = Color(55, 235, 55, 255)
+	local COLOR_Link_Fail           = Color(255, 88, 88)
+	local COLOR_Link_FailDistMissed = Color(175, 0, 0)
+	local COLOR_Link                = Color(205, 235, 255, 255)
+
+
 	function ACF.ToolCL_RegisterLinkGizmoData(from, to, callback)
 		EntGizmoDifferences[from] = EntGizmoDifferences[from] or {}
 		EntGizmoDifferences[to] = EntGizmoDifferences[to] or {}
@@ -962,23 +970,42 @@ do
 	function ACF.ToolCL_CanLink(from, to)
 		if not IsValid(from) then return false, "Link target not valid!" end
 		if not IsValid(to) then return false, "Target not valid!" end
-		local hadData, canLink, whyNot = ACF.ToolCL_GetLinkGizmoData(from, to)
+		local hadData, canLink, whyNot, renderData = ACF.ToolCL_GetLinkGizmoData(from, to)
 		if not hadData then return false, "No link data." end
-		return canLink == nil and true or canLink, whyNot
+		return canLink == nil and true or canLink, whyNot, renderData
 	end
 
+	local ACF_LinkDistanceTooFar = {
+		Text = "The entity is too far away.",
+		Renderer = function(data, from, to)
+			local fromPos, toPos = data.fromPos, data.toPos
+			local normal         = (toPos - fromPos):GetNormalized()
+			local toMaxDist      = fromPos + (normal * data.maxdist)
+			local dist           = data.dist
+
+			render.SetColorMaterial()
+			render.DepthRange(0, 0)
+			render.DrawBeam(fromPos, toMaxDist, 2, 0, 1, COLOR_Black)
+			render.DrawBeam(toMaxDist, toPos, 2, 0, 1, COLOR_Black)
+			render.DrawBeam(fromPos, toMaxDist, 1, 0, 1, COLOR_Link_Fail)
+			render.DrawBeam(toMaxDist, toPos, 1, 0, 1, COLOR_Link_FailDistMissed)
+			render.DepthRange(0, 1)
+		end
+	}
+
 	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_gun", function(from, to)
-		if from:GetPos():Distance(to:GetPos()) > ACF.LinkDistance then return false, "The entity is too far away." end
+		local fromPos, toPos = from:GetPos(), to:GetPos()
+		local dist    = fromPos:Distance(toPos)
+		local maxdist = ACF.LinkDistance
+		if dist > maxdist then return false, ACF_LinkDistanceTooFar, {fromPos = fromPos, toPos = toPos, dist = dist, maxdist = maxdist} end
 	end)
 
 	ACF.ToolCL_RegisterLinkGizmoData("acf_gearbox", "acf_engine", function(from, to)
-		if from:GetPos():Distance(to:GetPos()) > ACF.MobilityLinkDistance then return false, "The entity is too far away." end
+		local fromPos, toPos = from:GetPos(), to:GetPos()
+		local dist    = fromPos:Distance(toPos)
+		local maxdist = ACF.MobilityLinkDistance
+		if dist > maxdist then return false, ACF_LinkDistanceTooFar, {fromPos = fromPos, toPos = toPos, dist = dist, maxdist = maxdist} end
 	end)
-
-	local COLOR_Black          = Color(0, 0, 0, 255)
-	local COLOR_Link_OK        = Color(55, 235, 55, 255)
-	local COLOR_Link_Fail      = Color(235, 99, 99, 255)
-	local COLOR_Link           = Color(205, 235, 255, 255)
 
 	local HUDText = {}
 
@@ -1014,20 +1041,28 @@ do
 				local dist = entPos:Distance(targPos)
 
 				local linkcolor = COLOR_Link
+				local renderOverride, renderData
+
 				if lookingAtEntity then
-					local canLink, why = ACF.ToolCL_CanLink(ent, lookEnt, dist) 
+					local canLink, why, data = ACF.ToolCL_CanLink(ent, lookEnt, dist)
 					linkcolor = canLink and COLOR_Link_OK or COLOR_Link_Fail
-					local linkText = canLink and distTextOK or distTextNo:format(why)
+					local linkText = canLink and distTextOK or distTextNo:format(why.Text)
+					renderOverride = why.Renderer
+					renderData = data
 					DrawText(linkText, linkcolor, inbetween)
 				else
 					DrawText(distText:format(dist), linkcolor, inbetween)
 				end
 
-				render.SetColorMaterial()
-				render.DepthRange(0, 0)
-				render.DrawBeam(entPos, targPos, 2, 0, 1, COLOR_Black)
-				render.DrawBeam(entPos, targPos, 1, 0, 1, linkcolor)
-				render.DepthRange(0, 1)
+				if renderOverride then
+					renderOverride(renderData, from, to)
+				else
+					render.SetColorMaterial()
+					render.DepthRange(0, 0)
+					render.DrawBeam(entPos, targPos, 2, 0, 1, COLOR_Black)
+					render.DrawBeam(entPos, targPos, 1, 0, 1, linkcolor)
+					render.DepthRange(0, 1)
+				end
 			end
 		end
 	end)
