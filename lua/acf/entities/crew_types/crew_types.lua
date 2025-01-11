@@ -122,19 +122,8 @@ CrewTypes.Register("Gunner", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-		if Crew.GunName and Target.Name ~= Crew.GunName then return false, "Gunners can only be linked to one type of gun" end
-		return true, "Crew linked."
-	end,
 	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		Crew.GunName = Target.Name
-	end,
-	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
-			Crew.GunName = nil
-		end
+		print("Link", Crew, Target)
 	end,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus

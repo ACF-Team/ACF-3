@@ -699,7 +699,8 @@ do -- Metamethods --------------------------------
 
 			-- This is not performant... but people may be unhappy if I don't do this
 			if not crate then
-				crate = next(self.Crates)
+				local temp = next(self.Crates)
+				if Check(temp, ...) then crate = temp end
 			end
 
 			return crate

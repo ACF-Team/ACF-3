@@ -599,7 +599,7 @@ do
 		end
 
 		-- Crew death at 1 left
-		if Alive <= 1 then
+		if Alive <= 0 then
 			self:CPPIGetOwner():Kill()
 		end
 	end
@@ -716,7 +716,7 @@ do
 	end
 
 	-- Compactly define links between crew and other entities
-	for k,v in ipairs({"acf_gun", "acf_engine"}) do
+	for k,v in ipairs({"acf_gun", "acf_engine", "acf_turret"}) do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Target, Crew)
 			if Result then
