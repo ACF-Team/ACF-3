@@ -47,34 +47,34 @@ do
 end
 
 do
-	ACF.RegisterLinkSource("acf_baseplate", "prop_vehicle_prisoner_pod")
+	ACF.RegisterLinkSource("acf_baseplate", "Seat")
 
-	ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat, FromChip)
-		if This.Seat == Seat then return false, "This baseplate is already linked to this seat" end
-		if This.Seat then return false, "This baseplate is already linked to a seat" end
+	ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(self, Seat, _)
+		if self.Seat == Seat then return false, "This baseplate is already linked to this seat" end
+		if IsValid(self.Seat) then return false, "This baseplate is already linked to a seat" end
 
-		This.Seat = Seat
+		self.Seat = Seat
 
 		Seat._IsInvisible = true
 
-		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex(), function(ply, veh, role)
+		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh, role)
 			if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
 		end)
-		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. This:EntIndex(), function(ply, veh)
+		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(ply, veh)
 			if veh == Seat then ply:GodDisable() end -- Block damage if they're in the seat
 		end)
 
 		return true, "Seat linked successfully"
 	end)
 
-	ACF.RegisterClassUnlink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat, FromChip)
-		if This.Seat then
-			This.Seat = nil
+	ACF.RegisterClassUnlink("acf_baseplate", "prop_vehicle_prisoner_pod", function(self, Seat, _)
+		if IsValid(self.Seat) then
+			self.Seat = nil
 
 			Seat._IsInvisible = false
-			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex())
-			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. This:EntIndex())
-			This:CPPIGetOwner():GodDisable()
+			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex())
+			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex())
+			self:CPPIGetOwner():GodDisable()
 
 			return true, "Seat unlinked successfully"
 		end
