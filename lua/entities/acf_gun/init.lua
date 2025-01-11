@@ -699,8 +699,12 @@ do -- Metamethods --------------------------------
 
 			-- This is not performant... but people may be unhappy if I don't do this
 			if not crate then
-				local temp = next(self.Crates)
-				if Check(temp, ...) then crate = temp end
+				for k, _ in pairs(self.Crates) do
+					if Check(k, ...) then
+						crate = k
+						break
+					end
+				end
 			end
 
 			return crate
