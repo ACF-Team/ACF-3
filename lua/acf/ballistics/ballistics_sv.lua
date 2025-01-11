@@ -207,6 +207,10 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
 
+	if Entity.ACF_InvisibleToBallistics then return false end
+	if Entity.ACF_KillableButIndestructible and Entity.ACF and Entity.ACF.Health <= 0 then return false end
+	if Entity.ACF_TestFilter then return Entity:ACF_TestFilter(Bullet) end
+
 	return true
 end
 

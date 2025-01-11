@@ -212,7 +212,8 @@ function Damage.doPropDamage(Entity, DmgResult)
 	local HitRes = DmgResult:Compute()
 
 	if HitRes.Damage >= Health then
-		HitRes.Kill = true
+		HitRes.Kill = not Entity.ACF_KillableButIndestructible
+		Entity.ACF.Health = 0
 	else
 		local NewHealth = Health - HitRes.Damage
 		local MaxHealth = EntACF.MaxHealth
