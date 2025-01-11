@@ -977,11 +977,10 @@ do
 
 	local ACF_LinkDistanceTooFar = {
 		Text = "The entity is too far away.",
-		Renderer = function(data, from, to)
+		Renderer = function(data, _, _)
 			local fromPos, toPos = data.fromPos, data.toPos
 			local normal         = (toPos - fromPos):GetNormalized()
 			local toMaxDist      = fromPos + (normal * data.maxdist)
-			local dist           = data.dist
 
 			render.SetColorMaterial()
 			render.DepthRange(0, 0)
