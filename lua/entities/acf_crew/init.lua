@@ -294,8 +294,6 @@ do
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
 
-
-
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
@@ -600,7 +598,16 @@ do
 
 		-- Crew death at 1 left
 		if Alive <= 0 then
-			self:CPPIGetOwner():Kill()
+			local Contraption = self:GetContraption() or {}
+			local Base = Contraption.Base or {}
+			local Seat = Base.Seat or {}
+			if IsValid(Seat) then 
+				Seat:GetDriver():Kill()
+
+				-- hook.Add("CanPlayerEnterVehicle", "LockOut" .. Base:EntIndex(), function(ply, veh, role)
+				-- 	if veh == Base.Seat then return false end
+				-- end)
+			end
 		end
 	end
 

@@ -32,6 +32,21 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 end
 
 do
+	-- Maintain a record in the contraption of its current crew
+	hook.Add("cfw.contraption.entityAdded", "baseaddindex", function(contraption, ent)
+		if ent:GetClass() == "acf_baseplate" then
+			contraption.Base = ent
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "baseremoveindex", function(contraption, ent)
+		if ent:GetClass() == "acf_baseplate" then
+			contraption.Base = nil
+		end
+	end)
+end
+
+do
 	ACF.RegisterLinkSource("acf_baseplate", "prop_vehicle_prisoner_pod")
 
 	ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat, FromChip)
@@ -41,6 +56,7 @@ do
 		This.Seat = Seat
 
 		Seat._IsInvisible = true
+
 		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. This:EntIndex(), function(ply, veh, role)
 			if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
 		end)

@@ -123,7 +123,7 @@ CrewTypes.Register("Gunner", {
 		}
 	},
 	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
-		print("Link", Crew, Target)
+		print("Link", Crew, Target, Target.Turret)
 	end,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
