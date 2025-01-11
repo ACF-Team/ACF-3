@@ -1098,6 +1098,8 @@ if CLIENT then
         end
     end)
 
+    local lastAng
+
     hook.Add("CreateMove", "ACF_Scanner_BlockInputs", function(cmd)
         if scanning.IsScannerActive() then
             if lastAng == nil then

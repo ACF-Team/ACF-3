@@ -1,15 +1,11 @@
 ACF.LoadToolFunctions(TOOL)
 
-TOOL.Name = "ACF Menu"
+TOOL.Name = "#tool.acf_menu.menu_name"
 
 if CLIENT then
 	-- "Hitbox" colors
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
-
-	-- Name and descriptions if need to be changed
-	language.Add("Tool.acf_menu.name", "Armored Combat Framework")
-	language.Add("Tool.acf_menu.desc", "Main menu tool for the ACF addon")
 
 	local Queued = {}
 
