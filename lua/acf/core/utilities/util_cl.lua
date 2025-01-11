@@ -936,3 +936,107 @@ do -- Default turret menus
 		end
 	end
 end
+
+-- Link distance gizmo stuff
+do
+	local EntGizmoDifferences = {}
+
+	function ACF.ToolCL_RegisterLinkGizmoData(from, to, callback)
+		EntGizmoDifferences[from] = EntGizmoDifferences[from] or {}
+		EntGizmoDifferences[to] = EntGizmoDifferences[to] or {}
+
+		EntGizmoDifferences[from][to] = callback
+		EntGizmoDifferences[to][from] = callback
+	end
+
+	function ACF.ToolCL_GetLinkGizmoData(entFrom, entTo)
+		local fromTbl = EntGizmoDifferences[entFrom:GetClass()]
+		if not fromTbl then return end
+
+		local toTbl = fromTbl[entTo:GetClass()]
+		if not toTbl then return end
+
+		return true, toTbl(entFrom, entTo)
+	end
+
+	function ACF.ToolCL_CanLink(from, to)
+		if not IsValid(from) then return false, "Link target not valid!" end
+		if not IsValid(to) then return false, "Target not valid!" end
+		local hadData, canLink, whyNot = ACF.ToolCL_GetLinkGizmoData(from, to)
+		if not hadData then return false, "No link data." end
+		return canLink == nil and true or canLink, whyNot
+	end
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_gun", function(from, to)
+		if from:GetPos():Distance(to:GetPos()) > ACF.LinkDistance then return false, "The entity is too far away." end
+	end)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gearbox", "acf_engine", function(from, to)
+		if from:GetPos():Distance(to:GetPos()) > ACF.MobilityLinkDistance then return false, "The entity is too far away." end
+	end)
+
+	local COLOR_Black          = Color(0, 0, 0, 255)
+	local COLOR_Link_OK        = Color(55, 235, 55, 255)
+	local COLOR_Link_Fail      = Color(235, 99, 99, 255)
+	local COLOR_Link           = Color(205, 235, 255, 255)
+
+	local HUDText = {}
+
+	local function DrawText(text, color, x, y)
+		if not y then
+			local xy = x:ToScreen()
+			x, y = xy.x, xy.y
+		end
+
+		HUDText[#HUDText + 1] = {Text = text, X = x, Y = y, Color = color}
+	end
+
+	local distText   = "Distance: %.1f units"
+	local distTextOK = "✓ OK"
+	local distTextNo = "✗ Cannot link: %s"
+
+	hook.Add("PostDrawTranslucentRenderables", "ACF_PostDrawTranslucentRenderables_LinkDistanceVis", function()
+		if not ACF.ToolCL_InLinkState() then return end
+		table.Empty(HUDText)
+
+		local eyeTrace        = LocalPlayer():GetEyeTrace()
+		local lookEnt         = eyeTrace.Entity
+		local lookPos         = eyeTrace.HitPos
+		local lookingAtEntity = IsValid(lookEnt)
+		local linkEnts        = ACF.ToolCL_GetLinkedEnts()
+
+		for ent in pairs(linkEnts) do
+			if IsValid(ent) then
+				local targPos = lookingAtEntity and lookEnt:GetPos() or lookPos
+				local entPos  = ent:GetPos()
+
+				local inbetween = (entPos + targPos) / 2
+				local dist = entPos:Distance(targPos)
+
+				local linkcolor = COLOR_Link
+				if lookingAtEntity then
+					local canLink, why = ACF.ToolCL_CanLink(ent, lookEnt, dist) 
+					linkcolor = canLink and COLOR_Link_OK or COLOR_Link_Fail
+					local linkText = canLink and distTextOK or distTextNo:format(why)
+					DrawText(linkText, linkcolor, inbetween)
+				else
+					DrawText(distText:format(dist), linkcolor, inbetween)
+				end
+
+				render.SetColorMaterial()
+				render.DepthRange(0, 0)
+				render.DrawBeam(entPos, targPos, 2, 0, 1, COLOR_Black)
+				render.DrawBeam(entPos, targPos, 1, 0, 1, linkcolor)
+				render.DepthRange(0, 1)
+			end
+		end
+	end)
+
+	hook.Add("HUDPaint", "ACF_HUDPaint_LinkDistanceVis", function()
+		if not ACF.ToolCL_InLinkState() then return end
+
+		for _, v in ipairs(HUDText) do
+			draw.SimpleTextOutlined(v.Text, "ACF_Title", v.X, v.Y, v.Color or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		end
+	end)
+end
