@@ -170,6 +170,8 @@ DefineScannerType("primitive_airfoil",         "Primitive Airfoil",       Color(
     drawMesh = true
 })
 
+DefineScannerType("acf_baseplate",             "ACF Baseplate",          Color(255, 65, 160),   "ABP",   {drawBounds = true, drawMarker = true})
+
 local function NetStart(n)
     net_Start("ACF_Scanning_NetworkPacket")
     net_WriteString(n)
@@ -1096,6 +1098,8 @@ if CLIENT then
         end
     end)
 
+    local lastAng
+
     hook.Add("CreateMove", "ACF_Scanner_BlockInputs", function(cmd)
         if scanning.IsScannerActive() then
             if lastAng == nil then
@@ -1344,9 +1348,11 @@ if CLIENT then
             end
 
             for _, ent in ipairs(baseplates) do
-                drawEntityNoOutline(ent, baseplateC.colorEntityInside)
-                drawPhysMesh(ent, baseplateC.color)
-                drawBounds(ent, baseplateC)
+                if ent:GetClass() ~= "acf_baseplate" then
+                    drawEntityNoOutline(ent, baseplateC.colorEntityInside)
+                    drawPhysMesh(ent, baseplateC.color)
+                    drawBounds(ent, baseplateC)
+                end
                 VisualizeClips(ent)
             end
             render.DepthRange(0, 1)
@@ -1529,7 +1535,7 @@ if CLIENT then
             end
 
             for _, ent in ipairs(baseplates) do
-                if IsValid(ent) then
+                if IsValid(ent) and ent:GetClass() ~= "acf_baseplate" then
                     local pXY = ent:GetPos():ToScreen()
                     local pX, pY = pXY.x, pXY.y
                     DrawMarker(baseplateC, pX, pY, ent)
