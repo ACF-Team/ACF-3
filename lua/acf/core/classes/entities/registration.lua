@@ -156,7 +156,6 @@ function Entities.AutoRegister(ENT)
 	local Entity = GetEntityTable(Class)
 	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_UserVars or {}, ENT.ACF_DataVars or {})
 
-	local UserVars = ENT.ACF_UserVars
 	local DataVars = ENT.ACF_DataVars
 
 	if CLIENT then return end
