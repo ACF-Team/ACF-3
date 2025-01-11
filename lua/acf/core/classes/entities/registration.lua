@@ -123,6 +123,55 @@ Entities.AddDataArgumentType("LinkedEntity",
 	end
 )
 
+-- MARCH: Untested! Tell me if this breaks!
+Entities.AddDataArgumentType("LinkedEntities",
+	function(Value, Specs)
+		if not Value then return {} end
+		if isentity(Value) then Value = {Value} end
+		if not istable(Value) then return {} end
+
+		local ret = {}
+		local max = Specs.Max
+		for k, v in ipairs(Value) do
+			if max and k > max then break end
+			if not isentity(v) or not IsValid(v) then
+				v = NULL
+			else
+				if Specs.Classes then
+					local class = v:GetClass()
+					if not Specs.Classes[class] then
+						v = NULL
+					end
+				end
+			end
+
+			ret[k] = v
+		end
+
+		return Value
+	end,
+	function(_, value)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			ret[k] = v:EntIndex()
+		end
+
+		return ret
+	end,
+	function(self, value, createdEnts)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			local realEnt = createdEnts[v]
+			ret[k] = realEnt
+			self:Link(realEnt)
+		end
+
+		return ret
+	end
+)
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
