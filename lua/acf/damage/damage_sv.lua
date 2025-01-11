@@ -214,6 +214,9 @@ function Damage.doPropDamage(Entity, DmgResult)
 	if HitRes.Damage >= Health then
 		HitRes.Kill = not Entity.ACF_KillableButIndestructible
 		Entity.ACF.Health = 0
+		if Entity.ACF_DamageUpdatesWireOverlay then
+			Entity:UpdateOverlay()
+		end
 	else
 		local NewHealth = Health - HitRes.Damage
 		local MaxHealth = EntACF.MaxHealth
