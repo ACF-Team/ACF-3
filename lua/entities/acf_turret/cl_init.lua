@@ -183,7 +183,6 @@ do	-- Overlay
 
 		local Rotate = false
 		if SelfTbl.Type == "Turret-V" then
-			Right = -self:GetUp()
 			Up = self:GetRight()
 
 			Rotation = self:GetRight():Angle()

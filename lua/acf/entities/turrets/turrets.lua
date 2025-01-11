@@ -98,6 +98,7 @@ do	-- Turret drives
 			-- Slewing ring friction moment caused by load (kNm)
 			-- 1kg weight (mass * gravity) is about 9.81N
 			-- 0.006 = fric coefficient for ball slewing rings
+			-- 0.004 = fric coefficient for crossed ball slewing rings
 			-- k = 4.4 = coefficient of load accommodation for ball slewing rings
 			local Weight	= (TurretData.TotalMass * 9.81) / 1000
 			local Mz		= 0 -- Nm resistance to torque
@@ -108,14 +109,14 @@ do	-- Turret drives
 				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
 				Fa		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
 				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
-				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
+				Mz		= 0.004 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
 			else
 				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
 
 				OffBaseDistance	= math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
 				Mk		= Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
 				Fr		= Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
-				Mz		= 0.006 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+				Mz		= 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
 			end
 
 			-- 9.55 is 1 rad/s to RPM
@@ -162,7 +163,7 @@ do	-- Turret drives
 
 			Teeth			= {		-- Used to give a final teeth count with size
 				Min			= 12,
-				Max			= 3072
+				Max			= 2304
 			},
 
 			Armor			= {
@@ -171,8 +172,8 @@ do	-- Turret drives
 			},
 
 			MassLimit		= {
-				Min			= 12,
-				Max			= 960
+				Min			= 16,
+				Max			= 1024
 			},
 
 			SetupInputs		= function(_, List)
@@ -352,7 +353,7 @@ do	-- Turret motors
 				Base	= 12,
 
 				Min		= 8,
-				Max		= 32,
+				Max		= 48,
 			},
 
 			Torque			= {
@@ -387,7 +388,7 @@ do	-- Turret motors
 				Base	= 12,
 
 				Min		= 8,
-				Max		= 32,
+				Max		= 48,
 			},
 
 			Torque			= {

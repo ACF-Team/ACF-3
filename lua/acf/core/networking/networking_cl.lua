@@ -54,7 +54,11 @@ end
 net.Receive("ACF_Networking", function(Bits)
 	local Bytes   = net.ReadUInt(ACF.NetMessageSizeLimit)
 	local String  = Decompress(net.ReadData(Bytes))
-	local Message = ToTable(String)
+	local Message
+
+	if String then
+		Message = ToTable(String)
+	end
 
 	if not Message then
 		local Error = "ACF Networking: Failed to parse message. Report this to the ACF Team.\nMessage size: %sB\nTotal size: %sB\nMessage: %s"
