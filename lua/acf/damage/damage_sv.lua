@@ -214,9 +214,6 @@ function Damage.doPropDamage(Entity, DmgResult)
 	if HitRes.Damage >= Health then
 		HitRes.Kill = not Entity.ACF_KillableButIndestructible
 		Entity.ACF.Health = 0
-		if Entity.ACF_DamageUpdatesWireOverlay then
-			Entity:UpdateOverlay()
-		end
 	else
 		local NewHealth = Health - HitRes.Damage
 		local MaxHealth = EntACF.MaxHealth
@@ -225,6 +222,10 @@ function Damage.doPropDamage(Entity, DmgResult)
 		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
 		Damage.Network(Entity, nil, NewHealth, MaxHealth)
+	end
+
+	if Entity.ACF_DamageUpdatesWireOverlay then
+		Entity:UpdateOverlay()
 	end
 
 	return HitRes
