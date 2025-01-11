@@ -56,7 +56,8 @@ local function AddArguments(Entity, Arguments)
 	return List
 end
 
-local ArgumentTypes = {}
+local UserArgumentTypes = {}
+local DataArgumentTypes = {}
 
 local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 	local Restrictions = Entity.Restrictions
@@ -64,7 +65,7 @@ local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 	for k, v in pairs(ArgumentRestrictions) do
 		if not v.Type                then error("Argument '" .. tostring(k or "<NIL>") .. "' didn't have a Type!") end
 		if not isstring(v.Type)      then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-string Type! (" .. tostring(v.Type) .. ")") end
-		if not ArgumentTypes[v.Type] then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-registered Type! (" .. tostring(v.Type) .. ")") end
+		if not UserArgumentTypes[v.Type] and not DataArgumentTypes[v.Type] then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-registered Type! (" .. tostring(v.Type) .. ")") end
 
 		Restrictions[k] = v
 	end
@@ -73,14 +74,26 @@ end
 
 --- Adds an argument type and verifier to the ArgumentTypes dictionary.
 --- @param Type string The type of data
---- @param Verifier function The verification function. Arguments are: Value:any, Restrictions:table. Must return a Value of the same type and NOT nil!
-function Entities.AddArgumentType(Type, Verifier)
-	if ArgumentTypes[Type] then return end
+--- @param Validator function The verification function. Arguments are: Value:any, Restrictions:table. Must return a Value of the same type and NOT nil!
+function Entities.AddUserArgumentType(Type, Validator)
+	if UserArgumentTypes[Type] then return end
 
-	ArgumentTypes[Type] = Verifier
+	UserArgumentTypes[Type] = {
+		Validator = Validator
+	}
 end
 
-Entities.AddArgumentType("Number", function(Value, Specs)
+function Entities.AddDataArgumentType(Type, Validator, PreCopy, PostPaste)
+	if DataArgumentTypes[Type] then return end
+
+	DataArgumentTypes[Type] = {
+		Validator  = Validator,
+		PreCopy   = PreCopy,
+		PostPaste = PostPaste
+	}
+end
+
+Entities.AddUserArgumentType("Number", function(Value, Specs)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
 
 	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
@@ -90,16 +103,43 @@ Entities.AddArgumentType("Number", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddDataArgumentType("LinkedEntity",
+	function(Value, Specs)
+		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
+
+		if Specs.Classes then
+			local class = Value:GetClass()
+			if Specs.Classes[class] then return Value end
+
+			return NULL
+		end
+	end,
+	function(_, value)
+		return value:EntIndex()
+	end,
+	function(self, value, createdEnts)
+		self:Link(createdEnts[value])
+		return createdEnts[value]
+	end
+)
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
-function Entities.AddStrictArguments(Class, DataKeys)
+function Entities.AddStrictArguments(Class, UserVariables, DataVariables)
 	if not isstring(Class) then return end
 
 	local Entity    = GetEntityTable(Class)
-	local Arguments = table.GetKeys(DataKeys)
-	local List      = AddArguments(Entity, Arguments)
-	AddArgumentRestrictions(Entity, DataKeys)
+
+	local UserVars  = table.GetKeys(UserVariables)
+	local DataVars  = table.GetKeys(DataVariables)
+	local ArgumentNames  = {}
+	local Arguments = {}
+	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+
+	local List      = AddArguments(Entity, ArgumentNames)
+	AddArgumentRestrictions(Entity, Arguments)
 	return List
 end
 
@@ -114,7 +154,9 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_Class = Class
 
 	local Entity = GetEntityTable(Class)
-	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_DataKeys or {})
+	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_UserVars or {}, ENT.ACF_DataVars or {})
+
+	local DataVars = ENT.ACF_DataVars
 
 	if CLIENT then return end
 
@@ -136,8 +178,9 @@ function Entities.AutoRegister(ENT)
 		for _, argName in ipairs(List) do
 			if Restrictions[argName] then
 				local RestrictionSpecs = Restrictions[argName]
-				if not ArgumentTypes[RestrictionSpecs.Type] then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				ClientData[argName] = ArgumentTypes[RestrictionSpecs.Type](ClientData[argName], RestrictionSpecs)
+				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type] or DataArgumentTypes[RestrictionSpecs.Type]
+				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
+				ClientData[argName] = ArgumentVerification.Validator(ClientData[argName], RestrictionSpecs)
 			end
 		end
 
@@ -177,7 +220,10 @@ function Entities.AutoRegister(ENT)
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
 
-	local ACF_Limit = ENT.ACF_Limit
+	local ACF_Limit       = ENT.ACF_Limit
+	local PreEntityCopy   = ENT.PreEntityCopy
+	local PostEntityPaste = ENT.PostEntityPaste
+
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
@@ -219,6 +265,37 @@ function Entities.AutoRegister(ENT)
 		ACF.CheckLegal(New)
 
 		return New
+	end
+
+	function ENT:PreEntityCopy()
+		for k, v in pairs(DataVars) do
+			local typedef   = DataArgumentTypes[v.Type]
+			local validated = typedef.Validator(self[k], v)
+			local ret       = typedef.PreCopy(self, validated)
+			if ret then
+				duplicator.StoreEntityModifier(self, "ACF_" .. k, {ret})
+			end
+		end
+
+		if PreEntityCopy then PreEntityCopy(self) end
+
+		--Wire dupe info
+		self.BaseClass.PreEntityCopy(self)
+	end
+
+	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		local EntMods = Ent.EntityMods
+
+		for k, v in pairs(DataVars) do
+			local typedef    = DataArgumentTypes[v.Type]
+			local entmodData = EntMods["ACF_" .. k][1]
+			local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
+			ret              = typedef.Validator(ret, v)
+			if ret then Ent[k] = ret end
+		end
+
+		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
+		Ent.BaseClass.PostEntityPaste(Ent, Player, Ent, CreatedEntities)
 	end
 
 	ENT.ACF_VerifyClientData = VerifyClientData
