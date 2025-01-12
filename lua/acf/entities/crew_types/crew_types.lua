@@ -9,6 +9,40 @@ Name, Description, LimitConVar, Whitelist, Mass, UpdateFocus, UpdateEfficiency
 local ACF         = ACF
 local CrewTypes = ACF.Classes.CrewTypes
 
+--- Finds the longest bullet of any gun connected to this crew and adjusts the box accordingly
+local FindLongestBullet = function(Crew)
+	-- Go through every bullet linked to the gun, and find the longest shell
+	local LongestLength = 0
+	local LongestBullet = nil
+	for Gun in pairs(Crew.TargetsByType["acf_gun"] or {}) do
+		if not IsValid(Gun) then continue end
+		for Crate in pairs(Gun.Crates) do
+			local BulletData = Crate.BulletData
+			local Length = BulletData.PropLength + BulletData.ProjLength
+			if Length > LongestLength then
+				LongestLength = Length
+				LongestBullet = BulletData
+			end
+		end
+	end
+
+	-- If we find such a bullet and it's longer than we've seen before, set the scan box and hull to match it
+	if LongestLength > 0 and Crew.LongestLength ~= LongestLength then
+		local Length = LongestLength / 2.54 -- CM to inches
+		local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
+		Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
+		Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
+		Crew.LongestLength = LongestLength
+
+		-- Network the scan box to clients
+		net.Start("ACF_Crew_Space")
+		net.WriteUInt(Crew:EntIndex(), 16)
+		net.WriteVector(Crew.ScanBox)
+		net.WriteVector(Crew.CrewModel.ScanOffsetL)
+		net.Broadcast()
+	end
+end
+
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
 	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
@@ -49,38 +83,7 @@ CrewTypes.Register("Loader", {
 			Crew.ShouldScan = false
 		end
 	end,
-	UpdateLowFreq = function(Crew)
-		-- Go through every bullet linked to the gun, and find the longest shell
-		local LongestLength = 0
-		local LongestBullet = nil
-		for Gun in pairs(Crew.TargetsByType["acf_gun"] or {}) do
-			if not IsValid(Gun) then continue end
-			for Crate in pairs(Gun.Crates) do
-				local BulletData = Crate.BulletData
-				local Length = BulletData.PropLength + BulletData.ProjLength
-				if Length > LongestLength then
-					LongestLength = Length
-					LongestBullet = BulletData
-				end
-			end
-		end
-
-		-- If we find such a bullet and it's longer than we've seen before, set the scan box and hull to match it
-		if LongestLength > 0 and Crew.LongestLength ~= LongestLength then
-			local Length = LongestLength / 2.54 -- CM to inches
-			local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
-			Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
-			Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
-			Crew.LongestLength = LongestLength
-
-			-- Network the scan box to clients
-			net.Start("ACF_Crew_Space")
-			net.WriteUInt(Crew:EntIndex(), 16)
-			net.WriteVector(Crew.ScanBox)
-			net.WriteVector(Crew.CrewModel.ScanOffsetL)
-			net.Broadcast()
-		end
-	end,
+	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
@@ -225,6 +228,7 @@ CrewTypes.Register("Commander", {
 			Crew.ShouldScan = false
 		end
 	end,
+	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
