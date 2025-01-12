@@ -33,6 +33,11 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
     end
 end
 
+function ENT:CFW_OnParentedTo(oldEntity, newEntity)
+    ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
+    return false
+end
+
 local Text = "Baseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
 function ENT:UpdateOverlayText()
     local h, mh = self.ACF.Health, self.ACF.MaxHealth
