@@ -2,12 +2,18 @@
 Most of the crew type specific properties and logic is specified here.
 
 Must be specified:
-Name, Description, LimitConVar, Whitelist, Mass, UpdateFocus, UpdateEfficiency
+Name, Description, LimitConVar, LinkHandlers, Mass, UpdateFocus, UpdateEfficiency
 ]]--
 
 
 local ACF         = ACF
 local CrewTypes = ACF.Classes.CrewTypes
+
+--- Checks if the number of targets of the class for the crew exceeds the count
+--- Default count is 1
+local CheckCount = function(Crew, Class, Count)
+	return table.Count(Crew.TargetsByType[Class] or {}) >= (Count or 1)
+end
 
 --- Finds the longest bullet of any gun connected to this crew and adjusts the box accordingly
 local FindLongestBullet = function(Crew)
@@ -52,9 +58,6 @@ CrewTypes.Register("Loader", {
 		Amount	= 4,
 		Text	= "Maximum number of loaders a player can have."
 	},
-	Whitelist = {			-- What entities can this crew type can link to and affect
-		acf_gun = true, 	-- Loaders affect gun reload rates
-	},
 	Mass = 80,				-- Mass (kg) of a single crew member
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
@@ -73,22 +76,16 @@ CrewTypes.Register("Loader", {
 	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
 		ScanStep = 27,		-- How many parts of a scan to update each time
 	},
-	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		Crew.ShouldScan = true
-	end,
-	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
-			Crew.ShouldScan = false
-		end
-	end,
+	LinkHandlers = {		-- Custom link handlers for this crew type
+		acf_gun = {			-- Specify a target class for it to be included in the whitelist
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+		}
+	},
 	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
-		-- print("Loader Commander Eff: ", CommanderEff * ACF.CrewCommanderCoef)
-		-- print("Loader Self Eff: ", MyEff * ACF.CrewSelfCoef)
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
@@ -106,10 +103,6 @@ CrewTypes.Register("Gunner", {
 		Amount	= 4,
 		Text	= "Maximum number of gunners a player can have."
 	},
-	Whitelist = {
-		acf_gun = true,		-- Gunners affect gun accuracy
-		acf_turret = true,
-	},
 	Mass = 80,
 	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
 		Min = 15,			-- Best efficiency before this angle (Degs)
@@ -125,20 +118,15 @@ CrewTypes.Register("Gunner", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-		if Crew.GunName and Target.Name ~= Crew.GunName then return false, "Gunners can only be linked to one type of gun" end
-		return true, "Crew linked."
-	end,
-	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		Crew.GunName = Target.Name
-	end,
-	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
-			Crew.GunName = nil
-		end
-	end,
+	LinkHandlers = {
+		acf_turret = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
+				if Target.Turret == "Turret-V" then return false, "Gunners cannot link to vertical drives." end
+				return true, "Crew linked."
+			end
+		}
+	},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 1
@@ -158,9 +146,6 @@ CrewTypes.Register("Driver", {
 		Amount	= 2,
 		Text	= "Maximum number of drivers a player can have."
 	},
-	Whitelist = {
-		acf_engine = true, -- Drivers affect engine fuel efficiency
-	},
 	Mass = 80,
 	GForceInfo = {
 		Efficiencies = {
@@ -170,6 +155,11 @@ CrewTypes.Register("Driver", {
 		Damages = {
 			Min = 6,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
+		}
+	},
+	LinkHandlers = {
+		acf_baseplate = {
+
 		}
 	},
 	UpdateEfficiency = function(Crew, Commander)
@@ -186,9 +176,6 @@ CrewTypes.Register("Commander", {
 	Name        = "Commander",
 	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
 	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew.",
-	Whitelist 	= {
-		acf_gun = true, 	-- Only to support RWS
-	},
 	LimitConVar	= {
 		Name	= "_acf_crew_commander",
 		Amount	= 1,
@@ -212,22 +199,19 @@ CrewTypes.Register("Commander", {
 	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
 		ScanStep = 3,		-- How many parts of a scan to update each time
 	},
-	CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-		if Crew.GunName and Target.Name ~= Crew.GunName then return false, "Commanders can only be linked to one type of gun" end
-		return true, "Crew linked."
-	end,
-	OnLink = function(Crew, Target) -- Called when a crew member links to an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		Crew.GunName = Target.Name
-		Crew.ShouldScan = true
-	end,
-	OnUnlink = function(Crew, Target) -- Called when a crew member unlinks from an entity
-		if Target:GetClass() ~= "acf_gun" then return end
-		if table.Count(Crew.TargetsByType["acf_gun"]) == 0 then
-			Crew.GunName = nil
-			Crew.ShouldScan = false
-		end
-	end,
+	LinkHandlers = {
+		acf_gun = {
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+		},
+		acf_turret = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_turret") then return false, "Commanders can only link to one turret." end
+				if Target.Turret == "Turret-V" then return false, "Commanders cannot link to vertical drives." end
+				return true, "Crew linked."
+			end
+		}
+	},
 	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
@@ -243,7 +227,6 @@ CrewTypes.Register("Pilot", {
 	Name        = "Pilot",
 	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft.",
 	ExtraNotes 	= "Pilots do not affect anything at the moment.",
-	Whitelist = {},
 	LimitConVar	= {
 		Name	= "_acf_crew_pilot",
 		Amount	= 2,
@@ -256,6 +239,7 @@ CrewTypes.Register("Pilot", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
+	LinkHandlers = {},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)

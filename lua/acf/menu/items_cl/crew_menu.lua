@@ -73,14 +73,11 @@ local function CreateMenu(Menu)
 
 		Limits:SetText("Max Per Contraption: " .. Data.LimitConVar.Amount)
 
-		local str = "Links to: "
-		local counter = table.Count(Data.Whitelist)
-		for k, _ in pairs(Data.Whitelist) do
-			str = str .. k
-			counter = counter - 1
-			if counter > 0 then str = str .. ", " end
+		local wl = {}
+		for K, _ in pairs(Data.LinkHandlers or {}) do
+			wl[#wl + 1] = K
 		end
-		Whitelist:SetText(str)
+		Whitelist:SetText("Links to: " .. table.concat(wl, ", "))
 
 		Mass:SetText("Mass: " .. Data.Mass .. " kg")
 

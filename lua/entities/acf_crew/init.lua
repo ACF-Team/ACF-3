@@ -365,8 +365,6 @@ do
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 		Entity.IsAlive = true
 
-		Entity.LastThink = Clock.CurTime
-
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
 		-- Run randomized timers
@@ -474,8 +472,6 @@ do
 				end
 			end
 		end
-
-		self.LastThink = Clock.CurTime
 
 		EnforceLimits(self)
 
@@ -670,31 +666,35 @@ do
 	end
 
 	--- Register basic linkages from crew to non crew entities
-	local function CanLinkCrew(Target, Crew)
+	local function CanLinkCrew(Crew, Target)
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
 		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same contraption as this crewmate!" end
-		if not Crew.CrewType.Whitelist[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
-		if Crew.CrewType.CanLink then return Crew.CrewType.CanLink(Crew, Target) end
+		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
+
+		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
+		if Handlers.CanLink then return Handlers.CanLink(Crew, Target) end
 		return true, "Crew linked."
 	end
 
-	local function LinkCrew(Target, Crew)
-		if not CanLinkCrew(Target, Crew) then return end
+	local function LinkCrew(Crew, Target)
+		local TargetClass = Target:GetClass()
+		if not CanLinkCrew(Crew, Target) then return end
 
 		-- Update crew and target's records of each other
 		Crew.Targets[Target] = true
 		Crew.TargetsByType = Crew.TargetsByType or {}
-		Crew.TargetsByType[Target:GetClass()] = Crew.TargetsByType[Target:GetClass()] or {}
-		Crew.TargetsByType[Target:GetClass()][Target] = true
+		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
+		Crew.TargetsByType[TargetClass][Target] = true
 
 		Target.Crews[Crew] = true
 		Target.CrewsByType = Target.CrewsByType or {}
 		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
 		Target.CrewsByType[Crew.CrewTypeID][Crew] = true
 
-		if Crew.CrewType.OnLink then Crew.CrewType.OnLink(Crew, Target) end
+		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
+		if Handlers.OnLink then Handlers.OnLink(Crew, Target, TargetClass) end
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, true)
 
@@ -702,19 +702,21 @@ do
 		Crew:UpdateOverlay()
 	end
 
-	local function UnlinkCrew(Target, Crew)
+	local function UnlinkCrew(Crew, Target)
+		local TargetClass = Target:GetClass()
 		-- Update crew and target's records of each other
 		Crew.Targets[Target] = nil
 		Crew.TargetsByType = Crew.TargetsByType or {}
-		Crew.TargetsByType[Target:GetClass()] = Crew.TargetsByType[Target:GetClass()] or {}
-		Crew.TargetsByType[Target:GetClass()][Target] = nil
+		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
+		Crew.TargetsByType[TargetClass][Target] = nil
 
 		Target.Crews[Crew] = nil
 		Target.CrewsByType = Target.CrewsByType or {}
 		Target.CrewsByType[Crew.CrewTypeID] = Target.CrewsByType[Crew.CrewTypeID] or {}
 		Target.CrewsByType[Crew.CrewTypeID][Crew] = nil
 
-		if Crew.CrewType.OnUnlink then Crew.CrewType.OnUnlink(Crew, Target) end
+		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
+		if Handlers.OnUnLink then Handlers.OnUnLink(Crew, Target, TargetClass) end
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, false)
 
@@ -723,12 +725,19 @@ do
 	end
 
 	-- Compactly define links between crew and other entities
-	for k,v in ipairs({"acf_gun", "acf_engine", "acf_turret"}) do
+	local lt = {} -- Merge all crew whitelists
+	for ct, _ in pairs(CrewTypes.GetEntries()) do
+		for et, _ in pairs(CrewTypes.Get(ct).LinkHandlers or {}) do
+			lt[et] = true
+		end
+	end
+
+	for v, _ in pairs(lt) do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
-			local Result, Message = CanLinkCrew(Target, Crew)
+			local Result, Message = CanLinkCrew(Crew, Target)
 			if Result then
-				if FromChip then TimerSimple(10, function() LinkCrew(Target, Crew) end)
-				else LinkCrew(Target, Crew) end
+				if FromChip then TimerSimple(10, function() LinkCrew(Crew, Target) end)
+				else LinkCrew(Crew, Target) end
 			end
 			return Result, Message
 		end)
@@ -736,7 +745,7 @@ do
 		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew, FromChip)
 			if not Target.Crews[Crew] or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
-			UnlinkCrew(Target, Crew)
+			UnlinkCrew(Crew, Target)
 
 			return true, "Crewmate unlinked successfully!"
 		end)
