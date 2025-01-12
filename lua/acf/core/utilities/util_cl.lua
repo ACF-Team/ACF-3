@@ -1025,6 +1025,7 @@ do
 		if not ACF.ToolCL_InLinkState() then return end
 		table.Empty(HUDText)
 
+		local playerPos       = LocalPlayer():GetPos()
 		local eyeTrace        = LocalPlayer():GetEyeTrace()
 		local lookEnt         = eyeTrace.Entity
 		local lookPos         = eyeTrace.HitPos
@@ -1036,8 +1037,9 @@ do
 				local targPos = lookingAtEntity and lookEnt:GetPos() or lookPos
 				local entPos  = ent:GetPos()
 
-				local inbetween = (entPos + targPos) / 2
 				local dist = entPos:Distance(targPos)
+				local player2targ = math.Clamp(playerPos:Distance(targPos) / 1.5, 0, dist / 2)
+				local inbetween = targPos + ((entPos - targPos):GetNormalized() * math.Clamp(dist, 0, player2targ))
 
 				local linkcolor = COLOR_Link
 				local renderOverride, renderData
@@ -1069,8 +1071,17 @@ do
 	hook.Add("HUDPaint", "ACF_HUDPaint_LinkDistanceVis", function()
 		if not ACF.ToolCL_InLinkState() then return end
 
+		local w, h = ScrW(), ScrH()
+		local padding = 16
+
 		for _, v in ipairs(HUDText) do
-			draw.SimpleTextOutlined(v.Text, "ACF_Title", v.X, v.Y, v.Color or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+			surface.SetFont("ACF_Title")
+			local tX, tY = surface.GetTextSize(v.Text)
+			tX = tX / 2
+			tY = tY / 2
+			local x, y = math.Clamp(v.X, tX + padding, w - tX - padding), math.Clamp(v.Y, tY + padding, h - tY - padding)
+
+			draw.SimpleTextOutlined(v.Text, "ACF_Title", x, y, v.Color or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
 		end
 	end)
 end
