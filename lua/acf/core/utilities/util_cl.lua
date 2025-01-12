@@ -944,7 +944,7 @@ do
 	local COLOR_Black               = Color(0, 0, 0, 255)
 	local COLOR_Link_OK             = Color(55, 235, 55, 255)
 	local COLOR_Link_Fail           = Color(255, 88, 88)
-	local COLOR_Link_FailDistMissed = Color(175, 0, 0)
+	local COLOR_Link_FailDistMissed = Color(255, 200, 81)
 	local COLOR_Link                = Color(205, 235, 255, 255)
 
 	function ACF.ToolCL_RegisterLinkGizmoData(from, to, callback)
@@ -987,8 +987,8 @@ do
 			render.DepthRange(0, 0)
 			render.DrawBeam(fromPos, toMaxDist, 2, 0, 1, COLOR_Black)
 			render.DrawBeam(toMaxDist, toPos, 2, 0, 1, COLOR_Black)
-			render.DrawBeam(fromPos, toMaxDist, 1, 0, 1, COLOR_Link_Fail)
-			render.DrawBeam(toMaxDist, toPos, 1, 0, 1, COLOR_Link_FailDistMissed)
+			render.DrawBeam(fromPos, toMaxDist, 1, 0, 1, COLOR_Link_FailDistMissed)
+			render.DrawBeam(toMaxDist, toPos, 1, 0, 1, COLOR_Link_Fail)
 			render.DepthRange(0, 1)
 		end
 	}
