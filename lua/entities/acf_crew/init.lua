@@ -193,14 +193,12 @@ do -- Random timer stuff
 	function ENT:UpdateHighFreq(cfg)
 		local DeltaTime = cfg.DeltaTime
 
-		-- Check world lean angle and update ergonomics
-		local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
-		self.LeanAngle = math.deg(math.acos(LeanDot))
-
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = self.CrewType.LeanInfo
 		if LeanInfo then
-			self.LeanEff = 1 - ACF.Normalize(self.LeanAngle, LeanInfo.Min, LeanInfo.Max)
+			local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
+			local Angle = math.deg(math.acos(LeanDot))
+			self.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
 			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
 		end
 
@@ -361,7 +359,6 @@ do
 
 		-- Various state variables
 		Entity.ShouldScan = false
-		Entity.LeanAngle = 0
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 		Entity.IsAlive = true
 
@@ -437,7 +434,7 @@ do
 		str = string.format("Role: %s\nHealth: %s HP\nLean Angle: %s Deg\nSpace: %s %%\nMove: %s %%\nEfficiency: %s %%",
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
-			math.Round(self.LeanAngle, 2),
+			math.Round(self.LeanEff * 100, 2),
 			math.Round(self.SpaceEff * 100, 2),
 			math.Round(self.MoveEff * 100, 2),
 			math.Round(self.TotalEff * 100, 2)
