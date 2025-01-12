@@ -941,13 +941,11 @@ end
 do
 	local EntGizmoDifferences = {}
 
-
 	local COLOR_Black               = Color(0, 0, 0, 255)
 	local COLOR_Link_OK             = Color(55, 235, 55, 255)
 	local COLOR_Link_Fail           = Color(255, 88, 88)
 	local COLOR_Link_FailDistMissed = Color(175, 0, 0)
 	local COLOR_Link                = Color(205, 235, 255, 255)
-
 
 	function ACF.ToolCL_RegisterLinkGizmoData(from, to, callback)
 		EntGizmoDifferences[from] = EntGizmoDifferences[from] or {}
@@ -1051,8 +1049,10 @@ do
 					local canLink, why, data = ACF.ToolCL_CanLink(ent, lookEnt, dist)
 					linkcolor = canLink and COLOR_Link_OK or COLOR_Link_Fail
 					local linkText = canLink and distTextOK or distTextNo:format(why.Text and why.Text or why)
-					renderOverride = why.Renderer
-					renderData = data
+					if not canLink then
+						renderOverride = why.Renderer
+						renderData = data
+					end
 					DrawText(linkText, linkcolor, inbetween)
 				else
 					DrawText(distText:format(dist), linkcolor, inbetween)
