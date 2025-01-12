@@ -888,6 +888,24 @@ do -- Crew related
 
 		return true
 	end
+
+	--- Recursively searches a table for an entry given keys, initializing layers with {} if they don't exist
+	--- @param tbl table -- The table to search
+	--- @param ... any -- The keys to search for
+	--- @return any -- The value at the given keys
+	function ACF.GetTableSafe(tbl, ...)
+		if not tbl then return end
+
+		local keys = { ... }
+		local value = tbl
+
+		for _, key in ipairs(keys) do
+			if not value[key] then value[key] = {} end
+			value = value[key]
+		end
+
+		return value
+	end
 end
 
 do -- Reload related
