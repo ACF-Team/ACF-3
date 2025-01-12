@@ -224,7 +224,7 @@ function Damage.doPropDamage(Entity, DmgResult)
 		Damage.Network(Entity, nil, NewHealth, MaxHealth)
 	end
 
-	if Entity.ACF_DamageUpdatesWireOverlay then
+	if Entity.ACF_HealthUpdatesWireOverlay then
 		Entity:UpdateOverlay()
 	end
 

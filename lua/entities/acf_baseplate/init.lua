@@ -9,7 +9,7 @@ local Entities = Classes.Entities
 ENT.ACF_Limit                     = 16
 ENT.ACF_UserWeighable             = true
 ENT.ACF_KillableButIndestructible = true
-ENT.ACF_DamageUpdatesWireOverlay  = true
+ENT.ACF_HealthUpdatesWireOverlay  = true
 
 function ENT.ACF_OnVerifyClientData(ClientData)
     ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
