@@ -11,12 +11,12 @@ local CrewTypes = ACF.Classes.CrewTypes
 
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
-local CheckCount = function(Crew, Class, Count)
+local function CheckCount(Crew, Class, Count)
 	return table.Count(Crew.TargetsByType[Class] or {}) >= (Count or 1)
 end
 
 --- Finds the longest bullet of any gun connected to this crew and adjusts the box accordingly
-local FindLongestBullet = function(Crew)
+local function FindLongestBullet(Crew)
 	-- Go through every bullet linked to the gun, and find the longest shell
 	local LongestLength = 0
 	local LongestBullet = nil
@@ -159,7 +159,10 @@ CrewTypes.Register("Driver", {
 	},
 	LinkHandlers = {
 		acf_baseplate = {
-
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_baseplate") then return false, "Drivers can only link to one acf_baseplate." end
+				return true, "Crew linked."
+			end
 		}
 	},
 	UpdateEfficiency = function(Crew, Commander)

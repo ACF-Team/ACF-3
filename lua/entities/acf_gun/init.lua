@@ -592,8 +592,6 @@ do -- Metamethods --------------------------------
 			local SpreadScale = ACF.SpreadScale
 			local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
 
-			self:UpdateAccuracyMod()
-
 			return self.Spread * ACF.GunInaccuracyScale * IaccMult / self.AccuracyCrewMod
 		end
 
@@ -834,7 +832,6 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				self:UpdateLoadMod()
 				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
 				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 				print("Mag Reload: " .. Time)
