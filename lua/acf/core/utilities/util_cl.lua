@@ -970,6 +970,9 @@ do
 	function ACF.ToolCL_CanLink(from, to)
 		if not IsValid(from) then return false, "Link target not valid!" end
 		if not IsValid(to) then return false, "Target not valid!" end
+
+		if from == to then return false, "Cannot link an entity to itself!" end
+
 		local hadData, canLink, whyNot, renderData = ACF.ToolCL_GetLinkGizmoData(from, to)
 		if not hadData then return false, "No link data." end
 		return canLink == nil and true or canLink, whyNot, renderData
@@ -1047,7 +1050,7 @@ do
 				if lookingAtEntity then
 					local canLink, why, data = ACF.ToolCL_CanLink(ent, lookEnt, dist)
 					linkcolor = canLink and COLOR_Link_OK or COLOR_Link_Fail
-					local linkText = canLink and distTextOK or distTextNo:format(why.Text)
+					local linkText = canLink and distTextOK or distTextNo:format(why.Text and why.Text or why)
 					renderOverride = why.Renderer
 					renderData = data
 					DrawText(linkText, linkcolor, inbetween)
