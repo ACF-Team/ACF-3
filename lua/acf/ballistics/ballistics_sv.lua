@@ -18,9 +18,6 @@ local FlightTr        = { start = true, endpos = true, filter = true, mask = tru
 local GlobalFilter    = ACF.GlobalFilter
 local AmmoTypes       = ACF.Classes.AmmoTypes
 local HookRun         = hook.Run
-local EntIndexing     = ACF.EntityIndexing
-local Index           = EntIndexing.Get
-
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -140,7 +137,7 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
-	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Index(Bullet.Owner:GetVehicle(), "Alias")) then
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
 	end
@@ -207,14 +204,13 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
 
-	if Index(Entity, "_IsSpherical") then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
-
-	if Index(Entity, "ACF_InvisibleToBallistics") then return false end
-	if Index(Entity, "ACF_KillableButIndestructible") then
-		local EntACF = Index(Entity, "ACF")
+	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	if Entity.ACF_InvisibleToBallistics then return false end
+	if Entity.ACF_KillableButIndestructible then
+		local EntACF = Entity.ACF
 	    if EntACF and EntACF.Health <= 0 then return false end
 	end
-	if Index(Entity, "ACF_TestFilter") then return Entity:ACF_TestFilter(Bullet) end
+	if Entity.ACF_TestFilter then return Entity:ACF_TestFilter(Bullet) end
 
 	return true
 end
