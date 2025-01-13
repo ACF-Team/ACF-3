@@ -2,8 +2,7 @@ local EntTable = {
     Entity2Table = {}
 }
 
-ACF.EntityTable = EntTable
-
+ACF.EntityIndexing = EntTable
 local ent2tbl = EntTable.Entity2Table
 
 function EntTable.Get(ent, key)
