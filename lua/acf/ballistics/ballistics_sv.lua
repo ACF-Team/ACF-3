@@ -19,7 +19,7 @@ local GlobalFilter    = ACF.GlobalFilter
 local AmmoTypes       = ACF.Classes.AmmoTypes
 local HookRun         = hook.Run
 local EntIndexing     = ACF.EntityIndexing
-local Index, Newindex = EntIndexing.Get, EntIndexing.Set
+local Index           = EntIndexing.Get
 
 
 -- This will create, or update, the tracer effect on the clientside

@@ -33,7 +33,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
     end
 end
 
-function ENT:CFW_OnParentedTo(oldEntity, newEntity)
+function ENT:CFW_OnParentedTo(_, newEntity)
     if IsValid(newEntity) then
         ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
     end
