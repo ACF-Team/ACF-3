@@ -52,7 +52,7 @@ do -- Spawning and Updating
 				Armor:VerifyData(Data)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_armor", Data, Armor)
+			hook.Run("ACF_OnVerifyData", "acf_armor", Data, Armor)
 		end
 	end
 
@@ -89,7 +89,7 @@ do -- Spawning and Updating
 
 		local Armor = Armors.Get(Data.ArmorType)
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_armor", Player, Data, Armor)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_armor", Player, Data, Armor)
 		if CanSpawn == false then return false end
 
 		Player:AddCount("_acf_armor", Plate)
@@ -113,7 +113,7 @@ do -- Spawning and Updating
 			Armor:OnSpawn(Plate, Data)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_armor", Plate, Data, Armor)
+		hook.Run("ACF_OnSpawnEntity", "acf_armor", Plate, Data, Armor)
 
 		return Plate
 	end
@@ -132,7 +132,7 @@ do -- Spawning and Updating
 			OldArmor:OnLast(self)
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldArmor)
 
 		ACF.SaveEntity(self)
 
@@ -144,7 +144,7 @@ do -- Spawning and Updating
 			Armor:OnUpdate(Plate, Data)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_armor", self, Data, Armor)
+		hook.Run("ACF_OnUpdateEntity", "acf_armor", self, Data, Armor)
 
 		net.Start("ACF_UpdateEntity")
 			net.WriteEntity(self)

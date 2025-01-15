@@ -101,7 +101,7 @@ do	-- Spawn and Update funcs
 
 		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret_computer", Player, Data, Class, Computer)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_computer", Player, Data, Class, Computer)
 
 		if CanSpawn == false then return end
 
@@ -129,7 +129,7 @@ do	-- Spawn and Update funcs
 
 		Entity:UpdateOverlay(true)
 
-		HookRun("ACF_OnEntitySpawn", "acf_turret_computer", Entity, Data, Class, Computer)
+		HookRun("ACF_OnSpawnEntity", "acf_turret_computer", Entity, Data, Class, Computer)
 
 		ACF.CheckLegal(Entity)
 
@@ -145,7 +145,7 @@ do	-- Spawn and Update funcs
 		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret_computer", self, Data, Class, Computer)
+		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_computer", self, Data, Class, Computer)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -157,7 +157,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret_computer", self, Data, Class, Computer)
+		HookRun("ACF_OnUpdateEntity", "acf_turret_computer", self, Data, Class, Computer)
 
 		self:UpdateOverlay(true)
 

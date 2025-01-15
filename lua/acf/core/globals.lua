@@ -229,7 +229,7 @@ do -- Player loaded hook
 		util.AddNetworkString("ACF_PlayerLoaded")
 
 		net.Receive("ACF_PlayerLoaded", function(_, Player)
-			hook.Run("ACF_OnPlayerLoaded", Player)
+			hook.Run("ACF_OnLoadPlayer", Player)
 		end)
 	else
 		hook.Add("InitPostEntity", "ACF Player Loaded", function()
@@ -289,7 +289,7 @@ do -- Smoke/Wind -----------------------------------
 			end
 		end)
 
-		hook.Add("ACF_OnPlayerLoaded", "ACF Send Smoke Wind", function(Player)
+		hook.Add("ACF_OnLoadPlayer", "ACF Send Smoke Wind", function(Player)
 			net.Start("acf_smokewind")
 				net.WriteFloat(ACF.SmokeWind)
 			net.Send(Player)

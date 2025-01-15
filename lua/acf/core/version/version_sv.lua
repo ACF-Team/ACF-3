@@ -121,7 +121,7 @@ end
 do -- Client syncronization
 	util.AddNetworkString("ACF_VersionSync")
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF_VersionSync", function(Player)
+	hook.Add("ACF_OnLoadPlayer", "ACF_VersionSync", function(Player)
 		local JSON = util.TableToJSON(Repos)
 
 		net.Start("ACF_VersionSync")

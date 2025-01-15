@@ -36,7 +36,7 @@ function Ammo:GetDisplayData(Data)
 		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -62,7 +62,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -188,7 +188,7 @@ else
 		Effects.CreateEffect("ACF_Smoke", EffectTable)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
@@ -210,14 +210,14 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.FillerRatio = true
-		Trackers.SmokeWPRatio = true
+		Label:TrackClientData("FillerRatio")
+		Label:TrackClientData("SmokeWPRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
+	function Ammo:OnCreateAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

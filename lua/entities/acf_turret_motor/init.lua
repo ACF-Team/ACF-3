@@ -108,7 +108,7 @@ do	-- Spawn and Update funcs
 
 		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret_motor", Player, Data, Class, Motor)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_motor", Player, Data, Class, Motor)
 
 		if CanSpawn == false then return end
 
@@ -135,7 +135,7 @@ do	-- Spawn and Update funcs
 
 		Entity:UpdateOverlay(true)
 
-		HookRun("ACF_OnEntitySpawn", "acf_turret_motor", Entity, Data, Class, Motor)
+		HookRun("ACF_OnSpawnEntity", "acf_turret_motor", Entity, Data, Class, Motor)
 
 		ACF.CheckLegal(Entity)
 
@@ -151,7 +151,7 @@ do	-- Spawn and Update funcs
 		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret_motor", self, Data, Class, Motor)
+		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_motor", self, Data, Class, Motor)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -163,7 +163,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret_motor", self, Data, Class, Motor)
+		HookRun("ACF_OnUpdateEntity", "acf_turret_motor", self, Data, Class, Motor)
 
 		if IsValid(self.Turret) then
 			self.Turret:UpdateTurretSlew()

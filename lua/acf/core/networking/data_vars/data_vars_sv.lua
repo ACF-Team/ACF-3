@@ -119,7 +119,7 @@ do -- Data syncronization
 		end
 	})
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF Data Var Syncronization", function(Player)
+	hook.Add("ACF_OnLoadPlayer", "ACF Data Var Syncronization", function(Player)
 		-- Server data var syncronization
 		for Key in pairs(Server) do
 			NetworkData(Key, Player)
@@ -198,7 +198,7 @@ do -- Server data setter function
 		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
-			hook.Run("ACF_OnServerDataUpdate", nil, Key, Value)
+			hook.Run("ACF_OnUpdateServerData", nil, Key, Value)
 
 			NetworkData(Key)
 		end

@@ -38,7 +38,8 @@ if CLIENT then
 
 			return
 		end
-		if Entity.CanDrawOverlay and Entity:CanDrawOverlay() == false then return end
+
+		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
 
 		if Distance <= 65536 then
 			cam.Start3D()
@@ -63,7 +64,7 @@ if CLIENT then
 		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
 	end)
 
-	hook.Add("ACF_DrawBoxes", "ACF Draw Hitboxes", function(Entity)
+	hook.Add("ACF_OnDrawBoxes", "ACF Draw Hitboxes", function(Entity)
 		if not Entity.HitBoxes then return end
 		if not next(Entity.HitBoxes) then return end
 

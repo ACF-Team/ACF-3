@@ -163,9 +163,9 @@ return {
         },
 
         {
-            name = "Is not Legal when ACF_IsLegal hook returns",
+            name = "Is not Legal when ACF_OnCheckLegal hook returns",
             func = function( State )
-                hook.Add( "ACF_IsLegal", "TestFailure", function()
+                hook.Add( "ACF_OnCheckLegal", "TestFailure", function()
                     return false, "Test reason", "Test message", "Test timeout"
                 end )
 
@@ -178,7 +178,7 @@ return {
                 expect( Timeout ).to.equal( "Test timeout" )
             end,
 
-            cleanup = function() hook.Remove( "ACF_IsLegal", "TestFailure" ) end
+            cleanup = function() hook.Remove( "ACF_OnCheckLegal", "TestFailure" ) end
         },
 
         {
