@@ -358,7 +358,7 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return false end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_engine", Player, Data, Class, Engine)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_engine", Player, Data, Class, Engine)
 
 		if CanSpawn == false then return false end
 
@@ -404,7 +404,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
+		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
 		Entity:UpdateOverlay(true)
 
@@ -431,7 +431,7 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -451,7 +451,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, Engine)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		hook.Run("ACF_OnUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if next(self.Gearboxes) then
 			local Count, Total = 0, 0

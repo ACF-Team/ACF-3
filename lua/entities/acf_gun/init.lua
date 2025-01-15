@@ -218,7 +218,7 @@ do -- Spawn and Update functions --------------------------------
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gun", Player, Data, Class, Weapon)
 
 		if CanSpawn == false then return false end
 
@@ -262,7 +262,7 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
+		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
 
@@ -292,7 +292,7 @@ do -- Spawn and Update functions --------------------------------
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gun", self, Data, Class, Weapon)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -316,7 +316,7 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnUpdate(self, Data, Class, Weapon)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		hook.Run("ACF_OnUpdateEntity", "acf_gun", self, Data, Class, Weapon)
 
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do

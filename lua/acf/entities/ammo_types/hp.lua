@@ -20,7 +20,7 @@ function Ammo:GetDisplayData(Data)
 
 	Display.MaxKETransfert = Energy.Kinetic * Data.ShovePower
 
-	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end

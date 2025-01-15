@@ -168,7 +168,7 @@ function Entities.AutoRegister(ENT)
 		UpdateEntityData(self, ClientData)
 		ACF.RestoreEntity(self)
 
-		hook.Run("ACF_OnEntityUpdate", Class, self, ClientData)
+		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
 		if self.UpdateOverlay then self:UpdateOverlay(true) end
 		net.Start("ACF_UpdateEntity")
 		net.WriteEntity(self)
@@ -187,7 +187,7 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", Class, Player, ClientData)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData)
 		if CanSpawn == false then return false end
 
 		local New = ents.Create(Class)
@@ -208,7 +208,7 @@ function Entities.AutoRegister(ENT)
 		New.Owner = Player -- MUST be stored on ent for PP
 		New.DataStore = Entities.GetArguments(Class)
 
-		hook.Run("ACF_OnEntitySpawn", Class, New, ClientData)
+		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)

@@ -35,7 +35,7 @@ function Ammo:GetDisplayData(Data)
 	Display.FragMass    = FragMass / Display.Fragments
 	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end

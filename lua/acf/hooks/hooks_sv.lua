@@ -102,7 +102,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Data table The table of entity information that will be used on the entity.
 	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
 	--- @return boolean # True if the entity can be spawned, false otherwise.
-	function Gamemode:ACF_PreEntitySpawn()
+	function Gamemode:ACF_PreSpawnEntity()
 		return true
 	end
 
@@ -111,7 +111,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Entity entity The entity that was spawned.
 	--- @param Data table The table of entity information that was used on the entity.
 	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
-	function Gamemode:ACF_OnEntitySpawn()
+	function Gamemode:ACF_OnSpawnEntity()
 	end
 
 	--- Called before an entity is attempted to be updated.  
@@ -122,7 +122,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
 	--- @return boolean # True if the entity can be updated, false otherwise.
 	--- @return string # The reason why the entity couldn't be updated. Not required if the entity can be updated.
-	function Gamemode:ACF_PreEntityUpdate()
+	function Gamemode:ACF_PreUpdateEntity()
 		return true
 	end
 
@@ -131,7 +131,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Entity entity The entity that was updated.
 	--- @param Data table The table of entity information that was used on the entity.
 	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
-	function Gamemode:ACF_OnEntityUpdate()
+	function Gamemode:ACF_OnUpdateEntity()
 	end
 
 	--- Called when an entity is about to be updated or removed.

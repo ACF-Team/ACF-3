@@ -284,7 +284,7 @@ do -- Spawning and Updating --------------------
 		local Ammo   = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
 		local Model  = "models/holograms/hq_rcube_thin.mdl"
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 
 		if CanSpawn == false then return false end
 
@@ -319,7 +319,7 @@ do -- Spawning and Updating --------------------
 			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
+		hook.Run("ACF_OnSpawnEntity", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
 
 		Crate:UpdateOverlay(true)
 
@@ -370,7 +370,7 @@ do -- Spawning and Updating --------------------
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -389,7 +389,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		hook.Run("ACF_OnUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
 		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
 			-- Unlink if the weapon type or caliber has changed

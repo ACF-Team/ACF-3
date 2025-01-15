@@ -183,7 +183,7 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_fueltank", Player, Data, Class, FuelTank)
+		local CanSpawn = HookRun("ACF_PreSpawnEntity", "acf_fueltank", Player, Data, Class, FuelTank)
 
 		if CanSpawn == false then return end
 
@@ -223,7 +223,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_fueltank", Tank, Data, Class, FuelTank)
+		HookRun("ACF_OnSpawnEntity", "acf_fueltank", Tank, Data, Class, FuelTank)
 
 		Tank:UpdateOverlay(true)
 
@@ -252,7 +252,7 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -272,7 +272,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, FuelTank)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_fueltank", self, Data, Class, FuelTank)
+		HookRun("ACF_OnUpdateEntity", "acf_fueltank", self, Data, Class, FuelTank)
 
 		if next(self.Engines) then
 			local Fuel    = self.FuelType

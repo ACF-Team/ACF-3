@@ -27,7 +27,7 @@ function Ammo:GetDisplayData(Data)
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
-	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end

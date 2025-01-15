@@ -211,7 +211,7 @@ do -- Spawning and Updating --------------------
 		local Class    = Piledrivers.Get(Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_piledriver", self, Data, Class)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -230,7 +230,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_piledriver", self, Data, Class)
+		hook.Run("ACF_OnUpdateEntity", "acf_piledriver", self, Data, Class)
 
 		self:UpdateOverlay(true)
 

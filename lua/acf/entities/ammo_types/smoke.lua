@@ -36,7 +36,7 @@ function Ammo:GetDisplayData(Data)
 		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
 	}
 
-	hook.Run("ACF_OnGetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end

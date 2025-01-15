@@ -197,8 +197,8 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
-	hook.Add("ACF_OnEntitySpawn", "ACF Cleanup Gearbox Data", CleanupData)
-	hook.Add("ACF_OnEntityUpdate", "ACF Cleanup Gearbox Data", CleanupData)
+	hook.Add("ACF_OnSpawnEntity", "ACF Cleanup Gearbox Data", CleanupData)
+	hook.Add("ACF_OnUpdateEntity", "ACF Cleanup Gearbox Data", CleanupData)
 	hook.Add("ACF_OnSetupInputs", "ACF Cleanup Gearbox Data", function(Entity, List)
 		if Entity:GetClass() ~= "acf_gearbox" then return end
 
@@ -231,7 +231,7 @@ do -- Spawn and Update functions -----------------------
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, Gearbox)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gearbox", Player, Data, Class, Gearbox)
 
 		if CanSpawn == false then return false end
 
@@ -276,7 +276,7 @@ do -- Spawn and Update functions -----------------------
 			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
 
-		hook.Run("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
+		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		Entity:UpdateOverlay(true)
 
@@ -311,7 +311,7 @@ do -- Spawn and Update functions -----------------------
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -330,7 +330,7 @@ do -- Spawn and Update functions -----------------------
 			Class.OnUpdate(self, Data, Class, Gearbox)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		hook.Run("ACF_OnUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
 
 		if next(self.Engines) then
 			local Count, Total = 0, 0

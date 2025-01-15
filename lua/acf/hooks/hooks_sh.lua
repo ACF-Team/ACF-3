@@ -66,7 +66,7 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	--- @param AmmoType table The ammo type object requesting its display information.
 	--- @param Bullet table The bullet object being used to get display information.
 	--- @param GUIData table The display information table itself.
-	function Gamemode:ACF_OnGetDisplayData()
+	function Gamemode:ACF_OnRequestDisplayData()
 	end
 
 	--- Called when a bullet object is created or updated.
