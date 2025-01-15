@@ -204,13 +204,15 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
 
-	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
-	if Entity.ACF_InvisibleToBallistics then return false end
-	if Entity.ACF_KillableButIndestructible then
-		local EntACF = Entity.ACF
+	local EntTbl = Entity:GetTable()
+
+	if EntTbl._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	if EntTbl.ACF_InvisibleToBallistics then return false end
+	if EntTbl.ACF_KillableButIndestructible then
+		local EntACF = EntTbl.ACF
 	    if EntACF and EntACF.Health <= 0 then return false end
 	end
-	if Entity.ACF_TestFilter then return Entity:ACF_TestFilter(Bullet) end
+	if EntTbl.ACF_TestFilter then return EntTbl.ACF_TestFilter(Entity, Bullet) end
 
 	return true
 end

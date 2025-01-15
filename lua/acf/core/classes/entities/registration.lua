@@ -123,14 +123,16 @@ Entities.AddDataArgumentType("LinkedEntity",
 	end
 )
 
--- MARCH: Untested! Tell me if this breaks!
+-- MARCH: Untested!
+-- And if this code stays here, fix the PascalCase issue
+--[[
 Entities.AddDataArgumentType("LinkedEntities",
 	function(Value, Specs)
 		if not Value then return {} end
 		if isentity(Value) then Value = {Value} end
 		if not istable(Value) then return {} end
 
-		local ret = {}
+		local Ret = {}
 		local max = Specs.Max
 		for k, v in ipairs(Value) do
 			if max and k > max then break end
@@ -145,7 +147,7 @@ Entities.AddDataArgumentType("LinkedEntities",
 				end
 			end
 
-			ret[k] = v
+			Ret[k] = v
 		end
 
 		return Value
@@ -170,7 +172,7 @@ Entities.AddDataArgumentType("LinkedEntities",
 
 		return ret
 	end
-)
+)]]
 
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
