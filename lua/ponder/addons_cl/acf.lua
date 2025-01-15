@@ -27,3 +27,10 @@ Ponder.API.RegisterAddonCategory("acf", "mobility", {
     ModelIcon = "models/props_phx/wheels/trucktire.mdl",
     Description = "acf.storyboards.mobility.desc"
 })
+
+Ponder.API.RegisterAddonCategory("acf", "crew", {
+    Name = "acf.storyboards.crew",
+    Order = 2,
+    ModelIcon = "models/chairs_playerstart/sitpose.mdl",
+    Description = "acf.storyboards.crew.desc"
+})
