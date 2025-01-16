@@ -55,13 +55,16 @@ do -- Transaxial Gearboxes
 
 	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end

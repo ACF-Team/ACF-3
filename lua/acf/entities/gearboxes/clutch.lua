@@ -42,18 +42,22 @@ end
 do -- Straight-through Gearboxes
 	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
 		Scale = ScaleT,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end
 

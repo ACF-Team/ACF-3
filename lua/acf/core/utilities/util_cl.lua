@@ -100,14 +100,14 @@ do -- Default gearbox menus
 				local Default = ValuesData[Variable]
 
 				if not Default then
-					Default = math.Clamp(I * 0.1, -1, 1)
+					Default = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[Variable] = Default
 				end
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local Control = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -126,7 +126,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
+			local FinalDrive = GearBase:AddSlider("Final Drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -145,10 +145,10 @@ do -- Default gearbox menus
 			{
 				Name = "Gear 2",
 				Variable = "Gear2",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
 				Name = "Min Target RPM",
@@ -169,10 +169,10 @@ do -- Default gearbox menus
 			{
 				Name = "Final Drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = 1,
+				Default = 0.1,
 			},
 		}
 
@@ -183,7 +183,7 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[Class.ID]
 
-			ACF.SetClientData("Gear1", 0.01)
+			ACF.SetClientData("Gear1", 1)
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
@@ -218,18 +218,18 @@ do -- Default gearbox menus
 			{
 				Name = "Reverse Gear",
 				Variable = "Reverse",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
 				Name = "Final Drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = 1,
+				Default = 0.1,
 			},
 		}
 
@@ -302,14 +302,14 @@ do -- Default gearbox menus
 				local DefGear = ValuesData[GearVar]
 
 				if not DefGear then
-					DefGear = math.Clamp(I * 0.1, -1, 1)
+					DefGear = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[GearVar] = DefGear
 				end
 
 				ACF.SetClientData(GearVar, DefGear)
 
-				local Gear = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local Gear = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)

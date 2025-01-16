@@ -48,27 +48,33 @@ end
 do -- Inline Gearboxes
 	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end

@@ -49,59 +49,71 @@ do -- Pre-Scalable Gearboxes
 	-- Inline Gearboxes
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 
 	-- Inline Dual Clutch Gearboxes
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-S", {
 		Scale = ScaleS,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-M", {
 		Scale = ScaleM,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-L", {
 		Scale = ScaleL,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	-- Transaxial Gearboxes
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 
 	-- Transaxial Dual Clutch Gearboxes
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-S", {
 		Scale = ScaleS,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-M", {
 		Scale = ScaleM,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-L", {
 		Scale = ScaleL,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 end
 

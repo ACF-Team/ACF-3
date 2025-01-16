@@ -27,8 +27,8 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 
 	if GearRatio == 0 then return 0 end
 
-	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gearratio
-	return BaseRPM / GearRatio / -6
+	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert
+	return BaseRPM / -6
 end
 
 do -- Spawn and Update functions -----------------------
@@ -93,7 +93,11 @@ do -- Spawn and Update functions -----------------------
 					Data["Gear" .. I] = nil
 				end
 
-				Gears[I] = Clamp(Gear, -1, 1)
+				if Gearbox.InvertGearRatios then
+					Gear = math.Round(1 / Gear, 2)
+				end
+
+				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
 		end
 
@@ -106,7 +110,11 @@ do -- Spawn and Update functions -----------------------
 				Data.Gear0 = nil
 			end
 
-			Data.FinalDrive = Clamp(Final, -1, 1)
+			if Gearbox.InvertGearRatios then
+				Final = math.Round(1 / Final, 2)
+			end
+
+			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
 
 		do -- External verifications
@@ -797,7 +805,7 @@ do -- Movement -----------------------------------------
 				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 1, ACF.MaxGearRatio)
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
@@ -836,10 +844,10 @@ do -- Movement -----------------------------------------
 				local Inertia = 0
 
 				if GearRatio ~= 0 then
-					Inertia = InputInertia / GearRatio
+					Inertia = InputInertia * GearRatio
 				end
 
-				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) * GearRatio) * Clutch
+				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) / GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
@@ -901,7 +909,7 @@ do -- Movement -----------------------------------------
 		local GearRatio = self.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) / GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do

@@ -121,14 +121,17 @@ end
 do -- Inline Gearboxes
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-L-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end
 
@@ -136,30 +139,36 @@ do -- Inline Dual Clutch Gearboxes
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-S", {
 		Scale = ScaleS,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-M", {
 		Scale = ScaleM,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-L", "CVT-LD-L", {
 		Scale = ScaleL,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 end
 
 do -- Transaxial Gearboxes
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-T-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end
 
@@ -167,30 +176,36 @@ do -- Transaxial Dual Clutch Gearboxes
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-S", {
 		Scale = ScaleS,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-M", {
 		Scale = ScaleM,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-T", "CVT-TD-L", {
 		Scale = ScaleL,
 		DualClutch = true,
+		InvertGearRatios = true,
 	})
 end
 
 do -- Straight-through Gearboxes
 	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-S", {
 		Scale = ScaleS,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-M", {
 		Scale = ScaleM,
+		InvertGearRatios = true,
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
 	})
 end
 
