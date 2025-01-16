@@ -1,36 +1,84 @@
 local ACF = ACF
 
 do
-	-- Until things load, theres no way to register settings, so ACF.DefineSetting gets created here.
+	-- MARCH:
+	-- Until things load, theres no way to register settings, so all the settings stuff gets created here.
 	-- Data callbacks later creates ACF.__OnDefinedSetting (and also goes through everything defined here).
 	-- Both combined should ensure that no matter where ACF.DefineSetting is called, it will be registered
 	-- (but for official addon stuff, we should just define it here)
 
-	if not ACF.__DefinedSettings then
-		ACF.__DefinedSettings = {}
-	end
+	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I 
+	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and 
+	-- globals is the first file that would load...  
+
+	ACF.__DefinedSettings = ACF.__DefinedSettings or {}
+
+	-- This is kind of a weird API, but it allows DataCallback functions to set setting data as long as the key
+	-- isn't the default values (Key, Default, TextWhenChanged, Callback). Just call ACF.GetWorkingSetting() in
+	-- a data callback
+	local SettingData = {}
+
+	-- Defines a single setting.
+	-- Internally sets up the global, then registers the setting data.
+
+	-- A callback function can be provided. This callback should be a function that takes in a string Key and a
+	-- arbitrary type Value, and returns Value back. You can use a function that returns a function to create a
+	-- standard for a specific type; see ACF.BooleanDataCallback, FloatDataCallback, etc for examples of how that
+	-- behavior works.
 
 	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback)
 		ACF[Key] = Default
-		ACF.__DefinedSettings[Key] = {
-			Key = Key,
-			Default = Default,
-			Callback = Callback,
-			TextWhenChanged = TextWhenChanged
-		}
+
+		SettingData.Key             = Key
+		SettingData.Default         = Default
+		SettingData.TextWhenChanged = TextWhenChanged
+		SettingData.Callback        = Callback
+
+		ACF.__DefinedSettings[Key]  = SettingData
+		SettingData                 = {}
+
 		if ACF.__OnDefinedSetting then
 			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback)
 		end
-		-- print("ACF.DefineSetting: define " .. Key .. " = " .. tostring(Default) .. ", callback " .. tostring(Callback))
 	end
 
-	function ACF.BooleanDataCallback()
+	-- Returns the current value for the setting (ACF[Key]), along with the settings data.
+	function ACF.GetSetting(Key)
+		if not ACF[Key] then return end
+
+		return ACF[Key], ACF.__DefinedSettings[Key]
+	end
+
+	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(), 
+	-- SettingData is set to a new table; this is meant to be used in a data callback context (to write things
+	-- like minimum and maximum values for the panel, for example)
+	function ACF.GetWorkingSetting()
+		return SettingData
+	end
+
+	function ACF.BooleanDataCallback(Callback)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type = "Boolean"
+
 		return function(_, Value)
-			return tobool(Value)
+			Value = tobool(Value)
+
+			if Callback then
+				Callback(Value)
+			end
+
+			return Value
 		end
 	end
 
 	function ACF.FactorDataCallback(ThreshKey, Min, Max, Decimals)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type     = "Factor"
+		SettingData.ThreshKey = ThreshKey
+		SettingData.Min       = Min
+		SettingData.Max       = Max
+		SettingData.Decimals  = Decimals
+
 		return function(Key, Value)
 			local Factor = math.Round(tonumber(Value) or 1, Decimals or 2)
 			if Min then Factor = math.max(Factor, Min) end
@@ -44,6 +92,12 @@ do
 	end
 
 	function ACF.FloatDataCallback(Min, Max, Decimals)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type     = "Float"
+		SettingData.Min       = Min
+		SettingData.Max       = Max
+		SettingData.Decimals  = Decimals
+
 		return function(_, Value)
 			local Float = math.Round(tonumber(Value) or 1, Decimals or 2)
 			if Min then Float = math.max(Float, Min) end
@@ -90,11 +144,10 @@ do -- ACF global vars
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",       true,   "Fun Entities have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",     false,  "Procedural armor has been %s.", function(_, Value)
-		Value = tobool(Value)
+	ACF.DefineSetting("AllowProcArmor",     false,  "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
 		ACF.GlobalFilter["acf_armor"] = not Value
 		return Value
-	end)
+	end))
 
 	ACF.DefineSetting("WorkshopContent",    true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",     true,   "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
