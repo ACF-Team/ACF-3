@@ -324,7 +324,7 @@ function Entities.AutoRegister(ENT)
 			local validated = typedef.Validator(self[k], v)
 			local ret       = typedef.PreCopy(self, validated)
 			if ret then
-				duplicator.StoreEntityModifier(self, "ACF_" .. k, {ret})
+				duplicator.StoreEntityModifier(self, k, {ret})
 			end
 		end
 
@@ -339,7 +339,7 @@ function Entities.AutoRegister(ENT)
 
 		for k, v in pairs(DataVars) do
 			local typedef    = DataArgumentTypes[v.Type]
-			local entmodData = EntMods["ACF_" .. k][1]
+			local entmodData = EntMods[k][1]
 			local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
 			ret              = typedef.Validator(ret, v)
 			if ret then Ent[k] = ret end
