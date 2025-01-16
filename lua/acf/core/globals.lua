@@ -1,5 +1,30 @@
 local ACF = ACF
 
+do
+	-- Until things load, theres no way to register settings, so ACF.DefineSetting gets created here.
+	-- Data callbacks later creates ACF.__OnDefinedSetting (and also goes through everything defined here).
+	-- Both combined should ensure that no matter where ACF.DefineSetting is called, it will be registered
+	-- (but for official addon stuff, we should just define it here)
+
+	if not ACF.__DefinedSettings then
+		ACF.__DefinedSettings = {}
+	end
+
+	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback)
+		ACF[Key] = Default
+		ACF.__DefinedSettings[Key] = {
+			Key = Key,
+			Default = Default,
+			Callback = Callback,
+			TextWhenChanged = TextWhenChanged
+		}
+		if ACF.__OnDefinedSetting then
+			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback)
+		end
+		-- print("ACF.DefineSetting: define " .. Key .. " = " .. tostring(Default) .. ", callback " .. tostring(Callback))
+	end
+end
+
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
