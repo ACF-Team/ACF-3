@@ -9,6 +9,26 @@ local Entities = Classes.Entities
 ENT.ACF_Limit = 16
 ENT.ACF_UserWeighable = true
 
+do -- Random timer crew stuff
+	function ENT:UpdateAccuracyMod(cfg)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
+	end
+
+	function ENT:UpdateFuelMod(cfg)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.FuelCrewMod
+	end
+end
+
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
 end
@@ -29,6 +49,8 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	else
 		ACF.Contraption.SetMass(self, 1000)
 	end
+	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
+	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 end
 
 do

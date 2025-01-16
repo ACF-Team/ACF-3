@@ -770,7 +770,9 @@ do
 		-- Restore previous links
 		if EntMods.CrewTargets then
 			for _, EntID in pairs(EntMods.CrewTargets) do
-				self:Link(CreatedEntities[EntID])
+				timer.Simple(1, function()
+					self:Link(CreatedEntities[EntID])
+				end)
 			end
 			EntMods.CrewTargets = nil
 		end

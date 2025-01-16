@@ -18,6 +18,18 @@ local TimerSimple	= timer.Simple
 local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
+do -- Random timer crew stuff
+	function ENT:UpdateAccuracyMod(cfg)
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
+	end
+end
+
 do	-- Spawn and Update funcs
 	local WireIO	= Utilities.WireIO
 	local Entities	= Classes.Entities
@@ -306,6 +318,8 @@ do	-- Spawn and Update funcs
 		UpdateTurret(Entity, Data, Class, Turret)
 
 		Entity:UpdateOverlay(true)
+
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 
 		HookRun("ACF_OnEntitySpawn", "acf_turret", Entity, Data, Class, Turret)
 

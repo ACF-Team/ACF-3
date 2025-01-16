@@ -69,13 +69,21 @@ do -- Random timer crew stuff
 		return self.LoadCrewMod
 	end
 
+	--- Finds the turret ring or baseplate from a gun
+	function ENT:FindPropagator(cfg)
+		local Temp = self:GetParent()
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
+		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
+		return nil
+	end
+
 	function ENT:UpdateAccuracyMod(cfg)
-		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
-		local Val = (Count > 0) and (Sum / Count) or 0
+		local Propagator = self:FindPropagator(cfg)
+		local Val = Propagator and Propagator.AccuracyCrewMod or 0
+
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		print("Accuracy", self.AccuracyCrewMod)
 		return self.AccuracyCrewMod
 	end
 end

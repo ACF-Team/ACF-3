@@ -240,11 +240,17 @@ local function SetActive(Entity, Value, EntTbl)
 end
 
 do -- Random timer crew stuff
+	function ENT:FindPropagator(cfg)
+		local Temp = self:GetParent()
+		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
+		return nil
+	end
+
 	function ENT:UpdateFuelMod(cfg)
-		self.CrewsByType = self.CrewsByType or {}
-		local Sum, Count = ACF.WeightedLinkSum(self.CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
-		local Val = (Count > 0) and (Sum / Count) or 0
+		local Propagator = self:FindPropagator(cfg)
+		local Val = Propagator and Propagator.FuelCrewMod or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		print("Fuel Rate", self.FuelCrewMod)
 		return self.FuelCrewMod
 	end
 end
