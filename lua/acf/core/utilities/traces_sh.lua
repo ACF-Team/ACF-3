@@ -51,6 +51,18 @@ do -- ACF.trace
 		end
 	end
 
+	local function testTraceable(Ent)
+		local EntTbl = Ent:GetTable()
+
+		if EntTbl.ACF_InvisibleToTrace then return true end
+
+		if EntTbl.ACF_KillableButIndestructible and EntTbl.ACF and EntTbl.ACF.Health <= 0 then
+			return true
+		end
+
+		return false;
+	end
+
 	function ACF.trace(traceData)
 		local Original = traceData.output
 		local Output   = {}
@@ -60,7 +72,7 @@ do -- ACF.trace
 		util.TraceLine(traceData)
 
 		-- Check for clips or to filter this entity
-		if Output.HitNonWorld and (ACF.GlobalFilter[Output.Entity:GetClass()] or ACF.CheckClips(Output.Entity, Output.HitPos)) then
+		if Output.HitNonWorld and (ACF.GlobalFilter[Output.Entity:GetClass()] or testTraceable(Output.Entity) or ACF.CheckClips(Output.Entity, Output.HitPos)) then
 			local OldFilter = traceData.filter
 			local Filter    = { Output.Entity }
 
