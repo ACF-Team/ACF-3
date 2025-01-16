@@ -23,6 +23,35 @@ do
 		end
 		-- print("ACF.DefineSetting: define " .. Key .. " = " .. tostring(Default) .. ", callback " .. tostring(Callback))
 	end
+
+	function ACF.BooleanDataCallback()
+		return function(_, Value)
+			return tobool(Value)
+		end
+	end
+
+	function ACF.FactorDataCallback(ThreshKey, Min, Max, Decimals)
+		return function(Key, Value)
+			local Factor = math.Round(tonumber(Value) or 1, Decimals or 2)
+			if Min then Factor = math.max(Factor, Min) end
+			if Max then Factor = math.min(Factor, Max) end
+
+			local Old = ACF[Key]
+			ACF[ThreshKey] = ACF[ThreshKey] / Old * Factor
+
+			return Factor
+		end
+	end
+
+	function ACF.FloatDataCallback(Min, Max, Decimals)
+		return function(_, Value)
+			local Float = math.Round(tonumber(Value) or 1, Decimals or 2)
+			if Min then Float = math.max(Float, Min) end
+			if Max then Float = math.min(Float, Max) end
+
+			return Float
+		end
+	end
 end
 
 do -- ACF global vars
