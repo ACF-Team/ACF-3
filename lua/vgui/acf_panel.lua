@@ -142,6 +142,12 @@ function PANEL:AddCheckBox(Text)
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
 
+	function Panel:LinkToServerData(Key)
+		local Value = ACF.GetSetting(Key)
+		self:SetValue(Value)
+		self:SetServerData(Key, "OnChange")
+	end
+
 	return Panel
 end
 
@@ -188,11 +194,21 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	Panel:DockMargin(0, 0, 0, 5)
 	Panel:SetDecimals(Decimals or 0)
 	Panel:SetText(Title or "")
-	Panel:SetMinMax(Min, Max)
+	if Min and Max then
+		Panel:SetMinMax(Min, Max)
+	end
 	Panel:SetValue(Min)
 	Panel:SetDark(true)
 
 	Panel.Label:SetFont("ACF_Control")
+
+	function Panel:LinkToServerData(Key)
+		local Value, SettingData = ACF.GetSetting(Key)
+		Panel:SetDecimals(SettingData.Decimals or 0)
+		Panel:SetMinMax(SettingData.Min, SettingData.Max)
+		Panel:SetValue(Value)
+		self:SetServerData(Key, "OnValueChanged")
+	end
 
 	return Panel
 end
