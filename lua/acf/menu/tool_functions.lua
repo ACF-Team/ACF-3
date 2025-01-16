@@ -485,7 +485,7 @@ end
 do -- Clientside Tool interaction
 	if SERVER then
 		-- When the client specifies a new tool mode, switch to the new stage and operation.
-		hook.Add("ACF_OnUpdateClientData", "ACF ToolMode", function(Player, Key, Value)
+		hook.Add("ACF_OnClientUpdateData", "ACF ToolMode", function(Player, Key, Value)
 			--- Check if the key is of the form (e.g. "ToolMode:acf_menu"/"ToolMode:acf_copy")
 			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
 			if Header ~= "ToolMode" then return end

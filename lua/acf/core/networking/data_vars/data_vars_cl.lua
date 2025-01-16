@@ -62,7 +62,7 @@ do -- Server data var syncronization
 			if Values[K] ~= V then
 				Values[K] = V
 
-				hook.Run("ACF_OnUpdateServerData", nil, K, V)
+				hook.Run("ACF_OnServerDataUpdate", nil, K, V)
 			end
 
 			Received[K] = nil
@@ -135,7 +135,7 @@ do -- Client data setter function
 		if Forced or Client[Key] ~= Value then
 			Client[Key] = Value
 
-			hook.Run("ACF_OnUpdateClientData", LocalPlayer(), Key, Value)
+			hook.Run("ACF_OnClientUpdateData", LocalPlayer(), Key, Value)
 
 			NetworkData(Key)
 		end
@@ -162,7 +162,7 @@ do -- Server data setter function
 		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
-			hook.Run("ACF_OnUpdateServerData", Player, Key, Value)
+			hook.Run("ACF_OnServerDataUpdate", Player, Key, Value)
 
 			NetworkData(Key, true)
 		end

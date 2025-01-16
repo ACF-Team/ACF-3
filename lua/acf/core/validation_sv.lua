@@ -178,7 +178,7 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
 end
 
-hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
+hook.Add("ACF_OnServerDataUpdate", "ACF_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
 	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
