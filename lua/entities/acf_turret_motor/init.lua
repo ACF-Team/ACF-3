@@ -170,12 +170,6 @@ do	-- Spawn and Update funcs
 			self:ValidatePlacement()
 		end
 
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Motor updated successfully!"
 	end
 end

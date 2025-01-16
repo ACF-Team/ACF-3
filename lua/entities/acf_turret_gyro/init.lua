@@ -171,12 +171,6 @@ do	-- Spawn and Update funcs
 			end
 		end
 
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Gyro updated successfully!" .. Extra
 	end
 end

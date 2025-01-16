@@ -417,13 +417,6 @@ do -- Spawning and Updating --------------------
 			end
 		end
 
-		self:UpdateOverlay(true)
-
-		-- Let the client know that we've updated this entity
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Crate updated successfully." .. Extra
 	end
 end ---------------------------------------------

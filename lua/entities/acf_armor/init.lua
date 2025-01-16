@@ -146,10 +146,6 @@ do -- Spawning and Updating
 
 		hook.Run("ACF_OnUpdateEntity", "acf_armor", self, Data, Armor)
 
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Armor plate updated successfully!"
 	end
 end

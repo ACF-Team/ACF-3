@@ -342,12 +342,6 @@ do	-- Spawn and Update funcs
 
 		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Motor)
 
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		self:UpdateTurretMass()
 
 		return true, "Turret updated successfully!"

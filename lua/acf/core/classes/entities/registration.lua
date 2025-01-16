@@ -212,10 +212,6 @@ function Entities.AutoRegister(ENT)
 		ACF.RestoreEntity(self)
 
 		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
-		if self.UpdateOverlay then self:UpdateOverlay(true) end
-		net.Start("ACF_UpdateEntity")
-		net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
@@ -413,7 +409,16 @@ do -- Spawning and updating
 
 		local Result, Message = Entity:Update(Data)
 
-		if not Result then
+		if Result then
+			if Entity.UpdateOverlay then
+				Entity:UpdateOverlay(true)
+			end
+
+			-- Let the client know that we've updated this entity
+			net.Start("ACF_UpdateEntity")
+				net.WriteEntity(Entity)
+			net.Broadcast()
+		else
 			Message = "Couldn't update entity: " .. (Message or "No reason provided.")
 		end
 

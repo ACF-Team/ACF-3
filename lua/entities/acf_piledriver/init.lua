@@ -232,12 +232,6 @@ do -- Spawning and Updating --------------------
 
 		hook.Run("ACF_OnUpdateEntity", "acf_piledriver", self, Data, Class)
 
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Piledriver updated successfully!"
 	end
 end --------------------------------------------

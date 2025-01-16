@@ -121,7 +121,6 @@ do	-- Spawn and Update funcs
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-
 		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_computer")
 
@@ -158,14 +157,6 @@ do	-- Spawn and Update funcs
 		ACF.RestoreEntity(self)
 
 		HookRun("ACF_OnUpdateEntity", "acf_turret_computer", self, Data, Class, Computer)
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
-		--self:UpdateTurretMass()
 
 		return true, "Computer updated successfully!"
 	end

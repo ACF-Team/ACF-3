@@ -408,12 +408,6 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
-
 		return true, "Gearbox updated successfully!" .. Feedback
 	end
 end ----------------------------------------------------
