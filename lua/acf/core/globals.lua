@@ -137,7 +137,9 @@ do -- ACF global vars
 	ACF.FuelRate = 15
 	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(1, 5000, 0))
+	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
+	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("KEPush",             true,   "Kinectic energy entity pushing has been %s.", ACF.BooleanDataCallback())
@@ -162,8 +164,6 @@ do -- ACF global vars
 	ACF.SmokeWind            = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
-	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
 	ACF.KillIconColor        = Color(200, 200, 48)
 
 	-- Unit Conversion
