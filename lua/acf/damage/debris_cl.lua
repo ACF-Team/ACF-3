@@ -106,8 +106,8 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     Debris:SetMaterial(Material)
     Debris:SetColor(Color)
 
-    if not DoCollideAll then -- disable collisions
-        Debris:SetCollisionGroup(COLLISION_GROUP_WORLD)
+    if not DoCollideAll then
+        Debris:SetCollisionGroup(COLLISION_GROUP_WORLD) -- disable collisions
     end
 
     Debris:Spawn()
