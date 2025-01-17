@@ -38,10 +38,9 @@ Gearboxes.Register("Auto", {
 	CreateMenu	= ACF.AutomaticGearboxMenu,
 	CanSetGears = true,
 	Gears = {
-		Min	= 0,
-		Max	= 9,
+		Min	= 3,
+		Max	= 10,
 	},
-	IsScalable = true,
 	OnSpawn = InitGearbox,
 	OnUpdate = InitGearbox,
 	VerifyData = function(Data, Class)
@@ -94,7 +93,7 @@ Gearboxes.Register("Auto", {
 				Data.Gear8 = nil
 			end
 
-			Data.Reverse = math.Clamp(Reverse, -1, 1)
+			Data.Reverse = math.Clamp(Reverse, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
 	end,
 	SetupInputs = function(_, List)

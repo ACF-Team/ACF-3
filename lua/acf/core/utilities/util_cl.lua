@@ -172,7 +172,7 @@ do -- Default gearbox menus
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = 0.1,
+				Default = 1,
 			},
 		}
 
@@ -229,7 +229,7 @@ do -- Default gearbox menus
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = 0.1,
+				Default = 1,
 			},
 		}
 
@@ -246,7 +246,7 @@ do -- Default gearbox menus
 			{
 				Name = "Total Ratio",
 				Variable = "TotalRatio",
-				Tooltip = "Total ratio is the ratio of all gearboxes (exluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
+				Tooltip = "Total ratio is the ratio of all gearboxes (excluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
 				Min = 0,
 				Max = 1,
 				Decimals = 2,

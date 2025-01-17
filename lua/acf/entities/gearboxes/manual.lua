@@ -20,10 +20,9 @@ Gearboxes.Register("Manual", {
 	CreateMenu	= ACF.ManualGearboxMenu,
 	CanSetGears = true,
 	Gears = {
-		Min	= 0,
-		Max	= 9,
+		Min	= 3,
+		Max	= 10,
 	},
-	IsScalable	= true,
 })
 
 do -- Scalable Gearboxes

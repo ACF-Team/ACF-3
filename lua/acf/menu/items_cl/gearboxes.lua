@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 	local GearboxPreview = Base:AddModelPreview(nil, true)
 	local GearboxStats = Base:AddLabel()
 	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 0.75, 3, 2)
-	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 9, 0)
+	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 10, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
