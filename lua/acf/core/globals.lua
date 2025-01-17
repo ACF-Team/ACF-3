@@ -106,6 +106,15 @@ do
 			return Float
 		end
 	end
+
+	function ACF.StringDataCallback()
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type = "String"
+
+		return function(_, Value)
+			return tostring(Value)
+		end
+	end
 end
 
 do -- ACF global vars
