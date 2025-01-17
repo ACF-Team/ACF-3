@@ -19,7 +19,7 @@ local function BulletFlight(Bullet, DeltaTime)
 	Debug.Line(Bullet.SimPosLast, Bullet.SimPos, 15, Yellow)
 end
 
-hook.Add("ACF_OnClock", "ACF_ManageBulletEffects", function(_, DeltaTime)
+hook.Add("ACF_OnTick", "ACF_ManageBulletEffects", function(_, DeltaTime)
 	for _, Bullet in pairs(ACF.BulletEffect) do
 		BulletFlight(Bullet, DeltaTime)
 	end

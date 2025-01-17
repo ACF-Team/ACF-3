@@ -81,7 +81,7 @@ Chapter2:AddInstruction("ShowText", {
 })
 
 Chapter2:AddInstruction("ShowToolgun", {Length = .5, Tool = "Multi-Parent"})
-local ParentingTime = Chapter2:AddInstruction("MultiParent", {
+local ParentingTime = Chapter2:AddInstruction("Tools.MultiParent", {
     Children = {"Gun"},
     Parent = "TurretTrun",
     Easing = math.ease.InOutQuad

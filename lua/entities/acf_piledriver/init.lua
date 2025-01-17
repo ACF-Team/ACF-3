@@ -57,7 +57,7 @@ do -- Spawning and Updating --------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_piledriver", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_piledriver", Data, Class)
 		end
 	end
 
@@ -211,7 +211,7 @@ do -- Spawning and Updating --------------------
 		local Class    = Piledrivers.Get(Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_piledriver", self, Data, Class)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -230,13 +230,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_piledriver", self, Data, Class)
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
+		hook.Run("ACF_OnUpdateEntity", "acf_piledriver", self, Data, Class)
 
 		return true, "Piledriver updated successfully!"
 	end
@@ -326,9 +320,11 @@ do -- Firing ------------------------------------
 	function ENT:CanShoot()
 		if not ACF.GunsCanFire then return false end
 		if not ACF.AllowFunEnts then return false end
-		if hook.Run("ACF_FireShell", self) == false then return false end
+		if self.CurrentShot == 0 then return false end
 
-		return self.CurrentShot > 0
+		local CanFire = hook.Run("ACF_PreFireWeapon", self)
+
+		return CanFire
 	end
 
 	function ENT:Shoot()

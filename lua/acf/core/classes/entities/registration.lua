@@ -262,11 +262,7 @@ function Entities.AutoRegister(ENT)
 		UpdateEntityData(self, ClientData)
 		ACF.RestoreEntity(self)
 
-		hook.Run("ACF_OnEntityUpdate", Class, self, ClientData)
-		if self.UpdateOverlay then self:UpdateOverlay(true) end
-		net.Start("ACF_UpdateEntity")
-		net.WriteEntity(self)
-		net.Broadcast()
+		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
@@ -284,7 +280,7 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", Class, Player, ClientData)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData)
 		if CanSpawn == false then return false end
 
 		local New = ents.Create(Class)
@@ -305,7 +301,7 @@ function Entities.AutoRegister(ENT)
 		New.Owner = Player -- MUST be stored on ent for PP
 		New.DataStore = Entities.GetArguments(Class)
 
-		hook.Run("ACF_OnEntitySpawn", Class, New, ClientData)
+		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
@@ -415,7 +411,6 @@ Classes.AddSimpleFunctions(Entities, Entries)
 if CLIENT then return end
 
 do -- Spawning and updating
-	local hook = hook
 	local undo = undo
 
 	--- Spawns an entity with the given parameters
@@ -434,10 +429,6 @@ do -- Spawning and updating
 
 		if not ClassData then return false, Class .. " is not a registered ACF entity class." end
 		if not ClassData.Spawn then return false, Class .. " doesn't have a spawn function assigned to it." end
-
-		local HookResult, HookMessage = hook.Run("ACF_CanCreateEntity", Class, Player, Position, Angles, Data)
-
-		if HookResult == false then return false, HookMessage end
 
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
@@ -467,15 +458,18 @@ do -- Spawning and updating
 
 		Data = istable(Data) and Data or {}
 
-		local HookResult, HookMessage = hook.Run("ACF_CanUpdateEntity", Entity, Data)
-
-		if HookResult == false then
-			return false, "Couldn't update entity: " .. (HookMessage or "No reason provided.")
-		end
-
 		local Result, Message = Entity:Update(Data)
 
-		if not Result then
+		if Result then
+			if Entity.UpdateOverlay then
+				Entity:UpdateOverlay(true)
+			end
+
+			-- Let the client know that we've updated this entity
+			net.Start("ACF_UpdateEntity")
+				net.WriteEntity(Entity)
+			net.Broadcast()
+		else
 			Message = "Couldn't update entity: " .. (Message or "No reason provided.")
 		end
 

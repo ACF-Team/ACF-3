@@ -132,7 +132,6 @@ local min          = math.min
 local TimerCreate  = timer.Create
 local TimerSimple  = timer.Simple
 local TimerRemove  = timer.Remove
-local HookRun      = hook.Run
 local TickInterval = engine.TickInterval
 
 local function GetPitchVolume(Engine)
@@ -282,7 +281,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class, Engine)
 			end
 
-			HookRun("ACF_VerifyData", "acf_engine", Data, Class, Engine)
+			hook.Run("ACF_OnVerifyData", "acf_engine", Data, Class, Engine)
 		end
 	end
 
@@ -359,7 +358,7 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return false end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_engine", Player, Data, Class, Engine)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_engine", Player, Data, Class, Engine)
 
 		if CanSpawn == false then return false end
 
@@ -405,7 +404,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
+		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
 		Entity:UpdateOverlay(true)
 
@@ -432,7 +431,7 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -440,7 +439,7 @@ do -- Spawn and Update functions
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_engine", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_engine", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -452,7 +451,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, Engine)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		hook.Run("ACF_OnUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if next(self.Gearboxes) then
 			local Count, Total = 0, 0
@@ -497,12 +496,6 @@ do -- Spawn and Update functions
 				Feedback = Text:format(Count, Total)
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Engine updated successfully!" .. Feedback
 	end
@@ -881,7 +874,7 @@ function ENT:OnRemove()
 		Class.OnLast(self, Class)
 	end
 
-	HookRun("ACF_OnEntityLast", "acf_engine", self, Class)
+	hook.Run("ACF_OnEntityLast", "acf_engine", self, Class)
 
 	self:DestroySound()
 

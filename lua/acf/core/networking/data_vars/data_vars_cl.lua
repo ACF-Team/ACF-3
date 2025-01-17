@@ -135,7 +135,7 @@ do -- Client data setter function
 		if Forced or Client[Key] ~= Value then
 			Client[Key] = Value
 
-			hook.Run("ACF_OnClientDataUpdate", LocalPlayer(), Key, Value)
+			hook.Run("ACF_OnClientUpdateData", LocalPlayer(), Key, Value)
 
 			NetworkData(Key)
 		end

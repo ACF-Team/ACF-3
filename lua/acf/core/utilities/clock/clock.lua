@@ -10,5 +10,5 @@ hook.Add("Think", "ACF Clock Update", function()
 	Clock.DeltaTime = Delta
 	Clock.CurTime   = Now
 
-	hook.Run("ACF_OnClock", New, Delta)
+	hook.Run("ACF_OnTick", New, Delta)
 end)

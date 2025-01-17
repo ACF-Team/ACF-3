@@ -20,7 +20,7 @@ function Ammo:GetDisplayData(Data)
 
 	Display.MaxKETransfert = Energy.Kinetic * Data.ShovePower
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -42,7 +42,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -99,7 +99,7 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local HollowRatio = Base:AddSlider("Cavity Ratio", 0, 1, 2)
 		HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
 		HollowRatio:DefineSetter(function(_, _, _, Value)
@@ -111,13 +111,13 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.HollowRatio = true
+		Label:TrackClientData("HollowRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

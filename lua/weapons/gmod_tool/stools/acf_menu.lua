@@ -1,15 +1,11 @@
 ACF.LoadToolFunctions(TOOL)
 
-TOOL.Name = "ACF Menu"
+TOOL.Name = "#tool.acf_menu.menu_name"
 
 if CLIENT then
 	-- "Hitbox" colors
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
-
-	-- Name and descriptions if need to be changed
-	language.Add("Tool.acf_menu.name", "Armored Combat Framework")
-	language.Add("Tool.acf_menu.desc", "Main menu tool for the ACF addon")
 
 	local Queued = {}
 
@@ -42,7 +38,8 @@ if CLIENT then
 
 			return
 		end
-		if Entity.CanDrawOverlay and Entity:CanDrawOverlay() == false then return end
+
+		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
 
 		if Distance <= 65536 then
 			cam.Start3D()
@@ -67,7 +64,7 @@ if CLIENT then
 		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
 	end)
 
-	hook.Add("ACF_DrawBoxes", "ACF Draw Hitboxes", function(Entity)
+	hook.Add("ACF_OnDrawBoxes", "ACF Draw Hitboxes", function(Entity)
 		if not Entity.HitBoxes then return end
 		if not next(Entity.HitBoxes) then return end
 
