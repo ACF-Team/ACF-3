@@ -45,8 +45,6 @@ surface.CreateFont("ACF_LimitsetsNotice_Font6", {
     weight = 600
 })
 
-
-
 local function ShowLimitsetNotice(Bypass)
     if acf_has_limitset_notice_been_shown:GetBool() and not Bypass then return end
     if not ACF.CanSetServerData(LocalPlayer()) then return end
@@ -54,13 +52,14 @@ local function ShowLimitsetNotice(Bypass)
     if IsValid(ACF.LimitSets.NoticePanel) then ACF.LimitSets.NoticePanel:Remove() end
 
     local Frame = vgui.Create("DFrame")
+    Frame:SetIcon("icon16/cog_edit.png")
     ACF.LimitSets.NoticePanel = Frame
 
     Frame:SetSize(640, ScrH() * .85)
     Frame:Center()
     Frame:MakePopup()
     Frame:SetSizable(true)
-    Frame:SetTitle("ACF - Limitsets Notice")
+    Frame:SetTitle("ACF - Limitsets Notice & Selector")
 
     local Back = Frame:Add("DScrollPanel")
     Back:SetSize(0, 400)
