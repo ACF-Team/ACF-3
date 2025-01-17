@@ -118,7 +118,7 @@ do -- Data persisting
 		UpdateData(Key)
 	end)
 
-	hook.Add("Initialize", "ACF Load Persisted Data", function()
+	hook.Add("ACF_OnLoadAddon", "ACF Load Persisted Data", function()
 		local Saved       = ACF.LoadFromFile(Folder, File)
 		local SetFunction = ACF["Set" .. Realm .. "Data"]
 
@@ -140,7 +140,7 @@ do -- Data persisting
 		end
 
 		hook.Run("ACF_OnLoadPersistedData")
-		hook.Remove("Initialize", "ACF Load Persisted Data")
+		hook.Remove("ACF_OnLoadAddon", "ACF Load Persisted Data")
 	end)
 end
 
