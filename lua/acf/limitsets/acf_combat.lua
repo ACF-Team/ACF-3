@@ -1,4 +1,4 @@
-local PvP = ACF.LimitSets.Create("PvP")
+local PvP = ACF.LimitSets.Create("Combat")
     PvP:SetServerData("LegalChecks",              true)
     PvP:SetServerData("NameAndShame",             true)
     PvP:SetServerData("VehicleLegalChecks",       true)
