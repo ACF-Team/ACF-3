@@ -28,10 +28,12 @@ function LimitSets.Execute(Name)
     for Key, Value in pairs(LimitSet.ServerData) do
         ACF.SetServerData(Key, Value)
     end
+
+    ACF.Utilities.Messages.PrintLog("Info", "Loaded limitset '" .. Name .. "'.")
 end
 
 hook.Add("ACF_OnLoadAddon", "ACF_LimitSets_Setup", function()
-    local SelectedLimitsetName = ACF.SelectedLimitset or "PvP"
+    local SelectedLimitsetName = ACF.SelectedLimitset or "Combat"
     local SelectedLimitset     = ACF.LimitSets.Registered[SelectedLimitsetName]
 
     if SelectedLimitset then
