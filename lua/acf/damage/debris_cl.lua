@@ -70,7 +70,7 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     if not util.IsValidModel(Model) then return end
 
     local Lifetime = DebrisLife:GetFloat() * math.Rand(0.5, 1)
-    local CollideAll = CollideAll:GetBool()
+    local DoCollideAll = CollideAll:GetBool()
     local DoParticles = true
     local AllowIgnite = ShouldIgnite
     local AllowSmoke = true
@@ -80,17 +80,17 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
         if FPS < AutoLod_ReallyBadFps then
             if FPS < math.random(0, AutoLod_TerribleFps) then return end -- their game is basically crashing, dont add to the problem
             DoParticles = false
-            CollideAll = false
+            DoCollideAll = false
             Lifetime = Lifetime * math.Rand(0.01, 0.1)
         elseif FPS < AutoLod_LowFps then
             AllowIgnite = AllowIgnite and math.random(0, 100) < 15
             AllowSmoke = math.random(0, 100) < 25
-            CollideAll = false
+            DoCollideAll = false
             Lifetime = Lifetime * math.Rand(0.1, 0.25)
         elseif FPS < AutoLod_OkayFps then
             AllowIgnite = AllowIgnite and math.random(0, 100) < 25
             AllowSmoke = math.random(0, 100) < 50
-            CollideAll = CollideAll and math.random(0, 100) < 50
+            DoCollideAll = CollideAll and math.random(0, 100) < 50
             Lifetime = Lifetime * math.Rand(0.25, 0.5)
         elseif FPS <= AutoLod_GoodFps then
             Lifetime = Lifetime * 0.5
@@ -106,7 +106,7 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     Debris:SetMaterial(Material)
     Debris:SetColor(Color)
 
-    if CollideAll then
+    if not DoCollideAll then -- disable collisions
         Debris:SetCollisionGroup(COLLISION_GROUP_WORLD)
     end
 
