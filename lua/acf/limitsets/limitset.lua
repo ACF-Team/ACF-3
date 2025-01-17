@@ -27,7 +27,7 @@ function LimitSets.Create(Name)
     end
 
     -- This allows hot-reloading
-    if LimitSets.__PostInitLimitSet then
+    if Name == ACF.ServerData.SelectedLimitset and LimitSets.__PostInitLimitSet then
         timer.Simple(0, function()
             LimitSets.Execute(Name)
         end)
