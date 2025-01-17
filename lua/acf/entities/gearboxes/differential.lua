@@ -4,6 +4,7 @@ local Gearboxes = ACF.Classes.Gearboxes
 local Gear1SW = 10
 
 -- Old gearbox scales
+local ScaleT = 0.75
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
@@ -20,7 +21,7 @@ Gearboxes.Register("Differential", {
 do -- Scalable Gearboxes
 	Gearboxes.RegisterItem("1Gear-L", "Differential", {
 		Name			= "Differential, Inline",
-		Description		= "Small differential, used to connect power from gearbox to wheels",
+		Description		= "An inline gearbox used to connect power from another gearbox to the wheels.",
 		Model			= "models/engines/linear_s.mdl",
 		Mass			= Gear1SW,
 		Switch			= 0.3,
@@ -33,7 +34,7 @@ do -- Scalable Gearboxes
 
 	Gearboxes.RegisterItem("1Gear-T", "Differential", {
 		Name			= "Differential, Transaxial",
-		Description		= "Small differential, used to connect power from gearbox to wheels",
+		Description		= "A transaxial gearbox used to connect power from another gearbox to the wheels.",
 		Model			= "models/engines/transaxial_s.mdl",
 		Mass			= Gear1SW,
 		Switch			= 0.3,
@@ -117,30 +118,36 @@ do -- Pre-Scalable Gearboxes
 	})
 end
 
-ACF.SetCustomAttachments("models/engines/transaxial_l.mdl", {
-	{ Name = "driveshaftR", Pos = Vector(0, 20, 8), Ang = Angle(0, 90, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, -20, 8), Ang = Angle(0, -90, 90) },
-	{ Name = "input", Pos = Vector(20, 0, 8), Ang = Angle(0, 0, 90) },
-})
-ACF.SetCustomAttachments("models/engines/transaxial_m.mdl", {
-	{ Name = "driveshaftR", Pos = Vector(0, 12, 4.8), Ang = Angle(0, 90, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, -12, 4.8), Ang = Angle(0, -90, 90) },
-	{ Name = "input", Pos = Vector(12, 0, 4.8), Ang = Angle(0, 0, 90) },
-})
+do -- ACF Extras Gearboxes (Pre-Scalable)
+	-- Inline Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-L-T", {
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-L", "1Gear-LD-T", {
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+
+	-- Transaxial Gearboxes
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-T-T", {
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("Differential", "1Gear-T", "1Gear-TD-T", {
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+end
+
 ACF.SetCustomAttachments("models/engines/transaxial_s.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 8, 3.2), Ang = Angle(0, 90, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, -8, 3.2), Ang = Angle(0, -90, 90) },
 	{ Name = "input", Pos = Vector(8, 0, 3.2), Ang = Angle(0, 0, 90) },
-})
-ACF.SetCustomAttachments("models/engines/linear_l.mdl", {
-	{ Name = "driveshaftR", Pos = Vector(0, 20, 8), Ang = Angle(0, 90, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, -24, 8), Ang = Angle(0, -90, 90) },
-	{ Name = "input", Pos = Vector(0, 4, 29), Ang = Angle(0, -90, 90) },
-})
-ACF.SetCustomAttachments("models/engines/linear_m.mdl", {
-	{ Name = "driveshaftR", Pos = Vector(0, 12, 4.8), Ang = Angle(0, 90, 90) },
-	{ Name = "driveshaftL", Pos = Vector(0, -14.4, 4.8), Ang = Angle(0, -90, 90) },
-	{ Name = "input", Pos = Vector(0, 2.4, 17.4), Ang = Angle(0, -90, 90) },
 })
 ACF.SetCustomAttachments("models/engines/linear_s.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 8, 3.2), Ang = Angle(0, 90, 90) },
@@ -149,14 +156,10 @@ ACF.SetCustomAttachments("models/engines/linear_s.mdl", {
 })
 
 local Transaxial = {
-	{ Model = "models/engines/transaxial_l.mdl", Scale = 2.5 },
-	{ Model = "models/engines/transaxial_m.mdl", Scale = 1.5 },
 	{ Model = "models/engines/transaxial_s.mdl", Scale = 1 },
 }
 
 local Linears = {
-	{ Model = "models/engines/linear_l.mdl", Scale = 2.5 },
-	{ Model = "models/engines/linear_m.mdl", Scale = 1.5 },
 	{ Model = "models/engines/linear_s.mdl", Scale = 1 },
 }
 

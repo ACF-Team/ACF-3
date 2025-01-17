@@ -4,6 +4,7 @@ local Gearboxes = ACF.Classes.Gearboxes
 local Gear2SW = 20
 
 -- Old gearbox scales
+local ScaleT = 0.75
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
@@ -75,6 +76,18 @@ do -- Transaxial Gearboxes
 
 	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-L", {
 		Scale = ScaleL,
+		InvertGearRatios = true,
+	})
+end
+
+do -- ACF Extras Gearboxes (Pre-Scalable)
+	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-T", {
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-T", {
+		Scale = ScaleT,
 		InvertGearRatios = true,
 	})
 end

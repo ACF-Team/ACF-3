@@ -10,6 +10,7 @@ local Gear4ST = 540
 local StTB = 1.25 -- Straight torque bonus multiplier
 
 -- Old gearbox scales
+local ScaleT = 0.75
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
@@ -376,6 +377,81 @@ do -- 8-Speed Manual Gearboxes
 	Gearboxes.AddItemAlias("8-Speed", "Manual-ST", "8Gear-ST-L", {
 		MaxGear = 8,
 		Scale = ScaleL,
+		InvertGearRatios = true,
+	})
+end
+
+do -- ACF Extras Manual Gearboxes
+	Gearboxes.AddAlias("Manual", "4-Speed-Inline")
+	Gearboxes.AddAlias("Manual", "6-Speed-Inline")
+
+	-- 4-Speed Inline Gearboxes
+	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-L", "4Gear-L-T", {
+		MaxGear = 4,
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-L", "4Gear-LD-T", {
+		MaxGear = 4,
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+
+	-- 4-Speed Transaxial Gearboxes
+	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-T", "4Gear-T-T", {
+		MaxGear = 4,
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-T", "4Gear-TD-T", {
+		MaxGear = 4,
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+
+	-- 4-Speed Straight-through Gearboxes
+	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-ST", "4Gear-ST-T", {
+		MaxGear = 4,
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	-- 6-Speed Inline Gearboxes
+	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-L", "6Gear-L-T", {
+		MaxGear = 6,
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-L", "6Gear-LD-T", {
+		MaxGear = 6,
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+
+	-- 6-Speed Transaxial Gearboxes
+	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-T", "6Gear-T-T", {
+		MaxGear = 6,
+		Scale = ScaleT,
+		InvertGearRatios = true,
+	})
+
+	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-T", "6Gear-TD-T", {
+		MaxGear = 6,
+		Scale = ScaleT,
+		DualClutch = true,
+		InvertGearRatios = true,
+	})
+
+	-- 6-Speed Straight-through Gearboxes
+	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-ST", "6Gear-ST-T", {
+		MaxGear = 6,
+		Scale = ScaleT,
 		InvertGearRatios = true,
 	})
 end
