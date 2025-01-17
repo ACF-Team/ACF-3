@@ -1,0 +1,6 @@
+local Sandbox = ACF.LimitSets.Create("Sandbox")
+    Sandbox:SetServerData("LegalChecks",          true)
+    Sandbox:SetServerData("NameAndShame",         false)
+    Sandbox:SetServerData("VehicleLegalChecks",   false)
+    Sandbox:SetServerData("LinkDistance",         650)
+    Sandbox:SetServerData("MobilityLinkDistance", 650)
