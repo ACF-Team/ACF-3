@@ -6,7 +6,7 @@ surface.CreateFont("ACF_LimitsetsNotice_Font1", {
     font = "Tahoma",
     size = 16,
     antialias = true,
-    weight = 900
+    weight = 600
 })
 
 surface.CreateFont("ACF_LimitsetsNotice_Font2", {
@@ -38,6 +38,14 @@ surface.CreateFont("ACF_LimitsetsNotice_Font5", {
     weight = 600
 })
 
+surface.CreateFont("ACF_LimitsetsNotice_Font6", {
+    font = "Tahoma",
+    size = 26,
+    antialias = true,
+    weight = 600
+})
+
+
 
 local function ShowLimitsetNotice(Bypass)
     if acf_has_limitset_notice_been_shown:GetBool() and not Bypass then return end
@@ -48,17 +56,25 @@ local function ShowLimitsetNotice(Bypass)
     local Frame = vgui.Create("DFrame")
     ACF.LimitSets.NoticePanel = Frame
 
-    Frame:SetSize(640, 720)
+    Frame:SetSize(640, ScrH() * .85)
     Frame:Center()
     Frame:MakePopup()
     Frame:SetSizable(true)
     Frame:SetTitle("ACF - Limitsets Notice")
 
     local Back = Frame:Add("DScrollPanel")
-    Back:SetSize(0, 320)
+    Back:SetSize(0, 400)
     Back:DockMargin(8, 8, 8, 8)
     Back:Dock(TOP)
     Back:SetPaintBackground(true)
+
+    local Warn = Back:Add "DLabel"
+    Warn:SetFont("ACF_LimitsetsNotice_Font2")
+    Warn:Dock(TOP)
+    Warn:SetContentAlignment(5)
+    Warn:SetText("Important - Please Read!")
+    Warn:SetSize(0, 72)
+    Warn:SetColor(color_black)
 
     local Contents = Back:Add "DLabel"
     Contents:SetFont("ACF_LimitsetsNotice_Font1")
@@ -83,8 +99,9 @@ local function ShowLimitsetNotice(Bypass)
     InformationSheets:Dock(FILL)
     InformationSheets:DockMargin(8, 6, 8, 8)
 
-    local ShowSelectedLimitsetPanel = InformationSheets:AddSheet("Limitset Information", vgui.Create("DPanel"), "icon16/information.png", false, true).Panel
+    local ShowSelectedLimitsetPanel = InformationSheets:AddSheet("Limitset Information", vgui.Create("DScrollPanel"), "icon16/information.png", false, true).Panel
     ShowSelectedLimitsetPanel:Dock(FILL)
+    ShowSelectedLimitsetPanel:SetPaintBackground(true)
     ShowSelectedLimitsetPanel:DockMargin(4, -4, 4, 4)
 
     local ShowSelectedLimitsetSettings = InformationSheets:AddSheet("Changed Settings", vgui.Create("DPanel"), "icon16/cog_edit.png", false, true).Panel
@@ -93,11 +110,35 @@ local function ShowLimitsetNotice(Bypass)
 
     local SetTo   = Frame:Add("DButton")
     SetTo:Dock(BOTTOM)
-    SetTo:DockMargin(8, 0, 8, 0)
-    SetTo:SetFont("ACF_LimitsetsNotice_Font4")
+    SetTo:SetSize(0, 64)
+    SetTo:DockMargin(8, 0, 8, 8)
+    SetTo:SetFont("ACF_LimitsetsNotice_Font6")
 
     local Right = Material("icon16/arrow_right.png", "mips smooth")
 
+    SetTo.PaintColor = Color(129, 179, 255)
+    function SetTo:Paint(w, h)
+        self.PaintColor.a = ((math.sin(CurTime() * 6) + 1) / 2) * 150
+        DButton.Paint(self, w, h)
+        local Skin = self:GetSkin()
+        if not self.m_bBackground then return end
+
+        if self.Depressed or self:IsSelected() or self:GetToggle() then
+            return Skin.tex.Button_Down(0, 0, w, h, self.PaintColor)
+        end
+
+        if self:GetDisabled() then
+            return Skin.tex.Button_Dead(0, 0, w, h, self.PaintColor)
+        end
+
+        if self.Hovered then
+            return Skin.tex.Button_Hovered( 0, 0, w, h, self.PaintColor)
+        end
+
+        Skin.tex.Button(0, 0, w, h, self.PaintColor)
+    end
+
+    local CurDesc
     function SelectLimitsetPanel:OnRowSelected(_, Row)
         SetTo:SetText(Row.LimitSet and ("Choose the " .. Row.LimitSet.Name .. " limitset") or "Choose no limitset")
 
@@ -125,14 +166,14 @@ local function ShowLimitsetNotice(Bypass)
         end
 
         local Desc = ShowSelectedLimitsetPanel:Add("DLabel")
+        CurDesc = Desc
         Desc:SetColor(color_black)
         Desc:DockMargin(24, 2, 24, 2)
-        Desc:SetSize(0, 24)
         Desc:SetContentAlignment(7)
         Desc:SetFont("ACF_LimitsetsNotice_Font4")
-        Desc:SetText(Row.LimitSet and (Row.LimitSet.Description or "No description provided.") or "Don't select a limitset. This will keep your settings intact.")
+        Desc:SetText(Row.LimitSet and (Row.LimitSet.Description or "No description provided.") or "Don't select a limitset. This will keep your current server settings intact.\n\nIf you'd like to use a limitset at the base for your server, but then tweak limits/restrictions and have them persist, select a limitset from the list, choose it, then go back to this menu and choose \"Custom\".\n\nThis will override the settings that the limitset defined, but allow you to change values afterward and have them persist.")
         Desc:SetWrap(true)
-        Desc:Dock(FILL)
+        Desc:Dock(TOP)
 
         local SettingsChanged  = ShowSelectedLimitsetSettings:Add("DListView")
         SettingsChanged:Dock(FILL)
@@ -183,6 +224,16 @@ local function ShowLimitsetNotice(Bypass)
         local _, Selected = SelectLimitsetPanel:GetSelectedLine()
         ACF.SetServerData("SelectedLimitset", Selected.LimitSet and Selected.LimitSet.Name or "none", true)
         Frame:Close()
+    end
+
+    local OldFrameLayout = Frame.PerformLayout
+    function Frame:PerformLayout(w, h)
+        OldFrameLayout(self, w, h)
+        Back:SetSize(0, h * .43)
+        SelectLimitsetPanel:SetSize(0, h * .11)
+        if IsValid(CurDesc) then
+            CurDesc:SizeToContentsY()
+        end
     end
 end
 
