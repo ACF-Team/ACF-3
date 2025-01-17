@@ -12,6 +12,9 @@ local CrewTypes = ACF.Classes.CrewTypes
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
+	if not Class then
+		return table.Count(Crew.Targets) >= (Count or 1)
+	end
 	return table.Count(Crew.TargetsByType[Class] or {}) >= (Count or 1)
 end
 
@@ -69,7 +72,7 @@ CrewTypes.Register("Loader", {
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {			-- Specifying this table enables G force damage calculations
-			Min = 6,		-- Damage starts being applied after this (Gs)
+			Min = 5,		-- Damage starts being applied after this (Gs)
 			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
@@ -96,7 +99,7 @@ CrewTypes.Register("Loader", {
 
 CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
-	Description = "Gunners affect the accuracy of your gun. Link them to gun(s). They prefer sitting.",
+	Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting.",
 	ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change.",
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
@@ -114,15 +117,21 @@ CrewTypes.Register("Gunner", {
 			Max = 3,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 6,	-- Damage starts being applied after this (Gs)
+			Min = 5,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
 	LinkHandlers = {
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
+				if CheckCount(Crew) then return false, "Gunners can only link to one entity." end
 				if Target.Turret == "Turret-V" then return false, "Gunners cannot link to vertical drives." end
+				return true, "Crew linked."
+			end
+		},
+		acf_baseplate = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_baseplate") then return false, "Gunners can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
 		}
@@ -139,7 +148,7 @@ CrewTypes.Register("Gunner", {
 
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
-	Description = "Drivers affect the fuel efficiency of your engines. Link them to engine(s). They prefer sitting.",
+	Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting.",
 	ExtraNotes	= "Drivers can be linked to any engine and their focus does not change.",
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
@@ -153,14 +162,14 @@ CrewTypes.Register("Driver", {
 			Max = 3,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 6,	-- Damage starts being applied after this (Gs)
+			Min = 5,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
 	LinkHandlers = {
 		acf_baseplate = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_baseplate") then return false, "Drivers can only link to one acf_baseplate." end
+				if CheckCount(Crew) then return false, "Drivers can only link to one entity." end
 				return true, "Crew linked."
 			end
 		}
@@ -195,7 +204,7 @@ CrewTypes.Register("Commander", {
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {
-			Min = 6,		-- Damage starts being applied after this (Gs)
+			Min = 5,		-- Damage starts being applied after this (Gs)
 			Max = 9,		-- Instant death after this (Gs)
 		}
 	},
@@ -209,8 +218,14 @@ CrewTypes.Register("Commander", {
 		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_turret") then return false, "Commanders can only link to one turret." end
+				if CheckCount(Crew) then return false, "Commanders can only link to one entity." end
 				if Target.Turret == "Turret-V" then return false, "Commanders cannot link to vertical drives." end
+				return true, "Crew linked."
+			end
+		},
+		acf_baseplate = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_baseplate") then return false, "Commanders can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
 		}
@@ -242,10 +257,39 @@ CrewTypes.Register("Pilot", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	LinkHandlers = {},
+	LinkHandlers = {
+		acf_gun = {
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+		},
+		acf_turret = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
+				if Target.Turret == "Turret-V" then return false, "Pilot cannot link to vertical drives." end
+				return true, "Crew linked."
+			end
+		},
+		acf_baseplate = {
+			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_baseplate") then return false, "Pilot can only link to one acf_baseplate." end
+				return true, "Crew linked."
+			end
+		}
+	},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
-	UpdateFocus = function(Crew) return 1 end
+	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
+		local Count = table.Count(Crew.Targets)
+		Crew.Focus = (Count > 0) and 1 / Count or 1
+	end,
+	EnforceLimits = function(Crew)
+		-- Pilots exclude other crew
+		local Contraption = Crew:GetContraption() or {}
+		local Crews = Contraption.Crews or {}
+		for k, _ in pairs(Crews) do
+			if k:GetClass() ~= "Pilot" then k:Remove() end
+		end
+	end
 })

@@ -88,6 +88,7 @@ local function iterScan(crew, reps)
 	local Box = crew.ScanBoxBase + crew.ScanBox
 	local Hull = crew.ScanHull
 
+	-- Filter out players and other people's props
 	local filter = function(x) return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer()) end
 
 	-- Update reps hull traces
@@ -135,6 +136,8 @@ local function EnforceLimits(crew)
 			crew:Remove()
 		end
 	end
+
+	if CrewType.EnforceLimits then CrewType.EnforceLimits(crew) end
 end
 
 do -- Random timer stuff
@@ -770,6 +773,7 @@ do
 		-- Restore previous links
 		if EntMods.CrewTargets then
 			for _, EntID in pairs(EntMods.CrewTargets) do
+				-- ACF turrets i kneel
 				timer.Simple(1, function()
 					self:Link(CreatedEntities[EntID])
 				end)
