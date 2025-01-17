@@ -11,6 +11,12 @@ local GibModel    = "models/gibs/metal_gib%s.mdl"
 
 local math = math
 
+local AutoLod_TerribleFps = 15
+local AutoLod_ReallyBadFps = 25
+local AutoLod_LowFps = 35
+local AutoLod_OkayFps = 40
+local AutoLod_GoodFps = 45
+
 local function Particle(Entity, Effect)
     return CreateParticleSystem(Entity, Effect, PATTACH_ABSORIGIN_FOLLOW)
 end
@@ -71,22 +77,22 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
 
     if AutoLOD then
         local FPS = 1 / RealFrameTime()
-        if FPS < 20 then
-            if FPS < math.random(0, 15) then return end -- their game is basically crashing, dont add to the problem
+        if FPS < AutoLod_ReallyBadFps then
+            if FPS < math.random(0, AutoLod_TerribleFps) then return end -- their game is basically crashing, dont add to the problem
             DoParticles = false
             CollideAll = false
             Lifetime = Lifetime * math.Rand(0.01, 0.1)
-        elseif FPS < 30 then
+        elseif FPS < AutoLod_LowFps then
             AllowIgnite = AllowIgnite and math.random(0, 100) < 15
             AllowSmoke = math.random(0, 100) < 25
             CollideAll = false
             Lifetime = Lifetime * math.Rand(0.1, 0.25)
-        elseif FPS < 40 then
+        elseif FPS < AutoLod_OkayFps then
             AllowIgnite = AllowIgnite and math.random(0, 100) < 25
             AllowSmoke = math.random(0, 100) < 50
             CollideAll = CollideAll and math.random(0, 100) < 50
             Lifetime = Lifetime * math.Rand(0.25, 0.5)
-        elseif FPS <= 45 then
+        elseif FPS <= AutoLod_GoodFps then
             Lifetime = Lifetime * 0.5
         end
     end
@@ -135,18 +141,18 @@ local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, 
     local Lifetime = GibLife:GetFloat() * math.Rand(0.5, 1)
     if AutoLOD then
         local FPS = 1 / RealFrameTime()
-        if FPS < 20 then
-            if FPS < math.random(0, 20) then return end
+        if FPS < AutoLod_ReallyBadFps then
+            if FPS < math.random(0, AutoLod_ReallyBadFps) then return end
             DoParticles = false
             Lifetime = Lifetime * math.Rand(0.01, 0.1)
-        elseif FPS < 30 then
+        elseif FPS < AutoLod_LowFps then
             DoParticles = math.random(0, 100) < 50
             AllowIgnite = math.random(0, 100) < 15
             Lifetime = Lifetime * math.Rand(0.1, 0.25)
-        elseif FPS < 40 then
+        elseif FPS < AutoLod_OkayFps then
             AllowIgnite = math.random(0, 100) < 50
             Lifetime = Lifetime * math.Rand(0.25, 0.5)
-        elseif FPS <= 45 then
+        elseif FPS <= AutoLod_GoodFps then
             Lifetime = Lifetime * 0.5
         end
     end
