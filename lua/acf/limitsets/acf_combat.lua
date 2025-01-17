@@ -1,6 +1,0 @@
-local PvP = ACF.LimitSets.Create("Combat")
-    PvP:SetServerData("LegalChecks",              true)
-    PvP:SetServerData("NameAndShame",             true)
-    PvP:SetServerData("VehicleLegalChecks",       true)
-    PvP:SetServerData("LinkDistance",             250)
-    PvP:SetServerData("MobilityLinkDistance",     350)

@@ -1,0 +1,8 @@
+local Combat = ACF.LimitSets.Create("Combat")
+    Combat:WithAuthor("ACF Team")
+    Combat:WithDescription("The default mode for ACF combat, with curated combat settings by the developers. Recommended for PvP servers.")
+    Combat:SetServerData("LegalChecks",              true)
+    Combat:SetServerData("NameAndShame",             true)
+    Combat:SetServerData("VehicleLegalChecks",       true)
+    Combat:SetServerData("LinkDistance",             250)
+    Combat:SetServerData("MobilityLinkDistance",     350)

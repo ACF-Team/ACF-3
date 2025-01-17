@@ -1,4 +1,6 @@
 local Sandbox = ACF.LimitSets.Create("Sandbox")
+    Sandbox:WithAuthor("ACF Team")
+    Sandbox:WithDescription("All major restrictions are disabled, alongside some parameter buffs. Good for building/casual servers.")
     Sandbox:SetServerData("LegalChecks",          true)
     Sandbox:SetServerData("NameAndShame",         false)
     Sandbox:SetServerData("VehicleLegalChecks",   false)
