@@ -185,7 +185,9 @@ local function ShowLimitsetNotice(Bypass)
             for Key, Value in SortedPairs(Row.LimitSet.ServerData, true) do
                 local Old = ACF.GetServerData(Key)
                 local Changed = Old ~= Value
-                local Line = SettingsChanged:AddLine(Key, Old, Value)
+
+                local Phrase         = ("#acf.globals.%s"):format(Key)
+                local Line = SettingsChanged:AddLine(Phrase, Old, Value)
                 for _, v in ipairs(Line.Columns) do
                     v:SetFont("ACF_LimitsetsNotice_Font5")
                 end
