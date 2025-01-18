@@ -19,7 +19,6 @@ local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
 
-
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 	if Bullet.NoEffect then return end -- No clientside effect will be created for this bullet
@@ -205,7 +204,15 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if not hook.Run("ACF_OnFilterBullet", Entity, Bullet) then return false end
 
-	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	local EntTbl = Entity:GetTable()
+
+	if EntTbl._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	if EntTbl.ACF_InvisibleToBallistics then return false end
+	if EntTbl.ACF_KillableButIndestructible then
+		local EntACF = EntTbl.ACF
+	    if EntACF and EntACF.Health <= 0 then return false end
+	end
+	if EntTbl.ACF_TestFilter then return EntTbl.ACF_TestFilter(Entity, Bullet) end
 
 	return true
 end

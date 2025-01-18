@@ -123,6 +123,57 @@ Entities.AddDataArgumentType("LinkedEntity",
 	end
 )
 
+-- MARCH: Untested!
+-- And if this code stays here, fix the PascalCase issue
+--[[
+Entities.AddDataArgumentType("LinkedEntities",
+	function(Value, Specs)
+		if not Value then return {} end
+		if isentity(Value) then Value = {Value} end
+		if not istable(Value) then return {} end
+
+		local Ret = {}
+		local max = Specs.Max
+		for k, v in ipairs(Value) do
+			if max and k > max then break end
+			if not isentity(v) or not IsValid(v) then
+				v = NULL
+			else
+				if Specs.Classes then
+					local class = v:GetClass()
+					if not Specs.Classes[class] then
+						v = NULL
+					end
+				end
+			end
+
+			Ret[k] = v
+		end
+
+		return Value
+	end,
+	function(_, value)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			ret[k] = v:EntIndex()
+		end
+
+		return ret
+	end,
+	function(self, value, createdEnts)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			local realEnt = createdEnts[v]
+			ret[k] = realEnt
+			self:Link(realEnt)
+		end
+
+		return ret
+	end
+)]]
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
@@ -269,7 +320,7 @@ function Entities.AutoRegister(ENT)
 			local validated = typedef.Validator(self[k], v)
 			local ret       = typedef.PreCopy(self, validated)
 			if ret then
-				duplicator.StoreEntityModifier(self, "ACF_" .. k, {ret})
+				duplicator.StoreEntityModifier(self, k, {ret})
 			end
 		end
 
@@ -284,7 +335,7 @@ function Entities.AutoRegister(ENT)
 
 		for k, v in pairs(DataVars) do
 			local typedef    = DataArgumentTypes[v.Type]
-			local entmodData = EntMods["ACF_" .. k][1]
+			local entmodData = EntMods[k][1]
 			local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
 			ret              = typedef.Validator(ret, v)
 			if ret then Ent[k] = ret end

@@ -264,6 +264,14 @@ function SWEP:PrimaryAttack()
 		local OldHealth = Entity.ACF.Health
 		local MaxHealth = Entity.ACF.MaxHealth
 
+		local Now = CurTime()
+		if Now - (self.LastUpdate or 0) > 0.5 then
+			self.LastUpdate = Now
+			if Entity.ACF_HealthUpdatesWireOverlay then
+				Entity:UpdateOverlay()
+			end
+		end
+
 		if OldHealth >= MaxHealth then return end
 
 		local OldArmor = Entity.ACF.Armour
