@@ -1,5 +1,0 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "crew", "crew-restock")
-Storyboard:WithName("Crew Restocking")
-Storyboard:WithModelIcon("models/machinegun/machinegun_20mm.mdl")
-Storyboard:WithDescription("Learn about ammunition restocking")
-Storyboard:WithIndexOrder(1)

@@ -4,59 +4,7 @@ Storyboard:WithModelIcon("models/chairs_playerstart/sitpose.mdl")
 Storyboard:WithDescription("Learn about Efficiencies, Focus and Replacement")
 Storyboard:WithIndexOrder(2)
 
--- Import tank skeleton
--- (Baseplate: 2x5, Engine: V12L, Gearbox: Transaxial L, Main Gun: 125mmC, RWS Gun: 20mmMG)
-local Tank = {
-    {Name = "Base", IdentifyAs = "Base", Model = "models/hunter/plates/plate2x5.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1.25, 1), },
-
-    -- Engine area
-    {Name = "Engine", IdentifyAs = "Engine", Model = "models/engines/v12l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -84, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-    {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-
-    -- Driver area
-    {Name = "FuelTank3", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, 120, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(4, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-    {Name = "FuelTank4", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, 120, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(4, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-    {Name = "Driver", IdentifyAs = "Driver", Model = "models/chairs_playerstart/sitpose.mdl", Angles = Angle(0, 0, 30), Position = Vector(0, 144, 3), ComeFrom = Vector(0, 0, 50), Material = "sprops/sprops_grid_12x12", ParentTo = "Base", },
-    {Name = "AmmoCrate3", IdentifyAs = "Ammo Crate (125mmC AP)", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 90, 0), Position = Vector(24, 72, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(3, 3.5, 2), Material = "phoenix_storms/future_vents", ParentTo = "Base", },
-    {Name = "AmmoCrate4", IdentifyAs = "Ammo Crate (125mmC HE)", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 90, 0), Position = Vector(-24, 72, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(3, 3.5, 2), Material = "phoenix_storms/future_vents", ParentTo = "Base", },
-
-    -- Wheels
-    {Name = "LWheel1", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(72, -144, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "LWheel2", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(72, -48, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "LWheel3", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(72, 48, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "LWheel4", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(72, 144, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "RWheel1", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(-72, -144, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "RWheel2", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(-72, -48, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "RWheel3", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(-72, 48, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "RWheel4", IdentifyAs = "Wheel", Model = "models/xeon133/offroad/off-road-40.mdl", Angles = Angle(0, 0, 0), Position = Vector(-72, 144, 0), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-
-    -- Turret
-    {Name = "TurretH", IdentifyAs = "Turret Ring", Model = "models/acf/core/t_ring.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 36), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-    {Name = "TurretV", IdentifyAs = "Turret Trun", Model = "models/acf/core/t_trun.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, 48, 18), ComeFrom = Vector(0, 0, 50), ParentTo = "TurretH", },
-    {Name = "AmmoCrate1", IdentifyAs = "Ammo Crate (125mmC AP)", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 90, 0), Position = Vector(24, -72, 24), ComeFrom = Vector(0, 0, 50), Scale = Vector(4, 4, 2), Material = "phoenix_storms/future_vents", ParentTo = "TurretH", },
-    {Name = "AmmoCrate2", IdentifyAs = "Ammo Crate (125mmC HE)", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 90, 0), Position = Vector(-24, -72, 24), ComeFrom = Vector(0, 0, 50), Scale = Vector(4, 4, 2), Material = "phoenix_storms/future_vents", ParentTo = "TurretH", },
-
-    -- Turret Electronics
-    {Name = "BallComp", IdentifyAs = "Ballistic Computer", Model = "models/acf/core/t_computer.mdl", Angles = Angle(0, 0, 0), Position = Vector(-36, 36, 12), ComeFrom = Vector(0, 0, 50), ParentTo = "TurretH", },
-    {Name = "Gyro", IdentifyAs = "Two Axis Gyro", Model = "models/acf/core/t_gyro.mdl", Angles = Angle(0, 0, 0), Position = Vector(-24, 42, 9), ComeFrom = Vector(0, 0, 50), ParentTo = "TurretH", },
-    {Name = "MotorH", IdentifyAs = "Turret Ring Motor", Model = "models/acf/core/t_drive_e.mdl", Angles = Angle(0, 0, 0), Position = Vector(-36, -36, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(1.5, 1.5, 1.5), ParentTo = "TurretH", },
-    {Name = "MotorV", IdentifyAs = "Turret Trun Motor", Model = "models/acf/core/t_drive_e.mdl", Angles = Angle(90, 0, 0), Position = Vector(36, 48, 18), ComeFrom = Vector(0, 0, 50), Scale = Vector(1.5, 1.5, 1.5), ParentTo = "TurretH", },
-
-    -- Turret crew
-    {Name = "Gun", IdentifyAs = "125mm Cannon", Model = "models/tankgun_new/tankgun_100mm.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(125 / 100, 125 / 100, 125 / 100), ParentTo = "TurretV", },
-    {Name = "Gunner", IdentifyAs = "Gunner", Model = "models/chairs_playerstart/sitpose.mdl", Angles = Angle(0, 0, 0), Position = Vector(-24, 18, -33), ComeFrom = Vector(0, 0, 50), Material = "sprops/sprops_grid_12x12", ParentTo = "TurretH", },
-    {Name = "Commander", IdentifyAs = "Gunner", Model = "models/chairs_playerstart/sitpose.mdl", Angles = Angle(0, 0, 0), Position = Vector(24, 18, -33), ComeFrom = Vector(0, 0, 50), Material = "sprops/sprops_grid_12x12", ParentTo = "TurretH", },
-    {Name = "Loader", IdentifyAs = "Loader", Model = "models/chairs_playerstart/standingpose.mdl", Angles = Angle(0, 45, 0), Position = Vector(20, -20, -33), ComeFrom = Vector(0, 0, 50), Material = "sprops/sprops_grid_12x12", ParentTo = "TurretH", },
-    {Name = "Loader2", IdentifyAs = "Loader (Extra)", Model = "models/chairs_playerstart/standingpose.mdl", Angles = Angle(0, -45, 0), Position = Vector(-20, -20, -33), ComeFrom = Vector(0, 0, 50), Material = "sprops/sprops_grid_12x12", ParentTo = "TurretH", },
-
-    -- RWS
-    {Name = "TurretH2", IdentifyAs = "Turret Ring (RWS)", Model = "models/holograms/cylinder.mdl", Angles = Angle(0, 0, 0), Position = Vector(30, 30, 36), ComeFrom = Vector(0, 0, 50), Scale = Vector(3 / 12, 3 / 12, 1), ParentTo = "TurretH", },
-    {Name = "TurretV2", IdentifyAs = "Turret Trun (RWS)", Model = "models/acf/core/t_trun.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, 0, 12), ComeFrom = Vector(0, 0, 50), Scale = Vector(0.15, 0.15, 0.15), ParentTo = "TurretH2", },
-    {Name = "Gun2", IdentifyAs = "12.7mm Machineg Gun", Model = "models/machinegun/machinegun_20mm.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 0), Scale = Vector(12.7 / 20, 12.7 / 20, 12.7 / 20), ParentTo = "TurretV2", },
-    {Name = "AmmoCrate5", IdentifyAs = "Ammo Crate (12.7mmMG)", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, 0, -12), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1, 1), Material = "phoenix_storms/future_vents", ParentTo = "TurretH2", },
-}
+local Tank = ACF.PonderModelCaches.TankSkeleton
 
 local Chapter9 = Storyboard:Chapter("Efficiencies")
 Chapter9:AddInstruction("Delay", {Length = 2})
@@ -216,7 +164,10 @@ Chapter12:AddInstruction("PlaceModel", {
     ComeFrom = Vector(0, 0, 32),
 })
 Chapter12:AddInstruction("Delay", {Length = 2})
+Chapter12:AddInstruction("PlaySound", {Sound = "acf_base/weapons/cannon_new.mp3"})
 Chapter12:AddInstruction("SetSequence", {Name = "Gun", Sequence = "shoot"})
+Chapter12:AddInstruction("Delay", {Length = 0.5})
+Chapter12:AddInstruction("PlaySound", {Sound = "npc/zombie/zombie_voice_idle6.wav"})
 Chapter12:AddInstruction("MaterialModel", {Target = "Crew1", Material = "models/flesh"})
 Chapter12:AddInstruction("ChangeText", {
     Name = "Explain2",
@@ -261,6 +212,7 @@ Chapter13:AddInstruction("ChangeText", {
 Chapter13:AddInstruction("Delay", {Length = 1})
 Chapter13:AddInstruction("TransformModel", {Target = "Crew1", Rotation = Angle(0, 360 * 100, 0), Length = 2})
 Chapter13:AddInstruction("Delay", {Length = 1})
+Chapter13:AddInstruction("PlaySound", {Sound = "npc/zombie/zombie_voice_idle6.wav"})
 Chapter13:AddInstruction("MaterialModel", {Target = "Crew1", Material = "models/flesh"})
 Chapter13:AddInstruction("Delay", {Length = 2})
 Chapter13:AddInstruction("MaterialModel", {Target = "Crew1", Material = "sprops/trans/lights/light_plastic"})
@@ -463,13 +415,17 @@ Chapter17:AddInstruction("PlaceModel", {
     ParentTo = "Gunner"
 })
 Chapter17:AddInstruction("Delay", {Length = 2})
+Chapter17:AddInstruction("PlaySound", {Sound = "acf_base/weapons/cannon_new.mp3"})
 Chapter17:AddInstruction("SetSequence", {Name = "Gun3", Sequence = "shoot"})
+Chapter17:AddInstruction("PlaySound", {Sound = "npc/zombie/zombie_voice_idle6.wav"})
 Chapter17:AddInstruction("MaterialModel", {Target = "Gunner", Material = "models/flesh"})
 Chapter17:AddInstruction("Delay", {Length = 2})
 Chapter17:AddInstruction("MaterialModel", {Target = "Commander", Material = "models/flesh"})
 Chapter17:AddInstruction("MaterialModel", {Target = "Gunner", Material = "sprops/trans/lights/light_plastic"})
 Chapter17:AddInstruction("Delay", {Length = 2})
+Chapter17:AddInstruction("PlaySound", {Sound = "acf_base/weapons/cannon_new.mp3"})
 Chapter17:AddInstruction("SetSequence", {Name = "Gun3", Sequence = "shoot"})
+Chapter17:AddInstruction("PlaySound", {Sound = "npc/zombie/zombie_voice_idle6.wav"})
 Chapter17:AddInstruction("MaterialModel", {Target = "Gunner", Material = "models/flesh"})
 Chapter17:AddInstruction("Delay", {Length = 2})
 Chapter17:AddInstruction("MaterialModel", {Target = "Loader", Material = "models/flesh"})
