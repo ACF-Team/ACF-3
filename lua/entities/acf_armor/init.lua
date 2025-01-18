@@ -95,8 +95,8 @@ do -- Spawning and Updating
 		Player:AddCount("_acf_armor", Plate)
 		Player:AddCleanup("_acf_armor", Plate)
 
-		Plate:SetScaledModel("models/holograms/cube.mdl")
-		Plate:SetMaterial("sprops/textures/sprops_metal1")
+		Plate:SetScaledModel("models/holograms/hq_rcube_thin.mdl")
+		Plate:SetMaterial("phoenix_storms/metalfloor_2-3")
 		Plate:SetPlayer(Player)
 		Plate:SetAngles(Angle)
 		Plate:SetPos(Pos)
@@ -241,5 +241,15 @@ function ENT:OnRemove()
 		Armor.OnLast(self, Armor)
 	end
 
+	hook.Run("ACF_OnEntityLast", "acf_armor", self, Armor)
+
 	WireLib.Remove(self)
+end
+
+do -- Wire overlay text
+	local OverlayText = "Armor Type: %s\nPlate Size: %.1f x %.1f x %.1f"
+
+	function ENT:UpdateOverlayText()
+		return OverlayText:format(self.ArmorClass.Name, self.Size[1], self.Size[2], self.Size[3])
+	end
 end
