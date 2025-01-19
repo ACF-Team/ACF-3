@@ -236,8 +236,8 @@ CrewTypes.Register("Commander", {
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets) + 1 -- +1 for commanding the crew
-		Crew.Focus = (Count > 0) and 1 / Count or 1
+		-- local Count = table.Count(Crew.Targets) + 1 -- +1 for commanding the crew
+		Crew.Focus = 1
 	end
 })
 
