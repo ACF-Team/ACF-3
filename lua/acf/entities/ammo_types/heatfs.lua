@@ -15,6 +15,8 @@ function Ammo:OnLoaded()
 		HW = true,
 		SC = true,
 	})
+
+	self.MaxStandoffRatio = .75
 end
 
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)

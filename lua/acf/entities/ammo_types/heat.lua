@@ -190,6 +190,8 @@ function Ammo:VerifyData(ToolData)
 
 	if not isnumber(ToolData.StandoffRatio) then
 		ToolData.StandoffRatio = 0
+	else
+		ToolData.StandoffRatio = math.Clamp(ToolData.StandoffRatio, 0, self.MaxStandoffRatio or 0.2)
 	end
 
 	if not isnumber(ToolData.LinerAngle) then
