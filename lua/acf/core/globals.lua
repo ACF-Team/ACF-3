@@ -156,7 +156,7 @@ do -- ACF global vars
 	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"} -- Order of crew replacement priorities (Highest priority on the left, lowest on the right)
 
 	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
-	ACF.CrewHealth 			= 50	-- How much health crew members have
+	ACF.CrewHealth 			= 15	-- How much health crew members have
 
 	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
 	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath

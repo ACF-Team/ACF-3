@@ -957,8 +957,19 @@ do -- Reload related
 
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	function ACF.GetReloadEff(Crew, Gun, Ammo)
-		local D1 = Crew:GetPos():Distance(Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))) -- Breach relative to coordinate center?
-		local D2 = Crew:GetPos():Distance(Ammo:GetPos())
+		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
+		local CrewPos = Crew:GetPos()
+		local AmmoPos = Ammo:GetPos()
+		local D1 = CrewPos:Distance(BreechPos)
+		local D2 = CrewPos:Distance(AmmoPos)
+
+		-- Check loader can reach breech
+		local tr = util.TraceLine({
+			start = BreechPos,
+			endpos = Crew,
+		})
+		if tr.Entity ~= Crew then return 0 end
+
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 end

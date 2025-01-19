@@ -434,12 +434,13 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		str = string.format("Role: %s\nHealth: %s HP\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nTotal: %s %%",
+		str = string.format("Role: %s\nHealth: %s HP\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%",
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
 			math.Round(self.SpaceEff * 100, 2),
 			math.Round(self.MoveEff * 100, 2),
+			math.Round(self.Focus * 100, 2),
 			math.Round(self.TotalEff * 100, 2)
 		)
 		return str
