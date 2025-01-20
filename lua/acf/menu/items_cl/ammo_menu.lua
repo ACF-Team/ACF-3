@@ -243,8 +243,6 @@ local function AddInformation(Base, ToolData)
 
 	if not Result then return end
 
-	AddCrateInformation(Base, ToolData)
-
 	if Ammo.OnCreateAmmoInformation then
 		Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 	end
@@ -476,7 +474,7 @@ function ACF.CreateAmmoMenu(Menu)
 
 		Desc:SetText(Data.Description)
 
-		ACF.UpdateAmmoMenu(Menu)
+		ACF.UpdateAmmoMenu(Menu, {})
 	end
 
 	Menu.AmmoBase = Base
