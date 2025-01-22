@@ -1,5 +1,5 @@
-local ACF     = ACF
-
+local ACF         = ACF
+local Damage      = ACF.Damage
 local Effects     = ACF.Utilities.Effects
 local AllowDebris = GetConVar("acf_debris")
 local AutoLod     = GetConVar("acf_debris_autolod")
@@ -192,7 +192,7 @@ local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, 
     return true
 end
 
-function ACF.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
+function Damage.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
     if not AllowDebris:GetBool() then return end
     if not Model then return end
 
@@ -238,7 +238,7 @@ local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
 
         local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
 
-        ACF.CreateDebris(
+        Damage.CreateDebris(
             EntInfo.Model,
             EntInfo.Position,
             EntInfo.Angles,

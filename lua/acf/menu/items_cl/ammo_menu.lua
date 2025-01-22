@@ -199,7 +199,7 @@ end
 ---If the first is defined, this function will effectively do nothing.
 ---If the latter is defined, only the information regarding the ammo crate (armor, mass and capacity by default) will be omitted.
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
-local function AddInformation(Base, ToolData)
+local function AddCrateInformation(Base, ToolData)
 	if Ammo.PreCreateCrateInformation then
 		local Result = Ammo:PreCreateCrateInformation(Base, ToolData, BulletData)
 
@@ -242,6 +242,8 @@ local function AddInformation(Base, ToolData)
 	local Result = hook.Run("ACF_PreCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 
 	if not Result then return end
+
+	AddCrateInformation(Base, ToolData)
 
 	if Ammo.OnCreateAmmoInformation then
 		Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
@@ -370,8 +372,7 @@ end
 
 ---Updates and populates the current ammunition menu.
 ---@param Menu userdata The panel in which the entire ACF menu is being placed on.
----@param Settings? table<string, boolean> The lookup table containing all the settings for the menu.
-function ACF.UpdateAmmoMenu(Menu, Settings)
+function ACF.UpdateAmmoMenu(Menu)
 	if not Ammo then return end
 
 	local ToolData = ACF.GetAllClientData()
@@ -397,15 +398,12 @@ function ACF.UpdateAmmoMenu(Menu, Settings)
 		Ammo:OnCreateAmmoMenu(Base, ToolData, BulletData)
 	end
 
-	if not Settings.SuppressMenu then
-		AddGraph(Base, ToolData)
-	end
-
 	hook.Run("ACF_OnCreateAmmoMenu", Base, ToolData, Ammo, BulletData)
 
 	AddPreview(Base, ToolData)
 	AddControls(Base, ToolData)
 	AddInformation(Base, ToolData)
+	AddGraph(Base, ToolData)
 
 	Menu:EndTemporal(Base)
 end
@@ -474,7 +472,7 @@ function ACF.CreateAmmoMenu(Menu)
 
 		Desc:SetText(Data.Description)
 
-		ACF.UpdateAmmoMenu(Menu, {})
+		ACF.UpdateAmmoMenu(Menu)
 	end
 
 	Menu.AmmoBase = Base
