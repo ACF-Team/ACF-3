@@ -239,7 +239,6 @@ do -- Spawn and Update functions -----------------------
 
 		if not IsValid(Entity) then return end
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
@@ -247,7 +246,6 @@ do -- Spawn and Update functions -----------------------
 		Player:AddCleanup("acf_gearbox", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner          = Player -- MUST be stored on ent for PP
 		Entity.SoundPath      = Class.Sound
 		Entity.Engines        = {}
 		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
@@ -270,15 +268,11 @@ do -- Spawn and Update functions -----------------------
 
 		UpdateGearbox(Entity, Data, Class, Gearbox)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
-
-		Entity:UpdateOverlay(true)
 
 		ACF.CheckLegal(Entity)
 

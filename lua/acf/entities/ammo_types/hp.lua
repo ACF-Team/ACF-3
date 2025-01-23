@@ -8,6 +8,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Hollow Point"
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A round with a hollow cavity, meant to flatten against surfaces on impact."
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		MG = true,

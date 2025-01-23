@@ -366,7 +366,6 @@ do -- Spawn and Update functions
 
 		if not IsValid(Entity) then return false end
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
@@ -374,7 +373,6 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner         = Player -- MUST be stored on ent for PP
 		Entity.Active        = false
 		Entity.Gearboxes     = {}
 		Entity.FuelTanks     = {}
@@ -398,15 +396,11 @@ do -- Spawn and Update functions
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
 		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
-
-		Entity:UpdateOverlay(true)
 
 		ACF.CheckLegal(Entity)
 

@@ -103,6 +103,14 @@ Entities.AddUserArgumentType("Number", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddUserArgumentType("String", function(Value, Specs)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	return Value
+end)
+
 Entities.AddDataArgumentType("LinkedEntity",
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
@@ -294,12 +302,9 @@ function Entities.AutoRegister(ENT)
 			New:ACF_PreSpawn(Player, Pos, Angle, ClientData)
 		end
 
-		New:SetPlayer(Player)
 		New:Spawn()
 		Player:AddCount("_" .. Class, New)
 		Player:AddCleanup("_" .. Class, New)
-		New.Owner = Player -- MUST be stored on ent for PP
-		New.DataStore = Entities.GetArguments(Class)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
@@ -308,7 +313,7 @@ function Entities.AutoRegister(ENT)
 		end
 
 		New:ACF_UpdateEntityData(ClientData)
-		if New.UpdateOverlay then New:UpdateOverlay(true) end
+
 		ACF.CheckLegal(New)
 
 		return New
@@ -348,7 +353,13 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_VerifyClientData = VerifyClientData
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
-	duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(ArgsList))
+	local function SpawnFunction(Player, Pos, Angle, Data)
+		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+		return SpawnedEntity
+	end
+
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(ArgsList))
 end
 
 --- Registers a class as a spawnable entity class
@@ -371,7 +382,13 @@ function Entities.Register(Class, Function, ...)
 
 	Entity.Spawn = Function
 
-	duplicator.RegisterEntityClass(Class, Function, "Pos", "Angle", "Data", unpack(List))
+	local function SpawnFunction(Player, Pos, Angle, Data)
+		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+		return SpawnedEntity
+	end
+
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -386,7 +403,13 @@ function Entities.AddArguments(Class, ...)
 	local List      = AddArguments(Entity, Arguments)
 
 	if Entity.Spawn then
-		duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(List))
+		local function SpawnFunction(Player, Pos, Angle, Data)
+			local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+			return SpawnedEntity
+		end
+
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 	end
 end
 
@@ -434,14 +457,26 @@ do -- Spawning and updating
 
 		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
-		Entity:Activate()
 		Entity:CPPISetOwner(Player)
+		Entity:SetPlayer(Player)
+
+		Entity.ACF       = Entity.ACF or {}
+		Entity.Owner     = Player -- MUST be stored on ent for PP (supposedly)
+		Entity.DataStore = Entities.GetArguments(Class)
 
 		if not NoUndo then
 			undo.Create(Entity.Name or Class)
 				undo.AddEntity(Entity)
 				undo.SetPlayer(Player)
 			undo.Finish()
+		end
+
+		if Entity.UpdateOverlay then
+			Entity:UpdateOverlay(true)
+		end
+
+		if Entity.Outputs and Entity.Outputs.Entity then
+			WireLib.TriggerOutput(Entity, "Entity", Entity)
 		end
 
 		return true, Entity

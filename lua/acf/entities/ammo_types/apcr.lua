@@ -7,6 +7,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing Composite Rigid"
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "A hardened core munition designed for weapons in the 1940s."
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,

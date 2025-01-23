@@ -184,7 +184,6 @@ do	-- Spawn and Update funcs
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Mass", 0)
 
 		for _, v in ipairs(Entity.DataStore) do
@@ -274,12 +273,10 @@ do	-- Spawn and Update funcs
 
 		Contraption.SetModel(Entity, Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret")
 		Entity.MassCheckDelay 	= 0
 		Entity.CoMCheckDelay	= 0
@@ -304,8 +301,6 @@ do	-- Spawn and Update funcs
 		Rotator.Owner			= Entity
 
 		UpdateTurret(Entity, Data, Class, Turret)
-
-		Entity:UpdateOverlay(true)
 
 		HookRun("ACF_OnSpawnEntity", "acf_turret", Entity, Data, Class, Turret)
 
@@ -340,7 +335,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Motor)
+		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		self:UpdateTurretMass()
 

@@ -7,6 +7,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive"
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell filled with explosives, detonates on impact."
 	self.Blacklist = {
 		MG = true,

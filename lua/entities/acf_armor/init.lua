@@ -97,12 +97,10 @@ do -- Spawning and Updating
 
 		Plate:SetScaledModel("models/holograms/hq_rcube_thin.mdl")
 		Plate:SetMaterial("phoenix_storms/metalfloor_2-3")
-		Plate:SetPlayer(Player)
 		Plate:SetAngles(Angle)
 		Plate:SetPos(Pos)
 		Plate:Spawn()
 
-		Plate.Owner     = Player -- MUST be stored on ent for PP
 		Plate.DataStore = Entities.GetArguments("acf_armor")
 
 		duplicator.ClearEntityModifier(Plate, "mass")
@@ -152,11 +150,12 @@ end
 
 do -- ACF Activation and Damage
 	local Trace = { Entity = true, StartPos = true, HitPos = true }
+	local TensileDivisor = 1111 -- Balancing health multiplier around RHA
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		local Area = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Health  = Area / ACF.Threshold * self.Tensile
+		local Health  = Area / ACF.Threshold * (self.Tensile / TensileDivisor)
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then

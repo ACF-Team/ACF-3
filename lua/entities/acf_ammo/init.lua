@@ -256,7 +256,6 @@ do -- Spawning and Updating --------------------
 		Entity:UpdateMass(true)
 	end
 
-	util.PrecacheModel("models/holograms/hq_cylinder.mdl")
 	util.AddNetworkString("ACF_RequestAmmoData")
 
 	-- Whenever a player requests ammo data, we'll send it to them
@@ -300,28 +299,22 @@ do -- Spawning and Updating --------------------
 		Crate.ACF.Model = Model
 
 		Crate:SetMaterial("phoenix_storms/Future_vents")
-		Crate:SetPlayer(Player)
 		Crate:SetScaledModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()
 
-		Crate.Owner       = Player -- MUST be stored on ent for PP
 		Crate.IsExplosive = true
 		Crate.Weapons     = {}
 		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
 		UpdateCrate(Crate, Data, Class, Weapon, Ammo)
 
-		WireLib.TriggerOutput(Crate, "Entity", Crate)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
 		end
 
 		hook.Run("ACF_OnSpawnEntity", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
-
-		Crate:UpdateOverlay(true)
 
 		-- Backwards compatibility with old crates
 		if Data.Offset then

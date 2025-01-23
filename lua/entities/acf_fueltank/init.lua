@@ -193,7 +193,6 @@ do -- Spawn and Update functions
 
 		Tank.ACF		= Tank.ACF or {}
 
-		Tank:SetPlayer(Player)
 		Tank:SetScaledModel(Model)
 		if Material then
 			Tank:SetMaterial(Material)
@@ -205,7 +204,6 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_fueltank", Tank)
 		Player:AddCount(Limit, Tank)
 
-		Tank.Owner         = Player -- MUST be stored on ent for PP
 		Tank.Engines       = {}
 		Tank.Leaking       = 0
 		Tank.LastThink     = 0
@@ -217,15 +215,11 @@ do -- Spawn and Update functions
 
 		UpdateFuelTank(Tank, Data, Class, FuelTank, FuelType)
 
-		WireLib.TriggerOutput(Tank, "Entity", Tank)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Tank, Data, Class, FuelTank)
 		end
 
 		HookRun("ACF_OnSpawnEntity", "acf_fueltank", Tank, Data, Class, FuelTank)
-
-		Tank:UpdateOverlay(true)
 
 		-- Fuel tanks should be active by default
 		Tank:TriggerInput("Active", 1)

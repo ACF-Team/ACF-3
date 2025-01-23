@@ -9,6 +9,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing High Explosive"
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "Less capable armor piercing round with an explosive charge inside."
 	self.Blacklist = {
 		GL = true,

@@ -253,6 +253,12 @@ local function AddInformation(Base, ToolData)
 end
 
 local function AddGraph(Base, ToolData)
+	if Ammo.PreCreateAmmoGraph then
+		local Result = Ammo:PreCreateAmmoGraph(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
 	local Graph = Base:AddGraph()
 	Base.Graph = Graph
 	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
@@ -362,6 +368,10 @@ local function AddGraph(Base, ToolData)
 			end)
 		end
 	end)
+
+	if Ammo.OnCreateAmmoGraph then
+		Ammo:OnCreateAmmoGraph(Base, ToolData, BulletData)
+	end
 end
 
 ---Returns the client bullet data currently being used by the menu.
