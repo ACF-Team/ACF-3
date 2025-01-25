@@ -469,7 +469,11 @@ do
 					self:EmitSound(Sound, 70, 100, ACF.Volume)
 					self:Unlink(Link)
 					Link:Unlink(self)
-					ACF.SendNotify(self.Owner, false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
+
+					-- If we're waiting on it then don't send the notification...
+					if self.RemainignLinks and self.RemainingLinks[Link] then
+						ACF.SendNotify(self.Owner, false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
+					end
 				end
 			end
 		end
@@ -598,7 +602,7 @@ do
 			local Contraption = self:GetContraption() or {}
 			local Base = Contraption.Base or {}
 			local Seat = Base.Seat or {}
-			if IsValid(Seat) then 
+			if IsValid(Seat) then
 				Seat:GetDriver():Kill()
 
 				-- hook.Add("CanPlayerEnterVehicle", "LockOut" .. Base:EntIndex(), function(ply, veh, role)
@@ -631,26 +635,57 @@ end
 
 -- CFW Integration
 do
-	-- Maintain a record in the contraption of its current crew
+	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
 	hook.Add("cfw.contraption.entityAdded", "crewaddindex", function(contraption, ent)
 		if ent:GetClass() == "acf_crew" then
+			-- Index crew
 			contraption.Crews = contraption.Crews or {}
 			contraption.Crews[ent] = true
 
 			contraption.CrewsByType = contraption.CrewsByType or {}
 			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
 			contraption.CrewsByType[ent.CrewTypeID][ent] = true
+
+			-- Propagate links waiting on CFW from crew to contraption
+			contraption.RemainingLinks = contraption.RemainingLinks or {}
+			for target, _ in pairs(ent.RemainingLinks or {}) do
+				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
+				contraption.RemainingLinks[target][ent] = true
+			end
+			-- print("Contraption Remaining links")
+			-- PrintTable(contraption.RemainingLinks)
+		elseif contraption.RemainingLinks and contraption.RemainingLinks[ent] then
+			-- This runs if the entity is a target of some crew(s)
+			local waiters = contraption.RemainingLinks[ent] or {}
+			for waiter, _ in pairs(waiters) do
+				print("Waiting Link", waiter, ent)
+				waiter:Link(ent)
+			end
+			contraption.RemainingLinks[ent] = nil
 		end
 	end)
 
 	hook.Add("cfw.contraption.entityRemoved", "crewremoveindex", function(contraption, ent)
 		if ent:GetClass() == "acf_crew" then
+			-- Unindex crew
 			contraption.Crews = contraption.Crews or {}
 			contraption.Crews[ent] = nil
 
 			contraption.CrewsByType = contraption.CrewsByType or {}
 			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
 			contraption.CrewsByType[ent.CrewTypeID][ent] = nil
+
+			-- Unpropagate links waiting on CFW from crew to contraption
+			contraption.RemainingLinks = contraption.RemainingLinks or {}
+			for target, _ in pairs(ent.RemainingLinks or {}) do
+				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
+				contraption.RemainingLinks[target][ent] = nil
+			end
+		elseif contraption.RemainingLinks and contraption.RemainingLinks[ent] then
+			-- This runs if the entity is a target of some crew(s)
+			local waiters = contraption.RemainingLinks[ent] or {}
+			for waiter, _ in pairs(waiters) do waiter:Unlink(ent) end
+			contraption.RemainingLinks[ent] = nil
 		end
 	end)
 end
@@ -697,6 +732,10 @@ do
 		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
 		if Handlers.OnLink then Handlers.OnLink(Crew, Target, TargetClass) end
 
+		-- We're no longer waiting on them...
+		Crew.RemainingLinks = Crew.RemainingLinks or {}
+		Crew.RemainingLinks[Target] = nil
+
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, true)
 
 		if Target.UpdateOverlay then Target:UpdateOverlay() end
@@ -736,6 +775,7 @@ do
 	for v, _ in pairs(lt) do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Crew, Target)
+			-- print("Linking: " .. tostring(Result) .. " " .. Message)
 			if Result then
 				if FromChip then TimerSimple(10, function() LinkCrew(Crew, Target) end)
 				else LinkCrew(Crew, Target) end
@@ -759,6 +799,7 @@ do
 		if next(self.Targets) then
 			local Entities = {}
 			for Ent in pairs(self.Targets) do
+				-- print("Save: [" .. self:EntIndex() .. "] -> [" .. Ent:EntIndex() .. "]")
 				Entities[#Entities + 1] = Ent:EntIndex()
 			end
 			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
@@ -773,12 +814,22 @@ do
 
 		-- Restore previous links
 		if EntMods.CrewTargets then
+			local RLs = {} -- LUT mapping failed link targets to true
+
+			print(self, "PostEntityPaste")
 			for _, EntID in pairs(EntMods.CrewTargets) do
-				-- ACF turrets i kneel
-				timer.Simple(1, function()
-					self:Link(CreatedEntities[EntID])
-				end)
+				local ActualEnt = CreatedEntities[EntID]
+
+				local result, _ = self:Link(ActualEnt)
+				print(self, result, _)
+				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their target is indexed.
 			end
+
+			self.RemainingLinks = RLs
+
+			print("RemainingLinks", table.Count(self.RemainingLinks))
+			PrintTable(self.RemainingLinks)
+
 			EntMods.CrewTargets = nil
 		end
 

@@ -66,6 +66,9 @@ do -- Random timer crew stuff
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
+		
+
+		-- print("Load", self.LoadCrewMod)
 		return self.LoadCrewMod
 	end
 
@@ -83,7 +86,7 @@ do -- Random timer crew stuff
 		local Val = Propagator and Propagator.AccuracyCrewMod or 0
 
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		print("Accuracy", self.AccuracyCrewMod)
+		-- print("Accuracy", self.AccuracyCrewMod)
 		return self.AccuracyCrewMod
 	end
 end
@@ -101,7 +104,7 @@ do -- Spawn and Update functions --------------------------------
 	local Outputs = {
 		"Ready (Returns 1 if the weapon can be fired.)",
 		"Status (Returns the current state of the weapon.) [STRING]",
-		"Ammo Type (Returns  the name of the currently loaded ammo type.) [STRING]",
+		"Ammo Type (Returns the name of the currently loaded ammo type.) [STRING]",
 		"Shots Left (Returns the amount of rounds left in the breech or magazine.)",
 		"Total Ammo (Returns the amount of rounds available for this weapon.)",
 		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
@@ -766,7 +769,7 @@ do -- Metamethods --------------------------------
 				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
 				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-				print("Chamber", Time, self.LoadCrewMod)
+				-- print("Chamber", Time, self.LoadCrewMod)
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
@@ -774,6 +777,9 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+
+				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
+				self:SetNW2Int("Caliber", self.BulletData.Caliber)
 
 				ACF.ProgressTimer(
 					self,

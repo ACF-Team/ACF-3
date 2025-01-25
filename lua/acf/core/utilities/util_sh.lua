@@ -906,6 +906,25 @@ do -- Crew related
 
 		return value
 	end
+
+	--- Returns the length and bulletdata of the longest bullet in any crate a gun has ever seen.
+	--- @param Gun any The gun
+	--- @return integer LongestLength The length of the longest bullet
+	--- @return table? LongestBullet The bullet data of the longest bullet
+	function ACF.FindLongestBullet(Gun)
+		local LongestLength = 0
+		local LongestBullet = nil
+		for Crate in pairs(Gun.Crates) do
+			local BulletData = Crate.BulletData
+			local Length = BulletData.PropLength + BulletData.ProjLength
+			if Length > LongestLength then
+				LongestLength = Length
+				LongestBullet = BulletData
+			end
+		end
+
+		return LongestLength, LongestBullet
+	end
 end
 
 do -- Reload related
@@ -964,11 +983,13 @@ do -- Reload related
 		local D2 = CrewPos:Distance(AmmoPos)
 
 		-- Check loader can reach breech
-		-- local tr = util.TraceLine({
-		-- 	start = BreechPos,
-		-- 	endpos = Crew,
-		-- })
-		-- if tr.Entity ~= Crew then return 0 end
+		local tr = util.TraceLine({
+			start = BreechPos,
+			endpos = CrewPos,
+			filter = Gun,
+		})
+		-- print("Hit", tr.Entity)
+		if tr.Entity ~= Crew then return 0 end
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end

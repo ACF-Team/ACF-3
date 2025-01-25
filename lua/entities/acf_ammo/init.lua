@@ -651,7 +651,7 @@ do -- Entity Overlay ----------------------------
 			local Ideal = math.Round(ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, self.BulletData), 2)
 			local IdealMag = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData), 2)
 
-			local MagMass = math.Round(self.BulletData.CartMass * self.MagSize, 2)
+			local MagMass = math.Round(self.BulletData.CartMass * math.max(self.MagSize, 1), 2)
 			BulletInfo = BulletText:format(Cartridge, Projectile, Propellant, Length, Ideal, IdealMag, MagMass)
 		end
 

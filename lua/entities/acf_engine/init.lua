@@ -250,7 +250,7 @@ do -- Random timer crew stuff
 		local Propagator = self:FindPropagator(cfg)
 		local Val = Propagator and Propagator.FuelCrewMod or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		print("Fuel Rate", self.FuelCrewMod)
+		-- print("Fuel Rate", self.FuelCrewMod)
 		return self.FuelCrewMod
 	end
 end
