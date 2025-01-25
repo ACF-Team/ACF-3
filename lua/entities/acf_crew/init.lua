@@ -637,6 +637,7 @@ end
 do
 	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
 	hook.Add("cfw.contraption.entityAdded", "crewaddindex", function(contraption, ent)
+		contraption.RemainingLinks = contraption.RemainingLinks or {}
 		if ent:GetClass() == "acf_crew" then
 			-- Index crew
 			contraption.Crews = contraption.Crews or {}
@@ -647,25 +648,27 @@ do
 			contraption.CrewsByType[ent.CrewTypeID][ent] = true
 
 			-- Propagate links waiting on CFW from crew to contraption
-			contraption.RemainingLinks = contraption.RemainingLinks or {}
 			for target, _ in pairs(ent.RemainingLinks or {}) do
 				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
 				contraption.RemainingLinks[target][ent] = true
 			end
-			-- print("Contraption Remaining links")
-			-- PrintTable(contraption.RemainingLinks)
-		elseif contraption.RemainingLinks and contraption.RemainingLinks[ent] then
-			-- This runs if the entity is a target of some crew(s)
-			local waiters = contraption.RemainingLinks[ent] or {}
-			for waiter, _ in pairs(waiters) do
-				print("Waiting Link", waiter, ent)
-				waiter:Link(ent)
+			print("Contraption Remaining links")
+			PrintTable(contraption.RemainingLinks)
+		else
+			if contraption.RemainingLinks and contraption.RemainingLinks[ent] ~= nil then
+				-- This runs if the entity is a target of some crew(s)
+				local waiters = contraption.RemainingLinks[ent] or {}
+				for waiter, _ in pairs(waiters) do
+					print("Waiting Link", waiter, ent)
+					waiter:Link(ent)
+				end
+				contraption.RemainingLinks[ent] = nil
 			end
-			contraption.RemainingLinks[ent] = nil
 		end
 	end)
 
 	hook.Add("cfw.contraption.entityRemoved", "crewremoveindex", function(contraption, ent)
+		contraption.RemainingLinks = contraption.RemainingLinks or {}
 		if ent:GetClass() == "acf_crew" then
 			-- Unindex crew
 			contraption.Crews = contraption.Crews or {}
@@ -676,16 +679,17 @@ do
 			contraption.CrewsByType[ent.CrewTypeID][ent] = nil
 
 			-- Unpropagate links waiting on CFW from crew to contraption
-			contraption.RemainingLinks = contraption.RemainingLinks or {}
 			for target, _ in pairs(ent.RemainingLinks or {}) do
 				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
 				contraption.RemainingLinks[target][ent] = nil
 			end
-		elseif contraption.RemainingLinks and contraption.RemainingLinks[ent] then
-			-- This runs if the entity is a target of some crew(s)
-			local waiters = contraption.RemainingLinks[ent] or {}
-			for waiter, _ in pairs(waiters) do waiter:Unlink(ent) end
-			contraption.RemainingLinks[ent] = nil
+		else
+			if contraption.RemainingLinks and contraption.RemainingLinks[ent] then
+				-- This runs if the entity is a target of some crew(s)
+				local waiters = contraption.RemainingLinks[ent] or {}
+				for waiter, _ in pairs(waiters) do waiter:Unlink(ent) end
+				contraption.RemainingLinks[ent] = nil
+			end
 		end
 	end)
 end
