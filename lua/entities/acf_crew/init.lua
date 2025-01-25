@@ -659,7 +659,7 @@ do
 			end
 
 			-- print("Contraption Remaining links")
-			PrintTable(contraption.RemainingLinks)
+			-- PrintTable(contraption.RemainingLinks)
 		else
 			if contraption.RemainingLinks and contraption.RemainingLinks[ent] ~= nil then
 				-- This runs if the entity is a target of some crew(s)
