@@ -652,8 +652,14 @@ do
 				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
 				contraption.RemainingLinks[target][ent] = true
 			end
+
+			for target, _ in pairs(ent.RemainingLinks or {}) do
+				-- print("Prior Waiting Link", ent, target)
+				ent:Link(target)
+			end
+
 			-- print("Contraption Remaining links")
-			-- PrintTable(contraption.RemainingLinks)
+			PrintTable(contraption.RemainingLinks)
 		else
 			if contraption.RemainingLinks and contraption.RemainingLinks[ent] ~= nil then
 				-- This runs if the entity is a target of some crew(s)
