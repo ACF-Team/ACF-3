@@ -652,14 +652,14 @@ do
 				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
 				contraption.RemainingLinks[target][ent] = true
 			end
-			print("Contraption Remaining links")
-			PrintTable(contraption.RemainingLinks)
+			-- print("Contraption Remaining links")
+			-- PrintTable(contraption.RemainingLinks)
 		else
 			if contraption.RemainingLinks and contraption.RemainingLinks[ent] ~= nil then
 				-- This runs if the entity is a target of some crew(s)
 				local waiters = contraption.RemainingLinks[ent] or {}
 				for waiter, _ in pairs(waiters) do
-					print("Waiting Link", waiter, ent)
+					-- print("Waiting Link", waiter, ent)
 					waiter:Link(ent)
 				end
 				contraption.RemainingLinks[ent] = nil
