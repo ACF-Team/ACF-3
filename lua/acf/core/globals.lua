@@ -153,10 +153,14 @@ do -- ACF global vars
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
-	ACF.CrewPriorities = {"Driver", "Gunner", "Loader", "Commander", "Pilot"} -- Order of crew replacement priorities (Highest priority on the left, lowest on the right)
+	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
+	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
+
+	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
+	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
 
 	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
-	ACF.CrewHealth 			= 4	-- How much health crew members have
+	ACF.CrewHealth 			= 4		-- How much health crew members have
 
 	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
 	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath

@@ -270,6 +270,11 @@ do
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
+
+		if not isnumber(Data.CrewPriority) then -- Ammo priority is used to deliniate different stages
+			Data.CrewPriority = 1
+		end
+		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -294,6 +299,7 @@ do
 		Entity.CrewModelID = Data.CrewModelID
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
+		Entity.CrewPriority = Data.CrewPriority
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
@@ -434,14 +440,17 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		str = string.format("Role: %s\nHealth: %s HP\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%",
+		str = string.format("Role: %s\nHealth: %s HP\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
 			math.Round(self.SpaceEff * 100, 2),
 			math.Round(self.MoveEff * 100, 2),
 			math.Round(self.Focus * 100, 2),
-			math.Round(self.TotalEff * 100, 2)
+			math.Round(self.TotalEff * 100, 2),
+			self.ReplaceOthers,
+			self.ReplaceSelf,
+			self.CrewPriority
 		)
 		return str
 	end
@@ -508,34 +517,28 @@ do
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
 		if self:GetContraption() == nil then return end 				-- No contraption to replace crew in
-		if self:GetContraption().CrewsByType == nil then return end 	-- No crew to replace with
+		if self:GetContraption().CrewsByPriority == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
 			self.ToBeReplaced = true									-- Mark self for replacement
 
-			local start = false
-			local CrewsByType = self:GetContraption().CrewsByType
-			for _, CrewType in ipairs(ACF.CrewPriorities) do							-- Priority wise search over crew types
-				local OtherCrews = CrewsByType[CrewType] or {}
-
-				-- Ignore all crew types before our own on the hierarchy (only search for)
-				if CrewType == self.CrewTypeID then start = true end
-				if not start then continue end
-
-				for Other, _ in pairs(OtherCrews) do									-- For each crew of that type
+			-- Only consider "lower" priority crews
+			for i = self.CrewPriority, ACF.CrewRepPrioMax do
+				local OtherCrews = self:GetContraption().CrewsByPriority[i] or {}
+				for Other, _ in pairs(OtherCrews) do									-- For each crew of that priority
 					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
 					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
 					local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
 					local Replaceable = Other.ReplaceOthers								-- Other can be replaced
 					if NotMe and NotBusy and Alive and Replaceable then
 						Other.ToReplace = true 											-- Other is now replacing someone (us)
-
+	
 						-- Calculate replacement time
 						local ReplacementDist = self:GetPos():Distance(Other:GetPos())
 						local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
 						TimerSimple(ReplacementTime, function()
 							Other.ToReplace = false
 							self.ToBeReplaced = false
-
+	
 							self:SwapCrew(Other)
 						end)
 						return
@@ -647,6 +650,10 @@ do
 			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
 			contraption.CrewsByType[ent.CrewTypeID][ent] = true
 
+			contraption.CrewsByPriority = contraption.CrewsByPriority or {}
+			contraption.CrewsByPriority[ent.CrewPriority] = contraption.CrewsByPriority[ent.CrewPriority] or {}
+			contraption.CrewsByPriority[ent.CrewPriority][ent] = true
+
 			-- Propagate links waiting on CFW from crew to contraption
 			for target, _ in pairs(ent.RemainingLinks or {}) do
 				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
@@ -683,6 +690,10 @@ do
 			contraption.CrewsByType = contraption.CrewsByType or {}
 			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
 			contraption.CrewsByType[ent.CrewTypeID][ent] = nil
+
+			contraption.CrewsByPriority = contraption.CrewsByPriority or {}
+			contraption.CrewsByPriority[ent.CrewPriority] = contraption.CrewsByPriority[ent.CrewPriority] or {}
+			contraption.CrewsByPriority[ent.CrewPriority][ent] = nil
 
 			-- Unpropagate links waiting on CFW from crew to contraption
 			for target, _ in pairs(ent.RemainingLinks or {}) do
@@ -742,7 +753,7 @@ do
 		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
 		if Handlers.OnLink then Handlers.OnLink(Crew, Target, TargetClass) end
 
-		-- We're no longer waiting on them...
+		-- No longer waiting on this link
 		Crew.RemainingLinks = Crew.RemainingLinks or {}
 		Crew.RemainingLinks[Target] = nil
 
@@ -837,8 +848,8 @@ do
 
 			self.RemainingLinks = RLs
 
-			print("RemainingLinks", table.Count(self.RemainingLinks))
-			PrintTable(self.RemainingLinks)
+			-- print("RemainingLinks", table.Count(self.RemainingLinks))
+			-- PrintTable(self.RemainingLinks)
 
 			EntMods.CrewTargets = nil
 		end

@@ -51,6 +51,10 @@ local function CreateMenu(Menu)
 	ReplaceOthers:SetChecked(true)
 	ReplaceSelf:SetChecked(true)
 
+	local Priority = Base:AddNumberWang("Priority", ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
+	Priority:SetClientData("CrewPriority", "OnValueChanged")
+	Priority:SetValue(1)
+
 	ACF.SetClientData("ReplaceOthers", true)
 	ACF.SetClientData("ReplaceSelf", true)
 

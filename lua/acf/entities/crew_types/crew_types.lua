@@ -39,7 +39,7 @@ local function FindLongestBullet(Crew)
 	if LongestLength > 0 and Crew.LongestLength ~= LongestLength then
 		local Length = LongestLength / 2.54 -- CM to inches
 		local Caliber = LongestBullet.Caliber / 2.54 -- CM to inches
-		Crew.ScanBox = Vector(Length / 2, Length / 2, Caliber)
+		Crew.ScanBox = Vector(Length * ACF.CrewSpaceLengthMod, Length * ACF.CrewSpaceLengthMod, Caliber * ACF.CrewSpaceCaliberMod)
 		Crew.ScanHull = Vector(Caliber, Caliber, Caliber)
 		Crew.LongestLength = LongestLength
 

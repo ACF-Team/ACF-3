@@ -963,9 +963,6 @@ do -- Reload related
 
 		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
 		if not MagSize then
-			local Boxed = ACF.GetWeaponValue("IsBoxed", Caliber, Class, Weapon)
-			local Belted = ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
-			-- MagSize = (Boxed or Belted) and ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 			MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 		end
 
