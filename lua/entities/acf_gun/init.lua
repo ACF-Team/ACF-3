@@ -62,11 +62,7 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2
-		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
-		self.LoadCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
-
-		
+		self.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		-- print("Load", self.LoadCrewMod)
 		return self.LoadCrewMod

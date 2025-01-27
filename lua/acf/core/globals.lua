@@ -171,7 +171,9 @@ do -- ACF global vars
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
-	ACF.LoaderMaxBonus 		= 3		-- Maximum bonus loaders can give to reload time
+	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
+
+	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
 end
 
 do -- ACF Convars & Particles
