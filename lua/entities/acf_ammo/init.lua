@@ -31,10 +31,23 @@ local TimerExists  = timer.Exists
 local HookRun      = hook.Run
 
 do -- Random timer crew stuff
+	local function GetReloadEff(Crew, Ammo1, Ammo2)
+		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
+		local AmmoPos1 = Ammo1:GetPos()
+		local AmmoPos2 = Ammo2:GetPos()
+		local D1 = CrewPos:Distance(AmmoPos1)
+		local D2 = CrewPos:Distance(AmmoPos2)
+		-- debugoverlay.Sphere(CrewPos, 5, 5, Color(0, 255, 0), true)
+		-- debugoverlay.Sphere(AmmoPos1, 5, 5, Color(255, 0, 0), true)
+		-- debugoverlay.Sphere(AmmoPos2, 5, 5, Color(0, 0, 255), true)
+
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
+	end
+
 	function ENT:UpdateStockMod(LastTime)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.RestockCrate or self)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.RestockCrate or self)
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
 		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
 		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
 		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
@@ -783,6 +796,7 @@ do -- Ammo Consumption -------------------------
 			-- If we found a crate, we can start the restocking process
 			-- Self will take from crate, crate will give to self
 			if crate then
+				-- debugoverlay.Line(self:GetPos(), crate:GetPos(), 5, Color(0, 255, 0), true)
 				-- At most, you can transfer the smallest of: mag size, the ammo left in the giver, or the space left in the receiver
 				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
 

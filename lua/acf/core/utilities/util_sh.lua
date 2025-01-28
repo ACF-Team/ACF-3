@@ -970,15 +970,4 @@ do -- Reload related
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
 		return BaseTime * ReloadMod, true
 	end
-
-	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
-	function ACF.GetReloadEff(Crew, Gun, Ammo)
-		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
-		local CrewPos = Crew:GetPos()
-		local AmmoPos = Ammo:GetPos()
-		local D1 = CrewPos:Distance(BreechPos)
-		local D2 = CrewPos:Distance(AmmoPos)
-
-		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
-	end
 end

@@ -58,10 +58,24 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
+	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
+	local function GetReloadEff(Crew, Gun, Ammo)
+		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
+		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
+		local AmmoPos = Ammo:GetPos()
+		local D1 = CrewPos:Distance(BreechPos)
+		local D2 = CrewPos:Distance(AmmoPos)
+		-- debugoverlay.Sphere(BreechPos, 5, 5, Color(255, 0, 0), true)
+		-- debugoverlay.Sphere(CrewPos, 5, 5, Color(0, 255, 0), true)
+		-- debugoverlay.Sphere(AmmoPos, 5, 5, Color(0, 0, 255), true)
+
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
+	end
+
 	function ENT:UpdateLoadMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		if self.BulletData then
