@@ -23,7 +23,7 @@ local function FindLongestBullet(Crew)
 	-- Go through every bullet linked to the gun, and find the longest shell
 	local LongestLength = 0
 	local LongestBullet = nil
-	for Gun in pairs(Crew.TargetsByType["acf_gun"] or {}) do
+	for Gun in pairs(Crew.TargetsByType["acf_gun"] or Crew.TargetsByType["acf_rack"] or {}) do
 		if not IsValid(Gun) then continue end
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
@@ -83,7 +83,11 @@ CrewTypes.Register("Loader", {
 		acf_gun = {			-- Specify a target class for it to be included in the whitelist
 			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-		}
+		},
+		acf_rack = {
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+		},
 	},
 	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
@@ -216,6 +220,10 @@ CrewTypes.Register("Commander", {
 			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 		},
+		acf_rack = {
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Commanders can only link to one entity." end
@@ -261,8 +269,12 @@ CrewTypes.Register("Pilot", {
 	},
 	LinkHandlers = {
 		acf_gun = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+		},
+		acf_rack = {
+			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
 		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity

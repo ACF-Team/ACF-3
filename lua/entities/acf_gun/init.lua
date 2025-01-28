@@ -58,7 +58,6 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
-	
 	function ENT:UpdateLoadMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
@@ -733,7 +732,7 @@ do -- Metamethods --------------------------------
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
 			local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
-			Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+			local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 			print("Mag Reload", Time)
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
@@ -777,7 +776,7 @@ do -- Metamethods --------------------------------
 
 				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
-				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 				-- print("Chamber", Time, self.LoadCrewMod)
 
 				self.ReloadTime   = Time
@@ -856,7 +855,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
 				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
-				Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 				print("Mag Reload: " .. Time)
 
 				self.NextFire = Clock.CurTime + Time
