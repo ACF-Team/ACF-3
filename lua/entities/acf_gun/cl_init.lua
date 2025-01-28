@@ -131,7 +131,7 @@ do	-- Overlay/networking for that
 		local Length = self:GetNW2Float("Length", 0)
 		local Caliber = self:GetNW2Float("Caliber", 0)
 		local Radius = Caliber / 2.54 / 2
-		render.DrawWireframeBox(self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)), self:GetAngles(), Vector(-Length / 2.54, -Radius, -Radius), Vector(0, Radius, Radius), Color(255, 0, 255), true)
+		render.DrawWireframeBox(self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)), self:GetAngles(), Vector(-Length / 2.54 / 2, -Radius, -Radius), Vector(0, Radius, Radius), Color(255, 0, 255), true)
 
 		if next(SelfTbl.Crates) then
 			for _, T in ipairs(SelfTbl.Crates) do

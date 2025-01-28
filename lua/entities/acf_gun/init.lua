@@ -58,11 +58,24 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
+	
 	function ENT:UpdateLoadMod(cfg)
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, ACF.GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+
+		if self.BulletData then
+			local filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+
+			-- Check assuming 2 piece for now.
+			local tr = util.TraceLine({
+				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
+				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / 2.54 / 2, 0, 0)),
+				filter = filter,
+			})
+			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		end
 
 		-- print("Load", self.LoadCrewMod)
 		return self.LoadCrewMod

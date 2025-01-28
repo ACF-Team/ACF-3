@@ -979,15 +979,6 @@ do -- Reload related
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
-		-- Check loader can reach breech
-		-- local tr = util.TraceLine({
-		-- 	start = BreechPos,
-		-- 	endpos = CrewPos,
-		-- 	filter = Gun,
-		-- })
-		-- print("Hit", tr.Entity)
-		-- if tr.Entity ~= Crew then return 0 end
-
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 end
