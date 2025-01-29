@@ -22,7 +22,6 @@ local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
-local HookRun     = hook.Run
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- Helper functions
@@ -174,7 +173,7 @@ do -- Spawn and Update functions --------------------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_gun", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_gun", Data, Class)
 		end
 	end
 
@@ -304,7 +303,7 @@ do -- Spawn and Update functions --------------------------------
 		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
 
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gun", Player, Data, Class, Weapon)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gun", Player, Data, Class, Weapon)
 
 		if CanSpawn == false then return false end
 
@@ -319,12 +318,10 @@ do -- Spawn and Update functions --------------------------------
 
 		Contraption.SetModel(Entity, Weapon and Weapon.Model or Class.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.BarrelFilter = { Entity }
 		Entity.State        = "Empty"
 		Entity.Crates       = {}
@@ -339,7 +336,6 @@ do -- Spawn and Update functions --------------------------------
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
 		WireLib.TriggerOutput(Entity, "Status", "Empty")
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Ammo Type", "Empty")
 		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
@@ -351,7 +347,7 @@ do -- Spawn and Update functions --------------------------------
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateLoadMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 
-		HookRun("ACF_OnEntitySpawn", "acf_gun", Entity, Data, Class, Weapon)
+		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
 		Entity:UpdateOverlay(true)
 
@@ -381,7 +377,7 @@ do -- Spawn and Update functions --------------------------------
 		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gun", self, Data, Class, Weapon)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -393,7 +389,7 @@ do -- Spawn and Update functions --------------------------------
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gun", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_gun", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -405,7 +401,7 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnUpdate(self, Data, Class, Weapon)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_gun", self, Data, Class, Weapon)
+		hook.Run("ACF_OnUpdateEntity", "acf_gun", self, Data, Class, Weapon)
 
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do
@@ -610,15 +606,17 @@ do -- Metamethods --------------------------------
 
 				return false
 			end
+
 			if self.TurretLink and IsValid(self.Turret) then -- Special link to a turret, will block the gun from firing if the gun is not aligned with the turret's target angle
 				local Turret = self.Turret
 				if not Turret.Active then return false end
 
 				if self:GetForward():Dot(Turret.SlewFuncs.GetWorldTarget(Turret):Forward()) < 0.9961 then return false end
 			end
-			if HookRun("ACF_FireShell", self) == false then return false end -- Something hooked into ACF_FireShell said no
 
-			return true
+			local CanFire = hook.Run("ACF_PreFireWeapon", self)
+
+			return CanFire
 		end
 
 		function ENT:GetSpread()
@@ -1077,7 +1075,7 @@ do -- Metamethods --------------------------------
 				Class.OnLast(self, Class)
 			end
 
-			HookRun("ACF_OnEntityLast", "acf_gun", self, Class)
+			hook.Run("ACF_OnEntityLast", "acf_gun", self, Class)
 
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)

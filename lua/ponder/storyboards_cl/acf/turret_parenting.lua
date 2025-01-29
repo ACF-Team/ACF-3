@@ -1,5 +1,6 @@
 local Storyboard = Ponder.API.NewStoryboard("acf", "turrets", "turret-parenting")
 Storyboard:WithName("acf.storyboards.turrets.turret_parenting")
+Storyboard:WithIndexOrder(0)
 Storyboard:WithModelIcon("models/acf/core/t_ring.mdl")
 Storyboard:WithDescription(language.GetPhrase("acf.storyboards.turrets.turret_parenting.desc"))
 
@@ -81,7 +82,7 @@ Chapter2:AddInstruction("ShowText", {
 })
 
 Chapter2:AddInstruction("ShowToolgun", {Length = .5, Tool = "Multi-Parent"})
-local ParentingTime = Chapter2:AddInstruction("MultiParent", {
+local ParentingTime = Chapter2:AddInstruction("Tools.MultiParent", {
     Children = {"Gun"},
     Parent = "TurretTrun",
     Easing = math.ease.InOutQuad

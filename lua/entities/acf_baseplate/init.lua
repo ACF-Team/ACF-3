@@ -6,8 +6,10 @@ local ACF      = ACF
 local Classes  = ACF.Classes
 local Entities = Classes.Entities
 
-ENT.ACF_Limit = 16
-ENT.ACF_UserWeighable = true
+ENT.ACF_Limit                     = 16
+ENT.ACF_UserWeighable             = true
+ENT.ACF_KillableButIndestructible = true
+ENT.ACF_HealthUpdatesWireOverlay  = true
 
 do -- Random timer crew stuff
 	function ENT:UpdateAccuracyMod(cfg)
@@ -125,9 +127,18 @@ do
 	end
 end
 
-local Text = "Baseplate Size: %.1f x %.1f x %.1f"
+function ENT:CFW_OnParentedTo(_, NewEntity)
+    if IsValid(NewEntity) then
+        ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
+    end
+
+    return false
+end
+
+local Text = "Baseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
 function ENT:UpdateOverlayText()
-	return Text:format(self.Size[1], self.Size[2], self.Size[3])
+    local h, mh = self.ACF.Health, self.ACF.MaxHealth
+    return Text:format(self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
 end
 
 Entities.Register()

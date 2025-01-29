@@ -74,10 +74,11 @@ if SERVER then
 			local Distance = Position:DistToSqr(Crate:GetPos())
 
 			if CanRefillCrate(Refill, Crate, Distance) then
-				local Supply = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
-				local Transfer = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
+				local Supply    = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
+				local Transfer  = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
+				local CanRefill = hook.Run("ACF_PreRefillAmmo", Refill, Crate, Transfer)
 
-				if hook.Run("ACF_CanRefill", Refill, Crate, Transfer) == false then continue end
+				if not CanRefill then continue end
 
 				if not next(Refill.SupplyingTo) then
 					RefillEffect(Refill)
@@ -165,14 +166,21 @@ if SERVER then
 		return ""
 	end
 else
-	function Ammo:SetupAmmoMenuSettings(Settings)
-		Settings.SuppressControls    = true
-		Settings.SuppressInformation = true
-	end
-
-	function Ammo:AddAmmoPreview(Preview, Setup, ...)
-		Ammo.BaseClass.AddAmmoPreview(self, Preview, Setup, ...)
+	function Ammo:OnCreateAmmoPreview(Preview, Setup, ...)
+		Ammo.BaseClass.OnCreateAmmoPreview(self, Preview, Setup, ...)
 
 		Setup.FOV = 115
+	end
+
+	function Ammo:PreCreateAmmoControls()
+		return false
+	end
+
+	function Ammo:PreCreateAmmoInformation()
+		return false
+	end
+
+	function Ammo:PreCreateAmmoGraph()
+		return false
 	end
 end

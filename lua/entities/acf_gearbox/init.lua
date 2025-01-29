@@ -17,7 +17,6 @@ local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
 local max         = math.max
-local HookRun     = hook.Run
 local MaxDistance = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
@@ -105,7 +104,7 @@ do -- Spawn and Update functions -----------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			HookRun("ACF_VerifyData", "acf_gearbox", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_gearbox", Data, Class)
 		end
 	end
 
@@ -198,8 +197,8 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
-	hook.Add("ACF_OnEntitySpawn", "ACF Cleanup Gearbox Data", CleanupData)
-	hook.Add("ACF_OnEntityUpdate", "ACF Cleanup Gearbox Data", CleanupData)
+	hook.Add("ACF_OnSpawnEntity", "ACF Cleanup Gearbox Data", CleanupData)
+	hook.Add("ACF_OnUpdateEntity", "ACF Cleanup Gearbox Data", CleanupData)
 	hook.Add("ACF_OnSetupInputs", "ACF Cleanup Gearbox Data", function(Entity, List)
 		if Entity:GetClass() ~= "acf_gearbox" then return end
 
@@ -232,7 +231,7 @@ do -- Spawn and Update functions -----------------------
 
 		if not Player:CheckLimit(Limit) then return end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_gearbox", Player, Data, Class, Gearbox)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gearbox", Player, Data, Class, Gearbox)
 
 		if CanSpawn == false then return false end
 
@@ -240,7 +239,6 @@ do -- Spawn and Update functions -----------------------
 
 		if not IsValid(Entity) then return end
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
@@ -248,7 +246,6 @@ do -- Spawn and Update functions -----------------------
 		Player:AddCleanup("acf_gearbox", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner          = Player -- MUST be stored on ent for PP
 		Entity.SoundPath      = Class.Sound
 		Entity.Engines        = {}
 		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
@@ -271,15 +268,11 @@ do -- Spawn and Update functions -----------------------
 
 		UpdateGearbox(Entity, Data, Class, Gearbox)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_gearbox", Entity, Data, Class, Gearbox)
-
-		Entity:UpdateOverlay(true)
+		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		ACF.CheckLegal(Entity)
 
@@ -312,14 +305,14 @@ do -- Spawn and Update functions -----------------------
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gearbox", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -331,7 +324,7 @@ do -- Spawn and Update functions -----------------------
 			Class.OnUpdate(self, Data, Class, Gearbox)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_gearbox", self, Data, Class, Gearbox)
+		hook.Run("ACF_OnUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
 
 		if next(self.Engines) then
 			local Count, Total = 0, 0
@@ -408,12 +401,6 @@ do -- Spawn and Update functions -----------------------
 				Feedback = Text:format(Count, Total)
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Gearbox updated successfully!" .. Feedback
 	end
@@ -1128,7 +1115,7 @@ do -- Miscellaneous ------------------------------------
 			Class.OnLast(self, Class)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_gearbox", self, Class)
+		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, Class)
 
 		for Engine in pairs(self.Engines) do
 			self:Unlink(Engine)

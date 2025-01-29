@@ -9,6 +9,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing High Explosive"
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "Less capable armor piercing round with an explosive charge inside."
 	self.Blacklist = {
 		GL = true,
@@ -35,7 +36,7 @@ function Ammo:GetDisplayData(Data)
 	Display.FragMass    = FragMass / Display.Fragments
 	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -55,7 +56,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -145,7 +146,7 @@ else
 		Damage.explosionEffect(Position, Direction, Filler)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
@@ -157,13 +158,13 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.FillerRatio = true
+		Label:TrackClientData("FillerRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

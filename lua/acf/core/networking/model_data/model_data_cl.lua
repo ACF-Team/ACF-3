@@ -22,7 +22,7 @@ end
 -- @param Model The model to queue the callback for.
 -- @param Object Anything that won't fail the IsValid check, usually panels or entities.
 -- @param Callback The function to call when the model data is received.
-function ModelData.QueueRefresh(Model, Object, Callback)
+function ModelData.CallOnReceive(Model, Object, Callback)
 	if not IsValid(Object) then return end
 	if not isfunction(Callback) then return end
 
@@ -40,6 +40,22 @@ function ModelData.QueueRefresh(Model, Object, Callback)
 			[Object] = Callback
 		}
 	end
+end
+
+function ModelData.RunCallbacks(Model)
+	local Data = Callbacks[Model]
+
+	if not Data then return end
+
+	for Object, Callback in pairs(Data) do
+		if IsValid(Object) then
+			Callback(Object, Model)
+		end
+
+		Data[Object] = nil
+	end
+
+	Callbacks[Model] = nil
 end
 
 function ModelData.GetModelData(Model)
@@ -69,7 +85,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 			Standby[Model] = nil
 			Models[Model]  = Data
 
-			hook.Run("ACF_OnReceivedModelData", Model, Data)
+			hook.Run("ACF_OnReceiveModelData", Model, Data)
 		end
 
 		Entity:CallOnRemove("ACF_ModelData", function()
@@ -104,7 +120,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 		Standby[Model] = true
 		Queue[Model]   = true
 
-		hook.Run("ACF_OnRequestedModelData", Model)
+		hook.Run("ACF_OnRequestModelData", Model)
 	end)
 
 	Network.CreateReceiver("ACF_ModelData", function(Data)
@@ -117,7 +133,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 				Standby[Model] = nil
 				Models[Model]  = Info
 
-				hook.Run("ACF_OnReceivedModelData", Model, Info)
+				hook.Run("ACF_OnReceiveModelData", Model, Info)
 			end
 		end
 	end)
@@ -125,7 +141,7 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
 end)
 
-hook.Add("ACF_OnReceivedModelData", "ACF_ModelData_PanelRefresh", function(Model)
+hook.Add("ACF_OnReceiveModelData", "ACF_ModelData_PanelRefresh", function(Model)
 	local Data = Callbacks[Model]
 
 	if not Data then return end

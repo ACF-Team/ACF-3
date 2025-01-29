@@ -53,7 +53,7 @@ end
 
 function ENT:Animate(ReloadTime, LoadOnly)
 	if self.CloseAnim and self.CloseAnim > 0 then
-		self.CloseTime = math.max(ReloadTime - 0.75, ReloadTime * 0.75)
+		self.CloseTime = math.max(ReloadTime - 0.75, (ReloadTime / 2) - (LocalPlayer():Ping() / 1000))
 	else
 		self.CloseTime = ReloadTime
 		self.CloseAnim = nil

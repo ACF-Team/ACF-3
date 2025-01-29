@@ -134,7 +134,7 @@ hook.Add("Think", "ACF_DetectSZTransition", function()
 		plyzones[sid] = zone
 
 		if oldzone ~= zone then
-			hook.Run("ACF_PlayerChangedZone", ply, zone, oldzone)
+			hook.Run("ACF_OnPlayerChangeZone", ply, zone, oldzone)
 		end
 	end
 end)
@@ -333,7 +333,7 @@ concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 		this.DefaultCanDamage = this.ModeDefaultAction[mode]
 		this.DamagePermission = this.Modes[mode]
 		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
-		hook.Run("ACF_ProtectionModeChanged", mode, oldmode)
+		hook.Run("ACF_OnChangeProtectionMode", mode, oldmode)
 
 		return true
 	end
@@ -394,7 +394,7 @@ local function tellPlysAboutDPMode(mode, oldmode)
 	Messages.SendChat(_, "Info", "Damage protection has been changed to " .. mode .. " mode!")
 end
 
-hook.Add("ACF_ProtectionModeChanged", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
+hook.Add("ACF_OnChangeProtectionMode", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
 
 function this.IsInSafezone(pos)
 	if not this.Safezones then return false end
@@ -619,12 +619,12 @@ function this.ResendPermissionsOnChanged()
 	end
 end
 
-hook.Add("ACF_ProtectionModeChanged", "ACF_ResendPermissionsOnChanged", this.ResendPermissionsOnChanged)
+hook.Add("ACF_OnChangeProtectionMode", "ACF_ResendPermissionsOnChanged", this.ResendPermissionsOnChanged)
 
 -- -- -- -- -- Initial DP mode load -- -- -- -- --
 local m = table.KeyFromValue(this.Modes, this.DamagePermission)
 
 if not m then
 	this.DamagePermission = function() end
-	hook.Run("ACF_ProtectionModeChanged", "default", nil)
+	hook.Run("ACF_OnChangeProtectionMode", "default", nil)
 end

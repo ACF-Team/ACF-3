@@ -6,7 +6,7 @@ local Ammo      = AmmoTypes.Register("AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing"
-	self.Model		 = "models/munitions/round_100mm_shot.mdl"
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
 	self.Blacklist = {
 		GL = true,
@@ -27,7 +27,7 @@ function Ammo:GetDisplayData(Data)
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -42,7 +42,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -197,7 +197,7 @@ else
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
-	function Ammo:AddAmmoPreview(_, Setup)
+	function Ammo:OnCreateAmmoPreview(_, Setup)
 		Setup.Model = self.Model
 		Setup.FOV   = 60
 	end
@@ -239,12 +239,12 @@ else
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers)
-		Trackers.Projectile = true
-		Trackers.Propellant = true
+	function Ammo:OnCreateCrateInformation(_, Label)
+		Label:TrackClientData("Projectile")
+		Label:TrackClientData("Propellant")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

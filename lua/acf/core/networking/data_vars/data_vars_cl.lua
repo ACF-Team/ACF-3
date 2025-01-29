@@ -62,7 +62,7 @@ do -- Server data var syncronization
 			if Values[K] ~= V then
 				Values[K] = V
 
-				hook.Run("ACF_OnServerDataUpdate", nil, K, V)
+				hook.Run("ACF_OnUpdateServerData", nil, K, V)
 			end
 
 			Received[K] = nil
@@ -123,7 +123,7 @@ end
 
 do -- Client data setter function
 	--- Sets a client data var and networks it to the server.
-	--- Internally calls the ACF_OnClientDataUpdate hook
+	--- Internally calls the ACF_OnUpdateClientData hook
 	--- @param Key string The key of the datavar
 	--- @param Value any The value the datavar
 	--- @param Forced boolean Whether to send regardless of if the value has changed
@@ -135,7 +135,7 @@ do -- Client data setter function
 		if Forced or Client[Key] ~= Value then
 			Client[Key] = Value
 
-			hook.Run("ACF_OnClientDataUpdate", LocalPlayer(), Key, Value)
+			hook.Run("ACF_OnUpdateClientData", LocalPlayer(), Key, Value)
 
 			NetworkData(Key)
 		end
@@ -144,7 +144,7 @@ end
 
 do -- Server data setter function
 	--- Proposes changes to server datavars and networks them to server.
-	--- Internally calls the ACF_OnServerDataUpdate hook.
+	--- Internally calls the ACF_OnUpdateServerData hook.
 	--- @param Key string The key of the datavar
 	--- @param Value any The value of the datavar
 	--- @param Forced boolean Whether to send regardless of if the value has changed
@@ -162,7 +162,7 @@ do -- Server data setter function
 		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
-			hook.Run("ACF_OnServerDataUpdate", Player, Key, Value)
+			hook.Run("ACF_OnUpdateServerData", Player, Key, Value)
 
 			NetworkData(Key, true)
 		end
