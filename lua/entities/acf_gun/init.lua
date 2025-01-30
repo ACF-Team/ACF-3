@@ -75,7 +75,8 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		self.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+		local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		if self.BulletData then
 			local filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
@@ -96,6 +97,7 @@ do -- Random timer crew stuff
 	--- Finds the turret ring or baseplate from a gun
 	function ENT:FindPropagator(cfg)
 		local Temp = self:GetParent()
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
 		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
@@ -623,7 +625,7 @@ do -- Metamethods --------------------------------
 			local SpreadScale = ACF.SpreadScale
 			local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
 
-			return self.Spread * ACF.GunInaccuracyScale * IaccMult / self.AccuracyCrewMod
+			return self.Spread * ACF.GunInaccuracyScale * IaccMult / (self.AccuracyCrewMod or 1)
 		end
 
 		function ENT:Shoot()

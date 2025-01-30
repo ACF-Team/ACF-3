@@ -166,7 +166,8 @@ do -- Random timer stuff
 		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
 
 		-- Update crew focus
-		self.CrewType.UpdateFocus(self)
+		if self.IsAlive then self.CrewType.UpdateFocus(self, self.IsAlive)
+		else self.Focus = ACF.CrewFallbackCoef end
 
 		if self.CrewType.UpdateLowFreq then self.CrewType.UpdateLowFreq(self, cfg) end
 	end
@@ -242,7 +243,9 @@ do -- Random timer stuff
 		local Commanders = CrewsByType["Commander"] or {}
 		local Commander = next(Commanders)
 
-		self.CrewType.UpdateEfficiency(self, Commander)
+		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
+		else self.TotalEff = ACF.CrewFallbackCoef end
+
 		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
 
 		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
@@ -440,7 +443,7 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		str = string.format("Role: %s\nHealth: %s HP\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
@@ -638,21 +641,40 @@ end
 
 -- CFW Integration
 do
+	function ENT:CFWIndexCrew(contraption)
+		-- Index crew
+		contraption.Crews = contraption.Crews or {}
+		contraption.Crews[self] = true
+
+		contraption.CrewsByType = contraption.CrewsByType or {}
+		contraption.CrewsByType[self.CrewTypeID] = contraption.CrewsByType[self.CrewTypeID] or {}
+		contraption.CrewsByType[self.CrewTypeID][self] = true
+
+		contraption.CrewsByPriority = contraption.CrewsByPriority or {}
+		contraption.CrewsByPriority[self.CrewPriority] = contraption.CrewsByPriority[self.CrewPriority] or {}
+		contraption.CrewsByPriority[self.CrewPriority][self] = true
+	end
+
+	function ENT:CFWUnindexCrew(contraption)
+		-- Unindex crew
+		contraption.Crews = contraption.Crews or {}
+		contraption.Crews[self] = nil
+
+		contraption.CrewsByType = contraption.CrewsByType or {}
+		contraption.CrewsByType[self.CrewTypeID] = contraption.CrewsByType[self.CrewTypeID] or {}
+		contraption.CrewsByType[self.CrewTypeID][self] = nil
+
+		contraption.CrewsByPriority = contraption.CrewsByPriority or {}
+		contraption.CrewsByPriority[self.CrewPriority] = contraption.CrewsByPriority[self.CrewPriority] or {}
+		contraption.CrewsByPriority[self.CrewPriority][self] = nil
+	end
+
 	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
 	hook.Add("cfw.contraption.entityAdded", "crewaddindex", function(contraption, ent)
 		contraption.RemainingLinks = contraption.RemainingLinks or {}
 		if ent:GetClass() == "acf_crew" then
 			-- Index crew
-			contraption.Crews = contraption.Crews or {}
-			contraption.Crews[ent] = true
-
-			contraption.CrewsByType = contraption.CrewsByType or {}
-			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
-			contraption.CrewsByType[ent.CrewTypeID][ent] = true
-
-			contraption.CrewsByPriority = contraption.CrewsByPriority or {}
-			contraption.CrewsByPriority[ent.CrewPriority] = contraption.CrewsByPriority[ent.CrewPriority] or {}
-			contraption.CrewsByPriority[ent.CrewPriority][ent] = true
+			ent:CFWIndexCrew(contraption, ent)
 
 			-- Propagate links waiting on CFW from crew to contraption
 			for target, _ in pairs(ent.RemainingLinks or {}) do
@@ -684,16 +706,7 @@ do
 		contraption.RemainingLinks = contraption.RemainingLinks or {}
 		if ent:GetClass() == "acf_crew" then
 			-- Unindex crew
-			contraption.Crews = contraption.Crews or {}
-			contraption.Crews[ent] = nil
-
-			contraption.CrewsByType = contraption.CrewsByType or {}
-			contraption.CrewsByType[ent.CrewTypeID] = contraption.CrewsByType[ent.CrewTypeID] or {}
-			contraption.CrewsByType[ent.CrewTypeID][ent] = nil
-
-			contraption.CrewsByPriority = contraption.CrewsByPriority or {}
-			contraption.CrewsByPriority[ent.CrewPriority] = contraption.CrewsByPriority[ent.CrewPriority] or {}
-			contraption.CrewsByPriority[ent.CrewPriority][ent] = nil
+			ent:CFWUnindexCrew(contraption)
 
 			-- Unpropagate links waiting on CFW from crew to contraption
 			for target, _ in pairs(ent.RemainingLinks or {}) do

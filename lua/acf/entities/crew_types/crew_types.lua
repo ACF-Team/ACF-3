@@ -303,7 +303,7 @@ CrewTypes.Register("Pilot", {
 		local Contraption = Crew:GetContraption() or {}
 		local Crews = Contraption.Crews or {}
 		for k, _ in pairs(Crews) do
-			if k:GetClass() ~= "Pilot" then k:Remove() end
+			if k.CrewTypeID ~= "Pilot" then print(k) k:Remove() end
 		end
 	end
 })
