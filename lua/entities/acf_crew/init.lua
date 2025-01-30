@@ -278,6 +278,8 @@ do
 			Data.CrewPriority = 1
 		end
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
+
+		if Data.ReplacedOnlyHigher == nil then Data.ReplacedOnlyHigher = false end
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -303,6 +305,7 @@ do
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
 		Entity.CrewPriority = Data.CrewPriority
+		Entity.ReplacedOnlyHigher = Data.ReplacedOnlyHigher
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
@@ -401,7 +404,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf")
+	Entities.Register("acf_crew", MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
@@ -525,7 +528,8 @@ do
 			self.ToBeReplaced = true									-- Mark self for replacement
 
 			-- Only consider "lower" priority crews
-			for i = self.CrewPriority, ACF.CrewRepPrioMax do
+			local offset = self.ReplacedOnlyHigher and 1 or 0
+			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
 				local OtherCrews = self:GetContraption().CrewsByPriority[i] or {}
 				for Other, _ in pairs(OtherCrews) do									-- For each crew of that priority
 					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us

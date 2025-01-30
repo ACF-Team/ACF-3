@@ -55,8 +55,8 @@ local function CreateMenu(Menu)
 	Priority:SetClientData("CrewPriority", "OnValueChanged")
 	Priority:SetValue(1)
 
-	ACF.SetClientData("ReplaceOthers", true)
-	ACF.SetClientData("ReplaceSelf", true)
+	local ReplacedOnlyHigher = Base:AddCheckBox("Only higher priorities can replace me")
+	ReplacedOnlyHigher:SetClientData("ReplacedOnlyHigher", "OnChange")
 
 	local Limits = Base:AddLabel()
 	local Whitelist = Base:AddLabel()
