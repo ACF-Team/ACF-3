@@ -55,8 +55,8 @@ local function CreateMenu(Menu)
 	Priority:SetClientData("CrewPriority", "OnValueChanged")
 	Priority:SetValue(1)
 
-	local ReplacedOnlyHigher = Base:AddCheckBox("Only higher priorities can replace me")
-	ReplacedOnlyHigher:SetClientData("ReplacedOnlyHigher", "OnChange")
+	local ReplacedOnlyLower = Base:AddCheckBox("Only higher priorities can replace me")
+	ReplacedOnlyLower:SetClientData("ReplacedOnlyLower", "OnChange")
 
 	local Limits = Base:AddLabel()
 	local Whitelist = Base:AddLabel()

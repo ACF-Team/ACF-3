@@ -279,7 +279,7 @@ do
 		end
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
-		if Data.ReplacedOnlyHigher == nil then Data.ReplacedOnlyHigher = false end
+		if Data.ReplacedOnlyLower == nil then Data.ReplacedOnlyLower = false end
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -305,7 +305,7 @@ do
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
 		Entity.CrewPriority = Data.CrewPriority
-		Entity.ReplacedOnlyHigher = Data.ReplacedOnlyHigher
+		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
@@ -430,6 +430,8 @@ do
 					self:Unlink(Target)
 				end
 			end
+			self:CFWUnindexCrew(self:GetContraption())
+			self:CFWIndexCrew(self:GetContraption())
 		end
 
 		ACF.SaveEntity(self)
@@ -528,7 +530,7 @@ do
 			self.ToBeReplaced = true									-- Mark self for replacement
 
 			-- Only consider "lower" priority crews
-			local offset = self.ReplacedOnlyHigher and 1 or 0
+			local offset = self.ReplacedOnlyLower and 1 or 0
 			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
 				local OtherCrews = self:GetContraption().CrewsByPriority[i] or {}
 				for Other, _ in pairs(OtherCrews) do									-- For each crew of that priority
@@ -538,14 +540,14 @@ do
 					local Replaceable = Other.ReplaceOthers								-- Other can be replaced
 					if NotMe and NotBusy and Alive and Replaceable then
 						Other.ToReplace = true 											-- Other is now replacing someone (us)
-	
+
 						-- Calculate replacement time
 						local ReplacementDist = self:GetPos():Distance(Other:GetPos())
 						local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
 						TimerSimple(ReplacementTime, function()
 							Other.ToReplace = false
 							self.ToBeReplaced = false
-	
+
 							self:SwapCrew(Other)
 						end)
 						return
@@ -647,6 +649,8 @@ end
 do
 	function ENT:CFWIndexCrew(contraption)
 		-- Index crew
+		if contraption == nil then return end
+
 		contraption.Crews = contraption.Crews or {}
 		contraption.Crews[self] = true
 
@@ -661,6 +665,8 @@ do
 
 	function ENT:CFWUnindexCrew(contraption)
 		-- Unindex crew
+		if contraption == nil then return end
+
 		contraption.Crews = contraption.Crews or {}
 		contraption.Crews[self] = nil
 
