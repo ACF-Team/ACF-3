@@ -318,7 +318,7 @@ if SERVER then
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.35 -- Remove when health scales with armor
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
