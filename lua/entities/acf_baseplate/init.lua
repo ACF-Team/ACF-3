@@ -5,11 +5,18 @@ include("shared.lua")
 local ACF      = ACF
 local Classes  = ACF.Classes
 local Entities = Classes.Entities
+local Utilities   = ACF.Utilities
+local WireIO      = Utilities.WireIO
 
 ENT.ACF_Limit                     = 16
 ENT.ACF_UserWeighable             = true
 ENT.ACF_KillableButIndestructible = true
 ENT.ACF_HealthUpdatesWireOverlay  = true
+
+local Outputs = {
+	"Entity (The entity itself) [ENTITY]",
+	"Seat (The seat belonging to this baseplate) [ENTITY]",
+}
 
 do -- Random timer crew stuff
 	function ENT:UpdateAccuracyMod(cfg)
@@ -54,8 +61,81 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	else
 		ACF.Contraption.SetMass(self, 1000)
 	end
+
+	WireIO.SetupOutputs(self, Outputs, ClientData)
+
+	WireLib.TriggerOutput(self, "Entity", self)
+
+
+	-- Add seat support for baseplates
+	local Pod = ents.Create("prop_vehicle_prisoner_pod")
+	if IsValid(Pod) then
+		self:SetUseType(SIMPLE_USE) -- Avoid running activator function constantly...
+		self.Pod = Pod
+		Pod:SetAngles(self:GetAngles())
+		Pod:SetModel("models/vehicles/pilot_seat.mdl")
+		Pod:SetPos(self:GetPos())
+		Pod:Spawn()
+		Pod:SetParent(self)
+		Pod:CPPISetOwner(self:GetOwner())
+		Pod.Owner = self:GetOwner()
+		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt") 	-- I don't know what this does, but for good measure...
+		Pod:SetKeyValue("limitview", 0)											-- Let the player look around
+		Pod:SetNoDraw(true)														-- Don't render the seat
+		Pod:SetMoveType(MOVETYPE_NONE)
+		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+		Pod.Vehicle = self
+		Pod.ACF = Pod.ACF or {}
+		Pod.ACF.LegalSeat = true
+		Pod.DoNotDuplicate = true												-- Don't duplicate cause baseplate will generate one on spawn
+		Pod.ACF_InvisibleToBallistics = true									-- Baseplate seat
+
+		-- Make the player invisible and invincible while in the seat
+		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh, role)
+			if veh == Pod then
+				ply:GodEnable() -- Remove this if aliases are removed?
+				ply:SetNoDraw( true )
+			end
+		end)
+
+		-- Make the player visible and vulnerable when they leave the seat
+		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(ply, veh)
+			if veh == Pod then
+				ply:GodDisable() -- Remove this if aliases are removed?
+				ply:SetNoDraw( false )
+			end
+		end)
+
+		-- Allow players to enter the seat externally by pressing use on a prop on the same contraption as the baseplate
+		hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex(), function( ply, ent )
+			if not ply:KeyDown(IN_SPEED) then return end
+			if IsValid(ent) and ent:GetContraption() and ent:GetContraption().Base then
+				local Base = ent:GetContraption().Base
+				if Base == self and Pod:GetDriver() ~= ply then
+					ply:EnterVehicle(Pod)
+				end
+			end
+		end)
+
+		-- Cleanup hooks and stuff when the baseplate is removed
+		self:CallOnRemove("ACF_RemoveVehiclePod", function(Ent)
+			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex())
+			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex())
+			hook.Remove( "PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex())
+			self:CPPIGetOwner():GodDisable()
+			SafeRemoveEntity(Ent.Pod)
+		end)
+
+		WireLib.TriggerOutput(self, "Seat", Pod)
+	end
+
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+end
+
+function ENT:Use(Activator)
+	if not IsValid(Activator) then return end
+	Activator:EnterVehicle(self.Pod)
 end
 
 do
@@ -75,39 +155,6 @@ end
 
 do
 	ACF.RegisterLinkSource("acf_baseplate", "Seat")
-
-	ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(self, Seat, _)
-		if self.Seat == Seat then return false, "This baseplate is already linked to this seat" end
-		if IsValid(self.Seat) then return false, "This baseplate is already linked to a seat" end
-
-		self.Seat = Seat
-
-		Seat._IsInvisible = true
-
-		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh, role)
-			if veh == Seat then ply:GodEnable() end -- Block damage if they're in the seat
-		end)
-		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(ply, veh)
-			if veh == Seat then ply:GodDisable() end -- Block damage if they're in the seat
-		end)
-
-		return true, "Seat linked successfully"
-	end)
-
-	ACF.RegisterClassUnlink("acf_baseplate", "prop_vehicle_prisoner_pod", function(self, Seat, _)
-		if IsValid(self.Seat) then
-			self.Seat = nil
-
-			Seat._IsInvisible = false
-			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex())
-			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex())
-			self:CPPIGetOwner():GodDisable()
-
-			return true, "Seat unlinked successfully"
-		end
-
-		return false, "This seat is not linked to this baseplate"
-	end)
 
 	local Clock       = ACF.Utilities.Clock
 	local MaxDistance = ACF.LinkDistance ^ 2
@@ -131,17 +178,17 @@ do
 end
 
 function ENT:CFW_OnParentedTo(_, NewEntity)
-    if IsValid(NewEntity) then
-        ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
-    end
+	if IsValid(NewEntity) then
+		ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
+	end
 
-    return false
+	return false
 end
 
 local Text = "Baseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
 function ENT:UpdateOverlayText()
-    local h, mh = self.ACF.Health, self.ACF.MaxHealth
-    return Text:format(self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
+	local h, mh = self.ACF.Health, self.ACF.MaxHealth
+	return Text:format(self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
 end
 
 Entities.Register()

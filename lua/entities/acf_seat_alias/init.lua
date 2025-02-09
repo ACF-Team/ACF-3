@@ -27,6 +27,7 @@ do	-- Spawn functions
 	end
 
 	function MakeACF_SeatAlias(Vehicle)
+		if true then return end
 		if not IsValid(Vehicle) then return end
 		if not Vehicle._Alias then if IsValid(Vehicle:GetDriver()) then ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) else return end end
 		if Vehicle:GetModel() ~= Vehicle._Alias.SeatModel then Vehicle._Alias = nil ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) end
@@ -155,7 +156,7 @@ do	-- Arrr, there be hooks
 		if not IsValid(Ply) then return end
 		if not IsValid(Vic) then return end
 
-		ACF.ApplyAlias(Vic, Ply)
+		-- ACF.ApplyAlias(Vic, Ply)
 	end)
 
 	hook.Add("PlayerLeaveVehicle", "ACF.RemoveSeatAlias", function(_, Vic)

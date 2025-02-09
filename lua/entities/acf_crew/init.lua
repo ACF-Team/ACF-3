@@ -48,6 +48,7 @@ local Entities   = Classes.Entities
 local CheckLegal = ACF.CheckLegal
 local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
+local Damage		= ACF.Damage
 
 --- Helper function that generates scanning information for the crew member
 local function GenerateScanSetup()
@@ -265,6 +266,7 @@ do
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
 		"Entity (The crew entity itself) [ENTITY]",
+		"Seat (The seat belonging to this crew) [ENTITY]",
 	}
 
 	local function VerifyData(Data)
@@ -340,7 +342,6 @@ do
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_crew")
-
 		if not IsValid(Entity) then return end
 
 		Entity:SetPlayer(Player)
@@ -399,6 +400,36 @@ do
 		CheckLegal(Entity)
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
+
+		-- Add seat support for crews
+		local Pod = ents.Create("prop_vehicle_prisoner_pod")
+		if IsValid(Pod) then
+			Entity:SetUseType(SIMPLE_USE)
+			Entity.Pod = Pod
+			Pod:SetAngles(Angle)
+			Pod:SetModel(CrewModel.Model)
+			Pod:SetPos(Pos)
+			Pod:Spawn()
+			Pod:SetParent(Entity)
+			Pod:CPPISetOwner(Entity:GetOwner())
+			Pod.Owner = Entity:GetOwner()
+			Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")	-- I don't know what this does, but for good measure...
+			Pod:SetKeyValue("limitview", 0)											-- Let the player look around
+			Pod:SetNoDraw(true)														-- Don't render the seat
+			Pod:SetMoveType(MOVETYPE_NONE)
+			Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+
+			Pod.Vehicle = Entity
+			Pod.ACF = Pod.ACF or {}
+			Pod.ACF.LegalChecks = false												-- Will this cause issues?
+			Pod.DoNotDuplicate = true												-- Don't duplicate cause crew will generate one on spawn
+
+			Entity:CallOnRemove("ACF_RemoveVehiclePod", function(Ent)
+				SafeRemoveEntity(Ent.Pod)
+			end)
+
+			WireLib.TriggerOutput(Entity, "Seat", Pod)
+		end
 
 		return Entity
 	end
@@ -461,6 +492,11 @@ do
 			self.CrewPriority
 		)
 		return str
+	end
+
+	function ENT:Use(Activator)
+		if not IsValid(Activator) then return end
+		Activator:EnterVehicle(self.Pod)
 	end
 end
 
@@ -630,6 +666,11 @@ do
 		HitRes.Kill = false	-- Crew entities should never be removed
 
 		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
+
+		local Driver = self.Pod:GetDriver()
+		if IsValid(Driver) then
+			Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
+		end
 
 		return HitRes
 	end

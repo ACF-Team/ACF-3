@@ -826,6 +826,7 @@ do	-- Seat alias system
 	end
 
 	function ACF.PrepareAlias(Vehicle, Ply)
+		if true then return end
 		if not IsValid(Vehicle) then return end
 		if not IsValid(Ply) then return end
 		if Vehicle._Alias ~= nil then return end
@@ -911,11 +912,11 @@ do	-- Seat alias system
 		Vehicle._Alias = Alias
 	end
 
-	function ACF.ApplyAlias(Vehicle, Ply)
-		ACF.PrepareAlias(Vehicle, Ply)
+	-- function ACF.ApplyAlias(Vehicle, Ply)
+	-- 	ACF.PrepareAlias(Vehicle, Ply)
 
-		MakeACF_SeatAlias(Vehicle)
-	end
+	-- 	MakeACF_SeatAlias(Vehicle)
+	-- end
 end
 
 do -- Special squishy functions
