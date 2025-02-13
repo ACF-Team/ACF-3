@@ -142,7 +142,7 @@ do -- ACF global vars
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("KEPush",             true,   "Kinectic energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",       true,   "Fun Entities have been %s.", ACF.BooleanDataCallback())
@@ -152,7 +152,7 @@ do -- ACF global vars
 	end))
 
 	ACF.DefineSetting("WorkshopContent",    true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("WorkshopExtras",     true,   "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("WorkshopExtras",     false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("CreateDebris",       true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
