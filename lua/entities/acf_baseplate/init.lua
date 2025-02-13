@@ -19,7 +19,7 @@ local Outputs = {
 }
 
 do -- Random timer crew stuff
-	function ENT:UpdateAccuracyMod(cfg)
+	function ENT:UpdateAccuracyMod()
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
@@ -30,7 +30,7 @@ do -- Random timer crew stuff
 		return self.AccuracyCrewMod
 	end
 
-	function ENT:UpdateFuelMod(cfg)
+	function ENT:UpdateFuelMod()
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
@@ -91,7 +91,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		Pod.ACF_InvisibleToBallistics = true									-- Baseplate seat
 
 		-- Make the player invisible and invincible while in the seat
-		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh, role)
+		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh)
 			if veh == Pod then
 				ply:GodEnable() -- Remove this if aliases are removed?
 				ply:SetNoDraw( true )

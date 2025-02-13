@@ -239,7 +239,7 @@ local function SetActive(Entity, Value, EntTbl)
 end
 
 do -- Random timer crew stuff
-	function ENT:FindPropagator(cfg)
+	function ENT:FindPropagator()
 		local Temp = self:GetParent()
 		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
 		return nil

@@ -19,7 +19,7 @@ local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 do -- Random timer crew stuff
-	function ENT:UpdateAccuracyMod(cfg)
+	function ENT:UpdateAccuracyMod()
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)

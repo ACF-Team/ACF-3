@@ -43,7 +43,6 @@ function ENT:Draw(...)
 end
 
 local green = Color(0, 255, 0, 100)
-local blue = Color(0, 0, 255, 100)
 local purple = Color(255, 0, 255, 100)
 function ENT:DrawOverlay()
     if self.Targets then

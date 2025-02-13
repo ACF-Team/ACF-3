@@ -57,7 +57,7 @@ function FlashModel:Run(chapter, parameters)
     local clearColor = parameters.ClearColor or Color(255, 255, 255, 255)
 
     local tAdd = 0
-    for i = 1, reps do
+    for _ = 1, reps do
         for _, model in ipairs(parameters.Models) do
             chapter:AddInstruction("ColorModel", {Time = tAdd, Target = model, Length = lengthPerRep / 2, Color = fillColor})
         end

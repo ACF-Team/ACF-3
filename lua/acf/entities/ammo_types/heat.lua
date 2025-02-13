@@ -234,7 +234,6 @@ if SERVER then
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), math.Round(Data.BoomFillerMass * ACF.HEPower, 2))
 	end
 
-	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
 		if Bullet.Detonated then return end	-- Prevents GLATGM spawned HEAT projectiles from detonating twice, or for that matter this running twice at all
 		Bullet.Detonated = true

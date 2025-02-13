@@ -34,7 +34,6 @@ include("shared.lua")
 --===============================================================================================--
 local ACF = ACF
 local HookRun     = hook.Run
-local HookRemove     = hook.Remove
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local WireIO      = Utilities.WireIO
@@ -93,7 +92,7 @@ local function iterScan(crew, reps)
 	local filter = function(x) return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer()) end
 
 	-- Update reps hull traces
-	for i = 1, reps do
+	for _ = 1, reps do
 		-- Perform hull trace from scan center to corner of box
 		local index = crew.ScanIndex
 		local disp = crew.ScanDisplacements[index]
@@ -106,14 +105,14 @@ local function iterScan(crew, reps)
 
 		debugoverlay.Line(p1, hitpos, 1, Color(255, 0, 0))
 		debugoverlay.Line(hitpos, p2, 1, Color(0, 255, 0))
-		debugoverlay.Box( hitpos, -Hull/2, Hull/2, 10, Color(0,255,255,100) )
+		debugoverlay.Box( hitpos, -Hull / 2, Hull / 2, 10, Color(0, 255, 255, 100) )
 
 		-- Save the index for the next iteration. Loop around if needed.
 		index = index  + 1
 		if index > count then index = 1 end
 		crew.ScanIndex = index
 	end
-	debugoverlay.BoxAngles( crew:LocalToWorld(localoffset), -Box/2, Box/2, crew:GetAngles(), 1, Color(0,0,255,100) )
+	debugoverlay.BoxAngles( crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Color(0, 0, 255, 100) )
 
 	-- Update using new and saved scan lengths
 	local sum = 0
@@ -133,7 +132,7 @@ local function EnforceLimits(crew)
 	if Limit then
 		local Count = table.Count(CrewsByType[CrewTypeID] or {})
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew.Owner, false, "You have reached the " .. CrewType.Name .. "limit for this contraption.")
+			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this contraption.")
 			crew:Remove()
 		end
 	end
@@ -455,7 +454,7 @@ do
 
 		-- Unlink crews if their type changes
 		if self.CrewTypeID ~= Data.CrewTypeID then
-			ACF.SendNotify(self.Owner, false, "Crew updated with different occupation. All links removed, please relink.")
+			ACF.SendNotify(self:GetOwner(), false, "Crew updated with different occupation. All links removed, please relink.")
 			if next(self.Targets) then
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
@@ -525,7 +524,7 @@ do
 
 					-- If we're waiting on it then don't send the notification...
 					if self.RemainignLinks and self.RemainingLinks[Link] then
-						ACF.SendNotify(self.Owner, false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
+						ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
 					end
 				end
 			end
@@ -540,7 +539,7 @@ do
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
-		local Mass    = PhysObj:GetMass()
+		-- local Mass    = PhysObj:GetMass()
 		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 		local Armour  = ACF.CrewArmor -- Human body isn't that thick but we have to put something here
 		local Health  = ACF.CrewHealth
@@ -675,7 +674,7 @@ do
 		return HitRes
 	end
 
-	function ENT:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
+	function ENT:ACF_OnRepaired(OldArmor, OldHealth)
 		-- Dead crew should not be revivable
 		if OldArmor == 0 then self.ACF.Armor = 0 end
 		if OldHealth == 0 then self.ACF.Health = 0 end
@@ -860,7 +859,6 @@ do
 	for v, _ in pairs(lt) do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Crew, Target)
-			-- print("Linking: " .. tostring(Result) .. " " .. Message)
 			if Result then
 				if FromChip then TimerSimple(10, function() LinkCrew(Crew, Target) end)
 				else LinkCrew(Crew, Target) end
@@ -868,7 +866,7 @@ do
 			return Result, Message
 		end)
 
-		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew, FromChip)
+		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew)
 			if not Target.Crews[Crew] or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
 			UnlinkCrew(Crew, Target)
@@ -884,7 +882,6 @@ do
 		if next(self.Targets) then
 			local Entities = {}
 			for Ent in pairs(self.Targets) do
-				-- print("Save: [" .. self:EntIndex() .. "] -> [" .. Ent:EntIndex() .. "]")
 				Entities[#Entities + 1] = Ent:EntIndex()
 			end
 			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
@@ -901,12 +898,10 @@ do
 		if EntMods.CrewTargets then
 			local RLs = {} -- LUT mapping failed link targets to true
 
-			print(self, "PostEntityPaste")
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
 
 				local result, _ = self:Link(ActualEnt)
-				print(self, result, _)
 				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their target is indexed.
 			end
 
@@ -929,7 +924,7 @@ do
 		HookRun("ACF_OnEntityLast", "acf_crew", self, CrewModel, CrewType)
 
 		-- Unlink target entities
-		for v,_ in pairs(self.Targets) do
+		for v, _ in pairs(self.Targets) do
 			if IsValid(v) then self:Unlink(v) end
 		end
 

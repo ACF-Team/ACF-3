@@ -71,11 +71,11 @@ do -- Random timer crew stuff
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
-	function ENT:UpdateLoadMod(cfg)
+	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum1, _ = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2, _ = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum3, _ = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		if self.BulletData then
@@ -95,7 +95,7 @@ do -- Random timer crew stuff
 	end
 
 	--- Finds the turret ring or baseplate from a gun
-	function ENT:FindPropagator(cfg)
+	function ENT:FindPropagator()
 		local Temp = self:GetParent()
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
@@ -876,12 +876,12 @@ do -- Metamethods --------------------------------
 
 				ACF.ProgressTimer(
 					self,
-					function(cfg) 
+					function()
 						local eff = self:UpdateLoadMod()
 						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
 						return eff
 					end,
-					function(cfg) 
+					function()
 						if IsValid(self) then self:Chamber() end end,
 					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)

@@ -81,12 +81,12 @@ CrewTypes.Register("Loader", {
 	},
 	LinkHandlers = {		-- Custom link handlers for this crew type
 		acf_gun = {			-- Specify a target class for it to be included in the whitelist
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 		},
 		acf_rack = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
 		},
 	},
 	UpdateLowFreq = FindLongestBullet,
@@ -134,7 +134,7 @@ CrewTypes.Register("Gunner", {
 			end
 		},
 		acf_baseplate = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew, "acf_baseplate") then return false, "Gunners can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
@@ -172,7 +172,7 @@ CrewTypes.Register("Driver", {
 	},
 	LinkHandlers = {
 		acf_baseplate = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Drivers can only link to one entity." end
 				return true, "Crew linked."
 			end
@@ -217,12 +217,12 @@ CrewTypes.Register("Commander", {
 	},
 	LinkHandlers = {
 		acf_gun = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 		},
 		acf_rack = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
 		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
@@ -232,14 +232,14 @@ CrewTypes.Register("Commander", {
 			end
 		},
 		acf_baseplate = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew, "acf_baseplate") then return false, "Commanders can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
 		}
 	},
 	UpdateLowFreq = FindLongestBullet,
-	UpdateEfficiency = function(Crew, Commander)
+	UpdateEfficiency = function(Crew)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
@@ -269,12 +269,12 @@ CrewTypes.Register("Pilot", {
 	},
 	LinkHandlers = {
 		acf_gun = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
 		},
 		acf_rack = {
-			OnLink = function(Crew, Target)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew, Target) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
 		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
@@ -284,13 +284,13 @@ CrewTypes.Register("Pilot", {
 			end
 		},
 		acf_baseplate = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew, "acf_baseplate") then return false, "Pilot can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
 		}
 	},
-	UpdateEfficiency = function(Crew, Commander)
+	UpdateEfficiency = function(Crew)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
