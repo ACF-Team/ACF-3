@@ -803,8 +803,9 @@ do -- Crew related
 	end
 
 	local function UpdateDelta(cfg)
-		cfg.DeltaTime = (CurTime() - cfg.LastTime)
-		cfg.LastTime = CurTime()
+		local ct = CurTime()
+		cfg.DeltaTime = (ct - cfg.LastTime)
+		cfg.LastTime = ct
 		cfg.Elapsed = cfg.Elapsed + cfg.DeltaTime
 	end
 

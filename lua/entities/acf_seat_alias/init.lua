@@ -29,8 +29,8 @@ do	-- Spawn functions
 	function MakeACF_SeatAlias(Vehicle)
 		if true then return end
 		if not IsValid(Vehicle) then return end
-		if not Vehicle._Alias then if IsValid(Vehicle:GetDriver()) then ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) else return end end
-		if Vehicle:GetModel() ~= Vehicle._Alias.SeatModel then Vehicle._Alias = nil ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) end
+		-- if not Vehicle._Alias then if IsValid(Vehicle:GetDriver()) then ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) else return end end
+		-- if Vehicle:GetModel() ~= Vehicle._Alias.SeatModel then Vehicle._Alias = nil ACF.PrepareAlias(Vehicle, Vehicle:GetDriver()) end
 
 		if IsValid(Vehicle.AliasEnt) then
 			Vehicle.AliasEnt:Remove()
@@ -75,7 +75,7 @@ do	-- Spawn functions
 	net.Receive("ACF.RequestVehicleInfo", function(_, Ply)
 		local Ent = net.ReadEntity()
 		if not IsValid(Ent) then return end
-		if not Ent._Alias then ACF.PrepareAlias(Ent, Ply) end
+		-- if not Ent._Alias then ACF.PrepareAlias(Ent, Ply) end
 
 		UpdateClient(Ent, Ply)
 	end)

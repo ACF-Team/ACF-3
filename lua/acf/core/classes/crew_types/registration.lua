@@ -6,7 +6,7 @@ CreateConVar(
 	"sbox_max_acf_crew",
 	8,
 	FCVAR_ARCHIVE + FCVAR_NOTIFY,
-	"Maximum amount of " .. "ACF crew members" .. " a player can create."
+	"Maximum amount of ACF crew members a player can create."
 )
 
 function CrewTypes.Register(ID, Data)

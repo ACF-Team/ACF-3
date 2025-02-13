@@ -453,7 +453,7 @@ end ---------------------------------------------
 -- CFW Integration
 do
 	-- Maintain a record in the contraption of ammocrates
-	hook.Add("cfw.contraption.entityAdded", "ammoindex", function(contraption, ent)
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWAmmoIndex", function(contraption, ent)
 		if ent:GetClass() == "acf_ammo" then
 			contraption.Ammos = contraption.Ammos or {}
 			contraption.Ammos[ent] = true
@@ -464,7 +464,7 @@ do
 		end
 	end)
 
-	hook.Add("cfw.contraption.entityRemoved", "ammoindex", function(contraption, ent)
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWAmmoUnIndex", function(contraption, ent)
 		if ent:GetClass() == "acf_ammo" then
 			contraption.Ammos = contraption.Ammos or {}
 			contraption.Ammos[ent] = nil
@@ -791,7 +791,7 @@ do -- Ammo Consumption -------------------------
 				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
 
 				local IdealTime = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = Transfer})
-				print("Ideal Time", IdealTime)
+				-- print("Ideal Time", IdealTime)
 				ACF.ProgressTimer(
 					self,
 					function() return self:UpdateStockMod() end,
@@ -817,11 +817,11 @@ do -- Misc --------------------------------------
 		-- The crew of this crate is the crews of all the weapons linked to it
 		self.Crews = self.Crews or {}
 		self.CrewsByType = self.CrewsByType or {}
-		for weapon, _ in pairs(self.Weapons or {}) do
-			for crew, _ in pairs(weapon.Crews or {}) do
-				self.Crews[crew] = true
-				self.CrewsByType[crew.CrewTypeID] = self.CrewsByType[crew.CrewTypeID] or {}
-				self.CrewsByType[crew.CrewTypeID][crew] = true
+		for Weapon in pairs(self.Weapons or {}) do
+			for Crew in pairs(Weapon.Crews or {}) do
+				self.Crews[Crew] = true
+				self.CrewsByType[Crew.CrewTypeID] = self.CrewsByType[Crew.CrewTypeID] or {}
+				self.CrewsByType[Crew.CrewTypeID][Crew] = true
 			end
 		end
 

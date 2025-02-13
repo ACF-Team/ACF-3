@@ -64,33 +64,29 @@ do -- Random timer crew stuff
 		local AmmoPos = Ammo:GetPos()
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
-		-- debugoverlay.Sphere(BreechPos, 5, 5, Color(255, 0, 0), true)
-		-- debugoverlay.Sphere(CrewPos, 5, 5, Color(0, 255, 0), true)
-		-- debugoverlay.Sphere(AmmoPos, 5, 5, Color(0, 0, 255), true)
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, _ = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2, _ = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum3, _ = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		if self.BulletData then
-			local filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
 
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / 2.54 / 2, 0, 0)),
-				filter = filter,
+				filter = Filter,
 			})
 			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 		end
 
-		-- print("Load", self.LoadCrewMod)
 		return self.LoadCrewMod
 	end
 
@@ -104,12 +100,11 @@ do -- Random timer crew stuff
 		return nil
 	end
 
-	function ENT:UpdateAccuracyMod(cfg)
-		local Propagator = self:FindPropagator(cfg)
+	function ENT:UpdateAccuracyMod(Config)
+		local Propagator = self:FindPropagator(Config)
 		local Val = Propagator and Propagator.AccuracyCrewMod or 0
 
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		-- print("Accuracy", self.AccuracyCrewMod)
 		return self.AccuracyCrewMod
 	end
 end
@@ -346,8 +341,8 @@ do -- Spawn and Update functions --------------------------------
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateLoadMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
@@ -725,19 +720,19 @@ do -- Metamethods --------------------------------
 			if Current and Check(Current, ...) then return Current end
 
 			-- Search crates by their stage level
-			local crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
+			local Crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
 			-- This is not performant... but people may be unhappy if I don't do this
-			if not crate then
-				for k, _ in pairs(self.Crates) do
+			if not Crate then
+				for k in pairs(self.Crates) do
 					if Check(k, ...) then
-						crate = k
+						Crate = k
 						break
 					end
 				end
 			end
 
-			return crate
+			return Crate
 		end
 
 		function ENT:Unload(Reload)

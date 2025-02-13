@@ -126,7 +126,7 @@ do	-- Overlay/networking for that
 		-- TODO: Determine if NW2 Usage here is undesireable
 		-- Get the currently selected crate
 		local CrateID = self:GetNW2Int("CurCrate", 0)
-		local temp = Entity(CrateID)
+		local Temp = Entity(CrateID)
 
 		local Length = self:GetNW2Float("Length", 0)
 		local Caliber = self:GetNW2Float("Caliber", 0)
@@ -138,7 +138,7 @@ do	-- Overlay/networking for that
 				local E = T.Ent
 				if IsValid(E) then
 					-- Double outline selected crate for visibility
-					if E == temp then
+					if E == Temp then
 						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins() * 1.1, E:OBBMaxs() * 1.1, T.Col, true)
 					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)

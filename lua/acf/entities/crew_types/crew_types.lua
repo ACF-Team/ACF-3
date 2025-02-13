@@ -97,7 +97,7 @@ CrewTypes.Register("Loader", {
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
-		Crew.Focus = (Count > 0) and 1 / Count or 1
+		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 })
 
@@ -296,7 +296,7 @@ CrewTypes.Register("Pilot", {
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
-		Crew.Focus = (Count > 0) and 1 / Count or 1
+		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
 	EnforceLimits = function(Crew)
 		-- Pilots exclude other crew

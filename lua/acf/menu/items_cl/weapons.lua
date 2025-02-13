@@ -227,12 +227,12 @@ local function CreateMenu(Menu)
 		local Weapon   = Current.Weapon
 		local Caliber  = Current.Caliber
 		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
-		local Firedelay = GetReloadTime(Caliber, Class, Weapon)
-		local Firerate = 60 / Firedelay
+		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
+		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return EntText:format(Mass, math.Round(Firerate), math.Round(Firedelay, 3), Spread, Magazine)
+		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
 	end)
 
 	ClassBase.Menu    = Menu

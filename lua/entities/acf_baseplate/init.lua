@@ -2,11 +2,11 @@ AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
-local ACF      = ACF
-local Classes  = ACF.Classes
-local Entities = Classes.Entities
-local Utilities   = ACF.Utilities
-local WireIO      = Utilities.WireIO
+local ACF      		= ACF
+local Classes  		= ACF.Classes
+local Entities 		= Classes.Entities
+local Utilities   	= ACF.Utilities
+local WireIO      	= Utilities.WireIO
 
 ENT.ACF_Limit                     = 16
 ENT.ACF_UserWeighable             = true
@@ -91,28 +91,31 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		Pod.ACF_InvisibleToBallistics = true									-- Baseplate seat
 
 		-- Make the player invisible and invincible while in the seat
-		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(ply, veh)
-			if veh == Pod then
-				ply:GodEnable() -- Remove this if aliases are removed?
-				ply:SetNoDraw( true )
+		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(Ply, Veh)
+			if Veh == Pod then
+				Ply:GodEnable() -- Remove this if aliases are removed?
+				Ply:SetNoDraw(true)
 			end
 		end)
 
 		-- Make the player visible and vulnerable when they leave the seat
-		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(ply, veh)
-			if veh == Pod then
-				ply:GodDisable() -- Remove this if aliases are removed?
-				ply:SetNoDraw( false )
+		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(Ply, Veh)
+			if Veh == Pod then
+				Ply:GodDisable() -- Remove this if aliases are removed?
+				Ply:SetNoDraw(false)
 			end
 		end)
 
 		-- Allow players to enter the seat externally by pressing use on a prop on the same contraption as the baseplate
-		hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex(), function( ply, ent )
-			if not ply:KeyDown(IN_SPEED) then return end
-			if IsValid(ent) and ent:GetContraption() and ent:GetContraption().Base then
-				local Base = ent:GetContraption().Base
-				if Base == self and Pod:GetDriver() ~= ply then
-					ply:EnterVehicle(Pod)
+		hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex(), function(Ply, Ent)
+			if not Ply:KeyDown(IN_SPEED) then return end
+			if IsValid(Ent) then
+				local Contraption = Ent:GetContraption()
+				if Contraption then
+					local Base = Contraption.Base
+					if Base == self and Pod:GetDriver() ~= Ply then
+						Ply:EnterVehicle(Pod)
+					end
 				end
 			end
 		end)
@@ -122,7 +125,10 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 			hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex())
 			hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex())
 			hook.Remove( "PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex())
-			self:CPPIGetOwner():GodDisable()
+
+			local Owner = self:CPPIGetOwner()
+			if IsValid(Owner) then Owner:GodDisable() end
+
 			SafeRemoveEntity(Ent.Pod)
 		end)
 
@@ -140,46 +146,25 @@ end
 
 do
 	-- Maintain a record in the contraption of its current crew
-	hook.Add("cfw.contraption.entityAdded", "baseaddindex", function(contraption, ent)
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWBaseIndex", function(contraption, ent)
 		if ent:GetClass() == "acf_baseplate" then
 			contraption.Base = ent
 		end
 	end)
 
-	hook.Add("cfw.contraption.entityRemoved", "baseremoveindex", function(contraption, ent)
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWBaseUnIndex", function(contraption, ent)
 		if ent:GetClass() == "acf_baseplate" then
 			contraption.Base = nil
 		end
 	end)
 end
 
-do
-	ACF.RegisterLinkSource("acf_baseplate", "Seat")
-
-	local Clock       = ACF.Utilities.Clock
-	local MaxDistance = ACF.LinkDistance ^ 2
-	local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-	function ENT:Think()
-		if IsValid(self.Seat) then
-			local OutOfRange = self:GetPos():DistToSqr(self.Seat:GetPos()) > MaxDistance			-- Check distance limit
-			local DiffAncestors = self:GetContraption() ~= self.Seat:GetContraption()	-- Check same contraption
-			if OutOfRange or DiffAncestors then
-				local Sound = UnlinkSound:format(math.random(1, 3))
-				self.Seat:EmitSound(Sound, 70, 100, ACF.Volume)
-				self:EmitSound(Sound, 70, 100, ACF.Volume)
-				self:Unlink(self.Seat)
-				ACF.SendNotify(self:CPPIGetOwner(), false, "Seat unlinked from Baseplate because they are too far or on separate contraptions.")
-			end
-		end
-
-		self:NextThink(Clock.CurTime + math.Rand(1, 2))
-		return true
-	end
-end
-
 function ENT:CFW_OnParentedTo(_, NewEntity)
 	if IsValid(NewEntity) then
-		ACF.SendNotify(self:CPPIGetOwner(), false, "Cannot parent an ACF baseplate to another entity.")
+		local Owner = self:CPPIGetOwner()
+		if IsValid(Owner) then
+			ACF.SendNotify(Owner, false, "Cannot parent an ACF baseplate to another entity.")
+		end
 	end
 
 	return false

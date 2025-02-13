@@ -18,10 +18,10 @@ lua/entities/acf_gun/init.lua					(Gunner/loader/commander interaction with guns
 lua/entities/acf_ammo/init.lua					(Loader interaction with ammo for restocking)
 lua/entities/acf_engine/init.lua				(Driver interaction with engines)
 
-Note on common contraption checks:
-When checks that verify two entities are a part of the same contraption have a vacuous case.
-If both entities don't have a contraption (aren't linked) then the check passes. 
-This is for normal building QOL and since CFW doesn't have a notion of when a contraption is "finished" being built.
+Note on common Contraption checks:
+When checks that verify two entities are a part of the same Contraption have a vacuous case.
+If both entities don't have a Contraption (aren't linked) then the check passes. 
+This is for normal building QOL and since CFW doesn't have a notion of when a Contraption is "finished" being built.
 ]]--
 
 AddCSLuaFile("cl_init.lua")
@@ -49,6 +49,10 @@ local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
 
+-- Pool network strings
+util.AddNetworkString("ACF_Crew_Links")
+util.AddNetworkString("ACF_Crew_Space")
+
 --- Helper function that generates scanning information for the crew member
 local function GenerateScanSetup()
 	local directions = {}
@@ -56,8 +60,8 @@ local function GenerateScanSetup()
 	for i = -1, 1 do
 		for j = -1, 1 do
 			for k = -1, 1 do
-				table.insert(directions, Vector(i, j, k))
-				table.insert(lengths, 0)
+				directions[#directions + 1] = Vector(i, j, k)
+				lengths[#lengths + 1] = 0
 			end
 		end
 	end
@@ -79,6 +83,11 @@ local function traceVisHullCube(pos1, pos2, boxsize, filter)
 	return res.Fraction, length, truelength, res.HitPos
 end
 
+local Red = Color(255, 0, 0)
+local Green = Color(0, 255, 0)
+local Blue = Color(0, 0, 255, 100)
+local LightBlue = Color(0, 255, 255, 100)
+
 --- Helper function that Scans the space around the crew member by updating 
 local function iterScan(crew, reps)
 	local localoffset = crew.CrewModel.ScanOffsetL
@@ -89,7 +98,9 @@ local function iterScan(crew, reps)
 	local Hull = crew.ScanHull
 
 	-- Filter out players and other people's props
-	local filter = function(x) return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer()) end
+	local filter = function(x)
+		return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer())
+	end
 
 	-- Update reps hull traces
 	for _ = 1, reps do
@@ -103,16 +114,16 @@ local function iterScan(crew, reps)
 		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, filter)
 		crew.ScanLengths[index] = frac
 
-		debugoverlay.Line(p1, hitpos, 1, Color(255, 0, 0))
-		debugoverlay.Line(hitpos, p2, 1, Color(0, 255, 0))
-		debugoverlay.Box( hitpos, -Hull / 2, Hull / 2, 10, Color(0, 255, 255, 100) )
+		debugoverlay.Line(p1, hitpos, 1, Red)
+		debugoverlay.Line(hitpos, p2, 1, Green)
+		debugoverlay.Box( hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
 
 		-- Save the index for the next iteration. Loop around if needed.
 		index = index  + 1
 		if index > count then index = 1 end
 		crew.ScanIndex = index
 	end
-	debugoverlay.BoxAngles( crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Color(0, 0, 255, 100) )
+	debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
 
 	-- Update using new and saved scan lengths
 	local sum = 0
@@ -132,7 +143,7 @@ local function EnforceLimits(crew)
 	if Limit then
 		local Count = table.Count(CrewsByType[CrewTypeID] or {})
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this contraption.")
+			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this Contraption.")
 			crew:Remove()
 		end
 	end
@@ -154,7 +165,7 @@ do -- Random timer stuff
 
 		-- Update oxygen levels and apply drowning if necessary
 		local MouthPos = self:LocalToWorld(self.CrewModel.MouthOffsetL) -- Probably well underwater at this point
-		if ( bit.band( util.PointContents( MouthPos ), CONTENTS_WATER ) == CONTENTS_WATER ) then
+		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
 			self.Oxygen = self.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
 			self.Oxygen = self.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
@@ -253,9 +264,6 @@ do -- Random timer stuff
 end
 
 do
-	util.AddNetworkString("ACF_Crew_Links")
-	util.AddNetworkString("ACF_Crew_Space")
-
 	local Outputs = {
 		"ModelEff",
 		"LeanEff",
@@ -460,8 +468,8 @@ do
 					self:Unlink(Target)
 				end
 			end
-			self:CFWUnindexCrew(self:GetContraption())
-			self:CFWIndexCrew(self:GetContraption())
+			self:CFW_Unindex_Crew(self:GetContraption())
+			self:CFW_Index_Crew(self:GetContraption())
 		end
 
 		ACF.SaveEntity(self)
@@ -514,7 +522,7 @@ do
 				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
 				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors = self:GetContraption() ~= Link:GetContraption()	-- Check same contraption
+				local DiffAncestors = self:GetContraption() ~= Link:GetContraption()	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					Link:EmitSound(Sound, 70, 100, ACF.Volume)
@@ -523,8 +531,8 @@ do
 					Link:Unlink(self)
 
 					-- If we're waiting on it then don't send the notification...
-					if self.RemainignLinks and self.RemainingLinks[Link] then
-						ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same contraption as and close enough to their target.")
+					if self.RemainingLinks and self.RemainingLinks[Link] then
+						ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
 					end
 				end
 			end
@@ -559,7 +567,7 @@ do
 
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
-		if self:GetContraption() == nil then return end 				-- No contraption to replace crew in
+		if self:GetContraption() == nil then return end 				-- No Contraption to replace crew in
 		if self:GetContraption().CrewsByPriority == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
 			self.ToBeReplaced = true									-- Mark self for replacement
@@ -568,7 +576,7 @@ do
 			local offset = self.ReplacedOnlyLower and 1 or 0
 			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
 				local OtherCrews = self:GetContraption().CrewsByPriority[i] or {}
-				for Other, _ in pairs(OtherCrews) do									-- For each crew of that priority
+				for Other in pairs(OtherCrews) do									-- For each crew of that priority
 					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
 					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
 					local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
@@ -594,12 +602,12 @@ do
 
 	-- Handles swapping crew during replacement. Assumes KillCrew has ran before.
 	function ENT:SwapCrew(Other)
-		local mat1, mat2 = self:GetMaterial(), Other:GetMaterial()
-		local col1, col2 = self:GetColor(), Other:GetColor()
-		self:SetMaterial(mat2)
-		self:SetColor(col2)
-		Other:SetMaterial(mat1)
-		Other:SetColor(col1)
+		local Mat1, Mat2 = self:GetMaterial(), Other:GetMaterial()
+		local Col1, Col2 = self:GetColor(), Other:GetColor()
+		self:SetMaterial(Mat2)
+		self:SetColor(Col2)
+		Other:SetMaterial(Mat1)
+		Other:SetColor(Col1)
 
 		self.ACF.Health, Other.ACF.Health = Other.ACF.Health, self.ACF.Health
 		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
@@ -624,10 +632,10 @@ do
 	end
 
 	-- sound is the sound to play when the crew dies
-	function ENT:KillCrew(sound)
-		EmitSound( sound, self:GetPos())
-		self:SetMaterial( "models/flesh" )
-		self:SetColor( Color(255, 255, 255, 255) )
+	function ENT:KillCrew(Sound)
+		EmitSound(Sound, self:GetPos())
+		self:SetMaterial("models/flesh")
+		self:SetColor(Color(255, 255, 255, 255))
 
 		self.IsAlive = false
 		self.ACF.Health = 0
@@ -651,10 +659,6 @@ do
 			local Seat = Base.Seat or {}
 			if IsValid(Seat) then
 				Seat:GetDriver():Kill()
-
-				-- hook.Add("CanPlayerEnterVehicle", "LockOut" .. Base:EntIndex(), function(ply, veh, role)
-				-- 	if veh == Base.Seat then return false end
-				-- end)
 			end
 		end
 	end
@@ -687,88 +691,86 @@ end
 
 -- CFW Integration
 do
-	function ENT:CFWIndexCrew(contraption)
+	function ENT:CFW_Index_Crew(Contraption)
 		-- Index crew
-		if contraption == nil then return end
+		if Contraption == nil then return end
 
-		contraption.Crews = contraption.Crews or {}
-		contraption.Crews[self] = true
+		Contraption.Crews = Contraption.Crews or {}
+		Contraption.Crews[self] = true
 
-		contraption.CrewsByType = contraption.CrewsByType or {}
-		contraption.CrewsByType[self.CrewTypeID] = contraption.CrewsByType[self.CrewTypeID] or {}
-		contraption.CrewsByType[self.CrewTypeID][self] = true
+		Contraption.CrewsByType = Contraption.CrewsByType or {}
+		Contraption.CrewsByType[self.CrewTypeID] = Contraption.CrewsByType[self.CrewTypeID] or {}
+		Contraption.CrewsByType[self.CrewTypeID][self] = true
 
-		contraption.CrewsByPriority = contraption.CrewsByPriority or {}
-		contraption.CrewsByPriority[self.CrewPriority] = contraption.CrewsByPriority[self.CrewPriority] or {}
-		contraption.CrewsByPriority[self.CrewPriority][self] = true
+		Contraption.CrewsByPriority = Contraption.CrewsByPriority or {}
+		Contraption.CrewsByPriority[self.CrewPriority] = Contraption.CrewsByPriority[self.CrewPriority] or {}
+		Contraption.CrewsByPriority[self.CrewPriority][self] = true
 	end
 
-	function ENT:CFWUnindexCrew(contraption)
+	function ENT:CFW_Unindex_Crew(Contraption)
 		-- Unindex crew
-		if contraption == nil then return end
+		if Contraption == nil then return end
 
-		contraption.Crews = contraption.Crews or {}
-		contraption.Crews[self] = nil
+		Contraption.Crews = Contraption.Crews or {}
+		Contraption.Crews[self] = nil
 
-		contraption.CrewsByType = contraption.CrewsByType or {}
-		contraption.CrewsByType[self.CrewTypeID] = contraption.CrewsByType[self.CrewTypeID] or {}
-		contraption.CrewsByType[self.CrewTypeID][self] = nil
+		Contraption.CrewsByType = Contraption.CrewsByType or {}
+		Contraption.CrewsByType[self.CrewTypeID] = Contraption.CrewsByType[self.CrewTypeID] or {}
+		Contraption.CrewsByType[self.CrewTypeID][self] = nil
 
-		contraption.CrewsByPriority = contraption.CrewsByPriority or {}
-		contraption.CrewsByPriority[self.CrewPriority] = contraption.CrewsByPriority[self.CrewPriority] or {}
-		contraption.CrewsByPriority[self.CrewPriority][self] = nil
+		Contraption.CrewsByPriority = Contraption.CrewsByPriority or {}
+		Contraption.CrewsByPriority[self.CrewPriority] = Contraption.CrewsByPriority[self.CrewPriority] or {}
+		Contraption.CrewsByPriority[self.CrewPriority][self] = nil
 	end
 
 	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
-	hook.Add("cfw.contraption.entityAdded", "crewaddindex", function(contraption, ent)
-		contraption.RemainingLinks = contraption.RemainingLinks or {}
-		if ent:GetClass() == "acf_crew" then
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWCrewIndex", function(Contraption, Ent)
+		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
+		if Ent:GetClass() == "acf_crew" then
 			-- Index crew
-			ent:CFWIndexCrew(contraption, ent)
+			Ent:CFW_Index_Crew(Contraption, Ent)
 
-			-- Propagate links waiting on CFW from crew to contraption
-			for target, _ in pairs(ent.RemainingLinks or {}) do
-				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
-				contraption.RemainingLinks[target][ent] = true
+			-- Propagate links waiting on CFW from crew to Contraption
+			for Target in pairs(Ent.RemainingLinks or {}) do
+				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+				Contraption.RemainingLinks[Target][Ent] = true
 			end
 
-			for target, _ in pairs(ent.RemainingLinks or {}) do
-				-- print("Prior Waiting Link", ent, target)
-				ent:Link(target)
+			-- If this crew is parented into a new Contraption, try linking them to their Targets.
+			for Target in pairs(Ent.RemainingLinks or {}) do
+				Ent:Link(Target)
 			end
-
-			-- print("Contraption Remaining links")
-			-- PrintTable(contraption.RemainingLinks)
 		else
-			if contraption.RemainingLinks and contraption.RemainingLinks[ent] ~= nil then
-				-- This runs if the entity is a target of some crew(s)
-				local waiters = contraption.RemainingLinks[ent] or {}
-				for waiter, _ in pairs(waiters) do
-					-- print("Waiting Link", waiter, ent)
-					waiter:Link(ent)
+			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] ~= nil then
+				-- This runs if the entity is a Target of some crew(s)
+				local waiters = Contraption.RemainingLinks[Ent] or {}
+				for waiter in pairs(waiters) do
+					waiter:Link(Ent)
 				end
-				contraption.RemainingLinks[ent] = nil
+				Contraption.RemainingLinks[Ent] = nil
 			end
 		end
 	end)
 
-	hook.Add("cfw.contraption.entityRemoved", "crewremoveindex", function(contraption, ent)
-		contraption.RemainingLinks = contraption.RemainingLinks or {}
-		if ent:GetClass() == "acf_crew" then
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWCrewUnIndex", function(Contraption, Ent)
+		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
+		if Ent:GetClass() == "acf_crew" then
 			-- Unindex crew
-			ent:CFWUnindexCrew(contraption)
+			Ent:CFW_Unindex_Crew(Contraption)
 
-			-- Unpropagate links waiting on CFW from crew to contraption
-			for target, _ in pairs(ent.RemainingLinks or {}) do
-				contraption.RemainingLinks[target] = contraption.RemainingLinks[target] or {}
-				contraption.RemainingLinks[target][ent] = nil
+			-- Unpropagate links waiting on CFW from crew to Contraption
+			for Target in pairs(Ent.RemainingLinks or {}) do
+				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+				Contraption.RemainingLinks[Target][Ent] = nil
 			end
 		else
-			if contraption.RemainingLinks and contraption.RemainingLinks[ent] then
-				-- This runs if the entity is a target of some crew(s)
-				local waiters = contraption.RemainingLinks[ent] or {}
-				for waiter, _ in pairs(waiters) do waiter:Unlink(ent) end
-				contraption.RemainingLinks[ent] = nil
+			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] then
+				-- This runs if the entity is a Target of some crew(s)
+				local waiters = Contraption.RemainingLinks[Ent] or {}
+				for waiter in pairs(waiters) do
+					waiter:Unlink(Ent)
+				end
+				Contraption.RemainingLinks[Ent] = nil
 			end
 		end
 	end)
@@ -777,20 +779,20 @@ end
 -- Linkage Related
 do
 	--- Sends a "link" between two entities to the client
-	local function BroadcastEntity(name, entity, entity2, state)
-		net.Start(name)
-		net.WriteUInt(entity:EntIndex(), 16)
-		net.WriteUInt(entity2:EntIndex(), 16)
-		net.WriteBool(state)
+	local function BroadcastEntity(Name, Entity, Entity2, State)
+		net.Start(Name)
+		net.WriteUInt(Entity:EntIndex(), 16)
+		net.WriteUInt(Entity2:EntIndex(), 16)
+		net.WriteBool(State)
 		net.Broadcast()
 	end
 
 	--- Register basic linkages from crew to non crew entities
 	local function CanLinkCrew(Crew, Target)
-		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link target has a crew list
+		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
-		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same contraption as this crewmate!" end
+		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same Contraption as this crewmate!" end
 		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
@@ -802,7 +804,7 @@ do
 		local TargetClass = Target:GetClass()
 		if not CanLinkCrew(Crew, Target) then return end
 
-		-- Update crew and target's records of each other
+		-- Update crew and Target's records of each other
 		Crew.Targets[Target] = true
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
@@ -828,7 +830,7 @@ do
 
 	local function UnlinkCrew(Crew, Target)
 		local TargetClass = Target:GetClass()
-		-- Update crew and target's records of each other
+		-- Update crew and Target's records of each other
 		Crew.Targets[Target] = nil
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
@@ -850,13 +852,13 @@ do
 
 	-- Compactly define links between crew and other entities
 	local lt = {} -- Merge all crew whitelists
-	for ct, _ in pairs(CrewTypes.GetEntries()) do
-		for et, _ in pairs(CrewTypes.Get(ct).LinkHandlers or {}) do
+	for CrewTypeEntries in pairs(CrewTypes.GetEntries()) do
+		for et in pairs(CrewTypes.Get(CrewTypeEntries).LinkHandlers or {}) do
 			lt[et] = true
 		end
 	end
 
-	for v, _ in pairs(lt) do
+	for v in pairs(lt) do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Crew, Target)
 			if Result then
@@ -896,19 +898,16 @@ do
 
 		-- Restore previous links
 		if EntMods.CrewTargets then
-			local RLs = {} -- LUT mapping failed link targets to true
+			local RLs = {} -- LUT mapping failed link Targets to true
 
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
 
-				local result, _ = self:Link(ActualEnt)
-				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their target is indexed.
+				local result = self:Link(ActualEnt)
+				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their Target is indexed.
 			end
 
 			self.RemainingLinks = RLs
-
-			-- print("RemainingLinks", table.Count(self.RemainingLinks))
-			-- PrintTable(self.RemainingLinks)
 
 			EntMods.CrewTargets = nil
 		end
@@ -923,8 +922,8 @@ do
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self, CrewModel, CrewType)
 
-		-- Unlink target entities
-		for v, _ in pairs(self.Targets) do
+		-- Unlink Target entities
+		for v in pairs(self.Targets) do
 			if IsValid(v) then self:Unlink(v) end
 		end
 
