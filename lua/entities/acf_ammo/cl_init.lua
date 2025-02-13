@@ -151,7 +151,7 @@ do -- Ammo overlay
 		cam.Start2D()
 			-- TODO: REMOVE AMMO COUNT WHEN DONE DEVELOPMENT
 			draw.SimpleTextOutlined("S: " .. (self.AmmoStage or -1), "ACF_Title", CratePos.x, CratePos.y, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
-			draw.SimpleTextOutlined("A: " .. (self.Ammo or -1), "ACF_Title", CratePos.x, CratePos.y+15, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined("A: " .. (self.Ammo or -1), "ACF_Title", CratePos.x, CratePos.y + 15, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 		cam.End2D()
 	end
 

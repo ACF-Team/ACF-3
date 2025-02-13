@@ -794,8 +794,8 @@ do -- Ammo Consumption -------------------------
 				print("Ideal Time", IdealTime)
 				ACF.ProgressTimer(
 					self,
-					function(cfg) return self:UpdateStockMod() end,
-					function(cfg)
+					function() return self:UpdateStockMod() end,
+					function()
 						self.IsRestocking = false
 						local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) 	-- Recalculate
 						crate:Consume(Transfer) 													-- Give

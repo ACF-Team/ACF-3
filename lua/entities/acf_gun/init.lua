@@ -760,10 +760,10 @@ do -- Metamethods --------------------------------
 
 			ACF.ProgressTimer(
 				self,
-				function(cfg)
+				function()
 					return self:UpdateLoadMod()
 				end,
-				function(cfg)
+				function()
 					if IsValid(self) then
 						if Reload then
 							self:Load()
@@ -805,7 +805,7 @@ do -- Metamethods --------------------------------
 
 				ACF.ProgressTimer(
 					self,
-					function(cfg)
+					function()
 						local eff = Manual and self:UpdateLoadMod() or 1
 						if Manual then -- Automatics don't change their rate of fire
 							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
@@ -813,7 +813,7 @@ do -- Metamethods --------------------------------
 						end
 						return eff
 					end,
-					function(cfg)
+					function()
 						if IsValid(self) and self.BulletData then
 							if self.CurrentShot == 0 then
 								self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
