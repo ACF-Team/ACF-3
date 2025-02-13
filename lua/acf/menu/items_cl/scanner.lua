@@ -17,7 +17,6 @@ This was designed to help the community hold each other accountable, and can hel
 
     playerList:AddColumn("Player Name")
     local function PopulatePlayerList()
-        print("PopulatePlayerList called")
         local _, selected = playerList:GetSelectedLine()
         if IsValid(selected) and IsValid(selected.player) then
             selected = selected.player

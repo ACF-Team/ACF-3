@@ -82,7 +82,7 @@ hook.Add("ACF_OnLoadPersistedData", "ACF_LimitSets_Setup", function()
 
     UpdateLimitSet()
 
-    hook.Add("ACF_OnServerDataUpload", "ACF_LimitSets_WatchForKey", function(_, Key, _)
+    hook.Add("ACF_OnUploadServerData", "ACF_LimitSets_WatchForKey", function(_, Key, _)
         if Key ~= "SelectedLimitset" then return end
         UpdateLimitSet()
 

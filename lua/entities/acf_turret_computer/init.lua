@@ -77,8 +77,6 @@ do	-- Spawn and Update funcs
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		for _, v in ipairs(Entity.DataStore) do
 			Entity[v] = Data[v]
 		end
@@ -116,17 +114,13 @@ do	-- Spawn and Update funcs
 
 		Contraption.SetModel(Entity, Computer.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_computer")
 
 		UpdateComputer(Entity, Data, Class, Computer)
-
-		Entity:UpdateOverlay(true)
 
 		HookRun("ACF_OnSpawnEntity", "acf_turret_computer", Entity, Data, Class, Computer)
 

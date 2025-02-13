@@ -153,7 +153,7 @@ do -- ACF global vars
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("KEPush",             true,   "Kinectic energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",       true,   "Fun Entities have been %s.", ACF.BooleanDataCallback())
@@ -163,7 +163,7 @@ do -- ACF global vars
 	end))
 
 	ACF.DefineSetting("WorkshopContent",    true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("WorkshopExtras",     true,   "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("WorkshopExtras",     false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("CreateDebris",       true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
@@ -311,6 +311,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
 	CreateClientConVar("acf_legalshame", 0, true, true, "If enabled, you will get a message in console from the server if someone else has an ACF entity get disabled, but only when the server has that logging enabled.", 0, 1)
 	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
+	CreateClientConVar("acf_debris_autolod", 1, true, false, "Automatically disables some effects on debris if FPS is low.", 0, 1)
 	CreateClientConVar("acf_debris_collision", 0, true, false, "Toggles debris collisions with other entities.", 0, 1)
 	CreateClientConVar("acf_debris_gibmultiplier", 1, true, false, "The amount of gibs spawned when created by ACF debris.", 0, 1)
 	CreateClientConVar("acf_debris_giblifetime", 60, true, false, "Defines lifetime in seconds of each debris gib.", 1, 300)

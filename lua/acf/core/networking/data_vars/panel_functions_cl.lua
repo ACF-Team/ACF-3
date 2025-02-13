@@ -219,7 +219,7 @@ do -- Tracker and Setter panel functions
 			HijackFunctions(Panel, Setter or "SetValue")
 		end
 
-		hook.Add("ACF_On" .. Realm .. "DataUpdate", "ACF Update Panel Values", function(_, Key, Value)
+		hook.Add("ACF_OnUpdate" .. Realm .. "Data", "ACF Update Panel Values", function(_, Key, Value)
 			local Data = DataPanels[Realm][Key]
 
 			if not Data then return end -- This variable is not being set or tracked by panels

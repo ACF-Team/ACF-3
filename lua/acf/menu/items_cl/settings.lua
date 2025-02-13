@@ -103,6 +103,9 @@ do -- Clientside settings
 		local Debris = Base:AddCheckBox("#acf.menu.settings.debris.clientside")
 		Debris:SetConVar("acf_debris")
 
+		local AutoLod = Base:AddCheckBox("#acf.menu.settings.debris.autolod")
+		AutoLod:SetConVar("acf_debris_autolod")
+
 		local Collisions = Base:AddCheckBox("#acf.menu.settings.debris.collision")
 		Collisions:SetConVar("acf_debris_collision")
 

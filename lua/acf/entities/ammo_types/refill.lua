@@ -179,4 +179,8 @@ else
 	function Ammo:PreCreateAmmoInformation()
 		return false
 	end
+
+	function Ammo:PreCreateAmmoGraph()
+		return false
+	end
 end

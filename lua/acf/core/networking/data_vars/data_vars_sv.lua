@@ -68,8 +68,8 @@ do -- Data syncronization
 
 		if not Data then return end
 
-		local HookUpdate = "ACF_On" .. Type .. "DataUpdate"
-		local HookUpload = "ACF_On" .. Type .. "DataUpload"
+		local HookUpdate = "ACF_OnUpdate" .. Type .. "Data"
+		local HookUpload = "ACF_OnUpload" .. Type .. "Data"
 
 		for K, V in pairs(Data) do
 			if Values[K] ~= V then
@@ -189,7 +189,7 @@ end
 do -- Server data setter function
 	--- Sets a server datavar and networks it to the client
 	--- The server cannot modify the client because we don't want ACF to natively support servers modifying the client
-	--- Internally calls the ACF_OnServerDataUpdate hook
+	--- Internally calls the ACF_OnUpdateServerData hook
 	--- @param Key string The key of the datavar
 	--- @param Value any The value the datavar
 	--- @param Forced boolean Whether to send regardless of difference checks
@@ -201,7 +201,7 @@ do -- Server data setter function
 		if Forced or Server[Key] ~= Value then
 			Server[Key] = Value
 
-			hook.Run("ACF_OnServerDataUpdate", nil, Key, Value)
+			hook.Run("ACF_OnUpdateServerData", nil, Key, Value)
 
 			NetworkData(Key)
 		end

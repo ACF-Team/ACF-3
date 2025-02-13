@@ -174,12 +174,10 @@ do -- Spawning and Updating --------------------
 
 		Contraption.SetModel(Entity, Class.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.RoundData    = AmmoType()
 		Entity.LastThink    = Clock.CurTime
 		Entity.State        = "Loading"
@@ -192,9 +190,6 @@ do -- Spawning and Updating --------------------
 		UpdatePiledriver(Entity, Data, Class)
 
 		WireLib.TriggerOutput(Entity, "State", "Loading")
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
 
 		ACF.CheckLegal(Entity)
 

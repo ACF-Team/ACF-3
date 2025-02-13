@@ -113,12 +113,12 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	local function GetMass(Caliber, Class, Weapon)
-	        if Weapon then return Weapon.Mass end
+		if Weapon then return Weapon.Mass end
 
-	        local Factor = Caliber / Class.Caliber.Base
+		local Factor = Caliber / Class.Caliber.Base
 
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
-		end
+	end
 
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
@@ -233,12 +233,10 @@ do -- Spawn and Update functions --------------------------------
 
 		Contraption.SetModel(Entity, Weapon and Weapon.Model or Class.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.BarrelFilter = { Entity }
 		Entity.State        = "Empty"
 		Entity.Crates       = {}
@@ -253,7 +251,6 @@ do -- Spawn and Update functions --------------------------------
 		UpdateWeapon(Entity, Data, Class, Weapon)
 
 		WireLib.TriggerOutput(Entity, "Status", "Empty")
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Ammo Type", "Empty")
 		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
@@ -263,8 +260,6 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
-
-		Entity:UpdateOverlay(true)
 
 		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end

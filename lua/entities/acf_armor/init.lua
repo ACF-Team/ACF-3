@@ -95,14 +95,12 @@ do -- Spawning and Updating
 		Player:AddCount("_acf_armor", Plate)
 		Player:AddCleanup("_acf_armor", Plate)
 
-		Plate:SetScaledModel("models/holograms/cube.mdl")
-		Plate:SetMaterial("sprops/textures/sprops_metal1")
-		Plate:SetPlayer(Player)
+		Plate:SetScaledModel("models/holograms/hq_rcube_thin.mdl")
+		Plate:SetMaterial("phoenix_storms/metalfloor_2-3")
 		Plate:SetAngles(Angle)
 		Plate:SetPos(Pos)
 		Plate:Spawn()
 
-		Plate.Owner     = Player -- MUST be stored on ent for PP
 		Plate.DataStore = Entities.GetArguments("acf_armor")
 
 		duplicator.ClearEntityModifier(Plate, "mass")
@@ -152,11 +150,12 @@ end
 
 do -- ACF Activation and Damage
 	local Trace = { Entity = true, StartPos = true, HitPos = true }
+	local TensileDivisor = 1111 -- Balancing health multiplier around RHA
 
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		local Area = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Health  = Area / ACF.Threshold * self.Tensile
+		local Health  = Area / ACF.Threshold * (self.Tensile / TensileDivisor)
 		local Percent = 1
 
 		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
@@ -241,5 +240,15 @@ function ENT:OnRemove()
 		Armor.OnLast(self, Armor)
 	end
 
+	hook.Run("ACF_OnEntityLast", "acf_armor", self, Armor)
+
 	WireLib.Remove(self)
+end
+
+do -- Wire overlay text
+	local OverlayText = "Armor Type: %s\nPlate Size: %.1f x %.1f x %.1f"
+
+	function ENT:UpdateOverlayText()
+		return OverlayText:format(self.ArmorClass.Name, self.Size[1], self.Size[2], self.Size[3])
+	end
 end

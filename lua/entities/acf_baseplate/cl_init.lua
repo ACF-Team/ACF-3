@@ -15,10 +15,10 @@ function ENT:DrawGizmos()
     local Size = self.Size
 
     render.SetColorMaterial()
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 2, 0, 1, ColorBlack)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1, 0, 1, ColorRed)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 2, 0, 1, ColorBlack)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1, 0, 1, ColorGreen)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1.25, 0, 1, ColorBlack)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), .5, 0, 1, ColorRed)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1.25, 0, 1, ColorBlack)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), .5, 0, 1, ColorGreen)
 
     cam.IgnoreZ(false)
 end

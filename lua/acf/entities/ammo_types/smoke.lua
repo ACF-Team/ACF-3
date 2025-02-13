@@ -6,6 +6,7 @@ local Ammo      = AmmoTypes.Register("SM", "AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Smoke"
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly."
 	self.Blacklist = {
 		AC = true,
