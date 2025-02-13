@@ -127,9 +127,9 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
-		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
 	else
-		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+		Bullet.Mask		= MASK_SOLID
 	end
 
 	Bullet.Ricochets   = 0
@@ -137,9 +137,8 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
-	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
-		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
 	end
 
 	-- TODO: Make bullets use a metatable instead
