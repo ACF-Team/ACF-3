@@ -1,11 +1,9 @@
 local ACF = ACF
 
-do -- Custom font files
-	-- 16 Segments font created by ThorType
-	-- Huge thanks to LiddulBOFH to help me get it working
-	-- Source: https://www.dafont.com/16-segments.font
-	resource.AddFile("resource/fonts/16segments-basic.ttf")
-end
+-- 16 Segments font created by ThorType
+-- Huge thanks to LiddulBOFH to help me get it working
+-- Source: https://www.dafont.com/16-segments.font
+-- resource.AddFile("resource/fonts/16segments-basic.ttf")
 
 do -- Networked notifications
 	local Messages = ACF.Utilities.Messages
