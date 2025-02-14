@@ -247,6 +247,7 @@ do -- Spawning and Updating --------------------
 				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
 
 				-- for future use in reloading
+				Entity.IsBelted = ExtraData.IsBelted -- Ammunition is belted
 				-- Entity.IsBoxed = ExtraData.IsBoxed -- Ammunition is boxed
 				--Entity.IsTwoPiece = ExtraData.IsTwoPiece -- Ammunition is broken down to two pieces
 				ExtraData.AmmoStage = Data.AmmoStage
@@ -746,6 +747,7 @@ do -- Ammo Consumption -------------------------
 		if SelfTbl.Disabled then return false end
 		if not SelfTbl.Load then return false end
 		if SelfTbl.Damaged then return false end
+		if SelfTbl.IsBelted then return false end
 
 		return SelfTbl.Ammo < SelfTbl.Capacity
 	end

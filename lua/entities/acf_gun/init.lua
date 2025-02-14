@@ -468,7 +468,7 @@ do -- Metamethods --------------------------------
 
 			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
-					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate:CanConsume() then
+					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate.AmmoStage == 1 and Crate:CanConsume() then
 						This:Load()
 					end
 				end)
@@ -786,7 +786,6 @@ do -- Metamethods --------------------------------
 				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
 				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-				-- print("Chamber", Time, self.LoadCrewMod)
 
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
@@ -811,7 +810,9 @@ do -- Metamethods --------------------------------
 					function()
 						if IsValid(self) and self.BulletData then
 							if self.CurrentShot == 0 then
-								self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
+								local Crate = self.CurrentCrate
+								local MagSize = IsValid(Crate) and Crate.IsBelted and Crate.Ammo or self.MagSize or 1
+								self.CurrentShot = math.min(MagSize, self.TotalAmmo)
 							end
 
 							self.NextFire = nil
@@ -865,7 +866,6 @@ do -- Metamethods --------------------------------
 
 				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
 				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-				print("Mag Reload: " .. Time)
 
 				self.NextFire = Clock.CurTime + Time
 
