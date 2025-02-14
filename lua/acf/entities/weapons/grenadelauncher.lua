@@ -10,7 +10,7 @@ Weapons.Register("GL", {
 	MuzzleFlash = "gl_muzzleflash_noscale",
 	DefaultAmmo = "HE",
 	IsScalable  = true,
-	IsBoxed     = true,
+	IsBelted	= true,
 	IsAutomatic = true,
 	Mass		= 101,
 	Spread      = 0.28,
