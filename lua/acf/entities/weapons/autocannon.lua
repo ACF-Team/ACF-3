@@ -15,6 +15,8 @@ Weapons.Register("AC", {
 	Spread      = 0.2,
 	ScaleFactor = 0.86, -- Corrective factor to account for improperly scaled base models
 	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	TransferMult = 24, -- Thermal energy transfer rate
+	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
 		PropLength = 32.5, -- Relative to the Base caliber, in cm

@@ -181,10 +181,22 @@ do -- Spawn and Update functions --------------------------------
 	function ENT:SimulateTemp(DT, Temp)
 		local NewTemp = Temp or ACF.AmbientTemperature
 		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
-		local TempK = self.Thermal.TempK 								-- Cooling constant
+		local TempK = self.Thermal.TempK    						    -- Cooling constant
 		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
 		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
 		WireLib.TriggerOutput(self, "Temperature", math.Round(self.Thermal.Temp - 273.15, 3))
+
+		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
+
+		if self.Thermal.Temp >= 1223.15 then -- Barrel starts to melt at 950C, Liddul's failing point
+			local Malleable = (self.Thermal.Temp - 1223.15) / 550
+			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
+			--print(Damage, self.Thermal.Temp)
+
+			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
+			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
+		end
+
 	end
 
 	local function GetSound(Caliber, Class, Weapon)
@@ -264,7 +276,8 @@ do -- Spawn and Update functions --------------------------------
 		local Thermal = {}
 		if not Entity.Thermal then Thermal.Temp	= ACF.AmbientTemperature end			-- Default init temperature
 
-		Thermal.TransferMult = Entity.ClassData.TransferMult or 1
+		Thermal.TransferMult = Entity.ClassData.TransferMult or 1 -- Thermal transfer rate multiplier
+		EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
 
 		-- Simplification assumes barrel is the only heating element (breech excluded)
 		-- I really want to make guns not suck :( (These ratios piss me off marginally)
@@ -395,7 +408,7 @@ do -- Spawn and Update functions --------------------------------
 			function(Config)
 				Entity:SimulateTemp(Config.DeltaTime)
 			end,
-			function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1}
+			function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.2}
 		)
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
@@ -598,7 +611,7 @@ do -- Metamethods --------------------------------
 		ACF.AddInputAction("acf_gun", "Rate of Fire", function(Entity, Value)
 			if not Entity.BaseCyclic then return end
 
-			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic)
+			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic * (Entity.ClassData.CyclicCeilMult or 1))
 			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
 	end -----------------------------------------
@@ -679,7 +692,7 @@ do -- Metamethods --------------------------------
 
 		function ENT:Shoot()
 			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
-			local EnergyToHeat = BulletEnergy * 0.5 -- 50% of the bullet's energy goes into the barrel
+			local EnergyToHeat = BulletEnergy * EnergyConversion
 			self:SimulateTemp(1 / 66, EnergyToHeat)
 
 			local Cone = math.tan(math.rad(self:GetSpread()))

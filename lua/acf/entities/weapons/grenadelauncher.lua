@@ -16,6 +16,8 @@ Weapons.Register("GL", {
 	Spread      = 0.28,
 	Cyclic      = 250,
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 24, -- Thermal energy transfer rate
+	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 10,
 		PropLength = 1,

@@ -14,6 +14,7 @@ Weapons.Register("AL", {
 	Spread      = 0.08,
 	MagSize     = 6,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 24, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
