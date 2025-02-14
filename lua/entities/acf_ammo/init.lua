@@ -27,7 +27,6 @@ local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
-local HookRun      = hook.Run
 
 do -- Spawning and Updating --------------------
 	local Classes   = ACF.Classes
@@ -139,7 +138,7 @@ do -- Spawning and Updating --------------------
 					Class.VerifyData(Data, Class, Ammo)
 				end
 
-				HookRun("ACF_VerifyData", "acf_ammo", Data, Class, Ammo)
+				hook.Run("ACF_OnVerifyData", "acf_ammo", Data, Class, Ammo)
 			end
 		end
 	end
@@ -161,7 +160,7 @@ do -- Spawning and Updating --------------------
 					OldAmmo:OnLast(Entity)
 				end
 
-				HookRun("ACF_OnAmmoLast", OldAmmo, Entity)
+				hook.Run("ACF_OnAmmoLast", OldAmmo, Entity)
 			end
 
 			Entity.RoundData  = Ammo
@@ -172,7 +171,7 @@ do -- Spawning and Updating --------------------
 				Ammo:OnFirst(Entity)
 			end
 
-			HookRun("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
+			hook.Run("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
 
 			Ammo:Network(Entity, Entity.BulletData)
 		end
@@ -257,7 +256,6 @@ do -- Spawning and Updating --------------------
 		Entity:UpdateMass(true)
 	end
 
-	util.PrecacheModel("models/holograms/hq_cylinder.mdl")
 	util.AddNetworkString("ACF_RequestAmmoData")
 
 	-- Whenever a player requests ammo data, we'll send it to them
@@ -285,7 +283,7 @@ do -- Spawning and Updating --------------------
 		local Ammo   = AmmoTypes.Get(Data.AmmoType) -- The class representing this ammo type
 		local Model  = "models/holograms/hq_rcube_thin.mdl"
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_ammo", Player, Data, Class, Weapon, Ammo)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_ammo", Player, Data, Class, Weapon, Ammo)
 
 		if CanSpawn == false then return false end
 
@@ -301,28 +299,22 @@ do -- Spawning and Updating --------------------
 		Crate.ACF.Model = Model
 
 		Crate:SetMaterial("phoenix_storms/Future_vents")
-		Crate:SetPlayer(Player)
 		Crate:SetScaledModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()
 
-		Crate.Owner       = Player -- MUST be stored on ent for PP
 		Crate.IsExplosive = true
 		Crate.Weapons     = {}
 		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
 		UpdateCrate(Crate, Data, Class, Weapon, Ammo)
 
-		WireLib.TriggerOutput(Crate, "Entity", Crate)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
-
-		Crate:UpdateOverlay(true)
+		hook.Run("ACF_OnSpawnEntity", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
 
 		-- Backwards compatibility with old crates
 		if Data.Offset then
@@ -371,14 +363,14 @@ do -- Spawning and Updating --------------------
 		local Blacklist  = Ammo.Blacklist
 		local Extra      = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_ammo", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -390,7 +382,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_ammo", self, Data, Class, Weapon, Ammo)
+		hook.Run("ACF_OnUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
 
 		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
 			-- Unlink if the weapon type or caliber has changed
@@ -417,13 +409,6 @@ do -- Spawning and Updating --------------------
 				Extra = " Unlinked " .. Count .. " weapons from this crate."
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		-- Let the client know that we've updated this entity
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Crate updated successfully." .. Extra
 	end
@@ -513,9 +498,11 @@ do -- ACF Activation and Damage -----------------
 		local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
 		if (Ratio * self.Capacity / self.Ammo) > math.random() then
+			local CanBurn = hook.Run("ACF_PreBurnAmmo", self)
+
 			self.Inflictor = Inflictor
 
-			if HookRun("ACF_AmmoCanCookOff", self) ~= false then
+			if CanBurn then
 				self.Damaged = Clock.CurTime + (5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
 
 				local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
@@ -535,7 +522,10 @@ do -- ACF Activation and Damage -----------------
 
 	function ENT:Detonate()
 		if self.Exploding then return end
-		if HookRun("ACF_AmmoExplode", self) == false then return end
+
+		local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
+
+		if not CanExplode then return end
 
 		self.Exploding = true
 
@@ -703,7 +693,7 @@ do -- Misc --------------------------------------
 			Class.OnLast(self, Class)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, Class)
+		hook.Run("ACF_OnEntityLast", "acf_ammo", self, Class)
 
 		ActiveCrates[self] = nil
 

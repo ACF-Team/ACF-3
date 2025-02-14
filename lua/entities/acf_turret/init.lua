@@ -184,7 +184,6 @@ do	-- Spawn and Update funcs
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Mass", 0)
 
 		for _, v in ipairs(Entity.DataStore) do
@@ -247,7 +246,7 @@ do	-- Spawn and Update funcs
 
 		local Turret	= Turrets.GetItem(Class.ID, Data.Turret)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret", Player, Data, Class, Turret)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret", Player, Data, Class, Turret)
 
 		if CanSpawn == false then return false end
 
@@ -274,12 +273,10 @@ do	-- Spawn and Update funcs
 
 		Contraption.SetModel(Entity, Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret")
 		Entity.MassCheckDelay 	= 0
 		Entity.CoMCheckDelay	= 0
@@ -305,9 +302,7 @@ do	-- Spawn and Update funcs
 
 		UpdateTurret(Entity, Data, Class, Turret)
 
-		Entity:UpdateOverlay(true)
-
-		HookRun("ACF_OnEntitySpawn", "acf_turret", Entity, Data, Class, Turret)
+		HookRun("ACF_OnSpawnEntity", "acf_turret", Entity, Data, Class, Turret)
 
 		ACF.CheckLegal(Entity)
 
@@ -325,7 +320,7 @@ do	-- Spawn and Update funcs
 		local Turret	= Turrets.GetItem(Class.ID, Data.Turret)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret", self, Data, Class, Turret)
+		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -340,13 +335,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret", self, Data, Class, Motor)
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
+		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		self:UpdateTurretMass()
 

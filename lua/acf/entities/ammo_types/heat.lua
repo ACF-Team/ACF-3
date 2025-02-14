@@ -10,6 +10,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive Anti-Tank"
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "A round with a shaped charge inside. Fires a high-velocity jet on detonation."
 	self.Blacklist = {
 		AC = true,
@@ -68,7 +69,7 @@ function Ammo:GetDisplayData(Data)
 		FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -137,7 +138,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass		= Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	-- Recalculate the standoff for missiles
 	if Data.MissileStandoff then
@@ -190,6 +191,8 @@ function Ammo:VerifyData(ToolData)
 
 	if not isnumber(ToolData.StandoffRatio) then
 		ToolData.StandoffRatio = 0
+	else
+		ToolData.StandoffRatio = math.Clamp(ToolData.StandoffRatio, 0, self.MaxStandoffRatio or 0.2)
 	end
 
 	if not isnumber(ToolData.LinerAngle) then
@@ -277,7 +280,7 @@ if SERVER then
 
 			Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
 
-			if Ballistics.TestFilter(Ent, Bullet) == false then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
+			if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
 			-- Get the (full jet's) penetration
 			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
@@ -492,7 +495,7 @@ else
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
@@ -521,14 +524,14 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.LinerAngle = true
-		Trackers.StandoffRatio = true
+		Label:TrackClientData("LinerAngle")
+		Label:TrackClientData("StandoffRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")

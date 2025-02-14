@@ -7,6 +7,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing Discarding Sabot"
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "A subcaliber munition designed to trade damage for penetration. Loses energy quickly over distance."
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,
@@ -31,7 +32,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef  = Data.ProjArea * 0.000125 / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

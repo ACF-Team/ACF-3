@@ -56,7 +56,8 @@ local function AddArguments(Entity, Arguments)
 	return List
 end
 
-local ArgumentTypes = {}
+local UserArgumentTypes = {}
+local DataArgumentTypes = {}
 
 local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 	local Restrictions = Entity.Restrictions
@@ -64,7 +65,7 @@ local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 	for k, v in pairs(ArgumentRestrictions) do
 		if not v.Type                then error("Argument '" .. tostring(k or "<NIL>") .. "' didn't have a Type!") end
 		if not isstring(v.Type)      then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-string Type! (" .. tostring(v.Type) .. ")") end
-		if not ArgumentTypes[v.Type] then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-registered Type! (" .. tostring(v.Type) .. ")") end
+		if not UserArgumentTypes[v.Type] and not DataArgumentTypes[v.Type] then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-registered Type! (" .. tostring(v.Type) .. ")") end
 
 		Restrictions[k] = v
 	end
@@ -73,14 +74,26 @@ end
 
 --- Adds an argument type and verifier to the ArgumentTypes dictionary.
 --- @param Type string The type of data
---- @param Verifier function The verification function. Arguments are: Value:any, Restrictions:table. Must return a Value of the same type and NOT nil!
-function Entities.AddArgumentType(Type, Verifier)
-	if ArgumentTypes[Type] then return end
+--- @param Validator function The verification function. Arguments are: Value:any, Restrictions:table. Must return a Value of the same type and NOT nil!
+function Entities.AddUserArgumentType(Type, Validator)
+	if UserArgumentTypes[Type] then return end
 
-	ArgumentTypes[Type] = Verifier
+	UserArgumentTypes[Type] = {
+		Validator = Validator
+	}
 end
 
-Entities.AddArgumentType("Number", function(Value, Specs)
+function Entities.AddDataArgumentType(Type, Validator, PreCopy, PostPaste)
+	if DataArgumentTypes[Type] then return end
+
+	DataArgumentTypes[Type] = {
+		Validator  = Validator,
+		PreCopy   = PreCopy,
+		PostPaste = PostPaste
+	}
+end
+
+Entities.AddUserArgumentType("Number", function(Value, Specs)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
 
 	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
@@ -90,16 +103,102 @@ Entities.AddArgumentType("Number", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddUserArgumentType("String", function(Value, Specs)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	return Value
+end)
+
+Entities.AddDataArgumentType("LinkedEntity",
+	function(Value, Specs)
+		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
+
+		if Specs.Classes then
+			local class = Value:GetClass()
+			if Specs.Classes[class] then return Value end
+
+			return NULL
+		end
+	end,
+	function(_, value)
+		return value:EntIndex()
+	end,
+	function(self, value, createdEnts)
+		self:Link(createdEnts[value])
+		return createdEnts[value]
+	end
+)
+
+-- MARCH: Untested!
+-- And if this code stays here, fix the PascalCase issue
+--[[
+Entities.AddDataArgumentType("LinkedEntities",
+	function(Value, Specs)
+		if not Value then return {} end
+		if isentity(Value) then Value = {Value} end
+		if not istable(Value) then return {} end
+
+		local Ret = {}
+		local max = Specs.Max
+		for k, v in ipairs(Value) do
+			if max and k > max then break end
+			if not isentity(v) or not IsValid(v) then
+				v = NULL
+			else
+				if Specs.Classes then
+					local class = v:GetClass()
+					if not Specs.Classes[class] then
+						v = NULL
+					end
+				end
+			end
+
+			Ret[k] = v
+		end
+
+		return Value
+	end,
+	function(_, value)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			ret[k] = v:EntIndex()
+		end
+
+		return ret
+	end,
+	function(self, value, createdEnts)
+		local ret = {}
+
+		for k, v in ipairs(value) do
+			local realEnt = createdEnts[v]
+			ret[k] = realEnt
+			self:Link(realEnt)
+		end
+
+		return ret
+	end
+)]]
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
-function Entities.AddStrictArguments(Class, DataKeys)
+function Entities.AddStrictArguments(Class, UserVariables, DataVariables)
 	if not isstring(Class) then return end
 
 	local Entity    = GetEntityTable(Class)
-	local Arguments = table.GetKeys(DataKeys)
-	local List      = AddArguments(Entity, Arguments)
-	AddArgumentRestrictions(Entity, DataKeys)
+
+	local UserVars  = table.GetKeys(UserVariables)
+	local DataVars  = table.GetKeys(DataVariables)
+	local ArgumentNames  = {}
+	local Arguments = {}
+	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+
+	local List      = AddArguments(Entity, ArgumentNames)
+	AddArgumentRestrictions(Entity, Arguments)
 	return List
 end
 
@@ -114,7 +213,9 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_Class = Class
 
 	local Entity = GetEntityTable(Class)
-	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_DataKeys or {})
+	local ArgsList = Entities.AddStrictArguments(Class, ENT.ACF_UserVars or {}, ENT.ACF_DataVars or {})
+
+	local DataVars = ENT.ACF_DataVars
 
 	if CLIENT then return end
 
@@ -136,8 +237,9 @@ function Entities.AutoRegister(ENT)
 		for _, argName in ipairs(List) do
 			if Restrictions[argName] then
 				local RestrictionSpecs = Restrictions[argName]
-				if not ArgumentTypes[RestrictionSpecs.Type] then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				ClientData[argName] = ArgumentTypes[RestrictionSpecs.Type](ClientData[argName], RestrictionSpecs)
+				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type] or DataArgumentTypes[RestrictionSpecs.Type]
+				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
+				ClientData[argName] = ArgumentVerification.Validator(ClientData[argName], RestrictionSpecs)
 			end
 		end
 
@@ -168,16 +270,15 @@ function Entities.AutoRegister(ENT)
 		UpdateEntityData(self, ClientData)
 		ACF.RestoreEntity(self)
 
-		hook.Run("ACF_OnEntityUpdate", Class, self, ClientData)
-		if self.UpdateOverlay then self:UpdateOverlay(true) end
-		net.Start("ACF_UpdateEntity")
-		net.WriteEntity(self)
-		net.Broadcast()
+		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
 
-	local ACF_Limit = ENT.ACF_Limit
+	local ACF_Limit       = ENT.ACF_Limit
+	local PreEntityCopy   = ENT.PreEntityCopy
+	local PostEntityPaste = ENT.PostEntityPaste
+
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
@@ -187,7 +288,7 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
-		local CanSpawn = hook.Run("ACF_PreEntitySpawn", Class, Player, ClientData)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData)
 		if CanSpawn == false then return false end
 
 		local New = ents.Create(Class)
@@ -201,30 +302,64 @@ function Entities.AutoRegister(ENT)
 			New:ACF_PreSpawn(Player, Pos, Angle, ClientData)
 		end
 
-		New:SetPlayer(Player)
 		New:Spawn()
 		Player:AddCount("_" .. Class, New)
 		Player:AddCleanup("_" .. Class, New)
-		New.Owner = Player -- MUST be stored on ent for PP
-		New.DataStore = Entities.GetArguments(Class)
 
-		hook.Run("ACF_OnEntitySpawn", Class, New, ClientData)
+		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
 
 		New:ACF_UpdateEntityData(ClientData)
-		if New.UpdateOverlay then New:UpdateOverlay(true) end
+
 		ACF.CheckLegal(New)
 
 		return New
 	end
 
+	function ENT:PreEntityCopy()
+		for k, v in pairs(DataVars) do
+			local typedef   = DataArgumentTypes[v.Type]
+			local validated = typedef.Validator(self[k], v)
+			local ret       = typedef.PreCopy(self, validated)
+			if ret then
+				duplicator.StoreEntityModifier(self, k, {ret})
+			end
+		end
+
+		if PreEntityCopy then PreEntityCopy(self) end
+
+		--Wire dupe info
+		self.BaseClass.PreEntityCopy(self)
+	end
+
+	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		local EntMods = Ent.EntityMods
+
+		for k, v in pairs(DataVars) do
+			local typedef    = DataArgumentTypes[v.Type]
+			local entmodData = EntMods[k][1]
+			local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
+			ret              = typedef.Validator(ret, v)
+			if ret then Ent[k] = ret end
+		end
+
+		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
+		Ent.BaseClass.PostEntityPaste(Ent, Player, Ent, CreatedEntities)
+	end
+
 	ENT.ACF_VerifyClientData = VerifyClientData
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
-	duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(ArgsList))
+	local function SpawnFunction(Player, Pos, Angle, Data)
+		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+		return SpawnedEntity
+	end
+
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(ArgsList))
 end
 
 --- Registers a class as a spawnable entity class
@@ -247,7 +382,13 @@ function Entities.Register(Class, Function, ...)
 
 	Entity.Spawn = Function
 
-	duplicator.RegisterEntityClass(Class, Function, "Pos", "Angle", "Data", unpack(List))
+	local function SpawnFunction(Player, Pos, Angle, Data)
+		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+		return SpawnedEntity
+	end
+
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -262,7 +403,13 @@ function Entities.AddArguments(Class, ...)
 	local List      = AddArguments(Entity, Arguments)
 
 	if Entity.Spawn then
-		duplicator.RegisterEntityClass(Class, Entity.Spawn, "Pos", "Angle", "Data", unpack(List))
+		local function SpawnFunction(Player, Pos, Angle, Data)
+			local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+
+			return SpawnedEntity
+		end
+
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 	end
 end
 
@@ -287,7 +434,6 @@ Classes.AddSimpleFunctions(Entities, Entries)
 if CLIENT then return end
 
 do -- Spawning and updating
-	local hook = hook
 	local undo = undo
 
 	--- Spawns an entity with the given parameters
@@ -307,22 +453,30 @@ do -- Spawning and updating
 		if not ClassData then return false, Class .. " is not a registered ACF entity class." end
 		if not ClassData.Spawn then return false, Class .. " doesn't have a spawn function assigned to it." end
 
-		local HookResult, HookMessage = hook.Run("ACF_CanCreateEntity", Class, Player, Position, Angles, Data)
-
-		if HookResult == false then return false, HookMessage end
-
 		local Entity = ClassData.Spawn(Player, Position, Angles, Data)
 
 		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
-		Entity:Activate()
 		Entity:CPPISetOwner(Player)
+		Entity:SetPlayer(Player)
+
+		Entity.ACF       = Entity.ACF or {}
+		Entity.Owner     = Player -- MUST be stored on ent for PP (supposedly)
+		Entity.DataStore = Entities.GetArguments(Class)
 
 		if not NoUndo then
 			undo.Create(Entity.Name or Class)
 				undo.AddEntity(Entity)
 				undo.SetPlayer(Player)
 			undo.Finish()
+		end
+
+		if Entity.UpdateOverlay then
+			Entity:UpdateOverlay(true)
+		end
+
+		if Entity.Outputs and Entity.Outputs.Entity then
+			WireLib.TriggerOutput(Entity, "Entity", Entity)
 		end
 
 		return true, Entity
@@ -339,15 +493,18 @@ do -- Spawning and updating
 
 		Data = istable(Data) and Data or {}
 
-		local HookResult, HookMessage = hook.Run("ACF_CanUpdateEntity", Entity, Data)
-
-		if HookResult == false then
-			return false, "Couldn't update entity: " .. (HookMessage or "No reason provided.")
-		end
-
 		local Result, Message = Entity:Update(Data)
 
-		if not Result then
+		if Result then
+			if Entity.UpdateOverlay then
+				Entity:UpdateOverlay(true)
+			end
+
+			-- Let the client know that we've updated this entity
+			net.Start("ACF_UpdateEntity")
+				net.WriteEntity(Entity)
+			net.Broadcast()
+		else
 			Message = "Couldn't update entity: " .. (Message or "No reason provided.")
 		end
 

@@ -106,6 +106,9 @@ do -- Clientside settings
 		local Debris = Base:AddCheckBox("#acf.menu.settings.debris.clientside")
 		Debris:SetConVar("acf_debris")
 
+		local AutoLod = Base:AddCheckBox("#acf.menu.settings.debris.autolod")
+		AutoLod:SetConVar("acf_debris_autolod")
+
 		local Collisions = Base:AddCheckBox("#acf.menu.settings.debris.collision")
 		Collisions:SetConVar("acf_debris_collision")
 
@@ -140,209 +143,61 @@ do -- Serverside settings
 
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
 		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
+
+		-- What? Why is this different??
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
 
 			return Value
 		end)
+			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
-		Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
+		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):        LinkToServerData("RestrictInfo")
+			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
-		local Info = Base:AddCheckBox("#acf.menu.settings.general.restrict_info")
-		Info:SetServerData("RestrictInfo", "OnChange")
-		Info:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
-
-		local LegalChecks = Base:AddCheckBox("#acf.menu.settings.general.legal_checks")
-		LegalChecks:SetServerData("LegalChecks", "OnChange")
-		LegalChecks:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local VehicleLegalChecks = Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle")
-		VehicleLegalChecks:SetServerData("VehicleLegalChecks", "OnChange")
-		VehicleLegalChecks:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local LegalCheckNameAndShame = Base:AddCheckBox("#acf.menu.settings.general.name_and_shame")
-		LegalCheckNameAndShame:SetServerData("NameAndShame", "OnChange")
-		LegalCheckNameAndShame:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local GunFire = Base:AddCheckBox("#acf.menu.settings.general.gun_fire")
-		GunFire:SetServerData("GunsCanFire", "OnChange")
-		GunFire:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local GunSmoke = Base:AddCheckBox("#acf.menu.settings.general.gun_smoke")
-		GunSmoke:SetServerData("GunsCanSmoke", "OnChange")
-		GunSmoke:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local RackFire = Base:AddCheckBox("#acf.menu.settings.general.rack_fire")
-		RackFire:SetServerData("RacksCanFire", "OnChange")
-		RackFire:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local RequireFuel = Base:AddCheckBox("#acf.menu.settings.general.require_fuel")
-		RequireFuel:SetServerData("RequireFuel", "OnChange")
-		RequireFuel:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local MaxThickness = Base:AddSlider("#acf.menu.settings.general.max_thickness", ACF.MinimumArmor, ACF.MaximumArmor)
-		MaxThickness:SetServerData("MaxThickness", "OnValueChanged")
-		MaxThickness:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local Health = Base:AddSlider("#acf.menu.settings.general.health_factor", 0.01, 2, 2)
-		Health:SetServerData("HealthFactor", "OnValueChanged")
-		Health:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local Fuel = Base:AddSlider("#acf.menu.settings.general.fuel_factor", 0.01, 2, 2)
-		Fuel:SetServerData("FuelFactor", "OnValueChanged")
-		Fuel:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
+		Base:AddCheckBox("#acf.menu.settings.general.gun_fire"):             LinkToServerData("GunsCanFire")
+		Base:AddCheckBox("#acf.menu.settings.general.gun_smoke"):            LinkToServerData("GunsCanSmoke")
+		Base:AddCheckBox("#acf.menu.settings.general.rack_fire"):            LinkToServerData("RacksCanFire")
+		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):         LinkToServerData("RequireFuel")
+		Base:AddSlider("#acf.menu.settings.general.max_thickness"):          LinkToServerData("MaxThickness")
+		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
+		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
 	end)
 
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)
-		local HEPush = Base:AddCheckBox("#acf.menu.settings.entity_pushing.he_push")
-		HEPush:SetServerData("HEPush", "OnChange")
-		HEPush:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local KEPush = Base:AddCheckBox("#acf.menu.settings.entity_pushing.ke_push")
-		KEPush:SetServerData("KEPush", "OnChange")
-		KEPush:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		local Recoil = Base:AddCheckBox("#acf.menu.settings.entity_pushing.recoil_push")
-		Recoil:SetServerData("RecoilPush", "OnChange")
-		Recoil:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.entity_pushing.he_push"):       LinkToServerData("HEPush")
+		Base:AddCheckBox("#acf.menu.settings.entity_pushing.ke_push"):       LinkToServerData("KEPush")
+		Base:AddCheckBox("#acf.menu.settings.entity_pushing.recoil_push"):   LinkToServerData("RecoilPush")
 	end)
 
 	ACF.AddServerSettings(201, "#acf.menu.settings.fun_menu", function(Base)
-		local Entities = Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_fun")
-		Entities:SetServerData("AllowFunEnts", "OnChange")
-		Entities:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_fun"):LinkToServerData("AllowFunEnts")
+			Base:AddHelp("#acf.menu.settings.fun_menu.allow_fun_desc")
 
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.show_fun"):LinkToServerData("ShowFunMenu")
+			Base:AddHelp("#acf.menu.settings.fun_menu.show_fun_desc")
 
-		Base:AddHelp("#acf.menu.settings.fun_menu.allow_fun_desc")
-
-		local Menu = Base:AddCheckBox("#acf.menu.settings.fun_menu.show_fun")
-		Menu:SetServerData("ShowFunMenu", "OnChange")
-		Menu:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("#acf.menu.settings.fun_menu.show_fun_desc")
-
-		local AllowProcArmor = Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_proc_armor")
-		AllowProcArmor:SetServerData("AllowProcArmor", "OnChange")
-		AllowProcArmor:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_proc_armor"):LinkToServerData("AllowProcArmor")
 	end)
 
 	ACF.AddServerSettings(301, "#acf.menu.settings.workshop", function(Base)
-		local Content = Base:AddCheckBox("#acf.menu.settings.workshop.enable")
-		Content:SetServerData("WorkshopContent", "OnChange")
-		Content:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
+		Base:AddCheckBox("#acf.menu.settings.workshop.enable"):        LinkToServerData("WorkshopContent")
 
-			return Value
-		end)
-
-		local Extra = Base:AddCheckBox("#acf.menu.settings.workshop.enable_extra")
-		Extra:SetServerData("WorkshopExtras", "OnChange")
-		Extra:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("#acf.menu.settings.workshop.enable_desc")
+		Base:AddCheckBox("#acf.menu.settings.workshop.enable_extra"):  LinkToServerData("WorkshopExtras")
+			Base:AddHelp("#acf.menu.settings.workshop.enable_desc")
 	end)
 
 	ACF.AddServerSettings(501, "#acf.menu.settings.debris", function(Base)
-		local Debris = Base:AddCheckBox("#acf.menu.settings.debris.network")
-		Debris:SetServerData("CreateDebris", "OnChange")
-		Debris:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
+		Base:AddCheckBox("#acf.menu.settings.debris.network"):         LinkToServerData("CreateDebris")
 
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.debris.fireball"):        LinkToServerData("CreateFireballs")
+			Base:AddHelp("#acf.menu.settings.debris.fireball_desc")
 
-		local Fireballs = Base:AddCheckBox("#acf.menu.settings.debris.fireball")
-		Fireballs:SetServerData("CreateFireballs", "OnChange")
-		Fireballs:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("#acf.menu.settings.debris.fireball_desc")
-
-		local Multiplier = Base:AddSlider("#acf.menu.settings.debris.fireball_mult", 0.01, 1, 2)
-		Multiplier:SetServerData("FireballMult", "OnValueChanged")
-		Multiplier:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-
-		Base:AddHelp("#acf.menu.settings.debris.fireball_mult_desc")
+		Base:AddSlider("#acf.menu.settings.debris.fireball_mult"):     LinkToServerData("FireballMult")
+			Base:AddHelp("#acf.menu.settings.debris.fireball_mult_desc")
 	end)
 end

@@ -122,11 +122,15 @@ end
 do -- Procedural Armor
 	local DensityText = "Density: %sg/cm³ (%skg/in³)"
 	local ArmorTypes  = Classes.ArmorTypes
+	local PreviewSettings = {
+		FOV = 120,
+		Height = 160,
+	}
 
 	local function CreateMenu(Menu)
 		local Entries = ArmorTypes.GetEntries()
 
-		ACF.SetToolMode("acf_menu", "Spawner", "Component")
+		ACF.SetToolMode("acf_menu", "Spawner", "Armor")
 
 		ACF.SetClientData("PrimaryClass", "acf_armor")
 		ACF.SetClientData("SecondaryClass", "N/A")
@@ -139,10 +143,11 @@ do -- Procedural Armor
 		local SizeY     = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
 		local SizeZ     = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
 
-		local ClassBase = Menu:AddCollapsible("Material Information")
-		local ClassName = ClassBase:AddTitle()
-		local ClassDesc = ClassBase:AddLabel()
-		local ClassDens = ClassBase:AddLabel()
+		local ClassBase    = Menu:AddCollapsible("Material Information")
+		local ClassName    = ClassBase:AddTitle()
+		local ClassDesc    = ClassBase:AddLabel()
+		local ClassPreview = ClassBase:AddModelPreview("models/holograms/hq_rcube_thin.mdl", true)
+		local ClassDens    = ClassBase:AddLabel()
 
 		function ClassList:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
@@ -154,6 +159,8 @@ do -- Procedural Armor
 
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
+			ClassPreview:UpdateModel("models/holograms/hq_rcube_thin.mdl", "phoenix_storms/metalfloor_2-3")
+			ClassPreview:UpdateSettings(PreviewSettings)
 			ClassDens:SetText(DensityText:format(Density, math.Round(Density * ACF.gCmToKgIn, 2)))
 
 			ACF.SetClientData("ArmorType", Data.ID)
@@ -192,7 +199,7 @@ do -- Procedural Armor
 	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
 end
 
-hook.Add("ACF_AllowMenuOption", "Allow Fun Menu", function(_, Name)
+hook.Add("ACF_OnEnableMenuOption", "Enable Fun Menu", function(Name)
 	if Name ~= "Fun Stuff" then return end
 	if not ACF.GetServerBool("ShowFunMenu") then return false end
 end)

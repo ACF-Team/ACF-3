@@ -1,3 +1,4 @@
+local hook       = hook
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
@@ -17,8 +18,6 @@ local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
-local HookRun      = hook.Run
-
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -52,7 +51,7 @@ function Ballistics.RemoveBullet(Bullet)
 	Bullet.Removed = true
 
 	if not next(Bullets) then
-		hook.Remove("ACF_OnClock", "ACF Iterate Bullets")
+		hook.Remove("ACF_OnTick", "ACF Iterate Bullets")
 	end
 end
 
@@ -128,9 +127,9 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
-		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
 	else
-		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+		Bullet.Mask		= MASK_SOLID
 	end
 
 	Bullet.Ricochets   = 0
@@ -138,9 +137,8 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
-	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
-		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
 	end
 
 	-- TODO: Make bullets use a metatable instead
@@ -151,7 +149,7 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	if not next(Bullets) then
-		hook.Add("ACF_OnClock", "ACF Iterate Bullets", Ballistics.IterateBullets)
+		hook.Add("ACF_OnTick", "ACF Iterate Bullets", Ballistics.IterateBullets)
 	end
 
 	Bullets[Index] = Bullet
@@ -203,15 +201,25 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
-	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+	if not hook.Run("ACF_OnFilterBullet", Entity, Bullet) then return false end
 
-	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	local EntTbl = Entity:GetTable()
+
+	if EntTbl._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	if EntTbl.ACF_InvisibleToBallistics then return false end
+	if EntTbl.ACF_KillableButIndestructible then
+		local EntACF = EntTbl.ACF
+	    if EntACF and EntACF.Health <= 0 then return false end
+	end
+	if EntTbl.ACF_TestFilter then return EntTbl.ACF_TestFilter(Entity, Bullet) end
 
 	return true
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
-	if HookRun("ACF Bullet Flight", Bullet) == false then return end
+	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
+
+	if not CanFly then return end
 
 	if Bullet.SkyLvL then
 		if Clock.CurTime - Bullet.LifeTime > 30 then
@@ -279,7 +287,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		else
 			local Entity = traceRes.Entity
 
-			if Ballistics.TestFilter(Entity, Bullet) == false then
+			if not Ballistics.TestFilter(Entity, Bullet) then
 				table.insert(Bullet.Filter, Entity)
 				timer.Simple(0, function()
 					Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter; important in case something is embedded in something that shouldn't be hit
