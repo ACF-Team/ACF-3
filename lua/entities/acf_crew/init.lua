@@ -273,7 +273,7 @@ do
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
 		"Entity (The crew entity itself) [ENTITY]",
-		"Seat (The seat belonging to this crew) [ENTITY]",
+		"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 	}
 
 	local function VerifyData(Data)
@@ -435,7 +435,7 @@ do
 				SafeRemoveEntity(Ent.Pod)
 			end)
 
-			WireLib.TriggerOutput(Entity, "Seat", Pod)
+			WireLib.TriggerOutput(Entity, "Vehicles", {Pod})
 		end
 
 		return Entity

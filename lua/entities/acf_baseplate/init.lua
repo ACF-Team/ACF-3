@@ -15,7 +15,7 @@ ENT.ACF_HealthUpdatesWireOverlay  = true
 
 local Outputs = {
 	"Entity (The entity itself) [ENTITY]",
-	"Seat (The seat belonging to this baseplate) [ENTITY]",
+	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 }
 
 do -- Random timer crew stuff
@@ -132,7 +132,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 			SafeRemoveEntity(Ent.Pod)
 		end)
 
-		WireLib.TriggerOutput(self, "Seat", Pod)
+		WireLib.TriggerOutput(self, "Vehicles", {Pod})
 	end
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
