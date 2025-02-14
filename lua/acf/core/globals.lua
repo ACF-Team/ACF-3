@@ -118,7 +118,7 @@ do -- ACF global vars
 
 	-- General Settings
 	ACF.DefineSetting("AllowAdminData",     false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RestrictInfo",       true,   "Entity information has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RestrictInfo",       true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("LegalChecks",        true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("NameAndShame",       false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("VehicleLegalChecks", true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
@@ -146,6 +146,7 @@ do -- ACF global vars
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",       true,   "Fun Entities have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("ShowFunMenu",        true,   "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowProcArmor",     false,  "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
 		ACF.GlobalFilter["acf_armor"] = not Value
 		return Value
