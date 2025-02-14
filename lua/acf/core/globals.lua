@@ -141,6 +141,8 @@ do -- ACF global vars
 	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
+	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
+
 	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
@@ -162,7 +164,6 @@ do -- ACF global vars
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
-	ACF.SmokeWind            = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
@@ -170,9 +171,9 @@ do -- ACF global vars
 	-- Unit Conversion
 	ACF.MeterToInch          = 39.3701 -- Meters to inches
 	ACF.gCmToKgIn            = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
-	ACF.MmToInch		     = 0.0393701 -- Millimeters to inches
+	ACF.MmToInch             = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm             = 25.4 -- Inches to millimeters
-	ACF.InchToCmSq		     = 6.45 -- in² to cm²
+	ACF.InchToCmSq           = 6.45 -- in² to cm²
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
@@ -183,8 +184,8 @@ do -- ACF global vars
 	ACF.LengthToTime         = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
-	ACF.DragDiv              = 80 --Drag fudge factor
-	ACF.Scale                = 1 --Scale factor for ACF in the game world
+	ACF.DragDiv              = 80 -- Drag fudge factor
+	ACF.Scale                = 1 -- Scale factor for ACF in the game world
 	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
@@ -212,7 +213,7 @@ do -- ACF global vars
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
 	-- HE
-	ACF.HEPower              = 8000 --HE Filler power per KG in KJ
+	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
 	ACF.HEDensity            = 1.65e-3 -- Density of TNT in kg/cm3
 	ACF.HEFrag               = 1000 --Mean fragment number for equal weight TNT and casing
 
@@ -248,12 +249,22 @@ do -- ACF global vars
 		acf_gearbox = true,
 		acf_fueltank = true,
 		acf_engine = true,
+		acf_piledriver = true,
+		acf_rack = true,
+		acf_armor = true,
+		acf_baseplate = true,
+		acf_turret_computer = true,
+		acf_turret_gyro = true,
+		acf_turret_motor = true,
+		acf_computer = true,
+		acf_radar = true,
+		acf_receiver = true,
 		prop_physics = true,
 		prop_vehicle_prisoner_pod = true
 	}
 
 	-- Weapon Accuracy
-	ACF.SpreadScale          = 4 -- The maximum amount that damage can decrease a gun"s accuracy. Default 4x
+	ACF.SpreadScale          = 4 -- The maximum amount that damage can decrease a gun's accuracy. Default 4x
 	ACF.GunInaccuracyScale   = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
@@ -370,59 +381,3 @@ end
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	ACF.Gravity.z = -Value
 end, "ACF Bullet Gravity")
-
-do -- Smoke/Wind -----------------------------------
-	if SERVER then
-		local function msgtoconsole(_, msg)
-			print(msg)
-		end
-
-		util.AddNetworkString("acf_smokewind")
-
-		concommand.Add("acf_smokewind", function(ply, _, args, _)
-			local validply = IsValid(ply)
-
-			local printmsg = validply and function(hud, msg)
-				ply:PrintMessage(hud, msg)
-			end or msgtoconsole
-
-			if not args[1] then
-				printmsg(HUD_PRINTCONSOLE, "Set the wind intensity upon all smoke munitions." .. "\n   This affects the ability of smoke to be used for screening effect." .. "\n   Example; acf_smokewind 300")
-
-				return false
-			end
-
-			if validply and not ply:IsAdmin() then
-				printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
-
-				return false
-			else
-				local wind = tonumber(args[1])
-
-				if not wind then
-					printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: that wind value could not be interpreted as a number!")
-
-					return false
-				end
-
-				ACF.SmokeWind = wind
-				net.Start("acf_smokewind")
-				net.WriteFloat(wind)
-				net.Broadcast()
-				printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: set smoke-wind to " .. wind .. "!")
-
-				return true
-			end
-		end)
-
-		hook.Add("ACF_OnLoadPlayer", "ACF Send Smoke Wind", function(Player)
-			net.Start("acf_smokewind")
-				net.WriteFloat(ACF.SmokeWind)
-			net.Send(Player)
-		end)
-	else
-		net.Receive("acf_smokewind", function()
-			ACF.SmokeWind = net.ReadFloat()
-		end)
-	end
-end ------------------------------------------------
