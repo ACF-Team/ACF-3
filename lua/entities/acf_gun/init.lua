@@ -810,9 +810,7 @@ do -- Metamethods --------------------------------
 					function()
 						if IsValid(self) and self.BulletData then
 							if self.CurrentShot == 0 then
-								local Crate = self.CurrentCrate
-								local MagSize = IsValid(Crate) and Crate.IsBelted and Crate.Ammo or self.MagSize or 1
-								self.CurrentShot = math.min(MagSize, self.TotalAmmo)
+								self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
 							end
 
 							self.NextFire = nil
@@ -860,6 +858,13 @@ do -- Metamethods --------------------------------
 			self:SetState("Loading")
 
 			if self.MagReload then -- Mag-fed/Automatically loaded
+				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
+				print("IsBelted", Crate.IsBelted)
+				if Crate.IsBelted then
+					print("Beltsetmagsize", Crate.Ammo)
+					self.MagSize = Crate.Ammo
+				end
+
 				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
