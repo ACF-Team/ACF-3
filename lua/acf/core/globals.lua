@@ -202,6 +202,8 @@ do -- ACF global vars
 		starfall_prop = true
 	}
 
+	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
+
 	-- Ammo
 	ACF.AmmoArmor            = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
