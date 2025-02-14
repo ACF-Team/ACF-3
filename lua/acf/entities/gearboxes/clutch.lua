@@ -39,7 +39,7 @@ do -- Scalable Clutch
 	})
 end
 
-do -- Straight-through Gearboxes
+do -- Pre-Scalable Straight-through Gearboxes
 	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
 		Scale = ScaleT,
 		InvertGearRatios = true,

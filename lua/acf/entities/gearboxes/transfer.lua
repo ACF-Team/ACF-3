@@ -46,48 +46,32 @@ do -- Scalable gearboxes
 	})
 end
 
-do -- Inline Gearboxes
-	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-S", {
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+do -- Pre-Scalable Inline/Transaxial Gearboxes
+	local OldGearboxTypes = {"L", "T"}
 
-	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-M", {
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+	for _, GearboxType in ipairs(OldGearboxTypes) do
+		local OldCategory = "2Gear-" .. GearboxType
 
-	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-L", {
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-end
+		-- Regular Gearboxes
+		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-S", {
+			Scale = ScaleS,
+			InvertGearRatios = true,
+		})
 
-do -- Transaxial Gearboxes
-	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-S", {
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-M", {
+			Scale = ScaleM,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-M", {
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-L", {
+			Scale = ScaleL,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-L", {
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-end
-
-do -- ACF Extras Gearboxes (Pre-Scalable)
-	Gearboxes.AddItemAlias("Transfer", "2Gear-L", "2Gear-L-T", {
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Transfer", "2Gear-T", "2Gear-T-T", {
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
+		-- ACF Extras Gearboxes
+		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-T", {
+			Scale = ScaleT,
+			InvertGearRatios = true,
+		})
+	end
 end

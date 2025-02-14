@@ -78,7 +78,7 @@ Gearboxes.Register("CVT", {
 	end,
 })
 
-do -- Scalable gearboxes
+do -- Scalable Gearboxes
 	Gearboxes.RegisterItem("CVT-L", "CVT", {
 		Name			= "CVT, Inline",
 		Description		= "An inline gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio.",

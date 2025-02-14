@@ -65,392 +65,160 @@ do -- Scalable Gearboxes
 	})
 end
 
-do -- 4-Speed Manual Gearboxes
-	Gearboxes.AddAlias("Manual", "4-Speed")
+do -- Pre-Scalable 4/6/8-Speed Manual Gearboxes
+	local OldGearValues = {4, 6, 8}
 
-	-- Inline Gearboxes
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-L-S", {
-		MaxGear = 4,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+	for _, Gear in ipairs(OldGearValues) do
+		local OldCategory = tostring(Gear .. "-Speed")
+		local OldGear = tostring(Gear .. "Gear")
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-L-M", {
-		MaxGear = 4,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddAlias("Manual", OldCategory)
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-L-L", {
-		MaxGear = 4,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
+		-- Inline Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-L-S", {
+			MaxGear = Gear,
+			Scale = ScaleS,
+			InvertGearRatios = true,
+		})
 
-	-- Inline Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-LD-S", {
-		MaxGear = 4,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-L-M", {
+			MaxGear = Gear,
+			Scale = ScaleM,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-LD-M", {
-		MaxGear = 4,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-L-L", {
+			MaxGear = Gear,
+			Scale = ScaleL,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-L", "4Gear-LD-L", {
-		MaxGear = 4,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		-- Inline Dual Clutch Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-LD-S", {
+			MaxGear = Gear,
+			Scale = ScaleS,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	-- Transaxial Gearboxes
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-T-S", {
-		MaxGear = 4,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-LD-M", {
+			MaxGear = Gear,
+			Scale = ScaleM,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-T-M", {
-		MaxGear = 4,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-LD-L", {
+			MaxGear = Gear,
+			Scale = ScaleL,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-T-L", {
-		MaxGear = 4,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
+		-- Transaxial Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-T-S", {
+			MaxGear = Gear,
+			Scale = ScaleS,
+			InvertGearRatios = true,
+		})
 
-	-- Transaxial Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-TD-S", {
-		MaxGear = 4,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-T-M", {
+			MaxGear = Gear,
+			Scale = ScaleM,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-TD-M", {
-		MaxGear = 4,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-T-L", {
+			MaxGear = Gear,
+			Scale = ScaleL,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-T", "4Gear-TD-L", {
-		MaxGear = 4,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		-- Transaxial Dual Clutch Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-TD-S", {
+			MaxGear = Gear,
+			Scale = ScaleS,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	-- Straight-through Gearboxes
-	Gearboxes.AddItemAlias("4-Speed", "Manual-ST", "4Gear-ST-S", {
-		MaxGear = 4,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-TD-M", {
+			MaxGear = Gear,
+			Scale = ScaleM,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-ST", "4Gear-ST-M", {
-		MaxGear = 4,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-TD-L", {
+			MaxGear = Gear,
+			Scale = ScaleL,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("4-Speed", "Manual-ST", "4Gear-ST-L", {
-		MaxGear = 4,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
+		-- Straight-through Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-ST", OldGear .. "-ST-S", {
+			MaxGear = Gear,
+			Scale = ScaleS,
+			InvertGearRatios = true,
+		})
+
+		Gearboxes.AddItemAlias(OldCategory, "Manual-ST", OldGear .. "-ST-M", {
+			MaxGear = Gear,
+			Scale = ScaleM,
+			InvertGearRatios = true,
+		})
+
+		Gearboxes.AddItemAlias(OldCategory, "Manual-ST", OldGear .. "-ST-L", {
+			MaxGear = Gear,
+			Scale = ScaleL,
+			InvertGearRatios = true,
+		})
+	end
 end
 
-do -- 6-Speed Manual Gearboxes
-	Gearboxes.AddAlias("Manual", "6-Speed")
+do -- ACF Extras Manual Gearboxes (4/6-Speed)
+	local OldGearValues = {4, 6}
 
-	-- Inline Gearboxes
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-L-S", {
-		MaxGear = 6,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
+	for _, Gear in ipairs(OldGearValues) do
+		local OldCategory = tostring(Gear .. "-Speed-Inline")
+		local OldGear = tostring(Gear .. "Gear")
 
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-L-M", {
-		MaxGear = 6,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddAlias("Manual", OldCategory)
 
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-L-L", {
-		MaxGear = 6,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
+		-- Inline Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-L-T", {
+			MaxGear = Gear,
+			Scale = ScaleT,
+			InvertGearRatios = true,
+		})
 
-	-- Inline Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-LD-S", {
-		MaxGear = 6,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-L", OldGear .. "-LD-T", {
+			MaxGear = Gear,
+			Scale = ScaleT,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-LD-M", {
-		MaxGear = 6,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		-- Transaxial Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-T-T", {
+			MaxGear = Gear,
+			Scale = ScaleT,
+			InvertGearRatios = true,
+		})
 
-	Gearboxes.AddItemAlias("6-Speed", "Manual-L", "6Gear-LD-L", {
-		MaxGear = 6,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
+		Gearboxes.AddItemAlias(OldCategory, "Manual-T", OldGear .. "-TD-T", {
+			MaxGear = Gear,
+			Scale = ScaleT,
+			DualClutch = true,
+			InvertGearRatios = true,
+		})
 
-	-- Transaxial Gearboxes
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-T-S", {
-		MaxGear = 6,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-T-M", {
-		MaxGear = 6,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-T-L", {
-		MaxGear = 6,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-
-	-- Transaxial Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-TD-S", {
-		MaxGear = 6,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-TD-M", {
-		MaxGear = 6,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-T", "6Gear-TD-L", {
-		MaxGear = 6,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- Straight-through Gearboxes
-	Gearboxes.AddItemAlias("6-Speed", "Manual-ST", "6Gear-ST-S", {
-		MaxGear = 6,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-ST", "6Gear-ST-M", {
-		MaxGear = 6,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed", "Manual-ST", "6Gear-ST-L", {
-		MaxGear = 6,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-end
-
-do -- 8-Speed Manual Gearboxes
-	Gearboxes.AddAlias("Manual", "8-Speed")
-
-	-- Inline Gearboxes
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-L-S", {
-		MaxGear = 8,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-L-M", {
-		MaxGear = 8,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-L-L", {
-		MaxGear = 8,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-
-	-- Inline Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-LD-S", {
-		MaxGear = 8,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-LD-M", {
-		MaxGear = 8,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-L", "8Gear-LD-L", {
-		MaxGear = 8,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- Transaxial Gearboxes
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-T-S", {
-		MaxGear = 8,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-T-M", {
-		MaxGear = 8,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-T-L", {
-		MaxGear = 8,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-
-	-- Transaxial Dual Clutch Gearboxes
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-TD-S", {
-		MaxGear = 8,
-		Scale = ScaleS,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-TD-M", {
-		MaxGear = 8,
-		Scale = ScaleM,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-T", "8Gear-TD-L", {
-		MaxGear = 8,
-		Scale = ScaleL,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- Straight-through Gearboxes
-	Gearboxes.AddItemAlias("8-Speed", "Manual-ST", "8Gear-ST-S", {
-		MaxGear = 8,
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-ST", "8Gear-ST-M", {
-		MaxGear = 8,
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("8-Speed", "Manual-ST", "8Gear-ST-L", {
-		MaxGear = 8,
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-end
-
-do -- ACF Extras Manual Gearboxes
-	Gearboxes.AddAlias("Manual", "4-Speed-Inline")
-	Gearboxes.AddAlias("Manual", "6-Speed-Inline")
-
-	-- 4-Speed Inline Gearboxes
-	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-L", "4Gear-L-T", {
-		MaxGear = 4,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-L", "4Gear-LD-T", {
-		MaxGear = 4,
-		Scale = ScaleT,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- 4-Speed Transaxial Gearboxes
-	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-T", "4Gear-T-T", {
-		MaxGear = 4,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-T", "4Gear-TD-T", {
-		MaxGear = 4,
-		Scale = ScaleT,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- 4-Speed Straight-through Gearboxes
-	Gearboxes.AddItemAlias("4-Speed-Inline", "Manual-ST", "4Gear-ST-T", {
-		MaxGear = 4,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	-- 6-Speed Inline Gearboxes
-	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-L", "6Gear-L-T", {
-		MaxGear = 6,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-L", "6Gear-LD-T", {
-		MaxGear = 6,
-		Scale = ScaleT,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- 6-Speed Transaxial Gearboxes
-	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-T", "6Gear-T-T", {
-		MaxGear = 6,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-T", "6Gear-TD-T", {
-		MaxGear = 6,
-		Scale = ScaleT,
-		DualClutch = true,
-		InvertGearRatios = true,
-	})
-
-	-- 6-Speed Straight-through Gearboxes
-	Gearboxes.AddItemAlias("6-Speed-Inline", "Manual-ST", "6Gear-ST-T", {
-		MaxGear = 6,
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
+		-- Straight-through Gearboxes
+		Gearboxes.AddItemAlias(OldCategory, "Manual-ST", OldGear .. "-ST-T", {
+			MaxGear = Gear,
+			Scale = ScaleT,
+			InvertGearRatios = true,
+		})
+	end
 end
