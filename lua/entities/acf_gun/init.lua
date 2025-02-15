@@ -192,8 +192,8 @@ do -- Spawn and Update functions --------------------------------
 			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
 			--print(Damage, self.Thermal.Temp)
 
-			-- self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
-			-- if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
+			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
+			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
 		end
 
 	end
