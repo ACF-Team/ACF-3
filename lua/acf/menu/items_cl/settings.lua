@@ -165,6 +165,9 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.max_thickness"):          LinkToServerData("MaxThickness")
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
+
+		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):             LinkToServerData("SmokeWind")
+			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
 	end)
 
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)

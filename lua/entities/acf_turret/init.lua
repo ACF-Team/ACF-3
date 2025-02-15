@@ -224,12 +224,15 @@ do	-- Spawn and Update funcs
 				Type		= Entity.Turret
 			}
 
-			local DataString = util.TableToJSON(Data)
-
 			net.Start("ACF_RequestTurretInfo")
 				net.WriteEntity(Entity)
 				net.WriteEntity(Entity.Rotator)
-				net.WriteString(DataString)
+				net.WriteVector(Data.LocalCoM)
+				net.WriteFloat(Data.Mass)
+				net.WriteFloat(Data.MinDeg)
+				net.WriteFloat(Data.MaxDeg)
+				net.WriteFloat(Data.CoMDist)
+				net.WriteString(Data.Type)
 			net.Send(Player)
 		end
 	end)

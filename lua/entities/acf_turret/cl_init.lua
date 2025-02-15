@@ -22,7 +22,14 @@ do	-- NET SURFER
 	net.Receive("ACF_RequestTurretInfo", function()
 		local Entity	= net.ReadEntity()
 		local Rotator	= net.ReadEntity()
-		local Data		= util.JSONToTable(net.ReadString())
+		local Data		= {
+			LocalCoM	= net.ReadVector(),
+			Mass		= net.ReadFloat(),
+			MinDeg		= net.ReadFloat(),
+			MaxDeg		= net.ReadFloat(),
+			CoMDist		= net.ReadFloat(),
+			Type		= net.ReadString()
+		}
 
 		if not IsValid(Entity) then return end
 

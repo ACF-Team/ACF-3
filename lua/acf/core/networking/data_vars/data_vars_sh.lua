@@ -66,7 +66,7 @@ do -- Data persisting
 	local Realm   = SERVER and "Server" or "Client"
 	local Values  = ACF[Realm .. "Data"]
 	local Folder  = "acf/data_vars"
-	local File    = "stored.json"
+	local File    = SERVER and "stored_sv.json" or "stored_cl.json"
 	local Storing
 
 	local function StoreData()
