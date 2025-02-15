@@ -420,7 +420,7 @@ do
 
 		-- Add seat support for crews
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
-		local Owner = self:CPPIGetOwner()
+		local Owner = Entity:CPPIGetOwner()
 		if IsValid(Pod) and IsValid(Owner) then
 			Entity:SetUseType(SIMPLE_USE)
 			Entity.Pod = Pod
