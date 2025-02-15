@@ -72,7 +72,8 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	-- Add seat support for baseplates
 	local Pod = ents.Create("prop_vehicle_prisoner_pod")
-	if IsValid(Pod) then
+	local Owner = self:CPPIGetOwner()
+	if IsValid(Pod) and IsValid(Owner) then
 		self:SetUseType(SIMPLE_USE) -- Avoid running activator function constantly...
 		self.Pod = Pod
 		Pod:SetAngles(self:GetAngles())
@@ -80,8 +81,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		Pod:SetPos(self:GetPos())
 		Pod:Spawn()
 		Pod:SetParent(self)
-		Pod:CPPISetOwner(self:GetOwner())
-		Pod.Owner = self:GetOwner()
+		Pod.Owner = Owner
 		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt") 	-- I don't know what this does, but for good measure...
 		Pod:SetKeyValue("limitview", 0)											-- Let the player look around
 		Pod:SetNoDraw(true)														-- Don't render the seat

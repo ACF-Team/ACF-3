@@ -6,8 +6,8 @@ Name, Description, LimitConVar, LinkHandlers, Mass, UpdateFocus, UpdateEfficienc
 ]]--
 
 
-local ACF         = ACF
-local CrewTypes = ACF.Classes.CrewTypes
+local ACF		= ACF
+local CrewTypes	= ACF.Classes.CrewTypes
 
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
@@ -302,7 +302,7 @@ CrewTypes.Register("Pilot", {
 		-- Pilots exclude other crew
 		local Contraption = Crew:GetContraption() or {}
 		local Crews = Contraption.Crews or {}
-		for k, _ in pairs(Crews) do
+		for k in pairs(Crews) do
 			if k.CrewTypeID ~= "Pilot" then print(k) k:Remove() end
 		end
 	end

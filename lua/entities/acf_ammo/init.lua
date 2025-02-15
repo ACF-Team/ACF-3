@@ -36,9 +36,6 @@ do -- Random timer crew stuff
 		local AmmoPos2 = Ammo2:GetPos()
 		local D1 = CrewPos:Distance(AmmoPos1)
 		local D2 = CrewPos:Distance(AmmoPos2)
-		-- debugoverlay.Sphere(CrewPos, 5, 5, Color(0, 255, 0), true)
-		-- debugoverlay.Sphere(AmmoPos1, 5, 5, Color(255, 0, 0), true)
-		-- debugoverlay.Sphere(AmmoPos2, 5, 5, Color(0, 0, 255), true)
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end

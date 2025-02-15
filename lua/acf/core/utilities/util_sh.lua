@@ -762,7 +762,7 @@ do -- Crew related
 
 		local Sum = 0
 		local Count = 0
-		for v, _ in pairs(LUT) do
+		for v in pairs(LUT) do
 			if not IsValid(v) then continue end -- Skip invalids
 			Sum = Sum + Weighter(v, ...)
 			Count = Count + 1
@@ -772,100 +772,91 @@ do -- Crew related
 
 	--- Normalizes a value from [inMin,inMax] to [0,1]
 	--- Values outside the input range are clamped to the output range
-	--- @param value number The value to normalize
-	--- @param inMin number The minimum value of the input range
-	--- @param inMax number The maximum value of the input range
+	--- @param Value number The value to normalize
+	--- @param InMin number The minimum value of the input range
+	--- @param InMax number The maximum value of the input range
 	--- @return number # The normalized value
-	function ACF.Normalize(value, inMin, inMax)
-		return math.Clamp((value - inMin) / (inMax - inMin), 0, 1)
-	end
-
-	--- Assuming every item in "array" is in [0,1] (e.g. crew efficiencies)...
-	--- This property holds: sum(array) * Falloff(#array, Limit) < Limit
-	--- @param count number The number of items in the array
-	--- @param limit number The asymptotic limit to stay under
-	--- @return number # The asymptotic falloff multiplier
-	function ACF.AsymptoticFalloff(count, limit)
-		return limit / (count + limit - 1)
+	function ACF.Normalize(Value, InMin, InMax)
+		return math.Clamp((Value - InMin) / (InMax - InMin), 0, 1)
 	end
 
 	--- Maps a value from [inMin,inMax] to [outMin,outMax] using a transformation that maps [0,1] to [0,1]
 	--- Values outside the input range are clamped to the output range
-	--- @param value number The value to remap
-	--- @param inMin number The minimum value of the input range
-	--- @param inMax number The maximum value of the input range
-	--- @param outMin number The minimum value of the output range
-	--- @param outMax number The maximum value of the output range
-	--- @param transform function(value:number):number
+	--- @param Value number The value to remap
+	--- @param InMin number The minimum value of the input range
+	--- @param InMax number The maximum value of the input range
+	--- @param OutMin number The minimum value of the output range
+	--- @param OutMax number The maximum value of the output range
+	--- @param Transform function(value:number):number
 	--- @return number # The remapped value
-	function ACF.RemapAdv(value, inMin, inMax, outMin, outMax, transform)
-		return outMin + (transform(ACF.Normalize(value, inMin, inMax)) * (outMax - outMin))
+	function ACF.RemapAdv(Value, InMin, InMax, OutMin, OutMax, Transform)
+		return OutMin + (Transform(ACF.Normalize(Value, InMin, InMax)) * (OutMax - OutMin))
 	end
 
-	local function UpdateDelta(cfg)
-		local ct = CurTime()
-		cfg.DeltaTime = (ct - cfg.LastTime)
-		cfg.LastTime = ct
-		cfg.Elapsed = cfg.Elapsed + cfg.DeltaTime
+	local function UpdateDelta(Config)
+		local CT = CurTime()
+		Config.DeltaTime = (CT - Config.LastTime)
+		Config.LastTime = CT
+		Config.Elapsed = Config.Elapsed + Config.DeltaTime
 	end
 
-	local function InitFields(cfg)
-		cfg.DeltaTime = 0
-		cfg.Elapsed = 0
-		cfg.LastTime = CurTime()
+	local function InitFields(Config)
+		Config.DeltaTime = 0
+		Config.Elapsed = 0
+		Config.LastTime = CurTime()
 	end
 
 	--- Similar to a mix of timer.create and timer.simple but with random steps.
-	--- Every iteration it asks loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
-	--- Its principal use case is in dynamic reloading where the time until a loader finishes loading changes during loading and must be checked at random.
-	--- @param loop function A function that returns the time left until the next iteration
-	--- @param depends function A function that returns whether the timer should continue
-	--- @param finish function A function that is called when the timer finishes
-	--- @param cfg table A table with the fields: MinTime, MaxTime, Delay
-	function ACF.AugmentedTimer(loop, depends, finish, cfg)
-		InitFields(cfg)
+	--- Every iteration it asks Loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
+	--- Its principal use case is in dynamic reloading where the time until a loader Finishes loading changes during loading and must be checked at random.
+	--- @param Loop function A function that returns the time left until the next iteration
+	--- @param Depends function A function that returns whether the timer should continue
+	--- @param Finish function A function that is called when the timer Finishes
+	--- @param Config table A table with the fields: MinTime, MaxTime, Delay
+	function ACF.AugmentedTimer(Loop, Depends, Finish, Config)
+		InitFields(Config)
 
-		local realLoop
-		function realLoop()
-			if depends and not depends(cfg) then return end
+		local RealLoop
+		function RealLoop()
+			if Depends and not Depends(Config) then return end
 
-			UpdateDelta(cfg)
-			local left = loop(cfg)
-			local rand = cfg.MinTime + (cfg.MaxTime - cfg.MinTime) * math.random()
+			UpdateDelta(Config)
+			local left = Loop(Config)
+			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
 
-			--Random step or finishing step, whichever is faster.
+			--Random step or Finishing step, whichever is faster.
 			local timeleft = left and math.min(left, rand) or rand
-			-- If time left then recurse, otherwise call finish
+			-- If time left then recurse, otherwise call Finish
 			if timeleft > 0.001 then
-				timer.Simple(timeleft, realLoop)
+				timer.Simple(timeleft, RealLoop)
 			else
-				if finish then finish(cfg) end
+				if Finish then Finish(Config) end
 				return
 			end
 		end
 
-		if not cfg.Delay then realLoop()
-		else timer.Simple(cfg.Delay, realLoop) end
+		if not Config.Delay then RealLoop()
+		else timer.Simple(Config.Delay, RealLoop) end
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
-	--- Progress increases at the rate determined by loop, until it reaches "goal"
-	--- @param ent any The entity to attach the timer to (checks its validity)
-	--- @param loop any	A function that returns the efficiency of the process
-	--- @param finish any A function that is called when the timer finishes
-	--- @param cfg any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
-	function ACF.ProgressTimer(ent, loop, finish, cfg)
+	--- Progress increases at the rate determined by Loop, until it reaches "goal"
+	--- @param Ent any The entity to attach the timer to (checks its validity)
+	--- @param Loop any	A function that returns the efficiency of the process
+	--- @param Finish any A function that is called when the timer Finishes
+	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
+	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
 		ACF.AugmentedTimer(
-			function(cfg)
-				local eff = loop(cfg)
-				cfg.Progress = cfg.Progress + cfg.DeltaTime * eff
-				return (cfg.Goal - cfg.Progress) / eff
+			function(Config)
+				local eff = Loop(Config)
+				Config.Progress = Config.Progress + Config.DeltaTime * eff
+				return (Config.Goal - Config.Progress) / eff
 			end,
-			function(cfg)
-				return IsValid(ent) and cfg.Progress < cfg.Goal
+			function(Config)
+				return IsValid(Ent) and Config.Progress < Config.Goal
 			end,
-			finish,
-			cfg
+			Finish,
+			Config
 		)
 	end
 
@@ -891,14 +882,14 @@ do -- Crew related
 	end
 
 	--- Recursively searches a table for an entry given keys, initializing layers with {} if they don't exist
-	--- @param tbl table -- The table to search
+	--- @param Tbl table -- The table to search
 	--- @param ... any -- The keys to search for
 	--- @return any -- The value at the given keys
-	function ACF.GetTableSafe(tbl, ...)
-		if not tbl then return end
+	function ACF.GetTableSafe(Tbl, ...)
+		if not Tbl then return end
 
 		local keys = { ... }
-		local value = tbl
+		local value = Tbl
 
 		for _, key in ipairs(keys) do
 			if not value[key] then value[key] = {} end

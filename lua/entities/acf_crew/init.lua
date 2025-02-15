@@ -104,8 +104,11 @@ local function iterScan(crew, reps)
 	local Hull = crew.ScanHull
 
 	-- Filter out players and other people's props
+	-- False to skip, true to hit
 	local filter = function(x)
-		return not (x == crew or x:GetOwner() ~= crew:GetOwner() or x:IsPlayer())
+		local Owner = x:CPPIGetOwner()
+		if not IsValid(Owner) then return false end
+		return not (x == crew or Owner ~= Owner or x:IsPlayer())
 	end
 
 	-- Update reps hull traces
@@ -224,7 +227,8 @@ do -- Random timer stuff
 		end
 
 		-- Avoid G force calculation on crew during building...
-		if DeltaTime > 0 and self:GetContraption() ~= nil then
+		local Contraption = self:GetContraption()
+		if DeltaTime > 0 and Contraption ~= nil then
 			-- Calculate current G force on crew
 			self.Pos = self.Pos or self:GetPos()
 			self.Vel = self.Vel or self:GetVelocity()
@@ -255,7 +259,7 @@ do -- Random timer stuff
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = self:GetContraption() or {}
+		local Contraption = Contraption or {}
 		local CrewsByType = Contraption.CrewsByType or {}
 		local Commanders = CrewsByType["Commander"] or {}
 		local Commander = next(Commanders)
@@ -416,7 +420,8 @@ do
 
 		-- Add seat support for crews
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
-		if IsValid(Pod) then
+		local Owner = self:CPPIGetOwner()
+		if IsValid(Pod) and IsValid(Owner) then
 			Entity:SetUseType(SIMPLE_USE)
 			Entity.Pod = Pod
 			Pod:SetAngles(Angle)
@@ -424,8 +429,7 @@ do
 			Pod:SetPos(Pos)
 			Pod:Spawn()
 			Pod:SetParent(Entity)
-			Pod:CPPISetOwner(Entity:GetOwner())
-			Pod.Owner = Entity:GetOwner()
+			Pod.Owner = Owner
 			Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")	-- I don't know what this does, but for good measure...
 			Pod:SetKeyValue("limitview", 0)											-- Let the player look around
 			Pod:SetNoDraw(true)														-- Don't render the seat
@@ -570,15 +574,16 @@ do
 
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
-		if self:GetContraption() == nil then return end 				-- No Contraption to replace crew in
-		if self:GetContraption().CrewsByPriority == nil then return end 	-- No crew to replace with
+		local Contraption = self:GetContraption()
+		if Contraption == nil then return end 				-- No Contraption to replace crew in
+		if Contraption.CrewsByPriority == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
 			self.ToBeReplaced = true									-- Mark self for replacement
 
 			-- Only consider "lower" priority crews
 			local offset = self.ReplacedOnlyLower and 1 or 0
 			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
-				local OtherCrews = self:GetContraption().CrewsByPriority[i] or {}
+				local OtherCrews = Contraption.CrewsByPriority[i] or {}
 				for Other in pairs(OtherCrews) do									-- For each crew of that priority
 					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
 					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else

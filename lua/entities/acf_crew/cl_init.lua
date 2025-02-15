@@ -46,10 +46,10 @@ local green = Color(0, 255, 0, 100)
 local purple = Color(255, 0, 255, 100)
 function ENT:DrawOverlay()
     if self.Targets then
-        for k in pairs(self.Targets) do
-            local k = Entity(k)
-            if not IsValid(k) then continue end
-            render.DrawWireframeBox(k:GetPos(), k:GetAngles(), k:OBBMins(), k:OBBMaxs(), green, true)
+        for Target in pairs(self.Targets) do
+            local Target = Entity(Target)
+            if not IsValid(Target) then continue end
+            render.DrawWireframeBox(Target:GetPos(), Target:GetAngles(), Target:OBBMins(), Target:OBBMaxs(), green, true)
         end
     end
 
