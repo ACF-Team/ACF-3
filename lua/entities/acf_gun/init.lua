@@ -184,7 +184,6 @@ do -- Spawn and Update functions --------------------------------
 		local TempK = self.Thermal.TempK    						    -- Cooling constant
 		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
 		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
-		WireLib.TriggerOutput(self, "Temperature", math.Round(self.Thermal.Temp - 273.15, 3))
 
 		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
 
@@ -193,8 +192,8 @@ do -- Spawn and Update functions --------------------------------
 			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
 			--print(Damage, self.Thermal.Temp)
 
-			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
-			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
+			-- self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
+			-- if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
 		end
 
 	end
@@ -407,6 +406,7 @@ do -- Spawn and Update functions --------------------------------
 		ACF.AugmentedTimer(
 			function(Config)
 				Entity:SimulateTemp(Config.DeltaTime)
+				WireLib.TriggerOutput(Entity, "Temperature", math.Round((Entity.Thermal.Temp or 273.15) - 273.15, 3))
 			end,
 			function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.2}
 		)
@@ -887,8 +887,8 @@ do -- Metamethods --------------------------------
 							self.NextFire = nil
 
 							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-							WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
-							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
+							WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
+							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
 
 							self:SetState("Loaded")
 
