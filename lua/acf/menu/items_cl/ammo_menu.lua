@@ -42,7 +42,7 @@ end
 ---The thickness of the empty box will be defined by the ACF.AmmoArmor global variable.
 ---@return number Mass The mass of the hollow box.
 local function GetEmptyMass()
-	local Armor          = ACF.AmmoArmor * 0.039 -- Millimeters to inches
+	local Armor          = ACF.AmmoArmor * ACF.MmToInch
 	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
 	local InteriorVolume = (BoxSize.x - Armor) * (BoxSize.y - Armor) * (BoxSize.z - Armor)
 

@@ -644,22 +644,27 @@ do -- Unlinking ----------------------------------------
 	end
 
 	local function UnlinkGearbox(Gearbox, Target)
-		if Gearbox.GearboxOut[Target] or Target.GearboxIn[Gearbox] then
-			local Link = Gearbox.GearboxOut[Target]
+		local GearboxToTarget = Gearbox.GearboxOut[Target] or Target.GearboxIn[Gearbox]
+		local TargetToGearbox = Target.GearboxOut[Gearbox] or Gearbox.GearboxIn[Target]
+
+		if GearboxToTarget or TargetToGearbox then
+			local Link = Gearbox.GearboxOut[Target] or Target.GearboxOut[Gearbox]
 
 			if IsValid(Link.Rope) then
 				Link.Rope:Remove()
 			end
 
+			Gearbox.GearboxIn[Target]  = nil
 			Gearbox.GearboxOut[Target] = nil
 			Target.GearboxIn[Gearbox]  = nil
+			Target.GearboxOut[Gearbox] = nil
 
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Gearbox unlinked successfully!"
 		end
 
-		return false, "That gearboxes are not linked to each other!"
+		return false, "These gearboxes are not linked to each other!"
 	end
 
 	ACF.RegisterClassUnlink("acf_gearbox", "prop_physics", UnlinkWheel)
