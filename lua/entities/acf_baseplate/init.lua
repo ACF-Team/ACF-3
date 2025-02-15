@@ -140,6 +140,8 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+	ACF.ActiveBaseplatesTable[self] = true
+  	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
 
 function ENT:Use(Activator)
@@ -160,8 +162,6 @@ do
 			contraption.Base = nil
 		end
 	end)
-  ACF.ActiveBaseplatesTable[self] = true
-  self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
 
 function ENT:CFW_OnParentedTo(_, NewEntity)
