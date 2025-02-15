@@ -17,7 +17,7 @@ Weapons.Register("SL", {
 	Cyclic      = 600,
 	MagSize     = 1,
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
-	TransferMult = 0, -- Thermal energy transfer rate
+	TransferMult = 4, -- Thermal energy transfer rate
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
