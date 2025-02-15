@@ -49,6 +49,12 @@ local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
 
+--===============================================================================================--
+-- File locals
+local MaxDistance = ACF.LinkDistance ^ 2
+local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
+--===============================================================================================--
+
 -- Pool network strings
 util.AddNetworkString("ACF_Crew_Links")
 util.AddNetworkString("ACF_Crew_Space")
@@ -510,9 +516,6 @@ end
 -- Entity methods
 do
 	-- Think logic (mostly checks and stuff that updates frequently)
-	local MaxDistance = ACF.LinkDistance ^ 2
-	local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
-
 	function ENT:Think()
 		-- Check links on this entity
 		local Targets = self.Targets or {}
@@ -792,6 +795,7 @@ do
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
+		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
 		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same Contraption as this crewmate!" end
 		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 

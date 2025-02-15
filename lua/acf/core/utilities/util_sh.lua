@@ -957,15 +957,16 @@ do -- Reload related
 	--- @param Override table Override data, either from an entity or a table
 	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
 		-- Use the override if possible
-		local MagSize = Override and Override.MagSize
+		local MagSizeOverride = Override and Override.MagSize
 
 		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
 		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
-		if not MagSize then
-			MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
-		end
+		local DefaultMagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+
+		-- Use the largest of the default mag size or the current mag size (beltfeds), or the default if neither is specified...
+		local MagSize = math.min(MagSizeOverride or DefaultMagSize, DefaultMagSize)
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
