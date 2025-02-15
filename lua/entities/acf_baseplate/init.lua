@@ -182,74 +182,74 @@ function ENT:UpdateOverlayText()
 end
 
 function ENT:Think()
-    self:BaseplateRepulsion()
+	self:BaseplateRepulsion()
 end
 
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
-    if Ent == Self then return false end
+	if Ent == Self then return false end
 
-    if Ent:GetClass() ~= "acf_baseplate" then return false end
-    if not Ent.Size then return false end
-    if Ent:IsPlayerHolding() then return false end
+	if Ent:GetClass() ~= "acf_baseplate" then return false end
+	if not Ent.Size then return false end
+	if Ent:IsPlayerHolding() then return false end
 
-    local Physics     = Ent:GetPhysicsObject()
-    if not IsValid(Physics) then return false end
+	local Physics     = Ent:GetPhysicsObject()
+	if not IsValid(Physics) then return false end
 
-    local Pos         = Physics:GetPos()
-    local Radius      = math.sqrt((Ent.Size[1] / 2) ^ 2 + (Ent.Size[2] / 2) ^ 2)
+	local Pos         = Physics:GetPos()
+	local Radius      = math.sqrt((Ent.Size[1] / 2) ^ 2 + (Ent.Size[2] / 2) ^ 2)
 
-    if Self and not util.IsSphereIntersectingSphere(SelfPos, SelfRadius, Pos, Radius) then
-        return false
-    end
+	if Self and not util.IsSphereIntersectingSphere(SelfPos, SelfRadius, Pos, Radius) then
+		return false
+	end
 
-    local Vel         = Physics:GetVelocity()
-    local Contraption = Ent:GetContraption()
-    local Mass        = Contraption == nil and Ent:GetPhysicsObject():GetMass() or Contraption.totalMass
+	local Vel         = Physics:GetVelocity()
+	local Contraption = Ent:GetContraption()
+	local Mass        = Contraption == nil and Ent:GetPhysicsObject():GetMass() or Contraption.totalMass
 
-    return true, Physics, Pos, Vel, Contraption, Mass, Radius
+	return true, Physics, Pos, Vel, Contraption, Mass, Radius
 end
 
 local function CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
-    local Dir = SelfPos - VictimPos
-    Dir:Normalize()
+	local Dir = SelfPos - VictimPos
+	Dir:Normalize()
 
-    local Intersection = ((VictimPos + (Dir * VictimRadius)) - (SelfPos + (-Dir * SelfRadius))):Length()
-    return Intersection, Dir, SelfPos + (Dir * (SelfRadius + (Intersection / 2)))
+	local Intersection = ((VictimPos + (Dir * VictimRadius)) - (SelfPos + (-Dir * SelfRadius))):Length()
+	return Intersection, Dir, SelfPos + (Dir * (SelfRadius + (Intersection / 2)))
 end
 
 function ENT:BaseplateRepulsion()
-    if not self.Size then return end
-    if self:IsPlayerHolding() then return end
-    local SelfValid, _, SelfPos, SelfVel, SelfContraption, SelfMass, SelfRadius = GetBaseplateProperties(self)
-    if not SelfValid then return end
+	if not self.Size then return end
+	if self:IsPlayerHolding() then return end
+	local SelfValid, _, SelfPos, SelfVel, SelfContraption, SelfMass, SelfRadius = GetBaseplateProperties(self)
+	if not SelfValid then return end
 
-    for Victim in pairs(ACF.ActiveBaseplatesTable) do
-        local VictimValid, VictimPhysics, VictimPos, _, VictimContraption, VictimMass, VictimRadius = GetBaseplateProperties(Victim, self, SelfPos, SelfRadius)
-        if not VictimValid then continue end
+	for Victim in pairs(ACF.ActiveBaseplatesTable) do
+		local VictimValid, VictimPhysics, VictimPos, _, VictimContraption, VictimMass, VictimRadius = GetBaseplateProperties(Victim, self, SelfPos, SelfRadius)
+		if not VictimValid then continue end
 
-        -- This is already blocked by the CFW detour, so this is just in case
-        -- that breaks for whatever reason
-        if SelfContraption == VictimContraption then continue end
+		-- This is already blocked by the CFW detour, so this is just in case
+		-- that breaks for whatever reason
+		if SelfContraption == VictimContraption then continue end
 
-        local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
-        local MassRatio = math.Clamp(SelfMass / VictimMass, 0, .9)
-        local LinImpulse, AngImpulse = VictimPhysics:CalculateForceOffset(((SelfVel / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * MassRatio * 100, IntersectionCenter)
+		local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
+		local MassRatio = math.Clamp(SelfMass / VictimMass, 0, .9)
+		local LinImpulse, AngImpulse = VictimPhysics:CalculateForceOffset(((SelfVel / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * MassRatio * 100, IntersectionCenter)
 
-        VictimPhysics:ApplyForceCenter(LinImpulse)
-        VictimPhysics:ApplyTorqueCenter(VictimPhysics:LocalToWorldVector(AngImpulse * 2))
-        self:PlayBaseplateRepulsionSound(SelfVel)
-        Victim:PlayBaseplateRepulsionSound(SelfVel)
-    end
+		VictimPhysics:ApplyForceCenter(LinImpulse)
+		VictimPhysics:ApplyTorqueCenter(VictimPhysics:LocalToWorldVector(AngImpulse * 2))
+		self:PlayBaseplateRepulsionSound(SelfVel)
+		Victim:PlayBaseplateRepulsionSound(SelfVel)
+	end
 end
 
 function ENT:PlayBaseplateRepulsionSound(Vel)
-    local Hard = Vel:Length() > 500 and true or false
-    local Now  = CurTime()
-    local Prev = self.LastPlayRepulsionSound
-    if Prev and Now - Prev < 0.75 then return end
+	local Hard = Vel:Length() > 500 and true or false
+	local Now  = CurTime()
+	local Prev = self.LastPlayRepulsionSound
+	if Prev and Now - Prev < 0.75 then return end
 
-    self.LastPlayRepulsionSound = Now
-    self:EmitSound(Hard and "MetalVehicle.ImpactHard" or "MetalVehicle.ImpactSoft", 150, math.Rand(0.92, 1.05), 1, CHAN_AUTO, 0, 0)
+	self.LastPlayRepulsionSound = Now
+	self:EmitSound(Hard and "MetalVehicle.ImpactHard" or "MetalVehicle.ImpactSoft", 150, math.Rand(0.92, 1.05), 1, CHAN_AUTO, 0, 0)
 end
 
 Entities.Register()
