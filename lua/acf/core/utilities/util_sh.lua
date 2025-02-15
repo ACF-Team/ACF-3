@@ -966,7 +966,7 @@ do -- Reload related
 		local DefaultMagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
 		-- Use the largest of the default mag size or the current mag size (beltfeds), or the default if neither is specified...
-		local MagSize = math.min(MagSizeOverride or DefaultMagSize, DefaultMagSize)
+		local MagSize = math.max(MagSizeOverride or DefaultMagSize, DefaultMagSize)
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
