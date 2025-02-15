@@ -96,7 +96,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		-- Make the player invisible and invincible while in the seat
 		hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. self:EntIndex(), function(Ply, Veh)
 			if Veh == Pod then
-				Ply:GodEnable() -- Remove this if aliases are removed?
+				-- Ply:GodEnable() -- Remove this if aliases are removed?
 				Ply:SetNoDraw(true)
 			end
 		end)
@@ -104,7 +104,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		-- Make the player visible and vulnerable when they leave the seat
 		hook.Add("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. self:EntIndex(), function(Ply, Veh)
 			if Veh == Pod then
-				Ply:GodDisable() -- Remove this if aliases are removed?
+				-- Ply:GodDisable() -- Remove this if aliases are removed?
 				Ply:SetNoDraw(false)
 			end
 		end)
