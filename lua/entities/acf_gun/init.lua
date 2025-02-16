@@ -75,7 +75,7 @@ do -- Random timer crew stuff
 		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
-		if self.BulletData then
+		if self.BulletData and self.ClassData.BreechCheck then
 			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
 
 			-- Check assuming 2 piece for now.
@@ -867,6 +867,7 @@ do -- Metamethods --------------------------------
 
 				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
 				self:SetNW2Int("Caliber", self.BulletData.Caliber)
+				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
 
 				ACF.ProgressTimer(
 					self,

@@ -27,6 +27,7 @@ Weapons.Register("MO", {
 		Min  = 37,
 		Max  = 280,
 	},
+	BreechCheck = true,
 })
 
 Weapons.RegisterItem("60mmM", "MO", {

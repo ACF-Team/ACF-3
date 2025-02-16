@@ -30,6 +30,7 @@ Weapons.Register("SC", {
 	Sounds = {
 		[50] = "acf_base/weapons/ac_fire4.mp3",
 	},
+	BreechCheck = true,
 })
 
 Weapons.RegisterItem("37mmSC", "SC", {

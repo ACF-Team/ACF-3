@@ -103,6 +103,7 @@ Weapons.Register("C", {
 
 		Data.BodyG = Result
 	end,
+	BreechCheck = true,
 })
 
 Weapons.RegisterItem("37mmC", "C", {

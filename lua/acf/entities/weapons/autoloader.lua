@@ -36,6 +36,7 @@ Weapons.Register("AL", {
 		Min = 15,
 		Max = 8,
 	},
+	BreechCheck = true,
 })
 
 Weapons.RegisterItem("75mmAL", "AL", {
