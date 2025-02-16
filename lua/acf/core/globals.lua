@@ -134,7 +134,7 @@ do -- ACF global vars
 	ACF.ArmorMod = 1
 	ACF.DefineSetting("ArmorFactor",        1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
 
-	ACF.FuelRate = 15
+	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
 	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
@@ -269,15 +269,23 @@ do -- ACF global vars
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
-	ACF.FuelMinSize          = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelMaxSize          = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor            = 1 -- How many millimeters of armor fuel tanks have
-	ACF.FuelRefillColor      = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
-	ACF.TankVolumeMul        = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
-	ACF.LiIonED              = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
-	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
+	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
+	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
+	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
+	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
+	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Gearboxes
+	ACF.GearEfficiency     = 0.99 -- The percentage of RPM efficiency kept when increasing the gear count
+	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
+	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
+	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
+	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
+	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
 end
 
 do -- ACF Convars & Particles
@@ -306,7 +314,8 @@ if SERVER then
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
-	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
+	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
+	CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)

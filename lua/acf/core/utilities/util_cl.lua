@@ -54,6 +54,8 @@ do -- Panel helpers
 			local Count = 0
 
 			for _, Value in pairs(List) do
+				if Value.SuppressLoad then continue end
+
 				Count = Count + 1
 
 				Choices[Count] = Value
@@ -85,39 +87,27 @@ do -- Default gearbox menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.ManualGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local Variable = "Gear" .. I
 				local Default = ValuesData[Variable]
 
 				if not Default then
-					Default = math.Clamp(I * 0.1, -1, 1)
+					Default = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[Variable] = Default
 				end
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local Control = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -136,7 +126,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
+			local FinalDrive = GearBase:AddSlider("Final Drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -155,10 +145,10 @@ do -- Default gearbox menus
 			{
 				Name = "Gear 2",
 				Variable = "Gear2",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
 				Name = "Min Target RPM",
@@ -179,33 +169,21 @@ do -- Default gearbox menus
 			{
 				Name = "Final Drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.CVTGearboxMenu(Class, _, Menu, _)
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			ACF.SetClientData("Gear1", 0.01)
+			ACF.SetClientData("Gear1", 1)
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
@@ -240,16 +218,16 @@ do -- Default gearbox menus
 			{
 				Name = "Reverse Gear",
 				Variable = "Reverse",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
 				Name = "Final Drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
@@ -268,7 +246,7 @@ do -- Default gearbox menus
 			{
 				Name = "Total Ratio",
 				Variable = "TotalRatio",
-				Tooltip = "Total ratio is the ratio of all gearboxes (exluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
+				Tooltip = "Total ratio is the ratio of all gearboxes (excluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
 				Min = 0,
 				Max = 1,
 				Decimals = 2,
@@ -285,20 +263,8 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("Gear Settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
@@ -319,7 +285,7 @@ do -- Default gearbox menus
 
 				local Delta = UnitMult / Mult
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Var = "Shift" .. I
 					local Old = ACF.GetClientNumber(Var)
 
@@ -331,19 +297,19 @@ do -- Default gearbox menus
 				UnitMult = Mult
 			end
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local GearVar = "Gear" .. I
 				local DefGear = ValuesData[GearVar]
 
 				if not DefGear then
-					DefGear = math.Clamp(I * 0.1, -1, 1)
+					DefGear = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[GearVar] = DefGear
 				end
 
 				ACF.SetClientData(GearVar, DefGear)
 
-				local Gear = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local Gear = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -450,7 +416,7 @@ do -- Default gearbox menus
 				local WheelDiameter = ValuesData.WheelDiameter
 				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
 
 					ACF.SetClientData("Shift" .. I, Gear * Multiplier)
