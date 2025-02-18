@@ -14,6 +14,7 @@ local StTB = 1.25 -- Straight torque bonus multiplier
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
+local StScaleL = 2 -- Straight gearbox large scale
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
@@ -204,7 +205,7 @@ do -- Straight-through Gearboxes
 	})
 
 	Gearboxes.AddItemAlias("CVT", "CVT-ST", "CVT-ST-L", {
-		Scale = ScaleL,
+		Scale = StScaleL,
 		InvertGearRatios = true,
 	})
 end

@@ -18,6 +18,7 @@ local ShiftS = 0.25
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
+local StScaleL = 2 -- Straight gearbox large scale
 
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
@@ -273,7 +274,7 @@ do -- Pre-Scalable 3/5/7-Speed Gearboxes
 
 		Gearboxes.AddItemAlias(OldCategory, "Auto-ST", OldGear .. "-A-ST-L", {
 			MaxGear = Gear,
-			Scale = ScaleL,
+			Scale = StScaleL,
 			InvertGearRatios = true,
 		})
 	end

@@ -14,6 +14,7 @@ local ScaleT = 0.75
 local ScaleS = 1
 local ScaleM = 1.5
 local ScaleL = 2.5
+local StScaleL = 2 -- Straight gearbox large scale
 
 Gearboxes.Register("Manual", {
 	Name		= "Manual",
@@ -171,7 +172,7 @@ do -- Pre-Scalable 4/6/8-Speed Manual Gearboxes
 
 		Gearboxes.AddItemAlias(OldCategory, "Manual-ST", OldGear .. "-ST-L", {
 			MaxGear = Gear,
-			Scale = ScaleL,
+			Scale = StScaleL,
 			InvertGearRatios = true,
 		})
 	end
