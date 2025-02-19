@@ -190,7 +190,6 @@ do -- Spawn and Update functions --------------------------------
 		if self.Thermal.Temp >= 1223.15 then -- Barrel starts to melt at 950C, Liddul's failing point
 			local Malleable = (self.Thermal.Temp - 1223.15) / 550
 			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
-			--print(Damage, self.Thermal.Temp)
 
 			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
 			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
@@ -813,7 +812,6 @@ do -- Metamethods --------------------------------
 
 			local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
 			local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
-			print("Mag Reload", Time)
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")

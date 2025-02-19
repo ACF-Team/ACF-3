@@ -49,8 +49,6 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.HasBoxedAmmo = Data.IsBoxed
 		Entity.AmmoStage = Data.AmmoStage
 		Entity.IsBelted = Data.IsBelted or false
-		print("IsBelted", Entity.IsBelted)
-		print("IsBoxed", Entity.HasBoxedAmmo)
 	end
 
 	if Queued[Entity] then
