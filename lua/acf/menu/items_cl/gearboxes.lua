@@ -22,7 +22,7 @@ local function CreateMenu(Menu)
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview(nil, true)
 	local GearboxStats = Base:AddLabel()
-	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", 0.75, 3, 2)
+	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", ACF.GearboxMinSize, ACF.GearboxMaxSize, 2)
 	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 10, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
@@ -55,7 +55,7 @@ local function CreateMenu(Menu)
 		Current.Mass = Data.Mass
 		Current.MaxTorque = Data.MaxTorque
 		Current.Scale = Current.Scale or 1
-		Current.GearCount = Current.GearCount or 3
+		Current.GearCount = Data.Class.CanSetGears and Current.GearCount or Data.Class.Gears.Max or 3
 
 		SetStatsText(GearboxStats)
 

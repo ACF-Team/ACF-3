@@ -280,6 +280,8 @@ do -- ACF global vars
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 
 	-- Gearboxes
+	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
+	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox
 	ACF.GearEfficiency     = 0.99 -- The percentage of RPM efficiency kept when increasing the gear count
 	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
 	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale

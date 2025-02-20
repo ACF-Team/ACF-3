@@ -64,10 +64,10 @@ do -- Spawn and Update functions -----------------------
 		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
 
 		do -- Scale verification
-			local GearboxScale = Gearbox.Scale
+			local GearboxScale = Gearbox and Gearbox.Scale or Data.GearboxScale
 
 			if GearboxScale then
-				Data.GearboxScale = math.Clamp(GearboxScale, 0.75, 3)
+				Data.GearboxScale = Clamp(GearboxScale, ACF.GearboxMinSize, ACF.GearboxMaxSize)
 			end
 		end
 
@@ -82,6 +82,10 @@ do -- Spawn and Update functions -----------------------
 				Gears[0] = 0
 			end
 
+			if Data.GearAmount then
+				Data.GearAmount = Clamp(math.Round(Data.GearAmount), Class.Gears.Min, Class.Gears.Max)
+			end
+
 			local MaxGears = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
 
 			for I = 1, MaxGears do
@@ -93,6 +97,7 @@ do -- Spawn and Update functions -----------------------
 					Data["Gear" .. I] = nil
 				end
 
+				-- Invert pre-scalable gear ratios
 				if Gearbox.InvertGearRatios then
 					Gear = math.Round(1 / Gear, 2)
 				end
@@ -110,6 +115,7 @@ do -- Spawn and Update functions -----------------------
 				Data.Gear0 = nil
 			end
 
+			-- Invert pre-scalable gear ratios
 			if Gearbox.InvertGearRatios then
 				Final = math.Round(1 / Final, 2)
 			end
@@ -326,7 +332,7 @@ do -- Spawn and Update functions -----------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale")
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
@@ -839,7 +845,7 @@ do -- Movement -----------------------------------------
 					Inertia = InputInertia * GearRatio
 				end
 
-				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) / GearRatio) * Clutch
+				Link.ReqTq = abs(Ent:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
