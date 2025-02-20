@@ -39,7 +39,7 @@ Gearboxes.Register("Auto", {
 	CreateMenu	= ACF.AutomaticGearboxMenu,
 	CanSetGears = true,
 	Gears = {
-		Min	= 3,
+		Min	= 0,
 		Max	= 10,
 	},
 	OnSpawn = InitGearbox,

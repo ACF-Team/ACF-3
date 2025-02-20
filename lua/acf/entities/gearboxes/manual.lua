@@ -21,7 +21,7 @@ Gearboxes.Register("Manual", {
 	CreateMenu	= ACF.ManualGearboxMenu,
 	CanSetGears = true,
 	Gears = {
-		Min	= 3,
+		Min	= 0,
 		Max	= 10,
 	},
 })
