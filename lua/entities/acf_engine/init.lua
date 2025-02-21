@@ -543,8 +543,8 @@ local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerban
 
 function ENT:UpdateOverlayText()
 	local State, Name = self.Active and "Active" or "Idle", self.Name
-	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * 1.34)
-	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
+	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)
+	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)
 	local PowerbandMin = self.PeakMinRPM
 	local PowerbandMax = self.PeakMaxRPM
 	local Redline = self.LimitRPM

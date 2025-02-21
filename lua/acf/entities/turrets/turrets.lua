@@ -131,7 +131,7 @@ do	-- Turret drives
 			-- Moment from acceleration of rotating mass (kNm)
 			local RotInertia	= 0.01 * TurretData.TotalMass * (CoMDistance ^ 2)
 			local LoadInertia	= RotInertia * (1 / ((1 / GearRatio) ^ 2))
-			local Accel 	= (3.1415 * FinalTopSpeed) / (30 * PowerData.Accel)
+			local Accel 	= (math.pi * FinalTopSpeed) / (30 * PowerData.Accel)
 			local Mg 		= LoadInertia * Accel
 
 			-- 9.55 is 1 rad/s to RPM

@@ -9,7 +9,7 @@ local Down    = Vector(0, 0, -1)
 -- @param Filler The amount of filler in kilograms.
 -- @return The blast radius in inches.
 function Damage.getBlastRadius(Filler)
-	return Filler ^ 0.33 * 8 * 39.37
+	return Filler ^ 0.33 * 8 * ACF.MeterToInch
 end
 
 --- Helper function to create the default ACF explosion effect.

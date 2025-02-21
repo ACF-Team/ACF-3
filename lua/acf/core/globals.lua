@@ -170,10 +170,13 @@ do -- ACF global vars
 
 	-- Unit Conversion
 	ACF.MeterToInch          = 39.3701 -- Meters to inches
+	ACF.InchToMeter          = 0.0254 -- Inches to meters
 	ACF.gCmToKgIn            = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
 	ACF.MmToInch             = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm             = 25.4 -- Inches to millimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
+	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
+	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed

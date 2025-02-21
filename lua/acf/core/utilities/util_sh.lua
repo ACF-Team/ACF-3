@@ -194,7 +194,7 @@ do -- Mobility functions
 	--- @param MaxTorque number The maximum torque value of the gearbox
 	--- @param GearCount number The number of gears present in the gearbox
 	--- @return string # The mass of the gearbox formatted cleanly with units
-	--- @return number # The torque value of the gearbox in fl-lb
+	--- @return number # The torque value of the gearbox in ft-lb
 	--- @return number # The torque rating of the gearbox in N/m
 	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
 		local Mass = ACF.GetProperMass(BaseMass * (Scale ^ ACF.GearboxMassScale))
@@ -206,7 +206,7 @@ do -- Mobility functions
 			local TorqueLoss = MaxTorque * (ACF.GearEfficiency ^ GearCount)
 			local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
 			TorqueRating = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
-			Torque = math.Round(TorqueRating * 0.73)
+			Torque = math.Round(TorqueRating * ACF.NmToFtLb)
 		end
 
 		return Mass, Torque, TorqueRating

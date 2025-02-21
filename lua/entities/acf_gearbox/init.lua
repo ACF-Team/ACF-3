@@ -710,13 +710,13 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
+	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
 		local Final     = math.Round(self.FinalDrive, 2)
-		local Torque    = math.Round(self.MaxTorque * 0.73)
-		local Output    = math.Round(self.TorqueOutput * 0.73)
+		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
+		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
 		if not GearsText or GearsText == "" then
 			local Gears = self.Gears

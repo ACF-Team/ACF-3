@@ -25,7 +25,7 @@ end
 -- NOTE: This assume we're hitting a RHA plate at 0°
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	Speed = Speed * 0.001 -- From m/s to km/s

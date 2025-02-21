@@ -149,7 +149,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				local Class = K:GetClass()
 
 				if Class == "acf_engine" then
-					Power = Power + K.PeakPower * 1.34
+					Power = Power + K.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + K.Capacity
 				end
@@ -183,7 +183,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				local Class = K:GetClass()
 
 				if Class == "acf_engine" then
-					Power = Power + K.PeakPower * 1.34
+					Power = Power + K.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + K.Capacity
 				end

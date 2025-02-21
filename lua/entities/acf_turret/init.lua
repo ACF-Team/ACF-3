@@ -1020,7 +1020,7 @@ do -- Metamethods
 
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * 6.45
+			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 			local Armour	= self.ScaledArmor
 			local Health	= (Area / ACF.Threshold) * 5
 			local Percent	= 1

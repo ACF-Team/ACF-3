@@ -24,17 +24,17 @@ function Ammo:GetPenetration()
 end
 
 function Ammo:GetDisplayData(Data)
-	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * 39.37) * 43.4216, 350)
-	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * 39.37) * 43.4216, 350)
+	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
+	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
 	local Display  = {
 		SMFiller    = SMFiller,
 		SMLife      = math.Round(10 + SMFiller * 0.25, 2),
-		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * 0.0254, 2),
-		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * 0.0254, 2),
+		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
+		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
 		WPFiller    = WPFiller,
 		WPLife      = math.Round(5 + WPFiller * 0.1, 2),
-		WPRadiusMin = math.Round(WPFiller * 1.25 * 0.0254, 2),
-		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
+		WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
+		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
 	}
 
 	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -180,8 +180,8 @@ else
 		local EffectTable = {
 			Origin = Bullet.SimPos,
 			Normal = Bullet.SimFlight:GetNormalized(),
-			Scale = math.max(Bullet.FillerMass * 8 * 39.37, 0),
-			Magnitude = math.max(Bullet.WPMass * 8 * 39.37, 0),
+			Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
+			Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
 			Start = Vector(Color.r, Color.g, Color.b),
 			Radius = Bullet.Caliber,
 		}
