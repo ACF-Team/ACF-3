@@ -144,7 +144,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 		local Data  = GetSpawnData(Player, Entity, Class)
 
 		if not Data then
-			ACF.SendMessage(Player, "Error", "#tool.acfcopy.no_info_copied1 " .. Class .. " #tool.acfcopy.no_info_copied2")
+			ACF.SendMessage(Player, "Error", "#tool.acfcopy.no_info_copied")
 			return false
 		end
 
