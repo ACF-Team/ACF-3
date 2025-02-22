@@ -1,18 +1,12 @@
---[[*
+--[[
 	ACF Permission mode: Battle
 		This mode enables safezones and battlefield.
 		All things within safezones are protected from all registered ACF damage.
 		All things in the battlefield are vulnerable to all ACF damage.
-//]]
+]]
 
 -- the name for this mode used in commands and identification
-local modename = modename or "battle"
-
-if not ACF or not ACF.Permissions or not ACF.Permissions.RegisterMode then
-	error("ACF: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!")
-
-	return
-end
+local modename = "battle"
 
 local perms = ACF.Permissions
 local Messages = ACF.Utilities.Messages
@@ -33,7 +27,7 @@ local ShouldDisableNoclip = false
 		ent			Entity:	The entity which may be damaged.
 	Return: boolean
 		true if the entity should be damaged, false if the entity should be protected from the damage.
-//]]
+]]
 local function modepermission(_, attacker, ent)
 	local szs = perms.Safezones
 
@@ -63,7 +57,6 @@ hook.Add("PlayerNoClip", "ACF_DisableNoclipPressInBattle", DisableNoclipPressInB
 
 local function modethink()
 	for _, ply in ipairs(player.GetAll()) do
-		--print(ply:GetPos(), perms.IsInSafezone(ply:GetPos()))
 		if not perms.IsInSafezone(ply:GetPos()) then
 			ply:GodDisable()
 
