@@ -13,6 +13,9 @@ local function CreateMenu(Menu)
 	local Entries = Gearboxes.GetEntries()
 
 	Menu:AddTitle("#acf.menu.gearboxes.settings")
+	-- TODO: Remove this warning a few months after the scalable gearboxes update is added
+	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning1")
+	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning2")
 
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()

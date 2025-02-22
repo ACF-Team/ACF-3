@@ -27,8 +27,8 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 
 	if GearRatio == 0 then return 0 end
 
-	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert
-	return BaseRPM / -6
+	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
+	return BaseRPM * GearRatio / -6
 end
 
 do -- Spawn and Update functions -----------------------
@@ -167,6 +167,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.MinGear      = Class.Gears.Min
 		Entity.MaxGear      = MaxGear
 		Entity.GearCount    = Entity.MaxGear
+		Entity.ScaleMult    = Scale
 		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
 		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
 		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
@@ -195,7 +196,7 @@ do -- Spawn and Update functions -----------------------
 		Entity:ChangeGear(1)
 
 		-- ChangeGear doesn't update GearRatio if the gearbox is already in gear 1
-		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
+		Entity.GearRatio = Entity.Gears[1] / Entity.FinalDrive
 	end
 
 	local function CheckRopes(Entity, Target)
@@ -710,7 +711,7 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
+	local Text = "%s\nScale: %sx\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
@@ -728,7 +729,7 @@ do -- Overlay Text -------------------------------------
 			end
 		end
 
-		return Text:format(self.Name, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
+		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
 	end
 end ----------------------------------------------------
 
@@ -753,7 +754,7 @@ do -- Gear Shifting ------------------------------------
 
 		self.Gear           = Value
 		self.InGear         = false
-		self.GearRatio      = self.Gears[Value] * self.FinalDrive
+		self.GearRatio      = self.Gears[Value] / self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
 		local SoundPath  = self.SoundPath
@@ -806,7 +807,7 @@ do -- Movement -----------------------------------------
 				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 1, ACF.MaxGearRatio)
 			end
 
-			local GearRatio = Gears[1] * SelfTbl.FinalDrive
+			local GearRatio = Gears[1] / SelfTbl.FinalDrive
 			SelfTbl.GearRatio = GearRatio
 
 			if SelfTbl.LastRatio ~= GearRatio then
