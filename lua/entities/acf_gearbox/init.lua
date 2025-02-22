@@ -801,10 +801,10 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, 100)
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 1, ACF.MaxGearRatio)
+				Gears[1] = Clamp((InputRPM - MinRPM) * (SelfTbl.MaxRPM - MinRPM), 1, 20)
 			end
 
 			local GearRatio = Gears[1] / SelfTbl.FinalDrive
