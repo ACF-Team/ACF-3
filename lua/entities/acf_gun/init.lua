@@ -535,7 +535,7 @@ do -- Metamethods --------------------------------
 			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
 				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
 					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate.AmmoStage == 1 and Crate:CanConsume() then
-						This:Load()
+						This:Load(This.ClassData.IsBelted and ACF.InitReloadDelay)
 					end
 				end)
 			end
@@ -840,7 +840,7 @@ do -- Metamethods --------------------------------
 			)
 		end
 
-		function ENT:Chamber()
+		function ENT:Chamber(Override)
 			if self.Disabled then return end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
@@ -894,7 +894,7 @@ do -- Metamethods --------------------------------
 							if self:CanFire() then self:Shoot() end
 						end
 					end,
-					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = Override or IdealTime}
 				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
@@ -907,7 +907,7 @@ do -- Metamethods --------------------------------
 			end
 		end
 
-		function ENT:Load()
+		function ENT:Load(Override)
 			if self.Disabled then return false end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
@@ -927,6 +927,10 @@ do -- Metamethods --------------------------------
 			self.BulletData = Crate.BulletData
 			self:SetState("Loading")
 
+			if Override and IsValid(self) then
+				self:Chamber(Override)
+			end
+
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
 				if Crate.IsBelted then
@@ -937,7 +941,7 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData)
 				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 
 				self.NextFire = Clock.CurTime + Time
