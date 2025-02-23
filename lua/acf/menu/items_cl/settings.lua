@@ -142,8 +142,10 @@ do -- Serverside settings
 	ACF.AddMenuItem(101, "#acf.menu.settings", "#acf.menu.settings.server", "server", ACF.GenerateServerSettings)
 
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
+		Base:AddLabel(language.GetPhrase("acf.menu.settings.general.current_limitset_set_to"):format(ACF.GetServerData("SelectedLimitset") or "<Not set>"))
+		local ShowLimitset = Base:AddButton("#acf.menu.settings.general.show_limitset_menu")
+		ShowLimitset.DoClick = function() concommand.Run(LocalPlayer(), "acf_select_limitset", "") end
 		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
-
 		-- What? Why is this different??
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)

@@ -1,0 +1,8 @@
+local Sandbox = ACF.LimitSets.Create("Sandbox")
+    Sandbox:WithAuthor("ACF Team")
+    Sandbox:WithDescription("Most major restrictions are disabled, alongside some parameter buffs. Good for building/casual servers or high-trust environments.\n\nWe don't recommend this for PvP servers, as this mode aims to provide more freedom for builders, and therefore disables a lot of the exploit checks Combat provides and will make ACF moderation harder for staff.\n\n")
+    Sandbox:SetServerData("LegalChecks",          true)
+    Sandbox:SetServerData("NameAndShame",         false)
+    Sandbox:SetServerData("VehicleLegalChecks",   false)
+    -- Sandbox:SetServerData("LinkDistance",         650)
+    -- Sandbox:SetServerData("MobilityLinkDistance", 650)

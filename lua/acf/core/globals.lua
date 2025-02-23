@@ -106,6 +106,15 @@ do
 			return Float
 		end
 	end
+
+	function ACF.StringDataCallback()
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type = "String"
+
+		return function(_, Value)
+			return tostring(Value)
+		end
+	end
 end
 
 do -- ACF global vars
@@ -117,6 +126,8 @@ do -- ACF global vars
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
 
 	-- General Settings
+	ACF.DefineSetting("SelectedLimitset",   "none", "The current limitset has been set to %s.", ACF.StringDataCallback())
+
 	ACF.DefineSetting("AllowAdminData",     false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RestrictInfo",       true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("LegalChecks",        true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
