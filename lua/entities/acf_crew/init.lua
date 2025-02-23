@@ -253,7 +253,7 @@ do -- Random timer stuff
 			-- If specified, apply damage to crew based on G forces
 			local Damages = self.CrewType.GForceInfo.Damages
 			if Damages and GForce > Damages.Min and self.IsAlive then
-				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * 100
+				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * 100 * DeltaTime
 				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 			end
 		end
