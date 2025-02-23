@@ -168,6 +168,8 @@ do -- ACF global vars
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
 
+	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
+
 	-- Unit Conversion
 	ACF.MeterToInch          = 39.3701 -- Meters to inches
 	ACF.InchToMeter          = 0.0254 -- Inches to meters
@@ -182,9 +184,9 @@ do -- ACF global vars
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
-	ACF.BaseReload           = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime           = 0.2 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime         = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor
@@ -204,6 +206,8 @@ do -- ACF global vars
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		starfall_prop = true
 	}
+
+	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
 
 	-- Ammo
 	ACF.AmmoArmor            = 5 -- How many millimeters of armor ammo crates have
@@ -272,6 +276,9 @@ do -- ACF global vars
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
 	-- Fuel
+	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
+	ACF.FuelRate           = 10 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
@@ -282,6 +289,48 @@ do -- ACF global vars
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 
+	-- Crew 
+	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
+	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
+	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
+	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
+
+	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
+	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
+	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
+	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
+
+	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
+	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
+
+	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
+	ACF.CrewHealth 			= 4		-- How much health crew members have
+
+	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
+	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath
+	ACF.CrewOxygenGainRate 	= 2		-- Multiplier for how fast crew regain their breath
+
+	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
+	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
+
+	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
+	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
+	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
+
+	ACF.InitReloadDelay		= 10	-- Delay after spawning that belt feds are loaded
+
+	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
+
+	-- Fuel/Refills?
+	ACF.FuelMinSize          = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelMaxSize          = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelArmor            = 1 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor      = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
+	ACF.TankVolumeMul        = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.LiIonED              = 0.458 -- li-ion energy density: kw hours / liter
+	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
+	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
+	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
 	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox

@@ -776,3 +776,5 @@ do -- Special squishy functions
 		return Damage, HitRes
 	end
 end
+
+

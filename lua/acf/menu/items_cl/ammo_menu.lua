@@ -191,6 +191,11 @@ local function AddControls(Base, ToolData)
 	hook.Run("ACF_OnCreateAmmoControls", Base, ToolData, Ammo, BulletData)
 
 	AddTracer(Base, ToolData)
+
+	-- Control for the stowage stage (priority) of the ammo
+	local AmmoStage = Base:AddNumberWang("Stage", ACF.AmmoStageMin, ACF.AmmoStageMax)
+	AmmoStage:SetClientData("AmmoStage", "OnValueChanged")
+	AmmoStage:SetValue(1)
 end
 
 ---Creates the ammunition information panels on the ACF menu.

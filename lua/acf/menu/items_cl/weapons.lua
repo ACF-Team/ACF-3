@@ -2,7 +2,7 @@ local ACF       = ACF
 local Weapons   = ACF.Classes.Weapons
 local ModelData = ACF.ModelData
 local NameText  = "%smm %s"
-local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s"
+local EntText   = "Mass : %s\nFirerate : %s rpm\nFiredelay : %s s\nSpread : %s degrees%s"
 local MagText   = "\nRounds : %s rounds\nReload : %s seconds"
 local Current   = {}
 local CreateControl, IsScalable
@@ -125,12 +125,12 @@ end
 
 ---Returns the reload time of the selected weapon entry object using the current ammunition settings.
 ---@return integer ReloadTime The expected reload time of the weapon with the given ammunition.
-local function GetReloadTime()
+local function GetReloadTime(Caliber, Class, Weapon)
 	local BulletData = ACF.GetCurrentAmmoData()
 
 	if not BulletData then return 60 end
 
-	return ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime
+	return ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData)
 end
 
 ---Returns a string with the magazine capacity and reload time of a given weapon entry object.
@@ -144,7 +144,8 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	if not MagSize then return "" end
 
-	local MagReload = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+	local BulletData = ACF.GetCurrentAmmoData()
+	local MagReload = ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
 end
@@ -226,11 +227,12 @@ local function CreateMenu(Menu)
 		local Weapon   = Current.Weapon
 		local Caliber  = Current.Caliber
 		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
-		local Firerate = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon) or 60 / GetReloadTime()
+		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
+		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return EntText:format(Mass, math.Round(Firerate), Spread, Magazine)
+		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
 	end)
 
 	ClassBase.Menu    = Menu

@@ -123,12 +123,30 @@ do	-- Overlay/networking for that
 
 		render.SetColorMaterial()
 
+		-- TODO: Determine if NW2 Usage here is undesireable
+		-- Get the currently selected crate
+		local CrateID = self:GetNW2Int("CurCrate", 0)
+		local Temp = Entity(CrateID)
+
+		local Length = self:GetNW2Float("Length", 0)
+		local Caliber = self:GetNW2Float("Caliber", 0)
+		local BreechCheck = self:GetNW2Float("BreechCheck", false)
+		local Radius = Caliber / 2.54 / 2
+		if BreechCheck then
+			render.DrawWireframeBox(self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)), self:GetAngles(), Vector(-Length / 2.54 / 2, -Radius, -Radius), Vector(0, Radius, Radius), Color(255, 0, 255), true)
+		end
+
 		if next(SelfTbl.Crates) then
 			for _, T in ipairs(SelfTbl.Crates) do
 				local E = T.Ent
 				if IsValid(E) then
+					-- Double outline selected crate for visibility
+					if E == Temp then
+						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins() * 1.1, E:OBBMaxs() * 1.1, T.Col, true)
+					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
+					if E.DrawStage then E:DrawStage() end
 				end
 			end
 		end

@@ -13,6 +13,7 @@ Weapons.Register("MO", {
 	Spread      = 0.72,
 	Mass        = 459,
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 40,
 		PropLength = 3,
@@ -26,6 +27,7 @@ Weapons.Register("MO", {
 		Min  = 37,
 		Max  = 280,
 	},
+	BreechCheck = true,
 })
 
 Weapons.RegisterItem("60mmM", "MO", {

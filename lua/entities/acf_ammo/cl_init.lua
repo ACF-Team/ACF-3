@@ -46,7 +46,9 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.FitPerAxis = Data.FitPerAxis
 		Entity.Spacing = Data.Spacing
 		Entity.MagSize = Data.MagSize
-		Entity.HasBoxedAmmo = Data.MagSize > 0
+		Entity.HasBoxedAmmo = Data.IsBoxed
+		Entity.AmmoStage = Data.AmmoStage
+		Entity.IsBelted = Data.IsBelted or false
 	end
 
 	if Queued[Entity] then
@@ -111,24 +113,26 @@ do -- Ammo overlay
 	local Orange = Color(255, 127, 0, 65)
 	local Green  = Color(0, 255, 0, 65)
 	local Red    = Color(255, 0, 0, 65)
+	local Yellow = Color(255, 255, 0, 65)
 
-	local function GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, Direction)
-		local SizeX = (X - 1) * (RoundSize.x + Spacing) * RoundAngle:Forward() * Direction
-		local SizeY = (Y - 1) * (RoundSize.y + Spacing) * RoundAngle:Right() * Direction
-		local SizeZ = (Z - 1) * (RoundSize.z + Spacing) * RoundAngle:Up() * Direction
+	local function GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, Direction, IsBelted)
+		local AlteredSpacing = IsBelted and 0 or Spacing
+		local SizeX = (X - 1) * (RoundSize.x + AlteredSpacing) * RoundAngle:Forward() * Direction
+		local SizeY = (Y - 1) * (RoundSize.y + AlteredSpacing) * RoundAngle:Right() * Direction
+		local SizeZ = (Z - 1) * (RoundSize.z + AlteredSpacing) * RoundAngle:Up() * Direction
 
 		return SizeX + SizeY + SizeZ
 	end
 
 	local function DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Total)
-		local StartPos = GetPosition(Fits.x, Fits.y, Fits.z, RoundSize, Spacing, RoundAngle, 1) * 0.5
+		local StartPos = GetPosition(Fits.x, Fits.y, Fits.z, RoundSize, Spacing, RoundAngle, 1, Entity.IsBelted) * 0.5
 		local Count    = 0
 
 		for X = 1, Fits.x do
 			for Y = 1, Fits.y do
 				for Z = 1, Fits.z do
-					local LocalPos = GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, -1)
-					local C = Entity.IsRound and Blue or Entity.HasBoxedAmmo and Green or Orange
+					local LocalPos = GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, -1, Entity.IsBelted)
+					local C = Entity.IsRound and Blue or Entity.HasBoxedAmmo and Green or Entity.IsBelted and Yellow or Orange
 
 					render.DrawWireframeBox(Center + StartPos + LocalPos, RoundAngle, -RoundSize * 0.5, RoundSize * 0.5, C)
 
@@ -142,6 +146,16 @@ do -- Ammo overlay
 
 	function ENT:CanDrawOverlay() -- This is called to see if DrawOverlay can be called
 		return DrawBoxes:GetBool()
+	end
+
+	local orange = Color(255, 127, 0)
+	function ENT:DrawStage()
+		local CratePos = self:GetPos():ToScreen()
+		cam.Start2D()
+			-- TODO: REMOVE AMMO COUNT WHEN DONE DEVELOPMENT
+			draw.SimpleTextOutlined("S: " .. (self.AmmoStage or -1), "ACF_Title", CratePos.x, CratePos.y, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined("A: " .. (self.Ammo or -1), "ACF_Title", CratePos.x, CratePos.y + 15, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+		cam.End2D()
 	end
 
 	function ENT:DrawOverlay() -- Trace is passed as first argument, but not needed
@@ -160,16 +174,14 @@ do -- Ammo overlay
 		local RoundSize = self.RoundSize
 		local Spacing = self.Spacing
 		local Fits = self.FitPerAxis
+		local BorderShift = Vector(0.5, 0.5, 0.5)
 
 		if not self.BulkDisplay then
 			DrawRounds(self, Center, Spacing, Fits, RoundSize, RoundAngle, self.FinalAmmo)
 		else -- Basic bitch box that scales according to ammo, only for bulk display
 			local AmmoPerc = self.Ammo / self.Capacity
-			local SizeAdd = Vector(Spacing, Spacing, Spacing) * Fits
-			local BulkSize = ((Fits * RoundSize * Vector(1, AmmoPerc, 1)) + SizeAdd) * 0.5
-			local Offset = RoundAngle:Right() * (Fits.y * RoundSize.y) * 0.5 * (1 - AmmoPerc)
-
-			render.DrawWireframeBox(Center + Offset, RoundAngle, -BulkSize, BulkSize, Red)
+			render.DrawWireframeBox(Center, self:GetAngles(), self:OBBMins() + BorderShift, (self:OBBMaxs() - BorderShift) * Vector(1, 1, (2 * AmmoPerc) - 1), Red)
 		end
+		self:DrawStage()
 	end
 end

@@ -234,7 +234,6 @@ if SERVER then
 		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), math.Round(Data.BoomFillerMass * ACF.HEPower, 2))
 	end
 
-	local SpallingSin = math.sqrt(1 - ACF.HEATSpallingArc * ACF.HEATSpallingArc)
 	function Ammo:Detonate(Bullet, HitPos)
 		if Bullet.Detonated then return end	-- Prevents GLATGM spawned HEAT projectiles from detonating twice, or for that matter this running twice at all
 		Bullet.Detonated = true
@@ -318,7 +317,7 @@ if SERVER then
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035 -- Remove when health scales with armor
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.35 -- Remove when health scales with armor
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
@@ -338,67 +337,6 @@ if SERVER then
 
 			-- Filter the hit entity
 			if TraceRes.Entity then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity end
-
-			-- Determine how much damage the squishies will take
-			local Damageables = {}
-			local AreaSum     = 0
-			local AvgDist     = 0
-			for _, v in ipairs(Squishies) do
-				local TargetPos = v:GetPos()
-				local DotProd   = (TargetPos - PenHitPos):GetNormalized():Dot(Direction)
-				-- If within the arc of spalling
-				if DotProd > 0 then
-					-- Run a trace to determine if the target is occluded
-					local TargetTrace = {start = PenHitPos, endpos = TargetPos, filter = TraceData.filter, mask = Bullet.Mask}
-					local TargetRes   = ACF.trace(TargetTrace)
-					local SpallEnt    = TargetRes.Entity
-					-- If the trace hits something, deal damage to it (doesn't matter if it's not the squishy we wanted)
-					if TraceRes.HitNonWorld and ACF.Check(SpallEnt) then
-						Debug.Line(PenHitPos, TargetPos, 15, ColorRand(100, 255))
-
-						local DistSqr = math.max(1, (TargetRes.HitPos - PenHitPos):LengthSqr())
-						-- Calculate how much shrapnel will hit the target based on it's relative area
-						-- Divided by the distance because far away things seem smaller, mult'd by the dot product because
-						--  spalling is concentrated around the main jet, and divided by 6 because (simplifying the target
-						--  as a cube, good enough) one of the 6 faces is visible
-						local Area    = SpallEnt.ACF.Area
-						local RelArea = (DotProd ^ 3) * Area / (DistSqr * 6)
-
-						AreaSum = AreaSum + RelArea
-						AvgDist = AvgDist + math.sqrt(DistSqr)
-
-						local EntArmor = SpallEnt.GetArmor and SpallEnt:GetArmor(TraceRes) or SpallEnt.ACF and SpallEnt.ACF.Armour
-						local EffArmor = (EffectiveArmor * 0.5 / EntArmor) * 14 -- Magic multiplier to prevent nuking armored plates
-
-						Damageables[#Damageables + 1] = { SpallEnt, RelArea * EffArmor, TargetRes }
-					end
-				end
-			end
-
-			AvgDist = AvgDist / #Damageables
-
-			local Radius  = AvgDist * SpallingSin
-			-- Minimum area is the base of the spalling cone, with the distance being the average squishy distance
-			-- Divided by the average distance squared so it's the same as the relative area
-			local MinArea = Radius * Radius * math.pi / (AvgDist * AvgDist)
-
-			AreaSum = math.max(AreaSum, MinArea)
-
-			for _, v in ipairs(Damageables) do
-				local Entity, Area, TraceRes = unpack(v)
-				local SpallDmg, SpallInfo    = Damage.getBulletDamage(Bullet, TraceRes)
-				-- Damage is proportional to how much relative surface area the target occupies from the jet's POV
-				local SpallDamage = _Cavity * Area / AreaSum  -- change from _Cavity to Cavity when health scales with armor
-
-				SpallInfo:SetType(DMG_BULLET)
-				SpallDmg:SetDamage(SpallDamage)
-
-				local JetResult = Damage.dealDamage(Entity, SpallDmg, SpallInfo)
-
-				if JetResult.Kill then
-					ACF.APKill(Entity, Direction, 0, SpallInfo)
-				end
-			end
 
 			Penetrations = Penetrations + 1
 		end

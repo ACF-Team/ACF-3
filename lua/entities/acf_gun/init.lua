@@ -1,3 +1,12 @@
+--[[
+This is the main server side file for the gun entity.
+
+Crew relevant functions:
+- ENT:UpdateLoadMod(LastTime) -- Updates the load modifier for the gun
+- ENT:UpdateAccuracyMod(LastTime) -- Updates the accuracy modifier for the gun
+- ENT:FindNextCrate(Current, Check, ...) -- Finds the next crate that can be used for the gun
+]]--
+
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -15,7 +24,7 @@ local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
--- TODO: Replace with CFrame as soon as it's available
+-- Helper functions
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
@@ -28,6 +37,76 @@ local function UpdateTotalAmmo(Entity)
 	Entity.TotalAmmo = Total
 
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
+end
+
+-- TODO: Maybe move this logic to crates?
+local function CheckValid(v, Gun)
+	return IsValid(v) and v.Weapons[Gun]
+end
+
+local function CheckConsumable(v, Gun)
+	return CheckValid(v, Gun) and v:CanConsume()
+end
+
+local function CheckRestockable(v, Gun)
+	return CheckValid(v, Gun) and v:CanRestock()
+end
+
+local function CheckUnloadable(v, Gun)
+	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
+end
+
+do -- Random timer crew stuff
+	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
+	local function GetReloadEff(Crew, Gun, Ammo)
+		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
+		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
+		local AmmoPos = Ammo:GetPos()
+		local D1 = CrewPos:Distance(BreechPos)
+		local D2 = CrewPos:Distance(AmmoPos)
+
+		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
+	end
+
+	function ENT:UpdateLoadMod()
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+
+		if self.BulletData and self.ClassData.BreechCheck then
+			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+
+			-- Check assuming 2 piece for now.
+			local tr = util.TraceLine({
+				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
+				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / 2.54 / 2, 0, 0)),
+				filter = Filter,
+			})
+			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		end
+
+		return self.LoadCrewMod
+	end
+
+	--- Finds the turret ring or baseplate from a gun
+	function ENT:FindPropagator()
+		local Temp = self:GetParent()
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
+		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
+		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
+		return nil
+	end
+
+	function ENT:UpdateAccuracyMod(Config)
+		local Propagator = self:FindPropagator(Config)
+		local Val = Propagator and Propagator.AccuracyCrewMod or 0
+
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
+	end
 end
 
 do -- Spawn and Update functions --------------------------------
@@ -48,8 +127,10 @@ do -- Spawn and Update functions --------------------------------
 		"Total Ammo (Returns the amount of rounds available for this weapon.)",
 		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
 		"Reload Time (Returns the amount of time in seconds it'll take to reload the weapon.)",
+		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
 		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
 		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
+		"Temperature (The temperature of the weapon, in C)",
 		"Entity (The weapon itself.) [ENTITY]",
 	}
 
@@ -92,6 +173,28 @@ do -- Spawn and Update functions --------------------------------
 
 			hook.Run("ACF_OnVerifyData", "acf_gun", Data, Class)
 		end
+	end
+
+	--- Simulates the temperature of the gun
+	--- @param DT number The duration the temperature was experienced for
+	--- @param Ambient number The ambient temperature, or an override
+	function ENT:SimulateTemp(DT, Temp)
+		local NewTemp = Temp or ACF.AmbientTemperature
+		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
+		local TempK = self.Thermal.TempK    						    -- Cooling constant
+		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
+		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
+
+		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
+
+		if self.Thermal.Temp >= 1223.15 then -- Barrel starts to melt at 950C, Liddul's failing point
+			local Malleable = (self.Thermal.Temp - 1223.15) / 550
+			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
+
+			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
+			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
+		end
+
 	end
 
 	local function GetSound(Caliber, Class, Weapon)
@@ -142,12 +245,13 @@ do -- Spawn and Update functions --------------------------------
 		Entity.EntType      = Class.Name
 		Entity.ClassData    = Class
 		Entity.Class        = Class.ID -- Needed for custom killicons
+		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
-		Entity.BaseCyclic   = Cyclic and 60 / Cyclic
+		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
-		Entity.ReloadTime   = Entity.Cyclic or 1
+		Entity.ReloadTime   = Entity.Cyclic and 60 / Entity.Cyclic or 1
 		Entity.Spread       = Class.Spread
 		Entity.DefaultSound = GetSound(Caliber, Class)
 		Entity.SoundPath    = Entity.SoundPath or Entity.DefaultSound
@@ -157,6 +261,41 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
+
+		-- Comments from Liddul:
+		-- https://matmatch.com/materials/minfc934-astm-a322-grade-4150
+		-- Taking an average of samples of 4150 steel, since I can actually find data about it
+		-- Thermal conductivity: 40 J(W) / (m s K)
+		-- Specific heat: 475 J/(kg K)
+		-- Density: 7900kg/m3
+		-- Melting point: 1500C
+		-- ~950C for starting failure point?
+
+		local Thermal = {}
+		if not Entity.Thermal then Thermal.Temp	= ACF.AmbientTemperature end			-- Default init temperature
+
+		Thermal.TransferMult = Entity.ClassData.TransferMult or 1 -- Thermal transfer rate multiplier
+		EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
+
+		-- Simplification assumes barrel is the only heating element (breech excluded)
+		-- I really want to make guns not suck :( (These ratios piss me off marginally)
+		local DiameterRatio = Entity.ClassData.BarrelDiameterRatio or 1.15	-- Ratio of inner barrel diameter to outer barrel diameter
+		local LengthRatio = Entity.ClassData.BarrelLengthRatio or 0.45		-- Ratio of entity length to barrel length
+
+		local Length = (Entity.Size.x / 39.37 * LengthRatio) 				-- Barrel Length (m)
+		local RadIn = Entity.Caliber / 2 / 1000								-- Inner barrel radius (m)
+		local RadOut = RadIn * DiameterRatio								-- Outer barrel radius (m)
+
+		local BarrelVolume = math.pi * (RadOut ^ 2 - RadIn ^ 2) * Length	-- Barrel volume (m^3)
+		local BarrelArea = 2 * math.pi * (RadOut + RadIn) * Length			-- Barrel surface area (m^2) (excludes ends)
+		local BarrelMass = BarrelVolume * 7900								-- Barrel mass (kg)
+
+		local c = 475														-- Specific heat of 4150 steel (J/(kg K))
+		local h = 50  														-- Heat transfer coefficient for air (J/(s m^2 K))
+		local k = (h * BarrelArea) / (BarrelMass * c)						-- Cooling Constant (1/s)
+
+		Thermal.TempK = k * Thermal.TransferMult
+		Entity.Thermal = Thermal
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
@@ -178,8 +317,9 @@ do -- Spawn and Update functions --------------------------------
 		Entity:CanProperty(nil, "bodygroups")
 
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
-			WireLib.TriggerOutput(Entity, "Reload Time", Entity.Cyclic)
-			WireLib.TriggerOutput(Entity, "Rate of Fire", 60 / Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Reload Time", 60 / Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Rate of Fire", Entity.Cyclic)
+			WireLib.TriggerOutput(Entity, "Mag Reload Time", Entity.MagReload)
 		end
 
 		ACF.Activate(Entity, true)
@@ -255,11 +395,24 @@ do -- Spawn and Update functions --------------------------------
 		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
 
+
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
 
+		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(
+			function(Config)
+				Entity:SimulateTemp(Config.DeltaTime)
+				WireLib.TriggerOutput(Entity, "Temperature", math.Round((Entity.Thermal.Temp or 273.15) - 273.15, 3))
+			end,
+			function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.2}
+		)
+
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
+
+		Entity:UpdateOverlay(true)
 
 		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end
@@ -319,6 +472,18 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
+		if next(self.Crews or {}) then
+			for Crew in pairs(self.Crews) do
+				self:Unlink(Crew)
+			end
+		end
+
+		self:UpdateOverlay(true)
+
+		net.Start("ACF_UpdateEntity")
+			net.WriteEntity(self)
+		net.Broadcast()
+
 		return true, "Weapon updated successfully!"
 	end
 end ---------------------------------------------
@@ -368,9 +533,9 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
-				timer.Simple(0.5, function() -- Delay by 500ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens
-					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate:CanConsume() then
-						This:Load()
+				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
+					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate.AmmoStage == 1 and Crate:CanConsume() then
+						This:Load(This.ClassData.IsBelted and ACF.InitReloadDelay)
 					end
 				end)
 			end
@@ -380,12 +545,14 @@ do -- Metamethods --------------------------------
 
 		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] or Crate.Weapons[This] then
-				if This.CurrentCrate == Crate then
-					This.CurrentCrate = next(This.Crates, Crate)
-				end
-
 				This.Crates[Crate]  = nil
 				Crate.Weapons[This] = nil
+
+				-- Since we removed the references, this should ignore the removed crate.
+				if This.CurrentCrate == Crate then
+					This.CurrentCrate = This:FindNextCrate(nil, CheckConsumable, This)
+					if IsValid(This.CurrentCrate) then This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex()) end
+				end
 
 				This:UpdateOverlay(true)
 				Crate:UpdateOverlay(true)
@@ -443,10 +610,8 @@ do -- Metamethods --------------------------------
 		ACF.AddInputAction("acf_gun", "Rate of Fire", function(Entity, Value)
 			if not Entity.BaseCyclic then return end
 
-			local Delay = 60 / math.max(Value, 1)
-
-			Entity.Cyclic     = math.Clamp(Delay, Entity.BaseCyclic, 2)
-			Entity.ReloadTime = Entity.Cyclic
+			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic * (Entity.ClassData.CyclicCeilMult or 1))
+			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
 	end -----------------------------------------
 
@@ -521,10 +686,14 @@ do -- Metamethods --------------------------------
 			local SpreadScale = ACF.SpreadScale
 			local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
 
-			return self.Spread * ACF.GunInaccuracyScale * IaccMult
+			return self.Spread * ACF.GunInaccuracyScale * IaccMult / (self.AccuracyCrewMod or 1)
 		end
 
 		function ENT:Shoot()
+			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
+			local EnergyToHeat = BulletEnergy * EnergyConversion
+			self:SimulateTemp(1 / 66, EnergyToHeat)
+
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
@@ -565,7 +734,7 @@ do -- Metamethods --------------------------------
 				self.CurrentShot = self.CurrentShot - 1
 
 				if self.CurrentShot > 0 then -- Not empty
-					self:Chamber(self.Cyclic)
+					self:Chamber()
 				else -- Reload the magazine
 					self:Load()
 				end
@@ -609,26 +778,40 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
-		local function FindNextCrate(Gun)
-			if not next(Gun.Crates) then return end
+		--- Finds the next crate
+		--- @param Current any Optionally specified current crate to check against (optimization measure)
+		--- @param Check any Function used to check if a crate meets our criteria
+		--- @param ... unknown Varargs passed to the check function after the crew entity
+		--- @return any # The next crate that matches the check function or nil if none are found
+		function ENT:FindNextCrate(Current, Check, ...)
+			if not next(self.Crates) then return end
 
-			-- Find the next available crate to pull ammo from --
-			local Select = next(Gun.Crates, Gun.CurrentCrate) or next(Gun.Crates)
-			local Start  = Select
+			-- If the current crate is still satisfactory, why bother searching?
+			if Current and Check(Current, ...) then return Current end
 
-			repeat
-				if Select:CanConsume() then return Select end -- Return select
+			-- Search crates by their stage level
+			local Crate = ACF.FindCrateByStage(self:GetContraption(), ACF.AmmoStageMin, Check, ...)
 
-				Select = next(Gun.Crates, Select) or next(Gun.Crates)
-			until
-				Select == Start
+			-- This is not performant... but people may be unhappy if I don't do this
+			if not Crate then
+				for k in pairs(self.Crates) do
+					if Check(k, ...) then
+						Crate = k
+						break
+					end
+				end
+			end
+
+			return Crate
 		end
 
 		function ENT:Unload(Reload)
 			if self.Disabled then return end
-			if IsValid(self.CurrentCrate) then self.CurrentCrate:Consume(-1) end -- Put a shell back in the crate, if possible
+			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
+			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
-			local Time = self.MagReload or self.ReloadTime
+			local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, self)
+			local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
@@ -639,59 +822,80 @@ do -- Metamethods --------------------------------
 			WireLib.TriggerOutput(self, "Ammo Type", "Empty")
 			WireLib.TriggerOutput(self, "Shots Left", 0)
 
-			timer.Simple(Time, function()
-				if IsValid(self) then
-					if Reload then
-						self:Load()
-					else
-						self:SetState("Empty")
+			ACF.ProgressTimer(
+				self,
+				function()
+					return self:UpdateLoadMod()
+				end,
+				function()
+					if IsValid(self) then
+						if Reload then
+							self:Load()
+						else
+							self:SetState("Empty")
+						end
 					end
-				end
-			end)
+				end,
+				{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+			)
 		end
 
-		function ENT:Chamber(TimeOverride)
+		function ENT:Chamber(Override)
 			if self.Disabled then return end
 
-			local Crate = FindNextCrate(self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
 			if IsValid(Crate) and not CheckCrate(self, Crate, self:GetPos()) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
-				local BulletData = Crate.BulletData
-				local Time		 = TimeOverride or (ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime * 0.666) + (BulletData.ProjLength * ACF.LengthToTime * 0.333)) -- Mass contributes 2/3 of the reload time with length contributing 1/3
-
 				self.CurrentCrate = Crate
+				self:SetNW2Int("CurCrate", self.CurrentCrate:EntIndex())
+
+				local BulletData = Crate.BulletData
+				local IdealTime, Manual = ACF.CalcReloadTime(self.Caliber, self.ClassData, self.WeaponData, BulletData, self)
+				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+
 				self.ReloadTime   = Time
 				self.BulletData   = BulletData
 				self.NextFire 	  = Clock.CurTime + Time
 
-				if not TimeOverride then -- Mag-fed weapons don't change rate of fire
-					WireLib.TriggerOutput(self, "Reload Time", self.ReloadTime)
-					WireLib.TriggerOutput(self, "Rate of Fire", 60 / self.ReloadTime)
-				end
-
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				timer.Simple(Time, function()
-					if IsValid(self) then
-						if self.CurrentShot == 0 then
-							self.CurrentShot = math.min(self.MagSize, self.TotalAmmo)
+				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
+				self:SetNW2Int("Caliber", self.BulletData.Caliber)
+				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+
+				ACF.ProgressTimer(
+					self,
+					function()
+						local eff = Manual and self:UpdateLoadMod() or 1
+						if Manual then -- Automatics don't change their rate of fire
+							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
+							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
 						end
+						return eff
+					end,
+					function()
+						if IsValid(self) and self.BulletData then
+							if self.CurrentShot == 0 then
+								self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
+							end
 
-						self.NextFire = nil
+							self.NextFire = nil
 
-						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-						WireLib.TriggerOutput(self, "Projectile Mass", math.Round(self.BulletData.ProjMass * 1000, 2))
-						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2))
+							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+							WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
+							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
 
-						self:SetState("Loaded")
+							self:SetState("Loaded")
 
-						if self:CanFire() then self:Shoot() end
-					end
-				end)
+							if self:CanFire() then self:Shoot() end
+						end
+					end,
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = Override or IdealTime}
+				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
 
@@ -703,10 +907,10 @@ do -- Metamethods --------------------------------
 			end
 		end
 
-		function ENT:Load()
+		function ENT:Load(Override)
 			if self.Disabled then return false end
 
-			local Crate = FindNextCrate(self)
+			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, self:GetPos()) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
@@ -720,20 +924,39 @@ do -- Metamethods --------------------------------
 				return false
 			end
 
+			self.BulletData = Crate.BulletData
 			self:SetState("Loading")
 
-			if self.MagReload then -- Mag-fed/Automatically loaded
-				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
+			if Override and IsValid(self) then
+				self:Chamber(Override)
+			end
 
-				self.NextFire = Clock.CurTime + self.MagReload
+			if self.MagReload then -- Mag-fed/Automatically loaded
+				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
+				if Crate.IsBelted then
+					self.MagSize = Crate.Ammo
+				end
+
+				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
-				timer.Simple(self.MagReload, function() -- Reload timer
-					if IsValid(self) then
-						self:Chamber(self.Cyclic) -- One last timer to chamber the round
-					end
-				end)
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData)
+				local Time = Manual and IdealTime / self.LoadCrewMod or IdealTime
+
+				self.NextFire = Clock.CurTime + Time
+
+				ACF.ProgressTimer(
+					self,
+					function()
+						local eff = self:UpdateLoadMod()
+						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+						return eff
+					end,
+					function()
+						if IsValid(self) then self:Chamber() end end,
+					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+				)
 			else -- Single-shot/Manually loaded
 				self:Chamber()
 			end
@@ -880,7 +1103,15 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			self:NextThink(Clock.CurTime + 1)
+			-- for each crate in the first stage, if it's restockable, restock it
+			self.FirstStage = ACF.FindFirstStage(self:GetContraption())
+			for v, _ in pairs(self.FirstStage) do
+				if CheckRestockable(v, self) then
+					v:Restock()
+				end
+			end
+
+			self:NextThink(Clock.CurTime + 0.5 + math.random())
 
 			return true
 		end
