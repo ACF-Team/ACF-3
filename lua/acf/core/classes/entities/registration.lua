@@ -211,8 +211,9 @@ function Entities.AddStrictArguments(Class, UserVariables, DataVariables)
 	local DataVars  = table.GetKeys(DataVariables)
 	local ArgumentNames  = {}
 	local Arguments = {}
-	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
-	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+
+	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVariables[v] end
+	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = DataVariables[v] end
 
 	local List      = AddArguments(Entity, ArgumentNames)
 	AddArgumentRestrictions(Entity, Arguments)
