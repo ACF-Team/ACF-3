@@ -68,7 +68,7 @@ local function TraceThroughObject(Trace)
 
     local Opposite = FindOtherSide(Ent, Origin, Dire)
     local Exit     = ACF.trace({start = Enter, endpos = Opposite, filter = {Ent}}).HitPos
-    local Length   = (Exit - Enter):Length() * 25.4 -- Inches to mm
+    local Length   = (Exit - Enter):Length() * ACF.InchToMm
 
     return Length, Exit
 end

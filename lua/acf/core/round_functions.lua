@@ -91,7 +91,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	Data.ProjLength  = ProjLength
 	Data.PropLength  = PropLength
-	Data.PropMass    = Data.PropArea * (Data.PropLength * ACF.PDensity * 0.001) --Volume of the case as a cylinder * Powder density converted from g to kg
+	Data.PropMass    = Data.PropArea * (Data.PropLength * ACF.PDensity * 0.001) -- Volume of the case as a cylinder * Powder density converted from g to kg
 	Data.RoundVolume = ProjVolume + PropVolume
 
 	GUIData.ProjVolume = ProjVolume
@@ -106,9 +106,9 @@ function ACF.Penetration(Speed, Mass, Caliber)
 
 	Mass    = Mass * 2.20462 -- From kg to lb
 	Speed   = Speed * 3.28084 -- From m/s to ft/s
-	Caliber = Caliber * 0.0393701 -- From mm to in
+	Caliber = Caliber * ACF.MmToInch
 
-	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * 25.4 -- 25.4 because converting from in to mm
+	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * ACF.InchToMm
 end
 
 function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
@@ -118,7 +118,7 @@ function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
 end
 
 function ACF.Kinetic(Speed, Mass)
-	Speed = Speed * 0.0254 -- From in/s to m/s
+	Speed = Speed * ACF.InchToMeter -- From in/s to m/s
 
 	return {
 		Kinetic = Mass * 0.5 * Speed ^ 2 * 0.001, --Energy in KiloJoules
@@ -204,14 +204,14 @@ end
 -- Speed in m/s, Range in m
 -- Result in in/s
 function ACF.GetRangedSpeed(Speed, DragCoef, Range)
-	local V0    = Speed * 39.37 * ACF.Scale --initial velocity
+	local V0    = Speed * ACF.MeterToInch * ACF.Scale --initial velocity
 	local D0    = DragCoef * V0 ^ 2 / ACF.DragDiv --initial drag
 	local K1    = (D0 / (V0 ^ 1.5)) ^ -1 --estimated drag coefficient
 	local Limit = 200 * K1 * V0 ^ 0.5 / 3937 -- Maximum possible range
 
 	if Range >= Limit then return 0 end
 
-	return (V0 ^ 0.5 - ((Range * 39.37) / (2 * K1))) ^ 2
+	return (V0 ^ 0.5 - ((Range * ACF.MeterToInch) / (2 * K1))) ^ 2
 end
 
 function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
@@ -325,7 +325,7 @@ do -- Ammo crate capacity calculation
 		end
 
 		do -- Defining the actual boxsize
-			local Armor = math.max(0, ToolData.AmmoArmor or ACF.AmmoArmor) * 0.039 * 2
+			local Armor = math.max(0, ToolData.AmmoArmor or ACF.AmmoArmor) * ACF.MmToInch * 2
 			local X     = math.max(Size.x - Armor, 0)
 			local Y     = math.max(Size.y - Armor, 0)
 			local Z     = math.max(Size.z - Armor, 0)

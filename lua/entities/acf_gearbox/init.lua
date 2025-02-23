@@ -1,5 +1,3 @@
-DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
-
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -9,7 +7,7 @@ include("shared.lua")
 
 local ACF         = ACF
 local Contraption = ACF.Contraption
-local Mobility	  = ACF.Mobility
+local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
@@ -29,8 +27,8 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 
 	if GearRatio == 0 then return 0 end
 
-	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gearratio
-	return BaseRPM / GearRatio / -6
+	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
+	return BaseRPM * GearRatio / -6
 end
 
 do -- Spawn and Update functions -----------------------
@@ -52,15 +50,25 @@ do -- Spawn and Update functions -----------------------
 
 	local function VerifyData(Data)
 		if not Data.Gearbox then
-			Data.Gearbox = Data.Id or "2Gear-T-S"
+			Data.Gearbox = Data.Id or "2Gear-T"
 		end
 
 		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
 		if not Class then
-			Data.Gearbox = "2Gear-T-S"
+			Data.Gearbox = "2Gear-T"
 
-			Class = Classes.GetGroup(Gearboxes, "2Gear-T-S")
+			Class = Classes.GetGroup(Gearboxes, "2Gear-T")
+		end
+
+		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
+
+		do -- Scale verification
+			local GearboxScale = Gearbox and Gearbox.Scale or Data.GearboxScale
+
+			if GearboxScale then
+				Data.GearboxScale = Clamp(GearboxScale, ACF.GearboxMinSize, ACF.GearboxMaxSize)
+			end
 		end
 
 		do -- Gears table verification
@@ -74,7 +82,13 @@ do -- Spawn and Update functions -----------------------
 				Gears[0] = 0
 			end
 
-			for I = 1, Class.Gears.Max do
+			if Data.GearAmount then
+				Data.GearAmount = Clamp(math.Round(Data.GearAmount), Class.Gears.Min, Class.Gears.Max)
+			end
+
+			local MaxGears = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
+
+			for I = 1, MaxGears do
 				local Gear = ACF.CheckNumber(Gears[I])
 
 				if not Gear then
@@ -83,7 +97,12 @@ do -- Spawn and Update functions -----------------------
 					Data["Gear" .. I] = nil
 				end
 
-				Gears[I] = Clamp(Gear, -1, 1)
+				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
+				if Gearbox.InvertGearRatios and abs(Gear) < 1 then
+					Gear = math.Round(1 / Gear, 2)
+				end
+
+				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
 		end
 
@@ -96,7 +115,12 @@ do -- Spawn and Update functions -----------------------
 				Data.Gear0 = nil
 			end
 
-			Data.FinalDrive = Clamp(Final, -1, 1)
+			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
+			if Gearbox.InvertGearRatios and abs(Final) < 1 then
+				Final = math.Round(1 / Final, 2)
+			end
+
+			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
 
 		do -- External verifications
@@ -108,15 +132,25 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
+	local function GetMass(Model, PhysObj, Class, Gearbox, Scale)
+		if Gearbox then return Gearbox.Mass * (Scale ^ ACF.GearboxMassScale) end
+
+		local Volume = PhysObj:GetVolume()
+		local Factor = Volume / ModelData.GetModelVolume(Model)
+
+		return math.Round(Class.Mass * Factor)
+	end
+
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
-		local Mass = Gearbox.Mass
+		local CanDualClutch = Gearbox.CanDualClutch
+		local Scale = Data.GearboxScale or 1
+		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
+		local _, _, TorqueRating = ACF.GetGearboxStats(0, Scale, Gearbox.MaxTorque, MaxGear)
 
 		Entity.ACF = Entity.ACF or {}
 
-		Contraption.SetModel(Entity, Gearbox.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		Entity:SetScaledModel(Gearbox.Model)
+		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping
 		for _, V in ipairs(Entity.DataStore) do
@@ -129,15 +163,20 @@ do -- Spawn and Update functions -----------------------
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Class.Sound
 		Entity.SwitchTime   = Gearbox.Switch
-		Entity.MaxTorque    = Gearbox.MaxTorque
+		Entity.MaxTorque    = TorqueRating
 		Entity.MinGear      = Class.Gears.Min
-		Entity.MaxGear      = Class.Gears.Max
+		Entity.MaxGear      = MaxGear
 		Entity.GearCount    = Entity.MaxGear
-		Entity.DualClutch   = Gearbox.DualClutch
+		Entity.ScaleMult    = Scale
+		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
 		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
 		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
 		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
-		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model)
+		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model, Scale)
+
+		if CanDualClutch and Entity.DualClutch then
+			Entity.Name = Entity.Name .. ", Dual Clutch"
+		end
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Gearbox)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gearbox)
@@ -146,12 +185,18 @@ do -- Spawn and Update functions -----------------------
 
 		ACF.Activate(Entity, true)
 
-		Contraption.SetMass(Entity, Mass)
+		local PhysObj = Entity.ACF.PhysObj
+
+		if IsValid(PhysObj) then
+			local Mass = GetMass(Model, PhysObj, Class, Gearbox, Scale)
+
+			Contraption.SetMass(Entity, Mass)
+		end
 
 		Entity:ChangeGear(1)
 
 		-- ChangeGear doesn't update GearRatio if the gearbox is already in gear 1
-		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
+		Entity.GearRatio = Entity.Gears[1] / Entity.FinalDrive
 	end
 
 	local function CheckRopes(Entity, Target)
@@ -288,7 +333,7 @@ do -- Spawn and Update functions -----------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM")
+	Entities.Register("acf_gearbox", MakeACF_Gearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale")
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
@@ -554,21 +599,14 @@ do -- Linking ------------------------------------------
 
 		if DrvAngle < 0.7 then return end
 
-		local Rope
-
-		if Entity.Owner:GetInfoNum("ACF_MobilityRopeLinks", 1) ~= 0 then
-			Rope = constraint.CreateKeyframeRope(OutPosWorld, 1, "cable/cable2", nil, Entity, OutPos, 0, Target, InPos, 0)
-		end
-
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
-
 		local Link	= MobilityObj.Link(Entity, Target)
+
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
 		Link:SetAxis(Axis)
 		Link.Side = Side
-		Link.Rope = Rope
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
 
 		return Link
@@ -673,13 +711,13 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
+	local Text = "%s\nScale: %sx\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
 		local Final     = math.Round(self.FinalDrive, 2)
-		local Torque    = math.Round(self.MaxTorque * 0.73)
-		local Output    = math.Round(self.TorqueOutput * 0.73)
+		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
+		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
 		if not GearsText or GearsText == "" then
 			local Gears = self.Gears
@@ -691,7 +729,7 @@ do -- Overlay Text -------------------------------------
 			end
 		end
 
-		return Text:format(self.Name, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
+		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
 	end
 end ----------------------------------------------------
 
@@ -716,7 +754,7 @@ do -- Gear Shifting ------------------------------------
 
 		self.Gear           = Value
 		self.InGear         = false
-		self.GearRatio      = self.Gears[Value] * self.FinalDrive
+		self.GearRatio      = self.Gears[Value] / self.FinalDrive
 		self.ChangeFinished = Clock.CurTime + self.SwitchTime
 
 		local SoundPath  = self.SoundPath
@@ -742,9 +780,8 @@ do -- Movement -----------------------------------------
 		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
 
 		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-		local TorqueMult = 2 -- NOTE: Arbitrary torque multiplier; we ought to have a better means of implementing this
 
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * TorqueMult) * DeltaTime, -500000, 500000))
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * ACF.TorqueMult) * DeltaTime, -500000, 500000))
 	end
 
 	function ENT:Calc(InputRPM, InputInertia)
@@ -764,13 +801,13 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, 100)
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Gears[1] = Clamp((InputRPM - MinRPM) * (SelfTbl.MaxRPM - MinRPM), 1, 20)
 			end
 
-			local GearRatio = Gears[1] * SelfTbl.FinalDrive
+			local GearRatio = Gears[1] / SelfTbl.FinalDrive
 			SelfTbl.GearRatio = GearRatio
 
 			if SelfTbl.LastRatio ~= GearRatio then
@@ -806,10 +843,10 @@ do -- Movement -----------------------------------------
 				local Inertia = 0
 
 				if GearRatio ~= 0 then
-					Inertia = InputInertia / GearRatio
+					Inertia = InputInertia * GearRatio
 				end
 
-				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) * GearRatio) * Clutch
+				Link.ReqTq = abs(Ent:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
@@ -863,15 +900,15 @@ do -- Movement -----------------------------------------
 			return
 		end
 
-		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) --internal torque loss from damaged
-		local Slop = self.Automatic and 0.9 or 1 --internal torque loss from inefficiency
+		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local Slop = self.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
 		local ReactTq = 0
-		-- Calculate the ratio of total requested torque versus what's avaliable, and then multiply it but the current gearratio
+		-- Calculate the ratio of total requested torque versus what's available, and then multiply it by the current gear ratio
 		local AvailTq = 0
 		local GearRatio = self.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) / GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do
@@ -980,7 +1017,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		--Wire dupe info
-		BaseClass.PreEntityCopy(self)
+		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -1013,7 +1050,7 @@ do -- Duplicator Support -------------------------------
 			EntMods.ACFGearboxes = nil
 		end
 
-		BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 end ----------------------------------------------------
 

@@ -124,7 +124,7 @@ do -- Spawning and Updating --------------------
 
 				local Fraction   = 1 - Trace.Fraction
 				local MassCenter = Entity:LocalToWorld(Entity:GetPhysicsObject():GetMassCenter())
-				local Energy     = self.ProjMass * self.MuzzleVel * 39.37 * Fraction
+				local Energy     = self.ProjMass * self.MuzzleVel * ACF.MeterToInch * Fraction
 
 				ACF.KEShove(Entity, MassCenter, -Entity:GetForward(), Energy)
 			end
@@ -340,7 +340,7 @@ do -- Firing ------------------------------------
 
 			Bullet.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			Bullet.Pos    = self:LocalToWorld(self.Muzzle)
-			Bullet.Flight = self:GetForward() * Bullet.MuzzleVel * 39.37
+			Bullet.Flight = self:GetForward() * Bullet.MuzzleVel * ACF.MeterToInch
 
 			self.RoundData:Create(self, Bullet)
 

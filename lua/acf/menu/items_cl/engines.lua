@@ -29,7 +29,7 @@ local function UpdateEngineStats(Label, Data)
 	local MaxPower   = RPM.PeakMax
 	local Mass       = ACF.GetProperMass(Data.Mass)
 	local Torque     = math.Round(Data.Torque)
-	local TorqueFeet = math.Round(Data.Torque * 0.73)
+	local TorqueFeet = math.Round(Data.Torque * ACF.NmToFtLb)
 	local Type       = EngineTypes.Get(Data.Type)
 	local Efficiency = Type.Efficiency
 	local FuelList   = ""
@@ -54,7 +54,7 @@ local function UpdateEngineStats(Label, Data)
 		Data.Fuel[K] = Fuel -- TODO: Replace once engines use the proper class functions
 	end
 
-	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.Round(PeakkW), math.Round(PeakkW * 1.34), PeakkWRPM)
+	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.Round(PeakkW), math.Round(PeakkW * ACF.KwToHp), PeakkWRPM)
 
 	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, FuelList, Power))
 end
@@ -175,11 +175,11 @@ local function CreateMenu(Menu)
 		UpdateEngineStats(EngineStats, Data)
 
 		PowerGraph:SetXRange(0, Data.RPM.Limit)
-		PowerGraph:SetYRange(0, math.max(math.ceil(Data.PeakPower * 1.34), Data.Torque) * 1.1)
+		PowerGraph:SetYRange(0, math.max(math.ceil(Data.PeakPower * ACF.KwToHp), Data.Torque) * 1.1)
 		PowerGraph:SetFidelity(10)
 
 		PowerGraph:Clear()
-		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * 1.34), Color(255, 65, 65))
+		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * ACF.KwToHp), Color(255, 65, 65))
 		PowerGraph:PlotPoint("Peak Nm", Data.PeakTqRPM, math.Round(Data.Torque), Color(65, 65, 255))
 
 		PowerGraph:PlotLimitFunction("Tq", Data.RPM.Idle, Data.RPM.Limit, Color(65, 65, 255), function(X)
@@ -187,7 +187,7 @@ local function CreateMenu(Menu)
 		end)
 
 		PowerGraph:PlotLimitFunction("HP", Data.RPM.Idle, Data.RPM.Limit, Color(255, 65, 65), function(X)
-			return (ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque * X) * 1.34 / 9548.8
+			return (ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque * X) * ACF.KwToHp / 9548.8
 		end)
 
 		PowerGraph:PlotLimitLine("Idle RPM", false, Data.RPM.Idle, Color(127, 0, 0))

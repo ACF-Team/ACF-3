@@ -65,20 +65,12 @@ do
 			return false, "Cannot link due to excessive driveshaft angle!"
 		end
 
-		local Owner = Engine:CPPIGetOwner()
-		local Rope
-
-		if IsValid(Owner) and tobool(Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
-			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
-		end
-
 		local Link = MobilityObj.Link(Engine, Target)
 
 		Link:SetOrigin(Engine.Out)
 		Link:SetTargetPos(Target.In)
 		Link:SetAxis(Direction)
 
-		Link.Rope    = Rope
 		Link.RopeLen = (OutPos - InPos):Length()
 
 		Engine.Gearboxes[Target] = Link
@@ -569,8 +561,8 @@ local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerban
 
 function ENT:UpdateOverlayText()
 	local State, Name = self.Active and "Active" or "Idle", self.Name
-	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * 1.34)
-	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
+	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)
+	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)
 	local PowerbandMin = self.PeakMinRPM
 	local PowerbandMax = self.PeakMaxRPM
 	local Redline = self.LimitRPM

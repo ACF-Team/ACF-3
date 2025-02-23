@@ -49,6 +49,7 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
+	self.BaseplateClass = ACF.Classes.BaseplateTypes.Get(ClientData.BaseplateType)
 	self:SetSize(ClientData.Size)
 end
 
@@ -175,10 +176,10 @@ function ENT:CFW_OnParentedTo(_, NewEntity)
 	return false
 end
 
-local Text = "Baseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
+local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
-	return Text:format(self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
+	return Text:format(self.BaseplateClass.Name, self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
 end
 
 function ENT:Think()

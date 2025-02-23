@@ -87,7 +87,7 @@ function Ballistics.PenetrateMapEntity(Bullet, Trace)
 
     local PassThrough = util.TraceLine({
         start  = Enter,
-        endpos = Enter + Fwd * RHAe / 25.4,
+        endpos = Enter + Fwd * RHAe / ACF.InchToMm,
         mask   = MASK_SOLID_BRUSHONLY
     })
 
@@ -117,7 +117,7 @@ function Ballistics.PenetrateMapEntity(Bullet, Trace)
         if Back.StartSolid then return Ballistics.DoRicochet(Bullet, Trace) end
     until Back.Entity == Trace.Entity
 
-    local Thickness = (Back.HitPos - Enter):Length() * Density * 25.4 -- Obstacle thickness in RHA
+    local Thickness = (Back.HitPos - Enter):Length() * Density * ACF.InchToMm -- Obstacle thickness in RHA
 
     Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)
     Bullet.NextPos = Back.HitPos + Fwd * 0.25
@@ -135,10 +135,10 @@ function Ballistics.PenetrateGround(Bullet, Trace)
     local Enter   = Trace.HitPos -- Impact point
     local Fwd     = Bullet.Flight:GetNormalized()
 
-    local Penetrated, Exit = Ballistics.DigTrace(Enter + Fwd, Enter + Fwd * RHAe / 25.4)
+    local Penetrated, Exit = Ballistics.DigTrace(Enter + Fwd, Enter + Fwd * RHAe / ACF.InchToMm)
 
     if Penetrated then
-        local Thickness = (Exit - Enter):Length() * Density * 25.4 -- RHAe of the material passed through
+        local Thickness = (Exit - Enter):Length() * Density * ACF.InchToMm -- RHAe of the material passed through
         local DeltaTime = engine.TickInterval()
 
         Bullet.Flight  = Bullet.Flight * (1 - Thickness / MaxPen)

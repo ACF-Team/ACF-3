@@ -111,6 +111,21 @@ Entities.AddUserArgumentType("String", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	local ClassDef = ACF.Classes[Specs.ClassName]
+	if not ClassDef then error("Bad classname '" .. Specs.ClassName .. "'.") end
+
+	if not ClassDef.Get(Value) then
+		error("Classdef resolve failed. Likely data corruption/outdated contraption + default value not set by entity implementor. (value was " .. Value .. ")")
+	end
+
+	return Value
+end)
+
 Entities.AddDataArgumentType("LinkedEntity",
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
@@ -194,8 +209,9 @@ function Entities.AddStrictArguments(Class, UserVariables, DataVariables)
 	local DataVars  = table.GetKeys(DataVariables)
 	local ArgumentNames  = {}
 	local Arguments = {}
-	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
-	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVars[v] end
+
+	for _, v in ipairs(UserVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = UserVariables[v] end
+	for _, v in ipairs(DataVars) do ArgumentNames[#ArgumentNames + 1] = v; Arguments[v] = DataVariables[v] end
 
 	local List      = AddArguments(Entity, ArgumentNames)
 	AddArgumentRestrictions(Entity, Arguments)

@@ -257,8 +257,8 @@ if SERVER then
 		end
 
 		-- Move the jet start to the impact point and back it up by the passive standoff
-		local Start		= Bullet.Standoff * 39.37
-		local End		= Bullet.BreakupDist * 10 * 39.37
+		local Start		= Bullet.Standoff * ACF.MeterToInch
+		local End		= Bullet.BreakupDist * 10 * ACF.MeterToInch
 		local Direction = Bullet.Flight:GetNormalized()
 		local JetStart  = HitPos - Direction * Start
 		local JetEnd    = HitPos + Direction * End
@@ -282,7 +282,7 @@ if SERVER then
 			if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
 			-- Get the (full jet's) penetration
-			local Standoff    = (PenHitPos - JetStart):Length() * 0.0254 -- Back to m
+			local Standoff    = (PenHitPos - JetStart):Length() * ACF.InchToMeter -- Back to m
 			local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
@@ -294,9 +294,9 @@ if SERVER then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
 				local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-				local Penetrated, Exit = Ballistics.DigTrace(PenHitPos + Direction, PenHitPos + Direction * math.max(Penetration / Density, 1) / 25.4)
+				local Penetrated, Exit = Ballistics.DigTrace(PenHitPos + Direction, PenHitPos + Direction * math.max(Penetration / Density, 1) / ACF.InchToMm)
 				-- Base armor is the RHAe if penetrated, or simply more than the penetration so the jet loses all mass and penetration stops
-				BaseArmor = Penetrated and ((Exit - PenHitPos):Length() * Density * 25.4) or (Penetration + 1)
+				BaseArmor = Penetrated and ((Exit - PenHitPos):Length() * Density * ACF.InchToMm) or (Penetration + 1)
 				-- Update the starting position of the trace because world is not filterable
 				TraceData.start = Exit
 			--elseif Ent:CPPIGetOwner() == game.GetWorld() then
@@ -400,7 +400,7 @@ else
 	function Ammo:PenetrationEffect(Effect, Bullet)
 		local Detonated   = Bullet.Detonated
 		local EffectName  = Detonated and "ACF_Penetration" or "ACF_HEAT_Explosion"
-		local Radius      = Detonated and Bullet.Caliber or math.max(Bullet.FillerMass ^ 0.33 * 8 * 39.37, 1)
+		local Radius      = Detonated and Bullet.Caliber or math.max(Bullet.FillerMass ^ 0.33 * 8 * ACF.MeterToInch, 1)
 		local EffectTable = {
 			Origin = Bullet.SimPos,
 			Normal = Bullet.SimFlight:GetNormalized(),

@@ -193,8 +193,8 @@ if CLIENT then
 			local Angle    = math.Round(ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
 			local Armor    = math.Round(Ent:GetArmor(Trace))
 			local Size     = Ent:GetSize()
-			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * 25.4, 1)
-			local MaxArmor = Ent:GetSize():Length() * 25.4
+			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * ACF.InchToMm, 1)
+			local MaxArmor = Ent:GetSize():Length() * ACF.InchToMm
 
 			cam.Start2D()
 				render.Clear(0, 0, 0, 0)
@@ -487,7 +487,7 @@ do -- Armor readout
 				end
 
 				if Class == "acf_engine" then
-					Power = Power + Ent.PeakPower * 1.34
+					Power = Power + Ent.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + Ent.Capacity
 				end

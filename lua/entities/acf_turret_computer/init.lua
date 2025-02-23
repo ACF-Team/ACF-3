@@ -262,7 +262,7 @@ do	-- Metamethods and other important stuff
 				Accel			= ACF.Gravity,
 
 				StartAngle		= StartAngle,
-				Flight			= StartAngle:Forward() * BD.MuzzleVel * 39.37,
+				Flight			= StartAngle:Forward() * BD.MuzzleVel * ACF.MeterToInch,
 				Pos				= Vector(),
 				NextPos			= Vector(),
 				Error			= Vector(),
@@ -331,7 +331,7 @@ do	-- Metamethods and other important stuff
 						local StartAngle			= Angle(AngleToTarget.p, AngleToTarget.y, 0)
 
 						self.SimData.StartAngle		= StartAngle
-						self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+						self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * ACF.MeterToInch
 
 						self.SimData.TargetPosition	= LocalPosition
 						self.SimData.StraightDistance = LocalPosition:Length()
@@ -368,7 +368,7 @@ do	-- Metamethods and other important stuff
 					local StartAngle			= Angle(AngleToTarget.p, AngleToTarget.y, 0)
 
 					self.SimData.StartAngle		= StartAngle
-					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * ACF.MeterToInch
 
 					Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
 
@@ -419,7 +419,7 @@ do	-- Metamethods and other important stuff
 					local StartAngle	= Angle(AngleToTarget.p, AngleToTarget.y, 0)
 
 					self.SimData.StartAngle		= StartAngle
-					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * 39.37
+					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * ACF.MeterToInch
 
 					Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
 

@@ -40,15 +40,13 @@ function Menu.MakePanel(Panel)
 	Panel:SetName("Permission Modes")
 
 	local txt = Panel:Help(introTxt)
-	txt:SetContentAlignment( TEXT_ALIGN_CENTER )
-	--txt:SetAutoStretchVertical(false)
+	txt:SetContentAlignment(TEXT_ALIGN_CENTER)
 	txt:SizeToContents()
 
 	Panel:AddItem(txt)
 
 	currentMode = Panel:Help(string.format(currentModeTxt, CurrentPermission))
-	currentMode:SetContentAlignment( TEXT_ALIGN_CENTER )
-	--currentMode:SetAutoStretchVertical(false)
+	currentMode:SetContentAlignment(TEXT_ALIGN_CENTER)
 	currentMode:SetFont("DermaDefaultBold")
 	currentMode:SizeToContents()
 
@@ -85,17 +83,14 @@ function Menu.MakePanel(Panel)
 		Panel:AddItem(list)
 
 		txt = Panel:Help("What this mode does:")
-		txt:SetContentAlignment( TEXT_ALIGN_CENTER )
-		--txt:SetAutoStretchVertical(false)
+		txt:SetContentAlignment(TEXT_ALIGN_CENTER)
 		txt:SetFont("DermaDefaultBold")
 		txt:SizeToContents()
-		--txt:SetHeight(20)
 
 		Panel:AddItem(txt)
 
 		ModeDescTxt = Panel:Help(PermissionModes[CurrentPermission] or ModeDescDefault)
-		ModeDescTxt:SetContentAlignment( TEXT_ALIGN_CENTER )
-		--txt:SetAutoStretchVertical(false)
+		ModeDescTxt:SetContentAlignment(TEXT_ALIGN_CENTER)
 		ModeDescTxt:SizeToContents()
 
 		Panel:AddItem(ModeDescTxt)
