@@ -111,6 +111,23 @@ Entities.AddUserArgumentType("String", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	local ClassDef = ACF.Classes[Specs.ClassName]
+	if not ClassDef then error("Bad classname '" .. Specs.ClassName .. "'.") end
+
+	local CheckClass = ClassDef.Get(Value)
+	if not CheckClass then
+		CheckClass = ACF.Classes[Specs.Default or "N/A"]
+		if not ClassDef then error("Classdef resolve failed. Likely data corruption/outdated contraption/default value not set by entity implementor. (value was " .. Value .. ")") end
+	end
+
+	return Value
+end)
+
 Entities.AddDataArgumentType("LinkedEntity",
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
