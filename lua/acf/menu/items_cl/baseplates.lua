@@ -52,8 +52,8 @@ local function CreateMenu(Menu)
 		surface.SetMaterial(GridMaterial)
 		surface.DrawTexturedRectRotated(ScrW / 2, ScrH / 2, W * Z, H * Z, 0)
 
-		surface.SetDrawColor(255, 70, 70); surface.DrawRect((ScrW / 2) - 1, ScrH / 2, 3, H / 2)
-		surface.SetDrawColor(70, 255, 70); surface.DrawRect(ScrW / 2, (ScrH / 2) - 1, W / 2, 3)
+		surface.SetDrawColor(255, 70, 70); surface.DrawRect((ScrW / 2) - 1, ScrH / 2, 3, H / 2 * Z)
+		surface.SetDrawColor(70, 255, 70); surface.DrawRect(ScrW / 2, (ScrH / 2) - 1, W / 2 * Z, 3)
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")
