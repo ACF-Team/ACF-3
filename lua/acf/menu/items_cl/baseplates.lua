@@ -43,8 +43,7 @@ local function CreateMenu(Menu)
 	Vis:SetSize(30, 256)
 
 	function Vis:Paint(ScrW, ScrH)
-		local W, H, T = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
-		print("T")
+		local W, H = SizeX:GetValue(), SizeY:GetValue()
 		self.CamDistance = math.max(W, H, 60) * 1
 
 		local Z = (math.max(1, ScrH / H) / math.max(1, ScrW / W)) * 2
