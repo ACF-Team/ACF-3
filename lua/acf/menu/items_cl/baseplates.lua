@@ -1,6 +1,6 @@
 local ACF = ACF
 
-local GridMaterial = CreateMaterial("acf_bp_vis_grid1", "VertexLitGeneric", {
+local GridMaterial = CreateMaterial("acf_bp_vis_grid2", "UnlitGeneric", {
 	["$basetexture"] = "hunter/myplastic",
 	["$model"] = 1,
 	["$translucent"] = 1,
@@ -39,17 +39,21 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("BaseplateType", Data.ID)
 	end
 
-	BaseplateBase:AddLabel("Comparing the current dimensions with a 105mm Howitzer:")
-
-	local Vis = BaseplateBase:AddModelPreview("models/howitzer/howitzer_105mm.mdl", true)
+	local Vis = Menu:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
 
-	function Vis:PreDrawModel(_)
+	function Vis:Paint(ScrW, ScrH)
 		local W, H, T = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
+		print("T")
 		self.CamDistance = math.max(W, H, 60) * 1
 
-		render.SetMaterial(GridMaterial)
-		render.DrawBox(vector_origin, angle_zero, Vector(-H / 2, -W / 2, -T / 2), Vector(H / 2, W / 2, T / 2), color_white)
+		local Z = (math.max(1, ScrH / H) / math.max(1, ScrW / W)) * 2
+		surface.SetDrawColor(255, 255, 255)
+		surface.SetMaterial(GridMaterial)
+		surface.DrawTexturedRectRotated(ScrW / 2, ScrH / 2, W * Z, H * Z, 0)
+
+		surface.SetDrawColor(255, 70, 70); surface.DrawRect((ScrW / 2) - 1, ScrH / 2, 3, H / 2)
+		surface.SetDrawColor(70, 255, 70); surface.DrawRect(ScrW / 2, (ScrH / 2) - 1, W / 2, 3)
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")
