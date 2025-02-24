@@ -338,8 +338,8 @@ do -- ACF global vars
 	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
 	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
 	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
-	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
-	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
+	ACF.MinGearRatio       = -1 -- The minimum value that a gear's ratio can be set to
+	ACF.MaxGearRatio       = 1 -- The maximum value that a gear's ratio can be set to
 end
 
 do -- ACF Convars & Particles
