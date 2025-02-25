@@ -51,8 +51,8 @@ do
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
-		local InPos = Target:LocalToWorld(Target.In)
-		local OutPos = Engine:LocalToWorld(Engine.Out)
+		local InPos = Target:LocalToWorld(Target.In.Pos)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
 		local Direction
 
 		if Engine.IsTrans then
@@ -169,8 +169,8 @@ end
 
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local InPos = Ent:LocalToWorld(Ent.In)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+		local InPos = Ent:LocalToWorld(Ent.In.Pos)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
@@ -335,7 +335,7 @@ do -- Spawn and Update functions
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
-		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
+		Entity.Out              = Engine.Out
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -912,7 +912,7 @@ do	-- NET SURFER 2.0
 			local Outputs = {}
 			local FuelTanks = {}
 			local Data = {
-				Driveshaft	= Entity.Out
+				Driveshaft	= Entity.Out.Pos
 			}
 
 			if next(Entity.Gearboxes) then

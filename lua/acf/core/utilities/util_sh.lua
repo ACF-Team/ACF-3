@@ -276,6 +276,20 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
+do
+	--- A class that determines local position and direction, for things like driveshaft/power sources
+	function ACF.LocalPlane(LocalPos, LocalDir)
+		local Object = {
+			Pos = LocalPos or Vector(),
+			Dir = LocalDir
+		}
+
+		function Object:ApplyTo(Entity)
+			return Entity:LocalToWorld(self.Pos), (Entity:LocalToWorld(self.Dir) - Entity:GetPos()):GetNormalized()
+		end
+
+		return Object
+	end
 do -- ACF.GetHitAngle
 	-- This includes workarounds for traces starting and/or ending inside an object
 	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0
