@@ -189,6 +189,7 @@ end
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if Ent == Self then return false end
 
+	if not IsValid(Ent) then return false end
 	if Ent:GetClass() ~= "acf_baseplate" then return false end
 	if not Ent.Size then return false end
 	if Ent:IsPlayerHolding() then return false end
