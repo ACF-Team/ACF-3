@@ -420,8 +420,7 @@ do
 
 		-- Add seat support for crews
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
-		local Owner = Entity:CPPIGetOwner()
-		if IsValid(Pod) and IsValid(Owner) then
+		if IsValid(Pod) and IsValid(Player) then
 			Entity:SetUseType(SIMPLE_USE)
 			Entity.Pod = Pod
 			Pod:SetAngles(Angle)
@@ -429,7 +428,7 @@ do
 			Pod:SetPos(Pos)
 			Pod:Spawn()
 			Pod:SetParent(Entity)
-			Pod.Owner = Owner
+			Pod.Owner = Player
 			Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")	-- I don't know what this does, but for good measure...
 			Pod:SetKeyValue("limitview", 0)											-- Let the player look around
 			Pod:SetNoDraw(true)														-- Don't render the seat
