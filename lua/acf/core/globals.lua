@@ -161,6 +161,7 @@ do -- ACF global vars
 	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("FireballMult",       1,      nil, ACF.FloatDataCallback(0.01, 1, 2))
 
+	ACF.MaxDriveshaftAngle   = 12
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds

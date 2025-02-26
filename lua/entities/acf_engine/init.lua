@@ -51,17 +51,10 @@ do
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
-		local InPos = Target:LocalToWorld(Target.In)
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local Direction
+		local InPos = Target:LocalToWorld(Target.In.Pos)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
 
-		if Engine.IsTrans then
-			Direction = -Engine:GetRight()
-		else
-			Direction = Engine:GetForward()
-		end
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
 			return false, "Cannot link due to excessive driveshaft angle!"
 		end
 
@@ -169,8 +162,8 @@ end
 
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local InPos = Ent:LocalToWorld(Ent.In)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+		local InPos = Ent:LocalToWorld(Ent.In.Pos)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
@@ -178,10 +171,7 @@ local function CheckGearboxes(Engine)
 			continue
 		end
 
-		-- make sure the angle is not excessive
-		local Direction = Engine.IsTrans and -Engine:GetRight() or Engine:GetForward()
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
 			Engine:Unlink(Ent)
 		end
 	end
@@ -335,7 +325,12 @@ do -- Spawn and Update functions
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
-		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
+		Entity.Out              = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos), Engine.IsTrans and Vector(0, 1, 0) or Vector(1, 0, 0))
+
+		if Engine.IsTrans then
+			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
+		end
+
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -912,7 +907,7 @@ do	-- NET SURFER 2.0
 			local Outputs = {}
 			local FuelTanks = {}
 			local Data = {
-				Driveshaft	= Entity.Out
+				Driveshaft	= Entity.Out.Pos
 			}
 
 			if next(Entity.Gearboxes) then

@@ -276,6 +276,42 @@ function ACF.RandomVector(Min, Max)
 	return Vector(X, Y, Z)
 end
 
+do
+	--- A class that determines local position and direction, for things like driveshaft/power sources
+	function ACF.LocalPlane(LocalPos, LocalDir)
+		local Object = {
+			Pos = LocalPos or Vector(),
+			Dir = LocalDir
+		}
+
+		function Object:ApplyTo(Entity)
+			return Entity:LocalToWorld(self.Pos), (Entity:GetPos() - Entity:LocalToWorld(self.Dir)):GetNormalized()
+		end
+
+		return Object
+	end
+
+	--- Determines the angle between a driveshaft input and output.
+	--- A return value of zero means that both entities are facing each other perfectly.
+	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
+		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
+
+		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
+		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 2, Color(20, 255, 20))
+
+		local OutToIn = 1 - (OP - IP):GetNormalized():Dot(InputWorldDir)
+		local InToOut = 1 - (IP - OP):GetNormalized():Dot(OutputWorldDir)
+
+		local Degrees = (OutToIn + InToOut) * 180
+		return Degrees
+	end
+
+	function ACF.IsDriveshaftAngleExcessive(InputEntity, Input, OutputEntity, Output)
+		return ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output) > ACF.MaxDriveshaftAngle
+	end
+end
+
 do -- ACF.GetHitAngle
 	-- This includes workarounds for traces starting and/or ending inside an object
 	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0

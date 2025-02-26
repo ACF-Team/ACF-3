@@ -145,6 +145,10 @@ do -- Spawn and Update functions -----------------------
 		return math.Round(Class.Mass * Factor)
 	end
 
+	local vector_forward = Vector(1, 0, 0)
+	local vector_left    = Vector(0, -1, 0)
+	local vector_right   = Vector(0, 1, 0)
+
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
 		local CanDualClutch = Gearbox.CanDualClutch
 		local Scale = Data.GearboxScale or 1
@@ -163,6 +167,10 @@ do -- Spawn and Update functions -----------------------
 
 		Entity.Name         = Gearbox.Name
 		Entity.ShortName    = Gearbox.ID
+
+		local SplitID       = string.Split(Gearbox.ID, "-")
+		Entity.Shape        = SplitID[#SplitID]
+
 		Entity.EntType      = Class.Name
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Class.Sound
@@ -173,9 +181,9 @@ do -- Spawn and Update functions -----------------------
 		Entity.GearCount    = Entity.MaxGear
 		Entity.ScaleMult    = Scale
 		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
-		Entity.In           = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos)
-		Entity.OutL         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos)
-		Entity.OutR         = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos)
+		Entity.In           = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos), Entity.Shape == "T" and -vector_forward or vector_right)
+		Entity.OutL         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos), Entity.Shape == "ST" and vector_left or vector_right)
+		Entity.OutR         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos), vector_left)
 		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model, Scale)
 
 		if CanDualClutch and Entity.DualClutch then
@@ -210,7 +218,7 @@ do -- Spawn and Update functions -----------------------
 
 		for Ent, Link in pairs(Ropes) do
 			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
-			local InPos = Ent.In and Ent:LocalToWorld(Ent.In) or Ent:GetPos()
+			local InPos = Ent.In and Ent:LocalToWorld(Ent.In.Pos) or Ent:GetPos()
 
 			-- make sure it is not stretched too far
 			if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
@@ -218,10 +226,7 @@ do -- Spawn and Update functions -----------------------
 				continue
 			end
 
-			-- make sure the angle is not excessive
-			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link:GetOrigin().y):GetNormalized())
-
-			if DrvAngle < 0.7 then
+			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link, Link.Out) then
 				Entity:Unlink(Ent)
 			end
 		end
@@ -586,22 +591,23 @@ do -- Linking ------------------------------------------
 	end
 
 	local function GenerateLinkTable(Entity, Target)
-		local InPos = Target.In or Vector()
+		local InPos = Target.In and Target.In.Pos or Vector()
 		local InPosWorld = Target:LocalToWorld(InPos)
 		local OutPos, Side
 
+		local Plane
 		if Entity:WorldToLocal(InPosWorld).y < 0 then
-			OutPos = Entity.OutL
+			Plane = Entity.OutL
+			OutPos = Entity.OutL.Pos
 			Side = 0
 		else
-			OutPos = Entity.OutR
+			Plane = Entity.OutR
+			OutPos = Entity.OutR.Pos
 			Side = 1
 		end
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
-		local DrvAngle = (OutPosWorld - InPosWorld):GetNormalized():Dot((Entity:GetRight() * OutPos.y):GetNormalized())
-
-		if DrvAngle < 0.7 then return end
+		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane) then return end
 
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
@@ -1076,9 +1082,9 @@ do	-- NET SURFER 2.0
 			local OutputL = {}
 			local OutputR = {}
 			local Data = {
-				In = Entity.In,
-				OutL = Entity.OutL,
-				OutR = Entity.OutR
+				In = Entity.In.Pos,
+				OutL = Entity.OutL.Pos,
+				OutR = Entity.OutR.Pos
 			}
 
 			if next(Entity.GearboxIn) then
