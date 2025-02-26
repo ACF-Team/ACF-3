@@ -5,7 +5,5 @@ ENT.WireDebugName = "ACF Crewseat"
 ENT.PluralName    = "ACF Crewseats"
 ENT.IsACFCrewseat = true
 ENT.IsACFEntity = true
-ENT.Spawnable     = true
-ENT.Category = "ACF"
 
 cleanup.Register("acf_crew")
