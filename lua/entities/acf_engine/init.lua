@@ -53,15 +53,8 @@ do
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In.Pos)
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
-		local Direction
 
-		if Engine.IsTrans then
-			Direction = -Engine:GetRight()
-		else
-			Direction = Engine:GetForward()
-		end
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
 			return false, "Cannot link due to excessive driveshaft angle!"
 		end
 
@@ -178,10 +171,7 @@ local function CheckGearboxes(Engine)
 			continue
 		end
 
-		-- make sure the angle is not excessive
-		local Direction = Engine.IsTrans and -Engine:GetRight() or Engine:GetForward()
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
 			Engine:Unlink(Ent)
 		end
 	end
@@ -335,7 +325,12 @@ do -- Spawn and Update functions
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
-		Entity.Out              = Engine.Out
+		Entity.Out              = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos), Engine.IsTrans and Vector(0, 1, 0) or Vector(1, 0, 0))
+
+		if Engine.IsTrans then
+			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
+		end
+
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)

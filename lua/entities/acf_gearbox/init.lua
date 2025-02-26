@@ -148,7 +148,7 @@ do -- Spawn and Update functions -----------------------
 	local vector_forward = Vector(1, 0, 0)
 	local vector_left    = Vector(0, -1, 0)
 	local vector_right   = Vector(0, 1, 0)
-	
+
 	local function UpdateGearbox(Entity, Data, Class, Gearbox)
 		local CanDualClutch = Gearbox.CanDualClutch
 		local Scale = Data.GearboxScale or 1
@@ -181,7 +181,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.GearCount    = Entity.MaxGear
 		Entity.ScaleMult    = Scale
 		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
-		Entity.In           = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos), Entity.Shape == "T" and vector_forward or vector_right)
+		Entity.In           = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos), Entity.Shape == "T" and -vector_forward or vector_right)
 		Entity.OutL         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos), Entity.Shape == "ST" and vector_left or vector_right)
 		Entity.OutR         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos), vector_left)
 		Entity.HitBoxes     = ACF.GetHitboxes(Gearbox.Model, Scale)
@@ -226,10 +226,7 @@ do -- Spawn and Update functions -----------------------
 				continue
 			end
 
-			-- make sure the angle is not excessive
-			local DrvAngle = (OutPos - InPos):GetNormalized():Dot((Entity:GetRight() * Link:GetOrigin().y):GetNormalized())
-
-			if DrvAngle < 0.7 then
+			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link, Link.Out) then
 				Entity:Unlink(Ent)
 			end
 		end
@@ -598,18 +595,19 @@ do -- Linking ------------------------------------------
 		local InPosWorld = Target:LocalToWorld(InPos)
 		local OutPos, Side
 
+		local Plane
 		if Entity:WorldToLocal(InPosWorld).y < 0 then
+			Plane = Entity.OutL
 			OutPos = Entity.OutL.Pos
 			Side = 0
 		else
+			Plane = Entity.OutR
 			OutPos = Entity.OutR.Pos
 			Side = 1
 		end
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
-		local DrvAngle = (OutPosWorld - InPosWorld):GetNormalized():Dot((Entity:GetRight() * OutPos.y):GetNormalized())
-
-		if DrvAngle < 0.7 then return end
+		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane) then return end
 
 		local Phys = Target:GetPhysicsObject()
 		local Axis = Phys:WorldToLocalVector(Entity:GetRight())

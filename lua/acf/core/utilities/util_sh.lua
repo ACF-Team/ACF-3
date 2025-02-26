@@ -285,11 +285,37 @@ do
 		}
 
 		function Object:ApplyTo(Entity)
-			return Entity:LocalToWorld(self.Pos), (Entity:LocalToWorld(self.Dir) - Entity:GetPos()):GetNormalized()
+			return Entity:LocalToWorld(self.Pos), (Entity:GetPos() - Entity:LocalToWorld(self.Dir)):GetNormalized()
 		end
 
 		return Object
 	end
+
+	--- Determines the angle between a driveshaft input and output.
+	--- This is determined using two factors:
+	--- 	The angle between world-space plane directions
+	---		The angle between world-space plane positions
+	--- Both of these are added together.
+	--- 0 means that both entities are facing each other perfectly.
+	--- This does NOT return a perfect 360-degree value; but it will always be greater than 0
+	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
+		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
+
+		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
+		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 2, Color(20, 255, 20))
+
+		local DotBetweenPlanes = OutputWorldDir:Dot(InputWorldDir) + 1
+		local DotBetweenPoints = InputWorldDir:Dot((IP - OP):GetNormalized()) + 1
+
+		return (DotBetweenPlanes + DotBetweenPoints) * 180
+	end
+
+	function ACF.IsDriveshaftAngleExcessive(InputEntity, Input, OutputEntity, Output)
+		return ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output) > ACF.MaxDriveshaftAngle
+	end
+end
+
 do -- ACF.GetHitAngle
 	-- This includes workarounds for traces starting and/or ending inside an object
 	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0
