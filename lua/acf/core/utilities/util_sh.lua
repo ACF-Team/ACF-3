@@ -294,6 +294,11 @@ do
 	--- Determines the angle between a driveshaft input and output.
 	--- A return value of zero means that both entities are facing each other perfectly.
 	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+		-- Gearbox -> gearbox connections use Link objects; which contain Source, Origin, and Axis.
+		-- Beyond that, everything works like normal; so we can just populate Output/OutputEntity
+		-- from the Link object.
+		-- TODO: Link object maybe should use LocalPlane instead of creating it each time? This isn't
+		-- that hot of a function given it runs infrequently (i think), but it's still a bit of a waste
 		if Output == nil then
 			local Link = OutputEntity
 
@@ -304,6 +309,8 @@ do
 		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
 		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 2, Color(20, 255, 20))
 
+		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
+		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
 		if Input == nil then
 			if InputEntity:GetClass() == "prop_physics" then
 				local Degrees = (1 - (InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)) * 180
@@ -313,6 +320,8 @@ do
 			end
 		end
 
+		-- This handles either gearbox -> gearbox or engine -> gearbox, depending on if Output == nil
+		-- This will check both directions.
 		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
 		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
 
