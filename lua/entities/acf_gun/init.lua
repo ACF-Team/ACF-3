@@ -180,10 +180,10 @@ do -- Spawn and Update functions --------------------------------
 	--- @param Ambient number The ambient temperature, or an override
 	function ENT:SimulateTemp(DT, Temp)
 		local NewTemp = Temp or ACF.AmbientTemperature
-		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
-		local TempK = self.Thermal.TempK    						    -- Cooling constant
-		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
-		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
+		local TempDiff = (self.Thermal.Temp or ACF.AmbientTemperature) - NewTemp  -- Newton's law of cooling
+		local TempK = self.Thermal.TempK    						              -- Cooling constant
+		local TempRise = -TempK * TempDiff * DT							          -- Towards equilibirium
+		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	          -- Can't go below absolute zero
 
 		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
 
