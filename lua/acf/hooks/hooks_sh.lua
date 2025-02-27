@@ -53,6 +53,25 @@ Hooks.Add("ACF_Base_Shared", function(Gamemode)
 	function Gamemode:ACF_OnUpdateClientData()
 	end
 
+	--- Called when a server data variable value gets uploaded. Is fucntionally equivalent to ACF_OnUploadServerData, but is called after it and is called regardless if the value was truly changed or not.
+	--- @param Player entity The player that triggered the server data variable change.  
+	--- On the clientside, if the upload was done by the client then this will always be the local player.  
+	--- On the serverside, if the upload was done by the server then this will always be nil.
+	--- @param Key string The name of the affected server data variable.
+	--- @param Value any The new value assigned to the server data variable.
+	function Gamemode:ACF_OnUploadServerData()
+	end
+
+	--- Called when a client data variable value gets uploaded. Is fucntionally equivalent to ACF_OnUploadClientData, but is called after it and is called regardless if the value was truly changed or not.
+	--- On the clientside, this will be called every time the client uploads something to the data var.  
+	--- This means that this hook can be called multiple times on the same tick for the same data variable.  
+	--- On the serverside, this will be called once per tick when the value gets networked.
+	--- @param Player entity The player that triggered the client data variable change.
+	--- @param Key string The name of the affected client data variable.
+	--- @param Value any The new value assigned to the client data variable.
+	function Gamemode:ACF_OnUploadClientData()
+	end
+
 	--- Called after the Think hook is called.  
 	--- The only difference with the Think hook are the convenience arguments provided by this one.
 	--- @param CurTime number Returns the uptime of the server.
