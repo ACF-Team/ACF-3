@@ -226,7 +226,7 @@ do -- Spawn and Update functions -----------------------
 				continue
 			end
 
-			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link, Link.Out) then
+			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link) then
 				Entity:Unlink(Ent)
 			end
 		end
@@ -609,13 +609,11 @@ do -- Linking ------------------------------------------
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
 		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane) then return end
 
-		local Phys = Target:GetPhysicsObject()
-		local Axis = Phys:WorldToLocalVector(Entity:GetRight())
 		local Link	= MobilityObj.Link(Entity, Target)
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		Link:SetAxis(Axis)
+		Link:SetAxis(Plane.Dir)
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
 

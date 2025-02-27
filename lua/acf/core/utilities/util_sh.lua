@@ -294,11 +294,27 @@ do
 	--- Determines the angle between a driveshaft input and output.
 	--- A return value of zero means that both entities are facing each other perfectly.
 	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
-		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
-		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
+		if Output == nil then
+			local Link = OutputEntity
 
-		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
+			Output = ACF.LocalPlane(Link.Origin, Link.Axis)
+			OutputEntity = Link.Source
+		end
+
+		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
 		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 2, Color(20, 255, 20))
+
+		if Input == nil then
+			if InputEntity:GetClass() == "prop_physics" then
+				local Degrees = (1 - (InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)) * 180
+				return Degrees
+			else
+				error("Input == nil AND InputEntity != prop_physics!")
+			end
+		end
+
+		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
+		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
 
 		local OutToIn = 1 - (OP - IP):GetNormalized():Dot(InputWorldDir)
 		local InToOut = 1 - (IP - OP):GetNormalized():Dot(OutputWorldDir)
