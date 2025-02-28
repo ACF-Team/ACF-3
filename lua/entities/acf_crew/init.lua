@@ -227,8 +227,8 @@ do -- Random timer stuff
 		end
 
 		-- Avoid G force calculation on crew during building...
-		local Contraption = self:GetContraption()
-		if DeltaTime > 0 and Contraption ~= nil then
+		local Parent = self:GetParent()
+		if DeltaTime > 0 and IsValid(Parent) then
 			-- Calculate current G force on crew
 			self.Pos = self.Pos or self:GetPos()
 			self.Vel = self.Vel or self:GetVelocity()
