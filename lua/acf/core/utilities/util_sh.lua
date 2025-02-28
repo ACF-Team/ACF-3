@@ -291,7 +291,7 @@ do
 		return Object
 	end
 
-	--- Determines the angle between a driveshaft input and output.
+	--- Determines the combined deviations of the driveshaft between two entities
 	--- A return value of zero means that both entities are facing each other perfectly.
 	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
 		-- Gearbox -> gearbox connections use Link objects; which contain Source, Origin, and Axis.
@@ -306,14 +306,15 @@ do
 			OutputEntity = Link.Source
 		end
 
+		-- For the entity sending power, this is the direction of a "straight" shaft
 		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
-		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 2, Color(20, 255, 20))
+		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 5, Color(20, 255, 20))
 
 		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
 		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
 		if Input == nil then
 			if InputEntity:GetClass() == "prop_physics" then
-				local Degrees = (1 - (InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)) * 180
+				local Degrees = math.deg(math.acos((InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)))
 				return Degrees
 			else
 				error("Input == nil AND InputEntity != prop_physics!")
@@ -322,14 +323,19 @@ do
 
 		-- This handles either gearbox -> gearbox or engine -> gearbox, depending on if Output == nil
 		-- This will check both directions.
+
+		-- For the entity receiving power, this is the direction of a "straight" shaft
 		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
-		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 2, Color(255, 20, 20))
+		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 5, Color(255, 20, 20))
 
-		local OutToIn = 1 - (OP - IP):GetNormalized():Dot(InputWorldDir)
-		local InToOut = 1 - (IP - OP):GetNormalized():Dot(OutputWorldDir)
+		-- For the entity sending power, the deviation between the shaft and what it considers "straight"
+		local OutToIn = math.deg(math.acos((OP - IP):GetNormalized():Dot(InputWorldDir)))
 
-		local Degrees = (OutToIn + InToOut) * 180
-		return Degrees
+		-- For the entity receiving power, the deviation between the shaft and what it considers "straight"
+		local InToOut = math.deg(math.acos((IP - OP):GetNormalized():Dot(OutputWorldDir)))
+
+		-- The sum of the deviations
+		return OutToIn + InToOut
 	end
 
 	function ACF.IsDriveshaftAngleExcessive(InputEntity, Input, OutputEntity, Output)
