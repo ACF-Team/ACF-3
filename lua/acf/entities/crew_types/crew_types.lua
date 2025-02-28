@@ -62,7 +62,7 @@ CrewTypes.Register("Loader", {
 		Text	= "Maximum number of loaders a player can have."
 	},
 	Mass = 80,				-- Mass (kg) of a single crew member
-	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
@@ -77,7 +77,7 @@ CrewTypes.Register("Loader", {
 		}
 	},
 	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
-		ScanStep = 27,		-- How many parts of a scan to update each time
+		ScanStep = 3,		-- How many parts of a scan to update each time
 	},
 	LinkHandlers = {		-- Custom link handlers for this crew type
 		acf_gun = {			-- Specify a target class for it to be included in the whitelist
@@ -111,7 +111,7 @@ CrewTypes.Register("Gunner", {
 		Text	= "Maximum number of gunners a player can have."
 	},
 	Mass = 80,
-	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
@@ -142,7 +142,7 @@ CrewTypes.Register("Gunner", {
 	},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
-		local CommanderEff = Commander and Commander.TotalEff or 1
+		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew)
@@ -160,6 +160,10 @@ CrewTypes.Register("Driver", {
 		Text	= "Maximum number of drivers a player can have."
 	},
 	Mass = 80,
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+		Min = 60,			-- Best efficiency before this angle (Degs)
+		Max = 90,			-- Worst efficiency after this angle (Degs)
+	},
 	GForceInfo = {
 		Efficiencies = {
 			Min = 0,	-- Best efficiency before this (Gs)
@@ -180,7 +184,7 @@ CrewTypes.Register("Driver", {
 	},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
-		local CommanderEff = Commander and Commander.TotalEff or 1
+		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew)
@@ -198,7 +202,7 @@ CrewTypes.Register("Commander", {
 		Text	= "Maximum number of commanders a player can have."
 	},
 	Mass = 80,
-	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations
+	LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
