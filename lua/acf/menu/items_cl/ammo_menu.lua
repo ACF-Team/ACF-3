@@ -430,11 +430,29 @@ function ACF.CreateAmmoMenu(Menu)
 
 	--------------------------------------
 
+	local PresetType = "ammo"
+
 	local Row = Menu:AddPanel("DPanel")
 	Row:Dock(TOP)
 
 	local Presets = Row:Add("DComboBox")
 	Presets:Dock(LEFT)
+	local Files, _ = file.Find( "acf/presets/" .. PresetType .. "/*.json", "DATA")
+	for _, File in ipairs(Files) do
+		Presets:AddChoice(File)
+	end
+
+	Presets.OnSelect = function( self, _, FileName )
+		print("Applying Presets From", FileName)
+	
+		local FileContents = file.Read("acf/presets/" .. PresetType .. "/" .. FileName, "DATA")
+		local KVPairs = util.JSONToTable(FileContents)
+
+		for k, v in pairs(KVPairs) do
+			print("SetClientData", k, v)
+			ACF.SetClientData(k, v)
+		end
+	end
 
 	local AddPreset = Row:Add("DButton")
 	AddPreset:Dock(LEFT)
@@ -445,6 +463,14 @@ function ACF.CreateAmmoMenu(Menu)
 		local Prompt = Derma_StringRequest("Create ACF Preset", "Enter a name for the preset", "", function(Name)
 			if Name == "" then return end
 			print("Added Preset", Name)
+
+			-- Maybe need a confirmation for override? Not sure how to do that yet.
+			file.CreateDir("acf/presets/" .. PresetType)
+
+			local PresetPath = "acf/presets/" .. PresetType .. "/" .. Name .. ".json"
+			file.Write(PresetPath, util.TableToJSON( {CrateSizeX=36}, true ))
+
+			Presets:AddChoice(Name)
 		end)
 	end
 
@@ -455,13 +481,47 @@ function ACF.CreateAmmoMenu(Menu)
 
 	OpenPresetEditor.DoClick = function()
 		local Frame = vgui.Create( "DFrame" )
-		Frame:SetPos( 5, 5 )
-		Frame:SetSize( 300, 150 )
+		Frame:SetSize( 500, 500 )
 		Frame:SetTitle( "Name window" )
 		Frame:SetVisible( true )
-		Frame:SetDraggable( false )
+		Frame:SetDraggable( true )
 		Frame:ShowCloseButton( true )
 		Frame:MakePopup()
+		Frame:Center()
+
+		local Row = Frame:Add("DPanel")
+		Row:Dock(FILL)
+
+		local FileColumn = Row:Add("DListView")
+		FileColumn:Dock(LEFT)
+		FileColumn:SetSize(150, 150)
+		FileColumn:AddColumn("Preset Name")
+
+		-- Maybe make the editor have files in column 1 and column2 is rows of KV pairs
+		local Files, _ = file.Find( "acf/presets/" .. PresetType .. "/*.json", "DATA")
+		for _, File in ipairs(Files) do
+			FileColumn:AddLine(File)
+		end
+
+		local FileContents = file.Read("acf/presets/" .. PresetType .. "/test.json", "DATA")
+		local KVPairs = util.JSONToTable(FileContents)
+
+		local SettingsColumn = Row:Add("Panel")
+		SettingsColumn:Dock(FILL)
+
+		for k, v in pairs(KVPairs) do
+			local Row = SettingsColumn:Add("DPanel")
+			Row:Dock(TOP)
+
+			local Key = Row:Add("DTextEntry")
+			Key:Dock(LEFT)
+			Key:SetText(k)
+
+			local Value = Row:Add("DTextEntry")
+			Value:Dock(LEFT)
+			Value:SetText(v)
+		end
+
 	end
 
 	--------------------------------
