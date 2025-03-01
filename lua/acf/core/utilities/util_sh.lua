@@ -334,12 +334,15 @@ do
 		-- For the entity receiving power, the deviation between the shaft and what it considers "straight"
 		local InToOut = math.deg(math.acos((IP - OP):GetNormalized():Dot(OutputWorldDir)))
 
-		-- The sum of the deviations
-		return OutToIn + InToOut
+		-- Table of deviations
+		return {OutToIn,InToOut}
 	end
 
 	function ACF.IsDriveshaftAngleExcessive(InputEntity, Input, OutputEntity, Output)
-		return ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output) > ACF.MaxDriveshaftAngle
+		local Deviations = ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+
+		--Check if either direction has an excessive angle.
+		return Deviations[1] > ACF.MaxDriveshaftAngle or Deviations[2] > ACF.MaxDriveshaftAngle
 	end
 end
 
