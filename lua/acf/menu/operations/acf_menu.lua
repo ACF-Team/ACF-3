@@ -9,6 +9,8 @@ do -- Generic Spawner/Linker operation creator
 	local NameFormat = "%s[ID: %s]"
 	local PlayerEnts = {}
 
+	if SERVER then util.AddNetworkString("ACF_SendMenuCopyData") end
+
 	local function GetPlayerEnts(Player)
 		local Ents = PlayerEnts[Player]
 
@@ -235,6 +237,31 @@ do -- Generic Spawner/Linker operation creator
 
 					-- The call to SelectEntity will switch the mode to the linker
 					return SelectEntity(Entity, Name, Tool)
+				end,
+				OnReload = function(Tool, Trace)
+					if Trace.HitSky then return false end
+
+					local Entity = Trace.Entity
+					local Player = Tool:GetOwner()
+
+					if not IsValid(Entity) then return false end
+					if CLIENT then return true end -- Toolgun beam cope
+
+					if not Entity.DataStore then return false end
+
+					local Data = {}
+					for _, Key in pairs(Entity.DataStore) do
+						Data[Key] = Entity[Key]
+					end
+
+					ACF.SendMessage(Player, "Info", "Copied settings from " .. tostring(Entity) .. " to menu.")
+
+					net.Start("ACF_SendMenuCopyData")
+					net.WriteString(util.TableToJSON(Data))
+					net.Send(Player)
+					print("Player", Player, "sent data to server")
+
+					return true
 				end
 			})
 
@@ -255,6 +282,15 @@ do -- Generic Spawner/Linker operation creator
 				name = "right",
 				text = OnRightClick and OnRightClick.Text or "Select the entity you want to link or unlink."
 			})
+
+			net.Receive("ACF_SendMenuCopyData", function()
+				local Data = util.JSONToTable(net.ReadString())
+				PrintTable(Data)
+				for k, v in pairs(Data) do
+					if k == "Size" then continue end
+					ACF.SetClientData(k, v)
+				end
+			end)
 		end
 
 		do -- Linker stuff

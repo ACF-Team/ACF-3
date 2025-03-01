@@ -124,6 +124,10 @@ function PANEL:AddPanel(Name)
 	return Panel
 end
 
+function PANEL:AddPreset(PresetType, Fields)
+
+end
+
 function PANEL:AddButton(Text, Command, ...)
 	local Panel = self:AddPanel("DButton")
 	Panel:SetText(Text or "Button")

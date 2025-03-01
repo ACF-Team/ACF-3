@@ -428,6 +428,44 @@ end
 function ACF.CreateAmmoMenu(Menu)
 	Menu:AddTitle("Ammo Settings")
 
+	--------------------------------------
+
+	local Row = Menu:AddPanel("DPanel")
+	Row:Dock(TOP)
+
+	local Presets = Row:Add("DComboBox")
+	Presets:Dock(LEFT)
+
+	local AddPreset = Row:Add("DButton")
+	AddPreset:Dock(LEFT)
+	AddPreset:SetIcon("icon16/add.png")
+	AddPreset:SetText("") -- Remove label
+
+	AddPreset.DoClick = function()
+		local Prompt = Derma_StringRequest("Create ACF Preset", "Enter a name for the preset", "", function(Name)
+			if Name == "" then return end
+			print("Added Preset", Name)
+		end)
+	end
+
+	local OpenPresetEditor = Row:Add("DButton")
+	OpenPresetEditor:Dock(LEFT)
+	OpenPresetEditor:SetIcon("icon16/wrench.png")
+	OpenPresetEditor:SetText("") -- Remove label
+
+	OpenPresetEditor.DoClick = function()
+		local Frame = vgui.Create( "DFrame" )
+		Frame:SetPos( 5, 5 )
+		Frame:SetSize( 300, 150 )
+		Frame:SetTitle( "Name window" )
+		Frame:SetVisible( true )
+		Frame:SetDraggable( false )
+		Frame:ShowCloseButton( true )
+		Frame:MakePopup()
+	end
+
+	--------------------------------
+
 	local List = Menu:AddComboBox()
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
