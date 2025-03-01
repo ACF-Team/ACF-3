@@ -134,6 +134,12 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 			if IsValid(Owner) then Owner:GodDisable() end
 
 			SafeRemoveEntity(Ent.Pod)
+
+			if next(self.Crews or {}) then
+				for Crew in pairs(self.Crews) do
+					if IsValid(Crew) then self:Unlink(Crew) end
+				end
+			end
 		end)
 
 		WireLib.TriggerOutput(self, "Vehicles", {Pod})

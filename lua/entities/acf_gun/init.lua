@@ -183,7 +183,6 @@ do -- Spawn and Update functions --------------------------------
 		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
 		local TempK = self.Thermal.TempK    						    -- Cooling constant
 		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
-		print(TempK, NewTemp, TempRise, TempDiff, DT)
 		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
 
 		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
@@ -1154,6 +1153,12 @@ do -- Metamethods --------------------------------
 
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
+			end
+
+			if next(self.Crews or {}) then
+				for Crew in pairs(self.Crews) do
+					if IsValid(Crew) then self:Unlink(Crew) end
+				end
 			end
 
 			timer.Remove("ACF Ammo Left " .. self:EntIndex())

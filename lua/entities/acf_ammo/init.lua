@@ -790,7 +790,6 @@ do -- Ammo Consumption -------------------------
 				local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo)
 
 				local IdealTime = ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = Transfer})
-				-- print("Ideal Time", IdealTime)
 				ACF.ProgressTimer(
 					self,
 					function() return self:UpdateStockMod() end,

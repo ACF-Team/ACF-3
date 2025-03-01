@@ -259,9 +259,9 @@ do -- Random timer stuff
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = Contraption or {}
+		local Contraption = self:GetContraption() or {}
 		local CrewsByType = Contraption.CrewsByType or {}
-		local Commanders = CrewsByType["Commander"] or {}
+		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
 		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
