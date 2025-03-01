@@ -183,6 +183,7 @@ do -- Spawn and Update functions --------------------------------
 		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
 		local TempK = self.Thermal.TempK    						    -- Cooling constant
 		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
+		print(TempK, NewTemp, TempRise, TempDiff, DT)
 		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
 
 		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
@@ -692,7 +693,7 @@ do -- Metamethods --------------------------------
 		function ENT:Shoot()
 			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
 			local EnergyToHeat = BulletEnergy * EnergyConversion
-			self:SimulateTemp(1 / 66, EnergyToHeat)
+			self:SimulateTemp(1 / 66, self.Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
 
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
