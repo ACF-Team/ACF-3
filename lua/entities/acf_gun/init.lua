@@ -925,6 +925,12 @@ do -- Metamethods --------------------------------
 			end
 
 			self.BulletData = Crate.BulletData
+
+			self.CurrentCrate = Crate
+			self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
+			self:SetNW2Int("Caliber", self.BulletData.Caliber)
+			self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+
 			self:SetState("Loading")
 
 			if Override and IsValid(self) then
