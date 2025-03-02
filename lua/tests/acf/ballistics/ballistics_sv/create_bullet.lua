@@ -13,7 +13,9 @@ return {
         stub( ACF.Ballistics, "CalcBulletFlight" )
 
         State.Bullet = {
-            Type = "TestType"
+            Type = "TestType",
+            Position = Vector(0, 0, 0),
+            Flight = Vector(0, 0, 0)
         }
     end,
 

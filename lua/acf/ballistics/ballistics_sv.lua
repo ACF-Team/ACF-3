@@ -114,6 +114,9 @@ end
 
 local RequiredBulletDataProperties = {"Pos", "Flight"}
 function Ballistics.CreateBullet(BulletData)
+	local Index = Ballistics.GetBulletIndex()
+	if not Index then return end -- Too many bullets in the air
+
 	-- Validate BulletData, so we can catch these problems easier
 
 	for _, RequiredProp in ipairs(RequiredBulletDataProperties) do
@@ -121,10 +124,6 @@ function Ballistics.CreateBullet(BulletData)
 			error(("Ballistics.CreateBullet: Expected '%s' to be present in BulletData, got nil!"):format(RequiredProp))
 		end
 	end
-
-	local Index = Ballistics.GetBulletIndex()
-
-	if not Index then return end -- Too many bullets in the air
 
 	local Bullet = table.Copy(BulletData)
 
