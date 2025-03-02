@@ -146,11 +146,11 @@ function PANEL:AddCheckBox(Text)
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
 
-	function Panel:LinkToServerData(Key)
-		local Value = ACF.GetSetting(Key)
-		self:SetValue(Value)
-		self:SetServerData(Key, "OnChange")
-	end
+	-- function Panel:LinkToServerData(Key)
+	-- 	local Value = ACF.GetSetting(Key)
+	-- 	self:SetValue(Value)
+	-- 	self:SetServerData(Key, "OnChange")
+	-- end
 
 	return Panel
 end
@@ -206,15 +206,42 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 
 	Panel.Label:SetFont("ACF_Control")
 
-	function Panel:LinkToServerData(Key)
-		local Value, SettingData = ACF.GetSetting(Key)
-		Panel:SetDecimals(SettingData.Decimals or 0)
-		Panel:SetMinMax(SettingData.Min, SettingData.Max)
-		Panel:SetValue(Value)
-		self:SetServerData(Key, "OnValueChanged")
-	end
+	-- function Panel:LinkToServerData(Key)
+	-- 	local Value, SettingData = ACF.GetSetting(Key)
+	-- 	print("LinkToServerData", Key, Value, SettingData)
+	-- 	Panel:SetDecimals(SettingData.Decimals or 0)
+	-- 	Panel:SetMinMax(SettingData.Min, SettingData.Max)
+	-- 	Panel:SetValue(Value)
+	-- 	self:SetServerData(Key, "OnValueChanged")
+	-- end
 
 	return Panel
+end
+
+function PANEL:AddVectorSlider(Title, Min, Max, Decimals)
+	local Base = self:AddPanel("ACF_Panel")
+
+	Base.XSlider = Base:AddSlider(Title .. "X", Min, Max, Decimals)
+	Base.XSlider:Dock(TOP)
+	Base.YSlider = Base:AddSlider(Title .. "Y", Min, Max, Decimals)
+	Base.YSlider:Dock(TOP)
+	Base.ZSlider = Base:AddSlider(Title .. "Z", Min, Max, Decimals)
+	Base.ZSlider:Dock(TOP)
+
+	Base.SetValue = function(self, Value)
+		print("SetValue",Value)
+		self.XSlider:SetValue(Value.x)
+		self.YSlider:SetValue(Value.y)
+		self.ZSlider:SetValue(Value.z)
+		return Value
+	end
+
+	Base.GetValue = function(self)
+		print("GetValue")
+		return Vector(self.XSlider:GetValue(), self.YSlider:GetValue(), self.ZSlider:GetValue())
+	end
+
+	return Base
 end
 
 function PANEL:AddNumberWang(Label, Min, Max, Decimals)

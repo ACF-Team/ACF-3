@@ -287,7 +287,7 @@ do -- Generic Spawner/Linker operation creator
 				local Data = util.JSONToTable(net.ReadString())
 				PrintTable(Data)
 				for k, v in pairs(Data) do
-					if k == "Size" then continue end
+					print("Setting", k, v)
 					ACF.SetClientData(k, v)
 				end
 			end)

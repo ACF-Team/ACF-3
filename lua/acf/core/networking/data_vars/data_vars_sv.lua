@@ -84,6 +84,8 @@ do -- Data syncronization
 	net.Receive("ACF_DataVarNetwork", function(_, Player)
 		local Received = util.JSONToTable(net.ReadString())
 
+		print("ACF_DataVarNetwork", Player)
+		PrintTable(Received)
 		if not IsValid(Player) then return end -- NOTE: Can this even happen?
 		if not Client[Player] then return end -- Player no longer exists, discarding.
 

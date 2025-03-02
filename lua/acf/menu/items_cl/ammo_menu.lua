@@ -444,7 +444,7 @@ function ACF.CreateAmmoMenu(Menu)
 
 	Presets.OnSelect = function( self, _, FileName )
 		print("Applying Presets From", FileName)
-	
+
 		local FileContents = file.Read("acf/presets/" .. PresetType .. "/" .. FileName, "DATA")
 		local KVPairs = util.JSONToTable(FileContents)
 
@@ -521,7 +521,6 @@ function ACF.CreateAmmoMenu(Menu)
 			Value:Dock(LEFT)
 			Value:SetText(v)
 		end
-
 	end
 
 	--------------------------------
@@ -530,41 +529,44 @@ function ACF.CreateAmmoMenu(Menu)
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
 
-	local SizeX = Menu:AddSlider("Crate Length", Min, Max)
-	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
-	SizeX:DefineSetter(function(Panel, _, _, Value)
-		local X = math.Round(Value)
+	-- local SizeX = Menu:AddSlider("Crate Length", Min, Max)
+	-- SizeX:SetClientData("CrateSizeX", "OnValueChanged")
+	-- SizeX:DefineSetter(function(Panel, _, _, Value)
+	-- 	local X = math.Round(Value)
 
-		Panel:SetValue(X)
+	-- 	Panel:SetValue(X)
 
-		BoxSize.x = X
+	-- 	BoxSize.x = X
 
-		return X
-	end)
+	-- 	return X
+	-- end)
 
-	local SizeY = Menu:AddSlider("Crate Width", Min, Max)
-	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
-	SizeY:DefineSetter(function(Panel, _, _, Value)
-		local Y = math.Round(Value)
+	-- local SizeY = Menu:AddSlider("Crate Width", Min, Max)
+	-- SizeY:SetClientData("CrateSizeY", "OnValueChanged")
+	-- SizeY:DefineSetter(function(Panel, _, _, Value)
+	-- 	local Y = math.Round(Value)
 
-		Panel:SetValue(Y)
+	-- 	Panel:SetValue(Y)
 
-		BoxSize.y = Y
+	-- 	BoxSize.y = Y
 
-		return Y
-	end)
+	-- 	return Y
+	-- end)
 
-	local SizeZ = Menu:AddSlider("Crate Height", Min, Max)
-	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
-	SizeZ:DefineSetter(function(Panel, _, _, Value)
-		local Z = math.Round(Value)
+	-- local SizeZ = Menu:AddSlider("Crate Height", Min, Max)
+	-- SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
+	-- SizeZ:DefineSetter(function(Panel, _, _, Value)
+	-- 	local Z = math.Round(Value)
 
-		Panel:SetValue(Z)
+	-- 	Panel:SetValue(Z)
 
-		BoxSize.z = Z
+	-- 	BoxSize.z = Z
 
-		return Z
-	end)
+	-- 	return Z
+	-- end)
+
+	local VectorSet = Menu:AddVectorSlider("Crate Size", Min, Max)
+	VectorSet:SetClientData("Size", "OnValueChanged")
 
 	local Base = Menu:AddCollapsible("Ammo Information")
 	local Desc = Base:AddLabel()
