@@ -14,7 +14,7 @@ return {
 
         State.Bullet = {
             Type = "TestType",
-            Position = Vector(0, 0, 0),
+            Pos = Vector(0, 0, 0),
             Flight = Vector(0, 0, 0)
         }
     end,
