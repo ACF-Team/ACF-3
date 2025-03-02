@@ -218,24 +218,26 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
-function PANEL:AddVectorSlider(Title, Min, Max, Decimals)
+--- Adds a 
+function PANEL:AddVectorSlider(Title, Components, Min, Max, Decimals)
 	local Base = self:AddPanel("ACF_Panel")
 
-	Base.XSlider = Base:AddSlider(Title .. "X", Min, Max, Decimals)
-	Base.XSlider:Dock(TOP)
-	Base.YSlider = Base:AddSlider(Title .. "Y", Min, Max, Decimals)
-	Base.YSlider:Dock(TOP)
-	Base.ZSlider = Base:AddSlider(Title .. "Z", Min, Max, Decimals)
-	Base.ZSlider:Dock(TOP)
+	-- Setup sliders for each component desired and "propagate" their get/set through the Base panel
+	-- This should make it so you can just call PANEL:SetClientData("Size", "OnValueChanged")) just like how AddSlider works, just for vectors.
+	for k, v in ipairs({"X", "Y", "Z"}) do
+		local Slider = Base:AddSlider(Title .. v, Min, Max, Decimals)
+		Slider:Dock(TOP)
 
-	Base.SetValue = function(self, Value)
-		print("SetValue",Value)
-		self.XSlider:SetValue(Value.x)
-		self.YSlider:SetValue(Value.y)
-		self.ZSlider:SetValue(Value.z)
-		return Value
+		local OldSet = Slider.SetValue
+		Slider.SetValue = function(self, Value)
+			OldSet(self, Value)
+			Base.SetValue()
+			return Value
+		end
 	end
 
+	-- Figure out how to do this? Might need to take Vector, X, Y, Z, ... as arguments so it can update if only one slider changes
+	-- Or if the entire clientdata vector is set outside
 	Base.GetValue = function(self)
 		print("GetValue")
 		return Vector(self.XSlider:GetValue(), self.YSlider:GetValue(), self.ZSlider:GetValue())

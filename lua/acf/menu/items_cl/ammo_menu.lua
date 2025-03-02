@@ -565,8 +565,8 @@ function ACF.CreateAmmoMenu(Menu)
 	-- 	return Z
 	-- end)
 
-	local VectorSet = Menu:AddVectorSlider("Crate Size", Min, Max)
-	VectorSet:SetClientData("Size", "OnValueChanged")
+	local VectorSet = Menu:AddVectorSlider("CrateSize", Min, Max)
+	-- VectorSet:SetClientData("Size", "OnValueChanged")
 
 	local Base = Menu:AddCollapsible("Ammo Information")
 	local Desc = Base:AddLabel()
