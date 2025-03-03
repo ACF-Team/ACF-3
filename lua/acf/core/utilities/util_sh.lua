@@ -302,7 +302,7 @@ do
 		if Output == nil then
 			local Link = OutputEntity
 
-			Output = ACF.LocalPlane(Link.Origin, Link.Axis)
+			Output = ACF.LocalPlane(Link.Origin, Link.OutDirection)
 			OutputEntity = Link.Source
 		end
 
