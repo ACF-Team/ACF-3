@@ -6,7 +6,7 @@ local StatsText = language.GetPhrase("acf.menu.gearboxes.stats")
 local function SetStatsText(GearboxStats)
 	local Mass, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
 
-	GearboxStats:SetText(StatsText:format(Mass, TorqueRating, Torque))
+	GearboxStats:SetText(StatsText:format(ACF.GetProperMass(Mass), TorqueRating, Torque))
 end
 
 local function CreateMenu(Menu)

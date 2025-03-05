@@ -89,7 +89,7 @@ do -- Default gearbox menus
 	do -- Manual Gearbox Menu
 		function ACF.ManualGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -107,7 +107,8 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
+				local Control = GearBase:AddSlider(SliderName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -126,7 +127,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("Final Drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -143,7 +144,7 @@ do -- Default gearbox menus
 	do -- CVT Gearbox Menu
 		local CVTData = {
 			{
-				Name = "Gear 2",
+				Name = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(2),
 				Variable = "Gear2",
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
@@ -151,7 +152,7 @@ do -- Default gearbox menus
 				Default = -1,
 			},
 			{
-				Name = "Min Target RPM",
+				Name = "#acf.menu.gearboxes.min_target_rpm",
 				Variable = "MinRPM",
 				Min = 1,
 				Max = 9900,
@@ -159,7 +160,7 @@ do -- Default gearbox menus
 				Default = 3000,
 			},
 			{
-				Name = "Max Target RPM",
+				Name = "#acf.menu.gearboxes.max_target_rpm",
 				Variable = "MaxRPM",
 				Min = 101,
 				Max = 10000,
@@ -167,7 +168,7 @@ do -- Default gearbox menus
 				Default = 5000,
 			},
 			{
-				Name = "Final Drive",
+				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
@@ -177,7 +178,7 @@ do -- Default gearbox menus
 		}
 
 		function ACF.CVTGearboxMenu(Class, _, Menu, _)
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -216,7 +217,7 @@ do -- Default gearbox menus
 		local UnitMult = 10.936 -- km/h is set by default
 		local AutoData = {
 			{
-				Name = "Reverse Gear",
+				Name = "#acf.menu.gearboxes.reverse_gear",
 				Variable = "Reverse",
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
@@ -224,7 +225,7 @@ do -- Default gearbox menus
 				Default = -1,
 			},
 			{
-				Name = "Final Drive",
+				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
 				Min = ACF.MinGearRatio,
 				Max = ACF.MaxGearRatio,
@@ -235,27 +236,27 @@ do -- Default gearbox menus
 
 		local GenData = {
 			{
-				Name = "Upshift RPM",
+				Name = "#acf.menu.gearboxes.upshift_rpm",
 				Variable = "UpshiftRPM",
-				Tooltip = "Target engine RPM to upshift at.",
+				Tooltip = "#acf.menu.gearboxes.upshift_rpm_desc",
 				Min = 0,
 				Max = 10000,
 				Decimals = 0,
 				Default = 5000,
 			},
 			{
-				Name = "Total Ratio",
+				Name = "#acf.menu.gearboxes.total_ratio",
 				Variable = "TotalRatio",
-				Tooltip = "Total ratio is the ratio of all gearboxes (excluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
+				Tooltip = "#acf.menu.gearboxes.total_ratio_desc",
 				Min = 0,
 				Max = 1,
 				Decimals = 2,
 				Default = 0.1,
 			},
 			{
-				Name = "Wheel Diameter",
+				Name = "#acf.menu.gearboxes.wheel_diameter",
 				Variable = "WheelDiameter",
-				Tooltip = "If you use default spherical settings, add 0.5 to your wheel diameter.\nFor treaded vehicles, use the diameter of road wheels, not drive wheels.",
+				Tooltip = "#acf.menu.gearboxes.wheel_diameter_desc",
 				Min = 0,
 				Max = 1000,
 				Decimals = 2,
@@ -265,20 +266,20 @@ do -- Default gearbox menus
 
 		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			GearBase:AddLabel("Upshift Speed Unit :")
+			GearBase:AddLabel("#acf.menu.gearboxes.upshift_speed_unit")
 
 			ACF.SetClientData("ShiftUnit", UnitMult)
 
 			local Unit = GearBase:AddComboBox()
-			Unit:AddChoice("KPH", 10.936)
-			Unit:AddChoice("MPH", 17.6)
-			Unit:AddChoice("GMU", 1)
+			Unit:AddChoice("#acf.menu.gearboxes.kph", 10.936)
+			Unit:AddChoice("#acf.menu.gearboxes.mph", 17.6)
+			Unit:AddChoice("#acf.menu.gearboxes.gmu", 1)
 
 			function Unit:OnSelect(_, _, Mult)
 				if UnitMult == Mult then return end
@@ -309,7 +310,8 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(GearVar, DefGear)
 
-				local Gear = GearBase:AddSlider("Gear " .. I, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
+				local Gear = GearBase:AddSlider(GearName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -332,7 +334,8 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(ShiftVar, DefShift)
 
-				local Shift = GearBase:AddNumberWang("Gear " .. I .. " Upshift Speed", 0, 9999, 2)
+				local ShiftName = language.GetPhrase("acf.menu.gearboxes.gear_upshift_speed"):format(I)
+				local Shift = GearBase:AddNumberWang(ShiftName, 0, 9999, 2)
 				Shift:HideWang()
 				Shift:SetClientData(ShiftVar, "OnValueChanged")
 				Shift:DefineSetter(function(Panel, _, _, Value)
@@ -375,7 +378,7 @@ do -- Default gearbox menus
 
 			-----------------------------------
 
-			local GenBase = Menu:AddCollapsible("Shift Point Generator")
+			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator")
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
@@ -407,7 +410,7 @@ do -- Default gearbox menus
 				end
 			end
 
-			local Button = GenBase:AddButton("Calculate")
+			local Button = GenBase:AddButton("#acf.menu.gearboxes.calculate")
 
 			function Button:DoClickInternal()
 				local UpshiftRPM = ValuesData.UpshiftRPM

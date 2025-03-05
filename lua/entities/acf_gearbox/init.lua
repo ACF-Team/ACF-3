@@ -136,8 +136,8 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
-	local function GetMass(Model, PhysObj, Class, Gearbox, Scale)
-		if Gearbox then return Gearbox.Mass * (Scale ^ ACF.GearboxMassScale) end
+	local function GetMass(Model, PhysObj, Class, Gearbox, ScaledMass)
+		if Gearbox then return ScaledMass end
 
 		local Volume = PhysObj:GetVolume()
 		local Factor = Volume / ModelData.GetModelVolume(Model)
@@ -153,7 +153,7 @@ do -- Spawn and Update functions -----------------------
 		local CanDualClutch = Gearbox.CanDualClutch
 		local Scale = Data.GearboxScale or 1
 		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
-		local _, _, TorqueRating = ACF.GetGearboxStats(0, Scale, Gearbox.MaxTorque, MaxGear)
+		local ScaledMass, _, TorqueRating = ACF.GetGearboxStats(Gearbox.Mass, Scale, Gearbox.MaxTorque, MaxGear)
 
 		Entity.ACF = Entity.ACF or {}
 
@@ -200,7 +200,7 @@ do -- Spawn and Update functions -----------------------
 		local PhysObj = Entity.ACF.PhysObj
 
 		if IsValid(PhysObj) then
-			local Mass = GetMass(Model, PhysObj, Class, Gearbox, Scale)
+			local Mass = GetMass(Model, PhysObj, Class, Gearbox, ScaledMass)
 
 			Contraption.SetMass(Entity, Mass)
 		end
