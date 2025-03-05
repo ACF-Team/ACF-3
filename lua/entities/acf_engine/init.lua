@@ -331,7 +331,6 @@ do -- Spawn and Update functions
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
 
-
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
 
@@ -404,8 +403,6 @@ do -- Spawn and Update functions
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
-
-		Entity:UpdateOverlay(true)
 
 		ACF.CheckLegal(Entity)
 

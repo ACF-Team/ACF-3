@@ -395,7 +395,6 @@ do -- Spawn and Update functions --------------------------------
 		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
 
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Weapon)
 		end
@@ -411,8 +410,6 @@ do -- Spawn and Update functions --------------------------------
 		)
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
-
-		Entity:UpdateOverlay(true)
 
 		TimerCreate("ACF Ammo Left " .. Entity:EntIndex(), 1, 0, function()
 			if not IsValid(Entity) then return end
@@ -477,12 +474,6 @@ do -- Spawn and Update functions --------------------------------
 				self:Unlink(Crew)
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Weapon updated successfully!"
 	end

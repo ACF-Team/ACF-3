@@ -332,6 +332,7 @@ do -- ACF global vars
 	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
 	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
+
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
 	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox

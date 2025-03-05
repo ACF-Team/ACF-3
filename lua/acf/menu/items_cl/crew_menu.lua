@@ -3,29 +3,26 @@ local CrewTypes = ACF.Classes.CrewTypes
 local CrewModels = ACF.Classes.CrewModels
 
 local function CreateMenu(Menu)
-
 	ACF.SetToolMode("acf_menu", "Spawner", "Component")
 
 	ACF.SetClientData("PrimaryClass", "acf_crew")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
-	Menu:AddTitle("Crews")
+	Menu:AddTitle("Crew")
 
 	local Instructions = Menu:AddCollapsible("General Instructions", false)
-	Instructions:AddLabel("Crews will be necessary for a well functioning vehicle. Place them in your vehicle for protection and parent them.")
+	Instructions:AddLabel("Crew will be necessary for a well functioning vehicle. Place them in your vehicle for protection and parent them.")
 	Instructions:AddLabel("It is recommended to have a commander, driver, gunner, and loader in your vehicle.")
 	Instructions:AddLabel("The default limit for crew is 8. Crew will remove themselves if you exceed the type specific limit per contraption as displayed below.")
 	Instructions:AddLabel("Linking your seat (singular) to an acf_baseplate makes it immune to damage.")
 	Instructions:AddLabel("Please read the crew specific instructions and the stats below for more information.")
 
-	local EffFocusInfo = Menu:AddCollapsible("Efficy/Focus Info", false)
+	local EffFocusInfo = Menu:AddCollapsible("Efficiency/Focus Info", false)
 	EffFocusInfo:AddLabel("Each crew has a total efficiency which ranges from 0 to 1. This represents how well they can perform their job.")
 	EffFocusInfo:AddLabel("The total efficiency is the product of multiple factors such as lean angle, G-Forces, and model posture efficiency.")
-	EffFocusInfo:AddLabel("Different occupations are affected by different efficiencies. For example a loader is affected by load angle while a loader is not.")
-	EffFocusInfo:AddLabel("")
+	EffFocusInfo:AddLabel("Different occupations are affected by different efficiencies. For example a loader is affected by load angle while a loader is not.\n")
 	EffFocusInfo:AddLabel("Each crew also has a focus which ranges from 0 to 1. This represents how much effort/focus they can apply to each of their tasks.")
-	EffFocusInfo:AddLabel("For example, one loader loading two guns will have a focus of 0.5, since they load each half as fast.")
-	EffFocusInfo:AddLabel("")
+	EffFocusInfo:AddLabel("For example, one loader loading two guns will have a focus of 0.5, since they load each half as fast.\n")
 	EffFocusInfo:AddLabel("The exact efficiencies affecting each crew type or the way their focuses work can be found below.")
 
 	local EffTypesInfo = Menu:AddCollapsible("Efficiency Types", false)
