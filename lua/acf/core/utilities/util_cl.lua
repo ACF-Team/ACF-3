@@ -991,19 +991,36 @@ do -- Link distance gizmo stuff
 		end
 	}
 
-	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_gun", function(From, To)
+	local function GenericLinkDistanceCheck(From, To)
 		local FromPos, ToPos = From:GetPos(), To:GetPos()
 		local Dist    = FromPos:Distance(ToPos)
 		local MaxDist = ACF.LinkDistance
 		if Dist > MaxDist then return false, LinkDistanceTooFar, {FromPos = FromPos, ToPos = ToPos, Dist = Dist, MaxDist = MaxDist} end
-	end)
+	end
 
-	ACF.ToolCL_RegisterLinkGizmoData("acf_gearbox", "acf_engine", function(From, To)
+	local function MobilityLinkDistanceCheck(From, To)
 		local FromPos, ToPos = From:GetPos(), To:GetPos()
 		local Dist    = FromPos:Distance(ToPos)
 		local MaxDist = ACF.MobilityLinkDistance
 		if Dist > MaxDist then return false, LinkDistanceTooFar, {FromPos = FromPos, ToPos = ToPos, Dist = Dist, MaxDist = MaxDist} end
-	end)
+	end
+
+	local function AlwaysLinkableCheck()
+		return true
+	end
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_gun", GenericLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_rack", GenericLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_motor", GenericLinkDistanceCheck) -- TODO: Make this use the actual link distance check used in turrets
+	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_gyro", GenericLinkDistanceCheck)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gearbox", "acf_engine", MobilityLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_engine", "acf_fueltank", MobilityLinkDistanceCheck)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gun", "acf_turret_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gun", "acf_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_rack", "acf_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_rack", "acf_radar", AlwaysLinkableCheck)
 
 	local HUDText = {}
 
