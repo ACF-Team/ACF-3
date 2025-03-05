@@ -9,16 +9,17 @@ do -- Generic Spawner/Linker operation creator
 	local NameFormat = "%s[ID: %s]"
 	local PlayerEnts = {}
 
-	local CL_InLinkState  = false
+	local InLinkState  = false
 
 	if CLIENT then
 		net.Receive("ACF_MenuLinking", function()
 			local StateChange = net.ReadUInt(2)
+
 			if StateChange == 0 then     -- Entering link state
-				CL_InLinkState = true
+				InLinkState = true
 				table.Empty(PlayerEnts)
 			elseif StateChange == 1 then -- Exiting link state
-				CL_InLinkState = false
+				InLinkState = false
 				table.Empty(PlayerEnts)
 			elseif StateChange == 2 then -- Adding entity to link table
 				PlayerEnts[net.ReadEntity()] = true
@@ -28,42 +29,21 @@ do -- Generic Spawner/Linker operation creator
 		end)
 	end
 
-	local function S2C_EnterLinkState(ply)
+	local function UpdateLinkState(Player, State, Entity)
 		if CLIENT then return end
 
 		net.Start("ACF_MenuLinking")
-		net.WriteUInt(0, 2)
-		net.Send(ply)
-	end
+		net.WriteUInt(State, 2)
 
-	local function S2C_ExitLinkState(ply)
-		if CLIENT then return end
+		if State > 1 then
+			net.WriteEntity(Entity)
+		end
 
-		net.Start("ACF_MenuLinking")
-		net.WriteUInt(1, 2)
-		net.Send(ply)
-	end
-
-	local function S2C_AddLinkEnt(ply, ent)
-		if CLIENT then return end
-
-		net.Start("ACF_MenuLinking")
-		net.WriteUInt(2, 2)
-		net.WriteEntity(ent)
-		net.Send(ply)
-	end
-
-	local function S2C_RemoveLinkEnt(ply, ent)
-		if CLIENT then return end
-
-		net.Start("ACF_MenuLinking")
-		net.WriteUInt(3, 2)
-		net.WriteEntity(ent)
-		net.Send(ply)
+		net.Send(Player)
 	end
 
 	function ACF.ToolCL_InLinkState()
-		return CL_InLinkState
+		return InLinkState
 	end
 
 	function ACF.ToolCL_GetLinkedEnts()
@@ -151,7 +131,7 @@ do -- Generic Spawner/Linker operation creator
 		Entity:SetColor(EntColor)
 
 		Ents[Entity] = nil
-		S2C_RemoveLinkEnt(Player, Entity)
+		UpdateLinkState(Player, 3, Entity)
 
 		if not next(Ents) then
 			Tool:SetMode("Spawner", Name)
@@ -166,11 +146,11 @@ do -- Generic Spawner/Linker operation creator
 
 		if not next(Ents) then
 			Tool:SetMode("Linker", Name)
-			S2C_EnterLinkState(Player)
+			UpdateLinkState(Player, 0)
 		end
 
 		Ents[Entity] = Entity:GetColor()
-		S2C_AddLinkEnt(Player, Entity)
+		UpdateLinkState(Player, 2, Entity)
 
 		Entity:CallOnRemove("ACF_ToolLinking", UnselectEntity, Name, Tool)
 		Entity:SetColor(Green)
@@ -333,13 +313,13 @@ do -- Generic Spawner/Linker operation creator
 					local Entity = Trace.Entity
 					local Player = Tool:GetOwner()
 
-					if not IsValid(Entity) then S2C_ExitLinkState(Player) return false end
+					if not IsValid(Entity) then UpdateLinkState(Player, 1) return false end
 
-					local Ents   = GetPlayerEnts(Player)
+					local Ents = GetPlayerEnts(Player)
 
 					if not Player:KeyDown(IN_SPEED) then
 						LinkEntities(Player, Name, Tool, Entity, Ents)
-						S2C_ExitLinkState(Player)
+						UpdateLinkState(Player, 1)
 
 						return true
 					end
@@ -362,7 +342,7 @@ do -- Generic Spawner/Linker operation creator
 						UnselectEntity(Entity, Name, Tool)
 					end
 
-					S2C_ExitLinkState(Player)
+					UpdateLinkState(Player, 1)
 				end,
 			})
 
