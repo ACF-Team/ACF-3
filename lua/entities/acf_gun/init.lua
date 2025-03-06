@@ -175,6 +175,13 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
+	function ENT:ACF_IsLegal()
+		-- TODO: is acf_turret_rotator *actually* part of the parent chain here, I need to ask Liddul/check later...
+		if self.State == "Loaded" and not ACF.CheckParentChain(self, {acf_turret = true, acf_turret_rotator = true}, "acf_baseplate") then
+			return false, "Arbitrary Parent", "Guns must be parented to zero or more turret entities, ending in an ACF baseplate.", 2
+		end
+	end
+
 	--- Simulates the temperature of the gun
 	--- @param DT number The duration the temperature was experienced for
 	--- @param Ambient number The ambient temperature, or an override
