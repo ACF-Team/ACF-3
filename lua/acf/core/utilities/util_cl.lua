@@ -1014,7 +1014,24 @@ do -- Link distance gizmo stuff
 	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_motor", GenericLinkDistanceCheck) -- TODO: Make this use the actual link distance check used in turrets
 	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_gyro", GenericLinkDistanceCheck)
 
-	ACF.ToolCL_RegisterLinkGizmoData("acf_gearbox", "acf_engine", MobilityLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_engine", "acf_gearbox", function(From, To)
+		--[[
+		local Out = From.Out
+
+		if From:GetClass() == "acf_gearbox" then
+			local InPos = To.In and To.In.Pos or Vector()
+			local InPosWorld = To:LocalToWorld(InPos)
+
+			Out = From:WorldToLocal(InPosWorld).y < 0 and From.OutL or From.OutR
+		end
+
+		if ACF.IsDriveshaftAngleExcessive(To, To.In, From, Out) then
+			return false, { Text = "The driveshaft angle is excessive." }, {FromPos = From:GetPos(), ToPos = To:GetPos()}
+		end
+		]]
+		return MobilityLinkDistanceCheck(From, To)
+	end)
+
 	ACF.ToolCL_RegisterLinkGizmoData("acf_engine", "acf_fueltank", MobilityLinkDistanceCheck)
 
 	ACF.ToolCL_RegisterLinkGizmoData("acf_gun", "acf_turret_computer", AlwaysLinkableCheck)
