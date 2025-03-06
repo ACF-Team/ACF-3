@@ -43,7 +43,19 @@ function ACF.IsLegal(Entity)
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 
-	local Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity)
+	local Legal, Reason, Message, Timeout
+	if Entity.ACF_IsLegal then
+		Legal, Reason, Message, Timeout = Entity:ACF_IsLegal()
+	end
+
+	-- Legal would only be false if ACF_IsLegal is present on the entity *and* it returned false
+	-- If it returned true, the hook should be allowed to override that
+
+	-- Additionally; add arguments to the hook from the entity check, in case whatever hooks into this
+	-- wants to stop if the entity said its legal, add a reason onto the reason, etc?
+	if Legal ~= false then
+		Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity, Legal, Reason, Message, Timeout)
+	end
 
 	if not Legal then return Legal, Reason, Message, Timeout end
 

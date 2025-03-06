@@ -343,6 +343,36 @@ do
 	end
 end
 
+do
+	-- Checks the parent chain of an entity.
+	-- Basically; given Entity, confirms that all inbetween entities are a class whitelisted in InbetweenEntities,
+	-- and the final ancestor is a class whitelisted in EndIn.
+	function ACF.CheckParentChain(Entity, InbetweenEntities, EndIn)
+		if ACF.AllowArbitraryParents == false then return true end
+
+		local Parent = Entity
+		local NoInbetween = false
+		for _ = 1, 1000 do
+			local TestParent = Parent:GetParent()
+			if not IsValid(TestParent) then
+				break
+			end
+			if NoInbetween then return false end
+
+			Parent = TestParent
+			local Class = TestParent:GetClass()
+			if not (InbetweenEntities == Class or InbetweenEntities[Class]) then
+				-- The next check MUST be the end
+				NoInbetween = true
+			end
+		end
+
+		-- Parent is now the master parent
+		local Class = Parent:GetClass()
+		return Class == EndIn or EndIn[Class] or false
+	end
+end
+
 do -- ACF.GetHitAngle
 	-- This includes workarounds for traces starting and/or ending inside an object
 	-- Whenever a trace ends inside an object the hitNormal will be 0,0,0
