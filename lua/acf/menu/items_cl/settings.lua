@@ -181,6 +181,9 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_fun"):LinkToServerData("AllowFunEnts")
 			Base:AddHelp("#acf.menu.settings.fun_menu.allow_fun_desc")
 
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
+			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
+
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.show_fun"):LinkToServerData("ShowFunMenu")
 			Base:AddHelp("#acf.menu.settings.fun_menu.show_fun_desc")
 
