@@ -135,4 +135,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(GearboxClass, Entries, "ID")
 end
 
-ACF.AddMenuItem(301, "Entities", "#acf.menu.gearboxes", "cog", CreateMenu)
+ACF.AddMenuItem(301, "#acf.menu.entities", "#acf.menu.gearboxes", "cog", CreateMenu)

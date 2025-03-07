@@ -64,4 +64,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "ID")
 end
 
-ACF.AddMenuItem(51, "Entities", "Turrets", "shape_align_center", CreateMenu)
+ACF.AddMenuItem(51, "#acf.menu.entities", "Turrets", "shape_align_center", CreateMenu)

@@ -30,8 +30,8 @@ do
 		net.Start("ACF_refreshfriends")
 		net.SendToServer()
 
-		Menu:AddTitle("ACF Damage Permissions")
-		Menu:AddLabel("Allow or deny ACF damage to your props using this panel.\n\nThese preferences only work during the Build and Strict Build modes.")
+		Menu:AddTitle("#acf.menu.permissions.player_permissions_title")
+		Menu:AddLabel("#acf.menu.permissions.player_permissions_desc")
 
 		PlayerChecks = {}
 
@@ -44,35 +44,24 @@ do
 			end
 		end
 
-		local SetPerms = Menu:AddButton("Give Damage Permission")
+		local SetPerms = Menu:AddButton("#acf.menu.permissions.give_permissions")
 
 		function SetPerms:DoClickInternal()
 			Permissions.ApplyPermissions(PlayerChecks)
 		end
 	end
 
-	ACF.AddMenuItem(1, "Damage Permissions", "Player Permissions", "group_edit", CreateMenu)
+	ACF.AddMenuItem(1, "#acf.menu.permissions", "#acf.menu.permissions.player_permissions", "group_edit", CreateMenu)
 end
 
 do
-	local ModePermissions = {}
 	local PermissionModes = {}
 	local CurrentPermission = "default"
 	local DefaultPermission = "none"
-	local ModeDescDefault = "Can't find any info for this mode!"
 	local CurrentMode
-	local CurrentModeTxt = "\nThe current damage permission mode is %s."
 	local List
 
-	net.Receive("ACF_refreshpermissions", function()
-		PermissionModes = net.ReadTable()
-		CurrentPermission = net.ReadString()
-		DefaultPermission = net.ReadString()
-
-		ModePermissions:Update()
-	end)
-
-	function ModePermissions:Update()
+	local function UpdateModeData()
 		if List then
 			for ID, Line in pairs(List:GetLines()) do
 				if Line:GetValue(1) == CurrentPermission then
@@ -80,6 +69,7 @@ do
 				else
 					List:GetLine(ID):SetValue(2, "")
 				end
+
 				if Line:GetValue(1) == DefaultPermission then
 					List:GetLine(ID):SetValue(3, "Yes")
 				else
@@ -89,30 +79,41 @@ do
 		end
 
 		if CurrentMode then
+			local CurrentModeTxt = language.GetPhrase("acf.menu.permissions.current_mode")
 			CurrentMode:SetText(string.format(CurrentModeTxt, CurrentPermission))
 		end
 	end
 
-	function ModePermissions:RequestUpdate()
+	local function RequestUpdate()
 		net.Start("ACF_refreshpermissions")
 		net.SendToServer()
 	end
 
+	net.Receive("ACF_refreshpermissions", function()
+		PermissionModes = net.ReadTable()
+		CurrentPermission = net.ReadString()
+		DefaultPermission = net.ReadString()
+
+		UpdateModeData()
+	end)
+
 	timer.Simple(0, function()
-		ModePermissions:RequestUpdate()
+		RequestUpdate()
 	end)
 
 	local function CreateMenu(Menu)
-		Menu:AddTitle("Damage Permission Modes")
-		Menu:AddLabel("Damage Permission Modes change the way that ACF damage works.\n\nYou can change the DP mode if you are an admin.")
+		Menu:AddTitle("#acf.menu.permissions.permission_modes_title")
+		Menu:AddLabel("#acf.menu.permissions.permission_modes_desc")
+
+		local CurrentModeTxt = language.GetPhrase("acf.menu.permissions.current_mode")
 		CurrentMode = Menu:AddLabel(string.format(CurrentModeTxt, CurrentPermission))
 
 		if not LocalPlayer():IsAdmin() then return end
 
 		List = Menu:AddPanel("DListView")
-		List:AddColumn("Mode")
-		List:AddColumn("Active")
-		List:AddColumn("Map Default")
+		List:AddColumn("#acf.menu.permissions.mode")
+		List:AddColumn("#acf.menu.permissions.active")
+		List:AddColumn("#acf.menu.permissions.map_default")
 		List:SetMultiSelect(false)
 		List:SetSize(30, 100)
 
@@ -129,19 +130,21 @@ do
 			end
 		end
 
-		Menu:AddLabel("What this mode does:")
+		local ModeDescDefault = "#acf.menu.permissions.mode_desc_default"
+
+		Menu:AddLabel("#acf.menu.permissions.mode_desc_header")
 		local ModeDesc = Menu:AddLabel(PermissionModes[CurrentPermission] or ModeDescDefault)
 
 		List.OnRowSelected = function(Panel, Line)
 			ModeDesc:SetText(PermissionModes[Panel:GetLine(Line):GetValue(1)] or ModeDescDefault)
 		end
 
-		local SetMode = Menu:AddButton("Set Permission Mode")
+		local SetMode = Menu:AddButton("#acf.menu.permissions.set_mode")
 
 		function SetMode:DoClickInternal()
 			local Line = List:GetLine(List:GetSelectedLine())
 			if not Line then
-				ModePermissions:RequestUpdate()
+				RequestUpdate()
 				return
 			end
 
@@ -149,12 +152,12 @@ do
 			RunConsoleCommand("ACF_setpermissionmode", Mode)
 		end
 
-		local SetDefault = Menu:AddButton("Set Default Permission Mode")
+		local SetDefault = Menu:AddButton("#acf.menu.permissions.set_default_mode")
 
 		function SetDefault:DoClickInternal()
 			local Line = List:GetLine(List:GetSelectedLine())
 			if not Line then
-				ModePermissions:RequestUpdate()
+				RequestUpdate()
 				return
 			end
 
@@ -163,5 +166,5 @@ do
 		end
 	end
 
-	ACF.AddMenuItem(2, "Damage Permissions", "Set Permission Mode", "server_edit", CreateMenu)
+	ACF.AddMenuItem(2, "#acf.menu.permissions", "#acf.menu.permissions.set_mode", "server_edit", CreateMenu)
 end

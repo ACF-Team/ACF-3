@@ -124,4 +124,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(CrewModel, CrewModels.GetEntries(), "ID")
 end
 
-ACF.AddMenuItem(61, "Entities", "Crew", "user_female", CreateMenu)
+ACF.AddMenuItem(61, "#acf.menu.entities", "Crew", "user_female", CreateMenu)

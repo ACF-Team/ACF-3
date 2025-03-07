@@ -89,12 +89,6 @@ function TOOL:CheckForReload()
 end
 
 if CLIENT then
-	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
-	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility")
-	language.Add("tool.acfarmorprop.left", "Apply settings")
-	language.Add("tool.acfarmorprop.right", "Copy settings")
-	language.Add("tool.acfarmorprop.reload", "Get the total mass of an object and all constrained objects")
-
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
@@ -111,17 +105,17 @@ if CLIENT then
 			Presets:SetPreset("acfarmorprop")
 		Panel:AddItem(Presets)
 
-		Panel:NumSlider("Thickness", "acfarmorprop_thickness", MinimumArmor, MaximumArmor)
-		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
+		Panel:NumSlider("#tool.acfarmorprop.thickness", "acfarmorprop_thickness", MinimumArmor, MaximumArmor)
+		Panel:ControlHelp("#tool.acfarmorprop.thickness_desc")
 
-		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
-		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0). A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
+		Panel:NumSlider("#tool.acfarmorprop.ductility", "acfarmorprop_ductility", -80, 80)
+		Panel:ControlHelp("#tool.acfarmorprop.ductility_desc")
 
-		local SphereCheck = Panel:CheckBox("Use sphere search for armor readout", "acfarmorprop_sphere_search")
-		Panel:ControlHelp("If checked, the tool will find all the props in a sphere around the hit position instead of getting all the entities connected to a prop.")
+		local SphereCheck = Panel:CheckBox("#tool.acfarmorprop.sphere_search", "acfarmorprop_sphere_search")
+		Panel:ControlHelp("#tool.acfarmorprop.sphere_search_desc")
 
-		local SphereRadius = Panel:NumSlider("Sphere search radius", "acfarmorprop_sphere_radius", 0, 2000, 0)
-		Panel:ControlHelp("Defines the radius of the search sphere, only applies if the checkbox above is checked.")
+		local SphereRadius = Panel:NumSlider("#tool.acfarmorprop.sphere_search_radius", "acfarmorprop_sphere_radius", 0, 2000, 0)
+		Panel:ControlHelp("#tool.acfarmorprop.sphere_search_radius_desc")
 
 		function SphereCheck:OnChange(Bool)
 			SphereRadius:SetEnabled(Bool)
@@ -129,8 +123,6 @@ if CLIENT then
 
 		SphereRadius:SetEnabled(SphereCheck:GetChecked())
 	end
-
-	local BubbleText = "Current:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp\n\nAfter:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp"
 
 	function TOOL:DrawHUD()
 		local Trace = self:GetOwner():GetEyeTrace()
@@ -150,6 +142,7 @@ if CLIENT then
 		local Thickness = ArmorProp_Thickness:GetFloat()
 
 		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility * 0.01, Thickness)
+		local BubbleText = language.GetPhrase("tool.acfarmorprop.bubble_text")
 		local Text = BubbleText:format(Mass, Armor, Health, math.Round(NewMass, 2), math.Round(NewArmor, 2), math.Round(NewHealth, 2))
 
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
@@ -203,23 +196,22 @@ if CLIENT then
 				surface.SetDrawColor(BGGray)
 				surface.DrawRect(0, 34, 256, 2)
 
-				drawText("ACF Armor Data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Material: " .. Material, "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Weight: " .. Mass .. "kg", "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Nominal Armor: " .. Nominal .. "mm", "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("#tool.acfarmorprop.procedural.data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.material"):format(Material), "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.weight"):format(Mass), "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.nominal_armor"):format(Nominal), "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 110, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 110, Angle / 90 * 236, 32, Green)
-				drawText("Hit Angle: " .. Angle .. "°", "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.hit_angle"):format(Angle), "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 160, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 160, Armor / MaxArmor * 236, 32, Blue)
-				drawText("Armor: " .. Armor .. "mm", "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.armor"):format(Armor), "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 210, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 210, Health / MaxHealth * 236, 32, Red)
-				drawText("Health: " .. Health, "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
-				--drawText("")
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.health"):format(Health), "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
 			cam.End2D()
 		else
 			local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
@@ -235,7 +227,7 @@ if CLIENT then
 				surface.SetFont("Torchfont")
 
 				-- header
-				draw.SimpleTextOutlined("ACF Stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#tool.acfarmorprop.armor_stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- armor bar
 				draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
@@ -243,7 +235,7 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
 				end
 
-				draw.SimpleTextOutlined("Armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#tool.acfarmorprop.armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 				draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- health bar
@@ -252,12 +244,10 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
 				end
 
-				draw.SimpleTextOutlined("Health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#tool.acfarmorprop.health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 				draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			cam.End2D()
 		end
-
-
 	end
 
 	-- Clamp thickness if the change in ductility puts mass out of range
@@ -576,7 +566,7 @@ do -- Armor readout
 		local Player = self:GetOwner()
 
 		SendMessage(Player, nil, Text1:format(Name))
-		SendMessage(Player, nil, Text2:format(math.Round(Total, 1), math.Round(PhysTotal, 1), PhysRatio, math.Round(ParentTotal, 1)))
+		SendMessage(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
 		SendMessage(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
 		SendMessage(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 

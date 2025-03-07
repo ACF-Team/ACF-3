@@ -401,8 +401,6 @@ elseif CLIENT then
 	ACF.CustomToolCategory = CreateClientConVar("acf_tool_category", 0, true, false, "If enabled, ACF tools will be put inside their own category.", 0, 1)
 
 	if ACF.CustomToolCategory:GetBool() then
-		language.Add("spawnmenu.tools.acf", "ACF")
-
 		-- We use this hook so that the ACF category is always at the top
 		hook.Add("AddToolMenuTabs", "CreateACFCategory", function()
 			spawnmenu.AddToolCategory("Main", "ACF", "#spawnmenu.tools.acf")

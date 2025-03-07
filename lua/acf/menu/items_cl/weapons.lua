@@ -242,4 +242,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
-ACF.AddMenuItem(1, "Entities", "Weapons", "gun", CreateMenu)
+ACF.AddMenuItem(1, "#acf.menu.entities", "Weapons", "gun", CreateMenu)

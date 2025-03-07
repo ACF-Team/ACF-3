@@ -77,12 +77,12 @@ do -- Menu population functions
 		end
 	end
 
-	ACF.AddMenuOption(1, "About the Addon", "information")
+	ACF.AddMenuOption(1, "#acf.menu.about", "information")
 	ACF.AddMenuOption(101, "#acf.menu.settings", "wrench")
-	ACF.AddMenuOption(102, "Damage Permissions", "gun")
-	ACF.AddMenuOption(201, "Entities", "brick")
+	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
+	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
 	ACF.AddMenuOption(9999, "Fun Stuff", "bricks")
-	ACF.AddMenuOption(100000, "Scanner", "magnifier")
+	ACF.AddMenuOption(100000, "#acf.menu.scanner", "magnifier")
 end
 
 
