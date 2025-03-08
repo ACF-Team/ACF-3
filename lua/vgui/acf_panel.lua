@@ -242,6 +242,26 @@ function PANEL:AddCollapsible(Text, State)
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
+	function Category:AnimSlide(Anim, Delta, Data)
+		self:InvalidateLayout()
+		self:InvalidateParent()
+
+		local _, CH = self.Contents:ChildrenSize()
+
+		if self:GetExpanded() then
+			Data.From = self.Header:GetTall()
+			Data.To = CH
+		else
+			Data.From = CH
+			Data.To = self.Header:GetTall()
+		end
+
+		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
+		self:SetTall(Lerp(Delta, Data.From, Data.To))
+	end
+	Category:SetAnimTime(0.2)
+	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
+
 	return Base, Category
 end
 
