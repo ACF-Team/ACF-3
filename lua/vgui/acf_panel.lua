@@ -242,7 +242,7 @@ function PANEL:AddCollapsible(Text, State)
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
-	function Category:AnimSlide(Anim, Delta, Data)
+	function Category:AnimSlide(_, Delta, Data)
 		self:InvalidateLayout()
 		self:InvalidateParent()
 
