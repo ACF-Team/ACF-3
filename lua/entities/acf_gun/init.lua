@@ -175,12 +175,57 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
-	function ENT:ACF_IsLegal()
-		-- TODO: is acf_turret_rotator *actually* part of the parent chain here, I need to ask Liddul/check later...
-		if self.State == "Loaded" and not ACF.CheckParentChain(self, {acf_turret = true, acf_turret_rotator = true}, "acf_baseplate") then
-			return false, "Arbitrary Parent", "Guns must be parented to zero or more turret entities, ending in an ACF baseplate.", 2
+	-- self.ParentState is one of three values:
+	-- 0:  Unparented
+	-- -1: Invalid parent chain
+	-- 1:  Valid parent chain
+
+	function ENT:DetermineParentState()
+		local EntTable = self:GetTable()
+		if EntTable.ParentStateValid then return end
+
+		if not IsValid(self:GetParent()) then
+			self.ParentState = 0
+		elseif not ACF.CheckParentChain(self, {acf_turret = true, acf_turret_rotator = true}, "acf_baseplate") then
+			self.ParentState = -1
+		else
+			self.ParentState = 1
 		end
 	end
+
+	hook.Add("cfw.family.added", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if Ent:GetClass() == "acf_gun" then
+			if Family.Guns then
+				Family.Guns[Ent] = true
+			else
+				Family.Guns = {[Ent] = true}
+			end
+
+			Family.HasGuns = true
+		end
+
+		if Family.HasGuns then
+			for Gun in pairs(Family.Guns) do
+				if IsValid(Gun) then Gun:DetermineParentState() end
+			end
+		end
+	end)
+
+	hook.Add("cfw.family.subbed", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if Ent:GetClass() == "acf_gun" then
+			if Family.Guns then
+				Family.Guns[Ent] = nil
+			end
+
+			Family.HasGuns = next(Family.Guns) and true or nil
+		end
+
+		if Family.HasGuns then
+			for Gun in pairs(Family.Guns) do
+				if IsValid(Gun) then Gun:DetermineParentState() end
+			end
+		end
+	end)
 
 	--- Simulates the temperature of the gun
 	--- @param DT number The duration the temperature was experienced for
@@ -392,6 +437,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.BulletData   = EMPTY
 		Entity.TurretLink	= false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
+		Entity.ParentState = 0
 
 		duplicator.ClearEntityModifier(Entity, "mass")
 
@@ -646,6 +692,7 @@ do -- Metamethods --------------------------------
 			if not ACF.GunsCanFire then return false end -- Disabled by the server
 			if not self.Firing then return false end -- Nobody is holding the trigger
 			if self.Disabled then return false end -- Disabled
+
 			if self.State ~= "Loaded" then -- Weapon is not loaded
 				if self.State == "Empty" and not self.Retry then
 					if not self:Load() then
@@ -665,6 +712,12 @@ do -- Metamethods --------------------------------
 					end)
 				end
 
+				return false
+			end
+
+			if self.ParentState ~= 1 then
+				-- This NEEDS a better message, I can't find a good way to explain it right now
+				ACF.DisableEntity(self, "Invalid Parent Chain", "Guns can only be parented to turret entities and must have a baseplate root ancestor.", 5)
 				return false
 			end
 
