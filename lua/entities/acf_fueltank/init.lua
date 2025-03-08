@@ -598,7 +598,7 @@ function ENT:OnResized(Size)
 			Area = PhysObj:GetSurfaceArea()
 		end
 
-		local Mass = (Area * Wall) * ACF.InchToCmCu * SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local Mass = (Area * Wall) * ACF.InchToCmCu * ACF.SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
 
 		self.EmptyMass = Mass
 	end
