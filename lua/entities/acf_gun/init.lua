@@ -218,6 +218,7 @@ do -- Spawn and Update functions --------------------------------
 			end
 
 			Family.HasGuns = next(Family.Guns) and true or nil
+			Ent:DetermineParentState()
 		end
 
 		if Family.HasGuns then
