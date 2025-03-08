@@ -267,14 +267,18 @@ end
 
 function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 	local HasPonder = Ponder ~= nil
+	local PonderText = language.GetPhrase("acf.menu.ponder_button")
+
 	if not HasPonder then
-		local Button = self:AddButton(HasPonder and "Ponder about " .. StoryboardName or "Ponder not installed!")
-		function Button:DoClick() gui.OpenURL "https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276" end
+		local Button = self:AddButton(HasPonder and PonderText:format(StoryboardName) or "#acf.menu.ponder_not_installed")
+
+		function Button:DoClick() gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276") end
+
 		return Button
 	end
 
 	local Name = language.GetPhrase(Ponder.API.RegisteredAddonCategories[AddonID][CategoryID].Name)
-	local Button = self:AddButton(HasPonder and "Ponder about " .. Name)
+	local Button = self:AddButton(HasPonder and PonderText:format(Name))
 
 	function Button:DoClick()
 		if not IsValid(Ponder.UIWindow) then
