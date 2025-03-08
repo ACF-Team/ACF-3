@@ -180,6 +180,7 @@ do -- ACF Menu context panel
 
 			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
 				self:SetTall( LineHeight )
+				self:SetTall(LineHeight)
 				return
 			end
 
@@ -200,6 +201,7 @@ do -- ACF Menu context panel
 		local First
 
 		Tree.BaseHeight = 0.5
+		Tree.VBar:SetSize(0, 0)
 		Tree:SetLineHeight(19)
 
 		for _, Option in ipairs(OptionList) do
