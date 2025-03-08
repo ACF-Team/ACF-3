@@ -179,7 +179,6 @@ do -- ACF Menu context panel
 			self.Label:SetTextInset(self.Icon.x + self.Icon:GetWide() + 4, 0)
 
 			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
-				self:SetTall( LineHeight )
 				self:SetTall(LineHeight)
 				return
 			end
