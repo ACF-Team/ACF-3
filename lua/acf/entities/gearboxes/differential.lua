@@ -25,7 +25,7 @@ do -- Scalable Gearboxes
 		Model			= "models/engines/linear_s.mdl",
 		Mass			= Gear1SW,
 		Switch			= 0.3,
-		MaxTorque		= 25000,
+		MaxTorque		= 6000,
 		CanDualClutch	= true,
 		Preview = {
 			FOV = 125,
@@ -38,7 +38,7 @@ do -- Scalable Gearboxes
 		Model			= "models/engines/transaxial_s.mdl",
 		Mass			= Gear1SW,
 		Switch			= 0.3,
-		MaxTorque		= 25000,
+		MaxTorque		= 6000,
 		CanDualClutch	= true,
 		Preview = {
 			FOV = 85,

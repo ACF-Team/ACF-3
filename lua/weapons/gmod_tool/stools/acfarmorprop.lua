@@ -57,7 +57,7 @@ local function UpdateArmor(_, Entity, Data)
 
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
-	local Ductility = math.Clamp(Data.Ductility or 0, -80, 80)
+	local Ductility = math.Clamp(Data.Ductility or 0, ACF.MinDuctility, ACF.MaxDuctility)
 
 	UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 
@@ -92,7 +92,7 @@ if CLIENT then
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
-	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", -80, 80)
+	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", ACF.MinDuctility, ACF.MaxDuctility)
 	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true, "", MinimumArmor, MaximumArmor)
 
 	local Sphere = CreateClientConVar("acfarmorprop_sphere_search", 0, false, true, "", 0, 1)
@@ -108,7 +108,7 @@ if CLIENT then
 		Panel:NumSlider("#tool.acfarmorprop.thickness", "acfarmorprop_thickness", MinimumArmor, MaximumArmor)
 		Panel:ControlHelp("#tool.acfarmorprop.thickness_desc")
 
-		Panel:NumSlider("#tool.acfarmorprop.ductility", "acfarmorprop_ductility", -80, 80)
+		Panel:NumSlider("#tool.acfarmorprop.ductility", "acfarmorprop_ductility", ACF.MinDuctility, ACF.MaxDuctility)
 		Panel:ControlHelp("#tool.acfarmorprop.ductility_desc")
 
 		local SphereCheck = Panel:CheckBox("#tool.acfarmorprop.sphere_search", "acfarmorprop_sphere_search")
@@ -235,7 +235,7 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
 				end
 
-				draw.SimpleTextOutlined("#tool.acfarmorprop.armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#acf.menu.armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 				draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- health bar
@@ -244,7 +244,7 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
 				end
 
-				draw.SimpleTextOutlined("#tool.acfarmorprop.health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#acf.menu.health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 				draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			cam.End2D()
 		end
@@ -252,13 +252,12 @@ if CLIENT then
 
 	-- Clamp thickness if the change in ductility puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_ductility", function(_, _, value)
-
 		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
-		local ductility = math.Clamp((tonumber(value) or 0) / 100, -0.8, 0.8)
+		local ductility = math.Clamp((tonumber(value) or 0) / 100, ACF.MinDuctility / 100, ACF.MaxDuctility / 100)
 		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), MinimumArmor, MaximumArmor)
 		local mass = CalcArmor(area, ductility, thickness)
 
@@ -272,21 +271,20 @@ if CLIENT then
 
 	-- Clamp ductility and thickness if the change in thickness puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_thickness", function(_, _, value)
-
 		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
 		local thickness = math.Clamp(tonumber(value) or MinimumArmor, MinimumArmor, MaximumArmor)
-		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, -0.8, 0.8)
+		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, ACF.MinDuctility / 100, ACF.MaxDuctility / 100)
 		local mass = CalcArmor(area, ductility, thickness)
 
 		if mass > 50000 or mass < 0.1 then
 			mass = math.Clamp(mass, 0.1, 50000)
 
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
-			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
+			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, ACF.MinDuctility, ACF.MaxDuctility))
 
 			thickness = ACF.CalcArmor(area, ductility, mass)
 			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
@@ -380,7 +378,7 @@ else -- Serverside-only stuff
 		local PhysObj   = Entity.ACF.PhysObj
 		local Area      = Entity.ACF.Area
 		local Mass      = MassMod and MassMod.Mass or PhysObj:GetMass()
-		local Ductility = math.Clamp(Data.Ductility or 0, -80, 80) * 0.01
+		local Ductility = math.Clamp(Data.Ductility or 0, ACF.MinDuctility, ACF.MaxDuctility) * 0.01
 		local Thickness = ACF.CalcArmor(Area, Ductility, Mass)
 
 		duplicator.ClearEntityModifier(Entity, "mass")

@@ -197,7 +197,7 @@ do -- Mobility functions
 	--- @return number # The torque value of the gearbox in ft-lb
 	--- @return number # The torque rating of the gearbox in N/m
 	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
-		local Mass = BaseMass * (Scale ^ ACF.GearboxMassScale)
+		local Mass = math.floor((BaseMass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 -- Round to the nearest five
 
 		-- Torque calculations
 		local Torque, TorqueRating = 0, 0
@@ -205,7 +205,7 @@ do -- Mobility functions
 		if MaxTorque and GearCount then
 			local TorqueLoss = MaxTorque * (ACF.GearEfficiency ^ GearCount)
 			local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
-			TorqueRating = math.floor((TorqueLoss * ScalingCurve) / 10) * 10
+			TorqueRating = math.floor((TorqueLoss * ScalingCurve) / 10) * 10 -- Round to the nearest ten
 			Torque = math.Round(TorqueRating * ACF.NmToFtLb)
 		end
 

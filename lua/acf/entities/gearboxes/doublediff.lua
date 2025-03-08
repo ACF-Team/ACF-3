@@ -5,7 +5,7 @@ local Gearboxes = ACF.Classes.Gearboxes
 local GearDDSW = 45
 
 -- Torque Rating
-local GearDDST = 20000
+local GearDDST = 4500
 
 -- Old gearbox scales
 local ScaleS = 1

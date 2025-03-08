@@ -4,20 +4,18 @@ local Classes = ACF.Classes
 do -- Piledrivers menu
 	local Piledrivers = Classes.Piledrivers
 	local AmmoTypes   = Classes.AmmoTypes
-	local Info        = "Mass : %s kg\nRate of Fire : %s rpm\nMax Charges : %s\nRecharge Rate : %s charges/s"
-	local Stats       = "Penetration : %s mm RHA\nSpike Velocity : %s m/s\nSpike Length : %s cm\nSpike Mass : %s"
 	local Ammo, BulletData
 
 	local function CreateMenu(Menu)
 		local Entries  = Piledrivers.GetEntries()
 		local AmmoType = AmmoTypes.Get("HP")
 
-		Menu:AddTitle("Piledriver Settings")
+		Menu:AddTitle("#acf.menu.fun.piledrivers.settings")
 
 		local ClassList = Menu:AddComboBox()
-		local Caliber = Menu:AddSlider("Caliber", 0, 1, 2)
+		local Caliber = Menu:AddSlider("#acf.menu.caliber", 0, 1, 2)
 
-		local ClassBase = Menu:AddCollapsible("Piledriver Information")
+		local ClassBase = Menu:AddCollapsible("#acf.menu.fun.piledrivers.piledriver_info")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
 		local ClassPreview = ClassBase:AddModelPreview(nil, true)
@@ -81,7 +79,7 @@ do -- Piledrivers menu
 			local Current = math.Round(Caliber:GetValue(), 2)
 			local Name    = ClassList.Selected.Name
 
-			return Current .. "mm " .. Name
+			return language.GetPhrase("acf.menu.fun.piledrivers.class_name"):format(Current, Name)
 		end)
 
 		ClassInfo:TrackClientData("Weapon", "SetText")
@@ -89,6 +87,7 @@ do -- Piledrivers menu
 		ClassInfo:DefineSetter(function()
 			if not BulletData then return "" end
 
+			local Info     = language.GetPhrase("acf.menu.fun.piledrivers.stats")
 			local Class    = ClassList.Selected
 			local Current  = math.Round(Caliber:GetValue(), 2)
 			local Scale    = Current / Class.Caliber.Base
@@ -105,6 +104,7 @@ do -- Piledrivers menu
 		ClassStats:DefineSetter(function()
 			if not BulletData then return "" end
 
+			local Stats     = language.GetPhrase("acf.menu.fun.piledrivers.damage_stats")
 			local MaxPen    = math.Round(BulletData.MaxPen, 2)
 			local MuzzleVel = math.Round(BulletData.MuzzleVel, 2)
 			local Length    = BulletData.ProjLength
@@ -116,11 +116,10 @@ do -- Piledrivers menu
 		ACF.LoadSortedList(ClassList, Entries, "Name")
 	end
 
-	ACF.AddMenuItem(1, "Fun Stuff", "Piledrivers", "pencil", CreateMenu)
+	ACF.AddMenuItem(1, "#acf.menu.fun", "#acf.menu.fun.piledrivers", "pencil", CreateMenu)
 end
 
 do -- Procedural Armor
-	local DensityText = "Density: %sg/cm³ (%skg/in³)"
 	local ArmorTypes  = Classes.ArmorTypes
 	local PreviewSettings = {
 		FOV = 120,
@@ -135,15 +134,15 @@ do -- Procedural Armor
 		ACF.SetClientData("PrimaryClass", "acf_armor")
 		ACF.SetClientData("SecondaryClass", "N/A")
 
-		Menu:AddTitle("Procedural Armor")
-		Menu:AddLabel("WARNING: EXPERIMENTAL!\nProcedural Armor is an experimental work in progress and may cause crashes, errors, or just not work properly with all of ACF.\n\nProcedural Armor can be prevented from spawning by setting sbox_max_acf_armor to 0")
+		Menu:AddTitle("#acf.menu.fun.armor.menu_title")
+		Menu:AddLabel("#acf.menu.fun.armor.warning")
 
 		local ClassList = Menu:AddComboBox()
-		local SizeX     = Menu:AddSlider("Plate Length (gmu)", 0.25, 420, 2)
-		local SizeY     = Menu:AddSlider("Plate Width (gmu)", 0.25, 420, 2)
-		local SizeZ     = Menu:AddSlider("Plate Thickness (mm)", 5, 1000)
+		local SizeX     = Menu:AddSlider("#acf.menu.fun.armor.plate_length", 0.25, 420, 2)
+		local SizeY     = Menu:AddSlider("#acf.menu.fun.armor.plate_width", 0.25, 420, 2)
+		local SizeZ     = Menu:AddSlider("#acf.menu.fun.armor.plate_thickness", 5, 1000)
 
-		local ClassBase    = Menu:AddCollapsible("Material Information")
+		local ClassBase    = Menu:AddCollapsible("#acf.menu.fun.armor.material_info")
 		local ClassName    = ClassBase:AddTitle()
 		local ClassDesc    = ClassBase:AddLabel()
 		local ClassPreview = ClassBase:AddModelPreview("models/holograms/hq_rcube_thin.mdl", true)
@@ -156,6 +155,7 @@ do -- Procedural Armor
 			self.Selected       = Data
 
 			local Density = Data.Density
+			local DensityText = language.GetPhrase("acf.menu.fun.armor.stats")
 
 			ClassName:SetText(Data.Name)
 			ClassDesc:SetText(Data.Description)
@@ -196,10 +196,10 @@ do -- Procedural Armor
 		ACF.LoadSortedList(ClassList, Entries, "Name")
 	end
 
-	ACF.AddMenuItem(2, "Fun Stuff", "Armor", "brick", CreateMenu)
+	ACF.AddMenuItem(2, "#acf.menu.fun", "#acf.menu.fun.armor", "brick", CreateMenu)
 end
 
 hook.Add("ACF_OnEnableMenuOption", "Enable Fun Menu", function(Name)
-	if Name ~= "Fun Stuff" then return end
+	if Name ~= "#acf.menu.fun" then return end
 	if not ACF.GetServerBool("ShowFunMenu") then return false end
 end)

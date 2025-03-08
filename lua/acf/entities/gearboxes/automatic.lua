@@ -5,7 +5,7 @@ local Gearboxes = ACF.Classes.Gearboxes
 local Gear3SW = 60
 
 -- Torque Rating
-local Gear3ST = 675
+local Gear3ST = 900
 
 -- Straight through bonuses
 local StWB = 0.75 --straight weight bonus mulitplier

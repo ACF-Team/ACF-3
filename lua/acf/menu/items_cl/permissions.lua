@@ -34,12 +34,13 @@ do
 		Menu:AddLabel("#acf.menu.permissions.player_permissions_desc")
 
 		PlayerChecks = {}
+		local LocalPly = LocalPlayer()
 
 		for _, Target in player.Iterator() do
 			if (IsValid(Target)) then
 				local Check = Menu:AddCheckBox(Target:Nick())
 				Check.SteamID = Target:SteamID()
-				-- if Target == LocalPlayer() then Check:SetChecked(true) end
+				if Target == LocalPly then Check:SetDisabled(true) end
 				PlayerChecks[#PlayerChecks + 1] = Check
 			end
 		end

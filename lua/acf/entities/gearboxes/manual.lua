@@ -2,11 +2,11 @@ local ACF       = ACF
 local Gearboxes = ACF.Classes.Gearboxes
 
 -- Weight
-local Gear4SW = 60
+local Gear4SW = 50
 local StWB = 0.75 -- Straight weight bonus mulitplier
 
 -- Torque Rating
-local Gear4ST = 540
+local Gear4ST = 1000
 local StTB = 1.25 -- Straight torque bonus multiplier
 
 -- Old gearbox scales
