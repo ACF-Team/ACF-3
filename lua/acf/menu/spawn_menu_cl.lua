@@ -132,11 +132,40 @@ do -- ACF Menu context panel
 		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
 	end
 
+	local function FixStupidNodeCutoffTextIssue(Node)
+		function Node:AnimSlide( anim, delta, data )
+			if not IsValid(self.ChildNodes) then anim:Stop() return end
+
+			if anim.Started then
+				data.To = self:GetTall()
+				data.Visible = self.ChildNodes:IsVisible()
+			end
+
+			if anim.Finished then
+				self:InvalidateLayout()
+				self.ChildNodes:SetVisible( data.Visible )
+				self:SetTall( data.To )
+				self:GetParentNode():ChildExpanded()
+				return
+			end
+			self:SetTall(Lerp(math.ease.InOutSine(delta), data.From, data.To))
+
+			-- These fix the label overflow
+			self.ChildNodes:SetVisible(true)
+			self.ChildNodes:SetWide(20000)
+			self.Label:SetWide(20000)
+
+			self:GetParentNode():ChildExpanded()
+		end
+		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
+	end
+
 	local function PopulateTree(Tree)
 		local OptionList = GetSortedList(Options)
 		local First
 
 		Tree.BaseHeight = 0.5
+		Tree:SetLineHeight(19)
 
 		for _, Option in ipairs(OptionList) do
 			if not AllowOption(Option) then continue end
@@ -144,6 +173,8 @@ do -- ACF Menu context panel
 			local Parent = Tree:AddNode(Option.Name, Option.Icon)
 			local SetExpanded = Parent.SetExpanded
 			local Expander = Parent.Expander
+
+			FixStupidNodeCutoffTextIssue(Parent)
 
 			Parent.Action = Option.Action
 			Parent.Master = true

@@ -62,6 +62,47 @@ function ACF.IsLegal(Entity)
 	return true
 end
 
+function ACF.DisableEntity(Entity, Reason, Message, Timeout)
+	local Owner = Entity:CPPIGetOwner()
+
+	local Disabled = Entity.Disabled
+
+	if not Disabled or Reason ~= Disabled.Reason then
+		Entity.Disabled	= {
+			Reason  = Reason,
+			Message = Message
+		}
+
+		Entity:Disable() -- Let the entity know it's disabled
+		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
+		if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
+			local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
+
+			if Reason == "Not Solid" then -- Thank you garry, very cool
+				timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
+					if not IsValid(Entity) then return end
+
+					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+				end)
+			else
+				ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+			end
+		end
+	end
+
+	if Timeout then Timeout = math.max(Timeout, 1) end
+	TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
+		if not IsValid(Entity) then return end
+		if not ACF.CheckLegal(Entity) then return end
+
+		Entity.Disabled = nil
+
+		Entity:Enable()
+
+		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
+	end)
+end
+
 function ACF.CheckLegal(Entity)
 	local Legal, Reason, Message, Timeout = ACF.IsLegal(Entity)
 
@@ -69,43 +110,8 @@ function ACF.CheckLegal(Entity)
 		local Disabled = Entity.Disabled
 
 		if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
-			local Owner = Entity:CPPIGetOwner()
-
-			Entity.Disabled	= {
-				Reason  = Reason,
-				Message = Message
-			}
-
-			Entity:Disable() -- Let the entity know it's disabled
-
-			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-			if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
-				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
-
-				if Reason == "Not Solid" then -- Thank you garry, very cool
-					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
-						if not IsValid(Entity) then return end
-
-						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
-					end)
-				else
-					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
-				end
-			end
+			ACF.DisableEntity(Entity, Reason, Message, Timeout)
 		end
-
-		if Timeout then Timeout = math.max(Timeout, 1) end
-
-		TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
-			if not IsValid(Entity) then return end
-			if not ACF.CheckLegal(Entity) then return end
-
-			Entity.Disabled = nil
-
-			Entity:Enable()
-
-			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
-		end)
 
 		return false
 	end

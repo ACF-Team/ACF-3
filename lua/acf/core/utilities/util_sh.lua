@@ -348,8 +348,6 @@ do
 	-- Basically; given Entity, confirms that all inbetween entities are a class whitelisted in InbetweenEntities,
 	-- and the final ancestor is a class whitelisted in EndIn.
 	function ACF.CheckParentChain(Entity, InbetweenEntities, EndIn)
-		if ACF.AllowArbitraryParents == false then return true end
-
 		local Parent = Entity
 		local NoInbetween = false
 		for _ = 1, 1000 do

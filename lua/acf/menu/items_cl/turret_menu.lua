@@ -10,6 +10,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("#acf.menu.turrets.menu_title")
+	Menu:AddPonderAddonCategory("acf", "turrets")
 	Menu:AddLabel("#acf.menu.turrets.menu_desc")
 
 	local ClassList		= Menu:AddComboBox()
