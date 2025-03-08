@@ -716,7 +716,7 @@ do -- Metamethods --------------------------------
 				return false
 			end
 
-			if self.ParentState ~= 1 and not ACF.AllowArbitraryParents then
+			if self.ParentState ~= 1 and ACF.LegalChecks and not ACF.AllowArbitraryParents then
 				-- This NEEDS a better message, I can't find a good way to explain it right now
 				ACF.DisableEntity(self, "Invalid Parent Chain", "Guns can only be parented to turret entities and must have a baseplate root ancestor.", 5)
 				return false

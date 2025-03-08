@@ -156,8 +156,6 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):        LinkToServerData("RestrictInfo")
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
-		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
 		Base:AddCheckBox("#acf.menu.settings.general.gun_fire"):             LinkToServerData("GunsCanFire")
 		Base:AddCheckBox("#acf.menu.settings.general.gun_smoke"):            LinkToServerData("GunsCanSmoke")
@@ -177,7 +175,15 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.entity_pushing.recoil_push"):   LinkToServerData("RecoilPush")
 	end)
 
-	ACF.AddServerSettings(201, "#acf.menu.settings.fun_menu", function(Base)
+	ACF.AddServerSettings(201, "#acf.menu.settings.legal_checks", function(Base)
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
+
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
+			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
+	end)
+
+	ACF.AddServerSettings(301, "#acf.menu.settings.fun_menu", function(Base)
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_fun"):LinkToServerData("AllowFunEnts")
 			Base:AddHelp("#acf.menu.settings.fun_menu.allow_fun_desc")
 
@@ -190,7 +196,7 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_proc_armor"):LinkToServerData("AllowProcArmor")
 	end)
 
-	ACF.AddServerSettings(301, "#acf.menu.settings.workshop", function(Base)
+	ACF.AddServerSettings(401, "#acf.menu.settings.workshop", function(Base)
 		Base:AddCheckBox("#acf.menu.settings.workshop.enable"):        LinkToServerData("WorkshopContent")
 
 		Base:AddCheckBox("#acf.menu.settings.workshop.enable_extra"):  LinkToServerData("WorkshopExtras")
