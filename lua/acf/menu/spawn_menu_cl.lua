@@ -157,6 +157,41 @@ do -- ACF Menu context panel
 
 			self:GetParentNode():ChildExpanded()
 		end
+
+		function Node:PerformLayout()
+			if self:IsRootNode() then
+				return self:PerformRootNodeLayout()
+			end
+
+			if self.animSlide:Active() then return end
+
+			local LineHeight = self:GetLineHeight()
+
+			self.Expander:SetPos(-11, 0)
+			self.Expander:SetSize(15, 15)
+			self.Expander:SetVisible(false)
+
+			self.Label:StretchToParent(0, nil, 0, nil)
+			self.Label:SetTall(LineHeight)
+
+			self.Icon:SetVisible(true)
+			self.Icon:SetPos(self.Expander.x + self.Expander:GetWide() + 4, (LineHeight - self.Icon:GetTall()) * 0.5)
+			self.Label:SetTextInset(self.Icon.x + self.Icon:GetWide() + 4, 0)
+
+			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
+				self:SetTall( LineHeight )
+				return
+			end
+
+			self.ChildNodes:SizeToContents()
+			self:SetTall(LineHeight + self.ChildNodes:GetTall())
+
+			self.ChildNodes:StretchToParent(7, LineHeight, 0, 0)
+
+			self:DoChildrenOrder()
+		end
+
+		Node:SetHideExpander(true)
 		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
 	end
 
@@ -172,7 +207,6 @@ do -- ACF Menu context panel
 
 			local Parent = Tree:AddNode(Option.Name, Option.Icon)
 			local SetExpanded = Parent.SetExpanded
-			local Expander = Parent.Expander
 
 			FixStupidNodeCutoffTextIssue(Parent)
 
@@ -186,12 +220,6 @@ do -- ACF Menu context panel
 				SetExpanded(self, Bool)
 
 				self.AllowExpand = nil
-			end
-
-			function Expander:DoClick()
-				local Node = Parent:GetParentNode()
-
-				Node:OnNodeSelected(Parent)
 			end
 
 			Tree.BaseHeight = Tree.BaseHeight + 1
