@@ -235,6 +235,13 @@ do -- ACF Menu context panel
 
 				Parent.Count = Parent.Count + 1
 
+				function Child.Label:Paint(w, h)
+					local Skin = self:GetSkin()
+					surface.SetAlphaMultiplier(math.Remap(math.sin(CurTime() * 7), -1, 1, 0.6, 1))
+					Skin:PaintTreeNodeButton(self, w, h)
+					surface.SetAlphaMultiplier(1)
+				end
+
 				if not Parent.Selected then
 					Parent.Selected = Child
 
