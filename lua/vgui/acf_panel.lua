@@ -265,6 +265,31 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
+function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
+	local HasPonder = Ponder ~= nil
+	if not HasPonder then
+		local Button = self:AddButton(HasPonder and "Ponder about " .. StoryboardName or "Ponder not installed!")
+		function Button:DoClick() gui.OpenURL "https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276" end
+		return Button
+	end
+
+	local Name = language.GetPhrase(Ponder.API.RegisteredAddonCategories[AddonID][CategoryID].Name)
+	local Button = self:AddButton(HasPonder and "Ponder about " .. Name)
+
+	function Button:DoClick()
+		if not IsValid(Ponder.UIWindow) then
+			Ponder.UIWindow = vgui.Create("Ponder.UI")
+		else
+			Ponder.UIWindow:Remove()
+		end
+
+		local UI = Ponder.UIWindow
+		UI:LoadAddonCategoriesIndex(AddonID, CategoryID)
+	end
+
+	return Button
+end
+
 function PANEL:AddGraph()
 	local Base = self:AddPanel("Panel")
 	Base:DockMargin(0, 5, 0, 5)

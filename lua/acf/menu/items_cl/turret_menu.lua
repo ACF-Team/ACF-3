@@ -10,6 +10,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("Procedural Turrets")
+	Menu:AddPonderAddonCategory("acf", "turrets")
 	Menu:AddLabel("Typically, place the horizontal turret, and then parent a vertical turret to it to make a fully functional turret. You can parent anything directly to the turret pieces and they will be attached and rotate correctly.")
 
 	local ClassList		= Menu:AddComboBox()
