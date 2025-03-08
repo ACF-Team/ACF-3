@@ -4,21 +4,10 @@ local EngineTypes = Classes.EngineTypes
 local FuelTypes   = Classes.FuelTypes
 local FuelTanks   = Classes.FuelTanks
 local Engines     = Classes.Engines
-local RPMText = [[
-	Idle RPM : %s RPM
-	Powerband : %s-%s RPM
-	Redline : %s RPM
-	Mass : %s
-
-	%s
-	%s]]
-local PowerText = [[
-	Peak Torque : %s Nm - %s ft-lb @ %s RPM
-	Peak Power : %s kW - %s HP @ %s RPM]]
-local ConsumptionText = [[
-	%s Consumption :
-	%s L/min - %s gal/min @ %s RPM]]
 local TankSize    = Vector()
+local HPColor     = Color(255, 65, 65)
+local TorqueColor = Color(65, 65, 255)
+local IdleColor   = Color(127, 0, 0)
 
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
@@ -34,6 +23,10 @@ local function UpdateEngineStats(Label, Data)
 	local Efficiency = Type.Efficiency
 	local FuelList   = ""
 
+	local RPMText         = language.GetPhrase("acf.menu.engines.rpm_stats")
+	local PowerText       = language.GetPhrase("acf.menu.engines.power_stats")
+	local ConsumptionText = language.GetPhrase("acf.menu.engines.consumption_stats")
+
 	for K in pairs(Data.Fuel) do
 		local Fuel = FuelTypes.Get(K)
 
@@ -46,7 +39,7 @@ local function UpdateEngineStats(Label, Data)
 		else
 			local Rate = ACF.FuelRate * Efficiency * PeakkW / (60 * Fuel.Density)
 
-			AddText = ConsumptionText:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * 0.264, 2), PeakkWRPM)
+			AddText = ConsumptionText:format(Fuel.Name, math.Round(Rate, 2), math.Round(Rate * ACF.LToGal, 2), PeakkWRPM)
 		end
 
 		FuelList = FuelList .. "\n" .. AddText .. "\n"
@@ -63,12 +56,12 @@ local function CreateMenu(Menu)
 	local EngineEntries = Engines.GetEntries()
 	local FuelEntries   = FuelTanks.GetEntries()
 
-	Menu:AddTitle("Engine Settings")
+	Menu:AddTitle("#acf.menu.engines.settings")
 
 	local EngineClass = Menu:AddComboBox()
 	local EngineList = Menu:AddComboBox()
 
-	local EngineBase = Menu:AddCollapsible("Engine Information")
+	local EngineBase = Menu:AddCollapsible("#acf.menu.engines.engine_info")
 	local EngineName = EngineBase:AddTitle()
 	local EngineDesc = EngineBase:AddLabel()
 	local EnginePreview = EngineBase:AddModelPreview(nil, true)
@@ -78,20 +71,20 @@ local function CreateMenu(Menu)
 	local PGWidth = Menu:GetWide()
 	PowerGraph:SetSize(PGWidth, PGWidth / 2)
 
-	PowerGraph:SetXLabel("RPM")
-	PowerGraph:SetYLabel("x100")
+	PowerGraph:SetXLabel("#acf.menu.engines.rpm")
+	PowerGraph:SetYLabel("#acf.menu.engines.times_100")
 	PowerGraph:SetXSpacing(1000)
 	PowerGraph:SetYSpacing(100)
 	PowerGraph:SetFidelity(24)
 
-	Menu:AddTitle("Fuel Tank Settings")
+	Menu:AddTitle("#acf.menu.fuel.settings")
 	local FuelType = Menu:AddComboBox()
 	local FuelClass = Menu:AddComboBox()
 
 	local Min = ACF.FuelMinSize
 	local Max = ACF.FuelMaxSize
 
-	local SizeX = Menu:AddSlider("Tank Length", Min, Max)
+	local SizeX = Menu:AddSlider("#acf.menu.fuel.tank_length", Min, Max)
 	SizeX:SetClientData("TankSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value)
@@ -105,7 +98,7 @@ local function CreateMenu(Menu)
 		return X
 	end)
 
-	local SizeY = Menu:AddSlider("Tank Width", Min, Max)
+	local SizeY = Menu:AddSlider("#acf.menu.fuel.tank_width", Min, Max)
 	SizeY:SetClientData("TankSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
 		local Y = math.Round(Value)
@@ -119,7 +112,7 @@ local function CreateMenu(Menu)
 		return Y
 	end)
 
-	local SizeZ = Menu:AddSlider("Tank Height", Min, Max)
+	local SizeZ = Menu:AddSlider("#acf.menu.fuel.tank_height", Min, Max)
 	SizeZ:SetClientData("TankSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		local Z = math.Round(Value)
@@ -134,7 +127,7 @@ local function CreateMenu(Menu)
 	end)
 
 	local FuelList = Menu:AddComboBox()
-	local FuelBase = Menu:AddCollapsible("Fuel Tank Information")
+	local FuelBase = Menu:AddCollapsible("#acf.menu.fuel.tank_info")
 	local FuelDesc = FuelBase:AddLabel()
 	local FuelPreview = FuelBase:AddModelPreview(nil, true)
 	local FuelInfo = FuelBase:AddLabel()
@@ -179,18 +172,18 @@ local function CreateMenu(Menu)
 		PowerGraph:SetFidelity(10)
 
 		PowerGraph:Clear()
-		PowerGraph:PlotPoint("Peak HP", Data.PeakPowerRPM, math.Round(Data.PeakPower * ACF.KwToHp), Color(255, 65, 65))
-		PowerGraph:PlotPoint("Peak Nm", Data.PeakTqRPM, math.Round(Data.Torque), Color(65, 65, 255))
+		PowerGraph:PlotPoint(language.GetPhrase("acf.menu.engines.peak_hp"), Data.PeakPowerRPM, math.Round(Data.PeakPower * ACF.KwToHp), HPColor)
+		PowerGraph:PlotPoint(language.GetPhrase("acf.menu.engines.peak_nm"), Data.PeakTqRPM, math.Round(Data.Torque), TorqueColor)
 
-		PowerGraph:PlotLimitFunction("Tq", Data.RPM.Idle, Data.RPM.Limit, Color(65, 65, 255), function(X)
+		PowerGraph:PlotLimitFunction(language.GetPhrase("acf.menu.engines.torque"), Data.RPM.Idle, Data.RPM.Limit, TorqueColor, function(X)
 			return ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque
 		end)
 
-		PowerGraph:PlotLimitFunction("HP", Data.RPM.Idle, Data.RPM.Limit, Color(255, 65, 65), function(X)
+		PowerGraph:PlotLimitFunction(language.GetPhrase("acf.menu.engines.hp"), Data.RPM.Idle, Data.RPM.Limit, HPColor, function(X)
 			return (ACF.GetTorque(Data.TorqueCurve, math.Remap(X, Data.RPM.Idle, Data.RPM.Limit, 0, 1)) * Data.Torque * X) * ACF.KwToHp / 9548.8
 		end)
 
-		PowerGraph:PlotLimitLine("Idle RPM", false, Data.RPM.Idle, Color(127, 0, 0))
+		PowerGraph:PlotLimitLine(language.GetPhrase("acf.menu.engines.idle_rpm"), false, Data.RPM.Idle, IdleColor)
 
 		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
 	end
@@ -277,25 +270,25 @@ local function CreateMenu(Menu)
 		end
 
 		local Capacity	= Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
-		local EmptyMass	= Area * Wall * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local EmptyMass	= Area * Wall * ACF.InchToCmCu * ACF.SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
 
 		if TextFunc then
 			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
 		else
-			local Text = "Tank Armor : %s mm\nCapacity : %s L - %s gal\nFull Mass : %s\nEmpty Mass : %s"
+			local Text = language.GetPhrase("acf.menu.fuel.tank_stats")
 			local Liters = math.Round(Capacity, 2)
-			local Gallons = math.Round(Capacity * 0.264172, 2)
+			local Gallons = math.Round(Capacity * ACF.LToGal, 2)
 
 			FuelText = FuelText .. Text:format(ACF.FuelArmor, Liters, Gallons, ACF.GetProperMass(Mass), ACF.GetProperMass(EmptyMass))
 		end
 
 		if not FuelTank.IsExplosive then
-			FuelText = FuelText .. "\n\nThis fuel tank won't explode if damaged."
+			FuelText = FuelText .. language.GetPhrase("acf.menu.fuel.cannot_explode")
 		end
 
 		if FuelTank.Unlinkable then
-			FuelText = FuelText .. "\n\nThis fuel tank cannot be linked to other ACF entities."
+			FuelText = FuelText .. language.GetPhrase("acf.menu.fuel.cannot_link")
 		end
 
 		FuelDesc:SetText(FuelList.Description .. FuelDescText)
@@ -306,4 +299,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(FuelClass, FuelEntries, "ID")
 end
 
-ACF.AddMenuItem(201, "#acf.menu.entities", "Engines", "car", CreateMenu)
+ACF.AddMenuItem(201, "#acf.menu.entities", "#acf.menu.engines", "car", CreateMenu)

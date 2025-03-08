@@ -139,6 +139,8 @@ do -- ACF global vars
 
 	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.MinDuctility         = -80 -- The minimum amount of ductility that can be set on an entity
+	ACF.MaxDuctility         = 80 -- The maximum amount of ductility that can be set on an entity
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
@@ -179,8 +181,10 @@ do -- ACF global vars
 	ACF.MmToInch             = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm             = 25.4 -- Inches to millimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
+	ACF.InchToCmCu           = 16.387 -- in³ to cm³
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
+	ACF.LToGal               = 0.264172 -- Liters to gallons
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed

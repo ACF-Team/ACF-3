@@ -145,7 +145,7 @@ do -- Spawn and Update functions
 		Entity.EntType     = Class.Name
 		Entity.FuelDensity = FuelType.Density
 		Entity.Capacity    = Volume * ACF.gCmToKgIn * ACF.TankVolumeMul -- Internal volume available for fuel in liters
-		Entity.EmptyMass   = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		Entity.EmptyMass   = (Area * Wall) * ACF.InchToCmCu * ACF.SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
 		Entity.IsExplosive = FuelTank and FuelTank.IsExplosive or Class.IsExplosive
 		Entity.NoLinks     = FuelTank and FuelTank.Unlinkable or Class.Unlinkable
 		Entity.Shape       = FuelTank and FuelTank.Shape or Class.Shape
@@ -445,7 +445,7 @@ do -- Overlay Update
 			Content = FuelType.FuelTankOverlayText(Fuel)
 		else
 			local Liters = Round(Fuel, 2)
-			local Gallons = Round(Fuel * 0.264172, 2)
+			local Gallons = Round(Fuel * ACF.LToGal, 2)
 
 			Content = "Fuel Remaining: " .. Liters .. " liters / " .. Gallons .. " gallons"
 		end
@@ -598,7 +598,7 @@ function ENT:OnResized(Size)
 			Area = PhysObj:GetSurfaceArea()
 		end
 
-		local Mass = (Area * Wall) * 16.387 * 0.0079 -- Total wall volume * cu in to cc * density of steel (kg/cc)
+		local Mass = (Area * Wall) * ACF.InchToCmCu * SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
 
 		self.EmptyMass = Mass
 	end

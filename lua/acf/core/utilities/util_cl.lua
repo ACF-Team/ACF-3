@@ -431,13 +431,10 @@ end
 
 do -- Default turret menus
 	local Turrets	= ACF.Classes.Turrets
-	local TurretMassText	= "Drive Mass : %s kg, %s kg max capacity"
-	local MassText	= "Mass : %s kg"
+	local GraphBlue	= Color(65, 65, 200)
+	local GraphRed	= Color(200, 65, 65)
 
 	do	-- Turret ring
-		local TurretText	= "Teeth Count : %G"
-		local HandCrankText	= "-- Handcrank --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-
 		local Orange	= Color(255, 127, 0)
 		local Red		= Color(255, 0, 0)
 		local Green		= Color(0, 255, 0)
@@ -460,21 +457,27 @@ do -- Default turret menus
 				Tilt		= 1
 			}
 
-			local RingSize	= Menu:AddSlider("Ring Diameter", Data.Size.Min, Data.Size.Max, 2)
+			local RingSize	= Menu:AddSlider("#acf.menu.turrets.ring_diameter", Data.Size.Min, Data.Size.Max, 2)
 
-			local MaxSpeed	= Menu:AddSlider("Max Speed (deg/s)", 0, 120, 2)
+			local MaxSpeed	= Menu:AddSlider("#acf.menu.turrets.max_speed", 0, 120, 2)
 
-			Menu:AddLabel("If the Max Speed slider is lower than the calculated max speed of the turret, this will be the new limit. If 0, it will default to the actual max speed.")
+			Menu:AddLabel("#acf.menu.turrets.max_speed_desc")
 
-			local RingStats	= Menu:AddLabel(TurretText:format(0, 0))
-			local MassLbl	= Menu:AddLabel(MassText:format(0, 0))
+			local TurretText	= language.GetPhrase("acf.menu.turrets.turret_text")
+			local MassText		= language.GetPhrase("acf.menu.turrets.mass_text")
+			local RingStats		= Menu:AddLabel(TurretText:format(0, 0))
+			local MassLbl		= Menu:AddLabel(MassText:format(0, 0))
 
-			local ArcSettings	= Menu:AddCollapsible("Arc Settings")
+			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings")
 
-			ArcSettings:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.")
+			ArcSettings:AddLabel("#acf.menu.turrets.arc_settings_desc")
 
-			local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 0, 1)
-			local MaxDeg	= ArcSettings:AddSlider("Maximum Degrees", 0, 180, 1)
+			local CircleColor	= Color(65, 65, 65)
+			local MinDegText	= language.GetPhrase("acf.menu.turrets.arc_min")
+			local MaxDegText	= language.GetPhrase("acf.menu.turrets.arc_max")
+			local TotalArcText	= language.GetPhrase("acf.menu.turrets.arc_total")
+			local MinDeg		= ArcSettings:AddSlider("#acf.menu.turrets.min_degrees", -180, 0, 1)
+			local MaxDeg		= ArcSettings:AddSlider("#acf.menu.turrets.max_degrees", 0, 180, 1)
 
 			local ArcDraw = vgui.Create("Panel", ArcSettings)
 			ArcDraw:SetSize(64, 64)
@@ -486,7 +489,7 @@ do -- Default turret menus
 				surface.DrawRect(0, 0, h, h)
 
 				local Radius = (h / 2) - 2
-				surface.DrawCircle(h / 2, h / 2, Radius, Color(65, 65, 65))
+				surface.DrawCircle(h / 2, h / 2, Radius, CircleColor)
 
 				local Min, Max = MinDeg:GetValue(), MaxDeg:GetValue()
 
@@ -518,13 +521,13 @@ do -- Default turret menus
 					surface.DrawLine(h / 2, h / 2, (h / 2) + MaxDegX, (h / 2) + MaxDegY)
 				end
 
-				draw.SimpleTextOutlined("Zero", "ACF_Control", h + 4, 0, Orange, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+				draw.SimpleTextOutlined("#acf.menu.turrets.zero", "ACF_Control", h + 4, 0, Orange, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				if (Max - Min) ~= 360 then
-					draw.SimpleTextOutlined("Minimum: " .. Min, "ACF_Control", h + 4, 16, Red, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
-					draw.SimpleTextOutlined("Maximum: " .. Max, "ACF_Control", h + 4, 32, Green, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
-					draw.SimpleTextOutlined("Total Arc: " .. (Max - Min), "ACF_Control", h + 4, 48, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(MinDegText:format(Min), "ACF_Control", h + 4, 16, Red, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(MaxDegText:format(Max), "ACF_Control", h + 4, 32, Green, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(TotalArcText:format(Max - Min), "ACF_Control", h + 4, 48, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				else
-					draw.SimpleTextOutlined("No Arc Limit", "ACF_Control", h + 4 , 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined("#acf.menu.turrets.no_arc_limit", "ACF_Control", h + 4, 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				end
 			end
 
@@ -562,18 +565,18 @@ do -- Default turret menus
 				ACF.SetClientData("MaxDeg", 180)
 			end
 
-			local EstMass	= Menu:AddSlider("Est. Mass (kg)", 0, 100000, 0)
+			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 0)
+			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
 
-			local EstDist	= Menu:AddSlider("Mass Center Dist.", 0, 2, 2)
-
-			Menu:AddLabel("Approximation of the turret's speed with a handcrank.")
+			Menu:AddLabel("#acf.menu.turrets.handcrank_desc")
+			local HandCrankText	= language.GetPhrase("acf.menu.turrets.handcrank_text")
 			local HandCrankLbl	= Menu:AddLabel(HandCrankText:format(0, 0))
 
 			local Graph		= Menu:AddGraph()
 			local GraphSize	= Menu:GetParent():GetParent():GetWide()
 			Graph:SetSize(GraphSize, GraphSize / 2)
-			Graph:SetXLabel("Estimated Mass (kg)")
-			Graph:SetYLabel("Degrees/Sec")
+			Graph:SetXLabel("#acf.menu.turrets.estimated_mass")
+			Graph:SetYLabel("#acf.menu.turrets.degrees_per_second")
 			Graph:SetXRange(0, 100000)
 			Graph:SetXSpacing(10000)
 			Graph:SetYSpacing(5)
@@ -608,9 +611,9 @@ do -- Default turret menus
 				Graph:SetYRange(0, Points[1].y * 1.1)
 
 				Graph:Clear()
-				Graph:PlotTable("Slew Rate", Points, Color(65, 65, 200))
+				Graph:PlotTable(language.GetPhrase("acf.menu.turrets.slew_rate"), Points, GraphBlue)
 
-				Graph:PlotPoint("Estimate", TurretData.TotalMass, Info.MaxSlewRate, Color(65, 65, 200))
+				Graph:PlotPoint(language.GetPhrase("acf.menu.turrets.estimate"), TurretData.TotalMass, Info.MaxSlewRate, GraphBlue)
 			end
 
 			RingSize:SetClientData("RingSize", "OnValueChanged")
@@ -622,6 +625,7 @@ do -- Default turret menus
 				local Teeth = TurretClass.GetTeethCount(Data, N)
 				RingStats:SetText(TurretText:format(Teeth))
 				local MaxMass = TurretClass.GetMaxMass(Data, N)
+				local TurretMassText = language.GetPhrase("acf.menu.turrets.turret_mass_text")
 				MassLbl:SetText(TurretMassText:format(TurretClass.GetMass(Data, N), MaxMass))
 
 				TurretData.Teeth		= Teeth
@@ -681,10 +685,6 @@ do -- Default turret menus
 			MotorSim	= 0
 		}
 
-		local TorqText	= "Torque : %G Nm"
-		local HandcrankText = "-- Handcrank --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-		local MotorText	= "-- Motor --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-
 		function ACF.CreateTurretMotorMenu(Data, Menu)
 			local MotorClass	= Turrets.Get("2-Motor")
 			local TurretClass	= Turrets.Get("1-Turret")
@@ -693,36 +693,37 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretMotors")
 			ACF.SetClientData("PrimaryClass", "acf_turret_motor")
 
-			Menu:AddLabel("Motor Speed : " .. Data.Speed .. " RPM")
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.motors.speed"):format(Data.Speed))
 
-			local CompSize	= Menu:AddSlider("Motor Scale (" .. Data.ScaleLimit.Min .. "-" .. Data.ScaleLimit.Max .. ")", Data.ScaleLimit.Min, Data.ScaleLimit.Max, 1)
+			local ScaleText	= language.GetPhrase("acf.menu.turrets.motors.scale")
+			local CompSize	= Menu:AddSlider(ScaleText:format(Data.ScaleLimit.Min, Data.ScaleLimit.Max), Data.ScaleLimit.Min, Data.ScaleLimit.Max, 1)
 
-			Menu:AddLabel("Determines the number of teeth of the gear on the motor.")
-			local TeethAmt	= Menu:AddSlider("Gear Teeth (" .. Data.Teeth.Min .. "-" .. Data.Teeth.Max .. ")", Data.Teeth.Min, Data.Teeth.Max, 0)
+			local TeethText	= language.GetPhrase("acf.menu.turrets.motors.teeth")
+			local TeethAmt	= Menu:AddSlider(TeethText:format(Data.Teeth.Min, Data.Teeth.Max), Data.Teeth.Min, Data.Teeth.Max, 0)
+			Menu:AddLabel("#acf.menu.turrets.motors.teeth_desc")
 
-			local MassLbl	= Menu:AddLabel(TurretMassText:format(0, 0))
-			local TorqLbl	= Menu:AddLabel(TorqText:format(0))
+			local TurretMassText	= language.GetPhrase("acf.menu.turrets.turret_mass_text")
+			local TorqText			= language.GetPhrase("acf.menu.turrets.motors.torque_text")
+			local MassLbl			= Menu:AddLabel(TurretMassText:format(0, 0))
+			local TorqLbl			= Menu:AddLabel(TorqText:format(0))
 
 			-- Simulation
 
-			local TurretSim = Menu:AddCollapsible("Turret Simulation")
-			TurretSim:AddLabel("These values are only an approximation!")
+			local TurretSim = Menu:AddCollapsible("#acf.menu.turrets.motors.simulation")
+			TurretSim:AddLabel("#acf.menu.turrets.motors.simulation_desc")
 
 			local TurretType = TurretSim:AddComboBox()
-
-			local TurretSize = TurretSim:AddSlider("Turret Size", 0, 1, 2)
-
-			local EstMass = TurretSim:AddSlider("Est. Mass (kg)", 0, 100000, 1)
-
-			local EstDist = TurretSim:AddSlider("Mass Center Dist.", 0, 2, 2)
-
-			local MaxMassLbl	= TurretSim:AddLabel("Max mass: 0kg")
+			local TurretSize = TurretSim:AddSlider("#acf.menu.turrets.motors.turret_size", 0, 1, 2)
+			local EstMass = TurretSim:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 1)
+			local EstDist = TurretSim:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
+			local MaxMassText	= language.GetPhrase("acf.menu.turrets.motors.max_mass")
+			local MaxMassLbl	= TurretSim:AddLabel(MaxMassText:format(0))
 
 			local Graph		= Menu:AddGraph()
 			local GraphSize	= Menu:GetParent():GetParent():GetWide()
 			Graph:SetSize(GraphSize, GraphSize / 2)
-			Graph:SetXLabel("Estimated Mass (kg)")
-			Graph:SetYLabel("Degrees/Sec")
+			Graph:SetXLabel("#acf.menu.turrets.estimated_mass")
+			Graph:SetYLabel("#acf.menu.turrets.degrees_per_second")
 			Graph:SetXRange(0, 100000)
 			Graph:SetXSpacing(10000)
 			Graph:SetYSpacing(5)
@@ -762,12 +763,16 @@ do -- Default turret menus
 
 				self:SetYRange(0, math.max(MotorPoints[1].y, HandCrankPoints[1].y) * 1.1)
 
-				self:PlotTable("Hand Rate", HandCrankPoints, Color(65, 65, 200))
-				self:PlotPoint("Hand Estimate", TurretData.Mass, TurretData.HandSim, Color(65, 65, 200))
+				self:PlotTable(language.GetPhrase("acf.menu.turrets.motors.hand_rate"), HandCrankPoints, GraphBlue)
+				self:PlotPoint(language.GetPhrase("acf.menu.turrets.motors.hand_estimate"), TurretData.Mass, TurretData.HandSim, GraphBlue)
 
-				self:PlotTable("Motor Rate", MotorPoints, Color(200, 65, 65))
-				self:PlotPoint("Motor Estimate", TurretData.Mass, TurretData.MotorSim, Color(200, 65, 65))
+				self:PlotTable(language.GetPhrase("acf.menu.turrets.motors.motor_rate"), MotorPoints, GraphRed)
+				self:PlotPoint(language.GetPhrase("acf.menu.turrets.motors.motor_estimate"), TurretData.Mass, TurretData.MotorSim, GraphRed)
 			end
+
+			local HandcrankText	= language.GetPhrase("acf.menu.turrets.handcrank_text")
+			local MotorText		= language.GetPhrase("acf.menu.turrets.motors.motor_text")
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 
 			local HandcrankInfo	= TurretSim:AddLabel(HandcrankText:format(0, 0))
 			HandcrankInfo.UpdateSim = function(Panel)
@@ -836,7 +841,7 @@ do -- Default turret menus
 				TurretData.MaxMass		= TurretClass.GetMaxMass(TurretData.Turret, Value)
 
 				EstDist:SetMinMax(0, math.max(Value * 2, 24))
-				MaxMassLbl:SetText("Max mass: " .. math.Round(TurretData.MaxMass, 1) .. "kg")
+				MaxMassLbl:SetText(MaxMassText:format(math.Round(TurretData.MaxMass, 1)))
 
 				MotorInfo:UpdateSim()
 				HandcrankInfo:UpdateSim()
@@ -887,10 +892,11 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretGyros")
 			ACF.SetClientData("PrimaryClass", "acf_turret_gyro")
 
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
 
 			if Data.IsDual then
-				Menu:AddLabel("Can control both a horizontal and vertical turret drive.")
+				Menu:AddLabel("#acf.menu.gyros.dual_desc")
 			end
 		end
 	end
@@ -901,6 +907,7 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretComputers")
 			ACF.SetClientData("PrimaryClass", "acf_turret_computer")
 
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
 		end
 	end
