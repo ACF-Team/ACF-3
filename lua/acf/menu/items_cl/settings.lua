@@ -156,7 +156,6 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):        LinkToServerData("RestrictInfo")
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
 		Base:AddCheckBox("#acf.menu.settings.general.gun_fire"):             LinkToServerData("GunsCanFire")
 		Base:AddCheckBox("#acf.menu.settings.general.gun_smoke"):            LinkToServerData("GunsCanSmoke")
 		Base:AddCheckBox("#acf.menu.settings.general.rack_fire"):            LinkToServerData("RacksCanFire")
@@ -178,6 +177,7 @@ do -- Serverside settings
 	ACF.AddServerSettings(201, "#acf.menu.settings.legal_checks", function(Base)
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
