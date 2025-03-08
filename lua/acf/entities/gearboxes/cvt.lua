@@ -7,7 +7,7 @@ local GearCVTSW = 65
 local StWB = 0.75 -- Straight weight bonus mulitplier
 
 -- Torque Rating
-local GearCVTST = 175
+local GearCVTST = 700
 local StTB = 1.25 -- Straight torque bonus multiplier
 
 -- Old gearbox scales

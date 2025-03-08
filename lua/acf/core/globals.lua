@@ -337,8 +337,8 @@ do -- ACF global vars
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
 	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox
-	ACF.GearEfficiency     = 0.99 -- The percentage of RPM efficiency kept when increasing the gear count
-	ACF.GearboxMassScale   = 2 -- The exponent to determine the gearbox's mass in proportion to its scale
+	ACF.GearEfficiency     = 0.95 -- The percentage of RPM efficiency kept when increasing the gear count
+	ACF.GearboxMassScale   = 3 -- The exponent to determine the gearbox's mass in proportion to its scale
 	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
 	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
 	ACF.MinGearRatio       = -1 -- The minimum value that a gear's ratio can be set to
