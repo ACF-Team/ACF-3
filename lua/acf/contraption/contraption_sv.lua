@@ -101,7 +101,7 @@ function Contraption.GetEnts(Ent)
 
 			if CurFamily and CurFamily:GetRoot() ~= K then
 				Pare[K] = true
-			else
+			elseif ACF.IsEntityEligiblePhysmass(K) then
 				Phys[K] = true
 			end
 		end

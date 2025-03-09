@@ -634,6 +634,8 @@ do -- Linking ------------------------------------------
 		Link.IsBraking = false
 
 		Gearbox.Wheels[Wheel] = Link
+		if not Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes = {} end
+		Wheel.ACF_Gearboxes[Gearbox] = Link
 
 		Wheel:CallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex(), function()
 			if IsValid(Gearbox) then
@@ -685,6 +687,10 @@ do -- Unlinking ----------------------------------------
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Wheel unlinked successfully!"
+		end
+
+		if Wheel.ACF_Gearboxes and Wheel.ACF_Gearboxes[Gearbox] then
+			Wheel.ACF_Gearboxes[Gearbox] = nil
 		end
 
 		return false, "This wheel is not linked to this gearbox!"
