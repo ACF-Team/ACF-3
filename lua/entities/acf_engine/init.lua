@@ -370,6 +370,8 @@ do -- Spawn and Update functions
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
+		Entity:UpdateEngineLegality() -- Defaults to unparented
+
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
@@ -639,6 +641,69 @@ function ENT:DestroySound()
 	self.Sound      = nil
 end
 
+function ENT:CheckEngineLegality()
+	if not ACF.LegalChecks then return true end
+
+	local EntTable = self:GetTable()
+
+	if not ACF.AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
+		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
+	end
+
+	local Contraption = self:GetContraption()
+	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+
+	if Contraption.TotalEngines > 2 then return false, "Too Many Engines", "The contraption has too many engines (you can only have two per contraption)." end
+
+	return true
+end
+
+function ENT:UpdateEngineLegality()
+	self.EngineInvalid, self.EngineInvalidReason, self.EngineInvalidMessage = self:CheckEngineLegality()
+end
+
+function ENT:CFW_OnParentedTo(_, NewParent)
+	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
+	self.ACF_EngineParentValid = ParentValid
+	return ParentValid
+end
+
+hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
+	if Ent:GetClass() == "acf_engine" then
+		if Contraption.Engines then
+			Contraption.Engines[Ent] = true
+		else
+			Contraption.Engines = {[Ent] = true}
+		end
+
+		Contraption.HasEngines   = true
+		Contraption.TotalEngines = (Contraption.TotalEngines or 0) + 1
+	end
+
+	if Contraption.Engines then
+		for Engine in pairs(Contraption.Engines) do
+			Engine:UpdateEngineLegality()
+		end
+	end
+end)
+
+hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
+	if Ent:GetClass() == "acf_engine" then
+		if Contraption.Engines then
+			Contraption.Engines[Ent] = nil
+		end
+
+		Contraption.HasEngines   = next(Contraption.Engines) and true or nil
+		Contraption.TotalEngines = Contraption.HasEngines and 0 or table.Count(Contraption.Engines)
+	end
+
+	if Contraption.Engines then
+		for Engine in pairs(Contraption.Engines) do
+			Engine:UpdateEngineLegality()
+		end
+	end
+end)
+
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
 	SelfTbl        = SelfTbl or self:GetTable()
@@ -690,6 +755,12 @@ function ENT:CalcRPM(SelfTbl)
 	-- This helps to massively improve performance throughout the entire drivetrain
 	SelfTbl = SelfTbl or self:GetTable()
 	if not SelfTbl.Active then return end
+
+	if SelfTbl.Disabled then return end
+
+	if not SelfTbl.EngineInvalid then
+		ACF.DisableEntity(self, SelfTbl.EngineInvalidReason, SelfTbl.EngineInvalidMessage, math.random(5, 7))
+	end
 
 	local ClockTime  = Clock.CurTime
 	local DeltaTime  = ClockTime - SelfTbl.LastThink
