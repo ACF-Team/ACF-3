@@ -325,6 +325,7 @@ do
 		Entity.ReplaceSelf = Data.ReplaceSelf
 		Entity.CrewPriority = Data.CrewPriority
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
+		Entity.Name = CrewType.ID .. " Crew Member"
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
@@ -370,7 +371,7 @@ do
 		Player:AddCount(Limit, Entity)
 		if CrewType.LimitConVar then Player:AddCount(CrewType.LimitConVar.Name, Entity) end
 
-		Entity.Name = "Crew Member"
+		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = "Crew Member"
 		Entity.EntType = "Crew Member"
 
