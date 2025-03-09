@@ -326,6 +326,7 @@ do
 		Entity.CrewPriority = Data.CrewPriority
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
+		Entity.ShortName = CrewType.ID
 
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
@@ -372,8 +373,8 @@ do
 		if CrewType.LimitConVar then Player:AddCount(CrewType.LimitConVar.Name, Entity) end
 
 		Entity.Name = CrewType.ID .. " Crew Member"
-		Entity.ShortName = "Crew Member"
-		Entity.EntType = "Crew Member"
+		Entity.ShortName = CrewType.ID
+		Entity.EntType = "Crew"
 
 		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_crew")
