@@ -330,6 +330,7 @@ do -- Spawn and Update functions
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
+		Entity.IsSpecial        = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -554,7 +555,15 @@ end
 local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
 
 function ENT:UpdateOverlayText()
-	local State, Name = self.Active and "Active" or "Idle", self.Name
+	local State
+	if not ACF.AllowSpecialEngines and self.IsSpecial then
+		State = "Disabled: Special engines are disabled."
+	elseif self.Active then
+		State = "Active"
+	else
+		State = "Idle"
+	end
+	local Name = self.Name
 	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)
 	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)
 	local PowerbandMin = self.PeakMinRPM
@@ -756,6 +765,7 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	if not SelfTbl.Active then return end
 
+	if not ACF.AllowSpecialEngines and SelfTbl.IsSpecial then return end
 	if SelfTbl.Disabled then return end
 
 	if not SelfTbl.EngineInvalid then
