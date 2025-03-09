@@ -366,7 +366,9 @@ else -- Serverside-only stuff
 		UpdateArmor(_, Entity, ArmorMod)
 
 		local EntACF    = Entity.ACF
-		Properties.mass = EntACF and EntACF.Mass -- Don't let the primitive reset its own mass, use ACF mass instead
+		if EntACF then
+			Properties.mass = EntACF.Mass -- Don't let the primitive reset its own mass, use ACF mass instead
+		end
 	end)
 
 	duplicator.RegisterEntityModifier("acfsettings", function(_, Entity, Data)
