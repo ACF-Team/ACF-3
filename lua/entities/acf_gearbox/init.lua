@@ -607,7 +607,8 @@ do -- Linking ------------------------------------------
 		end
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
-		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane) then return end
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane)
+		if Excessive then return nil, Angle end
 
 		local Link	= MobilityObj.Link(Entity, Target)
 
@@ -618,16 +619,16 @@ do -- Linking ------------------------------------------
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
 
-		return Link
+		return Link, Angle
 	end
 
 	local function LinkWheel(Gearbox, Wheel)
 		if Gearbox.Wheels[Wheel] then return false, "This wheel is already linked to this gearbox!" end
 		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then return false, "This wheel is too far away from this gearbox!" end
 
-		local Link = GenerateLinkTable(Gearbox, Wheel)
+		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Wheel)
 
-		if not Link then return false, "Cannot link due to excessive driveshaft angle!" end
+		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.round(DriveshaftAngle) .. " deg)" end
 
 		Link.LastVel   = 0
 		Link.AntiSpazz = 0
@@ -654,9 +655,9 @@ do -- Linking ------------------------------------------
 		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "These gearboxes are too far away from each other!" end
 		if CheckLoopedGearbox(Gearbox, Target) then return false, "You cannot link gearboxes in a loop!" end
 
-		local Link = GenerateLinkTable(Gearbox, Target)
+		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Target)
 
-		if not Link then return false, "Cannot link due to excessive driveshaft angle!" end
+		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.round(DriveshaftAngle) .. " deg)" end
 
 		Gearbox.GearboxOut[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
@@ -984,6 +985,8 @@ do -- Braking ------------------------------------------
 		if self.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
 
 		local BoxPhys = self:GetAncestor():GetPhysicsObject()
+		if not IsValid(BoxPhys) then return end -- Fixes an issue I had where deleting a contraption while driving it threw an error
+
 		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
 		local DeltaTime = Clock.DeltaTime
 
