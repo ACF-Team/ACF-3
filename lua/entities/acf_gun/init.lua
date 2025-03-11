@@ -81,7 +81,7 @@ do -- Random timer crew stuff
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
-				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / 2.54 / 2, 0, 0)),
+				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
 				filter = Filter,
 			})
 			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
@@ -335,7 +335,7 @@ do -- Spawn and Update functions --------------------------------
 		local DiameterRatio = Entity.ClassData.BarrelDiameterRatio or 1.15	-- Ratio of inner barrel diameter to outer barrel diameter
 		local LengthRatio = Entity.ClassData.BarrelLengthRatio or 0.45		-- Ratio of entity length to barrel length
 
-		local Length = (Entity.Size.x / 39.37 * LengthRatio) 				-- Barrel Length (m)
+		local Length = (Entity.Size.x / ACF.MeterToInch * LengthRatio) 		-- Barrel Length (m)
 		local RadIn = Entity.Caliber / 2 / 1000								-- Inner barrel radius (m)
 		local RadOut = RadIn * DiameterRatio								-- Outer barrel radius (m)
 

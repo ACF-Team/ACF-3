@@ -15,7 +15,7 @@ hook.Add("ACF_OnUpdateRound", "ACF Piledriver Ammo", function(Ammo, _, Data, GUI
 
 	Data.MuzzleVel  = Ammo.SpikeLength * 0.01 / engine.TickInterval()
 	Data.CavVol     = Cavity
-	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - Cavity) * 0.0079
+	Data.ProjMass   = (Data.ProjArea * Data.ProjLength - Cavity) * ACF.SteelDensity
 	Data.ShovePower = 0.2 + ExpRatio
 	Data.Diameter   = Data.Caliber + ExpRatio * Data.ProjLength
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
