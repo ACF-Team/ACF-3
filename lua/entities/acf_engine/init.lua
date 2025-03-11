@@ -674,7 +674,6 @@ end
 function ENT:CFW_OnParentedTo(_, NewParent)
 	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
 	self.ACF_EngineParentValid = ParentValid
-	return ParentValid
 end
 
 hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
