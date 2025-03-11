@@ -92,6 +92,7 @@ function Contraption.GetEnts(Ent)
 	local Children = Ent:GetFamilyChildren()
 	local Phys     = {}
 	local Pare     = {}
+	local Dtch     = {}
 
 	for K in pairs(ConEnts) do
 		if Children[K] then
@@ -103,11 +104,13 @@ function Contraption.GetEnts(Ent)
 				Pare[K] = true
 			elseif ACF.IsEntityEligiblePhysmass(K) then
 				Phys[K] = true
+			else
+				Dtch[K] = true
 			end
 		end
 	end
 
-	return Phys, Pare
+	return Phys, Pare, Dtch
 end
 -------------------------------------------------
 function Contraption.HasConstraints(Ent)
@@ -135,7 +138,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented = Contraption.GetEnts(Ent)
+	local Physical, Parented, Detached = Contraption.GetEnts(Ent)
 	local Constraints = {}
 
 	for K in pairs(Physical) do
@@ -193,6 +196,10 @@ function Contraption.CalcMassRatio(Ent, Tally)
 		end
 	end
 
+	for _ in pairs(Detached) do
+		OthN = OthN + 1
+	end
+
 	local TotMass = Con and Con.totalMass or PhysMass
 
 	for K in pairs(Physical) do
@@ -202,6 +209,12 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	end
 
 	for K in pairs(Parented) do
+		K.acfphystotal      = PhysMass
+		K.acftotal          = TotMass
+		K.acflastupdatemass = Time
+	end
+
+	for K in pairs(Detached) do
 		K.acfphystotal      = PhysMass
 		K.acftotal          = TotMass
 		K.acflastupdatemass = Time
