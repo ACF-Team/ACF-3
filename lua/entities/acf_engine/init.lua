@@ -661,9 +661,7 @@ function ENT:CheckEngineLegality()
 
 	local Contraption = self:GetContraption()
 	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
-
-	if Contraption.TotalEngines > 2 then return false, "Too Many Engines", "The contraption has too many engines (you can only have two per contraption)." end
-
+	
 	return true
 end
 
