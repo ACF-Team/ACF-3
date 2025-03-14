@@ -227,6 +227,10 @@ do -- ACF global vars
 	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
+	-- Autoloaders
+	ACF.AutoloaderMinSize	= 18 -- Defines the shortest possible length of autoloaders for all their axises, in gmu
+	ACF.AutoloaderMaxSize	= 96 -- Defines the highest possible length of autoloaders for all their axises, in gmu
+
 	-- HE
 	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
 	ACF.HEDensity            = 1.65e-3 -- Density of TNT in kg/cm3
