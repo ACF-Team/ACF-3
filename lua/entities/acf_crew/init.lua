@@ -573,6 +573,12 @@ do
 		self.ACF.Type      = "Prop"
 	end
 
+	-- If the player trips a legality check (e.g. notsolid)
+	-- You can't bring back a dead crew so there is no enable...
+	function ENT:Disable()
+		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
+	end
+
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
 		local Contraption = self:GetContraption()
