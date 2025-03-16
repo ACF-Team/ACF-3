@@ -121,7 +121,7 @@ do	-- Overlay/networking for that
 
 		local Length = self:GetNW2Float("Length", 0)
 		local Caliber = self:GetNW2Float("Caliber", 0)
-		local BreechCheck = self:GetNW2Float("BreechCheck", false)
+		local BreechCheck = self:GetNW2Bool("BreechCheck", false)
 		local Radius = Caliber / ACF.InchToCm / 2
 		if BreechCheck then
 			render.DrawWireframeBox(self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)), self:GetAngles(), Vector(-Length / ACF.InchToCm / 2, -Radius, -Radius), Vector(0, Radius, Radius), Color(255, 0, 255), true)

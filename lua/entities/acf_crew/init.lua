@@ -661,13 +661,17 @@ do
 			if crew.IsAlive then Alive = Alive + 1 end
 		end
 
-		-- Crew death at 1 left
+		-- If all crew die, kill all seated players in the contraption
 		if Alive <= 0 then
-			local Contraption = self:GetContraption() or {}
-			local Base = Contraption.Base or {}
-			local Seat = Base.Seat or {}
-			if IsValid(Seat) then
-				Seat:GetDriver():Kill()
+			-- I don't like this but this only runs once per contraption
+			local ents = Contraption.ents or {}
+			for ent, _ in pairs(ents) do
+				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
+					local Driver = ent:GetDriver()
+					if IsValid(Driver) then
+						Driver:Kill()
+					end
+				end
 			end
 		end
 	end
