@@ -606,8 +606,11 @@ do
 							Other.ToReplace = false
 							self.ToBeReplaced = false
 
-							self:SwapCrew(Other)
+							if IsValid(self) then
+								self:SwapCrew(Other)
+							end
 						end)
+
 						return
 					end
 				end
