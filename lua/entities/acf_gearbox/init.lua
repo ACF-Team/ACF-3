@@ -628,7 +628,7 @@ do -- Linking ------------------------------------------
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Wheel)
 
-		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.round(DriveshaftAngle) .. " deg)" end
+		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(DriveshaftAngle) .. " deg)" end
 
 		Link.LastVel   = 0
 		Link.AntiSpazz = 0
@@ -657,7 +657,7 @@ do -- Linking ------------------------------------------
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Target)
 
-		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.round(DriveshaftAngle) .. " deg)" end
+		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(DriveshaftAngle) .. " deg)" end
 
 		Gearbox.GearboxOut[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
