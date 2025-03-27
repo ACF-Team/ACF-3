@@ -132,7 +132,7 @@ if SERVER then
 		local Target = Trace.Entity
 		local Filter = Bullet.Filter
 
-		if ACF.Check(Target) then
+		if ACF.Check(Target) and Bullet.Gun ~= Trace.Entity then
 			local Speed  = Bullet.Flight:Length() / ACF.Scale
 			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
 
