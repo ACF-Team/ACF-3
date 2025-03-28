@@ -661,7 +661,7 @@ function ENT:CheckEngineLegality()
 
 	local Contraption = self:GetContraption()
 	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
-	
+
 	return true
 end
 
