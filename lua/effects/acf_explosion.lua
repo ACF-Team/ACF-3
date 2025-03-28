@@ -73,10 +73,10 @@ function EFFECT:Core(Origin, Radius)
 		local Sound = SoundData.Sound
 		if Radius <= 2 then
 			SoundData.Sound = Sound.."/small/%s.mp3"
-			SoundData.Volume = 97
+			SoundData.Volume = 90
 		elseif Radius > 2 and Radius <= 6 then
 			SoundData.Sound = Sound.."/medium-small/%s.mp3"
-			SoundData.Volume = 110
+			SoundData.Volume = 105
 		elseif Radius > 6 and Radius <= 12 then
 			SoundData.Sound = Sound.."/medium/%s.mp3"
 			SoundData.Volume = 116
