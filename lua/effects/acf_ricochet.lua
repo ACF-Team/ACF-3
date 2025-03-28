@@ -4,7 +4,7 @@ local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetRicochetDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
-local Sound      = "acf_base/fx/ricochet%s.mp3"
+local Sound      = "^acf_base/fx/metal/ricochet/large/4.wav"
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
@@ -18,7 +18,8 @@ function EFFECT:Init(Data)
 	TraceData.endpos = Origin - DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
-
+	local MatType   = Trace.MatType
+	
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
 		local Scale = GetScale(DecalType, Caliber)
@@ -26,10 +27,29 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	local Level = math.Clamp(Mass * 200, 65, 500)
-	local Pitch = math.Clamp(Velocity * 0.01, 25, 255)
+	function CurSound(Caliber)
+		local Sound	= "acf_base/fx/impact/ricochet" 
 
-	Sounds.PlaySound(Origin, Sound:format(math.random(1, 4)), Level, Pitch, 1)
+		if Trace.HitWorld then
+			Sound = Sound.."/world/%s.wav"
+		else
+			if Caliber <= 1.5 then
+				Sound = Sound.."/small_arms/%s.wav"
+			elseif Caliber > 1.5 and Caliber <= 4.0 then
+				Sound = "^"..Sound.."/small/%s.wav"
+			elseif Caliber > 4.0 and Caliber < 10.0 then
+				Sound = "^"..Sound.."/medium/%s.wav"
+			else 
+				Sound = "^"..Sound.."/large/%s.wav"
+			end
+		end
+
+		return Sound
+	end
+
+	local SoundPath = CurSound(Caliber)
+
+	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 100, 100, 1)
 end
 
 function EFFECT:Think()

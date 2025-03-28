@@ -5,7 +5,6 @@ local GetDecal   = ACF.GetPenetrationDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
 local Effects    = ACF.Utilities.Effects
-local Sound      = "acf_base/fx/penetration%s.mp3"
 local White      = Color(255, 255, 255)
 
 function EFFECT:Init(Data)
@@ -40,7 +39,34 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
 
-	Sounds.PlaySound(Trace.HitPos, Sound:format(math.random(1, 6)), Level, Pitch, 1)
+	function CurSound(Caliber)
+		local Sound	= "acf_base/fx/impact/penetration" 
+
+		if Trace.HitWorld then
+			if Caliber <= 1.5 then
+				Sound = Sound.."/world/small arms/%s.wav"
+			else
+				Sound = Sound.."/world/%s.wav"
+			end
+		else
+			if Caliber <= 1.5 then
+				Sound = Sound.."/small_arms/%s.wav"
+			elseif Caliber > 1.5 and Caliber <= 4.0 then
+				Sound = "^"..Sound.."/small/%s.wav"
+			elseif Caliber > 4.0 and Caliber < 10.0 then
+				Sound = "^"..Sound.."/medium/%s.wav"
+			else 
+				Sound = "^"..Sound.."/large/%s.wav"
+			end
+		end
+
+		return Sound
+	end
+
+	local SoundPath = CurSound(Caliber)
+
+	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 100, 100, 1)
+	--Sounds.PlaySound(Trace.HitPos, "^acf_base/test/L_90_R_100.wav", 100, 100, 1)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)

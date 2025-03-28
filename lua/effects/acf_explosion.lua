@@ -61,10 +61,32 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Core(Origin, Radius)
-	local Pitch  = math.Clamp(123 - Radius * 3, 60, 120)
 
-	Sounds.PlaySound(Origin, "ambient/explosions/explode_9.wav", 105, Pitch, 1)
-	Sounds.PlaySound(Origin, "ambient/levels/streetwar/city_battle19.wav", 105, Pitch, 1)
+	function CurSound(Radius)
+		print(Radius)
+
+		local Sound	= "^acf_base/fx/explosion" 
+		if Radius <= 2 then
+			Sound = Sound.."/small/%s.wav"
+		elseif Radius > 2 and Radius <= 6 then
+			Sound = Sound.."/medium-small/%s.wav"
+		elseif Radius > 6 and Radius <= 12 then
+			Sound = Sound.."/medium/%s.wav"
+		elseif Radius > 12 and Radius <= 20 then
+			Sound = Sound.."/medium-large/%s.wav"
+		elseif Radius > 20 and Radius < 30 then
+			Sound = Sound.."/large/%s.wav"
+		else
+			Sound = Sound.."/extra-large/%s.wav"
+		end
+
+		return Sound
+	end
+
+	local SoundPath = CurSound(Radius)
+
+	print(SoundPath)
+	Sounds.PlaySound(Origin, SoundPath:format(math.random(0,4)), 100, 100, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
