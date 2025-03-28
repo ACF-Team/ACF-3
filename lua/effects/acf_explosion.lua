@@ -67,17 +67,17 @@ function EFFECT:Core(Origin, Radius)
 
 		local Sound	= "^acf_base/fx/explosion" 
 		if Radius <= 2 then
-			Sound = Sound.."/small/%s.wav"
+			Sound = Sound.."/small/%s.mp3"
 		elseif Radius > 2 and Radius <= 6 then
-			Sound = Sound.."/medium-small/%s.wav"
+			Sound = Sound.."/medium-small/%s.mp3"
 		elseif Radius > 6 and Radius <= 12 then
-			Sound = Sound.."/medium/%s.wav"
+			Sound = Sound.."/medium/%s.mp3"
 		elseif Radius > 12 and Radius <= 20 then
-			Sound = Sound.."/medium-large/%s.wav"
+			Sound = Sound.."/medium-large/%s.mp3"
 		elseif Radius > 20 and Radius < 30 then
-			Sound = Sound.."/large/%s.wav"
+			Sound = Sound.."/large/%s.mp3"
 		else
-			Sound = Sound.."/extra-large/%s.wav"
+			Sound = Sound.."/extra-large/%s.mp3"
 		end
 
 		return Sound
