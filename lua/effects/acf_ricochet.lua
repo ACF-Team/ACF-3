@@ -31,16 +31,16 @@ function EFFECT:Init(Data)
 		local Sound	= "acf_base/fx/impact/ricochet" 
 
 		if Trace.HitWorld then
-			Sound = Sound.."/world/%s.wav"
+			Sound = Sound.."/world/%s.mp3"
 		else
 			if Caliber <= 1.5 then
-				Sound = Sound.."/small_arms/%s.wav"
-			elseif Caliber > 1.5 and Caliber <= 4.0 then
-				Sound = "^"..Sound.."/small/%s.wav"
-			elseif Caliber > 4.0 and Caliber < 10.0 then
-				Sound = "^"..Sound.."/medium/%s.wav"
+				Sound = Sound.."/small_arms/%s.mp3"
+			elseif Caliber > 1.5 and Caliber <= 6.6 then
+				Sound = "^"..Sound.."/small/%s.mp3"
+			elseif Caliber > 6.6 and Caliber < 11.8 then
+				Sound = "^"..Sound.."/medium/%s.mp3"
 			else 
-				Sound = "^"..Sound.."/large/%s.wav"
+				Sound = "^"..Sound.."/large/%s.mp3"
 			end
 		end
 
@@ -49,7 +49,8 @@ function EFFECT:Init(Data)
 
 	local SoundPath = CurSound(Caliber)
 
-	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 100, 100, 1)
+	print(SoundPath)
+	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 87, 100, 1)
 end
 
 function EFFECT:Think()
