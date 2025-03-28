@@ -86,7 +86,7 @@ function EFFECT:Core(Origin, Radius)
 	local SoundPath = CurSound(Radius)
 
 	print(SoundPath)
-	Sounds.PlaySound(Origin, SoundPath:format(math.random(0,4)), 100, 100, 1)
+	Sounds.PlaySound(Origin, SoundPath:format(math.random(0,4)), 150, 100, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
