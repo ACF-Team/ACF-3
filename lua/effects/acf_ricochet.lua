@@ -27,30 +27,9 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	function CurSound(Caliber)
-		local Sound	= "acf_base/fx/hit/ricochet" 
+	local SoundData = Sounds.HitSoundBank(Data, Trace, "ricochet")
 
-		if Trace.HitWorld then
-			Sound = Sound.."/world/%s.mp3"
-		else
-			if Caliber <= 1.5 then
-				Sound = Sound.."/small_arms/%s.mp3"
-			elseif Caliber > 1.5 and Caliber <= 6.6 then
-				Sound = "^"..Sound.."/small/%s.mp3"
-			elseif Caliber > 6.6 and Caliber < 11.8 then
-				Sound = "^"..Sound.."/medium/%s.mp3"
-			else 
-				Sound = "^"..Sound.."/large/%s.mp3"
-			end
-		end
-
-		return Sound
-	end
-
-	local SoundPath = CurSound(Caliber)
-
-	print(SoundPath)
-	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 87, 100, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:Think()

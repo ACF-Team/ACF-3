@@ -62,42 +62,9 @@ end
 
 function EFFECT:Core(Origin, Radius)
 
-	function CurSound(Radius)
-		print(Radius)
+	SoundData = Sounds.ExplosionSoundBank(Radius)
 
-		local SoundData = {
-			Sound	= "^acf_base/fx/explosion",
-			Volume = 0
-		}
-
-		local Sound = SoundData.Sound
-		if Radius <= 2 then
-			SoundData.Sound = Sound.."/small/%s.mp3"
-			SoundData.Volume = 90
-		elseif Radius > 2 and Radius <= 6 then
-			SoundData.Sound = Sound.."/medium-small/%s.mp3"
-			SoundData.Volume = 105
-		elseif Radius > 6 and Radius <= 12 then
-			SoundData.Sound = Sound.."/medium/%s.mp3"
-			SoundData.Volume = 116
-		elseif Radius > 12 and Radius <= 20 then
-			SoundData.Sound = Sound.."/medium-large/%s.mp3"
-			SoundData.Volume = 120
-		elseif Radius > 20 and Radius < 30 then
-			SoundData.Sound = Sound.."/large/%s.mp3"
-			SoundData.Volume = 124
-		else
-			SoundData.Sound = Sound.."/extra-large/%s.mp3"
-			SoundData.Volume = 127
-		end
-
-		return SoundData
-	end
-
-	local SoundData = CurSound(Radius)
-
-	print(SoundData.Sound)
-	Sounds.PlaySound(Origin, SoundData.Sound:format(math.random(0,4)), SoundData.Volume, 100, 1)
+	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)

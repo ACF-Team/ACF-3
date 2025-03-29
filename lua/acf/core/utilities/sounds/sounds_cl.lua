@@ -137,3 +137,103 @@ do -- Processing adjustable sounds (for example, engine noises)
 		Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	end)
 end
+
+function Sounds.HitSoundBank(Data, Trace, Type)
+	local MatType   = Trace.MatType
+	local Caliber = Data:GetRadius()
+
+	local SoundData = {
+		SoundPath   = "^acf_base/fx/hit/",
+		SoundVolume = 100,
+		SoundPitch  = 100
+	}
+
+	local SoundPath = SoundData.SoundPath
+	local Directory = ""
+	local Size = ""
+
+	if Trace.HitWorld then --hit world
+		local Materials = {
+			[67] = "rock",
+			[77] = "metal/penetration",
+			[87] = "wood"
+		}
+
+		if Materials[MatType] ~= nil then
+			Directory = Materials[MatType].."/"
+		else
+			Directory = "ground/"
+		end
+
+		if Caliber <= 1.5 then
+			Size = "small_arms/"
+		else
+			Size = "small/"
+		end
+
+	elseif MatType == 70 then --hit flesh
+		Directory = "body/"
+
+	else --assume metal
+		local AmmoType = Data:GetDamageType()
+
+		Directory = "metal/"..Type.."/"
+
+		if Caliber <= 1.5 then
+			Size = "small_arms/"
+		elseif Caliber > 1.5 and Caliber <= 6.6 then
+			Size = "small/"
+		elseif Caliber > 6.6 and Caliber < 11.8 then
+			Size = "medium/"
+		else 
+			Size = "large/"
+		end
+
+		if Type == "impact" then
+			if AmmoType == 2 or AmmoType == 3 or AmmoType == 4 then
+				Size = Size.."dart/"
+			else
+				Size = Size.."ap/"
+			end
+		end
+
+	end
+
+	SoundData.SoundPath = SoundPath..Directory..Size.."%s.mp3"
+
+	print(SoundData.SoundPath)
+
+	return SoundData
+end
+
+function Sounds.ExplosionSoundBank(Radius)
+	local SoundData = {
+		SoundPath	= "^acf_base/fx/explosion",
+		SoundVolume = 100,
+		SoundPitch  = 100
+	}
+
+	local SoundPath = SoundData.SoundPath
+
+	if Radius <= 2 then
+		SoundData.SoundPath = SoundPath.."/small/%s.mp3"
+		SoundData.SoundVolume = 90
+	elseif Radius > 2 and Radius <= 6 then
+		SoundData.SoundPath = SoundPath.."/medium-small/%s.mp3"
+		SoundData.SoundVolume = 105
+	elseif Radius > 6 and Radius <= 12 then
+		SoundData.SoundPath = SoundPath.."/medium/%s.mp3"
+		SoundData.SoundVolume = 116
+	elseif Radius > 12 and Radius <= 20 then
+		SoundData.SoundPath = SoundPath.."/medium-large/%s.mp3"
+		SoundData.SoundVolume = 120
+	elseif Radius > 20 and Radius < 30 then
+		SoundData.SoundPath = SoundPath.."/large/%s.mp3"
+		SoundData.SoundVolume = 124
+	else
+		SoundData.SoundPath = SoundPath.."/extra-large/%s.mp3"
+		SoundData.SoundVolume = 127
+	end
+
+	return SoundData
+end

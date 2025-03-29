@@ -39,35 +39,9 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
 
-	function CurSound(Caliber)
-		local Sound	= "acf_base/fx/hit/penetration" 
+	local SoundData = Sounds.HitSoundBank(Data, Trace, "penetration")
 
-		if Trace.HitWorld then
-			if Caliber <= 15 then
-				Sound = Sound.."/world/small arms/%s.mp3"
-			else
-				Sound = Sound.."/world/%s.mp3"
-			end
-		else
-			if Caliber <= 1.5 then
-				Sound = Sound.."/small_arms/%s.mp3"
-			elseif Caliber > 1.5 and Caliber <= 6.6 then
-				Sound = "^"..Sound.."/small/%s.mp3"
-			elseif Caliber > 6.6 and Caliber < 11.8 then
-				Sound = "^"..Sound.."/medium/%s.mp3"
-			else 
-				Sound = "^"..Sound.."/large/%s.mp3"
-			end
-		end
-
-		return Sound
-	end
-
-	local SoundPath = CurSound(Caliber)
-
-	print(SoundPath)
-	Sounds.PlaySound(Trace.HitPos, SoundPath:format(math.random(0,4)), 90, 100, 1)
-	--Sounds.PlaySound(Trace.HitPos, "^acf_base/test/L_90_R_100.wav", 100, 100, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, 100, 1)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
