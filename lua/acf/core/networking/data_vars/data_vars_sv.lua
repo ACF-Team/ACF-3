@@ -68,14 +68,17 @@ do -- Data syncronization
 
 		if not Data then return end
 
-		local Hook = "ACF_OnUpdate" .. Type .. "Data"
+		local HookUpdate = "ACF_OnUpdate" .. Type .. "Data"
+		local HookUpload = "ACF_OnUpload" .. Type .. "Data"
 
 		for K, V in pairs(Data) do
 			if Values[K] ~= V then
 				Values[K] = V
 
-				hook.Run(Hook, Player, K, V)
+				hook.Run(HookUpdate, Player, K, V)
 			end
+
+			hook.Run(HookUpload, Player, K, V)
 
 			Data[K] = nil
 		end
