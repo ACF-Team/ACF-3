@@ -1,5 +1,6 @@
 local ACF        = ACF
 local Components = ACF.Classes.Components
+local AutoloaderTypes = ACF.Classes.AutoloaderTypes
 
 Components.Register("AL-CMP", {
 	Name   = "Autoloader",
@@ -41,6 +42,22 @@ Components.Register("AL-CMP", {
 			return Z
 		end)
 
+		local MoveType = Menu:AddComboBox()
+		local MoveTypeDesc = Menu:AddLabel("")
+
+		function MoveType:OnSelect(Index, _, Data)
+			if self.Selected == Data then return end
+
+			self.ListData.Index = Index
+			self.Selected = Data
+
+			MoveTypeDesc:SetText(Data.Description)
+
+			ACF.SetClientData("AutoloaderMoveType", Data.ID)
+		end
+
+		ACF.LoadSortedList(MoveType, AutoloaderTypes.GetEntries(), "ID")
+
 		ACF.SetClientData("PrimaryClass", "acf_autoloader")
 	end
 })
@@ -53,6 +70,9 @@ do
 		Preview = {
 			FOV = 90,
 		},
+		IndexTime = function(X, Y, Z, Mass)
+			return 1
+		end
 	})
 
 	Components.RegisterItem("CRS-H", "AL-CMP", {
@@ -62,6 +82,9 @@ do
 		Preview = {
 			FOV = 90,
 		},
+		IndexTime = function(X, Y, Z, Mass)
+			return 1
+		end
 	})
 
 	Components.RegisterItem("CRS-V", "AL-CMP", {
@@ -71,6 +94,9 @@ do
 		Preview = {
 			FOV = 90,
 		},
+		IndexTime = function(X, Y, Z, Mass)
+			return 1
+		end
 	})
 
 	Components.RegisterItem("RLD-A", "AL-CMP", {
@@ -80,5 +106,8 @@ do
 		Preview = {
 			FOV = 90,
 		},
+		IndexTime = function(X,Y,Z,Mass)
+			return 1
+		end
 	})
 end
