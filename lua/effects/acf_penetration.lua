@@ -40,7 +40,7 @@ function EFFECT:Init(Data)
 	end
 
 	function CurSound(Caliber)
-		local Sound	= "acf_base/fx/impact/penetration" 
+		local Sound	= "acf_base/fx/hit/penetration" 
 
 		if Trace.HitWorld then
 			if Caliber <= 15 then

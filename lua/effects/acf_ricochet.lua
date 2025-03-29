@@ -28,7 +28,7 @@ function EFFECT:Init(Data)
 	end
 
 	function CurSound(Caliber)
-		local Sound	= "acf_base/fx/impact/ricochet" 
+		local Sound	= "acf_base/fx/hit/ricochet" 
 
 		if Trace.HitWorld then
 			Sound = Sound.."/world/%s.mp3"
