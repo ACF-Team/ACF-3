@@ -26,6 +26,10 @@ function EFFECT:Init(Data)
 	local HitNormal = Trace.HitNormal
 	local MatType   = Trace.MatType
 
+	local SoundData = Sounds.HitSoundBank(Data, Trace, "penetration")
+
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
+
 	if MatType == 71 or MatType == 73 or MatType == 77 or MatType == 80 then
 		self:Metal(Emitter, Origin, Scale, HitNormal)
 	else -- Nonspecific
@@ -38,10 +42,6 @@ function EFFECT:Init(Data)
 
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
-
-	local SoundData = Sounds.HitSoundBank(Data, Trace, "penetration")
-
-	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, 100, 1)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)

@@ -165,7 +165,7 @@ function Sounds.HitSoundBank(Data, Trace, Type)
 			Directory = "ground/"
 		end
 
-		if Caliber <= 1.5 then
+		if Caliber <= 3.0 then
 			Size = "small_arms/"
 		else
 			Size = "small/"
