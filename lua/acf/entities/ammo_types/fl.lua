@@ -30,7 +30,7 @@ end
 
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	return ACF.Penetration(Speed, Bullet.FlechetteMass, Bullet.FlechetteCaliber * 10)
@@ -145,7 +145,7 @@ if SERVER then
 			for _ = 1, BulletData.Flechettes do
 				local Inaccuracy = VectorRand() / 360 * ((Gun.Spread or 0) + BulletData.FlechetteSpread)
 
-				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
+				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
 
 				Ballistics.CreateBullet(FlechetteData)
 			end
@@ -162,7 +162,7 @@ if SERVER then
 				local BaseSpread = BaseInaccuracy * BaseInaccuracyMult
 				local AddSpread  = AddInaccuracy * AddSpreadMult
 
-				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
+				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
 
 				Ballistics.CreateBullet(FlechetteData)
 			end
@@ -191,7 +191,7 @@ else
 	ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:GetRangedPenetration(Bullet, Range)
-		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * 0.0254
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * ACF.InchToMeter
 
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end

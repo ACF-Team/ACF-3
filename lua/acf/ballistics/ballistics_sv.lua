@@ -321,7 +321,7 @@ do -- Terminal ballistics --------------------------
 	function Ballistics.CalculateRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		-- Ricochet distribution center
-		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / 39.37 - Bullet.LimitVel) / 100)
+		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / ACF.MeterToInch - Bullet.LimitVel) / 100)
 
 		-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
 		local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
@@ -382,7 +382,7 @@ do -- Terminal ballistics --------------------------
 	function Ballistics.DoRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		local Speed    = Bullet.Flight:Length() / ACF.Scale
-		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
+		local MinAngle = math.min(Bullet.Ricochet - Speed / ACF.MeterToInch / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
 		local Ricochet = 0
 
 		if HitAngle < 89.9 and HitAngle > math.random(MinAngle, 90) then -- Checking for ricochet

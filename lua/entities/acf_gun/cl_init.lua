@@ -2,16 +2,7 @@ local ACF   = ACF
 local Clock = ACF.Utilities.Clock
 local Queued	= {}
 
-DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
-
 include("shared.lua")
-
-language.Add("Cleanup_acf_gun", "ACF Weapons")
-language.Add("Cleaned_acf_gun", "Cleaned up all ACF Weapons")
-language.Add("Cleanup_acf_smokelauncher", "ACF Smoke Launchers")
-language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
-language.Add("Cleaned_acf_smokelauncher", "Cleaned up all ACF Smoke Launchers")
-language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
 
 killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACF.KillIconColor)
 
@@ -24,7 +15,7 @@ function ENT:Initialize(...)
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
 
-	BaseClass.Initialize(self, ...)
+	self.BaseClass.Initialize(self, ...)
 end
 
 function ENT:Update()
@@ -36,7 +27,7 @@ function ENT:OnResized(_, Scale)
 end
 
 function ENT:Think()
-	BaseClass.Think(self)
+	self.BaseClass.Think(self)
 
 	local SelfTbl = self:GetTable()
 	local SinceFire = Clock.CurTime - SelfTbl.LastFire

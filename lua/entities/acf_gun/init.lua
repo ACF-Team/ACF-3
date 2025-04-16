@@ -546,7 +546,7 @@ do -- Metamethods --------------------------------
 			BulletData.Owner  = self.CurrentUser
 			BulletData.Gun	   = self -- because other guns share this table
 			BulletData.Pos    = self:BarrelCheck()
-			BulletData.Flight = Dir * BulletData.MuzzleVel * 39.37 + Velocity
+			BulletData.Flight = Dir * BulletData.MuzzleVel * ACF.MeterToInch + Velocity
 			BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			BulletData.Filter = self.BarrelFilter
 
@@ -555,7 +555,7 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
-			local Energy = ACF.Kinetic(BulletData.MuzzleVel * 39.37, BulletData.ProjMass).Kinetic
+			local Energy = ACF.Kinetic(BulletData.MuzzleVel * ACF.MeterToInch, BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
 				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, BulletData.Owner, self, self:GetForward(), 30)
@@ -602,7 +602,7 @@ do -- Metamethods --------------------------------
 
 			local MassCenter = self:LocalToWorld(self:GetPhysicsObject():GetMassCenter())
 			local BulletData = self.BulletData
-			local Energy = BulletData.ProjMass * BulletData.MuzzleVel * 39.37 + BulletData.PropMass * 3000 * 39.37
+			local Energy = BulletData.ProjMass * BulletData.MuzzleVel * ACF.MeterToInch + BulletData.PropMass * 3000 * ACF.MeterToInch
 
 			ACF.KEShove(self, MassCenter, -self:GetForward(), Energy)
 		end

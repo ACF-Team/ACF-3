@@ -439,7 +439,7 @@ do -- ACF Activation and Damage -----------------
 				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5) -- Random position in the ammo crate
-				BulletData.Flight = VectorRand():GetNormalized() * Speed * 39.37 + Entity:GetAncestor():GetVelocity() -- Random direction including baseplate speed
+				BulletData.Flight = VectorRand():GetNormalized() * Speed * ACF.MeterToInch + Entity:GetAncestor():GetVelocity() -- Random direction including baseplate speed
 
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity

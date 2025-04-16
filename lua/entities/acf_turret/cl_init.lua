@@ -2,13 +2,7 @@ local ACF		= ACF
 local Clock		= ACF.Utilities.Clock
 local Queued	= {}
 
-DEFINE_BASECLASS("acf_base_scalable")
-
 include("shared.lua")
-
-language.Add("Cleanup_acf_turret", "ACF Turrets")
-language.Add("Cleaned_acf_turret", "Cleaned up all ACF turrets!")
-language.Add("SBoxLimit__acf_turret", "You've reached the ACF turrets limit!")
 
 do	-- NET SURFER
 	net.Receive("ACF_InvalidateTurretInfo", function()

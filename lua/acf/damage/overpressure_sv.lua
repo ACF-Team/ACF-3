@@ -25,7 +25,7 @@ local function CanSee(Target, Data)
 end
 
 function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
-	local Radius = Energy ^ 0.33 * 0.025 * 39.37 -- Radius in meters (Completely arbitrary stuff, scaled to have 120s have a radius of about 20m)
+	local Radius = Energy ^ 0.33 * 0.025 * ACF.MeterToInch -- Radius in meters (Completely arbitrary stuff, scaled to have 120s have a radius of about 20m)
 	local Data = { start = Origin, endpos = true, mask = MASK_SHOT }
 
 	if Source then -- Filter out guns
@@ -38,7 +38,7 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 		end
 	end
 
-	util.ScreenShake(Origin, Energy, 1, 0.25, Radius * 3 * 39.37 )
+	util.ScreenShake(Origin, Energy, 1, 0.25, Radius * 3 * ACF.MeterToInch )
 
 	if Forward and Angle then -- Blast direction and angle are specified
 		Angle = math.rad(Angle * 0.5) -- Convert deg to rads
@@ -50,7 +50,7 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 			if math.acos(Forward:Dot(Direction)) < Angle then
 				local D = Position:Distance(Origin)
 
-				if D / 39.37 <= Radius then
+				if D / ACF.MeterToInch <= Radius then
 
 					Data.endpos = Position + VectorRand() * 5
 
@@ -71,7 +71,7 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 			if CanSee(Origin, V) then
 				local D = Position:Distance(Origin)
 
-				if D / 39.37 <= Radius then
+				if D / ACF.MeterToInch <= Radius then
 
 					Data.endpos = Position + VectorRand() * 5
 

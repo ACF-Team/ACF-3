@@ -17,7 +17,7 @@ end
 
 function Ammo:GetDisplayData(Data)
 	local Display = Ammo.BaseClass.GetDisplayData(self, Data)
-	local Energy  = ACF.Kinetic(Data.MuzzleVel * 39.37, Data.ProjMass)
+	local Energy  = ACF.Kinetic(Data.MuzzleVel * ACF.MeterToInch, Data.ProjMass)
 
 	Display.MaxKETransfert = Energy.Kinetic * Data.ShovePower
 

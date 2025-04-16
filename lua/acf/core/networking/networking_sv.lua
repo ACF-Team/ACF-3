@@ -31,7 +31,7 @@ local function SendMessages()
 		local Compressed = Compress(ToJSON(All))
 
 		net.Start("ACF_Networking")
-			net.WriteUInt(#Compressed, 12)
+			net.WriteUInt(#Compressed, ACF.NetMessageSizeLimit)
 			net.WriteData(Compressed)
 		net.Broadcast()
 
@@ -43,7 +43,7 @@ local function SendMessages()
 			local Compressed = Compress(ToJSON(Data))
 
 			net.Start("ACF_Networking")
-				net.WriteUInt(#Compressed, 12)
+				net.WriteUInt(#Compressed, ACF.NetMessageSizeLimit)
 				net.WriteData(Compressed)
 			net.Send(Target)
 
@@ -88,7 +88,7 @@ function Network.Send(Name, Player, ...)
 end
 
 net.Receive("ACF_Networking", function(_, Player)
-	local Bytes   = net.ReadUInt(12)
+	local Bytes   = net.ReadUInt(ACF.NetMessageSizeLimit)
 	-- This decompression limit should only be as high as it absolutely needs to be
 	local String  = Decompress(net.ReadData(Bytes), 1024)
 	if not String then return end

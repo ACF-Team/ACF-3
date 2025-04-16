@@ -3,13 +3,7 @@ local MaxRounds = GetConVar("acf_maxroundsdisplay")
 local Refills   = ACF.Utilities.Effects.Refills
 local Queued    = {}
 
-DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
-
 include("shared.lua")
-
-language.Add("Cleanup_acf_ammo", "ACF Ammo Crates")
-language.Add("Cleaned_acf_ammo", "Cleaned up all ACF Ammo Crates")
-language.Add("SBoxLimit__acf_ammo", "You've reached the ACF Ammo Crates limit!")
 
 killicon.Add("acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor)
 
@@ -65,7 +59,7 @@ function ENT:Initialize()
 		UpdateAmmoCount(self)
 	end, "Ammo Crate " .. self:EntIndex())
 
-	BaseClass.Initialize(self)
+	self.BaseClass.Initialize(self)
 end
 
 function ENT:RequestAmmoData()

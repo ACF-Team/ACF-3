@@ -134,11 +134,13 @@ do -- ACF global vars
 	ACF.ArmorMod = 1
 	ACF.DefineSetting("ArmorFactor",        1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
 
-	ACF.FuelRate = 15
+	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
 	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.MinDuctility         = -80 -- The minimum amount of ductility that can be set on an entity
+	ACF.MaxDuctility         = 80 -- The maximum amount of ductility that can be set on an entity
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
@@ -167,13 +169,20 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
+	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 
 	-- Unit Conversion
 	ACF.MeterToInch          = 39.3701 -- Meters to inches
+	ACF.InchToMeter          = 0.0254 -- Inches to meters
 	ACF.gCmToKgIn            = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
 	ACF.MmToInch             = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm             = 25.4 -- Inches to millimeters
+	ACF.InchToCm             = 2.54 -- Inches to centimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
+	ACF.InchToCmCu           = 16.387 -- in³ to cm³
+	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
+	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
+	ACF.LToGal               = 0.264172 -- Liters to gallons
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
@@ -335,8 +344,6 @@ elseif CLIENT then
 	ACF.CustomToolCategory = CreateClientConVar("acf_tool_category", 0, true, false, "If enabled, ACF tools will be put inside their own category.", 0, 1)
 
 	if ACF.CustomToolCategory:GetBool() then
-		language.Add("spawnmenu.tools.acf", "ACF")
-
 		-- We use this hook so that the ACF category is always at the top
 		hook.Add("AddToolMenuTabs", "CreateACFCategory", function()
 			spawnmenu.AddToolCategory("Main", "ACF", "#spawnmenu.tools.acf")

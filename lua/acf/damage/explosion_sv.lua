@@ -16,8 +16,6 @@ local TraceData    = {
 local Ballistics	= ACF.Ballistics
 local Debug			= ACF.Debug
 
-local InchToCm = 2.54
-
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
 -- @return True if the entity can be affected by explosions, false otherwise.
@@ -88,7 +86,7 @@ end
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local MaxSphere   = 4 * math.pi * (Radius * InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
+	local MaxSphere   = 4 * math.pi * (Radius * ACF.InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
 	local FragMass    = FragMass / Fragments
 	local BaseFragV   = (Power * 50000 / FragMass / Fragments) ^ 0.5
@@ -154,7 +152,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 				if not Damaged[HitEnt] and Damage.isValidTarget(HitEnt) then
 					local Distance      = Position:Distance(HitPos)
-					local Sphere        = math.max(4 * math.pi * (Distance * InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
+					local Sphere        = math.max(4 * math.pi * (Distance * ACF.InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 					local EntArea       = HitEnt.ACF.Area
 					local EntArmor      = HitEnt.ACF.Armour
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
@@ -185,7 +183,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 						if FragHit > 0 then
 							local Loss    = BaseFragV * Distance / Radius
-							local FragVel = math.max(BaseFragV - Loss, 0) * 0.0254
+							local FragVel = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
 							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 

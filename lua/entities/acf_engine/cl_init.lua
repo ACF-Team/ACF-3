@@ -4,10 +4,6 @@ local Queued	= {}
 
 include("shared.lua")
 
-language.Add("Cleanup_acf_engine", "ACF Engines")
-language.Add("Cleaned_acf_engine", "Cleaned up all ACF Engines")
-language.Add("SBoxLimit__acf_engine", "You've reached the ACF Engines limit!")
-
 function ENT:Update()
 	self.HitBoxes = ACF.GetHitboxes(self:GetModel())
 end
@@ -95,11 +91,11 @@ do	-- Overlay
 		local Rad = TimedCos(0.5, 2, 3, 0)
 
 		local OutPos = self:LocalToWorld(SelfTbl.Driveshaft)
+
 		for _, T in ipairs(SelfTbl.Outputs) do
 			local E = T.Ent
 
 			if IsValid(E) then
-
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(OutPos, Pos, 2, 0, 0, color_black)
 				render.DrawBeam(OutPos, Pos, 1.5, 0, 0, color_white)
@@ -116,6 +112,7 @@ do	-- Overlay
 	end
 
 	local FuelColor	= Color(255, 255, 0, 25)
+
 	function ENT:DrawOverlay()
 		local SelfTbl = self:GetTable()
 

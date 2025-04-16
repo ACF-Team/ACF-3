@@ -137,7 +137,7 @@ function ACF.UpdateArea(Entity, PhysObj)
 	else -- Spherical collisions
 		local Radius = Entity:BoundingRadius()
 
-		Area = 4 * 3.1415 * Radius * Radius * ACF.InchToCmSq
+		Area = 4 * math.pi * Radius * Radius * ACF.InchToCmSq
 	end
 
 	Entity.ACF.Area = Area

@@ -125,7 +125,7 @@ local plyzones = {}
 hook.Add("Think", "ACF_DetectSZTransition", function()
 	if not Permissions.Safezones then return end
 
-	for _, ply in ipairs(player.GetAll()) do
+	for _, ply in player.Iterator() do
 		local sid = ply:SteamID()
 		local pos = ply:GetPos()
 		local oldzone = plyzones[sid]
