@@ -172,7 +172,6 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
-
 	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 
 	-- Unit Conversion
@@ -283,10 +282,7 @@ do -- ACF global vars
 	ACF.GunInaccuracyScale   = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
-	-- Fuel
-	ACF.RequireFuel        = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate           = 10 -- Multiplier for fuel usage, 1.0 is approx real world
-	ACF.FuelFactor         = 1 -- Multiplier for ACF.FuelRate
+	-- Fuel/Refills
 	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
 	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
@@ -328,17 +324,6 @@ do -- ACF global vars
 	ACF.InitReloadDelay		= 10	-- Delay after spawning that belt feds are loaded
 
 	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
-
-	-- Fuel/Refills?
-	ACF.FuelMinSize          = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelMaxSize          = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor            = 1 -- How many millimeters of armor fuel tanks have
-	ACF.FuelRefillColor      = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
-	ACF.TankVolumeMul        = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
-	ACF.LiIonED              = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
-	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
 
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
