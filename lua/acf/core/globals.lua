@@ -172,6 +172,7 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
+	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 
 	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 
