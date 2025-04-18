@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("GL", {
 	Name        = "Grenade Launcher",
-	Description = "Small and light, grenade launchers allow you to fire huge amounts of explosives into an area at the cost of poor accuracy and small magazine size.",
+	Description = "#acf.descs.weapons.gl",
 	Sound       = "acf_base/weapons/grenadelauncher.mp3",
 	Model       = "models/launcher/40mmgl.mdl",
 	MuzzleFlash = "gl_muzzleflash_noscale",

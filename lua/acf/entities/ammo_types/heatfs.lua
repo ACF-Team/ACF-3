@@ -7,7 +7,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive Anti-Tank Fin Stabilized"
-	self.Description = "An improved HEAT round with better standoff and explosive power."
+	self.Description = "#acf.descs.ammo.heatfs"
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,
 		M = true,

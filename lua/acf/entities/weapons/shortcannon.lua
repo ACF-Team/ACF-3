@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("SC", {
 	Name        = "Short-Barrelled Cannon",
-	Description = "Shorter variant of cannons, limited to shorter round size and therefore worse performance than their full sized counterpart.",
+	Description = "#acf.descs.weapons.sc",
 	Model       = "models/tankgun/tankgun_short_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
