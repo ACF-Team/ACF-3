@@ -9,7 +9,7 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "Flechette"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
-	self.Description = "Flechette shells contain several steel darts inside, functioning as a large shotgun round."
+	self.Description = "#acf.descs.ammo.fl"
 	self.Blacklist = {
 		AC = true,
 		GL = true,

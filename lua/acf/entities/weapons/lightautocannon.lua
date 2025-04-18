@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("LAC", {
 	Name        = "Light Autocannon",
-	Description = "Compact variation of autocannons, they offer higher firerates at the cost of smaller magazine size.",
+	Description = "#acf.descs.weapons.lac",
 	Model       = "models/machinegun/machinegun_40mm_compact.mdl",
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",

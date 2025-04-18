@@ -45,7 +45,7 @@ local PortingData = {
 
 Weapons.Register("C", {
 	Name        = "Cannon",
-	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
+	Description = "#acf.descs.weapons.c",
 	Model       = "models/tankgun_new/tankgun_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",

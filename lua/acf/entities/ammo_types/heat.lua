@@ -11,7 +11,7 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "High Explosive Anti-Tank"
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
-	self.Description = "A round with a shaped charge inside. Fires a high-velocity jet on detonation."
+	self.Description = "#acf.descs.ammo.heat"
 	self.Blacklist = {
 		AC = true,
 		MG = true,

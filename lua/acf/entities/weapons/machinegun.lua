@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("MG", {
 	Name        = "Machinegun",
-	Description = "The lightest piece of automatic weaponry, machineguns offer a high rate of fire and good magazine size at the cost of a poor variety of ammo types.",
+	Description = "#acf.descs.weapons.mg",
 	Model       = "models/machinegun/machinegun_20mm.mdl",
 	Sound       = "acf_base/weapons/mg_fire4.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
