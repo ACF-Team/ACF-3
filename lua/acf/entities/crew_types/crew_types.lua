@@ -45,7 +45,7 @@ local function FindLongestBullet(Crew)
 
 		-- Network the scan box to clients
 		net.Start("ACF_Crew_Space")
-		net.WriteUInt(Crew:EntIndex(), 16)
+		net.WriteEntity(Crew)
 		net.WriteVector(Crew.ScanBox)
 		net.WriteVector(Crew.CrewModel.ScanOffsetL)
 		net.Broadcast()

@@ -14,10 +14,12 @@ net.Receive("ACF_Crew_Links", function()
 end)
 
 net.Receive("ACF_Crew_Space", function()
-    local EntIndex1 = net.ReadUInt(16)
+    local Ent = net.ReadEntity()
     local Box = net.ReadVector()
     local Offset = net.ReadVector()
-    local Ent = Entity(EntIndex1)
+
+    if not IsValid(Ent) then return end
+
     Ent.Box = Box + Ent:OBBMaxs() - Ent:OBBMins()
     Ent.Offset = Offset
 end)
