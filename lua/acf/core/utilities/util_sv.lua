@@ -787,6 +787,8 @@ end
 -- reason for physical components beyond mobility (wheels) or exploits these days.
 do
 	function ACF.IsEntityEligiblePhysmass(Entity)
+		if not IsValid(Entity) then return false end
+
 		-- Do not allow parented entities to count as physical mass whatsoever
 		if IsValid(Entity:GetParent()) then return false end
 
