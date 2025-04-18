@@ -7,7 +7,7 @@ local Ammo      = AmmoTypes.Register("AP")
 function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing"
 	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
-	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
+	self.Description = "#acf.descs.ammo.ap"
 	self.Blacklist = {
 		GL = true,
 		SL = true,

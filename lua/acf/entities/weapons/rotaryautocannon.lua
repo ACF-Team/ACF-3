@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("RAC", {
 	Name        = "Rotary Autocannon",
-	Description = "Rotary autocannons sacrifice accuracy and reload speed over autocannons to get the highest rate of fire possible.",
+	Description = "#acf.descs.weapons.rac",
 	Model       = "models/rotarycannon/kw/20mmrac.mdl",
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",

@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("AL", {
 	Name        = "Autoloaded Cannon",
-	Description = "An improvement over cannons that allows you fire multiple rounds in succesion at the cost of internal volume, mass and reload speed.",
+	Description = "#acf.descs.weapons.al",
 	Model       = "models/tankgun/tankgun_al_100mm.mdl",
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",

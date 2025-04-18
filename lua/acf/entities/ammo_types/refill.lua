@@ -7,7 +7,7 @@ local Ammo   = Types.Register("Refill", "AP")
 function Ammo:OnLoaded()
 	self.Name        = "Refill"
 	self.Model       = "models/Items/BoxSRounds.mdl"
-	self.Description = "Provides supplies to other ammo crates."
+	self.Description = "#acf.descs.ammo.refill"
 	self.Blacklist   = {}
 end
 

@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("SA", {
 	Name        = "Semiautomatic Cannon",
-	Description = "Semiautomatic cannons are smaller and lighter than their fully automatic counterpart, but they'll constantly reload every few rounds.",
+	Description = "#acf.descs.weapons.sa",
 	Model       = "models/autocannon/semiautocannon_45mm.mdl",
 	Sound       = "acf_base/weapons/sa_fire1.mp3",
 	MuzzleFlash = "semi_muzzleflash_noscale",

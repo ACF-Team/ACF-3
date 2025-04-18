@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("SL", {
 	Name        = "Smoke Launcher",
-	Description = "Compact, single shot launchers used to deploy smoke screens towards possible threats.",
+	Description = "#acf.descs.weapons.sl",
 	Sound       = "acf_base/weapons/smoke_launch.mp3",
 	Model       = "models/launcher/40mmsl.mdl",
 	MuzzleFlash = "gl_muzzleflash_noscale",

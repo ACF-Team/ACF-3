@@ -8,7 +8,7 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "Armor Piercing Fin Stabilized"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
-	self.Description = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
+	self.Description = "#acf.descs.ammo.apfsds"
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,
 		AC = true,

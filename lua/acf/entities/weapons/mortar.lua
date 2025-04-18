@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("MO", {
 	Name        = "Mortar",
-	Description = "Intended as short range artillery, mortars are capable of firing explosives and smoke round at a decent rate at poor velocity and accuracy.",
+	Description = "#acf.descs.weapons.mo",
 	Sound       = "acf_base/weapons/mortar_new.mp3",
 	Model		= "models/mortar/mortar_120mm.mdl",
 	MuzzleFlash = "mortar_muzzleflash_noscale",
