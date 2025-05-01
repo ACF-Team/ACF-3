@@ -4,13 +4,13 @@ local Engines = ACF.Classes.Engines
 
 Engines.Register("V6", {
 	Name		= "V6 Engine",
-	Description	= "V6s are more torquey than the Boxer and Inline 6s but suffer in power."
+	Description	= "#acf.descs.engines.v6"
 })
 
 do -- Petrol Engines
 	Engines.RegisterItem("3.6-V6", "V6", {
 		Name		 = "3.6L V6 Petrol",
-		Description	 = "Meaty Car sized V6, lots of torque.",
+		Description	 = "#acf.descs.engines.v6.3_6",
 		Model		 = "models/engines/v6small.mdl",
 		Sound		 = "acf_base/engines/v6_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -29,7 +29,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("6.2-V6", "V6", {
 		Name		 = "6.2L V6 Petrol",
-		Description	 = "Heavy duty 6V71 v6, throatier than an LA whore, but loaded with torque.",
+		Description	 = "#acf.descs.engines.v6.6_2",
 		Model		 = "models/engines/v6med.mdl",
 		Sound		 = "acf_base/engines/v6_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -48,7 +48,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("12.0-V6", "V6", {
 		Name		 = "12.0L V6 Petrol",
-		Description	 = "Fuck duty V6, guts ripped from god himself diluted in salt and shaped into an engine.",
+		Description	 = "#acf.descs.engines.v6.12_0",
 		Model		 = "models/engines/v6large.mdl",
 		Sound		 = "acf_base/engines/v6_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -69,7 +69,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("5.2-V6", "V6", {
 		Name		 = "5.2L V6 Diesel",
-		Description	 = "Light AFV-grade two-stroke diesel, high output but heavy.",
+		Description	 = "#acf.descs.engines.v6.5_2",
 		Model		 = "models/engines/v6med.mdl",
 		Sound		 = "acf_base/engines/i5_dieselmedium.wav",
 		Fuel		 = { Diesel = true },
@@ -88,7 +88,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("15.0-V6", "V6", {
 		Name		 = "15.0L V6 Diesel",
-		Description	 = "Powerful military-grade large V6, with impressive output. Well suited to medium-sized AFVs.",
+		Description	 = "#acf.descs.engines.v6.15_0",
 		Model		 = "models/engines/v6large.mdl",
 		Sound		 = "acf_base/engines/v6_diesellarge.wav",
 		Fuel		 = { Diesel = true },

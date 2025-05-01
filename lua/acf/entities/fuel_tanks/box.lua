@@ -1,6 +1,7 @@
 local FuelTanks = ACF.Classes.FuelTanks
 
 -- Preserving flavor text from older fuel tank sizes
+-- TODO: Localize these or get rid of them?
 local FuelDescSentences = {
 	"Seriously consider walking.",
 	"Will keep a kart running all day.",
@@ -40,7 +41,7 @@ local FuelDescSentences = {
 
 FuelTanks.Register("FTS_B", {
 	Name		= "Fuel Box",
-	Description	= "Scalable fuel box; required for engines to work.",
+	Description	= "#acf.descs.fuel.box",
 	IsScalable	= true,
 	Model		= "models/holograms/hq_rcube.mdl",
 	Material	= "models/props_canal/metalcrate001d",
@@ -73,8 +74,8 @@ FuelTanks.Register("FTS_B", {
 		SizeZ:SetVisible(true)
 		FuelList:SetVisible(false)
 
-		SizeX:SetText("Tank Length")
-		SizeZ:SetText("Tank Height")
+		SizeX:SetText("#acf.menu.fuel.tank_length")
+		SizeZ:SetText("#acf.menu.fuel.tank_height")
 	end,
 	FuelDescText = function()
 		return FuelDescSentences[math.random(33)]

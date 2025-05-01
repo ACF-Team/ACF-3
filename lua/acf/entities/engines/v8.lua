@@ -9,7 +9,7 @@ Engines.Register("V8", {
 do -- Petrol Engines
 	Engines.RegisterItem("5.7-V8", "V8", {
 		Name		 = "5.7L V8 Petrol",
-		Description	 = "Car sized petrol engine, good power and mid range torque",
+		Description	 = "#acf.descs.engines.v8.5_7",
 		Model		 = "models/engines/v8s.mdl",
 		Sound		 = "acf_base/engines/v8_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("9.0-V8", "V8", {
 		Name		 = "9.0L V8 Petrol",
-		Description	 = "Thirsty, giant V8, for medium applications",
+		Description	 = "#acf.descs.engines.v8.9_0",
 		Model		 = "models/engines/v8m.mdl",
 		Sound		 = "acf_base/engines/v8_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("18.0-V8", "V8", {
 		Name		 = "18.0L V8 Petrol",
-		Description	 = "American gasoline tank V8, good overall power and torque and fairly lightweight",
+		Description	 = "#acf.descs.engines.v8.18_0",
 		Model		 = "models/engines/v8l.mdl",
 		Sound		 = "acf_base/engines/v8_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -68,7 +68,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("4.5-V8", "V8", {
 		Name		 = "4.5L V8 Diesel",
-		Description	 = "Light duty diesel v8, good for light vehicles that require a lot of torque",
+		Description	 = "#acf.descs.engines.v8.4_5",
 		Model		 = "models/engines/v8s.mdl",
 		Sound		 = "acf_base/engines/v8_dieselsmall.wav",
 		Fuel		 = { Diesel = true },
@@ -87,7 +87,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("7.8-V8", "V8", {
 		Name		 = "7.8L V8 Diesel",
-		Description	 = "Redneck chariot material. Truck duty V8 diesel, has a good, wide powerband",
+		Description	 = "#acf.descs.engines.v8.7_8",
 		Model		 = "models/engines/v8m.mdl",
 		Sound		 = "acf_base/engines/v8_dieselmedium2.wav",
 		Fuel		 = { Diesel = true },
@@ -106,7 +106,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("19.0-V8", "V8", {
 		Name		 = "19.0L V8 Diesel",
-		Description	 = "Heavy duty diesel V8, used in heavy construction equipment and tanks",
+		Description	 = "#acf.descs.engines.v8.19_0",
 		Model		 = "models/engines/v8l.mdl",
 		Sound		 = "acf_base/engines/v8_diesellarge.wav",
 		Fuel		 = { Diesel = true },

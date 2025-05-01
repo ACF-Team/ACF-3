@@ -9,7 +9,7 @@ Engines.Register("V12", {
 do -- Petrol Engines
 	Engines.RegisterItem("4.6-V12", "V12", {
 		Name		 = "4.6L V12 Petrol",
-		Description	 = "An elderly racecar engine; low on torque, but plenty of power",
+		Description	 = "#acf.descs.engines.v12.4_6",
 		Model		 = "models/engines/v12s.mdl",
 		Sound		 = "acf_base/engines/v12_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("7.0-V12", "V12", {
 		Name		 = "7.0L V12 Petrol",
-		Description	 = "A high end V12; primarily found in very expensive cars",
+		Description	 = "#acf.descs.engines.v12.7_0",
 		Model		 = "models/engines/v12m.mdl",
 		Sound		 = "acf_base/engines/v12_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("13.0-V12", "V12", {
 		Name		 = "13.0L V12 Petrol",
-		Description	 = "Thirsty gasoline v12, good torque and power for medium applications.",
+		Description	 = "#acf.descs.engines.v12.13_0",
 		Model		 = "models/engines/v12m.mdl",
 		Sound		 = "acf_base/engines/v12_special.wav",
 		Fuel		 = { Petrol = true },
@@ -66,7 +66,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("23.0-V12", "V12", {
 		Name		 = "23.0L V12 Petrol",
-		Description	 = "A large, thirsty gasoline V12, found in early cold war tanks",
+		Description	 = "#acf.descs.engines.v12.23_0",
 		Model		 = "models/engines/v12l.mdl",
 		Sound		 = "acf_base/engines/v12_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -87,7 +87,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("4.0-V12", "V12", {
 		Name		 = "4.0L V12 Diesel",
-		Description	 = "Reliable truck-duty diesel; a lot of smooth torque",
+		Description	 = "#acf.descs.engines.v12.4_0",
 		Model		 = "models/engines/v12s.mdl",
 		Sound		 = "acf_base/engines/v12_dieselsmall.wav",
 		Fuel		 = { Diesel = true },
@@ -106,7 +106,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("9.2-V12", "V12", {
 		Name		 = "9.2L V12 Diesel",
-		Description	 = "High torque light-tank V12, used mainly for vehicles that require balls",
+		Description	 = "#acf.descs.engines.v12.9_2",
 		Model		 = "models/engines/v12m.mdl",
 		Sound		 = "acf_base/engines/v12_dieselmedium.wav",
 		Fuel		 = { Diesel = true },
@@ -125,7 +125,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("21.0-V12", "V12", {
 		Name		 = "21.0L V12 Diesel",
-		Description	 = "AVDS-1790-2 tank engine; massively powerful, but enormous and heavy",
+		Description	 = "#acf.descs.engines.v12.21_0",
 		Model		 = "models/engines/v12l.mdl",
 		Sound		 = "acf_base/engines/v12_diesellarge.wav",
 		Fuel		 = { Diesel = true },

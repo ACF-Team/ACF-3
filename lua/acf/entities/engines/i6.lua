@@ -9,7 +9,7 @@ Engines.Register("I6", {
 do -- Petrol Engines
 	Engines.RegisterItem("2.2-I6", "I6", {
 		Name		 = "2.2L I6 Petrol",
-		Description	 = "Car sized I6 petrol with power in the high revs.",
+		Description	 = "#acf.descs.engines.i6.2_2",
 		Model		 = "models/engines/inline6s.mdl",
 		Sound		 = "acf_base/engines/l6_petrolsmall2.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("4.8-I6", "I6", {
 		Name		 = "4.8L I6 Petrol",
-		Description	 = "Light truck duty I6, good for offroad applications.",
+		Description	 = "#acf.descs.engines.i6.4_8",
 		Model		 = "models/engines/inline6m.mdl",
 		Sound		 = "acf_base/engines/l6_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("17.2-I6", "I6", {
 		Name		 = "17.2L I6 Petrol",
-		Description	 = "Heavy tractor duty petrol I6, decent overall powerband.",
+		Description	 = "#acf.descs.engines.i6.17_2",
 		Model		 = "models/engines/inline6l.mdl",
 		Sound		 = "acf_base/engines/l6_petrollarge2.wav",
 		Fuel		 = { Petrol = true },
@@ -68,7 +68,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("3.0-I6", "I6", {
 		Name		 = "3.0L I6 Diesel",
-		Description	 = "Car sized I6 diesel, good, wide powerband.",
+		Description	 = "#acf.descs.engines.i6.3_0",
 		Model		 = "models/engines/inline6s.mdl",
 		Sound		 = "acf_base/engines/l6_dieselsmall.wav",
 		Fuel		 = { Diesel = true },
@@ -87,7 +87,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("6.5-I6", "I6", {
 		Name		 = "6.5L I6 Diesel",
-		Description	 = "Truck duty I6, good overall powerband and torque.",
+		Description	 = "#acf.descs.engines.i6.6_5",
 		Model		 = "models/engines/inline6m.mdl",
 		Sound		 = "acf_base/engines/l6_dieselmedium4.wav",
 		Fuel		 = { Diesel = true },
@@ -106,7 +106,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("20.0-I6", "I6", {
 		Name		 = "20.0L I6 Diesel",
-		Description	 = "Heavy duty diesel I6, used in generators and heavy movers.",
+		Description	 = "#acf.descs.engines.i6.20_0",
 		Model		 = "models/engines/inline6l.mdl",
 		Sound		 = "acf_base/engines/l6_diesellarge2.wav",
 		Fuel		 = { Diesel = true },

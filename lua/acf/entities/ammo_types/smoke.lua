@@ -190,7 +190,7 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
+		local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.FillerRatio = math.Round(Value, 2)
@@ -200,7 +200,7 @@ else
 			return BulletData.FillerVol
 		end)
 
-		local SmokeWPRatio = Base:AddSlider("WP to Smoke Ratio", 0, 1, 2)
+		local SmokeWPRatio = Base:AddSlider("#acf.menu.ammo.wp_ratio", 0, 1, 2)
 		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
 		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.SmokeWPRatio = math.Round(Value, 2)
@@ -227,7 +227,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
 			local PropMass	= ACF.GetProperMass(Data.PropMass)
@@ -244,7 +244,7 @@ else
 			local SMText, WPText = "", ""
 
 			if Data.FillerMass > 0 then
-				local Text		  = "Smoke Filler Mass : %s\nSmoke Filler Radius : %s m\nSmoke Filler Life : %s s\n"
+				local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
 				local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
 				local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
 
@@ -252,7 +252,7 @@ else
 			end
 
 			if Data.WPMass > 0 then
-				local Text	   = "WP Filler Mass : %s\nWP Filler Radius : %s m\nWP Filler Life : %s s"
+				local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
 				local WPMass   = ACF.GetProperMass(Data.WPMass)
 				local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
 

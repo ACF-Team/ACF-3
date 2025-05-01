@@ -9,7 +9,7 @@ Engines.Register("SP", {
 do -- Special Rotary Engines
 	Engines.RegisterItem("2.6L-Wankel", "SP", {
 		Name		 = "2.6L Rotary",
-		Description	 = "4 rotor racing Wankel, high revving and high strung.",
+		Description	 = "#acf.descs.engines.sp.2_6",
 		Model		 = "models/engines/wankel_4_med.mdl",
 		Sound		 = "acf_base/engines/wankel_large.wav",
 		Fuel		 = { Petrol = true },
@@ -30,7 +30,7 @@ end
 do -- Special I2 Engines
 	Engines.RegisterItem("0.9L-I2", "SP", {
 		Name		 = "0.9L I2 Petrol",
-		Description	 = "Turbocharged inline twin engine that delivers surprising pep for its size.",
+		Description	 = "#acf.descs.engines.sp.0_9",
 		Model		 = "models/engines/inline2s.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/ponyengine.wav",
 		Fuel		 = { Petrol = true },
@@ -51,7 +51,7 @@ end
 do -- Special I4 Engines
 	Engines.RegisterItem("1.0L-I4", "SP", {
 		Name		 = "1.0L I4 Petrol",
-		Description	 = "Tiny I4 designed for racing bikes. Doesn't pack much torque, but revs ludicrously high.",
+		Description	 = "#acf.descs.engines.sp.1_0",
 		Model		 = "models/engines/inline4s.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/l4/mini_onhigh.wav",
 		Fuel		 = { Petrol = true },
@@ -71,7 +71,7 @@ do -- Special I4 Engines
 
 	Engines.RegisterItem("1.9L-I4", "SP", {
 		Name		 = "1.9L I4 Petrol",
-		Description	 = "Supercharged racing 4 cylinder, most of the power in the high revs.",
+		Description	 = "#acf.descs.engines.sp.1_9",
 		Model		 = "models/engines/inline4s.mdl",
 		Sound		 = "acf_base/engines/i4_special.wav",
 		Fuel		 = { Petrol = true },
@@ -92,7 +92,7 @@ end
 do -- Special V4 Engines
 	Engines.RegisterItem("1.8L-V4", "SP", {
 		Name		 = "1.8L V4 Petrol",
-		Description	 = "Naturally aspirated rally-tuned V4 with enlarged bore and stroke.",
+		Description	 = "#acf.descs.engines.sp.1_8",
 		Model		 = "models/engines/v4s.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/l4/elan_onlow.wav",
 		Fuel		 = { Petrol = true },
@@ -113,7 +113,7 @@ end
 do -- Special I6 Engines
 	Engines.RegisterItem("3.8-I6", "SP", {
 		Name		 = "3.8L I6 Petrol",
-		Description	 = "Large racing straight six, powerful and high revving, but lacking in torque.",
+		Description	 = "#acf.descs.engines.sp.3_8",
 		Model		 = "models/engines/inline6m.mdl",
 		Sound		 = "acf_base/engines/l6_special.wav",
 		Fuel		 = { Petrol = true },
@@ -134,7 +134,7 @@ end
 do -- Special V6 Engines
 	Engines.RegisterItem("2.4L-V6", "SP", {
 		Name		 = "2.4L V6 Petrol",
-		Description	 = "Although the cast iron engine block is fairly weighty, this tiny v6 makes up for it with impressive power. The unique V angle allows uncharacteristically high RPM for a V6.",
+		Description	 = "#acf.descs.engines.sp.2_4",
 		Model		 = "models/engines/v6small.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/l6/capri_onmid.wav",
 		Fuel		 = { Petrol = true },
@@ -155,7 +155,7 @@ end
 do -- Special V8 Engines
 	Engines.RegisterItem("2.9-V8", "SP", {
 		Name		 = "2.9L V8 Petrol",
-		Description	 = "Racing V8, very high revving and loud",
+		Description	 = "#acf.descs.engines.sp.2_9",
 		Model		 = "models/engines/v8s.mdl",
 		Sound		 = "acf_base/engines/v8_special.wav",
 		Fuel		 = { Petrol = true },
@@ -174,7 +174,7 @@ do -- Special V8 Engines
 
 	Engines.RegisterItem("7.2-V8", "SP", {
 		Name		 = "7.2L V8 Petrol",
-		Description	 = "Very high revving, glorious v8 of ear rapetasticalness.",
+		Description	 = "#acf.descs.engines.sp.7_2",
 		Model		 = "models/engines/v8m.mdl",
 		Sound		 = "acf_base/engines/v8_special2.wav",
 		Fuel		 = { Petrol = true },
@@ -195,7 +195,7 @@ end
 do -- Special V10 Engines
 	Engines.RegisterItem("5.3-V10", "SP", {
 		Name		 = "5.3L V10 Special",
-		Description	 = "Extreme performance v10",
+		Description	 = "#acf.descs.engines.sp.5_3",
 		Model		 = "models/engines/v10sml.mdl",
 		Sound		 = "acf_base/engines/v10_special.wav",
 		Fuel		 = { Petrol = true },
@@ -216,7 +216,7 @@ end
 do -- Special V12 Engines
 	Engines.RegisterItem("3.0-V12", "SP", {
 		Name		 = "3.0L V12 Petrol",
-		Description	 = "A purpose-built racing v12, not known for longevity.",
+		Description	 = "#acf.descs.engines.sp.3_0",
 		Model		 = "models/engines/v12s.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.wav",
 		Fuel		 = { Petrol = true },

@@ -9,7 +9,7 @@ Engines.Register("V10", {
 do
 	Engines.RegisterItem("4.3-V10", "V10", {
 		Name		 = "4.3L V10 Petrol",
-		Description	 = "Small-block V-10 gasoline engine, great for powering a hot rod lincoln",
+		Description	 = "#acf.descs.engines.v10.4_3",
 		Model		 = "models/engines/v10sml.mdl",
 		Sound		 = "acf_base/engines/v10_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do
 
 	Engines.RegisterItem("8.0-V10", "V10", {
 		Name		 = "8.0L V10 Petrol",
-		Description	 = "Beefy 10-cylinder gas engine, gets 9 kids to soccer practice",
+		Description	 = "#acf.descs.engines.v10.8_0",
 		Model		 = "models/engines/v10med.mdl",
 		Sound		 = "acf_base/engines/v10_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do
 
 	Engines.RegisterItem("22.0-V10", "V10", {
 		Name		 = "22.0L V10 Multifuel",
-		Description	 = "Heavy multifuel V-10, gearbox-shredding torque but very heavy.",
+		Description	 = "#acf.descs.engines.v10.22_0",
 		Model		 = "models/engines/v10big.mdl",
 		Sound		 = "acf_base/engines/v10_diesellarge.wav",
 		Fuel		 = { Petrol = true, Diesel = true },

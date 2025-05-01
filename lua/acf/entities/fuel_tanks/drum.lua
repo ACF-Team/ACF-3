@@ -2,7 +2,7 @@ local FuelTanks = ACF.Classes.FuelTanks
 
 FuelTanks.Register("FTS_D", {
 	Name		= "Fuel Drum",
-	Description	= "Scalable fuel drum; required for engines to work.",
+	Description	= "#acf.descs.fuel.drum",
 	IsScalable	= true,
 	Model		= "models/props_c17/oildrum001_explosive.mdl",
 	Shape		= "Drum",
@@ -39,15 +39,15 @@ FuelTanks.Register("FTS_D", {
 		SizeZ:SetVisible(true)
 		FuelList:SetVisible(false)
 
-		SizeX:SetText("Drum Diameter")
-		SizeZ:SetText("Drum Height")
+		SizeX:SetText("#acf.menu.fuel.drum_diameter")
+		SizeZ:SetText("#acf.menu.fuel.drum_height")
 	end
 })
 
 do
 	FuelTanks.RegisterItem("Drum", "FTS_D", {
 		Name		= "Fuel Drum",
-		Description	= "Tends to explode when shot.",
+		Description	= "#acf.descs.fuel.drum_item",
 	})
 end
 

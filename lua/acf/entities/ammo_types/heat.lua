@@ -496,7 +496,7 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
+		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -513,7 +513,7 @@ else
 		end)
 
 		-- Capped the max standoff at 0.4 for historical reasons
-		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.2, 2)
+		local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.2, 2)
 		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 		StandoffRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.StandoffRatio = math.Round(Value, 2)
@@ -540,7 +540,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -557,7 +557,7 @@ else
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
 			local FragMass = ACF.GetProperMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)
@@ -573,7 +573,7 @@ else
 		Penetrator:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text     = "Copper mass : %s g\nJet mass : %s g\nJet velocity : %s m/s - %s m/s"
+			local Text     = language.GetPhrase("acf.menu.ammo.penetrator_heat")
 			local CuMass   = math.Round(BulletData.LinerMass * 1e3, 0)
 			local JetMass  = math.Round(BulletData.JetMass * 1e3, 0)
 			local MinVel   = math.Round(BulletData.JetMinVel, 0)
@@ -590,7 +590,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text   = "Penetration at passive standoff :\nAt %s mm : %s mm RHA\nMaximum penetration :\nAt %s mm : %s mm RHA"
+			local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_heat")
 			local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)
 			local Pen1 = math.Round(self:GetPenetration(BulletData, BulletData.Standoff), 1)
 			local Standoff2 = math.Round(BulletData.BreakupDist * 1e3, 0)

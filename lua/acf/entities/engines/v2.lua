@@ -9,7 +9,7 @@ Engines.Register("V2", {
 do -- Petrol Engines
 	Engines.RegisterItem("0.6-V2", "V2", {
 		Name		 = "600cc V-Twin",
-		Description	 = "Twin cylinder bike engine, torquey for its size",
+		Description	 = "#acf.descs.engines.v2.0_6",
 		Model		 = "models/engines/v-twins2.mdl",
 		Sound		 = "acf_base/engines/vtwin_small.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("1.2-V2", "V2", {
 		Name		 = "1200cc V-Twin",
-		Description	 = "Large displacement vtwin engine",
+		Description	 = "#acf.descs.engines.v2.1_2",
 		Model		 = "models/engines/v-twinm2.mdl",
 		Sound		 = "acf_base/engines/vtwin_medium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("2.4-V2", "V2", {
 		Name		 = "2400cc V-Twin",
-		Description	 = "Huge fucking Vtwin 'MURRICA FUCK YEAH",
+		Description	 = "#acf.descs.engines.v2.2_4",
 		Model		 = "models/engines/v-twinl2.mdl",
 		Sound		 = "acf_base/engines/vtwin_large.wav",
 		Fuel		 = { Petrol = true },

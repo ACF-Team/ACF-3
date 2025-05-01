@@ -197,7 +197,7 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
+		local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 		Flechettes:SetClientData("Flechettes", "OnValueChanged")
 		Flechettes:DefineSetter(function(Panel, _, _, Value)
 			ToolData.Flechettes = math.floor(Value)
@@ -209,7 +209,7 @@ else
 			return BulletData.Flechettes
 		end)
 
-		local Spread = Base:AddSlider("Flechette Spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
+		local Spread = Base:AddSlider("#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
 		Spread:SetClientData("Spread", "OnValueChanged")
 		Spread:DefineSetter(function(Panel, _, _, Value)
 			ToolData.Spread = Value
@@ -236,7 +236,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlechette Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -252,7 +252,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
 			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
@@ -260,6 +260,6 @@ else
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Menu:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

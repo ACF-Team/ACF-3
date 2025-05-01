@@ -9,7 +9,7 @@ Engines.Register("R7", {
 do
 	Engines.RegisterItem("3.8-R7", "R7", {
 		Name		 = "3.8L R7 Petrol",
-		Description	 = "A tiny, old worn-out radial.",
+		Description	 = "#acf.descs.engines.r7.3_8",
 		Model		 = "models/engines/radial7s.mdl",
 		Sound		 = "acf_base/engines/r7_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do
 
 	Engines.RegisterItem("11.0-R7", "R7", {
 		Name		 = "11.0L R7 Petrol",
-		Description	 = "Mid range radial, thirsty and smooth.",
+		Description	 = "#acf.descs.engines.r7.11_0",
 		Model		 = "models/engines/radial7m.mdl",
 		Sound		 = "acf_base/engines/r7_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do
 
 	Engines.RegisterItem("8.0-R7", "R7", {
 		Name		 = "8.0L R7 Diesel",
-		Description	 = "Heavy and with a narrow powerband, but efficient, and well-optimized to cruising.",
+		Description	 = "#acf.descs.engines.r7.8_0",
 		Model		 = "models/engines/radial7m.mdl",
 		Sound		 = "acf_base/engines/r7_petrolmedium.wav",
 		Fuel		 = { Petrol = true, Diesel = true },
@@ -66,7 +66,7 @@ do
 
 	Engines.RegisterItem("24.0-R7", "R7", {
 		Name		 = "24.0L R7 Petrol",
-		Description	 = "Massive American radial monster, destined for fighter aircraft and heavy tanks.",
+		Description	 = "#acf.descs.engines.r7.24_0",
 		Model		 = "models/engines/radial7l.mdl",
 		Sound		 = "acf_base/engines/r7_petrollarge.wav",
 		Fuel		 = { Petrol = true },

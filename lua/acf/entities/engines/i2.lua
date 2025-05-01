@@ -9,7 +9,7 @@ Engines.Register("I2", {
 do
 	Engines.RegisterItem("0.8L-I2", "I2", {
 		Name		 = "0.8L I2 Diesel",
-		Description	 = "For when a 3 banger is still too bulky for your micro-needs.",
+		Description	 = "#acf.descs.engines.i2.0_8",
 		Model		 = "models/engines/inline2s.mdl",
 		Sound		 = "acf_base/engines/i4_diesel2.wav",
 		Fuel		 = { Diesel = true },
@@ -28,7 +28,7 @@ do
 
 	Engines.RegisterItem("10.0-I2", "I2", {
 		Name		 = "10.0L I2 Diesel",
-		Description	 = "TORQUE.",
+		Description	 = "#acf.descs.engines.i2.10_0",
 		Model		 = "models/engines/inline2b.mdl",
 		Sound		 = "acf_base/engines/vtwin_large.wav",
 		Fuel		 = { Diesel = true },

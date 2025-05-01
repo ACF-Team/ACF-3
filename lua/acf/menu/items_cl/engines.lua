@@ -223,9 +223,16 @@ local function CreateMenu(Menu)
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 
+		if ClassDesc and string.StartsWith(ClassDesc, "#") then
+			ClassDesc = language.GetPhrase(ClassDesc)
+		end
+
 		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "")
-		if Data.Description then
-			self.Description = self.Description .. Data.Description
+		local ItemDesc = Data.Description
+
+		if ItemDesc then
+			ItemDesc = string.StartsWith(ItemDesc, "#") and language.GetPhrase(ItemDesc) or ItemDesc
+			self.Description = self.Description .. ItemDesc
 		end
 
 		ACF.SetClientData("FuelTank", Data.ID)
