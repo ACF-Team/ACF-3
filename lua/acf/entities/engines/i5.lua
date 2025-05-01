@@ -9,7 +9,7 @@ Engines.Register("I5", {
 do -- Petrol Engines
 	Engines.RegisterItem("2.3-I5", "I5", {
 		Name		 = "2.3L I5 Petrol",
-		Description	 = "Sedan-grade 5-cylinder, solid and dependable.",
+		Description	 = "#acf.descs.engines.i5.2_3",
 		Model		 = "models/engines/inline5s.mdl",
 		Sound		 = "acf_base/engines/i5_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("3.9-I5", "I5", {
 		Name		 = "3.9L I5 Petrol",
-		Description	 = "Truck sized inline 5, strong with a good balance of revs and torque.",
+		Description	 = "#acf.descs.engines.i5.3_9",
 		Model		 = "models/engines/inline5m.mdl",
 		Sound		 = "acf_base/engines/i5_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -49,7 +49,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("2.9-I5", "I5", {
 		Name		 = "2.9L I5 Diesel",
-		Description	 = "Aging fuel-injected diesel, low in horsepower but very forgiving and durable.",
+		Description	 = "#acf.descs.engines.i5.2_9",
 		Model		 = "models/engines/inline5s.mdl",
 		Sound		 = "acf_base/engines/i5_dieselsmall2.wav",
 		Fuel		 = { Diesel = true },
@@ -68,7 +68,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("4.1-I5", "I5", {
 		Name		 = "4.1L I5 Diesel",
-		Description	 = "Heavier duty diesel, found in things that work hard.",
+		Description	 = "#acf.descs.engines.i5.4_1",
 		Model		 = "models/engines/inline5m.mdl",
 		Sound		 = "acf_base/engines/i5_dieselmedium.wav",
 		Fuel		 = { Diesel = true },

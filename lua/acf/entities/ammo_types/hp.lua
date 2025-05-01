@@ -101,7 +101,7 @@ else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local HollowRatio = Base:AddSlider("Cavity Ratio", 0, 1, 2)
+		local HollowRatio = Base:AddSlider("#acf.menu.ammo.hollow_ratio", 0, 1, 2)
 		HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
 		HollowRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.HollowRatio = math.Round(Value, 2)
@@ -126,7 +126,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -141,7 +141,7 @@ else
 		HollowStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	  = "Expanded Caliber : %s mm\nTransfered Energy : %s KJ"
+			local Text	  = language.GetPhrase("acf.menu.ammo.hollow_stats_hp")
 			local Caliber = math.Round(BulletData.Diameter * 10, 2)
 			local Energy  = math.Round(BulletData.MaxKETransfert, 2)
 
@@ -155,7 +155,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
 			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
@@ -163,6 +163,6 @@ else
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end
