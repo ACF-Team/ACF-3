@@ -140,8 +140,8 @@ function Ballistics.CreateBullet(BulletData)
 		Bullet.Mask		= MASK_SOLID
 	end
 
-	Bullet.Ricochets   = 0
-	Bullet.GroundRicos = 0
+	Bullet.Ricochets   = Bullet.Ricochets or 0
+	Bullet.GroundRicos = Bullet.GroundRicos or 0
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
@@ -257,7 +257,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	Debug.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -313,6 +313,7 @@ end
 
 do -- Terminal ballistics --------------------------
 	function Ballistics.GetRicochetVector(Flight, HitNormal)
+		print("GetRicochetVector")
 		local Normal = Flight:GetNormalized()
 
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
@@ -344,10 +345,19 @@ do -- Terminal ballistics --------------------------
 		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
+		Debug.Cross(Trace.HitPos, 6, 30, Bullet.Color, true)
+
 		if HitRes.Loss == 1 then
+			-- If the there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
+		else
+			-- If there's less armor than penetration, spalling happens
+			if not Bullet.IsSpall and not Bullet.IsCookOff then
+				Ballistics.DoSpall(Bullet, Trace, HitRes)
+			end
 		end
 
+		-- Transfer bullet momentum into target
 		if ACF.KEPush then
 			ACF.KEShove(
 				Entity,
@@ -357,13 +367,16 @@ do -- Terminal ballistics --------------------------
 			)
 		end
 
+		-- If the entity should be killed, kill it
 		if HitRes.Kill and IsValid(Entity) then
 			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic, DmgInfo)
 		end
 
 		HitRes.Ricochet = false
 
+		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
+			print("Ricochet: ", Bullet.Ricochets)
 			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
 			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
 			local Position  = Trace.HitPos
@@ -402,5 +415,79 @@ do -- Terminal ballistics --------------------------
 		end
 
 		return false
+	end
+
+	function Ballistics.DoSpall(Bullet, Trace, HitRes)
+		-- Only ever called during overpenetration
+		local Speed = Bullet.Flight:Length() -- Speed in (u/s)
+		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
+
+		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
+		print("Damage: " .. HitRes.Damage)
+		print("RemovedMass: " .. RemovedMass)
+
+		local FragFormEnergy = 100 -- Energy needed to form a fragment (J) (Might depend on the material?)
+		local FragTotalEnergy = Energy * 0.33 -- 25% of energy is used to form fragments (J) (Might depend on the material?)
+		local FragCount = math.floor(FragTotalEnergy / FragFormEnergy) -- Number of fragments formed
+		FragCount = math.Clamp(FragCount, 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
+		print("Energy: " .. Energy)
+		print("FragCount: " .. FragCount)
+		if FragCount < 1 then return end -- No fragments formed
+
+		-- Test values
+		local FragSize = RemovedArea / FragCount 	-- Area of the fragments (cm^2)
+		local FragMass = RemovedMass / FragCount 	-- Mass of the fragments (kg)
+		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
+		print("FragSize: " .. FragSize)
+		print("FragSpeed: " .. FragSpeed)
+		print("FragMass: " .. FragMass)
+
+		local BaseCone = 10 * math.pow(FragSize, 1/3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+
+		local FragPos = Trace.HitPos
+		local FragDirInit = Bullet.Flight:GetNormalized()
+
+		-- Filter what the bullet has travelled through + the hit entity itself if applicable
+		local Filter = table.Copy(Bullet.Filter)
+		if Trace.Entity:IsValid() then Filter[#Filter + 1] = Trace.Entity end
+
+		-- Define a plane for the spread
+		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
+		local Up = FragDirInit:Cross(Right):GetNormalized()
+		local ConeTan = math.tan(math.rad(BaseCone)) -- "Width" of cone on the plane
+
+		-- Copied from AP ammotype definition
+		local ProjArea = math.pi * (FragSize / 2) ^ 2
+		local DragCoef = ProjArea * 0.0001 / FragMass
+
+		-- Create the fragments
+		for _ = 1, FragCount do
+			-- Uniform sampling of points on a circle defined by the cone on the plane
+			local SpreadRadius = ConeTan * math.sqrt(math.random())
+			local SpreadAngle = math.random() * 2 * math.pi
+			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
+			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
+
+			print("Spall")
+
+			Ballistics.CreateBullet({
+				Caliber    = FragSize,
+				Diameter   = FragSize,
+				Type       = "AP",
+				ProjArea   = ProjArea,
+				ProjMass   = FragMass,
+				DragCoef = DragCoef,
+				Ricochets = 99,
+				GroundRicos = 99,
+				ShovePower = 0.2,
+				LimitVel   = 800,
+				Ricochet   = 60,
+				Pos = FragPos,
+				Flight = FragDir * FragSpeed,
+				Filter = Filter,
+				IsSpall = true,
+			})
+		end
 	end
 end
