@@ -92,6 +92,7 @@ local function CreateMenu(Menu)
 				return Value
 			end)
 			Base:AddHelp("#acf.menu.gearboxes.dual_clutch_desc")
+			DualClutch:SetChecked(true)
 		else
 			ACF.SetClientData("DualClutch", false)
 

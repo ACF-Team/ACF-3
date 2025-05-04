@@ -335,6 +335,8 @@ ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
 
+ACF.CreateMenuOperation("Controller", "controller")
+
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
 	Text = "Attempts to convert the target entity into a baseplate.",
 	Func = function(Tool, Trace)

@@ -313,7 +313,6 @@ end
 
 do -- Terminal ballistics --------------------------
 	function Ballistics.GetRicochetVector(Flight, HitNormal)
-		print("GetRicochetVector")
 		local Normal = Flight:GetNormalized()
 
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal

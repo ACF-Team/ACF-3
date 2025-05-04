@@ -44,9 +44,8 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
-		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
-		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 50% as effective as loaders
+		self.StockCrewMod = math.Clamp(Sum, ACF.CrewFallbackCoef, 1)
 		return self.StockCrewMod
 	end
 end
