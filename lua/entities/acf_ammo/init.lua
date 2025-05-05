@@ -668,7 +668,7 @@ do -- Misc --------------------------------------
 
 	function ENT:OnResized(Size)
 		do -- Calculate new empty mass
-			local A = ACF.AmmoArmor * 0.039 -- Millimeters to inches
+			local A = ACF.AmmoArmor * ACF.MmToInch
 			local ExteriorVolume = Size.x * Size.y * Size.z
 			local InteriorVolume = (Size.x - A) * (Size.y - A) * (Size.z - A) -- Math degree
 

@@ -1,4 +1,3 @@
-
 local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
@@ -6,10 +5,9 @@ local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
 local Ammo, BulletData
 
-local CrateText = [[
-	Crate Armor: %s mm
-	Crate Mass : %s
-	Crate Capacity : %s round(s)]]
+local GraphRed    = Color(200, 65, 65)
+local GraphBlue   = Color(65, 65, 200)
+local GraphRedAlt = Color(255, 65, 65)
 
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
@@ -96,7 +94,8 @@ local function AddTracer(Base, ToolData)
 		return
 	end
 
-	local Tracer = Base:AddCheckBox("Tracer")
+	local TracerText = language.GetPhrase("acf.menu.ammo.tracer")
+	local Tracer = Base:AddCheckBox(TracerText:format(0))
 	Tracer:SetClientData("Tracer", "OnChange")
 	Tracer:DefineSetter(function(Panel, _, _, Value)
 		ToolData.Tracer = Value
@@ -106,7 +105,7 @@ local function AddTracer(Base, ToolData)
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 		ACF.SetClientData("Propellant", BulletData.PropLength)
 
-		Panel:SetText("Tracer : " .. BulletData.Tracer .. " cm")
+		Panel:SetText(TracerText:format(BulletData.Tracer))
 		Panel:SetValue(ToolData.Tracer)
 
 		return ToolData.Tracer
@@ -141,14 +140,14 @@ local function AddControls(Base, ToolData)
 	RoundLength:TrackClientData("Propellant")
 	RoundLength:TrackClientData("Tracer")
 	RoundLength:DefineSetter(function()
-		local Text = "Round Length: %s / %s cm"
+		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("Projectile Length", 0, BulletData.MaxRoundLength, 2)
+	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
 	Projectile:SetClientData("Projectile", "OnValueChanged")
 	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Projectile = Value
@@ -166,7 +165,7 @@ local function AddControls(Base, ToolData)
 		return BulletData.ProjLength
 	end)
 
-	local Propellant = Base:AddSlider("Propellant Length", 0, BulletData.MaxRoundLength, 2)
+	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
 	Propellant:SetClientData("Propellant", "OnValueChanged")
 	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Propellant = Value
@@ -216,11 +215,12 @@ local function AddCrateInformation(Base, ToolData)
 	Crate:TrackClientData("CrateSizeY")
 	Crate:TrackClientData("CrateSizeZ")
 	Crate:DefineSetter(function()
-		local Class  = GetWeaponClass(ToolData)
-		local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
-		local Empty  = GetEmptyMass()
-		local Load   = math.floor(BulletData.CartMass * Rounds)
-		local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
+		local CrateText = language.GetPhrase("acf.menu.ammo.crate_stats")
+		local Class     = GetWeaponClass(ToolData)
+		local Rounds    = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
+		local Empty     = GetEmptyMass()
+		local Load      = math.floor(BulletData.CartMass * Rounds)
+		local Mass      = ACF.GetProperMass(math.floor(Empty + Load))
 
 		return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
 	end)
@@ -264,9 +264,11 @@ local function AddGraph(Base, ToolData)
 	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
 	Graph:SetSize(MenuSizeX, MenuSizeX * 0.5)
 
+	local PenetrationText = language.GetPhrase("acf.menu.ammo.penetration")
+
 	Graph:SetXRange(0, 1000)
-	Graph:SetXLabel("Distance (m)")
-	Graph:SetYLabel("Pen (mm)")
+	Graph:SetXLabel("#acf.menu.ammo.distance")
+	Graph:SetYLabel(PenetrationText)
 
 	Graph:SetXSpacing(100)
 	Graph:SetYSpacing(50)
@@ -282,7 +284,7 @@ local function AddGraph(Base, ToolData)
 	Graph:DefineSetter(function(Panel)
 		Panel:Clear()
 
-		Panel:SetXLabel("Distance (m)")
+		Panel:SetXLabel("#acf.menu.ammo.distance")
 		Panel:SetFidelity(8)
 
 		Graph:SetXSpacing(100)
@@ -298,19 +300,21 @@ local function AddGraph(Base, ToolData)
 			Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT/HEATFS doesn't care how long the shell has been flying for penetration, just the instant it detonates
 			--Panel:SetXRange(0,60000)
 
-			Panel:SetXLabel("Standoff (mm)")
+			Panel:SetXLabel("#acf.menu.ammo.standoff")
 
-			--Panel:PlotLimitLine("Passive", false, BulletData.Standoff * 1000, Color(65, 65, 200))
-			--Panel:PlotLimitLine("Breakup", false, BulletData.BreakupDist * 1000, Color(200, 65, 65))
+			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.passive"), false, BulletData.Standoff * 1000, GraphBlue)
+			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.breakup"), false, BulletData.BreakupDist * 1000, GraphRed)
 
-			Panel:PlotPoint("Passive", BulletData.Standoff * 1000, PassiveStandoffPen, Color(65, 65, 200))
-			Panel:PlotPoint("Breakup", BulletData.BreakupDist * 1000, BreakupDistPen, Color(200, 65, 65))
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, GraphBlue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, GraphRed)
 
-			Panel:PlotFunction("mm Pen", Color(255, 65, 65), function(X)
+			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
 		elseif ToolData.AmmoType == "HE" then
-			Panel:SetYLabel("Blast Radius")
+			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
+
+			Panel:SetYLabel(BlastRadiusText)
 			Panel:SetXLabel("")
 
 			Panel:SetYSpacing(10)
@@ -318,14 +322,14 @@ local function AddGraph(Base, ToolData)
 			Panel:SetXRange(0, 10)
 			Panel:SetYRange(0, BulletData.BlastRadius * 2)
 
-			Panel:PlotLimitLine("Blast Radius", true, BulletData.BlastRadius, Color(200, 65, 65))
+			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
 
-			Panel:PlotFunction("Blast Radius", Color(200, 65, 65), function(_)
+			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
 				return BulletData.BlastRadius
 			end)
 		elseif ToolData.AmmoType == "SM" then
-			Panel:SetYLabel("Smoke Radius (m)")
-			Panel:SetXLabel("Time (s)")
+			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
+			Panel:SetXLabel("#acf.menu.ammo.time")
 
 			Panel:SetYSpacing(10)
 			Panel:SetXSpacing(5)
@@ -343,27 +347,27 @@ local function AddGraph(Base, ToolData)
 			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
 
 			if WPTime > 0 then
-				Panel:PlotLimitFunction("WP Filler", 0, WPTime, Color(65, 65, 200), function(X)
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.wp_filler"), 0, WPTime, GraphBlue, function(X)
 					return Lerp(X / WPTime, MinWP, MaxWP)
 				end)
 
-				Panel:PlotPoint("WP Max Radius", WPTime, MaxWP, Color(65, 65, 200))
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.wp_max_radius"), WPTime, MaxWP, GraphBlue)
 			end
 
 			if SFTime > 0 then
-				Panel:PlotLimitFunction("Smoke Filler", 0, SFTime, Color(200, 65, 65), function(X)
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.smoke_filler"), 0, SFTime, GraphRed, function(X)
 					return Lerp(X / SFTime, MinSF, MaxSF)
 				end)
 
-				Panel:PlotPoint("SM Max Radius", SFTime, MaxSF, Color(200, 65, 65))
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, GraphRed)
 			end
 		else
 			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
 
-			Panel:PlotPoint("300m", 300, Ammo:GetRangedPenetration(BulletData, 300), Color(65, 65, 200))
-			Panel:PlotPoint("800m", 800, Ammo:GetRangedPenetration(BulletData, 800), Color(65, 65, 200))
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, Ammo:GetRangedPenetration(BulletData, 300), GraphBlue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, Ammo:GetRangedPenetration(BulletData, 800), GraphBlue)
 
-			Panel:PlotFunction("Pen", Color(255, 65, 65), function(X)
+			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetRangedPenetration(BulletData, X)
 			end)
 		end
@@ -421,13 +425,13 @@ end
 ---Creates the basic information and panels on the ammunition menu.
 ---@param Menu userdata The panel in which the entire ACF menu is being placed on.
 function ACF.CreateAmmoMenu(Menu)
-	Menu:AddTitle("Ammo Settings")
+	Menu:AddTitle("#acf.menu.ammo.settings")
 
 	local List = Menu:AddComboBox()
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
 
-	local SizeX = Menu:AddSlider("Crate Length", Min, Max)
+	local SizeX = Menu:AddSlider("#acf.menu.ammo.crate_length", Min, Max)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value)
@@ -439,7 +443,7 @@ function ACF.CreateAmmoMenu(Menu)
 		return X
 	end)
 
-	local SizeY = Menu:AddSlider("Crate Width", Min, Max)
+	local SizeY = Menu:AddSlider("#acf.menu.ammo.crate_width", Min, Max)
 	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
 		local Y = math.Round(Value)
@@ -451,7 +455,7 @@ function ACF.CreateAmmoMenu(Menu)
 		return Y
 	end)
 
-	local SizeZ = Menu:AddSlider("Crate Height", Min, Max)
+	local SizeZ = Menu:AddSlider("#acf.menu.ammo.crate_height", Min, Max)
 	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		local Z = math.Round(Value)
@@ -463,7 +467,7 @@ function ACF.CreateAmmoMenu(Menu)
 		return Z
 	end)
 
-	local Base = Menu:AddCollapsible("Ammo Information")
+	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info")
 	local Desc = Base:AddLabel()
 
 	function List:LoadEntries(Class)

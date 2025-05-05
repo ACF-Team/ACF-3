@@ -4,12 +4,12 @@ local Gearboxes = ACF.Classes.Gearboxes
 local function CreateMenu(Menu)
 	local Entries = Gearboxes.GetEntries()
 
-	Menu:AddTitle("Gearbox Settings")
+	Menu:AddTitle("#acf.menu.gearboxes.settings")
 
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("Gearbox Information")
+	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview(nil, true)
@@ -59,4 +59,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(GearboxClass, Entries, "ID")
 end
 
-ACF.AddMenuItem(301, "Entities", "Gearboxes", "cog", CreateMenu)
+ACF.AddMenuItem(301, "#acf.menu.entities", "#acf.menu.gearboxes", "cog", CreateMenu)

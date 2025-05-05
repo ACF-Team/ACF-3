@@ -1,16 +1,16 @@
 local function CreateMenu(Menu)
-	Menu:AddTitle("Online Wiki")
+	Menu:AddTitle("#acf.menu.wiki")
 
-	Menu:AddLabel("The new ACF wiki will have a greater focus on providing content aimed towards the average builder.")
-	Menu:AddLabel("There's also gonna be a section where we'll document anything that could be useful for extension developers.")
+	Menu:AddLabel("#acf.menu.wiki.desc1")
+	Menu:AddLabel("#acf.menu.wiki.desc2")
 
-	local Wiki = Menu:AddButton("Open the Wiki")
+	local Wiki = Menu:AddButton("#acf.menu.wiki.open")
 
 	function Wiki:DoClickInternal()
 		gui.OpenURL("https://github.com/ACF-Team/ACF-3/wiki")
 	end
 
-	Menu:AddHelp("The wiki is still a work in progress, it'll get populated as time passes.")
+	Menu:AddHelp("#acf.menu.wiki.wip_notice")
 end
 
-ACF.AddMenuItem(101, "About the Addon", "Online Wiki", "book_open", CreateMenu)
+ACF.AddMenuItem(101, "#acf.menu.about", "#acf.menu.wiki", "book_open", CreateMenu)

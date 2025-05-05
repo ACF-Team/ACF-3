@@ -63,6 +63,7 @@ do -- ACF.trace
 		return false
 	end
 
+	--- ACF trace function that automatically filters out and retries when hitting a clipped portion of a prop.
 	function ACF.trace(TraceData)
 		local Original = TraceData.output
 		local Output   = {}

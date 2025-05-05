@@ -49,10 +49,10 @@ end
 -- @return The blank damage result table.
 function Meta:GetBlank()
 	return {
-		Damage   = 0,
-		Overkill = 0,
-		Loss     = 0,
-		Kill     = false,
+		Damage   = 0,		-- The damage dealt to the object
+		Overkill = 0,		-- How much the object was overpenetrated in mm
+		Loss     = 0,		-- Percentage of armor penetrated ("lost"), clamped to (0 - 1). 1 Represents more armor than penetration
+		Kill     = false,	-- Whether to kill the entity or not
 	}
 end
 
@@ -62,6 +62,7 @@ function Meta:ToString()
 	return String:format(self.Area, self.Penetration, self.Thickness, self.Angle, Factor, self.Count)
 end
 
+-- Sets up getters and setters for the DamageResult object.
 AccessorFunc(Meta, "Area", "Area", FORCE_NUMBER) -- cm2
 AccessorFunc(Meta, "Penetration", "Penetration", FORCE_NUMBER) -- mm
 AccessorFunc(Meta, "Thickness", "Thickness", FORCE_NUMBER) -- mm

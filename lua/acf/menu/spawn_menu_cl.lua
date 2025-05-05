@@ -77,11 +77,12 @@ do -- Menu population functions
 		end
 	end
 
-	ACF.AddMenuOption(1, "About the Addon", "information")
+	ACF.AddMenuOption(1, "#acf.menu.about", "information")
 	ACF.AddMenuOption(101, "#acf.menu.settings", "wrench")
-	ACF.AddMenuOption(201, "Entities", "brick")
-	ACF.AddMenuOption(9999, "Fun Stuff", "bricks")
-	ACF.AddMenuOption(100000, "Scanner", "magnifier")
+	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
+	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
+	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
+	ACF.AddMenuOption(100000, "#acf.menu.scanner", "magnifier")
 end
 
 
@@ -131,18 +132,84 @@ do -- ACF Menu context panel
 		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
 	end
 
+	local function FixStupidNodeCutoffTextIssue(Node)
+		function Node:AnimSlide( anim, delta, data )
+			if not IsValid(self.ChildNodes) then anim:Stop() return end
+
+			if anim.Started then
+				data.To = self:GetTall()
+				data.Visible = self.ChildNodes:IsVisible()
+			end
+
+			if anim.Finished then
+				self:InvalidateLayout()
+				self.ChildNodes:SetVisible( data.Visible )
+				self:SetTall( data.To )
+				self:GetParentNode():ChildExpanded()
+				return
+			end
+			self:SetTall(Lerp(math.ease.InOutSine(delta), data.From, data.To))
+
+			-- These fix the label overflow
+			self.ChildNodes:SetVisible(true)
+			self.ChildNodes:SetWide(20000)
+			self.Label:SetWide(20000)
+
+			self:GetParentNode():ChildExpanded()
+		end
+
+		function Node:PerformLayout()
+			if self:IsRootNode() then
+				return self:PerformRootNodeLayout()
+			end
+
+			if self.animSlide:Active() then return end
+
+			local LineHeight = self:GetLineHeight()
+
+			self.Expander:SetPos(-11, 0)
+			self.Expander:SetSize(15, 15)
+			self.Expander:SetVisible(false)
+
+			self.Label:StretchToParent(0, nil, 0, nil)
+			self.Label:SetTall(LineHeight)
+
+			self.Icon:SetVisible(true)
+			self.Icon:SetPos(self.Expander.x + self.Expander:GetWide() + 4, (LineHeight - self.Icon:GetTall()) * 0.5)
+			self.Label:SetTextInset(self.Icon.x + self.Icon:GetWide() + 4, 0)
+
+			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
+				self:SetTall(LineHeight)
+				return
+			end
+
+			self.ChildNodes:SizeToContents()
+			self:SetTall(LineHeight + self.ChildNodes:GetTall())
+
+			self.ChildNodes:StretchToParent(7, LineHeight, 0, 0)
+
+			self:DoChildrenOrder()
+		end
+
+		Node:SetHideExpander(true)
+		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
+	end
+
 	local function PopulateTree(Tree)
 		local OptionList = GetSortedList(Options)
 		local First
 
 		Tree.BaseHeight = 0.5
+		Tree.VBar:SetSize(0, 0)
+		Tree:SetLineHeight(19)
 
 		for _, Option in ipairs(OptionList) do
 			if not AllowOption(Option) then continue end
 
 			local Parent = Tree:AddNode(Option.Name, Option.Icon)
 			local SetExpanded = Parent.SetExpanded
-			local Expander = Parent.Expander
+
+			FixStupidNodeCutoffTextIssue(Parent)
 
 			Parent.Action = Option.Action
 			Parent.Master = true
@@ -156,12 +223,6 @@ do -- ACF Menu context panel
 				self.AllowExpand = nil
 			end
 
-			function Expander:DoClick()
-				local Node = Parent:GetParentNode()
-
-				Node:OnNodeSelected(Parent)
-			end
-
 			Tree.BaseHeight = Tree.BaseHeight + 1
 
 			local ItemList = GetSortedList(Option.List)
@@ -173,6 +234,13 @@ do -- ACF Menu context panel
 				Child.Parent = Parent
 
 				Parent.Count = Parent.Count + 1
+
+				function Child.Label:Paint(w, h)
+					local Skin = self:GetSkin()
+					surface.SetAlphaMultiplier(math.Remap(math.sin(CurTime() * 7), -1, 1, 0.6, 1))
+					Skin:PaintTreeNodeButton(self, w, h)
+					surface.SetAlphaMultiplier(1)
+				end
 
 				if not Parent.Selected then
 					Parent.Selected = Child

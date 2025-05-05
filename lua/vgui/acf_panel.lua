@@ -242,7 +242,56 @@ function PANEL:AddCollapsible(Text, State)
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
+	function Category:AnimSlide(_, Delta, Data)
+		self:InvalidateLayout()
+		self:InvalidateParent()
+
+		local _, CH = self.Contents:ChildrenSize()
+
+		if self:GetExpanded() then
+			Data.From = self.Header:GetTall()
+			Data.To = CH
+		else
+			Data.From = CH
+			Data.To = self.Header:GetTall()
+		end
+
+		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
+		self:SetTall(Lerp(Delta, Data.From, Data.To))
+	end
+	Category:SetAnimTime(0.2)
+	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
+
 	return Base, Category
+end
+
+function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
+	local HasPonder = Ponder ~= nil
+	local PonderText = language.GetPhrase("acf.menu.ponder_button")
+
+	if not HasPonder then
+		local Button = self:AddButton(HasPonder and PonderText:format(StoryboardName) or "#acf.menu.ponder_not_installed")
+
+		function Button:DoClick() gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276") end
+
+		return Button
+	end
+
+	local Name = language.GetPhrase(Ponder.API.RegisteredAddonCategories[AddonID][CategoryID].Name)
+	local Button = self:AddButton(HasPonder and PonderText:format(Name))
+
+	function Button:DoClick()
+		if not IsValid(Ponder.UIWindow) then
+			Ponder.UIWindow = vgui.Create("Ponder.UI")
+		else
+			Ponder.UIWindow:Remove()
+		end
+
+		local UI = Ponder.UIWindow
+		UI:LoadAddonCategoriesIndex(AddonID, CategoryID)
+	end
+
+	return Button
 end
 
 function PANEL:AddGraph()

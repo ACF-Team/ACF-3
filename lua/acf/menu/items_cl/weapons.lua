@@ -1,9 +1,7 @@
 local ACF       = ACF
 local Weapons   = ACF.Classes.Weapons
 local ModelData = ACF.ModelData
-local NameText  = "%smm %s"
 local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s"
-local MagText   = "\nRounds : %s rounds\nReload : %s seconds"
 local Current   = {}
 local CreateControl, IsScalable
 
@@ -62,10 +60,11 @@ CreateControl = function(Base)
 
 	if IsScalable then -- Scalable
 		local Bounds = Current.Class.Caliber
-		local Slider = Base:AddSlider("Caliber", Bounds.Min, Bounds.Max, 2)
+		local Slider = Base:AddSlider("#acf.menu.caliber", Bounds.Min, Bounds.Max, 2)
 		Slider:SetClientData("Caliber", "OnValueChanged")
 		Slider:DefineSetter(function(Panel, _, _, Value)
-			local Caliber = math.Round(Value, 2)
+			local Caliber  = math.Round(Value, 2)
+			local NameText = language.GetPhrase("acf.menu.weapons.name_text")
 
 			Title:SetText(NameText:format(Caliber, Current.Class.Name))
 			Panel:SetValue(Caliber)
@@ -144,6 +143,7 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	if not MagSize then return "" end
 
+	local MagText    = language.GetPhrase("acf.menu.weapons.mag_stats")
 	local MagReload = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
@@ -182,11 +182,11 @@ end
 local function CreateMenu(Menu)
 	local Entries = Weapons.GetEntries()
 
-	Menu:AddTitle("Weapon Settings")
+	Menu:AddTitle("#acf.menu.weapons.settings")
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
 	local ClassList  = ClassBase:AddComboBox()
-	local WeaponBase = Menu:AddCollapsible("Weapon Information")
+	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info")
 	local EntName    = WeaponBase:AddTitle()
 	local ClassDesc  = WeaponBase:AddLabel()
 	local EntPreview = WeaponBase:AddModelPreview(nil, true)
@@ -240,4 +240,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
-ACF.AddMenuItem(1, "Entities", "Weapons", "gun", CreateMenu)
+ACF.AddMenuItem(1, "#acf.menu.entities", "#acf.menu.weapons", "gun", CreateMenu)

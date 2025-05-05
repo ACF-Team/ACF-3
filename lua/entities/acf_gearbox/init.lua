@@ -1,5 +1,3 @@
-DEFINE_BASECLASS("acf_base_simple") -- Required to get the local BaseClass
-
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
@@ -29,7 +27,7 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 
 	if GearRatio == 0 then return 0 end
 
-	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gearratio
+	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
 	return BaseRPM / GearRatio / -6
 end
 
@@ -673,13 +671,13 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s fl-lb\nTorque Output: %s Nm / %s fl-lb"
+	local Text = "%s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
 		local Final     = math.Round(self.FinalDrive, 2)
-		local Torque    = math.Round(self.MaxTorque * 0.73)
-		local Output    = math.Round(self.TorqueOutput * 0.73)
+		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
+		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
 		if not GearsText or GearsText == "" then
 			local Gears = self.Gears
@@ -863,10 +861,10 @@ do -- Movement -----------------------------------------
 			return
 		end
 
-		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) --internal torque loss from damaged
-		local Slop = self.Automatic and 0.9 or 1 --internal torque loss from inefficiency
+		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local Slop = self.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
 		local ReactTq = 0
-		-- Calculate the ratio of total requested torque versus what's avaliable, and then multiply it but the current gearratio
+		-- Calculate the ratio of total requested torque versus what's available, and then multiply it by the current gear ratio
 		local AvailTq = 0
 		local GearRatio = self.GearRatio
 
@@ -980,7 +978,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		--Wire dupe info
-		BaseClass.PreEntityCopy(self)
+		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -1013,7 +1011,7 @@ do -- Duplicator Support -------------------------------
 			EntMods.ACFGearboxes = nil
 		end
 
-		BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 end ----------------------------------------------------
 
