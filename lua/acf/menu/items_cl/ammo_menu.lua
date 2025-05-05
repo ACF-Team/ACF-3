@@ -1,4 +1,3 @@
-
 local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
