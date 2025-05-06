@@ -443,7 +443,7 @@ do -- Terminal ballistics --------------------------
 		print("FragSpeed: " .. FragSpeed)
 		print("FragMass: " .. FragMass)
 
-		local BaseCone = 10 * math.pow(FragSize, 1/3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
 
 		local FragPos = Trace.HitPos
 		local FragDirInit = Bullet.Flight:GetNormalized()
