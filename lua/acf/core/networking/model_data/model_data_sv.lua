@@ -9,7 +9,7 @@ do -- Pointer entity creation
 
 		local Entity = ents.Create("base_entity")
 
-		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
+		if not IsValid(Entity) then return error("[ACF] Failed to create ModelData entity serverside!") end
 
 		function Entity:UpdateTransmitState()
 			return TRANSMIT_ALWAYS
