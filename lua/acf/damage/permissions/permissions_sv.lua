@@ -116,7 +116,7 @@ end
 
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
 	if not getMapSZs() then
-		print("Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
+		Messages.PrintLog("Warning", "Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
 	end
 end)
 
@@ -421,8 +421,8 @@ function Permissions.RegisterMode(mode, name, desc, default, think, defaultactio
 		Permissions.DefaultPermission = name
 
 		timer.Simple(1, function()
-			print("ACF: Found default permission mode: " .. DPM)
-			print("ACF: Setting permission mode to: " .. name)
+			Messages.PrintLog("Info", "Found default permission mode: " .. DPM)
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
 	elseif default then
 		Permissions.DamagePermission = Permissions.Modes[name]
@@ -430,13 +430,13 @@ function Permissions.RegisterMode(mode, name, desc, default, think, defaultactio
 		Permissions.DefaultPermission = name
 
 		timer.Simple(1, function()
-			print("ACF: Map does not have default permission set, using default")
-			print("ACF: Setting permission mode to: " .. name)
+			Messages.PrintLog("Info", "Map does not have default permission set, using default.")
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
 	end
 	--Old method - can break on rare occasions!
 	--if LoadMapDPM() == name or default then 
-	--	print("ACF: Setting permission mode to: "..name)
+	--	Messages.PrintLog("Info", "Setting permission mode to: "..name)
 	--	Permissions.DamagePermission = Permissions.Modes[name]
 	--	Permissions.DefaultPermission = name
 	--end
@@ -535,7 +535,7 @@ end
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
 local function plyBySID(steamid)
-	for _, v in ipairs(player.GetAll()) do
+	for _, v in player.Iterator() do
 		if v:SteamID() == steamid then return v end
 	end
 
@@ -604,7 +604,7 @@ net.Receive("ACF_refreshpermissions", function(_, ply)
 end)
 
 function Permissions.ResendPermissionsOnChanged()
-	for _, ply in ipairs(player.GetAll()) do
+	for _, ply in player.Iterator() do
 		Permissions.SendPermissionsState(ply)
 	end
 end
