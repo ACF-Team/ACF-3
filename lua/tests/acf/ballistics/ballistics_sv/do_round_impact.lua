@@ -20,7 +20,8 @@ return {
             ShovePower = 1,
             Energy = { Kinetic = 1 },
             Flight = Vector( 1, 1, 1 ),
-            DeltaTime = 1
+            DeltaTime = 1,
+            ProjArea = 1
         }
 
         State.Trace = {
