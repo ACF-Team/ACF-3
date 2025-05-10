@@ -295,7 +295,7 @@ do -- ACF global vars
 
 	-- Crew 
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
-	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
+	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
