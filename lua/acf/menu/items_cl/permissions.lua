@@ -90,6 +90,11 @@ do
 		net.SendToServer()
 	end
 
+	local function RequestSafezones()
+		net.Start("ACF_OnUpdateSafezones")
+		net.SendToServer()
+	end
+
 	net.Receive("ACF_refreshpermissions", function()
 		PermissionModes = net.ReadTable()
 		CurrentPermission = net.ReadString()
@@ -100,6 +105,7 @@ do
 
 	timer.Simple(0, function()
 		RequestUpdate()
+		RequestSafezones()
 	end)
 
 	local function CreateMenu(Menu)
@@ -110,6 +116,8 @@ do
 		CurrentMode = Menu:AddLabel(string.format(CurrentModeTxt, CurrentPermission))
 
 		if not LocalPlayer():IsAdmin() then return end
+
+		ACF.SetToolMode("acf_menu", "ZoneModifier", "Update")
 
 		List = Menu:AddPanel("DListView")
 		List:AddColumn("#acf.menu.permissions.mode")
