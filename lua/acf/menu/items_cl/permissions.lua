@@ -119,29 +119,19 @@ do
 
 		ACF.SetToolMode("acf_menu", "ZoneModifier", "Update")
 
-		List = Menu:AddPanel("DListView")
+		List = Menu:AddListView()
 		List:AddColumn("#acf.menu.permissions.mode")
 		List:AddColumn("#acf.menu.permissions.active")
 		List:AddColumn("#acf.menu.permissions.map_default")
-		List:SetMultiSelect(false)
-		List:SetSize(30, 100)
 
 		for Permission in pairs(PermissionModes) do
 			List:AddLine(Permission, "", "")
 		end
 
-		for id, line in pairs(List:GetLines()) do
-			if line:GetValue(1) == CurrentPermission then
-				List:GetLine(id):SetValue(2, "Yes")
-			end
-			if line:GetValue(1) == DefaultPermission then
-				List:GetLine(id):SetValue(3, "Yes")
-			end
-		end
-
-		local ModeDescDefault = "#acf.menu.permissions.mode_desc_default"
+		UpdateModeData()
 
 		Menu:AddLabel("#acf.menu.permissions.mode_desc_header")
+		local ModeDescDefault = "#acf.menu.permissions.mode_desc_default"
 		local ModeDesc = Menu:AddLabel(PermissionModes[CurrentPermission] or ModeDescDefault)
 
 		List.OnRowSelected = function(Panel, Line)

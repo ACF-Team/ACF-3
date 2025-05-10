@@ -136,11 +136,15 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
-function PANEL:AddCheckBox(Text)
+function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
+
+	if ConVar then
+		Panel:SetConVar(ConVar)
+	end
 
 	function Panel:LinkToServerData(Key)
 		local Value = ACF.GetSetting(Key)
@@ -213,6 +217,38 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
+function PANEL:AddListView()
+	local Panel = self:AddPanel("DListView")
+	Panel:SetMultiSelect(false)
+	Panel:SetSize(30, 100)
+
+	local AddColumn = Panel.AddColumn
+	local AddLine = Panel.AddLine
+
+	function Panel:AddColumn(...)
+		local Column = AddColumn(self, ...)
+		Column.Header:SetFont("ACF_Control")
+
+		return Column
+	end
+
+	function Panel:AddLine(...)
+		local Line = AddLine(self, ...)
+
+		for ColumnID in ipairs(Line.Columns) do
+			local Column = Line.Columns[ColumnID]
+
+			if IsValid(Column) then
+				Column:SetFont("ACF_Control")
+			end
+		end
+
+		return Line
+	end
+
+	return Panel
+end
+
 function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	local Base = self:AddPanel("ACF_Panel")
 
@@ -263,6 +299,16 @@ function PANEL:AddCollapsible(Text, State)
 	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
 
 	return Base, Category
+end
+
+function PANEL:AddMenuReload(Command)
+	local Reload = self:AddButton("#acf.menu.reload")
+	local ReloadDesc = language.GetPhrase("acf.menu.reload_desc"):format(Command)
+	Reload:SetTooltip(ReloadDesc)
+
+	function Reload:DoClickInternal()
+		RunConsoleCommand(Command)
+	end
 end
 
 function PANEL:AddPonderAddonCategory(AddonID, CategoryID)

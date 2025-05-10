@@ -82,6 +82,8 @@ local function UpdateComboBox(ComboBox)
 	end
 end
 
+--- Generates the menu used in the Copy tool.
+--- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateCopyMenu(Panel)
 	local Menu = ACF.CopyMenu
 
@@ -97,12 +99,7 @@ function ACF.CreateCopyMenu(Panel)
 		Menu:ClearAll()
 	end
 
-	local Reload = Menu:AddButton("#tool.acfcopy.reload")
-	Reload:SetTooltip("#tool.acfcopy.reload_desc")
-	function Reload:DoClickInternal()
-		RunConsoleCommand("acf_reload_copy_menu")
-	end
-
+	Menu:AddMenuReload("acf_reload_copy_menu")
 	ACF.SetToolMode("acfcopy", "Main", "CopyPaste")
 
 	if not Selected then
