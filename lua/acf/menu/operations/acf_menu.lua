@@ -321,6 +321,31 @@ do -- Generic Spawner/Linker operation creator
 	end
 end
 
+do -- Safezone modifier operation
+	local Permissions = ACF.Permissions
+	local StageName = "ZoneModifier"
+	local OpName = "Update"
+
+	ACF.RegisterOperation("acf_menu", StageName, OpName, {
+		OnEnterOp = function()
+			if CLIENT then
+				hook.Add("PreDrawOpaqueRenderables", "ACF_OnRenderSafezones", Permissions.RenderSafezones)
+				hook.Add("PostDrawHUD", "ACF_OnUpdateSafezones", Permissions.RenderSafezoneText)
+			end
+		end,
+		OnExitOp = function()
+			if CLIENT then
+				hook.Remove("PreDrawOpaqueRenderables", "ACF_OnRenderSafezones")
+				hook.Remove("PostDrawHUD", "ACF_OnUpdateSafezones")
+			end
+		end
+	})
+
+	ACF.RegisterToolInfo("acf_menu", StageName, OpName, {
+		name = "info",
+		text = "Select an option on the menu."
+	})
+end
 
 ACF.CreateMenuOperation("Weapon", "weapon", "ammo crate")
 ACF.CreateMenuOperation("Missile", "rack", "ammo crate")

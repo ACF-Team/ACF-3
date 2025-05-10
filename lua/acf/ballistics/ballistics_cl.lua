@@ -16,7 +16,7 @@ local function BulletFlight(Bullet, DeltaTime)
 		Bullet.Effect:ApplyMovement(Bullet)
 	end
 
-	-- Debug.Line(Bullet.SimPosLast, Bullet.SimPos, 15, Yellow)
+	Debug.Line(Bullet.SimPosLast, Bullet.SimPos, 15, Yellow)
 end
 
 hook.Add("ACF_OnTick", "ACF_ManageBulletEffects", function(_, DeltaTime)

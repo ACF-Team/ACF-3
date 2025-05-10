@@ -164,6 +164,9 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
 
+		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):    LinkToServerData("CrewFallbackCoef")
+			Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")
+
 		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):             LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
 	end)

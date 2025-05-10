@@ -17,10 +17,6 @@ local mapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
 local curMap = game.GetMap()
 
-local function msgtoconsole(_, msg)
-	print(msg)
-end
-
 local function resolveAABBs(mins, maxs)
 	--[[
 	for xyz, val in pairs(mins) do	// ensuring points conform to AABB mins/maxs
@@ -114,9 +110,49 @@ local function LoadMapDPM()
 	return ReadFile(mapDPMDir .. "default.txt")
 end
 
+util.AddNetworkString("ACF_OnUpdateSafezones")
+
+--- Networks the current data of all safezones to one or all player(s).
+--- @param Player? entity The specific player to network the update to (or none if the update should be sent to all players)
+function Permissions.UpdateSafezones(Player)
+	local ZoneCount = 0
+	net.Start("ACF_OnUpdateSafezones")
+
+	if not Permissions.Safezones then
+		net.WriteUInt(ZoneCount, 5)
+
+		if IsValid(Player) then
+			net.Send(Player)
+		else
+			net.Broadcast()
+		end
+
+		return
+	end
+
+	ZoneCount = table.Count(Permissions.Safezones)
+	net.WriteUInt(ZoneCount, 5)
+
+	for Name, Coords in pairs(Permissions.Safezones) do
+		net.WriteString(Name)
+		net.WriteVector(Coords[1])
+		net.WriteVector(Coords[2])
+	end
+
+	if IsValid(Player) then
+		net.Send(Player)
+	else
+		net.Broadcast()
+	end
+end
+
+net.Receive("ACF_OnUpdateSafezones", function(_, Player)
+	Permissions.UpdateSafezones(Player)
+end)
+
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
 	if not getMapSZs() then
-		print("Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
+		Messages.PrintLog("Warning", "Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
 	end
 end)
 
@@ -141,18 +177,14 @@ end)
 concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
-		printmsg(HUD_PRINTCONSOLE, " - Add a safezone as an AABB box." .. "\n   Input a name and six numbers. First three numbers are minimum co-ords, last three are maxs." .. "\n   Example; ACF_addsafezone airbase -500 -500 0 500 500 1000")
+		Messages.PrintLog("Info", "Add a safezone as an AABB box." .. "\n   Input a name and six numbers. First three numbers are minimum co-ords, last three are maxs." .. "\n   Example; ACF_addsafezone airbase -500 -500 0 500 500 1000")
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
@@ -169,7 +201,7 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 		end
 
 		if Permissions.Safezones[szname] and Permissions.Safezones[szname].default then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: an unmodifiable safezone called " .. szname .. " already exists!")
+			Messages.PrintLog("Error", "An unmodifiable safezone called " .. szname .. " already exists!")
 
 			return false
 		end
@@ -178,7 +210,7 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 			args[k] = tonumber(v)
 
 			if args[k] == nil then
-				printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: argument " .. k .. " could not be interpreted as a number (" .. v .. ")")
+				Messages.PrintLog("Error", "Argument " .. k .. " could not be interpreted as a number (" .. v .. ")!")
 
 				return false
 			end
@@ -193,7 +225,8 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 			Permissions.Safezones[szname].default = true
 		end
 
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: added a safezone called " .. szname .. " between " .. tostring(mins) .. " and " .. tostring(maxs) .. "!")
+		Messages.PrintLog("Info", "Added a safezone called " .. szname .. " between " .. tostring(mins) .. " and " .. tostring(maxs) .. "!")
+		Permissions.UpdateSafezones()
 
 		return true
 	end
@@ -202,43 +235,40 @@ end)
 concommand.Add("ACF_RemoveSafeZone", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
-		printmsg(HUD_PRINTCONSOLE, " - Delete a safezone using its name." .. "\n   Input a safezone name. If it exists, it will be removed." .. "\n   Deletion is not permanent until safezones are saved.")
+		Messages.PrintLog("Info", "Delete a safezone using its name." .. "\n   Input a safezone name. If it exists, it will be removed." .. "\n   Deletion is not permanent until safezones are saved.")
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local szname = tostring(args[1])
 
 		if not szname then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: could not interpret your input as a string.")
+			Messages.PrintLog("Error", "Could not interpret your input as a string!")
 
 			return false
 		end
 
 		if not (Permissions.Safezones and Permissions.Safezones[szname]) then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: could not find a safezone called " .. szname .. ".")
+			Messages.PrintLog("Error", "Could not find a safezone called " .. szname .. "!")
 
 			return false
 		end
 
 		if Permissions.Safezones[szname].default then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: an unmodifiable safezone called " .. szname .. " already exists!")
+			Messages.PrintLog("Error", "An unmodifiable safezone called " .. szname .. " already exists!")
 
 			return false
 		end
 
 		Permissions.Safezones[szname] = nil
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: removed the safezone called " .. szname .. "!")
+		Messages.PrintLog("Info", "Removed the safezone called " .. szname .. "!")
+		Permissions.UpdateSafezones()
 
 		return true
 	end
@@ -247,17 +277,13 @@ end)
 concommand.Add("ACF_SaveSafeZones", function(ply)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		if not Permissions.Safezones then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: There are no safezones on the map which can be saved.")
+			Messages.PrintLog("Error", "There are no safezones on the map which can be saved.")
 
 			return false
 		end
@@ -266,7 +292,7 @@ concommand.Add("ACF_SaveSafeZones", function(ply)
 		local mapname = getMapFilename()
 		file.CreateDir(mapSZDir)
 		file.Write(mapname, szjson)
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: All safezones on the map have been made restorable.")
+		Messages.PrintLog("Info", "All safezones on the map have been made restorable.")
 
 		return true
 	end
@@ -275,21 +301,18 @@ end)
 concommand.Add("ACF_ReloadSafeZones", function(ply)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local ret = getMapSZs()
 
 		if ret then
-			printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: All safezones on the map have been restored.")
+			Messages.PrintLog("Info", "All safezones on the map have been restored.")
+			Permissions.UpdateSafezones()
 		else
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: Safezone file for this map is missing, invalid or corrupt.")
+			Messages.PrintLog("Error", "Safezone file for this map is missing, invalid or corrupt.")
 		end
 
 		return ret
@@ -299,10 +322,6 @@ end)
 concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
 		local modes = ""
 
@@ -310,20 +329,20 @@ concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 			modes = modes .. k .. " "
 		end
 
-		printmsg(HUD_PRINTCONSOLE, " - Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
+		Messages.PrintLog("Info", "Set damage permission behavior mode." .. "\n   Available modes: " .. modes)
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local mode = tostring(args[1])
 
 		if not Permissions.Modes[mode] then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: " .. mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
+			Messages.PrintLog("Error", mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
 
 			return false
 		end
@@ -331,7 +350,7 @@ concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 		local oldmode = table.KeyFromValue(Permissions.Modes, Permissions.DamagePermission)
 		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[mode]
 		Permissions.DamagePermission = Permissions.Modes[mode]
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
+		Messages.PrintLog("Info", "Current damage permission policy is now " .. mode .. "!")
 		hook.Run("ACF_OnChangeProtectionMode", mode, oldmode)
 
 		return true
@@ -341,10 +360,6 @@ end)
 concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
 		local modes = ""
 
@@ -352,20 +367,20 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 			modes = modes .. k .. " "
 		end
 
-		printmsg(HUD_PRINTCONSOLE, " - Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
+		Messages.PrintLog("Info", "Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local mode = tostring(args[1])
 
 		if not Permissions.Modes[mode] then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: " .. mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
+			Messages.PrintLog("Error", mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
 
 			return false
 		end
@@ -373,11 +388,12 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		if Permissions.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
 		Permissions.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
+		local CurMapText = "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!"
+		Messages.PrintLog("Info", CurMapText)
 
-		for _, v in ipairs(player.GetAll()) do
+		for _, v in player.Iterator() do
 			if v:IsAdmin() then
-				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
+				Messages.SendChat(v, "Info", CurMapText)
 			end
 		end
 
@@ -421,22 +437,22 @@ function Permissions.RegisterMode(mode, name, desc, default, think, defaultactio
 		Permissions.DefaultPermission = name
 
 		timer.Simple(1, function()
-			print("ACF: Found default permission mode: " .. DPM)
-			print("ACF: Setting permission mode to: " .. name)
+			Messages.PrintLog("Info", "Found default permission mode: " .. DPM)
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
-	elseif default then
+	elseif default and not DPM then
 		Permissions.DamagePermission = Permissions.Modes[name]
 		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[name]
 		Permissions.DefaultPermission = name
 
 		timer.Simple(1, function()
-			print("ACF: Map does not have default permission set, using default")
-			print("ACF: Setting permission mode to: " .. name)
+			Messages.PrintLog("Info", "Map does not have default permission set, using default.")
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
 	end
 	--Old method - can break on rare occasions!
 	--if LoadMapDPM() == name or default then 
-	--	print("ACF: Setting permission mode to: "..name)
+	--	Messages.PrintLog("Info", "Setting permission mode to: "..name)
 	--	Permissions.DamagePermission = Permissions.Modes[name]
 	--	Permissions.DefaultPermission = name
 	--end
@@ -535,7 +551,7 @@ end
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
 local function plyBySID(steamid)
-	for _, v in ipairs(player.GetAll()) do
+	for _, v in player.Iterator() do
 		if v:SteamID() == steamid then return v end
 	end
 
@@ -604,7 +620,7 @@ net.Receive("ACF_refreshpermissions", function(_, ply)
 end)
 
 function Permissions.ResendPermissionsOnChanged()
-	for _, ply in ipairs(player.GetAll()) do
+	for _, ply in player.Iterator() do
 		Permissions.SendPermissionsState(ply)
 	end
 end

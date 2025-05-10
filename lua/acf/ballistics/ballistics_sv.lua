@@ -375,7 +375,6 @@ do -- Terminal ballistics --------------------------
 
 		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
-			print("Ricochet: ", Bullet.Ricochets)
 			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
 			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
 			local Position  = Trace.HitPos
@@ -423,26 +422,20 @@ do -- Terminal ballistics --------------------------
 
 		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
 		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
-		print("Damage: " .. HitRes.Damage)
-		print("RemovedMass: " .. RemovedMass)
 
 		local FragFormEnergy = 100 -- Energy needed to form a fragment (J) (Might depend on the material?)
 		local FragTotalEnergy = Energy * 0.33 -- 25% of energy is used to form fragments (J) (Might depend on the material?)
 		local FragCount = math.floor(FragTotalEnergy / FragFormEnergy) -- Number of fragments formed
 		FragCount = math.Clamp(FragCount, 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
-		print("Energy: " .. Energy)
-		print("FragCount: " .. FragCount)
+
 		if FragCount < 1 then return end -- No fragments formed
 
 		-- Test values
 		local FragSize = RemovedArea / FragCount 	-- Area of the fragments (cm^2)
 		local FragMass = RemovedMass / FragCount 	-- Mass of the fragments (kg)
 		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
-		print("FragSize: " .. FragSize)
-		print("FragSpeed: " .. FragSpeed)
-		print("FragMass: " .. FragMass)
 
-		local BaseCone = 10 * math.pow(FragSize, 1/3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
 
 		local FragPos = Trace.HitPos
 		local FragDirInit = Bullet.Flight:GetNormalized()
@@ -467,8 +460,6 @@ do -- Terminal ballistics --------------------------
 			local SpreadAngle = math.random() * 2 * math.pi
 			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
 			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
-
-			print("Spall")
 
 			Ballistics.CreateBullet({
 				Caliber    = FragSize,

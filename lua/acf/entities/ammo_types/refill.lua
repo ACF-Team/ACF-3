@@ -148,7 +148,7 @@ if SERVER then
 	end
 
 	function Ammo:Create()
-		print("Someone is trying to fire Refill bullets")
+		error("[ACF] Someone is trying to fire Refill bullets!")
 	end
 
 	function Ammo:Network(Entity, BulletData)

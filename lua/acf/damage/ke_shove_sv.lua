@@ -22,10 +22,8 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
 
 		if KE ~= KE then
-			print("Congratulations, you've just found a bug on ACF. Report this to the developer team.")
-			print("Affected entity", Target, Ancestor)
-
-			debug.Trace()
+			local ErrorText = "Congratulations, you've just found a bug on ACF. Report this to the developer team.\nAffected entity"
+			ErrorNoHaltWithStack(ErrorText, Target, Ancestor)
 
 			return
 		end
