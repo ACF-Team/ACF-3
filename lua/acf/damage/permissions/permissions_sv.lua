@@ -373,11 +373,12 @@ concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 		if Permissions.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
 		Permissions.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
+		local CurMapText = "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!"
+		Messages.PrintLog("Info", CurMapText)
 
-		for _, v in ipairs(player.GetAll()) do
+		for _, v in player.Iterator() do
 			if v:IsAdmin() then
-				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
+				Messages.SendChat(v, "Info", CurMapText)
 			end
 		end
 
@@ -424,7 +425,7 @@ function Permissions.RegisterMode(mode, name, desc, default, think, defaultactio
 			Messages.PrintLog("Info", "Found default permission mode: " .. DPM)
 			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
-	elseif default then
+	elseif default and not DPM then
 		Permissions.DamagePermission = Permissions.Modes[name]
 		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[name]
 		Permissions.DefaultPermission = name
