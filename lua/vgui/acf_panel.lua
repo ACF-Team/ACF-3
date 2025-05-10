@@ -265,6 +265,16 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
+function PANEL:AddMenuReload(Command)
+	local Reload = self:AddButton("#acf.menu.reload")
+	local ReloadDesc = language.GetPhrase("acf.menu.reload_desc"):format(Command)
+	Reload:SetTooltip(ReloadDesc)
+
+	function Reload:DoClickInternal()
+		RunConsoleCommand(Command)
+	end
+end
+
 function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 	local HasPonder = Ponder ~= nil
 	local PonderText = language.GetPhrase("acf.menu.ponder_button")
