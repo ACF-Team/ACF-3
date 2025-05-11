@@ -14,19 +14,13 @@ include("shared.lua")
 
 local ACF = ACF
 local HookRun     = hook.Run
-local HookRemove     = hook.Remove
 local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
 local WireIO      = Utilities.WireIO
-
 local Contraption = ACF.Contraption
 local hook	   = hook
 local Classes	= ACF.Classes
 local Entities   = Classes.Entities
 local CheckLegal = ACF.CheckLegal
-local TraceHull = util.TraceHull
-local TimerSimple	= timer.Simple
-
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
 util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
@@ -411,7 +405,7 @@ do
 		if ToggleLock then
 			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
 			RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
-			for Turret, _ in pairs(Turrets) do 
+			for Turret, _ in pairs(Turrets) do
 				if IsValid(Turret) then Turret:TriggerInput("Active", not SelfTbl.TurretLocked) end
 			end
 		end
@@ -692,7 +686,7 @@ LinkConfigs = {
 				hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
 			end)
 		end,
-		OnUnlinked = function(Controller, Target)
+		OnUnlinked = function(Controller, _)
 			-- Unregister hooks when the seat is unlinked
 			hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
 			hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
