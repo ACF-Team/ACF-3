@@ -281,7 +281,6 @@ do
 		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
 		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
 		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
-		-- print("Received: ", Entity.CamMode, Entity.Offset, Entity.Orbit)
 	end)
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
@@ -570,7 +569,7 @@ do
 		local CanNeutral = SelfTbl.GearboxEndCount == 2
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
-		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetIdleThrottle() or 0) end
+		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
 
 		local Unit = self:GetSpeedUnit()
 
@@ -746,7 +745,7 @@ for Class, Data in pairs(LinkConfigs) do
 		else Controller[Field][Target] = true end
 
 		timer.Simple(0, function()
-			if Controller.OnLinked then OnLinked(Controller, Target) end
+			if OnLinked then OnLinked(Controller, Target) end
 		end)
 
 		BroadcastEntity("ACF_Controller_Links", Controller, Target, true)
@@ -758,7 +757,7 @@ for Class, Data in pairs(LinkConfigs) do
 		if Single then Controller[Field] = nil
 		else Controller[Field][Target] = nil end
 
-		if Controller.OnUnlinked then OnUnlinked(Controller, Target) end
+		if OnUnlinked then OnUnlinked(Controller, Target) end
 
 		BroadcastEntity("ACF_Controller_Links", Controller, Target, false)
 
