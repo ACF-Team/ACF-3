@@ -383,7 +383,7 @@ do
 
 	-- Fire guns
 	function ENT:ProcessGuns(SelfTbl, Driver)
-		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_DUCK), DriverKeyDown(Driver, IN_SPEED)
+		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
 		for Gun in pairs(SelfTbl.GunsPrimary) do
 			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire1) end
 		end
