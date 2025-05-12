@@ -12,6 +12,7 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+-- Localizations
 local ACF = ACF
 local HookRun     = hook.Run
 local Utilities   = ACF.Utilities
@@ -23,13 +24,15 @@ local Entities   = Classes.Entities
 local CheckLegal = ACF.CheckLegal
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
+local TraceLine = util.TraceLine
+
 util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
 util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
-local PlayerOutputBinds = {
+local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_FORWARD] = "W",
 	[IN_MOVELEFT] = "A",
 	[IN_BACK] = "S",
@@ -56,7 +59,7 @@ local Defaults = {
 	Cam1Offset = Vector(0, 0, 150),
 	Cam1Orbit = 300,
 	Cam2Offset = Vector(0, 0, 150),
-	Cam2Orbit = 300,
+	Cam2Orbit = 0,
 	Cam3Offset = Vector(0, 0, 0),
 	Cam3Orbit = 0,
 
@@ -266,7 +269,7 @@ end
 -- Camera related
 do
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)
-		local EntIndex = net.ReadUInt(16)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamMode = net.ReadUInt(2)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
@@ -278,7 +281,7 @@ do
 	end)
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
-		local EntIndex = net.ReadUInt(16)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamAng = net.ReadAngle()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
@@ -286,23 +289,24 @@ do
 		Entity.CamAng = CamAng
 	end)
 
+	local CamTraceConfig = {}
 	function ENT:ProcessCameras(SelfTbl)
-		local CamAng = SelfTbl.CamAng or Angle(0, 0, 0)
+		local CamAng = SelfTbl.CamAng or angle_zero
 		RecacheBindOutput(self, SelfTbl, "CamAng", CamAng)
 
 		local CamDir = CamAng:Forward()
-		local CamOffset = SelfTbl.CamOffset or Vector()
+		local CamOffset = SelfTbl.CamOffset or vector_origin
 		local CamOrbit = SelfTbl.CamOrbit or 0
 		local CamPos = self:LocalToWorld(CamOffset) - CamDir * CamOrbit
 
 		-- debugoverlay.Line(CamPos, CamPos + CamDir * 100, 0.1, Color(255, 0, 0), true)
-		local Tr = util.TraceLine({
-			start = CamPos,
-			endpos = CamPos + CamDir * 99999,
-			filter = SelfTbl.Filter or {self},
-		})
 
-		local HitPos = Tr.HitPos or Vector()
+		CamTraceConfig.start = CamPos
+		CamTraceConfig.endpos = CamPos + CamDir * 99999
+		CamTraceConfig.filter = SelfTbl.Filter or {self}
+		local Tr = TraceLine(CamTraceConfig)
+
+		local HitPos = Tr.HitPos or vector_origin
 		RecacheBindOutput(self, SelfTbl, "HitPos", HitPos)
 
 		return CamPos, CamAng, HitPos
@@ -627,8 +631,8 @@ end
 -- I hate this so much :(
 function BroadcastEntity(Name, Entity, Entity2, State)
 	net.Start(Name)
-	net.WriteUInt(Entity:EntIndex(), 16)
-	net.WriteUInt(Entity2:EntIndex(), 16)
+	net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+	net.WriteUInt(Entity2:EntIndex(), MAX_EDICT_BITS)
 	net.WriteBool(State)
 	net.Broadcast()
 end
@@ -660,7 +664,7 @@ function OnActiveChanged(Controller, Ply, Active)
 	end
 
 	net.Start("ACF_Controller_Active")
-	net.WriteUInt(Controller:EntIndex(), 16)
+	net.WriteUInt(Controller:EntIndex(), MAX_EDICT_BITS)
 	net.WriteBool(Active)
 	net.Send(Ply)
 end
@@ -789,7 +793,7 @@ do
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
 
 		-- Update Outputs
-		for Bind, Output in pairs(PlayerOutputBinds) do
+		for Bind, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
 			RecacheBindOutput(self, SelfTbl, Output, DriverKeyDown(Driver, Bind) and 1 or 0)
 		end
 

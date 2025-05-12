@@ -2,6 +2,14 @@ DEFINE_BASECLASS("acf_base_simple")
 
 include("shared.lua")
 
+-- Locallization for performance...
+local ScrW = ScrW
+local ScrH = ScrH
+local SetDrawColor = surface.SetDrawColor
+local DrawRect = surface.DrawRect
+local DrawCircle = surface.DrawCircle
+local DrawText = draw.DrawText
+
 function ENT:Initialize(...)
 	BaseClass.Initialize(self, ...)
 end
@@ -25,23 +33,24 @@ local WorldCamMins = Vector(-4, -4, -4)
 local WorldCamMaxs = Vector(4, 4, 4)
 
 --- Unclips the camera from the world
-local function WorldUnclip(PreOrbit, PostOrbit)
-	local Tr = util.TraceHull({
-		start = PreOrbit,
-		endpos = PostOrbit,
-		mask = MASK_SOLID_BRUSHONLY,
-		mins = WorldCamMins,
-		maxs = WorldCamMaxs,
-	})
+local worldUnclipTrace = {
+	mask = MASK_SOLID_BRUSHONLY,
+	mins = WorldCamMins,
+	maxs = WorldCamMaxs
+}
 
+local function WorldUnclip(PreOrbit, PostOrbit)
+	worldUnclipTrace.start = PreOrbit
+	worldUnclipTrace.endpos = PostOrbit
+	local Tr = util.TraceHull(worldUnclipTrace)
 	if Tr.Hit then return Tr.HitPos end
 	return PostOrbit
 end
 
 -- Maintain a record of links to the entity from the server
 net.Receive("ACF_Controller_Links", function()
-	local EntIndex1 = net.ReadUInt(16)
-	local EntIndex2 = net.ReadUInt(16)
+	local EntIndex1 = net.ReadUInt(MAX_EDICT_BITS)
+	local EntIndex2 = net.ReadUInt(MAX_EDICT_BITS)
 	local Linked = net.ReadBool()
 
 	local Ent = Entity(EntIndex1)
@@ -54,7 +63,7 @@ end)
 -- Keep a record of the controller we are currently in, from the server
 local UpdateCamera = nil
 net.Receive("ACF_Controller_Active", function()
-	local EntIndex = net.ReadUInt(16)
+	local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 	local Activated = net.ReadBool()
 
 	local Ent = Entity(EntIndex)
@@ -70,18 +79,18 @@ UpdateCamera = function(ply)
 	CamOrbit = MyController["GetCam" .. Mode .. "Orbit"]()
 
 	net.Start("ACF_Controller_CamInfo")
-	net.WriteUInt(MyController:EntIndex(), 16)
+	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteUInt(Mode, 2)
 	net.SendToServer(ply)
 end
 
+local rangerTrace = {}
 local ranger = function(start, dir, length, mask)
-	local Tr = util.TraceLine({
-		start = start,
-		endpos = start + dir * length,
-		mask = mask or MASK_SOLID,
-	})
-	return Tr.HitPos or Vector()
+	rangerTrace.start = start
+	rangerTrace.endpos = start + dir * length
+	rangerTrace.mask = mask or MASK_SOLID
+	local Tr = util.TraceLine(rangerTrace)
+	return Tr.HitPos or vector_origin
 end
 
 -- local Scale = MyController:GetHUDScale()
@@ -93,7 +102,7 @@ end
 -- HUD RELATED
 local red = Color(255, 0, 0, 255)
 local green = Color(0, 255, 0, 255)
-hook.Add( "HUDPaint", "ACFAddonControllerHUD", function()
+hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	if not IsValid(MyController) then return end
 
 	-- Determine screen params
@@ -107,74 +116,74 @@ hook.Add( "HUDPaint", "ACFAddonControllerHUD", function()
 
 	local ColData = MyController:GetHUDColor() or Vector(255, 255, 255) -- See shared.lua
 	local Col = Color(ColData.x * 255, ColData.y * 255, ColData.z * 255, 255)
-	surface.SetDrawColor( Col )
+	SetDrawColor( Col )
 
 	-- HUD 1
 	local HudType = MyController:GetHUDType()
 	if HudType == 0 then
-		surface.DrawRect( x - 40 * Scale, y - thick / 2, 80 * Scale, thick )
-		surface.DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
+		DrawRect( x - 40 * Scale, y - thick / 2, 80 * Scale, thick )
+		DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
 
 		local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
 		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
 		local sp = HitPos:ToScreen()
 		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		surface.SetDrawColor( Ready and green or red )
-		surface.DrawCircle( sp.x, sp.y, 10 * Scale)
-		surface.SetDrawColor( Col )
+		SetDrawColor( Ready and green or red )
+		DrawCircle( sp.x, sp.y, 10 * Scale)
+		SetDrawColor( Col )
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
-		draw.DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
+		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
-		draw.DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
 	elseif HudType == 1 then
-		surface.DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
-		surface.DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
+		DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
+		DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
 
-		surface.DrawRect( x - 170 * Scale, y - thick / 2, 40 * Scale, thick )
-		surface.DrawRect( x + 130 * Scale, y - thick / 2, 40 * Scale, thick )
+		DrawRect( x - 170 * Scale, y - thick / 2, 40 * Scale, thick )
+		DrawRect( x + 130 * Scale, y - thick / 2, 40 * Scale, thick )
 
-		surface.DrawRect( x - thick / 2, y - 110 * Scale, thick, 40 * Scale )
-		surface.DrawRect( x - thick / 2, y + 70 * Scale, thick, 40 * Scale )
+		DrawRect( x - thick / 2, y - 110 * Scale, thick, 40 * Scale )
+		DrawRect( x - thick / 2, y + 70 * Scale, thick, 40 * Scale )
 
-		surface.DrawRect( x - 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
-		surface.DrawRect( x - 400 * Scale, y + 140 * Scale, thick, 60 * Scale )
-		surface.DrawRect( x + 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
-		surface.DrawRect( x + 400 * Scale, y + 140 * Scale, thick, 60 * Scale )
+		DrawRect( x - 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
+		DrawRect( x - 400 * Scale, y + 140 * Scale, thick, 60 * Scale )
+		DrawRect( x + 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
+		DrawRect( x + 400 * Scale, y + 140 * Scale, thick, 60 * Scale )
 
-		surface.DrawRect( x - 400 * Scale, y - 200 * Scale, 60 * Scale, thick )
-		surface.DrawRect( x - 400 * Scale, y + 200 * Scale, 60 * Scale, thick )
-		surface.DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
-		surface.DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
+		DrawRect( x - 400 * Scale, y - 200 * Scale, 60 * Scale, thick )
+		DrawRect( x - 400 * Scale, y + 200 * Scale, 60 * Scale, thick )
+		DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
+		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
 		local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
 		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
 		local sp = HitPos:ToScreen()
 		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		surface.SetDrawColor( Ready and green or red )
-		surface.DrawCircle( sp.x, sp.y, 10 * Scale)
-		surface.SetDrawColor( Col )
+		SetDrawColor( Ready and green or red )
+		DrawCircle( sp.x, sp.y, 10 * Scale)
+		SetDrawColor( Col )
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
-		draw.DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
+		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
-		draw.DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Secondary_AT", ""), MyController:GetNWInt("AHS_Secondary_SL", 0)
-		draw.DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
+		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
-		draw.DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Tertiary_AT", ""), MyController:GetNWInt("AHS_Tertiary_SL", 0)
-		draw.DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
+		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
-		draw.DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		local unit = MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
-		draw.DrawText("SPD: " .. MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
-		draw.DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText("SPD: " .. MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
 		local unit = MyController:GetFuelUnit() == 0 and " L" or " H"
-		draw.DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 end)
 
@@ -206,7 +215,7 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 
 	-- print(CamAng, MyController)
 	net.Start("ACF_Controller_CamData")
-	net.WriteUInt(MyController:EntIndex(), 16)
+	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteAngle(CamAng)
 	net.SendToServer()
 end)
@@ -246,7 +255,6 @@ hook.Add("CalcView", "ACFControllerView", function(Player, _, _, _)
 	return View
 end)
 
-local green = Color(0, 255, 0, 100)
 function ENT:DrawOverlay()
 	if self.Targets then
 		for Target in pairs(self.Targets) do
