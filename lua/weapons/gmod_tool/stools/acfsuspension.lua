@@ -144,6 +144,7 @@ if CLIENT then
 	--- Draws the hud/tooltips for this tool
 	function TOOL:DrawHUD()
 		local Player = LocalPlayer()
+		Player.ACF_Sus_Tool_Info = Player.ACF_Sus_Tool_Info or {}
 		local Selections = Player.ACF_Sus_Tool_Info
 		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
 
