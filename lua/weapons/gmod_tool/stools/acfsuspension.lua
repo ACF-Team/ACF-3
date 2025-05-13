@@ -34,7 +34,9 @@ if CLIENT then
 	end
 
 	CreateClientConVar("ACF_Sus_Tool_IsTracked", 1, false, true)
-	CreateClientConVar("ACF_Sus_Tool_Use_Custom", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_UseCustom", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_MakeSpherical", 1, false, true)
+	CreateClientConVar("ACF_Sus_Tool_DisableCollisions", 1, false, true)
 
 	--- Creates/recreates the menu for this tool
 	local function CreateMenu(Panel)
@@ -64,8 +66,14 @@ if CLIENT then
 		local IsTracked = Menu:AddCheckBox("Drivetrain Uses Tracks", "ACF_Sus_Tool_IsTracked")
 		IsTracked:SetTooltip("If checked, the drivetrain will be tracked. Otherwise, it will be wheeled.")
 
-		local UseCustom = Menu:AddCheckBox("Use my own suspension", "ACF_Sus_Tool_Use_Custom")
+		local UseCustom = Menu:AddCheckBox("Use my own suspension", "ACF_Sus_Tool_UseCustom")
 		UseCustom:SetTooltip("If checked, the drivetrain will only make your wheels rotate propperly.\nYou will need to create the constraints that hold it in place/suspend it yourself.")
+
+		local MakeSpherical = Menu:AddCheckBox("Make Spherical", "ACF_Sus_Tool_MakeSpherical")
+		MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
+
+		local DisableCollisions = Menu:AddCheckBox("Disable Collisions", "ACF_Sus_Tool_DisableCollisions")
+		DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
 
 		local Create = Menu:AddButton("Create Drivetrain")
 		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
@@ -278,12 +286,68 @@ elseif SERVER then -- Serverside-only stuff
 		return constraint.Ballsocket(Wheel, Plate, 0, 0, Vector(0, 0, 0), 0, 0, 0)
 	end
 
+	--- Disables collisions on the wheel with all entities
+	local function DisableCollisions(Wheel)
+		return Wheel:SetCollisionGroup(COLLISION_GROUP_WORLD)
+	end
+
+	--- Applies makespherical to the wheel
+	--- Taken from https://github.com/daveth/makespherical/blob/master/lua/weapons/gmod_tool/stools/makespherical.lua so it behaves the same
+	local function MakeSpherical(Wheel)
+		local ent = Wheel -- Otherwise I would have to find and replace manually
+		if not ent.noradius then
+			local OBB = ent:OBBMaxs() - ent:OBBMins()
+			ent.noradius = math.max( OBB.x, OBB.y, OBB.z) / 2
+		end
+
+		ent.obbcenter = ent.obbcenter or ent:OBBCenter()
+
+		local data = {
+			obbcenter 		= ent.obbcenter,
+			noradius 		= ent.noradius,
+			radius 			= ent.noradius,
+			mass 			= ent:GetPhysicsObject():GetMass(),
+			enabled 		= true,
+			isrenderoffset 	= 0,
+			renderoffset 	= Vector(0, 0, 0)
+		}
+
+		local phys = ent:GetPhysicsObject()
+		local ismove = phys:IsMoveable()
+		local issleep = phys:IsAsleep()
+		local radius = math.Clamp( data.radius, 1, 200 )
+
+		ent:PhysicsInitSphere( radius, phys:GetMaterial() )
+		ent:SetCollisionBounds( Vector( -radius, -radius, -radius ) , Vector( radius, radius, radius ) )
+
+		local phys = ent:GetPhysicsObject()
+		phys:SetMass( data.mass )
+		phys:EnableMotion( ismove )
+		if not issleep then phys:Wake() end
+
+		data.radius = radius
+		ent.noradius = data.noradius
+		duplicator.StoreEntityModifier( ent, "MakeSphericalCollisions", data )
+	end
+
 	function TOOL:CreateSuspension()
 		local Player = self:GetOwner()
 		local Selections = self.Selections
 
+		-- Handle makespherical / disable collisions BEFORE making the constraints
+		local IsSpherical = GetConVar("ACF_Sus_Tool_MakeSpherical"):GetInt()
+		local IsDisableCollisions = GetConVar("ACF_Sus_Tool_DisableCollisions"):GetInt()
+		for _, Wheel in ipairs(Selections.Wheels or EmptyTable) do
+			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+
+			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
+
+			if IsSpherical == 1 then MakeSpherical(Wheel) end
+		end
+
+		-- Handle making the suspension constraints
 		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
-		local UseCustom = GetConVar("ACF_Sus_Tool_Use_Custom"):GetInt()
+		local UseCustom = GetConVar("ACF_Sus_Tool_UseCustom"):GetInt()
 
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
