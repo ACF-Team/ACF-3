@@ -266,14 +266,12 @@ elseif SERVER then -- Serverside-only stuff
 	--- Creates a adv ballsocket constraint between the wheel and the plate
 	--- This forces the wheel to rotate freely, in the forward/backward direction
 	local function HullSocket(Wheel, Plate)
-		print("HullSocket")
 		return constraint.AdvBallsocket(Wheel, Plate, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, -180, 180, MinTol, MaxTol, MaxTol, MaxTol, 0, 0, 0, 1, 0)
 	end
 
 	--- Creates a adv ballsocket constraint between the wheel and its drive wheel
 	--- This forces the wheel to rotate freely, with the drive wheel
 	local function SlaveSocket(Wheel, DriveWheel)
-		print("SlaveSocket")
 		return constraint.AdvBallsocket(Wheel, DriveWheel, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, MinTol, MinTol, MinTol, MaxTol, MaxTol, MaxTol, 0, 0, 0, 1, 0)
 	end
 
@@ -290,12 +288,9 @@ elseif SERVER then -- Serverside-only stuff
 		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
 		local UseCustom = GetConVar("ACF_Sus_Tool_Use_Custom"):GetInt()
 
-		-- PrintTable(Selections)
-
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
 		local RightDriveWheel = Selections.Wheels[2]
-		-- print(Baseplate, LeftDriveWheel, RightDriveWheel)
 		if IsTracked == 1 then -- Tracked
 			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or {}) do
 				if not IsValid(Wheel) then continue end
