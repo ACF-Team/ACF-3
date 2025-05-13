@@ -148,7 +148,7 @@ do
 			end
 
 			local Mode = Line and Line:GetValue(1)
-			RunConsoleCommand("ACF_setpermissionmode", Mode)
+			RunConsoleCommand("acf_setpermissionmode", Mode)
 		end
 
 		local SetDefault = Menu:AddButton("#acf.menu.permissions.set_default_mode")
@@ -161,8 +161,15 @@ do
 			end
 
 			local Mode = Line and Line:GetValue(1)
-			RunConsoleCommand("ACF_setdefaultpermissionmode", Mode)
+			RunConsoleCommand("acf_setdefaultpermissionmode", Mode)
 		end
+
+		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones")
+		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
+		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
+		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.noclip"):LinkToServerData("NoclipOutsideZones")
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.save", "acf_savesafezones")
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", "acf_reloadsafezones")
 	end
 
 	ACF.AddMenuItem(2, "#acf.menu.permissions", "#acf.menu.permissions.set_mode", "server_edit", CreateMenu)

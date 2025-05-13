@@ -218,9 +218,10 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 end
 
 function PANEL:AddListView()
+	local LineHeight = 20
 	local Panel = self:AddPanel("DListView")
 	Panel:SetMultiSelect(false)
-	Panel:SetSize(30, 100)
+	Panel:SetWidth(30)
 
 	local AddColumn = Panel.AddColumn
 	local AddLine = Panel.AddLine
@@ -242,6 +243,8 @@ function PANEL:AddListView()
 				Column:SetFont("ACF_Control")
 			end
 		end
+
+		self:SetHeight(LineHeight * #self.Lines)
 
 		return Line
 	end
