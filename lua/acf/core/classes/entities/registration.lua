@@ -380,7 +380,7 @@ end
 
 --- Registers a class as a spawnable entity class
 --- @param Class string The class to register
---- @param Function fun(Player:entity, Pos:vector, Ang:angle, Data:table):Entity A function defining how to spawn your class (This should be your MakeACF_<something> function)
+--- @param Function fun(Player:entity, Pos:vector, Ang:angle, Data:table):Entity A function defining how to spawn your class (This should be your ACF.Make<something> function)
 --- @param ... any #A vararg of arguments to attach to the entity
 function Entities.Register(Class, Function, ...)
 	if Class == nil and Function == nil then

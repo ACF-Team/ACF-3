@@ -153,7 +153,7 @@ do -- Spawning and Updating --------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Piledriver(Player, Pos, Angle, Data)
+	function ACF.MakePiledriver(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Piledrivers.Get(Data.Weapon)
@@ -196,7 +196,7 @@ do -- Spawning and Updating --------------------
 		return Entity
 	end
 
-	Entities.Register("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
+	Entities.Register("acf_piledriver", ACF.MakePiledriver, "Weapon", "Caliber")
 
 	------------------- Updating ---------------------
 

@@ -96,7 +96,7 @@ do	-- Spawn and Update funcs
 		Contraption.SetMass(Entity, GetMass(Motor, Data))
 	end
 
-	function MakeACF_TurretMotor(Player, Pos, Angle, Data)
+	function ACF.MakeTurretMotor(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Motor)
@@ -136,7 +136,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_motor", MakeACF_TurretMotor, "Motor", "CompSize")
+	Entities.Register("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

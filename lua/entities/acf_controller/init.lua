@@ -83,12 +83,12 @@ local Clock = Utilities.Clock
 local DriverKeyDown = FindMetaTable("Player").KeyDown
 local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
 
-function RecacheBindOutput(Entity, SelfTbl, Output, Value)
+local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
 	if SelfTbl.Outputs[Output].Value == Value then return end
 	WireLib.TriggerOutput(Entity, Output, Value)
 end
 
-function RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
+local function RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
 	SelfTbl.CacheNW = SelfTbl.CacheNW or {}
 	if SelfTbl.CacheNW[Key] == Value then return end
 	SelfTbl.CacheNW[Key] = Value
@@ -140,7 +140,7 @@ do
 		Entity:UpdateOverlay(true)
 	end
 
-	function MakeController(Player, Pos, Ang, Data)
+	function ACF.MakeController(Player, Pos, Ang, Data)
 		VerifyData(Data)
 
 		-- Creating the entity
@@ -232,7 +232,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct an armor controller
-	Entities.Register("acf_controller", MakeController)
+	Entities.Register("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
 		-- Called when updating the entity
@@ -261,7 +261,7 @@ do
 		[2] = "Two Final, Dual Clutch"
 	}
 	function ENT:UpdateOverlayText()
-		str = string.format("All In One Controller\nPredicted Drivetrain: %s", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
+		local str = string.format("All In One Controller\nPredicted Drivetrain: %s", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
 		return str
 	end
 end
@@ -629,7 +629,7 @@ end
 
 -- Link and unlink functions
 -- I hate this so much :(
-function BroadcastEntity(Name, Entity, Entity2, State)
+local function BroadcastEntity(Name, Entity, Entity2, State)
 	net.Start(Name)
 	net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
 	net.WriteUInt(Entity2:EntIndex(), MAX_EDICT_BITS)
@@ -638,7 +638,7 @@ function BroadcastEntity(Name, Entity, Entity2, State)
 end
 
 -- Handle a player entering or exiting the vehicle
-function OnActiveChanged(Controller, Ply, Active)
+local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, Controller, "Driver", Ply)
 	RecacheBindOutput(Controller, Controller, "Active", 1)
 
@@ -670,7 +670,7 @@ function OnActiveChanged(Controller, Ply, Active)
 end
 
 -- Using this to auto generate the link/unlink functions
-LinkConfigs = {
+local LinkConfigs = {
 	prop_vehicle_prisoner_pod = {
 		Field = "Seat",
 		Single = true,

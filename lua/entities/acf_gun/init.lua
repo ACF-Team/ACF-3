@@ -328,7 +328,7 @@ do -- Spawn and Update functions --------------------------------
 		if not Entity.Thermal then Thermal.Temp	= ACF.AmbientTemperature end			-- Default init temperature
 
 		Thermal.TransferMult = Entity.ClassData.TransferMult or 1 -- Thermal transfer rate multiplier
-		EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
+		Thermal.EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
 
 		-- Simplification assumes barrel is the only heating element (breech excluded)
 		-- I really want to make guns not suck :( (These ratios piss me off marginally)
@@ -402,7 +402,7 @@ do -- Spawn and Update functions --------------------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Weapon(Player, Pos, Angle, Data)
+	function ACF.MakeWeapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Weapons, Data.Weapon)
@@ -476,7 +476,7 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber")
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
@@ -742,9 +742,10 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Shoot()
+			local Thermal = self.Thermal
 			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
-			local EnergyToHeat = BulletEnergy * EnergyConversion
-			self:SimulateTemp(1 / 66, self.Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
+			local EnergyToHeat = BulletEnergy * Thermal.EnergyConversion
+			self:SimulateTemp(1 / 66, Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
 
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))

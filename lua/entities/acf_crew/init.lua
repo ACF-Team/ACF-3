@@ -346,7 +346,7 @@ do
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
 	end
 
-	function MakeCrew(Player, Pos, Angle, Data)
+	function ACF.MakeCrew(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
@@ -453,7 +453,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
@@ -497,7 +497,7 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		local str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),

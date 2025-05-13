@@ -1239,13 +1239,12 @@ if CLIENT then
         render.DepthRange(0, 1)
     end
 
-    --local eyetrace_calc = nil
     local player_mt = FindMetaTable("Player")
-    if not ACF_SCANNING_PLMT_GETEYETRACE then
-        ACF_SCANNING_PLMT_GETEYETRACE = player_mt.GetEyeTrace
+    if not player_mt.GetEyeTraceLegacy then
+        player_mt.GetEyeTraceLegacy = player_mt.GetEyeTrace
     end
 
-    local plmt_eyetrace = ACF_SCANNING_PLMT_GETEYETRACE
+    local plmt_eyetrace = player_mt.GetEyeTraceLegacy
     local lastFrame, lastFrameTrace
 
     function player_mt:GetEyeTrace()

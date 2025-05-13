@@ -305,7 +305,7 @@ do -- Spawning and Updating --------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Ammo(Player, Pos, Ang, Data)
+	function ACF.MakeAmmo(Player, Pos, Ang, Data)
 		if not Player:CheckLimit("_acf_ammo") then return end -- Check sbox limits
 
 		VerifyData(Data)
@@ -375,7 +375,7 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
+	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 

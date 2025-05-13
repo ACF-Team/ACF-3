@@ -349,7 +349,7 @@ do -- Spawn and Update functions
 		Contraption.SetMass(Entity, Mass)
 	end
 
-	function MakeACF_Engine(Player, Pos, Angle, Data)
+	function ACF.MakeEngine(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class  = Classes.GetGroup(Engines, Data.Engine)
@@ -412,7 +412,7 @@ do -- Spawn and Update functions
 		return Entity
 	end
 
-	Entities.Register("acf_engine", MakeACF_Engine, "Engine")
+	Entities.Register("acf_engine", ACF.MakeEngine, "Engine")
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
