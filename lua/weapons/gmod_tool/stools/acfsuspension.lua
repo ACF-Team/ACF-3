@@ -13,15 +13,10 @@ TOOL.Command	 = nil
 TOOL.ConfigName	 = ""
 TOOL.Information = {
 	-- Note: desc is not a valid property, I just use it to generate language descriptions. (See language.Add)
-	{name = "right0shift", stage = 0, desc = "[SHIFT] Select a baseplate", icon2 = "gui/key.png"},
-	{name = "right1", stage = 1, desc = "Select a wheel"},
-	{name = "right1shift", stage = 1, desc = "[SHIFT] Select a steer plate", icon2 = "gui/key.png"},
+	{name = "right1shift", stage = 0, desc = "[SHIFT] Select a base/steer plate", icon2 = "gui/key.png"},
+	{name = "right1", stage = 0, desc = "Select a wheel"},
 	{name = "reload", desc = "Reset the tool", icon2 = "gui/refresh.png"}
 }
-
--- Stage 0 SHIFT + RMB: Baseplate -> Stage 1
--- Stage 1 RMB: Road wheels, ordered left/right starting from drive wheels and idlers
--- Stage 1 SHIFT + RMB: Steer plate -> Stage 1
 
 TOOL.Selections = {}				-- Holds the selections
 TOOL.Selections.Plates = {}			-- Holds the plates
@@ -166,16 +161,6 @@ if CLIENT then
 		end
 	end
 
-	function TOOL:DrawToolScreen()
-		local Trace = self:GetOwner():GetEyeTrace()
-		local Ent   = Trace.Entity
-		local Weapon = self.Weapon
-	end
-
-	function TOOL:Think()
-
-	end
-
 	-- Toolgun beam will show even if nothing happens serverside. I don't wanna fix this :(...
 	function TOOL:LeftClick(Trace) return true end
 	function TOOL:RightClick(Trace) return true end
@@ -194,10 +179,20 @@ elseif SERVER then -- Serverside-only stuff
 		return true
 	end
 
-	function TOOL:Think()
-		local Player = self:GetOwner()
-		local Trace = Player:GetEyeTrace()
-		local Ent = Trace.Entity
+	--- Attempts to remove the entity from any of the selections. Relies on silent fails to check everywhere.
+	function TOOL:RemoveEntity(Entity, Player)
+		table.RemoveByValue(self.Selections.Plates, Entity)		-- Remove from plates
+		table.RemoveByValue(self.Selections.Wheels, Entity)		-- Remove from wheels
+		self.Selections.PlatesToWheels[Entity] = nil			-- Remove the table for the plate
+
+		-- Remove the wheel from any plate
+		for _, v in pairs(self.Selections.PlatesToWheels) do
+			table.RemoveByValue(v, Entity)
+		end
+
+		net.Start("ACF_Sus_Tool")
+		net.WriteTable(self.Selections)
+		net.Send(Player)
 	end
 
 	function TOOL:RightClick(Trace)
@@ -208,22 +203,22 @@ elseif SERVER then -- Serverside-only stuff
 		if not checkOwner(Player, Ent) then return end
 
 		local IsShift = Player:KeyDown(IN_SPEED)
-		local Stage = self:GetStage()
 		if IsShift then
-			if Stage == 0 then
-				self.Selections.Plates[1] = Ent
-				self.Selections.PlatesToWheels[Ent] = {}
-				self:SetStage(1)
-			elseif Stage ~= 0 then
-				table.insert(self.Selections.Plates, Ent)
-				self.Selections.PlatesToWheels[Ent] = {}
-			end
+			table.insert(self.Selections.Plates, Ent)
+			self.Selections.PlatesToWheels[Ent] = {}
+
+			Ent:CallOnRemove("ACF_Sus_Tool", function(Ent) self:RemoveEntity(Ent, Player) end)
 		else
-			if Stage ~= 0 then
-				table.insert(self.Selections.Wheels, Ent)
-				local CurrentPlate = self.Selections.Plates[#self.Selections.Plates]
-				table.insert(self.Selections.PlatesToWheels[CurrentPlate], Ent)
+			if #self.Selections.Plates == 0 then
+				ACF.SendNotify(Player, false, "You need to select a baseplate first.")
+				return
 			end
+
+			table.insert(self.Selections.Wheels, Ent)
+			local CurrentPlate = self.Selections.Plates[#self.Selections.Plates]
+			table.insert(self.Selections.PlatesToWheels[CurrentPlate], Ent)
+
+			Ent:CallOnRemove("ACF_Sus_Tool", function(Ent) self:RemoveEntity(Ent, Player) end)
 		end
 
 		-- Broadcast the selections to the client
@@ -235,8 +230,6 @@ elseif SERVER then -- Serverside-only stuff
 
 	function TOOL:Reload(Trace)
 		local Player = self:GetOwner()
-		print("Reset stage")
-		self:SetStage(0)
 
 		self.Selections = {}
 		self.Selections.Plates = {}
@@ -273,13 +266,15 @@ elseif SERVER then -- Serverside-only stuff
 	--- Creates a adv ballsocket constraint between the wheel and the plate
 	--- This forces the wheel to rotate freely, in the forward/backward direction
 	local function HullSocket(Wheel, Plate)
+		print("HullSocket")
 		return constraint.AdvBallsocket(Wheel, Plate, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, -180, 180, MinTol, MaxTol, MaxTol, MaxTol, 0, 0, 0, 1, 0)
 	end
 
 	--- Creates a adv ballsocket constraint between the wheel and its drive wheel
 	--- This forces the wheel to rotate freely, with the drive wheel
 	local function SlaveSocket(Wheel, DriveWheel)
-		return constraint.AdvBallsocket( Wheel, DriveWheel, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, MinTol, MinTol, MinTol, MaxTol, MaxTol, MaxTol, 0, 0, 0, 1, 0 )
+		print("SlaveSocket")
+		return constraint.AdvBallsocket(Wheel, DriveWheel, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, MinTol, MinTol, MinTol, MaxTol, MaxTol, MaxTol, 0, 0, 0, 1, 0)
 	end
 
 	--- Creates a simple ballsocket constraint between the wheel and the plate
@@ -289,20 +284,23 @@ elseif SERVER then -- Serverside-only stuff
 	end
 
 	function TOOL:CreateSuspension()
-		print("Create Suspension")
 		local Player = self:GetOwner()
 		local Selections = self.Selections
 
 		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
+		local UseCustom = GetConVar("ACF_Sus_Tool_Use_Custom"):GetInt()
+
+		-- PrintTable(Selections)
 
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
 		local RightDriveWheel = Selections.Wheels[2]
-		if IsTracked then -- Tracked
+		-- print(Baseplate, LeftDriveWheel, RightDriveWheel)
+		if IsTracked == 1 then -- Tracked
 			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or {}) do
 				if not IsValid(Wheel) then continue end
 				if Index > 2 then SlaveSocket(Wheel, Index % 2 == 1 and LeftDriveWheel or RightDriveWheel) end
-				Axis(Wheel, Baseplate)
+				if UseCustom == 0 then Axis(Wheel, Baseplate) end
 			end
 		else -- Wheeled
 			for Index, Plate in ipairs(Selections.Plates) do
@@ -310,28 +308,33 @@ elseif SERVER then -- Serverside-only stuff
 				for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or {}) do
 					if not IsValid(Wheel) then continue end
 					if Index == 1 then
-						Axis(Wheel, Plate)
+						if UseCustom == 0 then Axis(Wheel, Plate) end
 					else
 						HullSocket(Wheel, Plate)
-						RotationSocket(Wheel, Plate)
+						if UseCustom == 0 then RotationSocket(Wheel, Plate) end
 					end
 				end
 			end
 		end
 
+		-- Unlikely, but maybe this will help...
+		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created. Components missing/Corrupted. Please refresh (R) and redo the suspension.") return end
 		ACF.SendNotify(Player, true, "Created " .. (IsTracked and "tracked" or "wheeled") .. " drivetrain")
 	end
 
 	function TOOL:ClearSuspension()
-		print("Clear Suspension")
 		local Player = self:GetOwner()
 		local Selections = self.Selections
+
+		-- Remove constraints from all plates and wheels
 		for _, v in pairs(Selections.Plates) do
 			if IsValid(v) then constraint.RemoveAll(v) end
 		end
+
 		for _, v in pairs(Selections.Wheels) do
 			if IsValid(v) then constraint.RemoveAll(v) end
 		end
+
 		ACF.SendNotify(Player, true, "Cleared all constraints in drivetrain")
 	end
 end
