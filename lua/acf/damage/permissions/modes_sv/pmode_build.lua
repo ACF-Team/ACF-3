@@ -11,7 +11,7 @@ local modename = "build"
 
 local perms = ACF.Permissions
 -- a short description of what the mode does
-local modedescription = "Disables all ACF damage unless the owner permits it. PvP is allowed."
+local modedescription = "Disables all ACF damage unless the owner permits it. Players and NPCs can still be harmed."
 -- if the attacker or victim can't be identified, what should we do? true allows damage, false blocks it.
 local DefaultPermission = false
 

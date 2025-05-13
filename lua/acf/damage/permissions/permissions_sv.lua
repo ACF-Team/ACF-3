@@ -4,7 +4,6 @@ ACF.Permissions = ACF.Permissions or {}
 local Permissions = ACF.Permissions
 local Messages = ACF.Utilities.Messages
 --TODO: make player-customizable
-Permissions.Selfkill = true
 Permissions.Safezones = false
 Permissions.Player = Permissions.Player or {}
 Permissions.Modes = Permissions.Modes or {}
@@ -156,10 +155,17 @@ hook.Add("Initialize", "ACF_LoadSafesForMap", function()
 	end
 end)
 
+hook.Add("PlayerNoClip", "ACF_DisableNoclipPressInBattle", function(Player, WantsNoclipOn)
+	if not ACF.EnableSafezones or not Permissions.Safezones then return end
+	if ACF.NoclipOutsideZones or not WantsNoclipOn then return end
+
+	return Permissions.IsInSafezone(Player:GetPos()) ~= false
+end)
+
 local plyzones = {}
 
 hook.Add("Think", "ACF_DetectSZTransition", function()
-	if not Permissions.Safezones then return end
+	if not ACF.EnableSafezones or not Permissions.Safezones then return end
 
 	for _, ply in player.Iterator() do
 		local sid = ply:SteamID()
@@ -170,6 +176,11 @@ hook.Add("Think", "ACF_DetectSZTransition", function()
 
 		if oldzone ~= zone then
 			hook.Run("ACF_OnPlayerChangeZone", ply, zone, oldzone)
+			Messages.SendChat(ply, zone and "Normal" or "Warning", "You have entered the " .. (zone and zone .. " safezone." or "battlefield!"))
+
+			if not ACF.NoclipOutsideZones and ply:GetMoveType() == MOVETYPE_NOCLIP then
+				ply:SetMoveType(MOVETYPE_WALK)
+			end
 		end
 	end
 end)
@@ -450,12 +461,6 @@ function Permissions.RegisterMode(mode, name, desc, default, think, defaultactio
 			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
 	end
-	--Old method - can break on rare occasions!
-	--if LoadMapDPM() == name or default then 
-	--	Messages.PrintLog("Info", "Setting permission mode to: "..name)
-	--	Permissions.DamagePermission = Permissions.Modes[name]
-	--	Permissions.DefaultPermission = name
-	--end
 end
 
 function Permissions.CanDamage(Entity, _, DmgInfo)
@@ -472,6 +477,13 @@ function Permissions.CanDamage(Entity, _, DmgInfo)
 
 	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
 		return Permissions.DefaultCanDamage
+	end
+
+	-- Safezones behavior
+	if ACF.EnableSafezones and Permissions.Safezones then
+		local EntPos = Entity:GetPos()
+		local AttPos = Attacker:GetPos()
+		if Permissions.IsInSafezone(EntPos) or Permissions.IsInSafezone(AttPos) then return false end
 	end
 
 	return Permissions.DamagePermission(Owner, Attacker, Entity)
