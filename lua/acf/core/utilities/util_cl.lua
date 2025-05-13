@@ -84,6 +84,43 @@ do -- Panel helpers
 			Panel:AddChoice(Value.Name, Value, Index == Current)
 		end
 	end
+
+	--- Initializes the base menu panel for an ACF tool menu.
+	--- @param Panel panel The base panel to build the menu off of.
+	--- @param GlobalID string The identifier in the ACF global table where a reference to the menu panel should be stored.
+	--- @param ReloadCommand? string A concommand string to automatically add a button and concommand to refresh this menu.
+	function ACF.InitMenuBase(Panel, GlobalID, ReloadCommand)
+		if not IsValid(Panel) or not isstring(GlobalID) then return end
+
+		local Menu = ACF[GlobalID]
+
+		if not IsValid(Menu) then
+			Menu = vgui.Create("ACF_Panel")
+			Menu.Panel = Panel
+
+			Panel:AddItem(Menu)
+
+			ACF[GlobalID] = Menu
+
+			if ReloadCommand then
+				concommand.Add(ReloadCommand, function()
+					if not IsValid(ACF[GlobalID]) then return end
+
+					local CreateMenuFunc = ACF["Create" .. GlobalID]
+					CreateMenuFunc(ACF[GlobalID].Panel)
+				end)
+			end
+		else
+			Menu:ClearAllTemporal()
+			Menu:ClearAll()
+		end
+
+		if ReloadCommand then
+			Menu:AddMenuReload(ReloadCommand)
+		end
+
+		return Menu
+	end
 end
 
 do -- Default gearbox menus

@@ -11,22 +11,7 @@ end)
 --- Generates the menu used in the Armor Properties tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateArmorPropertiesMenu(Panel)
-	local Menu = ACF.ArmorPropertiesMenu
-
-	if not IsValid(Menu) then
-		Menu = vgui.Create("ACF_Panel")
-		Menu.Panel = Panel
-
-		Panel:AddItem(Menu)
-
-		ACF.ArmorPropertiesMenu = Menu
-	else
-		Menu:ClearAllTemporal()
-		Menu:ClearAll()
-	end
-
-	Menu:AddMenuReload("acf_reload_armor_properties_menu")
-
+	local Menu = ACF.InitMenuBase(Panel, "ArmorPropertiesMenu", "acf_reload_armor_properties_menu")
 	local Presets = Menu:AddPanel("ControlPresets")
 	Presets:AddConVar("acfarmorprop_thickness")
 	Presets:AddConVar("acfarmorprop_ductility")

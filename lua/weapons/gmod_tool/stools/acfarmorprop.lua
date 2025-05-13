@@ -98,12 +98,6 @@ if CLIENT then
 
 	TOOL.BuildCPanel = ACF.CreateArmorPropertiesMenu
 
-	concommand.Add("acf_reload_armor_properties_menu", function()
-		if not IsValid(ACF.ArmorPropertiesMenu) then return end
-
-		ACF.CreateArmorPropertiesMenu(ACF.ArmorPropertiesMenu.Panel)
-	end)
-
 	function TOOL:DrawHUD()
 		local Trace = self:GetOwner():GetEyeTrace()
 		local Ent = Trace.Entity
@@ -411,7 +405,7 @@ end
 
 do -- Armor readout
 	local Contraption = ACF.Contraption
-	local SendMessage = ACF.SendMessage
+	local Messages    = ACF.Utilities.Messages
 
 	local Text1 = "--- Contraption Readout (Owner: %s) ---"
 	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
@@ -545,10 +539,10 @@ do -- Armor readout
 		local ParentTotal = Total - PhysTotal
 		local Player = self:GetOwner()
 
-		SendMessage(Player, nil, Text1:format(Name))
-		SendMessage(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
-		SendMessage(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
-		SendMessage(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
+		Messages.SendChat(Player, nil, Text1:format(Name))
+		Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
+		Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
+		Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 
 		return true
 	end

@@ -35,6 +35,3 @@ function Messages.SendLog(Player, Type, ...)
 		net.Broadcast()
 	end
 end
-
--- Backwards compatibility
-ACF.SendMessage = Messages.SendChat

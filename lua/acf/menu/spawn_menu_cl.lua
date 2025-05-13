@@ -258,23 +258,9 @@ do -- ACF Menu context panel
 	--- Generates the menu used in the main menu tool.
 	--- @param Panel panel The base panel to build the menu off of.
 	function ACF.CreateSpawnMenu(Panel)
-		local Menu = ACF.SpawnMenu
-
-		if not IsValid(Menu) then
-			Menu = vgui.Create("ACF_Panel")
-			Menu.Panel = Panel
-
-			Panel:AddItem(Menu)
-
-			ACF.SpawnMenu = Menu
-		else
-			Menu:ClearAllTemporal()
-			Menu:ClearAll()
-		end
-
-		Menu:AddMenuReload("acf_reload_spawn_menu")
-
+		local Menu = ACF.InitMenuBase(Panel, "SpawnMenu", "acf_reload_spawn_menu")
 		local Tree = Menu:AddPanel("DTree")
+
 		function Tree:OnNodeSelected(Node)
 			if self.Selected == Node then return end
 

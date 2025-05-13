@@ -1,23 +1,9 @@
 --- Generates the menu used in the Sound Replacer tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel)
-	local Menu = ACF.SoundMenu
-
-	if not IsValid(Menu) then
-		Menu = vgui.Create("ACF_Panel")
-		Menu.Panel = Panel
-
-		Panel:AddItem(Menu)
-
-		ACF.SoundMenu = Menu
-	else
-		Menu:ClearAllTemporal()
-		Menu:ClearAll()
-	end
-
+	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
-	Menu:AddMenuReload("acf_reload_sound_menu")
 	Menu:AddLabel("#tool.acfsound.help")
 
 	local SoundNameText = Menu:AddPanel("DTextEntry")
@@ -37,7 +23,6 @@ function ACF.CreateSoundMenu(Panel)
 	SoundPre:SetTall(ButtonHeight)
 
 	local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play", "play", SoundNameText:GetValue())
-	SoundPrePlay:SetText("#tool.acfsound.play")
 	SoundPrePlay:SetIcon("icon16/sound.png")
 
 	-- Playing a silent sound will mute the preview but not the sound emitters.

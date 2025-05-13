@@ -104,12 +104,6 @@ end
 if CLIENT then
 	TOOL.BuildCPanel = ACF.CreateSoundMenu
 
-	concommand.Add("acf_reload_sound_menu", function()
-		if not IsValid(ACF.SoundMenu) then return end
-
-		ACF.CreateSoundMenu(ACF.SoundMenu.Panel)
-	end)
-
 	--[[
 		This is another dirty hack that prevents the sound emitter tool from automatically equipping when a sound is selected in the sound browser.
 		However, this hack only applies if the currently equipped tool is the sound replacer and you're trying to switch to the wire sound tool.
