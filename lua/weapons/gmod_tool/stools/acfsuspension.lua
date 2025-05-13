@@ -23,6 +23,7 @@ TOOL.Selections.Plates = {}			-- Holds the plates
 TOOL.Selections.Wheels = {}			-- Holds the wheels
 TOOL.Selections.PlatesToWheels = {}	-- Holds the wheels for each plate
 
+local EmptyTable = {}
 if CLIENT then
 	-- Add descriptions to tool info
 	language.Add("tool.acfsuspension.name", "ACF Suspension Tool")
@@ -70,9 +71,8 @@ if CLIENT then
 		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
 
 		function Create:DoClickInternal()
-			net.Start("ACF_Sus_Tool_Server")
+			net.Start("ACF_Sus_Tool")
 			net.WriteString("Create")
-			net.WriteUInt(LocalPlayer():EntIndex(), 16)
 			net.SendToServer()
 		end
 
@@ -80,9 +80,8 @@ if CLIENT then
 		Clear:SetTooltip("Clears all constraints on selected entities.")
 
 		function Clear:DoClickInternal()
-			net.Start("ACF_Sus_Tool_Server")
+			net.Start("ACF_Sus_Tool")
 			net.WriteString("Clear")
-			net.WriteUInt(LocalPlayer():EntIndex(), 16)
 			net.SendToServer()
 		end
 
@@ -137,26 +136,26 @@ if CLIENT then
 	--- Draws the hud/tooltips for this tool
 	function TOOL:DrawHUD()
 		local Player = LocalPlayer()
-		local Selections = Player.ACF_Sus_Tool_Info or {}
+		local Selections = Player.ACF_Sus_Tool_Info
 		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
 
 		-- For each plate...
-		for k, v in ipairs(Selections.Plates or {}) do
-			if not IsValid(v) then continue end
-			if k == 1 then DrawEntText(v, "Baseplate", Color(255, 0, 255))
-			else DrawEntText(v, "Steer plate", Color(0, 255, 255)) end
+		for PlateIndex, Plate in ipairs(Selections.Plates or EmptyTable) do
+			if not IsValid(Plate) then continue end
+			if PlateIndex == 1 then DrawEntText(Plate, "Baseplate", Color(255, 0, 255))
+			else DrawEntText(Plate, "Steer plate", Color(0, 255, 255)) end
 
 			-- For each wheel of the plate...
-			for k2, w in ipairs(Selections.PlatesToWheels[v] or {}) do
-				if not IsValid(w) then continue end
-				local Direction = IsTracked and k2 % 2 == 1 and " Left" or " Right"
-				local Steer = k > 1 and " Steer" or ""
-				local Drive = IsTracked and k == 1 and  k2 <= 2 and " Drive" or ""
-				local Road = IsTracked and k == 1 and k2 > 2 and " Road" or ""
+			for WheelIndex, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+				if not IsValid(Wheel) then continue end
+				local Direction = IsTracked and WheelIndex % 2 == 1 and " Left" or " Right"
+				local Steer = PlateIndex > 1 and " Steer" or ""
+				local Drive = IsTracked and PlateIndex == 1 and  WheelIndex <= 2 and " Drive" or ""
+				local Road = IsTracked and PlateIndex == 1 and WheelIndex > 2 and " Road" or ""
 				Name = Direction .. Drive .. Steer .. Road .. " Wheel"
 
-				DrawEntLink(v, w, Color(255, 255, 0))
-				DrawEntText(w, Name, Color(255, 0, 0))
+				DrawEntLink(Plate, Wheel, Color(255, 255, 0))
+				DrawEntText(Wheel, Name, Color(255, 0, 0))
 			end
 		end
 	end
@@ -167,7 +166,6 @@ if CLIENT then
 	function TOOL:Reload(_) return true end
 elseif SERVER then -- Serverside-only stuff
 	util.AddNetworkString("ACF_Sus_Tool")
-	util.AddNetworkString("ACF_Sus_Tool_Server")
 
 	local function checkOwner(ply, ent)
 		if CPPI then
@@ -243,10 +241,9 @@ elseif SERVER then -- Serverside-only stuff
 		return true
 	end
 
-	net.Receive("ACF_Sus_Tool_Server", function()
+	net.Receive("ACF_Sus_Tool", function(_, ply)
 		local Action = net.ReadString()
-		local Player = net.ReadEntity()
-		local Tool = Player:GetTool("acfsuspension")
+		local Tool = ply:GetTool("acfsuspension")
 
 		if Action == "Create" then Tool:CreateSuspension()
 		elseif Action == "Clear" then Tool:ClearSuspension()
@@ -292,16 +289,16 @@ elseif SERVER then -- Serverside-only stuff
 		local LeftDriveWheel = Selections.Wheels[1]
 		local RightDriveWheel = Selections.Wheels[2]
 		if IsTracked == 1 then -- Tracked
-			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or {}) do
-				if not IsValid(Wheel) then continue end
+			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or EmptyTable) do
+				if not IsValid(Wheel) and checkOwner(Player, Wheel) or not checkOwner(Wheel, Player) then continue end
 				if Index > 2 then SlaveSocket(Wheel, Index % 2 == 1 and LeftDriveWheel or RightDriveWheel) end
 				if UseCustom == 0 then Axis(Wheel, Baseplate) end
 			end
 		else -- Wheeled
 			for Index, Plate in ipairs(Selections.Plates) do
 				if not IsValid(Plate) then continue end
-				for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or {}) do
-					if not IsValid(Wheel) then continue end
+				for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+					if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 					if Index == 1 then
 						if UseCustom == 0 then Axis(Wheel, Plate) end
 					else
@@ -323,11 +320,11 @@ elseif SERVER then -- Serverside-only stuff
 
 		-- Remove constraints from all plates and wheels
 		for _, v in pairs(Selections.Plates) do
-			if IsValid(v) then constraint.RemoveAll(v) end
+			if IsValid(v) and checkOwner(Player, v) then constraint.RemoveAll(v) end
 		end
 
 		for _, v in pairs(Selections.Wheels) do
-			if IsValid(v) then constraint.RemoveAll(v) end
+			if IsValid(v) and checkOwner(Player, v) then constraint.RemoveAll(v) end
 		end
 
 		ACF.SendNotify(Player, true, "Cleared all constraints in drivetrain")
