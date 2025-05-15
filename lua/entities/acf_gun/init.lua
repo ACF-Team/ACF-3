@@ -285,7 +285,7 @@ do -- Spawn and Update functions --------------------------------
 
 		Entity.ACF.Model = Model
 
-		Entity:SetScaledModel(Model)
+		Entity:SetScaledModel(Model, Scale)
 		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping
