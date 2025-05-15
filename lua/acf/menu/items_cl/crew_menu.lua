@@ -2,6 +2,8 @@ local ACF		= ACF
 local CrewTypes = ACF.Classes.CrewTypes
 local CrewModels = ACF.Classes.CrewModels
 
+local table_empty = {}
+
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Component")
 
@@ -70,7 +72,7 @@ local function CreateMenu(Menu)
 		Limits:SetText(language.GetPhrase("acf.menu.crew.max_per_contraption"):format(Data.LimitConVar.Amount))
 
 		local wl = {}
-		for K in pairs(Data.LinkHandlers or {}) do
+		for K in pairs(Data.LinkHandlers or table_empty) do
 			wl[#wl + 1] = K
 		end
 		Whitelist:SetText(language.GetPhrase("acf.menu.crew.links_to"):format(table.concat(wl, ", ")))

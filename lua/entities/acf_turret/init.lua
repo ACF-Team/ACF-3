@@ -367,7 +367,7 @@ do	-- Spawn and Update funcs
 			self.Rotator:Remove()
 		end
 
-		if next(self.Crews or {}) then
+		if self.Crews and next(self.Crews) then
 			for Crew in pairs(self.Crews) do
 				if IsValid(Crew) then self:Unlink(Crew) end
 			end

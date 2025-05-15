@@ -815,14 +815,13 @@ do -- Misc --------------------------------------
 		-- The crew of this crate is the crews of all the weapons linked to it
 		self.Crews = self.Crews or {}
 		self.CrewsByType = self.CrewsByType or {}
-		for Weapon in pairs(self.Weapons or {}) do
-			for Crew in pairs(Weapon.Crews or {}) do
+		if self.Weapons then for Weapon in pairs(self.Weapons) do
+			if Weapon.Crews then for Crew in pairs(Weapon.Crews) do
 				self.Crews[Crew] = true
 				self.CrewsByType[Crew.CrewTypeID] = self.CrewsByType[Crew.CrewTypeID] or {}
 				self.CrewsByType[Crew.CrewTypeID][Crew] = true
-			end
-		end
-
+			end end
+		end end
 		self:NextThink(CurTime() + 1)
 		return true
 	end

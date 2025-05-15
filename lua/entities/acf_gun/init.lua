@@ -523,7 +523,7 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		if next(self.Crews or {}) then
+		if self.Crews and next(self.Crews) then
 			for Crew in pairs(self.Crews) do
 				self:Unlink(Crew)
 			end
@@ -1214,7 +1214,7 @@ do -- Metamethods --------------------------------
 				self:Unlink(Crate)
 			end
 
-			if next(self.Crews or {}) then
+			if self.Crews and next(self.Crews) then
 				for Crew in pairs(self.Crews) do
 					if IsValid(Crew) then self:Unlink(Crew) end
 				end

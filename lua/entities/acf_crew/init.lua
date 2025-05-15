@@ -150,7 +150,9 @@ local function EnforceLimits(crew)
 
 	local Limit = CrewType.LimitConVar
 	if Limit then
-		local Count = table.Count(CrewsByType[CrewTypeID] or {})
+		local Crews = CrewsByType[CrewTypeID]
+		local Count = Crews and table.Count(Crews) or 0
+
 		if Count > Limit.Amount then
 			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this Contraption.")
 			crew:Remove()
@@ -753,15 +755,15 @@ do
 			Ent:CFW_Index_Crew(Contraption, Ent)
 
 			-- Propagate links waiting on CFW from crew to Contraption
-			for Target in pairs(Ent.RemainingLinks or {}) do
+			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
 				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
 				Contraption.RemainingLinks[Target][Ent] = true
-			end
+			end end
 
 			-- If this crew is parented into a new Contraption, try linking them to their Targets.
-			for Target in pairs(Ent.RemainingLinks or {}) do
+			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
 				Ent:Link(Target)
-			end
+			end end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] ~= nil then
 				-- This runs if the entity is a Target of some crew(s)
@@ -781,10 +783,10 @@ do
 			Ent:CFW_Unindex_Crew(Contraption)
 
 			-- Unpropagate links waiting on CFW from crew to Contraption
-			for Target in pairs(Ent.RemainingLinks or {}) do
+			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
 				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
 				Contraption.RemainingLinks[Target][Ent] = nil
-			end
+			end end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] then
 				-- This runs if the entity is a Target of some crew(s)
@@ -876,9 +878,10 @@ do
 	-- Compactly define links between crew and other entities
 	local lt = {} -- Merge all crew whitelists
 	for CrewTypeEntries in pairs(CrewTypes.GetEntries()) do
-		for et in pairs(CrewTypes.Get(CrewTypeEntries).LinkHandlers or {}) do
+		local LinkHandlers = CrewTypes.Get(CrewTypeEntries).LinkHandlers
+		if LinkHandlers then for et in pairs(LinkHandlers) do
 			lt[et] = true
-		end
+		end end
 	end
 
 	for v in pairs(lt) do
