@@ -21,14 +21,14 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
 	local VelDiff = WheelPhys:LocalToWorldVector(WheelPhys:GetAngleVelocity()) - SelfWorld
 	local BaseRPM = VelDiff:Dot(WheelPhys:LocalToWorldVector(Link.Axis))
-	local GearRatio = Entity.GearRatio
+	local GearRatio = 1 / Entity.GearRatio -- TODO: Rectify once confirmed safe
 
 	Link.Vel = BaseRPM
 
 	if GearRatio == 0 then return 0 end
 
 	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
-	return BaseRPM / GearRatio / -6
+	return BaseRPM * GearRatio / -6
 end
 
 do -- Spawn and Update functions -----------------------
