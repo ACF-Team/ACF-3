@@ -787,7 +787,8 @@ do
 		-- Process gearboxes
 		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl, Driver) end
 
-		if iters % math.Round(self:GetShiftTime() / 15) then self:ProcessDrivetrainLowFreq(SelfTbl) end
+		local Interval = math.Round(self:GetShiftTime() * 66 / 1000)
+		if iters % Interval == 0 then self:ProcessDrivetrainLowFreq(SelfTbl) end
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
