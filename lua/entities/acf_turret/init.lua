@@ -88,8 +88,7 @@ do	-- Spawn and Update funcs
 			Model	= Turret.ModelSmall
 		end
 
-		Entity:SetScaledModel(Model, Size)
-		Entity:SetScale(Size)
+		Entity:SetScaledModel(Model)
 
 		local RingHeight = Class.GetRingHeight({Type = Data.Turret, Ratio = Turret.Size.Ratio}, Size)
 

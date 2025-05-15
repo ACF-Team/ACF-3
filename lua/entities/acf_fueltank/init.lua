@@ -117,9 +117,8 @@ do -- Spawn and Update functions
 		Entity.ACF.Model = FuelTank and FuelTank.Model or Class.Model -- Must be set before changing model
 		Entity.ClassData = Class
 
-		local Size = Class.IsScalable and Data.Size or Entity:GetOriginalSize()
-		Entity:SetScaledModel(Entity.ACF.Model, Size)
-		Entity:SetSize(Size)
+		Entity:SetScaledModel(Entity.ACF.Model)
+		Entity:SetSize(Class.IsScalable and Data.Size or Entity:GetOriginalSize())
 		Entity:SetMaterial(Material or "")
 
 		-- Storing all the relevant information on the entity for duping

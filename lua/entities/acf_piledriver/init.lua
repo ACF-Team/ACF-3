@@ -68,7 +68,7 @@ do -- Spawning and Updating --------------------
 
 		Entity.ACF.Model = Class.Model -- Must be set before changing model
 
-		Entity:SetScaledModel(Class.Model, Scale)
+		Entity:SetScaledModel(Class.Model)
 		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping

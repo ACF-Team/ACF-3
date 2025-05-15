@@ -332,7 +332,7 @@ do -- Spawning and Updating --------------------
 		Crate.ACF.Model = Model
 
 		Crate:SetMaterial("phoenix_storms/Future_vents")
-		Crate:SetScaledModel(Model, Data.Size)
+		Crate:SetScaledModel(Model)
 		Crate:SetAngles(Ang)
 		Crate:SetPos(Pos)
 		Crate:Spawn()

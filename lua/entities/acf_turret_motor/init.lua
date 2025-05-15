@@ -56,7 +56,7 @@ do	-- Spawn and Update funcs
 		local Model		= Motor.Model
 		local Size		= Data.CompSize
 
-		Entity:SetScaledModel(Model, Size)
+		Entity:SetScaledModel(Model)
 		Entity:SetScale(Size)
 
 		Entity.ACF.Model	= Model
