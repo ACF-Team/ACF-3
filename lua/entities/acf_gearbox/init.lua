@@ -98,7 +98,8 @@ do -- Spawn and Update functions -----------------------
 				end
 
 				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-				if Gearbox.InvertGearRatios and abs(Gear) < 1 then
+				-- Why not do it for post scaleable pre inversion too? Might as well.
+				if abs(Gear) < 1 then
 					Gear = math.Round(1 / Gear, 2)
 				end
 
@@ -116,7 +117,8 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-			if Gearbox.InvertGearRatios and abs(Final) < 1 then
+			-- Why not do it for post scaleable pre inversion too? Might as well.
+			if abs(Final) < 1 then
 				Final = math.Round(1 / Final, 2)
 			end
 
