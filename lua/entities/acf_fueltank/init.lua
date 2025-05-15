@@ -193,7 +193,7 @@ do -- Spawn and Update functions
 
 		Tank.ACF		= Tank.ACF or {}
 
-		Tank:SetScaledModel(Model)
+		Tank:SetScaledModel(Model, Data.Size)
 		if Material then
 			Tank:SetMaterial(Material)
 		end

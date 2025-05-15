@@ -157,7 +157,7 @@ do -- Spawn and Update functions -----------------------
 
 		Entity.ACF = Entity.ACF or {}
 
-		Entity:SetScaledModel(Gearbox.Model)
+		Entity:SetScaledModel(Gearbox.Model, Scale)
 		Entity:SetScale(Scale)
 
 		-- Storing all the relevant information on the entity for duping

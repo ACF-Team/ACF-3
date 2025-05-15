@@ -100,13 +100,16 @@ do -- Network sender and receivers
 	end)
 end
 
-function ENT:SetScaledModel( Model )
+function ENT:SetScaledModel( Model, Scale )
 	if not self.ACF then self.ACF = {} end
 	Contraption.SetModel(self, Model)
 
 	local Data = self.ScaleData
 	if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then
 		self:SetScaleData("Model", Model )
+		if Scale then
+			self:SetScale(Scale)
+		end
 		self:Restore()
 	end
 end
