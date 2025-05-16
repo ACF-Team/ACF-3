@@ -278,6 +278,8 @@ function PANEL:AddCollapsible(Text, State)
 
 	local Category = self:AddPanel("DCollapsibleCategory")
 	Category:SetLabel(Text or "Title")
+	Category.Header:SetFont("ACF_Title")
+	Category.Header:SetSize(0, 24)
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
