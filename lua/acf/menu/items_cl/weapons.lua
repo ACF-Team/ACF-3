@@ -144,6 +144,7 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	local MagText    = language.GetPhrase("acf.menu.weapons.mag_stats")
 	local BulletData = ACF.GetCurrentAmmoData()
+	if BulletData == nil then return "" end
 	local MagReload  = ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
@@ -224,9 +225,12 @@ local function CreateMenu(Menu)
 
 		if not Class then return "" end
 
-		local EntText  = language.GetPhrase("acf.menu.weapons.weapon_stats")
 		local Weapon   = Current.Weapon
+
+		local EntText  = language.GetPhrase("acf.menu.weapons.weapon_stats")
 		local Caliber  = Current.Caliber
+		if not Caliber then return "" end
+
 		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
 		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
 		local FireRate = 60 / FireDelay
@@ -236,7 +240,7 @@ local function CreateMenu(Menu)
 		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
 	end
 	EntData:DefineSetter(Update)
-	timer.Simple(0, function() EntData:SetText(Update()) end)
+	EntData:SetText("")
 
 	ClassBase.Menu    = Menu
 	ClassBase.Title   = EntName

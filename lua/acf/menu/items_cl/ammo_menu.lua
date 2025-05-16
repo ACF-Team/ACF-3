@@ -386,6 +386,11 @@ end
 ---Returns the client bullet data currently being used by the menu.
 ---@return table<string, any> BulletData The client bullet data.
 function ACF.GetCurrentAmmoData()
+	if BulletData == nil then
+		local ToolData = ACF.GetAllClientData()
+		BulletData = Ammo:ClientConvert(ToolData)
+	end
+
 	return BulletData
 end
 
@@ -474,6 +479,7 @@ function ACF.CreateAmmoMenu(Menu)
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info")
 	local Desc = Base:AddLabel()
+	Desc:SetText("")
 
 	function List:LoadEntries(Class)
 		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")
