@@ -3,40 +3,12 @@ local ModelData = ACF.ModelData
 local Models    = ModelData.Models
 
 util.AddNetworkString "ACF_ModelData_Entity"
-util.AddNetworkString "ACF_ModelData"
 
 local function SendPointerEntity(To)
 	net.Start("ACF_ModelData_Entity")
 	net.WriteUInt(ModelData.Entity:EntIndex(), MAX_EDICT_BITS)
 	if To then net.Send(To) else net.Broadcast() end
 end
-
-local function SendModelData(To, Path)
-	local ModelData = ModelData.GetModelData(Path)
-	if not ModelData then return end
-
-	net.Start("ACF_ModelData")
-
-	net.WriteString(Path)
-	net.WriteFloat(ModelData.Volume)
-	net.WriteVector(ModelData.Center)
-	net.WriteVector(ModelData.Size)
-	net.WriteUInt(#ModelData.Mesh, 6)
-	for Piece = 1, #ModelData.Mesh do
-		local Vertices = ModelData.Mesh[Piece]
-		net.WriteUInt(#Vertices, 9)
-		for I = 1, #Vertices do
-			net.WriteVector(Vertices[I])
-		end
-	end
-
-	net.Send(To)
-end
-
-net.Receive("ACF_ModelData", function(_, Player)
-	local Path = net.ReadString()
-	SendModelData(Player, Path)
-end)
 
 do -- Pointer entity creation
 	local function Create()
@@ -103,19 +75,6 @@ do -- Model data getter method
 
 		return Entity:GetPhysicsObject()
 	end
-
-	local function SanitizeMesh(PhysObj)
-		local Mesh = PhysObj:GetMeshConvexes()
-
-		for I, Hull in ipairs(Mesh) do
-			for J, Vertex in ipairs(Hull) do
-				Mesh[I][J] = Vertex.pos
-			end
-		end
-
-		return Mesh
-	end
-
 	-------------------------------------------------------------------
 
 	function ModelData.GetModelData(Model)
@@ -134,7 +93,7 @@ do -- Model data getter method
 		local Min, Max = PhysObj:GetAABB()
 
 		Data = {
-			Mesh   = SanitizeMesh(PhysObj),
+			Mesh   = ModelData.SanitizeMesh(PhysObj),
 			Volume = PhysObj:GetVolume(),
 			Center = (Min + Max) * 0.5,
 			Size   = Max - Min,
