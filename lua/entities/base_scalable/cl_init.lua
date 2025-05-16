@@ -3,8 +3,20 @@ DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
 include("shared.lua")
 
 local ACF     = ACF
-local Network = ACF.Networking
 local Standby = {}
+
+local function RequestEntityScaleInfo(Entity)
+	if Standby[Entity] then return end
+	Standby[Entity] = true
+
+	net.Start("ACF_Scalable_Entity")
+	net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+	net.SendToServer()
+
+	Entity:CallOnRemove("ACF_Scalable_Entity", function()
+		Standby[Entity] = nil
+	end)
+end
 
 function ENT:Initialize()
 	BaseClass.Initialize(self)
@@ -13,7 +25,7 @@ function ENT:Initialize()
 
 	-- Instantly requesting ScaleData and Scale
 	if not Standby[self] then
-		Network.Send("ACF_Scalable_Entity", self)
+		RequestEntityScaleInfo(self)
 	end
 end
 
@@ -46,7 +58,7 @@ function ENT:GetOriginalSize()
 
 	if not Size then
 		if not (Data.Type or Standby[self]) then
-			Network.Send("ACF_Scalable_Entity", self)
+			RequestEntityScaleInfo(self)
 		end
 
 		return
@@ -140,32 +152,20 @@ do -- Size and scale setter methods
 	end
 end
 
-Network.CreateSender("ACF_Scalable_Entity", function(Queue, Entity)
-	Queue[Entity:EntIndex()] = true
-	Standby[Entity] = true
+net.Receive("ACF_Scalable_Entity", function()
+	local Entity = ents.GetByIndex(net.ReadUInt(MAX_EDICT_BITS))
 
-	Entity:CallOnRemove("ACF_Scalable_Entity", function()
-		Standby[Entity] = nil
-	end)
-end)
+	if not IsValid(Entity) then return end
+	if not Entity.IsScalable then return end
 
-Network.CreateReceiver("ACF_Scalable_Entity", function(Data)
-	for Index, Info in pairs(Data) do
-		local Entity = ents.GetByIndex(Index)
+	local Scale = net.ReadVector()
+	local Type  = net.ReadString()
+	local Path  = net.ReadString()
 
-		if not IsValid(Entity) then continue end
-		if not Entity.IsScalable then continue end
-
-		local Scale = Info.Scale
-
-		Standby[Entity] = nil
-
-		Entity:RemoveCallOnRemove("ACF_Scalable_Entity")
-		Entity:SetScaleData(Info.Type, Info.Path)
-
-		if not Entity:SetScale(Scale) then
-			Entity.SavedScale = Scale
-		end
+	Entity:RemoveCallOnRemove("ACF_Scalable_Entity")
+	Entity:SetScaleData(Type, Path)
+	if not Entity:SetScale(Scale) then
+		Entity.SavedScale = Scale
 	end
 end)
 
@@ -211,7 +211,7 @@ do -- Scalable entity related hooks
 
 		-- Instantly requesting ScaleData and Scale
 		if not Standby[Entity] then
-			Network.Send("ACF_Scalable_Entity", Entity)
+			RequestEntityScaleInfo(Entity)
 		end
 
 		if Entity.OnFullUpdate then Entity:OnFullUpdate() end
