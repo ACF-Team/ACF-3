@@ -1,7 +1,6 @@
 local ACF       = ACF
 local ModelData = ACF.ModelData
 local Models    = ModelData.Models
-local Network   = ACF.Networking
 local Standby   = {}
 local Callbacks = {}
 
@@ -69,7 +68,7 @@ function ModelData.GetModelData(Model)
 	if IsValid(ModelData.Entity) and Data then
 		return Data
 	elseif not Data then
-		Network.Send("ACF_ModelData", Path)
+		ModelData.RequestModel(Path)
 	end
 end
 
@@ -101,44 +100,57 @@ hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
 		UpdateEntity(Entity)
 	end
 
-	Network.CreateReceiver("ACF_ModelData_Entity", function(Data)
-		local Index    = Data.Index
-		local ModelEnt = Entity(Index)
+	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
+end)
 
-		ModelData.EntIndex = Index
+net.Receive("ACF_ModelData_Entity", function()
+	local Index    = net.ReadUInt(MAX_EDICT_BITS)
+	local ModelEnt = Entity(Index)
+	ModelData.EntIndex = Index
 
-		if not IsValid(ModelEnt) then
-			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
+	if not IsValid(ModelEnt) then
+		hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
 
-			return
-		end
+		return
+	end
 
-		UpdateEntity(ModelEnt)
-	end)
+	UpdateEntity(ModelEnt)
+end)
 
-	Network.CreateSender("ACF_ModelData", function(Queue, Model)
-		Standby[Model] = true
-		Queue[Model]   = true
+function ModelData.RequestModel(Model)
+	Standby[Model] = true
+	net.Start("ACF_ModelData")
+	net.WriteString(Model)
+	net.SendToServer()
+	hook.Run("ACF_OnRequestModelData", Model)
+end
 
-		hook.Run("ACF_OnRequestModelData", Model)
-	end)
+net.Receive("ACF_ModelData", function()
+	local Exists = IsValid(ModelData.Entity)
 
-	Network.CreateReceiver("ACF_ModelData", function(Data)
-		local Exists = IsValid(ModelData.Entity)
-
-		for Model, Info in pairs(Data) do
-			if not Exists then
-				Standby[Model] = Info
-			else
-				Standby[Model] = nil
-				Models[Model]  = Info
-
-				hook.Run("ACF_OnReceiveModelData", Model, Info)
+	local Model = net.ReadString()
+	if not Exists then
+		Standby[Model] = Info
+	else
+		Standby[Model] = nil
+		local Info = {
+			Volume = net.ReadFloat(),
+			Center = net.ReadVector(),
+			Size   = net.ReadVector(),
+			Mesh = {}
+		}
+		local Mesh = Info.Mesh
+		for PieceI = 1, net.ReadUInt(6) do
+			local Piece = {}
+			Mesh[PieceI] = Piece
+			for VertexI = 1, net.ReadUInt(9) do
+				Piece[VertexI] = net.ReadVector()
 			end
 		end
-	end)
 
-	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
+		Models[Model]  = Info
+		hook.Run("ACF_OnReceiveModelData", Model, Info)
+	end
 end)
 
 hook.Add("ACF_OnReceiveModelData", "ACF_ModelData_PanelRefresh", function(Model)

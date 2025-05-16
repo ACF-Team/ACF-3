@@ -1,7 +1,42 @@
 local ACF       = ACF
 local ModelData = ACF.ModelData
 local Models    = ModelData.Models
-local Network   = ACF.Networking
+
+util.AddNetworkString "ACF_ModelData_Entity"
+util.AddNetworkString "ACF_ModelData"
+
+local function SendPointerEntity(To)
+	net.Start("ACF_ModelData_Entity")
+	net.WriteUInt(ModelData.Entity:EntIndex(), MAX_EDICT_BITS)
+	if To then net.Send(To) else net.Broadcast() end
+end
+
+local function SendModelData(To, Path)
+	local ModelData = ModelData.GetModelData(Path)
+	if not ModelData then return end
+
+	net.Start("ACF_ModelData")
+
+	net.WriteString(Path)
+	net.WriteFloat(ModelData.Volume)
+	net.WriteVector(ModelData.Center)
+	net.WriteVector(ModelData.Size)
+	net.WriteUInt(#ModelData.Mesh, 6)
+	for Piece = 1, #ModelData.Mesh do
+		local Vertices = ModelData.Mesh[Piece]
+		net.WriteUInt(#Vertices, 9)
+		for I = 1, #Vertices do
+			net.WriteVector(Vertices[I])
+		end
+	end
+
+	net.Send(To)
+end
+
+net.Receive("ACF_ModelData", function(_, Player)
+	local Path = net.ReadString()
+	SendModelData(Player, Path)
+end)
 
 do -- Pointer entity creation
 	local function Create()
@@ -32,9 +67,8 @@ do -- Pointer entity creation
 			end)
 		end)
 
-		Network.Broadcast("ACF_ModelData_Entity", Entity)
-
 		ModelData.Entity = Entity
+		SendPointerEntity()
 	end
 
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
@@ -44,7 +78,7 @@ do -- Pointer entity creation
 	end)
 
 	hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(Player)
-		Network.Send("ACF_ModelData_Entity", Player, ModelData.Entity)
+		SendPointerEntity(Player)
 	end)
 
 	hook.Add("ShutDown", "ACF_ModelData", function()
@@ -111,21 +145,3 @@ do -- Model data getter method
 		return Data
 	end
 end
-
-hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
-	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
-		Queue.Index = Entity:EntIndex()
-	end)
-
-	Network.CreateReceiver("ACF_ModelData", function(Player, Data)
-		for Model in pairs(Data) do
-			Network.Send("ACF_ModelData", Player, Model)
-		end
-	end)
-
-	Network.CreateSender("ACF_ModelData", function(Queue, Model)
-		Queue[Model] = ModelData.GetModelData(Model)
-	end)
-
-	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
-end)
