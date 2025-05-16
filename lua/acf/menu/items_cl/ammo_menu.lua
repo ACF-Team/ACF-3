@@ -386,11 +386,6 @@ end
 ---Returns the client bullet data currently being used by the menu.
 ---@return table<string, any> BulletData The client bullet data.
 function ACF.GetCurrentAmmoData()
-	if BulletData == nil then
-		local ToolData = ACF.GetAllClientData()
-		BulletData = Ammo:ClientConvert(ToolData)
-	end
-
 	return BulletData
 end
 

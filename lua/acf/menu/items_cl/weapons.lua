@@ -144,7 +144,7 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	local MagText    = language.GetPhrase("acf.menu.weapons.mag_stats")
 	local BulletData = ACF.GetCurrentAmmoData()
-	if BulletData == nil then return "" end
+	if not BulletData then return "" end
 	local MagReload  = ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
@@ -200,6 +200,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("Destiny", "Weapons") -- The information of these entities will come from ACF.Classes.Weapons
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Weapon") -- The ACF Menu tool will be set to spawner stage, weapon operation
+
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
