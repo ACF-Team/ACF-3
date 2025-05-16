@@ -218,7 +218,8 @@ local function CreateMenu(Menu)
 	EntData:TrackClientData("Projectile", "SetText")
 	EntData:TrackClientData("Propellant")
 	EntData:TrackClientData("Tracer")
-	EntData:DefineSetter(function()
+	EntData:TrackClientData("Caliber")
+	local function Update()
 		local Class = Current.Class
 
 		if not Class then return "" end
@@ -233,7 +234,9 @@ local function CreateMenu(Menu)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
 		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
-	end)
+	end
+	EntData:DefineSetter(Update)
+	timer.Simple(0, function() EntData:SetText(Update()) end)
 
 	ClassBase.Menu    = Menu
 	ClassBase.Title   = EntName
