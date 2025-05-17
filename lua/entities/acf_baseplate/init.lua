@@ -70,7 +70,6 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	WireLib.TriggerOutput(self, "Entity", self)
 
-
 	-- Add seat support for baseplates
 	local Pod = ents.Create("prop_vehicle_prisoner_pod")
 	local Owner = self:CPPIGetOwner()
