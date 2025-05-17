@@ -91,7 +91,6 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 		Pod.Vehicle = self
 		Pod.ACF = Pod.ACF or {}
 		Pod.ACF.LegalSeat = true
-		Pod.DoNotDuplicate = true												-- Don't duplicate cause baseplate will generate one on spawn
 		Pod.ACF_InvisibleToBallistics = true									-- Baseplate seat
 
 		-- Make the player invisible and invincible while in the seat

@@ -1083,4 +1083,42 @@ do -- Reload related
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
 		return BaseTime * ReloadMod, true
 	end
+
+	--- Generates a lua seat for a given entity
+	--- @param Entity any The entity to attach the seat to
+	--- @param Player any The owner of the entity
+	--- @param Pos any The position of the seat
+	--- @param Angle any The angle of the seat
+	--- @param Model any The model of the seat
+	--- @param Invisible boolean Whether the seat should be invisible to traces and 
+	--- @return unknown Pod The generated seat
+	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model, Invisible)
+		local Pod = ents.Create("prop_vehicle_prisoner_pod")
+		if IsValid(Pod) and IsValid(Player) then
+			Pod:SetAngles(Angle)
+			Pod:SetModel(Model)
+			Pod:SetPos(Pos)
+			Pod:Spawn()
+			Pod:SetParent(Entity)
+
+			Pod.Owner = Player
+			Pod:CPPISetOwner(Player)
+
+			Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    -- I don't know what this does, but for good measure...
+			Pod:SetKeyValue("limitview", 0)                                            -- Let the player look around
+
+			Pod.Vehicle = Entity
+			Pod.ACF = Pod.ACF or {}
+
+			if Invisible then
+				Pod:SetNoDraw(true)                                                    -- Don't render the seat
+				Pod:SetMoveType(MOVETYPE_NONE)
+				Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+				Pod.ACF.LegalChecks = false
+			end
+			return Pod
+		else
+			return nil
+		end
+	end
 end
