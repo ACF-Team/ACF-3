@@ -669,31 +669,38 @@ local function OnActiveChanged(Controller, Ply, Active)
 	net.Send(Ply)
 end
 
+local function OnLinkedSeat(Controller, Target)
+	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
+		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
+	end)
+
+	hook.Add("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex(), function(Ply, Veh)
+		if Veh == Target then OnActiveChanged(Controller, Ply, false) end
+	end)
+
+	-- Remove the hooks when the controller is removed
+	Controller:CallOnRemove("ACFRemoveController", function(Ent)
+		hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
+		hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
+	end)
+end
+
+local function OnUnlinkedSeat(Controller)
+	-- Remove the hooks when the seat is unlinked
+	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
+	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
+end
+
 -- Using this to auto generate the link/unlink functions
 local LinkConfigs = {
 	prop_vehicle_prisoner_pod = {
 		Field = "Seat",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			-- Register hooks when a new seat is linked
-			hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
-				if Veh == Target then OnActiveChanged(Controller, Ply, true) end
-			end)
-
-			hook.Add("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex(), function(Ply, Veh)
-				if Veh == Target then OnActiveChanged(Controller, Ply, false) end
-			end)
-
-			-- Remove the hooks when the controller is removed
-			Controller:CallOnRemove("ACFRemoveController", function(Ent)
-				hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
-				hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
-			end)
+			OnLinkedSeat(Controller, Target)
 		end,
 		OnUnlinked = function(Controller, _)
-			-- Unregister hooks when the seat is unlinked
-			hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
-			hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
+			OnUnlinkedSeat(Controller)
 		end,
 	},
 	acf_gearbox = {
@@ -716,7 +723,23 @@ local LinkConfigs = {
 	},
 	acf_baseplate = {
 		Field = "Baseplate",
-		Single = true
+		Single = true,
+		OnLinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+		end,
+		OnUnlinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
+		end
+	},
+	acf_crew = {
+		Field = "Crew",
+		Single = true,
+		OnLinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+		end,
+		OnUnlinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
+		end
 	},
 	acf_rack = {
 		Field = "Racks",
@@ -742,6 +765,7 @@ for Class, Data in pairs(LinkConfigs) do
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
 
+		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
 			if OnLinked then OnLinked(Controller, Target) end
 		end)

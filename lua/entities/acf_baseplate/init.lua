@@ -49,6 +49,9 @@ local function ConfigureLuaSeat(Entity, Pod)
 	Entity:SetUseType(SIMPLE_USE)
 	Entity.Pod = Pod
 
+	local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
+	if not Found then print("Creating NoCollide", constraint.NoCollide(Entity, Pod, 0, 0), Entity, Pod) else print("Found NoCollide", Found) end
+
 	hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. Entity:EntIndex(), function(Ply, Veh)
 		if Veh == Pod then
 			-- Ply:GodEnable() -- Remove this if aliases are removed?
@@ -132,11 +135,8 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	-- Add seat support for baseplates
 	local Owner = self:CPPIGetOwner()
 	if not self.AlreadyHasSeat then
-		print("No seat detected, creating one...")
 		local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
 		if IsValid(Pod) then ConfigureLuaSeat(self, Pod) end
-	else
-		print("Seat detected, configuring...")
 	end
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
