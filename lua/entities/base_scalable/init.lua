@@ -17,12 +17,14 @@ function ENT:GetOriginalSize()
 end
 
 local function TransmitScaleInfo(Entity, To)
-	local Scale = Entity:GetScale()
 	local Data  = Entity.ScaleData
+	local Scale = Entity:GetScale()
 
 	net.Start("ACF_Scalable_Entity")
 	net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
-	net.WriteVector(Scale)
+	net.WriteFloat(Scale[1])
+	net.WriteFloat(Scale[2])
+	net.WriteFloat(Scale[3])
 	net.WriteString(Data.Type)
 	net.WriteString(Data.Path)
 

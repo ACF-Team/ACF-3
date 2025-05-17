@@ -158,7 +158,7 @@ net.Receive("ACF_Scalable_Entity", function()
 	if not IsValid(Entity) then return end
 	if not Entity.IsScalable then return end
 
-	local Scale = net.ReadVector()
+	local Scale = Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
 	local Type  = net.ReadString()
 	local Path  = net.ReadString()
 
