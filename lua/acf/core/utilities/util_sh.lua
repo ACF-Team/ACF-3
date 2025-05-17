@@ -1111,7 +1111,7 @@ do -- Reload related
 			Pod.ACF = Pod.ACF or {}
 
 			if Invisible then
-				Pod:SetNoDraw(true)                                                    -- Don't render the seat
+				Pod:SetNoDraw(false)                                                    -- Don't render the seat
 				Pod:SetMoveType(MOVETYPE_NONE)
 				Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
 				Pod.ACF.LegalChecks = false
