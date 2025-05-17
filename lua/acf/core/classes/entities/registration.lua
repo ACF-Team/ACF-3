@@ -287,9 +287,10 @@ function Entities.AutoRegister(ENT)
 			local value     = typedef.Validator(self[k], v)
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
+				duplicator.StoreEntityModifier(self, k, {value})
+			else
+				self[k] = value
 			end
-
-			duplicator.StoreEntityModifier(self, k, {value})
 		end
 
 		if PreEntityCopy then PreEntityCopy(self) end
