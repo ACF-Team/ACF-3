@@ -288,9 +288,7 @@ function Entities.AutoRegister(ENT)
 		if PreEntityCopy then PreEntityCopy(self) end
 
 		--Wire dupe info
-		if self.BaseClass then
-			self.BaseClass.PreEntityCopy(self)
-		end
+		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -302,16 +300,13 @@ function Entities.AutoRegister(ENT)
 
 			local entmodData = EntMods[k]
 
-			if entmodData then
-				entmodData = entmodData[1]
-				if typedef.PostPaste then
-					local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
-					ret              = typedef.Validator(ret, v)
-					if ret then Ent[k] = ret end
-				else
-					local validated = typedef.Validator(entmodData, v)
-					Ent[k] = validated
-				end
+			if typedef.PostPaste then
+				local ret        = typedef.PostPaste(Ent, entmodData[1], CreatedEntities)
+				ret              = typedef.Validator(ret, v)
+				if ret then Ent[k] = ret end
+			else
+				local validated = typedef.Validator(entmodData, v)
+				Ent[k] = validated
 			end
 		end
 
