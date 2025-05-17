@@ -207,14 +207,16 @@ function Entities.AutoRegister(ENT)
 		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData) end
 	end
 
-	local function UpdateEntityData(self, ClientData)
+	local function UpdateEntityData(self, ClientData, First)
 		local Entity = GetEntityTable(Class)
 		local List   = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {}
 		for _, v in ipairs(List) do
-			self[v] = ClientData[v]
+			if UserVars[v].ClientData or First then
+				self[v] = ClientData[v]
+			end
 		end
 
 		if self.ACF_PostUpdateEntityData then self:ACF_PostUpdateEntityData(ClientData) end
@@ -269,11 +271,10 @@ function Entities.AutoRegister(ENT)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
+		New:ACF_UpdateEntityData(ClientData, true)
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
-
-		New:ACF_UpdateEntityData(ClientData)
 
 		ACF.CheckLegal(New)
 
@@ -283,15 +284,12 @@ function Entities.AutoRegister(ENT)
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
-			local validated = typedef.Validator(self[k], v)
+			local value     = typedef.Validator(self[k], v)
 			if typedef.PreCopy then
-				local ret       = typedef.PreCopy(self, validated)
-				if ret then
-					duplicator.StoreEntityModifier(self, k, {ret})
-				end
-			else
-				self[k] = validated
+				value = typedef.PreCopy(self, value)
 			end
+
+			duplicator.StoreEntityModifier(self, k, {value})
 		end
 
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -307,13 +305,20 @@ function Entities.AutoRegister(ENT)
 
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
-			local entmodData = EntMods[k][1]
-			if typedef.PostPaste then
-				local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
-				ret              = typedef.Validator(ret, v)
-				if ret then Ent[k] = ret end
-			else
-				EntMods[k][1] = typedef.Validator(ret, v)
+			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
+
+			local entmodData = EntMods[k]
+
+			if entmodData then
+				entmodData = entmodData[1]
+				if typedef.PostPaste then
+					local ret        = typedef.PostPaste(Ent, entmodData, CreatedEntities)
+					ret              = typedef.Validator(ret, v)
+					if ret then Ent[k] = ret end
+				else
+					local validated = typedef.Validator(entmodData, v)
+					Ent[k] = validated
+				end
 			end
 		end
 
