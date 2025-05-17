@@ -17,6 +17,7 @@ local function CreateMenu(Menu)
 	Instructions:AddLabel("Gun -> To shoot guns")
 	Instructions:AddLabel("Racks -> To shoot racks")
 	Instructions:AddLabel("Baseplates -> To use baseplate seats or to read speed from the controller.")
+	Instructions:AddLabel("Crew -> To use crew seats if you're doing multicrew stuff.")
 	Instructions:AddLabel("Only these entities need to be linked. The rest will be automatically detected.")
 	Instructions:AddLabel("If you don't want the AIO controller to control something, just don't link it.")
 

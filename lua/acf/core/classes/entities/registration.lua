@@ -102,6 +102,14 @@ Entities.AddUserArgumentType("String", function(Value, Specs)
 	return Value
 end)
 
+Entities.AddUserArgumentType("Boolean", function(Value, Specs)
+	if not isbool(Value) then
+		Value = Specs.Default or false
+	end
+
+	return Value
+end)
+
 Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
