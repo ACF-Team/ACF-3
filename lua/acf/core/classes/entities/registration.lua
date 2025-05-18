@@ -283,6 +283,7 @@ function Entities.AutoRegister(ENT)
 
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
+			print(k, self[k])
 			local typedef   = UserArgumentTypes[v.Type]
 			local value     = typedef.Validator(self[k], v)
 			if typedef.PreCopy then
@@ -290,7 +291,6 @@ function Entities.AutoRegister(ENT)
 			end
 
 			self[k] = value
-			duplicator.StoreEntityModifier(self, k, {value})
 		end
 
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -300,21 +300,16 @@ function Entities.AutoRegister(ENT)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
 			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
 
-			local entmodData = EntMods[k]
-			if entmodData then
-				local ret = entmodData[1]
-				if typedef.PostPaste then
-					ret = typedef.PostPaste(Ent, ret, CreatedEntities)
-				end
-				ret = typedef.Validator(ret, v)
-				if ret then Ent[k] = ret end
+			local check = Ent[k]
+			if typedef.PostPaste then
+				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
+			check = typedef.Validator(check, v)
+			Ent[k] = check
 		end
 
 		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
@@ -330,7 +325,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(ArgsList))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data")
 end
 
 --- Registers a class as a spawnable entity class
