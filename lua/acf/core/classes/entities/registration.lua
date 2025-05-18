@@ -287,10 +287,10 @@ function Entities.AutoRegister(ENT)
 			local value     = typedef.Validator(self[k], v)
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
-				duplicator.StoreEntityModifier(self, k, {value})
-			else
-				self[k] = value
 			end
+
+			self[k] = value
+			duplicator.StoreEntityModifier(self, k, {value})
 		end
 
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -307,14 +307,13 @@ function Entities.AutoRegister(ENT)
 			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
 
 			local entmodData = EntMods[k]
-
-			if typedef.PostPaste then
-				local ret        = typedef.PostPaste(Ent, entmodData[1], CreatedEntities)
-				ret              = typedef.Validator(ret, v)
+			if entmodData then
+				local ret = entmodData[1]
+				if typedef.PostPaste then
+					ret = typedef.PostPaste(Ent, ret, CreatedEntities)
+				end
+				ret = typedef.Validator(ret, v)
 				if ret then Ent[k] = ret end
-			else
-				local validated = typedef.Validator(entmodData, v)
-				Ent[k] = validated
 			end
 		end
 
