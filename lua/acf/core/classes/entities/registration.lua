@@ -176,7 +176,7 @@ function Entities.AutoRegister(ENT)
 
 	local Entity = GetEntityTable(Class)
 	local UserVars = ENT.ACF_UserVars or {}
-	local ArgsList = Entities.AddStrictArguments(Class, UserVars)
+	Entities.AddStrictArguments(Class, UserVars)
 
 	if CLIENT then return end
 
@@ -283,7 +283,6 @@ function Entities.AutoRegister(ENT)
 
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
-			print(k, self[k])
 			local typedef   = UserArgumentTypes[v.Type]
 			local value     = typedef.Validator(self[k], v)
 			if typedef.PreCopy then
