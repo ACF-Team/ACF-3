@@ -260,7 +260,7 @@ do -- Random timer stuff
 			self.Vel = vel
 			self.Accel = accel
 
-			local GForce = accel:Length() / 600
+			local GForce = accel:Length() / 600 -- G Force is acceleration / default source gravity
 
 			-- If specified, affect crew ergonomics based on G forces
 			local Effs = self.CrewType.GForceInfo.Efficiencies
@@ -268,6 +268,7 @@ do -- Random timer stuff
 				self.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
 				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
 			end
+			WireLib.TriggerOutput(self, "GForce", GForce)
 
 			-- If specified, apply damage to crew based on G forces
 			local Damages = self.CrewType.GForceInfo.Damages
@@ -301,6 +302,7 @@ do
 		"MoveEff",
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
+		"GForce (The strength of GForce experienced)",
 		"Entity (The crew entity itself) [ENTITY]",
 		"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 	}
