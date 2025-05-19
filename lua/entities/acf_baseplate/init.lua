@@ -45,7 +45,7 @@ end
 --- Called when first creating the seat, or when reusing it from a dupe
 local function ConfigureLuaSeat(Entity, Pod, Player)
 	ACF.ConfigureLuaSeat(Pod, Player, true)
-	Entity.AlreadyHasSeat = true
+	Entity:ACF_SetUserVar("AlreadyHasSeat", true)
 
 	Entity:SetUseType(SIMPLE_USE)
 	Entity.Pod = Pod
@@ -152,7 +152,7 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	-- Add seat support for baseplates
 	local Owner = self:CPPIGetOwner()
-	if not self.AlreadyHasSeat then
+	if not self:ACF_GetUserVar "AlreadyHasSeat" then
 		local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
 		if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Owner) end
 	end
