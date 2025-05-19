@@ -1091,8 +1091,8 @@ do -- Reload related
 	--- @param Angle any The angle of the seat
 	--- @param Model any The model of the seat
 	--- @return unknown Pod The generated seat
-	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model, Invisible)
-		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model, Invisible)
+	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
+		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
 		if IsValid(Pod) and IsValid(Player) then
 			Pod:SetAngles(Angle)
