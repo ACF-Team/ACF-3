@@ -200,7 +200,8 @@ function Entities.AutoRegister(ENT)
 				local RestrictionSpecs = Restrictions[argName]
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				ClientData[argName] = ArgumentVerification.Validator(ClientData[argName], RestrictionSpecs)
+				local Value = ClientData[argName] or (ClientData.ACF_UserData and ClientData.ACF_UserData[argName] or nil)
+				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs)
 			end
 		end
 
@@ -212,10 +213,12 @@ function Entities.AutoRegister(ENT)
 		local List   = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
-		self.ACF = self.ACF or {}
+		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
+		self.ACF_UserData = self.ACF_UserData or {}
+
 		for _, v in ipairs(List) do
 			if UserVars[v].ClientData or First then
-				self[v] = ClientData[v]
+				self.ACF_UserData[v] = ClientData[v]
 			end
 		end
 
@@ -236,6 +239,25 @@ function Entities.AutoRegister(ENT)
 		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
+	end
+
+	function ENT:ACF_GetUserVar(Key)
+		if not Key then error("Tried to get the value of a nil key.") end
+		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
+
+		return self.ACF_UserData[Key]
+	end
+
+	function ENT:ACF_SetUserVar(Key, Value)
+		if not Key then error("Tried to set the value of a nil key.") end
+
+		local UserVar = UserVars[Key]
+		if not UserVar then error("No user-variable named '" .. Key .. "'.") end
+
+		local Typedef = UserArgumentTypes[UserVar.Type]
+		if not Typedef then error(UserVar.Type .. " is not a valid type") end
+
+		self.ACF_UserData[Key] = Typedef.Validator(Value, UserVar)
 	end
 
 	local ACF_Limit       = ENT.ACF_Limit
@@ -284,31 +306,35 @@ function Entities.AutoRegister(ENT)
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
-			local value     = typedef.Validator(self[k], v)
+			local value     = typedef.Validator(self.ACF_UserData[k], v)
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
 			end
 
-			self[k] = value
+			self.ACF_UserData[k] = value
 		end
 
 		if PreEntityCopy then PreEntityCopy(self) end
-
 		--Wire dupe info
 		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		local UserData = Ent.ACF_UserData
+		if not UserData then
+			Ent.ACF_UserData = {}
+		end
+
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
 			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
 
-			local check = Ent[k]
+			local check = UserData and UserData[k] or Ent[k]
 			if typedef.PostPaste then
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(check, v)
-			Ent[k] = check
+			Ent.ACF_UserData[k] = check
 		end
 
 		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
@@ -320,7 +346,6 @@ function Entities.AutoRegister(ENT)
 
 	local function SpawnFunction(Player, Pos, Angle, Data)
 		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
-
 		return SpawnedEntity
 	end
 
