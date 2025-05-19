@@ -1092,7 +1092,7 @@ do -- Reload related
 	--- @param Model any The model of the seat
 	--- @return unknown Pod The generated seat
 	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
-		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
+		print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
 		if IsValid(Pod) and IsValid(Player) then
 			Pod:SetAngles(Angle)
@@ -1114,24 +1114,25 @@ do -- Reload related
 	--- Whenever the seat is created, this should be called after.
 	--- @param Pod any The seat to configure
 	--- @param Player any The owner of the seat
-	--- @param Invisible any Whether the seat should be invisible to traces and visuals
-	function ACF.ConfigureLuaSeat(Pod, Player, Invisible)
-		-- print("ConfigureLuaSeat", Pod, Player, Invisible)
+	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
+		print("ConfigureLuaSeat", Entity, Pod, Player)
 		-- Just to be safe...
 		Pod.Owner = Player
 		Pod:CPPISetOwner(Player)
 
-		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    -- I don't know what this does, but for good measure...
+		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    	-- I don't know what this does, but for good measure...
 		Pod:SetKeyValue("limitview", 0)                                            -- Let the player look around
 
 		Pod.Vehicle = Entity
 		Pod.ACF = Pod.ACF or {}
 
-		if Invisible then
-			Pod:SetNoDraw(true)                                                    -- Don't render the seat
-			Pod:SetMoveType(MOVETYPE_NONE)
-			Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
-			Pod.ACF.LegalChecks = false
-		end
+		-- If it's a lua generated seat, you probably want this anyways
+		Pod:PhysicsInit(SOLID_VPHYSICS)
+		Pod:SetMoveType(MOVETYPE_NONE)
+		Pod:SetCollisionGroup(COLLISION_GROUP_WORLD)
+		timer.Simple(1, function() Pod:SetNotSolid(true) end)	-- Bad idea to do this in the same tick
+		Pod:SetNoDraw(true)
+		Pod.ACF.LegalChecks = false								-- Don't do any checks
+		Pod.ACF.LegalSeat = true								-- Since these don't have vehichle tables
 	end
 end

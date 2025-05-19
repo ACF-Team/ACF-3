@@ -38,6 +38,24 @@ if CLIENT then
 	CreateClientConVar("ACF_Sus_Tool_MakeSpherical", 1, false, true)
 	CreateClientConVar("ACF_Sus_Tool_DisableCollisions", 1, false, true)
 
+	CreateClientConVar("ACF_Sus_Tool_LimiterLength", 40, false, true)
+
+	CreateClientConVar("ACF_Sus_Tool_SpringX", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_SpringY", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_SpringZ", 40, false, true)
+
+	CreateClientConVar("ACF_Sus_Tool_ArmX", 40, false, true)
+	CreateClientConVar("ACF_Sus_Tool_ArmY", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_ArmZ", 0, false, true)
+
+	-- CreateClientConVar("ACF_Sus_Tool_SpringType", 0, false, true)
+	-- CreateClientConVar("ACF_Sus_Tool_ArmType", 0, false, true)
+
+	CreateClientConVar("ACF_Sus_Tool_Elasticity", 10000, false, true)
+	CreateClientConVar("ACF_Sus_Tool_Damping", 500, false, true)
+	CreateClientConVar("ACF_Sus_Tool_RelativeDamping", 0.1, false, true)
+	CreateClientConVar("ACF_Sus_Tool_InOutSpeedMul", 4, false, true)
+
 	--- Creates/recreates the menu for this tool
 	local function CreateMenu(Panel)
 		local Menu = ACF.ArmorMenu
@@ -62,21 +80,80 @@ if CLIENT then
 
 		Menu:AddTitle("ACF Suspension Tool")
 		Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
+		Menu:AddLabel("You can hover over any of these elements to see their description.")
 
-		local IsTracked = Menu:AddCheckBox("Drivetrain Uses Tracks", "ACF_Sus_Tool_IsTracked")
+		local SettingsGeneral = Menu:AddCollapsible("Settings (General)", true)
+
+		local IsTracked = SettingsGeneral:AddCheckBox("Drivetrain Uses Tracks", "ACF_Sus_Tool_IsTracked")
 		IsTracked:SetTooltip("If checked, the drivetrain will be tracked. Otherwise, it will be wheeled.")
 
-		local UseCustom = Menu:AddCheckBox("Use my own suspension", "ACF_Sus_Tool_UseCustom")
-		UseCustom:SetTooltip("If checked, the drivetrain will only make your wheels rotate propperly.\nYou will need to create the constraints that hold it in place/suspend it yourself.")
-
-		local MakeSpherical = Menu:AddCheckBox("Make Spherical", "ACF_Sus_Tool_MakeSpherical")
+		local MakeSpherical = SettingsGeneral:AddCheckBox("Make Spherical", "ACF_Sus_Tool_MakeSpherical")
 		MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
 
-		local DisableCollisions = Menu:AddCheckBox("Disable Collisions", "ACF_Sus_Tool_DisableCollisions")
+		local DisableCollisions = SettingsGeneral:AddCheckBox("Disable Collisions", "ACF_Sus_Tool_DisableCollisions")
 		DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
+
+		local LimiterLength = SettingsGeneral:AddSlider("Limiter Length", 0, 100)
+		LimiterLength:SetConVar("ACF_Sus_Tool_LimiterLength")
+
+		-- Spring related
+		local SpringType = SettingsGeneral:AddComboBox()
+		SpringType:AddChoice("Spring Type: Axis (None)", 0)
+		SpringType:AddChoice("Spring Type: Hydraulic", 1)
+		SpringType:AddChoice("Spring Type: Elastic", 2)
+
+		local SpringX = SettingsGeneral:AddSlider("Spring X", -100, 100)
+		SpringX:SetConVar("ACF_Sus_Tool_SpringX")
+
+		local SpringY = SettingsGeneral:AddSlider("Spring Y", -100, 100)
+		SpringY:SetConVar("ACF_Sus_Tool_SpringY")
+
+		local SpringZ = SettingsGeneral:AddSlider("Spring Z", -100, 100)
+		SpringZ:SetConVar("ACF_Sus_Tool_SpringZ")
+
+		local SpecificSettings = SettingsGeneral:AddCollapsible("Spring Specific Settings", true)
+
+		-- Generate spring specific settings
+		function SpringType:OnSelect(Index, _, Data)
+			if self.Selected == Data then return end
+			self.Selected = Data
+
+			SpecificSettings:ClearAll()
+			if Data == 1 then
+				-- Hydraulic Specific
+				local InOutSpeedMul = SpecificSettings:AddSlider("In/Out Speed Multiplier", 4, 120)
+				InOutSpeedMul:SetConVar("ACF_Sus_Tool_InOutSpeedMul")
+			elseif Data == 2 then
+				-- Elastic Specific
+				local Elasticity = SpecificSettings:AddSlider("Elasticity", 0, 400)
+				Elasticity:SetConVar("ACF_Sus_Tool_Elasticity")
+
+				local Dampening = SpecificSettings:AddSlider("Damping", 0, 50)
+				Dampening:SetConVar("ACF_Sus_Tool_Damping")
+
+				local RelativeDampening = SpecificSettings:AddSlider("Relative Damping", 0, 1)
+				RelativeDampening:SetConVar("ACF_Sus_Tool_RelativeDamping")
+			end
+		end
+
+		-- Arm related
+		local ArmType = SettingsGeneral:AddComboBox()
+		ArmType:AddChoice("Arm Type: Fork", 0)
+		ArmType:AddChoice("Arm Type: Forward Lever", 1)
+		ArmType:AddChoice("Arm Type: Sideways Lever", 2)
+
+		local ArmX = SettingsGeneral:AddSlider("Arm X", -100, 100)
+		ArmX:SetConVar("ACF_Sus_Tool_ArmX")
+
+		local ArmY = SettingsGeneral:AddSlider("Arm Y", -100, 100)
+		ArmY:SetConVar("ACF_Sus_Tool_ArmY")
+
+		local ArmZ = SettingsGeneral:AddSlider("Arm Z", -100, 100)
+		ArmZ:SetConVar("ACF_Sus_Tool_ArmZ")
 
 		local Create = Menu:AddButton("Create Drivetrain")
 		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
+		Create:SetTextColor(Color(0, 255, 0))
 
 		function Create:DoClickInternal()
 			net.Start("ACF_Sus_Tool")
@@ -86,6 +163,7 @@ if CLIENT then
 
 		local Clear = Menu:AddButton("Clear Drivetrain")
 		Clear:SetTooltip("Clears all constraints on selected entities.")
+		Clear:SetTextColor(Color(255, 0, 0))
 
 		function Clear:DoClickInternal()
 			net.Start("ACF_Sus_Tool")
@@ -93,23 +171,23 @@ if CLIENT then
 			net.SendToServer()
 		end
 
-		Menu:AddTitle("Instructions (General)")
-		Menu:AddLabel("When selecting wheels, select in alternating order starting with left then right.")
-		Menu:AddLabel("If you hold the tool, the entities you selected will be labelled, which should help.")
-		Menu:AddLabel("Pressing R at any time will reset the tool's record of the selected entities, in case you made a mistake.")
+		local InstructionsGeneral = Menu:AddCollapsible("Instructions (General)", true)
+		InstructionsGeneral:AddLabel("When selecting wheels, select in alternating order starting with left then right.")
+		InstructionsGeneral:AddLabel("If you hold the tool, the entities you selected will be labelled, which should help.")
+		InstructionsGeneral:AddLabel("Pressing R at any time will reset the tool's record of the selected entities, in case you made a mistake.")
 
-		Menu:AddTitle("Instructions (Tracked)")
-		Menu:AddLabel("1. Select the baseplate with SHIFT + RMB")
-		Menu:AddLabel("2. Select left/right drive wheels with RMB")
-		Menu:AddLabel("3. Select left/right road wheels with RMB")
-		Menu:AddLabel("4. If you ever want to add a steer plate, select it with SHIFT + RMB")
-		Menu:AddLabel("5. Then all steer wheels selected after will belong to that steer plate")
+		local InstructionsTracked = Menu:AddCollapsible("Instructions (Tracked)", true)
+		InstructionsTracked:AddLabel("1. Select the baseplate with SHIFT + RMB")
+		InstructionsTracked:AddLabel("2. Select left/right drive wheels with RMB")
+		InstructionsTracked:AddLabel("3. Select left/right road wheels with RMB")
+		InstructionsTracked:AddLabel("4. If you ever want to add a steer plate, select it with SHIFT + RMB")
+		InstructionsTracked:AddLabel("5. Then all steer wheels selected after will belong to that steer plate")
 
-		Menu:AddTitle("Instructions (Wheeled)")
-		Menu:AddLabel("1. Select the baseplate with SHIFT + RMB")
-		Menu:AddLabel("2. Select left/right road wheels with RMB")
-		Menu:AddLabel("3. If you ever want to add a steer plate, select it with SHIFT + RMB")
-		Menu:AddLabel("4. Then all steer wheels selected after will belong to that steer plate")
+		local InstructionsTracked = Menu:AddCollapsible("Instructions (Wheeled)", true)
+		InstructionsTracked:AddLabel("1. Select the baseplate with SHIFT + RMB")
+		InstructionsTracked:AddLabel("2. Select left/right road wheels with RMB")
+		InstructionsTracked:AddLabel("3. If you ever want to add a steer plate, select it with SHIFT + RMB")
+		InstructionsTracked:AddLabel("4. Then all steer wheels selected after will belong to that steer plate")
 	end
 
 	TOOL.BuildCPanel = CreateMenu
@@ -146,7 +224,7 @@ if CLIENT then
 		local Player = LocalPlayer()
 		Player.ACF_Sus_Tool_Info = Player.ACF_Sus_Tool_Info or {}
 		local Selections = Player.ACF_Sus_Tool_Info
-		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
+		local IsTracked = tonumber(Player:GetInfo("ACF_Sus_Tool_IsTracked"))
 
 		-- For each plate...
 		for PlateIndex, Plate in ipairs(Selections.Plates or EmptyTable) do
@@ -336,8 +414,8 @@ elseif SERVER then -- Serverside-only stuff
 		local Selections = self.Selections
 
 		-- Handle makespherical / disable collisions BEFORE making the constraints
-		local IsSpherical = GetConVar("ACF_Sus_Tool_MakeSpherical"):GetInt()
-		local IsDisableCollisions = GetConVar("ACF_Sus_Tool_DisableCollisions"):GetInt()
+		local IsSpherical = tonumber(Player:GetInfo("ACF_Sus_Tool_MakeSpherical"))
+		local IsDisableCollisions = tonumber(Player:GetInfo("ACF_Sus_Tool_DisableCollisions"))
 		for _, Wheel in ipairs(Selections.Wheels or EmptyTable) do
 			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
@@ -347,8 +425,8 @@ elseif SERVER then -- Serverside-only stuff
 		end
 
 		-- Handle making the suspension constraints
-		local IsTracked = GetConVar("ACF_Sus_Tool_IsTracked"):GetInt()
-		local UseCustom = GetConVar("ACF_Sus_Tool_UseCustom"):GetInt()
+		local IsTracked = tonumber(Player:GetInfo("ACF_Sus_Tool_IsTracked"))
+		local UseCustom = tonumber(Player:GetInfo("ACF_Sus_Tool_UseCustom"))
 
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
