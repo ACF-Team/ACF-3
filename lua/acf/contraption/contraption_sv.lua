@@ -365,7 +365,10 @@ do -- ASSUMING DIRECT CONTROL
 
 			function ENT:SetNotSolid(...)
 				-- NOTE: Slight delay added to this check in order to account for baseplate conversion otherwise failing
-				if self.IsACFEntity and ACF.LegalChecks then timer.Simple(0, function() ACF.CheckLegal(self) end) end
+				if not IsValid(self) then return end
+				if self.IsACFEntity and ACF.LegalChecks then
+					timer.Simple(0, function() if not IsValid(self) then return end ACF.CheckLegal(self) end)
+				end
 
 				SetNotSolid(self, ...)
 			end

@@ -242,6 +242,10 @@ hook.Add("CalcView", "ACFControllerView", function(Player, _, _, _)
 	local Pod = Player:GetVehicle()
 	if not IsValid(Pod) then return end
 
+	local ACF_Data = Pod.ACF
+	if not ACF_Data then return end
+	if not ACF_Data.LuaGeneratedSeat then return end
+
 	local PreOrbit = MyController:LocalToWorld(CamOffset)
 	local PostOrbit = PreOrbit - CamAng:Forward() * CamOrbit
 

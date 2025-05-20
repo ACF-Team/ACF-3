@@ -1125,6 +1125,7 @@ do -- Reload related
 
 		Pod.Vehicle = Entity
 		Pod.ACF = Pod.ACF or {}
+		Pod.ACF.LuaGeneratedSeat = true
 
 		-- If it's a lua generated seat, you probably want this anyways
 		Pod:PhysicsInit(SOLID_VPHYSICS)
@@ -1132,7 +1133,5 @@ do -- Reload related
 		Pod:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		timer.Simple(1, function() Pod:SetNotSolid(true) end)	-- Bad idea to do this in the same tick
 		Pod:SetNoDraw(true)
-		Pod.ACF.LegalChecks = false								-- Don't do any checks
-		Pod.ACF.LegalSeat = true								-- Since these don't have vehichle tables
 	end
 end
