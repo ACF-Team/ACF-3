@@ -33,28 +33,28 @@ if CLIENT then
 		language.Add("tool.acfsuspension." .. v.name, v.desc)
 	end
 
-	CreateClientConVar("ACF_Sus_Tool_IsTracked", 1, false, true)
-	CreateClientConVar("ACF_Sus_Tool_UseCustom", 0, false, true)
-	CreateClientConVar("ACF_Sus_Tool_MakeSpherical", 1, false, true)
-	CreateClientConVar("ACF_Sus_Tool_DisableCollisions", 1, false, true)
+	CreateClientConVar("acf_sus_tool_istracked", 1, false, true)
+	CreateClientConVar("acf_sus_tool_usecustom", 0, false, true)
+	CreateClientConVar("acf_sus_tool_makespherical", 1, false, true)
+	CreateClientConVar("acf_sus_tool_disablecollisions", 1, false, true)
 
-	CreateClientConVar("ACF_Sus_Tool_LimiterLength", 40, false, true)
+	CreateClientConVar("acf_sus_tool_limiterlength", 40, false, true)
 
-	CreateClientConVar("ACF_Sus_Tool_SpringX", 0, false, true)
-	CreateClientConVar("ACF_Sus_Tool_SpringY", 0, false, true)
-	CreateClientConVar("ACF_Sus_Tool_SpringZ", 40, false, true)
+	CreateClientConVar("acf_sus_tool_springx", 0, false, true)
+	CreateClientConVar("acf_sus_tool_springy", 0, false, true)
+	CreateClientConVar("acf_sus_tool_springz", 40, false, true)
 
-	CreateClientConVar("ACF_Sus_Tool_ArmX", 40, false, true)
-	CreateClientConVar("ACF_Sus_Tool_ArmY", 0, false, true)
-	CreateClientConVar("ACF_Sus_Tool_ArmZ", 0, false, true)
+	CreateClientConVar("acf_sus_tool_armx", 40, false, true)
+	CreateClientConVar("acf_sus_tool_army", 0, false, true)
+	CreateClientConVar("acf_sus_tool_armz", 0, false, true)
 
-	CreateClientConVar("ACF_Sus_Tool_SpringType", 0, false, true)
-	CreateClientConVar("ACF_Sus_Tool_ArmType", 0, false, true)
+	CreateClientConVar("acf_sus_tool_springtype", 1, false, true)
+	CreateClientConVar("acf_sus_tool_armtype", 1, false, true)
 
-	CreateClientConVar("ACF_Sus_Tool_Elasticity", 10000, false, true)
-	CreateClientConVar("ACF_Sus_Tool_Damping", 500, false, true)
-	CreateClientConVar("ACF_Sus_Tool_RelativeDamping", 0.1, false, true)
-	CreateClientConVar("ACF_Sus_Tool_InOutSpeedMul", 4, false, true)
+	CreateClientConVar("acf_sus_tool_elasticity", 10000, false, true)
+	CreateClientConVar("acf_sus_tool_damping", 500, false, true)
+	CreateClientConVar("acf_sus_tool_relativedamping", 0.1, false, true)
+	CreateClientConVar("acf_sus_tool_inoutspeedmul", 4, false, true)
 
 	--- Creates/recreates the menu for this tool
 	local function CreateMenu(Panel)
@@ -81,77 +81,83 @@ if CLIENT then
 		Menu:AddTitle("ACF Suspension Tool")
 		Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
 		Menu:AddLabel("You can hover over any of these elements to see their description.")
+		local WIP = Menu:AddLabel("THIS TOOL IS CURRENTLY WIP...")
+		WIP:SetTextColor(Color(255, 0, 0))
 
 		local SettingsGeneral = Menu:AddCollapsible("Settings (General)", true)
 
-		local IsTracked = SettingsGeneral:AddCheckBox("Drivetrain Uses Tracks", "ACF_Sus_Tool_IsTracked")
+		local IsTracked = SettingsGeneral:AddCheckBox("Drivetrain Uses Tracks", "acf_sus_tool_istracked")
 		IsTracked:SetTooltip("If checked, the drivetrain will be tracked. Otherwise, it will be wheeled.")
 
-		local MakeSpherical = SettingsGeneral:AddCheckBox("Make Spherical", "ACF_Sus_Tool_MakeSpherical")
+		local MakeSpherical = SettingsGeneral:AddCheckBox("Make Spherical", "acf_sus_tool_makespherical")
 		MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
 
-		local DisableCollisions = SettingsGeneral:AddCheckBox("Disable Collisions", "ACF_Sus_Tool_DisableCollisions")
+		local DisableCollisions = SettingsGeneral:AddCheckBox("Disable Collisions", "acf_sus_tool_disablecollisions")
 		DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
 
 		local LimiterLength = SettingsGeneral:AddSlider("Limiter Length", 0, 100)
-		LimiterLength:SetConVar("ACF_Sus_Tool_LimiterLength")
+		LimiterLength:SetConVar("acf_sus_tool_limiterlength")
 
 		-- Spring related
 		local SpringType = SettingsGeneral:AddComboBox()
-		SpringType:AddChoice("Spring Type: Axis (None)", 0)
-		SpringType:AddChoice("Spring Type: Hydraulic", 1)
-		SpringType:AddChoice("Spring Type: Elastic", 2)
-		SpringType:SetConVar("ACF_Sus_Tool_SpringType")
+		SpringType:AddChoice("Spring Type: Axis (None)", 1)
+		SpringType:AddChoice("Spring Type: Hydraulic", 2)
+		SpringType:AddChoice("Spring Type: Elastic", 3)
 
 		local SpecificSettings = SettingsGeneral:AddCollapsible("Spring Specific Settings", true)
 
 		local SpringX = SettingsGeneral:AddSlider("Spring X", -100, 100)
-		SpringX:SetConVar("ACF_Sus_Tool_SpringX")
+		SpringX:SetConVar("acf_sus_tool_springx")
 
 		local SpringY = SettingsGeneral:AddSlider("Spring Y", -100, 100)
-		SpringY:SetConVar("ACF_Sus_Tool_SpringY")
+		SpringY:SetConVar("acf_sus_tool_springy")
 
 		local SpringZ = SettingsGeneral:AddSlider("Spring Z", -100, 100)
-		SpringZ:SetConVar("ACF_Sus_Tool_SpringZ")
+		SpringZ:SetConVar("acf_sus_tool_springz")
 
 		-- Generate spring specific settings
-		function SpringType:OnSelect(Index, _, Data)
-			if self.Selected == Data then return end
-			self.Selected = Data
-
+		function SpringType:OnSelect(_, _, Data)
+			GetConVar("acf_sus_tool_springtype"):SetInt(Data)
 			SpecificSettings:ClearAll()
-			if Data == 1 then
+			if Data == 2 then
 				-- Hydraulic Specific
 				local InOutSpeedMul = SpecificSettings:AddSlider("In/Out Speed Multiplier", 4, 120)
-				InOutSpeedMul:SetConVar("ACF_Sus_Tool_InOutSpeedMul")
-			elseif Data == 2 then
+				InOutSpeedMul:SetConVar("acf_sus_tool_inoutspeedmul")
+			elseif Data == 3 then
 				-- Elastic Specific
 				local Elasticity = SpecificSettings:AddSlider("Elasticity", 0, 400)
-				Elasticity:SetConVar("ACF_Sus_Tool_Elasticity")
+				Elasticity:SetConVar("acf_sus_tool_elasticity")
 
 				local Dampening = SpecificSettings:AddSlider("Damping", 0, 50)
-				Dampening:SetConVar("ACF_Sus_Tool_Damping")
+				Dampening:SetConVar("acf_sus_tool_damping")
 
 				local RelativeDampening = SpecificSettings:AddSlider("Relative Damping", 0, 1)
-				RelativeDampening:SetConVar("ACF_Sus_Tool_RelativeDamping")
+				RelativeDampening:SetConVar("acf_sus_tool_relativedamping")
 			end
 		end
 
+		SpringType:ChooseOptionID(GetConVar("acf_sus_tool_springtype"):GetInt())
+
 		-- Arm related
 		local ArmType = SettingsGeneral:AddComboBox()
-		ArmType:AddChoice("Arm Type: Fork", 0)
-		ArmType:AddChoice("Arm Type: Forward Lever", 1)
-		ArmType:AddChoice("Arm Type: Sideways Lever", 2)
-		ArmType:SetConVar("ACF_Sus_Tool_ArmType")
+		ArmType:AddChoice("Arm Type: Fork", 1)
+		ArmType:AddChoice("Arm Type: Forward Lever", 2)
+		ArmType:AddChoice("Arm Type: Sideways Lever", 3)
+
+		function ArmType:OnSelect(_, _, Data)
+			GetConVar("acf_sus_tool_armtype"):SetInt(Data)
+		end
+
+		ArmType:ChooseOptionID(GetConVar("acf_sus_tool_armtype"):GetInt())
 
 		local ArmX = SettingsGeneral:AddSlider("Arm X", -100, 100)
-		ArmX:SetConVar("ACF_Sus_Tool_ArmX")
+		ArmX:SetConVar("acf_sus_tool_armx")
 
 		local ArmY = SettingsGeneral:AddSlider("Arm Y", -100, 100)
-		ArmY:SetConVar("ACF_Sus_Tool_ArmY")
+		ArmY:SetConVar("acf_sus_tool_army")
 
 		local ArmZ = SettingsGeneral:AddSlider("Arm Z", -100, 100)
-		ArmZ:SetConVar("ACF_Sus_Tool_ArmZ")
+		ArmZ:SetConVar("acf_sus_tool_armz")
 
 		local Create = Menu:AddButton("Create Drivetrain")
 		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
@@ -226,7 +232,7 @@ if CLIENT then
 		local Player = LocalPlayer()
 		Player.ACF_Sus_Tool_Info = Player.ACF_Sus_Tool_Info or {}
 		local Selections = Player.ACF_Sus_Tool_Info
-		local IsTracked = tonumber(Player:GetInfo("ACF_Sus_Tool_IsTracked"))
+		local IsTracked = tonumber(Player:GetInfo("acf_sus_tool_istracked"))
 
 		-- For each plate...
 		for PlateIndex, Plate in ipairs(Selections.Plates or EmptyTable) do
@@ -416,8 +422,8 @@ elseif SERVER then -- Serverside-only stuff
 		local Selections = self.Selections
 
 		-- Handle makespherical / disable collisions BEFORE making the constraints
-		local IsSpherical = tonumber(Player:GetInfo("ACF_Sus_Tool_MakeSpherical"))
-		local IsDisableCollisions = tonumber(Player:GetInfo("ACF_Sus_Tool_DisableCollisions"))
+		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
+		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
 		for _, Wheel in ipairs(Selections.Wheels or EmptyTable) do
 			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
@@ -427,8 +433,8 @@ elseif SERVER then -- Serverside-only stuff
 		end
 
 		-- Handle making the suspension constraints
-		local IsTracked = tonumber(Player:GetInfo("ACF_Sus_Tool_IsTracked"))
-		local UseCustom = tonumber(Player:GetInfo("ACF_Sus_Tool_UseCustom"))
+		local IsTracked = tonumber(Player:GetInfo("acf_sus_tool_istracked"))
+		local UseCustom = tonumber(Player:GetInfo("acf_sus_tool_usecustom"))
 
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
