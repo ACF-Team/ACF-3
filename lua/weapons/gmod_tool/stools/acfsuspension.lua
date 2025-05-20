@@ -48,8 +48,8 @@ if CLIENT then
 	CreateClientConVar("ACF_Sus_Tool_ArmY", 0, false, true)
 	CreateClientConVar("ACF_Sus_Tool_ArmZ", 0, false, true)
 
-	-- CreateClientConVar("ACF_Sus_Tool_SpringType", 0, false, true)
-	-- CreateClientConVar("ACF_Sus_Tool_ArmType", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_SpringType", 0, false, true)
+	CreateClientConVar("ACF_Sus_Tool_ArmType", 0, false, true)
 
 	CreateClientConVar("ACF_Sus_Tool_Elasticity", 10000, false, true)
 	CreateClientConVar("ACF_Sus_Tool_Damping", 500, false, true)
@@ -101,6 +101,9 @@ if CLIENT then
 		SpringType:AddChoice("Spring Type: Axis (None)", 0)
 		SpringType:AddChoice("Spring Type: Hydraulic", 1)
 		SpringType:AddChoice("Spring Type: Elastic", 2)
+		SpringType:SetConVar("ACF_Sus_Tool_SpringType")
+
+		local SpecificSettings = SettingsGeneral:AddCollapsible("Spring Specific Settings", true)
 
 		local SpringX = SettingsGeneral:AddSlider("Spring X", -100, 100)
 		SpringX:SetConVar("ACF_Sus_Tool_SpringX")
@@ -110,8 +113,6 @@ if CLIENT then
 
 		local SpringZ = SettingsGeneral:AddSlider("Spring Z", -100, 100)
 		SpringZ:SetConVar("ACF_Sus_Tool_SpringZ")
-
-		local SpecificSettings = SettingsGeneral:AddCollapsible("Spring Specific Settings", true)
 
 		-- Generate spring specific settings
 		function SpringType:OnSelect(Index, _, Data)
@@ -141,6 +142,7 @@ if CLIENT then
 		ArmType:AddChoice("Arm Type: Fork", 0)
 		ArmType:AddChoice("Arm Type: Forward Lever", 1)
 		ArmType:AddChoice("Arm Type: Sideways Lever", 2)
+		ArmType:SetConVar("ACF_Sus_Tool_ArmType")
 
 		local ArmX = SettingsGeneral:AddSlider("Arm X", -100, 100)
 		ArmX:SetConVar("ACF_Sus_Tool_ArmX")
