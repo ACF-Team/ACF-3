@@ -558,6 +558,9 @@ do
 		local W, A, S, D = DriverKeyDown(Driver, IN_FORWARD), DriverKeyDown(Driver, IN_MOVELEFT), DriverKeyDown(Driver, IN_BACK), DriverKeyDown(Driver, IN_MOVERIGHT)
 		local IsBraking = DriverKeyDown(Driver, IN_JUMP)
 
+		if self:GetFlipWS() then W, S = S, W end
+		if self:GetFlipAD() then A, D = D, A end
+
 		local IsLateral = W or S						-- Forward/backward movement
 		local IsTurning = A or D						-- Left/right movement
 		local IsMoving = IsLateral or IsTurning			-- Moving in any direction
