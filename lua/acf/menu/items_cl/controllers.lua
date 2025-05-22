@@ -21,6 +21,9 @@ local function CreateMenu(Menu)
 	Instructions:AddLabel("Only these entities need to be linked. The rest will be automatically detected.")
 	Instructions:AddLabel("If you don't want the AIO controller to control something, just don't link it.")
 
+	local TroubleShooting = Menu:AddCollapsible("Troubleshooting", true)
+	TroubleShooting:AddLabel("If you're using a single gearbox, make sure all your forward gears come before your reverse gears in the readout.")
+
 	local Controls = Menu:AddCollapsible("Controls", true)
 	Controls:AddLabel("Mouse1: Fire primary weapon (largest caliber gun)")
 	Controls:AddLabel("Mouse2: Fire secondary weapon (any other gun)")
