@@ -101,8 +101,8 @@ if CLIENT then
 		Menu:AddTitle("ACF Suspension Tool")
 		Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
 		Menu:AddLabel("You can hover over any of these elements to see their description.")
-		local WIP = Menu:AddLabel("THIS TOOL IS CURRENTLY WIP...")
-		WIP:SetTextColor(Color(255, 0, 0))
+		local WIP = Menu:AddLabel("This tool is mostly stable, but may need further testing.")
+		WIP:SetTextColor(yellow)
 
 		local GeneralSettings = Menu:AddCollapsible("General Settings", true)
 
