@@ -549,6 +549,9 @@ elseif SERVER then -- Serverside-only stuff
 
 		-- If the controller is removed, remove the constraint/rope. Vice versa.
 		if Controller then
+			Controller.Owner = ply
+			Controller:CPPISetOwner(ply)
+
 			Controller:DeleteOnRemove(Const)
 			Const:DeleteOnRemove( Controller )
 			if Rope then
