@@ -74,7 +74,7 @@ local Defaults = {
 	BrakeEngagement = 0,
 	BrakeStrength = 100,
 
-	ShiftTime = 0,
+	ShiftTime = 100,
 	ShiftMinRPM = 0,
 	ShiftMaxRPM = 0
 }
@@ -521,6 +521,13 @@ do
 		self.GearboxEndCount = table.Count(self.GearboxEnds)
 		-- PrintTable({Wheels = self.Wheels, Engines = self.Engines, Fuels = self.Fuels, GearboxEnds = self.GearboxEnds, GearboxIntermediates = self.GearboxIntermediates})
 
+		-- Process gears
+		local ForwardGearCount = 0
+		for k, v in ipairs(MainGearbox.Gears) do
+			if v > 0 then ForwardGearCount = ForwardGearCount + 1 else break end
+		end
+		self.ForwardGearCount, self.TotalGearCount = ForwardGearCount, #MainGearbox.Gears
+
 		self.FuelCapacity = 0
 		for Fuel in pairs(self.Fuels) do self.FuelCapacity = self.FuelCapacity + Fuel.Capacity end
 
@@ -610,6 +617,9 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
+		local W, S = DriverKeyDown(self.Driver, IN_FORWARD), DriverKeyDown(self.Driver, IN_BACK)
+		if self:GetFlipWS() then W, S = S, W end
+
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0
 		for Engine in pairs(SelfTbl.Engines) do
@@ -622,10 +632,14 @@ do
 
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
-		if RPM > MinRPM and Gear < Gearbox.GearCount then
-			Gearbox:TriggerInput("Gear", Gear + 1)
-		elseif RPM < MaxRPM and Gear > 1 then
-			Gearbox:TriggerInput("Gear", Gear - 1)
+		if RPM > MinRPM then Gear = Gear + 1
+		elseif RPM < MaxRPM then Gear = Gear - 1 end
+
+		local Lower = (W and 1) or (S and SelfTbl.ForwardGearCount + 1) or 0
+		local Upper = (W and SelfTbl.ForwardGearCount) or (S and SelfTbl.TotalGearCount) or 0
+		Gear = math.Clamp(Gear, Lower, Upper)
+		if Gear ~= SelfTbl.Gearbox.Gear then
+			SelfTbl.Gearbox:TriggerInput("Gear", Gear)
 		end
 	end
 end
