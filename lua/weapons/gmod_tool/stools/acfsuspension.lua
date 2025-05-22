@@ -562,7 +562,7 @@ elseif SERVER then -- Serverside-only stuff
 
 	-- Makes an elastic constraint between a wheel and a plate
 	local function MakeElastic(Wheel, Plate, Offset1, Offset2, Constant, Damping, RelDamping)
-		return constraint.Elastic(Wheel, Plate, 0, 0, Offset1, Plate:WorldToLocal(Wheel:GetPos()) + Offset2, Constant, Damping, RelDamping, "cable/cable", 1)
+		return constraint.Elastic(Wheel, Plate, 0, 0, Offset1, Plate:WorldToLocal(Wheel:GetPos()) + Offset2, Constant, Damping, RelDamping, "", 0)
 	end
 
 	function TOOL:CreateSuspension()
