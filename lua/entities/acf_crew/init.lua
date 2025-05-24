@@ -523,6 +523,7 @@ end
 -- Entity methods
 do
 	-- Think logic (mostly checks and stuff that updates frequently)
+	-- Hopefully runs after CFW is initialized
 	function ENT:Think()
 		-- Check links on this entity
 		local Targets = self.Targets or {}
@@ -540,10 +541,7 @@ do
 					self:Unlink(Link)
 					Link:Unlink(self)
 
-					-- If we're waiting on it then don't send the notification...
-					if self.RemainingLinks and self.RemainingLinks[Link] then
-						ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
-					end
+					ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
 				end
 			end
 		end
@@ -755,15 +753,19 @@ do
 			Ent:CFW_Index_Crew(Contraption, Ent)
 
 			-- Propagate links waiting on CFW from crew to Contraption
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
-				Contraption.RemainingLinks[Target][Ent] = true
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = true
+				end
+			end
 
 			-- If this crew is parented into a new Contraption, try linking them to their Targets.
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Ent:Link(Target)
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Ent:Link(Target)
+				end
+			end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] ~= nil then
 				-- This runs if the entity is a Target of some crew(s)
@@ -783,10 +785,12 @@ do
 			Ent:CFW_Unindex_Crew(Contraption)
 
 			-- Unpropagate links waiting on CFW from crew to Contraption
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
-				Contraption.RemainingLinks[Target][Ent] = nil
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = nil
+				end
+			end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] then
 				-- This runs if the entity is a Target of some crew(s)
@@ -925,6 +929,8 @@ do
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
+
+		self:NextThink(Clock.CurTime + 1) -- Hope CFW finishes merging contraptions after this point...
 
 		-- Restore previous links
 		if EntMods.CrewTargets then
