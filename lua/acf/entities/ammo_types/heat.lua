@@ -132,6 +132,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.JetMass        = JetMass
 	Data.JetMinVel      = JetMinVel
 	Data.JetMaxVel      = JetMaxVel
+	Data.JetAvgVel	  	= JetAvgVel
 	Data.BreakupTime    = BreakupTime
 	Data.Standoff       = Standoff
 	Data.BreakupDist    = BreakupDist
@@ -244,18 +245,6 @@ if SERVER then
 
 		Damage.createExplosion(HitPos, Filler, Fragments, nil, DmgInfo)
 
-		-- Find ACF entities in the range of the damage (or simplify to like 6m)
-		local FoundEnts = ents.FindInSphere(HitPos, 250)
-		local Squishies = {}
-		for _, v in ipairs(FoundEnts) do
-			local Class = v:GetClass()
-
-			-- Blacklist armor and props, the most common entities
-			if Class ~= "acf_armor" and Class ~= "prop_physics" and (Class:find("^acf") or Class:find("^gmod_wire") or Class:find("^prop_vehicle") or v:IsPlayer()) then
-				Squishies[#Squishies + 1] = v
-			end
-		end
-
 		-- Move the jet start to the impact point and back it up by the passive standoff
 		local Start		= Bullet.Standoff * ACF.MeterToInch
 		local End		= Bullet.BreakupDist * 10 * ACF.MeterToInch
@@ -317,14 +306,22 @@ if SERVER then
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.35 -- Remove when health scales with armor
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 1 -- Remove when health scales with armor
 
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
+				local Speed = Bullet.JetAvgVel
+
+				Bullet.Energy = {}
+				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
+
+				if not Bullet.IsSpall and not Bullet.IsCookOff then
+					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
+				end
 
 				if JetResult.Kill then
 					ACF.APKill(Ent, Direction, 0, JetInfo)
