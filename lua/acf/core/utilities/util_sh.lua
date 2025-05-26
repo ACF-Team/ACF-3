@@ -1084,6 +1084,16 @@ do -- Reload related
 		return BaseTime * ReloadMod, true
 	end
 
+	local ModelToPlayerStart = {
+		["models/chairs_playerstart/jeeppose.mdl"] = "playerstart_chairs_jeep",
+		["models/chairs_playerstart/airboatpose.mdl"] = "playerstart_chairs_airboat",
+		["models/chairs_playerstart/sitposealt.mdl"] = "playerstart_chairs_seated",
+		["models/chairs_playerstart/podpose.mdl"] = "playerstart_chairs_podpose",
+		["models/chairs_playerstart/sitpose.mdl"] = "playerstart_chairs_seated_alt",
+		["models/chairs_playerstart/standingpose.mdl"] = "playerstart_chairs_standing",
+		["models/chairs_playerstart/pronepose.mdl"] = "playerstart_chairs_prone"
+	}
+
 	--- Generates a lua seat for a given entity
 	--- @param Entity any The entity to attach the seat to
 	--- @param Player any The owner of the entity
@@ -1100,6 +1110,19 @@ do -- Reload related
 			Pod:SetPos(Pos)
 			Pod:Spawn()
 			Pod:SetParent(Entity)
+
+			-- MARCH: Fixes player-start animations
+			-- I don't like how this works but it's the best way I can think of right now
+			local PlayerStartName = ModelToPlayerStart[Model]
+			if PlayerStartName then
+				local PlayerStartInfo = list.GetForEdit("Vehicles")[PlayerStartName]
+				if PlayerStartInfo then
+					Pod:SetVehicleClass(PlayerStartName)
+					if PlayerStartInfo.Members then
+						table.Merge(Pod, PlayerStartInfo.Members)
+					end
+				end
+			end
 
 			Pod.Owner = Player
 			Pod:CPPISetOwner(Player)
