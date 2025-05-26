@@ -307,8 +307,10 @@ if SERVER then
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 1 -- Remove when health scales with armor
+				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
+				_Cavity = Cavity * math.min(Penetration / EffectiveArmor, 1) -- Penetration should not exceed armor (in line with kinetic shells)
 
+				-- Damage result, Damage info
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 				JetInfo:SetType(DMG_BULLET)
