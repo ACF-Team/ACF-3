@@ -630,7 +630,7 @@ elseif SERVER then -- Serverside-only stuff
 						elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 						if SpringType == 2 and IsValid(ControlPlate) then
-							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index/2)-3) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
+							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2) - 3) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
 						elseif SpringType == 3 then
 							MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
 						end
@@ -639,7 +639,7 @@ elseif SERVER then -- Serverside-only stuff
 				end
 			end
 		else -- Wheeled TODO: CHECK and FIX
-			for PlateIndex, Plate in ipairs(Selections.Plates) do
+			for _, Plate in ipairs(Selections.Plates) do
 				if not IsValid(Plate) then continue end
 				for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
 					if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
@@ -655,7 +655,7 @@ elseif SERVER then -- Serverside-only stuff
 						elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 						if SpringType == 2 and IsValid(ControlPlate) then
-							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index/2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
+							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
 						elseif SpringType == 3 then
 							MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
 						end
