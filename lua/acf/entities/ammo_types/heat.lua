@@ -163,6 +163,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
+		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
