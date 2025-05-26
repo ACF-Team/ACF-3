@@ -115,11 +115,11 @@ if CLIENT then
 		local DisableCollisions = GeneralSettings:AddCheckBox("Disable Collisions", "acf_sus_tool_disablecollisions")
 		DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
 
-		local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend Drive Wheels", "acf_sus_tool_suspenddrivewheels")
-		SuspendDriveWheels:SetTooltip("If checked, the drive wheels will be suspended as well.")
+		-- local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend Drive Wheels", "acf_sus_tool_suspenddrivewheels")
+		-- SuspendDriveWheels:SetTooltip("If checked, the drive wheels will be suspended as well.")
 
-		local SuspendIdlerWheels = GeneralSettings:AddCheckBox("Suspend Idler Wheels", "acf_sus_tool_suspendidlerwheels")
-		SuspendIdlerWheels:SetTooltip("If checked, the idler wheels will be suspended as well.")
+		-- local SuspendIdlerWheels = GeneralSettings:AddCheckBox("Suspend Idler Wheels", "acf_sus_tool_suspendidlerwheels")
+		-- SuspendIdlerWheels:SetTooltip("If checked, the idler wheels will be suspended as well.")
 
 		-- Spring related
 		local SpringType = GeneralSettings:AddComboBox()
@@ -307,7 +307,7 @@ if CLIENT then
 				if not IsValid(Wheel) then continue end
 				-- Determine wheel name...
 				local IsLeft = WheelIndex % 2 == 1
-				local Direction = UsesDriveWheel == 1 and IsLeft and "Left" or "Right"
+				local Direction = IsLeft and "Left" or "Right"
 				local Steer = PlateIndex > 1 and " Steer" or ""
 				local Drive = UsesDriveWheel == 1 and PlateIndex == 1 and WheelIndex <= 2 and " Drive" or ""
 				local Idler = UsesDriveWheel == 1 and PlateIndex == 1 and WheelIndex > 2 and WheelIndex <= 4 and " Idler" or ""
@@ -321,7 +321,7 @@ if CLIENT then
 
 				-- Not axis, so it has a suspension...
 				local Mirror = IsLeft and 1 or -1
-				local ShouldSus = UsesDriveWheel == 1 and WheelIndex > 4
+				local ShouldSus = (UsesDriveWheel == 1 and WheelIndex > 4) or (UsesDriveWheel == 0)
 				if ShouldSus and SpringType ~= 1 then
 					if ShowSpringInfo == 1 then DrawArm(Wheel, Baseplate, Vector(SpringX, SpringY, SpringZ), blue) end
 					if ShowArmInfo == 1 then
@@ -639,9 +639,9 @@ elseif SERVER then -- Serverside-only stuff
 				end
 			end
 		else -- Wheeled TODO: CHECK and FIX
-			for Index, Plate in ipairs(Selections.Plates) do
+			for PlateIndex, Plate in ipairs(Selections.Plates) do
 				if not IsValid(Plate) then continue end
-				for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+				for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
 					if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
 					local Mirror = Index % 2 == 1 and 1 or -1
@@ -655,7 +655,7 @@ elseif SERVER then -- Serverside-only stuff
 						elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 						if SpringType == 2 and IsValid(ControlPlate) then
-							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index/2)-3) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
+							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index/2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
 						elseif SpringType == 3 then
 							MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
 						end
