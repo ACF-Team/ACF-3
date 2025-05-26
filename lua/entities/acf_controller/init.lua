@@ -274,7 +274,7 @@ do
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity:CPPIGetOwner() ~= ply then return end
-
+		if Entity:GetDisableAIOCam() then return end
 		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
 		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
 		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
@@ -286,11 +286,13 @@ do
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity:CPPIGetOwner() ~= ply then return end
+		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
 	end)
 
 	local CamTraceConfig = {}
 	function ENT:ProcessCameras(SelfTbl)
+		if self:GetDisableAIOCam() then return end
 		local CamAng = SelfTbl.CamAng or angle_zero
 		RecacheBindOutput(self, SelfTbl, "CamAng", CamAng)
 
@@ -565,7 +567,6 @@ do
 		local W, A, S, D = DriverKeyDown(Driver, IN_FORWARD), DriverKeyDown(Driver, IN_MOVELEFT), DriverKeyDown(Driver, IN_BACK), DriverKeyDown(Driver, IN_MOVERIGHT)
 		local IsBraking = DriverKeyDown(Driver, IN_JUMP)
 
-		if self:GetFlipWS() then W, S = S, W end
 		if self:GetFlipAD() then A, D = D, A end
 
 		local IsLateral = W or S						-- Forward/backward movement
@@ -618,7 +619,6 @@ do
 		if not IsValid(Gearbox) then return end
 
 		local W, S = DriverKeyDown(self.Driver, IN_FORWARD), DriverKeyDown(self.Driver, IN_BACK)
-		if self:GetFlipWS() then W, S = S, W end
 
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0

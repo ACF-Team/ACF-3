@@ -118,6 +118,8 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	local Col = Color(ColData.x * 255, ColData.y * 255, ColData.z * 255, 255)
 	SetDrawColor( Col )
 
+	if MyController:GetDisableAIOHUD() then return end -- Disable hud if not enabled
+
 	-- HUD 1
 	local HudType = MyController:GetHUDType()
 	if HudType == 0 then
@@ -238,6 +240,7 @@ end)
 hook.Add("CalcView", "ACFControllerView", function(Player, _, _, _)
 	if Player ~= LocalPlayer() then return end
 	if not IsValid(MyController) then return end
+	if MyController:GetDisableAIOCam() then return end
 
 	local Pod = Player:GetVehicle()
 	if not IsValid(Pod) then return end
