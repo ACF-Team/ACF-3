@@ -335,7 +335,7 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 		if not IsValid(Ponder.UIWindow) then
 			Ponder.UIWindow = vgui.Create("Ponder.UI")
 		else
-			Ponder.UIWindow:Remove()
+			Ponder.UIWindow:PonderShow()
 		end
 
 		local UI = Ponder.UIWindow
