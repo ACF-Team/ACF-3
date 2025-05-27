@@ -95,4 +95,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
-ACF.AddMenuItem(0, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)
+ACF.AddMenuItem(50, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)
