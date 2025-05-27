@@ -20,7 +20,7 @@ end
 local function AddStatus(Name, Branches)
 	local Data        = Repository[Name]
 	local Branch      = Branches[Data.Head] or Branches.master
-	local Base        = MenuBase:AddCollapsible(language.GetPhrase("acf.menu.updates.realm_status"):format(Name))
+	local Base        = MenuBase:AddCollapsible(language.GetPhrase("acf.menu.updates.realm_status"):format(Name), nil, "icon16/server.png")
 	local DefaultText = language.GetPhrase("acf.menu.updates.unknown")
 
 	Base:SetTooltip(language.GetPhrase("acf.menu.updates.realm_tooltip"):format(Name))

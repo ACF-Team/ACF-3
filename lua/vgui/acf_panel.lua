@@ -270,7 +270,7 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	return Wang, Text
 end
 
-function PANEL:AddCollapsible(Text, State)
+function PANEL:AddCollapsible(Text, State, Icon)
 	if State == nil then State = true end
 
 	local Base = vgui.Create("ACF_Panel")
@@ -280,6 +280,24 @@ function PANEL:AddCollapsible(Text, State)
 	Category:SetLabel(Text or "Title")
 	Category.Header:SetFont("ACF_Title")
 	Category.Header:SetSize(0, 24)
+	Category.Image = Category.Header:Add "DImage"
+	Category.Image:SetPos(3, 3)
+	Category.Image:SetSize(24 - 6, 24 - 6)
+
+	function Category:SetIcon(iconStr)
+		if iconStr == nil then
+			Category.Header:SetTextInset(0, 0)
+			return
+		end
+
+		Category.Header:SetTextInset(24, 0)
+		self.Image:SetImage(iconStr)
+	end
+
+	if Icon ~= nil then
+		Category:SetIcon(Icon)
+	end
+
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
