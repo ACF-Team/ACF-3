@@ -525,7 +525,7 @@ do
 
 		-- Process gears
 		local ForwardGearCount = 0
-		for k, v in ipairs(MainGearbox.Gears) do
+		for _, v in ipairs(MainGearbox.Gears) do
 			if v > 0 then ForwardGearCount = ForwardGearCount + 1 else break end
 		end
 		self.ForwardGearCount, self.TotalGearCount = ForwardGearCount, #MainGearbox.Gears
