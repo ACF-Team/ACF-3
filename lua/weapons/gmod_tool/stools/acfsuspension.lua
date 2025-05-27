@@ -76,8 +76,8 @@ if CLIENT then
 	local black = Color(0, 0, 0)
 
 	--- Creates/recreates the menu for this tool
-	local function CreateMenu(Panel)
-		local Menu = ACF.ArmorMenu
+	function ACF.CreateSuspensionToolMenu(Panel)
+		local Menu = ACF.InitMenuBase(Panel, "SuspensionToolMenu", "acf_reload_suspension_menu")
 
 		-- Handles recreating the menu, useful if you change elements.
 		if not IsValid(Menu) then
@@ -101,8 +101,7 @@ if CLIENT then
 		Menu:AddTitle("ACF Suspension Tool")
 		Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
 		Menu:AddLabel("You can hover over any of these elements to see their description.")
-		local WIP = Menu:AddLabel("This tool is mostly stable, but may need further testing.")
-		WIP:SetTextColor(yellow)
+		Menu:AddLabel("This tool is mostly stable, but may need further testing.")
 
 		local GeneralSettings = Menu:AddCollapsible("General Settings", true)
 
@@ -194,7 +193,6 @@ if CLIENT then
 		SpringType:ChooseOptionID(GetConVar("acf_sus_tool_springtype"):GetInt())
 
 		local Create = Menu:AddButton("Create Drivetrain")
-		Create:SetTextColor(green)
 		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
 
 		function Create:DoClickInternal()
@@ -204,7 +202,6 @@ if CLIENT then
 		end
 
 		local Clear = Menu:AddButton("Clear Drivetrain")
-		Clear:SetTextColor(red)
 		Clear:SetTooltip("Clears all constraints on selected entities.")
 
 		function Clear:DoClickInternal()
@@ -234,13 +231,7 @@ if CLIENT then
 		InstructionsGeneral:AddLabel("10. (Optional) If applicable, press the create button in the menu to create the suspension.")
 	end
 
-	TOOL.BuildCPanel = CreateMenu
-
-	concommand.Add("acf_reload_suspension_menu", function()
-		if not IsValid(ACF.ArmorMenu) then return end
-
-		CreateMenu(ACF.ArmorMenu.Panel)
-	end)
+	TOOL.BuildCPanel = ACF.CreateSuspensionToolMenu
 
 	net.Receive("ACF_Sus_Tool", function()
 		local Player = LocalPlayer()
