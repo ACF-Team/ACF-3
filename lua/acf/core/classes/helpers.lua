@@ -13,12 +13,4 @@ function Classes.AddSboxLimit(Data)
 				Data.Amount,
 				FCVAR_ARCHIVE + FCVAR_NOTIFY,
 				Data.Text or "")
-
-	function Data:AddCount(Ply, Ent)
-		return Ply:AddCount(self.Name, Ent)
-	end
-
-	function Data:CheckLimit(Ply)
-		return Ply:CheckLimit(self.Name)
-	end
 end
