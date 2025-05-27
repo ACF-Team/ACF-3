@@ -65,6 +65,13 @@ do -- Random timer crew stuff
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
+		local tr = util.TraceLine({
+			start = BreechPos,
+			endpos = CrewPos,
+			filter = function(x) return not (x == Gun or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
+		})
+		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
@@ -75,14 +82,14 @@ do -- Random timer crew stuff
 		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
+		-- Check space behind breech
 		if self.BulletData and self.ClassData.BreechCheck then
-			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
 
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
-				filter = Filter,
+				filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
 			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 		end
