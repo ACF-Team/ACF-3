@@ -7,7 +7,7 @@ local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -199,7 +199,7 @@ end
 hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 -- Global Funcs ---------------------------------

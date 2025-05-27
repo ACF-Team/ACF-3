@@ -1,11 +1,11 @@
 local ACF = ACF
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 hook.Add("ACF_OnUpdateServerData", "ACF_ArmorToolMenu_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 --- Generates the menu used in the Armor Properties tool.

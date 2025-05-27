@@ -16,7 +16,7 @@ TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
 
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor(Area, Ductility, Thickness)
@@ -68,7 +68,7 @@ end
 hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 function TOOL:CheckForReload()
