@@ -692,9 +692,12 @@ do
 
 		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
 
-		local Driver = self.Pod:GetDriver()
-		if IsValid(Driver) then
-			Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
+		if IsValid(self.Pod) then
+			local Driver = self.Pod:GetDriver()
+
+			if IsValid(Driver) then
+				Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
+			end
 		end
 
 		return HitRes
