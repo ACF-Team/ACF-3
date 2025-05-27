@@ -516,6 +516,7 @@ do
 
 	function ENT:Use(Activator)
 		if not IsValid(Activator) then return end
+		if not IsValid(self.Pod) then return end
 		Activator:EnterVehicle(self.Pod)
 	end
 end
