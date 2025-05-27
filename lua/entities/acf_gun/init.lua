@@ -201,6 +201,8 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	hook.Add("cfw.family.added", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = true
@@ -219,6 +221,8 @@ do -- Spawn and Update functions --------------------------------
 	end)
 
 	hook.Add("cfw.family.subbed", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = nil
