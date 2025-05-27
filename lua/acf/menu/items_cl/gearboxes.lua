@@ -21,7 +21,7 @@ local function CreateMenu(Menu)
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info")
+	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info", nil, "icon16/chart_curve_edit.png")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
 	local GearboxPreview = Base:AddModelPreview(nil, true)

@@ -164,7 +164,7 @@ do
 			RunConsoleCommand("acf_setdefaultpermissionmode", Mode)
 		end
 
-		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones")
+		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones", nil, "icon16/lock_edit.png")
 		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
 		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
 		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.noclip"):LinkToServerData("NoclipOutsideZones")

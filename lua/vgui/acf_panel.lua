@@ -281,16 +281,18 @@ function PANEL:AddCollapsible(Text, State, Icon)
 	Category.Header:SetFont("ACF_Title")
 	Category.Header:SetSize(0, 24)
 	Category.Image = Category.Header:Add "DImage"
-	Category.Image:SetPos(3, 3)
-	Category.Image:SetSize(24 - 6, 24 - 6)
+	Category.Image:SetPos(4, 4)
+	Category.Image:SetSize(24 - 8, 24 - 8)
 
 	function Category:SetIcon(iconStr)
 		if iconStr == nil then
 			Category.Header:SetTextInset(0, 0)
+			self.Image:Hide()
 			return
 		end
 
-		Category.Header:SetTextInset(24, 0)
+		Category.Header:SetTextInset(26, 0)
+		self.Image:Show()
 		self.Image:SetImage(iconStr)
 	end
 

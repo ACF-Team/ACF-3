@@ -20,7 +20,7 @@ local function CreateMenu(Menu)
 	local SensorClass = Menu:AddComboBox()
 	local SensorList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("#acf.menu.sensors.sensor_info")
+	local Base = Menu:AddCollapsible("#acf.menu.sensors.sensor_info", nil, "icon16/transmit_edit.png")
 	local SensorName = Base:AddTitle()
 	local SensorDesc = Base:AddLabel()
 	local SensorPreview = Base:AddModelPreview(nil, true)

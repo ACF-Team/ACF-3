@@ -132,7 +132,7 @@ do -- Default gearbox menus
 	do -- Manual Gearbox Menu
 		function ACF.ManualGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -221,7 +221,7 @@ do -- Default gearbox menus
 		}
 
 		function ACF.CVTGearboxMenu(Class, _, Menu, _)
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -309,7 +309,7 @@ do -- Default gearbox menus
 
 		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -421,7 +421,7 @@ do -- Default gearbox menus
 
 			-----------------------------------
 
-			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator")
+			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator", nil, "icon16/chart_curve_edit.png")
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
@@ -511,7 +511,7 @@ do -- Default turret menus
 			local RingStats		= Menu:AddLabel(TurretText:format(0, 0))
 			local MassLbl		= Menu:AddLabel(MassText:format(0, 0))
 
-			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings")
+			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings", nil, "icon16/chart_pie_edit.png")
 
 			ArcSettings:AddLabel("#acf.menu.turrets.arc_settings_desc")
 

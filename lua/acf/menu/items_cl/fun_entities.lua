@@ -15,7 +15,7 @@ do -- Piledrivers menu
 		local ClassList = Menu:AddComboBox()
 		local Caliber = Menu:AddSlider("#acf.menu.caliber", 0, 1, 2)
 
-		local ClassBase = Menu:AddCollapsible("#acf.menu.fun.piledrivers.piledriver_info")
+		local ClassBase = Menu:AddCollapsible("#acf.menu.fun.piledrivers.piledriver_info", nil, "icon16/monitor_edit.png")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
 		local ClassPreview = ClassBase:AddModelPreview(nil, true)
