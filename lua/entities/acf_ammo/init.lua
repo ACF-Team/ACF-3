@@ -28,6 +28,7 @@ local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
+local Sounds = ACF.Utilities.Sounds
 
 do -- Random timer crew stuff
 	local function GetReloadEff(Crew, Ammo1, Ammo2)
@@ -794,6 +795,8 @@ do -- Ammo Consumption -------------------------
 					self,
 					function() return self:UpdateStockMod() end,
 					function()
+						Sounds.SendSound(crate, "acf_base/fx/resupply_single.mp3", 70, 100, 0.25)
+						Sounds.SendSound(self, "acf_base/fx/resupply_single.mp3", 70, 100, 0.25)
 						self.IsRestocking = false
 						local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) 	-- Recalculate
 						crate:Consume(Transfer) 													-- Give
