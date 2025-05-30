@@ -315,6 +315,42 @@ do
 	end
 end
 
+-- Cam related
+do
+	function ENT:AnalyzeCams()
+		-- Build filter from connected entities (by constraints and parenting)
+		-- Partially adapted from https://github.com/thegrb93/StarfallEx/blob/master/lua/starfall/libs_sv/entities.lua#L926
+		timer.Simple(1, function()
+			-- Wait for the dupe to initialize and anything else that might be needed
+			local Filter = {}
+			local Seen = {}
+			local Recurse = nil
+			Recurse = function(Entity)
+				if not IsValid(Entity) or Seen[Entity] then return end
+
+				Seen[Entity] = true
+				table.insert(Filter, Entity)
+
+				local constraints = constraint.GetTable(Entity)
+				for _, v in pairs(constraints) do
+					if v.Ent1 then Recurse(v.Ent1) end
+					if v.Ent2 then Recurse(v.Ent2) end
+				end
+
+				local Parent = Entity:GetParent()
+				if IsValid(Parent) then Recurse(Parent) end
+
+				local Children = Entity:GetChildren()
+				for _, Child in pairs(Children) do
+					Recurse(Child)
+				end
+			end
+			Recurse(self)
+			self.Filter = Filter
+		end)
+	end
+end
+
 -- Hud related
 do
 	function ENT:ProcessHUDs(SelfTbl)
@@ -682,9 +718,15 @@ local function OnActiveChanged(Controller, Ply, Active)
 		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
 	end
 
+	-- Let the player know the controller is active or not
 	net.Start("ACF_Controller_Active")
 	net.WriteUInt(Controller:EntIndex(), MAX_EDICT_BITS)
 	net.WriteBool(Active)
+	net.Send(Ply)
+
+	-- Network the camera filter to the player
+	net.Start("ACF_Controller_CamInfo")
+	net.WriteTable(Controller.Filter or {})
 	net.Send(Ply)
 end
 
@@ -744,7 +786,7 @@ local LinkConfigs = {
 		Field = "Baseplate",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) Controller:AnalyzeCams() end
 		end,
 		OnUnlinked = function(Controller, Target)
 			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end

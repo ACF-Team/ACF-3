@@ -21,6 +21,7 @@ end
 -- Note: Since this file is sent to each client, locals are unique to each player...
 -- General
 local MyController = nil -- The controller the player is using, or nil.
+local MyFilter = nil -- The filter for the camera of the current controller
 
 -- Camera related
 local CamAng = Angle(0, 0, 0)
@@ -74,6 +75,12 @@ net.Receive("ACF_Controller_Active", function()
 	if Activated then UpdateCamera(LocalPlayer()) end
 end)
 
+-- Receive filter from server
+net.Receive("ACF_Controller_CamInfo", function()
+	Temp = net.ReadTable()
+	if #Temp > 0 then MyFilter = Temp end
+end)
+
 UpdateCamera = function(ply)
 	CamOffset = MyController["GetCam" .. Mode .. "Offset"]()
 	CamOrbit = MyController["GetCam" .. Mode .. "Orbit"]()
@@ -85,10 +92,11 @@ UpdateCamera = function(ply)
 end
 
 local rangerTrace = {}
-local ranger = function(start, dir, length, mask)
+local ranger = function(start, dir, length, filter, mask)
 	rangerTrace.start = start
 	rangerTrace.endpos = start + dir * length
 	rangerTrace.mask = mask or MASK_SOLID
+	rangerTrace.filter = filter
 	local Tr = util.TraceLine(rangerTrace)
 	return Tr.HitPos or vector_origin
 end
@@ -126,14 +134,6 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x - 40 * Scale, y - thick / 2, 80 * Scale, thick )
 		DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
 
-		local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
-		local sp = HitPos:ToScreen()
-		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		SetDrawColor( Ready and green or red )
-		DrawCircle( sp.x, sp.y, 10 * Scale)
-		SetDrawColor( Col )
-
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
@@ -158,15 +158,6 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
 		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
-		if IsValid(Primary) then
-			local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-			local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
-			local sp = HitPos:ToScreen()
-			local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-			SetDrawColor( Ready and green or red )
-			DrawCircle( sp.x, sp.y, 10 * Scale)
-		end
-
 		SetDrawColor( Col )
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
@@ -188,6 +179,15 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
 		local unit = MyController:GetFuelUnit() == 0 and " L" or " H"
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+	end
+
+	local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
+	if IsValid(Primary) then
+		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MyFilter )
+		local sp = HitPos:ToScreen()
+		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
+		SetDrawColor( Ready and green or red )
+		DrawCircle( sp.x, sp.y, 10 * Scale)
 	end
 end)
 
