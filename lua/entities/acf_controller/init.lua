@@ -298,8 +298,7 @@ do
 
 		local CamDir = CamAng:Forward()
 		local CamOffset = SelfTbl.CamOffset or vector_origin
-		local CamOrbit = SelfTbl.CamOrbit or 0
-		local CamPos = self:LocalToWorld(CamOffset) - CamDir * CamOrbit
+		local CamPos = self:LocalToWorld(CamOffset)
 
 		-- debugoverlay.Line(CamPos, CamPos + CamDir * 100, 0.1, Color(255, 0, 0), true)
 
