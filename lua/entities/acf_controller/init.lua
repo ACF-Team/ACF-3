@@ -351,7 +351,7 @@ do
 		end
 
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt)
+		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
 
 		local FuelLevel = 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
@@ -564,6 +564,16 @@ do
 
 	--- Handles driving, gearing, clutches, latches and brakes
 	function ENT:ProcessDrivetrain(SelfTbl, Driver)
+		-- Log speed even if drivetrain is invalid
+		-- TODO: should this be map or player scale?
+		local Unit = self:GetSpeedUnit()
+		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
+		local Speed = self.Baseplate:GetVelocity():Length() * Conv
+		SelfTbl.Speed = Speed
+		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
+
+		if not IsValid(SelfTbl.Gearbox) then return end
+
 		local W, A, S, D = DriverKeyDown(Driver, IN_FORWARD), DriverKeyDown(Driver, IN_MOVELEFT), DriverKeyDown(Driver, IN_BACK), DriverKeyDown(Driver, IN_MOVERIGHT)
 		local IsBraking = DriverKeyDown(Driver, IN_JUMP)
 
@@ -579,14 +589,6 @@ do
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
 		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
-
-		local Unit = self:GetSpeedUnit()
-
-		-- TODO: should this be map or player scale?
-		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
-		local Speed = self.Baseplate:GetVelocity():Length() * Conv
-		SelfTbl.Speed = Speed
-		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
 		local BrakeStrength = self:GetBrakeStrength()
 
@@ -657,9 +659,9 @@ end
 -- Handle a player entering or exiting the vehicle
 local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, Controller, "Driver", Ply)
-	RecacheBindOutput(Controller, Controller, "Active", 1)
+	RecacheBindOutput(Controller, Controller, "Active", Active and 1 or 0)
 
-	Controller.Active = Active and 1 or 0
+	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
 
 	for Turret in pairs(Controller.Turrets) do
@@ -810,7 +812,7 @@ do
 	-- Main logic loop
 	local iters = 0
 	function ENT:Think()
-		local SelfTbl = self:GetTable() -- TODO: Why use this?
+		local SelfTbl = self:GetTable()
 		local Driver = SelfTbl.Driver
 		if not IsValid(Driver) then return end
 
