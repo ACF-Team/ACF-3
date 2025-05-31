@@ -1157,6 +1157,8 @@ do -- Reload related
 		-- Pod:SetMoveType(MOVETYPE_NONE)
 		-- Pod:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		timer.Simple(2, function()
+			if not IsValid(Pod) then return end
+
 			local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
 			if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
 			Pod:SetSolid(SOLID_NONE)

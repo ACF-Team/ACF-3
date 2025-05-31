@@ -38,5 +38,6 @@ function ENT:DrawOverlay()
 
     if IsValid(self) and self.Box then
         render.DrawWireframeBox(self:LocalToWorld(self.Offset), self:GetAngles(), -self.Box / 2, self.Box / 2, purple, true)
+        render.DrawSphere(self:LocalToWorld(self.Offset), 2, 10, 10, purple )
     end
 end
