@@ -374,7 +374,6 @@ do
 			SelfTbl.Secondary = next(self.GunsSecondary)
 		end
 
-
 		if IsValid(SelfTbl.Tertiary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", SelfTbl.Tertiary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.Type or 0, self.SetNWInt)
@@ -419,6 +418,7 @@ do
 	end
 
 	-- Fire guns
+	-- TODO: Check if already firing, add fire sequencing
 	function ENT:ProcessGuns(SelfTbl, Driver)
 		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
 		for Gun in pairs(SelfTbl.GunsPrimary) do

@@ -170,12 +170,6 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 	Entity:SetUseType(SIMPLE_USE)
 	Entity.Pod = Pod
 
-	-- AD2 takes a bit to apply constraints
-	timer.Simple(1, function()
-		local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
-		if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
-	end)
-
 	Entity:CallOnRemove("ACF_RemoveVehiclePod", function(Ent)
 		SafeRemoveEntity(Ent.Pod)
 	end)
@@ -835,7 +829,9 @@ do
 
 	local function LinkCrew(Crew, Target)
 		local TargetClass = Target:GetClass()
-		if not CanLinkCrew(Crew, Target) then return end
+
+		local Success, _ = CanLinkCrew(Crew, Target)
+		if not Success then return end
 
 		-- Update crew and Target's records of each other
 		Crew.Targets[Target] = true
@@ -934,7 +930,7 @@ do
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
-		self:NextThink(Clock.CurTime + 1) -- Hope CFW finishes merging contraptions after this point...
+		self:NextThink(Clock.CurTime + 2) -- Hope CFW finishes merging contraptions after this point...
 
 		-- Restore previous links
 		if EntMods.CrewTargets then

@@ -50,12 +50,6 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 	Entity:SetUseType(SIMPLE_USE)
 	Entity.Pod = Pod
 
-	-- AD2 takes a bit to apply constraints
-	timer.Simple(1, function()
-		local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
-		if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
-	end)
-
 	hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. Entity:EntIndex(), function(Ply, Veh)
 		if Veh == Pod then
 			-- Ply:GodEnable() -- Remove this if aliases are removed?

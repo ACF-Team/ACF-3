@@ -1150,11 +1150,17 @@ do -- Reload related
 		Pod.ACF = Pod.ACF or {}
 		Pod.ACF.LuaGeneratedSeat = true
 
+		-- Cope with wiremod's linking system not checking parents...
+
 		-- If it's a lua generated seat, you probably want this anyways
-		Pod:PhysicsInit(SOLID_VPHYSICS)
-		Pod:SetMoveType(MOVETYPE_NONE)
-		Pod:SetCollisionGroup(COLLISION_GROUP_WORLD)
-		timer.Simple(1, function() Pod:SetNotSolid(true) end)	-- Bad idea to do this in the same tick
+		-- Pod:PhysicsInit(SOLID_NONE)
+		-- Pod:SetMoveType(MOVETYPE_NONE)
+		-- Pod:SetCollisionGroup(COLLISION_GROUP_WORLD)
+		timer.Simple(2, function()
+			local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
+			if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
+			Pod:SetSolid(SOLID_NONE)
+		end)
 		Pod:SetNoDraw(true)
 	end
 end
