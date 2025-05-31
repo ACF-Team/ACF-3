@@ -418,24 +418,30 @@ do
 	end
 
 	-- Fire guns
-	-- TODO: Check if already firing, add fire sequencing
+	-- TODO:  Add fire sequencing
+	local FiringStates = {}
+	local function HandleFire(Fire, Guns)
+		for Gun in pairs(Guns) do
+			if IsValid(Gun) then
+				if not FiringStates[Gun] and Fire then
+					Gun.Firing = true
+					if Gun:CanFire() then Gun:Shoot() end
+				else
+					Gun.Firing = false
+				end
+			end
+		end
+	end
+
 	function ENT:ProcessGuns(SelfTbl, Driver)
+		if SelfTbl:GetDisableFiring() then return end
+
 		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
-		for Gun in pairs(SelfTbl.GunsPrimary) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire1) end
-		end
 
-		for Gun in pairs(SelfTbl.GunsSecondary) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire2) end
-		end
-
-		for Gun in pairs(SelfTbl.Racks) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire3) end
-		end
-
-		for Gun in pairs(SelfTbl.GunsSmoke) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire4) end
-		end
+		HandleFire(Fire1, SelfTbl.GunsPrimary)
+		HandleFire(Fire2, SelfTbl.GunsSecondary)
+		HandleFire(Fire3, SelfTbl.Racks)
+		HandleFire(Fire4, SelfTbl.GunsSmoke)
 	end
 
 	-- Aim turrets
