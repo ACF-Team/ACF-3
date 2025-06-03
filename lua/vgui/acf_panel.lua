@@ -136,11 +136,15 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
-function PANEL:AddCheckBox(Text)
+function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
+
+	if ConVar then
+		Panel:SetConVar(ConVar)
+	end
 
 	function Panel:LinkToServerData(Key)
 		local Value = ACF.GetSetting(Key)
@@ -213,6 +217,41 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
+function PANEL:AddListView()
+	local LineHeight = 20
+	local Panel = self:AddPanel("DListView")
+	Panel:SetMultiSelect(false)
+	Panel:SetWidth(30)
+
+	local AddColumn = Panel.AddColumn
+	local AddLine = Panel.AddLine
+
+	function Panel:AddColumn(...)
+		local Column = AddColumn(self, ...)
+		Column.Header:SetFont("ACF_Control")
+
+		return Column
+	end
+
+	function Panel:AddLine(...)
+		local Line = AddLine(self, ...)
+
+		for ColumnID in ipairs(Line.Columns) do
+			local Column = Line.Columns[ColumnID]
+
+			if IsValid(Column) then
+				Column:SetFont("ACF_Control")
+			end
+		end
+
+		self:SetHeight(LineHeight * #self.Lines)
+
+		return Line
+	end
+
+	return Panel
+end
+
 function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	local Base = self:AddPanel("ACF_Panel")
 
@@ -231,7 +270,7 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	return Wang, Text
 end
 
-function PANEL:AddCollapsible(Text, State)
+function PANEL:AddCollapsible(Text, State, Icon)
 	if State == nil then State = true end
 
 	local Base = vgui.Create("ACF_Panel")
@@ -239,6 +278,28 @@ function PANEL:AddCollapsible(Text, State)
 
 	local Category = self:AddPanel("DCollapsibleCategory")
 	Category:SetLabel(Text or "Title")
+	Category.Header:SetFont("ACF_Title")
+	Category.Header:SetSize(0, 24)
+	Category.Image = Category.Header:Add "DImage"
+	Category.Image:SetPos(4, 4)
+	Category.Image:SetSize(24 - 8, 24 - 8)
+
+	function Category:SetIcon(iconStr)
+		if iconStr == nil then
+			Category.Header:SetTextInset(0, 0)
+			self.Image:Hide()
+			return
+		end
+
+		Category.Header:SetTextInset(26, 0)
+		self.Image:Show()
+		self.Image:SetImage(iconStr)
+	end
+
+	if Icon ~= nil then
+		Category:SetIcon(Icon)
+	end
+
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
@@ -265,6 +326,16 @@ function PANEL:AddCollapsible(Text, State)
 	return Base, Category
 end
 
+function PANEL:AddMenuReload(Command)
+	local Reload = self:AddButton("#acf.menu.reload")
+	local ReloadDesc = language.GetPhrase("acf.menu.reload_desc"):format(Command)
+	Reload:SetTooltip(ReloadDesc)
+
+	function Reload:DoClickInternal()
+		RunConsoleCommand(Command)
+	end
+end
+
 function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 	local HasPonder = Ponder ~= nil
 	local PonderText = language.GetPhrase("acf.menu.ponder_button")
@@ -284,7 +355,7 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 		if not IsValid(Ponder.UIWindow) then
 			Ponder.UIWindow = vgui.Create("Ponder.UI")
 		else
-			Ponder.UIWindow:Remove()
+			Ponder.UIWindow:PonderShow()
 		end
 
 		local UI = Ponder.UIWindow

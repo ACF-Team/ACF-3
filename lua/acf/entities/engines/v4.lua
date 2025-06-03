@@ -9,7 +9,7 @@ Engines.Register("V4", {
 do -- Diesel Engines
 	Engines.RegisterItem("1.9L-V4", "V4", {
 		Name		 = "1.9L V4 Diesel",
-		Description	 = "Torquey little lunchbox; for those smaller vehicles that don't agree with petrol powerbands",
+		Description	 = "#acf.descs.engines.v4.1_9",
 		Model		 = "models/engines/v4s.mdl",
 		Sound		 = "acf_base/engines/i4_diesel2.wav",
 		Fuel		 = { Diesel = true },
@@ -28,7 +28,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("3.3L-V4", "V4", {
 		Name		 = "3.3L V4 Diesel",
-		Description	 = "Compact cube of git; for moderate utility applications",
+		Description	 = "#acf.descs.engines.v4.3_3",
 		Model		 = "models/engines/v4m.mdl",
 		Sound		 = "acf_base/engines/i4_dieselmedium.wav",
 		Fuel		 = { Diesel = true },

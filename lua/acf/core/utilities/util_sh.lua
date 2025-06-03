@@ -1083,4 +1083,84 @@ do -- Reload related
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
 		return BaseTime * ReloadMod, true
 	end
+
+	local ModelToPlayerStart = {
+		["models/chairs_playerstart/jeeppose.mdl"] = "playerstart_chairs_jeep",
+		["models/chairs_playerstart/airboatpose.mdl"] = "playerstart_chairs_airboat",
+		["models/chairs_playerstart/sitposealt.mdl"] = "playerstart_chairs_seated",
+		["models/chairs_playerstart/podpose.mdl"] = "playerstart_chairs_podpose",
+		["models/chairs_playerstart/sitpose.mdl"] = "playerstart_chairs_seated_alt",
+		["models/chairs_playerstart/standingpose.mdl"] = "playerstart_chairs_standing",
+		["models/chairs_playerstart/pronepose.mdl"] = "playerstart_chairs_prone"
+	}
+
+	--- Generates a lua seat for a given entity
+	--- @param Entity any The entity to attach the seat to
+	--- @param Player any The owner of the entity
+	--- @param Pos any The position of the seat
+	--- @param Angle any The angle of the seat
+	--- @param Model any The model of the seat
+	--- @return unknown Pod The generated seat
+	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
+		print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
+		local Pod = ents.Create("prop_vehicle_prisoner_pod")
+		if IsValid(Pod) and IsValid(Player) then
+			Pod:SetAngles(Angle)
+			Pod:SetModel(Model)
+			Pod:SetPos(Pos)
+			Pod:Spawn()
+			Pod:SetParent(Entity)
+
+			-- MARCH: Fixes player-start animations
+			-- I don't like how this works but it's the best way I can think of right now
+			local PlayerStartName = ModelToPlayerStart[Model]
+			if PlayerStartName then
+				local PlayerStartInfo = list.GetForEdit("Vehicles")[PlayerStartName]
+				if PlayerStartInfo then
+					Pod:SetVehicleClass(PlayerStartName)
+					if PlayerStartInfo.Members then
+						table.Merge(Pod, PlayerStartInfo.Members)
+					end
+				end
+			end
+
+			Pod.Owner = Player
+			Pod:CPPISetOwner(Player)
+
+			return Pod
+		else
+			return nil
+		end
+	end
+
+	--- Configures a lua seat after it has been created.
+	--- Whenever the seat is created, this should be called after.
+	--- @param Pod any The seat to configure
+	--- @param Player any The owner of the seat
+	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
+		print("ConfigureLuaSeat", Entity, Pod, Player)
+		-- Just to be safe...
+		Pod.Owner = Player
+		Pod:CPPISetOwner(Player)
+
+		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    	-- I don't know what this does, but for good measure...
+		Pod:SetKeyValue("limitview", 0)                                            -- Let the player look around
+
+		Pod.Vehicle = Entity
+		Pod.ACF = Pod.ACF or {}
+		Pod.ACF.LuaGeneratedSeat = true
+
+		-- Cope with wiremod's linking system not checking parents...
+
+		-- If it's a lua generated seat, you probably want this anyways
+		timer.Simple(3, function()
+			if not IsValid(Pod) then return end
+
+			local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
+			if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
+
+			Pod:SetSolid(SOLID_NONE)
+		end)
+		Pod:SetNoDraw(true)
+	end
 end

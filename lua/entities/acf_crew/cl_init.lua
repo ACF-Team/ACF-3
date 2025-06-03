@@ -14,10 +14,12 @@ net.Receive("ACF_Crew_Links", function()
 end)
 
 net.Receive("ACF_Crew_Space", function()
-    local EntIndex1 = net.ReadUInt(16)
+    local Ent = net.ReadEntity()
     local Box = net.ReadVector()
     local Offset = net.ReadVector()
-    local Ent = Entity(EntIndex1)
+
+    if not IsValid(Ent) then return end
+
     Ent.Box = Box + Ent:OBBMaxs() - Ent:OBBMins()
     Ent.Offset = Offset
 end)
@@ -36,5 +38,6 @@ function ENT:DrawOverlay()
 
     if IsValid(self) and self.Box then
         render.DrawWireframeBox(self:LocalToWorld(self.Offset), self:GetAngles(), -self.Box / 2, self.Box / 2, purple, true)
+        render.DrawSphere(self:LocalToWorld(self.Offset), 2, 10, 10, purple )
     end
 end

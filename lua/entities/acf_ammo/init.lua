@@ -28,6 +28,7 @@ local ActiveCrates = ACF.AmmoCrates
 local Utilities    = ACF.Utilities
 local TimerCreate  = timer.Create
 local TimerExists  = timer.Exists
+local Sounds = ACF.Utilities.Sounds
 
 do -- Random timer crew stuff
 	local function GetReloadEff(Crew, Ammo1, Ammo2)
@@ -44,9 +45,8 @@ do -- Random timer crew stuff
 		self.CrewsByType = self.CrewsByType or {}
 		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.RestockCrate or self)
 		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.RestockCrate or self)
-		local Sum, Count = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 25% as effective as loaders
-		local Val = Sum * ACF.AsymptoticFalloff(Count, ACF.LoaderMaxBonus)
-		self.StockCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		local Sum, _ = Sum1 + Sum2 * 0.5, Count1 + Count2 -- Commanders are 50% as effective as loaders
+		self.StockCrewMod = math.Clamp(Sum, ACF.CrewFallbackCoef, 1)
 		return self.StockCrewMod
 	end
 end
@@ -306,7 +306,7 @@ do -- Spawning and Updating --------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Ammo(Player, Pos, Ang, Data)
+	function ACF.MakeAmmo(Player, Pos, Ang, Data)
 		if not Player:CheckLimit("_acf_ammo") then return end -- Check sbox limits
 
 		VerifyData(Data)
@@ -376,7 +376,7 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	Entities.Register("acf_ammo", MakeACF_Ammo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
+	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
@@ -500,6 +500,7 @@ do -- ACF Activation and Damage -----------------
 
 				BulletData.Pos    = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5) -- Random position in the ammo crate
 				BulletData.Flight = VectorRand():GetNormalized() * Speed * ACF.MeterToInch + Entity:GetAncestor():GetVelocity() -- Random direction including baseplate speed
+				BulletData.IsCookOff = true
 
 				BulletData.Owner  = Entity.Inflictor or Entity.Owner
 				BulletData.Gun    = Entity
@@ -794,6 +795,8 @@ do -- Ammo Consumption -------------------------
 					self,
 					function() return self:UpdateStockMod() end,
 					function()
+						Sounds.SendSound(crate, "acf_base/fx/resupply_single.mp3", 70, 100, 0.25)
+						Sounds.SendSound(self, "acf_base/fx/resupply_single.mp3", 70, 100, 0.25)
 						self.IsRestocking = false
 						local Transfer = math.min(MagSize, crate.Ammo, self.Capacity - self.Ammo) 	-- Recalculate
 						crate:Consume(Transfer) 													-- Give
@@ -815,14 +818,13 @@ do -- Misc --------------------------------------
 		-- The crew of this crate is the crews of all the weapons linked to it
 		self.Crews = self.Crews or {}
 		self.CrewsByType = self.CrewsByType or {}
-		for Weapon in pairs(self.Weapons or {}) do
-			for Crew in pairs(Weapon.Crews or {}) do
+		if self.Weapons then for Weapon in pairs(self.Weapons) do
+			if Weapon.Crews then for Crew in pairs(Weapon.Crews) do
 				self.Crews[Crew] = true
 				self.CrewsByType[Crew.CrewTypeID] = self.CrewsByType[Crew.CrewTypeID] or {}
 				self.CrewsByType[Crew.CrewTypeID][Crew] = true
-			end
-		end
-
+			end end
+		end end
 		self:NextThink(CurTime() + 1)
 		return true
 	end

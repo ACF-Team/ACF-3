@@ -19,13 +19,14 @@ local function CreateMenu(Menu)
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
 	local ClassList    = Menu:AddComboBox()
-	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info")
-	local BaseplateName     = BaseplateBase:AddTitle()
-	local BaseplateDesc     = BaseplateBase:AddLabel()
 
 	local SizeX        = Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 96, 2)
 	local SizeY        = Menu:AddSlider("#acf.menu.baseplates.plate_length", 36, 420, 2)
 	local SizeZ        = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", 0.5, 3, 2)
+
+	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
+	local BaseplateName     = BaseplateBase:AddTitle()
+	local BaseplateDesc     = BaseplateBase:AddLabel()
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -39,7 +40,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("BaseplateType", Data.ID)
 	end
 
-	local Vis = Menu:AddPanel("DPanel")
+	local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
 
 	function Vis:Paint(ScrW, ScrH)
@@ -94,4 +95,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
-ACF.AddMenuItem(0, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)
+ACF.AddMenuItem(50, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)

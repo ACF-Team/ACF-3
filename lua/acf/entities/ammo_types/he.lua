@@ -117,7 +117,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -131,7 +131,7 @@ else
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
 			local FragMass = ACF.GetProperMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)

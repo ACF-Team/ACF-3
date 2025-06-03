@@ -29,12 +29,6 @@ if CLIENT then
 
 	TOOL.BuildCPanel = ACF.CreateSpawnMenu
 
-	concommand.Add("acf_reload_spawn_menu", function()
-		if not IsValid(ACF.SpawnMenu) then return end
-
-		ACF.CreateSpawnMenu(ACF.SpawnMenu.Panel)
-	end)
-
 	hook.Add("ACF_OnDrawBoxes", "ACF Draw Hitboxes", function(Entity)
 		if not Entity.HitBoxes then return end
 		if not next(Entity.HitBoxes) then return end

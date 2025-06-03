@@ -9,7 +9,7 @@ Engines.Register("I3", {
 do -- Petrol Engines
 	Engines.RegisterItem("1.2-I3", "I3", {
 		Name		 = "1.2L I3 Petrol",
-		Description	 = "Tiny microcar engine, efficient but weak.",
+		Description	 = "#acf.descs.engines.i3.1_2",
 		Model		 = "models/engines/inline3s.mdl",
 		Sound		 = "acf_base/engines/i4_petrolsmall2.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("3.4-I3", "I3", {
 		Name		 = "3.4L I3 Petrol",
-		Description	 = "Short block engine for light utility use.",
+		Description	 = "#acf.descs.engines.i3.3_4",
 		Model		 = "models/engines/inline3m.mdl",
 		Sound		 = "acf_base/engines/i4_petrolmedium2.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do -- Petrol Engines
 
 	Engines.RegisterItem("13.5-I3", "I3", {
 		Name		 = "13.5L I3 Petrol",
-		Description	 = "Short block light tank engine, likes sideways mountings.",
+		Description	 = "#acf.descs.engines.i3.13_5",
 		Model		 = "models/engines/inline3b.mdl",
 		Sound		 = "acf_base/engines/i4_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -68,7 +68,7 @@ end
 do -- Diesel Engines
 	Engines.RegisterItem("1.1-I3", "I3", {
 		Name		 = "1.1L I3 Diesel",
-		Description	 = "ATV grade 3-banger, enormous rev band but a choppy idle, great for light utility work.",
+		Description	 = "#acf.descs.engines.i3.1_1",
 		Model		 = "models/engines/inline3s.mdl",
 		Sound		 = "acf_base/engines/i4_diesel2.wav",
 		Fuel		 = { Diesel = true },
@@ -87,7 +87,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("2.8-I3", "I3", {
 		Name		 = "2.8L I3 Diesel",
-		Description	 = "Medium utility grade I3 diesel, for tractors",
+		Description	 = "#acf.descs.engines.i3.2_8",
 		Model		 = "models/engines/inline3m.mdl",
 		Sound		 = "acf_base/engines/i4_dieselmedium.wav",
 		Fuel		 = { Diesel = true },
@@ -106,7 +106,7 @@ do -- Diesel Engines
 
 	Engines.RegisterItem("11.0-I3", "I3", {
 		Name		 = "11.0L I3 Diesel",
-		Description	 = "Light tank duty engine, compact yet grunts hard.",
+		Description	 = "#acf.descs.engines.i3.11_0",
 		Model		 = "models/engines/inline3b.mdl",
 		Sound		 = "acf_base/engines/i4_diesellarge.wav",
 		Fuel		 = { Diesel = true },

@@ -76,6 +76,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.JetMass        = JetMass
 	Data.JetMinVel      = JetMinVel
 	Data.JetMaxVel      = JetMaxVel
+	Data.JetAvgVel	  	= JetAvgVel
 	Data.BreakupTime    = BreakupTime
 	Data.Standoff       = Standoff
 	Data.BreakupDist    = BreakupDist
@@ -106,6 +107,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
+		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
@@ -123,7 +125,7 @@ else
 	ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
+		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -139,7 +141,7 @@ else
 			return BulletData.ConeAng
 		end)
 
-		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.75, 2)
+		local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.75, 2)
 		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 		StandoffRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.StandoffRatio = math.Round(Value, 2)

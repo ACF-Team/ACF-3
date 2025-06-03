@@ -9,13 +9,16 @@ Name, Description, LimitConVar, LinkHandlers, Mass, UpdateFocus, UpdateEfficienc
 local ACF		= ACF
 local CrewTypes	= ACF.Classes.CrewTypes
 
+local table_empty = {}
+
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
 	if not Class then
 		return table.Count(Crew.Targets) >= (Count or 1)
 	end
-	return table.Count(Crew.TargetsByType[Class] or {}) >= (Count or 1)
+	local Targets = Crew.TargetsByType[Class]
+	return (Targets and table.Count(Targets) or 0) >= (Count or 1)
 end
 
 --- Finds the longest bullet of any gun connected to this crew and adjusts the box accordingly
@@ -23,7 +26,7 @@ local function FindLongestBullet(Crew)
 	-- Go through every bullet linked to the gun, and find the longest shell
 	local LongestLength = 0
 	local LongestBullet = nil
-	for Gun in pairs(Crew.TargetsByType["acf_gun"] or Crew.TargetsByType["acf_rack"] or {}) do
+	for Gun in pairs(Crew.TargetsByType["acf_gun"] or Crew.TargetsByType["acf_rack"] or table_empty) do
 		if not IsValid(Gun) then continue end
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
@@ -45,7 +48,7 @@ local function FindLongestBullet(Crew)
 
 		-- Network the scan box to clients
 		net.Start("ACF_Crew_Space")
-		net.WriteUInt(Crew:EntIndex(), 16)
+		net.WriteEntity(Crew)
 		net.WriteVector(Crew.ScanBox)
 		net.WriteVector(Crew.CrewModel.ScanOffsetL)
 		net.Broadcast()
@@ -249,7 +252,7 @@ CrewTypes.Register("Commander", {
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Contraption = Crew:GetContraption() or {}
-		local CrewCount = table.Count(Contraption.Crews or {}) - 1 -- Excluding the commander
+		local CrewCount = (Contraption.Crews and table.Count(Contraption.Crews) or 0) - 1 -- Excluding the commander
 		local Count = table.Count(Crew.Targets) + (CrewCount * 1 / ACF.CommanderCapacity) -- 1/3rd focus to each crew, 1 to each other target
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end

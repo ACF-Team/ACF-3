@@ -78,7 +78,7 @@ do -- Spawning and Updating
 		Entity:UpdateMass(true)
 	end
 
-	function MakeACF_Armor(Player, Pos, Angle, Data)
+	function ACF.MakeArmor(Player, Pos, Angle, Data)
 		if not Player:CheckLimit("_acf_armor") then return end
 
 		local Plate = ents.Create("acf_armor")
@@ -116,7 +116,7 @@ do -- Spawning and Updating
 		return Plate
 	end
 
-	Entities.Register("acf_armor", MakeACF_Armor, "Width", "Height", "Thickness", "ArmorType")
+	Entities.Register("acf_armor", ACF.MakeArmor, "Width", "Height", "Thickness", "ArmorType")
 
 	------------------- Updating ---------------------
 

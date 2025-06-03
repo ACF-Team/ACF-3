@@ -65,6 +65,13 @@ do -- Random timer crew stuff
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
+		local tr = util.TraceLine({
+			start = BreechPos,
+			endpos = CrewPos,
+			filter = function(x) return not (x == Gun or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
+		})
+		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
@@ -75,14 +82,14 @@ do -- Random timer crew stuff
 		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
+		-- Check space behind breech
 		if self.BulletData and self.ClassData.BreechCheck then
-			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
 
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
-				filter = Filter,
+				filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
 			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 		end
@@ -194,6 +201,8 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	hook.Add("cfw.family.added", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = true
@@ -212,6 +221,8 @@ do -- Spawn and Update functions --------------------------------
 	end)
 
 	hook.Add("cfw.family.subbed", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = nil
@@ -328,7 +339,7 @@ do -- Spawn and Update functions --------------------------------
 		if not Entity.Thermal then Thermal.Temp	= ACF.AmbientTemperature end			-- Default init temperature
 
 		Thermal.TransferMult = Entity.ClassData.TransferMult or 1 -- Thermal transfer rate multiplier
-		EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
+		Thermal.EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
 
 		-- Simplification assumes barrel is the only heating element (breech excluded)
 		-- I really want to make guns not suck :( (These ratios piss me off marginally)
@@ -402,7 +413,7 @@ do -- Spawn and Update functions --------------------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Weapon(Player, Pos, Angle, Data)
+	function ACF.MakeWeapon(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Weapons, Data.Weapon)
@@ -437,6 +448,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.TotalAmmo    = 0
 		Entity.BulletData   = EMPTY
 		Entity.TurretLink	= false
+		Entity.HasInitialLoaded = false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 		Entity.ParentState = 0
 
@@ -476,7 +488,7 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gun", MakeACF_Weapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber")
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
@@ -523,7 +535,7 @@ do -- Spawn and Update functions --------------------------------
 			end
 		end
 
-		if next(self.Crews or {}) then
+		if self.Crews and next(self.Crews) then
 			for Crew in pairs(self.Crews) do
 				self:Unlink(Crew)
 			end
@@ -577,12 +589,23 @@ do -- Metamethods --------------------------------
 			This:UpdateOverlay(true)
 			Crate:UpdateOverlay(true)
 
-			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
-				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
-					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate.AmmoStage == 1 and Crate:CanConsume() then
-						This:Load(This.ClassData.IsBelted and ACF.InitReloadDelay)
-					end
-				end)
+			local function AttemptReload(This, Target, Instant)
+				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
+					This:Load(Instant)
+				end
+			end
+
+			if This.State == "Empty" and Crate.AmmoStage == 1 then -- When linked to an empty weapon, attempt to load it
+				if This.HasInitialLoaded then
+					timer.Simple(1, function()
+						AttemptReload(This, Crate)
+					end)
+				else
+					This.HasInitialLoaded = true
+					timer.Simple(ACF.InitReloadDelay, function()
+						AttemptReload(This, Crate, true)
+					end)
+				end
 			end
 
 			return true, "Weapon linked successfully."
@@ -742,9 +765,10 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Shoot()
+			local Thermal = self.Thermal
 			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
-			local EnergyToHeat = BulletEnergy * EnergyConversion
-			self:SimulateTemp(1 / 66, self.Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
+			local EnergyToHeat = BulletEnergy * Thermal.EnergyConversion
+			self:SimulateTemp(1 / 66, Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
 
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
@@ -892,7 +916,7 @@ do -- Metamethods --------------------------------
 			)
 		end
 
-		function ENT:Chamber(Override)
+		function ENT:Chamber(Instant)
 			if self.Disabled then return end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
@@ -919,34 +943,41 @@ do -- Metamethods --------------------------------
 				self:SetNW2Int("Caliber", self.BulletData.Caliber)
 				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
 
+				local ReloadLoop = function()
+					local eff = Manual and self:UpdateLoadMod() or 1
+					if Manual then -- Automatics don't change their rate of fire
+						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
+						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
+					end
+					return eff
+				end
+
+				local ReloadFinish = function()
+					if IsValid(self) and self.BulletData then
+						if self.CurrentShot == 0 then
+							self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
+						end
+
+						self.NextFire = nil
+
+						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+						WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
+						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
+
+						self:SetState("Loaded")
+
+						if self:CanFire() then self:Shoot() end
+					end
+				end
+
+				if Instant then
+					ReloadLoop()
+					ReloadFinish()
+					return true
+				end
+
 				ACF.ProgressTimer(
-					self,
-					function()
-						local eff = Manual and self:UpdateLoadMod() or 1
-						if Manual then -- Automatics don't change their rate of fire
-							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
-							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
-						end
-						return eff
-					end,
-					function()
-						if IsValid(self) and self.BulletData then
-							if self.CurrentShot == 0 then
-								self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
-							end
-
-							self.NextFire = nil
-
-							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-							WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
-							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
-
-							self:SetState("Loaded")
-
-							if self:CanFire() then self:Shoot() end
-						end
-					end,
-					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = Override or IdealTime}
+					self, ReloadLoop, ReloadFinish, {MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
@@ -959,7 +990,7 @@ do -- Metamethods --------------------------------
 			end
 		end
 
-		function ENT:Load(Override)
+		function ENT:Load(Instant)
 			if self.Disabled then return false end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
@@ -985,10 +1016,6 @@ do -- Metamethods --------------------------------
 
 			self:SetState("Loading")
 
-			if Override and IsValid(self) then
-				self:Chamber(Override)
-			end
-
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
 				if Crate.IsBelted then
@@ -1004,19 +1031,27 @@ do -- Metamethods --------------------------------
 
 				self.NextFire = Clock.CurTime + Time
 
+				local ReloadLoop = function()
+					local eff = self:UpdateLoadMod()
+					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+					return eff
+				end
+
+				local ReloadFinish = function()
+					if IsValid(self) then self:Chamber() end
+				end
+
+				if Instant then
+					ReloadLoop()
+					ReloadFinish()
+					return true
+				end
+
 				ACF.ProgressTimer(
-					self,
-					function()
-						local eff = self:UpdateLoadMod()
-						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
-						return eff
-					end,
-					function()
-						if IsValid(self) then self:Chamber() end end,
-					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+					self, ReloadLoop, ReloadFinish, {MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
 			else -- Single-shot/Manually loaded
-				self:Chamber()
+				self:Chamber(Instant)
 			end
 
 			return true
@@ -1213,7 +1248,7 @@ do -- Metamethods --------------------------------
 				self:Unlink(Crate)
 			end
 
-			if next(self.Crews or {}) then
+			if self.Crews and next(self.Crews) then
 				for Crew in pairs(self.Crews) do
 					if IsValid(Crew) then self:Unlink(Crew) end
 				end

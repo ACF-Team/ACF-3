@@ -132,6 +132,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.JetMass        = JetMass
 	Data.JetMinVel      = JetMinVel
 	Data.JetMaxVel      = JetMaxVel
+	Data.JetAvgVel	  	= JetAvgVel
 	Data.BreakupTime    = BreakupTime
 	Data.Standoff       = Standoff
 	Data.BreakupDist    = BreakupDist
@@ -162,6 +163,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
+		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
@@ -244,18 +246,6 @@ if SERVER then
 
 		Damage.createExplosion(HitPos, Filler, Fragments, nil, DmgInfo)
 
-		-- Find ACF entities in the range of the damage (or simplify to like 6m)
-		local FoundEnts = ents.FindInSphere(HitPos, 250)
-		local Squishies = {}
-		for _, v in ipairs(FoundEnts) do
-			local Class = v:GetClass()
-
-			-- Blacklist armor and props, the most common entities
-			if Class ~= "acf_armor" and Class ~= "prop_physics" and (Class:find("^acf") or Class:find("^gmod_wire") or Class:find("^prop_vehicle") or v:IsPlayer()) then
-				Squishies[#Squishies + 1] = v
-			end
-		end
-
 		-- Move the jet start to the impact point and back it up by the passive standoff
 		local Start		= Bullet.Standoff * ACF.MeterToInch
 		local End		= Bullet.BreakupDist * 10 * ACF.MeterToInch
@@ -317,14 +307,24 @@ if SERVER then
 			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.35 -- Remove when health scales with armor
+				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
+				_Cavity = Cavity * math.min(Penetration / EffectiveArmor, 1) -- Penetration should not exceed armor (in line with kinetic shells)
 
+				-- Damage result, Damage info
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
+				local Speed = Bullet.JetAvgVel
+
+				Bullet.Energy = {}
+				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
+
+				if not Bullet.IsSpall and not Bullet.IsCookOff then
+					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
+				end
 
 				if JetResult.Kill then
 					ACF.APKill(Ent, Direction, 0, JetInfo)
@@ -434,7 +434,7 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
+		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("Projectile")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -451,7 +451,7 @@ else
 		end)
 
 		-- Capped the max standoff at 0.4 for historical reasons
-		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.2, 2)
+		local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.2, 2)
 		StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 		StandoffRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.StandoffRatio = math.Round(Value, 2)
@@ -478,7 +478,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -495,7 +495,7 @@ else
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
 			local FragMass = ACF.GetProperMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)
@@ -511,7 +511,7 @@ else
 		Penetrator:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text     = "Copper mass : %s g\nJet mass : %s g\nJet velocity : %s m/s - %s m/s"
+			local Text     = language.GetPhrase("acf.menu.ammo.penetrator_heat")
 			local CuMass   = math.Round(BulletData.LinerMass * 1e3, 0)
 			local JetMass  = math.Round(BulletData.JetMass * 1e3, 0)
 			local MinVel   = math.Round(BulletData.JetMinVel, 0)
@@ -528,7 +528,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text   = "Penetration at passive standoff :\nAt %s mm : %s mm RHA\nMaximum penetration :\nAt %s mm : %s mm RHA"
+			local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_heat")
 			local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)
 			local Pen1 = math.Round(self:GetPenetration(BulletData, BulletData.Standoff), 1)
 			local Standoff2 = math.Round(BulletData.BreakupDist * 1e3, 0)

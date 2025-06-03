@@ -61,7 +61,7 @@ local function CreateMenu(Menu)
 	local EngineClass = Menu:AddComboBox()
 	local EngineList = Menu:AddComboBox()
 
-	local EngineBase = Menu:AddCollapsible("#acf.menu.engines.engine_info")
+	local EngineBase = Menu:AddCollapsible("#acf.menu.engines.engine_info", nil, "icon16/monitor_edit.png")
 	local EngineName = EngineBase:AddTitle()
 	local EngineDesc = EngineBase:AddLabel()
 	local EnginePreview = EngineBase:AddModelPreview(nil, true)
@@ -127,7 +127,7 @@ local function CreateMenu(Menu)
 	end)
 
 	local FuelList = Menu:AddComboBox()
-	local FuelBase = Menu:AddCollapsible("#acf.menu.fuel.tank_info")
+	local FuelBase = Menu:AddCollapsible("#acf.menu.fuel.tank_info", nil, "icon16/cup_edit.png")
 	local FuelDesc = FuelBase:AddLabel()
 	local FuelPreview = FuelBase:AddModelPreview(nil, true)
 	local FuelInfo = FuelBase:AddLabel()
@@ -216,9 +216,16 @@ local function CreateMenu(Menu)
 		local ClassData = FuelClass.Selected
 		local ClassDesc = ClassData.Description
 
+		if ClassDesc and string.StartsWith(ClassDesc, "#") then
+			ClassDesc = language.GetPhrase(ClassDesc)
+		end
+
 		self.Description = (ClassDesc and (ClassDesc .. "\n\n") or "")
-		if Data.Description then
-			self.Description = self.Description .. Data.Description
+		local ItemDesc = Data.Description
+
+		if ItemDesc then
+			ItemDesc = string.StartsWith(ItemDesc, "#") and language.GetPhrase(ItemDesc) or ItemDesc
+			self.Description = self.Description .. ItemDesc
 		end
 
 		ACF.SetClientData("FuelTank", Data.ID)

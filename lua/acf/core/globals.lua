@@ -137,10 +137,10 @@ do -- ACF global vars
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
-	ACF.MinDuctility         = -80 -- The minimum amount of ductility that can be set on an entity
-	ACF.MaxDuctility         = 80 -- The maximum amount of ductility that can be set on an entity
+	ACF.MinimumArmor         = 1     -- Minimum possible armor that can be given to an entity
+	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
+	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
+	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
@@ -164,6 +164,9 @@ do -- ACF global vars
 	ACF.DefineSetting("CreateDebris",       true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("FireballMult",       1,      nil, ACF.FloatDataCallback(0.01, 1, 2))
+
+	ACF.DefineSetting("EnableSafezones",    true,   "Safezones have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("NoclipOutsideZones", true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
 
 	ACF.MaxDriveshaftAngle   = 80 -- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.Year                 = 1945
@@ -295,7 +298,7 @@ do -- ACF global vars
 
 	-- Crew 
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
-	ACF.CrewFallbackCoef 	= 0.1	-- Minimum possible efficiency
+	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
@@ -321,7 +324,7 @@ do -- ACF global vars
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
 
-	ACF.InitReloadDelay		= 10	-- Delay after spawning that belt feds are loaded
+	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
 	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
 

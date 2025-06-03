@@ -89,7 +89,7 @@ do	-- Spawn and Update funcs
 		Contraption.SetMass(Entity, Mass)
 	end
 
-	function MakeACF_BallisticComputer(Player, Pos, Angle, Data)
+	function ACF.MakeBallisticComputer(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Computer)
@@ -129,7 +129,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_computer", MakeACF_BallisticComputer, "Computer")
+	Entities.Register("acf_turret_computer", ACF.MakeBallisticComputer, "Computer")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
