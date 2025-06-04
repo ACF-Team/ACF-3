@@ -10,6 +10,8 @@ local DrawRect = surface.DrawRect
 local DrawCircle = surface.DrawCircle
 local DrawText = draw.DrawText
 
+local TraceLine = util.TraceLine
+
 function ENT:Initialize(...)
 	BaseClass.Initialize(self, ...)
 end
@@ -97,7 +99,7 @@ local ranger = function(start, dir, length, filter, mask)
 	rangerTrace.endpos = start + dir * length
 	rangerTrace.mask = mask or MASK_SOLID
 	rangerTrace.filter = filter
-	local Tr = util.TraceLine(rangerTrace)
+	local Tr = TraceLine(rangerTrace)
 	return Tr.HitPos or vector_origin
 end
 
@@ -192,7 +194,8 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 end)
 
 hook.Add("KeyPress", "ACFControllerCamMode", function(ply, key)
-	if ply ~= LocalPlayer() then return end
+	if not IsValid(ply) or ply ~= LocalPlayer() then return end
+	if not IsFirstTimePredicted() then return end
 	if not IsValid(MyController) then return end
 
 	if key == IN_DUCK then

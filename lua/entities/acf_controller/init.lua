@@ -48,6 +48,10 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_DUCK] = "Duck",
 }
 
+-- Reverse lookup
+local WIRE_OUTPUT_TO_IN_ENUM = {}
+for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
+
 local Defaults = {
 	ZoomSpeed = 10,
 	ZoomMin = 5,
@@ -425,7 +429,7 @@ do
 			if IsValid(Gun) then
 				if not FiringStates[Gun] and Fire then
 					Gun.Firing = true
-					if Gun:CanFire() then Gun:Shoot() end
+					if Gun.CanFire and Gun:CanFire() then Gun:Shoot() end
 				else
 					Gun.Firing = false
 				end
