@@ -62,7 +62,7 @@ end
 
 function EFFECT:Core(Origin, Radius)
 
-	SoundData = Sounds.ExplosionSoundBank(Radius)
+	local SoundData = Sounds.ExplosionSound(Radius)
 
 	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, 100, 1)
 end

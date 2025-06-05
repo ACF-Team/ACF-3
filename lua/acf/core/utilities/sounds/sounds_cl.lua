@@ -218,38 +218,43 @@ function Sounds.HitSound(Data, Trace, EffectType)
 
 	SoundData.SoundPath = table.concat(SoundPath, "/")
 
-	--print("playing:", SoundData.SoundPath, " @ ", SoundData.SoundPitch, " pitch")
+	--print("TYPE:", EffectType," playing:", SoundData.SoundPath, " @ ", SoundData.SoundPitch, " pitch")
 
 	return SoundData
 end
 
-function Sounds.ExplosionSoundBank(Radius)
+function Sounds.ExplosionSound(Radius)
 	local SoundData = {
-		SoundPath	= "^acf_base/fx/explosion",
+		SoundPath	= "",
 		SoundVolume = 100
 	}
 
-	local SoundPath = SoundData.SoundPath
+	local SoundPath = {"^acf_base/fx/explosion", "", "%s.mp3"}
 
+	---again probably a better way to do this...
 	if Radius <= 2 then
-		SoundData.SoundPath = SoundPath.."/small/%s.mp3"
-		SoundData.SoundVolume = 90
+		SoundPath[2] = "small"
+		SoundData.SoundVolume = 92
 	elseif Radius > 2 and Radius <= 6 then
-		SoundData.SoundPath = SoundPath.."/medium-small/%s.mp3"
+		SoundPath[2] = "medium-small"
 		SoundData.SoundVolume = 105
 	elseif Radius > 6 and Radius <= 12 then
-		SoundData.SoundPath = SoundPath.."/medium/%s.mp3"
+		SoundPath[2] = "medium"
 		SoundData.SoundVolume = 116
 	elseif Radius > 12 and Radius <= 20 then
-		SoundData.SoundPath = SoundPath.."/medium-large/%s.mp3"
+		SoundPath[2] = "medium-large"
 		SoundData.SoundVolume = 120
 	elseif Radius > 20 and Radius < 30 then
-		SoundData.SoundPath = SoundPath.."/large/%s.mp3"
+		SoundPath[2] = "large"
 		SoundData.SoundVolume = 124
 	else
-		SoundData.SoundPath = SoundPath.."/extra-large/%s.mp3"
+		SoundPath[2] = "extra-large"
 		SoundData.SoundVolume = 127
 	end
+
+	SoundData.SoundPath = table.concat(SoundPath, "/")
+
+	--print("TYPE:", "explosion"," playing:", SoundData.SoundPath, " @ ", SoundData.SoundVolume, " volume")
 
 	return SoundData
 end
