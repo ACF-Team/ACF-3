@@ -27,9 +27,9 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	local SoundData = Sounds.HitSoundBank(Data, Trace, "ricochet")
+	local SoundData = Sounds.HitSound(Data, Trace, "ricochet")
 
-	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), 100, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:Think()
