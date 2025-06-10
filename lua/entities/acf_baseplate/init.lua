@@ -124,18 +124,27 @@ function ENT:PreEntityCopy()
 	end
 end
 
-function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-	local EntMods = Ent.EntityMods
-	if EntMods.LuaSeatID then
-		local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
+-- Avoiding race conditions :D
+hook.Add("AdvDupe_FinishPasting", "ACF_Base_Seat_Config", function(Raw)
+	Raw = Raw[1]
+	local EntityList, CreatedEntities, Player = Raw.EntityList, Raw.CreatedEntities, Raw.Player
 
-		-- "Repair" the seat if the reference makes no sense. In any case, configure it.
-		if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
-			Pod = ACF.GenerateLuaSeat(self, Player, self:GetPos(), self:GetAngles(), self:GetModel(), true)
+	for Index, _ in pairs(EntityList) do
+		local Ent = CreatedEntities[Index]
+		local EntMods = Ent.EntityMods
+		if IsValid(Ent) and Ent:GetClass() == "acf_baseplate" and EntMods and EntMods.LuaSeatID then
+			-- print("Applied lua seat dupe hook (Baseplate)", Ent)
+
+			local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
+
+			-- "Repair" the seat if the reference makes no sense. In any case, configure it.
+			if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
+				Pod = ACF.GenerateLuaSeat(Ent, Player, Ent:GetPos(), Ent:GetAngles(), Ent:GetModel(), true)
+			end
+			if IsValid(Pod) then ConfigureLuaSeat(Ent, Pod, Player) end
 		end
-		if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Player) end
 	end
-end
+end)
 
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	local EntMods = ClientData.EntityMods

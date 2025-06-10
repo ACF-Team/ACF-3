@@ -1160,7 +1160,7 @@ do -- Reload related
 			if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
 
 			Pod:SetSolid(SOLID_NONE)
+			Pod:SetNoDraw(true)
 		end)
-		Pod:SetNoDraw(true)
 	end
 end
