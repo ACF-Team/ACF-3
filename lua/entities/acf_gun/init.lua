@@ -70,7 +70,11 @@ do -- Random timer crew stuff
 			endpos = CrewPos,
 			filter = function(x) return not (x == Gun or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
 		})
-		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. tostring(Gun) or nil
+		Crew:UpdateOverlayText()
+		if tr.Hit then
+			return 0.000001
+		end -- Wanna avoid division by zero...
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
@@ -91,7 +95,11 @@ do -- Random timer crew stuff
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
 				filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
-			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
+			self:UpdateOverlayText()
+			if tr.Hit then
+				return 0.000001
+			end
 		end
 
 		return self.LoadCrewMod
@@ -325,6 +333,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
+
+		Entity.OverlayErrors = {}
 
 		-- Comments from Liddul:
 		-- https://matmatch.com/materials/minfc934-astm-a322-grade-4150
@@ -1121,6 +1131,16 @@ do -- Metamethods --------------------------------
 				Status = "Not linked to an ammo crate!"
 			else
 				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
+			end
+
+			local ErrorCount = table.Count(self.OverlayErrors)
+			if ErrorCount > 0 then
+				Status = Status .. " (" .. ErrorCount .. " errors)"
+			end
+
+			-- Compile error messages
+			for _, Error in pairs(self.OverlayErrors) do
+				Status = Status .. "\n\n" .. Error
 			end
 
 			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates

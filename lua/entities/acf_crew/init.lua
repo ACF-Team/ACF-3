@@ -353,6 +353,8 @@ do
 
 		Entity.ACF.Model = CrewModel.Model
 
+		Entity.OverlayErrors = {}
+
 		ACF.Activate(Entity, true)
 
 		local PhysObj = Entity.ACF.PhysObj
@@ -493,7 +495,19 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		local str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		local Status = self.IsAlive and "Alive" or "Dead"
+		local ErrorCount = table.Count(self.OverlayErrors)
+		if ErrorCount > 0 then
+			Status = Status .. " (" .. ErrorCount .. " errors)"
+		end
+
+		-- Compile error messages
+		for _, Error in pairs(self.OverlayErrors) do
+			Status = Status .. "\n\n" .. Error
+		end
+
+		local str = string.format("%s\n\nRole: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+			Status,
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
@@ -540,6 +554,7 @@ do
 				end
 			end
 		end
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and table.Count(Targets) == 0 and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
