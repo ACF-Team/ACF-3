@@ -1056,7 +1056,7 @@ do -- Reload related
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * ReloadMod, true
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	--- Calculates the time it takes for a gun to reload its magazine
@@ -1081,7 +1081,7 @@ do -- Reload related
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * ReloadMod, true
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	local ModelToPlayerStart = {
