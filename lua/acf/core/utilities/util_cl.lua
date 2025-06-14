@@ -954,4 +954,16 @@ do -- Default turret menus
 			Menu:AddLabel(MassText:format(Data.Mass))
 		end
 	end
+
+	do
+		function ACF.DrawOutlineBeam(width, color, ...)
+			local args = {...}
+			for i = 1, #args, 2 do
+				render.DrawBeam(args[i], args[i + 1], width + 0.5, 0, 1, color_black)
+			end
+			for i = 1, #args, 2 do
+				render.DrawBeam(args[i], args[i + 1], width, 0, 1, color)
+			end
+		end
+	end
 end
