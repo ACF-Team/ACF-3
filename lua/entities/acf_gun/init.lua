@@ -600,7 +600,7 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			local function AttemptReload(This, Target, Instant)
-				if IsValid(This) and IsValid(Target) and Target:CanConsume() and This.State ~= "Loading" then
+				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
 					This:Load(Instant)
 				end
 			end
@@ -616,6 +616,7 @@ do -- Metamethods --------------------------------
 						AttemptReload(This, Crate, true)
 					end)
 				end
+				This:SetState("Loading")
 			end
 
 			return true, "Weapon linked successfully."
