@@ -928,6 +928,7 @@ do -- Metamethods --------------------------------
 
 		function ENT:Chamber(Instant)
 			if self.Disabled then return end
+			if self.State == "Unloading" then return end -- Don't chamber while unloading
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
@@ -964,6 +965,7 @@ do -- Metamethods --------------------------------
 
 				local ReloadFinish = function()
 					if IsValid(self) and self.BulletData then
+						if self.State == "Unloading" then return end -- Don't chamber while unloading
 						if self.CurrentShot == 0 then
 							self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
 						end
