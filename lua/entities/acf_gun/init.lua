@@ -109,7 +109,6 @@ do -- Random timer crew stuff
 	function ENT:FindPropagator()
 		local Temp = self:GetParent()
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
 		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
 		return nil
