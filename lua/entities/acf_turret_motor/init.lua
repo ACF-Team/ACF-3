@@ -241,6 +241,10 @@ do	-- Metamethods and other important stuff
 			self:UpdateOverlay(true)
 		end
 
+		function ENT:CFW_AfterParentedTo(_, _)
+			self:ValidatePlacement()
+		end
+
 		function ENT:ValidatePlacement()
 			self.ValidPlacement = true
 
