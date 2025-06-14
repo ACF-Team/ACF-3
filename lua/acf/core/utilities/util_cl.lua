@@ -956,10 +956,16 @@ do -- Default turret menus
 	end
 
 	do
+		-- Draws an outlined beam between var-length pairs of XY1 -> XY2 line segments.
+		-- Is not the best thing in the world, only really used in gizmos to make it easier 
+		-- to see during building
 		function ACF.DrawOutlineBeam(width, color, ...)
 			local args = {...}
+			local Add = 0.4
 			for i = 1, #args, 2 do
-				render.DrawBeam(args[i], args[i + 1], width + 0.5, 0, 1, color_black)
+				local DirAdd = (args[i + 1] - args[i]):GetNormalized() * (Add / 2)
+
+				render.DrawBeam(args[i] - DirAdd, args[i + 1] + DirAdd, width + Add, 0, 1, color_black)
 			end
 			for i = 1, #args, 2 do
 				render.DrawBeam(args[i], args[i + 1], width, 0, 1, color)
