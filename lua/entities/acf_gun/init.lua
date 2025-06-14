@@ -68,7 +68,7 @@ do -- Random timer crew stuff
 		local tr = util.TraceLine({
 			start = BreechPos,
 			endpos = CrewPos,
-			filter = function(x) return not (x == Gun or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
+			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
 		})
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. tostring(Gun) or nil
 		Crew:UpdateOverlayText()
@@ -93,7 +93,7 @@ do -- Random timer crew stuff
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
-				filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
+				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
 			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlayText()
