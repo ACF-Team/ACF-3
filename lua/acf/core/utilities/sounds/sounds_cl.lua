@@ -138,72 +138,41 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
-function Sounds.HitSound_World(MatType, Caliber)
-	---more materials sounds can be added if the folders exist.
-	local Materials = {
-		[67] = "rock",
-		[77] = "metal",
-		[87] = "wood"
-	}
-
-	local SoundPath = {"world", "", ""}
-
-	---check the material type
-	if Materials[MatType] ~= nil then
-		SoundPath[2] = Materials[MatType]
-	else
-		---there wasnt a speficed material sound type, use a generic sound
-		SoundPath[2] = "ground"
-	end
-
-	---check the caliber of the weapon
-	if Caliber <= 3.0 then
-		SoundPath[3] = "small_arms"
-	else
-		SoundPath[3] = "cannon"
-	end
-
-	return table.concat(SoundPath, "/")
-end
-
-function Sounds.HitSound_Prop(EffectType, Caliber, AmmoType)
-	local SoundPath = {"prop", EffectType, ""}
-
-	---theres probably a better way to do this...
-	if Caliber <= 1.5 then
-		SoundPath[3] = "small_arms"
-	elseif Caliber > 1.5 and Caliber <= 6.6 then
-		SoundPath[3] = "small"
-	elseif Caliber > 6.6 and Caliber < 11.8 then
-		SoundPath[3] = "medium"
-	else 
-		SoundPath[3] = "large"
-	end
-
-	---shot at with a dart round (apfsds, apds, apcr)
-	if EffectType == "impact" then
-		if AmmoType == 2 or AmmoType == 3 or AmmoType == 4 then
-			SoundPath[4] = "dart"
-		end
-	end
-
-	return table.concat(SoundPath, "/")
-end
-
-function Sounds.HitSound(Data, Trace, EffectType)
+function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 	local MatType   = Trace.MatType
 	local Caliber   = Data:GetRadius()
-
+	local SoundPath = {"^acf_base/fx/hit", "", "%s.mp3"}
 	local SoundData = {
 		SoundPath   = "",
 		SoundPitch  = math.random(75,125)
 	}
 
-	local SoundPath = {"^acf_base/fx/hit", "", "%s.mp3"}
-
 	---hit world
 	if Trace.HitWorld then
-		SoundPath[2] = Sounds.HitSound_World(MatType, Caliber)
+		---more materials sounds can be added if the folders exist.
+		local WorldSoundPath = {"world", "", ""}
+		local Materials = {
+			[67] = "rock",
+			[77] = "metal",
+			[87] = "wood"
+		}
+
+		---check the material type
+		if Materials[MatType] ~= nil then
+			WorldSoundPath[2] = Materials[MatType]
+		else
+			---there wasnt a speficed material sound type, use a generic sound
+			WorldSoundPath[2] = "ground"
+		end
+
+		---check the caliber of the weapon
+		if Caliber <= 3.0 then
+			WorldSoundPath[3] = "small_arms"
+		else
+			WorldSoundPath[3] = "cannon"
+		end
+
+		SoundPath[2] = table.concat(WorldSoundPath, "/")
 
 	---hit flesh material (players, crew ents, npcs)
 	elseif MatType == 70 then
@@ -212,8 +181,27 @@ function Sounds.HitSound(Data, Trace, EffectType)
 	---assume anything else is metal (props)
 	else
 		local AmmoType = Data:GetDamageType()
+		local PropSoundPath = {"prop", EffectType, ""}
 
-		SoundPath[2] = Sounds.HitSound_Prop(EffectType, Caliber, AmmoType)
+		---theres probably a better way to do this...
+		if Caliber <= 1.5 then
+			PropSoundPath[3] = "small_arms"
+		elseif Caliber > 1.5 and Caliber <= 6.6 then
+			PropSoundPath[3] = "small"
+		elseif Caliber > 6.6 and Caliber < 11.8 then
+			PropSoundPath[3] = "medium"
+		else 
+			PropSoundPath[3] = "large"
+		end
+
+		---shot at with a dart round (apfsds, apds, apcr)
+		if EffectType == "impact" then
+			if AmmoType == 2 or AmmoType == 3 or AmmoType == 4 then
+				PropSoundPath[4] = "dart"
+			end
+		end
+
+		SoundPath[2] = table.concat(PropSoundPath, "/")
 	end
 
 	SoundData.SoundPath = table.concat(SoundPath, "/")
@@ -223,13 +211,13 @@ function Sounds.HitSound(Data, Trace, EffectType)
 	return SoundData
 end
 
-function Sounds.ExplosionSound(Radius)
+function Sounds.GetExplosionSoundPath(Radius)
+	local SoundPath = {"^acf_base/fx/explosion", "", "%s.mp3"}
 	local SoundData = {
 		SoundPath	= "",
-		SoundVolume = 100
+		SoundVolume = 100,
+		SoundPitch  = math.random(75,125)
 	}
-
-	local SoundPath = {"^acf_base/fx/explosion", "", "%s.mp3"}
 
 	---again probably a better way to do this...
 	if Radius <= 2 then

@@ -26,7 +26,7 @@ function EFFECT:Init(Data)
 	local HitNormal = Trace.HitNormal
 	local MatType   = Trace.MatType
 
-	local SoundData = Sounds.HitSound(Data, Trace, "penetration")
+	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "penetration")
 
 	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), 100, SoundData.SoundPitch, 1)
 

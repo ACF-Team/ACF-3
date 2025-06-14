@@ -62,9 +62,9 @@ end
 
 function EFFECT:Core(Origin, Radius)
 
-	local SoundData = Sounds.ExplosionSound(Radius)
+	local SoundData = Sounds.GetExplosionSoundPath(Radius)
 
-	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, 100, 1)
+	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0,4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
