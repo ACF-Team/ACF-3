@@ -203,7 +203,7 @@ do	-- Overlay
 			CurAng = -math.Round(self:WorldToLocalAngles(SelfTbl.Rotator:GetAngles()).pitch, 2)
 		end
 
-		render.DrawLine(self:LocalToWorld(self:OBBCenter()), SelfTbl.Rotator:LocalToWorld(SelfTbl.LocalCoM), red, true)
+		ACF.DrawOutlineBeam(0.25, red, self:LocalToWorld(self:OBBCenter()), SelfTbl.Rotator:LocalToWorld(SelfTbl.LocalCoM))
 
 		render.OverrideDepthEnable(true, true)
 			render.DrawWireframeSphere(SelfTbl.Rotator:LocalToWorld(SelfTbl.LocalCoM), 1.5, 4, 3, red)
@@ -275,7 +275,7 @@ do	-- Overlay
 			render.DrawQuad(RotOrigin + RotRGT * UX * 0.25 + RotFWD * UX * -1.5, RotOrigin + -RotRGT * UX * 0.25 + RotFWD * UX * -1.5, RotOrigin, RotOrigin, curColor)
 		end
 
-		render.DrawLine(Pos, self:LocalToWorld(self:OBBCenter() + LocDir * X * 2), magenta, true)
+		ACF.DrawOutlineBeam(0.25, magenta, Pos, self:LocalToWorld(self:OBBCenter() + LocDir * X * 2))
 
 		local HomePos = (Pos + self:GetForward() * X * 1.125):ToScreen()
 		local CurPos = (Pos + SelfTbl.Rotator:GetForward() * X * 0.925):ToScreen()
