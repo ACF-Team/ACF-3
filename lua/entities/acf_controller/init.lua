@@ -826,7 +826,8 @@ local LinkConfigs = {
 		Field = "Baseplate",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Link(Target.Pod) Controller:AnalyzeCams() end
+			Controller:AnalyzeCams()
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
 		end,
 		OnUnlinked = function(Controller, Target)
 			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
