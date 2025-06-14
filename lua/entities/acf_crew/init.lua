@@ -353,6 +353,8 @@ do
 
 		Entity.ACF.Model = CrewModel.Model
 
+		Entity.OverlayErrors = {}
+
 		ACF.Activate(Entity, true)
 
 		local PhysObj = Entity.ACF.PhysObj
@@ -493,7 +495,19 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		local str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		local Status = self.IsAlive and "Alive" or "Dead"
+		local ErrorCount = table.Count(self.OverlayErrors)
+		if ErrorCount > 0 then
+			Status = Status .. " (" .. ErrorCount .. " errors)"
+		end
+
+		-- Compile error messages
+		for _, Error in pairs(self.OverlayErrors) do
+			Status = Status .. "\n\n" .. Error
+		end
+
+		local str = string.format("%s\n\nRole: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+			Status,
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
@@ -540,6 +554,7 @@ do
 				end
 			end
 		end
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and table.Count(Targets) == 0 and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -948,19 +963,30 @@ do
 			EntMods.CrewTargets = nil
 		end
 
-		if EntMods.LuaSeatID then
-			local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
-
-			-- "Repair" the seat if the reference makes no sense. In any case, configure it.
-			if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
-				Pod = ACF.GenerateLuaSeat(self, Player, self:GetPos(), self:GetAngles(), self:GetModel(), true)
-			end
-			if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Player) end
-		end
-
 		--Wire dupe info
 		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
+
+	-- Avoiding race conditions :D
+	hook.Add("AdvDupe_FinishPasting", "ACF_Crew_Seat_Config", function(Raw)
+		Raw = Raw[1]
+		local EntityList, CreatedEntities, Player = Raw.EntityList, Raw.CreatedEntities, Raw.Player
+		for Index, _ in pairs(EntityList) do
+			local Ent = CreatedEntities[Index]
+			local EntMods = Ent.EntityMods
+			if IsValid(Ent) and Ent:GetClass() == "acf_crew" and EntMods and EntMods.LuaSeatID then
+				-- print("Applied lua seat dupe hook (Crew)", Ent)
+
+				local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
+
+				-- "Repair" the seat if the reference makes no sense. In any case, configure it.
+				if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
+					Pod = ACF.GenerateLuaSeat(Ent, Player, Ent:GetPos(), Ent:GetAngles(), Ent:GetModel(), true)
+				end
+				if IsValid(Pod) then ConfigureLuaSeat(Ent, Pod, Player) end
+			end
+		end
+	end)
 
 	function ENT:OnRemove()
 		local CrewModel = self.CrewModel
