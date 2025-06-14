@@ -87,11 +87,15 @@ local Clock = Utilities.Clock
 local DriverKeyDown = FindMetaTable("Player").KeyDown
 local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
 
+
+
+--- Sets a wire output if the cached value has changed
 local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
 	if SelfTbl.Outputs[Output].Value == Value then return end
 	WireLib.TriggerOutput(Entity, Output, Value)
 end
 
+--- Sets a networked variable if the cached value has changed
 local function RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
 	SelfTbl.CacheNW = SelfTbl.CacheNW or {}
 	if SelfTbl.CacheNW[Key] == Value then return end
@@ -448,18 +452,20 @@ do
 		HandleFire(Fire4, SelfTbl.GunsSmoke)
 	end
 
-	-- Aim turrets
-	function ENT:ProcessTurrets(SelfTbl, Driver, HitPos)
-		local ToggleLock = DriverKeyDown(Driver, IN_RELOAD) and DriverKeyDownLast(Driver, IN_RELOAD) == false
-		local Turrets = SelfTbl.Turrets
-
-		if ToggleLock then
+	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
+		if Key == IN_RELOAD and Down then
+			local Turrets = SelfTbl.Turrets
 			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
 			RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
 			for Turret, _ in pairs(Turrets) do
 				if IsValid(Turret) then Turret:TriggerInput("Active", not SelfTbl.TurretLocked) end
 			end
 		end
+	end
+
+	-- Aim turrets
+	function ENT:ProcessTurrets(SelfTbl, Driver, HitPos)
+		local Turrets = SelfTbl.Turrets
 
 		if SelfTbl.TurretLocked then return end
 
@@ -739,6 +745,15 @@ local function OnActiveChanged(Controller, Ply, Active)
 	net.Send(Ply)
 end
 
+local function OnKeyChanged(Controller, Key, Down)
+	local Output = IN_ENUM_TO_WIRE_OUTPUT[Key]
+	if Output ~= nil then
+		RecacheBindOutput(Controller, Controller, Output, Down and 1 or 0)
+	end
+
+	Controller:ToggleTurretLocks(Controller:GetTable(), Key, Down)
+end
+
 local function OnLinkedSeat(Controller, Target)
 	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
 		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
@@ -748,10 +763,24 @@ local function OnLinkedSeat(Controller, Target)
 		if Veh == Target then OnActiveChanged(Controller, Ply, false) end
 	end)
 
+	hook.Add("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnKeyChanged(Controller, Key, true)
+	end)
+
+	hook.Add("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnKeyChanged(Controller, Key, false)
+	end)
+
 	-- Remove the hooks when the controller is removed
 	Controller:CallOnRemove("ACFRemoveController", function(Ent)
 		hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
 		hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
+		hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Ent:EntIndex())
+		hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Ent:EntIndex())
 	end)
 end
 
@@ -759,6 +788,8 @@ local function OnUnlinkedSeat(Controller)
 	-- Remove the hooks when the seat is unlinked
 	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
 	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
+	hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex())
+	hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex())
 end
 
 -- Using this to auto generate the link/unlink functions
@@ -886,11 +917,6 @@ do
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
-
-		-- Update Outputs
-		for Bind, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
-			RecacheBindOutput(self, SelfTbl, Output, DriverKeyDown(Driver, Bind) and 1 or 0)
-		end
 
 		iters = iters + 1
 		self:UpdateOverlay()
