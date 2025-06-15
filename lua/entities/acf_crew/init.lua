@@ -154,11 +154,8 @@ function ENT:CFW_OnParentedTo(OldParent, _)
 	end
 end
 
---- Check other crews of the same type and enforce convar limits
-local function EnforceLimits(crew)
-	local CrewType = crew.CrewType
-	local CrewTypeID = crew.CrewTypeID
-
+-- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
+local function CheckParentState(crew)
 	local Family = crew:GetFamily()
 
 	if not Family or Family.ancestor == crew then
@@ -167,8 +164,16 @@ local function EnforceLimits(crew)
 			Message = "Must be parented to something!"
 		}
 		crew.TotalEff = 0
-		return
+		return false
 	end
+
+	return true
+end
+
+--- Check other crews of the same type and enforce convar limits
+local function EnforceLimits(crew)
+	local CrewType = crew.CrewType
+	local CrewTypeID = crew.CrewTypeID
 
 	local Contraption = crew:GetContraption() or {}
 	local CrewsByType = Contraption.CrewsByType or {}
@@ -547,10 +552,10 @@ do
 	-- Hopefully runs after CFW is initialized
 	function ENT:Think()
 		-- Check links on this entity
-		local Targets = self.Targets or {}
+		local Targets = self.Targets
 		local SelfContraption = self:GetContraption()
-
-		if next(Targets) then
+		local IsParented = CheckParentState(self)
+		if IsParented and Targets ~= nil and next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
 				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
@@ -563,13 +568,20 @@ do
 					self:EmitSound(Sound, 70, 100, ACF.Volume)
 					self:Unlink(Link)
 					Link:Unlink(self)
-					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
+
+					local Reasons = {}
+					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
+					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
+					Reasons = table.concat(Reasons, ", and ")
+					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
+
+					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
 				end
 			end
 		end
 
-		self.OverlayErrors.ParentCheck = SelfContraption == nil and "This crew must be parented!" or nil
-		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and table.Count(Targets) == 0 and "This crew must be linked!" or nil
+		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -849,7 +861,6 @@ do
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
 		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
-		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same Contraption as this crewmate!" end
 		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
@@ -960,13 +971,10 @@ do
 
 		-- Restore previous links
 		if EntMods.CrewTargets then
-			local RLs = {} -- LUT mapping failed link Targets to true
-
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
-
-				local result = self:Link(ActualEnt)
-				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their Target is indexed.
+				local result, err = self:Link(ActualEnt)
+				if not result then ACF.SendNotify(Ent:CPPIGetOwner(), false, "ACF Crew:PostEntityPaste failure: " .. err) end
 			end
 
 			self.RemainingLinks = RLs
