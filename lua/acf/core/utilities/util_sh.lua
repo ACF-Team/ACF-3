@@ -1185,7 +1185,7 @@ do -- Reload related
 	--        ENT:PostEntityPaste()
 	--     AdvDupe2 only: DupeFinished hook
 
-	function ACF.ApplySeatPatch(self, CreatedEntities, EntityList, SortedEntities, LuaSeatID, Pod)
+	function ACF.ApplySeatPatch(self, CreatedEntities, EntityList, LuaSeatID, Pod)
 		-- Register the old entity index -> new entity created lookup
 		CreatedEntities[LuaSeatID] = Pod
 
@@ -1235,7 +1235,7 @@ do -- Reload related
 			if CurrentPlayer then
 				local Queue = AdvDupe2.JobManager.Queue[CurrentPlayer]
 				if Queue then
-					return ACF.ApplySeatPatch(self, Queue.CreatedEntities, Queue.EntityList, Queue.SortedEntities, Data.EntityMods.LuaSeatID[1], self.Pod)
+					return ACF.ApplySeatPatch(self, Queue.CreatedEntities, Queue.EntityList, Data.EntityMods.LuaSeatID[1], self.Pod)
 				end
 			end
 		end

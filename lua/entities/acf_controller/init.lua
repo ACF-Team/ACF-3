@@ -85,7 +85,7 @@ local Defaults = {
 
 local Clock = Utilities.Clock
 local DriverKeyDown = FindMetaTable("Player").KeyDown
-local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
+-- local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
 
 
 
@@ -464,7 +464,7 @@ do
 	end
 
 	-- Aim turrets
-	function ENT:ProcessTurrets(SelfTbl, Driver, HitPos)
+	function ENT:ProcessTurrets(SelfTbl, _, HitPos)
 		local Turrets = SelfTbl.Turrets
 
 		if SelfTbl.TurretLocked then return end
