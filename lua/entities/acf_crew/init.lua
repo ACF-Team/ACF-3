@@ -145,7 +145,15 @@ local function EnforceLimits(crew)
 	local CrewType = crew.CrewType
 	local CrewTypeID = crew.CrewTypeID
 
-	local Contraption = crew:GetContraption() or {}
+	local Contraption = crew:GetContraption()
+	if not Contraption then
+		crew.Disabled = {
+			Reason = "Unparented",
+			Message = "Must be parented!"
+		}
+		crew.TotalEff = 0
+		return
+	end
 	local CrewsByType = Contraption.CrewsByType or {}
 
 	local Limit = CrewType.LimitConVar
@@ -160,14 +168,19 @@ local function EnforceLimits(crew)
 	end
 
 	if CrewType.EnforceLimits then CrewType.EnforceLimits(crew) end
+	crew.Disabled = nil
 end
 
 do -- Random timer stuff
 	function ENT:UpdateUltraLowFreq(cfg)
+		if self.Disabled then return end
+
 		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, cfg) end
 	end
 
 	function ENT:UpdateLowFreq(cfg)
+		if self.Disabled then return end
+
 		local DeltaTime = cfg.DeltaTime
 
 		-- Update health ergonomics
@@ -195,6 +208,8 @@ do -- Random timer stuff
 	end
 
 	function ENT:UpdateMedFreq(cfg)
+		if self.Disabled then return end
+
 		-- If specified, affect crew ergonomics based on space 
 		local SpaceInfo = self.CrewType.SpaceInfo
 		if SpaceInfo and self.ShouldScan then
@@ -217,6 +232,8 @@ do -- Random timer stuff
 	end
 
 	function ENT:UpdateHighFreq(cfg)
+		if self.Disabled then return end
+
 		local DeltaTime = cfg.DeltaTime
 
 		-- If specified, affect crew ergonomics based on lean angle
@@ -514,13 +531,15 @@ do
 	function ENT:Think()
 		-- Check links on this entity
 		local Targets = self.Targets or {}
+		local SelfContraption = self:GetContraption()
+
 		if next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
 				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
-				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors = self:GetContraption() ~= Link:GetContraption()	-- Check same Contraption
+				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					Link:EmitSound(Sound, 70, 100, ACF.Volume)
@@ -532,6 +551,8 @@ do
 				end
 			end
 		end
+
+		self.OverlayErrors.ParentCheck = SelfContraption == nil and "This crew must be parented!" or nil
 		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and table.Count(Targets) == 0 and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
