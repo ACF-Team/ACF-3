@@ -142,7 +142,7 @@ end
 
 function ENT:CFW_OnParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
-	if IsValid(OldParent) then
+	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
 		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
 		if next(self.Targets) then
 			for Target in pairs(self.Targets) do
