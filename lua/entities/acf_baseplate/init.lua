@@ -124,6 +124,10 @@ function ENT:PreEntityCopy()
 	end
 end
 
+-- Exposes Pod to util_sh and other things with a more unique name
+-- frankly, should rename Pod entirely
+function ENT:ACF_GetSeatProxy() return self.Pod end
+
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	local EntMods = ClientData.EntityMods
 	if EntMods and EntMods.mass then
@@ -138,8 +142,12 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	-- Add seat support for baseplates
 	local Owner = self:CPPIGetOwner()
-	local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
-	if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Owner) end
+	if not self:ACF_GetUserVar "AlreadyHasSeat" then
+		local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
+		if IsValid(Pod) then
+			ConfigureLuaSeat(self, Pod, Owner)
+		end
+	end
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
@@ -147,8 +155,22 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
 
-function ENT:OnDuplicated(Data)
-	ACF.OnDuplicatedWithLuaSeat(self, Data)
+local Messages = ACF.Utilities.Messages
+
+function ENT:PostEntityPaste(_, _, CreatedEntities)
+	-- Pod should be valid since this runs after all entities are created
+	local LuaSeatID = self.EntityMods
+	LuaSeatID = LuaSeatID and LuaSeatID.LuaSeatID
+	LuaSeatID = LuaSeatID and LuaSeatID[1]
+
+	if LuaSeatID then
+		self.Pod = CreatedEntities[LuaSeatID]
+		if not IsValid(self.Pod) then
+			Messages.SendChat(self:CPPIGetOwner(), "Error", "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
+			return
+		end
+		ConfigureLuaSeat(self, self.Pod, self:CPPIGetOwner())
+	end
 end
 
 function ENT:Use(Activator)
