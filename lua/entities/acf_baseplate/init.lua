@@ -124,28 +124,6 @@ function ENT:PreEntityCopy()
 	end
 end
 
--- Avoiding race conditions :D
-hook.Add("AdvDupe_FinishPasting", "ACF_Base_Seat_Config", function(Raw)
-	Raw = Raw[1]
-	local EntityList, CreatedEntities, Player = Raw.EntityList, Raw.CreatedEntities, Raw.Player
-
-	for Index, _ in pairs(EntityList) do
-		local Ent = CreatedEntities[Index]
-		local EntMods = Ent.EntityMods
-		if IsValid(Ent) and Ent:GetClass() == "acf_baseplate" and EntMods and EntMods.LuaSeatID then
-			-- print("Applied lua seat dupe hook (Baseplate)", Ent)
-
-			local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
-
-			-- "Repair" the seat if the reference makes no sense. In any case, configure it.
-			if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
-				Pod = ACF.GenerateLuaSeat(Ent, Player, Ent:GetPos(), Ent:GetAngles(), Ent:GetModel(), true)
-			end
-			if IsValid(Pod) then ConfigureLuaSeat(Ent, Pod, Player) end
-		end
-	end
-end)
-
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	local EntMods = ClientData.EntityMods
 	if EntMods and EntMods.mass then
@@ -160,15 +138,17 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 
 	-- Add seat support for baseplates
 	local Owner = self:CPPIGetOwner()
-	if not self:ACF_GetUserVar "AlreadyHasSeat" then
-		local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
-		if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Owner) end
-	end
+	local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
+	if IsValid(Pod) then ConfigureLuaSeat(self, Pod, Owner) end
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 	ACF.ActiveBaseplatesTable[self] = true
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
+end
+
+function ENT:OnDuplicated(Data)
+	ACF.OnDuplicatedWithLuaSeat(self, Data)
 end
 
 function ENT:Use(Activator)

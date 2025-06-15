@@ -1152,10 +1152,114 @@ do -- Reload related
 
 		if not IsValid(Pod) then return end
 
-		local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
-		if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
+		local FoundNoCollide = constraint.Find(Entity, Pod, "NoCollide", 0, 0)
+		if not FoundNoCollide then
+			FoundNoCollide = constraint.NoCollide(Entity, Pod, 0, 0)
+		end
 
-		Pod:SetNotSolid(true)
+		Pod:SetSolid(SOLID_NONE)
 		Pod:SetNoDraw(true)
+
+		Pod.DoNotDuplicate = true
+		FoundNoCollide.DoNotDuplicate = true
+	end
+
+	-- The following code performs great magic and wizardry to the duplicator system to convince it that the Lua-generated seat was present all along.
+	-- This is mostly for the sake of keeping Wiremod connections and ACF links intact while not having to create the Lua-generated seat through the 
+	-- duplicator system (which means we cant track/modify/set it up in any way, vs. creating it on spawn and performing this smoke and mirrors trick)
+
+	-- To support a duplicator system, you just need to provide the CreatedEntities, EntityList, and SortedEntities tables.
+	-- AdvDupe2 is easy because the active queue is exposed as a global. Other systems (looking at default Sandbox :/) store that information in 
+	-- locals, so they need to be pulled manually with debug.getlocal thread and local offsets, which is obviously pretty annoying but there's not
+	-- really a better way. The logic here needs to happen during the entity creation phase, so it has to happen in OnDuplicated, which doesn't
+	-- provide any of the necessary tables we need to inject ourselves into the dupe. Any other place where CreatedEntities, etc is exposed will result
+	-- in race conditions based on entity indices.
+
+	-- The general duplicator process resembles this, regardless of synchronous (duplicator) vs asynchronous (AdvDupe2):
+	--     Entity creation stage
+	--        ENT:Initialize()
+	--        ENT:OnDuplicated(Data)
+	--          ^------------------------ we inject ourselves here
+	--     Constraint linkup
+	--     Post paste
+	--        ENT:PostEntityPaste()
+	--     AdvDupe2 only: DupeFinished hook
+
+	function ACF.ApplySeatPatch(self, CreatedEntities, EntityList, LuaSeatID, Pod)
+		-- Register the old entity index -> new entity created lookup
+		CreatedEntities[LuaSeatID] = Pod
+
+		-- Search through CreatedEntities for the lua-generated seat creator to get the DupeParentID property
+		local DupeParentID
+		for k, v in pairs(CreatedEntities) do
+			if v == self then
+				DupeParentID = k
+				break
+			end
+		end
+
+		-- We need to store PhysicsObjects in the BuildDupeInfo table to keep the illusion
+		-- this is actually coming from the dupe...
+		-- see https://github.com/Facepunch/garrysmod/blob/da9ef6911f0e1bc75eb4e51ea8b72be65acb2342/garrysmod/lua/includes/modules/duplicator.lua#L28
+		local PhysicsObjects = {}
+		local num = Pod:GetPhysicsObjectCount()
+		for objectID = 0, num - 1 do
+			local obj = Pod:GetPhysicsObjectNum(objectID)
+			if not IsValid(obj) then continue end
+
+			-- Regular duplicator does a WorldToLocal stage, based on 0, 0, 0 coordinates...?
+			-- We can't access those values...
+			PhysicsObjects[objectID] = {
+				Pos = obj:GetPos(),
+				Angle = obj:GetAngles(),
+				Frozen = not obj:IsMoveable(),
+				NoGrav = obj:IsGravityEnabled() and nil or true,
+				Sleep = obj:IsAsleep() and nil or true
+			}
+		end
+
+		-- Store lua-generated seat in EntityList with DupeParentID fetched earlier and physics objects generated earlier
+		EntityList[LuaSeatID] = {
+			BuildDupeInfo = {
+				DupeParentID = DupeParentID,
+				PhysicsObjects = PhysicsObjects
+			}, -- have to define PhysicsObjects in both places for some stupid reason
+			PhysicsObjects = PhysicsObjects
+		}
+	end
+
+	function ACF.OnDuplicatedWithLuaSeat(self, Data)
+		-- Fix for older dev-branch contraptions
+		local LuaSeatID = Data.EntityMods.LuaSeatID
+		if not LuaSeatID then return end
+		LuaSeatID = LuaSeatID[1]
+		if not LuaSeatID then return end
+
+		-- advdupe2 hack
+		do
+			local CurrentPlayer = AdvDupe2.JobManager.CurrentPlayer
+			if CurrentPlayer then
+				local Queue = AdvDupe2.JobManager.Queue[CurrentPlayer]
+				if Queue then
+					return ACF.ApplySeatPatch(self, Queue.CreatedEntities, Queue.EntityList, Data.EntityMods.LuaSeatID[1], self.Pod)
+				end
+			end
+		end
+
+		-- regular duplicator hack :(
+		-- we shouldn't even support the regular duplicator frankly
+
+		-- TODO: actually do this. For now, just going to silently fail, if you use regular duplicator
+		-- congrats you're part of the 0.001% of gmod players using ACF and regular dupe, bug me (March) to fix this
+		-- and i might but until then you're practically a critically endangered species
+
+		--[[do
+			local NameEL, ValueEL = debug.getlocal(3, 5)
+			local NameCE, ValueCE = debug.getlocal(3, 7)
+
+			if NameEL == "EntityList" and NameCE == "CreatedEntities" then
+				return ACF.ApplySeatPatch(self, ValueCE, ValueEL, Data.EntityMods.LuaSeatID[1], self.Pod)
+			end
+		end]]
 	end
 end
