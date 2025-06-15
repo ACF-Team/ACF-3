@@ -140,6 +140,20 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
+function ENT:CFW_OnParentedTo(OldParent, _)
+	-- Force unlinks if OldParent is valid
+	if IsValid(OldParent) then
+		ACF.SendNotify(self:GetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
+		if next(self.Targets) then
+			for Target in pairs(self.Targets) do
+				self:Unlink(Target)
+			end
+		end
+		self:CFW_Unindex_Crew(self:GetContraption())
+		self:CFW_Index_Crew(self:GetContraption())
+	end
+end
+
 --- Check other crews of the same type and enforce convar limits
 local function EnforceLimits(crew)
 	local CrewType = crew.CrewType
