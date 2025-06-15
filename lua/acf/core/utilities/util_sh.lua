@@ -1157,5 +1157,6 @@ do -- Reload related
 
 		Pod:SetNotSolid(true)
 		Pod:SetNoDraw(true)
+		Pod.DoNotDuplicate = true
 	end
 end

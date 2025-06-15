@@ -442,12 +442,52 @@ do
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
 
 		-- Add seat support for crews
-		if not Entity.AlreadyHasSeat then
-			local Pod = ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Entity:GetModel(), true)
-			if IsValid(Pod) then ConfigureLuaSeat(Entity, Pod, Player) end
-		end
+		local Pod = ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Entity:GetModel(), true)
+		if IsValid(Pod) then ConfigureLuaSeat(Entity, Pod, Player) end
 
 		return Entity
+	end
+
+
+	function ENT:ApplySeatPatch(CreatedEntities, EntityList, LuaSeatID, Pod)
+		CreatedEntities[LuaSeatID] = Pod
+		local DupeParentID
+		for k, v in pairs(CreatedEntities) do
+			if v == self then
+				DupeParentID = k
+				break
+			end
+		end
+
+		EntityList[LuaSeatID] = {
+			BuildDupeInfo = {
+				DupeParentID = DupeParentID
+			}
+		}
+	end
+
+	function ENT:OnDuplicated(Data)
+		-- advdupe2 hack
+		do
+			local CurrentPlayer = AdvDupe2.JobManager.CurrentPlayer
+			if CurrentPlayer then
+				local Queue = AdvDupe2.JobManager.Queue[CurrentPlayer]
+				if Queue then
+					return self:ApplySeatPatch(Queue.CreatedEntities, Queue.EntityList, Data.EntityMods.LuaSeatID[1], self.Pod)
+				end
+			end
+		end
+
+		-- regular duplicator hack :(
+		-- we shouldn't even support the regular duplicator frankly
+		do
+			local NameEL, ValueEL = debug.getlocal(2, 5)
+			local NameCE, ValueCE = debug.getlocal(2, 7)
+
+			if NameEL == "EntityList" and NameCE == "CreatedEntities" then
+				return self:ApplySeatPatch(ValueCE, ValueEL, Data.EntityMods.LuaSeatID[1], self.Pod)
+			end
+		end
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
@@ -966,27 +1006,6 @@ do
 		--Wire dupe info
 		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
-
-	-- Avoiding race conditions :D
-	hook.Add("AdvDupe_FinishPasting", "ACF_Crew_Seat_Config", function(Raw)
-		Raw = Raw[1]
-		local EntityList, CreatedEntities, Player = Raw.EntityList, Raw.CreatedEntities, Raw.Player
-		for Index, _ in pairs(EntityList) do
-			local Ent = CreatedEntities[Index]
-			local EntMods = Ent.EntityMods
-			if IsValid(Ent) and Ent:GetClass() == "acf_crew" and EntMods and EntMods.LuaSeatID then
-				-- print("Applied lua seat dupe hook (Crew)", Ent)
-
-				local Pod = CreatedEntities[EntMods.LuaSeatID[1]]
-
-				-- "Repair" the seat if the reference makes no sense. In any case, configure it.
-				if IsValid(Pod) and Pod:GetClass() ~= "prop_vehicle_prisoner_pod" then
-					Pod = ACF.GenerateLuaSeat(Ent, Player, Ent:GetPos(), Ent:GetAngles(), Ent:GetModel(), true)
-				end
-				if IsValid(Pod) then ConfigureLuaSeat(Ent, Pod, Player) end
-			end
-		end
-	end)
 
 	function ENT:OnRemove()
 		local CrewModel = self.CrewModel
