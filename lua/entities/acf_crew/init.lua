@@ -143,7 +143,7 @@ end
 function ENT:CFW_OnParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) then
-		ACF.SendNotify(self:GetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
+		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
 		if next(self.Targets) then
 			for Target in pairs(self.Targets) do
 				self:Unlink(Target)
@@ -159,15 +159,18 @@ local function EnforceLimits(crew)
 	local CrewType = crew.CrewType
 	local CrewTypeID = crew.CrewTypeID
 
-	local Contraption = crew:GetContraption()
-	if not Contraption then
+	local Family = crew:GetFamily()
+
+	if not Family or Family.ancestor == crew then
 		crew.Disabled = {
-			Reason = "Unparented",
-			Message = "Must be parented!"
+			Reason = "Bad Parent",
+			Message = "Must be parented to something!"
 		}
 		crew.TotalEff = 0
 		return
 	end
+
+	local Contraption = crew:GetContraption() or {}
 	local CrewsByType = Contraption.CrewsByType or {}
 
 	local Limit = CrewType.LimitConVar
@@ -560,8 +563,7 @@ do
 					self:EmitSound(Sound, 70, 100, ACF.Volume)
 					self:Unlink(Link)
 					Link:Unlink(self)
-
-					ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
+					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
 				end
 			end
 		end
