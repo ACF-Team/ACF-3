@@ -1150,17 +1150,12 @@ do -- Reload related
 		Pod.ACF = Pod.ACF or {}
 		Pod.ACF.LuaGeneratedSeat = true
 
-		-- Cope with wiremod's linking system not checking parents...
+		if not IsValid(Pod) then return end
 
-		-- If it's a lua generated seat, you probably want this anyways
-		timer.Simple(3, function()
-			if not IsValid(Pod) then return end
+		local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
+		if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
 
-			local Found = constraint.Find( Entity, Pod, "NoCollide", 0, 0)
-			if not Found then constraint.NoCollide(Entity, Pod, 0, 0) end
-
-			Pod:SetSolid(SOLID_NONE)
-			Pod:SetNoDraw(true)
-		end)
+		Pod:SetNotSolid(true)
+		Pod:SetNoDraw(true)
 	end
 end
