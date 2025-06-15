@@ -70,7 +70,7 @@ do -- Random timer crew stuff
 			endpos = CrewPos,
 			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
 		})
-		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. tostring(Gun) or nil
+		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
 		Crew:UpdateOverlayText()
 		if tr.Hit then
 			return 0.000001
