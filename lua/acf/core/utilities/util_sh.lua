@@ -1157,7 +1157,7 @@ do -- Reload related
 			FoundNoCollide = constraint.NoCollide(Entity, Pod, 0, 0)
 		end
 
-		Pod:SetNotSolid(true)
+		Pod:SetSolid(SOLID_NONE)
 		Pod:SetNoDraw(true)
 
 		Pod.DoNotDuplicate = true
