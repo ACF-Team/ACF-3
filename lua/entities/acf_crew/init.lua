@@ -448,48 +448,6 @@ do
 		return Entity
 	end
 
-
-	function ENT:ApplySeatPatch(CreatedEntities, EntityList, LuaSeatID, Pod)
-		CreatedEntities[LuaSeatID] = Pod
-		local DupeParentID
-		for k, v in pairs(CreatedEntities) do
-			if v == self then
-				DupeParentID = k
-				break
-			end
-		end
-
-		EntityList[LuaSeatID] = {
-			BuildDupeInfo = {
-				DupeParentID = DupeParentID
-			}
-		}
-	end
-
-	function ENT:OnDuplicated(Data)
-		-- advdupe2 hack
-		do
-			local CurrentPlayer = AdvDupe2.JobManager.CurrentPlayer
-			if CurrentPlayer then
-				local Queue = AdvDupe2.JobManager.Queue[CurrentPlayer]
-				if Queue then
-					return self:ApplySeatPatch(Queue.CreatedEntities, Queue.EntityList, Data.EntityMods.LuaSeatID[1], self.Pod)
-				end
-			end
-		end
-
-		-- regular duplicator hack :(
-		-- we shouldn't even support the regular duplicator frankly
-		do
-			local NameEL, ValueEL = debug.getlocal(2, 5)
-			local NameCE, ValueCE = debug.getlocal(2, 7)
-
-			if NameEL == "EntityList" and NameCE == "CreatedEntities" then
-				return self:ApplySeatPatch(ValueCE, ValueEL, Data.EntityMods.LuaSeatID[1], self.Pod)
-			end
-		end
-	end
-
 	-- Bare minimum arguments to reconstruct a crew
 	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority", "AlreadyHasSeat")
 
@@ -1005,6 +963,10 @@ do
 
 		--Wire dupe info
 		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	end
+
+	function ENT:OnDuplicated(Data)
+		ACF.OnDuplicatedWithLuaSeat(self, Data)
 	end
 
 	function ENT:OnRemove()
