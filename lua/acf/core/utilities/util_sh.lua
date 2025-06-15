@@ -1229,6 +1229,12 @@ do -- Reload related
 	end
 
 	function ACF.OnDuplicatedWithLuaSeat(self, Data)
+		-- Fix for older dev-branch contraptions
+		local LuaSeatID = Data.EntityMods.LuaSeatID
+		if not LuaSeatID then return end
+		LuaSeatID = LuaSeatID[1]
+		if not LuaSeatID then return end
+
 		-- advdupe2 hack
 		do
 			local CurrentPlayer = AdvDupe2.JobManager.CurrentPlayer
