@@ -22,7 +22,7 @@ local EntityImpulses = {
 	}
 }
 if SERVER then
-	concommand.Add("acf_fundebug_entimpulse2", function(Player, Cmd, Args)
+	concommand.Add("acf_fundebug_entimpulse", function(Player, Cmd, Args)
 		if not IsValid(Player) then return end
 		if not FunDebuggingFunctions:GetBool() then Player:ChatPrint("Fun debugging functions aren't enabled...") return end
 		local Target = Player:GetEyeTrace().Entity
