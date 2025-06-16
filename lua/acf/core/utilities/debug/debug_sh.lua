@@ -15,9 +15,37 @@ local FunDebuggingFunctions = CreateConVar("acf_fundebuggingfuncs", "0", {FCVAR_
 
 local EntityImpulses = {
 	detonate = {
-		Callback = function(Player, Target, _)
-			if IsValid(Target) and Target.Detonate then return Target:Detonate() end
-			Player:ChatPrint("No target or target cannot be detonated")
+		Callback = function(Player, Target, Args)
+			local Targets
+			local TargetOverride = string.lower(Args[2] or "")
+			if string.Trim(TargetOverride) == "" then
+				Targets = {Target}
+			else
+				if TargetOverride == "all" then
+					Targets = ents.FindByClass("acf_*")
+				elseif TargetOverride == "owned" then
+					Targets = {}
+					for _, Ent in ipairs(ents.GetAll()) do
+						if IsValid(Ent) and Ent:CPPIGetOwner() == Player then
+							Targets[#Targets + 1] = Ent
+						end
+					end
+				else
+					local EntID = tonumber(TargetOverride)
+					if EntID ~= nil then Targets = {Entity(EntID)} end
+				end
+			end
+
+			local DetonatedAtLeastOnce = false
+			for _, T in ipairs(Targets) do
+				if IsValid(T) and T.Detonate then
+					DetonDetonatedAtLeastOnceated = true
+					T:Detonate()
+				end
+			end
+			if not DetonatedAtLeastOnce then
+				Player:ChatPrint("No target or target cannot be detonated")
+			end
 		end
 	},
 	-- needs more work, now doesnt work at all right now
