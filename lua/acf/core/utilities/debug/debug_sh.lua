@@ -19,10 +19,43 @@ local EntityImpulses = {
 			if IsValid(Target) and Target.Detonate then return Target:Detonate() end
 			Player:ChatPrint("No target or target cannot be detonated")
 		end
+	},
+	-- needs more work, now doesnt work at all right now
+	shoot = {
+		Callback = function(Player, Target, Args)
+			local Now = Args[2] == "now"
+
+			if IsValid(Target) and Target.Shoot then
+				if Target.CanFire then
+					local oldFiring = Target.Firing
+					Target.Firing = true
+					if Target.CurrentShot > 0 then
+						Target:Shoot()
+						Target.Firing = oldFiring
+						return
+					elseif Now then
+						if Target.State == "Loading" and Target.ReloadTimer then
+							Target.ReloadTimer:Cancel(true)
+						else
+							Target:Load(true)
+						end
+					else
+						Target.Firing = oldFiring
+						Player:ChatPrint("Target cannot shoot right now.")
+					end
+				elseif Target.CanShoot then
+					return Target:Shoot()
+				else
+					Player:ChatPrint("Don't know how to shoot this target.")
+				end
+			else
+				Player:ChatPrint("No target.")
+			end
+		end
 	}
 }
 if SERVER then
-	concommand.Add("acf_fundebug_entimpulse", function(Player, Cmd, Args)
+	concommand.Add("acf_fundebug_entimpulse", function(Player, _, Args)
 		if not IsValid(Player) then return end
 		if not FunDebuggingFunctions:GetBool() then Player:ChatPrint("Fun debugging functions aren't enabled...") return end
 		local Target = Player:GetEyeTrace().Entity
