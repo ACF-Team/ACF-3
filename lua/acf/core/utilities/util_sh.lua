@@ -1193,5 +1193,7 @@ do -- Reload related
 			local Phys = Pod:GetPhysicsObjectNum(Idx)
 			Phys:SetContents(CONTENTS_EMPTY)
 		end
+		Pod.ACF_InvisibleToBallistics = true
+		Pod.ACF_InvisibleToTrace = true
 	end
 end
