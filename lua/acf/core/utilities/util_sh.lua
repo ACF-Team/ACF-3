@@ -937,7 +937,9 @@ do -- Crew related
 		InitFields(Config)
 
 		local RealLoop
+		local Cancelled = false
 		function RealLoop()
+			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
 			UpdateDelta(Config)
@@ -957,6 +959,12 @@ do -- Crew related
 
 		if not Config.Delay then RealLoop()
 		else timer.Simple(Config.Delay, RealLoop) end
+
+		local ProxyObject = {}
+		function ProxyObject:Cancel()
+			Cancelled = true
+		end
+		return ProxyObject
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
@@ -966,7 +974,7 @@ do -- Crew related
 	--- @param Finish any A function that is called when the timer Finishes
 	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
-		ACF.AugmentedTimer(
+		return ACF.AugmentedTimer(
 			function(Config)
 				local eff = Loop(Config)
 				Config.Progress = Config.Progress + Config.DeltaTime * eff
