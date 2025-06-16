@@ -938,6 +938,7 @@ do -- Crew related
 
 		local RealLoop
 		local Cancelled = false
+		local Finished  = false
 		function RealLoop()
 			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
@@ -952,7 +953,7 @@ do -- Crew related
 			if timeleft > 0.001 then
 				timer.Simple(timeleft, RealLoop)
 			else
-				if Finish then Finish(Config) end
+				if Finish and not Finished then Finished = true Finish(Config) end
 				return
 			end
 		end
@@ -961,8 +962,12 @@ do -- Crew related
 		else timer.Simple(Config.Delay, RealLoop) end
 
 		local ProxyObject = {}
-		function ProxyObject:Cancel()
+		function ProxyObject:Cancel(RunFinisher)
 			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
 		end
 		return ProxyObject
 	end
