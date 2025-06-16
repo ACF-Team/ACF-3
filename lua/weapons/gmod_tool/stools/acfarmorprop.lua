@@ -50,10 +50,10 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	end
 end
 
-local function UpdateArmor(_, Entity, Data)
+local function UpdateArmor(_, Entity, Data, BecauseOfDupe)
 	if CLIENT then return end
 	if not Data then return end
-	if not ACF.Check(Entity) then return end
+	if not ACF.Check(Entity, BecauseOfDupe) then return end
 
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
@@ -329,7 +329,7 @@ else -- Serverside-only stuff
 
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
 		if Entity.IsPrimitive then return end
-		UpdateArmor(_, Entity, Data)
+		UpdateArmor(_, Entity, Data, true)
 	end)
 
 	-- Specifically handling Primitives separately so that we can ensure that their stats are not impacted by a race condition
