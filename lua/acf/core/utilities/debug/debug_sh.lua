@@ -39,7 +39,7 @@ local EntityImpulses = {
 			local DetonatedAtLeastOnce = false
 			for _, T in ipairs(Targets) do
 				if IsValid(T) and T.Detonate then
-					DetonDetonatedAtLeastOnceated = true
+					DetonatedAtLeastOnce = true
 					T:Detonate()
 				end
 			end
