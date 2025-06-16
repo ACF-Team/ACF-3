@@ -30,9 +30,13 @@ local EntityImpulses = {
 							Targets[#Targets + 1] = Ent
 						end
 					end
-				else
-					local EntID = tonumber(TargetOverride)
-					if EntID ~= nil then Targets = {Entity(EntID)} end
+				elseif TargetOverride:match("^[0-9,]*$") then
+					local EntIDs = string.Split(TargetOverride, ",")
+					Targets = {}
+					for I, EntID in ipairs(EntIDs) do
+						EntID = string.Trim(EntID)
+						Targets[I] = Entity(tonumber(EntID))
+					end
 				end
 			end
 
