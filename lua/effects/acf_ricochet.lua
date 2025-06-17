@@ -10,15 +10,13 @@ function EFFECT:Init(Data)
 	local Origin = Data:GetOrigin()
 	local DirVec = Data:GetNormal()
 	local Velocity = Data:GetScale() --Velocity of the projectile in gmod units
-	local Mass = Data:GetMagnitude() --Mass of the projectile in kg
 	local Type = Data:GetDamageType()
 
 	TraceData.start = Origin
 	TraceData.endpos = Origin - DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
-	local MatType   = Trace.MatType
-	
+
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
 		local Scale = GetScale(DecalType, Caliber)
@@ -28,7 +26,7 @@ function EFFECT:Init(Data)
 
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "ricochet")
 
-	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), 100, SoundData.SoundPitch, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:Think()

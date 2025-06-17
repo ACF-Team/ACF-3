@@ -26,7 +26,7 @@ function EFFECT:Init(Data)
 
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "penetration")
 
-	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0,4)), 100, SoundData.SoundPitch, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 
 	if MatType == 71 or MatType == 73 or MatType == 77 or MatType == 80 then
 		self:Metal(Emitter, Origin, Scale, HitNormal)

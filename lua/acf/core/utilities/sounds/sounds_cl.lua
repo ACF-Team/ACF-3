@@ -158,7 +158,7 @@ function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 	local SoundPath = {"^acf_base/fx/hit", "", "%s.mp3"}
 	local SoundData = {
 		SoundPath   = "",
-		SoundPitch  = math.random(75,125)
+		SoundPitch  = math.random(75, 125)
 	}
 
 	---hit world
@@ -204,15 +204,13 @@ function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 			PropSoundPath[3] = "small"
 		elseif Caliber > 6.6 and Caliber < 11.8 then
 			PropSoundPath[3] = "medium"
-		else 
+		else
 			PropSoundPath[3] = "large"
 		end
 
 		---shot at with a dart round (apfsds, apds, apcr)
-		if EffectType == "impact" then
-			if AmmoType == 2 or AmmoType == 3 or AmmoType == 4 then
-				PropSoundPath[4] = "dart"
-			end
+		if EffectType == "impact" and (AmmoType == 2 or AmmoType == 3 or AmmoType == 4) then
+			PropSoundPath[4] = "dart"
 		end
 
 		SoundPath[2] = table.concat(PropSoundPath, "/")
@@ -230,7 +228,7 @@ function Sounds.GetExplosionSoundPath(Radius)
 	local SoundData = {
 		SoundPath	= "",
 		SoundVolume = 100,
-		SoundPitch  = math.random(75,125)
+		SoundPitch  = math.random(75, 125)
 	}
 
 	---again probably a better way to do this...
