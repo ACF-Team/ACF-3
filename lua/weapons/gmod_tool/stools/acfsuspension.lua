@@ -218,7 +218,7 @@ if CLIENT then
 		local InstructionsGeneral = Menu:AddCollapsible("Instructions", true)
 		InstructionsGeneral:AddLabel("Left/Right is relative to the baseplate's forward direction.")
 		InstructionsGeneral:AddLabel("Drive wheels are directly connected to gearboxes.\nIdler wheels are not connected to a gearbox and are at the very front.\nRoad wheels are meant to touch the ground.")
-		InstructionsGeneral:AddLabel("Skip steps 2 to 5 if you do not use drive wheels (Usually fully wheeled vehichles).")
+		InstructionsGeneral:AddLabel("Skip steps 2 to 5 if you do not use drive wheels (usually fully wheeled vehicles).")
 		InstructionsGeneral:AddLabel("1. Select the baseplate with SHIFT + RMB")
 		InstructionsGeneral:AddLabel("2. Select the left drive wheel with RMB")
 		InstructionsGeneral:AddLabel("3. Select the right drive wheel with RMB")

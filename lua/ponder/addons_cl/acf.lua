@@ -32,7 +32,7 @@ Ponder.API.RegisterAddonCategory("acf", "crew", {
     Name = "Crew",
     Order = 2,
     ModelIcon = "models/chairs_playerstart/sitpose.mdl",
-    Description = "Learn how to use the crew system"
+    Description = "Learn how to use the crew system."
 })
 
 ACF.PonderModelCaches = {

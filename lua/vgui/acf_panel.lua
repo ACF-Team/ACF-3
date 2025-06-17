@@ -280,7 +280,7 @@ function PANEL:AddCollapsible(Text, State, Icon)
 	Category:SetLabel(Text or "Title")
 	Category.Header:SetFont("ACF_Title")
 	Category.Header:SetSize(0, 24)
-	Category.Image = Category.Header:Add "DImage"
+	Category.Image = Category.Header:Add("DImage")
 	Category.Image:SetPos(4, 4)
 	Category.Image:SetSize(24 - 8, 24 - 8)
 
@@ -320,6 +320,7 @@ function PANEL:AddCollapsible(Text, State, Icon)
 		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
 		self:SetTall(Lerp(Delta, Data.From, Data.To))
 	end
+
 	Category:SetAnimTime(0.2)
 	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
 
