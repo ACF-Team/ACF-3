@@ -48,6 +48,8 @@ do -- Playing regular sounds
 			local Delay = LocalPlayer():EyePos():Distance(Origin) / SpeedOfSound
 			if Delay > 0.1 then
 				timer.Simple(Delay, function() CallPlaySound(Origin, Path, Level, Pitch, Volume) end)
+			else
+				CallPlaySound(Origin, Path, Level, Pitch, Volume)
 			end
 		else
 			CallPlaySound(Origin, Path, Level, Pitch, Volume)
