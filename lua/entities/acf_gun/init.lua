@@ -952,8 +952,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
 				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
-				self:SetNW2Int("Caliber", self.BulletData.Caliber)
-				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+				self:SetNW2Float("Caliber", self.BulletData.Caliber)
 
 				local ReloadLoop = function()
 					local eff = Manual and self:UpdateLoadMod() or 1

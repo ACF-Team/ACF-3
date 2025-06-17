@@ -36,7 +36,15 @@ Weapons.Register("AL", {
 		Min = 15,
 		Max = 8,
 	},
-	BreechCheck = true,
+	BreechConfigs = {
+		MeasuredCaliber = 17.0,
+		Locations = {
+			{Name = "Front of Left Drum", LPos = Vector(-62.9, -27.5, 4.5), LAng = Angle(180, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Front of Right Drum", LPos = Vector(-62.9, 27.5, 4.5), LAng = Angle(180, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Rear of Left Drum", LPos = Vector(-130.7, -27.5, 4.5), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Rear of Right Drum", LPos = Vector(-130.7, 27.5, 4.5), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+		}
+	}
 })
 
 Weapons.RegisterItem("75mmAL", "AL", {

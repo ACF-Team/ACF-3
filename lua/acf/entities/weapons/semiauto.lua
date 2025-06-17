@@ -36,6 +36,13 @@ Weapons.Register("SA", {
 		Min = 350,
 		Max = 150,
 	},
+	BreechConfigs = {
+		MeasuredCaliber = 7.6,
+		Locations = {
+			{Name = "Vertical Magazine", LPos = Vector(18.8166, -0, 12.2373), LAng = Angle(0, 0, 0), Width = 5.0628, Height = 16.6836},
+			{Name = "Horizontal Magazine", LPos = Vector(20.0114, -13.6, 0), LAng = Angle(0, 0, 0), Width = 17.563, Height = 5.563},
+		}
+	}
 })
 
 Weapons.RegisterItem("25mmSA", "SA", {

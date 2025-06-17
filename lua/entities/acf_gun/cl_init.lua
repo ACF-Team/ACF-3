@@ -1,5 +1,6 @@
 local ACF   = ACF
 local Clock = ACF.Utilities.Clock
+local Weapons = ACF.Classes.Weapons
 local Queued	= {}
 
 include("shared.lua")
@@ -121,10 +122,21 @@ do	-- Overlay/networking for that
 
 		local Length = self:GetNW2Float("Length", 0)
 		local Caliber = self:GetNW2Float("Caliber", 0)
-		local BreechCheck = self:GetNW2Bool("BreechCheck", false)
-		local Radius = Caliber / ACF.InchToCm / 2
-		if BreechCheck then
-			render.DrawWireframeBox(self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)), self:GetAngles(), Vector(-Length / ACF.InchToCm / 2, -Radius, -Radius), Vector(0, Radius, Radius), Color(255, 0, 255), true)
+		local Depth = -Length / ACF.InchToCm / 2
+
+		local Class = self:GetNWString("Class")
+		local ClassData  = Weapons.Get(Class)
+		if ClassData.BreechConfigs then
+			local Scale = Caliber / ClassData.BreechConfigs.MeasuredCaliber
+			for Index, Config in ipairs(ClassData.BreechConfigs.Locations) do
+
+				local Pos = self:LocalToWorld(Config.LPos * Scale)
+				local Ang = self:LocalToWorldAngles(Config.LAng)
+				local MinBox = Vector(Depth, -Config.Width / 2 * Scale, -Config.Height / 2 * Scale)
+				local MaxBox = Vector(0, Config.Width / 2 * Scale, Config.Height / 2 * Scale)
+
+				render.DrawWireframeBox(Pos, Ang, MinBox, MaxBox, Color(255, 0, 255), true)
+			end
 		end
 
 		if next(SelfTbl.Crates) then

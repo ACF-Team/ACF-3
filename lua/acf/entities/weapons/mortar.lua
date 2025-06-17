@@ -27,7 +27,13 @@ Weapons.Register("MO", {
 		Min  = 37,
 		Max  = 280,
 	},
-	BreechCheck = true,
+	BreechConfigs = {
+		MeasuredCaliber = 28.0,
+		Locations = {
+			{Name = "Breech", LPos = Vector(-97.4919, 0, 0.015625), LAng = Angle(0, 0, 0), Width = 11.023622047244, Height = 11.023622047244},
+			{Name = "Barrel", LPos = Vector(37.0706, 0, 0.015625), LAng = Angle(180, 0, 0), Width = 11.023622047244, Height = 11.023622047244},
+		}
+	}
 })
 
 Weapons.RegisterItem("60mmM", "MO", {
