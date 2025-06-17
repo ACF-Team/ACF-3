@@ -37,6 +37,15 @@ do -- Playing regular sounds
 			sound.Play(Path, Origin, Level, Pitch, Volume)
 		end
 	end
+	local function DistanceToOrigin(Origin)
+		if isentity(Origin) and IsValid(Origin) then
+			return LocalPlayer():EyePos():Distance(Origin:GetPos())
+		elseif isvector(Origin) then
+			return LocalPlayer():EyePos():Distance(Origin)
+		else
+			return 0
+		end
+	end
 	--- Plays a single, non-looping sound at the given origin.
 	--- @param Origin table | vector The source to play the sound from
 	--- @param Path string The path to the sound to be played local to the game's sound folder
@@ -45,7 +54,7 @@ do -- Playing regular sounds
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, Instant)
 		if not Instant then
-			local Delay = LocalPlayer():EyePos():Distance(Origin) / SpeedOfSound
+			local Delay = DistanceToOrigin(Origin) / SpeedOfSound
 			if Delay > 0.1 then
 				timer.Simple(Delay, function() CallPlaySound(Origin, Path, Level, Pitch, Volume) end)
 			else

@@ -434,11 +434,10 @@ function EFFECT:Render()
 	local Radius = self.Radius
 	local Ratio  = math.ease.OutQuad((CurTime() - self.Start) / self.ShockwaveLife)
 	render.SetMaterial(ShockwaveMaterial)
-	local T = 0.05 * (1 - Ratio)
 	ShockwaveMaterial:SetFloat("$bluramount", Ratio * 0.03)
-	ShockwaveMaterial:SetFloat("$refractamount", T)
+	ShockwaveMaterial:SetFloat("$refractamount", 0.05 * (1 - Ratio))
 	ShockwaveMaterial:SetFloat("$time", 4) -- this might not do anything after all
-	ShockwaveMaterial:SetFloat("$silhouettethickness", Ratio * 0.5)
+	ShockwaveMaterial:SetFloat("$silhouettethickness", Ratio * 1.2)
 	WorkingColor.a = 255 - (Ratio * 255)
 	render.DrawSphere(self:GetPos(), 50 + (Radius * Ratio * 120), 32, 16, WorkingColor)
 end
