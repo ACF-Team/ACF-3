@@ -16,8 +16,6 @@ function EFFECT:Init(Data)
 	local Index    = Data:GetDamageType()
 	local Emitter  = ParticleEmitter(Origin)
 	local Scale    = math.max(Mass * (Velocity * ACF.InchToMeter) * 0.01, 1) ^ 0.3
-	local Level    = math.Clamp(Mass * 200, 65, 500)
-	local Pitch    = math.Clamp(Velocity * 0.01, 25, 255)
 
 	TraceData.start = Origin - Normal
 	TraceData.endpos = Origin + Normal * Velocity

@@ -4,7 +4,6 @@ local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetRicochetDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
-local Sound      = "^acf_base/fx/metal/ricochet/large/4.wav"
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
