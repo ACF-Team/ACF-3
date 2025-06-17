@@ -292,12 +292,14 @@ do -- ASSUMING DIRECT CONTROL
 			local SetCollisionBounds		= ENT.SetCollisionBounds
 			local SetCollisionGroup			= ENT.SetCollisionGroup
 			local SetNotSolid				= ENT.SetNotSolid
+			local IsVehicle 				= ENT.IsVehicle
 			EntDetours.SetNoDraw			= SetNoDraw
 			EntDetours.SetModel				= SetModel
 			EntDetours.PhysicsInitSphere	= PhysicsInitSphere
 			EntDetours.SetCollisionBounds	= SetCollisionBounds
 			EntDetours.SetCollisionGroup	= SetCollisionGroup
 			EntDetours.SetNotSolid			= SetNotSolid
+			EntDetours.IsVehicle			= IsVehicle
 
 			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
 			function Contraption.SetMass(Entity, Mass)
@@ -333,6 +335,13 @@ do -- ASSUMING DIRECT CONTROL
 				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
 
 				SetModel(self, Model)
+			end
+
+			function ENT:IsVehicle()
+				if self.IsACFEntity and self.ACF_DetourIsVehicle then
+					return self:ACF_DetourIsVehicle()
+				end
+				return IsVehicle(self)
 			end
 
 			-- All of these should prevent the relevant functions from occurring on ACF entities, but only if LegalChecks are enabled

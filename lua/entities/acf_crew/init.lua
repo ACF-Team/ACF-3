@@ -523,7 +523,7 @@ do
 			Status = Status .. "\n\n" .. Error
 		end
 
-		local str = string.format("%s\n\nRole: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		local str = string.format("%s\n\nRole: %s\nHealth: %s%%\nLean: %s%%\nSpace: %s%%\nMove: %s%%\nFocus: %s%%\nTotal: %s%%\n\nReplaces Others: %s\nReplaceable: %s\nPriority: %s",
 			Status,
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),

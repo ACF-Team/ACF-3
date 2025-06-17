@@ -937,7 +937,10 @@ do -- Crew related
 		InitFields(Config)
 
 		local RealLoop
+		local Cancelled = false
+		local Finished  = false
 		function RealLoop()
+			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
 			UpdateDelta(Config)
@@ -950,13 +953,23 @@ do -- Crew related
 			if timeleft > 0.001 then
 				timer.Simple(timeleft, RealLoop)
 			else
-				if Finish then Finish(Config) end
+				if Finish and not Finished then Finished = true Finish(Config) end
 				return
 			end
 		end
 
 		if not Config.Delay then RealLoop()
 		else timer.Simple(Config.Delay, RealLoop) end
+
+		local ProxyObject = {}
+		function ProxyObject:Cancel(RunFinisher)
+			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
+		end
+		return ProxyObject
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
@@ -966,7 +979,7 @@ do -- Crew related
 	--- @param Finish any A function that is called when the timer Finishes
 	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
-		ACF.AugmentedTimer(
+		return ACF.AugmentedTimer(
 			function(Config)
 				local eff = Loop(Config)
 				Config.Progress = Config.Progress + Config.DeltaTime * eff
@@ -1180,5 +1193,7 @@ do -- Reload related
 			local Phys = Pod:GetPhysicsObjectNum(Idx)
 			Phys:SetContents(CONTENTS_EMPTY)
 		end
+		Pod.ACF_InvisibleToBallistics = true
+		Pod.ACF_InvisibleToTrace = true
 	end
 end

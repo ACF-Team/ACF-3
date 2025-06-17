@@ -75,6 +75,7 @@ end)
 hook.Add("ACF_OnCheckLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
     if not ACF.VehicleLegalChecks then return end
     if not Entity:IsVehicle() then return end
+    if not Entity.VehicleTable then return end
     if Entity.ACF and Entity.ACF.LuaGeneratedSeat then return end -- Crew/Baseplate seat bypass
 
     local ModelPath = Entity:GetModel()
