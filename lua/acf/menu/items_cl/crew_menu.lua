@@ -11,6 +11,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("#acf.menu.crew.settings")
+	Menu:AddPonderAddonCategory("acf", "crew")
 
 	local CrewJob		= Menu:AddComboBox()
 	local CrewJobDesc	= Menu:AddLabel()
