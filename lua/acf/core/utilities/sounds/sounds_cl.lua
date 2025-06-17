@@ -161,9 +161,14 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+	--- Returns a table of sound infomation depending on what the trace hit.
+	--- @param Data table The effect data relating to the projectile
+	--- @param Trace table The trace data relating to the projectile
+	--- @param EffectType string The type of effect being used (e.g. Impact, Ricochet)
 function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 	local MatType   = Trace.MatType
 	local Caliber   = Data:GetRadius()
+	local HitWater  = bit.band(util.PointContents(Trace.HitPos), CONTENTS_WATER) == CONTENTS_WATER
 	local SoundPath = {"^acf_base/fx/hit", "", "%s.mp3"}
 	local SoundData = {
 		SoundPath   = "",
@@ -171,7 +176,7 @@ function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 	}
 
 	---hit world
-	if Trace.HitWorld then
+	if Trace.HitWorld or HitWater then
 		---more materials sounds can be added if the folders exist.
 		local WorldSoundPath = {"world", "", ""}
 		local Materials = {
@@ -183,8 +188,10 @@ function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 		---check the material type
 		if Materials[MatType] ~= nil then
 			WorldSoundPath[2] = Materials[MatType]
+		elseif HitWater then
+			WorldSoundPath[2] = "water"
 		else
-			---there wasnt a speficed material sound type, use a generic sound
+			---there wasn't a specified material sound type, use a generic sound
 			WorldSoundPath[2] = "ground"
 		end
 
@@ -227,11 +234,11 @@ function Sounds.GetHitSoundPath(Data, Trace, EffectType)
 
 	SoundData.SoundPath = table.concat(SoundPath, "/")
 
-	--print("TYPE:", EffectType," playing:", SoundData.SoundPath, " @ ", SoundData.SoundPitch, " pitch")
-
 	return SoundData
 end
 
+	--- Returns a table of sound infomation depending on the radius of the explosion.  
+	--- @param Radius number Radius of the explosion
 function Sounds.GetExplosionSoundPath(Radius)
 	local SoundPath = {"^acf_base/fx/explosion", "", "%s.mp3"}
 	local SoundData = {
@@ -262,8 +269,6 @@ function Sounds.GetExplosionSoundPath(Radius)
 	end
 
 	SoundData.SoundPath = table.concat(SoundPath, "/")
-
-	--print("TYPE:", "explosion"," playing:", SoundData.SoundPath, " @ ", SoundData.SoundVolume, " volume")
 
 	return SoundData
 end
