@@ -66,10 +66,13 @@ do -- Random timer crew stuff
 		local D2 = CrewPos:Distance(AmmoPos)
 
 		local tr = util.TraceLine({
-			start = BreechPos,
-			endpos = CrewPos,
+			start = CrewPos,
+			endpos = BreechPos,
 			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
 		})
+
+		debugoverlay.Line(CrewPos, tr.HitPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlayText()
 		if tr.Hit then
@@ -95,6 +98,9 @@ do -- Random timer crew stuff
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
 				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
+
+			debugoverlay.Line(tr.StartPos, tr.HitPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+
 			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlayText()
 			if tr.Hit then
@@ -338,9 +344,17 @@ do -- Spawn and Update functions --------------------------------
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
 
+		-- Breech information
 		Entity.BreechIndex  = Data.BreechIndex or 1
-
-		print("Breech Index: " .. Entity.BreechIndex)
+		local BreechConfigs = Entity.ClassData.BreechConfigs
+		if BreechConfigs then
+			local BreechScale = Caliber / BreechConfigs.MeasuredCaliber
+			local BreechConfig = BreechConfigs.Locations[Entity.BreechIndex] or {}
+			Entity.BreechPos = Entity:LocalToWorld(BreechConfig.LPos * BreechScale)
+			Entity.BreechAng = Entity:LocalToWorldAngles(BreechConfig.LAng)
+			Entity.BreechWidth = BreechConfig.Width * BreechScale
+			Entity.BreechHeight = BreechConfig.Height * BreechScale
+		end
 
 		Entity.OverlayErrors = {}
 

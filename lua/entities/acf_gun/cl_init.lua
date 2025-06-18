@@ -67,8 +67,8 @@ function ENT:Animate(ReloadTime, LoadOnly)
 end
 
 do	-- Overlay/networking for that
-	local Purple = Color(255, 0, 255)
-	local Cyan = Color(0, 255, 255)
+	local Purple = Color(255, 0, 255, 100)
+	local Cyan = Color(0, 255, 255, 100)
 	function ENT:RequestGunInfo()
 		if Queued[self] then return end
 
@@ -116,14 +116,14 @@ do	-- Overlay/networking for that
 
 		render.SetColorMaterial()
 
-		local BreechIndex = self:GetNW2Int("BreechIndex", 1)
 		local Length = self:GetNW2Float("Length", 0)
-		local Caliber = self:GetNW2Float("Caliber", 0)
-		local Depth = -Length / ACF.InchToCm / 2
-
 		local Class = self:GetNWString("Class")
 		local ClassData  = Weapons.Get(Class)
-		if ClassData.BreechConfigs then
+		if ClassData.BreechConfigs and Length > 0 then
+			local BreechIndex = self:GetNW2Int("BreechIndex", 1)
+			local Caliber = self:GetNW2Float("Caliber", 0)
+			local Depth = -Length / ACF.InchToCm / 2
+
 			local Scale = Caliber / ClassData.BreechConfigs.MeasuredCaliber
 			for Index, Config in ipairs(ClassData.BreechConfigs.Locations) do
 				local Pos = self:LocalToWorld(Config.LPos * Scale)

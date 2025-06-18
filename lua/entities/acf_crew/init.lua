@@ -238,8 +238,8 @@ do -- Random timer stuff
 			if not self.ScanIndex then
 				-- If we haven't ran an initial scan, setup relevant information
 				self.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
-				self.ScanBox = Vector()
-				self.ScanHull = Vector(6, 6, 6)
+				self.ScanBox = self.ScanBox or Vector()
+				self.ScanHull = self.ScanHull or Vector(6, 6, 6)
 				self.ScanDisplacements, self.ScanLengths, self.ScanCount = GenerateScanSetup()
 				self.ScanIndex = 1
 				self.SpaceEff = iterScan(self, self.ScanCount)
