@@ -87,7 +87,7 @@ do -- Random timer crew stuff
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		-- Check space behind breech
-		if self.BulletData and self.ClassData.BreechCheck then
+		if self.BulletData and self.ClassData.BreechConfigs then
 
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
@@ -178,6 +178,11 @@ do -- Spawn and Update functions --------------------------------
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
 
 			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+		end
+
+		-- For breech locations
+		if not Data.BreechIndex then
+			Data.BreechIndex = 1
 		end
 
 		do -- External verifications
@@ -332,6 +337,10 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
+
+		Entity.BreechIndex  = Data.BreechIndex or 1
+
+		print("Breech Index: " .. Entity.BreechIndex)
 
 		Entity.OverlayErrors = {}
 
@@ -497,7 +506,7 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber", "BreechIndex")
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
@@ -953,6 +962,7 @@ do -- Metamethods --------------------------------
 
 				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
 				self:SetNW2Float("Caliber", self.BulletData.Caliber)
+				self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
 				local ReloadLoop = function()
 					local eff = Manual and self:UpdateLoadMod() or 1
@@ -1024,7 +1034,7 @@ do -- Metamethods --------------------------------
 			self.CurrentCrate = Crate
 			self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
 			self:SetNW2Int("Caliber", self.BulletData.Caliber)
-			self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+			self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
 			self:SetState("Loading")
 
@@ -1121,7 +1131,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
+		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nBreech Loaded At: %s"
 
 		function ENT:UpdateOverlayText()
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
@@ -1151,7 +1161,9 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo)
+			local BreechIndex = self.BreechIndex or 1
+			local BreechName = self.ClassData.BreechConfigs and self.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
+			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo, BreechName)
 		end
 	end -----------------------------------------
 
