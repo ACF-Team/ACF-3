@@ -132,7 +132,7 @@ local function iterScan(crew, reps)
 		if index > count then index = 1 end
 		crew.ScanIndex = index
 	end
-	debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
+	-- debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
 
 	-- Update using new and saved scan lengths
 	local sum = 0

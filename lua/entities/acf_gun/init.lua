@@ -22,6 +22,7 @@ local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
+local TraceLine = util.TraceLine
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- Helper functions
@@ -62,13 +63,13 @@ do -- Random timer crew stuff
 
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
-		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
+		local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
 		local AmmoPos = Ammo:GetPos()
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
-		local tr = util.TraceLine({
+		local tr = TraceLine({
 			start = CrewPos,
 			endpos = BreechPos,
 			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
@@ -97,20 +98,38 @@ do -- Random timer crew stuff
 		if self.BulletData and self.ClassData.BreechConfigs then
 
 			-- Check assuming 2 piece for now.
-			local p1 = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0))
-			local p2 = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0))
-			local tr = util.TraceLine({
-				start = p1,
-				endpos = p2,
+			local ShellLength = ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
+			local p1 = self.BreechPos
+			local p2 = p1 - Vector(ShellLength, 0, 0)
+			local wp1, wp2 = self:LocalToWorld(p1), self:LocalToWorld(p2)
+
+			local tr = TraceLine({
+				start = wp1,
+				endpos = wp2,
 				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
 
-			debugoverlay.Line(p1, tr.HitPos, 1, Green, true)
-			debugoverlay.Line(tr.HitPos, p2, 1, Red, true)
+			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
+			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
 
-			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
+			-- Additional Randomized check
+			local rb = Vector(0, self.BreechWidth or 0, self.BreechHeight or 0) / 2 * VectorRand()
+			local rp1 = p1 + rb
+			local rp2 = p2 + rb
+			local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
+
+			local tr2 = TraceLine({
+				start = wrp1,
+				endpos = wrp2,
+				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
+			})
+
+			debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
+			debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
+
+			self.OverlayErrors.BreechCheck = (tr.Hit or tr2.Hit) and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlayText()
-			if tr.Hit then
+			if (tr.Hit or tr2.Hit) then
 				return 0.000001
 			end
 		end
@@ -355,10 +374,10 @@ do -- Spawn and Update functions --------------------------------
 		Entity.BreechIndex  = Data.BreechIndex or 1
 		local BreechConfigs = Entity.ClassData.BreechConfigs
 		if BreechConfigs then
-			local BreechScale = Caliber / BreechConfigs.MeasuredCaliber
+			local BreechScale = (Caliber / 10) / BreechConfigs.MeasuredCaliber
 			local BreechConfig = BreechConfigs.Locations[Entity.BreechIndex] or {}
-			Entity.BreechPos = Entity:LocalToWorld(BreechConfig.LPos * BreechScale)
-			Entity.BreechAng = Entity:LocalToWorldAngles(BreechConfig.LAng)
+			Entity.BreechPos = BreechConfig.LPos * BreechScale
+			Entity.BreechAng = BreechConfig.LAng
 			Entity.BreechWidth = BreechConfig.Width * BreechScale
 			Entity.BreechHeight = BreechConfig.Height * BreechScale
 		end
