@@ -192,6 +192,7 @@ local function CreateMenu(Menu)
 	local ClassDesc  = WeaponBase:AddLabel()
 	local EntPreview = WeaponBase:AddModelPreview(nil, true)
 	local EntData    = WeaponBase:AddLabel()
+	local BreechIndex = WeaponBase:AddComboBox()
 	local AmmoList   = ACF.CreateAmmoMenu(Menu)
 
 	-- Configuring the ACF Spawner tool
@@ -200,7 +201,6 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("Destiny", "Weapons") -- The information of these entities will come from ACF.Classes.Weapons
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Weapon") -- The ACF Menu tool will be set to spawner stage, weapon operation
-
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -215,6 +215,23 @@ local function CreateMenu(Menu)
 		ClassDesc:SetText(Data.Description)
 
 		AmmoList:LoadEntries(Data.ID)
+
+		BreechIndex:Clear()
+		if Data.BreechConfigs then
+			for Index, Config in ipairs(Data.BreechConfigs.Locations) do
+				BreechIndex:AddChoice("Loaded At: " .. Config.Name, Index)
+			end
+
+			BreechIndex:SetVisible(true)
+			BreechIndex:SetClientData("BreechIndex", "OnSelect")
+			BreechIndex:DefineSetter(function(_, _, _, Value)
+				ACF.SetClientData("BreechIndex", Value)
+				return Value
+			end)
+			BreechIndex:ChooseOptionID(Data.BreechIndex or 1)
+		else
+			BreechIndex:SetVisible(false)
+		end
 	end
 
 	EntData:TrackClientData("Projectile", "SetText")

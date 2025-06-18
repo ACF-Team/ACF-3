@@ -22,6 +22,7 @@ local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
+local TraceLine = util.TraceLine
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 
 -- Helper functions
@@ -57,24 +58,30 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
+	local Red = Color(255, 0, 0)
+	local Green = Color(0, 255, 0)
+
+	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
+
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
-		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
+		local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
 		local AmmoPos = Ammo:GetPos()
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
-		local tr = util.TraceLine({
-			start = BreechPos,
-			endpos = CrewPos,
-			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
-		})
+		TraceConfig.start = CrewPos
+		TraceConfig.endpos = BreechPos
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end
+		local tr = TraceLine(TraceConfig)
+
+		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
+		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
+
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
-		Crew:UpdateOverlayText()
-		if tr.Hit then
-			return 0.000001
-		end -- Wanna avoid division by zero...
+		Crew:UpdateOverlay()
+		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
@@ -87,19 +94,42 @@ do -- Random timer crew stuff
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		-- Check space behind breech
-		if self.BulletData and self.ClassData.BreechCheck then
+		if self.BulletData and self.ClassData.BreechConfigs then
 
 			-- Check assuming 2 piece for now.
-			local tr = util.TraceLine({
-				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
-				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
-				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
-			})
-			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
-			self:UpdateOverlayText()
-			if tr.Hit then
-				return 0.000001
+			local ShellLength = ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
+			local p1 = self.BreechPos
+			local p2 = p1 - Vector(ShellLength, 0, 0)
+			local wp1, wp2 = self:LocalToWorld(p1), self:LocalToWorld(p2)
+
+			TraceConfig.start = wp1
+			TraceConfig.endpos = wp2
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			local tr = TraceLine(TraceConfig)
+
+			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
+			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
+
+			-- Additional Randomized check just in case
+			local tr2
+			if not tr.Hit then
+				local rb = Vector(0, self.BreechWidth or 0, self.BreechHeight or 0) / 2 * VectorRand()
+				local rp1 = p1 + rb
+				local rp2 = p2 + rb
+				local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
+
+				TraceConfig.start = wrp1
+				TraceConfig.endpos = wrp2
+				local tr2 = TraceLine(TraceConfig)
+
+				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
+				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
 			end
+
+			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
+			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
+			self:UpdateOverlay()
+			if IsBlocked then return 0.000001 end
 		end
 
 		return self.LoadCrewMod
@@ -178,6 +208,11 @@ do -- Spawn and Update functions --------------------------------
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
 
 			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
+		end
+
+		-- For breech locations
+		if not Data.BreechIndex then
+			Data.BreechIndex = 1
 		end
 
 		do -- External verifications
@@ -332,6 +367,18 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
+
+		-- Breech information
+		Entity.BreechIndex  = Data.BreechIndex or 1
+		local BreechConfigs = Entity.ClassData.BreechConfigs
+		if BreechConfigs then
+			local BreechScale = (Caliber / 10) / BreechConfigs.MeasuredCaliber
+			local BreechConfig = BreechConfigs.Locations[Entity.BreechIndex] or {}
+			Entity.BreechPos = BreechConfig.LPos * BreechScale
+			Entity.BreechAng = BreechConfig.LAng
+			Entity.BreechWidth = BreechConfig.Width * BreechScale
+			Entity.BreechHeight = BreechConfig.Height * BreechScale
+		end
 
 		Entity.OverlayErrors = {}
 
@@ -497,7 +544,7 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber")
+	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber", "BreechIndex")
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 
@@ -952,8 +999,8 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
 
 				self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
-				self:SetNW2Int("Caliber", self.BulletData.Caliber)
-				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+				self:SetNW2Float("Caliber", self.BulletData.Caliber)
+				self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
 				local ReloadLoop = function()
 					local eff = Manual and self:UpdateLoadMod() or 1
@@ -1025,7 +1072,7 @@ do -- Metamethods --------------------------------
 			self.CurrentCrate = Crate
 			self:SetNW2Int("Length", self.BulletData.PropLength + self.BulletData.ProjLength)
 			self:SetNW2Int("Caliber", self.BulletData.Caliber)
-			self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
+			self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
 			self:SetState("Loading")
 
@@ -1122,7 +1169,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s"
+		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nLoading Location: %s"
 
 		function ENT:UpdateOverlayText()
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
@@ -1152,7 +1199,9 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo)
+			local BreechIndex = self.BreechIndex or 1
+			local BreechName = self.ClassData.BreechConfigs and self.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
+			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo, BreechName)
 		end
 	end -----------------------------------------
 
