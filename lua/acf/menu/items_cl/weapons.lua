@@ -144,6 +144,7 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	local MagText    = language.GetPhrase("acf.menu.weapons.mag_stats")
 	local BulletData = ACF.GetCurrentAmmoData()
+	if not BulletData then return "" end
 	local MagReload  = ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
@@ -186,7 +187,7 @@ local function CreateMenu(Menu)
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
 	local ClassList  = ClassBase:AddComboBox()
-	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info")
+	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info", nil, "icon16/monitor_edit.png")
 	local EntName    = WeaponBase:AddTitle()
 	local ClassDesc  = WeaponBase:AddLabel()
 	local EntPreview = WeaponBase:AddModelPreview(nil, true)
@@ -199,6 +200,7 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("Destiny", "Weapons") -- The information of these entities will come from ACF.Classes.Weapons
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Weapon") -- The ACF Menu tool will be set to spawner stage, weapon operation
+
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -218,14 +220,18 @@ local function CreateMenu(Menu)
 	EntData:TrackClientData("Projectile", "SetText")
 	EntData:TrackClientData("Propellant")
 	EntData:TrackClientData("Tracer")
-	EntData:DefineSetter(function()
+	EntData:TrackClientData("Caliber")
+	local function Update()
 		local Class = Current.Class
 
 		if not Class then return "" end
 
-		local EntText  = language.GetPhrase("acf.menu.weapons.weapon_stats")
 		local Weapon   = Current.Weapon
+
+		local EntText  = language.GetPhrase("acf.menu.weapons.weapon_stats")
 		local Caliber  = Current.Caliber
+		if not Caliber then return "" end
+
 		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
 		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
 		local FireRate = 60 / FireDelay
@@ -233,7 +239,9 @@ local function CreateMenu(Menu)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
 		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
-	end)
+	end
+	EntData:DefineSetter(Update)
+	EntData:SetText("")
 
 	ClassBase.Menu    = Menu
 	ClassBase.Title   = EntName

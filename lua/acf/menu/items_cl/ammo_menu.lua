@@ -472,8 +472,9 @@ function ACF.CreateAmmoMenu(Menu)
 		return Z
 	end)
 
-	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info")
+	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
 	local Desc = Base:AddLabel()
+	Desc:SetText("")
 
 	function List:LoadEntries(Class)
 		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")

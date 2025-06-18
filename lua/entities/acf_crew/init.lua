@@ -108,7 +108,7 @@ local function iterScan(crew, reps)
 	local filter = function(x)
 		local Owner = x:CPPIGetOwner()
 		if not IsValid(Owner) then return false end
-		return not (x == crew or Owner ~= Owner or x:IsPlayer())
+		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer())
 	end
 
 	-- Update reps hull traces
@@ -140,6 +140,36 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
+function ENT:CFW_OnParentedTo(OldParent, _)
+	-- Force unlinks if OldParent is valid
+	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
+		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
+		if next(self.Targets) then
+			for Target in pairs(self.Targets) do
+				self:Unlink(Target)
+			end
+		end
+		self:CFW_Unindex_Crew(self:GetContraption())
+		self:CFW_Index_Crew(self:GetContraption())
+	end
+end
+
+-- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
+local function CheckParentState(crew)
+	local Family = crew:GetFamily()
+
+	if not Family or Family.ancestor == crew then
+		crew.Disabled = {
+			Reason = "Bad Parent",
+			Message = "Must be parented to something!"
+		}
+		crew.TotalEff = 0
+		return false
+	end
+
+	return true
+end
+
 --- Check other crews of the same type and enforce convar limits
 local function EnforceLimits(crew)
 	local CrewType = crew.CrewType
@@ -160,14 +190,19 @@ local function EnforceLimits(crew)
 	end
 
 	if CrewType.EnforceLimits then CrewType.EnforceLimits(crew) end
+	crew.Disabled = nil
 end
 
 do -- Random timer stuff
 	function ENT:UpdateUltraLowFreq(cfg)
+		if self.Disabled then return end
+
 		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, cfg) end
 	end
 
 	function ENT:UpdateLowFreq(cfg)
+		if self.Disabled then return end
+
 		local DeltaTime = cfg.DeltaTime
 
 		-- Update health ergonomics
@@ -195,6 +230,8 @@ do -- Random timer stuff
 	end
 
 	function ENT:UpdateMedFreq(cfg)
+		if self.Disabled then return end
+
 		-- If specified, affect crew ergonomics based on space 
 		local SpaceInfo = self.CrewType.SpaceInfo
 		if SpaceInfo and self.ShouldScan then
@@ -217,6 +254,8 @@ do -- Random timer stuff
 	end
 
 	function ENT:UpdateHighFreq(cfg)
+		if self.Disabled then return end
+
 		local DeltaTime = cfg.DeltaTime
 
 		-- If specified, affect crew ergonomics based on lean angle
@@ -243,7 +282,7 @@ do -- Random timer stuff
 			self.Vel = vel
 			self.Accel = accel
 
-			local GForce = accel:Length() / 600
+			local GForce = accel:Length() / 600 -- G Force is acceleration / default source gravity
 
 			-- If specified, affect crew ergonomics based on G forces
 			local Effs = self.CrewType.GForceInfo.Efficiencies
@@ -251,6 +290,7 @@ do -- Random timer stuff
 				self.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
 				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
 			end
+			WireLib.TriggerOutput(self, "GForce", GForce)
 
 			-- If specified, apply damage to crew based on G forces
 			local Damages = self.CrewType.GForceInfo.Damages
@@ -284,8 +324,8 @@ do
 		"MoveEff",
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
-		"Entity (The crew entity itself) [ENTITY]",
-		"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
+		"GForce (The strength of GForce experienced)",
+		"Entity (The crew entity itself) [ENTITY]"
 	}
 
 	local function VerifyData(Data)
@@ -335,6 +375,8 @@ do
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
 
 		Entity.ACF.Model = CrewModel.Model
+
+		Entity.OverlayErrors = {}
 
 		ACF.Activate(Entity, true)
 
@@ -422,35 +464,6 @@ do
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
 
-		-- Add seat support for crews
-		local Pod = ents.Create("prop_vehicle_prisoner_pod")
-		if IsValid(Pod) and IsValid(Player) then
-			Entity:SetUseType(SIMPLE_USE)
-			Entity.Pod = Pod
-			Pod:SetAngles(Angle)
-			Pod:SetModel(CrewModel.Model)
-			Pod:SetPos(Pos)
-			Pod:Spawn()
-			Pod:SetParent(Entity)
-			Pod.Owner = Player
-			Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")	-- I don't know what this does, but for good measure...
-			Pod:SetKeyValue("limitview", 0)											-- Let the player look around
-			Pod:SetNoDraw(true)														-- Don't render the seat
-			Pod:SetMoveType(MOVETYPE_NONE)
-			Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
-
-			Pod.Vehicle = Entity
-			Pod.ACF = Pod.ACF or {}
-			Pod.ACF.LegalChecks = false												-- Will this cause issues?
-			Pod.DoNotDuplicate = true												-- Don't duplicate cause crew will generate one on spawn
-
-			Entity:CallOnRemove("ACF_RemoveVehiclePod", function(Ent)
-				SafeRemoveEntity(Ent.Pod)
-			end)
-
-			WireLib.TriggerOutput(Entity, "Vehicles", {Pod})
-		end
-
 		return Entity
 	end
 
@@ -499,7 +512,19 @@ do
 	end
 
 	function ENT:UpdateOverlayText()
-		local str = string.format("Role: %s\nHealth: %s %%\nLean: %s %%\nSpace: %s %%\nMove: %s %%\nFocus: %s %%\nTotal: %s %%\nReplaces Others: %s\nReplacable: %s\nPriority: %s",
+		local Status = self.IsAlive and "Alive" or "Dead"
+		local ErrorCount = table.Count(self.OverlayErrors)
+		if ErrorCount > 0 then
+			Status = Status .. " (" .. ErrorCount .. " errors)"
+		end
+
+		-- Compile error messages
+		for _, Error in pairs(self.OverlayErrors) do
+			Status = Status .. "\n\n" .. Error
+		end
+
+		local str = string.format("%s\n\nRole: %s\nHealth: %s%%\nLean: %s%%\nSpace: %s%%\nMove: %s%%\nFocus: %s%%\nTotal: %s%%\n\nReplaces Others: %s\nReplaceable: %s\nPriority: %s",
+			Status,
 			self.CrewTypeID,
 			math.Round(self.HealthEff * 100, 2),
 			math.Round(self.LeanEff * 100, 2),
@@ -516,6 +541,7 @@ do
 
 	function ENT:Use(Activator)
 		if not IsValid(Activator) then return end
+		if not IsValid(self.Pod) then return end
 		Activator:EnterVehicle(self.Pod)
 	end
 end
@@ -523,16 +549,19 @@ end
 -- Entity methods
 do
 	-- Think logic (mostly checks and stuff that updates frequently)
+	-- Hopefully runs after CFW is initialized
 	function ENT:Think()
 		-- Check links on this entity
-		local Targets = self.Targets or {}
-		if next(Targets) then
+		local Targets = self.Targets
+		local SelfContraption = self:GetContraption()
+		local IsParented = CheckParentState(self)
+		if IsParented and Targets ~= nil and next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
 				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
-				local OutOfRange = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors = self:GetContraption() ~= Link:GetContraption()	-- Check same Contraption
+				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					Link:EmitSound(Sound, 70, 100, ACF.Volume)
@@ -540,13 +569,19 @@ do
 					self:Unlink(Link)
 					Link:Unlink(self)
 
-					-- If we're waiting on it then don't send the notification...
-					if self.RemainingLinks and self.RemainingLinks[Link] then
-						ACF.SendNotify(self:GetOwner(), false, "Crew unlinked. Make sure they're part of the same Contraption as and close enough to their Target.")
-					end
+					local Reasons = {}
+					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
+					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
+					Reasons = table.concat(Reasons, ", and ")
+					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
+
+					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
 				end
 			end
 		end
+
+		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -694,9 +729,12 @@ do
 
 		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
 
-		local Driver = self.Pod:GetDriver()
-		if IsValid(Driver) then
-			Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
+		if IsValid(self.Pod) then
+			local Driver = self.Pod:GetDriver()
+
+			if IsValid(Driver) then
+				Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
+			end
 		end
 
 		return HitRes
@@ -755,15 +793,19 @@ do
 			Ent:CFW_Index_Crew(Contraption, Ent)
 
 			-- Propagate links waiting on CFW from crew to Contraption
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
-				Contraption.RemainingLinks[Target][Ent] = true
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = true
+				end
+			end
 
 			-- If this crew is parented into a new Contraption, try linking them to their Targets.
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Ent:Link(Target)
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Ent:Link(Target)
+				end
+			end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] ~= nil then
 				-- This runs if the entity is a Target of some crew(s)
@@ -783,10 +825,12 @@ do
 			Ent:CFW_Unindex_Crew(Contraption)
 
 			-- Unpropagate links waiting on CFW from crew to Contraption
-			if Ent.RemainingLinks then for Target in pairs(Ent.RemainingLinks) do
-				Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
-				Contraption.RemainingLinks[Target][Ent] = nil
-			end end
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = nil
+				end
+			end
 		else
 			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] then
 				-- This runs if the entity is a Target of some crew(s)
@@ -817,7 +861,6 @@ do
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
 		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
-		if Target:GetContraption() ~= Crew:GetContraption() then return false, "This entity is not part of the same Contraption as this crewmate!" end
 		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
@@ -827,7 +870,9 @@ do
 
 	local function LinkCrew(Crew, Target)
 		local TargetClass = Target:GetClass()
-		if not CanLinkCrew(Crew, Target) then return end
+
+		local Success, _ = CanLinkCrew(Crew, Target)
+		if not Success then return end
 
 		-- Update crew and Target's records of each other
 		Crew.Targets[Target] = true
@@ -922,15 +967,14 @@ do
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
+		self:NextThink(Clock.CurTime + 2) -- Hope CFW finishes merging contraptions after this point...
+
 		-- Restore previous links
 		if EntMods.CrewTargets then
-			local RLs = {} -- LUT mapping failed link Targets to true
-
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
-
-				local result = self:Link(ActualEnt)
-				if not result then RLs[ActualEnt] = true end -- Failed links should be checked again when their Target is indexed.
+				local result, err = self:Link(ActualEnt)
+				if not result then ACF.SendNotify(Ent:CPPIGetOwner(), false, "ACF Crew:PostEntityPaste failure: " .. err) end
 			end
 
 			self.RemainingLinks = RLs

@@ -16,7 +16,7 @@ TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
 
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor(Area, Ductility, Thickness)
@@ -50,10 +50,10 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	end
 end
 
-local function UpdateArmor(_, Entity, Data)
+local function UpdateArmor(_, Entity, Data, BecauseOfDupe)
 	if CLIENT then return end
 	if not Data then return end
-	if not ACF.Check(Entity) then return end
+	if not ACF.Check(Entity, BecauseOfDupe) then return end
 
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
@@ -68,7 +68,7 @@ end
 hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 function TOOL:CheckForReload()
@@ -329,7 +329,7 @@ else -- Serverside-only stuff
 
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
 		if Entity.IsPrimitive then return end
-		UpdateArmor(_, Entity, Data)
+		UpdateArmor(_, Entity, Data, true)
 	end)
 
 	-- Specifically handling Primitives separately so that we can ensure that their stats are not impacted by a race condition

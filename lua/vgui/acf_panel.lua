@@ -270,7 +270,7 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	return Wang, Text
 end
 
-function PANEL:AddCollapsible(Text, State)
+function PANEL:AddCollapsible(Text, State, Icon)
 	if State == nil then State = true end
 
 	local Base = vgui.Create("ACF_Panel")
@@ -278,6 +278,28 @@ function PANEL:AddCollapsible(Text, State)
 
 	local Category = self:AddPanel("DCollapsibleCategory")
 	Category:SetLabel(Text or "Title")
+	Category.Header:SetFont("ACF_Title")
+	Category.Header:SetSize(0, 24)
+	Category.Image = Category.Header:Add("DImage")
+	Category.Image:SetPos(4, 4)
+	Category.Image:SetSize(24 - 8, 24 - 8)
+
+	function Category:SetIcon(iconStr)
+		if iconStr == nil then
+			Category.Header:SetTextInset(0, 0)
+			self.Image:Hide()
+			return
+		end
+
+		Category.Header:SetTextInset(26, 0)
+		self.Image:Show()
+		self.Image:SetImage(iconStr)
+	end
+
+	if Icon ~= nil then
+		Category:SetIcon(Icon)
+	end
+
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
@@ -298,6 +320,7 @@ function PANEL:AddCollapsible(Text, State)
 		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
 		self:SetTall(Lerp(Delta, Data.From, Data.To))
 	end
+
 	Category:SetAnimTime(0.2)
 	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
 
@@ -333,7 +356,7 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 		if not IsValid(Ponder.UIWindow) then
 			Ponder.UIWindow = vgui.Create("Ponder.UI")
 		else
-			Ponder.UIWindow:Remove()
+			Ponder.UIWindow:PonderShow()
 		end
 
 		local UI = Ponder.UIWindow

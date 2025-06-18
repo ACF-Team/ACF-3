@@ -352,7 +352,7 @@ do -- Terminal ballistics --------------------------
 		else
 			-- If there's less armor than penetration, spalling happens
 			if not Bullet.IsSpall and not Bullet.IsCookOff then
-				Ballistics.DoSpall(Bullet, Trace, HitRes)
+				Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
 			end
 		end
 
@@ -415,9 +415,8 @@ do -- Terminal ballistics --------------------------
 		return false
 	end
 
-	function Ballistics.DoSpall(Bullet, Trace, HitRes)
+	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed)
 		-- Only ever called during overpenetration
-		local Speed = Bullet.Flight:Length() -- Speed in (u/s)
 		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
 
 		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
@@ -436,6 +435,8 @@ do -- Terminal ballistics --------------------------
 		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
 
 		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+
+		-- print(Energy, FragSize, FragMass, FragSpeed, BaseCone)
 
 		local FragPos = Trace.HitPos
 		local FragDirInit = Bullet.Flight:GetNormalized()

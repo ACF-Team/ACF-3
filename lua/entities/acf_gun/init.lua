@@ -65,6 +65,17 @@ do -- Random timer crew stuff
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
+		local tr = util.TraceLine({
+			start = BreechPos,
+			endpos = CrewPos,
+			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
+		})
+		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
+		Crew:UpdateOverlayText()
+		if tr.Hit then
+			return 0.000001
+		end -- Wanna avoid division by zero...
+
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
@@ -75,16 +86,20 @@ do -- Random timer crew stuff
 		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
+		-- Check space behind breech
 		if self.BulletData and self.ClassData.BreechCheck then
-			local Filter = function(x) return not (x == self or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
 
 			-- Check assuming 2 piece for now.
 			local tr = util.TraceLine({
 				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
 				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
-				filter = Filter,
+				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
-			if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
+			self:UpdateOverlayText()
+			if tr.Hit then
+				return 0.000001
+			end
 		end
 
 		return self.LoadCrewMod
@@ -93,7 +108,6 @@ do -- Random timer crew stuff
 	--- Finds the turret ring or baseplate from a gun
 	function ENT:FindPropagator()
 		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
 		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
 		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
@@ -194,6 +208,8 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	hook.Add("cfw.family.added", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = true
@@ -212,6 +228,8 @@ do -- Spawn and Update functions --------------------------------
 	end)
 
 	hook.Add("cfw.family.subbed", "ACF_Gun_FamilyChecks", function(Family, Ent)
+		if not IsValid(Ent) then return end -- CFW issue?
+
 		if Ent:GetClass() == "acf_gun" then
 			if Family.Guns then
 				Family.Guns[Ent] = nil
@@ -314,6 +332,8 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Long         = Class.LongBarrel
 		Entity.NormalMuzzle = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("muzzle")).Pos)
 		Entity.Muzzle       = Entity.NormalMuzzle
+
+		Entity.OverlayErrors = {}
 
 		-- Comments from Liddul:
 		-- https://matmatch.com/materials/minfc934-astm-a322-grade-4150
@@ -437,6 +457,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.TotalAmmo    = 0
 		Entity.BulletData   = EMPTY
 		Entity.TurretLink	= false
+		Entity.HasInitialLoaded = false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 		Entity.ParentState = 0
 
@@ -577,12 +598,24 @@ do -- Metamethods --------------------------------
 			This:UpdateOverlay(true)
 			Crate:UpdateOverlay(true)
 
-			if This.State == "Empty" then -- When linked to an empty weapon, attempt to load it
-				timer.Simple(1, function() -- Delay by 1000ms just in case the wiring isn't applied at the same time or whatever weird dupe shit happens (e.g. cfw)
-					if IsValid(This) and IsValid(Crate) and This.State == "Empty" and Crate.AmmoStage == 1 and Crate:CanConsume() then
-						This:Load(This.ClassData.IsBelted and ACF.InitReloadDelay)
-					end
-				end)
+			local function AttemptReload(This, Target, Instant)
+				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
+					This:Load(Instant)
+				end
+			end
+
+			if This.State == "Empty" and Crate.AmmoStage == 1 then -- When linked to an empty weapon, attempt to load it
+				if This.HasInitialLoaded then
+					timer.Simple(1, function()
+						AttemptReload(This, Crate)
+					end)
+				else
+					This.HasInitialLoaded = true
+					timer.Simple(ACF.InitReloadDelay, function()
+						AttemptReload(This, Crate, true)
+					end)
+				end
+				This:SetState("Loading")
 			end
 
 			return true, "Weapon linked successfully."
@@ -860,6 +893,7 @@ do -- Metamethods --------------------------------
 
 		function ENT:Unload(Reload)
 			if self.Disabled then return end
+			if self.State == "Unloading" then return end -- Don't unload while unloading
 			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
@@ -893,8 +927,9 @@ do -- Metamethods --------------------------------
 			)
 		end
 
-		function ENT:Chamber(Override)
+		function ENT:Chamber(Instant)
 			if self.Disabled then return end
+			if self.State == "Unloading" then return end -- Don't chamber while unloading
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
 
@@ -920,34 +955,42 @@ do -- Metamethods --------------------------------
 				self:SetNW2Int("Caliber", self.BulletData.Caliber)
 				self:SetNW2Bool("BreechCheck", self.ClassData.BreechCheck or false)
 
+				local ReloadLoop = function()
+					local eff = Manual and self:UpdateLoadMod() or 1
+					if Manual then -- Automatics don't change their rate of fire
+						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
+						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
+					end
+					return eff
+				end
+
+				local ReloadFinish = function()
+					if IsValid(self) and self.BulletData then
+						if self.State == "Unloading" then return end -- Don't chamber while unloading
+						if self.CurrentShot == 0 then
+							self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
+						end
+
+						self.NextFire = nil
+
+						WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
+						WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
+						WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
+
+						self:SetState("Loaded")
+
+						if self:CanFire() then self:Shoot() end
+					end
+				end
+
+				if Instant then
+					ReloadLoop()
+					ReloadFinish()
+					return true
+				end
+
 				ACF.ProgressTimer(
-					self,
-					function()
-						local eff = Manual and self:UpdateLoadMod() or 1
-						if Manual then -- Automatics don't change their rate of fire
-							WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
-							WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
-						end
-						return eff
-					end,
-					function()
-						if IsValid(self) and self.BulletData then
-							if self.CurrentShot == 0 then
-								self.CurrentShot = math.min(self.MagSize or 1, self.TotalAmmo)
-							end
-
-							self.NextFire = nil
-
-							WireLib.TriggerOutput(self, "Shots Left", self.CurrentShot)
-							WireLib.TriggerOutput(self, "Projectile Mass", math.Round((self.BulletData.ProjMass or 0) * 1000, 2))
-							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((self.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
-
-							self:SetState("Loaded")
-
-							if self:CanFire() then self:Shoot() end
-						end
-					end,
-					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = Override or IdealTime}
+					self, ReloadLoop, ReloadFinish, {MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
@@ -960,7 +1003,7 @@ do -- Metamethods --------------------------------
 			end
 		end
 
-		function ENT:Load(Override)
+		function ENT:Load(Instant)
 			if self.Disabled then return false end
 
 			local Crate = self:FindNextCrate(self.CurrentCrate, CheckConsumable, self)
@@ -986,10 +1029,6 @@ do -- Metamethods --------------------------------
 
 			self:SetState("Loading")
 
-			if Override and IsValid(self) then
-				self:Chamber(Override)
-			end
-
 			if self.MagReload then -- Mag-fed/Automatically loaded
 				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
 				if Crate.IsBelted then
@@ -1005,19 +1044,27 @@ do -- Metamethods --------------------------------
 
 				self.NextFire = Clock.CurTime + Time
 
+				local ReloadLoop = function()
+					local eff = self:UpdateLoadMod()
+					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+					return eff
+				end
+
+				local ReloadFinish = function()
+					if IsValid(self) then self:Chamber() end
+				end
+
+				if Instant then
+					ReloadLoop()
+					ReloadFinish()
+					return true
+				end
+
 				ACF.ProgressTimer(
-					self,
-					function()
-						local eff = self:UpdateLoadMod()
-						if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
-						return eff
-					end,
-					function()
-						if IsValid(self) then self:Chamber() end end,
-					{MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
+					self, ReloadLoop, ReloadFinish, {MinTime = 1.0,	MaxTime = 3.0, Progress = 0, Goal = IdealTime}
 				)
 			else -- Single-shot/Manually loaded
-				self:Chamber()
+				self:Chamber(Instant)
 			end
 
 			return true
@@ -1087,6 +1134,16 @@ do -- Metamethods --------------------------------
 				Status = "Not linked to an ammo crate!"
 			else
 				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
+			end
+
+			local ErrorCount = table.Count(self.OverlayErrors)
+			if ErrorCount > 0 then
+				Status = Status .. " (" .. ErrorCount .. " errors)"
+			end
+
+			-- Compile error messages
+			for _, Error in pairs(self.OverlayErrors) do
+				Status = Status .. "\n\n" .. Error
 			end
 
 			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates

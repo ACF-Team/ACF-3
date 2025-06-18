@@ -11,13 +11,14 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("#acf.menu.crew.settings")
+	Menu:AddPonderAddonCategory("acf", "crew")
 
 	local CrewJob		= Menu:AddComboBox()
 	local CrewJobDesc	= Menu:AddLabel()
 	local CrewModel		= Menu:AddComboBox()
 	local CrewModelDesc	= Menu:AddLabel()
 
-	local Base			= Menu:AddCollapsible("#acf.menu.crew.crew_info")
+	local Base			= Menu:AddCollapsible("#acf.menu.crew.crew_info", nil, "icon16/group_edit.png")
 	local CrewName		= Base:AddTitle()
 	local CrewPreview	= Base:AddModelPreview(nil, true)
 	local ReplaceOthers	= Base:AddCheckBox("#acf.menu.crew.replace_others")
@@ -45,17 +46,17 @@ local function CreateMenu(Menu)
 	local GDamages = Base:AddLabel()
 	local ExtraNotes = Base:AddLabel()
 
-	local Instructions = Menu:AddCollapsible("#acf.menu.crew.instructions", false)
+	local Instructions = Menu:AddCollapsible("#acf.menu.crew.instructions", false, "icon16/user_comment.png")
 	for I = 1, 5 do
 		Instructions:AddLabel(language.GetPhrase("acf.menu.crew.instructions.desc" .. I))
 	end
 
-	local EffFocusInfo = Menu:AddCollapsible("#acf.menu.crew.efficiency", false)
+	local EffFocusInfo = Menu:AddCollapsible("#acf.menu.crew.efficiency", false, "icon16/user_comment.png")
 	for I = 1, 6 do
 		EffFocusInfo:AddLabel(language.GetPhrase("acf.menu.crew.efficiency.desc" .. I))
 	end
 
-	local EffTypesInfo = Menu:AddCollapsible("#acf.menu.crew.types", false)
+	local EffTypesInfo = Menu:AddCollapsible("#acf.menu.crew.types", false, "icon16/user_comment.png")
 	for I = 1, 5 do
 		EffTypesInfo:AddLabel(language.GetPhrase("acf.menu.crew.types.desc" .. I))
 	end

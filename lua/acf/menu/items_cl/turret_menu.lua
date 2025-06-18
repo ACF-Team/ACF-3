@@ -17,7 +17,7 @@ local function CreateMenu(Menu)
 	local ClassDesc		= Menu:AddLabel()
 	local ComponentClass	= Menu:AddComboBox()
 
-	local Base			= Menu:AddCollapsible("#acf.menu.turrets.components")
+	local Base			= Menu:AddCollapsible("#acf.menu.turrets.components", nil, "icon16/cd_edit.png")
 	local ComponentName	= Base:AddTitle()
 	local ComponentDesc	= Base:AddLabel()
 	local ComponentPreview = Base:AddModelPreview(_, true)

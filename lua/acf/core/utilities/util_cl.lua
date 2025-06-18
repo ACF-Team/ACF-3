@@ -94,25 +94,28 @@ do -- Panel helpers
 
 		local Menu = ACF[GlobalID]
 
-		if not IsValid(Menu) then
-			Menu = vgui.Create("ACF_Panel")
-			Menu.Panel = Panel
+		-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
+		-- Because otherwise auto-refresh doesn't work.
+		-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
+		if IsValid(Menu) then
+			Menu:Remove()
+			Menu = nil
+		end
 
-			Panel:AddItem(Menu)
+		Menu = vgui.Create("ACF_Panel")
+		Menu.Panel = Panel
 
-			ACF[GlobalID] = Menu
+		Panel:AddItem(Menu)
 
-			if ReloadCommand then
-				concommand.Add(ReloadCommand, function()
-					if not IsValid(ACF[GlobalID]) then return end
+		ACF[GlobalID] = Menu
 
-					local CreateMenuFunc = ACF["Create" .. GlobalID]
-					CreateMenuFunc(ACF[GlobalID].Panel)
-				end)
-			end
-		else
-			Menu:ClearAllTemporal()
-			Menu:ClearAll()
+		if ReloadCommand then
+			concommand.Add(ReloadCommand, function()
+				if not IsValid(ACF[GlobalID]) then return end
+
+				local CreateMenuFunc = ACF["Create" .. GlobalID]
+				CreateMenuFunc(ACF[GlobalID].Panel)
+			end)
 		end
 
 		if ReloadCommand then
@@ -129,7 +132,7 @@ do -- Default gearbox menus
 	do -- Manual Gearbox Menu
 		function ACF.ManualGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -218,7 +221,7 @@ do -- Default gearbox menus
 		}
 
 		function ACF.CVTGearboxMenu(Class, _, Menu, _)
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -306,7 +309,7 @@ do -- Default gearbox menus
 
 		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
-			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings")
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
@@ -418,7 +421,7 @@ do -- Default gearbox menus
 
 			-----------------------------------
 
-			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator")
+			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator", nil, "icon16/chart_curve_edit.png")
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
@@ -508,7 +511,7 @@ do -- Default turret menus
 			local RingStats		= Menu:AddLabel(TurretText:format(0, 0))
 			local MassLbl		= Menu:AddLabel(MassText:format(0, 0))
 
-			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings")
+			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings", nil, "icon16/chart_pie_edit.png")
 
 			ArcSettings:AddLabel("#acf.menu.turrets.arc_settings_desc")
 
@@ -949,6 +952,24 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
+		end
+	end
+
+	do
+		-- Draws an outlined beam between var-length pairs of XY1 -> XY2 line segments.
+		-- Is not the best thing in the world, only really used in gizmos to make it easier 
+		-- to see during building
+		function ACF.DrawOutlineBeam(width, color, ...)
+			local args = {...}
+			local Add = 0.4
+			for i = 1, #args, 2 do
+				local DirAdd = (args[i + 1] - args[i]):GetNormalized() * (Add / 2)
+
+				render.DrawBeam(args[i] - DirAdd, args[i + 1] + DirAdd, width + Add, 0, 1, color_black)
+			end
+			for i = 1, #args, 2 do
+				render.DrawBeam(args[i], args[i + 1], width, 0, 1, color)
+			end
 		end
 	end
 end

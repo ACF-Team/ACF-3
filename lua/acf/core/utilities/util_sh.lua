@@ -937,7 +937,10 @@ do -- Crew related
 		InitFields(Config)
 
 		local RealLoop
+		local Cancelled = false
+		local Finished  = false
 		function RealLoop()
+			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
 			UpdateDelta(Config)
@@ -950,13 +953,23 @@ do -- Crew related
 			if timeleft > 0.001 then
 				timer.Simple(timeleft, RealLoop)
 			else
-				if Finish then Finish(Config) end
+				if Finish and not Finished then Finished = true Finish(Config) end
 				return
 			end
 		end
 
 		if not Config.Delay then RealLoop()
 		else timer.Simple(Config.Delay, RealLoop) end
+
+		local ProxyObject = {}
+		function ProxyObject:Cancel(RunFinisher)
+			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
+		end
+		return ProxyObject
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
@@ -966,7 +979,7 @@ do -- Crew related
 	--- @param Finish any A function that is called when the timer Finishes
 	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
-		ACF.AugmentedTimer(
+		return ACF.AugmentedTimer(
 			function(Config)
 				local eff = Loop(Config)
 				Config.Progress = Config.Progress + Config.DeltaTime * eff
@@ -1056,7 +1069,7 @@ do -- Reload related
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * ReloadMod, true
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	--- Calculates the time it takes for a gun to reload its magazine
@@ -1081,6 +1094,106 @@ do -- Reload related
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return BaseTime * ReloadMod, true
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+	end
+
+	local ModelToPlayerStart = {
+		["models/chairs_playerstart/jeeppose.mdl"] = "playerstart_chairs_jeep",
+		["models/chairs_playerstart/airboatpose.mdl"] = "playerstart_chairs_airboat",
+		["models/chairs_playerstart/sitposealt.mdl"] = "playerstart_chairs_seated",
+		["models/chairs_playerstart/podpose.mdl"] = "playerstart_chairs_podpose",
+		["models/chairs_playerstart/sitpose.mdl"] = "playerstart_chairs_seated_alt",
+		["models/chairs_playerstart/standingpose.mdl"] = "playerstart_chairs_standing",
+		["models/chairs_playerstart/pronepose.mdl"] = "playerstart_chairs_prone"
+	}
+
+	--- Generates a lua seat for a given entity
+	--- @param Entity any The entity to attach the seat to
+	--- @param Player any The owner of the entity
+	--- @param Pos any The position of the seat
+	--- @param Angle any The angle of the seat
+	--- @param Model any The model of the seat
+	--- @return unknown Pod The generated seat
+	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
+		if not Player:CheckLimit("vehicles") then return end
+
+		print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
+		local Pod = ents.Create("prop_vehicle_prisoner_pod")
+		Player:AddCount("vehicles", Pod)
+		if IsValid(Pod) and IsValid(Player) then
+			Pod:SetAngles(Angle)
+			Pod:SetModel(Model)
+			Pod:SetPos(Pos)
+			Pod:Spawn()
+			Pod:SetParent(Entity)
+
+			-- MARCH: Fixes player-start animations
+			-- I don't like how this works but it's the best way I can think of right now
+			local PlayerStartName = ModelToPlayerStart[Model]
+			if PlayerStartName then
+				local PlayerStartInfo = list.GetForEdit("Vehicles")[PlayerStartName]
+				if PlayerStartInfo then
+					Pod:SetVehicleClass(PlayerStartName)
+					if PlayerStartInfo.Members then
+						table.Merge(Pod, PlayerStartInfo.Members)
+					end
+				end
+			end
+
+			Pod.Owner = Player
+			Pod:CPPISetOwner(Player)
+
+			return Pod
+		else
+			return nil
+		end
+	end
+
+	if WireLib then
+		if not ACF.WirelibDetour_GetClosestRealVehicle then
+			ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
+		end
+		local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
+		function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
+			if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
+				local Pod = Vehicle:ACF_GetSeatProxy()
+				if IsValid(Pod) then return Pod end
+			end
+
+			return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+		end
+	end
+
+	--- Configures a lua seat after it has been created.
+	--- Whenever the seat is created, this should be called after.
+	--- @param Pod any The seat to configure
+	--- @param Player any The owner of the seat
+	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
+		print("ConfigureLuaSeat", Entity, Pod, Player)
+		-- Just to be safe...
+		Pod.Owner = Player
+		Pod:CPPISetOwner(Player)
+
+		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    	-- I don't know what this does, but for good measure...
+		Pod:SetKeyValue("limitview", 0)                                            -- Let the player look around
+
+		Pod.Vehicle = Entity
+		Pod.ACF = Pod.ACF or {}
+		Pod.ACF.LuaGeneratedSeat = true
+
+		if not IsValid(Pod) then return end
+
+		Pod:SetNoDraw(true)
+
+		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
+		Pod:SetNotSolid(true)
+		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+		local Count = Pod:GetPhysicsObjectCount()
+		for Idx = 0, Count - 1 do
+			local Phys = Pod:GetPhysicsObjectNum(Idx)
+			Phys:SetContents(CONTENTS_EMPTY)
+		end
+		Pod.ACF_InvisibleToBallistics = true
+		Pod.ACF_InvisibleToTrace = true
 	end
 end

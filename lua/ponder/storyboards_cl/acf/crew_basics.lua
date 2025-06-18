@@ -1,7 +1,7 @@
 local Storyboard = Ponder.API.NewStoryboard("acf", "crew", "crew-overview")
 Storyboard:WithName("Crew Basics")
 Storyboard:WithModelIcon("models/chairs_playerstart/sitpose.mdl")
-Storyboard:WithDescription("Learn the basics of crew")
+Storyboard:WithDescription("Learn the basics of crew.")
 Storyboard:WithIndexOrder(3)
 local Tank = ACF.PonderModelCaches.TankSkeleton
 

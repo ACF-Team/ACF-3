@@ -53,11 +53,11 @@ local function IsReallyValid(trace, ply)
 end
 
 function TOOL:LeftClick(trace)
-	if CLIENT then return true end
-
 	local owner = self:GetOwner()
 
 	if not IsReallyValid(trace, owner) then return false end
+	if CLIENT then return true end
+
 	local sound = owner:GetInfo("wire_soundemitter_sound")
 	local pitch = owner:GetInfoNum("acfsound_pitch", 1)
 	local volume = owner:GetInfoNum("acfsound_volume", 1)
@@ -68,11 +68,11 @@ function TOOL:LeftClick(trace)
 end
 
 function TOOL:RightClick(trace)
-	if CLIENT then return true end
-
 	local owner = self:GetOwner()
 
 	if not IsReallyValid(trace, owner) then return false end
+	if CLIENT then return true end
+
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
@@ -91,8 +91,9 @@ function TOOL:RightClick(trace)
 end
 
 function TOOL:Reload(trace)
-	if CLIENT then return true end
 	if not IsReallyValid(trace, self:GetOwner()) then return false end
+	if CLIENT then return true end
+
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end

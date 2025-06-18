@@ -292,12 +292,14 @@ do -- ASSUMING DIRECT CONTROL
 			local SetCollisionBounds		= ENT.SetCollisionBounds
 			local SetCollisionGroup			= ENT.SetCollisionGroup
 			local SetNotSolid				= ENT.SetNotSolid
+			local IsVehicle 				= ENT.IsVehicle
 			EntDetours.SetNoDraw			= SetNoDraw
 			EntDetours.SetModel				= SetModel
 			EntDetours.PhysicsInitSphere	= PhysicsInitSphere
 			EntDetours.SetCollisionBounds	= SetCollisionBounds
 			EntDetours.SetCollisionGroup	= SetCollisionGroup
 			EntDetours.SetNotSolid			= SetNotSolid
+			EntDetours.IsVehicle			= IsVehicle
 
 			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
 			function Contraption.SetMass(Entity, Mass)
@@ -335,6 +337,13 @@ do -- ASSUMING DIRECT CONTROL
 				SetModel(self, Model)
 			end
 
+			function ENT:IsVehicle()
+				if self.IsACFEntity and self.ACF_DetourIsVehicle then
+					return self:ACF_DetourIsVehicle()
+				end
+				return IsVehicle(self)
+			end
+
 			-- All of these should prevent the relevant functions from occurring on ACF entities, but only if LegalChecks are enabled
 			-- Will also call ACF.CheckLegal at the same time as preventing the function usage, because likely something else is amiss
 			function ENT:PhysicsInitSphere(...)
@@ -365,7 +374,10 @@ do -- ASSUMING DIRECT CONTROL
 
 			function ENT:SetNotSolid(...)
 				-- NOTE: Slight delay added to this check in order to account for baseplate conversion otherwise failing
-				if self.IsACFEntity and ACF.LegalChecks then timer.Simple(0, function() ACF.CheckLegal(self) end) end
+				if not IsValid(self) then return end
+				if self.IsACFEntity and ACF.LegalChecks then
+					timer.Simple(0, function() if not IsValid(self) then return end ACF.CheckLegal(self) end)
+				end
 
 				SetNotSolid(self, ...)
 			end

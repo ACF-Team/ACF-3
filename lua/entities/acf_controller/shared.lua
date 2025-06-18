@@ -11,11 +11,17 @@ cleanup.Register("acf_controller")
 
 ENT.Editable = true
 function ENT:SetupDataTables()
+	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 10, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOCam", { KeyName = "disableaiocam", Edit = { type = "Bool", order = 11, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOHUD", { KeyName = "disableaiohud", Edit = { type = "Bool", order = 12, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableFiring", { KeyName = "disablefiring", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
+	-- self:NetworkVar( "String", "KeyBinds", { KeyName = "keybinds", Edit = { readonly = true, order = 14, category = "Miscellaneous" } } )
+
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 20, category = "Camera Settings", min = 0.001, max = 90 } } )
 	self:NetworkVar( "Float", "ZoomMin", { KeyName = "zoommin", Edit = { type = "Float", order = 21, category = "Camera Settings" , min = 0.001, max = 90 } } )
 	self:NetworkVar( "Float", "ZoomMax", { KeyName = "zoommax", Edit = { type = "Float", order = 22, category = "Camera Settings" , min = 0.001, max = 90 } } )
-	self:NetworkVar( "Float", "SlewMin", { KeyName = "slewmin", Edit = { type = "Float", order = 23, category = "Camera Settings" , min = 0.001, max = 360 } } )
-	self:NetworkVar( "Float", "SlewMax", { KeyName = "slewmax", Edit = { type = "Float", order = 23, category = "Camera Settings" , min = 0.001, max = 360 } } )
+	self:NetworkVar( "Float", "SlewMin", { KeyName = "slewmin", Edit = { type = "Float", order = 23, category = "Camera Settings" , min = 0.001, max = 10 } } )
+	self:NetworkVar( "Float", "SlewMax", { KeyName = "slewmax", Edit = { type = "Float", order = 23, category = "Camera Settings" , min = 0.001, max = 10 } } )
 
 	self:NetworkVar( "Int", "CamCount", { KeyName = "camcount", Edit = { type = "Int", order = 30, category = "Camera Specific Settings", min = 1, max = 3} } )
 	self:NetworkVar( "Vector", "Cam1Offset", { KeyName = "cam1offset", Edit = { type = "Generic", order = 31, category = "Camera Specific Settings"} } )

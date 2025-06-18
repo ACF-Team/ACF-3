@@ -10,6 +10,8 @@ local DrawRect = surface.DrawRect
 local DrawCircle = surface.DrawCircle
 local DrawText = draw.DrawText
 
+local TraceLine = util.TraceLine
+
 function ENT:Initialize(...)
 	BaseClass.Initialize(self, ...)
 end
@@ -21,6 +23,7 @@ end
 -- Note: Since this file is sent to each client, locals are unique to each player...
 -- General
 local MyController = nil -- The controller the player is using, or nil.
+local MyFilter = nil -- The filter for the camera of the current controller
 
 -- Camera related
 local CamAng = Angle(0, 0, 0)
@@ -74,6 +77,12 @@ net.Receive("ACF_Controller_Active", function()
 	if Activated then UpdateCamera(LocalPlayer()) end
 end)
 
+-- Receive filter from server
+net.Receive("ACF_Controller_CamInfo", function()
+	Temp = net.ReadTable()
+	if #Temp > 0 then MyFilter = Temp end
+end)
+
 UpdateCamera = function(ply)
 	CamOffset = MyController["GetCam" .. Mode .. "Offset"]()
 	CamOrbit = MyController["GetCam" .. Mode .. "Orbit"]()
@@ -85,11 +94,12 @@ UpdateCamera = function(ply)
 end
 
 local rangerTrace = {}
-local ranger = function(start, dir, length, mask)
+local ranger = function(start, dir, length, filter, mask)
 	rangerTrace.start = start
 	rangerTrace.endpos = start + dir * length
 	rangerTrace.mask = mask or MASK_SOLID
-	local Tr = util.TraceLine(rangerTrace)
+	rangerTrace.filter = filter
+	local Tr = TraceLine(rangerTrace)
 	return Tr.HitPos or vector_origin
 end
 
@@ -118,19 +128,13 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	local Col = Color(ColData.x * 255, ColData.y * 255, ColData.z * 255, 255)
 	SetDrawColor( Col )
 
+	if MyController:GetDisableAIOHUD() then return end -- Disable hud if not enabled
+
 	-- HUD 1
 	local HudType = MyController:GetHUDType()
 	if HudType == 0 then
 		DrawRect( x - 40 * Scale, y - thick / 2, 80 * Scale, thick )
 		DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
-
-		local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
-		local sp = HitPos:ToScreen()
-		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		SetDrawColor( Ready and green or red )
-		DrawCircle( sp.x, sp.y, 10 * Scale)
-		SetDrawColor( Col )
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
@@ -156,14 +160,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
 		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
-		local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MASK_SOLID_BRUSHONLY )
-		local sp = HitPos:ToScreen()
-		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		SetDrawColor( Ready and green or red )
-		DrawCircle( sp.x, sp.y, 10 * Scale)
 		SetDrawColor( Col )
-
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
@@ -185,10 +182,20 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local unit = MyController:GetFuelUnit() == 0 and " L" or " H"
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
+
+	local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
+	if IsValid(Primary) then
+		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MyFilter )
+		local sp = HitPos:ToScreen()
+		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
+		SetDrawColor( Ready and green or red )
+		DrawCircle( sp.x, sp.y, 10 * Scale)
+	end
 end)
 
 hook.Add("KeyPress", "ACFControllerCamMode", function(ply, key)
-	if ply ~= LocalPlayer() then return end
+	if not IsValid(ply) or ply ~= LocalPlayer() then return end
+	if not IsFirstTimePredicted() then return end
 	if not IsValid(MyController) then return end
 
 	if key == IN_DUCK then
@@ -213,7 +220,6 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	local TrueSlew = Slew * FrameTime()
 	CamAng = Angle(math.Clamp(CamAng.pitch + y * TrueSlew, -90, 90), CamAng.yaw - x * TrueSlew, 0)
 
-	-- print(CamAng, MyController)
 	net.Start("ACF_Controller_CamData")
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteAngle(CamAng)
@@ -238,6 +244,7 @@ end)
 hook.Add("CalcView", "ACFControllerView", function(Player, _, _, _)
 	if Player ~= LocalPlayer() then return end
 	if not IsValid(MyController) then return end
+	if MyController:GetDisableAIOCam() then return end
 
 	local Pod = Player:GetVehicle()
 	if not IsValid(Pod) then return end

@@ -48,6 +48,10 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_DUCK] = "Duck",
 }
 
+-- Reverse lookup
+local WIRE_OUTPUT_TO_IN_ENUM = {}
+for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
+
 local Defaults = {
 	ZoomSpeed = 10,
 	ZoomMin = 5,
@@ -74,20 +78,24 @@ local Defaults = {
 	BrakeEngagement = 0,
 	BrakeStrength = 100,
 
-	ShiftTime = 0,
+	ShiftTime = 100,
 	ShiftMinRPM = 0,
 	ShiftMaxRPM = 0
 }
 
 local Clock = Utilities.Clock
 local DriverKeyDown = FindMetaTable("Player").KeyDown
-local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
+-- local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
 
+
+
+--- Sets a wire output if the cached value has changed
 local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
 	if SelfTbl.Outputs[Output].Value == Value then return end
 	WireLib.TriggerOutput(Entity, Output, Value)
 end
 
+--- Sets a networked variable if the cached value has changed
 local function RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
 	SelfTbl.CacheNW = SelfTbl.CacheNW or {}
 	if SelfTbl.CacheNW[Key] == Value then return end
@@ -274,7 +282,7 @@ do
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity:CPPIGetOwner() ~= ply then return end
-
+		if Entity:GetDisableAIOCam() then return end
 		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
 		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
 		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
@@ -286,18 +294,19 @@ do
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity:CPPIGetOwner() ~= ply then return end
+		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
 	end)
 
 	local CamTraceConfig = {}
 	function ENT:ProcessCameras(SelfTbl)
+		if self:GetDisableAIOCam() then return end
 		local CamAng = SelfTbl.CamAng or angle_zero
 		RecacheBindOutput(self, SelfTbl, "CamAng", CamAng)
 
 		local CamDir = CamAng:Forward()
 		local CamOffset = SelfTbl.CamOffset or vector_origin
-		local CamOrbit = SelfTbl.CamOrbit or 0
-		local CamPos = self:LocalToWorld(CamOffset) - CamDir * CamOrbit
+		local CamPos = self:LocalToWorld(CamOffset)
 
 		-- debugoverlay.Line(CamPos, CamPos + CamDir * 100, 0.1, Color(255, 0, 0), true)
 
@@ -310,6 +319,42 @@ do
 		RecacheBindOutput(self, SelfTbl, "HitPos", HitPos)
 
 		return CamPos, CamAng, HitPos
+	end
+end
+
+-- Cam related
+do
+	function ENT:AnalyzeCams()
+		-- Build filter from connected entities (by constraints and parenting)
+		-- Partially adapted from https://github.com/thegrb93/StarfallEx/blob/master/lua/starfall/libs_sv/entities.lua#L926
+		timer.Simple(1, function()
+			-- Wait for the dupe to initialize and anything else that might be needed
+			local Filter = {}
+			local Seen = {}
+			local Recurse = nil
+			Recurse = function(Entity)
+				if not IsValid(Entity) or Seen[Entity] then return end
+
+				Seen[Entity] = true
+				table.insert(Filter, Entity)
+
+				local constraints = constraint.GetTable(Entity)
+				for _, v in pairs(constraints) do
+					if v.Ent1 then Recurse(v.Ent1) end
+					if v.Ent2 then Recurse(v.Ent2) end
+				end
+
+				local Parent = Entity:GetParent()
+				if IsValid(Parent) then Recurse(Parent) end
+
+				local Children = Entity:GetChildren()
+				for _, Child in pairs(Children) do
+					Recurse(Child)
+				end
+			end
+			Recurse(self)
+			self.Filter = Filter
+		end)
 	end
 end
 
@@ -337,7 +382,6 @@ do
 			SelfTbl.Secondary = next(self.GunsSecondary)
 		end
 
-
 		if IsValid(SelfTbl.Tertiary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", SelfTbl.Tertiary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.Type or 0, self.SetNWInt)
@@ -349,7 +393,7 @@ do
 		end
 
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt)
+		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
 
 		local FuelLevel = 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
@@ -382,37 +426,46 @@ do
 	end
 
 	-- Fire guns
-	function ENT:ProcessGuns(SelfTbl, Driver)
-		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
-		for Gun in pairs(SelfTbl.GunsPrimary) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire1) end
-		end
-
-		for Gun in pairs(SelfTbl.GunsSecondary) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire2) end
-		end
-
-		for Gun in pairs(SelfTbl.Racks) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire3) end
-		end
-
-		for Gun in pairs(SelfTbl.GunsSmoke) do
-			if IsValid(Gun) then Gun:TriggerInput("Fire", Fire4) end
+	-- TODO:  Add fire sequencing
+	local FiringStates = {}
+	local function HandleFire(Fire, Guns)
+		for Gun in pairs(Guns) do
+			if IsValid(Gun) then
+				if not FiringStates[Gun] and Fire then
+					Gun.Firing = true
+					if Gun.CanFire and Gun:CanFire() then Gun:Shoot() end
+				else
+					Gun.Firing = false
+				end
+			end
 		end
 	end
 
-	-- Aim turrets
-	function ENT:ProcessTurrets(SelfTbl, Driver, HitPos)
-		local ToggleLock = DriverKeyDown(Driver, IN_RELOAD) and DriverKeyDownLast(Driver, IN_RELOAD) == false
-		local Turrets = SelfTbl.Turrets
+	function ENT:ProcessGuns(SelfTbl, Driver)
+		if SelfTbl:GetDisableFiring() then return end
 
-		if ToggleLock then
+		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
+
+		HandleFire(Fire1, SelfTbl.GunsPrimary)
+		HandleFire(Fire2, SelfTbl.GunsSecondary)
+		HandleFire(Fire3, SelfTbl.Racks)
+		HandleFire(Fire4, SelfTbl.GunsSmoke)
+	end
+
+	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
+		if Key == IN_RELOAD and Down then
+			local Turrets = SelfTbl.Turrets
 			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
 			RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
 			for Turret, _ in pairs(Turrets) do
 				if IsValid(Turret) then Turret:TriggerInput("Active", not SelfTbl.TurretLocked) end
 			end
 		end
+	end
+
+	-- Aim turrets
+	function ENT:ProcessTurrets(SelfTbl, _, HitPos)
+		local Turrets = SelfTbl.Turrets
 
 		if SelfTbl.TurretLocked then return end
 
@@ -521,6 +574,13 @@ do
 		self.GearboxEndCount = table.Count(self.GearboxEnds)
 		-- PrintTable({Wheels = self.Wheels, Engines = self.Engines, Fuels = self.Fuels, GearboxEnds = self.GearboxEnds, GearboxIntermediates = self.GearboxIntermediates})
 
+		-- Process gears
+		local ForwardGearCount = 0
+		for _, v in ipairs(MainGearbox.Gears) do
+			if v > 0 then ForwardGearCount = ForwardGearCount + 1 else break end
+		end
+		self.ForwardGearCount, self.TotalGearCount = ForwardGearCount, #MainGearbox.Gears
+
 		self.FuelCapacity = 0
 		for Fuel in pairs(self.Fuels) do self.FuelCapacity = self.FuelCapacity + Fuel.Capacity end
 
@@ -555,8 +615,20 @@ do
 
 	--- Handles driving, gearing, clutches, latches and brakes
 	function ENT:ProcessDrivetrain(SelfTbl, Driver)
+		-- Log speed even if drivetrain is invalid
+		-- TODO: should this be map or player scale?
+		local Unit = self:GetSpeedUnit()
+		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
+		local Speed = self.Baseplate:GetVelocity():Length() * Conv
+		SelfTbl.Speed = Speed
+		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
+
+		if not IsValid(SelfTbl.Gearbox) then return end
+
 		local W, A, S, D = DriverKeyDown(Driver, IN_FORWARD), DriverKeyDown(Driver, IN_MOVELEFT), DriverKeyDown(Driver, IN_BACK), DriverKeyDown(Driver, IN_MOVERIGHT)
 		local IsBraking = DriverKeyDown(Driver, IN_JUMP)
+
+		if self:GetFlipAD() then A, D = D, A end
 
 		local IsLateral = W or S						-- Forward/backward movement
 		local IsTurning = A or D						-- Left/right movement
@@ -568,14 +640,6 @@ do
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
 		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
-
-		local Unit = self:GetSpeedUnit()
-
-		-- TODO: should this be map or player scale?
-		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
-		local Speed = self.Baseplate:GetVelocity():Length() * Conv
-		SelfTbl.Speed = Speed
-		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
 		local BrakeStrength = self:GetBrakeStrength()
 
@@ -607,6 +671,8 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
+		local W, S = DriverKeyDown(self.Driver, IN_FORWARD), DriverKeyDown(self.Driver, IN_BACK)
+
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0
 		for Engine in pairs(SelfTbl.Engines) do
@@ -619,10 +685,14 @@ do
 
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
-		if RPM > MinRPM and Gear < Gearbox.GearCount then
-			Gearbox:TriggerInput("Gear", Gear + 1)
-		elseif RPM < MaxRPM and Gear > 1 then
-			Gearbox:TriggerInput("Gear", Gear - 1)
+		if RPM > MinRPM then Gear = Gear + 1
+		elseif RPM < MaxRPM then Gear = Gear - 1 end
+
+		local Lower = (W and 1) or (S and SelfTbl.ForwardGearCount + 1) or 0
+		local Upper = (W and SelfTbl.ForwardGearCount) or (S and SelfTbl.TotalGearCount) or 0
+		Gear = math.Clamp(Gear, Lower, Upper)
+		if Gear ~= SelfTbl.Gearbox.Gear then
+			SelfTbl.Gearbox:TriggerInput("Gear", Gear)
 		end
 	end
 end
@@ -640,9 +710,9 @@ end
 -- Handle a player entering or exiting the vehicle
 local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, Controller, "Driver", Ply)
-	RecacheBindOutput(Controller, Controller, "Active", 1)
+	RecacheBindOutput(Controller, Controller, "Active", Active and 1 or 0)
 
-	Controller.Active = Active and 1 or 0
+	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
 
 	for Turret in pairs(Controller.Turrets) do
@@ -663,10 +733,63 @@ local function OnActiveChanged(Controller, Ply, Active)
 		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
 	end
 
+	-- Let the player know the controller is active or not
 	net.Start("ACF_Controller_Active")
 	net.WriteUInt(Controller:EntIndex(), MAX_EDICT_BITS)
 	net.WriteBool(Active)
 	net.Send(Ply)
+
+	-- Network the camera filter to the player
+	net.Start("ACF_Controller_CamInfo")
+	net.WriteTable(Controller.Filter or {})
+	net.Send(Ply)
+end
+
+local function OnKeyChanged(Controller, Key, Down)
+	local Output = IN_ENUM_TO_WIRE_OUTPUT[Key]
+	if Output ~= nil then
+		RecacheBindOutput(Controller, Controller, Output, Down and 1 or 0)
+	end
+
+	Controller:ToggleTurretLocks(Controller:GetTable(), Key, Down)
+end
+
+local function OnLinkedSeat(Controller, Target)
+	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
+		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
+	end)
+
+	hook.Add("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex(), function(Ply, Veh)
+		if Veh == Target then OnActiveChanged(Controller, Ply, false) end
+	end)
+
+	hook.Add("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnKeyChanged(Controller, Key, true)
+	end)
+
+	hook.Add("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnKeyChanged(Controller, Key, false)
+	end)
+
+	-- Remove the hooks when the controller is removed
+	Controller:CallOnRemove("ACFRemoveController", function(Ent)
+		hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
+		hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
+		hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Ent:EntIndex())
+		hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Ent:EntIndex())
+	end)
+end
+
+local function OnUnlinkedSeat(Controller)
+	-- Remove the hooks when the seat is unlinked
+	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
+	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
+	hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex())
+	hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex())
 end
 
 -- Using this to auto generate the link/unlink functions
@@ -675,25 +798,10 @@ local LinkConfigs = {
 		Field = "Seat",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			-- Register hooks when a new seat is linked
-			hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
-				if Veh == Target then OnActiveChanged(Controller, Ply, true) end
-			end)
-
-			hook.Add("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex(), function(Ply, Veh)
-				if Veh == Target then OnActiveChanged(Controller, Ply, false) end
-			end)
-
-			-- Remove the hooks when the controller is removed
-			Controller:CallOnRemove("ACFRemoveController", function(Ent)
-				hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
-				hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
-			end)
+			OnLinkedSeat(Controller, Target)
 		end,
 		OnUnlinked = function(Controller, _)
-			-- Unregister hooks when the seat is unlinked
-			hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
-			hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
+			OnUnlinkedSeat(Controller)
 		end,
 	},
 	acf_gearbox = {
@@ -716,7 +824,24 @@ local LinkConfigs = {
 	},
 	acf_baseplate = {
 		Field = "Baseplate",
-		Single = true
+		Single = true,
+		OnLinked = function(Controller, Target)
+			Controller:AnalyzeCams()
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+		end,
+		OnUnlinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
+		end
+	},
+	acf_crew = {
+		Field = "Crew",
+		Single = true,
+		OnLinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+		end,
+		OnUnlinked = function(Controller, Target)
+			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
+		end
 	},
 	acf_rack = {
 		Field = "Racks",
@@ -742,6 +867,7 @@ for Class, Data in pairs(LinkConfigs) do
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
 
+		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
 			if OnLinked then OnLinked(Controller, Target) end
 		end)
@@ -769,7 +895,7 @@ do
 	-- Main logic loop
 	local iters = 0
 	function ENT:Think()
-		local SelfTbl = self:GetTable() -- TODO: Why use this?
+		local SelfTbl = self:GetTable()
 		local Driver = SelfTbl.Driver
 		if not IsValid(Driver) then return end
 
@@ -792,11 +918,6 @@ do
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
-
-		-- Update Outputs
-		for Bind, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
-			RecacheBindOutput(self, SelfTbl, Output, DriverKeyDown(Driver, Bind) and 1 or 0)
-		end
 
 		iters = iters + 1
 		self:UpdateOverlay()

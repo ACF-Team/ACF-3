@@ -19,16 +19,22 @@ local Colors = {
 	[MAT_SLOSH]    = Color(104, 90, 70),
 	[MAT_SNOW]     = Color(154, 140, 110),
 	[MAT_FOLIAGE]  = Color(104, 90, 70),
+	[MAT_TILE]     = Color(150, 146, 141),
 	[MAT_SAND]     = Color(180, 155, 100),
 }
 
 function EFFECT:Init(Data)
+	self.Start = CurTime()
+	self.ShockwaveLife = 0.1
+
 	local Origin  = Data:GetOrigin()
 	local Normal  = Data:GetNormal():GetNormalized() -- Gross
 	local Size    = Data:GetScale()
 	local Radius  = math.max(Size * 0.02, 1)
 	local Emitter = ParticleEmitter(Origin)
 	local Mult    = LocalPlayer():GetInfoNum("acf_cl_particlemul", 1)
+
+	self.Radius = Radius
 
 	Debug.Cross(Origin, 15, 15, Yellow, true)
 	--Debug.Sphere(Origin, Size, 15, Yellow, true)
@@ -177,10 +183,10 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	for _ = 0, Density * Mult do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(5, 50) * Radius)
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(2, 4) * Radius)
 
 		if Smoke then
-			Smoke:SetVelocity(Angle:Up() * math.Rand(5, 70 * Radius))
+			Smoke:SetVelocity(Angle:Up() * math.Rand(300, 400 * Radius))
 			Smoke:SetLifeTime(0)
 			Smoke:SetDieTime(math.Rand(0.5, 0.6) * DietimeMod)
 			Smoke:SetStartAlpha(math.Rand(100, 140))
@@ -189,15 +195,15 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Smoke:SetEndSize(25 * Radius)
 			Smoke:SetRoll(math.Rand(0, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(12 * Radius)
+			Smoke:SetAirResistance(55 * Radius)
 			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
 			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
 		end
 
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(40, 100) * Radius)
+		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(4, 12) * Radius)
 
 		if Smoke then
-			Smoke:SetVelocity(Angle:Up() * math.Rand(5, 10 * Radius))
+			Smoke:SetVelocity(Angle:Up() * math.Rand(500, 1000 * Radius))
 			Smoke:SetLifeTime(0)
 			Smoke:SetDieTime(math.Rand(0.2, 0.4) * DietimeMod)
 			Smoke:SetStartAlpha(math.Rand(70, 120))
@@ -206,7 +212,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Smoke:SetEndSize(10 * Radius)
 			Smoke:SetRoll(math.Rand(0, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(12 * Radius)
+			Smoke:SetAirResistance(115 * Radius)
 			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
 			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
 		end
@@ -417,8 +423,21 @@ function EFFECT:Airburst(Emitter, GroundHit, Origin, GroundOrigin, Radius, Direc
 end
 
 function EFFECT:Think()
-	return false
+	return (CurTime() - self.Start) < self.ShockwaveLife
 end
 
+local WorkingColor = Color(255, 255, 255, 255)
+local ShockwaveMaterial = CreateMaterial("ACF_RefractTest4", "Aftershock", {
+	["$normalmap"] = "models/props_combine/portalball001_sheet"
+})
 function EFFECT:Render()
+	local Radius = self.Radius
+	local Ratio  = math.ease.OutQuad((CurTime() - self.Start) / self.ShockwaveLife)
+	render.SetMaterial(ShockwaveMaterial)
+	ShockwaveMaterial:SetFloat("$bluramount", Ratio * 0.03)
+	ShockwaveMaterial:SetFloat("$refractamount", 0.05 * (1 - Ratio))
+	ShockwaveMaterial:SetFloat("$time", 4) -- this might not do anything after all
+	ShockwaveMaterial:SetFloat("$silhouettethickness", Ratio * 1.2)
+	WorkingColor.a = 255 - (Ratio * 255)
+	render.DrawSphere(self:GetPos(), 50 + (Radius * Ratio * 120), 32, 16, WorkingColor)
 end

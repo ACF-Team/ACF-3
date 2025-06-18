@@ -22,8 +22,11 @@ function ACF.CreateSoundMenu(Panel)
 	SoundPre:SetWide(Wide)
 	SoundPre:SetTall(ButtonHeight)
 
-	local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play", "play", SoundNameText:GetValue())
+	local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
 	SoundPrePlay:SetIcon("icon16/sound.png")
+	SoundPrePlay.DoClick = function()
+		RunConsoleCommand("play", SoundNameText:GetValue())
+	end
 
 	-- Playing a silent sound will mute the preview but not the sound emitters.
 	local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav")
