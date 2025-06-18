@@ -61,6 +61,8 @@ do -- Random timer crew stuff
 	local Red = Color(255, 0, 0)
 	local Green = Color(0, 255, 0)
 
+	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
+
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
 		local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
@@ -69,20 +71,17 @@ do -- Random timer crew stuff
 		local D1 = CrewPos:Distance(BreechPos)
 		local D2 = CrewPos:Distance(AmmoPos)
 
-		local tr = TraceLine({
-			start = CrewPos,
-			endpos = BreechPos,
-			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
-		})
+		TraceConfig.start = CrewPos
+		TraceConfig.endpos = BreechPos
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end
+		local tr = TraceLine(TraceConfig)
 
 		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
 		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
 
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
-		Crew:UpdateOverlayText()
-		if tr.Hit then
-			return 0.000001
-		end -- Wanna avoid division by zero...
+		Crew:UpdateOverlay()
+		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
@@ -103,35 +102,34 @@ do -- Random timer crew stuff
 			local p2 = p1 - Vector(ShellLength, 0, 0)
 			local wp1, wp2 = self:LocalToWorld(p1), self:LocalToWorld(p2)
 
-			local tr = TraceLine({
-				start = wp1,
-				endpos = wp2,
-				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
-			})
+			TraceConfig.start = wp1
+			TraceConfig.endpos = wp2
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			local tr = TraceLine(TraceConfig)
 
 			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
 			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
 
-			-- Additional Randomized check
-			local rb = Vector(0, self.BreechWidth or 0, self.BreechHeight or 0) / 2 * VectorRand()
-			local rp1 = p1 + rb
-			local rp2 = p2 + rb
-			local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
+			-- Additional Randomized check just in case
+			local tr2
+			if not tr.Hit then
+				local rb = Vector(0, self.BreechWidth or 0, self.BreechHeight or 0) / 2 * VectorRand()
+				local rp1 = p1 + rb
+				local rp2 = p2 + rb
+				local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
 
-			local tr2 = TraceLine({
-				start = wrp1,
-				endpos = wrp2,
-				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
-			})
+				TraceConfig.start = wrp1
+				TraceConfig.endpos = wrp2
+				local tr2 = TraceLine(TraceConfig)
 
-			debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
-			debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
-
-			self.OverlayErrors.BreechCheck = (tr.Hit or tr2.Hit) and "Not enough space behind breech!\nHover with ACF menu tool" or nil
-			self:UpdateOverlayText()
-			if (tr.Hit or tr2.Hit) then
-				return 0.000001
+				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
+				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
 			end
+
+			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
+			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
+			self:UpdateOverlay()
+			if IsBlocked then return 0.000001 end
 		end
 
 		return self.LoadCrewMod
@@ -1171,7 +1169,7 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nBreech Loaded At: %s"
+		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nLoading Location: %s"
 
 		function ENT:UpdateOverlayText()
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
