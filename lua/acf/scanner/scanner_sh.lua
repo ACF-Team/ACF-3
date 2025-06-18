@@ -1316,37 +1316,47 @@ if CLIENT then
             end
         end
     end
+
     hook.Add("PostDrawTranslucentRenderables", "ACF_Scanner_Render3D", function(_, _, drawing3DSkybox)
         if drawing3DSkybox then return end
+
         if scanning.IsScannerActive() then
             for _, ent in ipairs(scanningEnts) do
                 if IsValid(ent) then
                     local class = ent:GetClass()
                     local scanDef = scannerTypes[class]
+
                     if scanDef ~= nil then
                         if scanDef.drawModelOverlay then
                             drawEntity(ent, scanDef.colorEntity)
                         end
+
                         if scanDef.drawBounds then
                             drawBounds(ent, scanDef)
                         end
+
                         if scanDef.drawMesh then
                             drawEntityNoOutline(ent, scanDef.colorEntityInside)
                             drawPhysMesh(ent, scanDef.color)
                         end
+
                         VisualizeClips(ent)
                     end
                 end
             end
 
             for _, ent in ipairs(baseplates) do
-                if ent:GetClass() ~= "acf_baseplate" then
-                    drawEntityNoOutline(ent, baseplateC.colorEntityInside)
-                    drawPhysMesh(ent, baseplateC.color)
-                    drawBounds(ent, baseplateC)
+                if IsValid(ent) then
+                    if ent:GetClass() ~= "acf_baseplate" then
+                        drawEntityNoOutline(ent, baseplateC.colorEntityInside)
+                        drawPhysMesh(ent, baseplateC.color)
+                        drawBounds(ent, baseplateC)
+                    end
+
+                    VisualizeClips(ent)
                 end
-                VisualizeClips(ent)
             end
+
             render.DepthRange(0, 1)
         end
     end)
