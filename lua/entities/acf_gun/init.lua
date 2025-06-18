@@ -57,6 +57,9 @@ local function CheckUnloadable(v, Gun)
 end
 
 do -- Random timer crew stuff
+	local Red = Color(255, 0, 0)
+	local Green = Color(0, 255, 0)
+
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
 		local BreechPos = Gun:LocalToWorld(Vector(Gun:OBBMins().x, 0, 0))
@@ -71,7 +74,8 @@ do -- Random timer crew stuff
 			filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end,
 		})
 
-		debugoverlay.Line(CrewPos, tr.HitPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
+		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
 
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlayText()
@@ -93,13 +97,16 @@ do -- Random timer crew stuff
 		if self.BulletData and self.ClassData.BreechConfigs then
 
 			-- Check assuming 2 piece for now.
+			local p1 = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0))
+			local p2 = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0))
 			local tr = util.TraceLine({
-				start = self:LocalToWorld(Vector(self:OBBMins().x, 0, 0)),
-				endpos = self:LocalToWorld(Vector(self:OBBMins().x - ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2, 0, 0)),
+				start = p1,
+				endpos = p2,
 				filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end,
 			})
 
-			debugoverlay.Line(tr.StartPos, tr.HitPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+			debugoverlay.Line(p1, tr.HitPos, 1, Green, true)
+			debugoverlay.Line(tr.HitPos, p2, 1, Red, true)
 
 			self.OverlayErrors.BreechCheck = tr.Hit and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlayText()

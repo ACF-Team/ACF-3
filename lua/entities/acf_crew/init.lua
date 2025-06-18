@@ -123,8 +123,8 @@ local function iterScan(crew, reps)
 		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, filter)
 		crew.ScanLengths[index] = frac
 
-		debugoverlay.Line(p1, hitpos, 1, Red)
-		debugoverlay.Line(hitpos, p2, 1, Green)
+		debugoverlay.Line(p1, hitpos, 1, Green)
+		debugoverlay.Line(hitpos, p2, 1, Red)
 		debugoverlay.Box( hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
 
 		-- Save the index for the next iteration. Loop around if needed.
