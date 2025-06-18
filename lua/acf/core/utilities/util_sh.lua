@@ -1117,7 +1117,7 @@ do -- Reload related
 	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
 		if not Player:CheckLimit("vehicles") then return end
 
-		print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
+		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
 		Player:AddCount("vehicles", Pod)
 		if IsValid(Pod) and IsValid(Player) then
@@ -1169,7 +1169,7 @@ do -- Reload related
 	--- @param Pod any The seat to configure
 	--- @param Player any The owner of the seat
 	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
-		print("ConfigureLuaSeat", Entity, Pod, Player)
+		-- print("ConfigureLuaSeat", Entity, Pod, Player)
 		-- Just to be safe...
 		Pod.Owner = Player
 		Pod:CPPISetOwner(Player)
