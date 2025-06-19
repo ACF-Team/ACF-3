@@ -941,6 +941,7 @@ do -- Metamethods --------------------------------
 		function ENT:Unload(Reload)
 			if self.Disabled then return end
 			if self.State == "Unloading" then return end -- Don't unload while unloading
+			if self.BulletData == EMPTY then return end -- If it's empty, we're already unloading, or something went wrong
 			self.FreeCrate = self:FindNextCrate(self.FreeCrate, CheckUnloadable, self)
 			if IsValid(self.FreeCrate) then self.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
 
