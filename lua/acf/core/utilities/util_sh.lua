@@ -1119,10 +1119,6 @@ do -- Reload related
 	--- @param Model any The model of the seat
 	--- @return unknown Pod The generated seat
 	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
-		if not IsValid(Player) or not Player:IsPlayer() then
-			ACF.DumpStack("Player type error check")
-			error("Player was not valid or was a different type (got " .. (Player and type(Player) or "<nil>") .. ")")
-		end
 		if not Player:CheckLimit("vehicles") then return end
 
 		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
