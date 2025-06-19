@@ -75,14 +75,14 @@ local function GenerateScanSetup()
 end
 
 --- Helper function that runs a hull trace between two points
+local TraceHullConfig = {start = Vector(), endpos = Vector(), filter = nil, mins = Vector(-1, -1, -1), maxs = Vector(1, 1, 1)}
 local function traceVisHullCube(pos1, pos2, boxsize, filter)
-	local res = TraceHull({
-		start = pos1,
-		endpos = pos2,
-		filter = filter,
-		mins = -boxsize / 2,
-		maxs = boxsize / 2
-	})
+	TraceHullConfig.start = pos1
+	TraceHullConfig.endpos = pos2
+	TraceHullConfig.filter = filter
+	TraceHullConfig.mins = -boxsize / 2
+	TraceHullConfig.maxs = boxsize / 2
+	local res = TraceHull(TraceHullConfig)
 
 	local length = pos1:Distance(pos2)
 	local truelength = res.Fraction * length
@@ -91,7 +91,6 @@ end
 
 local Red = Color(255, 0, 0)
 local Green = Color(0, 255, 0)
-local Blue = Color(0, 0, 255, 100)
 local LightBlue = Color(0, 255, 255, 100)
 
 --- Helper function that Scans the space around the crew member by updating 
@@ -123,16 +122,16 @@ local function iterScan(crew, reps)
 		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, filter)
 		crew.ScanLengths[index] = frac
 
-		debugoverlay.Line(p1, hitpos, 1, Red)
-		debugoverlay.Line(hitpos, p2, 1, Green)
-		debugoverlay.Box( hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
+		debugoverlay.Line(p1, hitpos, 1, Green)
+		debugoverlay.Line(hitpos, p2, 1, Red)
+		debugoverlay.Box(hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
 
 		-- Save the index for the next iteration. Loop around if needed.
-		index = index  + 1
+		index = index + 1
 		if index > count then index = 1 end
 		crew.ScanIndex = index
 	end
-	debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
+	-- debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
 
 	-- Update using new and saved scan lengths
 	local sum = 0
@@ -238,8 +237,8 @@ do -- Random timer stuff
 			if not self.ScanIndex then
 				-- If we haven't ran an initial scan, setup relevant information
 				self.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
-				self.ScanBox = Vector()
-				self.ScanHull = Vector(6, 6, 6)
+				self.ScanBox = self.ScanBox or Vector()
+				self.ScanHull = self.ScanHull or Vector(6, 6, 6)
 				self.ScanDisplacements, self.ScanLengths, self.ScanCount = GenerateScanSetup()
 				self.ScanIndex = 1
 				self.SpaceEff = iterScan(self, self.ScanCount)

@@ -303,6 +303,24 @@ function PANEL:AddCollapsible(Text, State, Icon)
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
+	function Category:Paint(w, h)
+		local skin = self:GetSkin()
+
+		if h <= self:GetHeaderHeight() then
+			skin.tex.CategoryList.Header(0, 0, w, h)
+
+			-- Little hack, draw the ComboBox's dropdown arrow to tell the player the category is collapsed and not empty
+			if not self:GetExpanded()
+				then skin.tex.Input.ComboBox.Button.Down(w - 18, h / 2 - 8, 15, 15)
+			end
+
+			return
+		end
+
+		skin.tex.CategoryList.InnerH( 0, 0, w, self:GetHeaderHeight() + 1 )
+		skin.tex.CategoryList.Inner( 0, self:GetHeaderHeight(), w, h - self:GetHeaderHeight() )
+	end
+
 	function Category:AnimSlide(_, Delta, Data)
 		self:InvalidateLayout()
 		self:InvalidateParent()

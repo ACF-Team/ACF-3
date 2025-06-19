@@ -13,10 +13,8 @@ function RecursiveEntityRemove(ent, track)
 end
 
 local bpConvertibleModelPaths = {
-    {
-        startWith = "models/sprops/rectangles",
-        addAngles = Angle(0, 0, 0)
-    }
+    { startWith = "models/sprops/rectangles", addAngles = Angle(0, 0, 0) },
+    { startWith = "models/sprops/misc/sq_holes", addAngles = Angle(0, 0, 90) },
 }
 
 function ACF.ConvertEntityToBaseplate(Player, Target)
@@ -60,6 +58,12 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     Baseplate.Width = l
     Baseplate.Thickness = t
     Baseplate.PhysicsObjects[0].Angle = Baseplate.PhysicsObjects[0].Angle + foundTranslation.addAngles
+
+    -- Swap width/thickness if necessary
+    if foundTranslation.addAngles.z == 90 then
+        Baseplate.Width = t
+        Baseplate.Thickness = l
+    end
 
     -- Delete everything now
     for k, _ in pairs(Entities) do

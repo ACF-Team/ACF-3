@@ -63,8 +63,7 @@ if CLIENT then
 	CreateClientConVar("acf_sus_tool_showarminfo", 1, false, true)
 	CreateClientConVar("acf_sus_tool_showspringinfo", 1, false, true)
 
-	CreateClientConVar("acf_sus_tool_suspenddrivewheels", 0, false, true)
-	CreateClientConVar("acf_sus_tool_suspendidlerwheels", 0, false, true)
+	CreateClientConVar("acf_sus_tool_suspendallwheels", 0, false, true)
 
 	local orange = Color(255, 93, 0)
 	local blue = Color(0, 0, 255)
@@ -74,162 +73,6 @@ if CLIENT then
 	local red = Color(255, 0, 0)
 	local green = Color(0, 255, 0)
 	local black = Color(0, 0, 0)
-
-	--- Creates/recreates the menu for this tool
-	function ACF.CreateSuspensionToolMenu(Panel)
-		local Menu = ACF.InitMenuBase(Panel, "SuspensionToolMenu", "acf_reload_suspension_menu")
-
-		-- Handles recreating the menu, useful if you change elements.
-		if not IsValid(Menu) then
-			Menu = vgui.Create("ACF_Panel")
-			Menu.Panel = Panel
-
-			Panel:AddItem(Menu)
-
-			ACF.ArmorMenu = Menu
-		else
-			Menu:ClearAllTemporal()
-			Menu:ClearAll()
-		end
-
-		local Reload = Menu:AddButton("Reload Menu")
-		Reload:SetTooltip("You can also type 'acf_reload_suspension_menu' in console.")
-		function Reload:DoClickInternal()
-			RunConsoleCommand("acf_reload_suspension_menu")
-		end
-
-		Menu:AddTitle("ACF Suspension Tool")
-		Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
-		Menu:AddLabel("You can hover over any of these elements to see their description.")
-		Menu:AddLabel("This tool is mostly stable, but may need further testing.")
-
-		local GeneralSettings = Menu:AddCollapsible("General Settings", true)
-
-		local UsesDriveWheel = GeneralSettings:AddCheckBox("Drive wheels used", "acf_sus_tool_usesdrivewheel")
-		UsesDriveWheel:SetTooltip("If checked, wheels will be slaved to the drive wheels. (Partially) Tracked vehicles should use this.")
-
-		local MakeSpherical = GeneralSettings:AddCheckBox("Make Spherical", "acf_sus_tool_makespherical")
-		MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
-
-		local DisableCollisions = GeneralSettings:AddCheckBox("Disable Collisions", "acf_sus_tool_disablecollisions")
-		DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
-
-		-- local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend Drive Wheels", "acf_sus_tool_suspenddrivewheels")
-		-- SuspendDriveWheels:SetTooltip("If checked, the drive wheels will be suspended as well.")
-
-		-- local SuspendIdlerWheels = GeneralSettings:AddCheckBox("Suspend Idler Wheels", "acf_sus_tool_suspendidlerwheels")
-		-- SuspendIdlerWheels:SetTooltip("If checked, the idler wheels will be suspended as well.")
-
-		-- Spring related
-		local SpringType = GeneralSettings:AddComboBox()
-		SpringType:AddChoice("Spring Type: Axis (None)", 1)
-		SpringType:AddChoice("Spring Type: Hydraulic", 2)
-		SpringType:AddChoice("Spring Type: Elastic", 3)
-
-		local SpringGeneral = GeneralSettings:AddCollapsible("General Spring Settings", true)
-
-		-- Generate spring specific settings
-		function SpringType:OnSelect(_, _, Data)
-			GetConVar("acf_sus_tool_springtype"):SetInt(Data)
-			SpringGeneral:ClearAll()
-			if Data ~= 1 then
-				local SpringSpecific = SpringGeneral:AddCollapsible("Specific Spring Settings", true)
-				if Data == 2 then
-					-- Hydraulic Specific
-					local InOutSpeedMul = SpringSpecific:AddSlider("In/Out Speed Multiplier", 4, 120)
-					InOutSpeedMul:SetConVar("acf_sus_tool_inoutspeedmul")
-					InOutSpeedMul:SetTooltip("How fast it changes the length.")
-				elseif Data == 3 then
-					-- Elastic Specific
-					local Elasticity = SpringSpecific:AddSlider("Elasticity", 0, 400)
-					Elasticity:SetConVar("acf_sus_tool_elasticity")
-					Elasticity:SetTooltip("Stiffness of the elastic. The larger the number the less the elastic will stretch.")
-
-					local Dampening = SpringSpecific:AddSlider("Damping", 0, 50)
-					Dampening:SetConVar("acf_sus_tool_damping")
-					Dampening:SetTooltip("How much energy the elastic loses. The larger the number, the less bouncy the elastic.")
-
-					local RelativeDampening = SpringSpecific:AddSlider("Relative Damping", 0, 1)
-					RelativeDampening:SetConVar("acf_sus_tool_relativedamping")
-					RelativeDampening:SetTooltip("The amount of energy the elastic loses proportional to the relative velocity of the two objects the elastic is attached to.")
-				end
-
-				local SpringX = SpringGeneral:AddSlider("Spring X", -100, 100)
-				SpringX:SetConVar("acf_sus_tool_springx")
-
-				local SpringY = SpringGeneral:AddSlider("Spring Y", -100, 100)
-				SpringY:SetConVar("acf_sus_tool_springy")
-
-				local SpringZ = SpringGeneral:AddSlider("Spring Z", -100, 100)
-				SpringZ:SetConVar("acf_sus_tool_springz")
-
-				-- Arm related
-				local ArmType = SpringGeneral:AddComboBox()
-				ArmType:AddChoice("Arm Type: Fork", 1)
-				ArmType:AddChoice("Arm Type: Forward Lever", 2)
-				ArmType:AddChoice("Arm Type: Sideways Lever", 3)
-
-				function ArmType:OnSelect(_, _, Data)
-					GetConVar("acf_sus_tool_armtype"):SetInt(Data)
-				end
-
-				ArmType:ChooseOptionID(GetConVar("acf_sus_tool_armtype"):GetInt())
-
-				local ArmX = SpringGeneral:AddSlider("Arm X", -100, 100)
-				ArmX:SetConVar("acf_sus_tool_armx")
-
-				local ArmY = SpringGeneral:AddSlider("Arm Y", -100, 100)
-				ArmY:SetConVar("acf_sus_tool_army")
-
-				local ArmZ = SpringGeneral:AddSlider("Arm Z", -100, 100)
-				ArmZ:SetConVar("acf_sus_tool_armz")
-
-				local LimiterLength = SpringGeneral:AddSlider("Limiter Length", 0, 100)
-				LimiterLength:SetConVar("acf_sus_tool_limiterlength")
-				LimiterLength:SetTooltip("Limits the distance the wheel can move from its default position")
-			end
-		end
-
-		SpringType:ChooseOptionID(GetConVar("acf_sus_tool_springtype"):GetInt())
-
-		local Create = Menu:AddButton("Create Drivetrain")
-		Create:SetTooltip("Creates a new drivetrain with the selected entitites.")
-
-		function Create:DoClickInternal()
-			net.Start("ACF_Sus_Tool")
-			net.WriteString("Create")
-			net.SendToServer()
-		end
-
-		local Clear = Menu:AddButton("Clear Drivetrain")
-		Clear:SetTooltip("Clears all constraints on selected entities.")
-
-		function Clear:DoClickInternal()
-			net.Start("ACF_Sus_Tool")
-			net.WriteString("Clear")
-			net.SendToServer()
-		end
-
-		local SettingsVisual = Menu:AddCollapsible("Visual Settings", true)
-		SettingsVisual:AddCheckBox("Show Wheel Info", "acf_sus_tool_showwheelinfo")
-		SettingsVisual:AddCheckBox("Show Arms Info", "acf_sus_tool_showarminfo")
-		SettingsVisual:AddCheckBox("Show Springs Info", "acf_sus_tool_showspringinfo")
-
-		local InstructionsGeneral = Menu:AddCollapsible("Instructions", true)
-		InstructionsGeneral:AddLabel("Left/Right is relative to the baseplate's forward direction.")
-		InstructionsGeneral:AddLabel("Drive wheels are directly connected to gearboxes.\nIdler wheels are not connected to a gearbox and are at the very front.\nRoad wheels are meant to touch the ground.")
-		InstructionsGeneral:AddLabel("Skip steps 2 to 5 if you do not use drive wheels (usually fully wheeled vehicles).")
-		InstructionsGeneral:AddLabel("1. Select the baseplate with SHIFT + RMB")
-		InstructionsGeneral:AddLabel("2. Select the left drive wheel with RMB")
-		InstructionsGeneral:AddLabel("3. Select the right drive wheel with RMB")
-		InstructionsGeneral:AddLabel("4. Select the left idler wheel with RMB")
-		InstructionsGeneral:AddLabel("5. Select the right idler wheel with RMB")
-		InstructionsGeneral:AddLabel("6. For each pair of road wheels, select the left then the right with RMB.")
-		InstructionsGeneral:AddLabel("7. (Optional) Selecting a new plate with SHIFT + RMB will select a new steer plate.\nWheels selected afterwards will belong to this new plate.")
-		InstructionsGeneral:AddLabel("8. (Optional) When you finish selecting the wheels, select the control plate with CTRL + RMB.")
-		InstructionsGeneral:AddLabel("9. (Optional) If applicable, press the cleanup button in the menu to remove old constraints.")
-		InstructionsGeneral:AddLabel("10. (Optional) If applicable, press the create button in the menu to create the suspension.")
-	end
 
 	TOOL.BuildCPanel = ACF.CreateSuspensionToolMenu
 
@@ -284,6 +127,7 @@ if CLIENT then
 		local ShowWheelInfo = tonumber(Player:GetInfo("acf_sus_tool_showwheelinfo"))
 		local ShowArmInfo = tonumber(Player:GetInfo("acf_sus_tool_showarminfo"))
 		local ShowSpringInfo = tonumber(Player:GetInfo("acf_sus_tool_showspringinfo"))
+		local SuspendsAllWheels = tonumber(Player:GetInfo("acf_sus_tool_suspendallwheels"))
 
 		-- For each plate...
 		local Baseplate = Selections.Plates and Selections.Plates[1]
@@ -312,8 +156,8 @@ if CLIENT then
 
 				-- Not axis, so it has a suspension...
 				local Mirror = IsLeft and 1 or -1
-				local ShouldSus = (UsesDriveWheel == 1 and WheelIndex > 4) or (UsesDriveWheel == 0)
-				if ShouldSus and SpringType ~= 1 then
+				local IsSuspended = (SuspendsAllWheels == 0 and WheelIndex > 4) or SuspendsAllWheels == 1
+				if IsSuspended and SpringType ~= 1 then
 					if ShowSpringInfo == 1 then DrawArm(Wheel, Baseplate, Vector(SpringX, SpringY, SpringZ), blue) end
 					if ShowArmInfo == 1 then
 						if ArmType == 1 then
@@ -589,6 +433,7 @@ elseif SERVER then -- Serverside-only stuff
 		local Elasticity = tonumber(Player:GetInfo("acf_sus_tool_elasticity"))
 		local Damping = tonumber(Player:GetInfo("acf_sus_tool_damping"))
 		local RelativeDamping = tonumber(Player:GetInfo("acf_sus_tool_relativedamping"))
+		local SuspendsAllWheels = tonumber(Player:GetInfo("acf_sus_tool_suspendallwheels"))
 
 		local Baseplate = Selections.Plates[1]
 		local LeftDriveWheel = Selections.Wheels[1]
@@ -607,12 +452,13 @@ elseif SERVER then -- Serverside-only stuff
 			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or EmptyTable) do
 				if not IsValid(Wheel) and checkOwner(Player, Wheel) or not checkOwner(Wheel, Player) then continue end
 
+				local IsSuspended = (SuspendsAllWheels == 0 and Index > 4) or SuspendsAllWheels == 1
 				if Index > 2 then SlaveSocket(Wheel, Index % 2 == 1 and LeftDriveWheel or RightDriveWheel) end -- Other wheels to drive wheel
-				if Index <= 4 then Axis(Wheel, Baseplate) end -- Drive and idler wheels to baseplate
+				if not IsSuspended then Axis(Wheel, Baseplate) end -- Drive and idler wheels to baseplate
 
 				-- Road wheel to baseplate
 				local Mirror = Index % 2 == 1 and 1 or -1
-				if Index > 4 then
+				if IsSuspended then
 					if SpringType == 1 then Axis(Wheel, Baseplate) -- Axis suspension
 					else
 						HullSocket(Wheel, Baseplate) -- Restrict rotation to baseplate
@@ -630,15 +476,15 @@ elseif SERVER then -- Serverside-only stuff
 				end
 			end
 		else -- Wheeled TODO: CHECK and FIX
-			for _, Plate in ipairs(Selections.Plates) do
+			for PlateIndex, Plate in ipairs(Selections.Plates) do
 				if not IsValid(Plate) then continue end
 				for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
 					if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
 					local Mirror = Index % 2 == 1 and 1 or -1
 					if SpringType == 1 then -- Axis suspension
-						if Index == 1 then Axis(Wheel, Plate) -- Non steered wheels
-						else BallSocket(Wheel, Plate) HullSocket(Wheel, Plate) end -- Steered wheels
+						if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
+						else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
 					else
 						HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
 						if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)

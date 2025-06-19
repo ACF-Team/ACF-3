@@ -145,7 +145,7 @@ function ACF.DumpStack(Message, StartAt)
 	while true do
 		local FuncInfo = debug.getinfo(Frame, "flnSu")
 		if not FuncInfo then
-			MsgC(BrightColor, string.rep(" ", (Frame - StartFrame) * 4), "(main)")
+			MsgC(BrightColor, string.rep(" ", (Frame - StartFrame) * 4), "(Native to Lua transition - no further stack frames available)")
 			break
 		end
 

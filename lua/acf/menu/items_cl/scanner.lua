@@ -11,25 +11,50 @@ local function CreateMenu(Menu)
 
     Menu:AddLabel(MenuDesc)
 
-    local playerList = Menu:AddPanel("DListView")
+    local playerContainer = Menu:AddPanel("DPanel")
+    playerContainer:Dock(TOP)
+    playerContainer:SetSize(0, 300)
+
+    local playerList = playerContainer:Add("DScrollPanel")
     playerList:Dock(TOP)
     playerList:SetSize(0, 300)
-    playerList:SetMultiSelect(false)
 
-    playerList:AddColumn("#acf.menu.scanner.player_name")
+    local highlight = Color(162, 206, 255, 194)
     local function PopulatePlayerList()
-        local _, selected = playerList:GetSelectedLine()
-        if IsValid(selected) and IsValid(selected.player) then
-            selected = selected.player
-        end
-
         playerList:Clear()
 
         for _, v in player.Iterator() do
-            local line = playerList:AddLine(v:Nick())
+            local line = playerList:Add("DButton")
             line.player = v
-            if line.player == selected then
-                playerList:SelectItem(line)
+            line:Dock(TOP)
+            line:SetText("")
+            line:SetTall(32)
+
+            local avatar = line:Add("AvatarImage")
+            avatar:SetSize(24, 24)
+            avatar:SetPos(4, 4)
+            avatar:SetMouseInputEnabled(false)
+            avatar:SetPlayer(v, 32)
+
+            function line:Paint(w, h)
+                local ply = self.player
+                if not IsValid(ply) then return end
+                local name = ply:Nick()
+
+                if self:IsHovered() then
+                    highlight:SetSaturation(Lerp((math.sin(SysTime() * 7) + 1) / 2, 0.2, 0.4))
+                    draw.RoundedBox(2, 0, 0, w, h, highlight)
+                end
+
+                draw.SimpleText(name, "ACF_Label", 32, h / 2, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            end
+
+            function line:DoClickInternal()
+                if not IsValid(line.player) then
+                    return
+                end
+
+                ACF.Scanning.BeginScanning(line.player)
             end
         end
     end
@@ -41,18 +66,8 @@ local function CreateMenu(Menu)
         end)
     end)
 
-    local btn = Menu:AddButton("#acf.menu.scanner.scan_player")
     local btn2 = Menu:AddButton("#acf.menu.scanner.refresh_players")
-    btn:Dock(TOP)
-    function btn:DoClickInternal()
-        local _, selected = playerList:GetSelectedLine()
-        if not IsValid(selected) then
-            Derma_Message("#acf.menu.scanner.no_player_selected", "#acf.menu.scanner.scanner_failure", "#acf.menu.scanner.go_back")
-            return
-        end
-
-        ACF.Scanning.BeginScanning(selected.player)
-    end
+    btn2:Dock(TOP)
     function btn2:DoClickInternal()
         PopulatePlayerList()
     end
