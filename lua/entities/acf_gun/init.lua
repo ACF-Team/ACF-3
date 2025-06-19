@@ -174,7 +174,6 @@ do -- Spawn and Update functions --------------------------------
 		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
 		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
 		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
-		"Temperature (The temperature of the weapon, in C)",
 		"Entity (The weapon itself.) [ENTITY]",
 	}
 
@@ -281,28 +280,6 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end)
 
-	--- Simulates the temperature of the gun
-	--- @param DT number The duration the temperature was experienced for
-	--- @param Ambient number The ambient temperature, or an override
-	function ENT:SimulateTemp(DT, Temp)
-		local NewTemp = Temp or ACF.AmbientTemperature
-		local TempDiff = self.Thermal.Temp - NewTemp					-- Newton's law of cooling
-		local TempK = self.Thermal.TempK    						    -- Cooling constant
-		local TempRise = -TempK * TempDiff * DT							-- Towards equilibirium
-		self.Thermal.Temp = math.max(self.Thermal.Temp + TempRise, 0) 	-- Can't go below absolute zero
-
-		local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
-
-		if self.Thermal.Temp >= 1223.15 then -- Barrel starts to melt at 950C, Liddul's failing point
-			local Malleable = (self.Thermal.Temp - 1223.15) / 550
-			local Damage = (BulletEnergy / 10000) * Malleable * 0.1
-
-			self.ACF.Health = math.max(self.ACF.Health - Damage, 0)
-			if self.ACF.Health <= 0 then ACF.APKill(self, self:GetForward(), 5) return end
-		end
-
-	end
-
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
 		local ClassSounds = Class.Sounds
@@ -381,41 +358,6 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		Entity.OverlayErrors = {}
-
-		-- Comments from Liddul:
-		-- https://matmatch.com/materials/minfc934-astm-a322-grade-4150
-		-- Taking an average of samples of 4150 steel, since I can actually find data about it
-		-- Thermal conductivity: 40 J(W) / (m s K)
-		-- Specific heat: 475 J/(kg K)
-		-- Density: 7900kg/m3
-		-- Melting point: 1500C
-		-- ~950C for starting failure point?
-
-		local Thermal = Entity.Thermal or {}
-		if not Entity.Thermal then Thermal.Temp	= ACF.AmbientTemperature end			-- Default init temperature
-
-		Thermal.TransferMult = Entity.ClassData.TransferMult or 1 -- Thermal transfer rate multiplier
-		Thermal.EnergyConversion = 0.04 -- Percentage of the bullet's energy which goes into the barrel
-
-		-- Simplification assumes barrel is the only heating element (breech excluded)
-		-- I really want to make guns not suck :( (These ratios piss me off marginally)
-		local DiameterRatio = Entity.ClassData.BarrelDiameterRatio or 1.15	-- Ratio of inner barrel diameter to outer barrel diameter
-		local LengthRatio = Entity.ClassData.BarrelLengthRatio or 0.45		-- Ratio of entity length to barrel length
-
-		local Length = (Entity.Size.x / ACF.MeterToInch * LengthRatio) 		-- Barrel Length (m)
-		local RadIn = Entity.Caliber / 2 / 1000								-- Inner barrel radius (m)
-		local RadOut = RadIn * DiameterRatio								-- Outer barrel radius (m)
-
-		local BarrelVolume = math.pi * (RadOut ^ 2 - RadIn ^ 2) * Length	-- Barrel volume (m^3)
-		local BarrelArea = 2 * math.pi * (RadOut + RadIn) * Length			-- Barrel surface area (m^2) (excludes ends)
-		local BarrelMass = BarrelVolume * 7900								-- Barrel mass (kg)
-
-		local c = 475														-- Specific heat of 4150 steel (J/(kg K))
-		local h = 50  														-- Heat transfer coefficient for air (J/(s m^2 K))
-		local k = (h * BarrelArea) / (BarrelMass * c)						-- Cooling Constant (1/s)
-
-		Thermal.TempK = k * Thermal.TransferMult
-		Entity.Thermal = Thermal
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
@@ -523,13 +465,6 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(
-			function(Config)
-				Entity:SimulateTemp(Config.DeltaTime)
-				WireLib.TriggerOutput(Entity, "Temperature", math.Round((Entity.Thermal.Temp or 273.15) - 273.15, 3))
-			end,
-			function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.2}
-		)
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
@@ -735,7 +670,7 @@ do -- Metamethods --------------------------------
 		ACF.AddInputAction("acf_gun", "Rate of Fire", function(Entity, Value)
 			if not Entity.BaseCyclic then return end
 
-			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic * (Entity.ClassData.CyclicCeilMult or 1))
+			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic)
 			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
 	end -----------------------------------------
@@ -822,11 +757,6 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:Shoot()
-			local Thermal = self.Thermal
-			local BulletEnergy = (self.BulletData.PropMass * ACF.PropImpetus * ACF.PDensity * 1000)
-			local EnergyToHeat = BulletEnergy * Thermal.EnergyConversion
-			self:SimulateTemp(1 / 66, Thermal.Temp + EnergyToHeat) -- "Add" the bullet's energy to the gun
-
 			local Cone = math.tan(math.rad(self:GetSpread()))
 			local randUnitSquare = (self:GetUp() * (2 * math.random() - 1) + self:GetRight() * (2 * math.random() - 1))
 			local Spread = randUnitSquare:GetNormalized() * Cone * (math.random() ^ (1 / ACF.GunInaccuracyBias))
