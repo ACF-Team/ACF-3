@@ -132,7 +132,7 @@ do	-- Overlay/networking for that
 				local MaxBox = Vector(0, Config.Width / 2 * Scale, Config.Height / 2 * Scale)
 
 				render.DrawWireframeBox(Pos, Ang, MinBox, MaxBox, Index == BreechIndex and Purple or Cyan, true)
-				if Index == BreechIndex then render.DrawSphere( Pos, 2, 10, 10, Purple ) end -- Draw the location of the breech
+				if Index == BreechIndex then render.DrawWireframeSphere(Pos, 2, 10, 10, Purple, true) end -- Draw the location of the breech
 			end
 		end
 
