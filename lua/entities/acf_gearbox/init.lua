@@ -21,7 +21,7 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
 	local VelDiff = WheelPhys:LocalToWorldVector(WheelPhys:GetAngleVelocity()) - SelfWorld
 	local BaseRPM = VelDiff:Dot(WheelPhys:LocalToWorldVector(Link.Axis))
-	local GearRatio = Entity.GearRatio -- TODO: Rectify once confirmed safe
+	local GearRatio = Entity.GearRatio
 
 	Link.Vel = BaseRPM
 
@@ -540,7 +540,7 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		Entity.CVTRatio = Clamp(Value, 0, 100)
+		Entity.CVTRatio = Clamp(Value, 0, ACF.MaxCVTRatio)
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -815,7 +815,7 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, 100)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, ACF.MaxCVTRatio)
 			else
 				local MinRPM  = SelfTbl.MinRPM
 				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
