@@ -28,7 +28,7 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	if GearRatio == 0 then return 0 end
 
 	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
-	return BaseRPM / GearRatio / -6
+	return BaseRPM * GearRatio / -6
 end
 
 do -- Spawn and Update functions -----------------------
@@ -98,11 +98,10 @@ do -- Spawn and Update functions -----------------------
 				end
 
 				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-				--[[
-				if Gearbox.InvertGearRatios and abs(Gear) < 1 then
+				-- Why not do it for post scaleable pre inversion too? Might as well.
+				if abs(Gear) < 1 then
 					Gear = math.Round(1 / Gear, 2)
 				end
-				]]--
 
 				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
@@ -118,11 +117,10 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-			--[[
-			if Gearbox.InvertGearRatios and abs(Final) < 1 then
+			-- Why not do it for post scaleable pre inversion too? Might as well.
+			if abs(Final) < 1 then
 				Final = math.Round(1 / Final, 2)
 			end
-			]]--
 
 			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
@@ -542,7 +540,7 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		Entity.CVTRatio = Clamp(Value, 0, 1)
+		Entity.CVTRatio = Clamp(Value, 0, ACF.MaxCVTRatio)
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -817,10 +815,10 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 0.01, 1)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, ACF.MaxCVTRatio)
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
@@ -859,10 +857,10 @@ do -- Movement -----------------------------------------
 				local Inertia = 0
 
 				if GearRatio ~= 0 then
-					Inertia = InputInertia / GearRatio
+					Inertia = InputInertia * GearRatio
 				end
 
-				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) * GearRatio) * Clutch
+				Link.ReqTq = abs(Ent:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
@@ -924,7 +922,7 @@ do -- Movement -----------------------------------------
 		local GearRatio = self.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) / GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do
