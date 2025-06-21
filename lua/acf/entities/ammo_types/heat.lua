@@ -308,7 +308,7 @@ if SERVER then
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
 				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
-				_Cavity = Cavity * math.min(Penetration / EffectiveArmor, 1) -- Penetration should not exceed armor (in line with kinetic shells)
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.035
 
 				-- Damage result, Damage info
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
@@ -322,9 +322,9 @@ if SERVER then
 				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
-				if not Bullet.IsSpall and not Bullet.IsCookOff then
-					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
-				end
+				-- if not Bullet.IsSpall and not Bullet.IsCookOff then
+				-- 	Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
+				-- end
 
 				if JetResult.Kill then
 					ACF.APKill(Ent, Direction, 0, JetInfo)
