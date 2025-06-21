@@ -29,7 +29,7 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 		Start = Bullet.Flight * 0.1,
 		Attachment = Bullet.Hide and 0 or 1,
 		Origin = (IsUpdate and Hit > 0) and HitPos or Bullet.Pos,
-		Scale = IsUpdate and Hit or 0,
+		Scale = (not Bullet.Hide and IsUpdate) and Hit or 0,
 		EntIndex = not IsUpdate and Bullet.Crate or nil,
 	}
 
@@ -465,18 +465,23 @@ do -- Terminal ballistics --------------------------
 			Ballistics.CreateBullet({
 				Caliber    = FragSize,
 				Diameter   = FragSize,
+				-- Id         = Bullet.Id,
 				Type       = "AP",
+				Owner      = Bullet.Owner,
+				Entity     = Bullet.Entity,
+				-- Crate      = Bullet.Crate,
+				Gun        = Bullet.Gun,
+				Pos        = FragPos,
 				ProjArea   = ProjArea,
 				ProjMass   = FragMass,
 				DragCoef = DragCoef,
-				Ricochets = 99,
-				GroundRicos = 99,
-				ShovePower = 0.2,
+				-- Tracer     = Bullet.Tracer,
 				LimitVel   = 800,
 				Ricochet   = 60,
-				Pos = FragPos,
+				ShovePower = 0.2,
 				Flight = FragDir * FragSpeed,
 				Filter = Filter,
+				Hide = true,
 				IsSpall = true,
 			})
 		end
