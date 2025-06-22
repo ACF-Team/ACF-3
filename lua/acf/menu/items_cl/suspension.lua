@@ -33,21 +33,18 @@ function ACF.CreateSuspensionToolMenu(Panel)
     local UsesDriveWheel = GeneralSettings:AddCheckBox("Drive wheels used", "acf_sus_tool_usesdrivewheel")
     UsesDriveWheel:SetTooltip("If checked, wheels will be slaved to the drive wheels. (Partially) Tracked vehicles should use this.")
 
+    local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend All Wheels", "acf_sus_tool_suspendallwheels")
+    SuspendDriveWheels:SetTooltip("If checked, all wheels will be suspended, including drive/idler wheels. Tracked vehicles should use this.")
+
     local MakeSpherical = GeneralSettings:AddCheckBox("Make Spherical", "acf_sus_tool_makespherical")
     MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
 
     local DisableCollisions = GeneralSettings:AddCheckBox("Disable Collisions", "acf_sus_tool_disablecollisions")
     DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
 
-    -- local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend Drive Wheels", "acf_sus_tool_suspenddrivewheels")
-    -- SuspendDriveWheels:SetTooltip("If checked, the drive wheels will be suspended as well.")
-
-    -- local SuspendIdlerWheels = GeneralSettings:AddCheckBox("Suspend Idler Wheels", "acf_sus_tool_suspendidlerwheels")
-    -- SuspendIdlerWheels:SetTooltip("If checked, the idler wheels will be suspended as well.")
-
     -- Spring related
     local SpringType = GeneralSettings:AddComboBox()
-    SpringType:AddChoice("Spring Type: Axis (None)", 1)
+    SpringType:AddChoice("Spring Type: Rigid (None)", 1)
     SpringType:AddChoice("Spring Type: Hydraulic", 2)
     SpringType:AddChoice("Spring Type: Elastic", 3)
 

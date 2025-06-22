@@ -128,7 +128,7 @@ end
 -- frankly, should rename Pod entirely
 function ENT:ACF_GetSeatProxy() return self.Pod end
 
-function ENT:ACF_PostSpawn(_, _, _, ClientData)
+function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	local EntMods = ClientData.EntityMods
 	if EntMods and EntMods.mass then
 		ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
@@ -141,7 +141,6 @@ function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	WireLib.TriggerOutput(self, "Entity", self)
 
 	-- Add seat support for baseplates
-	local Owner = self:CPPIGetOwner()
 	if not self:ACF_GetUserVar "AlreadyHasSeat" then
 		local Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
 		if IsValid(Pod) then

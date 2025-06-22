@@ -541,6 +541,12 @@ do
 		SelfTbl.GearboxRight:TriggerInput(SelfTbl.GearboxRightDir .. " Clutch", R)
 	end
 
+	--- Sets the gears of the left/right transfers
+	local function SetTransfers(SelfTbl, L, R)
+		SelfTbl.GearboxLeft:TriggerInput("Gear", L)
+		SelfTbl.GearboxRight:TriggerInput("Gear", R)
+	end
+
 	--- Creates/Removes weld constraints from the Left/Right Wheels to baseplate or between them.
 	local function SetLatches(SelfTbl, Engage)
 		for Wheel in pairs(SelfTbl.Wheels) do
@@ -554,10 +560,25 @@ do
 		end
 	end
 
-	--- Sets the gears of the left/right transfers
-	local function SetTransfers(SelfTbl, L, R)
-		SelfTbl.GearboxLeft:TriggerInput("Gear", L)
-		SelfTbl.GearboxRight:TriggerInput("Gear", R)
+	--- All wheel variant
+	local function SetAllBrakes(SelfTbl, Strength)
+		for Gearbox in pairs(SelfTbl.GearboxEnds) do
+			if IsValid(Gearbox) then Gearbox:TriggerInput("Brake", Strength) end
+		end
+	end
+
+	--- All wheel variant
+	local function SetAllClutches(SelfTbl, Strength)
+		for Gearbox in pairs(SelfTbl.GearboxEnds) do
+			if IsValid(Gearbox) then Gearbox:TriggerInput("Clutch", Strength) end
+		end
+	end
+
+	--- All wheel variant
+	local function SetAllTransfers(SelfTbl, Gear)
+		for Gearbox in pairs(SelfTbl.GearboxEnds) do
+			if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Gear) end
+		end
 	end
 
 	--- Intentionally Supported drivetrains:
@@ -637,32 +658,48 @@ do
 		-- Only two transfer setups can reasonably be expected to neutral steer
 		local IsNeutral = not IsLateral and IsTurning
 		local CanNeutral = SelfTbl.GearboxEndCount == 2
+		local ShouldAWD = SelfTbl.GearboxEndCount > 2
+
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
 		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
 
 		local BrakeStrength = self:GetBrakeStrength()
 
-		if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
-			SetBrakes(SelfTbl, BrakeStrength, BrakeStrength) SetClutches(SelfTbl, CLUTCH_BLOCK, CLUTCH_BLOCK) SetLatches(SelfTbl, true)
-			return
-		end
 
-		SetLatches(SelfTbl, false)
-		if IsNeutral and CanNeutral then -- Neutral steering, gears follow A/D
-			SetBrakes(SelfTbl, 0, 0) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_FLOW)
-			SetTransfers(SelfTbl, A and 2 or 1, D and 2 or 1)
-		else -- Normal driving, gears follow W/S
-			local MainGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
-			if CanNeutral then SetTransfers(SelfTbl, MainGear, MainGear) end
-
-			if A and not D then -- Turn left
-				SetBrakes(SelfTbl, BrakeStrength, 0) SetClutches(SelfTbl, CLUTCH_BLOCK, CLUTCH_FLOW)
-			elseif D and not A then -- Turn right
-				SetBrakes(SelfTbl, 0, BrakeStrength) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_BLOCK)
-			else -- No turn
-				SetBrakes(SelfTbl, 0, 0) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_FLOW)
+		if not ShouldAWD then
+			-- Tank steering
+			if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
+				SetBrakes(SelfTbl, BrakeStrength, BrakeStrength) SetClutches(SelfTbl, CLUTCH_BLOCK, CLUTCH_BLOCK) SetLatches(SelfTbl, true)
+				return
 			end
+
+			SetLatches(SelfTbl, false)
+			if IsNeutral and CanNeutral then -- Neutral steering, gears follow A/D
+				SetBrakes(SelfTbl, 0, 0) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_FLOW)
+				SetTransfers(SelfTbl, A and 2 or 1, D and 2 or 1)
+			else -- Normal driving, gears follow W/S
+				local TransferGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
+				if CanNeutral then SetTransfers(SelfTbl, TransferGear, TransferGear) end
+
+				if A and not D then -- Turn left
+					SetBrakes(SelfTbl, BrakeStrength, 0) SetClutches(SelfTbl, CLUTCH_BLOCK, CLUTCH_FLOW)
+				elseif D and not A then -- Turn right
+					SetBrakes(SelfTbl, 0, BrakeStrength) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_BLOCK)
+				else -- No turn
+					SetBrakes(SelfTbl, 0, 0) SetClutches(SelfTbl, CLUTCH_FLOW, CLUTCH_FLOW)
+				end
+			end
+		else
+			-- Car steering
+			if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
+				SetAllBrakes(SelfTbl, BrakeStrength) SetAllClutches(SelfTbl, CLUTCH_BLOCK) SetLatches(SelfTbl, true)
+				return
+			end
+
+			SetLatches(SelfTbl, false)
+			local TransferGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
+			SetAllTransfers(SelfTbl, TransferGear)
 		end
 	end
 

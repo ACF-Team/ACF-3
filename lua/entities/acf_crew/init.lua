@@ -91,7 +91,7 @@ end
 
 local Red = Color(255, 0, 0)
 local Green = Color(0, 255, 0)
-local LightBlue = Color(0, 255, 255, 100)
+local LightBlue = Color(0, 255, 255, 50)
 
 --- Helper function that Scans the space around the crew member by updating 
 local function iterScan(crew, reps)
