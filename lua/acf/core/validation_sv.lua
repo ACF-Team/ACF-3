@@ -7,7 +7,7 @@ local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
@@ -43,11 +43,64 @@ function ACF.IsLegal(Entity)
 	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
 
-	local Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity)
+	local Legal, Reason, Message, Timeout
+	if Entity.ACF_IsLegal then
+		Legal, Reason, Message, Timeout = Entity:ACF_IsLegal()
+	end
+
+	-- Legal would only be false if ACF_IsLegal is present on the entity *and* it returned false
+	-- If it returned true, the hook should be allowed to override that
+
+	-- Additionally; add arguments to the hook from the entity check, in case whatever hooks into this
+	-- wants to stop if the entity said its legal, add a reason onto the reason, etc?
+	if Legal ~= false then
+		Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity, Legal, Reason, Message, Timeout)
+	end
 
 	if not Legal then return Legal, Reason, Message, Timeout end
 
 	return true
+end
+
+function ACF.DisableEntity(Entity, Reason, Message, Timeout)
+	local Owner = Entity:CPPIGetOwner()
+
+	local Disabled = Entity.Disabled
+
+	if not Disabled or Reason ~= Disabled.Reason then
+		Entity.Disabled	= {
+			Reason  = Reason,
+			Message = Message
+		}
+
+		Entity:Disable() -- Let the entity know it's disabled
+		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
+		if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
+			local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
+
+			if Reason == "Not Solid" then -- Thank you garry, very cool
+				timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
+					if not IsValid(Entity) then return end
+
+					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+				end)
+			else
+				ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+			end
+		end
+	end
+
+	if Timeout then Timeout = math.max(Timeout, 1) end
+	TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
+		if not IsValid(Entity) then return end
+		if not ACF.CheckLegal(Entity) then return end
+
+		Entity.Disabled = nil
+
+		Entity:Enable()
+
+		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
+	end)
 end
 
 function ACF.CheckLegal(Entity)
@@ -57,43 +110,8 @@ function ACF.CheckLegal(Entity)
 		local Disabled = Entity.Disabled
 
 		if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
-			local Owner = Entity:CPPIGetOwner()
-
-			Entity.Disabled	= {
-				Reason  = Reason,
-				Message = Message
-			}
-
-			Entity:Disable() -- Let the entity know it's disabled
-
-			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-			if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
-				local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
-
-				if Reason == "Not Solid" then -- Thank you garry, very cool
-					timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
-						if not IsValid(Entity) then return end
-
-						ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
-					end)
-				else
-					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
-				end
-			end
+			ACF.DisableEntity(Entity, Reason, Message, Timeout)
 		end
-
-		if Timeout then Timeout = math.max(Timeout, 1) end
-
-		TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
-			if not IsValid(Entity) then return end
-			if not ACF.CheckLegal(Entity) then return end
-
-			Entity.Disabled = nil
-
-			Entity:Enable()
-
-			if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
-		end)
 
 		return false
 	end
@@ -181,7 +199,7 @@ end
 hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 -- Global Funcs ---------------------------------

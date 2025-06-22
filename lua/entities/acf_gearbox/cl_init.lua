@@ -5,7 +5,11 @@ local Queued	= {}
 include("shared.lua")
 
 function ENT:Update()
-	self.HitBoxes = ACF.GetHitboxes(self:GetModel())
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
+end
+
+function ENT:OnResized()
+	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
 end
 
 do	-- NET SURFER 2.0
@@ -226,5 +230,58 @@ do	-- Overlay
 				draw.SimpleTextOutlined("Right Output", "ACF_Title", OutRTextPos.x, OutRTextPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 			end
 		cam.End2D()
+	end
+end
+
+do -- Rendering mobility links
+	local RopesCvar = GetConVar("acf_mobilityropelinks")
+	local RopeMat = Material("cable/cable2")
+	local RopeColor = Color(127, 127, 127)
+
+	function ENT:Draw()
+		self.BaseClass.Draw(self)
+
+		if RopesCvar:GetBool() then
+			self:DrawRopes({self = true}, true)
+		end
+	end
+
+	function ENT:DrawRopes(Rendered)
+		if Rendered[self] then return end
+
+		local SelfTbl = self:GetTable()
+
+		render.SetMaterial(RopeMat)
+		Rendered[self] = true
+
+		if not SelfTbl.HasData then
+			self:RequestGearboxInfo()
+			return
+		elseif Clock.CurTime > SelfTbl.Age then
+			self:RequestGearboxInfo()
+		end
+
+		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
+		local RightPos	= self:LocalToWorld(SelfTbl.OutR)
+
+		for _, T in ipairs(SelfTbl.OutputsL) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, RopeColor)
+			end
+		end
+
+		for _, T in ipairs(SelfTbl.OutputsR) do
+			local E = T.Ent
+
+			if IsValid(E) then
+
+				local Pos = E:LocalToWorld(T.Pos)
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, RopeColor)
+			end
+		end
 	end
 end

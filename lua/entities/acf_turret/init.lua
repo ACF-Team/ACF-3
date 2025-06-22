@@ -18,6 +18,19 @@ local TimerSimple	= timer.Simple
 local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
+do -- Random timer crew stuff
+	function ENT:UpdateAccuracyMod()
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
+		local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
+		local Sum, Count = Sum1 + Sum2 + Sum3, Count1 + Count2 + Count3
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
+	end
+end
+
 do	-- Spawn and Update funcs
 	local WireIO	= Utilities.WireIO
 	local Entities	= Classes.Entities
@@ -239,7 +252,7 @@ do	-- Spawn and Update funcs
 
 	------------------
 
-	function MakeACF_Turret(Player, Pos, Angle, Data)
+	function ACF.MakeTurret(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Turret)
@@ -305,6 +318,10 @@ do	-- Spawn and Update funcs
 
 		UpdateTurret(Entity, Data, Class, Turret)
 
+		Entity:UpdateOverlay(true)
+
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+
 		HookRun("ACF_OnSpawnEntity", "acf_turret", Entity, Data, Class, Turret)
 
 		ACF.CheckLegal(Entity)
@@ -312,7 +329,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret", MakeACF_Turret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
+	Entities.Register("acf_turret", ACF.MakeTurret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
@@ -348,6 +365,12 @@ do	-- Spawn and Update funcs
 	function ENT:OnRemove()
 		if IsValid(self.Rotator) then
 			self.Rotator:Remove()
+		end
+
+		if self.Crews and next(self.Crews) then
+			for Crew in pairs(self.Crews) do
+				if IsValid(Crew) then self:Unlink(Crew) end
+			end
 		end
 	end
 

@@ -12,6 +12,7 @@ Weapons.Register("SC", {
 	Spread      = 0.16,
 	Mass        = 1195,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
@@ -29,6 +30,12 @@ Weapons.Register("SC", {
 	Sounds = {
 		[50] = "acf_base/weapons/ac_fire4.mp3",
 	},
+	BreechConfigs = {
+		MeasuredCaliber = 17.0,
+		Locations = {
+			{Name = "Breech", LPos = Vector(-40.8958, 0, 0.015625), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+		}
+	}
 })
 
 Weapons.RegisterItem("37mmSC", "SC", {

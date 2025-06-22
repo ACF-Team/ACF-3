@@ -190,6 +190,11 @@ local function AddControls(Base, ToolData)
 	hook.Run("ACF_OnCreateAmmoControls", Base, ToolData, Ammo, BulletData)
 
 	AddTracer(Base, ToolData)
+
+	-- Control for the stowage stage (priority) of the ammo
+	local AmmoStage = Base:AddNumberWang("#acf.menu.ammo.stage", ACF.AmmoStageMin, ACF.AmmoStageMax)
+	AmmoStage:SetClientData("AmmoStage", "OnValueChanged")
+	AmmoStage:SetValue(1)
 end
 
 ---Creates the ammunition information panels on the ACF menu.
@@ -467,8 +472,9 @@ function ACF.CreateAmmoMenu(Menu)
 		return Z
 	end)
 
-	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info")
+	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
 	local Desc = Base:AddLabel()
+	Desc:SetText("")
 
 	function List:LoadEntries(Class)
 		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")

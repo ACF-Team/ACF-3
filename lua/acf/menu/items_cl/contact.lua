@@ -3,7 +3,7 @@ local function CreateMenu(Menu)
 	Menu:AddLabel("#acf.menu.contact.desc2")
 
 	do -- Official Discord Server
-		local Base = Menu:AddCollapsible("#acf.menu.contact.discord", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.discord", false, "icon16/server.png")
 
 		Base:AddLabel("#acf.menu.contact.discord_desc")
 
@@ -15,7 +15,7 @@ local function CreateMenu(Menu)
 	end
 
 	do -- Official Steam Group
-		local Base = Menu:AddCollapsible("#acf.menu.contact.steam", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.steam", false, "vgui/resource/icon_steam")
 
 		Base:AddLabel("#acf.menu.contact.steam_desc")
 
@@ -27,7 +27,7 @@ local function CreateMenu(Menu)
 	end
 
 	do -- "Github Issues & Suggestions"
-		local Base = Menu:AddCollapsible("#acf.menu.contact.github", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.github", false, "icon16/arrow_branch.png")
 
 		Base:AddLabel("#acf.menu.contact.github_desc1")
 		Base:AddLabel("#acf.menu.contact.github_desc2")
@@ -40,7 +40,7 @@ local function CreateMenu(Menu)
 	end
 
 	do -- How to Contribute
-		local Base = Menu:AddCollapsible("#acf.menu.contact.contributing", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.contributing", false, "icon16/page_code.png")
 
 		Base:AddLabel("#acf.menu.contact.contributing_desc")
 

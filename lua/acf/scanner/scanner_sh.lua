@@ -130,7 +130,7 @@ local playerC       = DefineScannerType(nil, "Player",         Color(150, 200, 2
 
 DefineScannerType("acf_gun",                   "ACF Gun",                 Color(100, 130, 255), "G",   {drawModelOverlay = true})
 DefineScannerType("acf_ammo",                  "ACF Ammo Crate",          Color(255, 50, 35),   "A",   {drawBounds = true, drawMarker = true})
-local ammoRefill = DefineScannerType(nil,                         "ACF Ammo Refill",         Color(255, 50, 35),   "AR",  {drawBounds = true, drawMarker = true})
+local ammoRefill = DefineScannerType(nil,      "ACF Ammo Refill",         Color(255, 50, 35),   "AR",  {drawBounds = true, drawMarker = true})
 
 DefineScannerType("acf_rack",                  "ACF Missile Rack",        Color(100, 230, 255), "RK",  {drawModelOverlay = true})
 DefineScannerType("acf_radar",                 "ACF Radar",               Color(255, 200, 50),  "R",   {drawModelOverlay = true})
@@ -139,7 +139,7 @@ DefineScannerType("prop_vehicle_prisoner_pod", "Seat/Pod",                Color(
 DefineScannerType("acf_engine",                "ACF Engine",              Color(200, 255, 100), "E",   {drawModelOverlay = true})
 DefineScannerType("acf_gearbox",               "ACF Gearbox",             Color(148, 148, 20),  "GB",  {drawModelOverlay = true, drawOverlay = true})
 DefineScannerType("acf_fueltank",              "ACF Fueltank",            Color(200, 180, 230), "F",   {drawBounds = true})
-local fuelRefill = DefineScannerType(nil,                         "ACF Fueltank Refill",     Color(200, 180, 230), "FR",   {drawBounds = true})
+local fuelRefill = DefineScannerType(nil,      "ACF Fueltank Refill",     Color(200, 180, 230), "FR",  {drawBounds = true})
 
 DefineScannerType("acf_piledriver",            "ACF Piledriver",          Color(255, 100, 90),  "PD",  {})
 DefineScannerType("acf_computer",              "ACF Computer",            Color(235, 235, 255), "E",   {drawModelOverlay = true})
@@ -154,23 +154,15 @@ DefineScannerType("gmod_wire_expression2",     "Expression 2 Chip",       Color(
 DefineScannerType("starfall_processor",        "Starfall Chip",           Color(100, 140, 230), "SF",  {})
 DefineScannerType("starfall_prop",             "Starfall-Created Prop",   Color(160, 200, 255), "SP",  {})
 
-DefineScannerType("primitive_shape",           "Primitive Shape",         Color(200, 200, 255), "PR",  {
-    drawMesh = true
-})
-DefineScannerType("primitive_staircase",       "Primitive Staircase",     Color(200, 200, 255), "PRs", {
-    drawMesh = true
-})
-DefineScannerType("primitive_ladder",          "Primitive Ladder",        Color(200, 200, 255), "PRl", {
-    drawMesh = true
-})
-DefineScannerType("primitive_rail_slider",     "Primitive Rail Slider",   Color(200, 200, 255), "PRr", {
-    drawMesh = true
-})
-DefineScannerType("primitive_airfoil",         "Primitive Airfoil",       Color(200, 200, 255), "PRa", {
-    drawMesh = true
-})
+DefineScannerType("primitive_shape",           "Primitive Shape",         Color(200, 200, 255), "PR",  {drawMesh = true})
+DefineScannerType("primitive_staircase",       "Primitive Staircase",     Color(200, 200, 255), "PRs", {drawMesh = true})
+DefineScannerType("primitive_ladder",          "Primitive Ladder",        Color(200, 200, 255), "PRl", {drawMesh = true})
+DefineScannerType("primitive_rail_slider",     "Primitive Rail Slider",   Color(200, 200, 255), "PRr", {drawMesh = true})
+DefineScannerType("primitive_airfoil",         "Primitive Airfoil",       Color(200, 200, 255), "PRa", {drawMesh = true})
 
-DefineScannerType("acf_baseplate",             "ACF Baseplate",          Color(255, 65, 160),   "ABP",   {drawBounds = true, drawMarker = true})
+DefineScannerType("acf_baseplate",             "ACF Baseplate",           Color(255, 65, 160),  "ABP", {drawBounds = true, drawMarker = true})
+DefineScannerType("acf_crew",                  "ACF Crew Member",         Color(211, 33, 196),  "CR",  {drawModelOverlay = true})
+DefineScannerType("acf_controller",            "ACF Controller",          Color(156, 0, 177),   "CON", {drawModelOverlay = true})
 
 local function NetStart(n)
     net_Start("ACF_Scanning_NetworkPacket")
@@ -444,6 +436,7 @@ if SERVER then
         end
     end)
 end
+
 if CLIENT then
     local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
     local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
@@ -1239,13 +1232,12 @@ if CLIENT then
         render.DepthRange(0, 1)
     end
 
-    --local eyetrace_calc = nil
     local player_mt = FindMetaTable("Player")
-    if not ACF_SCANNING_PLMT_GETEYETRACE then
-        ACF_SCANNING_PLMT_GETEYETRACE = player_mt.GetEyeTrace
+    if not player_mt.GetEyeTraceLegacy then
+        player_mt.GetEyeTraceLegacy = player_mt.GetEyeTrace
     end
 
-    local plmt_eyetrace = ACF_SCANNING_PLMT_GETEYETRACE
+    local plmt_eyetrace = player_mt.GetEyeTraceLegacy
     local lastFrame, lastFrameTrace
 
     function player_mt:GetEyeTrace()
@@ -1324,37 +1316,47 @@ if CLIENT then
             end
         end
     end
+
     hook.Add("PostDrawTranslucentRenderables", "ACF_Scanner_Render3D", function(_, _, drawing3DSkybox)
         if drawing3DSkybox then return end
+
         if scanning.IsScannerActive() then
             for _, ent in ipairs(scanningEnts) do
                 if IsValid(ent) then
                     local class = ent:GetClass()
                     local scanDef = scannerTypes[class]
+
                     if scanDef ~= nil then
                         if scanDef.drawModelOverlay then
                             drawEntity(ent, scanDef.colorEntity)
                         end
+
                         if scanDef.drawBounds then
                             drawBounds(ent, scanDef)
                         end
+
                         if scanDef.drawMesh then
                             drawEntityNoOutline(ent, scanDef.colorEntityInside)
                             drawPhysMesh(ent, scanDef.color)
                         end
+
                         VisualizeClips(ent)
                     end
                 end
             end
 
             for _, ent in ipairs(baseplates) do
-                if ent:GetClass() ~= "acf_baseplate" then
-                    drawEntityNoOutline(ent, baseplateC.colorEntityInside)
-                    drawPhysMesh(ent, baseplateC.color)
-                    drawBounds(ent, baseplateC)
+                if IsValid(ent) then
+                    if ent:GetClass() ~= "acf_baseplate" then
+                        drawEntityNoOutline(ent, baseplateC.colorEntityInside)
+                        drawPhysMesh(ent, baseplateC.color)
+                        drawBounds(ent, baseplateC)
+                    end
+
+                    VisualizeClips(ent)
                 end
-                VisualizeClips(ent)
             end
+
             render.DepthRange(0, 1)
         end
     end)

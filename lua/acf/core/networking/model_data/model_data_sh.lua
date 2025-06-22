@@ -37,6 +37,18 @@ local function GetVolume(Mesh)
 	return PhysObj:GetVolume()
 end
 
+function ModelData.SanitizeMesh(PhysObj)
+	local Mesh = PhysObj:GetMeshConvexes()
+
+	for I, Hull in ipairs(Mesh) do
+		for J, Vertex in ipairs(Hull) do
+			Mesh[I][J] = Vertex.pos
+		end
+	end
+
+	return Mesh
+end
+
 -------------------------------------------------------------------
 
 function ModelData.GetModelPath(Model)

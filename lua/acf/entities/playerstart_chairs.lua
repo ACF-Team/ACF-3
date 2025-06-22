@@ -32,6 +32,10 @@ local function HandlePHXAirboatAnimation(_, Player)
 	return Player:SelectWeightedSequence(ACT_DRIVE_AIRBOAT)
 end
 
+local function HandleStandAnim(_, Player)
+	return Player:LookupSequence("run_dual")
+end
+
 local function HandlePodAnim(_, Player)
 	return Player:LookupSequence("drive_pd")
 end
@@ -74,7 +78,7 @@ AddVehicle("playerstart_chairs_seated_alt", {
 AddVehicle("playerstart_chairs_standing", {
 	Name      = "Standing Pose",
 	Model     = "models/chairs_playerstart/standingpose.mdl",
-	Animation = HandlePodAnim,
+	Animation = HandleStandAnim,
 })
 
 AddVehicle("playerstart_chairs_prone", {

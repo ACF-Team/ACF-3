@@ -171,7 +171,7 @@ do -- Spawn and Update functions
 		WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 	end
 
-	function MakeACF_FuelTank(Player, Pos, Angle, Data)
+	function ACF.MakeFuelTank(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class    = Classes.GetGroup(FuelTanks, Data.FuelTank)
@@ -231,7 +231,7 @@ do -- Spawn and Update functions
 		return Tank
 	end
 
-	Entities.Register("acf_fueltank", MakeACF_FuelTank, "FuelTank", "FuelType", "Size")
+	Entities.Register("acf_fueltank", ACF.MakeFuelTank, "FuelTank", "FuelType", "Size")
 
 	ACF.RegisterLinkSource("acf_fueltank", "Engines")
 

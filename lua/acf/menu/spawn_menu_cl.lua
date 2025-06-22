@@ -10,8 +10,8 @@ local Lookup  = ACF.MenuLookup
 
 do -- Menu population functions
 	local function DefaultAction(Menu)
-		Menu:AddTitle("There's nothing here.")
-		Menu:AddLabel("This option is either a work in progress or something isn't working as intended.")
+		Menu:AddTitle("#acf.menu.default_action_title")
+		Menu:AddLabel("#acf.menu.default_action_desc")
 	end
 
 	function ACF.AddMenuOption(Index, Name, Icon, Enabled)
@@ -255,28 +255,12 @@ do -- ACF Menu context panel
 		Tree:SetSelectedItem(First)
 	end
 
+	--- Generates the menu used in the main menu tool.
+	--- @param Panel panel The base panel to build the menu off of.
 	function ACF.CreateSpawnMenu(Panel)
-		local Menu = ACF.SpawnMenu
-
-		if not IsValid(Menu) then
-			Menu = vgui.Create("ACF_Panel")
-			Menu.Panel = Panel
-
-			Panel:AddItem(Menu)
-
-			ACF.SpawnMenu = Menu
-		else
-			Menu:ClearAllTemporal()
-			Menu:ClearAll()
-		end
-
-		local Reload = Menu:AddButton("Reload Menu")
-		Reload:SetTooltip("You can also type 'acf_reload_spawn_menu' in console.")
-		function Reload:DoClickInternal()
-			ACF.CreateSpawnMenu(Panel)
-		end
-
+		local Menu = ACF.InitMenuBase(Panel, "SpawnMenu", "acf_reload_spawn_menu")
 		local Tree = Menu:AddPanel("DTree")
+
 		function Tree:OnNodeSelected(Node)
 			if self.Selected == Node then return end
 

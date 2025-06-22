@@ -85,21 +85,7 @@ end
 --- Generates the menu used in the Copy tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateCopyMenu(Panel)
-	local Menu = ACF.CopyMenu
-
-	if not IsValid(Menu) then
-		Menu = vgui.Create("ACF_Panel")
-		Menu.Panel = Panel
-
-		Panel:AddItem(Menu)
-
-		ACF.CopyMenu = Menu
-	else
-		Menu:ClearAllTemporal()
-		Menu:ClearAll()
-	end
-
-	Menu:AddMenuReload("acf_reload_copy_menu")
+	local Menu = ACF.InitMenuBase(Panel, "CopyMenu", "acf_reload_copy_menu")
 	ACF.SetToolMode("acfcopy", "Main", "CopyPaste")
 
 	if not Selected then

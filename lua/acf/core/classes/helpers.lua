@@ -4,9 +4,12 @@ local Classes = ACF.Classes
 --- @param Data {Name:string, Amount:number, Text:string}
 function Classes.AddSboxLimit(Data)
 	if CLIENT then return end
-	if ConVarExists("sbox_max" .. Data.Name) then return end
 
-	CreateConVar("sbox_max" .. Data.Name,
+	local ConVarName = "sbox_max" .. Data.Name
+
+	if ConVarExists(ConVarName) then return end
+
+	CreateConVar(ConVarName,
 				Data.Amount,
 				FCVAR_ARCHIVE + FCVAR_NOTIFY,
 				Data.Text or "")

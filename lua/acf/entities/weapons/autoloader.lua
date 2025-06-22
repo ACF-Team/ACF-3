@@ -9,10 +9,12 @@ Weapons.Register("AL", {
 	Sound       = "acf_base/weapons/autoloader.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
+	IsAutomatic = true,
 	Mass        = 2985,
 	Spread      = 0.08,
-	MagSize     = 10,
+	MagSize     = 6,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
@@ -31,9 +33,18 @@ Weapons.Register("AL", {
 		Max = 35,
 	},
 	Cyclic = {
-		Min = 28,
-		Max = 13,
+		Min = 15,
+		Max = 8,
 	},
+	BreechConfigs = {
+		MeasuredCaliber = 17.0,
+		Locations = {
+			{Name = "Front of Left Drum", LPos = Vector(-62.9, 27.5, 4.5), LAng = Angle(180, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Front of Right Drum", LPos = Vector(-62.9, -27.5, 4.5), LAng = Angle(180, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Rear of Left Drum", LPos = Vector(-130.7, 27.5, 4.5), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+			{Name = "Rear of Right Drum", LPos = Vector(-130.7, -27.5, 4.5), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+		}
+	}
 })
 
 Weapons.RegisterItem("75mmAL", "AL", {

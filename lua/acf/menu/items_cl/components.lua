@@ -20,7 +20,7 @@ local function CreateMenu(Menu)
 	local ComponentClass = Menu:AddComboBox()
 	local ComponentList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("#acf.menu.components.component_info")
+	local Base = Menu:AddCollapsible("#acf.menu.components.component_info", nil, "icon16/drive_edit.png")
 	local ComponentName = Base:AddTitle()
 	local ComponentDesc = Base:AddLabel()
 	local ComponentPreview = Base:AddModelPreview(nil, true)

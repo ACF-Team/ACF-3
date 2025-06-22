@@ -187,6 +187,30 @@ do -- Mobility functions
 		Class.RPM.PeakMin  = math.Round(PowerbandMinRPM, -1)
 		Class.RPM.PeakMax  = math.Round(PowerbandMaxRPM, -1)
 	end
+
+	--- Processes the stats of a gearbox into scaled mass and torque formats.
+	--- @param BaseMass number The base mass value of the gearbox
+	--- @param Scale number The scale value of the gearbox
+	--- @param MaxTorque number The maximum torque value of the gearbox
+	--- @param GearCount number The number of gears present in the gearbox
+	--- @return number # The mass of the gearbox
+	--- @return number # The torque value of the gearbox in ft-lb
+	--- @return number # The torque rating of the gearbox in N/m
+	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
+		local Mass = math.floor((BaseMass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 -- Round to the nearest five
+
+		-- Torque calculations
+		local Torque, TorqueRating = 0, 0
+
+		if MaxTorque and GearCount then
+			local TorqueLoss = MaxTorque * (ACF.GearEfficiency ^ GearCount)
+			local ScalingCurve = Scale ^ ACF.GearboxTorqueScale
+			TorqueRating = math.floor((TorqueLoss * ScalingCurve) / 10) * 10 -- Round to the nearest ten
+			Torque = math.Round(TorqueRating * ACF.NmToFtLb)
+		end
+
+		return Mass, Torque, TorqueRating
+	end
 end
 
 do -- Unit conversion
@@ -250,6 +274,102 @@ function ACF.RandomVector(Min, Max)
 	local Z = math.Rand(Min.z, Max.z)
 
 	return Vector(X, Y, Z)
+end
+
+do
+	--- A class that determines local position and direction, for things like driveshaft/power sources
+	function ACF.LocalPlane(LocalPos, LocalDir)
+		local Object = {
+			Pos = LocalPos or Vector(),
+			Dir = LocalDir
+		}
+
+		function Object:ApplyTo(Entity)
+			return Entity:LocalToWorld(self.Pos), (Entity:GetPos() - Entity:LocalToWorld(self.Dir)):GetNormalized()
+		end
+
+		return Object
+	end
+
+	--- Determines the combined deviations of the driveshaft between two entities
+	--- A return value of zero means that both entities are facing each other perfectly.
+	function ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+		-- Gearbox -> gearbox connections use Link objects; which contain Source, Origin, and Axis.
+		-- Beyond that, everything works like normal; so we can just populate Output/OutputEntity
+		-- from the Link object.
+		-- TODO: Link object maybe should use LocalPlane instead of creating it each time? This isn't
+		-- that hot of a function given it runs infrequently (i think), but it's still a bit of a waste
+		if Output == nil then
+			local Link = OutputEntity
+
+			Output = ACF.LocalPlane(Link.Origin, Link.OutDirection)
+			OutputEntity = Link.Source
+		end
+
+		-- For the entity sending power, this is the direction of a "straight" shaft
+		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
+		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 5, Color(20, 255, 20))
+
+		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
+		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
+		if Input == nil then
+			if InputEntity:GetClass() == "prop_physics" then
+				local Degrees = math.deg(math.acos((InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)))
+				return Degrees
+			else
+				error("Input == nil AND InputEntity != prop_physics!")
+			end
+		end
+
+		-- This handles either gearbox -> gearbox or engine -> gearbox, depending on if Output == nil
+		-- This will check both directions.
+
+		-- For the entity receiving power, this is the direction of a "straight" shaft
+		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
+		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 5, Color(255, 20, 20))
+
+		-- For the entity sending power, the deviation between the shaft and what it considers "straight"
+		local OutToIn = math.deg(math.acos((OP - IP):GetNormalized():Dot(InputWorldDir)))
+
+		-- For the entity receiving power, the deviation between the shaft and what it considers "straight"
+		local InToOut = math.deg(math.acos((IP - OP):GetNormalized():Dot(OutputWorldDir)))
+
+		-- The max of the deviations
+		return math.max(OutToIn, InToOut)
+	end
+
+	function ACF.IsDriveshaftAngleExcessive(InputEntity, Input, OutputEntity, Output)
+		local Determined = ACF.DetermineDriveshaftAngle(InputEntity, Input, OutputEntity, Output)
+		return Determined > ACF.MaxDriveshaftAngle, Determined
+	end
+end
+
+do
+	-- Checks the parent chain of an entity.
+	-- Basically; given Entity, confirms that all inbetween entities are a class whitelisted in InbetweenEntities,
+	-- and the final ancestor is a class whitelisted in EndIn.
+	function ACF.CheckParentChain(Entity, InbetweenEntities, EndIn)
+		local Parent = Entity
+		local NoInbetween = false
+		for _ = 1, 1000 do
+			local TestParent = Parent:GetParent()
+			if not IsValid(TestParent) then
+				break
+			end
+			if NoInbetween then return false end
+
+			Parent = TestParent
+			local Class = TestParent:GetClass()
+			if not (InbetweenEntities == Class or InbetweenEntities[Class]) then
+				-- The next check MUST be the end
+				NoInbetween = true
+			end
+		end
+
+		-- Parent is now the master parent
+		local Class = Parent:GetClass()
+		return Class == EndIn or EndIn[Class] or false
+	end
 end
 
 do -- ACF.GetHitAngle
@@ -374,6 +494,16 @@ do -- Native type verification functions
 		if Value == nil then return Default end
 
 		return tostring(Value) or Default
+	end
+
+	--- Returns the entity representation of a value or a default of this type
+	--- @param Value Entity The input to be converted to an entity
+	--- @param Default Entity The default value if the input cannot be made into an entity
+	--- @return Entity # The entity result
+	function ACF.CheckEntity(Value, Default)
+		if Value == nil then return Default end
+
+		return IsValid(Value) and Value or Default
 	end
 end
 
@@ -737,5 +867,337 @@ do -- File creation
 		if not file.Exists(FullPath, "DATA") then return end
 
 		return util.JSONToTable(file.Read(FullPath, "DATA"))
+	end
+end
+
+do -- Crew related
+	--- Computes the weighted sum of a LUT (often representing links) using a weighting function.
+	--- @param LUT any -- The lookup table to sum
+	--- @param Weighter function -- The function to compute the weight of each entry
+	--- @param ... unknown -- Additional arguments to pass to the weighter
+	--- @return integer -- The weighted sum of the LUT
+	--- @return integer -- The count of entries in the LUT
+	function ACF.WeightedLinkSum(LUT, Weighter, ...)
+		if not LUT then return 0, 0 end
+
+		local Sum = 0
+		local Count = 0
+		for v in pairs(LUT) do
+			if not IsValid(v) then continue end -- Skip invalids
+			Sum = Sum + Weighter(v, ...)
+			Count = Count + 1
+		end
+		return Sum, Count
+	end
+
+	--- Normalizes a value from [inMin,inMax] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param Value number The value to normalize
+	--- @param InMin number The minimum value of the input range
+	--- @param InMax number The maximum value of the input range
+	--- @return number # The normalized value
+	function ACF.Normalize(Value, InMin, InMax)
+		return math.Clamp((Value - InMin) / (InMax - InMin), 0, 1)
+	end
+
+	--- Maps a value from [inMin,inMax] to [outMin,outMax] using a transformation that maps [0,1] to [0,1]
+	--- Values outside the input range are clamped to the output range
+	--- @param Value number The value to remap
+	--- @param InMin number The minimum value of the input range
+	--- @param InMax number The maximum value of the input range
+	--- @param OutMin number The minimum value of the output range
+	--- @param OutMax number The maximum value of the output range
+	--- @param Transform function(value:number):number
+	--- @return number # The remapped value
+	function ACF.RemapAdv(Value, InMin, InMax, OutMin, OutMax, Transform)
+		return OutMin + (Transform(ACF.Normalize(Value, InMin, InMax)) * (OutMax - OutMin))
+	end
+
+	local function UpdateDelta(Config)
+		local CT = CurTime()
+		Config.DeltaTime = (CT - Config.LastTime)
+		Config.LastTime = CT
+		Config.Elapsed = Config.Elapsed + Config.DeltaTime
+	end
+
+	local function InitFields(Config)
+		Config.DeltaTime = 0
+		Config.Elapsed = 0
+		Config.LastTime = CurTime()
+	end
+
+	--- Similar to a mix of timer.create and timer.simple but with random steps.
+	--- Every iteration it asks Loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
+	--- Its principal use case is in dynamic reloading where the time until a loader Finishes loading changes during loading and must be checked at random.
+	--- @param Loop function A function that returns the time left until the next iteration
+	--- @param Depends function A function that returns whether the timer should continue
+	--- @param Finish function A function that is called when the timer Finishes
+	--- @param Config table A table with the fields: MinTime, MaxTime, Delay
+	function ACF.AugmentedTimer(Loop, Depends, Finish, Config)
+		InitFields(Config)
+
+		local RealLoop
+		local Cancelled = false
+		local Finished  = false
+		function RealLoop()
+			if Cancelled then return end
+			if Depends and not Depends(Config) then return end
+
+			UpdateDelta(Config)
+			local left = Loop(Config)
+			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
+
+			--Random step or Finishing step, whichever is faster.
+			local timeleft = left and math.min(left, rand) or rand
+			-- If time left then recurse, otherwise call Finish
+			if timeleft > 0.001 then
+				timer.Simple(timeleft, RealLoop)
+			else
+				if Finish and not Finished then Finished = true Finish(Config) end
+				return
+			end
+		end
+
+		if not Config.Delay then RealLoop()
+		else timer.Simple(Config.Delay, RealLoop) end
+
+		local ProxyObject = {}
+		function ProxyObject:Cancel(RunFinisher)
+			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
+		end
+		return ProxyObject
+	end
+
+	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
+	--- Progress increases at the rate determined by Loop, until it reaches "goal"
+	--- @param Ent any The entity to attach the timer to (checks its validity)
+	--- @param Loop any	A function that returns the efficiency of the process
+	--- @param Finish any A function that is called when the timer Finishes
+	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
+	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
+		return ACF.AugmentedTimer(
+			function(Config)
+				local eff = Loop(Config)
+				Config.Progress = Config.Progress + Config.DeltaTime * eff
+				return (Config.Goal - Config.Progress) / eff
+			end,
+			function(Config)
+				return IsValid(Ent) and Config.Progress < Config.Goal
+			end,
+			Finish,
+			Config
+		)
+	end
+
+	--- Checks the two bullet datas are equal
+	--- TODO: Probably find a better way to do this via the ammo classes...
+	--- @param Data1 any -- The first bullet data
+	--- @param Data2 any -- The second bullet data
+	--- @return boolean -- Whether the two bullet datas are equal
+	function ACF.BulletEquality(Data1, Data2)
+		if not Data1 then return false end
+		if not Data2 then return false end
+
+		-- Only check fields all rounds share...
+		-- Note: We are trying to fail as early as possible so check constraints from most to least common
+		if Data1.Type ~= Data2.Type then return false end
+		if Data1.Caliber ~= Data2.Caliber then return false end
+		if Data1.Diameter ~= Data2.Diameter then return false end
+		if Data1.ProjArea ~= Data2.ProjArea then return false end
+		if Data1.PropArea ~= Data2.PropArea then return false end
+		if Data1.Efficiency ~= Data2.Efficiency then return false end
+
+		return true
+	end
+
+	--- Recursively searches a table for an entry given keys, initializing layers with {} if they don't exist
+	--- @param Tbl table -- The table to search
+	--- @param ... any -- The keys to search for
+	--- @return any -- The value at the given keys
+	function ACF.GetTableSafe(Tbl, ...)
+		if not Tbl then return end
+
+		local keys = { ... }
+		local value = Tbl
+
+		for _, key in ipairs(keys) do
+			if not value[key] then value[key] = {} end
+			value = value[key]
+		end
+
+		return value
+	end
+
+	--- Returns the length and bulletdata of the longest bullet in any crate a gun has ever seen.
+	--- @param Gun any The gun
+	--- @return integer LongestLength The length of the longest bullet
+	--- @return table? LongestBullet The bullet data of the longest bullet
+	function ACF.FindLongestBullet(Gun)
+		local LongestLength = 0
+		local LongestBullet = nil
+		for Crate in pairs(Gun.Crates) do
+			local BulletData = Crate.BulletData
+			local Length = BulletData.PropLength + BulletData.ProjLength
+			if Length > LongestLength then
+				LongestLength = Length
+				LongestBullet = BulletData
+			end
+		end
+
+		return LongestLength, LongestBullet
+	end
+end
+
+do -- Reload related
+	--- Calculates the time it takes for a gun to reload
+	--- It is recommended to use Override with an entity which has "Cyclic" set to a value to reduce usage
+	--- @param Caliber number The caliber of the weapon
+	--- @param Class table Weapon class group
+	--- @param Weapon table Weapon class item
+	--- @param BulletData table Bullet data
+	--- @param Override table Override data, either from an entity or a table
+	function ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData, Override)
+		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
+
+		-- If the weapon has a cyclic rate, use it, otherwise calculate the reload time based on the bullet data
+		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
+		if Cyclic then return 60 / Cyclic, false end
+
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
+
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+	end
+
+	--- Calculates the time it takes for a gun to reload its magazine
+	--- It is recommended to use Override with an entity which has "MagSize" set to a value to reduce usage
+	--- @param Caliber number The caliber of the weapon
+	--- @param Class table Weapon class group
+	--- @param Weapon table Weapon class item
+	--- @param BulletData table Bullet data
+	--- @param Override table Override data, either from an entity or a table
+	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
+		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
+
+		-- Use the override if possible
+		local MagSizeOverride = Override and Override.MagSize
+
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
+
+		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
+		local DefaultMagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+
+		-- Use the largest of the default mag size or the current mag size (beltfeds), or the default if neither is specified...
+		local MagSize = math.max(MagSizeOverride or DefaultMagSize, DefaultMagSize)
+
+		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+	end
+
+	local ModelToPlayerStart = {
+		["models/chairs_playerstart/jeeppose.mdl"] = "playerstart_chairs_jeep",
+		["models/chairs_playerstart/airboatpose.mdl"] = "playerstart_chairs_airboat",
+		["models/chairs_playerstart/sitposealt.mdl"] = "playerstart_chairs_seated",
+		["models/chairs_playerstart/podpose.mdl"] = "playerstart_chairs_podpose",
+		["models/chairs_playerstart/sitpose.mdl"] = "playerstart_chairs_seated_alt",
+		["models/chairs_playerstart/standingpose.mdl"] = "playerstart_chairs_standing",
+		["models/chairs_playerstart/pronepose.mdl"] = "playerstart_chairs_prone"
+	}
+
+	--- Generates a lua seat for a given entity
+	--- @param Entity any The entity to attach the seat to
+	--- @param Player any The owner of the entity
+	--- @param Pos any The position of the seat
+	--- @param Angle any The angle of the seat
+	--- @param Model any The model of the seat
+	--- @return unknown Pod The generated seat
+	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
+		if not Player:CheckLimit("vehicles") then return end
+
+		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
+		local Pod = ents.Create("prop_vehicle_prisoner_pod")
+		Player:AddCount("vehicles", Pod)
+		if IsValid(Pod) and IsValid(Player) then
+			Pod:SetAngles(Angle)
+			Pod:SetModel(Model)
+			Pod:SetPos(Pos)
+			Pod:Spawn()
+			Pod:SetParent(Entity)
+
+			-- MARCH: Fixes player-start animations
+			-- I don't like how this works but it's the best way I can think of right now
+			local PlayerStartName = ModelToPlayerStart[Model]
+			if PlayerStartName then
+				local PlayerStartInfo = list.GetForEdit("Vehicles")[PlayerStartName]
+				if PlayerStartInfo then
+					Pod:SetVehicleClass(PlayerStartName)
+					if PlayerStartInfo.Members then
+						table.Merge(Pod, PlayerStartInfo.Members)
+					end
+				end
+			end
+
+			Pod.Owner = Player
+			Pod:CPPISetOwner(Player)
+
+			return Pod
+		else
+			return nil
+		end
+	end
+
+	if WireLib then
+		if not ACF.WirelibDetour_GetClosestRealVehicle then
+			ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
+		end
+		local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
+		function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
+			if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
+				local Pod = Vehicle:ACF_GetSeatProxy()
+				if IsValid(Pod) then return Pod end
+			end
+
+			return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+		end
+	end
+
+	--- Configures a lua seat after it has been created.
+	--- Whenever the seat is created, this should be called after.
+	--- @param Pod any The seat to configure
+	--- @param Player any The owner of the seat
+	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
+		-- print("ConfigureLuaSeat", Entity, Pod, Player)
+		-- Just to be safe...
+		Pod.Owner = Player
+		Pod:CPPISetOwner(Player)
+
+		Pod:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")    	-- I don't know what this does, but for good measure...
+		Pod:SetKeyValue("limitview", 0)                                            -- Let the player look around
+
+		Pod.Vehicle = Entity
+		Pod.ACF = Pod.ACF or {}
+		Pod.ACF.LuaGeneratedSeat = true
+
+		if not IsValid(Pod) then return end
+
+		Pod:SetNoDraw(true)
+
+		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
+		Pod:SetNotSolid(true)
+		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+		local Count = Pod:GetPhysicsObjectCount()
+		for Idx = 0, Count - 1 do
+			local Phys = Pod:GetPhysicsObjectNum(Idx)
+			Phys:SetContents(CONTENTS_EMPTY)
+		end
+		Pod.ACF_InvisibleToBallistics = true
+		Pod.ACF_InvisibleToTrace = true
 	end
 end

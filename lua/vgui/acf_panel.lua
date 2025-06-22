@@ -136,11 +136,15 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
-function PANEL:AddCheckBox(Text)
+function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
+
+	if ConVar then
+		Panel:SetConVar(ConVar)
+	end
 
 	function Panel:LinkToServerData(Key)
 		local Value = ACF.GetSetting(Key)
@@ -213,6 +217,41 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
+function PANEL:AddListView()
+	local LineHeight = 20
+	local Panel = self:AddPanel("DListView")
+	Panel:SetMultiSelect(false)
+	Panel:SetWidth(30)
+
+	local AddColumn = Panel.AddColumn
+	local AddLine = Panel.AddLine
+
+	function Panel:AddColumn(...)
+		local Column = AddColumn(self, ...)
+		Column.Header:SetFont("ACF_Control")
+
+		return Column
+	end
+
+	function Panel:AddLine(...)
+		local Line = AddLine(self, ...)
+
+		for ColumnID in ipairs(Line.Columns) do
+			local Column = Line.Columns[ColumnID]
+
+			if IsValid(Column) then
+				Column:SetFont("ACF_Control")
+			end
+		end
+
+		self:SetHeight(LineHeight * #self.Lines)
+
+		return Line
+	end
+
+	return Panel
+end
+
 function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	local Base = self:AddPanel("ACF_Panel")
 
@@ -231,7 +270,7 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	return Wang, Text
 end
 
-function PANEL:AddCollapsible(Text, State)
+function PANEL:AddCollapsible(Text, State, Icon)
 	if State == nil then State = true end
 
 	local Base = vgui.Create("ACF_Panel")
@@ -239,8 +278,48 @@ function PANEL:AddCollapsible(Text, State)
 
 	local Category = self:AddPanel("DCollapsibleCategory")
 	Category:SetLabel(Text or "Title")
+	Category.Header:SetFont("ACF_Title")
+	Category.Header:SetSize(0, 24)
+	Category.Image = Category.Header:Add("DImage")
+	Category.Image:SetPos(4, 4)
+	Category.Image:SetSize(24 - 8, 24 - 8)
+
+	function Category:SetIcon(iconStr)
+		if iconStr == nil then
+			Category.Header:SetTextInset(0, 0)
+			self.Image:Hide()
+			return
+		end
+
+		Category.Header:SetTextInset(26, 0)
+		self.Image:Show()
+		self.Image:SetImage(iconStr)
+	end
+
+	if Icon ~= nil then
+		Category:SetIcon(Icon)
+	end
+
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
+
+	function Category:Paint(w, h)
+		local skin = self:GetSkin()
+
+		if h <= self:GetHeaderHeight() then
+			skin.tex.CategoryList.Header(0, 0, w, h)
+
+			-- Little hack, draw the ComboBox's dropdown arrow to tell the player the category is collapsed and not empty
+			if not self:GetExpanded()
+				then skin.tex.Input.ComboBox.Button.Down(w - 18, h / 2 - 8, 15, 15)
+			end
+
+			return
+		end
+
+		skin.tex.CategoryList.InnerH( 0, 0, w, self:GetHeaderHeight() + 1 )
+		skin.tex.CategoryList.Inner( 0, self:GetHeaderHeight(), w, h - self:GetHeaderHeight() )
+	end
 
 	function Category:AnimSlide(_, Delta, Data)
 		self:InvalidateLayout()
@@ -259,6 +338,7 @@ function PANEL:AddCollapsible(Text, State)
 		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
 		self:SetTall(Lerp(Delta, Data.From, Data.To))
 	end
+
 	Category:SetAnimTime(0.2)
 	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
 
@@ -294,7 +374,7 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 		if not IsValid(Ponder.UIWindow) then
 			Ponder.UIWindow = vgui.Create("Ponder.UI")
 		else
-			Ponder.UIWindow:Remove()
+			Ponder.UIWindow:PonderShow()
 		end
 
 		local UI = Ponder.UIWindow

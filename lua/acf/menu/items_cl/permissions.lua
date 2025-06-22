@@ -90,6 +90,11 @@ do
 		net.SendToServer()
 	end
 
+	local function RequestSafezones()
+		net.Start("ACF_OnUpdateSafezones")
+		net.SendToServer()
+	end
+
 	net.Receive("ACF_refreshpermissions", function()
 		PermissionModes = net.ReadTable()
 		CurrentPermission = net.ReadString()
@@ -100,6 +105,7 @@ do
 
 	timer.Simple(0, function()
 		RequestUpdate()
+		RequestSafezones()
 	end)
 
 	local function CreateMenu(Menu)
@@ -111,29 +117,21 @@ do
 
 		if not LocalPlayer():IsAdmin() then return end
 
-		List = Menu:AddPanel("DListView")
+		ACF.SetToolMode("acf_menu", "ZoneModifier", "Update")
+
+		List = Menu:AddListView()
 		List:AddColumn("#acf.menu.permissions.mode")
 		List:AddColumn("#acf.menu.permissions.active")
 		List:AddColumn("#acf.menu.permissions.map_default")
-		List:SetMultiSelect(false)
-		List:SetSize(30, 100)
 
 		for Permission in pairs(PermissionModes) do
 			List:AddLine(Permission, "", "")
 		end
 
-		for id, line in pairs(List:GetLines()) do
-			if line:GetValue(1) == CurrentPermission then
-				List:GetLine(id):SetValue(2, "Yes")
-			end
-			if line:GetValue(1) == DefaultPermission then
-				List:GetLine(id):SetValue(3, "Yes")
-			end
-		end
-
-		local ModeDescDefault = "#acf.menu.permissions.mode_desc_default"
+		UpdateModeData()
 
 		Menu:AddLabel("#acf.menu.permissions.mode_desc_header")
+		local ModeDescDefault = "#acf.menu.permissions.mode_desc_default"
 		local ModeDesc = Menu:AddLabel(PermissionModes[CurrentPermission] or ModeDescDefault)
 
 		List.OnRowSelected = function(Panel, Line)
@@ -150,7 +148,7 @@ do
 			end
 
 			local Mode = Line and Line:GetValue(1)
-			RunConsoleCommand("ACF_setpermissionmode", Mode)
+			RunConsoleCommand("acf_setpermissionmode", Mode)
 		end
 
 		local SetDefault = Menu:AddButton("#acf.menu.permissions.set_default_mode")
@@ -163,8 +161,15 @@ do
 			end
 
 			local Mode = Line and Line:GetValue(1)
-			RunConsoleCommand("ACF_setdefaultpermissionmode", Mode)
+			RunConsoleCommand("acf_setdefaultpermissionmode", Mode)
 		end
+
+		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones", nil, "icon16/lock_edit.png")
+		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
+		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
+		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.noclip"):LinkToServerData("NoclipOutsideZones")
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.save", "acf_savesafezones")
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", "acf_reloadsafezones")
 	end
 
 	ACF.AddMenuItem(2, "#acf.menu.permissions", "#acf.menu.permissions.set_mode", "server_edit", CreateMenu)

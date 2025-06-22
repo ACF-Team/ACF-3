@@ -9,10 +9,14 @@ Weapons.Register("RAC", {
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
+	IsAutomatic = true,
+	IsBelted	= true,
 	Spread      = 0.48,
 	Mass        = 212,
 	Cyclic      = 2000,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	TransferMult = 10, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,

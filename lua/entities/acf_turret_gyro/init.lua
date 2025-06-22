@@ -79,7 +79,7 @@ do	-- Spawn and Update funcs
 		end
 	end
 
-	function MakeACF_TurretGyro(Player, Pos, Angle, Data)
+	function ACF.MakeTurretGyro(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Gyro)
@@ -119,7 +119,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_gyro", MakeACF_TurretGyro, "Gyro")
+	Entities.Register("acf_turret_gyro", ACF.MakeTurretGyro, "Gyro")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

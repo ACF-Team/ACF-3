@@ -64,6 +64,9 @@ do -- Clientside settings
 		local Ropes = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.rope_links")
 		Ropes:SetConVar("acf_mobilityropelinks")
 
+		local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
+		AdvShafts:SetConVar("acf_advancedmobilityropelinks")
+
 		local Particles = Base:AddSlider("#acf.menu.settings.effects_visual_elements.particle_mult", 0.1, 1, 2)
 		Particles:SetConVar("acf_cl_particlemul")
 
@@ -161,6 +164,9 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
 
+		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):    LinkToServerData("CrewFallbackCoef")
+			Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")
+
 		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):             LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
 	end)
@@ -175,11 +181,17 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
+
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
+			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
 	end)
 
 	ACF.AddServerSettings(301, "#acf.menu.settings.fun_menu", function(Base)
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_fun"):LinkToServerData("AllowFunEnts")
 			Base:AddHelp("#acf.menu.settings.fun_menu.allow_fun_desc")
+
+		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_sengines"):LinkToServerData("AllowSpecialEngines")
+			Base:AddHelp("#acf.menu.settings.fun_menu.allow_sengines_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.show_fun"):LinkToServerData("ShowFunMenu")
 			Base:AddHelp("#acf.menu.settings.fun_menu.show_fun_desc")

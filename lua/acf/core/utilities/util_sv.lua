@@ -776,3 +776,33 @@ do -- Special squishy functions
 		return Damage, HitRes
 	end
 end
+
+-- Method used for contraption_sv's GetEnts. Tl;dr: a filter for physical entities,
+-- where the conditions are as follows:
+--     - The entity must be parentless
+--     - The entity must be either a prop or a baseplate
+--     - If the entity is a prop, it must be connected to an ACF gearbox
+
+-- This should solve most ways of doing weight boosting these days, since theres really no valid
+-- reason for physical components beyond mobility (wheels) or exploits these days.
+do
+	function ACF.IsEntityEligiblePhysmass(Entity)
+		if not IsValid(Entity) then return false end
+
+		-- Do not allow parented entities to count as physical mass whatsoever
+		if IsValid(Entity:GetParent()) then return false end
+
+		-- Don't allow any entity types that aren't baseplates or props to count as physical mass
+		local Class = Entity:GetClass()
+		if Class ~= "acf_baseplate" and Class ~= "prop_physics" then return false end
+
+		-- Don't allow props that aren't attached to gearboxes to count as physical mass
+		if Class == "prop_physics" then
+			local Gearboxes = Entity.ACF_Gearboxes
+			if Gearboxes == nil then return false end
+			if #Gearboxes < 0 then return false end
+		end
+
+		return true
+	end
+end

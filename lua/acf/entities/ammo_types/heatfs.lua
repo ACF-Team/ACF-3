@@ -76,6 +76,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.JetMass        = JetMass
 	Data.JetMinVel      = JetMinVel
 	Data.JetMaxVel      = JetMaxVel
+	Data.JetAvgVel	  	= JetAvgVel
 	Data.BreakupTime    = BreakupTime
 	Data.Standoff       = Standoff
 	Data.BreakupDist    = BreakupDist
@@ -106,6 +107,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetMass       = _JetMass
 		Data.JetMinVel     = _JetMinVel
 		Data.JetMaxVel     = _JetMaxVel
+		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
