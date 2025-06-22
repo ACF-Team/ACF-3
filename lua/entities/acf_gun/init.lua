@@ -349,12 +349,19 @@ do -- Spawn and Update functions --------------------------------
 		Entity.BreechIndex  = Data.BreechIndex or 1
 		local BreechConfigs = Entity.ClassData.BreechConfigs
 		if BreechConfigs then
+			-- If a custom breech config is specified, use it
 			local BreechScale = (Caliber / 10) / BreechConfigs.MeasuredCaliber
 			local BreechConfig = BreechConfigs.Locations[Entity.BreechIndex] or {}
 			Entity.BreechPos = BreechConfig.LPos * BreechScale
 			Entity.BreechAng = BreechConfig.LAng
 			Entity.BreechWidth = BreechConfig.Width * BreechScale
 			Entity.BreechHeight = BreechConfig.Height * BreechScale
+		else
+			-- If no custom breech config is specified, use the rear of the model
+			Entity.BreechPos = Vector(Entity:OBBMins().x, 0, 0)
+			Entity.BreechAng = Angle(0, 0, 0)
+			Entity.BreechWidth = 0
+			Entity.BreechHeight = 0
 		end
 
 		Entity.OverlayErrors = {}
