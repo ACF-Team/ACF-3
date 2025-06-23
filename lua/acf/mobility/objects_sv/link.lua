@@ -3,6 +3,8 @@ local Meta	= {}
 local String	= "Link [Source = %s, Target = %s, Origin = %s, Axis = %s]"
 local Debug		= ACF.Debug
 local Objects	= ACF.Mobility.Objects
+local deg		= math.deg
+local Clamp		= math.Clamp
 
 function Objects.Link(Source, Target)
 	local Link	= {
@@ -22,15 +24,41 @@ function Objects.Link(Source, Target)
 	return Link
 end
 
-local red		= Color(255, 0, 0)
-local orange	= Color(255, 127, 0)
-function Meta:Transfer( Torque )
-	local P1 = self.Source:LocalToWorld(self.Origin)
-	local P2 = self.Target:LocalToWorld(self.TargetPos)
-	Debug.Line(P1, P2, 0.05, self.IsGearbox and red or orange, true)
-	Debug.Text(LerpVector(0.5, P1, P2), math.Round(Torque, 1) .. " Nm", 0.05, false)
+do
+	local red		= Color(255, 0, 0)
+	local orange	= Color(255, 127, 0)
 
+	-- Function used to apply torque to a wheel or other entity
+	-- Previously was a part of acf_gearbox init.lua
+	local function ActWheel(Link, Wheel, Torque, DeltaTime)
+		local Phys = Wheel:GetPhysicsObject()
 
+		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+
+		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
+
+		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * ACF.TorqueMult) * DeltaTime, -500000, 500000))
+	end
+
+	-- Used to transfer torque from one gearbox to another
+	function Meta:TransferGearbox( Gearbox, Torque, DeltaTime, MassRatio )
+		local P1 = self.Source:LocalToWorld(self.Origin)
+		local P2 = self.Target:LocalToWorld(self.TargetPos)
+		Debug.Line(P1, P2, 0.05, red, true)
+		Debug.Text(LerpVector(0.5, P1, P2), math.Round(Torque, 1) .. " Nm", 0.05, false)
+
+		Gearbox:Act(Torque, DeltaTime, MassRatio)
+	end
+
+	-- Used to transfer torque from a gearbox to a wheel or other entity
+	function Meta:TransferWheel( Entity, Torque, DeltaTime )
+		local P1 = self.Source:LocalToWorld(self.Origin)
+		local P2 = self.Target:LocalToWorld(self.TargetPos)
+		Debug.Line(P1, P2, 0.05, orange, true)
+		Debug.Text(LerpVector(0.5, P1, P2), math.Round(Torque, 1) .. " Nm", 0.05, false)
+
+		ActWheel(self, Entity, Torque, DeltaTime)
+	end
 end
 
 function Meta:ToString()
