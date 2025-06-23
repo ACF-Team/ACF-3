@@ -148,8 +148,8 @@ Chapter2:AddInstruction("ShowText", {
 Chapter2:AddInstruction("Delay", {Length = 2.5})
 
 local LinkingTime2 = Chapter2:AddInstruction("ACF Menu", {
-    Children = {"Gearbox"},
-    Target = "Engine",
+    Children = {"Engine"},
+    Target = "Gearbox",
     Easing = math.ease.InOutQuad
 })
 Chapter2:AddInstruction("HideToolgun", {Time = LinkingTime2, Length = 0.5})
@@ -203,8 +203,8 @@ Chapter3:AddInstruction("ShowToolgun", {Length = 0.75, Tool = language.GetPhrase
 Chapter3:AddInstruction("Delay", {Length = 1})
 
 local LinkingTime3 = Chapter3:AddInstruction("ACF Menu", {
-    Children = {"Wheel"},
-    Target = "Gearbox",
+    Children = {"Gearbox"},
+    Target = "Wheel",
     Easing = math.ease.InOutQuad
 })
 Chapter3:AddInstruction("HideToolgun", {Time = LinkingTime3, Length = 0.5})
