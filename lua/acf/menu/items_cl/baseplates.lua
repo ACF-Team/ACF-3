@@ -20,7 +20,7 @@ local function CreateMenu(Menu)
 
 	local ClassList    = Menu:AddComboBox()
 
-	local SizeX        = Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 96, 2)
+	local SizeX        = Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 120, 2)
 	local SizeY        = Menu:AddSlider("#acf.menu.baseplates.plate_length", 36, 420, 2)
 	local SizeZ        = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", 0.5, 3, 2)
 
