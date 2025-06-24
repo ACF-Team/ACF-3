@@ -155,9 +155,6 @@ end
 
 local Messages = ACF.Utilities.Messages
 
-function ENT:ACF_DetourIsVehicle() return true end
-function ENT:IsValidVehicle() return false end
-function ENT:GetDriver() return self.Pod:GetDriver() end
 
 function ENT:PostEntityPaste(_, _, CreatedEntities)
 	-- Pod should be valid since this runs after all entities are created
