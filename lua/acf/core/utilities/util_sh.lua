@@ -1153,20 +1153,22 @@ do -- Reload related
 		end
 	end
 
-	if WireLib then
-		if not ACF.WirelibDetour_GetClosestRealVehicle then
-			ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
-		end
-		local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
-		function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
-			if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
-				local Pod = Vehicle:ACF_GetSeatProxy()
-				if IsValid(Pod) then return Pod end
+	timer.Simple(1, function()
+		if WireLib then
+			if not ACF.WirelibDetour_GetClosestRealVehicle then
+				ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
 			end
+			local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
+			function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
+				if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
+					local Pod = Vehicle:ACF_GetSeatProxy()
+					if IsValid(Pod) then return Pod end
+				end
 
-			return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+				return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+			end
 		end
-	end
+	end)
 
 	--- Configures a lua seat after it has been created.
 	--- Whenever the seat is created, this should be called after.
