@@ -50,72 +50,71 @@ function ENT:GetCachedMesh()
 
     local NewMesh = IsValid(self.CachedMesh) and self.CachedMesh or Mesh(self.CachedMaterial)
     local Width, Length, Height = self.Size[2], self.Size[1], self.Size[3]
-    local CubeSize = 36
+    local CubeSize = 36 * 2
 
     -- MARCH: I tried to do this with the mesh library, but it really didn't want to work.
     -- Someone else can feel free to recode this if they want and feel like throwing up, but
     -- considering this only runs once per baseplate, it's worth my sanity
     NewMesh:BuildFromTriangles {
         -- Up quad
-        Vertex(-Width / 2, Length / 2, Height / 2,      0, 0, 1,     0, Length / CubeSize),
-        Vertex(Width / 2,  Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, Length / CubeSize),
-        Vertex(Width / 2, -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, 0),
+        Vertex(-Width / 2, Length / 2, Height / 2,      0, 0, 1,    -Width / CubeSize,  Length / CubeSize),
+        Vertex(Width / 2,  Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize,  Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, -Length / CubeSize),
 
-        Vertex(Width / 2,  -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, 0),
-        Vertex(-Width / 2, -Length / 2, Height / 2,      0, 0, 1,     0, 0),
-        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 0, 1,     0, Length / CubeSize),
+        Vertex(Width / 2,  -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, -Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, 0, 1,    -Width / CubeSize, -Length / CubeSize),
+        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 0, 1,    -Width / CubeSize,  Length / CubeSize),
 
         -- Down quad
-        Vertex(Width / 2, -Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, 0),
-        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, Length / CubeSize),
-        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 0, -1,     0, Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, -Length / CubeSize),
+        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize,  Length / CubeSize),
+        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 0, -1,    -Width / CubeSize,  Length / CubeSize),
 
-        Vertex(-Width / 2,  Length / 2, -Height / 2,      0, 0, -1,     0, Length / CubeSize),
-        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, 0, -1,     0, 0),
-        Vertex(Width / 2, - Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, 0),
+        Vertex(-Width / 2,  Length / 2, -Height / 2,      0, 0, -1,    -Width / CubeSize,  Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, 0, -1,    -Width / CubeSize, -Length / CubeSize),
+        Vertex(Width / 2, - Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, -Length / CubeSize),
 
 
 
         -- Right quad
-        Vertex(Width / 2, -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, 0),
-        Vertex(Width / 2,  Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, Length / CubeSize),
-        Vertex(Width / 2, Length / 2, -Height / 2,      1, 0, 0,     0, Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, -Length / CubeSize),
+        Vertex(Width / 2,  Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize,  Length / CubeSize),
+        Vertex(Width / 2, Length / 2, -Height / 2,      1, 0, 0,    -Height / CubeSize,  Length / CubeSize),
 
-        Vertex(Width / 2,  Length / 2, -Height / 2,      1, 0, 0,     0, Length / CubeSize),
-        Vertex(Width / 2, -Length / 2, -Height / 2,      1, 0, 0,     0, 0),
-        Vertex(Width / 2,  -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, 0),
+        Vertex(Width / 2,  Length / 2, -Height / 2,      1, 0, 0,    -Height / CubeSize,  Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      1, 0, 0,    -Height / CubeSize, -Length / CubeSize),
+        Vertex(Width / 2,  -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, -Length / CubeSize),
 
         -- Left quad
-        Vertex(-Width / 2, Length / 2, -Height / 2,      -1, 0, 0,     0, Length / CubeSize),
-        Vertex(-Width / 2,  Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, Length / CubeSize),
-        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, 0),
+        Vertex(-Width / 2, Length / 2, -Height / 2,      -1, 0, 0,    -Height / CubeSize,  Length / CubeSize),
+        Vertex(-Width / 2,  Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize,  Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, -Length / CubeSize),
 
-        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, 0),
-        Vertex(-Width / 2, -Length / 2, -Height / 2,      -1, 0, 0,     0, 0),
-        Vertex(-Width / 2,  Length / 2, -Height / 2,      -1, 0, 0,     0, Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, -Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      -1, 0, 0,   -Height / CubeSize, -Length / CubeSize),
+        Vertex(-Width / 2,  Length / 2, -Height / 2,      -1, 0, 0,   -Height / CubeSize,  Length / CubeSize),
 
 
 
         -- Back quad
-        Vertex(Width / 2, Length / 2, -Height / 2,      0, 1, 0,     0, Height / CubeSize),
-        Vertex(Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, Width / CubeSize),
-        Vertex(-Width / 2, Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, 0),
+        Vertex(Width / 2, Length / 2, -Height / 2,      0, 1, 0,    -Height / CubeSize,  Width / CubeSize),
+        Vertex(Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize,  Width / CubeSize),
+        Vertex(-Width / 2, Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, -Width / CubeSize),
 
-        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, 0),
-        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 1, 0,     0, 0),
-        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 1, 0,     0, Width / CubeSize),
+        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, -Width / CubeSize),
+        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 1, 0,    -Height / CubeSize, -Width / CubeSize),
+        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 1, 0,    -Height / CubeSize,  Width / CubeSize),
 
         -- Front quad
-        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, 0),
-        Vertex(Width / 2,  -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, Width / CubeSize),
-        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, Width / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, -Width / CubeSize),
+        Vertex(Width / 2,  -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize,  Width / CubeSize),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,    -Height / CubeSize,  Width / CubeSize),
 
-        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, Width / CubeSize),
-        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, 0),
-        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, 0),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,    -Height / CubeSize,  Width / CubeSize),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, -1, 0,   -Height / CubeSize, -Width / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, -Width / CubeSize),
     }
 
-    -- Vertex(-Width / 2, -Length / 2, Height / 2,     0, 0, 1,     0, 0)
     self.CachedMesh = NewMesh
 
 
