@@ -118,7 +118,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("CrewModelID", Data.ID)
 	end
 
-	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID")
+	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID", "Icon")
 	ACF.LoadSortedList(CrewModel, CrewModels.GetEntries(), "ID")
 end
 
