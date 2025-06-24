@@ -30,6 +30,115 @@ function ENT:DrawGizmos()
     cam.IgnoreZ(false)
 end
 
+local function Vertex(X, Y, Z, F, S, VT, U, V)
+    return {
+        pos = Vector(X, Y, Z),
+        normal = Vector(F, S, VT),
+        u = U,
+        v = V
+    }
+end
+
+function ENT:GetCachedMesh()
+    if not self:NeedsRecache() then return self.MeshUnion end
+
+    local CurrentMaterialPath = self:GetMaterial()
+    if not self.CachedMaterial or self.LastMaterialPath ~= CurrentMaterialPath then
+        self.CachedMaterial = Material(CurrentMaterialPath)
+        self.LastMaterialPath = CurrentMaterialPath
+    end
+
+    local NewMesh = IsValid(self.CachedMesh) and self.CachedMesh or Mesh(self.CachedMaterial)
+    local Width, Length, Height = self.Size[2], self.Size[1], self.Size[3]
+    local CubeSize = 36
+
+    -- MARCH: I tried to do this with the mesh library, but it really didn't want to work.
+    -- Someone else can feel free to recode this if they want and feel like throwing up, but
+    -- considering this only runs once per baseplate, it's worth my sanity
+    NewMesh:BuildFromTriangles {
+        -- Up quad
+        Vertex(-Width / 2, Length / 2, Height / 2,      0, 0, 1,     0, Length / CubeSize),
+        Vertex(Width / 2,  Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, 0),
+
+        Vertex(Width / 2,  -Length / 2, Height / 2,      0, 0, 1,     Width / CubeSize, 0),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, 0, 1,     0, 0),
+        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 0, 1,     0, Length / CubeSize),
+
+        -- Down quad
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, 0),
+        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, Length / CubeSize),
+        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 0, -1,     0, Length / CubeSize),
+
+        Vertex(-Width / 2,  Length / 2, -Height / 2,      0, 0, -1,     0, Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, 0, -1,     0, 0),
+        Vertex(Width / 2, - Length / 2, -Height / 2,      0, 0, -1,     Width / CubeSize, 0),
+
+
+
+        -- Right quad
+        Vertex(Width / 2, -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, 0),
+        Vertex(Width / 2,  Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, Length / CubeSize),
+        Vertex(Width / 2, Length / 2, -Height / 2,      1, 0, 0,     0, Length / CubeSize),
+
+        Vertex(Width / 2,  Length / 2, -Height / 2,      1, 0, 0,     0, Length / CubeSize),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      1, 0, 0,     0, 0),
+        Vertex(Width / 2,  -Length / 2, Height / 2,      1, 0, 0,     Height / CubeSize, 0),
+
+        -- Left quad
+        Vertex(-Width / 2, Length / 2, -Height / 2,      -1, 0, 0,     0, Length / CubeSize),
+        Vertex(-Width / 2,  Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, Length / CubeSize),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, 0),
+
+        Vertex(-Width / 2, -Length / 2, Height / 2,      -1, 0, 0,     Height / CubeSize, 0),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      -1, 0, 0,     0, 0),
+        Vertex(-Width / 2,  Length / 2, -Height / 2,      -1, 0, 0,     0, Length / CubeSize),
+
+
+
+        -- Back quad
+        Vertex(Width / 2, Length / 2, -Height / 2,      0, 1, 0,     0, Height / CubeSize),
+        Vertex(Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, Width / CubeSize),
+        Vertex(-Width / 2, Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, 0),
+
+        Vertex(-Width / 2,  Length / 2, Height / 2,      0, 1, 0,     Height / CubeSize, 0),
+        Vertex(-Width / 2, Length / 2, -Height / 2,      0, 1, 0,     0, 0),
+        Vertex(Width / 2,  Length / 2, -Height / 2,      0, 1, 0,     0, Width / CubeSize),
+
+        -- Front quad
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, 0),
+        Vertex(Width / 2,  -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, Width / CubeSize),
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, Width / CubeSize),
+
+        Vertex(Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, Width / CubeSize),
+        Vertex(-Width / 2, -Length / 2, -Height / 2,      0, -1, 0,     0, 0),
+        Vertex(-Width / 2, -Length / 2, Height / 2,      0, -1, 0,     Height / CubeSize, 0),
+    }
+
+    -- Vertex(-Width / 2, -Length / 2, Height / 2,     0, 0, 1,     0, 0)
+    self.CachedMesh = NewMesh
+
+
+    self.MeshUnion = {Mesh = self.CachedMesh, Material = self.CachedMaterial}
+    self.LastSize = self.Size
+    return self.MeshUnion
+end
+
+function ENT:NeedsRecache()
+    if not self.Size then return false end
+    if self.LastSize ~= self.Size then return true end
+    if not self.CachedMaterial then return true end
+    if self.LastMaterialPath ~= self:GetMaterial() then return true end
+    if not IsValid(self.CachedMesh) then return true end
+    if not self.MeshUnion then return true end
+
+    return false
+end
+
+local OneScale = Matrix()
+OneScale:Identity()
+OneScale:Scale(Vector(1, 1, 1))
+
 function ENT:Draw()
     -- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
     local LocalPlayer = LocalPlayer()
@@ -40,6 +149,7 @@ function ENT:Draw()
         self:DrawEntityOutline()
     end
 
+    self:EnableMatrix("RenderMultiply", OneScale)
     self:DrawModel()
 
     if not LookedAt then return end
@@ -54,6 +164,16 @@ function ENT:Draw()
     if class ~= "weapon_physgun" and (class ~= "gmod_tool" or Weapon.current_mode ~= "acf_menu") then return end
 
     self:DrawGizmos()
+end
+
+function ENT:GetRenderMesh()
+    return self:GetCachedMesh()
+end
+
+function ENT:OnRemove()
+    if IsValid(self.CachedMesh) then
+        self.CachedMesh:Destroy()
+    end
 end
 
 ACF.Classes.Entities.Register()
