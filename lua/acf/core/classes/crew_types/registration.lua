@@ -1,6 +1,6 @@
 local Classes     = ACF.Classes
 local CrewTypes   = Classes.CrewTypes
-local Entries     = Classes.GetOrCreateEntries(BaseplateTypes)
+local Entries     = Classes.GetOrCreateEntries(CrewTypes)
 
 CreateConVar(
 	"sbox_max_acf_crew",
