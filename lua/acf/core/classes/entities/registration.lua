@@ -9,20 +9,7 @@ local istable    = istable
 local unpack     = unpack
 local Classes    = ACF.Classes
 local Entities   = Classes.Entities
-local Entries    = {}
-
--- This allows everything entity-wise to stay registered on refreshes
-do
-	local OldEntries = Entities.GetRegisteredEntities and Entities.GetRegisteredEntities() or nil
-	if OldEntries then
-		Entries = OldEntries
-	end
-
-	-- GetRegisteredEntities defined last so we can call it and still get the old table
-	function Entities.GetRegisteredEntities()
-		return Entries
-	end
-end
+local Entries    = Classes.GetOrCreateEntries(Entities)
 
 --- Gets the entity table of a certain class
 --- If an entity table doesn't exist for the class, it will register one.

@@ -1,6 +1,6 @@
 local Classes    = ACF.Classes
 local Components = Classes.Components
-local Entries    = {}
+local Entries    = Classes.GetOrCreateEntries(Components)
 
 
 function Components.Register(ID, Data)
