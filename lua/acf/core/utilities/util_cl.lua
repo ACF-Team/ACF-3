@@ -5,18 +5,21 @@ do -- Custom fonts
 		font = "Roboto",
 		size = 18,
 		weight = 850,
+		antialias = true,
 	})
 
 	surface.CreateFont("ACF_Label", {
 		font = "Roboto",
 		size = 14,
 		weight = 650,
+		antialias = true,
 	})
 
 	surface.CreateFont("ACF_Control", {
 		font = "Roboto",
 		size = 14,
 		weight = 550,
+		antialias = true,
 	})
 end
 
@@ -54,6 +57,8 @@ do -- Panel helpers
 			local Count = 0
 
 			for _, Value in pairs(List) do
+				if Value.SuppressLoad then continue end
+
 				Count = Count + 1
 
 				Choices[Count] = Value
@@ -79,45 +84,74 @@ do -- Panel helpers
 			Panel:AddChoice(Value.Name, Value, Index == Current)
 		end
 	end
+
+	--- Initializes the base menu panel for an ACF tool menu.
+	--- @param Panel panel The base panel to build the menu off of.
+	--- @param GlobalID string The identifier in the ACF global table where a reference to the menu panel should be stored.
+	--- @param ReloadCommand? string A concommand string to automatically add a button and concommand to refresh this menu.
+	function ACF.InitMenuBase(Panel, GlobalID, ReloadCommand)
+		if not IsValid(Panel) or not isstring(GlobalID) then return end
+
+		local Menu = ACF[GlobalID]
+
+		-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
+		-- Because otherwise auto-refresh doesn't work.
+		-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
+		if IsValid(Menu) then
+			Menu:Remove()
+			Menu = nil
+		end
+
+		Menu = vgui.Create("ACF_Panel")
+		Menu.Panel = Panel
+
+		Panel:AddItem(Menu)
+
+		ACF[GlobalID] = Menu
+
+		if ReloadCommand then
+			concommand.Add(ReloadCommand, function()
+				if not IsValid(ACF[GlobalID]) then return end
+
+				local CreateMenuFunc = ACF["Create" .. GlobalID]
+				CreateMenuFunc(ACF[GlobalID].Panel)
+			end)
+		end
+
+		if ReloadCommand then
+			Menu:AddMenuReload(ReloadCommand)
+		end
+
+		return Menu
+	end
 end
 
 do -- Default gearbox menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+		function ACF.ManualGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local Variable = "Gear" .. I
 				local Default = ValuesData[Variable]
 
 				if not Default then
-					Default = math.Clamp(I * 0.1, -1, 1)
+					Default = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[Variable] = Default
 				end
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
+				local Control = GearBase:AddSlider(SliderName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -136,7 +170,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("Final Drive", -1, 1, 2)
+			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -153,15 +187,15 @@ do -- Default gearbox menus
 	do -- CVT Gearbox Menu
 		local CVTData = {
 			{
-				Name = "Gear 2",
+				Name = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(2),
 				Variable = "Gear2",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
-				Name = "Min Target RPM",
+				Name = "#acf.menu.gearboxes.min_target_rpm",
 				Variable = "MinRPM",
 				Min = 1,
 				Max = 9900,
@@ -169,7 +203,7 @@ do -- Default gearbox menus
 				Default = 3000,
 			},
 			{
-				Name = "Max Target RPM",
+				Name = "#acf.menu.gearboxes.max_target_rpm",
 				Variable = "MaxRPM",
 				Min = 101,
 				Max = 10000,
@@ -177,35 +211,23 @@ do -- Default gearbox menus
 				Default = 5000,
 			},
 			{
-				Name = "Final Drive",
+				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+		function ACF.CVTGearboxMenu(Class, _, Menu, _)
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			ACF.SetClientData("Gear1", 0.01)
+			ACF.SetClientData("Gear1", 1)
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
@@ -238,18 +260,18 @@ do -- Default gearbox menus
 		local UnitMult = 10.936 -- km/h is set by default
 		local AutoData = {
 			{
-				Name = "Reverse Gear",
+				Name = "#acf.menu.gearboxes.reverse_gear",
 				Variable = "Reverse",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
-				Default = -0.1,
+				Default = -1,
 			},
 			{
-				Name = "Final Drive",
+				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
-				Min = -1,
-				Max = 1,
+				Min = ACF.MinGearRatio,
+				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
@@ -257,27 +279,27 @@ do -- Default gearbox menus
 
 		local GenData = {
 			{
-				Name = "Upshift RPM",
+				Name = "#acf.menu.gearboxes.upshift_rpm",
 				Variable = "UpshiftRPM",
-				Tooltip = "Target engine RPM to upshift at.",
+				Tooltip = "#acf.menu.gearboxes.upshift_rpm_desc",
 				Min = 0,
 				Max = 10000,
 				Decimals = 0,
 				Default = 5000,
 			},
 			{
-				Name = "Total Ratio",
+				Name = "#acf.menu.gearboxes.total_ratio",
 				Variable = "TotalRatio",
-				Tooltip = "Total ratio is the ratio of all gearboxes (exluding this one) multiplied together.\nFor example, if you use engine to automatic to diffs to wheels, your total ratio would be (diff gear ratio * diff final ratio).",
+				Tooltip = "#acf.menu.gearboxes.total_ratio_desc",
 				Min = 0,
 				Max = 1,
 				Decimals = 2,
 				Default = 0.1,
 			},
 			{
-				Name = "Wheel Diameter",
+				Name = "#acf.menu.gearboxes.wheel_diameter",
 				Variable = "WheelDiameter",
-				Tooltip = "If you use default spherical settings, add 0.5 to your wheel diameter.\nFor treaded vehicles, use the diameter of road wheels, not drive wheels.",
+				Tooltip = "#acf.menu.gearboxes.wheel_diameter_desc",
 				Min = 0,
 				Max = 1000,
 				Decimals = 2,
@@ -285,41 +307,29 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, Data, Menu, Base)
-			local Text = "Mass : %s\nTorque Rating : %s n/m - %s fl-lb\n"
-			local Mass = ACF.GetProperMass(Data.Mass)
-			local Gears = Class.Gears
-			local Torque = math.floor(Data.MaxTorque * 0.73)
-
-			Base:AddLabel(Text:format(Mass, Data.MaxTorque, Torque))
-
-			if Data.DualClutch then
-				Base:AddLabel("The dual clutch allows you to apply power and brake each side independently.")
-			end
-
-			-----------------------------------
-
-			local GearBase = Menu:AddCollapsible("Gear Settings")
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
+			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
+			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
 
 			local ValuesData = Values[Class.ID]
 
-			GearBase:AddLabel("Upshift Speed Unit :")
+			GearBase:AddLabel("#acf.menu.gearboxes.upshift_speed_unit")
 
 			ACF.SetClientData("ShiftUnit", UnitMult)
 
 			local Unit = GearBase:AddComboBox()
-			Unit:AddChoice("KPH", 10.936)
-			Unit:AddChoice("MPH", 17.6)
-			Unit:AddChoice("GMU", 1)
+			Unit:AddChoice("#acf.menu.gearboxes.kph", 10.936)
+			Unit:AddChoice("#acf.menu.gearboxes.mph", 17.6)
+			Unit:AddChoice("#acf.menu.gearboxes.gmu", 1)
 
 			function Unit:OnSelect(_, _, Mult)
 				if UnitMult == Mult then return end
 
 				local Delta = UnitMult / Mult
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Var = "Shift" .. I
 					local Old = ACF.GetClientNumber(Var)
 
@@ -331,19 +341,20 @@ do -- Default gearbox menus
 				UnitMult = Mult
 			end
 
-			for I = 1, Gears.Max do
+			for I = 1, Gears do
 				local GearVar = "Gear" .. I
 				local DefGear = ValuesData[GearVar]
 
 				if not DefGear then
-					DefGear = math.Clamp(I * 0.1, -1, 1)
+					DefGear = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 
 					ValuesData[GearVar] = DefGear
 				end
 
 				ACF.SetClientData(GearVar, DefGear)
 
-				local Gear = GearBase:AddSlider("Gear " .. I, -1, 1, 2)
+				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
+				local Gear = GearBase:AddSlider(GearName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
 				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -366,7 +377,8 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(ShiftVar, DefShift)
 
-				local Shift = GearBase:AddNumberWang("Gear " .. I .. " Upshift Speed", 0, 9999, 2)
+				local ShiftName = language.GetPhrase("acf.menu.gearboxes.gear_upshift_speed"):format(I)
+				local Shift = GearBase:AddNumberWang(ShiftName, 0, 9999, 2)
 				Shift:HideWang()
 				Shift:SetClientData(ShiftVar, "OnValueChanged")
 				Shift:DefineSetter(function(Panel, _, _, Value)
@@ -409,7 +421,7 @@ do -- Default gearbox menus
 
 			-----------------------------------
 
-			local GenBase = Menu:AddCollapsible("Shift Point Generator")
+			local GenBase = Menu:AddCollapsible("#acf.menu.gearboxes.shift_point_generator", nil, "icon16/chart_curve_edit.png")
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
@@ -441,7 +453,7 @@ do -- Default gearbox menus
 				end
 			end
 
-			local Button = GenBase:AddButton("Calculate")
+			local Button = GenBase:AddButton("#acf.menu.gearboxes.calculate")
 
 			function Button:DoClickInternal()
 				local UpshiftRPM = ValuesData.UpshiftRPM
@@ -450,7 +462,7 @@ do -- Default gearbox menus
 				local WheelDiameter = ValuesData.WheelDiameter
 				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
 
-				for I = 1, Gears.Max do
+				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
 
 					ACF.SetClientData("Shift" .. I, Gear * Multiplier)
@@ -462,13 +474,10 @@ end
 
 do -- Default turret menus
 	local Turrets	= ACF.Classes.Turrets
-	local TurretMassText	= "Drive Mass : %s kg, %s kg max capacity"
-	local MassText	= "Mass : %s kg"
+	local GraphBlue	= Color(65, 65, 200)
+	local GraphRed	= Color(200, 65, 65)
 
 	do	-- Turret ring
-		local TurretText	= "Teeth Count : %G"
-		local HandCrankText	= "-- Handcrank --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-
 		local Orange	= Color(255, 127, 0)
 		local Red		= Color(255, 0, 0)
 		local Green		= Color(0, 255, 0)
@@ -491,21 +500,27 @@ do -- Default turret menus
 				Tilt		= 1
 			}
 
-			local RingSize	= Menu:AddSlider("Ring Diameter", Data.Size.Min, Data.Size.Max, 2)
+			local RingSize	= Menu:AddSlider("#acf.menu.turrets.ring_diameter", Data.Size.Min, Data.Size.Max, 2)
 
-			local MaxSpeed	= Menu:AddSlider("Max Speed (deg/s)", 0, 120, 2)
+			local MaxSpeed	= Menu:AddSlider("#acf.menu.turrets.max_speed", 0, 120, 2)
 
-			Menu:AddLabel("If the Max Speed slider is lower than the calculated max speed of the turret, this will be the new limit. If 0, it will default to the actual max speed.")
+			Menu:AddLabel("#acf.menu.turrets.max_speed_desc")
 
-			local RingStats	= Menu:AddLabel(TurretText:format(0, 0))
-			local MassLbl	= Menu:AddLabel(MassText:format(0, 0))
+			local TurretText	= language.GetPhrase("acf.menu.turrets.turret_text")
+			local MassText		= language.GetPhrase("acf.menu.turrets.mass_text")
+			local RingStats		= Menu:AddLabel(TurretText:format(0, 0))
+			local MassLbl		= Menu:AddLabel(MassText:format(0, 0))
 
-			local ArcSettings	= Menu:AddCollapsible("Arc Settings")
+			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings", nil, "icon16/chart_pie_edit.png")
 
-			ArcSettings:AddLabel("If the total arc is less than 360, then it will use the limits set here.\nIf it is 360, then it will have free rotation.")
+			ArcSettings:AddLabel("#acf.menu.turrets.arc_settings_desc")
 
-			local MinDeg	= ArcSettings:AddSlider("Minimum Degrees", -180, 0, 1)
-			local MaxDeg	= ArcSettings:AddSlider("Maximum Degrees", 0, 180, 1)
+			local CircleColor	= Color(65, 65, 65)
+			local MinDegText	= language.GetPhrase("acf.menu.turrets.arc_min")
+			local MaxDegText	= language.GetPhrase("acf.menu.turrets.arc_max")
+			local TotalArcText	= language.GetPhrase("acf.menu.turrets.arc_total")
+			local MinDeg		= ArcSettings:AddSlider("#acf.menu.turrets.min_degrees", -180, 0, 1)
+			local MaxDeg		= ArcSettings:AddSlider("#acf.menu.turrets.max_degrees", 0, 180, 1)
 
 			local ArcDraw = vgui.Create("Panel", ArcSettings)
 			ArcDraw:SetSize(64, 64)
@@ -517,7 +532,7 @@ do -- Default turret menus
 				surface.DrawRect(0, 0, h, h)
 
 				local Radius = (h / 2) - 2
-				surface.DrawCircle(h / 2, h / 2, Radius, Color(65, 65, 65))
+				surface.DrawCircle(h / 2, h / 2, Radius, CircleColor)
 
 				local Min, Max = MinDeg:GetValue(), MaxDeg:GetValue()
 
@@ -549,13 +564,13 @@ do -- Default turret menus
 					surface.DrawLine(h / 2, h / 2, (h / 2) + MaxDegX, (h / 2) + MaxDegY)
 				end
 
-				draw.SimpleTextOutlined("Zero", "ACF_Control", h + 4, 0, Orange, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+				draw.SimpleTextOutlined("#acf.menu.turrets.zero", "ACF_Control", h + 4, 0, Orange, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				if (Max - Min) ~= 360 then
-					draw.SimpleTextOutlined("Minimum: " .. Min, "ACF_Control", h + 4, 16, Red, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
-					draw.SimpleTextOutlined("Maximum: " .. Max, "ACF_Control", h + 4, 32, Green, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
-					draw.SimpleTextOutlined("Total Arc: " .. (Max - Min), "ACF_Control", h + 4, 48, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(MinDegText:format(Min), "ACF_Control", h + 4, 16, Red, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(MaxDegText:format(Max), "ACF_Control", h + 4, 32, Green, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined(TotalArcText:format(Max - Min), "ACF_Control", h + 4, 48, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				else
-					draw.SimpleTextOutlined("No Arc Limit", "ACF_Control", h + 4 , 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+					draw.SimpleTextOutlined("#acf.menu.turrets.no_arc_limit", "ACF_Control", h + 4, 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
 				end
 			end
 
@@ -593,18 +608,18 @@ do -- Default turret menus
 				ACF.SetClientData("MaxDeg", 180)
 			end
 
-			local EstMass	= Menu:AddSlider("Est. Mass (kg)", 0, 100000, 0)
+			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 0)
+			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
 
-			local EstDist	= Menu:AddSlider("Mass Center Dist.", 0, 2, 2)
-
-			Menu:AddLabel("Approximation of the turret's speed with a handcrank.")
+			Menu:AddLabel("#acf.menu.turrets.handcrank_desc")
+			local HandCrankText	= language.GetPhrase("acf.menu.turrets.handcrank_text")
 			local HandCrankLbl	= Menu:AddLabel(HandCrankText:format(0, 0))
 
 			local Graph		= Menu:AddGraph()
 			local GraphSize	= Menu:GetParent():GetParent():GetWide()
 			Graph:SetSize(GraphSize, GraphSize / 2)
-			Graph:SetXLabel("Estimated Mass (kg)")
-			Graph:SetYLabel("Degrees/Sec")
+			Graph:SetXLabel("#acf.menu.turrets.estimated_mass")
+			Graph:SetYLabel("#acf.menu.turrets.degrees_per_second")
 			Graph:SetXRange(0, 100000)
 			Graph:SetXSpacing(10000)
 			Graph:SetYSpacing(5)
@@ -639,9 +654,9 @@ do -- Default turret menus
 				Graph:SetYRange(0, Points[1].y * 1.1)
 
 				Graph:Clear()
-				Graph:PlotTable("Slew Rate", Points, Color(65, 65, 200))
+				Graph:PlotTable(language.GetPhrase("acf.menu.turrets.slew_rate"), Points, GraphBlue)
 
-				Graph:PlotPoint("Estimate", TurretData.TotalMass, Info.MaxSlewRate, Color(65, 65, 200))
+				Graph:PlotPoint(language.GetPhrase("acf.menu.turrets.estimate"), TurretData.TotalMass, Info.MaxSlewRate, GraphBlue)
 			end
 
 			RingSize:SetClientData("RingSize", "OnValueChanged")
@@ -653,6 +668,7 @@ do -- Default turret menus
 				local Teeth = TurretClass.GetTeethCount(Data, N)
 				RingStats:SetText(TurretText:format(Teeth))
 				local MaxMass = TurretClass.GetMaxMass(Data, N)
+				local TurretMassText = language.GetPhrase("acf.menu.turrets.turret_mass_text")
 				MassLbl:SetText(TurretMassText:format(TurretClass.GetMass(Data, N), MaxMass))
 
 				TurretData.Teeth		= Teeth
@@ -712,10 +728,6 @@ do -- Default turret menus
 			MotorSim	= 0
 		}
 
-		local TorqText	= "Torque : %G Nm"
-		local HandcrankText = "-- Handcrank --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-		local MotorText	= "-- Motor --\n\nMax Speed : %G deg/s\nAcceleration : %G deg/s^2"
-
 		function ACF.CreateTurretMotorMenu(Data, Menu)
 			local MotorClass	= Turrets.Get("2-Motor")
 			local TurretClass	= Turrets.Get("1-Turret")
@@ -724,36 +736,37 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretMotors")
 			ACF.SetClientData("PrimaryClass", "acf_turret_motor")
 
-			Menu:AddLabel("Motor Speed : " .. Data.Speed .. " RPM")
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.motors.speed"):format(Data.Speed))
 
-			local CompSize	= Menu:AddSlider("Motor Scale (" .. Data.ScaleLimit.Min .. "-" .. Data.ScaleLimit.Max .. ")", Data.ScaleLimit.Min, Data.ScaleLimit.Max, 1)
+			local ScaleText	= language.GetPhrase("acf.menu.turrets.motors.scale")
+			local CompSize	= Menu:AddSlider(ScaleText:format(Data.ScaleLimit.Min, Data.ScaleLimit.Max), Data.ScaleLimit.Min, Data.ScaleLimit.Max, 1)
 
-			Menu:AddLabel("Determines the number of teeth of the gear on the motor.")
-			local TeethAmt	= Menu:AddSlider("Gear Teeth (" .. Data.Teeth.Min .. "-" .. Data.Teeth.Max .. ")", Data.Teeth.Min, Data.Teeth.Max, 0)
+			local TeethText	= language.GetPhrase("acf.menu.turrets.motors.teeth")
+			local TeethAmt	= Menu:AddSlider(TeethText:format(Data.Teeth.Min, Data.Teeth.Max), Data.Teeth.Min, Data.Teeth.Max, 0)
+			Menu:AddLabel("#acf.menu.turrets.motors.teeth_desc")
 
-			local MassLbl	= Menu:AddLabel(TurretMassText:format(0, 0))
-			local TorqLbl	= Menu:AddLabel(TorqText:format(0))
+			local TurretMassText	= language.GetPhrase("acf.menu.turrets.turret_mass_text")
+			local TorqText			= language.GetPhrase("acf.menu.turrets.motors.torque_text")
+			local MassLbl			= Menu:AddLabel(TurretMassText:format(0, 0))
+			local TorqLbl			= Menu:AddLabel(TorqText:format(0))
 
 			-- Simulation
 
-			local TurretSim = Menu:AddCollapsible("Turret Simulation")
-			TurretSim:AddLabel("These values are only an approximation!")
+			local TurretSim = Menu:AddCollapsible("#acf.menu.turrets.motors.simulation")
+			TurretSim:AddLabel("#acf.menu.turrets.motors.simulation_desc")
 
 			local TurretType = TurretSim:AddComboBox()
-
-			local TurretSize = TurretSim:AddSlider("Turret Size", 0, 1, 2)
-
-			local EstMass = TurretSim:AddSlider("Est. Mass (kg)", 0, 100000, 1)
-
-			local EstDist = TurretSim:AddSlider("Mass Center Dist.", 0, 2, 2)
-
-			local MaxMassLbl	= TurretSim:AddLabel("Max mass: 0kg")
+			local TurretSize = TurretSim:AddSlider("#acf.menu.turrets.motors.turret_size", 0, 1, 2)
+			local EstMass = TurretSim:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 1)
+			local EstDist = TurretSim:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
+			local MaxMassText	= language.GetPhrase("acf.menu.turrets.motors.max_mass")
+			local MaxMassLbl	= TurretSim:AddLabel(MaxMassText:format(0))
 
 			local Graph		= Menu:AddGraph()
 			local GraphSize	= Menu:GetParent():GetParent():GetWide()
 			Graph:SetSize(GraphSize, GraphSize / 2)
-			Graph:SetXLabel("Estimated Mass (kg)")
-			Graph:SetYLabel("Degrees/Sec")
+			Graph:SetXLabel("#acf.menu.turrets.estimated_mass")
+			Graph:SetYLabel("#acf.menu.turrets.degrees_per_second")
 			Graph:SetXRange(0, 100000)
 			Graph:SetXSpacing(10000)
 			Graph:SetYSpacing(5)
@@ -793,12 +806,16 @@ do -- Default turret menus
 
 				self:SetYRange(0, math.max(MotorPoints[1].y, HandCrankPoints[1].y) * 1.1)
 
-				self:PlotTable("Hand Rate", HandCrankPoints, Color(65, 65, 200))
-				self:PlotPoint("Hand Estimate", TurretData.Mass, TurretData.HandSim, Color(65, 65, 200))
+				self:PlotTable(language.GetPhrase("acf.menu.turrets.motors.hand_rate"), HandCrankPoints, GraphBlue)
+				self:PlotPoint(language.GetPhrase("acf.menu.turrets.motors.hand_estimate"), TurretData.Mass, TurretData.HandSim, GraphBlue)
 
-				self:PlotTable("Motor Rate", MotorPoints, Color(200, 65, 65))
-				self:PlotPoint("Motor Estimate", TurretData.Mass, TurretData.MotorSim, Color(200, 65, 65))
+				self:PlotTable(language.GetPhrase("acf.menu.turrets.motors.motor_rate"), MotorPoints, GraphRed)
+				self:PlotPoint(language.GetPhrase("acf.menu.turrets.motors.motor_estimate"), TurretData.Mass, TurretData.MotorSim, GraphRed)
 			end
+
+			local HandcrankText	= language.GetPhrase("acf.menu.turrets.handcrank_text")
+			local MotorText		= language.GetPhrase("acf.menu.turrets.motors.motor_text")
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 
 			local HandcrankInfo	= TurretSim:AddLabel(HandcrankText:format(0, 0))
 			HandcrankInfo.UpdateSim = function(Panel)
@@ -867,7 +884,7 @@ do -- Default turret menus
 				TurretData.MaxMass		= TurretClass.GetMaxMass(TurretData.Turret, Value)
 
 				EstDist:SetMinMax(0, math.max(Value * 2, 24))
-				MaxMassLbl:SetText("Max mass: " .. math.Round(TurretData.MaxMass, 1) .. "kg")
+				MaxMassLbl:SetText(MaxMassText:format(math.Round(TurretData.MaxMass, 1)))
 
 				MotorInfo:UpdateSim()
 				HandcrankInfo:UpdateSim()
@@ -918,10 +935,11 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretGyros")
 			ACF.SetClientData("PrimaryClass", "acf_turret_gyro")
 
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
 
 			if Data.IsDual then
-				Menu:AddLabel("Can control both a horizontal and vertical turret drive.")
+				Menu:AddLabel("#acf.menu.gyros.dual_desc")
 			end
 		end
 	end
@@ -932,7 +950,26 @@ do -- Default turret menus
 			ACF.SetClientData("Destiny", "TurretComputers")
 			ACF.SetClientData("PrimaryClass", "acf_turret_computer")
 
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
+		end
+	end
+
+	do
+		-- Draws an outlined beam between var-length pairs of XY1 -> XY2 line segments.
+		-- Is not the best thing in the world, only really used in gizmos to make it easier 
+		-- to see during building
+		function ACF.DrawOutlineBeam(width, color, ...)
+			local args = {...}
+			local Add = 0.4
+			for i = 1, #args, 2 do
+				local DirAdd = (args[i + 1] - args[i]):GetNormalized() * (Add / 2)
+
+				render.DrawBeam(args[i] - DirAdd, args[i + 1] + DirAdd, width + Add, 0, 1, color_black)
+			end
+			for i = 1, #args, 2 do
+				render.DrawBeam(args[i], args[i + 1], width, 0, 1, color)
+			end
 		end
 	end
 end

@@ -4,7 +4,7 @@ local Piledrivers = ACF.Classes.Piledrivers
 
 Piledrivers.Register("PD", {
 	Name        = "Piledriver",
-	Description = "Formerly a piece of construction equipment, it was modified to be used in close-quarters combat. Doesn't actually drive piles.",
+	Description = "#acf.descs.weapons.pd",
 	Model       = "models/piledriver/piledriver_100mm.mdl",
 	IsScalable  = true,
 	Mass        = 1200, -- Relative to the Base caliber

@@ -8,7 +8,7 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 	if not IsValid(Target) then return end
 	if Target.ACF_Killed then return end
 
-	if hook.Run("ACF_KEShove", Target, Pos, Vec, KE) == false then return end
+	if not hook.Run("ACF_OnPushEntity", Target, Pos, Vec, KE) then return end
 
 	local Ancestor = Target:GetAncestor()
 	local Phys = Ancestor:GetPhysicsObject()
@@ -22,10 +22,8 @@ function ACF.KEShove(Target, Pos, Vec, KE)
 		local LocalPos = Ancestor:WorldToLocal(Pos) * Ratio
 
 		if KE ~= KE then
-			print("Congratulations, you've just found a bug on ACF. Report this to the developer team.")
-			print("Affected entity", Target, Ancestor)
-
-			debug.Trace()
+			local ErrorText = "Congratulations, you've just found a bug on ACF. Report this to the developer team.\nAffected entity"
+			ErrorNoHaltWithStack(ErrorText, Target, Ancestor)
 
 			return
 		end

@@ -64,8 +64,6 @@ do	-- Spawn and Update funcs
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		for _, v in ipairs(Entity.DataStore) do
 			Entity[v] = Data[v]
 		end
@@ -81,7 +79,7 @@ do	-- Spawn and Update funcs
 		end
 	end
 
-	function MakeACF_TurretGyro(Player, Pos, Angle, Data)
+	function ACF.MakeTurretGyro(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Gyro)
@@ -91,7 +89,7 @@ do	-- Spawn and Update funcs
 
 		local Gyro	= Turrets.GetItem(Class.ID, Data.Gyro)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret_gyro", Player, Data, Class, Gyro)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_gyro", Player, Data, Class, Gyro)
 
 		if CanSpawn == false then return end
 
@@ -106,26 +104,22 @@ do	-- Spawn and Update funcs
 
 		Contraption.SetModel(Entity, Gyro.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret_gyro")
 
 		UpdateGyro(Entity, Data, Class, Gyro)
 
-		Entity:UpdateOverlay(true)
-
-		HookRun("ACF_OnEntitySpawn", "acf_turret_gyro", Entity, Data, Class, Gyro)
+		HookRun("ACF_OnSpawnEntity", "acf_turret_gyro", Entity, Data, Class, Gyro)
 
 		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	Entities.Register("acf_turret_gyro", MakeACF_TurretGyro, "Gyro")
+	Entities.Register("acf_turret_gyro", ACF.MakeTurretGyro, "Gyro")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
@@ -135,7 +129,7 @@ do	-- Spawn and Update funcs
 		local Gyro	= Turrets.GetItem(Class.ID, Data.Gyro)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret_gyro", self, Data, Class, Gyro)
+		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_gyro", self, Data, Class, Gyro)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -147,7 +141,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret_gyro", self, Data, Class, Gyro)
+		HookRun("ACF_OnUpdateEntity", "acf_turret_gyro", self, Data, Class, Gyro)
 
 		if Data.IsDual ~= self.IsDual then
 			self.IsDual = Data.IsDual
@@ -170,12 +164,6 @@ do	-- Spawn and Update funcs
 				end
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Gyro updated successfully!" .. Extra
 	end

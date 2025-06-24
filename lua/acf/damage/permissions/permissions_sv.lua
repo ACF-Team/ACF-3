@@ -1,25 +1,20 @@
 -- This file defines damage permission with all ACF weaponry
 local ACF = ACF
 ACF.Permissions = ACF.Permissions or {}
-local this = ACF.Permissions
+local Permissions = ACF.Permissions
 local Messages = ACF.Utilities.Messages
 --TODO: make player-customizable
-this.Selfkill = true
-this.Safezones = false
-this.Player = this.Player or {}
-this.Modes = this.Modes or {}
-this.ModeDescs = this.ModeDescs or {}
-this.ModeThinks = this.ModeThinks or {}
-this.ModeDefaultAction = this.ModeDefaultAction or {}
+Permissions.Safezones = false
+Permissions.Player = Permissions.Player or {}
+Permissions.Modes = Permissions.Modes or {}
+Permissions.ModeDescs = Permissions.ModeDescs or {}
+Permissions.ModeThinks = Permissions.ModeThinks or {}
+Permissions.ModeDefaultAction = Permissions.ModeDefaultAction or {}
 --TODO: convar this
 local mapSZDir = "acf/safezones/"
 local mapDPMDir = "acf/permissions/"
 file.CreateDir(mapDPMDir)
 local curMap = game.GetMap()
-
-local function msgtoconsole(_, msg)
-	print(msg)
-end
 
 local function resolveAABBs(mins, maxs)
 	--[[
@@ -30,7 +25,7 @@ local function resolveAABBs(mins, maxs)
 			mins.xyz = store
 		end
 	end
-	//]]
+	]]
 	local store
 
 	if mins.x > maxs.x then
@@ -58,7 +53,6 @@ end
 local function validateSZs(safetable)
 	if type(safetable) ~= "table" then return false end
 
-	--PrintTable(safetable)
 	for k, v in pairs(safetable) do
 		if type(k) ~= "string" then return false end
 		if not (#v == 2 and v[1] and v[2]) then return false end
@@ -86,7 +80,7 @@ local function getMapSZs()
 	local mapSZFile = file.Read(mapname, "DATA") or ""
 	local safezones = util.JSONToTable(mapSZFile)
 	if not validateSZs(safezones) then return false end -- TODO: generate default safezones around spawnpoints.
-	this.Safezones = safezones
+	Permissions.Safezones = safezones
 
 	return true
 end
@@ -115,26 +109,78 @@ local function LoadMapDPM()
 	return ReadFile(mapDPMDir .. "default.txt")
 end
 
+util.AddNetworkString("ACF_OnUpdateSafezones")
+
+--- Networks the current data of all safezones to one or all player(s).
+--- @param Player? entity The specific player to network the update to (or none if the update should be sent to all players)
+function Permissions.UpdateSafezones(Player)
+	local ZoneCount = 0
+	net.Start("ACF_OnUpdateSafezones")
+
+	if not Permissions.Safezones then
+		net.WriteUInt(ZoneCount, 5)
+
+		if IsValid(Player) then
+			net.Send(Player)
+		else
+			net.Broadcast()
+		end
+
+		return
+	end
+
+	ZoneCount = table.Count(Permissions.Safezones)
+	net.WriteUInt(ZoneCount, 5)
+
+	for Name, Coords in pairs(Permissions.Safezones) do
+		net.WriteString(Name)
+		net.WriteVector(Coords[1])
+		net.WriteVector(Coords[2])
+	end
+
+	if IsValid(Player) then
+		net.Send(Player)
+	else
+		net.Broadcast()
+	end
+end
+
+net.Receive("ACF_OnUpdateSafezones", function(_, Player)
+	Permissions.UpdateSafezones(Player)
+end)
+
 hook.Add("Initialize", "ACF_LoadSafesForMap", function()
 	if not getMapSZs() then
-		print("Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
+		Messages.PrintLog("Warning", "Safezone file " .. getMapFilename() .. " is missing, invalid or corrupt! Safezones will not be restored this time.")
 	end
+end)
+
+hook.Add("PlayerNoClip", "ACF_DisableNoclipPressInBattle", function(Player, WantsNoclipOn)
+	if not ACF.EnableSafezones or not Permissions.Safezones then return end
+	if ACF.NoclipOutsideZones or not WantsNoclipOn then return end
+
+	return Permissions.IsInSafezone(Player:GetPos()) ~= false
 end)
 
 local plyzones = {}
 
 hook.Add("Think", "ACF_DetectSZTransition", function()
-	if not this.Safezones then return end
+	if not ACF.EnableSafezones or not Permissions.Safezones then return end
 
-	for _, ply in ipairs(player.GetAll()) do
+	for _, ply in player.Iterator() do
 		local sid = ply:SteamID()
 		local pos = ply:GetPos()
 		local oldzone = plyzones[sid]
-		local zone = this.IsInSafezone(pos) or nil
+		local zone = Permissions.IsInSafezone(pos) or nil
 		plyzones[sid] = zone
 
 		if oldzone ~= zone then
-			hook.Run("ACF_PlayerChangedZone", ply, zone, oldzone)
+			hook.Run("ACF_OnPlayerChangeZone", ply, zone, oldzone)
+			Messages.SendChat(ply, zone and "Normal" or "Warning", "You have entered the " .. (zone and zone .. " safezone." or "battlefield!"))
+
+			if not ACF.NoclipOutsideZones and ply:GetMoveType() == MOVETYPE_NOCLIP then
+				ply:SetMoveType(MOVETYPE_WALK)
+			end
 		end
 	end
 end)
@@ -142,18 +188,14 @@ end)
 concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
-		printmsg(HUD_PRINTCONSOLE, " - Add a safezone as an AABB box." .. "\n   Input a name and six numbers. First three numbers are minimum co-ords, last three are maxs." .. "\n   Example; ACF_addsafezone airbase -500 -500 0 500 500 1000")
+		Messages.PrintLog("Info", "Add a safezone as an AABB box." .. "\n   Input a name and six numbers. First three numbers are minimum co-ords, last three are maxs." .. "\n   Example; ACF_addsafezone airbase -500 -500 0 500 500 1000")
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
@@ -165,12 +207,12 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 			default = nil
 		end
 
-		if not this.Safezones then
-			this.Safezones = {}
+		if not Permissions.Safezones then
+			Permissions.Safezones = {}
 		end
 
-		if this.Safezones[szname] and this.Safezones[szname].default then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: an unmodifiable safezone called " .. szname .. " already exists!")
+		if Permissions.Safezones[szname] and Permissions.Safezones[szname].default then
+			Messages.PrintLog("Error", "An unmodifiable safezone called " .. szname .. " already exists!")
 
 			return false
 		end
@@ -179,7 +221,7 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 			args[k] = tonumber(v)
 
 			if args[k] == nil then
-				printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: argument " .. k .. " could not be interpreted as a number (" .. v .. ")")
+				Messages.PrintLog("Error", "Argument " .. k .. " could not be interpreted as a number (" .. v .. ")!")
 
 				return false
 			end
@@ -188,13 +230,14 @@ concommand.Add("ACF_AddSafeZone", function(ply, _, args)
 		local mins = Vector(args[2], args[3], args[4])
 		local maxs = Vector(args[5], args[6], args[7])
 		mins, maxs = resolveAABBs(mins, maxs)
-		this.Safezones[szname] = {mins, maxs}
+		Permissions.Safezones[szname] = {mins, maxs}
 
 		if default then
-			this.Safezones[szname].default = true
+			Permissions.Safezones[szname].default = true
 		end
 
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: added a safezone called " .. szname .. " between " .. tostring(mins) .. " and " .. tostring(maxs) .. "!")
+		Messages.PrintLog("Info", "Added a safezone called " .. szname .. " between " .. tostring(mins) .. " and " .. tostring(maxs) .. "!")
+		Permissions.UpdateSafezones()
 
 		return true
 	end
@@ -203,43 +246,40 @@ end)
 concommand.Add("ACF_RemoveSafeZone", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
-		printmsg(HUD_PRINTCONSOLE, " - Delete a safezone using its name." .. "\n   Input a safezone name. If it exists, it will be removed." .. "\n   Deletion is not permanent until safezones are saved.")
+		Messages.PrintLog("Info", "Delete a safezone using its name." .. "\n   Input a safezone name. If it exists, it will be removed." .. "\n   Deletion is not permanent until safezones are saved.")
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local szname = tostring(args[1])
 
 		if not szname then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: could not interpret your input as a string.")
+			Messages.PrintLog("Error", "Could not interpret your input as a string!")
 
 			return false
 		end
 
-		if not (this.Safezones and this.Safezones[szname]) then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: could not find a safezone called " .. szname .. ".")
+		if not (Permissions.Safezones and Permissions.Safezones[szname]) then
+			Messages.PrintLog("Error", "Could not find a safezone called " .. szname .. "!")
 
 			return false
 		end
 
-		if this.Safezones[szname].default then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: an unmodifiable safezone called " .. szname .. " already exists!")
+		if Permissions.Safezones[szname].default then
+			Messages.PrintLog("Error", "An unmodifiable safezone called " .. szname .. " already exists!")
 
 			return false
 		end
 
-		this.Safezones[szname] = nil
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: removed the safezone called " .. szname .. "!")
+		Permissions.Safezones[szname] = nil
+		Messages.PrintLog("Info", "Removed the safezone called " .. szname .. "!")
+		Permissions.UpdateSafezones()
 
 		return true
 	end
@@ -248,26 +288,22 @@ end)
 concommand.Add("ACF_SaveSafeZones", function(ply)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
-		if not this.Safezones then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: There are no safezones on the map which can be saved.")
+		if not Permissions.Safezones then
+			Messages.PrintLog("Error", "There are no safezones on the map which can be saved.")
 
 			return false
 		end
 
-		local szjson = util.TableToJSON(this.Safezones)
+		local szjson = util.TableToJSON(Permissions.Safezones)
 		local mapname = getMapFilename()
 		file.CreateDir(mapSZDir)
 		file.Write(mapname, szjson)
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: All safezones on the map have been made restorable.")
+		Messages.PrintLog("Info", "All safezones on the map have been made restorable.")
 
 		return true
 	end
@@ -276,21 +312,18 @@ end)
 concommand.Add("ACF_ReloadSafeZones", function(ply)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local ret = getMapSZs()
 
 		if ret then
-			printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: All safezones on the map have been restored.")
+			Messages.PrintLog("Info", "All safezones on the map have been restored.")
+			Permissions.UpdateSafezones()
 		else
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: Safezone file for this map is missing, invalid or corrupt.")
+			Messages.PrintLog("Error", "Safezone file for this map is missing, invalid or corrupt.")
 		end
 
 		return ret
@@ -300,40 +333,36 @@ end)
 concommand.Add("ACF_SetPermissionMode", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
 		local modes = ""
 
-		for k in pairs(this.Modes) do
+		for k in pairs(Permissions.Modes) do
 			modes = modes .. k .. " "
 		end
 
-		printmsg(HUD_PRINTCONSOLE, " - Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
+		Messages.PrintLog("Info", "Set damage permission behavior mode." .. "\n   Available modes: " .. modes)
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local mode = tostring(args[1])
 
-		if not this.Modes[mode] then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: " .. mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
+		if not Permissions.Modes[mode] then
+			Messages.PrintLog("Error", mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
 
 			return false
 		end
 
-		local oldmode = table.KeyFromValue(this.Modes, this.DamagePermission)
-		this.DefaultCanDamage = this.ModeDefaultAction[mode]
-		this.DamagePermission = this.Modes[mode]
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Current damage permission policy is now " .. mode .. "!")
-		hook.Run("ACF_ProtectionModeChanged", mode, oldmode)
+		local oldmode = table.KeyFromValue(Permissions.Modes, Permissions.DamagePermission)
+		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[mode]
+		Permissions.DamagePermission = Permissions.Modes[mode]
+		Messages.PrintLog("Info", "Current damage permission policy is now " .. mode .. "!")
+		hook.Run("ACF_OnChangeProtectionMode", mode, oldmode)
 
 		return true
 	end
@@ -342,47 +371,44 @@ end)
 concommand.Add("ACF_SetDefaultPermissionMode", function(ply, _, args)
 	local validply = IsValid(ply)
 
-	local printmsg = validply and function(hud, msg)
-		ply:PrintMessage(hud, msg)
-	end or msgtoconsole
-
 	if not args[1] then
 		local modes = ""
 
-		for k in pairs(this.Modes) do
+		for k in pairs(Permissions.Modes) do
 			modes = modes .. k .. " "
 		end
 
-		printmsg(HUD_PRINTCONSOLE, " - Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
+		Messages.PrintLog("Info", "Set damage permission behaviour mode." .. "\n   Available modes: " .. modes)
 
 		return false
 	end
 
 	if validply and not ply:IsAdmin() then
-		printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
+		Messages.PrintLog("Error", "You can't use this because you are not an admin.")
 
 		return false
 	else
 		local mode = tostring(args[1])
 
-		if not this.Modes[mode] then
-			printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: " .. mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
+		if not Permissions.Modes[mode] then
+			Messages.PrintLog("Error", mode .. " is not a valid permission mode!" .. "\nUse this command without arguments to see all available modes.")
 
 			return false
 		end
 
-		if this.DefaultPermission == mode then return false end
+		if Permissions.DefaultPermission == mode then return false end
 		SaveMapDPM(mode)
-		this.DefaultPermission = mode
-		printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: Default permission mode for " .. curMap .. " set to: " .. mode)
+		Permissions.DefaultPermission = mode
+		local CurMapText = "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!"
+		Messages.PrintLog("Info", CurMapText)
 
-		for _, v in ipairs(player.GetAll()) do
+		for _, v in player.Iterator() do
 			if v:IsAdmin() then
-				Messages.SendChat(v, "Info", "Default permission mode for " .. curMap .. " has been set to " .. mode .. "!")
+				Messages.SendChat(v, "Info", CurMapText)
 			end
 		end
 
-		this.ResendPermissionsOnChanged()
+		Permissions.ResendPermissionsOnChanged()
 
 		return true
 	end
@@ -391,16 +417,16 @@ end)
 local function tellPlysAboutDPMode(mode, oldmode)
 	if mode == oldmode then return end
 
-	Messages.SendChat(_, "Info", "Damage protection has been changed to " .. mode .. " mode!")
+	Messages.SendChat(nil, "Info", "Damage protection has been changed to " .. mode .. " mode!")
 end
 
-hook.Add("ACF_ProtectionModeChanged", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
+hook.Add("ACF_OnChangeProtectionMode", "ACF_TellPlysAboutDPMode", tellPlysAboutDPMode)
 
-function this.IsInSafezone(pos)
-	if not this.Safezones then return false end
+function Permissions.IsInSafezone(pos)
+	if not Permissions.Safezones then return false end
 	local szmin, szmax
 
-	for szname, szpts in pairs(this.Safezones) do
+	for szname, szpts in pairs(Permissions.Safezones) do
 		szmin = szpts[1]
 		szmax = szpts[2]
 		if (pos.x > szmin.x and pos.y > szmin.y and pos.z > szmin.z) and (pos.x < szmax.x and pos.y < szmax.y and pos.z < szmax.z) then return szname end
@@ -409,43 +435,35 @@ function this.IsInSafezone(pos)
 	return false
 end
 
-function this.RegisterMode(mode, name, desc, default, think, defaultaction)
-	this.Modes[name] = mode
-	this.ModeDescs[name] = desc
-	this.ModeThinks[name] = think or function() end
-	this.ModeDefaultAction[name] = Either(defaultaction, nil, defaultaction)
+function Permissions.RegisterMode(mode, name, desc, default, think, defaultaction)
+	Permissions.Modes[name] = mode
+	Permissions.ModeDescs[name] = desc
+	Permissions.ModeThinks[name] = think or function() end
+	Permissions.ModeDefaultAction[name] = Either(defaultaction, nil, defaultaction)
 	local DPM = LoadMapDPM()
 
-	if DPM then
-		if DPM == name then
-			this.DamagePermission = this.Modes[name]
-			this.DefaultCanDamage = this.ModeDefaultAction[name]
-			this.DefaultPermission = name
-
-			timer.Simple(1, function()
-				print("ACF: Found default permission mode: " .. DPM)
-				print("ACF: Setting permission mode to: " .. name)
-			end)
-		end
-	elseif default then
-		this.DamagePermission = this.Modes[name]
-		this.DefaultCanDamage = this.ModeDefaultAction[name]
-		this.DefaultPermission = name
+	if DPM and DPM == name then
+		Permissions.DamagePermission = Permissions.Modes[name]
+		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[name]
+		Permissions.DefaultPermission = name
 
 		timer.Simple(1, function()
-			print("ACF: Map does not have default permission set, using default")
-			print("ACF: Setting permission mode to: " .. name)
+			Messages.PrintLog("Info", "Found default permission mode: " .. DPM)
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
+		end)
+	elseif default and not DPM then
+		Permissions.DamagePermission = Permissions.Modes[name]
+		Permissions.DefaultCanDamage = Permissions.ModeDefaultAction[name]
+		Permissions.DefaultPermission = name
+
+		timer.Simple(1, function()
+			Messages.PrintLog("Info", "Map does not have default permission set, using default.")
+			Messages.PrintLog("Info", "Setting permission mode to: " .. name)
 		end)
 	end
-	--Old method - can break on rare occasions!
-	--if LoadMapDPM() == name or default then 
-	--	print("ACF: Setting permission mode to: "..name)
-	--	this.DamagePermission = this.Modes[name]
-	--	this.DefaultPermission = name
-	--end
 end
 
-function this.CanDamage(Entity, _, DmgInfo)
+function Permissions.CanDamage(Entity, _, DmgInfo)
 	local Attacker = DmgInfo:GetAttacker()
 	local Owner    = IsValid(Entity) and Entity:CPPIGetOwner()
 
@@ -453,67 +471,73 @@ function this.CanDamage(Entity, _, DmgInfo)
 		if IsValid(Entity) and Entity:IsPlayer() then
 			Owner = Entity
 		else
-			return this.DefaultCanDamage
+			return Permissions.DefaultCanDamage
 		end
 	end
 
 	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
-		return this.DefaultCanDamage
+		return Permissions.DefaultCanDamage
 	end
 
-	return this.DamagePermission(Owner, Attacker, Entity)
+	-- Safezones behavior
+	if ACF.EnableSafezones and Permissions.Safezones then
+		local EntPos = Entity:GetPos()
+		local AttPos = Attacker:GetPos()
+		if Permissions.IsInSafezone(EntPos) or Permissions.IsInSafezone(AttPos) then return false end
+	end
+
+	return Permissions.DamagePermission(Owner, Attacker, Entity)
 end
 
-hook.Add("ACF_PreDamageEntity", "ACF_DamagePermissionCore", this.CanDamage)
+hook.Add("ACF_PreDamageEntity", "ACF_DamagePermissionCore", Permissions.CanDamage)
 
-this.thinkWrapper = function()
-	local curmode = table.KeyFromValue(this.Modes, this.DamagePermission)
-	--print(curmode)
-	local think = this.ModeThinks[curmode]
+Permissions.thinkWrapper = function()
+	local curmode = table.KeyFromValue(Permissions.Modes, Permissions.DamagePermission)
+	local think = Permissions.ModeThinks[curmode]
 	local nextthink
 
 	if think then
 		nextthink = think()
 	end
 
-	timer.Simple(nextthink or 0.01, this.thinkWrapper)
+	timer.Simple(nextthink or 0.01, Permissions.thinkWrapper)
 end
 
-timer.Simple(0.01, this.thinkWrapper)
+timer.Simple(0.01, Permissions.thinkWrapper)
 
-function this.GetDamagePermissions(ownerid)
-	if not this.Player[ownerid] then
-		this.Player[ownerid] = {
+function Permissions.GetDamagePermissions(ownerid)
+	if not Permissions.Player[ownerid] then
+		Permissions.Player[ownerid] = {
 			[ownerid] = true
 		}
 	end
 
-	return this.Player[ownerid]
+	return Permissions.Player[ownerid]
 end
 
-function this.AddDamagePermission(owner, attacker)
+function Permissions.AddDamagePermission(owner, attacker)
 	local ownerid = owner:SteamID()
 	local attackerid = attacker:SteamID()
-	local ownerprefs = this.GetDamagePermissions(ownerid)
+	local ownerprefs = Permissions.GetDamagePermissions(ownerid)
 	ownerprefs[attackerid] = true
 end
 
-function this.RemoveDamagePermission(owner, attacker)
+function Permissions.RemoveDamagePermission(owner, attacker)
 	local ownerid = owner:SteamID()
-	if not this.Player[ownerid] then return end
+	if not Permissions.Player[ownerid] then return end
 	local attackerid = attacker:SteamID()
-	this.Player[ownerid][attackerid] = nil
+	Permissions.Player[ownerid][attackerid] = nil
 end
 
-function this.ClearDamagePermissions(owner)
+function Permissions.ClearDamagePermissions(owner)
 	local ownerid = owner:SteamID()
-	if not this.Player[ownerid] then return end
-	this.Player[ownerid] = nil
+	if not Permissions.Player[ownerid] then return end
+	Permissions.Player[ownerid] = nil
 end
 
-function this.PermissionsRaw(ownerid, attackerid, value)
+function Permissions.PermissionsRaw(ownerid, attackerid, value)
 	if not ownerid then return end
-	local ownerprefs = this.GetDamagePermissions(ownerid)
+	local ownerprefs = Permissions.GetDamagePermissions(ownerid)
 
 	if attackerid then
 		local old = ownerprefs[attackerid] and true or nil
@@ -529,8 +553,8 @@ end
 local function onDisconnect(ply)
 	local plyid = ply:SteamID()
 
-	if this.Player[plyid] then
-		this.Player[plyid] = nil
+	if Permissions.Player[plyid] then
+		Permissions.Player[plyid] = nil
 	end
 
 	plyzones[plyid] = nil
@@ -539,7 +563,7 @@ end
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
 local function plyBySID(steamid)
-	for _, v in ipairs(player.GetAll()) do
+	for _, v in player.Iterator() do
 		if v:SteamID() == steamid then return v end
 	end
 
@@ -550,42 +574,36 @@ end
 -- All code below modified from the NADMOD client permissions menu, by Nebual
 -- http://www.facepunch.com/showthread.php?t=1221183
 util.AddNetworkString("ACF_dmgfriends")
-util.AddNetworkString("ACF_refreshfeedback")
 
 net.Receive("ACF_dmgfriends", function(_, ply)
-	--Msg("\nsv dmgfriends\n")
 	if not ply:IsValid() then return end
 	local perms = net.ReadTable()
 	local ownerid = ply:SteamID()
-	--Msg("ownerid = ", ownerid)
-	--PrintTable(perms)
 	local changed
+	local Success = true
 
 	for k, v in pairs(perms) do
-		changed = this.PermissionsRaw(ownerid, k, v)
+		changed = Permissions.PermissionsRaw(ownerid, k, v)
 
-		--Msg(k, " has ", changed and "changed\n" or "not changed\n")
 		if changed then
 			local targ = plyBySID(k)
 
 			if targ then
 				local note = v and "given you" or "removed your"
 				local nick = string.Trim(string.format("%q", ply:Nick()), "\"") -- Ensuring that the name is Lua safe
-				--Msg("Sending", targ, " ", note, "\n")
+
 				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
 			end
 		end
 	end
 
-	net.Start("ACF_refreshfeedback")
-	net.WriteBit(true)
-	net.Send(ply)
+	local FeedbackMessage = Success and "Successfully updated your ACF damage permissions!" or "Failed to update your ACF damage permissions."
+	ACF.SendNotify(ply, Success, FeedbackMessage)
 end)
 
-function this.RefreshPlyDPFriends(ply)
-	--Msg("\nsv refreshfriends\n")
+function Permissions.RefreshPlyDPFriends(ply)
 	if not ply:IsValid() then return end
-	local perms = this.GetDamagePermissions(ply:SteamID())
+	local perms = Permissions.GetDamagePermissions(ply:SteamID())
 	net.Start("ACF_refreshfriends")
 	net.WriteTable(perms)
 	net.Send(ply)
@@ -594,37 +612,37 @@ end
 util.AddNetworkString("ACF_refreshfriends")
 
 net.Receive("ACF_refreshfriends", function(_, ply)
-	this.RefreshPlyDPFriends(ply)
+	Permissions.RefreshPlyDPFriends(ply)
 end)
 
-function this.SendPermissionsState(ply)
-	local modes = this.ModeDescs
-	local current = table.KeyFromValue(this.Modes, this.DamagePermission)
+function Permissions.SendPermissionsState(ply)
+	local modes = Permissions.ModeDescs
+	local current = table.KeyFromValue(Permissions.Modes, Permissions.DamagePermission)
 	net.Start("ACF_refreshpermissions")
 	net.WriteTable(modes)
-	net.WriteString(current or this.DefaultPermission)
-	net.WriteString(this.DefaultPermission or "")
+	net.WriteString(current or Permissions.DefaultPermission)
+	net.WriteString(Permissions.DefaultPermission or "")
 	net.Send(ply)
 end
 
 util.AddNetworkString("ACF_refreshpermissions")
 
 net.Receive("ACF_refreshpermissions", function(_, ply)
-	this.SendPermissionsState(ply)
+	Permissions.SendPermissionsState(ply)
 end)
 
-function this.ResendPermissionsOnChanged()
-	for _, ply in ipairs(player.GetAll()) do
-		this.SendPermissionsState(ply)
+function Permissions.ResendPermissionsOnChanged()
+	for _, ply in player.Iterator() do
+		Permissions.SendPermissionsState(ply)
 	end
 end
 
-hook.Add("ACF_ProtectionModeChanged", "ACF_ResendPermissionsOnChanged", this.ResendPermissionsOnChanged)
+hook.Add("ACF_OnChangeProtectionMode", "ACF_ResendPermissionsOnChanged", Permissions.ResendPermissionsOnChanged)
 
 -- -- -- -- -- Initial DP mode load -- -- -- -- --
-local m = table.KeyFromValue(this.Modes, this.DamagePermission)
+local m = table.KeyFromValue(Permissions.Modes, Permissions.DamagePermission)
 
 if not m then
-	this.DamagePermission = function() end
-	hook.Run("ACF_ProtectionModeChanged", "default", nil)
+	Permissions.DamagePermission = function() end
+	hook.Run("ACF_OnChangeProtectionMode", "default", nil)
 end

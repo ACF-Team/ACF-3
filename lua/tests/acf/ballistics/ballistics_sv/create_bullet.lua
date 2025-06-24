@@ -13,13 +13,15 @@ return {
         stub( ACF.Ballistics, "CalcBulletFlight" )
 
         State.Bullet = {
-            Type = "TestType"
+            Type = "TestType",
+            Pos = Vector(0, 0, 0),
+            Flight = Vector(0, 0, 0)
         }
     end,
 
     afterEach = function()
         table.Empty( ACF.Ballistics.Bullets )
-        hook.Remove( "ACF_OnClock", "ACF Iterate Bullets" )
+        hook.Remove( "ACF_OnTick", "ACF Iterate Bullets" )
     end,
 
     afterAll = function( State )

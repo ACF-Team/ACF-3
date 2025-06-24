@@ -16,7 +16,7 @@ TOOL.ClientConVar["thickness"] = 1
 TOOL.ClientConVar["ductility"] = 0
 
 local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaximumArmor
+local MaximumArmor = ACF.MaxThickness
 
 -- Calculates mass, armor, and health given prop area and desired ductility and thickness.
 local function CalcArmor(Area, Ductility, Thickness)
@@ -50,14 +50,14 @@ local function UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 	end
 end
 
-local function UpdateArmor(_, Entity, Data)
+local function UpdateArmor(_, Entity, Data, BecauseOfDupe)
 	if CLIENT then return end
 	if not Data then return end
-	if not ACF.Check(Entity) then return end
+	if not ACF.Check(Entity, BecauseOfDupe) then return end
 
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
-	local Ductility = math.Clamp(Data.Ductility or 0, -80, 80)
+	local Ductility = math.Clamp(Data.Ductility or 0, ACF.MinDuctility, ACF.MaxDuctility)
 
 	UpdateValues(Entity, Data, PhysObj, Area, Ductility)
 
@@ -65,10 +65,10 @@ local function UpdateArmor(_, Entity, Data)
 	duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Data.Thickness, Ductility = Ductility })
 end
 
-hook.Add("ACF_OnServerDataUpdate", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
+hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key, Value)
 	if Key ~= "MaxThickness" then return end
 
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaximumArmor))
+	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
 function TOOL:CheckForReload()
@@ -89,48 +89,14 @@ function TOOL:CheckForReload()
 end
 
 if CLIENT then
-	language.Add("tool.acfarmorprop.name", "ACF Armor Properties")
-	language.Add("tool.acfarmorprop.desc", "Sets the weight of a prop by desired armor thickness and ductility")
-	language.Add("tool.acfarmorprop.left", "Apply settings")
-	language.Add("tool.acfarmorprop.right", "Copy settings")
-	language.Add("tool.acfarmorprop.reload", "Get the total mass of an object and all constrained objects")
-
-	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
-
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
-	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", -80, 80)
+	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", ACF.MinDuctility, ACF.MaxDuctility)
 	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true, "", MinimumArmor, MaximumArmor)
 
 	local Sphere = CreateClientConVar("acfarmorprop_sphere_search", 0, false, true, "", 0, 1)
 	local Radius = CreateClientConVar("acfarmorprop_sphere_radius", 0, false, true, "", 0, 10000)
 
-	function TOOL.BuildCPanel(Panel)
-		local Presets = vgui.Create("ControlPresets")
-			Presets:AddConVar("acfarmorprop_thickness")
-			Presets:AddConVar("acfarmorprop_ductility")
-			Presets:SetPreset("acfarmorprop")
-		Panel:AddItem(Presets)
-
-		Panel:NumSlider("Thickness", "acfarmorprop_thickness", MinimumArmor, MaximumArmor)
-		Panel:ControlHelp("Set the desired armor thickness (in mm) and the mass will be adjusted accordingly.")
-
-		Panel:NumSlider("Ductility", "acfarmorprop_ductility", -80, 80)
-		Panel:ControlHelp("Set the desired armor ductility (thickness-vs-health bias). A ductile prop can survive more damage but is penetrated more easily (slider > 0). A non-ductile prop is brittle - hardened against penetration, but more easily shattered by bullets and explosions (slider < 0).")
-
-		local SphereCheck = Panel:CheckBox("Use sphere search for armor readout", "acfarmorprop_sphere_search")
-		Panel:ControlHelp("If checked, the tool will find all the props in a sphere around the hit position instead of getting all the entities connected to a prop.")
-
-		local SphereRadius = Panel:NumSlider("Sphere search radius", "acfarmorprop_sphere_radius", 0, 2000, 0)
-		Panel:ControlHelp("Defines the radius of the search sphere, only applies if the checkbox above is checked.")
-
-		function SphereCheck:OnChange(Bool)
-			SphereRadius:SetEnabled(Bool)
-		end
-
-		SphereRadius:SetEnabled(SphereCheck:GetChecked())
-	end
-
-	local BubbleText = "Current:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp\n\nAfter:\nMass: %s kg\nArmor: %s mm\nHealth: %s hp"
+	TOOL.BuildCPanel = ACF.CreateArmorPropertiesMenu
 
 	function TOOL:DrawHUD()
 		local Trace = self:GetOwner():GetEyeTrace()
@@ -150,6 +116,7 @@ if CLIENT then
 		local Thickness = ArmorProp_Thickness:GetFloat()
 
 		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility * 0.01, Thickness)
+		local BubbleText = language.GetPhrase("tool.acfarmorprop.bubble_text")
 		local Text = BubbleText:format(Mass, Armor, Health, math.Round(NewMass, 2), math.Round(NewArmor, 2), math.Round(NewHealth, 2))
 
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
@@ -193,8 +160,8 @@ if CLIENT then
 			local Angle    = math.Round(ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
 			local Armor    = math.Round(Ent:GetArmor(Trace))
 			local Size     = Ent:GetSize()
-			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * 25.4, 1)
-			local MaxArmor = Ent:GetSize():Length() * 25.4
+			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * ACF.InchToMm, 1)
+			local MaxArmor = Ent:GetSize():Length() * ACF.InchToMm
 
 			cam.Start2D()
 				render.Clear(0, 0, 0, 0)
@@ -203,23 +170,22 @@ if CLIENT then
 				surface.SetDrawColor(BGGray)
 				surface.DrawRect(0, 34, 256, 2)
 
-				drawText("ACF Armor Data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Material: " .. Material, "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Weight: " .. Mass .. "kg", "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText("Nominal Armor: " .. Nominal .. "mm", "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText("#tool.acfarmorprop.procedural.data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.material"):format(Material), "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.weight"):format(Mass), "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.nominal_armor"):format(Nominal), "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 110, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 110, Angle / 90 * 236, 32, Green)
-				drawText("Hit Angle: " .. Angle .. "°", "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.hit_angle"):format(Angle), "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 160, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 160, Armor / MaxArmor * 236, 32, Blue)
-				drawText("Armor: " .. Armor .. "mm", "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.armor"):format(Armor), "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
 
 				draw.RoundedBox(6, 10, 210, 236, 32, BGGray)
 				draw.RoundedBox(6, 10, 210, Health / MaxHealth * 236, 32, Red)
-				drawText("Health: " .. Health, "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
-				--drawText("")
+				drawText(language.GetPhrase("tool.acfarmorprop.procedural.health"):format(Health), "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
 			cam.End2D()
 		else
 			local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
@@ -232,10 +198,10 @@ if CLIENT then
 
 				surface.SetDrawColor(Black)
 				surface.DrawRect(0, 0, 256, 256)
-				surface.SetFont("Torchfont")
+				surface.SetFont("torchfont")
 
 				-- header
-				draw.SimpleTextOutlined("ACF Stats", "Torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#tool.acfarmorprop.armor_stats", "torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- armor bar
 				draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
@@ -243,8 +209,8 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
 				end
 
-				draw.SimpleTextOutlined("Armor", "Torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-				draw.SimpleTextOutlined(ArmourTxt, "Torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#acf.menu.armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined(ArmourTxt, "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 				-- health bar
 				draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
@@ -252,23 +218,20 @@ if CLIENT then
 					draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
 				end
 
-				draw.SimpleTextOutlined("Health", "Torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-				draw.SimpleTextOutlined(HealthTxt, "Torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined("#acf.menu.health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+				draw.SimpleTextOutlined(HealthTxt, "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			cam.End2D()
 		end
-
-
 	end
 
 	-- Clamp thickness if the change in ductility puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_ductility", function(_, _, value)
-
 		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
-		local ductility = math.Clamp((tonumber(value) or 0) / 100, -0.8, 0.8)
+		local ductility = math.Clamp((tonumber(value) or 0) / 100, ACF.MinDuctility / 100, ACF.MaxDuctility / 100)
 		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), MinimumArmor, MaximumArmor)
 		local mass = CalcArmor(area, ductility, thickness)
 
@@ -282,21 +245,20 @@ if CLIENT then
 
 	-- Clamp ductility and thickness if the change in thickness puts mass out of range
 	cvars.AddChangeCallback("acfarmorprop_thickness", function(_, _, value)
-
 		local area = ArmorProp_Area:GetFloat()
 
 		-- don't bother recalculating if we don't have a valid ent
 		if area == 0 then return end
 
 		local thickness = math.Clamp(tonumber(value) or MinimumArmor, MinimumArmor, MaximumArmor)
-		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, -0.8, 0.8)
+		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, ACF.MinDuctility / 100, ACF.MaxDuctility / 100)
 		local mass = CalcArmor(area, ductility, thickness)
 
 		if mass > 50000 or mass < 0.1 then
 			mass = math.Clamp(mass, 0.1, 50000)
 
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
-			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, -80, 80))
+			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, ACF.MinDuctility, ACF.MaxDuctility))
 
 			thickness = ACF.CalcArmor(area, ductility, mass)
 			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
@@ -367,7 +329,7 @@ else -- Serverside-only stuff
 
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
 		if Entity.IsPrimitive then return end
-		UpdateArmor(_, Entity, Data)
+		UpdateArmor(_, Entity, Data, true)
 	end)
 
 	-- Specifically handling Primitives separately so that we can ensure that their stats are not impacted by a race condition
@@ -378,7 +340,9 @@ else -- Serverside-only stuff
 		UpdateArmor(_, Entity, ArmorMod)
 
 		local EntACF    = Entity.ACF
-		Properties.mass = EntACF and EntACF.Mass -- Don't let the primitive reset its own mass, use ACF mass instead
+		if EntACF then
+			Properties.mass = EntACF.Mass -- Don't let the primitive reset its own mass, use ACF mass instead
+		end
 	end)
 
 	duplicator.RegisterEntityModifier("acfsettings", function(_, Entity, Data)
@@ -390,7 +354,7 @@ else -- Serverside-only stuff
 		local PhysObj   = Entity.ACF.PhysObj
 		local Area      = Entity.ACF.Area
 		local Mass      = MassMod and MassMod.Mass or PhysObj:GetMass()
-		local Ductility = math.Clamp(Data.Ductility or 0, -80, 80) * 0.01
+		local Ductility = math.Clamp(Data.Ductility or 0, ACF.MinDuctility, ACF.MaxDuctility) * 0.01
 		local Thickness = ACF.CalcArmor(Area, Ductility, Mass)
 
 		duplicator.ClearEntityModifier(Entity, "mass")
@@ -441,7 +405,7 @@ end
 
 do -- Armor readout
 	local Contraption = ACF.Contraption
-	local SendMessage = ACF.SendMessage
+	local Messages    = ACF.Utilities.Messages
 
 	local Text1 = "--- Contraption Readout (Owner: %s) ---"
 	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
@@ -487,7 +451,7 @@ do -- Armor readout
 				end
 
 				if Class == "acf_engine" then
-					Power = Power + Ent.PeakPower * 1.34
+					Power = Power + Ent.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + Ent.Capacity
 				end
@@ -575,10 +539,10 @@ do -- Armor readout
 		local ParentTotal = Total - PhysTotal
 		local Player = self:GetOwner()
 
-		SendMessage(Player, nil, Text1:format(Name))
-		SendMessage(Player, nil, Text2:format(math.Round(Total, 1), math.Round(PhysTotal, 1), PhysRatio, math.Round(ParentTotal, 1)))
-		SendMessage(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
-		SendMessage(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
+		Messages.SendChat(Player, nil, Text1:format(Name))
+		Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
+		Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
+		Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 
 		return true
 	end

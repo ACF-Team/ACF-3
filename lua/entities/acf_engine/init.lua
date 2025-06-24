@@ -51,25 +51,11 @@ do
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
 
 		-- make sure the angle is not excessive
-		local InPos = Target:LocalToWorld(Target.In)
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local Direction
+		local InPos = Target:LocalToWorld(Target.In.Pos)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
 
-		if Engine.IsTrans then
-			Direction = -Engine:GetRight()
-		else
-			Direction = Engine:GetForward()
-		end
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
 			return false, "Cannot link due to excessive driveshaft angle!"
-		end
-
-		local Owner = Engine:CPPIGetOwner()
-		local Rope
-
-		if IsValid(Owner) and tobool(Owner:GetInfoNum("ACF_MobilityRopeLinks", 1)) then
-			Rope = constraint.CreateKeyframeRope(OutPos, 1, "cable/cable2", nil, Engine, Engine.Out, 0, Target, Target.In, 0)
 		end
 
 		local Link = MobilityObj.Link(Engine, Target)
@@ -78,7 +64,6 @@ do
 		Link:SetTargetPos(Target.In)
 		Link:SetAxis(Direction)
 
-		Link.Rope    = Rope
 		Link.RopeLen = (OutPos - InPos):Length()
 
 		Engine.Gearboxes[Target] = Link
@@ -132,7 +117,6 @@ local min          = math.min
 local TimerCreate  = timer.Create
 local TimerSimple  = timer.Simple
 local TimerRemove  = timer.Remove
-local HookRun      = hook.Run
 local TickInterval = engine.TickInterval
 
 local function GetPitchVolume(Engine)
@@ -178,8 +162,8 @@ end
 
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
-		local OutPos = Engine:LocalToWorld(Engine.Out)
-		local InPos = Ent:LocalToWorld(Ent.In)
+		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+		local InPos = Ent:LocalToWorld(Ent.In.Pos)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
@@ -187,10 +171,7 @@ local function CheckGearboxes(Engine)
 			continue
 		end
 
-		-- make sure the angle is not excessive
-		local Direction = Engine.IsTrans and -Engine:GetRight() or Engine:GetForward()
-
-		if (OutPos - InPos):GetNormalized():Dot(Direction) < 0.7 then
+		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
 			Engine:Unlink(Ent)
 		end
 	end
@@ -239,6 +220,20 @@ local function SetActive(Entity, Value, EntTbl)
 	Entity:UpdateOutputs(EntTbl)
 end
 
+do -- Random timer crew stuff
+	function ENT:FindPropagator()
+		local Temp = self:GetParent()
+		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
+		return nil
+	end
+
+	function ENT:UpdateFuelMod(cfg)
+		local Propagator = self:FindPropagator(cfg)
+		local Val = Propagator and Propagator.FuelCrewMod or 0
+		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.FuelCrewMod
+	end
+end
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -282,7 +277,7 @@ do -- Spawn and Update functions
 				Class.VerifyData(Data, Class, Engine)
 			end
 
-			HookRun("ACF_VerifyData", "acf_engine", Data, Class, Engine)
+			hook.Run("ACF_OnVerifyData", "acf_engine", Data, Class, Engine)
 		end
 	end
 
@@ -330,7 +325,12 @@ do -- Spawn and Update functions
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
 		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
-		Entity.Out              = Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos)
+		Entity.Out              = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos), Engine.IsTrans and Vector(0, 1, 0) or Vector(1, 0, 0))
+
+		if Engine.IsTrans then
+			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
+		end
+		Entity.IsSpecial        = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -349,7 +349,7 @@ do -- Spawn and Update functions
 		Contraption.SetMass(Entity, Mass)
 	end
 
-	function MakeACF_Engine(Player, Pos, Angle, Data)
+	function ACF.MakeEngine(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class  = Classes.GetGroup(Engines, Data.Engine)
@@ -359,7 +359,7 @@ do -- Spawn and Update functions
 
 		if not Player:CheckLimit(Limit) then return false end
 
-		local CanSpawn = HookRun("ACF_PreEntitySpawn", "acf_engine", Player, Data, Class, Engine)
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_engine", Player, Data, Class, Engine)
 
 		if CanSpawn == false then return false end
 
@@ -367,15 +367,15 @@ do -- Spawn and Update functions
 
 		if not IsValid(Entity) then return false end
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
+		Entity:UpdateEngineLegality() -- Defaults to unparented
+
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Owner         = Player -- MUST be stored on ent for PP
 		Entity.Active        = false
 		Entity.Gearboxes     = {}
 		Entity.FuelTanks     = {}
@@ -399,22 +399,20 @@ do -- Spawn and Update functions
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
-		HookRun("ACF_OnEntitySpawn", "acf_engine", Entity, Data, Class, Engine)
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
-		Entity:UpdateOverlay(true)
+		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
 		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	Entities.Register("acf_engine", MakeACF_Engine, "Engine")
+	Entities.Register("acf_engine", ACF.MakeEngine, "Engine")
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
@@ -432,7 +430,7 @@ do -- Spawn and Update functions
 		local OldClass = self.ClassData
 		local Feedback = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -440,7 +438,7 @@ do -- Spawn and Update functions
 			OldClass.OnLast(self, OldClass)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_engine", self, OldClass)
+		hook.Run("ACF_OnEntityLast", "acf_engine", self, OldClass)
 
 		ACF.SaveEntity(self)
 
@@ -452,7 +450,7 @@ do -- Spawn and Update functions
 			Class.OnUpdate(self, Data, Class, Engine)
 		end
 
-		HookRun("ACF_OnEntityUpdate", "acf_engine", self, Data, Class, Engine)
+		hook.Run("ACF_OnUpdateEntity", "acf_engine", self, Data, Class, Engine)
 
 		if next(self.Gearboxes) then
 			local Count, Total = 0, 0
@@ -497,12 +495,6 @@ do -- Spawn and Update functions
 				Feedback = Text:format(Count, Total)
 			end
 		end
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
 
 		return true, "Engine updated successfully!" .. Feedback
 	end
@@ -563,9 +555,17 @@ end
 local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
 
 function ENT:UpdateOverlayText()
-	local State, Name = self.Active and "Active" or "Idle", self.Name
-	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * 1.34)
-	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * 0.73)
+	local State
+	if not ACF.AllowSpecialEngines and self.IsSpecial then
+		State = "Disabled: Special engines are disabled."
+	elseif self.Active then
+		State = "Active"
+	else
+		State = "Idle"
+	end
+	local Name = self.Name
+	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)
+	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)
 	local PowerbandMin = self.PeakMinRPM
 	local PowerbandMax = self.PeakMaxRPM
 	local Redline = self.LimitRPM
@@ -650,6 +650,66 @@ function ENT:DestroySound()
 	self.Sound      = nil
 end
 
+function ENT:CheckEngineLegality()
+	if not ACF.LegalChecks then return true end
+
+	local EntTable = self:GetTable()
+
+	if not ACF.AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
+		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
+	end
+
+	local Contraption = self:GetContraption()
+	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+
+	return true
+end
+
+function ENT:UpdateEngineLegality()
+	self.EngineInvalid, self.EngineInvalidReason, self.EngineInvalidMessage = self:CheckEngineLegality()
+end
+
+function ENT:CFW_OnParentedTo(_, NewParent)
+	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
+	self.ACF_EngineParentValid = ParentValid
+end
+
+hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
+	if Ent:GetClass() == "acf_engine" then
+		if Contraption.Engines then
+			Contraption.Engines[Ent] = true
+		else
+			Contraption.Engines = {[Ent] = true}
+		end
+
+		Contraption.HasEngines   = true
+		Contraption.TotalEngines = (Contraption.TotalEngines or 0) + 1
+	end
+
+	if Contraption.Engines then
+		for Engine in pairs(Contraption.Engines) do
+			Engine:UpdateEngineLegality()
+		end
+	end
+end)
+
+hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
+	if Ent:GetClass() == "acf_engine" then
+		if Contraption.Engines then
+			Contraption.Engines[Ent] = nil
+		end
+
+		Contraption.HasEngines   = next(Contraption.Engines) and true or nil
+		Contraption.TotalEngines = Contraption.HasEngines and 0 or table.Count(Contraption.Engines)
+	end
+
+	if Contraption.Engines then
+		for Engine in pairs(Contraption.Engines) do
+			Engine:UpdateEngineLegality()
+		end
+	end
+end)
+
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
 	SelfTbl        = SelfTbl or self:GetTable()
@@ -689,10 +749,10 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	if not IsValid(FuelTank) then return 0 end
 
 	if SelfTbl.FuelType == "Electric" then
-		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4 / self.FuelCrewMod
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
-		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity / self.FuelCrewMod
 	end
 end
 
@@ -701,6 +761,13 @@ function ENT:CalcRPM(SelfTbl)
 	-- This helps to massively improve performance throughout the entire drivetrain
 	SelfTbl = SelfTbl or self:GetTable()
 	if not SelfTbl.Active then return end
+
+	if not ACF.AllowSpecialEngines and SelfTbl.IsSpecial then return end
+	if SelfTbl.Disabled then return end
+
+	if not SelfTbl.EngineInvalid then
+		ACF.DisableEntity(self, SelfTbl.EngineInvalidReason, SelfTbl.EngineInvalidMessage, math.random(5, 7))
+	end
 
 	local ClockTime  = Clock.CurTime
 	local DeltaTime  = ClockTime - SelfTbl.LastThink
@@ -786,8 +853,8 @@ function ENT:CalcRPM(SelfTbl)
 
 		-- Split the torque fairly between the gearboxes who need it
 		for Ent, Link in pairs(BoxesTbl) do
-			Link:Transfer(Link.ReqTq * AvailRatio * MassRatio)
-			Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			Link:TransferGearbox(Ent, Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			--Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
 		end
 	end
 
@@ -881,7 +948,7 @@ function ENT:OnRemove()
 		Class.OnLast(self, Class)
 	end
 
-	HookRun("ACF_OnEntityLast", "acf_engine", self, Class)
+	hook.Run("ACF_OnEntityLast", "acf_engine", self, Class)
 
 	self:DestroySound()
 
@@ -915,7 +982,7 @@ do	-- NET SURFER 2.0
 			local Outputs = {}
 			local FuelTanks = {}
 			local Data = {
-				Driveshaft	= Entity.Out
+				Driveshaft	= Entity.Out.Pos
 			}
 
 			if next(Entity.Gearboxes) then

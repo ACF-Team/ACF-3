@@ -6,7 +6,7 @@ return {
         State.ACF_APKill = stub( ACF, "APKill" ).returns( State.ACF_APKill_Result )
         State.ACF_KEShove = stub( ACF, "KEShove" )
 
-        State.ACF_Damage_Result = { Loss = 0, Kill = false }
+        State.ACF_Damage_Result = { Damage = 0, Loss = 0, Kill = false }
         stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 
         State.DmgInfo = {}
@@ -20,7 +20,8 @@ return {
             ShovePower = 1,
             Energy = { Kinetic = 1 },
             Flight = Vector( 1, 1, 1 ),
-            DeltaTime = 1
+            DeltaTime = 1,
+            ProjArea = 1
         }
 
         State.Trace = {

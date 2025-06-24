@@ -1,21 +1,17 @@
---[[*
+--[[
 	ACF Permission mode: Build
 		This mode blocks all damage to entities without the owner's permission.
 		Owners can permit damage from specific players.
 		Players and NPCs remain vulnerable to damage. This is what admin mods are for.
 		This mode requires a CPPI-compatible prop-protector to function properly.
-//]]
+]]
 
 -- the name for this mode used in commands and identification
-local modename = modename or "build"
-
-if not ACF or not ACF.Permissions or not ACF.Permissions.RegisterMode then
-	error("ACF: Tried to load the " .. modename .. " permission-mode before the permission-core has loaded!")
-end
+local modename = "build"
 
 local perms = ACF.Permissions
 -- a short description of what the mode does
-local modedescription = "Disables all ACF damage unless the owner permits it. PvP is allowed."
+local modedescription = "Disables all ACF damage unless the owner permits it. Players and NPCs can still be harmed."
 -- if the attacker or victim can't be identified, what should we do? true allows damage, false blocks it.
 local DefaultPermission = false
 
@@ -28,20 +24,16 @@ local DefaultPermission = false
 		ent			Entity:	The entity which may be damaged.
 	Return: boolean
 		true if the entity should be damaged, false if the entity should be protected from the damage.
-//]]
+]]
 local function modepermission(owner, attacker, ent)
-	if IsValid(ent) and ent:IsPlayer() or ent:IsNPC() then return end --print("is squishy")
+	if IsValid(ent) and ent:IsPlayer() or ent:IsNPC() then return end
 
-	if not (owner.SteamID or attacker.SteamID) then
-		--print("ACF ERROR: owner or attacker is not a player!", tostring(owner), tostring(attacker), "\n", debug.traceback())
-		return DefaultPermission
-	end
+	if not (owner.SteamID or attacker.SteamID) then return DefaultPermission end
 
 	local ownerid = owner:SteamID()
 	local attackerid = attacker:SteamID()
 	local ownerperms = perms.GetDamagePermissions(ownerid)
-	if ownerperms[attackerid] then return end --print("permitted")
-	--print("disallowed")
+	if ownerperms[attackerid] then return end
 
 	return false
 end

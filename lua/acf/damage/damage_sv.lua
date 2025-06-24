@@ -109,9 +109,8 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 		SourceDamage:SetInflictor(Inflictor)
 		SourceDamage:SetDamage(Damage)
 		SourceDamage:SetDamageForce(Direction * ForceMult)
-		if Explosive then
-			SourceDamage:SetDamageType(DMG_BLAST)
-		end
+		SourceDamage:SetDamageType(Explosive and DMG_BLAST or DMG_BULLET)
+
 		Entity:TakeDamageInfo(SourceDamage)
 
 		local EffectTable = {
@@ -187,14 +186,12 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doVehicleDamage(Entity, DmgResult, DmgInfo)
-	if not IsValid(Entity.Alias) then
-		local Driver = Entity:GetDriver()
+	local Driver	= Entity:GetDriver()
 
-		if IsValid(Driver) then
-			DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
+	if IsValid(Driver) then
+		DmgInfo:SetHitGroup(math.random(0, 7)) -- Hit a random part of the driver
 
-			Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
-		end
+		Damage.dealDamage(Driver, DmgResult, DmgInfo) -- Deal direct damage to the driver
 	end
 
 	return Damage.doPropDamage(Entity, DmgResult, DmgInfo) -- We'll just damage it like a regular prop
@@ -212,7 +209,12 @@ function Damage.doPropDamage(Entity, DmgResult)
 	local HitRes = DmgResult:Compute()
 
 	if HitRes.Damage >= Health then
-		HitRes.Kill = true
+		if Entity.ACF_KillableButIndestructible then
+			HitRes.Kill = false
+			Entity.ACF.Health = 0
+		else
+			HitRes.Kill = true
+		end
 	else
 		local NewHealth = Health - HitRes.Damage
 		local MaxHealth = EntACF.MaxHealth
@@ -221,6 +223,10 @@ function Damage.doPropDamage(Entity, DmgResult)
 		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
 
 		Damage.Network(Entity, nil, NewHealth, MaxHealth)
+	end
+
+	if Entity.ACF_HealthUpdatesWireOverlay then
+		Entity:UpdateOverlay()
 	end
 
 	return HitRes

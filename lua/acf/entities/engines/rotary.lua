@@ -4,13 +4,13 @@ local Engines = ACF.Classes.Engines
 
 Engines.Register("R", {
 	Name		= "Rotary Engine",
-	Description	= "Wankels have rather wide powerbands, but are very high strung."
+	Description	= "#acf.descs.engines.r"
 })
 
 do
 	Engines.RegisterItem("900cc-R", "R", {
 		Name		 = "0.9L Rotary",
-		Description	 = "Small 2-rotor Wankel, suited for yard use.",
+		Description	 = "#acf.descs.engines.r.0_9",
 		Model		 = "models/engines/wankel_2_small.mdl",
 		Sound		 = "acf_base/engines/wankel_small.wav",
 		Fuel		 = { Petrol = true },
@@ -29,7 +29,7 @@ do
 
 	Engines.RegisterItem("1.3L-R", "R", {
 		Name		 = "1.3L Rotary",
-		Description	 = "Medium 2-rotor Wankel.",
+		Description	 = "#acf.descs.engines.r.1_3",
 		Model		 = "models/engines/wankel_2_med.mdl",
 		Sound		 = "acf_base/engines/wankel_medium.wav",
 		Fuel		 = { Petrol = true },
@@ -48,7 +48,7 @@ do
 
 	Engines.RegisterItem("2.0L-R", "R", {
 		Name		 = "2.0L Rotary",
-		Description	 = "High performance 3-rotor Wankel.",
+		Description	 = "#acf.descs.engines.r.2_0",
 		Model		 = "models/engines/wankel_3_med.mdl",
 		Sound		 = "acf_base/engines/wankel_large.wav",
 		Fuel		 = { Petrol = true },

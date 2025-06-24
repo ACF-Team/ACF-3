@@ -372,6 +372,31 @@ do -- Generic Spawner/Linker operation creator
 	end
 end
 
+do -- Safezone modifier operation
+	local Permissions = ACF.Permissions
+	local StageName = "ZoneModifier"
+	local OpName = "Update"
+
+	ACF.RegisterOperation("acf_menu", StageName, OpName, {
+		OnEnterOp = function()
+			if CLIENT then
+				hook.Add("PreDrawOpaqueRenderables", "ACF_OnRenderSafezones", Permissions.RenderSafezones)
+				hook.Add("PostDrawHUD", "ACF_OnUpdateSafezones", Permissions.RenderSafezoneText)
+			end
+		end,
+		OnExitOp = function()
+			if CLIENT then
+				hook.Remove("PreDrawOpaqueRenderables", "ACF_OnRenderSafezones")
+				hook.Remove("PostDrawHUD", "ACF_OnUpdateSafezones")
+			end
+		end
+	})
+
+	ACF.RegisterToolInfo("acf_menu", StageName, OpName, {
+		name = "info",
+		text = "Select an option on the menu."
+	})
+end
 
 ACF.CreateMenuOperation("Weapon", "weapon", "ammo crate")
 ACF.CreateMenuOperation("Missile", "rack", "ammo crate")
@@ -379,11 +404,14 @@ ACF.CreateMenuOperation("Engine", "engine", "fuel tank")
 ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
+ACF.CreateMenuOperation("Armor", "armor plate")
 
 ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
+
+ACF.CreateMenuOperation("Controller", "controller")
 
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
 	Text = "Attempts to convert the target entity into a baseplate.",

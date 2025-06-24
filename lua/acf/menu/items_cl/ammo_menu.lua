@@ -1,30 +1,13 @@
-
+local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
 local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
 local Ammo, BulletData
 
-local CrateText = [[
-	Crate Armor: %s mm
-	Crate Mass : %s
-	Crate Capacity : %s round(s)]]
-
----Quick copy helper function for menu settings.
----@param Settings? table<string, boolean> Lookup table containing the keys for each menu aspect that has to be omitted.
----This table can use the following keys: SuppressMenu, SuppressPreview, SuppressControls, SuppressTracer, SuppressInformation and SuppressCrateInformation.
----@return table<string, boolean> Copy The copy of the original settings table.
-local function CopySettings(Settings)
-	local Copy = {}
-
-	if Settings then
-		for K, V in pairs(Settings) do
-			Copy[K] = V
-		end
-	end
-
-	return Copy
-end
+local GraphRed    = Color(200, 65, 65)
+local GraphBlue   = Color(65, 65, 200)
+local GraphRedAlt = Color(255, 65, 65)
 
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
@@ -57,7 +40,7 @@ end
 ---The thickness of the empty box will be defined by the ACF.AmmoArmor global variable.
 ---@return number Mass The mass of the hollow box.
 local function GetEmptyMass()
-	local Armor          = ACF.AmmoArmor * 0.039 -- Millimeters to inches
+	local Armor          = ACF.AmmoArmor * ACF.MmToInch
 	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
 	local InteriorVolume = (BoxSize.x - Armor) * (BoxSize.y - Armor) * (BoxSize.z - Armor)
 
@@ -66,48 +49,105 @@ end
 
 ---Creates the entity preview panel on the ACF menu.
 ---@param Base userdata The panel being populated with the preview.
----@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
 ---This function will only use SuppressPreview. If it's defined, this function will effectively do nothing.
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
-local function AddPreview(Base, Settings, ToolData)
-	if Settings.SuppressPreview then return end
+local function AddPreview(Base, ToolData)
+	if Ammo.PreCreateAmmoPreview then
+		local Result = Ammo:PreCreateAmmoPreview(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoPreview", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
 
 	local Preview = Base:AddModelPreview(nil, true)
 	local Setup   = {}
 
-	if Ammo.AddAmmoPreview then
-		Ammo:AddAmmoPreview(Preview, Setup, ToolData, BulletData)
+	if Ammo.OnCreateAmmoPreview then
+		Ammo:OnCreateAmmoPreview(Preview, Setup, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateAmmoPreview", Preview, Setup, ToolData, Ammo, BulletData)
 
 	Preview:UpdateModel(Setup.Model)
 	Preview:UpdateSettings(Setup)
 end
 
+local function AddTracer(Base, ToolData)
+	if Ammo.PreCreateTracerControls then
+		local Result = Ammo:PreCreateTracerControls(Base, ToolData, BulletData)
+
+		if not Result then
+			ACF.SetClientData("Tracer", false)
+
+			return
+		end
+	end
+
+	local Result = hook.Run("ACF_PreCreateTracerControls", Base, ToolData, Ammo, BulletData)
+
+	if not Result then
+		ACF.SetClientData("Tracer", false)
+
+		return
+	end
+
+	local TracerText = language.GetPhrase("acf.menu.ammo.tracer")
+	local Tracer = Base:AddCheckBox(TracerText:format(0))
+	Tracer:SetClientData("Tracer", "OnChange")
+	Tracer:DefineSetter(function(Panel, _, _, Value)
+		ToolData.Tracer = Value
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		ACF.SetClientData("Projectile", BulletData.ProjLength)
+		ACF.SetClientData("Propellant", BulletData.PropLength)
+
+		Panel:SetText(TracerText:format(BulletData.Tracer))
+		Panel:SetValue(ToolData.Tracer)
+
+		return ToolData.Tracer
+	end)
+
+	if Ammo.OnCreateTracerControls then
+		Ammo:OnCreateTracerControls(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateTracerControls", Base, ToolData, Ammo, BulletData)
+end
+
 ---Creates the ammunition control panels on the ACF menu.
 ---@param Base userdata The panel being populated with the ammunition controls.
----@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
 ---This function makes use of SuppressControls and SuppressTracer.
 ---If the first is defined, this function will effectively do nothing.
 ---If the latter is defined, only the Tracer checkbox will be omitted and the Tracer client data variable will be set to false.
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
-local function AddControls(Base, Settings, ToolData)
-	if Settings.SuppressControls then return end
+local function AddControls(Base, ToolData)
+	if Ammo.PreCreateAmmoControls then
+		local Result = Ammo:PreCreateAmmoControls(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoControls", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
 
 	local RoundLength = Base:AddLabel()
 	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
 	RoundLength:TrackClientData("Propellant")
 	RoundLength:TrackClientData("Tracer")
 	RoundLength:DefineSetter(function()
-		local Text = "Round Length: %s / %s cm"
+		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("Projectile Length", 0, BulletData.MaxRoundLength, 2)
+	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
 	Projectile:SetClientData("Projectile", "OnValueChanged")
 	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Projectile = Value
@@ -125,7 +165,7 @@ local function AddControls(Base, Settings, ToolData)
 		return BulletData.ProjLength
 	end)
 
-	local Propellant = Base:AddSlider("Propellant Length", 0, BulletData.MaxRoundLength, 2)
+	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
 	Propellant:SetClientData("Propellant", "OnValueChanged")
 	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Propellant = Value
@@ -143,89 +183,97 @@ local function AddControls(Base, Settings, ToolData)
 		return BulletData.PropLength
 	end)
 
-	if Ammo.AddAmmoControls then
-		Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	if Ammo.OnCreateAmmoControls then
+		Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoControls", Base, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateAmmoControls", Base, ToolData, Ammo, BulletData)
 
-	-- We'll create the tracer checkbox after all the other controls
-	if not Settings.SuppressTracer then
-		local Tracer = Base:AddCheckBox("Tracer")
-		Tracer:SetClientData("Tracer", "OnChange")
-		Tracer:DefineSetter(function(Panel, _, _, Value)
-			ToolData.Tracer = Value
+	AddTracer(Base, ToolData)
 
-			Ammo:UpdateRoundData(ToolData, BulletData)
-
-			ACF.SetClientData("Projectile", BulletData.ProjLength)
-			ACF.SetClientData("Propellant", BulletData.PropLength)
-
-			Panel:SetText("Tracer : " .. BulletData.Tracer .. " cm")
-			Panel:SetValue(ToolData.Tracer)
-
-			return ToolData.Tracer
-		end)
-	else
-		ACF.SetClientData("Tracer", false) -- Disabling the tracer, as it takes up spaces on ammo.
-	end
+	-- Control for the stowage stage (priority) of the ammo
+	local AmmoStage = Base:AddNumberWang("#acf.menu.ammo.stage", ACF.AmmoStageMin, ACF.AmmoStageMax)
+	AmmoStage:SetClientData("AmmoStage", "OnValueChanged")
+	AmmoStage:SetValue(1)
 end
 
 ---Creates the ammunition information panels on the ACF menu.
 ---@param Base userdata The panel being populated with the ammunition information.
----@param Settings table<string, boolean> The lookup table containing all the settings for the menu.
 ---This function makes use of SuppressInformation and SuppressCrateInformation
 ---If the first is defined, this function will effectively do nothing.
 ---If the latter is defined, only the information regarding the ammo crate (armor, mass and capacity by default) will be omitted.
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
-local function AddInformation(Base, Settings, ToolData)
-	if Settings.SuppressInformation then return end
+local function AddCrateInformation(Base, ToolData)
+	if Ammo.PreCreateCrateInformation then
+		local Result = Ammo:PreCreateCrateInformation(Base, ToolData, BulletData)
 
-	if not Settings.SuppressCrateInformation then
-		local Trackers = {}
-
-		local Crate = Base:AddLabel()
-		Crate:TrackClientData("Weapon", "SetText")
-		Crate:TrackClientData("CrateSizeX")
-		Crate:TrackClientData("CrateSizeY")
-		Crate:TrackClientData("CrateSizeZ")
-		Crate:DefineSetter(function()
-			local Class  = GetWeaponClass(ToolData)
-			local Rounds = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
-			local Empty  = GetEmptyMass()
-			local Load   = math.floor(BulletData.CartMass * Rounds)
-			local Mass   = ACF.GetProperMass(math.floor(Empty + Load))
-
-			return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
-		end)
-
-		if Ammo.AddCrateDataTrackers then
-			Ammo:AddCrateDataTrackers(Trackers, ToolData, BulletData)
-		end
-
-		hook.Run("ACF_AddCrateDataTrackers", Trackers, ToolData, Ammo, BulletData)
-
-		for Tracker in pairs(Trackers) do
-			Crate:TrackClientData(Tracker)
-		end
+		if not Result then return end
 	end
 
-	if Ammo.AddAmmoInformation then
-		Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	local Result = hook.Run("ACF_PreCreateCrateInformation", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	local Crate = Base:AddLabel()
+	Crate:TrackClientData("Weapon", "SetText")
+	Crate:TrackClientData("CrateSizeX")
+	Crate:TrackClientData("CrateSizeY")
+	Crate:TrackClientData("CrateSizeZ")
+	Crate:DefineSetter(function()
+		local CrateText = language.GetPhrase("acf.menu.ammo.crate_stats")
+		local Class     = GetWeaponClass(ToolData)
+		local Rounds    = ACF.GetAmmoCrateCapacity(BoxSize, Class, ToolData, BulletData)
+		local Empty     = GetEmptyMass()
+		local Load      = math.floor(BulletData.CartMass * Rounds)
+		local Mass      = ACF.GetProperMass(math.floor(Empty + Load))
+
+		return CrateText:format(ACF.AmmoArmor, Mass, Rounds)
+	end)
+
+	if Ammo.OnCreateCrateInformation then
+		Ammo:OnCreateCrateInformation(Base, Crate, ToolData, BulletData)
 	end
 
-	hook.Run("ACF_AddAmmoInformation", Base, ToolData, Ammo, BulletData)
+	hook.Run("ACF_OnCreateCrateInformation", Base, Crate, ToolData, Ammo, BulletData)
+end
+
+local function AddInformation(Base, ToolData)
+	if Ammo.PreCreateAmmoInformation then
+		local Result = Ammo:PreCreateAmmoInformation(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	AddCrateInformation(Base, ToolData)
+
+	if Ammo.OnCreateAmmoInformation then
+		Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 end
 
 local function AddGraph(Base, ToolData)
+	if Ammo.PreCreateAmmoGraph then
+		local Result = Ammo:PreCreateAmmoGraph(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
 	local Graph = Base:AddGraph()
 	Base.Graph = Graph
 	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
 	Graph:SetSize(MenuSizeX, MenuSizeX * 0.5)
 
+	local PenetrationText = language.GetPhrase("acf.menu.ammo.penetration")
+
 	Graph:SetXRange(0, 1000)
-	Graph:SetXLabel("Distance (m)")
-	Graph:SetYLabel("Pen (mm)")
+	Graph:SetXLabel("#acf.menu.ammo.distance")
+	Graph:SetYLabel(PenetrationText)
 
 	Graph:SetXSpacing(100)
 	Graph:SetYSpacing(50)
@@ -241,7 +289,7 @@ local function AddGraph(Base, ToolData)
 	Graph:DefineSetter(function(Panel)
 		Panel:Clear()
 
-		Panel:SetXLabel("Distance (m)")
+		Panel:SetXLabel("#acf.menu.ammo.distance")
 		Panel:SetFidelity(8)
 
 		Graph:SetXSpacing(100)
@@ -257,19 +305,21 @@ local function AddGraph(Base, ToolData)
 			Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT/HEATFS doesn't care how long the shell has been flying for penetration, just the instant it detonates
 			--Panel:SetXRange(0,60000)
 
-			Panel:SetXLabel("Standoff (mm)")
+			Panel:SetXLabel("#acf.menu.ammo.standoff")
 
-			--Panel:PlotLimitLine("Passive", false, BulletData.Standoff * 1000, Color(65, 65, 200))
-			--Panel:PlotLimitLine("Breakup", false, BulletData.BreakupDist * 1000, Color(200, 65, 65))
+			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.passive"), false, BulletData.Standoff * 1000, GraphBlue)
+			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.breakup"), false, BulletData.BreakupDist * 1000, GraphRed)
 
-			Panel:PlotPoint("Passive", BulletData.Standoff * 1000, PassiveStandoffPen, Color(65, 65, 200))
-			Panel:PlotPoint("Breakup", BulletData.BreakupDist * 1000, BreakupDistPen, Color(200, 65, 65))
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, GraphBlue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, GraphRed)
 
-			Panel:PlotFunction("mm Pen", Color(255, 65, 65), function(X)
+			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
 		elseif ToolData.AmmoType == "HE" then
-			Panel:SetYLabel("Blast Radius")
+			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
+
+			Panel:SetYLabel(BlastRadiusText)
 			Panel:SetXLabel("")
 
 			Panel:SetYSpacing(10)
@@ -277,14 +327,14 @@ local function AddGraph(Base, ToolData)
 			Panel:SetXRange(0, 10)
 			Panel:SetYRange(0, BulletData.BlastRadius * 2)
 
-			Panel:PlotLimitLine("Blast Radius", true, BulletData.BlastRadius, Color(200, 65, 65))
+			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
 
-			Panel:PlotFunction("Blast Radius", Color(200, 65, 65), function(_)
+			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
 				return BulletData.BlastRadius
 			end)
 		elseif ToolData.AmmoType == "SM" then
-			Panel:SetYLabel("Smoke Radius (m)")
-			Panel:SetXLabel("Time (s)")
+			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
+			Panel:SetXLabel("#acf.menu.ammo.time")
 
 			Panel:SetYSpacing(10)
 			Panel:SetXSpacing(5)
@@ -302,31 +352,35 @@ local function AddGraph(Base, ToolData)
 			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
 
 			if WPTime > 0 then
-				Panel:PlotLimitFunction("WP Filler", 0, WPTime, Color(65, 65, 200), function(X)
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.wp_filler"), 0, WPTime, GraphBlue, function(X)
 					return Lerp(X / WPTime, MinWP, MaxWP)
 				end)
 
-				Panel:PlotPoint("WP Max Radius", WPTime, MaxWP, Color(65, 65, 200))
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.wp_max_radius"), WPTime, MaxWP, GraphBlue)
 			end
 
 			if SFTime > 0 then
-				Panel:PlotLimitFunction("Smoke Filler", 0, SFTime, Color(200, 65, 65), function(X)
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.smoke_filler"), 0, SFTime, GraphRed, function(X)
 					return Lerp(X / SFTime, MinSF, MaxSF)
 				end)
 
-				Panel:PlotPoint("SM Max Radius", SFTime, MaxSF, Color(200, 65, 65))
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, GraphRed)
 			end
 		else
 			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
 
-			Panel:PlotPoint("300m", 300, Ammo:GetRangedPenetration(BulletData, 300), Color(65, 65, 200))
-			Panel:PlotPoint("800m", 800, Ammo:GetRangedPenetration(BulletData, 800), Color(65, 65, 200))
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, Ammo:GetRangedPenetration(BulletData, 300), GraphBlue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, Ammo:GetRangedPenetration(BulletData, 800), GraphBlue)
 
-			Panel:PlotFunction("Pen", Color(255, 65, 65), function(X)
+			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetRangedPenetration(BulletData, X)
 			end)
 		end
 	end)
+
+	if Ammo.OnCreateAmmoGraph then
+		Ammo:OnCreateAmmoGraph(Base, ToolData, BulletData)
+	end
 end
 
 ---Returns the client bullet data currently being used by the menu.
@@ -337,46 +391,52 @@ end
 
 ---Updates and populates the current ammunition menu.
 ---@param Menu userdata The panel in which the entire ACF menu is being placed on.
----@param Settings? table<string, boolean> The lookup table containing all the settings for the menu.
-function ACF.UpdateAmmoMenu(Menu, Settings)
+function ACF.UpdateAmmoMenu(Menu)
 	if not Ammo then return end
 
 	local ToolData = ACF.GetAllClientData()
 	local Base = Menu.AmmoBase
 
 	BulletData = Ammo:ClientConvert(ToolData)
-	Settings   = CopySettings(Settings)
-
-	if Ammo.SetupAmmoMenuSettings then
-		Ammo:SetupAmmoMenuSettings(Settings, ToolData, BulletData)
-	end
-
-	hook.Run("ACF_SetupAmmoMenuSettings", Settings, ToolData, Ammo, BulletData)
 
 	Menu:ClearTemporal(Base)
+
+	if Ammo.PreCreateAmmoMenu then
+		local Result = Ammo:PreCreateAmmoMenu(ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoMenu", ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
 	Menu:StartTemporal(Base)
 
-	if not Settings.SuppressMenu then
-		AddPreview(Base, Settings, ToolData)
-		AddControls(Base, Settings, ToolData)
-		AddInformation(Base, Settings, ToolData)
-		AddGraph(Base, ToolData)
+	if Ammo.OnCreateAmmoMenu then
+		Ammo:OnCreateAmmoMenu(Base, ToolData, BulletData)
 	end
+
+	hook.Run("ACF_OnCreateAmmoMenu", Base, ToolData, Ammo, BulletData)
+
+	AddPreview(Base, ToolData)
+	AddControls(Base, ToolData)
+	AddInformation(Base, ToolData)
+	AddGraph(Base, ToolData)
 
 	Menu:EndTemporal(Base)
 end
 
 ---Creates the basic information and panels on the ammunition menu.
 ---@param Menu userdata The panel in which the entire ACF menu is being placed on.
----@param Settings? table<string, boolean> The lookup table containing all the settings for the menu.
-function ACF.CreateAmmoMenu(Menu, Settings)
-	Menu:AddTitle("Ammo Settings")
+function ACF.CreateAmmoMenu(Menu)
+	Menu:AddTitle("#acf.menu.ammo.settings")
 
 	local List = Menu:AddComboBox()
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
 
-	local SizeX = Menu:AddSlider("Crate Length", Min, Max)
+	local SizeX = Menu:AddSlider("#acf.menu.ammo.crate_length", Min, Max)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value)
@@ -388,7 +448,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return X
 	end)
 
-	local SizeY = Menu:AddSlider("Crate Width", Min, Max)
+	local SizeY = Menu:AddSlider("#acf.menu.ammo.crate_width", Min, Max)
 	SizeY:SetClientData("CrateSizeY", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
 		local Y = math.Round(Value)
@@ -400,7 +460,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return Y
 	end)
 
-	local SizeZ = Menu:AddSlider("Crate Height", Min, Max)
+	local SizeZ = Menu:AddSlider("#acf.menu.ammo.crate_height", Min, Max)
 	SizeZ:SetClientData("CrateSizeZ", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		local Z = math.Round(Value)
@@ -412,8 +472,9 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 		return Z
 	end)
 
-	local Base = Menu:AddCollapsible("Ammo Information")
+	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
 	local Desc = Base:AddLabel()
+	Desc:SetText("")
 
 	function List:LoadEntries(Class)
 		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")
@@ -431,7 +492,7 @@ function ACF.CreateAmmoMenu(Menu, Settings)
 
 		Desc:SetText(Data.Description)
 
-		ACF.UpdateAmmoMenu(Menu, Settings)
+		ACF.UpdateAmmoMenu(Menu)
 	end
 
 	Menu.AmmoBase = Base

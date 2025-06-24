@@ -7,7 +7,8 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive"
-	self.Description = "A shell filled with explosives, detonates on impact."
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
+	self.Description = "#acf.descs.ammo.he"
 	self.Blacklist = {
 		MG = true,
 		RAC = true,
@@ -28,7 +29,7 @@ function Ammo:GetDisplayData(Data)
 		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / (FragMass / Fragments) / Fragments) ^ 0.5,
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -47,7 +48,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -108,7 +109,7 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
@@ -116,7 +117,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -130,7 +131,7 @@ else
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
 			local FragMass = ACF.GetProperMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)

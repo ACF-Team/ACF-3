@@ -61,6 +61,8 @@ ACF.Tools = ACF.Tools or {}
 --- @field OnHolster function A function to handle the holster action.
 --- @field OnThink function A function to handle the think action.
 --- @field DrawToolScreen function | nil A function to handle what should be drawn on the tool's screen (see https://wiki.facepunch.com/gmod/TOOL:DrawToolScreen)
+--- @field OnEnterOp function A function to perform upon switching to the operation.
+--- @field OnExitOp function A function to perform upon switching away from the operation.
 
 --------------------------------------------------------------------------------------------
 
@@ -278,6 +280,8 @@ do -- Tool Functions Loader
 	--- @param Name string The name of the net var (e.g. "Stage"/"Operation")
 	--- @param Value any The value of the net var (e.g. 0/1/2/3/...)
 	local function UpdateNetvar(Tool, Name, Value)
+		if CLIENT then return end
+
 		net.Start("ACF_ToolNetVars")
 			net.WriteString(Tool.Mode)
 			net.WriteString(Name)
@@ -300,7 +304,6 @@ do -- Tool Functions Loader
 		--- @param self Tool The tool
 		--- @param Stage number The index of the stage (see ToolData.Indexed)
 		function Tool:SetStage(Stage)
-			if CLIENT then return end
 			if not Stage then return end
 			if not Data.Indexed[Stage] then return end
 
@@ -325,18 +328,54 @@ do -- Tool Functions Loader
 		--- @param self Tool
 		--- @param Op any
 		function Tool:SetOperation(Op)
-			if CLIENT then return end
 			if not Op then return end
 			if not self.StageData.Indexed[Op] then return end
+
+			--- Run exit function for the old operation
+			if self.OpData then
+				local OnExitOp = self.OpData.OnExitOp
+
+				if OnExitOp then
+					OnExitOp(self)
+				end
+			end
 
 			self.Operation = Op
 			self.OpData = self.StageData.Indexed[Op]
 
 			UpdateNetvar(self, "Operation", Op)
+
+			--- Run entry function for the new operation
+			if self.OpData then
+				local OnEnterOp = self.OpData.OnEnterOp
+
+				if OnEnterOp then
+					OnEnterOp(self)
+				end
+			end
 		end
 
 		function Tool:GetOperation()
 			return self.Operation
+		end
+
+		-- Helper function, allows you to set both stage and op at the same time with their names
+		function Tool:SetMode(StageName, OpName)
+			-- Both must be specified strings
+			if not StageName then return end
+			if not OpName then return end
+
+			-- Look up the stage and operation by name if they exist. Then access their indices and set stage and operation.
+			local Stage = Data.Stages[StageName]
+
+			if not Stage then return end
+
+			local Op = Stage.Ops[OpName]
+
+			if not Op then return end
+
+			self:SetStage(Stage.Index)
+			self:SetOperation(Op.Index)
 		end
 
 		if CLIENT then
@@ -366,25 +405,6 @@ do -- Tool Functions Loader
 				return self.OpData and isfunction(self.OpData.OnReload)
 			end
 		else
-			-- Helper function, allows you to set both stage and op at the same time with their names
-			function Tool:SetMode(StageName, OpName)
-				-- Both must be specified strings
-				if not StageName then return end
-				if not OpName then return end
-
-				-- Look up the stage and operation by name if they exist. Then access their indices and set stage and operation.
-				local Stage = Data.Stages[StageName]
-
-				if not Stage then return end
-
-				local Op = Stage.Ops[OpName]
-
-				if not Op then return end
-
-				self:SetStage(Stage.Index)
-				self:SetOperation(Op.Index)
-			end
-
 			--- Restores the tool's mode to its last known state.
 			--- This includes setting the appropriate stage and operation based on previously saved client data.
 			function Tool:RestoreMode()
@@ -485,7 +505,7 @@ end
 do -- Clientside Tool interaction
 	if SERVER then
 		-- When the client specifies a new tool mode, switch to the new stage and operation.
-		hook.Add("ACF_OnClientDataUpdate", "ACF ToolMode", function(Player, Key, Value)
+		hook.Add("ACF_OnUpdateClientData", "ACF ToolMode", function(Player, Key, Value)
 			--- Check if the key is of the form (e.g. "ToolMode:acf_menu"/"ToolMode:acf_copy")
 			local Header, Name = unpack(string.Explode(":", Key), 1, 2)
 			if Header ~= "ToolMode" then return end
@@ -515,6 +535,12 @@ do -- Clientside Tool interaction
 			if not isstring(Op) then return end
 
 			ACF.SetClientData(Key:format(Tool), Value:format(Stage, Op))
+
+			local PlayerTool = LocalPlayer():GetTool(Tool)
+
+			if PlayerTool then
+				PlayerTool:SetMode(Stage, Op)
+			end
 		end
 	end
 end

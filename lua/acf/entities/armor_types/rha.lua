@@ -14,7 +14,7 @@ function Armor:OnLoaded()
 	self.Name		 = "Rolled Homogenous Armor"
 	self.Density     = 7.84 -- g/cm3
 	self.Tensile     = 1111
-	self.Description = "The standard of durability and weight."
+	self.Description = "#acf.descs.armor.rha"
 end
 
 function Armor:GetMass(Volume)

@@ -4,14 +4,19 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("LAC", {
 	Name        = "Light Autocannon",
-	Description = "Compact variation of autocannons, they offer higher firerates at the cost of smaller magazine size.",
+	Description = "#acf.descs.weapons.lac",
 	Model       = "models/machinegun/machinegun_40mm_compact.mdl",
 	Sound       = "acf_base/weapons/mg_fire3.mp3",
 	MuzzleFlash = "mg_muzzleflash_noscale",
 	IsScalable  = true,
+	IsAutomatic = true,
+	IsBelted	= true,
 	Mass        = 301,
 	Spread      = 0.48,
 	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	TransferMult = 20, -- Thermal energy transfer rate
+	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 32,
 		PropLength = 26,

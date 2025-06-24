@@ -9,14 +9,15 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
-	Menu:AddTitle("Procedural Turrets")
-	Menu:AddLabel("Typically, place the horizontal turret, and then parent a vertical turret to it to make a fully functional turret. You can parent anything directly to the turret pieces and they will be attached and rotate correctly.")
+	Menu:AddTitle("#acf.menu.turrets.menu_title")
+	Menu:AddPonderAddonCategory("acf", "turrets")
+	Menu:AddLabel("#acf.menu.turrets.menu_desc")
 
 	local ClassList		= Menu:AddComboBox()
 	local ClassDesc		= Menu:AddLabel()
 	local ComponentClass	= Menu:AddComboBox()
 
-	local Base			= Menu:AddCollapsible("Turret Components")
+	local Base			= Menu:AddCollapsible("#acf.menu.turrets.components", nil, "icon16/cd_edit.png")
 	local ComponentName	= Base:AddTitle()
 	local ComponentDesc	= Base:AddLabel()
 	local ComponentPreview = Base:AddModelPreview(_, true)
@@ -27,7 +28,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index	= Index
 		self.Selected		= Data
 
-		ClassDesc:SetText(Data.Description or "No description provided.")
+		ClassDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		ACF.SetToolMode("acf_menu", "Spawner", Data.ID)
 		ACF.LoadSortedList(ComponentClass, Data.Items, "Name")
@@ -44,7 +45,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("Component", Data.ID)
 
 		ComponentName:SetText(Data.Name)
-		ComponentDesc:SetText(Data.Description or "No description provided.")
+		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		ComponentPreview:UpdateModel(Data.Model)
 		ComponentPreview:UpdateSettings(Data.Preview)
@@ -64,4 +65,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "ID")
 end
 
-ACF.AddMenuItem(51, "Entities", "Turrets", "shape_align_center", CreateMenu)
+ACF.AddMenuItem(51, "#acf.menu.entities", "#acf.menu.turrets", "shape_align_center", CreateMenu)

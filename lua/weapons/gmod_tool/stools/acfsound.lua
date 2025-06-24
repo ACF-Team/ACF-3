@@ -53,11 +53,11 @@ local function IsReallyValid(trace, ply)
 end
 
 function TOOL:LeftClick(trace)
-	if CLIENT then return true end
-
 	local owner = self:GetOwner()
 
 	if not IsReallyValid(trace, owner) then return false end
+	if CLIENT then return true end
+
 	local sound = owner:GetInfo("wire_soundemitter_sound")
 	local pitch = owner:GetInfoNum("acfsound_pitch", 1)
 	local volume = owner:GetInfoNum("acfsound_volume", 1)
@@ -68,11 +68,11 @@ function TOOL:LeftClick(trace)
 end
 
 function TOOL:RightClick(trace)
-	if CLIENT then return true end
-
 	local owner = self:GetOwner()
 
 	if not IsReallyValid(trace, owner) then return false end
+	if CLIENT then return true end
+
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
@@ -91,8 +91,9 @@ function TOOL:RightClick(trace)
 end
 
 function TOOL:Reload(trace)
-	if CLIENT then return true end
 	if not IsReallyValid(trace, self:GetOwner()) then return false end
+	if CLIENT then return true end
+
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
@@ -102,97 +103,7 @@ function TOOL:Reload(trace)
 end
 
 if CLIENT then
-
-	function TOOL.BuildCPanel(panel)
-		local wide = panel:GetWide()
-
-		local Desc = panel:Help("#tool.acfsound.help")
-		Desc:SetFont("ACF_Control")
-
-		local SoundNameText = vgui.Create("DTextEntry", ValuePanel)
-		SoundNameText:SetText("")
-		SoundNameText:SetWide(wide - 20)
-		SoundNameText:SetTall(20)
-		SoundNameText:SetMultiline(false)
-		SoundNameText:SetConVar("wire_soundemitter_sound")
-		SoundNameText:SetVisible(true)
-		SoundNameText:Dock(LEFT)
-		panel:AddItem(SoundNameText)
-
-		local SoundBrowserButton = vgui.Create("DButton")
-		SoundBrowserButton:SetText("#tool.acfsound.open_browser")
-		SoundBrowserButton:SetFont("ACF_Control")
-		SoundBrowserButton:SetWide(wide)
-		SoundBrowserButton:SetTall(20)
-		SoundBrowserButton:SetVisible(true)
-		SoundBrowserButton:SetIcon("icon16/application_view_list.png")
-		SoundBrowserButton.DoClick = function()
-			RunConsoleCommand("wire_sound_browser_open", SoundNameText:GetValue(), "1")
-		end
-		panel:AddItem(SoundBrowserButton)
-
-		local SoundPre = vgui.Create("DPanel")
-		SoundPre:SetWide(wide)
-		SoundPre:SetTall(20)
-		SoundPre:SetVisible(true)
-
-		local SoundPrePlay = vgui.Create("DButton", SoundPre)
-		SoundPrePlay:SetText("#tool.acfsound.play")
-		SoundPrePlay:SetFont("ACF_Control")
-		SoundPrePlay:SetVisible(true)
-		SoundPrePlay:SetIcon("icon16/sound.png")
-		SoundPrePlay.DoClick = function()
-			RunConsoleCommand("play", SoundNameText:GetValue())
-		end
-
-		local SoundPreStop = vgui.Create("DButton", SoundPre)
-		SoundPreStop:SetText("#tool.acfsound.stop")
-		SoundPreStop:SetFont("ACF_Control")
-		SoundPreStop:SetVisible(true)
-		SoundPreStop:SetIcon("icon16/sound_mute.png")
-		SoundPreStop.DoClick = function()
-			RunConsoleCommand("play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters.
-		end
-		panel:AddItem(SoundPre)
-
-		-- Set the Play/Stop button positions here
-		SoundPre:InvalidateLayout(true)
-		SoundPre.PerformLayout = function()
-			local HWide = SoundPre:GetWide() / 2
-			local Tall = SoundPre:GetTall()
-			SoundPrePlay:SetSize(HWide, Tall)
-			SoundPrePlay:Dock(LEFT)
-			SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which previous button didnt.
-		end
-
-		local CopyButton = vgui.Create("DButton")
-		CopyButton:SetText("#tool.acfsound.copy")
-		CopyButton:SetFont("ACF_Control")
-		CopyButton:SetWide(wide)
-		CopyButton:SetTall(20)
-		CopyButton:SetIcon("icon16/page_copy.png")
-		CopyButton:SetVisible(true)
-		CopyButton.DoClick = function()
-			SetClipboardText(SoundNameText:GetValue())
-		end
-		panel:AddItem(CopyButton)
-
-		local ClearButton = vgui.Create("DButton")
-		ClearButton:SetText("#tool.acfsound.clear")
-		ClearButton:SetFont("ACF_Control")
-		ClearButton:SetWide(wide)
-		ClearButton:SetTall(20)
-		ClearButton:SetIcon("icon16/cancel.png")
-		ClearButton:SetVisible(true)
-		ClearButton.DoClick = function()
-			SoundNameText:SetValue("")
-			RunConsoleCommand("wire_soundemitter_sound", "")
-		end
-		panel:AddItem(ClearButton)
-
-		panel:NumSlider("#tool.acfsound.volume", "acfsound_volume", 0.1, 2, 2)
-		panel:NumSlider("#tool.acfsound.pitch", "acfsound_pitch", 0.1, 2, 2)
-	end
+	TOOL.BuildCPanel = ACF.CreateSoundMenu
 
 	--[[
 		This is another dirty hack that prevents the sound emitter tool from automatically equipping when a sound is selected in the sound browser.

@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("HW", {
 	Name        = "Howitzer",
-	Description = "Analog of cannons, except it's intended to fire explosive and chemical rounds where the bigger round size excels.",
+	Description = "#acf.descs.weapons.hw",
 	Sound       = "acf_base/weapons/howitzer_new2.mp3",
 	Model       = "models/howitzer/howitzer_105mm.mdl",
 	MuzzleFlash = "howie_muzzleflash_noscale",
@@ -12,6 +12,7 @@ Weapons.Register("HW", {
 	Mass        = 860,
 	Spread      = 0.1,
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 90,
 		PropLength = 90,
@@ -25,6 +26,12 @@ Weapons.Register("HW", {
 		Min  = 75,
 		Max  = 203,
 	},
+	BreechConfigs = {
+		MeasuredCaliber = 20.3,
+		Locations = {
+			{Name = "Breech", LPos = Vector(-47.538, 0, -1.35938), LAng = Angle(0, 0, 0), Width = 7.992125984252, Height = 7.992125984252},
+		}
+	}
 })
 
 Weapons.RegisterItem("75mmHW", "HW", {

@@ -26,7 +26,7 @@ do	-- Turret drives
 
 	Turrets.Register("1-Turret", {
 		Name		= "Turrets",
-		Description	= "The turret drives themselves.\nThese have a fallback handcrank that is used automatically if no motor is available.",
+		Description	= "#acf.descs.turrets",
 		Entity		= "acf_turret",
 		CreateMenu	= ACF.CreateTurretMenu,
 		LimitConVar	= {
@@ -131,7 +131,7 @@ do	-- Turret drives
 			-- Moment from acceleration of rotating mass (kNm)
 			local RotInertia	= 0.01 * TurretData.TotalMass * (CoMDistance ^ 2)
 			local LoadInertia	= RotInertia * (1 / ((1 / GearRatio) ^ 2))
-			local Accel 	= (3.1415 * FinalTopSpeed) / (30 * PowerData.Accel)
+			local Accel 	= (math.pi * FinalTopSpeed) / (30 * PowerData.Accel)
 			local Mg 		= LoadInertia * Accel
 
 			-- 9.55 is 1 rad/s to RPM
@@ -149,10 +149,10 @@ do	-- Turret drives
 	do	-- Horizontal turret component
 		Turrets.RegisterItem("Turret-H", "1-Turret", {
 			Name			= "Horizontal Turret",
-			Description		= "The large stable base of a turret.",
+			Description		= "#acf.descs.turrets.horizontal",
 			Model			= "models/acf/core/t_ring.mdl",
 			ModelSmall		= "models/holograms/cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
-			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 30, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
 				Base		= 60,	-- The default size for the menu
@@ -167,8 +167,8 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 50,
-				Max			= 300
+				Min			= 2.5,
+				Max			= 80
 			},
 
 			MassLimit		= {
@@ -195,7 +195,7 @@ do	-- Turret drives
 
 					if Turret.HasArc then
 						if Turret.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, math.Clamp(-Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0))).yaw
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -math.Clamp(Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0))).yaw
 						else
 							local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
 							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0, StabAmt, 0) - AngDiff, Angle(0, -Turret.MaxDeg, 0), Angle(0, -Turret.MinDeg, 0))
@@ -226,9 +226,9 @@ do	-- Turret drives
 	do	-- Vertical turret component
 		Turrets.RegisterItem("Turret-V", "1-Turret", {
 			Name			= "Vertical Turret",
-			Description		= "The smaller part of a turret, usually has the weapon directly attached to it.\nCan be naturally stabilized up to 25% if there is no motor attached, but the mass must be balanced.",
+			Description		= "#acf.descs.turrets.vertical",
 			Model			= "models/acf/core/t_trun.mdl",
-			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 24, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Preview			= {
 				FOV = 105,
@@ -247,8 +247,8 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 50,
-				Max			= 300
+				Min			= 5,
+				Max			= 30
 			},
 
 			MassLimit		= {
@@ -305,7 +305,7 @@ end
 do	-- Turret motors
 	Turrets.Register("2-Motor", {
 		Name		= "Motors",
-		Description	= "Slewing drive motors, to increase operational speeds and get you on target.\nMust be parented to or share the parent with the linked turret drive.\nMust also be close to the linked turret (Within or close to diameter).",
+		Description	= "#acf.descs.motors",
 		Entity		= "acf_turret_motor",
 		CreateMenu	= ACF.CreateTurretMotorMenu,
 		LimitConVar	= {
@@ -331,7 +331,7 @@ do	-- Turret motors
 
 		Turrets.RegisterItem("Motor-ELC", "2-Motor", {
 			Name			= "Electric Motor",
-			Description		= "A snappy responsive electric motor; can handle most use cases but quickly falters under higher weights.",
+			Description		= "#acf.descs.motors.electric",
 			Model			= "models/acf/core/t_drive_e.mdl",
 			Sound			= "acf_base/fx/turret_electric.wav",
 
@@ -366,7 +366,7 @@ do	-- Turret motors
 
 		Turrets.RegisterItem("Motor-HYD", "2-Motor", {
 			Name			= "Hydraulic Motor",
-			Description		= "A strong but sluggish hydraulic motor; it'll turn the world over but takes a little bit to get to that point.",
+			Description		= "#acf.descs.motors.hydraulic",
 			Model			= "models/acf/core/t_drive_h.mdl",
 			Sound			= "acf_base/fx/turret_hydraulic.wav",
 
@@ -402,7 +402,7 @@ end
 do	-- Turret gyroscopes
 	Turrets.Register("3-Gyro", {
 		Name		= "Gyroscopes",
-		Description	= "Components that are used to stabilize turret drives.",
+		Description	= "#acf.descs.gyros",
 		Entity		= "acf_turret_gyro",
 		CreateMenu	= ACF.CreateTurretGyroMenu,
 		LimitConVar	= {
@@ -421,7 +421,7 @@ do	-- Turret gyroscopes
 
 		Turrets.RegisterItem("1-Gyro", "3-Gyro", {
 			Name			= "Single Axis Turret Gyro",
-			Description		= "A component that will stabilize one turret drive.\nMust be parented to or share the parent with the linked turret drive.\nMust have a motor linked to the turret drive.",
+			Description		= "#acf.descs.gyros.single",
 			Model			= "models/bull/various/gyroscope.mdl",
 
 			Preview			= {
@@ -434,7 +434,7 @@ do	-- Turret gyroscopes
 
 		Turrets.RegisterItem("2-Gyro", "3-Gyro", {
 			Name			= "Dual Axis Turret Gyro",
-			Description		= "A component that will stabilize one vertical and horizontal turret drive.\nMust be parented to or share the parent with the horizontal turret drive.\nEach turret drive must have a motor linked.",
+			Description		= "#acf.descs.gyros.dual",
 			Model			= "models/acf/core/t_gyro.mdl",
 
 			Preview			= {
@@ -453,7 +453,7 @@ end
 do	-- Turret computers
 	Turrets.Register("4-Computer", {
 		Name		= "Computers",
-		Description	= "Computer capable of calculating the optimal angle to hit a target.\nLinks to a weapon to get bullet data, required for ballistics calculations.",
+		Description	= "#acf.descs.computers",
 		Entity		= "acf_turret_computer",
 		CreateMenu	= ACF.CreateTurretComputerMenu,
 		LimitConVar	= {
@@ -473,7 +473,7 @@ do	-- Turret computers
 	do	-- Computers
 		Turrets.RegisterItem("DIR-BalComp", "4-Computer", {
 			Name			= "Direct Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot within view.\nAs long as Calculate is true, this will continue to track in a straight line from the initial position and velocity.\nHas a 0.2s delay between uses.",
+			Description		= "#acf.descs.computers.direct",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {
@@ -508,7 +508,7 @@ do	-- Turret computers
 
 		Turrets.RegisterItem("IND-BalComp", "4-Computer", {
 			Name			= "Indirect Ballistics Computer",
-			Description		= "A component that is capable of calculating the angle required to shoot a weapon to hit a spot out of view.\nHas a 1s delay between uses.",
+			Description		= "#acf.descs.computers.indirect",
 			Model			= "models/acf/core/t_computer.mdl",
 
 			Preview			= {

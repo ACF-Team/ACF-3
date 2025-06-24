@@ -57,7 +57,7 @@ do -- Spawning and Updating --------------------
 				Class.VerifyData(Data, Class)
 			end
 
-			hook.Run("ACF_VerifyData", "acf_piledriver", Data, Class)
+			hook.Run("ACF_OnVerifyData", "acf_piledriver", Data, Class)
 		end
 	end
 
@@ -124,7 +124,7 @@ do -- Spawning and Updating --------------------
 
 				local Fraction   = 1 - Trace.Fraction
 				local MassCenter = Entity:LocalToWorld(Entity:GetPhysicsObject():GetMassCenter())
-				local Energy     = self.ProjMass * self.MuzzleVel * 39.37 * Fraction
+				local Energy     = self.ProjMass * self.MuzzleVel * ACF.MeterToInch * Fraction
 
 				ACF.KEShove(Entity, MassCenter, -Entity:GetForward(), Energy)
 			end
@@ -153,7 +153,7 @@ do -- Spawning and Updating --------------------
 
 	-------------------------------------------------------------------------------
 
-	function MakeACF_Piledriver(Player, Pos, Angle, Data)
+	function ACF.MakePiledriver(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Piledrivers.Get(Data.Weapon)
@@ -174,12 +174,10 @@ do -- Spawning and Updating --------------------
 
 		Contraption.SetModel(Entity, Class.Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner        = Player -- MUST be stored on ent for PP
 		Entity.RoundData    = AmmoType()
 		Entity.LastThink    = Clock.CurTime
 		Entity.State        = "Loading"
@@ -192,16 +190,13 @@ do -- Spawning and Updating --------------------
 		UpdatePiledriver(Entity, Data, Class)
 
 		WireLib.TriggerOutput(Entity, "State", "Loading")
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
 
 		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	Entities.Register("acf_piledriver", MakeACF_Piledriver, "Weapon", "Caliber")
+	Entities.Register("acf_piledriver", ACF.MakePiledriver, "Weapon", "Caliber")
 
 	------------------- Updating ---------------------
 
@@ -211,7 +206,7 @@ do -- Spawning and Updating --------------------
 		local Class    = Piledrivers.Get(Data.Weapon)
 		local OldClass = self.ClassData
 
-		local CanUpdate, Reason = hook.Run("ACF_PreEntityUpdate", "acf_piledriver", self, Data, Class)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_piledriver", self, Data, Class)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		if OldClass.OnLast then
@@ -230,13 +225,7 @@ do -- Spawning and Updating --------------------
 			Class.OnUpdate(self, Data, Class)
 		end
 
-		hook.Run("ACF_OnEntityUpdate", "acf_piledriver", self, Data, Class)
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
+		hook.Run("ACF_OnUpdateEntity", "acf_piledriver", self, Data, Class)
 
 		return true, "Piledriver updated successfully!"
 	end
@@ -326,9 +315,11 @@ do -- Firing ------------------------------------
 	function ENT:CanShoot()
 		if not ACF.GunsCanFire then return false end
 		if not ACF.AllowFunEnts then return false end
-		if hook.Run("ACF_FireShell", self) == false then return false end
+		if self.CurrentShot == 0 then return false end
 
-		return self.CurrentShot > 0
+		local CanFire = hook.Run("ACF_PreFireWeapon", self)
+
+		return CanFire
 	end
 
 	function ENT:Shoot()
@@ -349,7 +340,7 @@ do -- Firing ------------------------------------
 
 			Bullet.Owner  = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 			Bullet.Pos    = self:LocalToWorld(self.Muzzle)
-			Bullet.Flight = self:GetForward() * Bullet.MuzzleVel * 39.37
+			Bullet.Flight = self:GetForward() * Bullet.MuzzleVel * ACF.MeterToInch
 
 			self.RoundData:Create(self, Bullet)
 

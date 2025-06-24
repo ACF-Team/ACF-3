@@ -10,17 +10,17 @@ local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Component")
 
 	if not next(Entries) then
-		Menu:AddTitle("No Components Registered")
-		Menu:AddLabel("No components have been registered. If this is incorrect, check your console for errors and contact the server owner.")
+		Menu:AddTitle("#acf.menu.components.none_registered")
+		Menu:AddLabel("#acf.menu.components.none_registered_desc")
 		return
 	end
 
-	Menu:AddTitle("Component Settings")
+	Menu:AddTitle("#acf.menu.components.settings")
 
 	local ComponentClass = Menu:AddComboBox()
 	local ComponentList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("Component Information")
+	local Base = Menu:AddCollapsible("#acf.menu.components.component_info", nil, "icon16/drive_edit.png")
 	local ComponentName = Base:AddTitle()
 	local ComponentDesc = Base:AddLabel()
 	local ComponentPreview = Base:AddModelPreview(nil, true)
@@ -47,7 +47,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("Component", Data.ID)
 
 		ComponentName:SetText(Data.Name)
-		ComponentDesc:SetText(Data.Description or "No description provided.")
+		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		ComponentPreview:UpdateModel(Data.Model)
 		ComponentPreview:UpdateSettings(Data.Preview)
@@ -67,4 +67,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ComponentClass, Entries, "ID")
 end
 
-ACF.AddMenuItem(501, "Entities", "Components", "drive", CreateMenu)
+ACF.AddMenuItem(501, "#acf.menu.entities", "#acf.menu.components", "drive", CreateMenu)

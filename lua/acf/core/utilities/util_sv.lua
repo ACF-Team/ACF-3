@@ -1,11 +1,9 @@
 local ACF = ACF
 
-do -- Custom font files
-	-- 16 Segments font created by ThorType
-	-- Huge thanks to LiddulBOFH to help me get it working
-	-- Source: https://www.dafont.com/16-segments.font
-	resource.AddFile("resource/fonts/16segments-basic.ttf")
-end
+-- 16 Segments font created by ThorType
+-- Huge thanks to LiddulBOFH to help me get it working
+-- Source: https://www.dafont.com/16-segments.font
+-- resource.AddFile("resource/fonts/16segments-basic.ttf")
 
 do -- Networked notifications
 	local Messages = ACF.Utilities.Messages
@@ -628,296 +626,6 @@ do -- Extra overlay text
 	end
 end
 
-do	-- Seat alias system
-	local SeatModel = {
-		[1] = {
-			model	= "models/chairs_playerstart/sitpose.mdl",
-			pos		= Vector(0, -19.6, 20),
-			ang		= Angle(0, 90, 0)
-		},
-		[2] = {
-			model	= "models/chairs_playerstart/jeeppose.mdl",
-			pos		= Vector(0, -39.5, 5),
-			ang		= Angle(0, 90, 0)
-		},
-		[3] = {
-			model	= "models/chairs_playerstart/airboatpose.mdl",
-			pos		= Vector(0, -35.4, 9.3),
-			ang		= Angle(0, 90, 0)
-		},
-		[4] = {
-			model	= "models/chairs_playerstart/podpose.mdl",
-			pos		= Vector(0, 5, 6),
-			ang		= Angle(0, 90, 0)
-		},
-	}
-
-	-- Because garry's mod wouldn't even be a game without annoying fucking workarounds
-	-- HL2 vehicles MOVE the fucking normally static "vehicle_feet_passenger0" so we have to do something totally different
-	local PosOverride = {
-		["models/airboat.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos) - Vector(0.1, -24, -25.5), Vic:WorldToLocalAngles(SeatAng), true
-		end,
-		["models/vehicle.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos), Vic:WorldToLocalAngles(SeatAng), false
-		end,
-		["models/buggy.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos), Vic:WorldToLocalAngles(SeatAng), false
-		end,
-		["models/vehicles/prisoner_pod_inner.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos) - Vector(5, 0, 6), Vic:WorldToLocalAngles(SeatAng) + Angle(0, -90, 0), true
-		end,
-		["models/vehicles/driver_pod.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos) - Vector(5, 0, 6), Vic:WorldToLocalAngles(SeatAng) + Angle(0, -90, 0), true
-		end,
-		["models/chairs_playerstart/pronepose.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			return Vic:WorldToLocal(SeatPos) - Vector(0, 42, -5), Vic:WorldToLocalAngles(SeatAng) + Angle(0, 0, -85), true
-		end,
-		["models/lubprops/seat/raceseat2.mdl"] = function(Vic)
-			local SeatPos, SeatAng = Vic:GetPassengerSeatPoint(0)
-
-			-- Close enough, I hate this seat in particular because of the weird offset everything *just has to have*
-			return Vic:WorldToLocal(SeatPos) + Vector(0, 24, -6), Vic:WorldToLocalAngles(SeatAng) + Angle(20, -90, 22.5), true
-		end,
-	}
-
-	local ClassList = {
-		["prop_vehicle_jeep"] = function(Ply) return Ply:LookupSequence("drive_jeep") end,
-		["prop_vehicle_airboat"] = function(Ply) return Ply:LookupSequence("drive_airboat") end,
-		["prop_vehicle_prisoner_pod"] = function(Ply, Vic)
-			-- Using the same shitty hack that whoever wrote however long ago in garrysmod/gamemodes/base/gamemode/animations.lua #171
-
-			if Vic:GetModel() == "models/vehicles/prisoner_pod_inner.mdl" then
-				return Ply:LookupSequence("drive_pd")
-			else
-				return Ply:LookupSequence("sit_rollercoaster")
-			end
-		end,
-	}
-
-	local Hitboxes	= {
-		[1] = {
-			["head"] = {
-				pos	= Vector(0, -18, 46),
-				ang	= Angle(0, 0, -10),
-				min	= Vector(-4, -6, -6),
-				max	= Vector(4, 6, 6)
-			},
-			["chest"] = {
-				pos	= Vector(0, -22, 30),
-				ang	= Angle(0, 0, 0),
-				min	= Vector(-8, -5.5, -12),
-				max	= Vector(8, 6, 12)
-			},
-		},
-		[2] = {
-			["head"] = {
-				pos	= Vector(0, -34, 38),
-				ang	= Angle(0, 0, 0),
-				min	= Vector(-4, -6, -6),
-				max	= Vector(4, 6, 6)
-			},
-			["chest"] = {
-				pos	= Vector(0, -32, 20),
-				ang	= Angle(0, 0, 15),
-				min	= Vector(-8, -5.5, -12),
-				max	= Vector(8, 6, 12)
-			},
-		},
-		[3] = {
-			["head"] = {
-				pos	= Vector(0, -31, 39),
-				ang	= Angle(0, 0, 0),
-				min	= Vector(-4, -6, -6),
-				max	= Vector(4, 6, 6)
-			},
-			["chest"] = {
-				pos	= Vector(0, -33, 22),
-				ang	= Angle(0, 0, 10),
-				min	= Vector(-8, -5.5, -12),
-				max	= Vector(8, 6, 12)
-			},
-		},
-		[4] = {
-			["head"] = {
-				pos	= Vector(0, -3, 73),
-				ang	= Angle(0, 0, 20),
-				min	= Vector(-4, -6, -6),
-				max	= Vector(4, 6, 6)
-			},
-			["chest"] = {
-				pos	= Vector(0, -0.5, 54),
-				ang	= Angle(0, 0, 0),
-				min	= Vector(-8, -5.5, -12),
-				max	= Vector(8, 6, 12)
-			},
-		}
-	}
-
-	local ArmorHitboxes = {
-		[1] = {
-			["helmet"] = {
-				parent	= "head",
-				min	= Vector(-4.5, -6.5, 3),
-				max	= Vector(4.5, 6.5, 6.5)
-			},
-			["vest"] = {
-				parent	= "chest",
-				min	= Vector(-7.5, -6, -11),
-				max	= Vector(7.5, 6.5, 11)
-			},
-		},
-		[2] = {
-			["helmet"] = {
-				parent	= "head",
-				min	= Vector(-4.5, -6.5, 3),
-				max	= Vector(4.5, 6.5, 6.5)
-			},
-			["vest"] = {
-				parent	= "chest",
-				min	= Vector(-7.5, -6, -11),
-				max	= Vector(7.5, 6.5, 11)
-			},
-		},
-		[3] = {
-			["helmet"] = {
-				parent	= "head",
-				min	= Vector(-4.5, -6.5, 3),
-				max	= Vector(4.5, 6.5, 6.5)
-			},
-			["vest"] = {
-				parent	= "chest",
-				min	= Vector(-7.5, -6, -11),
-				max	= Vector(7.5, 6.5, 11)
-			},
-		},
-		[4] = {
-			["helmet"] = {
-				parent	= "head",
-				min	= Vector(-4.5, -6.5, 3),
-				max	= Vector(4.5, 6.5, 6.5)
-			},
-			["vest"] = {
-				parent	= "chest",
-				min	= Vector(-7.5, -6, -11),
-				max	= Vector(7.5, 6.5, 11)
-			},
-		}
-	}
-
-	local function RoundVector(Vec, Dec)
-		return Vector(math.Round(Vec.x, Dec), math.Round(Vec.y, Dec), math.Round(Vec.z, Dec))
-	end
-
-	local function RoundAngle(Ang, Dec)
-		return Angle(math.Round(Ang.p, Dec), math.Round(Ang.y, Dec), math.Round(Ang.r, Dec))
-	end
-
-	function ACF.PrepareAlias(Vehicle, Ply)
-		if not IsValid(Vehicle) then return end
-		if not IsValid(Ply) then return end
-		if Vehicle._Alias ~= nil then return end
-		local Alias	= {}
-
-		-- Since this list is not always available in the same state, we'll need to get it over and over
-		local VT = list.Get("Vehicles")
-
-		-- Every playermodel is a little different, so this has to be done on a per-player basis
-		local SeqList = {
-			[Ply:LookupSequence("sit_rollercoaster")] = 1,
-			[Ply:LookupSequence("sit")] = 1, -- basically the same as sit_rollercoaster? Seems to only be used for PHX Car Seat 1
-			[Ply:LookupSequence("drive_jeep")] = 2,
-			[Ply:LookupSequence("drive_airboat")] = 3,
-			[Ply:LookupSequence("drive_pd")] = 4,
-		}
-
-		local Seq = -1
-
-		if VT[Vehicle.VehicleName] then
-			local VTD = VT[Vehicle.VehicleName]
-
-			if VTD.Members and VTD.Members.HandleAnimation and isfunction(VTD.Members.HandleAnimation) then
-				Seq = VTD.Members.HandleAnimation(Vehicle, Ply)
-			else
-				local Class = Vehicle:GetClass()
-
-				if ClassList[Class] then
-					Seq = ClassList[Class](Ply, Vehicle)
-				end
-			end
-		else
-			if Vehicle.HandleAnimation and isfunction(Vehicle.HandleAnimation) then
-				Seq = Vehicle:HandleAnimation(Ply)
-
-				if not SeqList[Seq] then
-					Seq = -1
-				end
-			else
-				local Class = Vehicle:GetClass()
-
-				if ClassList[Class] then
-					Seq = ClassList[Class](Ply, Vehicle)
-				end
-			end
-		end
-
-		local Pose = (Seq ~= -1) and SeqList[Seq] or 1
-		Alias.Pose	= Pose
-		local AliasInfo = SeatModel[Pose]
-		Alias.Model = AliasInfo.model
-		local Pos	= AliasInfo.pos
-		local Ang	= AliasInfo.ang
-
-		local AttachmentPos	= Vector()
-		local AttachmentAng	= Angle()
-		local Override	= false
-
-		if PosOverride[Vehicle:GetModel()] then
-			AttachmentPos, AttachmentAng, Override = PosOverride[Vehicle:GetModel()](Vehicle)
-		else
-			local Attachment = Vehicle:LookupAttachment("vehicle_feet_passenger0")
-			if Attachment > 0 then
-				local AttachmentInfo = Vehicle:GetAttachment(Attachment)
-
-				AttachmentPos = Vehicle:WorldToLocal(AttachmentInfo.Pos)
-				AttachmentAng = Vehicle:WorldToLocalAngles(AttachmentInfo.Ang)
-			end
-		end
-
-		if Override then
-			Alias.Pos	= RoundVector(AttachmentPos, 2)
-			Alias.Ang	= RoundAngle(AttachmentAng, 2)
-		else
-			Alias.Pos	= RoundVector(AttachmentPos - Pos, 2)
-			Alias.Ang	= RoundAngle(AttachmentAng - Ang, 2)
-		end
-
-		Alias.Hitboxes	= Hitboxes[Pose]
-		Alias.ArmorHitboxes	= ArmorHitboxes[Pose]
-		Alias.SeatModel	= Vehicle:GetModel()
-
-		Vehicle._Alias = Alias
-	end
-
-	function ACF.ApplyAlias(Vehicle, Ply)
-		ACF.PrepareAlias(Vehicle, Ply)
-
-		MakeACF_SeatAlias(Vehicle)
-	end
-end
-
 do -- Special squishy functions
 	local BoneList = {
 		head = {boneName = "ValveBiped.Bip01_Head1", group = "head", min = Vector(-6, -6, -6), max = Vector(8, 4, 6)},
@@ -963,84 +671,32 @@ do -- Special squishy functions
 
 		local HitBones = {}
 
-		if Entity:IsPlayer() and Entity:InVehicle() and IsValid(Entity:GetVehicle().Alias) then
-			local Vehicle = Entity:GetVehicle()
-			local Alias = Vehicle.Alias
-			local AliasInfo = Vehicle._Alias
-			local LocalRay = Alias:WorldToLocal(RayStart)
-			local LocalRayDir = Alias:WorldToLocal(RayDir + Alias:GetPos())
+		for k, v in pairs(Bones) do
+			local BoneData = CheckList[k]
+			local BonePos, BoneAng = Entity:GetBonePosition(v)
 
-			for k, v in pairs(AliasInfo.Hitboxes) do
-				local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, v.pos, v.ang, v.min, v.max)
+			local HitPos = util.IntersectRayWithOBB(RayStart, RayDir * 64, BonePos, BoneAng, BoneData.min, BoneData.max)
 
-				--debugoverlay.Text(Alias:LocalToWorld(v.pos),k,10,false)
-				--debugoverlay.BoxAngles(Alias:LocalToWorld(v.pos), v.min, v.max, Alias:LocalToWorldAngles(v.ang), 10, Color(255, 0, 0, 50))
-
-				if HitPos ~= nil then
-					HitBones[k] = HitPos
-				end
+			if HitPos ~= nil then
+				HitBones[k] = HitPos
 			end
+		end
 
-			if Entity:Armor() > 0 then
-				for k, v in pairs(AliasInfo.ArmorHitboxes) do
-					local parentBox = AliasInfo.Hitboxes[v.parent]
+		if table.IsEmpty(HitBones) then
+			local nearest, nearestdist = "none", 16384
 
-					local HitPos = util.IntersectRayWithOBB(LocalRay, LocalRayDir * 64, parentBox.pos, parentBox.ang, v.min, v.max)
-
-					--debugoverlay.Text(Alias:LocalToWorld(parentBox.pos),k,10,false)
-					--debugoverlay.BoxAngles(Alias:LocalToWorld(parentBox.pos), v.min, v.max, Alias:LocalToWorldAngles(parentBox.ang), 10, Color(0, 0, 255, 50))
-
-					if HitPos ~= nil then
-						HitBones[k] = HitPos
-					end
-				end
-			end
-
-			if table.IsEmpty(HitBones) then
-				local nearest, nearestdist = "none", 16384
-
-				for k, v in pairs(AliasInfo.Hitboxes) do
-					local DistToLine = util.DistanceToLine(LocalRay, LocalRay + LocalRayDir * 64, Alias:LocalToWorld(v.pos))
-
-					if DistToLine < nearestdist then
-						nearest = k
-						nearestdist = DistToLine
-					end
-				end
-
-				return CheckList[nearest].group
-			end
-		else
 			for k, v in pairs(Bones) do
-				local BoneData = CheckList[k]
-				local BonePos, BoneAng = Entity:GetBonePosition(v)
+				local BonePos = Entity:GetBonePosition(v)
 
-				local HitPos = util.IntersectRayWithOBB(RayStart, RayDir * 64, BonePos, BoneAng, BoneData.min, BoneData.max)
+				local DistToLine = util.DistanceToLine(RayStart, RayStart + RayDir * 64, BonePos)
 
-				--debugoverlay.Text(BonePos,k,5,false)
-				--debugoverlay.BoxAngles(BonePos, BoneData.min, BoneData.max, BoneAng, 5, Color(255, 0, 0, 50))
-
-				if HitPos ~= nil then
-					HitBones[k] = HitPos
+				if DistToLine < nearestdist then
+					nearest = k
+					nearestdist = DistToLine
 				end
 			end
 
-			if table.IsEmpty(HitBones) then
-				local nearest, nearestdist = "none", 16384
-
-				for k, v in pairs(Bones) do
-					local BonePos = Entity:GetBonePosition(v)
-
-					local DistToLine = util.DistanceToLine(RayStart, RayStart + RayDir * 64, BonePos)
-
-					if DistToLine < nearestdist then
-						nearest = k
-						nearestdist = DistToLine
-					end
-				end
-
-				return CheckList[nearest].group
-			end
+			return CheckList[nearest].group
 		end
 
 		if table.Count(HitBones) == 1 then return CheckList[next(HitBones)].group end -- Single box got hit, just return that
@@ -1118,5 +774,35 @@ do -- Special squishy functions
 		end
 
 		return Damage, HitRes
+	end
+end
+
+-- Method used for contraption_sv's GetEnts. Tl;dr: a filter for physical entities,
+-- where the conditions are as follows:
+--     - The entity must be parentless
+--     - The entity must be either a prop or a baseplate
+--     - If the entity is a prop, it must be connected to an ACF gearbox
+
+-- This should solve most ways of doing weight boosting these days, since theres really no valid
+-- reason for physical components beyond mobility (wheels) or exploits these days.
+do
+	function ACF.IsEntityEligiblePhysmass(Entity)
+		if not IsValid(Entity) then return false end
+
+		-- Do not allow parented entities to count as physical mass whatsoever
+		if IsValid(Entity:GetParent()) then return false end
+
+		-- Don't allow any entity types that aren't baseplates or props to count as physical mass
+		local Class = Entity:GetClass()
+		if Class ~= "acf_baseplate" and Class ~= "prop_physics" then return false end
+
+		-- Don't allow props that aren't attached to gearboxes to count as physical mass
+		if Class == "prop_physics" then
+			local Gearboxes = Entity.ACF_Gearboxes
+			if Gearboxes == nil then return false end
+			if #Gearboxes < 0 then return false end
+		end
+
+		return true
 	end
 end

@@ -5,8 +5,10 @@ function ENT:Update() end
 local HideInfo = ACF.HideInfoBubble
 
 local ColorBlack = Color(0, 0, 0)
-local ColorRed   = Color(255, 50, 40)
-local ColorGreen = Color(40, 255, 50)
+local ColorRed   = Color(255, 96, 87)
+local ColorGreen = Color(119, 255, 92)
+local ColorBlue  = Color(108, 184, 255)
+local VectorZ    = Vector(0, 0, 16)
 
 function ENT:DrawGizmos()
     cam.IgnoreZ(true)
@@ -15,10 +17,15 @@ function ENT:DrawGizmos()
     local Size = self.Size
 
     render.SetColorMaterial()
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 2, 0, 1, ColorBlack)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1, 0, 1, ColorRed)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 2, 0, 1, ColorBlack)
-    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1, 0, 1, ColorGreen)
+
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), 1.25, 0, 1, ColorBlack)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(Size.x / 2, 0, 0)), .5, 0, 1, ColorRed)
+
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), 1.25, 0, 1, ColorBlack)
+    render.DrawBeam(Pos, self:LocalToWorld(Vector(0, -Size.y / 2, 0)), .5, 0, 1, ColorGreen)
+
+    render.DrawBeam(Pos, self:LocalToWorld(VectorZ), 1.25, 0, 1, ColorBlack)
+    render.DrawBeam(Pos, self:LocalToWorld(VectorZ), .5, 0, 1, ColorBlue)
 
     cam.IgnoreZ(false)
 end

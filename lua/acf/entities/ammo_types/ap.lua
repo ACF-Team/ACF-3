@@ -6,8 +6,8 @@ local Ammo      = AmmoTypes.Register("AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing"
-	self.Model		 = "models/munitions/round_100mm_shot.mdl"
-	self.Description = "A shell made out of a solid piece of steel, meant to penetrate armor."
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
+	self.Description = "#acf.descs.ammo.ap"
 	self.Blacklist = {
 		GL = true,
 		SL = true,
@@ -16,7 +16,7 @@ end
 
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10)
@@ -27,7 +27,7 @@ function Ammo:GetDisplayData(Data)
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -42,7 +42,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -144,7 +144,7 @@ if SERVER then
 			if HitRes.Overkill > 0 then
 				table.insert(Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
 
-				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * 39.37
+				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * ACF.MeterToInch
 
 				return "Penetrated"
 			elseif HitRes.Ricochet then
@@ -192,12 +192,12 @@ else
 	end
 
 	function Ammo:GetRangedPenetration(Bullet, Range)
-		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * 0.0254
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * ACF.InchToMeter
 
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
-	function Ammo:AddAmmoPreview(_, Setup)
+	function Ammo:OnCreateAmmoPreview(_, Setup)
 		Setup.Model = self.Model
 		Setup.FOV   = 60
 	end
@@ -239,19 +239,19 @@ else
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers)
-		Trackers.Projectile = true
-		Trackers.Propellant = true
+	function Ammo:OnCreateCrateInformation(_, Label)
+		Label:TrackClientData("Projectile")
+		Label:TrackClientData("Propellant")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -265,7 +265,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
 			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 			local R2P, R2V = self:GetRangedPenetration(BulletData, 800)
@@ -273,6 +273,6 @@ else
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

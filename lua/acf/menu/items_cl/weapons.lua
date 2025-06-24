@@ -1,9 +1,6 @@
 local ACF       = ACF
 local Weapons   = ACF.Classes.Weapons
 local ModelData = ACF.ModelData
-local NameText  = "%smm %s"
-local EntText   = "Mass : %s\nFirerate : %s rpm\nSpread : %s degrees%s"
-local MagText   = "\nRounds : %s rounds\nReload : %s seconds"
 local Current   = {}
 local CreateControl, IsScalable
 
@@ -62,10 +59,11 @@ CreateControl = function(Base)
 
 	if IsScalable then -- Scalable
 		local Bounds = Current.Class.Caliber
-		local Slider = Base:AddSlider("Caliber", Bounds.Min, Bounds.Max, 2)
+		local Slider = Base:AddSlider("#acf.menu.caliber", Bounds.Min, Bounds.Max, 2)
 		Slider:SetClientData("Caliber", "OnValueChanged")
 		Slider:DefineSetter(function(Panel, _, _, Value)
-			local Caliber = math.Round(Value, 2)
+			local Caliber  = math.Round(Value, 2)
+			local NameText = language.GetPhrase("acf.menu.weapons.name_text")
 
 			Title:SetText(NameText:format(Caliber, Current.Class.Name))
 			Panel:SetValue(Caliber)
@@ -125,12 +123,12 @@ end
 
 ---Returns the reload time of the selected weapon entry object using the current ammunition settings.
 ---@return integer ReloadTime The expected reload time of the weapon with the given ammunition.
-local function GetReloadTime()
+local function GetReloadTime(Caliber, Class, Weapon)
 	local BulletData = ACF.GetCurrentAmmoData()
 
 	if not BulletData then return 60 end
 
-	return ACF.BaseReload + (BulletData.ProjMass + BulletData.PropMass) * ACF.MassToTime
+	return ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData)
 end
 
 ---Returns a string with the magazine capacity and reload time of a given weapon entry object.
@@ -144,7 +142,10 @@ local function GetMagazineText(Caliber, Class, Weapon)
 
 	if not MagSize then return "" end
 
-	local MagReload = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+	local MagText    = language.GetPhrase("acf.menu.weapons.mag_stats")
+	local BulletData = ACF.GetCurrentAmmoData()
+	if not BulletData then return "" end
+	local MagReload  = ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData)
 
 	return MagText:format(math.floor(MagSize), math.Round(MagReload, 2))
 end
@@ -165,7 +166,7 @@ local function GetMass(Panel, Caliber, Class, Weapon)
 
 	if not Base then
 		if ModelData.IsOnStandby(Model) then
-			ModelData.QueueRefresh(Model, Panel, function()
+			ModelData.CallOnReceive(Model, Panel, function()
 				Panel:SetText(Panel:GetText())
 			end)
 		end
@@ -182,15 +183,16 @@ end
 local function CreateMenu(Menu)
 	local Entries = Weapons.GetEntries()
 
-	Menu:AddTitle("Weapon Settings")
+	Menu:AddTitle("#acf.menu.weapons.settings")
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
 	local ClassList  = ClassBase:AddComboBox()
-	local WeaponBase = Menu:AddCollapsible("Weapon Information")
+	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info", nil, "icon16/monitor_edit.png")
 	local EntName    = WeaponBase:AddTitle()
 	local ClassDesc  = WeaponBase:AddLabel()
 	local EntPreview = WeaponBase:AddModelPreview(nil, true)
 	local EntData    = WeaponBase:AddLabel()
+	local BreechIndex = WeaponBase:AddComboBox()
 	local AmmoList   = ACF.CreateAmmoMenu(Menu)
 
 	-- Configuring the ACF Spawner tool
@@ -213,25 +215,50 @@ local function CreateMenu(Menu)
 		ClassDesc:SetText(Data.Description)
 
 		AmmoList:LoadEntries(Data.ID)
+
+		BreechIndex:Clear()
+		if Data.BreechConfigs then
+			for Index, Config in ipairs(Data.BreechConfigs.Locations) do
+				BreechIndex:AddChoice("Loaded At: " .. Config.Name, Index)
+			end
+
+			BreechIndex:SetVisible(true)
+			BreechIndex:SetClientData("BreechIndex", "OnSelect")
+			BreechIndex:DefineSetter(function(_, _, _, Value)
+				ACF.SetClientData("BreechIndex", Value)
+				return Value
+			end)
+			BreechIndex:ChooseOptionID(Data.BreechIndex or 1)
+		else
+			BreechIndex:SetVisible(false)
+		end
 	end
 
 	EntData:TrackClientData("Projectile", "SetText")
 	EntData:TrackClientData("Propellant")
 	EntData:TrackClientData("Tracer")
-	EntData:DefineSetter(function()
+	EntData:TrackClientData("Caliber")
+	local function Update()
 		local Class = Current.Class
 
 		if not Class then return "" end
 
 		local Weapon   = Current.Weapon
+
+		local EntText  = language.GetPhrase("acf.menu.weapons.weapon_stats")
 		local Caliber  = Current.Caliber
+		if not Caliber then return "" end
+
 		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
-		local Firerate = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon) or 60 / GetReloadTime()
+		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
+		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return EntText:format(Mass, math.Round(Firerate), Spread, Magazine)
-	end)
+		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
+	end
+	EntData:DefineSetter(Update)
+	EntData:SetText("")
 
 	ClassBase.Menu    = Menu
 	ClassBase.Title   = EntName
@@ -240,4 +267,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(ClassList, Entries, "Name")
 end
 
-ACF.AddMenuItem(1, "Entities", "Weapons", "gun", CreateMenu)
+ACF.AddMenuItem(1, "#acf.menu.entities", "#acf.menu.weapons", "gun", CreateMenu)

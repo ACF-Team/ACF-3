@@ -72,9 +72,11 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
     end)
 end)
 
-hook.Add("ACF_IsLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
+hook.Add("ACF_OnCheckLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
     if not ACF.VehicleLegalChecks then return end
     if not Entity:IsVehicle() then return end
+    if not Entity.VehicleTable then return end
+    if Entity.ACF and Entity.ACF.LuaGeneratedSeat then return end -- Crew/Baseplate seat bypass
 
     local ModelPath = Entity:GetModel()
 
@@ -85,6 +87,7 @@ end)
 
 hook.Add("CanPlayerEnterVehicle", "ACF_SeatLegality", function(Player, Entity)
     if not ACF.VehicleLegalChecks or not Entity.ACF then return end
+    if Entity.ACF and Entity.ACF.LuaGeneratedSeat then return end -- Crew/Baseplate seat bypass
 
     local IsLegal, Reason = ACF.IsLegal(Entity)
     if IsLegal then return end

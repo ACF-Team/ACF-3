@@ -45,7 +45,7 @@ local PortingData = {
 
 Weapons.Register("C", {
 	Name        = "Cannon",
-	Description = "Manually loaded weaponry, allows you fire all kinds of rounds at high velocity.",
+	Description = "#acf.descs.weapons.c",
 	Model       = "models/tankgun_new/tankgun_100mm.mdl",
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
@@ -53,6 +53,7 @@ Weapons.Register("C", {
 	Mass        = 2031,
 	Spread      = 0.08,
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
@@ -102,6 +103,12 @@ Weapons.Register("C", {
 
 		Data.BodyG = Result
 	end,
+	BreechConfigs = {
+		MeasuredCaliber = 17.0,
+		Locations = {
+			{Name = "Breech", LPos = Vector(-58.9363, 0, 0), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
+		}
+	}
 })
 
 Weapons.RegisterItem("37mmC", "C", {

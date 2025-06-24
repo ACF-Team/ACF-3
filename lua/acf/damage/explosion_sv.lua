@@ -16,8 +16,6 @@ local TraceData    = {
 local Ballistics	= ACF.Ballistics
 local Debug			= ACF.Debug
 
-local InchToCm = 2.54
-
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
 -- @return True if the entity can be affected by explosions, false otherwise.
@@ -29,7 +27,7 @@ function Damage.isValidTarget(Entity)
 	local Type = EntACF and EntACF.Type or ACF.Check(Entity)
 
 	if not Type then return false end
-	if Ballistics.TestFilter(Entity) == false then return false end
+	if not Ballistics.TestFilter(Entity) then return false end
 
 	if Type ~= "Squishy" then return true end
 
@@ -88,7 +86,7 @@ end
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local MaxSphere   = 4 * math.pi * (Radius * InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
+	local MaxSphere   = 4 * math.pi * (Radius * ACF.InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
 	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
 	local FragMass    = FragMass / Fragments
 	local BaseFragV   = (Power * 50000 / FragMass / Fragments) ^ 0.5
@@ -154,7 +152,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 				if not Damaged[HitEnt] and Damage.isValidTarget(HitEnt) then
 					local Distance      = Position:Distance(HitPos)
-					local Sphere        = math.max(4 * math.pi * (Distance * InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
+					local Sphere        = math.max(4 * math.pi * (Distance * ACF.InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
 					local EntArea       = HitEnt.ACF.Area
 					local EntArmor      = HitEnt.ACF.Armour
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
@@ -185,7 +183,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 						if FragHit > 0 then
 							local Loss    = BaseFragV * Distance / Radius
-							local FragVel = math.max(BaseFragV - Loss, 0) * 0.0254
+							local FragVel = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
 							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
 							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
 
@@ -240,272 +238,3 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		Power = math.max(Power - PowerSpent, 0)
 	end
 end
-
---[[
-do -- Experimental HE code
-	local DEBUG_TIME  = 30
-	local DEBUG_RED   = Color(255, 0, 0, 15)
-	--local DEBUG_GREEN = Color(0, 255, 0)
-
-	local min   = math.min
-	local max   = math.max
-	local floor = math.floor
-	local round = math.Round
-	local clamp = math.Clamp
-
-	local function isValidTarget(ent)
-		if not IsValid(ent) then return false end
-		if ent.Exploding then return false end
-		if not ACF.Check(ent) then return false end
-		if (ent:IsPlayer() or ent:IsNPC()) and ent:Health() <= 0 then return false end
-
-		return true
-	end
-
-	local function getRandomPos(Entity, IsChar)
-		if IsChar then
-			local Mins, Maxs = Entity:OBBMins() * 0.65, Entity:OBBMaxs() * 0.65 -- Scale down the "hitbox" since most of the character is in the middle
-			local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
-
-			return Entity:LocalToWorld(Rand)
-		else
-			local Mesh = Entity:GetPhysicsObject():GetMesh()
-
-			if not Mesh then -- Is Make-Sphericaled
-				local Mins, Maxs = Entity:OBBMins(), Entity:OBBMaxs()
-				local Rand		 = Vector(math.Rand(Mins[1], Maxs[1]), math.Rand(Mins[2], Maxs[2]), math.Rand(Mins[3], Maxs[3]))
-
-				return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5)) -- Attempt to a random point in the sphere
-			else
-				local Rand = math.random(3, #Mesh / 3) * 3
-				local P    = Vector(0, 0, 0)
-
-				for I = Rand - 2, Rand do P = P + Mesh[I].pos end
-
-				return Entity:LocalToWorld(P / 3) -- Attempt to hit a point on a face of the mesh
-			end
-		end
-	end
-
-	local trace     = ACF.trace
-	local traceData = { mask = MASK_SOLID }
-
-	local function doTrace(originalTarget)
-		local traceRes  = trace(traceData)
-		local hitEntity = traceRes.Entity
-
-		if traceRes.HitNonWorld and hitEntity ~= originalTarget and not isValidTarget(hitEntity) then
-			traceData.filter[#traceData.filter + 1] = hitEntity
-
-			return doTrace()
-		end
-
-		return traceRes
-	end
-
-	local findInSphere = ents.FindInSphere
-	local doDamage     = ACF.Damage
-	local doShove      = ACF.KEShove
-	local doAPKill     = ACF.APKill
-	local doHEKill     = ACF.HEKill
-	local fakeBullet   = {
-		IsFrag   = true,
-		Owner    = true,
-		Gun      = true,
-		Caliber  = true,
-		Diameter = true,
-		ProjArea = true,
-		ProjMass = true,
-		Flight   = true,
-		Speed    = true,
-		GetPenetration = function(self) return self.penetration end
-	}
-
-	function ACF.HE(origin, explosiveMass, fragMass, inflictor, filter, gun)
-		local totalPower = explosiveMass * ACF.HEPower -- KJ
-
-		local blastRatio       = clamp(explosiveMass / fragMass, 0, 1)
-		local blastRadius      = explosiveMass ^ 0.33 * 8 * 39.37 -- in
-		local blastSurfaceArea = 4 * 3.1415 * blastRadius ^ 2 -- in^2
-		local blastPower       = totalPower * blastRatio -- KJ
-
-		local fragCount   = blastRatio < 1 and max(floor(blastRatio * ACF.HEFrag), 2) or 0
-		local fragPower   = totalPower - blastPower -- KJ
-		local fragMass    = fragMass / fragCount -- kg
-		local fragSpeed   = (2 * (fragPower * 1000 / fragCount) / fragMass) ^ 0.5 -- m/s
-		local fragVolume  = fragMass / 0.00794 -- g/mm^3
-		local fragCaliber = (6 * fragVolume / 3.1415) ^ 0.3333 -- mm
-		local fragArea    = 0.25 * 3.1415 * fragCaliber^2
-		local fragPen     = ACF.Penetration(fragSpeed, fragMass, fragCaliber) * 0.25 -- mm
-
-		fakeBullet.Owner    = inflictor or gun
-		fakeBullet.Caliber  = fragCaliber
-		fakeBullet.Diameter = fragCaliber -- this might not be correct
-		fakeBullet.ProjArea = fragArea
-		fakeBullet.ProjMass = fragMass
-		fakeBullet.Speed    = fragSpeed / 39.37 -- m/s
-
-		local filter       = filter or {}
-		local filterCount  = #filter
-
-		traceData.start  = origin
-		traceData.filter = filter
-
-		local bogies              = findInSphere(origin, blastRadius)
-		--local bogieCount          = #bogies
-		local damaged             = {} -- entities that have been damaged and cannot be damaged again
-		local penetratedSomething = true
-
-		do -- debug prints
-			--print("HE")
-			print("  Total Power: " .. round(totalPower, 1) .. " KJ")
-			print("  Blast Ratio: " .. round(blastRatio, 2))
-			print("  Blast Radius: " .. round(blastRadius / 39.37) .. " m")
-			--print("  Blast Energy: " .. round(blastPower, 1) .. " KJ")
-			--print("  Blast Surface Area: " .. round(blastSurfaceArea) .. " in^2")
-			print("")
-			--print("  Frag Energy: " .. round(fragPower / fragCount, 1) .. " KJ")
-			print("  Frag Count: " .. fragCount)
-			print("  Frag Mass: " .. round(fragMass * 1000, 2) .. " g")
-			print("  Frag Speed: " .. round(fragSpeed) .. " m/s")
-			--print("  Frag Volume: " .. round(fragVolume, 2) .. " mm^3")
-			print("  Frag Caliber: " .. round(fragCaliber, 2) .. " mm")
-			print("  Frag Penetration: " .. round(fragPen, 2) .. " mm")
-			print("")
-
-			debugoverlay.Sphere(origin, blastRadius, DEBUG_TIME, Color(255, 255, 255, 5))
-		end
-
-		while penetratedSomething do
-			penetratedSomething = false
-
-			for index, bogie in pairs(bogies) do
-				if not isValidTarget(bogie) then
-					bogies[index]       = nil
-					filterCount         = filterCount + 1
-					filter[filterCount] = bogie
-
-					continue
-				end
-
-				-- Trace towards the bogie
-				-- We'll target any entity that the trace hits so long as it's a valid target and has not been damaged already
-				traceData.endpos = getRandomPos(bogie, bogie:IsPlayer() or bogie:IsNPC())
-
-				local traceRes = doTrace(bogie)
-				local ent      = traceRes.HitNonWorld and traceRes.Entity
-
-				if ent and not damaged[ent] then
-					debugoverlay.Line(origin, traceRes.HitPos, DEBUG_TIME, Color(255, 255, 255, 5))
-					print("Target: " .. tostring(ent))
-
-					damaged[ent] = true
-
-					if ent == bogie then bogies[index] = nil end
-
-					-- Project the targets shadow onto the blast sphere
-					local targetPos     = ent:GetPos()
-					local displacement  = targetPos - origin
-					local distance      = displacement:Length()
-					local sphereAtRange = 4 * 3.1415 * distance^2
-					local circleArea    = ent.ACF.Area / ACF.InchToCmSq / 4 -- Surface area converted to a circle
-					local shadowArea    = circleArea / sphereAtRange * blastSurfaceArea
-
-					-- How much power goes to the target
-					local areaFraction   = min(shadowArea / blastSurfaceArea, 0.5)
-					local powerDelivered = blastPower * areaFraction
-
-					-- Fragmentation damage
-					local fragHits = round(fragCount * areaFraction)
-					local fragRes
-
-					if fragHits > 0 then
-						print("    Frags hitting " .. fragHits)
-
-						fakeBullet.ProjArea    = fragArea * fragHits
-						fakeBullet.Mass        = fragMass * fragHits
-						fakeBullet.Flight      = displacement:GetNormalized() * fragSpeed
-						fakeBullet.penetration = fragPen * (1 - (distance / blastRadius) ^ 2)
-
-						fragRes = doDamage(fakeBullet, traceRes)
-
-					end
-
-					-- Blast damage
-					local blastRes
-
-					-- target has not been killed by frag damage and we are delivering at least 0.5 KJ to the target
-					-- ~0.5 KJ is a world-class punch or handgun shot
-					if not (fragRes and fragRes.Kill) and powerDelivered > 0.5 then
-						fakeBullet.ProjArea = ent.ACF.Area
-					end
-
-					-- Push on it
-					doShove(ent, origin, displacement, powerDelivered)
-
-					print("    Damage: " .. (blastRes and blastRes.Damage or 0) + (fragRes and fragRes.Damage or 0))
-					-- Handle killed or penetrated targets
-					local targetKilled     = (blastRes and blastRes.Kill) or (fragRes and fragRes.Kill)
-					local targetPenetrated = (blastRes and blastRes.Overkill > 0) or (fragRes and fragRes.Overkill > 0)
-
-					if targetKilled or targetPenetrated then
-						print("    Target " .. (targetKilled and "killed" or "penetrated"))
-						debugoverlay.BoxAngles(ent:GetPos(), ent:OBBMins(), ent:OBBMaxs(), ent:GetAngles(), DEBUG_TIME, DEBUG_RED)
-
-						penetratedSomething = true
-						filterCount         = filterCount + 1
-						filter[filterCount] = ent
-
-						if targetKilled then
-							if fragRes and fragRes.Kill then
-								doAPKill(ent, displacement, powerDelivered)
-							else
-								local debris = doHEKill(ent, displacement, powerDelivered, origin)
-
-								for fireball in pairs(debris) do
-									filterCount         = filterCount + 1
-									filter[filterCount] = fireball
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-
-		-- Explosion effect
-		local effect = EffectData()
-			effect:SetOrigin(origin)
-			effect:SetNormal(Vector(0, 0, -1))
-			effect:SetScale(max(explosiveMass ^ 0.33 * 8 * 39.37, 1))
-
-		util.Effect("ACF_Explosion", effect)
-	end
-
-	local rounds = {
-		["(155mm) M107 HE"] = {
-			mass = 43.2, -- kg
-			filler = 6.86, -- tnt
-		}
-		["(76mm) M42A1 HE"] = {
-			mass = 5.84,
-			filler = 0.39
-		},
-		["(40mm) L/60 Bofors HE-T"] = {
-			mass = 0.93,
-			filler = 0.092,
-		},
-		["(??) M67 Hand Grenade"] = {
-			mass = 0.4,
-			filler = 0.18,
-		}
-	}
-
-	function ACF.testHE()
-		for name, data in pairs(rounds) do
-			print(name)
-			ACF.HE(eye().HitPos, data.filler, data.mass - data.filler, me(), {me()}, me())
-		end
-	end
-end
-]]

@@ -92,6 +92,7 @@ function Contraption.GetEnts(Ent)
 	local Children = Ent:GetFamilyChildren()
 	local Phys     = {}
 	local Pare     = {}
+	local Dtch     = {}
 
 	for K in pairs(ConEnts) do
 		if Children[K] then
@@ -101,13 +102,15 @@ function Contraption.GetEnts(Ent)
 
 			if CurFamily and CurFamily:GetRoot() ~= K then
 				Pare[K] = true
-			else
+			elseif ACF.IsEntityEligiblePhysmass(K) then
 				Phys[K] = true
+			else
+				Dtch[K] = true
 			end
 		end
 	end
 
-	return Phys, Pare
+	return Phys, Pare, Dtch
 end
 -------------------------------------------------
 function Contraption.HasConstraints(Ent)
@@ -135,7 +138,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented = Contraption.GetEnts(Ent)
+	local Physical, Parented, Detached = Contraption.GetEnts(Ent)
 	local Constraints = {}
 
 	for K in pairs(Physical) do
@@ -149,7 +152,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				local Class = K:GetClass()
 
 				if Class == "acf_engine" then
-					Power = Power + K.PeakPower * 1.34
+					Power = Power + K.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + K.Capacity
 				end
@@ -183,7 +186,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				local Class = K:GetClass()
 
 				if Class == "acf_engine" then
-					Power = Power + K.PeakPower * 1.34
+					Power = Power + K.PeakPower * ACF.KwToHp
 				elseif Class == "acf_fueltank" then
 					Fuel = Fuel + K.Capacity
 				end
@@ -195,6 +198,16 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 	local TotMass = Con and Con.totalMass or PhysMass
 
+	for K in pairs(Detached) do
+		OthN = OthN + 1
+
+		local Phys = K:GetPhysicsObject()
+
+		if IsValid(Phys) then
+			TotMass = TotMass + Phys:GetMass()
+		end
+	end
+
 	for K in pairs(Physical) do
 		K.acfphystotal      = PhysMass
 		K.acftotal          = TotMass
@@ -202,6 +215,12 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	end
 
 	for K in pairs(Parented) do
+		K.acfphystotal      = PhysMass
+		K.acftotal          = TotMass
+		K.acflastupdatemass = Time
+	end
+
+	for K in pairs(Detached) do
 		K.acfphystotal      = PhysMass
 		K.acftotal          = TotMass
 		K.acflastupdatemass = Time
@@ -279,12 +298,14 @@ do -- ASSUMING DIRECT CONTROL
 			local SetCollisionBounds		= ENT.SetCollisionBounds
 			local SetCollisionGroup			= ENT.SetCollisionGroup
 			local SetNotSolid				= ENT.SetNotSolid
+			local IsVehicle 				= ENT.IsVehicle
 			EntDetours.SetNoDraw			= SetNoDraw
 			EntDetours.SetModel				= SetModel
 			EntDetours.PhysicsInitSphere	= PhysicsInitSphere
 			EntDetours.SetCollisionBounds	= SetCollisionBounds
 			EntDetours.SetCollisionGroup	= SetCollisionGroup
 			EntDetours.SetNotSolid			= SetNotSolid
+			EntDetours.IsVehicle			= IsVehicle
 
 			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
 			function Contraption.SetMass(Entity, Mass)
@@ -322,6 +343,13 @@ do -- ASSUMING DIRECT CONTROL
 				SetModel(self, Model)
 			end
 
+			function ENT:IsVehicle()
+				if self.IsACFEntity and self.ACF_DetourIsVehicle then
+					return self:ACF_DetourIsVehicle()
+				end
+				return IsVehicle(self)
+			end
+
 			-- All of these should prevent the relevant functions from occurring on ACF entities, but only if LegalChecks are enabled
 			-- Will also call ACF.CheckLegal at the same time as preventing the function usage, because likely something else is amiss
 			function ENT:PhysicsInitSphere(...)
@@ -352,7 +380,10 @@ do -- ASSUMING DIRECT CONTROL
 
 			function ENT:SetNotSolid(...)
 				-- NOTE: Slight delay added to this check in order to account for baseplate conversion otherwise failing
-				if self.IsACFEntity and ACF.LegalChecks then timer.Simple(0, function() ACF.CheckLegal(self) end) end
+				if not IsValid(self) then return end
+				if self.IsACFEntity and ACF.LegalChecks then
+					timer.Simple(0, function() if not IsValid(self) then return end ACF.CheckLegal(self) end)
+				end
 
 				SetNotSolid(self, ...)
 			end

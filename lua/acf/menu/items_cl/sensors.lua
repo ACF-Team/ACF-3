@@ -10,17 +10,17 @@ local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Sensor")
 
 	if not next(Entries) then
-		Menu:AddTitle("No Sensors Registered")
-		Menu:AddLabel("No sensors have been registered. If this is incorrect, check your console for errors and contact the server owner.")
+		Menu:AddTitle("#acf.menu.sensors.none_registered")
+		Menu:AddLabel("#acf.menu.sensors.none_registered_desc")
 		return
 	end
 
-	Menu:AddTitle("Sensor Settings")
+	Menu:AddTitle("#acf.menu.sensors.settings")
 
 	local SensorClass = Menu:AddComboBox()
 	local SensorList = Menu:AddComboBox()
 
-	local Base = Menu:AddCollapsible("Sensor Information")
+	local Base = Menu:AddCollapsible("#acf.menu.sensors.sensor_info", nil, "icon16/transmit_edit.png")
 	local SensorName = Base:AddTitle()
 	local SensorDesc = Base:AddLabel()
 	local SensorPreview = Base:AddModelPreview(nil, true)
@@ -47,7 +47,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("Sensor", Data.ID)
 
 		SensorName:SetText(Data.Name)
-		SensorDesc:SetText(Data.Description or "No description provided.")
+		SensorDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		SensorPreview:UpdateModel(Data.Model)
 		SensorPreview:UpdateSettings(Data.Preview)
@@ -67,4 +67,4 @@ local function CreateMenu(Menu)
 	ACF.LoadSortedList(SensorClass, Entries, "ID")
 end
 
-ACF.AddMenuItem(401, "Entities", "Sensors", "transmit", CreateMenu)
+ACF.AddMenuItem(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit", CreateMenu)

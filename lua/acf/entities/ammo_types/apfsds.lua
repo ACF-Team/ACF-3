@@ -8,7 +8,7 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "Armor Piercing Fin Stabilized"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
-	self.Description = "A fin stabilized sabot munition designed to trade damage for superior penetration and long range effectiveness."
+	self.Description = "#acf.descs.ammo.apfsds"
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,
 		AC = true,
@@ -25,7 +25,7 @@ end
 -- NOTE: This assume we're hitting a RHA plate at 0°
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	Speed = Speed * 0.001 -- From m/s to km/s
@@ -60,7 +60,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

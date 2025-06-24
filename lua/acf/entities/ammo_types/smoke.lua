@@ -6,7 +6,8 @@ local Ammo      = AmmoTypes.Register("SM", "AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Smoke"
-	self.Description = "A shell filled white phosporous, detonating on impact. Smoke filler produces a long lasting cloud but takes a while to be effective, whereas WP filler quickly creates a cloud that also dissipates quickly."
+	self.Model		 = "models/munitions/round_100mm_shot.mdl"
+	self.Description = "#acf.descs.ammo.sm"
 	self.Blacklist = {
 		AC = true,
 		AL = true,
@@ -23,20 +24,20 @@ function Ammo:GetPenetration()
 end
 
 function Ammo:GetDisplayData(Data)
-	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * 39.37) * 43.4216, 350)
-	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * 39.37) * 43.4216, 350)
+	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
+	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
 	local Display  = {
 		SMFiller    = SMFiller,
 		SMLife      = math.Round(10 + SMFiller * 0.25, 2),
-		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * 0.0254, 2),
-		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * 0.0254, 2),
+		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
+		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
 		WPFiller    = WPFiller,
 		WPLife      = math.Round(5 + WPFiller * 0.1, 2),
-		WPRadiusMin = math.Round(WPFiller * 1.25 * 0.0254, 2),
-		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * 0.0254, 2),
+		WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
+		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -62,7 +63,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -179,8 +180,8 @@ else
 		local EffectTable = {
 			Origin = Bullet.SimPos,
 			Normal = Bullet.SimFlight:GetNormalized(),
-			Scale = math.max(Bullet.FillerMass * 8 * 39.37, 0),
-			Magnitude = math.max(Bullet.WPMass * 8 * 39.37, 0),
+			Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
+			Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
 			Start = Vector(Color.r, Color.g, Color.b),
 			Radius = Bullet.Caliber,
 		}
@@ -188,8 +189,8 @@ else
 		Effects.CreateEffect("ACF_Smoke", EffectTable)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
+		local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.FillerRatio = math.Round(Value, 2)
@@ -199,7 +200,7 @@ else
 			return BulletData.FillerVol
 		end)
 
-		local SmokeWPRatio = Base:AddSlider("WP to Smoke Ratio", 0, 1, 2)
+		local SmokeWPRatio = Base:AddSlider("#acf.menu.ammo.wp_ratio", 0, 1, 2)
 		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
 		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
 			ToolData.SmokeWPRatio = math.Round(Value, 2)
@@ -210,14 +211,14 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.FillerRatio = true
-		Trackers.SmokeWPRatio = true
+		Label:TrackClientData("FillerRatio")
+		Label:TrackClientData("SmokeWPRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Menu, ToolData, Data)
+	function Ammo:OnCreateAmmoInformation(Menu, ToolData, Data)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
@@ -226,7 +227,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, Data)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
 			local PropMass	= ACF.GetProperMass(Data.PropMass)
@@ -243,7 +244,7 @@ else
 			local SMText, WPText = "", ""
 
 			if Data.FillerMass > 0 then
-				local Text		  = "Smoke Filler Mass : %s\nSmoke Filler Radius : %s m\nSmoke Filler Life : %s s\n"
+				local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
 				local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
 				local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
 
@@ -251,7 +252,7 @@ else
 			end
 
 			if Data.WPMass > 0 then
-				local Text	   = "WP Filler Mass : %s\nWP Filler Radius : %s m\nWP Filler Life : %s s"
+				local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
 				local WPMass   = ACF.GetProperMass(Data.WPMass)
 				local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
 

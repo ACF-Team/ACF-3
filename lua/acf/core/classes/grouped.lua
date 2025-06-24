@@ -31,7 +31,7 @@ function Classes.AddGroup(ID, Destiny, Data)
 		Group[K] = V
 	end
 
-	hook.Run("ACF_OnNewClassGroup", ID, Group)
+	hook.Run("ACF_OnCreateGroup", ID, Group)
 
 	return Group
 end
@@ -68,7 +68,7 @@ function Classes.AddGroupItem(ID, GroupID, Destiny, Data)
 		Class[K] = V
 	end
 
-	hook.Run("ACF_OnNewGroupedClass", ID, Group, Class)
+	hook.Run("ACF_OnCreateGroupItem", ID, Group, Class)
 
 	return Class
 end
@@ -161,7 +161,8 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	--- @param GroupID string # The ID of the group the group item belongs to
 	--- @param ID string # The ID of the group item to make an alias of
 	--- @param Alias string # The alias to apply to the given group item
-	function Namespace.AddItemAlias(GroupID, ID, Alias)
+	--- @param Overrides? table # An optional table of overrides to alter the behavior of the alias
+	function Namespace.AddItemAlias(GroupID, ID, Alias, Overrides)
 		local Group = isstring(GroupID) and Entries[GroupID]
 
 		if not Group then return end
@@ -170,7 +171,24 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 
 		local Lookup = Group.Lookup
 
-		Lookup[Alias] = Lookup[ID]
+		-- NOTE: This is commented out to prevent cyclic references with the regular duplicator
+		-- Try to add this back in if it seems to be useful for something
+		-- Lookup[Alias] = Lookup[ID]
+
+		if istable(Overrides) then
+			-- Make a shallow copy of the table, then apply overrides
+			Lookup[Alias] = {}
+
+			for Key, Value in pairs(Lookup[ID]) do
+				Lookup[Alias][Key] = Value
+			end
+
+			for Key, Value in pairs(Overrides) do
+				Lookup[Alias][Key] = Value
+			end
+		else
+			Lookup[Alias] = Lookup[ID]
+		end
 	end
 
 	--- Checks whether an ID is an alias of a group item
@@ -188,13 +206,13 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 	end
 end
 
-hook.Add("ACF_OnNewClassGroup", "ACF Precache Model", function(_, Group)
+hook.Add("ACF_OnCreateGroup", "ACF Precache Model", function(_, Group)
 	if not isstring(Group.Model) then return end
 
 	util.PrecacheModel(Group.Model)
 end)
 
-hook.Add("ACF_OnNewGroupedClass", "ACF Precache Model", function(_, _, Class)
+hook.Add("ACF_OnCreateGroupItem", "ACF Precache Model", function(_, _, Class)
 	if not isstring(Class.Model) then return end
 
 	util.PrecacheModel(Class.Model)

@@ -1,13 +1,13 @@
 local function CreateMenu(Menu)
-	Menu:AddTitle("Your feedback is important.")
-	Menu:AddLabel("For this reason, we've setup a variety of methods to generate discussion among the members of the ACF community.")
+	Menu:AddTitle("#acf.menu.contact.desc1")
+	Menu:AddLabel("#acf.menu.contact.desc2")
 
 	do -- Official Discord Server
-		local Base = Menu:AddCollapsible("Official Discord Server", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.discord", false, "icon16/server.png")
 
-		Base:AddLabel("We have a Discord server! You can discuss the addon's development or just hang around on one of the off-topic channels.")
+		Base:AddLabel("#acf.menu.contact.discord_desc")
 
-		local Link = Base:AddButton("Join the Discord Server")
+		local Link = Base:AddButton("#acf.menu.contact.discord_join")
 
 		function Link:DoClickInternal()
 			gui.OpenURL("https://discordapp.com/invite/jgdzysxjST")
@@ -15,11 +15,11 @@ local function CreateMenu(Menu)
 	end
 
 	do -- Official Steam Group
-		local Base = Menu:AddCollapsible("Official Steam Group", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.steam", false, "vgui/resource/icon_steam")
 
-		Base:AddLabel("There's also a Steam group, you'll find all important announcements about the addon's development there.")
+		Base:AddLabel("#acf.menu.contact.steam_desc")
 
-		local Link = Base:AddButton("Join the Steam Group")
+		local Link = Base:AddButton("#acf.menu.contact.steam_join")
 
 		function Link:DoClickInternal()
 			gui.OpenURL("https://steamcommunity.com/groups/officialacf")
@@ -27,12 +27,12 @@ local function CreateMenu(Menu)
 	end
 
 	do -- "Github Issues & Suggestions"
-		local Base = Menu:AddCollapsible("Github Issues & Suggestions", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.github", false, "icon16/arrow_branch.png")
 
-		Base:AddLabel("The recommended method for bug reporting and suggestion posting is the Issues tab on the Github repository.")
-		Base:AddLabel("By using this method, you'll be able to easily track your issue and the discussion related to it.")
+		Base:AddLabel("#acf.menu.contact.github_desc1")
+		Base:AddLabel("#acf.menu.contact.github_desc2")
 
-		local Link = Base:AddButton("Report an Issue")
+		local Link = Base:AddButton("#acf.menu.contact.github_report")
 
 		function Link:DoClickInternal()
 			gui.OpenURL("https://github.com/ACF-Team/ACF-3/issues/new/choose")
@@ -40,11 +40,11 @@ local function CreateMenu(Menu)
 	end
 
 	do -- How to Contribute
-		local Base = Menu:AddCollapsible("How to Contribute", false)
+		local Base = Menu:AddCollapsible("#acf.menu.contact.contributing", false, "icon16/page_code.png")
 
-		Base:AddLabel("To make it easier for first time contributors, we've left a guide about how to contribute to the addon.")
+		Base:AddLabel("#acf.menu.contact.contributing_desc")
 
-		local Link = Base:AddButton("Contributing to ACF")
+		local Link = Base:AddButton("#acf.menu.contact.contributing_link")
 
 		function Link:DoClickInternal()
 			gui.OpenURL("https://github.com/ACF-Team/ACF-3/blob/master/CONTRIBUTING.md")
@@ -52,4 +52,4 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddMenuItem(301, "About the Addon", "Contact Us", "feed", CreateMenu)
+ACF.AddMenuItem(301, "#acf.menu.about", "#acf.menu.contact", "feed", CreateMenu)

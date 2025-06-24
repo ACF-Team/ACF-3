@@ -9,7 +9,7 @@ Engines.Register("B6", {
 do
 	Engines.RegisterItem("2.8-B6", "B6", {
 		Name		 = "2.8L Flat 6 Petrol",
-		Description	 = "Car sized flat six engine, sporty and light",
+		Description	 = "#acf.descs.engines.b6.2_8",
 		Model		 = "models/engines/b6small.mdl",
 		Sound		 = "acf_base/engines/b6_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do
 
 	Engines.RegisterItem("5.0-B6", "B6", {
 		Name		 = "5.0L Flat 6 Petrol",
-		Description	 = "Sports car grade flat six, renown for their smooth operation and light weight",
+		Description	 = "#acf.descs.engines.b6.5_0",
 		Model		 = "models/engines/b6med.mdl",
 		Sound		 = "acf_base/engines/b6_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do
 
 	Engines.RegisterItem("8.3-B6", "B6", {
 		Name		 = "8.3L Flat 6 Multifuel",
-		Description	 = "Military-grade multifuel boxer engine. Although heavy, it is compact, durable, and has excellent performance under adverse conditions.",
+		Description	 = "#acf.descs.engines.b6.8_3",
 		Model		 = "models/engines/b6med.mdl",
 		Sound		 = "acf_base/engines/v8_diesel.wav",
 		Fuel		 = { Petrol = true, Diesel = true },
@@ -66,7 +66,7 @@ do
 
 	Engines.RegisterItem("15.8-B6", "B6", {
 		Name		 = "15.8L Flat 6 Petrol",
-		Description	 = "Monstrous aircraft-grade boxer with a high rev range biased powerband",
+		Description	 = "#acf.descs.engines.b6.15_8",
 		Model		 = "models/engines/b6large.mdl",
 		Sound		 = "acf_base/engines/b6_petrollarge.wav",
 		Fuel		 = { Petrol = true },
@@ -85,7 +85,7 @@ do
 
 	Engines.RegisterItem("14.5-B6", "B6", {
 		Name		 = "14.5L Flat 6 Diesel",
-		Description	 = "Very large diesel boxer, compact, but lacking in torque compared to others",
+		Description	 = "#acf.descs.engines.b6.14_5",
 		Model		 = "models/engines/b6large.mdl",
 		Sound		 = "acf_base/engines/i6_diesellarge2.wav",
 		Fuel		 = { Diesel = true },

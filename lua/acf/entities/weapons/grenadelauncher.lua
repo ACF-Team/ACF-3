@@ -4,17 +4,20 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("GL", {
 	Name        = "Grenade Launcher",
-	Description = "Small and light, grenade launchers allow you to fire huge amounts of explosives into an area at the cost of poor accuracy and small magazine size.",
+	Description = "#acf.descs.weapons.gl",
 	Sound       = "acf_base/weapons/grenadelauncher.mp3",
 	Model       = "models/launcher/40mmgl.mdl",
 	MuzzleFlash = "gl_muzzleflash_noscale",
 	DefaultAmmo = "HE",
 	IsScalable  = true,
-	IsBoxed     = true,
+	IsBelted	= true,
+	IsAutomatic = true,
 	Mass		= 101,
 	Spread      = 0.28,
 	Cyclic      = 250,
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 20, -- Thermal energy transfer rate
+	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 10,
 		PropLength = 1,

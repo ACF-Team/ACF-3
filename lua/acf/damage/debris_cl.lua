@@ -1,12 +1,21 @@
-local ACF     = ACF
-
+local ACF         = ACF
+local Damage      = ACF.Damage
 local Effects     = ACF.Utilities.Effects
 local AllowDebris = GetConVar("acf_debris")
+local AutoLod     = GetConVar("acf_debris_autolod")
 local CollideAll  = GetConVar("acf_debris_collision")
 local DebrisLife  = GetConVar("acf_debris_lifetime")
 local GibMult     = GetConVar("acf_debris_gibmultiplier")
 local GibLife     = GetConVar("acf_debris_giblifetime")
 local GibModel    = "models/gibs/metal_gib%s.mdl"
+
+local math = math
+
+local AutoLod_TerribleFps = 15
+local AutoLod_ReallyBadFps = 25
+local AutoLod_LowFps = 35
+local AutoLod_OkayFps = 40
+local AutoLod_GoodFps = 45
 
 local function Particle(Entity, Effect)
     return CreateParticleSystem(Entity, Effect, PATTACH_ABSORIGIN_FOLLOW)
@@ -56,33 +65,61 @@ local function Ignite(Entity, Lifetime, IsGib)
     end
 end
 
-local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite)
+local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite, AutoLOD)
     -- TODO: This fixes a crashing bug, but the underlying issue that Model can sometimes be blank ("") isn't fixed yet
     if not util.IsValidModel(Model) then return end
+
+    local Lifetime = DebrisLife:GetFloat() * math.Rand(0.5, 1)
+    local DoCollideAll = CollideAll:GetBool()
+    local DoParticles = true
+    local AllowIgnite = ShouldIgnite
+    local AllowSmoke = true
+
+    if AutoLOD then
+        local FPS = 1 / RealFrameTime()
+        if FPS < AutoLod_ReallyBadFps then
+            if FPS < math.random(0, AutoLod_TerribleFps) then return end -- their game is basically crashing, dont add to the problem
+            DoParticles = false
+            DoCollideAll = false
+            Lifetime = Lifetime * math.Rand(0.01, 0.1)
+        elseif FPS < AutoLod_LowFps then
+            AllowIgnite = AllowIgnite and math.random(0, 100) < 15
+            AllowSmoke = math.random(0, 100) < 25
+            DoCollideAll = false
+            Lifetime = Lifetime * math.Rand(0.1, 0.25)
+        elseif FPS < AutoLod_OkayFps then
+            AllowIgnite = AllowIgnite and math.random(0, 100) < 25
+            AllowSmoke = math.random(0, 100) < 50
+            DoCollideAll = CollideAll and math.random(0, 100) < 50
+            Lifetime = Lifetime * math.Rand(0.25, 0.5)
+        elseif FPS <= AutoLod_GoodFps then
+            Lifetime = Lifetime * 0.5
+        end
+    end
 
     local Debris = ents.CreateClientProp(Model)
 
     if not IsValid(Debris) then return end
-
-    local Lifetime = DebrisLife:GetFloat() * math.Rand(0.5, 1)
 
     Debris:SetPos(Position)
     Debris:SetAngles(Angles)
     Debris:SetMaterial(Material)
     Debris:SetColor(Color)
 
-    if not CollideAll:GetBool() then
-        Debris:SetCollisionGroup(COLLISION_GROUP_WORLD)
+    if not DoCollideAll then
+        Debris:SetCollisionGroup(COLLISION_GROUP_WORLD) -- disable collisions
     end
 
     Debris:Spawn()
 
-    Debris.EmberParticle = Particle(Debris, "embers_medium_01")
+    if DoParticles then
+        Debris.EmberParticle = Particle(Debris, "embers_medium_01")
 
-    if ShouldIgnite and math.Rand(0, 0.5) < ACF.DebrisIgniteChance then
-        Ignite(Debris, Lifetime)
-    else
-        Debris.SmokeParticle = Particle(Debris, "smoke_exhaust_01a")
+        if AllowIgnite and math.Rand(0, 0.5) < ACF.DebrisIgniteChance then
+            Ignite(Debris, Lifetime)
+        elseif AllowSmoke then
+            Debris.SmokeParticle = Particle(Debris, "smoke_exhaust_01a")
+        end
     end
 
     local PhysObj = Debris:GetPhysicsObject()
@@ -98,12 +135,31 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     return Debris
 end
 
-local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max)
+local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max, AutoLOD)
+    local DoParticles = true
+    local AllowIgnite = true
+    local Lifetime = GibLife:GetFloat() * math.Rand(0.5, 1)
+    if AutoLOD then
+        local FPS = 1 / RealFrameTime()
+        if FPS < AutoLod_ReallyBadFps then
+            if FPS < math.random(0, AutoLod_ReallyBadFps) then return end
+            DoParticles = false
+            Lifetime = Lifetime * math.Rand(0.01, 0.1)
+        elseif FPS < AutoLod_LowFps then
+            DoParticles = math.random(0, 100) < 50
+            AllowIgnite = math.random(0, 100) < 15
+            Lifetime = Lifetime * math.Rand(0.1, 0.25)
+        elseif FPS < AutoLod_OkayFps then
+            AllowIgnite = math.random(0, 100) < 50
+            Lifetime = Lifetime * math.Rand(0.25, 0.5)
+        elseif FPS <= AutoLod_GoodFps then
+            Lifetime = Lifetime * 0.5
+        end
+    end
     local Gib = ents.CreateClientProp(GibModel:format(math.random(1, 5)))
 
     if not IsValid(Gib) then return end
 
-    local Lifetime = GibLife:GetFloat() * math.Rand(0.5, 1)
     local Offset   = ACF.RandomVector(Min, Max)
 
     Offset:Rotate(Angles)
@@ -115,10 +171,12 @@ local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, 
     Gib:SetColor(Color)
     Gib:Spawn()
 
-    Gib.SmokeParticle = Particle(Gib, "smoke_gib_01")
+    if DoParticles then
+        Gib.SmokeParticle = Particle(Gib, "smoke_gib_01")
 
-    if math.random() < ACF.DebrisIgniteChance then
-        Ignite(Gib, Lifetime, true)
+        if AllowIgnite and math.random() < ACF.DebrisIgniteChance then
+            Ignite(Gib, Lifetime, true)
+        end
     end
 
     local PhysObj = Gib:GetPhysicsObject()
@@ -134,11 +192,13 @@ local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, 
     return true
 end
 
-function ACF.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
+function Damage.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
     if not AllowDebris:GetBool() then return end
     if not Model then return end
 
-    local Debris = CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
+    local AutoLOD = AutoLod:GetBool()
+
+    local Debris = CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite, AutoLOD)
 
     if IsValid(Debris) then
         local Multiplier = GibMult:GetFloat()
@@ -148,9 +208,13 @@ function ACF.CreateDebris(Model, Position, Angles, Material, Color, Normal, Powe
 
         if CanGib and Multiplier > 0 then
             local GibCount = math.Clamp(Radius * 0.1, 1, math.max(10 * Multiplier, 1))
+            if AutoLOD then
+                local FPS = 1 / RealFrameTime()
+                GibCount = math.Clamp(GibCount, 0, FPS * 0.5)
+            end
 
             for _ = 1, GibCount do
-                if not CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max) then
+                if not CreateGib(Position, Angles, Material, Color, Normal, Power, Min, Max, AutoLOD) then
                     break
                 end
             end
@@ -174,7 +238,7 @@ local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
 
         local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
 
-        ACF.CreateDebris(
+        Damage.CreateDebris(
             EntInfo.Model,
             EntInfo.Position,
             EntInfo.Angles,

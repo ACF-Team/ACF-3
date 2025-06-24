@@ -9,7 +9,7 @@ function Ammo:OnLoaded()
 
 	self.Name		 = "Flechette"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
-	self.Description = "Flechette shells contain several steel darts inside, functioning as a large shotgun round."
+	self.Description = "#acf.descs.ammo.fl"
 	self.Blacklist = {
 		AC = true,
 		GL = true,
@@ -30,7 +30,7 @@ end
 
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	return ACF.Penetration(Speed, Bullet.FlechetteMass, Bullet.FlechetteCaliber * 10)
@@ -41,7 +41,7 @@ function Ammo:GetDisplayData(Data)
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 	}
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -64,7 +64,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.CartMass		   = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -145,7 +145,7 @@ if SERVER then
 			for _ = 1, BulletData.Flechettes do
 				local Inaccuracy = VectorRand() / 360 * ((Gun.Spread or 0) + BulletData.FlechetteSpread)
 
-				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
+				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
 
 				Ballistics.CreateBullet(FlechetteData)
 			end
@@ -162,7 +162,7 @@ if SERVER then
 				local BaseSpread = BaseInaccuracy * BaseInaccuracyMult
 				local AddSpread  = AddInaccuracy * AddSpreadMult
 
-				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * 39.37 + Gun:GetVelocity()
+				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
 
 				Ballistics.CreateBullet(FlechetteData)
 			end
@@ -191,13 +191,13 @@ else
 	ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
 
 	function Ammo:GetRangedPenetration(Bullet, Range)
-		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * 0.0254
+		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * ACF.InchToMeter
 
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
-		local Flechettes = Base:AddSlider("Flechette Amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
+		local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 		Flechettes:SetClientData("Flechettes", "OnValueChanged")
 		Flechettes:DefineSetter(function(Panel, _, _, Value)
 			ToolData.Flechettes = math.floor(Value)
@@ -209,7 +209,7 @@ else
 			return BulletData.Flechettes
 		end)
 
-		local Spread = Base:AddSlider("Flechette Spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
+		local Spread = Base:AddSlider("#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
 		Spread:SetClientData("Spread", "OnValueChanged")
 		Spread:DefineSetter(function(Panel, _, _, Value)
 			ToolData.Spread = Value
@@ -222,13 +222,13 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.Flechettes = true
+		Label:TrackClientData("Flechettes")
 	end
 
-	function Ammo:AddAmmoInformation(Menu, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Menu, ToolData, BulletData)
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
@@ -236,7 +236,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlechette Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -252,7 +252,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
 			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
@@ -260,6 +260,6 @@ else
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Menu:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Menu:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

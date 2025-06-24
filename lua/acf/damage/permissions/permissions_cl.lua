@@ -1,105 +1,69 @@
 -- Code modified from the NADMOD client permissions menu, by Nebual
 -- http://www.facepunch.com/showthread.php?t=1221183
+
 ACF.Permissions = ACF.Permissions or {}
-local this = ACF.Permissions
-local getPanelChecks = function() return {} end
+local Permissions = ACF.Permissions
+Permissions.Safezones = Permissions.Safezones or {}
 
-net.Receive("ACF_refreshfriends", function()
-	--Msg("\ncl refreshfriends\n")
-	local perms = net.ReadTable()
-	local checks = getPanelChecks()
+function Permissions.ApplyPermissions(Checks)
+	local Perms = {}
 
-	--PrintTable(perms)
-	for _, check in pairs(checks) do
-		if perms[check.steamid] then
-			check:SetChecked(true)
-		else
-			check:SetChecked(false)
-		end
-	end
-end)
-
-net.Receive("ACF_refreshfeedback", function()
-	local success = net.ReadBit()
-	local str, notify
-
-	if success then
-		str = "Successfully updated your ACF damage permissions!"
-		notify = "NOTIFY_GENERIC"
-	else
-		str = "Failed to update your ACF damage permissions."
-		notify = "NOTIFY_ERROR"
-	end
-
-	GAMEMODE:AddNotify(str, notify, 7)
-end)
-
-function this.ApplyPermissions(checks)
-	local perms = {}
-
-	for _, check in pairs(checks) do
-		if not check.steamid then
+	for _, Check in pairs(Checks) do
+		if not Check.SteamID then
 			Error("Encountered player checkbox without an attached SteamID!")
 		end
 
-		perms[check.steamid] = check:GetChecked()
+		Perms[Check.SteamID] = Check:GetChecked()
 	end
 
 	net.Start("ACF_dmgfriends")
-	net.WriteTable(perms)
+	net.WriteTable(Perms)
 	net.SendToServer()
 end
 
-function this.ClientPanel(Panel)
-	Panel:ClearControls()
+do -- Safezones logic
+	local ZonesColor = Color(255, 251, 0, 166)
+	local ZoneOutlinesColor = Color(189, 186, 7, 255)
 
-	if not this.ClientCPanel then
-		this.ClientCPanel = Panel
-	end
+	--- Draws the 3D boxes for all active safezones.
+	function Permissions.RenderSafezones()
+		render.SetColorMaterial()
 
-	Panel:SetName("ACF Damage Permissions")
-	local Title = Panel:Help("ACF Damage Permission Panel")
-	Title:SetContentAlignment(TEXT_ALIGN_CENTER)
-	Title:SetFont("DermaDefaultBold")
-	--txt:SetAutoStretchVertical(false)
-	--txt:SetHeight
-	local Desc = Panel:Help("Allow or deny ACF damage to your props using this panel.\n\nThese preferences only work during the Build and Strict Build modes.")
-	Desc:SetContentAlignment(TEXT_ALIGN_CENTER)
-	--txt:SetAutoStretchVertical(false)
-	Panel.playerChecks = {}
-	local checks = Panel.playerChecks
-	getPanelChecks = function() return checks end
-	local Players = player.GetAll()
+		for _, Coords in pairs(Permissions.Safezones) do
+			local ZoneCenter = (Coords[1] + Coords[2]) / 2
+			local ZoneMins = ZoneCenter - Coords[1]
+			local ZoneMaxs = ZoneCenter - Coords[2]
 
-	for _, tar in ipairs(Players) do
-		if (IsValid(tar)) then
-			local check = Panel:CheckBox(tar:Nick())
-			check.steamid = tar:SteamID()
-			--if tar == LocalPlayer() then check:SetChecked(true) end
-			checks[#checks + 1] = check
+			render.DrawBox(ZoneCenter, angle_zero, ZoneMins, ZoneMaxs, ZonesColor)
+			render.DrawWireframeBox(ZoneCenter, angle_zero, ZoneMins, ZoneMaxs, ZoneOutlinesColor)
 		end
 	end
 
-	local button = Panel:Button("Give Damage Permission")
+	--- Draws the 2D text for all active safezones.
+	function Permissions.RenderSafezoneText()
+		for Name, Coords in pairs(Permissions.Safezones) do
+			local ZoneCenter = ((Coords[1] + Coords[2]) / 2):ToScreen()
+			local ZoneMins = "Start: (" .. Coords[1].x .. ", " .. Coords[1].y .. ", " .. Coords[1].z .. ")"
+			local ZoneMaxs = "End: (" .. Coords[2].x .. ", " .. Coords[2].y .. ", " .. Coords[2].z .. ")"
 
-	button.DoClick = function()
-		this.ApplyPermissions(Panel.playerChecks)
+			draw.SimpleTextOutlined(Name, "ACF_Title", ZoneCenter.x, ZoneCenter.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined(ZoneMins, "ACF_Title", ZoneCenter.x, ZoneCenter.y + 35, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined(ZoneMaxs, "ACF_Title", ZoneCenter.x, ZoneCenter.y + 55, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+		end
 	end
 
-	net.Start("ACF_refreshfriends")
-	net.SendToServer(ply)
+	net.Receive("ACF_OnUpdateSafezones", function()
+		local ZonesCount = net.ReadUInt(5)
+		Permissions.Safezones = {}
+
+		if ZonesCount == 0 then return end
+
+		for _ = 1, ZonesCount do
+			local ZoneName = net.ReadString()
+			local ZoneMins = net.ReadVector()
+			local ZoneMaxs = net.ReadVector()
+
+			Permissions.Safezones[ZoneName] = {ZoneMins, ZoneMaxs}
+		end
+	end)
 end
-
-function this.SpawnMenuOpen()
-	if this.ClientCPanel then
-		this.ClientPanel(this.ClientCPanel)
-	end
-end
-
-hook.Add("SpawnMenuOpen", "ACFPermissionsSpawnMenuOpen", this.SpawnMenuOpen)
-
-function this.PopulateToolMenu()
-	spawnmenu.AddToolMenuOption("Utilities", "ACF", "Damage Permission", "Damage Permission", "", "", this.ClientPanel)
-end
-
-hook.Add("PopulateToolMenu", "ACFPermissionsPopulateToolMenu", this.PopulateToolMenu)

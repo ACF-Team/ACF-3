@@ -4,14 +4,19 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("AC", {
 	Name        = "Autocannon",
-	Description = "Despite being the heaviest piece of automatic weaponry, they offer high magazine capacity with a decent firerate and reload speed.",
+	Description = "#acf.descs.weapons.ac",
 	Model       = "models/autocannon/autocannon_50mm.mdl",
 	Sound       = "acf_base/weapons/ac_fire4.mp3",
 	MuzzleFlash = "auto_muzzleflash_noscale",
 	IsScalable  = true,
+	IsAutomatic = true,
+	IsBelted	= true,
 	Mass        = 1953, -- Relative to the model's volume
 	Spread      = 0.2,
 	ScaleFactor = 0.86, -- Corrective factor to account for improperly scaled base models
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	TransferMult = 20, -- Thermal energy transfer rate
+	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
 		PropLength = 32.5, -- Relative to the Base caliber, in cm

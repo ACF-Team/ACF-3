@@ -5,15 +5,39 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
+util.AddNetworkString "ACF_Scalable_Entity"
+
 local ACF     = ACF
 local Contraption	= ACF.Contraption
-local Network = ACF.Networking
 
 function ENT:GetOriginalSize()
 	local Data = self.ScaleData
 
 	return Data:GetSize()
 end
+
+local function TransmitScaleInfo(Entity, To)
+	local Data  = Entity.ScaleData
+	local Scale = Entity:GetScale()
+
+	net.Start("ACF_Scalable_Entity")
+	net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+	net.WriteFloat(Scale[1])
+	net.WriteFloat(Scale[2])
+	net.WriteFloat(Scale[3])
+	net.WriteString(Data.Type)
+	net.WriteString(Data.Path)
+
+	if To then net.Send(To) else net.Broadcast() end
+end
+
+net.Receive("ACF_Scalable_Entity", function(_, Player)
+	local Entity = ents.GetByIndex(net.ReadUInt(MAX_EDICT_BITS))
+
+	if IsValid(Entity) and Entity.IsScalable then
+		TransmitScaleInfo(Entity, Player)
+	end
+end)
 
 do -- Size and scale setter methods
 	local function ApplyScale(Entity, Data, Scale)
@@ -46,13 +70,13 @@ do -- Size and scale setter methods
 		-- If it's not a new entity, then network the new size
 		-- Otherwise, the entity will request its size by itself
 		if Previous then
-			Network.Broadcast("ACF_Scalable_Entity", Entity)
+			TransmitScaleInfo(Entity)
 		end
 
 		if IsValid(PhysObj) then
 			if Entity.OnResized then Entity:OnResized(Size, Scale) end
 
-			hook.Run("ACF_OnEntityResized", Entity, PhysObj, Size, Scale)
+			hook.Run("ACF_OnResizeEntity", Entity, PhysObj, Size, Scale)
 		end
 
 		return true
@@ -76,28 +100,6 @@ do -- Size and scale setter methods
 
 		return ResizeEntity(self, Scale)
 	end
-end
-
-do -- Network sender and receivers
-	Network.CreateSender("ACF_Scalable_Entity", function(Queue, Entity)
-		local Data = Entity.ScaleData
-
-		Queue[Entity:EntIndex()] = {
-			Scale = Entity:GetScale(),
-			Type  = Data.Type,
-			Path  = Data.Path,
-		}
-	end)
-
-	Network.CreateReceiver("ACF_Scalable_Entity", function(Player, Data)
-		for Index in pairs(Data) do
-			local Entity = ents.GetByIndex(Index)
-
-			if IsValid(Entity) and Entity.IsScalable then
-				Network.Send("ACF_Scalable_Entity", Player, Entity)
-			end
-		end
-	end)
 end
 
 function ENT:SetScaledModel( Model )

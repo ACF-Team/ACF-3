@@ -7,7 +7,8 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing Composite Rigid"
-	self.Description = "A hardened core munition designed for weapons in the 1940s."
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
+	self.Description = "#acf.descs.ammo.apcr"
 	self.Blacklist = ACF.GetWeaponBlacklist({
 		C = true,
 		AL = true,
@@ -29,7 +30,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V

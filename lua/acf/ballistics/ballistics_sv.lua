@@ -1,3 +1,4 @@
+local hook       = hook
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
@@ -17,8 +18,6 @@ local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
-local HookRun      = hook.Run
-
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -30,7 +29,7 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 		Start = Bullet.Flight * 0.1,
 		Attachment = Bullet.Hide and 0 or 1,
 		Origin = (IsUpdate and Hit > 0) and HitPos or Bullet.Pos,
-		Scale = IsUpdate and Hit or 0,
+		Scale = (not Bullet.Hide and IsUpdate) and Hit or 0,
 		EntIndex = not IsUpdate and Bullet.Crate or nil,
 	}
 
@@ -52,7 +51,7 @@ function Ballistics.RemoveBullet(Bullet)
 	Bullet.Removed = true
 
 	if not next(Bullets) then
-		hook.Remove("ACF_OnClock", "ACF Iterate Bullets")
+		hook.Remove("ACF_OnTick", "ACF Iterate Bullets")
 	end
 end
 
@@ -113,10 +112,18 @@ function Ballistics.IterateBullets()
 	end
 end
 
+local RequiredBulletDataProperties = {"Pos", "Flight"}
 function Ballistics.CreateBullet(BulletData)
 	local Index = Ballistics.GetBulletIndex()
-
 	if not Index then return end -- Too many bullets in the air
+
+	-- Validate BulletData, so we can catch these problems easier
+
+	for _, RequiredProp in ipairs(RequiredBulletDataProperties) do
+		if not BulletData[RequiredProp] then
+			error(("Ballistics.CreateBullet: Expected '%s' to be present in BulletData, got nil!"):format(RequiredProp))
+		end
+	end
 
 	local Bullet = table.Copy(BulletData)
 
@@ -128,19 +135,18 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.LastThink   = Clock.CurTime
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
-		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) + CONTENTS_AUX -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
+		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
 	else
-		Bullet.Mask		= MASK_SOLID + CONTENTS_AUX
+		Bullet.Mask		= MASK_SOLID
 	end
 
-	Bullet.Ricochets   = 0
-	Bullet.GroundRicos = 0
+	Bullet.Ricochets   = Bullet.Ricochets or 0
+	Bullet.GroundRicos = Bullet.GroundRicos or 0
 	Bullet.Color       = ColorRand(100, 255)
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
-	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and IsValid(Bullet.Owner:GetVehicle().Alias) then
+	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
-		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle().Alias
 	end
 
 	-- TODO: Make bullets use a metatable instead
@@ -151,7 +157,7 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	if not next(Bullets) then
-		hook.Add("ACF_OnClock", "ACF Iterate Bullets", Ballistics.IterateBullets)
+		hook.Add("ACF_OnTick", "ACF Iterate Bullets", Ballistics.IterateBullets)
 	end
 
 	Bullets[Index] = Bullet
@@ -203,15 +209,25 @@ function Ballistics.TestFilter(Entity, Bullet)
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
-	if HookRun("ACF_OnFilterBullet", Entity, Bullet) == false then return false end
+	if not hook.Run("ACF_OnFilterBullet", Entity, Bullet) then return false end
 
-	if Entity._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	local EntTbl = Entity:GetTable()
+
+	if EntTbl._IsSpherical then return false end -- TODO: Remove when damage changes make props unable to be destroyed, as physical props can have friction reduced (good for wheels)
+	if EntTbl.ACF_InvisibleToBallistics then return false end
+	if EntTbl.ACF_KillableButIndestructible then
+		local EntACF = EntTbl.ACF
+	    if EntACF and EntACF.Health <= 0 then return false end
+	end
+	if EntTbl.ACF_TestFilter then return EntTbl.ACF_TestFilter(Entity, Bullet) end
 
 	return true
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
-	if HookRun("ACF Bullet Flight", Bullet) == false then return end
+	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
+
+	if not CanFly then return end
 
 	if Bullet.SkyLvL then
 		if Clock.CurTime - Bullet.LifeTime > 30 then
@@ -241,7 +257,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	Debug.Line(Bullet.Pos, traceRes.HitPos, 15, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -279,7 +295,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		else
 			local Entity = traceRes.Entity
 
-			if Ballistics.TestFilter(Entity, Bullet) == false then
+			if not Ballistics.TestFilter(Entity, Bullet) then
 				table.insert(Bullet.Filter, Entity)
 				timer.Simple(0, function()
 					Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter; important in case something is embedded in something that shouldn't be hit
@@ -305,7 +321,7 @@ do -- Terminal ballistics --------------------------
 	function Ballistics.CalculateRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		-- Ricochet distribution center
-		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / 39.37 - Bullet.LimitVel) / 100)
+		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / ACF.MeterToInch - Bullet.LimitVel) / 100)
 
 		-- Ricochet probability (sigmoid distribution); up to 5% minimal ricochet probability for projectiles with caliber < 20 mm
 		local ricoProb = math.Clamp(1 / (1 + math.exp((HitAngle - sigmoidCenter) / -4)), math.max(-0.05 * (Bullet.Caliber - 2) / 2, 0), 1)
@@ -328,10 +344,19 @@ do -- Terminal ballistics --------------------------
 		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
+		Debug.Cross(Trace.HitPos, 6, 30, Bullet.Color, true)
+
 		if HitRes.Loss == 1 then
+			-- If the there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
+		else
+			-- If there's less armor than penetration, spalling happens
+			if not Bullet.IsSpall and not Bullet.IsCookOff then
+				Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
+			end
 		end
 
+		-- Transfer bullet momentum into target
 		if ACF.KEPush then
 			ACF.KEShove(
 				Entity,
@@ -341,12 +366,14 @@ do -- Terminal ballistics --------------------------
 			)
 		end
 
+		-- If the entity should be killed, kill it
 		if HitRes.Kill and IsValid(Entity) then
 			ACF.APKill(Entity, Bullet.Flight:GetNormalized(), Energy.Kinetic, DmgInfo)
 		end
 
 		HitRes.Ricochet = false
 
+		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
 			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
 			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
@@ -366,7 +393,7 @@ do -- Terminal ballistics --------------------------
 	function Ballistics.DoRicochet(Bullet, Trace)
 		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
 		local Speed    = Bullet.Flight:Length() / ACF.Scale
-		local MinAngle = math.min(Bullet.Ricochet - Speed / 39.37 / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
+		local MinAngle = math.min(Bullet.Ricochet - Speed / ACF.MeterToInch / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
 		local Ricochet = 0
 
 		if HitAngle < 89.9 and HitAngle > math.random(MinAngle, 90) then -- Checking for ricochet
@@ -386,5 +413,77 @@ do -- Terminal ballistics --------------------------
 		end
 
 		return false
+	end
+
+	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed)
+		-- Only ever called during overpenetration
+		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
+
+		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
+
+		local FragFormEnergy = 100 -- Energy needed to form a fragment (J) (Might depend on the material?)
+		local FragTotalEnergy = Energy * 0.33 -- 25% of energy is used to form fragments (J) (Might depend on the material?)
+		local FragCount = math.floor(FragTotalEnergy / FragFormEnergy) -- Number of fragments formed
+		FragCount = math.Clamp(FragCount, 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
+
+		if FragCount < 1 then return end -- No fragments formed
+
+		-- Test values
+		local FragSize = RemovedArea / FragCount 	-- Area of the fragments (cm^2)
+		local FragMass = RemovedMass / FragCount 	-- Mass of the fragments (kg)
+		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
+
+		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+
+		-- print(Energy, FragSize, FragMass, FragSpeed, BaseCone)
+
+		local FragPos = Trace.HitPos
+		local FragDirInit = Bullet.Flight:GetNormalized()
+
+		-- Filter what the bullet has travelled through + the hit entity itself if applicable
+		local Filter = table.Copy(Bullet.Filter)
+		if Trace.Entity:IsValid() then Filter[#Filter + 1] = Trace.Entity end
+
+		-- Define a plane for the spread
+		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
+		local Up = FragDirInit:Cross(Right):GetNormalized()
+		local ConeTan = math.tan(math.rad(BaseCone)) -- "Width" of cone on the plane
+
+		-- Copied from AP ammotype definition
+		local ProjArea = math.pi * (FragSize / 2) ^ 2
+		local DragCoef = ProjArea * 0.0001 / FragMass
+
+		-- Create the fragments
+		for _ = 1, FragCount do
+			-- Uniform sampling of points on a circle defined by the cone on the plane
+			local SpreadRadius = ConeTan * math.sqrt(math.random())
+			local SpreadAngle = math.random() * 2 * math.pi
+			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
+			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
+
+			Ballistics.CreateBullet({
+				Caliber    = FragSize,
+				Diameter   = FragSize,
+				-- Id         = Bullet.Id,
+				Type       = "AP",
+				Owner      = Bullet.Owner,
+				Entity     = Bullet.Entity,
+				-- Crate      = Bullet.Crate,
+				Gun        = Bullet.Gun,
+				Pos        = FragPos,
+				ProjArea   = ProjArea,
+				ProjMass   = FragMass,
+				DragCoef = DragCoef,
+				-- Tracer     = Bullet.Tracer,
+				LimitVel   = 800,
+				Ricochet   = 60,
+				ShovePower = 0.2,
+				Flight = FragDir * FragSpeed,
+				Filter = Filter,
+				Hide = true,
+				IsSpall = true,
+			})
+		end
 	end
 end

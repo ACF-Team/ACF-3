@@ -136,11 +136,21 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
-function PANEL:AddCheckBox(Text)
+function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetDark(true)
+
+	if ConVar then
+		Panel:SetConVar(ConVar)
+	end
+
+	function Panel:LinkToServerData(Key)
+		local Value = ACF.GetSetting(Key)
+		self:SetValue(Value)
+		self:SetServerData(Key, "OnChange")
+	end
 
 	return Panel
 end
@@ -188,11 +198,56 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	Panel:DockMargin(0, 0, 0, 5)
 	Panel:SetDecimals(Decimals or 0)
 	Panel:SetText(Title or "")
-	Panel:SetMinMax(Min, Max)
+	if Min and Max then
+		Panel:SetMinMax(Min, Max)
+	end
 	Panel:SetValue(Min)
 	Panel:SetDark(true)
 
 	Panel.Label:SetFont("ACF_Control")
+
+	function Panel:LinkToServerData(Key)
+		local Value, SettingData = ACF.GetSetting(Key)
+		Panel:SetDecimals(SettingData.Decimals or 0)
+		Panel:SetMinMax(SettingData.Min, SettingData.Max)
+		Panel:SetValue(Value)
+		self:SetServerData(Key, "OnValueChanged")
+	end
+
+	return Panel
+end
+
+function PANEL:AddListView()
+	local LineHeight = 20
+	local Panel = self:AddPanel("DListView")
+	Panel:SetMultiSelect(false)
+	Panel:SetWidth(30)
+
+	local AddColumn = Panel.AddColumn
+	local AddLine = Panel.AddLine
+
+	function Panel:AddColumn(...)
+		local Column = AddColumn(self, ...)
+		Column.Header:SetFont("ACF_Control")
+
+		return Column
+	end
+
+	function Panel:AddLine(...)
+		local Line = AddLine(self, ...)
+
+		for ColumnID in ipairs(Line.Columns) do
+			local Column = Line.Columns[ColumnID]
+
+			if IsValid(Column) then
+				Column:SetFont("ACF_Control")
+			end
+		end
+
+		self:SetHeight(LineHeight * #self.Lines)
+
+		return Line
+	end
 
 	return Panel
 end
@@ -215,7 +270,7 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	return Wang, Text
 end
 
-function PANEL:AddCollapsible(Text, State)
+function PANEL:AddCollapsible(Text, State, Icon)
 	if State == nil then State = true end
 
 	local Base = vgui.Create("ACF_Panel")
@@ -223,10 +278,100 @@ function PANEL:AddCollapsible(Text, State)
 
 	local Category = self:AddPanel("DCollapsibleCategory")
 	Category:SetLabel(Text or "Title")
+	Category.Header:SetFont("ACF_Title")
+	Category.Header:SetSize(0, 24)
+	Category.Image = Category.Header:Add("DImage")
+	Category.Image:SetPos(4, 4)
+	Category.Image:SetSize(24 - 8, 24 - 8)
+
+	function Category:SetIcon(iconStr)
+		if iconStr == nil then
+			Category.Header:SetTextInset(0, 0)
+			self.Image:Hide()
+			return
+		end
+
+		Category.Header:SetTextInset(26, 0)
+		self.Image:Show()
+		self.Image:SetImage(iconStr)
+	end
+
+	if Icon ~= nil then
+		Category:SetIcon(Icon)
+	end
+
 	Category:DoExpansion(State)
 	Category:SetContents(Base)
 
+	function Category:Paint(w, h)
+		local Skin = self:GetSkin()
+		local OldHeight = self:GetHeaderHeight()
+		self:SetHeaderHeight(OldHeight + 1)
+		Skin:PaintCollapsibleCategory(self, w, h)
+		self:SetHeaderHeight(OldHeight)
+	end
+
+	function Category:AnimSlide(_, Delta, Data)
+		self:InvalidateLayout()
+		self:InvalidateParent()
+
+		local _, CH = self.Contents:ChildrenSize()
+
+		if self:GetExpanded() then
+			Data.From = self.Header:GetTall()
+			Data.To = CH
+		else
+			Data.From = CH
+			Data.To = self.Header:GetTall()
+		end
+
+		if IsValid(self.Contents) then self.Contents:SetVisible(true) end
+		self:SetTall(Lerp(Delta, Data.From, Data.To))
+	end
+
+	Category:SetAnimTime(0.2)
+	Category.animSlide = Derma_Anim("Anim", Category, Category.AnimSlide)
+
 	return Base, Category
+end
+
+function PANEL:AddMenuReload(Command)
+	local Reload = self:AddButton("#acf.menu.reload")
+	local ReloadDesc = language.GetPhrase("acf.menu.reload_desc"):format(Command)
+	Reload:SetTooltip(ReloadDesc)
+
+	function Reload:DoClickInternal()
+		RunConsoleCommand(Command)
+	end
+end
+
+function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
+	local HasPonder = Ponder ~= nil
+	local PonderText = language.GetPhrase("acf.menu.ponder_button")
+
+	if not HasPonder then
+		local Button = self:AddButton(HasPonder and PonderText:format(StoryboardName) or "#acf.menu.ponder_not_installed")
+
+		function Button:DoClick() gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276") end
+
+		return Button
+	end
+
+	local Name = language.GetPhrase(Ponder.API.RegisteredAddonCategories[AddonID][CategoryID].Name)
+	local Button = self:AddButton(HasPonder and PonderText:format(Name))
+
+	function Button:DoClick()
+		if not IsValid(Ponder.UIWindow) then
+			Ponder.UIWindow = vgui.Create("Ponder.UI")
+		else
+			Ponder.UIWindow:PonderShow()
+		end
+
+		local UI = Ponder.UIWindow
+		UI:LoadAddonCategoriesIndex(AddonID, CategoryID)
+	end
+
+	return Button
 end
 
 function PANEL:AddGraph()
@@ -608,7 +753,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		if not Center then
 			if ModelData.IsOnStandby(Path) then
-				ModelData.QueueRefresh(Path, self, function()
+				ModelData.CallOnReceive(Path, self, function()
 					self:UpdateModel(Path, Material)
 				end)
 			end

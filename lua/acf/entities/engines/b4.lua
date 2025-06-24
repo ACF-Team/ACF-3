@@ -9,7 +9,7 @@ Engines.Register("B4", {
 do
 	Engines.RegisterItem("1.4-B4", "B4", {
 		Name		 = "1.4L Flat 4 Petrol",
-		Description	 = "Small air cooled flat four, most commonly found in nazi insects",
+		Description	 = "#acf.descs.engines.b4.1_4",
 		Model		 = "models/engines/b4small.mdl",
 		Sound		 = "acf_base/engines/b4_petrolsmall.wav",
 		Fuel		 = { Petrol = true },
@@ -28,7 +28,7 @@ do
 
 	Engines.RegisterItem("2.1-B4", "B4", {
 		Name		 = "2.1L Flat 4 Petrol",
-		Description	 = "Tuned up flat four, probably find this in things that go fast in a desert.",
+		Description	 = "#acf.descs.engines.b4.2_1",
 		Model		 = "models/engines/b4small.mdl",
 		Sound		 = "acf_base/engines/b4_petrolmedium.wav",
 		Fuel		 = { Petrol = true },
@@ -47,7 +47,7 @@ do
 
 	Engines.RegisterItem("2.4-B4", "B4", {
 		Name		 = "2.4L Flat 4 Multifuel",
-		Description	 = "Tiny military-grade multifuel. Heavy, but grunts hard.",
+		Description	 = "#acf.descs.engines.b4.2_4",
 		Model		 = "models/engines/b4small.mdl",
 		Sound		 = "acf_extra/vehiclefx/engines/coh/ba11.wav",
 		Fuel		 = { Petrol = true, Diesel = true },
@@ -66,7 +66,7 @@ do
 
 	Engines.RegisterItem("3.2-B4", "B4", {
 		Name		 = "3.2L Flat 4 Petrol",
-		Description	 = "Bored out fuckswindleton batshit flat four. Fuck yourself.", -- Ok
+		Description	 = "#acf.descs.engines.b4.3_2", -- Ok
 		Model		 = "models/engines/b4med.mdl",
 		Sound		 = "acf_base/engines/b4_petrollarge.wav",
 		Fuel		 = { Petrol = true },

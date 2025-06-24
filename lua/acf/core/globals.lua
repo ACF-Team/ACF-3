@@ -1,5 +1,113 @@
 local ACF = ACF
 
+do
+	-- MARCH:
+	-- Until things load, theres no way to register settings, so all the settings stuff gets created here.
+	-- Data callbacks later creates ACF.__OnDefinedSetting (and also goes through everything defined here).
+	-- Both combined should ensure that no matter where ACF.DefineSetting is called, it will be registered
+	-- (but for official addon stuff, we should just define it here)
+
+	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I 
+	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and 
+	-- globals is the first file that would load...  
+
+	ACF.__DefinedSettings = ACF.__DefinedSettings or {}
+
+	-- This is kind of a weird API, but it allows DataCallback functions to set setting data as long as the key
+	-- isn't the default values (Key, Default, TextWhenChanged, Callback). Just call ACF.GetWorkingSetting() in
+	-- a data callback
+	local SettingData = {}
+
+	-- Defines a single setting.
+	-- Internally sets up the global, then registers the setting data.
+
+	-- A callback function can be provided. This callback should be a function that takes in a string Key and a
+	-- arbitrary type Value, and returns Value back. You can use a function that returns a function to create a
+	-- standard for a specific type; see ACF.BooleanDataCallback, FloatDataCallback, etc for examples of how that
+	-- behavior works.
+
+	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback)
+		ACF[Key] = Default
+
+		SettingData.Key             = Key
+		SettingData.Default         = Default
+		SettingData.TextWhenChanged = TextWhenChanged
+		SettingData.Callback        = Callback
+
+		ACF.__DefinedSettings[Key]  = SettingData
+		SettingData                 = {}
+
+		if ACF.__OnDefinedSetting then
+			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback)
+		end
+	end
+
+	-- Returns the current value for the setting (ACF[Key]), along with the settings data.
+	function ACF.GetSetting(Key)
+		if not ACF[Key] then return end
+
+		return ACF[Key], ACF.__DefinedSettings[Key]
+	end
+
+	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(), 
+	-- SettingData is set to a new table; this is meant to be used in a data callback context (to write things
+	-- like minimum and maximum values for the panel, for example)
+	function ACF.GetWorkingSetting()
+		return SettingData
+	end
+
+	function ACF.BooleanDataCallback(Callback)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type = "Boolean"
+
+		return function(_, Value)
+			Value = tobool(Value)
+
+			if Callback then
+				Callback(Value)
+			end
+
+			return Value
+		end
+	end
+
+	function ACF.FactorDataCallback(ThreshKey, Min, Max, Decimals)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type     = "Factor"
+		SettingData.ThreshKey = ThreshKey
+		SettingData.Min       = Min
+		SettingData.Max       = Max
+		SettingData.Decimals  = Decimals
+
+		return function(Key, Value)
+			local Factor = math.Round(tonumber(Value) or 1, Decimals or 2)
+			if Min then Factor = math.max(Factor, Min) end
+			if Max then Factor = math.min(Factor, Max) end
+
+			local Old = ACF[Key]
+			ACF[ThreshKey] = ACF[ThreshKey] / Old * Factor
+
+			return Factor
+		end
+	end
+
+	function ACF.FloatDataCallback(Min, Max, Decimals)
+		local SettingData = ACF.GetWorkingSetting()
+		SettingData.Type     = "Float"
+		SettingData.Min       = Min
+		SettingData.Max       = Max
+		SettingData.Decimals  = Decimals
+
+		return function(_, Value)
+			local Float = math.Round(tonumber(Value) or 1, Decimals or 2)
+			if Min then Float = math.max(Float, Min) end
+			if Max then Float = math.min(Float, Max) end
+
+			return Float
+		end
+	end
+end
+
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
@@ -9,54 +117,90 @@ do -- ACF global vars
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
 
 	-- General Settings
-	ACF.LegalChecks          = true -- Whether or not IsLegal checks should be run on ACF entities
-	ACF.NameAndShame         = false -- Whether or not IsLegal checks should message everyone* about ACF entities getting disabled
-	ACF.VehicleLegalChecks   = true -- Whether or not IsLegal checks should be run on vehicle entities
+	ACF.DefineSetting("AllowAdminData",     false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RestrictInfo",       true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LegalChecks",        true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("NameAndShame",       false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("VehicleLegalChecks", true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
+
+	ACF.DefineSetting("GunsCanFire",        true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("GunsCanSmoke",       true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RacksCanFire",       true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RequireFuel",        true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
+
+	ACF.Threshold = 264.7
+	ACF.DefineSetting("HealthFactor",       1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
+
+	ACF.ArmorMod = 1
+	ACF.DefineSetting("ArmorFactor",        1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
+
+	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
+	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
+
+	ACF.MinimumArmor         = 1     -- Minimum possible armor that can be given to an entity
+	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
+	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
+	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
+	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
+
+	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
+
+	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
+
+	ACF.DefineSetting("AllowFunEnts",        true,   "Fun Entities have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowArbitraryParents", false,   "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowSpecialEngines", false,  "Special engines have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("ShowFunMenu",         true,   "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowProcArmor",      false,  "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
+		ACF.GlobalFilter["acf_armor"] = not Value
+		return Value
+	end))
+
+	ACF.DefineSetting("WorkshopContent",    true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("WorkshopExtras",     false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+
+	ACF.DefineSetting("CreateDebris",       true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("FireballMult",       1,      nil, ACF.FloatDataCallback(0.01, 1, 2))
+
+	ACF.DefineSetting("EnableSafezones",    true,   "Safezones have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("NoclipOutsideZones", true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
+
+	ACF.MaxDriveshaftAngle   = 80 -- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
-	ACF.RestrictInfo         = true -- If enabled, players will be only allowed to get info from entities they're allowed to mess with.
-	ACF.AllowAdminData       = false -- Allows admins to mess with a few server settings and data variables
-	ACF.HEPush               = true -- Whether or not HE pushes on entities
-	ACF.KEPush               = true -- Whether or not kinetic force pushes on entities
-	ACF.RecoilPush           = true -- Whether or not ACF guns apply recoil
 	ACF.Volume               = 1 -- Global volume for ACF sounds
-	ACF.AllowFunEnts         = true -- Allows entities listed under the Fun Stuff option to be used
-	ACF.AllowProcArmor       = false --Allows procedural armor entities to be used.
-	ACF.WorkshopContent      = true -- Enable workshop content download for clients
-	ACF.WorkshopExtras       = false -- Enable extra workshop content download for clients
-	ACF.SmokeWind            = 5 + math.random() * 35 --affects the ability of smoke to be used for screening effect
-	ACF.MobilityLinkDistance = 325 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
-	ACF.LinkDistance         = 200 -- Maximum distance, in inches, at which components will remain linked with each other
-	ACF.MinimumArmor         = 1 -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000 -- Maximum possible armor that can be given to an entity
+	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
+	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
-
-	ACF.GunsCanFire          = true
-	ACF.GunsCanSmoke         = true
-	ACF.RacksCanFire         = true
+	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 
 	-- Unit Conversion
 	ACF.MeterToInch          = 39.3701 -- Meters to inches
+	ACF.InchToMeter          = 0.0254 -- Inches to meters
 	ACF.gCmToKgIn            = 0.016387064 -- g/cm³ to kg/in³ :face_vomiting: :face_vomiting: :face_vomiting:
-	ACF.MmToInch		     = 0.0393701 -- Millimeters to inches
+	ACF.MmToInch             = 0.0393701 -- Millimeters to inches
 	ACF.InchToMm             = 25.4 -- Inches to millimeters
-	ACF.InchToCmSq		     = 6.45 -- in² to cm²
+	ACF.InchToCm             = 2.54 -- Inches to centimeters
+	ACF.InchToCmSq           = 6.45 -- in² to cm²
+	ACF.InchToCmCu           = 16.387 -- in³ to cm³
+	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
+	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
+	ACF.LToGal               = 0.264172 -- Liters to gallons
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
-	ACF.BaseReload           = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime           = 0.2 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime         = 0.1 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
+	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
+	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
 
 	-- External and Terminal Ballistics
-	ACF.DragDiv              = 80 --Drag fudge factor
-	ACF.Scale                = 1 --Scale factor for ACF in the game world
-	ACF.HealthFactor         = 1
-	ACF.Threshold            = 264.7 -- Health Divisor, directly tied to ACF.HealthFactor
-	ACF.ArmorMod             = 1
-	ACF.ArmorFactor          = 1 -- Multiplier for ACF.ArmorMod
+	ACF.DragDiv              = 80 -- Drag fudge factor
+	ACF.Scale                = 1 -- Scale factor for ACF in the game world
 	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
 	ACF.GlobalFilter = { -- Global ACF filter
 		gmod_ghost = true,
@@ -73,6 +217,8 @@ do -- ACF global vars
 		starfall_prop = true
 	}
 
+	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
+
 	-- Ammo
 	ACF.AmmoArmor            = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
@@ -84,7 +230,7 @@ do -- ACF global vars
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
 	-- HE
-	ACF.HEPower              = 8000 --HE Filler power per KG in KJ
+	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
 	ACF.HEDensity            = 1.65e-3 -- Density of TNT in kg/cm3
 	ACF.HEFrag               = 1000 --Mean fragment number for equal weight TNT and casing
 
@@ -120,28 +266,78 @@ do -- ACF global vars
 		acf_gearbox = true,
 		acf_fueltank = true,
 		acf_engine = true,
+		acf_piledriver = true,
+		acf_rack = true,
+		acf_armor = true,
+		acf_baseplate = true,
+		acf_turret_computer = true,
+		acf_turret_gyro = true,
+		acf_turret_motor = true,
+		acf_computer = true,
+		acf_radar = true,
+		acf_receiver = true,
 		prop_physics = true,
 		prop_vehicle_prisoner_pod = true
 	}
 
 	-- Weapon Accuracy
-	ACF.SpreadScale          = 4 -- The maximum amount that damage can decrease a gun"s accuracy. Default 4x
+	ACF.SpreadScale          = 4 -- The maximum amount that damage can decrease a gun's accuracy. Default 4x
 	ACF.GunInaccuracyScale   = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
-	-- Fuel
-	ACF.RequireFuel          = true -- Whether or not fuel usage should be required for engines
-	ACF.FuelRate             = 15 -- Multiplier for fuel usage, 1.0 is approx real world
-	ACF.FuelFactor           = 1 -- Multiplier for ACF.FuelRate
-	ACF.FuelMinSize          = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelMaxSize          = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor            = 1 -- How many millimeters of armor fuel tanks have
-	ACF.FuelRefillColor      = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
-	ACF.TankVolumeMul        = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
-	ACF.LiIonED              = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance       = 300 -- Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed          = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
-	ACF.RefuelSpeed          = 20 -- Liters per second * ACF.FuelRate
+	-- Fuel/Refills
+	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
+	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
+	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
+	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
+	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
+	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
+	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
+	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+
+	-- Crew 
+	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
+	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
+	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
+	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
+
+	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
+	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
+	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
+	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
+
+	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
+	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
+
+	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
+	ACF.CrewHealth 			= 4		-- How much health crew members have
+
+	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
+	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath
+	ACF.CrewOxygenGainRate 	= 2		-- Multiplier for how fast crew regain their breath
+
+	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
+	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
+
+	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
+	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
+	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
+
+	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
+
+	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
+
+	-- Gearboxes
+	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
+	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox
+	ACF.GearEfficiency     = 0.95 -- The percentage of RPM efficiency kept when increasing the gear count
+	ACF.GearboxMassScale   = 3 -- The exponent to determine the gearbox's mass in proportion to its scale
+	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
+	ACF.TorqueMult         = 5 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
+	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
+	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
+	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to
 end
 
 do -- ACF Convars & Particles
@@ -170,12 +366,14 @@ if SERVER then
 elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
-	CreateClientConVar("acf_mobilityropelinks", 1, true, true)
+	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
+	CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
 	CreateClientConVar("acf_legalshame", 0, true, true, "If enabled, you will get a message in console from the server if someone else has an ACF entity get disabled, but only when the server has that logging enabled.", 0, 1)
 	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
+	CreateClientConVar("acf_debris_autolod", 1, true, false, "Automatically disables some effects on debris if FPS is low.", 0, 1)
 	CreateClientConVar("acf_debris_collision", 0, true, false, "Toggles debris collisions with other entities.", 0, 1)
 	CreateClientConVar("acf_debris_gibmultiplier", 1, true, false, "The amount of gibs spawned when created by ACF debris.", 0, 1)
 	CreateClientConVar("acf_debris_giblifetime", 60, true, false, "Defines lifetime in seconds of each debris gib.", 1, 300)
@@ -198,8 +396,6 @@ elseif CLIENT then
 	ACF.CustomToolCategory = CreateClientConVar("acf_tool_category", 0, true, false, "If enabled, ACF tools will be put inside their own category.", 0, 1)
 
 	if ACF.CustomToolCategory:GetBool() then
-		language.Add("spawnmenu.tools.acf", "ACF")
-
 		-- We use this hook so that the ACF category is always at the top
 		hook.Add("AddToolMenuTabs", "CreateACFCategory", function()
 			spawnmenu.AddToolCategory("Main", "ACF", "#spawnmenu.tools.acf")
@@ -229,7 +425,7 @@ do -- Player loaded hook
 		util.AddNetworkString("ACF_PlayerLoaded")
 
 		net.Receive("ACF_PlayerLoaded", function(_, Player)
-			hook.Run("ACF_OnPlayerLoaded", Player)
+			hook.Run("ACF_OnLoadPlayer", Player)
 		end)
 	else
 		hook.Add("InitPostEntity", "ACF Player Loaded", function()
@@ -244,59 +440,3 @@ end
 cvars.AddChangeCallback("sv_gravity", function(_, _, Value)
 	ACF.Gravity.z = -Value
 end, "ACF Bullet Gravity")
-
-do -- Smoke/Wind -----------------------------------
-	if SERVER then
-		local function msgtoconsole(_, msg)
-			print(msg)
-		end
-
-		util.AddNetworkString("acf_smokewind")
-
-		concommand.Add("acf_smokewind", function(ply, _, args, _)
-			local validply = IsValid(ply)
-
-			local printmsg = validply and function(hud, msg)
-				ply:PrintMessage(hud, msg)
-			end or msgtoconsole
-
-			if not args[1] then
-				printmsg(HUD_PRINTCONSOLE, "Set the wind intensity upon all smoke munitions." .. "\n   This affects the ability of smoke to be used for screening effect." .. "\n   Example; acf_smokewind 300")
-
-				return false
-			end
-
-			if validply and not ply:IsAdmin() then
-				printmsg(HUD_PRINTCONSOLE, "You can't use this because you are not an admin.")
-
-				return false
-			else
-				local wind = tonumber(args[1])
-
-				if not wind then
-					printmsg(HUD_PRINTCONSOLE, "Command unsuccessful: that wind value could not be interpreted as a number!")
-
-					return false
-				end
-
-				ACF.SmokeWind = wind
-				net.Start("acf_smokewind")
-				net.WriteFloat(wind)
-				net.Broadcast()
-				printmsg(HUD_PRINTCONSOLE, "Command SUCCESSFUL: set smoke-wind to " .. wind .. "!")
-
-				return true
-			end
-		end)
-
-		hook.Add("ACF_OnPlayerLoaded", "ACF Send Smoke Wind", function(Player)
-			net.Start("acf_smokewind")
-				net.WriteFloat(ACF.SmokeWind)
-			net.Send(Player)
-		end)
-	else
-		net.Receive("acf_smokewind", function()
-			ACF.SmokeWind = net.ReadFloat()
-		end)
-	end
-end ------------------------------------------------

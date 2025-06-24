@@ -66,7 +66,7 @@ do -- Data persisting
 	local Realm   = SERVER and "Server" or "Client"
 	local Values  = ACF[Realm .. "Data"]
 	local Folder  = "acf/data_vars"
-	local File    = "stored.json"
+	local File    = SERVER and "stored_sv.json" or "stored_cl.json"
 	local Storing
 
 	local function StoreData()
@@ -114,7 +114,7 @@ do -- Data persisting
 		Keys[Key] = Default
 	end
 
-	hook.Add("ACF_On" .. Realm .. "DataUpdate", "ACF Persisted Data", function(_, Key)
+	hook.Add("ACF_OnUpdate" .. Realm .. "Data", "ACF Persisted Data", function(_, Key)
 		UpdateData(Key)
 	end)
 
@@ -202,7 +202,7 @@ do -- Data callbacks
 			Store[Name] = nil
 		end
 
-		hook.Add("ACF_On" .. Realm .. "DataUpdate", "ACF Data Callbacks", function(Player, Key, Value)
+		hook.Add("ACF_OnUpdate" .. Realm .. "Data", "ACF Data Callbacks", function(Player, Key, Value)
 			if not Callback[Key] then return end
 
 			local Data = Queue[Key]

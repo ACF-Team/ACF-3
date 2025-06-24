@@ -1,7 +1,14 @@
 local ACF       = ACF
 local ModelData = ACF.ModelData
 local Models    = ModelData.Models
-local Network   = ACF.Networking
+
+util.AddNetworkString "ACF_ModelData_Entity"
+
+local function SendPointerEntity(To)
+	net.Start("ACF_ModelData_Entity")
+	net.WriteUInt(ModelData.Entity:EntIndex(), MAX_EDICT_BITS)
+	if To then net.Send(To) else net.Broadcast() end
+end
 
 do -- Pointer entity creation
 	local function Create()
@@ -9,7 +16,7 @@ do -- Pointer entity creation
 
 		local Entity = ents.Create("base_entity")
 
-		if not IsValid(Entity) then return print("[SERVER] Failed to create ModelData entity") end
+		if not IsValid(Entity) then return error("[ACF] Failed to create ModelData entity serverside!") end
 
 		function Entity:UpdateTransmitState()
 			return TRANSMIT_ALWAYS
@@ -32,9 +39,8 @@ do -- Pointer entity creation
 			end)
 		end)
 
-		Network.Broadcast("ACF_ModelData_Entity", Entity)
-
 		ModelData.Entity = Entity
+		SendPointerEntity()
 	end
 
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
@@ -43,8 +49,8 @@ do -- Pointer entity creation
 		hook.Remove("InitPostEntity", "ACF_ModelData")
 	end)
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF_ModelData", function(Player)
-		Network.Send("ACF_ModelData_Entity", Player, ModelData.Entity)
+	hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(Player)
+		SendPointerEntity(Player)
 	end)
 
 	hook.Add("ShutDown", "ACF_ModelData", function()
@@ -69,19 +75,6 @@ do -- Model data getter method
 
 		return Entity:GetPhysicsObject()
 	end
-
-	local function SanitizeMesh(PhysObj)
-		local Mesh = PhysObj:GetMeshConvexes()
-
-		for I, Hull in ipairs(Mesh) do
-			for J, Vertex in ipairs(Hull) do
-				Mesh[I][J] = Vertex.pos
-			end
-		end
-
-		return Mesh
-	end
-
 	-------------------------------------------------------------------
 
 	function ModelData.GetModelData(Model)
@@ -100,7 +93,7 @@ do -- Model data getter method
 		local Min, Max = PhysObj:GetAABB()
 
 		Data = {
-			Mesh   = SanitizeMesh(PhysObj),
+			Mesh   = ModelData.SanitizeMesh(PhysObj),
 			Volume = PhysObj:GetVolume(),
 			Center = (Min + Max) * 0.5,
 			Size   = Max - Min,
@@ -111,21 +104,3 @@ do -- Model data getter method
 		return Data
 	end
 end
-
-hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
-	Network.CreateSender("ACF_ModelData_Entity", function(Queue, Entity)
-		Queue.Index = Entity:EntIndex()
-	end)
-
-	Network.CreateReceiver("ACF_ModelData", function(Player, Data)
-		for Model in pairs(Data) do
-			Network.Send("ACF_ModelData", Player, Model)
-		end
-	end)
-
-	Network.CreateSender("ACF_ModelData", function(Queue, Model)
-		Queue[Model] = ModelData.GetModelData(Model)
-	end)
-
-	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
-end)

@@ -1,6 +1,7 @@
 -- Please see lua\acf\menu\tool_functions.lua for more information on how this ACF tool works
 local ACF        = ACF
 local Entities   = ACF.Classes.Entities
+local Messages   = ACF.Utilities.Messages
 local CopiedData = {}
 local Disabled   = {}
 
@@ -25,7 +26,7 @@ if SERVER then
 		DisabledData[Data] = State
 	end)
 
-	hook.Add("ACF_OnPlayerLoaded", "ACF Copy Data", function(Player)
+	hook.Add("ACF_OnLoadPlayer", "ACF Copy Data", function(Player)
 		CopiedData[Player] = {}
 		Disabled[Player] = {}
 	end)
@@ -122,7 +123,7 @@ local function CreateNewEntity(Player, Trace)
 		Message = "#tool.acfcopy.create_succeed"
 	end
 
-	ACF.SendMessage(Player, Result and "Info" or "Error", Message)
+	Messages.SendChat(Player, Result and "Info" or "Error", Message)
 
 	return true
 end
@@ -136,7 +137,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 
 		if not IsValid(Entity) then return CreateNewEntity(Player, Trace) end
 		if not isfunction(Entity.Update) then
-			ACF.SendMessage(Player, "Error", "#tool.acfcopy.unsupported")
+			Messages.SendChat(Player, "Error", "#tool.acfcopy.unsupported")
 			return false
 		end
 
@@ -144,7 +145,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 		local Data  = GetSpawnData(Player, Entity, Class)
 
 		if not Data then
-			ACF.SendMessage(Player, "Error", "#tool.acfcopy.no_info_copied1 " .. Class .. " #tool.acfcopy.no_info_copied2")
+			Messages.SendChat(Player, "Error", "#tool.acfcopy.no_info_copied")
 			return false
 		end
 
@@ -154,7 +155,7 @@ ACF.RegisterOperation("acfcopy", "Main", "CopyPaste", {
 			Message = "#tool.acfcopy.update_fail " .. Message
 		end
 
-		ACF.SendMessage(Player, Result and "Info" or "Error", Message)
+		Messages.SendChat(Player, Result and "Info" or "Error", Message)
 
 		return true
 	end,

@@ -18,6 +18,19 @@ local TimerSimple	= timer.Simple
 local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
+do -- Random timer crew stuff
+	function ENT:UpdateAccuracyMod()
+		self.CrewsByType = self.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
+		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
+		local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
+		local Sum, Count = Sum1 + Sum2 + Sum3, Count1 + Count2 + Count3
+		local Val = (Count > 0) and (Sum / Count) or 0
+		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.AccuracyCrewMod
+	end
+end
+
 do	-- Spawn and Update funcs
 	local WireIO	= Utilities.WireIO
 	local Entities	= Classes.Entities
@@ -184,7 +197,6 @@ do	-- Spawn and Update funcs
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 		Entity:SetNWString("Class", Entity.Class)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
 		WireLib.TriggerOutput(Entity, "Mass", 0)
 
 		for _, v in ipairs(Entity.DataStore) do
@@ -225,19 +237,22 @@ do	-- Spawn and Update funcs
 				Type		= Entity.Turret
 			}
 
-			local DataString = util.TableToJSON(Data)
-
 			net.Start("ACF_RequestTurretInfo")
 				net.WriteEntity(Entity)
 				net.WriteEntity(Entity.Rotator)
-				net.WriteString(DataString)
+				net.WriteVector(Data.LocalCoM)
+				net.WriteFloat(Data.Mass)
+				net.WriteFloat(Data.MinDeg)
+				net.WriteFloat(Data.MaxDeg)
+				net.WriteFloat(Data.CoMDist)
+				net.WriteString(Data.Type)
 			net.Send(Player)
 		end
 	end)
 
 	------------------
 
-	function MakeACF_Turret(Player, Pos, Angle, Data)
+	function ACF.MakeTurret(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local Class = Classes.GetGroup(Turrets, Data.Turret)
@@ -247,7 +262,7 @@ do	-- Spawn and Update funcs
 
 		local Turret	= Turrets.GetItem(Class.ID, Data.Turret)
 
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_turret", Player, Data, Class, Turret)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret", Player, Data, Class, Turret)
 
 		if CanSpawn == false then return false end
 
@@ -274,12 +289,10 @@ do	-- Spawn and Update funcs
 
 		Contraption.SetModel(Entity, Model)
 
-		Entity:SetPlayer(Player)
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity.Owner			= Player
 		Entity.DataStore		= Entities.GetArguments("acf_turret")
 		Entity.MassCheckDelay 	= 0
 		Entity.CoMCheckDelay	= 0
@@ -307,14 +320,16 @@ do	-- Spawn and Update funcs
 
 		Entity:UpdateOverlay(true)
 
-		HookRun("ACF_OnEntitySpawn", "acf_turret", Entity, Data, Class, Turret)
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateAccuracyMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+
+		HookRun("ACF_OnSpawnEntity", "acf_turret", Entity, Data, Class, Turret)
 
 		ACF.CheckLegal(Entity)
 
 		return Entity
 	end
 
-	Entities.Register("acf_turret", MakeACF_Turret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
+	Entities.Register("acf_turret", ACF.MakeTurret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
@@ -325,7 +340,7 @@ do	-- Spawn and Update funcs
 		local Turret	= Turrets.GetItem(Class.ID, Data.Turret)
 		local OldClass	= self.ClassData
 
-		local CanUpdate, Reason	= HookRun("ACF_PreEntityUpdate", "acf_turret", self, Data, Class, Turret)
+		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
@@ -340,13 +355,7 @@ do	-- Spawn and Update funcs
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_turret", self, Data, Class, Motor)
-
-		self:UpdateOverlay(true)
-
-		net.Start("ACF_UpdateEntity")
-			net.WriteEntity(self)
-		net.Broadcast()
+		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		self:UpdateTurretMass()
 
@@ -356,6 +365,12 @@ do	-- Spawn and Update funcs
 	function ENT:OnRemove()
 		if IsValid(self.Rotator) then
 			self.Rotator:Remove()
+		end
+
+		if self.Crews and next(self.Crews) then
+			for Crew in pairs(self.Crews) do
+				if IsValid(Crew) then self:Unlink(Crew) end
+			end
 		end
 	end
 
@@ -1028,7 +1043,7 @@ do -- Metamethods
 
 		function ENT:ACF_Activate(Recalc)
 			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * 6.45
+			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 			local Armour	= self.ScaledArmor
 			local Health	= (Area / ACF.Threshold) * 5
 			local Percent	= 1

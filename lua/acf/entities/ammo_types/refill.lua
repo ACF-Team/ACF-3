@@ -7,7 +7,7 @@ local Ammo   = Types.Register("Refill", "AP")
 function Ammo:OnLoaded()
 	self.Name        = "Refill"
 	self.Model       = "models/Items/BoxSRounds.mdl"
-	self.Description = "Provides supplies to other ammo crates."
+	self.Description = "#acf.descs.ammo.refill"
 	self.Blacklist   = {}
 end
 
@@ -74,10 +74,11 @@ if SERVER then
 			local Distance = Position:DistToSqr(Crate:GetPos())
 
 			if CanRefillCrate(Refill, Crate, Distance) then
-				local Supply = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
-				local Transfer = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
+				local Supply    = math.ceil(ACF.RefillSpeed / Crate.BulletData.CartMass / Distance ^ 0.5)
+				local Transfer  = math.min(Supply, Refill.Ammo, Crate.Capacity - Crate.Ammo)
+				local CanRefill = hook.Run("ACF_PreRefillAmmo", Refill, Crate, Transfer)
 
-				if hook.Run("ACF_CanRefill", Refill, Crate, Transfer) == false then continue end
+				if not CanRefill then continue end
 
 				if not next(Refill.SupplyingTo) then
 					RefillEffect(Refill)
@@ -147,7 +148,7 @@ if SERVER then
 	end
 
 	function Ammo:Create()
-		print("Someone is trying to fire Refill bullets")
+		error("[ACF] Someone is trying to fire Refill bullets!")
 	end
 
 	function Ammo:Network(Entity, BulletData)
@@ -165,14 +166,21 @@ if SERVER then
 		return ""
 	end
 else
-	function Ammo:SetupAmmoMenuSettings(Settings)
-		Settings.SuppressControls    = true
-		Settings.SuppressInformation = true
-	end
-
-	function Ammo:AddAmmoPreview(Preview, Setup, ...)
-		Ammo.BaseClass.AddAmmoPreview(self, Preview, Setup, ...)
+	function Ammo:OnCreateAmmoPreview(Preview, Setup, ...)
+		Ammo.BaseClass.OnCreateAmmoPreview(self, Preview, Setup, ...)
 
 		Setup.FOV = 115
+	end
+
+	function Ammo:PreCreateAmmoControls()
+		return false
+	end
+
+	function Ammo:PreCreateAmmoInformation()
+		return false
+	end
+
+	function Ammo:PreCreateAmmoGraph()
+		return false
 	end
 end

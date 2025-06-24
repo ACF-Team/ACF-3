@@ -1,35 +1,60 @@
 local ACF = ACF
 
 local function CreateMenu(Menu)
-    Menu:AddTitle("Scan a Player [WIP!]")
-    Menu:AddLabel([[Select a player below, then hit the Scan Player button. You will enter a spectator perspective mode that allows you to visualize the components of a contraption. 
-        
-Rotate the camera with your mouse, and use WASD Space/Control to move your location relative to the target. 
-Use the scroll wheel to increase/decrease your movement speed.
-Advanced controls are given to you on the top-right of your screen.
+    Menu:AddTitle("#acf.menu.scanner.menu_title")
 
-This was designed to help the community hold each other accountable, and can help with catching some often used exploits and cheating methods. It is still a work in progress, and there are a lot of features missing. Please report any issues on the GitHub repository.]])
+    local MenuDesc = ""
 
-    local playerList = Menu:AddPanel("DListView")
+    for I = 1, 5 do
+        MenuDesc = MenuDesc .. language.GetPhrase("acf.menu.scanner.menu_desc" .. I)
+    end
+
+    Menu:AddLabel(MenuDesc)
+
+    local playerContainer = Menu:AddPanel("DPanel")
+    playerContainer:Dock(TOP)
+    playerContainer:SetSize(0, 300)
+
+    local playerList = playerContainer:Add("DScrollPanel")
     playerList:Dock(TOP)
     playerList:SetSize(0, 300)
-    playerList:SetMultiSelect(false)
 
-    playerList:AddColumn("Player Name")
+    local highlight = Color(162, 206, 255, 194)
     local function PopulatePlayerList()
-        print("PopulatePlayerList called")
-        local _, selected = playerList:GetSelectedLine()
-        if IsValid(selected) and IsValid(selected.player) then
-            selected = selected.player
-        end
-
         playerList:Clear()
 
-        for _, v in ipairs(player.GetAll()) do
-            local line = playerList:AddLine(v:Nick())
+        for _, v in player.Iterator() do
+            local line = playerList:Add("DButton")
             line.player = v
-            if line.player == selected then
-                playerList:SelectItem(line)
+            line:Dock(TOP)
+            line:SetText("")
+            line:SetTall(32)
+
+            local avatar = line:Add("AvatarImage")
+            avatar:SetSize(24, 24)
+            avatar:SetPos(4, 4)
+            avatar:SetMouseInputEnabled(false)
+            avatar:SetPlayer(v, 32)
+
+            function line:Paint(w, h)
+                local ply = self.player
+                if not IsValid(ply) then return end
+                local name = ply:Nick()
+
+                if self:IsHovered() then
+                    highlight:SetSaturation(Lerp((math.sin(SysTime() * 7) + 1) / 2, 0.2, 0.4))
+                    draw.RoundedBox(2, 0, 0, w, h, highlight)
+                end
+
+                draw.SimpleText(name, "ACF_Label", 32, h / 2, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            end
+
+            function line:DoClickInternal()
+                if not IsValid(line.player) then
+                    return
+                end
+
+                ACF.Scanning.BeginScanning(line.player)
             end
         end
     end
@@ -41,21 +66,11 @@ This was designed to help the community hold each other accountable, and can hel
         end)
     end)
 
-    local btn = Menu:AddButton("Scan Player")
-    local btn2 = Menu:AddButton("Refresh Players")
-    btn:Dock(TOP)
-    function btn:DoClickInternal()
-        local _, selected = playerList:GetSelectedLine()
-        if not IsValid(selected) then
-            Derma_Message("No player selected.", "Scanner Failure", "Go back")
-            return
-        end
-
-        ACF.Scanning.BeginScanning(selected.player)
-    end
+    local btn2 = Menu:AddButton("#acf.menu.scanner.refresh_players")
+    btn2:Dock(TOP)
     function btn2:DoClickInternal()
         PopulatePlayerList()
     end
 end
 
-ACF.AddMenuItem(401, "Scanner", "Scan a Player...", "transmit", CreateMenu)
+ACF.AddMenuItem(401, "#acf.menu.scanner", "#acf.menu.scanner.menu_name", "transmit", CreateMenu)

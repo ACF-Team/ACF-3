@@ -1,17 +1,9 @@
 local ACF   = ACF
 local Clock = ACF.Utilities.Clock
+local Weapons = ACF.Classes.Weapons
 local Queued	= {}
 
-DEFINE_BASECLASS("acf_base_scalable") -- Required to get the local BaseClass
-
 include("shared.lua")
-
-language.Add("Cleanup_acf_gun", "ACF Weapons")
-language.Add("Cleaned_acf_gun", "Cleaned up all ACF Weapons")
-language.Add("Cleanup_acf_smokelauncher", "ACF Smoke Launchers")
-language.Add("SBoxLimit__acf_gun", "You've reached the ACF Weapons limit!")
-language.Add("Cleaned_acf_smokelauncher", "Cleaned up all ACF Smoke Launchers")
-language.Add("SBoxLimit__acf_smokelauncher", "You've reached the ACF Smoke Launcher limit!")
 
 killicon.Add("acf_gun", "HUD/killicons/acf_gun", ACF.KillIconColor)
 
@@ -24,7 +16,7 @@ function ENT:Initialize(...)
 	self.FireAnim 	= self:LookupSequence("shoot")
 	self.CloseAnim 	= self:LookupSequence("load")
 
-	BaseClass.Initialize(self, ...)
+	self.BaseClass.Initialize(self, ...)
 end
 
 function ENT:Update()
@@ -36,7 +28,7 @@ function ENT:OnResized(_, Scale)
 end
 
 function ENT:Think()
-	BaseClass.Think(self)
+	self.BaseClass.Think(self)
 
 	local SelfTbl = self:GetTable()
 	local SinceFire = Clock.CurTime - SelfTbl.LastFire
@@ -53,7 +45,7 @@ end
 
 function ENT:Animate(ReloadTime, LoadOnly)
 	if self.CloseAnim and self.CloseAnim > 0 then
-		self.CloseTime = math.max(ReloadTime - 0.75, ReloadTime * 0.75)
+		self.CloseTime = math.max(ReloadTime - 0.75, (ReloadTime / 2) - (LocalPlayer():Ping() / 1000))
 	else
 		self.CloseTime = ReloadTime
 		self.CloseAnim = nil
@@ -75,7 +67,8 @@ function ENT:Animate(ReloadTime, LoadOnly)
 end
 
 do	-- Overlay/networking for that
-
+	local Purple = Color(255, 0, 255, 100)
+	local Cyan = Color(0, 255, 255, 100)
 	function ENT:RequestGunInfo()
 		if Queued[self] then return end
 
@@ -123,12 +116,40 @@ do	-- Overlay/networking for that
 
 		render.SetColorMaterial()
 
+		local Length = self:GetNW2Float("Length", 0)
+		local Class = self:GetNWString("Class")
+		local ClassData  = Weapons.Get(Class)
+		if ClassData.BreechConfigs and Length > 0 then
+			local BreechIndex = self:GetNW2Int("BreechIndex", 1)
+			local Caliber = self:GetNW2Float("Caliber", 0)
+			local Depth = -Length / ACF.InchToCm / 2
+
+			local Scale = Caliber / ClassData.BreechConfigs.MeasuredCaliber
+			for Index, Config in ipairs(ClassData.BreechConfigs.Locations) do
+				local Pos = self:LocalToWorld(Config.LPos * Scale)
+				local Ang = self:LocalToWorldAngles(Config.LAng)
+				local MinBox = Vector(Depth, -Config.Width / 2 * Scale, -Config.Height / 2 * Scale)
+				local MaxBox = Vector(0, Config.Width / 2 * Scale, Config.Height / 2 * Scale)
+
+				render.DrawWireframeBox(Pos, Ang, MinBox, MaxBox, Index == BreechIndex and Purple or Cyan, true)
+				if Index == BreechIndex then render.DrawWireframeSphere(Pos, 2, 10, 10, Purple, true) end -- Draw the location of the breech
+			end
+		end
+
+		-- Get the currently selected crate
+		local CrateID = self:GetNW2Int("CurCrate", 0)
+		local Temp = Entity(CrateID)
 		if next(SelfTbl.Crates) then
 			for _, T in ipairs(SelfTbl.Crates) do
 				local E = T.Ent
 				if IsValid(E) then
+					-- Double outline selected crate for visibility
+					if E == Temp then
+						render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins() * 1.1, E:OBBMaxs() * 1.1, T.Col, true)
+					end
 					render.DrawWireframeBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col, true)
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), T.Col)
+					if E.DrawStage then E:DrawStage() end
 				end
 			end
 		end

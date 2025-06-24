@@ -9,7 +9,8 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing High Explosive"
-	self.Description = "Less capable armor piercing round with an explosive charge inside."
+	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
+	self.Description = "#acf.descs.ammo.aphe"
 	self.Blacklist = {
 		GL = true,
 		MG = true,
@@ -20,7 +21,7 @@ end
 
 function Ammo:GetPenetration(Bullet, Speed)
 	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * 0.0254 or Bullet.MuzzleVel
+		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 	end
 
 	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
@@ -35,7 +36,7 @@ function Ammo:GetDisplayData(Data)
 	Display.FragMass    = FragMass / Display.Fragments
 	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-	hook.Run("ACF_GetDisplayData", self, Data, Display)
+	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
 	return Display
 end
@@ -55,7 +56,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
-	hook.Run("ACF_UpdateRoundData", self, ToolData, Data, GUIData)
+	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
@@ -145,7 +146,7 @@ else
 		Damage.explosionEffect(Position, Direction, Filler)
 	end
 
-	function Ammo:AddAmmoControls(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 		FillerRatio:DefineSetter(function(_, _, _, Value)
@@ -157,13 +158,13 @@ else
 		end)
 	end
 
-	function Ammo:AddCrateDataTrackers(Trackers, ...)
-		Ammo.BaseClass.AddCrateDataTrackers(self, Trackers, ...)
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Trackers.FillerRatio = true
+		Label:TrackClientData("FillerRatio")
 	end
 
-	function Ammo:AddAmmoInformation(Base, ToolData, BulletData)
+	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
@@ -171,7 +172,7 @@ else
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
+			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
@@ -185,7 +186,7 @@ else
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
+			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
 			local FragMass = ACF.GetProperMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)
@@ -200,7 +201,7 @@ else
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
-			local Text     = "Penetration : %s mm RHA\nAt 300m : %s mm RHA @ %s m/s\nAt 800m : %s mm RHA @ %s m/s"
+			local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen   = math.Round(BulletData.MaxPen, 2)
 			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
@@ -208,6 +209,6 @@ else
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
 
-		Base:AddLabel("Note: The penetration range data is an approximation and may not be entirely accurate.")
+		Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

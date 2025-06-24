@@ -34,6 +34,3 @@ net.Receive("ACF_Messages", function()
 		Messages.PrintChat(Type, Message)
 	end
 end)
-
--- Backwards compatibility
-ACF.PrintToChat = Messages.PrintChat

@@ -4,7 +4,7 @@ local Weapons = ACF.Classes.Weapons
 
 Weapons.Register("SL", {
 	Name        = "Smoke Launcher",
-	Description = "Compact, single shot launchers used to deploy smoke screens towards possible threats.",
+	Description = "#acf.descs.weapons.sl",
 	Sound       = "acf_base/weapons/smoke_launch.mp3",
 	Model       = "models/launcher/40mmsl.mdl",
 	MuzzleFlash = "gl_muzzleflash_noscale",
@@ -17,6 +17,7 @@ Weapons.Register("SL", {
 	Cyclic      = 600,
 	MagSize     = 1,
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
+	TransferMult = 4, -- Thermal energy transfer rate
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
@@ -38,6 +39,13 @@ Weapons.Register("SL", {
 		Min = 10,
 		Max = 15,
 	},
+	BreechConfigs = {
+		MeasuredCaliber = 8.1,
+		Locations = {
+			{Name = "Breech", LPos = Vector(-7.09631, 0, -0.180664), LAng = Angle(0, 0, 0), Width = 3.1889763779528, Height = 3.1889763779528},
+			{Name = "Barrel", LPos = Vector(9.8606, 0, -0.182617), LAng = Angle(180, 0, 0), Width = 3.1889763779528, Height = 3.1889763779528},
+		}
+	}
 })
 
 Weapons.RegisterItem("40mmSL", "SL", {

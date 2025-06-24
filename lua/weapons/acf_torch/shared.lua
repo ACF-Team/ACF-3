@@ -33,7 +33,7 @@ SWEP.ViewModelFlip = false
 SWEP.ViewModelFOV = 55
 SWEP.ViewModel = "models/weapons/c_cuttingtorch.mdl"
 SWEP.WorldModel = "models/weapons/w_cuttingtorch.mdl"
-SWEP.PrintName = "ACF Cutting Torch"
+SWEP.PrintName = "#acf.torch"
 SWEP.Slot = 0
 SWEP.SlotPos = 6
 SWEP.IconLetter = "G"
@@ -169,10 +169,7 @@ function SWEP:Think()
 
 	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
 	--local Trace = Owner:GetEyeTrace()
-	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID + CONTENTS_AUX, filter = {Owner}}
-	if Owner:InVehicle() and IsValid(Owner:GetVehicle().Alias) then
-		TraceData.filter[2] = Owner:GetVehicle().Alias
-	end
+	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID, filter = {Owner}}
 	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
@@ -263,6 +260,14 @@ function SWEP:PrimaryAttack()
 	else
 		local OldHealth = Entity.ACF.Health
 		local MaxHealth = Entity.ACF.MaxHealth
+
+		local Now = CurTime()
+		if Now - (self.LastUpdate or 0) > 0.5 then
+			self.LastUpdate = Now
+			if Entity.ACF_HealthUpdatesWireOverlay then
+				Entity:UpdateOverlay()
+			end
+		end
 
 		if OldHealth >= MaxHealth then return end
 
