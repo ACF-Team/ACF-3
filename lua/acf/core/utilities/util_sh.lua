@@ -1188,15 +1188,12 @@ do -- Reload related
 		if not IsValid(Pod) then return end
 
 		Pod:SetNoDraw(true)
-
-		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
 		Pod:SetNotSolid(true)
-		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
-		local Count = Pod:GetPhysicsObjectCount()
-		for Idx = 0, Count - 1 do
-			local Phys = Pod:GetPhysicsObjectNum(Idx)
-			Phys:SetContents(CONTENTS_EMPTY)
-		end
+		-- MARCH: In Advanced Duplicator 2, pasting runs v.PostEntityPaste (if it exists), and then afterwards will call
+		-- v:SetNotSolid(v.SolidMod). For whatever reason, that is false when the seat gets duped. So this just tricks
+		-- the duplicator to make it not-solid. source: advdupe2/lua/advdupe2/sv_clipboard.lua
+		Pod.SolidMod = true
+
 		Pod.ACF_InvisibleToBallistics = true
 		Pod.ACF_InvisibleToTrace = true
 	end
