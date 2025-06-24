@@ -1187,6 +1187,8 @@ do -- Reload related
 
 		if not IsValid(Pod) then return end
 
+		Pod:SetParent(Entity)
+
 		Pod:SetNoDraw(true)
 
 		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
