@@ -92,7 +92,7 @@ local function CreateMenu(Menu)
 
 	BaseplateConvertInfo:AddLabel(BaseplateConvertText)
 	local Entries = BaseplateTypes.GetEntries()
-	ACF.LoadSortedList(ClassList, Entries, "Name")
+	ACF.LoadSortedList(ClassList, Entries, "Name", "Icon")
 end
 
 ACF.AddMenuItem(50, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)

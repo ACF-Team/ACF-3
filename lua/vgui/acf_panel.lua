@@ -190,6 +190,35 @@ function PANEL:AddComboBox()
 	Panel:SetDark(true)
 	Panel:SetWrap(true)
 
+
+	function Panel:ReloadIconMaterial(Icon)
+		self.IconMaterial = Material(Icon)
+		self.LastIcon = Icon
+	end
+	local OldPaint = Panel.Paint
+	function Panel:Paint(w, h)
+		local Icon = self.ChoiceIcons[self:GetSelectedID()]
+
+		if Icon then
+			self:SetTextInset(24, 0)
+		else
+			self:SetTextInset(8, 0)
+		end
+
+		OldPaint(Panel, w, h)
+
+		if Icon then
+			if self.LastIcon ~= Icon then
+				self:ReloadIconMaterial(Icon)
+			end
+
+			surface.SetMaterial(self.IconMaterial)
+			local Size = 16
+			local Center = (h / 2) - (Size / 2)
+			surface.DrawTexturedRect(Center + 2, Center, Size, Size)
+		end
+	end
+
 	return Panel
 end
 
