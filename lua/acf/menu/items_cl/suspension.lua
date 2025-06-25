@@ -81,9 +81,9 @@ function ACF.CreateSuspensionToolMenu(Panel)
 
             -- Arm related
             local ArmType = SpringGeneral:AddComboBox()
-            ArmType:AddChoice("Arm Type: Fork", 1)
-            ArmType:AddChoice("Arm Type: Forward Lever", 2)
-            ArmType:AddChoice("Arm Type: Sideways Lever", 3)
+            ArmType:AddChoice("Arm Type: Forward Lever", 1)
+            ArmType:AddChoice("Arm Type: Sideways Lever", 2)
+            ArmType:AddChoice("Arm Type: Fork", 3)
 
             function ArmType:OnSelect(_, _, Data)
                 GetConVar("acf_sus_tool_armtype"):SetInt(Data)

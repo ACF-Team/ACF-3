@@ -37,30 +37,30 @@ if CLIENT then
 		language.Add("tool.acfsuspension." .. v.name, v.desc)
 	end
 
-	CreateClientConVar("acf_sus_tool_makespherical", 1, false, true)
-	CreateClientConVar("acf_sus_tool_disablecollisions", 1, false, true)
+	CreateClientConVar("acf_sus_tool_makespherical", 1, true, true)
+	CreateClientConVar("acf_sus_tool_disablecollisions", 1, true, true)
 
-	CreateClientConVar("acf_sus_tool_limiterlength", 0, false, true)
+	CreateClientConVar("acf_sus_tool_limiterlength", 40, true, true)
 
-	CreateClientConVar("acf_sus_tool_springx", 0, false, true)
-	CreateClientConVar("acf_sus_tool_springy", 0, false, true)
-	CreateClientConVar("acf_sus_tool_springz", 40, false, true)
+	CreateClientConVar("acf_sus_tool_springx", 0, true, true)
+	CreateClientConVar("acf_sus_tool_springy", 0, true, true)
+	CreateClientConVar("acf_sus_tool_springz", 40, true, true)
 
-	CreateClientConVar("acf_sus_tool_armx", 40, false, true)
-	CreateClientConVar("acf_sus_tool_army", 40, false, true)
-	CreateClientConVar("acf_sus_tool_armz", 0, false, true)
+	CreateClientConVar("acf_sus_tool_armx", 40, true, true)
+	CreateClientConVar("acf_sus_tool_army", 40, true, true)
+	CreateClientConVar("acf_sus_tool_armz", 0, true, true)
 
-	CreateClientConVar("acf_sus_tool_springtype", 1, false, true)
-	CreateClientConVar("acf_sus_tool_armtype", 1, false, true)
+	CreateClientConVar("acf_sus_tool_springtype", 1, true, true)
+	CreateClientConVar("acf_sus_tool_armtype", 1, true, true)
 
-	CreateClientConVar("acf_sus_tool_elasticity", 10000, false, true)
-	CreateClientConVar("acf_sus_tool_damping", 500, false, true)
-	CreateClientConVar("acf_sus_tool_relativedamping", 0.1, false, true)
-	CreateClientConVar("acf_sus_tool_inoutspeedmul", 4, false, true)
+	CreateClientConVar("acf_sus_tool_elasticity", 10000, true, true)
+	CreateClientConVar("acf_sus_tool_damping", 500, true, true)
+	CreateClientConVar("acf_sus_tool_relativedamping", 0.1, true, true)
+	CreateClientConVar("acf_sus_tool_inoutspeedmul", 4, true, true)
 
-	CreateClientConVar("acf_sus_tool_showwheelinfo", 1, false, true)
-	CreateClientConVar("acf_sus_tool_showarminfo", 1, false, true)
-	CreateClientConVar("acf_sus_tool_showspringinfo", 1, false, true)
+	CreateClientConVar("acf_sus_tool_showwheelinfo", 1, true, true)
+	CreateClientConVar("acf_sus_tool_showarminfo", 1, true, true)
+	CreateClientConVar("acf_sus_tool_showspringinfo", 1, true, true)
 
 	local orange = Color(255, 93, 0)
 	local blue = Color(0, 0, 255)
