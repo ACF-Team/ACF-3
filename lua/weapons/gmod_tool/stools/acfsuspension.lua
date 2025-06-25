@@ -392,7 +392,7 @@ elseif SERVER then -- Serverside-only stuff
 		-- Handle makespherical / disable collisions BEFORE making the constraints
 		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
 		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
-		for _, Wheel in ipairs(Selections.Wheels or EmptyTable) do
+		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
 			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
 			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
