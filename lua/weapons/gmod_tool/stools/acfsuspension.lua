@@ -37,7 +37,6 @@ if CLIENT then
 		language.Add("tool.acfsuspension." .. v.name, v.desc)
 	end
 
-	CreateClientConVar("acf_sus_tool_usesdrivewheel", 1, false, true)
 	CreateClientConVar("acf_sus_tool_makespherical", 1, false, true)
 	CreateClientConVar("acf_sus_tool_disablecollisions", 1, false, true)
 
@@ -62,8 +61,6 @@ if CLIENT then
 	CreateClientConVar("acf_sus_tool_showwheelinfo", 1, false, true)
 	CreateClientConVar("acf_sus_tool_showarminfo", 1, false, true)
 	CreateClientConVar("acf_sus_tool_showspringinfo", 1, false, true)
-
-	CreateClientConVar("acf_sus_tool_suspendallwheels", 0, false, true)
 
 	local orange = Color(255, 93, 0)
 	local blue = Color(0, 0, 255)
@@ -114,7 +111,6 @@ if CLIENT then
 		local Selections = Player.ACF_Sus_Tool_Info
 
 		-- TODO: Try getinfonum
-		local UsesDriveWheel = tonumber(Player:GetInfo("acf_sus_tool_usesdrivewheel"))
 		local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
 		local ArmType = tonumber(Player:GetInfo("acf_sus_tool_armtype"))
 		local ArmX = tonumber(Player:GetInfo("acf_sus_tool_armx"))
@@ -127,7 +123,6 @@ if CLIENT then
 		local ShowWheelInfo = tonumber(Player:GetInfo("acf_sus_tool_showwheelinfo"))
 		local ShowArmInfo = tonumber(Player:GetInfo("acf_sus_tool_showarminfo"))
 		local ShowSpringInfo = tonumber(Player:GetInfo("acf_sus_tool_showspringinfo"))
-		local SuspendsAllWheels = tonumber(Player:GetInfo("acf_sus_tool_suspendallwheels"))
 
 		-- For each plate...
 		local Baseplate = Selections.Plates and Selections.Plates[1]
@@ -138,39 +133,27 @@ if CLIENT then
 			else DrawEntText(Plate, "Steer plate", cyan) end
 
 			-- For each wheel of the plate...
-			for WheelIndex, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+			for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
 				if not IsValid(Wheel) then continue end
 				-- Determine wheel name...
-				local IsLeft = WheelIndex % 2 == 1
-				local Direction = IsLeft and "Left" or "Right"
-				local Steer = PlateIndex > 1 and " Steer" or ""
-				local Drive = UsesDriveWheel == 1 and PlateIndex == 1 and WheelIndex <= 2 and " Drive" or ""
-				local Idler = UsesDriveWheel == 1 and PlateIndex == 1 and WheelIndex > 2 and WheelIndex <= 4 and " Idler" or ""
-				local Road = UsesDriveWheel == 1 and PlateIndex == 1 and WheelIndex > 4 and " Road" or ""
-				Name = Direction .. Drive .. Idler .. Steer .. Road .. " Wheel"
-
 				if ShowWheelInfo == 1 then
 					DrawEntLink(Plate, Wheel, yellow)
-					DrawEntText(Wheel, Name, red)
+					DrawEntText(Wheel, "Wheel", red)
 				end
 
-				-- Not axis, so it has a suspension...
-				local Mirror = IsLeft and 1 or -1
-				local IsSuspended = (SuspendsAllWheels == 0 and WheelIndex > 4) or SuspendsAllWheels == 1
-				if IsSuspended and SpringType ~= 1 then
-					if ShowSpringInfo == 1 then DrawArm(Wheel, Baseplate, Vector(SpringX, SpringY, SpringZ), blue) end
-					if ShowArmInfo == 1 then
-						if ArmType == 1 then
-							DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-							DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
-							DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
-						elseif ArmType == 2 then
-							DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-							DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
-						elseif ArmType == 3 then
-							DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-							DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
-						end
+				local Mirror = Wheel:GetPos().x < Baseplate:GetPos().x and 1 or -1
+				if ShowSpringInfo == 1 then DrawArm(Wheel, Baseplate, Vector(SpringX, SpringY, SpringZ), blue) end
+				if ShowArmInfo == 1 then
+					if ArmType == 1 then
+						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
+					elseif ArmType == 2 then
+						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+					elseif ArmType == 3 then
+						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
 					end
 				end
 			end
@@ -418,7 +401,6 @@ elseif SERVER then -- Serverside-only stuff
 		end
 
 		-- Handle making the suspension constraints
-		local UsesDriveWheel = tonumber(Player:GetInfo("acf_sus_tool_usesdrivewheel"))
 		local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
 		local ArmType = tonumber(Player:GetInfo("acf_sus_tool_armtype"))
 		local ArmX = tonumber(Player:GetInfo("acf_sus_tool_armx"))
@@ -433,74 +415,23 @@ elseif SERVER then -- Serverside-only stuff
 		local Elasticity = tonumber(Player:GetInfo("acf_sus_tool_elasticity"))
 		local Damping = tonumber(Player:GetInfo("acf_sus_tool_damping"))
 		local RelativeDamping = tonumber(Player:GetInfo("acf_sus_tool_relativedamping"))
-		local SuspendsAllWheels = tonumber(Player:GetInfo("acf_sus_tool_suspendallwheels"))
 
 		local Baseplate = Selections.Plates[1]
-		local LeftDriveWheel = Selections.Wheels[1]
-		local RightDriveWheel = Selections.Wheels[2]
-		local LeftIdlerWheel = Selections.Wheels[3]
-		local RightIdlerWheel = Selections.Wheels[4]
 		local ControlPlate = Selections.ControlPlates[1]
+
+		-- Determine left/right wheels, swap if needed
+		local LeftDriveWheel, RightDriveWheel = Selections.Wheels[1], Selections.Wheels[2]
+		if LeftDriveWheel:GetPos().x > RightDriveWheel:GetPos().x then
+			LeftDriveWheel, RightDriveWheel = RightDriveWheel, LeftDriveWheel
+		end
+
+		print(LeftDriveWheel, RightDriveWheel)
 
 		-- Cover edge cases
 		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
 		if SpringType == 2 and not IsValid(ControlPlate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Control plate missing.") return end
-		if UsesDriveWheel == 1 and not (IsValid(LeftDriveWheel) and IsValid(RightDriveWheel)) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Track missing drive wheel(s)") return end
-		if UsesDriveWheel == 1 and not (IsValid(LeftIdlerWheel) and IsValid(RightIdlerWheel)) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Track missing idler wheel(s)") return end
 
-		if UsesDriveWheel == 1 then -- Tracked
-			for Index, Wheel in ipairs(Selections.PlatesToWheels[Baseplate] or EmptyTable) do
-				if not IsValid(Wheel) and checkOwner(Player, Wheel) or not checkOwner(Wheel, Player) then continue end
 
-				local IsSuspended = (SuspendsAllWheels == 0 and Index > 4) or SuspendsAllWheels == 1
-				if Index > 2 then SlaveSocket(Wheel, Index % 2 == 1 and LeftDriveWheel or RightDriveWheel) end -- Other wheels to drive wheel
-				if not IsSuspended then Axis(Wheel, Baseplate) end -- Drive and idler wheels to baseplate
-
-				-- Road wheel to baseplate
-				local Mirror = Index % 2 == 1 and 1 or -1
-				if IsSuspended then
-					if SpringType == 1 then Axis(Wheel, Baseplate) -- Axis suspension
-					else
-						HullSocket(Wheel, Baseplate) -- Restrict rotation to baseplate
-						if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-						elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-						elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
-
-						if SpringType == 2 and IsValid(ControlPlate) then
-							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2) - 3) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
-						elseif SpringType == 3 then
-							MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
-						end
-						if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
-					end
-				end
-			end
-		else -- Wheeled TODO: CHECK and FIX
-			for PlateIndex, Plate in ipairs(Selections.Plates) do
-				if not IsValid(Plate) then continue end
-				for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
-					if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
-
-					local Mirror = Index % 2 == 1 and 1 or -1
-					if SpringType == 1 then -- Axis suspension
-						if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
-						else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
-					else
-						HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
-						if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-						elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-						elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
-
-						if SpringType == 2 and IsValid(ControlPlate) then
-							MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
-						elseif SpringType == 3 then
-							MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
-						end
-						if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
-					end
-				end
-			end
-		end
 
 		ACF.SendNotify(Player, true, "Drivetrain successfully created.")
 	end
