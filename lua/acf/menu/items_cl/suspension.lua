@@ -30,12 +30,6 @@ function ACF.CreateSuspensionToolMenu(Panel)
 
     local GeneralSettings = Menu:AddCollapsible("General Settings", true)
 
-    local UsesDriveWheel = GeneralSettings:AddCheckBox("Drive wheels used", "acf_sus_tool_usesdrivewheel")
-    UsesDriveWheel:SetTooltip("If checked, wheels will be slaved to the drive wheels. (Partially) Tracked vehicles should use this.")
-
-    local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend All Wheels", "acf_sus_tool_suspendallwheels")
-    SuspendDriveWheels:SetTooltip("If checked, all wheels will be suspended, including drive/idler wheels. Tracked vehicles should use this.")
-
     local MakeSpherical = GeneralSettings:AddCheckBox("Make Spherical", "acf_sus_tool_makespherical")
     MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
 

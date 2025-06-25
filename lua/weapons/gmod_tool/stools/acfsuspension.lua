@@ -416,7 +416,7 @@ elseif SERVER then -- Serverside-only stuff
 		local RelativeDamping = tonumber(Player:GetInfo("acf_sus_tool_relativedamping"))
 
 		local Baseplate = Selections.Plates[1]
-		local ControlPlate = Selections.ControlPlates[1]
+		local ControlPlate = Selections.ControlPlate
 
 		-- Cover edge cases
 		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
@@ -441,30 +441,43 @@ elseif SERVER then -- Serverside-only stuff
 			else UndrivenWheels[Wheel] = true end
 		end
 
-		-- for PlateIndex, Plate in ipairs(Selections.Plates) do
-		-- 	if not IsValid(Plate) then continue end
-		-- 	for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
-		-- 		if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+		-- Drivewheel constraints
+		for DriveWheel, _ in pairs(DrivenWheels) do
+			for RoadWheel, _ in pairs(UndrivenWheels) do
+				if LeftWheels[DriveWheel] and LeftWheels[RoadWheel] then SlaveSocket(RoadWheel, DriveWheel) end
+				if RightWheels[DriveWheel] and RightWheels[RoadWheel] then SlaveSocket(RoadWheel, DriveWheel) end
+			end
+		end
 
-		-- 		local Mirror = Wheel:GetPos().x < Baseplate:GetPos().x and 1 or -1
-		-- 		if SpringType == 1 then -- Axis suspension
-		-- 			if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
-		-- 			else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
-		-- 		else
-		-- 			HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
-		-- 			if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-		-- 			elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-		-- 			elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
+		local WheelCount = 0
+		for PlateIndex, Plate in ipairs(Selections.Plates) do
+			if not IsValid(Plate) then continue end
+			for Wheel, _ in pairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+				if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+				WheelCount = WheelCount + 1
 
-		-- 			if SpringType == 2 and IsValid(ControlPlate) then
-		-- 				MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
-		-- 			elseif SpringType == 3 then
-		-- 				MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
-		-- 			end
-		-- 			if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
-		-- 		end
-		-- 	end
-		-- end
+				local Mirror = Wheel:GetPos().x < Baseplate:GetPos().x and 1 or -1
+
+				-- Suspending
+				if SpringType == 1 then -- Axis suspension
+					if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
+					else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
+				else
+					HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
+					if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
+
+					if SpringType == 2 and IsValid(ControlPlate) then
+						MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector(0, 0, WheelCount * 6)), ControlPlate:GetAngles())
+					elseif SpringType == 3 then
+						MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
+					end
+
+					if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
+				end
+			end
+		end
 
 		ACF.SendNotify(Player, true, "Drivetrain successfully created.")
 	end
