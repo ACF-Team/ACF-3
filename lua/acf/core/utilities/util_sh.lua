@@ -197,7 +197,7 @@ do -- Mobility functions
 	--- @return number # The torque value of the gearbox in ft-lb
 	--- @return number # The torque rating of the gearbox in N/m
 	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
-		local Mass = math.floor((BaseMass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 -- Round to the nearest five
+		local Mass = math.Round(BaseMass * (Scale ^ ACF.GearboxMassScale))
 
 		-- Torque calculations
 		local Torque, TorqueRating = 0, 0
