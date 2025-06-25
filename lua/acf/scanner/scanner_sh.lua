@@ -402,12 +402,12 @@ if SERVER then
                         end
                     end
 
-                    net_WriteUInt(#ammoCrates, 14)
+                    net_WriteUInt(#ammoCrates, MAX_EDICT_BITS)
                     for _, v in ipairs(ammoCrates) do
                         writeAmmoFuelPacket(v, v.AmmoType == "Refill")
                     end
 
-                    net_WriteUInt(#fuelTanks, 14)
+                    net_WriteUInt(#fuelTanks, MAX_EDICT_BITS)
                     for _, v in ipairs(fuelTanks) do
                         writeAmmoFuelPacket(v, v.SupplyFuel == true)
                     end
