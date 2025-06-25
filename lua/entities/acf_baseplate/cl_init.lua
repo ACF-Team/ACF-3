@@ -8,7 +8,9 @@ local ColorBlack = Color(0, 0, 0)
 local ColorRed   = Color(255, 96, 87)
 local ColorGreen = Color(119, 255, 92)
 local ColorBlue  = Color(108, 184, 255)
+local ColorOrange = Color(255, 127, 0)
 local VectorZ    = Vector(0, 0, 16)
+local North      = Vector(0, 1, 0)
 
 function ENT:DrawGizmos()
     cam.IgnoreZ(true)
@@ -26,6 +28,14 @@ function ENT:DrawGizmos()
 
     render.DrawBeam(Pos, self:LocalToWorld(VectorZ), 1.25, 0, 1, ColorBlack)
     render.DrawBeam(Pos, self:LocalToWorld(VectorZ), .5, 0, 1, ColorBlue)
+
+    local NorthPos = Pos + North * Size.x
+    render.DrawBeam(Pos, NorthPos, 0.25, 0, 1, ColorOrange)
+
+    cam.Start2D()
+        local NP = NorthPos:ToScreen()
+        draw.SimpleTextOutlined("NORTH", "ACF_Title", NP.x, NP.y, ColorOrange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, ColorBlack)
+    cam.End2D()
 
     cam.IgnoreZ(false)
 end
