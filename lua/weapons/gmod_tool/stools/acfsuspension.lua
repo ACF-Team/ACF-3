@@ -20,7 +20,7 @@ TOOL.Information = {
 }
 
 TOOL.Selections = {}				-- Holds the selections
-TOOL.Selections.ControlPlates = {}	-- Holds the control plate
+TOOL.Selections.ControlPlate = nil	-- Holds the control plate
 TOOL.Selections.Plates = {}			-- Holds the plates
 TOOL.Selections.Wheels = {}			-- Holds the wheels
 TOOL.Selections.PlatesToWheels = {}	-- Holds the wheels for each plate
@@ -133,9 +133,8 @@ if CLIENT then
 			else DrawEntText(Plate, "Steer plate", cyan) end
 
 			-- For each wheel of the plate...
-			for _, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+			for Wheel, _ in pairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
 				if not IsValid(Wheel) then continue end
-				-- Determine wheel name...
 				if ShowWheelInfo == 1 then
 					DrawEntLink(Plate, Wheel, yellow)
 					DrawEntText(Wheel, "Wheel", red)
@@ -159,7 +158,7 @@ if CLIENT then
 			end
 		end
 
-		if IsValid(Selections.ControlPlates[1]) then DrawEntText(Selections.ControlPlates[1], "Control plate", green) end
+		if IsValid(Selections.ControlPlate) then DrawEntText(Selections.ControlPlate, "Control plate", green) end
 	end
 
 	-- Toolgun beam will show even if nothing happens serverside. I don't wanna fix this :(...
@@ -181,10 +180,10 @@ elseif SERVER then -- Serverside-only stuff
 
 	--- Attempts to remove the entity from any of the selections. Relies on silent fails to check everywhere.
 	function TOOL:RemoveEntity(Entity, Player)
-		table.RemoveByValue(self.Selections.Plates, Entity)		-- Remove from plates
-		table.RemoveByValue(self.Selections.Wheels, Entity)		-- Remove from wheels
-		table.RemoveByValue(self.Selections.ControlPlates, Entity)		-- Remove from wheels
-		self.Selections.PlatesToWheels[Entity] = nil			-- Remove the table for the plate
+		table.RemoveByValue(self.Selections.Plates, Entity)	-- Remove from plates
+		self.Selections.Wheels[Entity] = nil				-- Remove from wheels
+		self.Selections.ControlPlate = nil					-- Remove from wheels
+		self.Selections.PlatesToWheels[Entity] = nil		-- Remove the table for the plate
 
 		-- Remove the wheel from any plate
 		for _, v in pairs(self.Selections.PlatesToWheels) do
@@ -212,7 +211,7 @@ elseif SERVER then -- Serverside-only stuff
 			Ent:CallOnRemove("ACF_Sus_Tool", function(Ent) self:RemoveEntity(Ent, Player) end)
 		elseif IsCtrl then
 			-- Select the control plate
-			self.Selections.ControlPlates[1] = Ent
+			self.Selections.ControlPlate = Ent
 		else
 			-- Select a wheel for the plate
 			if #self.Selections.Plates == 0 then
@@ -220,9 +219,9 @@ elseif SERVER then -- Serverside-only stuff
 				return
 			end
 
-			table.insert(self.Selections.Wheels, Ent)
+			self.Selections.Wheels[Ent] = true
 			local CurrentPlate = self.Selections.Plates[#self.Selections.Plates]
-			table.insert(self.Selections.PlatesToWheels[CurrentPlate], Ent)
+			self.Selections.PlatesToWheels[CurrentPlate][Ent] = true
 			Ent:CallOnRemove("ACF_Sus_Tool", function(Ent) self:RemoveEntity(Ent, Player) end)
 		end
 
@@ -419,19 +418,53 @@ elseif SERVER then -- Serverside-only stuff
 		local Baseplate = Selections.Plates[1]
 		local ControlPlate = Selections.ControlPlates[1]
 
-		-- Determine left/right wheels, swap if needed
-		local LeftDriveWheel, RightDriveWheel = Selections.Wheels[1], Selections.Wheels[2]
-		if LeftDriveWheel:GetPos().x > RightDriveWheel:GetPos().x then
-			LeftDriveWheel, RightDriveWheel = RightDriveWheel, LeftDriveWheel
-		end
-
-		print(LeftDriveWheel, RightDriveWheel)
-
 		-- Cover edge cases
 		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
 		if SpringType == 2 and not IsValid(ControlPlate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Control plate missing.") return end
 
+		-- Determine left/right wheels
+		local LeftWheels, RightWheels = {}, {}
+		local avg, count = 0, 0
+		for Wheel in pairs(Selections.Wheels or EmptyTable) do
+			avg = avg + Wheel:GetPos().x
+			count = count + 1
+		end
+		avg = avg / count
+		for Wheel in pairs(Selections.Wheels or EmptyTable) do
+			if Wheel:GetPos().x < avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
+		end
 
+		-- Determine driven/undriven wheels
+		local DrivenWheels, UndrivenWheels = {}, {}
+		for Wheel in pairs(Selections.Wheels or EmptyTable) do
+			if Wheel.ACF_Gearboxes and table.Count(Wheel.ACF_Gearboxes) > 0 then DrivenWheels[Wheel] = true
+			else UndrivenWheels[Wheel] = true end
+		end
+
+		-- for PlateIndex, Plate in ipairs(Selections.Plates) do
+		-- 	if not IsValid(Plate) then continue end
+		-- 	for Index, Wheel in ipairs(Selections.PlatesToWheels[Plate] or EmptyTable) do
+		-- 		if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+
+		-- 		local Mirror = Wheel:GetPos().x < Baseplate:GetPos().x and 1 or -1
+		-- 		if SpringType == 1 then -- Axis suspension
+		-- 			if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
+		-- 			else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
+		-- 		else
+		-- 			HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
+		-- 			if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+		-- 			elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+		-- 			elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
+
+		-- 			if SpringType == 2 and IsValid(ControlPlate) then
+		-- 				MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector((math.ceil(Index / 2)) * 8, Mirror * 4, 0)), ControlPlate:GetAngles())
+		-- 			elseif SpringType == 3 then
+		-- 				MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
+		-- 			end
+		-- 			if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
+		-- 		end
+		-- 	end
+		-- end
 
 		ACF.SendNotify(Player, true, "Drivetrain successfully created.")
 	end
@@ -441,11 +474,11 @@ elseif SERVER then -- Serverside-only stuff
 		local Selections = self.Selections
 
 		-- Remove constraints from all plates and wheels
-		for _, v in pairs(Selections.Plates) do
+		for _, v in ipairs(Selections.Plates) do
 			if IsValid(v) and checkOwner(Player, v) then constraint.RemoveAll(v) end
 		end
 
-		for _, v in pairs(Selections.Wheels) do
+		for v, _ in pairs(Selections.Wheels) do
 			if IsValid(v) and checkOwner(Player, v) then constraint.RemoveAll(v) end
 		end
 
