@@ -374,7 +374,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity:SetNWString("Sound", Entity.SoundPath)
 		Entity:SetNWFloat("SoundPitch", Entity.SoundPitch)
 		Entity:SetNWFloat("SoundVolume", Entity.SoundVolume)
-		Entity:SetNWString("Class", Entity.Class)
+		Entity:SetNWString("ACF_Class", Entity.Class)
 
 		-- Adjustable barrel length
 		if Entity.Long then
