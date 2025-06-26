@@ -314,6 +314,12 @@ function Entities.AutoRegister(ENT)
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
 
+	if not ENT.ACF_PostMenuSpawn then
+		function ENT:ACF_PostMenuSpawn()
+			self:DropToFloor()
+		end
+	end
+
 	function ENT:ACF_GetUserVar(Key)
 		if not Key then error("Tried to get the value of a nil key.") end
 		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
