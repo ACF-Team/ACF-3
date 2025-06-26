@@ -191,32 +191,135 @@ function PANEL:AddComboBox()
 	Panel:SetWrap(true)
 
 
-	function Panel:ReloadIconMaterial(Icon)
-		self.IconMaterial = Material(Icon)
+	local function ReloadIconMaterial(self, Icon)
+		if Icon == self.LastIcon then return end
 		self.LastIcon = Icon
+
+		if IsValid(self.IconPanel) then
+			self.IconPanel:Remove()
+		end
+
+		if Icon == nil then
+			self:SetTextInset(8, 0)
+			return
+		end
+		self.IconPadding = 0
+
+		if string.GetExtensionFromFilename(Icon) == "mdl" then
+			self.IconPanel = self:Add("ModelImage")
+			local Size = 48
+			local ModelInfo = util.GetModelInfo(Icon)
+			-- Determine by bounding box how much we need to zoom in
+			-- The bounding box being more regular means zoom in less
+			-- This is only present in very recent gmod - the check should stay until
+			-- at least a new gmod update
+			if ModelInfo.HullMax ~= nil then
+				local CalculatedSize = ModelInfo.HullMax - ModelInfo.HullMin
+				local Abnormality = math.abs(CalculatedSize[3] - CalculatedSize[2] - CalculatedSize[1])
+
+				if Abnormality < 178 then
+					Size = math.Remap(Abnormality, 10, 160, 18, 64)
+				else
+					Size = math.Remap(Abnormality, 160, 300, 42, 64)
+				end
+			end
+			self.IconPanel:SetSize(Size, Size)
+			self.IconPanel:SetModel(Icon)
+			self.IconPadding = 30
+		else
+			self.IconPanel = self:Add("DImage")
+			self.IconPanel:SetSize(16, 16)
+			self.IconPanel:SetKeepAspect(true)
+			self.IconPanel:SetMaterial(Material(Icon))
+			self.IconPadding = 26
+		end
+		self.IconPanel:SetMouseInputEnabled(false)
+
+		if not self.OldLayout then
+			self.OldLayout = self.PerformLayout
+			function self:PerformLayout(w, h)
+				if self.OldLayout then self:OldLayout(w, h) end
+
+				if IsValid(self.IconPanel) then
+					local center = h / 2
+					center = center - (self.IconPanel:GetTall() / 2)
+					self.IconPanel:SetPos(center + 2, center)
+					self:SetTextInset(self.IconPadding, 0)
+				end
+			end
+		end
 	end
-	local OldPaint = Panel.Paint
-	function Panel:Paint(w, h)
+
+	local OldThink = Panel.Think
+
+	function Panel:Think()
+		OldThink(self)
 		local Icon = self.ChoiceIcons[self:GetSelectedID()]
 
-		if Icon then
-			self:SetTextInset(24, 0)
-		else
-			self:SetTextInset(8, 0)
+		ReloadIconMaterial(Panel, Icon)
+	end
+
+	local function SetupOptionIcon(Option, Icon)
+		ReloadIconMaterial(Option, Icon)
+	end
+
+	function Panel:OpenMenu(pControlOpener)
+		if pControlOpener and pControlOpener == self.TextEntry then
+			return
 		end
 
-		OldPaint(Panel, w, h)
+		-- Don't do anything if there aren't any options..
+		if #self.Choices == 0 then return end
 
-		if Icon then
-			if self.LastIcon ~= Icon then
-				self:ReloadIconMaterial(Icon)
+		-- If the menu still exists and hasn't been deleted
+		-- then just close it and don't open a new one.
+		if IsValid(self.Menu) then
+			self.Menu:Remove()
+			self.Menu = nil
+		end
+
+		self.Menu = DermaMenu( false, self )
+
+		if self:GetSortItems() then
+			local sorted = {}
+			for k, v in pairs(self.Choices) do
+				local val = tostring(v)
+				if string.len(val) > 1 and not tonumber(val) and val:StartWith("#") then
+					val = language.GetPhrase(val:sub(2))
+				end
+
+				table.insert(sorted, { id = k, data = v, label = val })
 			end
 
-			surface.SetMaterial(self.IconMaterial)
-			local Size = 16
-			local Center = (h / 2) - (Size / 2)
-			surface.DrawTexturedRect(Center + 2, Center, Size, Size)
+			for _, v in SortedPairsByMemberValue(sorted, "label") do
+				local option = self.Menu:AddOption(v.data, function() self:ChooseOption(v.data, v.id) end)
+
+				if self.ChoiceIcons[v.id] then
+					SetupOptionIcon(option, self.ChoiceIcons[v.id])
+				end
+
+				if self.Spacers[v.id] then
+					self.Menu:AddSpacer()
+				end
+			end
+		else
+			for k, v in pairs(self.Choices) do
+				local option = self.Menu:AddOption(v, function() self:ChooseOption(v, k) end)
+
+				if self.ChoiceIcons[k] then
+					SetupOptionIcon(option, self.ChoiceIcons[k])
+				end
+
+				if self.Spacers[k] then
+					self.Menu:AddSpacer()
+				end
+			end
 		end
+
+		local x, y = self:LocalToScreen(0, self:GetTall())
+
+		self.Menu:SetMinimumWidth(self:GetWide())
+		self.Menu:Open(x, y, false, self)
 	end
 
 	return Panel
