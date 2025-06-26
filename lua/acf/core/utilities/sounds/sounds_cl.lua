@@ -40,6 +40,9 @@ local function DistanceToOrigin(Origin)
 	end
 end
 
+-- TODO: Consider if we're actually going to do this or not.
+-- It's not hard to add back in the future (we just wrap the calls around this)
+-- The bottom self-assignment is so the linter shuts up in the meantime
 local function DoDelayed(Origin, Call, Instant)
 	if Instant then return Call() end
 
@@ -50,6 +53,7 @@ local function DoDelayed(Origin, Call, Instant)
 		Call()
 	end
 end
+DoDelayed = DoDelayed
 
 do -- Playing regular sounds
 	--- Plays a single, non-looping sound at the given origin.
@@ -58,16 +62,14 @@ do -- Playing regular sounds
 	--- @param Level? integer The sound's level/attenuation from 0-127
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, Instant)
-		DoDelayed(Origin, function()
-			Volume = ACF.Volume * Volume
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, _)
+		Volume = ACF.Volume * Volume
 
-			if isentity(Origin) and IsValid(Origin) then
-				Origin:EmitSound(Path, Level, Pitch, Volume)
-			elseif isvector(Origin) then
-				sound.Play(Path, Origin, Level, Pitch, Volume)
-			end
-		end, Instant)
+		if isentity(Origin) and IsValid(Origin) then
+			Origin:EmitSound(Path, Level, Pitch, Volume)
+		elseif isvector(Origin) then
+			sound.Play(Path, Origin, Level, Pitch, Volume)
+		end
 	end
 
 	net.Receive("ACF_Sounds", function()
@@ -94,21 +96,19 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
-		DoDelayed(Origin, function()
-			if not IsValid(Origin) then return end
+		if not IsValid(Origin) then return end
 
-			local Sound = Origin.Sound
-			if not Sound then return end
+		local Sound = Origin.Sound
+		if not Sound then return end
 
-			Volume = Volume * ACF.Volume
+		Volume = Volume * ACF.Volume
 
-			if Sound:IsPlaying() then
-				Sound:ChangePitch(Pitch, 0.05)
-				Sound:ChangeVolume(Volume, 0.05)
-			else
-				Sound:PlayEx(Volume, Pitch)
-			end
-		end)
+		if Sound:IsPlaying() then
+			Sound:ChangePitch(Pitch, 0.05)
+			Sound:ChangeVolume(Volume, 0.05)
+		else
+			Sound:PlayEx(Volume, Pitch)
+		end
 	end
 
 	--- Creates a sound patch with the given parameters on the origin entity.  
@@ -118,32 +118,28 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
-		DoDelayed(Origin, function()
-			if not IsValid(Origin) then return end
-			if Origin.Sound then return end
+		if not IsValid(Origin) then return end
+		if Origin.Sound then return end
 
-			local Sound = CreateSound(Origin, Path)
-			Origin.Sound = Sound
+		local Sound = CreateSound(Origin, Path)
+		Origin.Sound = Sound
 
-			-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
-			Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
-				Sounds.DestroyAdjustableSound(Entity, true)
-			end)
-
-			Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
+		-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
+		Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
+			Sounds.DestroyAdjustableSound(Entity, true)
 		end)
+
+		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 	end
 
 	--- Stops an existing adjustable sound on the origin.
 	--- @param Origin table The entity to stop the sound on
-	function Sounds.DestroyAdjustableSound(Origin, Instant)
-		DoDelayed(Origin, function()
-			local Current = Origin.Sound
-			if not Current then return end
+	function Sounds.DestroyAdjustableSound(Origin, _)
+		local Current = Origin.Sound
+		if not Current then return end
 
-			Current:Stop()
-			Origin.Sound = nil
-		end, Instant)
+		Current:Stop()
+		Origin.Sound = nil
 	end
 
 	net.Receive("ACF_Sounds_Adjustable", function()
