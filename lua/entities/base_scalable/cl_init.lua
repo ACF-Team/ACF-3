@@ -147,8 +147,8 @@ net.Receive("ACF_Scalable_Entity", function()
 	local Path  = net.ReadString()
 
 	WaitForEntity(EntIndex, function(Entity)
-		hook.Add("Think", "ACF_RunThisASAP" .. EntIndex, function()
-			hook.Remove("Think", "ACF_RunThisASAP" .. EntIndex)
+		hook.Add("RenderScene", "ACF_RunThisASAP" .. EntIndex, function()
+			hook.Remove("RenderScene", "ACF_RunThisASAP" .. EntIndex)
 			if not IsValid(Entity) then return end
 			if not Entity.IsScalable then return end
 
