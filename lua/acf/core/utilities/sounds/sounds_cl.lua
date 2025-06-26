@@ -17,7 +17,9 @@ do -- Valid sound check
 
 		if Valid == nil then
 			Valid = file.Exists(Path, "GAME")
-
+			if not Valid then
+				Valid = sound.GetProperties(Name) ~= nil
+			end
 			ValidSounds[Path] = Valid
 		end
 
