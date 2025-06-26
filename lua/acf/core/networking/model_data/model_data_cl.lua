@@ -21,7 +21,7 @@ function ModelData.GetModelData(Model)
 		Center = (Min + Max) * 0.5,
 		Size   = Max - Min
 	}
-	EntTest:Remove()
+	timer.Simple(0, function() if IsValid(EntTest) then EntTest:Remove() end end)
 	Models[Path] = Data
 
 	-- backwards compat
