@@ -2,7 +2,6 @@ DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
 
 include("shared.lua")
 
-local ACF     = ACF
 local Standby = {}
 
 local function RequestEntityScaleInfo(Entity)
@@ -68,8 +67,6 @@ function ENT:GetOriginalSize()
 end
 
 do -- Size and scale setter methods
-	local ModelData = ACF.ModelData
-
 	local function ApplyScale(Entity, Data, Scale)
 		local Mesh = Data:GetMesh(Scale)
 
@@ -96,22 +93,6 @@ do -- Size and scale setter methods
 		local Data = Entity.ScaleData
 
 		if not Scale then
-			local Path = Data.Path
-
-			-- We have updated ScaleData but no ModelData yet
-			-- We'll wait for it and instantly tell the entity to rescale
-			if Path and ModelData.IsOnStandby(Path) then
-				ModelData.CallOnReceive(Path, Entity, function()
-					local Saved = Entity.SavedScale
-
-					if not Saved then return end
-
-					Entity:SetScale(Saved)
-
-					Entity.SavedScale = nil
-				end)
-			end
-
 			return false
 		end
 
