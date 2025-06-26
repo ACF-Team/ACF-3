@@ -111,10 +111,8 @@ end
 
 function EFFECT:ApplyMovement(Bullet)
 	local Position = Bullet.SimPos
-
 	if math.abs(Position.x) > 16380 or math.abs(Position.y) > 16380 or Position.z < -16380 then
 		self.Kill = true
-
 		return
 	end
 
@@ -130,7 +128,7 @@ function EFFECT:ApplyMovement(Bullet)
 		local DeltaPos = Position - Bullet.SimPosLast
 		local Length = math.max(DeltaPos:Length() * 2, 1)
 		local MaxSprites = 2
-		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", Position)
+		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", Bullet.SimPosLast)
 
 		if Light then
 			local Color = Bullet.Color
