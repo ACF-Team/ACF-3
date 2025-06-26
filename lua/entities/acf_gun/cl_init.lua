@@ -117,8 +117,10 @@ do	-- Overlay/networking for that
 		render.SetColorMaterial()
 
 		local Length = self:GetNW2Float("Length", 0)
-		local Class = self:GetNWString("Class")
-		local ClassData  = Weapons.Get(Class)
+		local Class = self:GetNWString("ACF_Class")
+		local ClassData = Weapons.Get(Class)
+		if not ClassData then return end
+
 		if ClassData.BreechConfigs and Length > 0 then
 			local BreechIndex = self:GetNW2Int("BreechIndex", 1)
 			local Caliber = self:GetNW2Float("Caliber", 0)
