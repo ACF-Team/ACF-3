@@ -21,11 +21,6 @@ function ENT:Initialize()
 	BaseClass.Initialize(self)
 
 	self.Initialized = true
-
-	-- Instantly requesting ScaleData and Scale
-	if not Standby[self] then
-		RequestEntityScaleInfo(self)
-	end
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
@@ -133,21 +128,36 @@ do -- Size and scale setter methods
 	end
 end
 
+local function WaitForEntity(EntIndex, Then)
+	local Entity = ents.GetByIndex(EntIndex)
+	if IsValid(Entity) then Then(Entity) return end
+
+	hook.Add("NetworkEntityCreated", "ACF_WaitingForEntity" .. EntIndex, function(Ent)
+		if Ent:EntIndex() ~= EntIndex then return end
+
+		hook.Remove("OnEntityCreated", "ACF_WaitingForEntity" .. EntIndex)
+		Then(Ent)
+	end)
+end
+
 net.Receive("ACF_Scalable_Entity", function()
-	local Entity = ents.GetByIndex(net.ReadUInt(MAX_EDICT_BITS))
-
-	if not IsValid(Entity) then return end
-	if not Entity.IsScalable then return end
-
+	local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 	local Scale = Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
 	local Type  = net.ReadString()
 	local Path  = net.ReadString()
 
-	Entity:RemoveCallOnRemove("ACF_Scalable_Entity")
-	Entity:SetScaleData(Type, Path)
-	if not Entity:SetScale(Scale) then
-		Entity.SavedScale = Scale
-	end
+	WaitForEntity(EntIndex, function(Entity)
+		hook.Add("Think", "ACF_RunThisASAP" .. EntIndex, function()
+			hook.Remove("Think", "ACF_RunThisASAP" .. EntIndex)
+			if not IsValid(Entity) then return end
+			if not Entity.IsScalable then return end
+
+			Entity:SetScaleData(Type, Path)
+			if not Entity:SetScale(Scale) then
+				Entity.SavedScale = Scale
+			end
+		end)
+	end)
 end)
 
 do -- Dealing with visual clip's bullshit
