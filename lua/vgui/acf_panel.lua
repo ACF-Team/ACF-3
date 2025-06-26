@@ -216,8 +216,12 @@ function PANEL:AddComboBox()
 			if ModelInfo.HullMax ~= nil then
 				local CalculatedSize = ModelInfo.HullMax - ModelInfo.HullMin
 				local Abnormality = math.abs(CalculatedSize[3] - CalculatedSize[2] - CalculatedSize[1])
-				print(Icon, Abnormality)
-				Size = math.Remap(Abnormality, 10, 160, 18, 64)
+
+				if Abnormality < 178 then
+					Size = math.Remap(Abnormality, 10, 160, 18, 64)
+				else
+					Size = math.Remap(Abnormality, 160, 300, 42, 64)
+				end
 			end
 			self.IconPanel:SetSize(Size, Size)
 			self.IconPanel:SetModel(Icon)
