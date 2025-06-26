@@ -64,12 +64,12 @@ do -- Generic Spawner/Linker operation creator
 
 		if Success then
 			local PhysObj = Result:GetPhysicsObject()
-
 			if Result.ACF_PostMenuSpawn then
 				Result:ACF_PostMenuSpawn()
 			else
 				Result:DropToFloor()
 			end
+			Result:SetSpawnEffect(true)
 
 			if IsValid(PhysObj) then
 				PhysObj:EnableMotion(false)
