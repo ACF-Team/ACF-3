@@ -258,7 +258,7 @@ local function CreateMenu(Menu)
 	ClassBase.Title   = EntName
 	ClassBase.Preview = EntPreview
 
-	ACF.LoadSortedList(ClassList, Entries, "Name")
+	ACF.LoadSortedList(ClassList, Entries, "Name", "Model")
 end
 
 ACF.AddMenuItem(1, "#acf.menu.entities", "#acf.menu.weapons", "gun", CreateMenu)
