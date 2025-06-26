@@ -56,7 +56,7 @@ local Defaults = {
 	ZoomSpeed = 10,
 	ZoomMin = 5,
 	ZoomMax = 90,
-	SlewMin = 1,
+	SlewMin = 0.15,
 	SlewMax = 1,
 
 	CamCount = 2,
@@ -85,9 +85,6 @@ local Defaults = {
 
 local Clock = Utilities.Clock
 local DriverKeyDown = FindMetaTable("Player").KeyDown
--- local DriverKeyDownLast = FindMetaTable("Player").KeyDownLast
-
-
 
 --- Sets a wire output if the cached value has changed
 local function RecacheBindOutput(Entity, SelfTbl, Output, Value)

@@ -47,7 +47,6 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 	ACF.ConfigureLuaSeat(Entity, Pod, Player)
 	Entity:ACF_SetUserVar("AlreadyHasSeat", true)
 
-	Entity:SetUseType(SIMPLE_USE)
 	Entity.Pod = Pod
 
 	hook.Add("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. Entity:EntIndex(), function(Ply, Veh)
@@ -67,7 +66,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 
 	-- Allow players to enter the seat externally by pressing use on a prop on the same contraption as the baseplate
 	hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. Entity:EntIndex(), function(Ply, Ent)
-		if not Ply:KeyDown(IN_SPEED) then return end
+		if not Ply:KeyDown(IN_WALK) then return end
 		if IsValid(Ent) then
 			local Contraption = Ent:GetContraption()
 			if Contraption then
@@ -156,9 +155,6 @@ end
 
 local Messages = ACF.Utilities.Messages
 
-function ENT:ACF_DetourIsVehicle() return true end
-function ENT:IsValidVehicle() return false end
-function ENT:GetDriver() return self.Pod:GetDriver() end
 
 function ENT:PostEntityPaste(_, _, CreatedEntities)
 	-- Pod should be valid since this runs after all entities are created
@@ -174,11 +170,6 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 		end
 		ConfigureLuaSeat(self, self.Pod, self:CPPIGetOwner())
 	end
-end
-
-function ENT:Use(Activator)
-	if not IsValid(Activator) then return end
-	Activator:EnterVehicle(self.Pod)
 end
 
 do
@@ -283,6 +274,11 @@ function ENT:PlayBaseplateRepulsionSound(Vel)
 
 	self.LastPlayRepulsionSound = Now
 	self:EmitSound(Hard and "MetalVehicle.ImpactHard" or "MetalVehicle.ImpactSoft", 150, math.Rand(0.92, 1.05), 1, CHAN_AUTO, 0, 0)
+end
+
+function ENT:ACF_PostMenuSpawn()
+	self:DropToFloor()
+	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 end
 
 Entities.Register()

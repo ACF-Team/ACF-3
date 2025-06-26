@@ -152,7 +152,7 @@ do	-- Turret drives
 			Description		= "#acf.descs.turrets.horizontal",
 			Model			= "models/acf/core/t_ring.mdl",
 			ModelSmall		= "models/holograms/cylinder.mdl", -- To be used for diameters <= 12.5u, for RWS or other small turrets
-			Mass			= 34, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 30, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Size = {
 				Base		= 60,	-- The default size for the menu
@@ -167,8 +167,8 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 50,
-				Max			= 300
+				Min			= 2.5,
+				Max			= 80
 			},
 
 			MassLimit		= {
@@ -228,7 +228,7 @@ do	-- Turret drives
 			Name			= "Vertical Turret",
 			Description		= "#acf.descs.turrets.vertical",
 			Model			= "models/acf/core/t_trun.mdl",
-			Mass			= 25, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
+			Mass			= 24, -- At default size, this is the mass of the turret ring. Will scale up/down with diameter difference
 
 			Preview			= {
 				FOV = 105,
@@ -247,8 +247,8 @@ do	-- Turret drives
 			},
 
 			Armor			= {
-				Min			= 50,
-				Max			= 300
+				Min			= 5,
+				Max			= 30
 			},
 
 			MassLimit		= {

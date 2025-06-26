@@ -853,8 +853,8 @@ function ENT:CalcRPM(SelfTbl)
 
 		-- Split the torque fairly between the gearboxes who need it
 		for Ent, Link in pairs(BoxesTbl) do
-			Link:Transfer(Link.ReqTq * AvailRatio * MassRatio)
-			Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			Link:TransferGearbox(Ent, Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			--Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
 		end
 	end
 

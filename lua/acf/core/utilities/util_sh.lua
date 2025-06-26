@@ -197,7 +197,7 @@ do -- Mobility functions
 	--- @return number # The torque value of the gearbox in ft-lb
 	--- @return number # The torque rating of the gearbox in N/m
 	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
-		local Mass = math.floor((BaseMass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 -- Round to the nearest five
+		local Mass = math.Round(BaseMass * (Scale ^ ACF.GearboxMassScale))
 
 		-- Torque calculations
 		local Torque, TorqueRating = 0, 0
@@ -1153,20 +1153,22 @@ do -- Reload related
 		end
 	end
 
-	if WireLib then
-		if not ACF.WirelibDetour_GetClosestRealVehicle then
-			ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
-		end
-		local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
-		function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
-			if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
-				local Pod = Vehicle:ACF_GetSeatProxy()
-				if IsValid(Pod) then return Pod end
+	timer.Simple(1, function()
+		if WireLib then
+			if not ACF.WirelibDetour_GetClosestRealVehicle then
+				ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
 			end
+			local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
+			function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
+				if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
+					local Pod = Vehicle:ACF_GetSeatProxy()
+					if IsValid(Pod) then return Pod end
+				end
 
-			return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+				return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+			end
 		end
-	end
+	end)
 
 	--- Configures a lua seat after it has been created.
 	--- Whenever the seat is created, this should be called after.
@@ -1187,16 +1189,15 @@ do -- Reload related
 
 		if not IsValid(Pod) then return end
 
-		Pod:SetNoDraw(true)
+		Pod:SetParent(Entity)
 
-		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
+		Pod:SetNoDraw(true)
 		Pod:SetNotSolid(true)
-		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
-		local Count = Pod:GetPhysicsObjectCount()
-		for Idx = 0, Count - 1 do
-			local Phys = Pod:GetPhysicsObjectNum(Idx)
-			Phys:SetContents(CONTENTS_EMPTY)
-		end
+		-- MARCH: In Advanced Duplicator 2, pasting runs v.PostEntityPaste (if it exists), and then afterwards will call
+		-- v:SetNotSolid(v.SolidMod). For whatever reason, that is false when the seat gets duped. So this just tricks
+		-- the duplicator to make it not-solid. source: advdupe2/lua/advdupe2/sv_clipboard.lua
+		Pod.SolidMod = true
+
 		Pod.ACF_InvisibleToBallistics = true
 		Pod.ACF_InvisibleToTrace = true
 	end

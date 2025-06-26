@@ -190,6 +190,35 @@ function PANEL:AddComboBox()
 	Panel:SetDark(true)
 	Panel:SetWrap(true)
 
+
+	function Panel:ReloadIconMaterial(Icon)
+		self.IconMaterial = Material(Icon)
+		self.LastIcon = Icon
+	end
+	local OldPaint = Panel.Paint
+	function Panel:Paint(w, h)
+		local Icon = self.ChoiceIcons[self:GetSelectedID()]
+
+		if Icon then
+			self:SetTextInset(24, 0)
+		else
+			self:SetTextInset(8, 0)
+		end
+
+		OldPaint(Panel, w, h)
+
+		if Icon then
+			if self.LastIcon ~= Icon then
+				self:ReloadIconMaterial(Icon)
+			end
+
+			surface.SetMaterial(self.IconMaterial)
+			local Size = 16
+			local Center = (h / 2) - (Size / 2)
+			surface.DrawTexturedRect(Center + 2, Center, Size, Size)
+		end
+	end
+
 	return Panel
 end
 
@@ -304,21 +333,11 @@ function PANEL:AddCollapsible(Text, State, Icon)
 	Category:SetContents(Base)
 
 	function Category:Paint(w, h)
-		local skin = self:GetSkin()
-
-		if h <= self:GetHeaderHeight() then
-			skin.tex.CategoryList.Header(0, 0, w, h)
-
-			-- Little hack, draw the ComboBox's dropdown arrow to tell the player the category is collapsed and not empty
-			if not self:GetExpanded()
-				then skin.tex.Input.ComboBox.Button.Down(w - 18, h / 2 - 8, 15, 15)
-			end
-
-			return
-		end
-
-		skin.tex.CategoryList.InnerH( 0, 0, w, self:GetHeaderHeight() + 1 )
-		skin.tex.CategoryList.Inner( 0, self:GetHeaderHeight(), w, h - self:GetHeaderHeight() )
+		local Skin = self:GetSkin()
+		local OldHeight = self:GetHeaderHeight()
+		self:SetHeaderHeight(OldHeight + 1)
+		Skin:PaintCollapsibleCategory(self, w, h)
+		self:SetHeaderHeight(OldHeight)
 	end
 
 	function Category:AnimSlide(_, Delta, Data)
@@ -762,12 +781,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 		local Center = ModelData.GetModelCenter(Path)
 
 		if not Center then
-			if ModelData.IsOnStandby(Path) then
-				ModelData.CallOnReceive(Path, self, function()
-					self:UpdateModel(Path, Material)
-				end)
-			end
-
 			return self:DrawEntity(false)
 		end
 

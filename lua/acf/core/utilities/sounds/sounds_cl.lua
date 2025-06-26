@@ -17,7 +17,9 @@ do -- Valid sound check
 
 		if Valid == nil then
 			Valid = file.Exists(Path, "GAME")
-
+			if not Valid then
+				Valid = sound.GetProperties(Name) ~= nil
+			end
 			ValidSounds[Path] = Valid
 		end
 
@@ -25,27 +27,31 @@ do -- Valid sound check
 	end
 end
 
-do -- Playing regular sounds
-	-- MARCH/TODO: universal ACF constant for speed of sound (maybe it already exists and I don't know :P)
-	local SpeedOfSound = 343 * 39.37
-	local function CallPlaySound(Origin, Path, Level, Pitch, Volume)
-		Volume = ACF.Volume * Volume
+-- MARCH/TODO: universal ACF constant for speed of sound (maybe it already exists and I don't know :P)
+local SpeedOfSound = 343 * 39.37
 
-		if isentity(Origin) and IsValid(Origin) then
-			Origin:EmitSound(Path, Level, Pitch, Volume)
-		elseif isvector(Origin) then
-			sound.Play(Path, Origin, Level, Pitch, Volume)
-		end
+local function DistanceToOrigin(Origin)
+	if isentity(Origin) and IsValid(Origin) then
+		return LocalPlayer():EyePos():Distance(Origin:GetPos())
+	elseif isvector(Origin) then
+		return LocalPlayer():EyePos():Distance(Origin)
+	else
+		return 0
 	end
-	local function DistanceToOrigin(Origin)
-		if isentity(Origin) and IsValid(Origin) then
-			return LocalPlayer():EyePos():Distance(Origin:GetPos())
-		elseif isvector(Origin) then
-			return LocalPlayer():EyePos():Distance(Origin)
-		else
-			return 0
-		end
+end
+
+local function DoDelayed(Origin, Call, Instant)
+	if Instant then return Call() end
+
+	local Delay = DistanceToOrigin(Origin) / SpeedOfSound
+	if Delay > 0.1 then
+		timer.Simple(Delay, function() Call() end)
+	else
+		Call()
 	end
+end
+
+do -- Playing regular sounds
 	--- Plays a single, non-looping sound at the given origin.
 	--- @param Origin table | vector The source to play the sound from
 	--- @param Path string The path to the sound to be played local to the game's sound folder
@@ -53,16 +59,15 @@ do -- Playing regular sounds
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, Instant)
-		if not Instant then
-			local Delay = DistanceToOrigin(Origin) / SpeedOfSound
-			if Delay > 0.1 then
-				timer.Simple(Delay, function() CallPlaySound(Origin, Path, Level, Pitch, Volume) end)
-			else
-				CallPlaySound(Origin, Path, Level, Pitch, Volume)
+		DoDelayed(Origin, function()
+			Volume = ACF.Volume * Volume
+
+			if isentity(Origin) and IsValid(Origin) then
+				Origin:EmitSound(Path, Level, Pitch, Volume)
+			elseif isvector(Origin) then
+				sound.Play(Path, Origin, Level, Pitch, Volume)
 			end
-		else
-			CallPlaySound(Origin, Path, Level, Pitch, Volume)
-		end
+		end, Instant)
 	end
 
 	net.Receive("ACF_Sounds", function()
@@ -89,19 +94,21 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
-		if not IsValid(Origin) then return end
+		DoDelayed(Origin, function()
+			if not IsValid(Origin) then return end
 
-		local Sound = Origin.Sound
-		if not Sound then return end
+			local Sound = Origin.Sound
+			if not Sound then return end
 
-		Volume = Volume * ACF.Volume
+			Volume = Volume * ACF.Volume
 
-		if Sound:IsPlaying() then
-			Sound:ChangePitch(Pitch, 0.05)
-			Sound:ChangeVolume(Volume, 0.05)
-		else
-			Sound:PlayEx(Volume, Pitch)
-		end
+			if Sound:IsPlaying() then
+				Sound:ChangePitch(Pitch, 0.05)
+				Sound:ChangeVolume(Volume, 0.05)
+			else
+				Sound:PlayEx(Volume, Pitch)
+			end
+		end)
 	end
 
 	--- Creates a sound patch with the given parameters on the origin entity.  
@@ -111,28 +118,32 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
-		if not IsValid(Origin) then return end
-		if Origin.Sound then return end
+		DoDelayed(Origin, function()
+			if not IsValid(Origin) then return end
+			if Origin.Sound then return end
 
-		local Sound = CreateSound(Origin, Path)
-		Origin.Sound = Sound
+			local Sound = CreateSound(Origin, Path)
+			Origin.Sound = Sound
 
-		-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
-		Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
-			Sounds.DestroyAdjustableSound(Entity)
+			-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
+			Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
+				Sounds.DestroyAdjustableSound(Entity, true)
+			end)
+
+			Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 		end)
-
-		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 	end
 
 	--- Stops an existing adjustable sound on the origin.
 	--- @param Origin table The entity to stop the sound on
-	function Sounds.DestroyAdjustableSound(Origin)
-		local Current = Origin.Sound
-		if not Current then return end
+	function Sounds.DestroyAdjustableSound(Origin, Instant)
+		DoDelayed(Origin, function()
+			local Current = Origin.Sound
+			if not Current then return end
 
-		Current:Stop()
-		Origin.Sound = nil
+			Current:Stop()
+			Origin.Sound = nil
+		end, Instant)
 	end
 
 	net.Receive("ACF_Sounds_Adjustable", function()
