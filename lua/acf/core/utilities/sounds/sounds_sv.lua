@@ -1,6 +1,7 @@
 local Sounds = ACF.Utilities.Sounds
 
 util.AddNetworkString("ACF_Sounds")
+util.AddNetworkString("ACF_StopSound")
 util.AddNetworkString("ACF_Sounds_Adjustable")
 util.AddNetworkString("ACF_Sounds_AdjustableCreate")
 
@@ -34,6 +35,13 @@ function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 		net.WriteUInt(Pitch, 8)
 		net.WriteUInt(Volume * 100, 8)
 	net.SendPAS(Pos)
+end
+
+function Sounds.StopSound(Entity, Path)
+	net.Start("ACF_StopSound")
+	net.WriteEntity(Entity)
+	net.WriteString(Path)
+	net.Broadcast()
 end
 
 --- Creates a sound patch on all clients in the PAS.  
