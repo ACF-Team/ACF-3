@@ -66,6 +66,7 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 
 	ShouldStop = ShouldStop or false
 	local Time = CurTime()
+	if not Origin.ACF then Origin.ACF = {} end
 	Origin.ACF.SoundTimer = Origin.ACF.SoundTimer or Time
 
 	-- Slowing down the rate of sending a bit
