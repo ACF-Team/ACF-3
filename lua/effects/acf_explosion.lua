@@ -79,26 +79,6 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 
 	if not IsValid(Emitter) then return end
 
-	-- The initial explosion flash
-	for _ = 0, 3 do
-		local Flame = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
-
-		if Flame then
-			Flame:SetVelocity((HitNormal + VectorRand()) * 150 * Radius)
-			Flame:SetLifeTime(0)
-			Flame:SetDieTime(0.26)
-			Flame:SetStartAlpha(255)
-			Flame:SetEndAlpha(5)
-			Flame:SetStartSize(Radius * 8)
-			Flame:SetEndSize(Radius * 90)
-			Flame:SetRoll(math.random(120, 360))
-			Flame:SetRollDelta(math.Rand(-1, 1))
-			Flame:SetAirResistance(300)
-			Flame:SetGravity(Vector(0, 0, 4))
-			Flame:SetColor(255, 255, 255)
-		end
-	end
-
 	-- Debris flecks flown off by the explosion
 	for _ = 0, 5 * math.Clamp(Radius, 1, 30) * Mult do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
@@ -257,6 +237,27 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			EF:SetEndLength(Radius * 70)
 		end
 	end
+
+	-- The initial explosion flash
+	for _ = 0, 3 do
+		local Flame = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
+
+		if Flame then
+			Flame:SetVelocity((HitNormal + VectorRand()) * 150 * Radius)
+			Flame:SetLifeTime(0)
+			Flame:SetDieTime(0.26)
+			Flame:SetStartAlpha(220)
+			Flame:SetEndAlpha(5)
+			Flame:SetStartSize(Radius * 8)
+			Flame:SetEndSize(Radius * 90)
+			Flame:SetRoll(math.random(120, 360))
+			Flame:SetRollDelta(math.Rand(-1, 1))
+			Flame:SetAirResistance(300)
+			Flame:SetGravity(Vector(0, 0, 4))
+			Flame:SetColor(255, 255, 255)
+		end
+	end
+
 	timer.Simple(0.5, function()
 		Emitter:Finish()
 	end)
