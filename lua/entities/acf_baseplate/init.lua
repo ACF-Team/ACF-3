@@ -276,4 +276,9 @@ function ENT:PlayBaseplateRepulsionSound(Vel)
 	self:EmitSound(Hard and "MetalVehicle.ImpactHard" or "MetalVehicle.ImpactSoft", 150, math.Rand(0.92, 1.05), 1, CHAN_AUTO, 0, 0)
 end
 
+function ENT:ACF_PostMenuSpawn()
+	self:DropToFloor()
+	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
+end
+
 Entities.Register()
