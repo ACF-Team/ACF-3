@@ -111,7 +111,7 @@ if CLIENT then
 		local Selections = Player.ACF_Sus_Tool_Info
 
 		-- TODO: Try getinfonum
-		local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
+		-- local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
 		local ArmType = tonumber(Player:GetInfo("acf_sus_tool_armtype"))
 		local ArmX = tonumber(Player:GetInfo("acf_sus_tool_armx"))
 		local ArmY = tonumber(Player:GetInfo("acf_sus_tool_army"))
