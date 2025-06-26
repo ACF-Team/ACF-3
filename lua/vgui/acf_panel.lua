@@ -781,12 +781,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 		local Center = ModelData.GetModelCenter(Path)
 
 		if not Center then
-			if ModelData.IsOnStandby(Path) then
-				ModelData.CallOnReceive(Path, self, function()
-					self:UpdateModel(Path, Material)
-				end)
-			end
-
 			return self:DrawEntity(false)
 		end
 
