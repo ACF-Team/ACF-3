@@ -35,6 +35,9 @@ do -- Playing regular sounds
 
 		if isentity(Origin) and IsValid(Origin) then
 			Origin:EmitSound(Path, Level, Pitch, Volume)
+			Origin:CallOnRemove("ACF_Sound_" .. Path, function()
+				Origin:StopSound(Path)
+			end)
 		elseif isvector(Origin) then
 			sound.Play(Path, Origin, Level, Pitch, Volume)
 		end
