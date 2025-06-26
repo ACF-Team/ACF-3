@@ -266,22 +266,63 @@ do -- Random timer stuff
 			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
 		end
 
-		-- Avoid G force calculation on crew during building...
+		-- TODO: Clean this shit up man
+		local Contraption = self:GetContraption() or {}
+		local CrewsByType = Contraption.CrewsByType or {}
+		local Commanders = CrewsByType.Commander or {}
+		local Commander = next(Commanders)
+
+		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
+		else self.TotalEff = ACF.CrewFallbackCoef end
+
+		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
+
+		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
+	end
+
+	function ENT:EnforceLimits(cfg)
+		local Targets = self.Targets
+		local SelfContraption = self:GetContraption()
+		local IsParented = CheckParentState(self)
+		if IsParented and Targets ~= nil and next(Targets) then
+			local Pos = self:GetPos()
+			for Link in pairs(Targets) do
+				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
+
+				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
+				if OutOfRange or DiffAncestors then
+					local Sound = UnlinkSound:format(math.random(1, 3))
+					Link:EmitSound(Sound, 70, 100, ACF.Volume)
+					self:EmitSound(Sound, 70, 100, ACF.Volume)
+					self:Unlink(Link)
+					Link:Unlink(self)
+
+					local Reasons = {}
+					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
+					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
+					Reasons = table.concat(Reasons, ", and ")
+					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
+
+					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
+				end
+			end
+		end
+
+		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
+
+		EnforceLimits(self)
+
+		self:UpdateOverlay()
+	end
+
+	function ENT:EnforceGForces()
 		local Parent = self:GetParent()
-		if DeltaTime > 0 and IsValid(Parent) then
-			-- Calculate current G force on crew
-			self.Pos = self.Pos or self:LocalToWorld(self.CrewModel.ScanOffsetL)
-			self.Vel = self.Vel or self:GetVelocity()
-
-			local pos = self:GetPos()
-			local vel = (pos - self.Pos) / DeltaTime
-			local accel = (vel - self.Vel) / DeltaTime
-
-			self.Pos = pos
-			self.Vel = vel
-			self.Accel = accel
-
-			local GForce = accel:Length() / 600 -- G Force is acceleration / default source gravity
+		if IsValid(Parent) then
+			local NewPos = self:LocalToWorld(self.CrewModel.ScanOffsetL)
+			local GForce, DeltaTime = ACF.UpdateGForceTracker(self.GForceTracker, NewPos)
+			-- print(GForce, DeltaTime)
 
 			-- If specified, affect crew ergonomics based on G forces
 			local Effs = self.CrewType.GForceInfo.Efficiencies
@@ -298,19 +339,6 @@ do -- Random timer stuff
 				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 			end
 		end
-
-		-- TODO: Clean this shit up man
-		local Contraption = self:GetContraption() or {}
-		local CrewsByType = Contraption.CrewsByType or {}
-		local Commanders = CrewsByType.Commander or {}
-		local Commander = next(Commanders)
-
-		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
-		else self.TotalEff = ACF.CrewFallbackCoef end
-
-		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
-
-		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
 	end
 end
 
@@ -440,6 +468,8 @@ do
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 		Entity.IsAlive = true
 
+		Entity.GForceTracker = ACF.SetupGForceTracker(Entity:LocalToWorld(CrewModel.ScanOffsetL))
+
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
 		-- Run randomized timers
@@ -448,6 +478,11 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateMedFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+
+		hook.Add("Think", Entity, function()
+			Entity:EnforceGForces()
+		end)
 
 		-- Finish setting up the entity
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
@@ -547,48 +582,6 @@ end
 
 -- Entity methods
 do
-	-- Think logic (mostly checks and stuff that updates frequently)
-	-- Hopefully runs after CFW is initialized
-	function ENT:Think()
-		-- Check links on this entity
-		local Targets = self.Targets
-		local SelfContraption = self:GetContraption()
-		local IsParented = CheckParentState(self)
-		if IsParented and Targets ~= nil and next(Targets) then
-			local Pos = self:GetPos()
-			for Link in pairs(Targets) do
-				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
-
-				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
-				if OutOfRange or DiffAncestors then
-					local Sound = UnlinkSound:format(math.random(1, 3))
-					Link:EmitSound(Sound, 70, 100, ACF.Volume)
-					self:EmitSound(Sound, 70, 100, ACF.Volume)
-					self:Unlink(Link)
-					Link:Unlink(self)
-
-					local Reasons = {}
-					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
-					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
-					Reasons = table.concat(Reasons, ", and ")
-					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
-
-					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
-				end
-			end
-		end
-
-		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
-		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
-
-		EnforceLimits(self)
-
-		self:UpdateOverlay()
-		self:NextThink(Clock.CurTime + math.Rand(1, 2))
-		return true
-	end
-
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		-- local Mass    = PhysObj:GetMass()
@@ -965,8 +958,6 @@ do
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
-
-		self:NextThink(Clock.CurTime + 2) -- Hope CFW finishes merging contraptions after this point...
 
 		-- Restore previous links
 		if EntMods.CrewTargets then

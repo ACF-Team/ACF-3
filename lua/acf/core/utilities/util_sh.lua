@@ -1202,3 +1202,45 @@ do -- Reload related
 		Pod.ACF_InvisibleToTrace = true
 	end
 end
+
+do
+	--- Sets up a table to track G forces
+	--- Use with ACF.UpdateGForceTracker to update the G force tracker.
+	--- @param pos? Vector The initial position
+	--- @param vel? Vector The initial velocity
+	--- @param accel? Vector The initial acceleration
+	--- @return nil
+	function ACF.SetupGForceTracker(pos, vel, accel)
+		return {
+			Pos = pos or vector_origin,
+			Vel = vel or vector_origin,
+			Acc = accel or vector_origin,
+			LastPos = pos or vector_origin,
+			LastVel = vel or vector_origin,
+			LastAcc = accel or vector_origin,
+			LastTime = CurTime()
+		}
+	end
+
+	--- Returns the G force given the current position and the time since the last update.
+	--- @param tbl table The table storing the G force tracker data
+	--- @param newPos Vector The new position to update the tracker with
+	--- @param dt? number The delta time since the last update (defaults to time since last update)
+	--- @return number, number The G force experienced and the delta time since the last update
+	function ACF.UpdateGForceTracker(tbl, newPos, dt)
+		if not tbl then return end
+
+		local LastTime = tbl.LastTime or CurTime()
+		local DeltaTime = dt or (CurTime() - LastTime)
+
+		tbl.Pos = newPos or tbl.Pos
+		tbl.Vel = (tbl.Pos - tbl.LastPos) / DeltaTime
+		tbl.Acc = (tbl.Vel - tbl.LastVel) / DeltaTime
+
+		tbl.LastPos = tbl.Pos
+		tbl.LastVel = tbl.Vel
+		tbl.LastAcc = tbl.Acc
+		tbl.LastTime = LastTime + DeltaTime
+		return tbl.Acc:Length() / -ACF.Gravity.z, DeltaTime -- Since gravity is a vector...
+	end
+end
