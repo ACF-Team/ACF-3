@@ -32,7 +32,7 @@ do -- Playing regular sounds
 	--- @param Level? integer The sound's level/attenuation from 0-127
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, Instant)
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume)
 		Volume = ACF.Volume * Volume
 
 		if isentity(Origin) and IsValid(Origin) then
