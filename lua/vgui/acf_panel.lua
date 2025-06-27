@@ -198,8 +198,13 @@ function PANEL:InjectMenuFuncs(Menu)
 		if visible then
 			OldSetVisible(self, visible)
 		end
-		self:AlphaTo(visible and 255 or 0, 0.08, 0, visible and nil or function() OldSetVisible(self, visible) end)
+		self:AlphaTo(visible and 255 or 0, 0.08, 0, function() OldSetVisible(self, visible) end)
 	end
+	hook.Add("Think", Menu, function()
+		if Menu:IsVisible() then
+			Menu:AnimationThinkInternal()
+		end
+	end)
 end
 
 function PANEL:AddComboBox()
