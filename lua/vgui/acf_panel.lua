@@ -183,13 +183,32 @@ function PANEL:AddHelp(Text)
 	return Panel
 end
 
+function PANEL:InjectMenuFuncs(Menu)
+	Menu:SetAlpha(0)
+
+	local OldRemove     = Menu.Remove
+	local OldSetVisible = Menu.SetVisible
+
+	function Menu:Remove()
+		self:AlphaTo(0, 0.08, 0, function()
+			if IsValid(self) then OldRemove(self) end
+		end)
+	end
+	function Menu:SetVisible(visible)
+		if visible then
+			OldSetVisible(self, visible)
+		end
+		self:AlphaTo(visible and 255 or 0, 0.08, 0, visible and nil or function() OldSetVisible(self, visible) end)
+	end
+end
+
 function PANEL:AddComboBox()
+	local ACFPanel = self
 	local Panel = self:AddPanel("DComboBox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetSortItems(false)
 	Panel:SetDark(true)
 	Panel:SetWrap(true)
-
 
 	local function ReloadIconMaterial(self, Icon)
 		if Icon == self.LastIcon then return end
@@ -301,7 +320,7 @@ function PANEL:AddComboBox()
 		end
 
 		self.Menu = DermaMenu( false, self )
-
+		ACFPanel:InjectMenuFuncs(self.Menu)
 		if self:GetSortItems() then
 			local sorted = {}
 			for k, v in pairs(self.Choices) do
