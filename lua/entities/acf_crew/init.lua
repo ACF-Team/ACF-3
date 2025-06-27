@@ -255,8 +255,6 @@ do -- Random timer stuff
 	function ENT:UpdateHighFreq(cfg)
 		if self.Disabled then return end
 
-		local DeltaTime = cfg.DeltaTime
-
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = self.CrewType.LeanInfo
 		if LeanInfo then
@@ -480,7 +478,7 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.1, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1 / 66, MaxTime = 1 / 66, Delay = 0.1})
 
 		-- hook.Add("Think", Entity, function()
 		-- 	Entity:EnforceGForces()
