@@ -336,7 +336,6 @@ do -- Random timer stuff
 			local Damages = self.CrewType.GForceInfo.Damages
 			if Damages and GForce > Damages.Min and self.IsAlive then
 				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * self.ACF.MaxHealth * DeltaTime
-				print(Damage * self.ACF.MaxHealth,  GForce, Damages.Min, Damages.Max, self.ACF.MaxHealth, DeltaTime)
 				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 			end
 		end
