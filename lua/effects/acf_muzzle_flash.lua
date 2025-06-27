@@ -11,7 +11,7 @@ function EFFECT:Init(Data)
 	local Sound      = Gun:GetNWString("Sound")
 	local Pitch      = Gun:GetNWFloat("SoundPitch")
 	local Volume     = Gun:GetNWFloat("SoundVolume")
-	local Class      = Gun:GetNWString("Class")
+	local Class      = Gun:GetNWString("ACF_Class")
 	local ClassData  = Weapons.Get(Class)
 	if not ClassData then return end
 	local Attachment = "muzzle"
