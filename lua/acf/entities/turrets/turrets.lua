@@ -26,6 +26,7 @@ do	-- Turret drives
 
 	Turrets.Register("1-Turret", {
 		Name		= "Turrets",
+		SpawnModel  = "models/acf/core/t_ring.mdl",
 		Description	= "#acf.descs.turrets",
 		Entity		= "acf_turret",
 		CreateMenu	= ACF.CreateTurretMenu,
@@ -305,6 +306,7 @@ end
 do	-- Turret motors
 	Turrets.Register("2-Motor", {
 		Name		= "Motors",
+		SpawnModel  = "models/acf/core/t_drive_e.mdl",
 		Description	= "#acf.descs.motors",
 		Entity		= "acf_turret_motor",
 		CreateMenu	= ACF.CreateTurretMotorMenu,
@@ -402,6 +404,7 @@ end
 do	-- Turret gyroscopes
 	Turrets.Register("3-Gyro", {
 		Name		= "Gyroscopes",
+		SpawnModel  = "models/bull/various/gyroscope.mdl",
 		Description	= "#acf.descs.gyros",
 		Entity		= "acf_turret_gyro",
 		CreateMenu	= ACF.CreateTurretGyroMenu,
@@ -453,6 +456,7 @@ end
 do	-- Turret computers
 	Turrets.Register("4-Computer", {
 		Name		= "Computers",
+		SpawnModel  = "models/acf/core/t_computer.mdl",
 		Description	= "#acf.descs.computers",
 		Entity		= "acf_turret_computer",
 		CreateMenu	= ACF.CreateTurretComputerMenu,

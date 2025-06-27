@@ -275,8 +275,8 @@ CrewTypes.Register("Pilot", {
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
 	GForceInfo = {
 		Damages = {
-			Min = 6,	-- Damage starts being applied after this (Gs)
-			Max = 9,	-- Instant death after this (Gs)
+			Min = 9,	-- Damage starts being applied after this (Gs)
+			Max = 15,	-- Instant death after this (Gs)
 		}
 	},
 	LinkHandlers = {

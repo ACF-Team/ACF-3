@@ -71,7 +71,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 			local Contraption = Ent:GetContraption()
 			if Contraption then
 				local Base = Contraption.Base
-				if Base == Entity and Pod:GetDriver() ~= Ply then
+				if Base == Entity and IsValid(Pod) and Pod:GetDriver() ~= Ply then
 					Ply:EnterVehicle(Pod)
 				end
 			end
