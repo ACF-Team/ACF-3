@@ -9,6 +9,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing High Explosive"
+	self.SpawnIcon   = "acf/icons/shell_aphe.png"
 	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "#acf.descs.ammo.aphe"
 	self.Blacklist = {

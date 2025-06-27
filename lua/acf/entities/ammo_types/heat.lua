@@ -10,6 +10,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive Anti-Tank"
+	self.SpawnIcon   = "acf/icons/shell_heat.png"
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "#acf.descs.ammo.heat"
 	self.Blacklist = {

@@ -477,7 +477,7 @@ function ACF.CreateAmmoMenu(Menu)
 	Desc:SetText("")
 
 	function List:LoadEntries(Class)
-		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")
+		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
 	end
 
 	function List:OnSelect(Index, _, Data)
