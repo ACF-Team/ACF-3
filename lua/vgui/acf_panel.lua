@@ -205,6 +205,9 @@ function PANEL:AddComboBox()
 		end
 		self.IconPadding = 0
 
+		local Tall = self:GetTall()
+		local Ratio = Tall / 22
+
 		if string.GetExtensionFromFilename(Icon) == "mdl" then
 			self.IconPanel = self:Add("ModelImage")
 			local Size = 48
@@ -223,14 +226,15 @@ function PANEL:AddComboBox()
 					Size = math.Remap(Abnormality, 160, 300, 42, 64)
 				end
 			end
+			Size = Size * Ratio
 			self.IconPanel:SetSize(Size, Size)
 			self.IconPanel:SetModel(Icon)
 			self.IconPadding = 30
 		else
 			self.IconPanel = self:Add("DImage")
-			self.IconPanel:SetSize(16, 16)
+			self.IconPanel:SetSize(16 * Ratio, 16 * Ratio)
 			self.IconPanel:SetKeepAspect(true)
-			self.IconPanel:SetMaterial(Material(Icon))
+			self.IconPanel:SetMaterial(Material(Icon, "smooth"))
 			self.IconPadding = 26
 		end
 		self.IconPanel:SetMouseInputEnabled(false)
@@ -243,7 +247,7 @@ function PANEL:AddComboBox()
 				if IsValid(self.IconPanel) then
 					local center = h / 2
 					center = center - (self.IconPanel:GetTall() / 2)
-					self.IconPanel:SetPos(center + 2, center)
+					self.IconPanel:SetPos(center + (self.IconOffset or 4), center)
 					self:SetTextInset(self.IconPadding, 0)
 				end
 			end
@@ -260,7 +264,25 @@ function PANEL:AddComboBox()
 	end
 
 	local function SetupOptionIcon(Option, Icon)
+		Option:SetTall(28)
+		function Option:PerformLayout( w, h )
+			self:SizeToContents()
+			self:SetWide(self:GetWide() + 30)
+
+			local w = math.max(self:GetParent():GetWide(), self:GetWide())
+
+			self:SetSize(w, 28)
+
+			if IsValid(self.SubMenuArrow) then
+				self.SubMenuArrow:SetSize( 15, 15 )
+				self.SubMenuArrow:CenterVertical()
+				self.SubMenuArrow:AlignRight( 4 )
+			end
+
+			DButton.PerformLayout( self, w, h )
+		end
 		ReloadIconMaterial(Option, Icon)
+		Option.IconPadding = 38
 	end
 
 	function Panel:OpenMenu(pControlOpener)
@@ -294,9 +316,7 @@ function PANEL:AddComboBox()
 			for _, v in SortedPairsByMemberValue(sorted, "label") do
 				local option = self.Menu:AddOption(v.data, function() self:ChooseOption(v.data, v.id) end)
 
-				if self.ChoiceIcons[v.id] then
-					SetupOptionIcon(option, self.ChoiceIcons[v.id])
-				end
+				SetupOptionIcon(option, self.ChoiceIcons[v.id])
 
 				if self.Spacers[v.id] then
 					self.Menu:AddSpacer()
@@ -306,9 +326,7 @@ function PANEL:AddComboBox()
 			for k, v in pairs(self.Choices) do
 				local option = self.Menu:AddOption(v, function() self:ChooseOption(v, k) end)
 
-				if self.ChoiceIcons[k] then
-					SetupOptionIcon(option, self.ChoiceIcons[k])
-				end
+				SetupOptionIcon(option, self.ChoiceIcons[k])
 
 				if self.Spacers[k] then
 					self.Menu:AddSpacer()
