@@ -163,6 +163,7 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.max_thickness"):          LinkToServerData("MaxThickness")
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
+		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):   LinkToServerData("MaxDriveshaftAngle")
 
 		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):    LinkToServerData("CrewFallbackCoef")
 			Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")

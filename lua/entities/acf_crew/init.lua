@@ -35,7 +35,6 @@ include("shared.lua")
 local ACF = ACF
 local HookRun     = hook.Run
 local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
 local WireIO      = Utilities.WireIO
 
 local Contraption = ACF.Contraption
@@ -278,7 +277,7 @@ do -- Random timer stuff
 		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
 	end
 
-	function ENT:EnforceLimits(cfg)
+	function ENT:EnforceLimits()
 		local Targets = self.Targets
 		local SelfContraption = self:GetContraption()
 		local IsParented = CheckParentState(self)
@@ -320,7 +319,6 @@ do -- Random timer stuff
 		if IsValid(Parent) then
 			local NewPos = self:LocalToWorld(self.CrewModel.ScanOffsetL)
 			local GForce, DeltaTime = ACF.UpdateGForceTracker(self.GForceTracker, NewPos)
-			-- print(GForce, DeltaTime)
 
 			-- If specified, affect crew ergonomics based on G forces
 			local Effs = self.CrewType.GForceInfo.Efficiencies
@@ -478,7 +476,7 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 2/66, MaxTime = 2/66, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 2 / 66, MaxTime = 2 / 66, Delay = 0.1})
 
 		-- hook.Add("Think", Entity, function()
 		-- 	Entity:EnforceGForces()
