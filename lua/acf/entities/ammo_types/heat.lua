@@ -317,7 +317,7 @@ if SERVER then
 				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
-				local Speed = Bullet.JetAvgVel
+				-- local Speed = Bullet.JetAvgVel
 
 				-- Bullet.Energy = {}
 				-- Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
