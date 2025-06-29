@@ -169,7 +169,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NoclipOutsideZones", true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
-	ACF.DefineSetting("MaxDriveshaftAngle", 85,    nil, ACF.FloatDataCallback(85, 120, 0))
+	ACF.DefineSetting("MaxDriveshaftAngle", 85,    nil, ACF.FloatDataCallback(85, 180, 0))
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
