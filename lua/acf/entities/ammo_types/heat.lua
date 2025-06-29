@@ -319,8 +319,8 @@ if SERVER then
 
 				local Speed = Bullet.JetAvgVel
 
-				Bullet.Energy = {}
-				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
+				-- Bullet.Energy = {}
+				-- Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				-- if not Bullet.IsSpall and not Bullet.IsCookOff then
