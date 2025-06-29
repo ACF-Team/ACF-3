@@ -167,3 +167,115 @@ do -- Processing adjustable sounds (for example, engine noises)
 		Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	end)
 end
+
+	--- Returns a table of sound infomation depending on what the trace hit.
+	--- @param Data table The effect data relating to the projectile
+	--- @param Trace table The trace data relating to the projectile
+	--- @param EffectType string The type of effect being used (e.g. Impact, Ricochet)
+function Sounds.GetHitSoundPath(Data, Trace, EffectType)
+	local MatType   = Trace.MatType
+	local Caliber   = Data:GetRadius()
+	local HitWater  = bit.band(util.PointContents(Trace.HitPos), CONTENTS_WATER) == CONTENTS_WATER
+	local SoundPath = {"^acf_base/fx/hit", "", "%s.mp3"}
+	local SoundData = {
+		SoundPath   = "",
+		SoundPitch  = math.random(75, 125)
+	}
+
+	---hit world
+	if Trace.HitWorld or HitWater then
+		---more materials sounds can be added if the folders exist.
+		local WorldSoundPath = {"world", "", ""}
+		local Materials = {
+			[67] = "rock",
+			[77] = "metal",
+			[87] = "wood"
+		}
+
+		---check the material type
+		if Materials[MatType] ~= nil then
+			WorldSoundPath[2] = Materials[MatType]
+		elseif HitWater then
+			WorldSoundPath[2] = "water"
+		else
+			---there wasn't a specified material sound type, use a generic sound
+			WorldSoundPath[2] = "ground"
+		end
+
+		---check the caliber of the weapon
+		if Caliber <= 3.0 then
+			WorldSoundPath[3] = "small_arms"
+		else
+			WorldSoundPath[3] = "cannon"
+		end
+
+		SoundPath[2] = table.concat(WorldSoundPath, "/")
+
+	---hit flesh material (players, crew ents, npcs)
+	elseif MatType == 70 then
+		SoundPath[2] = "flesh"
+
+	---assume anything else is metal (props)
+	else
+		local AmmoType = Data:GetDamageType()
+		local PropSoundPath = {"prop", EffectType, ""}
+
+		---theres probably a better way to do this...
+		if Caliber <= 1.5 then
+			PropSoundPath[3] = "small_arms"
+		elseif Caliber > 1.5 and Caliber <= 6.6 then
+			PropSoundPath[3] = "small"
+		elseif Caliber > 6.6 and Caliber < 11.8 then
+			PropSoundPath[3] = "medium"
+		else
+			PropSoundPath[3] = "large"
+		end
+
+		---shot at with a dart round (apfsds, apds, apcr)
+		if EffectType == "impact" and (AmmoType == 2 or AmmoType == 3 or AmmoType == 4) then
+			PropSoundPath[4] = "dart"
+		end
+
+		SoundPath[2] = table.concat(PropSoundPath, "/")
+	end
+
+	SoundData.SoundPath = table.concat(SoundPath, "/")
+
+	return SoundData
+end
+
+	--- Returns a table of sound infomation depending on the radius of the explosion.  
+	--- @param Radius number Radius of the explosion
+function Sounds.GetExplosionSoundPath(Radius)
+	local SoundPath = {"^acf_base/fx/explosion", "", "%s.mp3"}
+	local SoundData = {
+		SoundPath	= "",
+		SoundVolume = 100,
+		SoundPitch  = math.random(75, 125)
+	}
+
+	---again probably a better way to do this...
+	if Radius <= 2 then
+		SoundPath[2] = "small"
+		SoundData.SoundVolume = 92
+	elseif Radius > 2 and Radius <= 6 then
+		SoundPath[2] = "medium-small"
+		SoundData.SoundVolume = 105
+	elseif Radius > 6 and Radius <= 12 then
+		SoundPath[2] = "medium"
+		SoundData.SoundVolume = 116
+	elseif Radius > 12 and Radius <= 20 then
+		SoundPath[2] = "medium-large"
+		SoundData.SoundVolume = 120
+	elseif Radius > 20 and Radius < 30 then
+		SoundPath[2] = "large"
+		SoundData.SoundVolume = 124
+	else
+		SoundPath[2] = "extra-large"
+		SoundData.SoundVolume = 127
+	end
+
+	SoundData.SoundPath = table.concat(SoundPath, "/")
+
+	return SoundData
+end
