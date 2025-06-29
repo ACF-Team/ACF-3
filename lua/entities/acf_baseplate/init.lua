@@ -165,7 +165,7 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 	if LuaSeatID then
 		self.Pod = CreatedEntities[LuaSeatID]
 		if not IsValid(self.Pod) then
-			Messages.SendChat(self:CPPIGetOwner(), "Error", "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
+			ACF.SendNotify(self:CPPIGetOwner(), false, "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
 			local Pod = ACF.GenerateLuaSeat(self, self:CPPIGetOwner(), self:GetPos(), self:GetAngles(), self:GetModel(), true)
 			if IsValid(Pod) then self.Pod = Pod end
 		end
