@@ -273,7 +273,7 @@ do	-- Metamethods and other important stuff
 				return
 			end
 
-			if (self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
+			if (IsValid(Turret:GetParent()) and self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
 				self.ValidPlacement = false
 				self:SetActive(false, "Must be parented to (or share parent with) the ring!")
 				return
