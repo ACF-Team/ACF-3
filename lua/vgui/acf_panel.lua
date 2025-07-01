@@ -287,7 +287,10 @@ function PANEL:AddComboBox()
 		ReloadIconMaterial(Panel, Icon)
 	end
 
-	local function SetupOptionIcon(Option, Icon)
+	local function SetupOptionIcon(Combo, _, Option, Icon)
+		if Combo:GetSelected() == Option:GetText() then
+			Option.Highlight = true
+		end
 		Option:SetTall(28)
 		function Option:PerformLayout( w, h )
 			self:SizeToContents()
@@ -340,7 +343,7 @@ function PANEL:AddComboBox()
 			for _, v in SortedPairsByMemberValue(sorted, "label") do
 				local option = self.Menu:AddOption(v.data, function() self:ChooseOption(v.data, v.id) end)
 
-				SetupOptionIcon(option, self.ChoiceIcons[v.id])
+				SetupOptionIcon(self, self.Menu, option, self.ChoiceIcons[v.id])
 
 				if self.Spacers[v.id] then
 					self.Menu:AddSpacer()
@@ -350,7 +353,7 @@ function PANEL:AddComboBox()
 			for k, v in pairs(self.Choices) do
 				local option = self.Menu:AddOption(v, function() self:ChooseOption(v, k) end)
 
-				SetupOptionIcon(option, self.ChoiceIcons[k])
+				SetupOptionIcon(self, self.Menu, option, self.ChoiceIcons[k])
 
 				if self.Spacers[k] then
 					self.Menu:AddSpacer()
