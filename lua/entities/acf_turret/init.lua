@@ -84,7 +84,7 @@ do	-- Spawn and Update funcs
 		local Model		= Turret.Model
 		local Size		= Data.RingSize
 
-		if (Size <= 12.5) and (Data.Turret == "Turret-H") then
+		if Turrets.WillUseSmallModel(Size) and (Data.Turret == "Turret-H") then
 			Model	= Turret.ModelSmall
 		end
 
