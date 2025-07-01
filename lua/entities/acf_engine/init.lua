@@ -654,13 +654,14 @@ function ENT:CheckEngineLegality()
 	if not ACF.LegalChecks then return true end
 
 	local EntTable = self:GetTable()
+	local AllowArbitraryParents = ACF.AllowArbitraryParents
 
-	if not ACF.AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
+	if not AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
 		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
 	end
 
 	local Contraption = self:GetContraption()
-	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+	if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
 
 	return true
 end
