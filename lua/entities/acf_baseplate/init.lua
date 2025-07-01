@@ -153,9 +153,6 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
 
-local Messages = ACF.Utilities.Messages
-
-
 function ENT:PostEntityPaste(_, _, CreatedEntities)
 	-- Pod should be valid since this runs after all entities are created
 	local LuaSeatID = self.EntityMods
