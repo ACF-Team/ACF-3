@@ -4,14 +4,12 @@ local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetRicochetDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
-local Sound      = "acf_base/fx/ricochet%s.mp3"
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
 	local Origin = Data:GetOrigin()
 	local DirVec = Data:GetNormal()
 	local Velocity = Data:GetScale() --Velocity of the projectile in gmod units
-	local Mass = Data:GetMagnitude() --Mass of the projectile in kg
 	local Type = Data:GetDamageType()
 
 	TraceData.start = Origin
@@ -26,10 +24,9 @@ function EFFECT:Init(Data)
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
 	end
 
-	local Level = math.Clamp(Mass * 200, 65, 500)
-	local Pitch = math.Clamp(Velocity * 0.01, 25, 255)
+	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "ricochet")
 
-	Sounds.PlaySound(Origin, Sound:format(math.random(1, 4)), Level, Pitch, 1)
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:Think()
