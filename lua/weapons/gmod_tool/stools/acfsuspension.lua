@@ -389,16 +389,6 @@ elseif SERVER then -- Serverside-only stuff
 		local Player = self:GetOwner()
 		local Selections = self.Selections
 
-		-- Handle makespherical / disable collisions BEFORE making the constraints
-		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
-		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
-		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
-			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
-
-			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
-			if IsSpherical == 1 then MakeSpherical(Wheel) end
-		end
-
 		-- Handle making the suspension constraints
 		local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
 		local ArmType = tonumber(Player:GetInfo("acf_sus_tool_armtype"))
@@ -420,7 +410,21 @@ elseif SERVER then -- Serverside-only stuff
 
 		-- Cover edge cases
 		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
+		if IsValid(Baseplate:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a baseplate.") return end
 		if SpringType == 2 and not IsValid(ControlPlate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Control plate missing.") return end
+		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
+			if IsValid(Wheel:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a wheel.") end
+		end
+
+		-- Handle makespherical / disable collisions BEFORE making the constraints
+		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
+		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
+		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
+			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+
+			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
+			if IsSpherical == 1 then MakeSpherical(Wheel) end
+		end
 
 		-- Determine left/right wheels
 		local LeftWheels, RightWheels = {}, {}

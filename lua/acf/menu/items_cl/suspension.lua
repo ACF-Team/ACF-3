@@ -57,7 +57,7 @@ function ACF.CreateSuspensionToolMenu(Panel)
                 InOutSpeedMul:SetTooltip("How fast it changes the length.")
             elseif Data == 3 then
                 -- Elastic Specific
-                local Elasticity = SpringSpecific:AddSlider("Elasticity", 0, 400)
+                local Elasticity = SpringSpecific:AddSlider("Elasticity", 0, 4000)
                 Elasticity:SetConVar("acf_sus_tool_elasticity")
                 Elasticity:SetTooltip("Stiffness of the elastic. The larger the number the less the elastic will stretch.")
 
