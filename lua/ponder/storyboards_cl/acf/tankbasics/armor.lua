@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "armor")
+Storyboard:WithName("Armor Basics")
+Storyboard:WithModelIcon("models/squad/sf_plates/sf_plate2x2.mdl")
+Storyboard:WithDescription("(WIP) Learn how to armor props and best practices")
+Storyboard:WithIndexOrder(1)
