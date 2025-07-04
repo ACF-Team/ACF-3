@@ -24,6 +24,9 @@ do	-- Turret drives
 		return Angle(p, y, r)
 	end
 
+	local WillUseSmallModel = function(Size) return Size <= 12.5 end
+	Turrets.WillUseSmallModel = WillUseSmallModel
+
 	Turrets.Register("1-Turret", {
 		Name		= "Turrets",
 		SpawnModel  = "models/acf/core/t_ring.mdl",
@@ -49,7 +52,7 @@ do	-- Turret drives
 		GetRingHeight	= function(TurretData, Size)
 			local RingHeight = math.max(Size * TurretData.Ratio, 4)
 
-			if (TurretData.Type == "Turret-H") and (Size <= 12.5) then
+			if (TurretData.Type == "Turret-H") and WillUseSmallModel(Size) then
 				return 12 -- sticc
 			end
 

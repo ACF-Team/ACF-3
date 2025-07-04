@@ -153,9 +153,6 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
 
-local Messages = ACF.Utilities.Messages
-
-
 function ENT:PostEntityPaste(_, _, CreatedEntities)
 	-- Pod should be valid since this runs after all entities are created
 	local LuaSeatID = self.EntityMods
@@ -165,8 +162,9 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 	if LuaSeatID then
 		self.Pod = CreatedEntities[LuaSeatID]
 		if not IsValid(self.Pod) then
-			Messages.SendChat(self:CPPIGetOwner(), "Error", "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
-			return
+			ACF.SendNotify(self:CPPIGetOwner(), false, "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
+			local Pod = ACF.GenerateLuaSeat(self, self:CPPIGetOwner(), self:GetPos(), self:GetAngles(), self:GetModel(), true)
+			if IsValid(Pod) then self.Pod = Pod end
 		end
 		ConfigureLuaSeat(self, self.Pod, self:CPPIGetOwner())
 	end
