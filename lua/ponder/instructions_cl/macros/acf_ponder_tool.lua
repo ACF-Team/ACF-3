@@ -25,27 +25,47 @@ end
 
 local Caption = Ponder.API.NewInstructionMacro("Caption")
 function Caption:Run(chapter, parameters)
-    local length = parameters.Length or 1
+    local FadeInOutTime = parameters.FadeInOutTime or 0.5 -- Time for showtext/hidetext to fade in and out
+    local SpacingTime = parameters.SpacingTime or 0.5 -- Time between captions
+    local Defaults = parameters.Defaults or {} -- Whatever is common to all captions
+    local WPM = parameters.WPM or 200
+
     local tAdd = 0
-    chapter:AddInstruction("ShowText", {
-        Time = parameters.Time or tAdd,
-        Name = parameters.Name or "Explain",
-        Dimension = parameters.Dimension or "2D",
-        Text = parameters.Text,
-        Horizontal = parameters.Horizontal or TEXT_ALIGN_CENTER,
-        PositionRelativeToScreen = true,
-        Position = parameters.Position or Vector(0.5, 0.25, 0)
-    })
-    tAdd = tAdd + length
-    chapter:AddInstruction("HideText", {Time = tAdd, Name = "Explain"})
 
-    if parameters.Delay then
-        tAdd = tAdd + parameters.Delay
-        chapter:AddInstruction("Delay", {Length = tAdd + parameters.Delay})
+    local TotalTextTime = 0
+    for TextIndex, TextData in ipairs(parameters.TextDatas) do
+        local TextTime = #string.Explode(" ", TextData.Text) / WPM * 60
+        TotalTextTime = TotalTextTime + TextTime
+        chapter:AddInstruction("ShowText", {
+            Time = tAdd,
+            Length = FadeInOutTime,
+            Dimension = TextData.Dimension or Defaults.Dimension or "2D",
+            PositionRelativeToScreen = TextData.PositionRelativeToScreen or Defaults.PositionRelativeToScreen or true,
+
+            Name = (TextData.Name or Defaults.Name or "Caption") .. TextIndex,
+            Text = TextData.Text or Defaults.Text,
+            Horizontal = TextData.Horizontal or Defaults.Horizontal or TEXT_ALIGN_CENTER,
+            Position = TextData.Position or Defaults.Position or Vector(0.5, 0.25, 0),
+            ParentTo = TextData.ParentTo or Defaults.ParentTo or nil,
+        })
     end
-
+    tAdd = tAdd + FadeInOutTime + TotalTextTime + SpacingTime * (#parameters.TextDatas - 1)
+    print(tAdd, "show time")
+    for TextIndex, TextData in ipairs(parameters.TextDatas) do
+        chapter:AddInstruction("HideText", {
+            Time = tAdd,
+            Length = FadeInOutTime,
+            Name = (TextData.Name or Defaults.Name or "Caption") .. TextIndex,
+        })
+    end
+    tAdd = tAdd + FadeInOutTime
+    print(tAdd, "hide time")
     return tAdd
 end
+
+-- local StateText = Ponder.API.NewInstructionMacro("StateText")
+-- function StateText:Run(chapter, parameters)
+-- end
 
 local FlashModel = Ponder.API.NewInstructionMacro("FlashModel")
 function FlashModel:Run(chapter, parameters)

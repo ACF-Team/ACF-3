@@ -16,7 +16,7 @@ end
 
 -- Copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
 function ENT:Draw()
-	self:DoNormalDraw(false, HideInfo())
+	self:DoNormalDraw(HideInfo(), HideInfo())
 
 	WireRender(self)
 end

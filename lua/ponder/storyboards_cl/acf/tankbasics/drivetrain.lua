@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "drivetrain")
+Storyboard:WithName("Drivetrain Entities")
+Storyboard:WithModelIcon("models/engines/v12l.mdl")
+Storyboard:WithDescription("(WIP) Learn how to setup a basic drivetrain")
+Storyboard:WithIndexOrder(5)

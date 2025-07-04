@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "turret_extras")
+Storyboard:WithName("Turret Components")
+Storyboard:WithModelIcon("models/acf/core/t_drive_e.mdl")
+Storyboard:WithDescription("(WIP) Learn how to use turret motors and stabilizers")
+Storyboard:WithIndexOrder(2)

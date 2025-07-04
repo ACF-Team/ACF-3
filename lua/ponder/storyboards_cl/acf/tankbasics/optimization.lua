@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "Optimization")
+Storyboard:WithName("Optimization")
+Storyboard:WithModelIcon("models/combine_helicopter/helicopter_bomb01.mdl")
+Storyboard:WithDescription("(WIP) Learn how to reduce the impact of your tank")
+Storyboard:WithIndexOrder(0)
