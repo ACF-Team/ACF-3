@@ -146,13 +146,13 @@ if CLIENT then
 					if ArmType == 1 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
 						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
 					elseif ArmType == 2 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
 					elseif ArmType == 3 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
 					end
 				end
 			end
@@ -468,9 +468,9 @@ elseif SERVER then -- Serverside-only stuff
 					else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
 				else
 					HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
-					if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-					elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-					elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
+					if ArmType == 1 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 2 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 3 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 					if SpringType == 2 and IsValid(ControlPlate) then
 						local LocalPos = Baseplate:WorldToLocal(Wheel:GetPos())
