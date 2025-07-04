@@ -63,10 +63,9 @@ function Caption:Run(chapter, parameters)
     return tAdd
 end
 
-local StateText = Ponder.API.NewInstructionMacro("StateText")
-function StateText:Run(chapter, parameters)
-    
-end
+-- local StateText = Ponder.API.NewInstructionMacro("StateText")
+-- function StateText:Run(chapter, parameters)
+-- end
 
 local FlashModel = Ponder.API.NewInstructionMacro("FlashModel")
 function FlashModel:Run(chapter, parameters)
