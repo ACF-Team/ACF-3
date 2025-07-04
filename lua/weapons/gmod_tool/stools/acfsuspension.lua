@@ -473,7 +473,8 @@ elseif SERVER then -- Serverside-only stuff
 					elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 					if SpringType == 2 and IsValid(ControlPlate) then
-						MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector(0, 0, WheelCount * 6)), ControlPlate:GetAngles())
+						local LocalPos = Baseplate:WorldToLocal(Wheel:GetPos())
+						MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(LocalPos * 1 / math.abs(LocalPos.y) * 12), ControlPlate:GetAngles())
 					elseif SpringType == 3 then
 						MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
 					end
