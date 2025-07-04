@@ -169,6 +169,7 @@ function Damage.doSquishyDamage(Entity, DmgResult, DmgInfo)
 
 	local Attacker, Inflictor = DmgInfo:GetAttacker(), DmgInfo:GetInflictor()
 	local Direction = (DmgInfo.HitPos - DmgInfo.Origin):GetNormalized()
+	Damage = Damage * ACF.SquishyDamageMult
 
 	if not ACF.Damage.DoSquishyFlingKill(Entity, Damage, DmgInfo.HitPos, Attacker, Inflictor, Direction, DmgInfo.Type == DMG_BLAST) then
 		Entity:TakeDamage(Damage, Attacker, Inflictor)
