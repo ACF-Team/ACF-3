@@ -102,8 +102,10 @@ function Contraption.GetEnts(Ent)
 
 			if CurFamily and CurFamily:GetRoot() ~= K then
 				Pare[K] = true
-			else
+			elseif ACF.IsEntityEligiblePhysmass(K) then
 				Phys[K] = true
+			else
+				Dtch[K] = true
 			end
 		end
 	end
@@ -196,14 +198,8 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 	local TotMass = Con and Con.totalMass or PhysMass
 
-	for K in pairs(Detached) do
+	for _ in pairs(Detached) do
 		OthN = OthN + 1
-
-		local Phys = K:GetPhysicsObject()
-
-		if IsValid(Phys) then
-			TotMass = TotMass + Phys:GetMass()
-		end
 	end
 
 	for K in pairs(Physical) do

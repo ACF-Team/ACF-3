@@ -153,19 +153,21 @@ do -- Serverside settings
 		end)
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):        LinkToServerData("RestrictInfo")
+		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):          LinkToServerData("RestrictInfo")
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):         LinkToServerData("RequireFuel")
-		Base:AddSlider("#acf.menu.settings.general.max_thickness"):          LinkToServerData("MaxThickness")
-		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
-		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
-		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):   LinkToServerData("MaxDriveshaftAngle")
+		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):           LinkToServerData("RequireFuel")
+		Base:AddCheckBox("#acf.menu.settings.general.detached_physmass_ratio"):LinkToServerData("DetachedPhysicalMassRatio")
+			Base:AddHelp("#acf.menu.settings.general.detached_physmass_ratio_desc")
+		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
+		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthFactor")
+		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
+		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
 
-		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):    LinkToServerData("CrewFallbackCoef")
+		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):      LinkToServerData("CrewFallbackCoef")
 			Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")
 
-		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):             LinkToServerData("SmokeWind")
+		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):               LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
 	end)
 

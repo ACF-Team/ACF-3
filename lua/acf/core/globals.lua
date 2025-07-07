@@ -154,6 +154,8 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowArbitraryParents", false,   "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowSpecialEngines", true,  "Special engines have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("ShowFunMenu",         true,   "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
+	-- If false, detached physical entities will not affect mass ratio and vice versa
+	ACF.DefineSetting("DetachedPhysmassRatio", false, "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowProcArmor",      false,  "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
 		ACF.GlobalFilter["acf_armor"] = not Value
 		return Value
@@ -336,7 +338,8 @@ do -- ACF global vars
 	ACF.GearEfficiency     = 0.95 -- The percentage of RPM efficiency kept when increasing the gear count
 	ACF.GearboxMassScale   = 3 -- The exponent to determine the gearbox's mass in proportion to its scale
 	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
-	ACF.TorqueMult         = 2 -- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
+	-- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
+	ACF.DefineSetting("TorqueMult", 5, "The arbitrary multiplier for the final amount of torque. Stopgap measure until a future engine update.", ACF.FloatDataCallback(0, 10, 2))
 	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
 	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
 	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to
