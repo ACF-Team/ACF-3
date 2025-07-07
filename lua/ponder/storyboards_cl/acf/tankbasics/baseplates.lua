@@ -1,5 +1,0 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "baseplates")
-Storyboard:WithName("ACF Baseplate Entities")
-Storyboard:WithModelIcon("models/hunter/plates/plate1x1.mdl")
-Storyboard:WithDescription("(WIP) Learn how to setup a baseplate entity")
-Storyboard:WithIndexOrder(6)
