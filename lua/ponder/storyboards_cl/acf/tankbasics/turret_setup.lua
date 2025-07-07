@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "turret_setup")
+Storyboard:WithName("Turret Setup")
+Storyboard:WithModelIcon("models/acf/core/t_ring.mdl")
+Storyboard:WithDescription("(WIP) Learn how to setup a basic turret")
+Storyboard:WithIndexOrder(4)

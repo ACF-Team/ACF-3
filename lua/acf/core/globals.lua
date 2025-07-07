@@ -127,6 +127,7 @@ do -- ACF global vars
 	ACF.DefineSetting("GunsCanSmoke",       true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RacksCanFire",       true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RequireFuel",        true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("SquishyDamageMult",  1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
 	ACF.Threshold = 264.7
 	ACF.DefineSetting("HealthFactor",       1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
