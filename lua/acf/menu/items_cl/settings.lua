@@ -145,6 +145,7 @@ do -- Serverside settings
 		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
 
 		-- What? Why is this different??
+		-- MARCH REPLY: I don't remember!!
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
@@ -157,8 +158,13 @@ do -- Serverside settings
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):           LinkToServerData("RequireFuel")
+
 		Base:AddCheckBox("#acf.menu.settings.general.detached_physmass_ratio"):LinkToServerData("DetachedPhysmassRatio")
 			Base:AddHelp("#acf.menu.settings.general.detached_physmass_ratio_desc")
+
+		Base:AddCheckBox("#acf.menu.settings.general.allow_dynamic_linking"):LinkToServerData("AllowDynamicLinking")
+			Base:AddHelp("#acf.menu.settings.general.allow_dynamic_linking_desc")
+
 		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthFactor")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
