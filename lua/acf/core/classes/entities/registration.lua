@@ -125,6 +125,7 @@ Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	return Value
 end)
 
+-- Single entity link.
 Entities.AddUserArgumentType("LinkedEntity",
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
@@ -135,13 +136,58 @@ Entities.AddUserArgumentType("LinkedEntity",
 
 			return NULL
 		end
+
+		return Value
 	end,
 	function(_, value)
 		return value:EntIndex()
 	end,
 	function(self, value, createdEnts)
-		self:Link(createdEnts[value])
-		return createdEnts[value]
+		local Ent = createdEnts[value]
+		if not IsValid(Ent) then return NULL end
+
+		return self:Link(Ent) and Ent or NULL
+	end
+)
+
+-- Entity link LUT where Key == Entity and Value == true.
+Entities.AddUserArgumentType("LinkedEntities",
+	function(Value, Specs)
+		if not istable(Value) then Value = {} return Value end
+		if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
+
+		if Specs.Classes then
+			-- Check everything. What's valid?
+			local NewTable = {}
+			for Entity in pairs(Value) do
+				if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
+					NewTable[Entity] = true
+				end
+			end
+
+			return NewTable
+		else
+			return Value
+		end
+	end,
+	function(_, Value)
+		local EntIndexTable = {}
+		for Entity in pairs(Value) do
+			EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
+		end
+		return EntIndexTable
+	end,
+	function(self, Value, CreatedEnts)
+		local EntTable = {}
+
+		for _, EntIndex in ipairs(Value) do
+			local Created = CreatedEnts[EntIndex]
+			if IsValid(Created) and self:Link(Created) then
+				EntTable[Created] = true
+			end
+		end
+
+		return EntTable
 	end
 )
 
