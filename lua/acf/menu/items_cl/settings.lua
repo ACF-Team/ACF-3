@@ -157,7 +157,7 @@ do -- Serverside settings
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):           LinkToServerData("RequireFuel")
-		Base:AddCheckBox("#acf.menu.settings.general.detached_physmass_ratio"):LinkToServerData("DetachedPhysicalMassRatio")
+		Base:AddCheckBox("#acf.menu.settings.general.detached_physmass_ratio"):LinkToServerData("DetachedPhysmassRatio")
 			Base:AddHelp("#acf.menu.settings.general.detached_physmass_ratio_desc")
 		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthFactor")

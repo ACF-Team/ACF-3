@@ -141,7 +141,9 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local Physical, Parented, Detached = Contraption.GetEnts(Ent)
 	local Constraints = {}
 
-	for K in pairs(Physical) do
+	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
+	-- if DetachedPhysmassRatio == false
+	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
 		local Phys = K:GetPhysicsObject()
 
 		if not IsValid(Phys) then
