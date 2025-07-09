@@ -1242,3 +1242,27 @@ do
 		return tbl.Acc:Length() / -ACF.Gravity.z, DeltaTime -- Since gravity is a vector...
 	end
 end
+
+-- Helper function to perform pairs() over one or two tables (note this doesn't take into account duplicate keys)
+function ACF.DuplexPairs(Table1, Table2)
+	local Switched = false
+
+	local function Enumerator(_, K)
+		local V
+
+		if Switched then
+			K, V = next(Table2, K)
+			return K, V
+		else
+			K, V = next(Table1, K)
+			if K == nil and Table2 ~= nil then
+				Switched = true
+				return next(Table2, nil)
+			else
+				return K, V
+			end
+		end
+	end
+
+	return Enumerator, nil, nil
+end

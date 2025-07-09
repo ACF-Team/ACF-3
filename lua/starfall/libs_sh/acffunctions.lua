@@ -1090,6 +1090,14 @@ if SERVER then
 	-- @return boolean The result of the operation
 	-- @return string The result message
 	function ents_methods:acfLinkTo(target, notify)
+		if not ACF.AllowDynamicLinking then
+			if notify then
+				ACF.SendNotify(instance.player, false, "Dynamic linking has been disabled on this server.")
+			end
+
+			return false, "Dynamic linking has been disabled on this server."
+		end
+
 		CheckType(self, ents_metatable)
 		CheckType(target, ents_metatable)
 

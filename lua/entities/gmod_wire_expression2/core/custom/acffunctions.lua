@@ -330,6 +330,14 @@ end
 
 --allows e2 to perform ACF links
 e2function number entity:acfLinkTo(entity Target, number Notify)
+	if not ACF.AllowDynamicLinking then
+		if Notify ~= 0 then
+			ACF.SendNotify(self.player, 0, "Dynamic linking has been disabled on this server.")
+		end
+
+		return 0
+	end
+
 	if not validPhysics(this) then return 0 end
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
