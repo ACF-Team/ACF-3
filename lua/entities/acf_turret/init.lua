@@ -575,7 +575,8 @@ do	-- Spawn and Update funcs
 		local SlewInput 	= SelfTbl.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
-		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12) ^ 2
+		local MotorDistance = IsValid(SelfTbl.Motor) and (SelfTbl.Motor.CompSize * 7.5) or 0
+		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12 + MotorDistance) ^ 2
 
 		if IsValid(SelfTbl.Motor) and SelfTbl.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
 			local USound = UnlinkSound:format(math.random(1, 3))
@@ -733,7 +734,7 @@ do -- Metamethods
 			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
-			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12) ^ 2) then return false, "This motor is too far from the turret!" end
+			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12 + Motor.CompSize * 7.5) ^ 2) then return false, "This motor is too far from the turret!" end
 
 			This.Motor		= Motor
 			Motor.Turret	= This
