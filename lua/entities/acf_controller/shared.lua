@@ -38,7 +38,7 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", "ThrottleIdle", { KeyName = "throttleidle", Edit = { type = "Int", order = 60, category = "Drivetrain Settings", min = 0, max = 100 } } )
 	self:NetworkVar( "Int", "SpeedUnit", { KeyName = "speedunit", Edit = { type = "Combo", order = 61, category = "Drivetrain Settings", values = {KPH = 0, MPH = 1} } } )
-	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, H = 1} } } )
+	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, G = 1} } } )
 
 	self:NetworkVar( "Int", "BrakeEngagement", { KeyName = "brakeengagement", Edit = { type = "Combo", order = 71, category = "Brake Settings", values = {Manual = 0, Automatic = 1} } } )
 	self:NetworkVar( "Float", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Float", order = 73, category = "Brake Settings", min = 0.001, max = 1000 } } )
