@@ -1,17 +1,34 @@
-local TraceData  = { start = true, endpos = true }
-local TraceLine  = util.TraceLine
-local ValidDecal = ACF.IsValidAmmoDecal
-local GetDecal   = ACF.GetRicochetDecal
-local GetScale   = ACF.GetDecalScale
-local Sounds     = ACF.Utilities.Sounds
-local Sound      = "acf_base/fx/ricochet%s.mp3"
+local TraceData    = { start = true, endpos = true }
+local TraceLine    = util.TraceLine
+local ValidDecal   = ACF.IsValidAmmoDecal
+local GetDecal     = ACF.GetRicochetDecal
+local GetScale     = ACF.GetDecalScale
+local Effects      = ACF.Utilities.Effects
+local Sounds       = ACF.Utilities.Sounds
+local Sound        = "acf_base/fx/ricochet%s.mp3"
+
+local Colors = {
+	Default        = Color(120, 110, 100),
+	[MAT_GRATE]    = Color(170, 160, 144),
+	[MAT_CLIP]     = Color(170, 160, 144),
+	[MAT_METAL]    = Color(170, 160, 144),
+	[MAT_COMPUTER] = Color(170, 160, 144),
+	[MAT_CONCRETE] = Color(180, 172, 158),
+	[MAT_DIRT]     = Color(95, 80, 63),
+	[MAT_GRASS]    = Color(114, 100, 80),
+	[MAT_SLOSH]    = Color(104, 90, 70),
+	[MAT_SNOW]     = Color(154, 140, 110),
+	[MAT_FOLIAGE]  = Color(104, 90, 70),
+	[MAT_TILE]     = Color(150, 146, 141),
+	[MAT_SAND]     = Color(180, 155, 100),
+}
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
 	local Origin = Data:GetOrigin()
 	local DirVec = Data:GetNormal()
-	local Velocity = Data:GetScale() --Velocity of the projectile in gmod units
-	local Mass = Data:GetMagnitude() --Mass of the projectile in kg
+	local Velocity = Data:GetScale() -- Velocity of the projectile in gmod units
+	local Mass = Data:GetMagnitude() -- Mass of the projectile in kg
 	local Type = Data:GetDamageType()
 
 	local Emitter = ParticleEmitter(Origin)
@@ -22,7 +39,10 @@ function EFFECT:Init(Data)
 	local Trace = TraceLine(TraceData)
 	local Radius = 3
 
+	-- Ricochet sparks
 	if IsValid(Emitter) then
+		local DebrisColor = Colors[Trace.MatType] or Colors.Default
+
 		for _ = 0, math.Rand(12, 24) do
 			local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
@@ -38,18 +58,27 @@ function EFFECT:Init(Data)
 				Debris:SetRollDelta(math.Rand(-3, 3))
 				Debris:SetAirResistance(30)
 				Debris:SetGravity(Vector(0, 0, -1200))
-				Debris:SetColor(120, 120, 120)
+				Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
 			end
 		end
 
-		util.Effect("ManhackSparks", Data)
+		local EffectTable = {
+			Radius = Caliber,
+			Origin = Origin,
+			Normal = DirVec,
+			Scale = Velocity,
+			Magnitude = Mass,
+			DamageType = Type,
+		}
+
+		Effects.CreateEffect("ManhackSparks", EffectTable)
 	end
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
 		local Scale = GetScale(DecalType, Caliber)
 
-		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
+		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, color_white, Scale, Scale)
 	end
 
 	local Level = math.Clamp(Mass * 200, 65, 500)

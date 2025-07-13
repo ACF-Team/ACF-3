@@ -32,7 +32,7 @@ function EFFECT:Init(Data)
 		local DecalType = ValidDecal(Type) and Type or 1
 		local Scale = GetScale(DecalType, Caliber)
 
-		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
+		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, color_white, Scale, Scale)
 	end
 end
 
