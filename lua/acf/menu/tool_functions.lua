@@ -378,6 +378,56 @@ do -- Tool Functions Loader
 			self:SetOperation(Op.Index)
 		end
 
+		--- Restores the tool's mode to its last known state.
+		--- This includes setting the appropriate stage and operation based on previously saved client data.
+		function Tool:RestoreMode()
+			--- The ToolMode variable is in the format "Stage:Op", where Stage and Op are the current stage and operation.
+			--- self.Mode is the current acf tool itself (e.g. "acf_menu"/"acf_copy")
+			local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
+
+			if ToolMode then
+				-- Explode the ToolMode string to get stage and operation as an array, then unpack as a vararg
+				local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
+
+				self:SetMode(Stage, Op)
+			end
+		end
+
+		--- Handles deploys (when you switch to the acf tool or start using it) and calls the "OnDeploy" method if defined.
+		function Tool:Deploy()
+			self:RestoreMode()
+
+			if self.OpData then
+				local OnDeploy = self.OpData.OnDeploy
+
+				if OnDeploy then
+					OnDeploy(self)
+				end
+			end
+		end
+
+		--- Handles deploys (when you switch to another tool and holster the acf tool) and calls the "OnDeploy" method if defined.
+		function Tool:Holster()
+			if self.OpData then
+				local OnHolster = self.OpData.OnHolster
+
+				if OnHolster then
+					OnHolster(self)
+				end
+			end
+		end
+
+		--- Handles thinks (happen repeatedly while the tool is equipped) and calls the "OnThink" method if defined.
+		function Tool:Think()
+			if self.OpData then
+				local OnThink = self.OpData.OnThink
+
+				if OnThink then
+					OnThink(self)
+				end
+			end
+		end
+
 		if CLIENT then
 			Tool.Category = Category:GetBool() and "ACF" or "Construction"
 
@@ -405,21 +455,6 @@ do -- Tool Functions Loader
 				return self.OpData and isfunction(self.OpData.OnReload)
 			end
 		else
-			--- Restores the tool's mode to its last known state.
-			--- This includes setting the appropriate stage and operation based on previously saved client data.
-			function Tool:RestoreMode()
-				--- The ToolMode variable is in the format "Stage:Op", where Stage and Op are the current stage and operation.
-				--- self.Mode is the current acf tool itself (e.g. "acf_menu"/"acf_copy")
-				local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
-
-				if ToolMode then
-					-- Explode the ToolMode string to get stage and operation as an array, then unpack as a vararg
-					local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
-
-					self:SetMode(Stage, Op)
-				end
-			end
-
 			--- The rest of these bind into tool hooks (https://wiki.facepunch.com/gmod/TOOL_Hooks)
 
 			--- Handles left clicks and calls the "OnLeftClick" method for the current operation if defined.
@@ -462,41 +497,6 @@ do -- Tool Functions Loader
 				end
 
 				return false
-			end
-
-			--- Handles deploys (when you switch to the acf tool or start using it) and calls the "OnDeploy" method if defined.
-			function Tool:Deploy()
-				self:RestoreMode()
-
-				if self.OpData then
-					local OnDeploy = self.OpData.OnDeploy
-
-					if OnDeploy then
-						OnDeploy(self)
-					end
-				end
-			end
-
-			--- Handles deploys (when you switch to another tool and holster the acf tool) and calls the "OnDeploy" method if defined.
-			function Tool:Holster()
-				if self.OpData then
-					local OnHolster = self.OpData.OnHolster
-
-					if OnHolster then
-						OnHolster(self)
-					end
-				end
-			end
-
-			--- Handles thinks (happen repeatedly while the tool is equipped) and calls the "OnThink" method if defined.
-			function Tool:Think()
-				if self.OpData then
-					local OnThink = self.OpData.OnThink
-
-					if OnThink then
-						OnThink(self)
-					end
-				end
 			end
 		end
 	end
