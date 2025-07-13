@@ -79,7 +79,7 @@ end)
 
 -- Receive filter from server
 net.Receive("ACF_Controller_CamInfo", function()
-	Temp = net.ReadTable()
+	local Temp = net.ReadTable()
 	if #Temp > 0 then MyFilter = Temp end
 end)
 
