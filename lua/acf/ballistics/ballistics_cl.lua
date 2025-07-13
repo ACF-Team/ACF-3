@@ -1,7 +1,4 @@
 local ACF    = ACF
-local Debug	 = ACF.Debug
-local Yellow = Color(255, 255, 0)
-local Teal   = Color(0, 255, 255)
 
 ACF.BulletEffect = ACF.BulletEffect or {}
 
