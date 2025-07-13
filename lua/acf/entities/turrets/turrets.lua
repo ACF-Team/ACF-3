@@ -195,20 +195,21 @@ do	-- Turret drives
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
-					local Rotator = Turret.Rotator
+					local TurretTbl = Turret:GetTable()
+					local Rotator = TurretTbl.Rotator
 
-					if Turret.HasArc then
-						if Turret.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -math.Clamp(Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0))).yaw
+					if TurretTbl.HasArc then
+						if TurretTbl.Manual then
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -math.Clamp(TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0))).yaw
 						else
-							local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(0, StabAmt, 0) - AngDiff, Angle(0, -Turret.MaxDeg, 0), Angle(0, -Turret.MinDeg, 0))
+							local AngDiff = Rotator:WorldToLocalAngles(TurretTbl.LastRotatorAngle)
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(TurretTbl.DesiredAngle) - Angle(0, StabAmt, 0) - AngDiff, Angle(0, -TurretTbl.MaxDeg, 0), Angle(0, -TurretTbl.MinDeg, 0))
 
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).yaw
 						end
 					else
-						local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
-						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -Turret.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle + AngDiff).yaw - StabAmt)
+						local AngDiff = Rotator:WorldToLocalAngles(TurretTbl.LastRotatorAngle)
+						return TurretTbl.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -TurretTbl.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(TurretTbl.DesiredAngle + AngDiff).yaw - StabAmt)
 					end
 				end,
 
@@ -275,18 +276,19 @@ do	-- Turret drives
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
-					local Rotator = Turret.Rotator
+					local TurretTbl = Turret:GetTable()
+					local Rotator = TurretTbl.Rotator
 
-					if Turret.HasArc then
-						if Turret.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(math.Clamp(-Turret.DesiredDeg, Turret.MinDeg, Turret.MaxDeg), 0, 0))).pitch
+					if TurretTbl.HasArc then
+						if TurretTbl.Manual then
+							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(math.Clamp(-TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0, 0))).pitch
 						else
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(Turret.DesiredAngle) - Angle(StabAmt, 0, 0), Angle(-Turret.MaxDeg, 0, 0), Angle(-Turret.MinDeg, 0, 0))
+							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(TurretTbl.DesiredAngle) - Angle(StabAmt, 0, 0), Angle(-TurretTbl.MaxDeg, 0, 0), Angle(-TurretTbl.MinDeg, 0, 0))
 
 							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).pitch
 						end
 					else
-						return Turret.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-Turret.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(Turret.DesiredAngle).pitch - StabAmt)
+						return TurretTbl.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-TurretTbl.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(TurretTbl.DesiredAngle).pitch - StabAmt)
 					end
 				end,
 
