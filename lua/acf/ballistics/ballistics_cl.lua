@@ -20,7 +20,7 @@ local function BulletFlight(Bullet, DeltaTime)
 		local Trace = ACF.trace {
 			start = Bullet.SimPosLast,
 			endpos = Bullet.SimPos,
-			filter = function(x) return x:GetClass() ~= "acf_gun" end
+			filter = ents.FindByClass("acf_gun")
 		}
 
 		Debug.Line(Bullet.SimPosLast, Trace.HitPos, 15, Teal)
