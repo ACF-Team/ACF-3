@@ -53,8 +53,18 @@ function ENT:GetCachedMesh()
     if not self:NeedsRecache() then return self.MeshUnion end
 
     local CurrentMaterialPath = self:GetMaterial()
+    if CurrentMaterialPath == nil or CurrentMaterialPath == "" then
+        -- Try to prevent crash here with multicored shaderapidx9.
+        -- CurrentMaterialPath will return "" if the material has been reset
+        -- this then causes Material("") which equals nil which results in a no-op
+        -- at best without mcore and a crash with mcore enabled.
+        CurrentMaterialPath = "hunter/myplastic"
+    end
+
     if not self.CachedMaterial or self.LastMaterialPath ~= CurrentMaterialPath then
         self.CachedMaterial = Material(CurrentMaterialPath)
+        -- REALLY make sure we don't crash from what I said above!!!
+        if self.CachedMaterial == nil then return self.MeshUnion end
         self.LastMaterialPath = CurrentMaterialPath
     end
 
