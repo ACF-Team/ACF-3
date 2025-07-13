@@ -14,10 +14,36 @@ function EFFECT:Init(Data)
 	local Mass = Data:GetMagnitude() --Mass of the projectile in kg
 	local Type = Data:GetDamageType()
 
+	local Emitter = ParticleEmitter(Origin)
+
 	TraceData.start = Origin
 	TraceData.endpos = Origin - DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
+	local Radius = 3
+
+	if IsValid(Emitter) then
+		for _ = 0, math.Rand(12, 24) do
+			local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
+
+			if Debris then
+				Debris:SetVelocity((DirVec + VectorRand()) * 150 * Radius)
+				Debris:SetLifeTime(0)
+				Debris:SetDieTime(math.Rand(0.5, 1) * Radius)
+				Debris:SetStartAlpha(255)
+				Debris:SetEndAlpha(0)
+				Debris:SetStartSize(math.Clamp(Radius, 1, 7))
+				Debris:SetEndSize(math.Clamp(Radius, 1, 7))
+				Debris:SetRoll(math.Rand(0, 360))
+				Debris:SetRollDelta(math.Rand(-3, 3))
+				Debris:SetAirResistance(30)
+				Debris:SetGravity(Vector(0, 0, -1200))
+				Debris:SetColor(120, 120, 120)
+			end
+		end
+
+		util.Effect("ManhackSparks", Data)
+	end
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
