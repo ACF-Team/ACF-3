@@ -359,6 +359,7 @@ ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
 ACF.CreateMenuOperation("Armor", "armor plate")
 ACF.CreateMenuOperation("Controller", "controller")
+ACF.CreateMenuOperation("Crew", "crew member")
 
 ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")

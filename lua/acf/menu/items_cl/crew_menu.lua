@@ -9,6 +9,7 @@ local function CreateMenu(Menu)
 
 	ACF.SetClientData("PrimaryClass", "acf_crew")
 	ACF.SetClientData("SecondaryClass", "N/A")
+	ACF.SetToolMode("acf_menu", "Spawner", "Crew")
 
 	Menu:AddTitle("#acf.menu.crew.settings")
 	Menu:AddPonderAddonCategory("acf", "tankbasics")
