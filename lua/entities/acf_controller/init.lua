@@ -322,36 +322,20 @@ end
 -- Cam related
 do
 	function ENT:AnalyzeCams()
-		-- Build filter from connected entities (by constraints and parenting)
-		-- Partially adapted from https://github.com/thegrb93/StarfallEx/blob/master/lua/starfall/libs_sv/entities.lua#L926
-		timer.Simple(1, function()
-			-- Wait for the dupe to initialize and anything else that might be needed
-			local Filter = {}
-			local Seen = {}
-			local Recurse = nil
-			Recurse = function(Entity)
-				if not IsValid(Entity) or Seen[Entity] then return end
+		if self.UsesWireFilter then return end -- So we don't override the wire based filter
 
-				Seen[Entity] = true
-				table.insert(Filter, Entity)
-
-				local constraints = constraint.GetTable(Entity)
-				for _, v in pairs(constraints) do
-					if v.Ent1 then Recurse(v.Ent1) end
-					if v.Ent2 then Recurse(v.Ent2) end
-				end
-
-				local Parent = Entity:GetParent()
-				if IsValid(Parent) then Recurse(Parent) end
-
-				local Children = Entity:GetChildren()
-				for _, Child in pairs(Children) do
-					Recurse(Child)
-				end
+		-- Just get it from the contraption lol...
+		local Filter = {self} -- Atleast filter the controller itself
+		local Contraption = self:GetContraption()
+		if Contraption ~= nil then
+			-- And the contraption too if it's valid
+			local LUT = Contraption.ents
+			Filter = {}
+			for v, _ in pairs(LUT) do
+				if IsValid(v) then Filter[#Filter + 1] = v end
 			end
-			Recurse(self)
-			self.Filter = Filter
-		end)
+		end
+		self.Filter = Filter
 	end
 end
 
@@ -748,6 +732,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
+	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
 
 	for Turret in pairs(Controller.Turrets) do
 		if IsValid(Turret) then Turret:TriggerInput("Active", Active) end
@@ -860,7 +845,6 @@ local LinkConfigs = {
 		Field = "Baseplate",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			Controller:AnalyzeCams()
 			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
 		end,
 		OnUnlinked = function(Controller, Target)
@@ -964,6 +948,7 @@ do
 		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
 			local Filter = ToTable(Value)
 			if not IsValid(Filter) then return end
+			Controller.UsesWireFilter = true
 			Controller.Filter = Filter
 		end)
 	end
