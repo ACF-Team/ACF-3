@@ -6,22 +6,7 @@ local GetScale     = ACF.GetDecalScale
 local Effects      = ACF.Utilities.Effects
 local Sounds       = ACF.Utilities.Sounds
 local Sound        = "acf_base/fx/ricochet%s.mp3"
-
-local Colors = {
-	Default        = Color(120, 110, 100),
-	[MAT_GRATE]    = Color(170, 160, 144),
-	[MAT_CLIP]     = Color(170, 160, 144),
-	[MAT_METAL]    = Color(170, 160, 144),
-	[MAT_COMPUTER] = Color(170, 160, 144),
-	[MAT_CONCRETE] = Color(180, 172, 158),
-	[MAT_DIRT]     = Color(95, 80, 63),
-	[MAT_GRASS]    = Color(114, 100, 80),
-	[MAT_SLOSH]    = Color(104, 90, 70),
-	[MAT_SNOW]     = Color(154, 140, 110),
-	[MAT_FOLIAGE]  = Color(104, 90, 70),
-	[MAT_TILE]     = Color(150, 146, 141),
-	[MAT_SAND]     = Color(180, 155, 100),
-}
+local Colors       = Effects.MaterialColors
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius()
