@@ -14,23 +14,7 @@ local function BulletFlight(Bullet, DeltaTime)
 	Bullet.SimFlight  = Bullet.SimFlight + (Bullet.Accel - Drag) * DeltaTime -- Calculates the next shell vector
 
 	if IsValid(Bullet.Effect) then
-		-- Determine if the bullet should pause until further update from the server.
-		-- Assume that a valid clientside trace hit means that the server will let us know what happened
-		-- so in the meantime we should stop trying to draw the effect.
-		local Trace = ACF.trace {
-			start = Bullet.SimPosLast,
-			endpos = Bullet.SimPos,
-			filter = ents.FindByClass("acf_gun")
-		}
-
-		Debug.Line(Bullet.SimPosLast, Trace.HitPos, 15, Teal)
-		Debug.Line(Trace.HitPos, Bullet.SimPos, 15, Yellow)
-
-		if Trace.Hit then
-			Bullet.Effect.DrawEffect = false
-		else
-			Bullet.Effect:ApplyMovement(Bullet)
-		end
+		Bullet.Effect:ApplyMovement(Bullet)
 	end
 end
 
