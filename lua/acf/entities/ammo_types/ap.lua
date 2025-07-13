@@ -207,6 +207,8 @@ else
 		local EffectTable = {
 			Origin = Bullet.SimPos,
 			Normal = Bullet.SimFlight:GetNormalized(),
+			Scale = Bullet.SimFlight:Length(),
+			Magnitude = Bullet.RoundMass,
 			Radius = Bullet.Caliber,
 			DamageType = DecalIndex(Bullet.AmmoType),
 		}

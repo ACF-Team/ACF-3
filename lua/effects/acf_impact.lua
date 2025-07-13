@@ -10,23 +10,28 @@ function EFFECT:Init(Data)
 
 	if Caliber <= 0 then return end
 
-	local Origin = Data:GetOrigin()
-	local DirVec = Data:GetNormal()
-	local Type = Data:GetDamageType()
+	local Origin   = Data:GetOrigin()
+	local DirVec   = Data:GetNormal()
+	local Type     = Data:GetDamageType()
+	local Velocity = Data:GetScale() -- Velocity of the projectile in gmod units
+	local Mass     = Data:GetMagnitude() -- Mass of the projectile in kg
 
 	TraceData.start = Origin - DirVec
-	TraceData.endpos = Origin + DirVec * 100
+	TraceData.endpos = Origin + DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
+	local Normal = (DirVec + Trace.HitNormal):GetNormalized()
 
-	-- Placeholder
 	local EffectTable = {
 		Start = Origin,
-		Normal = Trace.HitNormal,
-		Magnitude = 0,
+		Normal = Normal,
+		Magnitude = Mass,
+		DamageType = Type,
+		Radius = Caliber,
+		Scale = Velocity,
 	}
 
-	Effects.CreateEffect("ElectricSpark", EffectTable)
+	Effects.CreateEffect("ManhackSparks", EffectTable)
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
