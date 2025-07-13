@@ -20,18 +20,16 @@ function EFFECT:Init(Data)
 	TraceData.endpos = Origin + DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
-	local Normal = (DirVec + Trace.HitNormal):GetNormalized()
-
 	local EffectTable = {
 		Start = Origin,
-		Normal = Normal,
+		Normal = Trace.HitNormal,
 		Magnitude = Mass,
 		DamageType = Type,
 		Radius = Caliber,
 		Scale = Velocity,
 	}
 
-	Effects.CreateEffect("ManhackSparks", EffectTable)
+	Effects.CreateEffect("cball_explode", EffectTable)
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
