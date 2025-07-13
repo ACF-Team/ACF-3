@@ -137,6 +137,12 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 		return Result
 	end
 
+	--- Gets the stored entries table
+	--- Returns the original reference
+	--- Allows the class system to restore itself later
+	--- @return table # The stored entries table
+	function Namespace.GetStored() return Entries end
+
 	--- Gets all the group items for a given group in the namespace  
 	--- If aliases exist in the namespace, they will be included in the returned table
 	--- @param ClassID string The ID of the group to explore

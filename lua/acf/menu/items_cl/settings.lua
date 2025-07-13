@@ -145,6 +145,7 @@ do -- Serverside settings
 		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
 
 		-- What? Why is this different??
+		-- MARCH REPLY: I don't remember!!
 		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
 		Admins:DefineSetter(function(Panel, _, _, Value)
 			Panel:SetValue(Value)
@@ -153,22 +154,34 @@ do -- Serverside settings
 		end)
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):        LinkToServerData("RestrictInfo")
+		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):          LinkToServerData("RestrictInfo")
 			Base:AddHelp("#acf.menu.settings.general.restrict_info_desc")
 
-		Base:AddCheckBox("#acf.menu.settings.general.gun_fire"):             LinkToServerData("GunsCanFire")
-		Base:AddCheckBox("#acf.menu.settings.general.gun_smoke"):            LinkToServerData("GunsCanSmoke")
-		Base:AddCheckBox("#acf.menu.settings.general.rack_fire"):            LinkToServerData("RacksCanFire")
-		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):         LinkToServerData("RequireFuel")
-		Base:AddSlider("#acf.menu.settings.general.max_thickness"):          LinkToServerData("MaxThickness")
-		Base:AddSlider("#acf.menu.settings.general.health_factor"):          LinkToServerData("HealthFactor")
-		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):            LinkToServerData("FuelFactor")
+		Base:AddCheckBox("#acf.menu.settings.general.require_fuel"):           LinkToServerData("RequireFuel")
 
-		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):    LinkToServerData("CrewFallbackCoef")
+		Base:AddCheckBox("#acf.menu.settings.general.detached_physmass_ratio"):LinkToServerData("DetachedPhysmassRatio")
+			Base:AddHelp("#acf.menu.settings.general.detached_physmass_ratio_desc")
+
+		Base:AddCheckBox("#acf.menu.settings.general.allow_dynamic_linking"):LinkToServerData("AllowDynamicLinking")
+			Base:AddHelp("#acf.menu.settings.general.allow_dynamic_linking_desc")
+
+		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
+		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthFactor")
+		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
+		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
+
+		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):      LinkToServerData("CrewFallbackCoef")
 			Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")
 
-		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):             LinkToServerData("SmokeWind")
+		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):               LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
+	end)
+
+	ACF.AddServerSettings(51, "#acf.menu.settings.weapons", function(Base)
+		Base:AddCheckBox("#acf.menu.settings.weapons.gun_fire"):             LinkToServerData("GunsCanFire")
+		Base:AddCheckBox("#acf.menu.settings.weapons.gun_smoke"):            LinkToServerData("GunsCanSmoke")
+		Base:AddCheckBox("#acf.menu.settings.weapons.rack_fire"):            LinkToServerData("RacksCanFire")
+		Base:AddSlider("#acf.menu.settings.weapons.squishy_mult"):           LinkToServerData("SquishyDamageMult")
 	end)
 
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)

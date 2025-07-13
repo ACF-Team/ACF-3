@@ -158,19 +158,13 @@ end
 ---@param Class? table<string, any> The weapon group object to get information from. Not necessary for non-scalable weapons.
 ---@param Weapon table<string, any> The weapon item object to get informatio from, not necessary for scalable weapons.
 ---@return number Mass The expected mass.
-local function GetMass(Panel, Caliber, Class, Weapon)
+local function GetMass(_, Caliber, Class, Weapon)
 	if Weapon then return Weapon.Mass end
 
 	local Model = Class.Model
 	local Base  = ModelData.GetModelVolume(Model)
 
 	if not Base then
-		if ModelData.IsOnStandby(Model) then
-			ModelData.CallOnReceive(Model, Panel, function()
-				Panel:SetText(Panel:GetText())
-			end)
-		end
-
 		return 0
 	end
 
@@ -264,7 +258,7 @@ local function CreateMenu(Menu)
 	ClassBase.Title   = EntName
 	ClassBase.Preview = EntPreview
 
-	ACF.LoadSortedList(ClassList, Entries, "Name")
+	ACF.LoadSortedList(ClassList, Entries, "Name", "Model")
 end
 
 ACF.AddMenuItem(1, "#acf.menu.entities", "#acf.menu.weapons", "gun", CreateMenu)

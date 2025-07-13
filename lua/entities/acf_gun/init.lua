@@ -945,6 +945,7 @@ do -- Metamethods --------------------------------
 					if Manual then -- Automatics don't change their rate of fire
 						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
 						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
+						self.ReloadTime = IdealTime / eff
 					end
 					return eff
 				end
@@ -1032,6 +1033,7 @@ do -- Metamethods --------------------------------
 				local ReloadLoop = function()
 					local eff = self:UpdateLoadMod()
 					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+					self.MagReload = IdealTime / eff
 					return eff
 				end
 

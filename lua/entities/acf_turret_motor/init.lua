@@ -258,7 +258,7 @@ do	-- Metamethods and other important stuff
 
 			local Turret = self.Turret
 			local LocPos	= Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
-			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.1) + 12) ^ 2
+			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.2) + 12 + self.CompSize * 7.5) ^ 2
 			local LocDist	= Vector(LocPos.x, LocPos.y, 0):Length2DSqr()
 
 			if LocDist > MaxDist then
@@ -273,7 +273,7 @@ do	-- Metamethods and other important stuff
 				return
 			end
 
-			if (self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
+			if (IsValid(Turret:GetParent()) and self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
 				self.ValidPlacement = false
 				self:SetActive(false, "Must be parented to (or share parent with) the ring!")
 				return

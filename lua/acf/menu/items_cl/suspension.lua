@@ -30,12 +30,6 @@ function ACF.CreateSuspensionToolMenu(Panel)
 
     local GeneralSettings = Menu:AddCollapsible("General Settings", true)
 
-    local UsesDriveWheel = GeneralSettings:AddCheckBox("Drive wheels used", "acf_sus_tool_usesdrivewheel")
-    UsesDriveWheel:SetTooltip("If checked, wheels will be slaved to the drive wheels. (Partially) Tracked vehicles should use this.")
-
-    local SuspendDriveWheels = GeneralSettings:AddCheckBox("Suspend All Wheels", "acf_sus_tool_suspendallwheels")
-    SuspendDriveWheels:SetTooltip("If checked, all wheels will be suspended, including drive/idler wheels. Tracked vehicles should use this.")
-
     local MakeSpherical = GeneralSettings:AddCheckBox("Make Spherical", "acf_sus_tool_makespherical")
     MakeSpherical:SetTooltip("If checked, makespherical is applied to the wheels.\nShould have the same affect as the makespherical tool.")
 
@@ -63,7 +57,7 @@ function ACF.CreateSuspensionToolMenu(Panel)
                 InOutSpeedMul:SetTooltip("How fast it changes the length.")
             elseif Data == 3 then
                 -- Elastic Specific
-                local Elasticity = SpringSpecific:AddSlider("Elasticity", 0, 400)
+                local Elasticity = SpringSpecific:AddSlider("Elasticity", 0, 4000)
                 Elasticity:SetConVar("acf_sus_tool_elasticity")
                 Elasticity:SetTooltip("Stiffness of the elastic. The larger the number the less the elastic will stretch.")
 
@@ -87,9 +81,9 @@ function ACF.CreateSuspensionToolMenu(Panel)
 
             -- Arm related
             local ArmType = SpringGeneral:AddComboBox()
-            ArmType:AddChoice("Arm Type: Fork", 1)
-            ArmType:AddChoice("Arm Type: Forward Lever", 2)
-            ArmType:AddChoice("Arm Type: Sideways Lever", 3)
+            ArmType:AddChoice("Arm Type: Forward Lever", 1)
+            ArmType:AddChoice("Arm Type: Sideways Lever", 2)
+            ArmType:AddChoice("Arm Type: Fork", 3)
 
             function ArmType:OnSelect(_, _, Data)
                 GetConVar("acf_sus_tool_armtype"):SetInt(Data)
@@ -138,17 +132,10 @@ function ACF.CreateSuspensionToolMenu(Panel)
     SettingsVisual:AddCheckBox("Show Springs Info", "acf_sus_tool_showspringinfo")
 
     local InstructionsGeneral = Menu:AddCollapsible("Instructions", true)
-    InstructionsGeneral:AddLabel("Left/Right is relative to the baseplate's forward direction.")
-    InstructionsGeneral:AddLabel("Drive wheels are directly connected to gearboxes.\nIdler wheels are not connected to a gearbox and are at the very front.\nRoad wheels are meant to touch the ground.")
-    InstructionsGeneral:AddLabel("Skip steps 2 to 5 if you do not use drive wheels (usually fully wheeled vehicles).")
     InstructionsGeneral:AddLabel("1. Select the baseplate with SHIFT + RMB")
-    InstructionsGeneral:AddLabel("2. Select the left drive wheel with RMB")
-    InstructionsGeneral:AddLabel("3. Select the right drive wheel with RMB")
-    InstructionsGeneral:AddLabel("4. Select the left idler wheel with RMB")
-    InstructionsGeneral:AddLabel("5. Select the right idler wheel with RMB")
-    InstructionsGeneral:AddLabel("6. For each pair of road wheels, select the left then the right with RMB.")
-    InstructionsGeneral:AddLabel("7. (Optional) Selecting a new plate with SHIFT + RMB will select a new steer plate.\nWheels selected afterwards will belong to this new plate.")
-    InstructionsGeneral:AddLabel("8. (Optional) When you finish selecting the wheels, select the control plate with CTRL + RMB.")
-    InstructionsGeneral:AddLabel("9. (Optional) If applicable, press the cleanup button in the menu to remove old constraints.")
-    InstructionsGeneral:AddLabel("10. (Optional) If applicable, press the create button in the menu to create the suspension.")
+    InstructionsGeneral:AddLabel("2. Select all the wheels you want attached to your baseplate with RMB.")
+    InstructionsGeneral:AddLabel("3. (Optional) Selecting a new plate with SHIFT + RMB will select a new steer plate.\nWheels selected afterwards will belong to this new plate.")
+    InstructionsGeneral:AddLabel("4. (Optional) For hydraulic suspension, select the control plate with CTRL + RMB.")
+    InstructionsGeneral:AddLabel("(Optional) If applicable, press the cleanup button in the menu to remove old constraints.")
+    InstructionsGeneral:AddLabel("(Optional) If applicable, press the create button in the menu to create the suspension.")
 end

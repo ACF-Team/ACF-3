@@ -774,7 +774,7 @@ do -- Gear Shifting ------------------------------------
 		local SoundPath  = self.SoundPath
 
 		if SoundPath ~= "" then
-			local Pitch = self.SoundPitch and math.Clamp(self.SoundPitch * 100, 0, 255) or 100
+			local Pitch = self.SoundPitch and Clamp(self.SoundPitch * 100, 0, 255) or 100
 			local Volume = self.SoundVolume or 0.5
 
 			Sounds.SendSound(self, SoundPath, 70, Pitch, Volume)
@@ -787,16 +787,6 @@ end ----------------------------------------------------
 
 do -- Movement -----------------------------------------
 	local deg         = math.deg
-
-	local function ActWheel(Link, Wheel, Torque, DeltaTime)
-		local Phys = Wheel:GetPhysicsObject()
-
-		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
-
-		local TorqueAxis = Phys:LocalToWorldVector(Link.Axis)
-
-		Phys:ApplyTorqueCenter(TorqueAxis * Clamp(deg(-Torque * ACF.TorqueMult) * DeltaTime, -500000, 500000))
-	end
 
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
@@ -926,8 +916,8 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(self.GearboxOut) do
-			Link:Transfer(Link.ReqTq * AvailTq)
-			Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
+			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio)
+			--Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
 		local Braking = self.Braking
@@ -938,8 +928,8 @@ do -- Movement -----------------------------------------
 				local WheelTorque = Link.ReqTq * AvailTq
 				ReactTq = ReactTq + WheelTorque
 
-				Link:Transfer(WheelTorque)
-				ActWheel(Link, Ent, WheelTorque, DeltaTime)
+				Link:TransferWheel(Ent, WheelTorque, DeltaTime)
+				--ActWheel(Link, Ent, WheelTorque, DeltaTime)
 			end
 		end
 

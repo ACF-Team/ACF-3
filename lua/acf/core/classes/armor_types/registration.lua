@@ -1,7 +1,6 @@
 local Classes    = ACF.Classes
 local ArmorTypes = Classes.ArmorTypes
-local Entries    = {}
-
+local Entries    = Classes.GetOrCreateEntries(ArmorTypes)
 
 function ArmorTypes.Register(ID, Base)
 	return Classes.AddObject(ID, Base, Entries)

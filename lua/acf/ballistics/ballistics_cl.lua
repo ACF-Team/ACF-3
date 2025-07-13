@@ -1,6 +1,7 @@
 local ACF    = ACF
-local Debug	 = ACF.Debug
+local Debug  = ACF.Debug
 local Yellow = Color(255, 255, 0)
+local Teal   = Color(0, 255, 255)
 
 ACF.BulletEffect = ACF.BulletEffect or {}
 
@@ -13,10 +14,11 @@ local function BulletFlight(Bullet, DeltaTime)
 	Bullet.SimFlight  = Bullet.SimFlight + (Bullet.Accel - Drag) * DeltaTime -- Calculates the next shell vector
 
 	if IsValid(Bullet.Effect) then
+		Debug.Line(Bullet.SimPosLast, Trace.HitPos, 15, Teal)
+		Debug.Line(Trace.HitPos, Bullet.SimPos, 15, Yellow)
+
 		Bullet.Effect:ApplyMovement(Bullet)
 	end
-
-	Debug.Line(Bullet.SimPosLast, Bullet.SimPos, 15, Yellow)
 end
 
 hook.Add("ACF_OnTick", "ACF_ManageBulletEffects", function(_, DeltaTime)

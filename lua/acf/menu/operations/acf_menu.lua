@@ -6,7 +6,7 @@ do -- Generic Spawner/Linker operation creator
 	local Messages   = ACF.Utilities.Messages
 	local SpawnText  = "Spawn a new %s or update an existing one."
 	local Green      = Color(0, 255, 0)
-	local NameFormat = "%s[ID: %s]"
+	local NameFormat = "%s [ID: %s]"
 	local PlayerEnts = {}
 
 	local function GetPlayerEnts(Player)
@@ -64,8 +64,12 @@ do -- Generic Spawner/Linker operation creator
 
 		if Success then
 			local PhysObj = Result:GetPhysicsObject()
-
-			Result:DropToFloor()
+			if Result.ACF_PostMenuSpawn then
+				Result:ACF_PostMenuSpawn()
+			else
+				Result:DropToFloor()
+			end
+			Result:SetSpawnEffect(true)
 
 			if IsValid(PhysObj) then
 				PhysObj:EnableMotion(false)
@@ -246,7 +250,7 @@ do -- Generic Spawner/Linker operation creator
 			if Secondary then
 				ACF.RegisterToolInfo("acf_menu", "Spawner", Name, {
 					name = "left_secondary",
-					text = "(Hold Shift or R) " .. SpawnText:format(Secondary),
+					text = "(Hold Shift) " .. SpawnText:format(Secondary),
 					icon2 = "gui/info",
 				})
 			end
@@ -308,7 +312,7 @@ do -- Generic Spawner/Linker operation creator
 
 			ACF.RegisterToolInfo("acf_menu", "Linker", Name, {
 				name = "right_shift",
-				text = "Select another entity to link.",
+				text = "(Hold Shift) Select another entity to link.",
 				icon2 = "gui/info",
 			})
 
@@ -354,13 +358,13 @@ ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
 ACF.CreateMenuOperation("Armor", "armor plate")
+ACF.CreateMenuOperation("Controller", "controller")
+ACF.CreateMenuOperation("Crew", "crew member")
 
 ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
-
-ACF.CreateMenuOperation("Controller", "controller")
 
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
 	Text = "Attempts to convert the target entity into a baseplate.",

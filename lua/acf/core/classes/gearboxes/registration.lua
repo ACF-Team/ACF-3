@@ -1,6 +1,6 @@
 local Classes   = ACF.Classes
 local Gearboxes = Classes.Gearboxes
-local Entries   = {}
+local Entries   = Classes.GetOrCreateEntries(Gearboxes)
 
 
 function Gearboxes.Register(ID, Data)

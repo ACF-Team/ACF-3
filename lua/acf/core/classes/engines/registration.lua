@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 local Engines = Classes.Engines
 local Types   = Classes.EngineTypes
-local Entries = {}
+local Entries = Classes.GetOrCreateEntries(Engines)
 local Loaded
 
 

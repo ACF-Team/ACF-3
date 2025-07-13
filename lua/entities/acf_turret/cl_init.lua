@@ -85,7 +85,7 @@ do	-- Turret drive drawing
 
 	function ENT:Draw()
 		-- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
-		local LookedAt = self:BeingLookedAtByLocalPlayer()
+		local LookedAt = self:BeingLookedAtByLocalPlayer() and not LocalPlayer:InVehicle()
 
 		if LookedAt then
 			self:DrawEntityOutline()

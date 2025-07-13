@@ -113,7 +113,7 @@ do -- Piledrivers menu
 			return Stats:format(MaxPen, MuzzleVel, Length, Mass)
 		end)
 
-		ACF.LoadSortedList(ClassList, Entries, "Name")
+		ACF.LoadSortedList(ClassList, Entries, "Name", "Model")
 	end
 
 	ACF.AddMenuItem(1, "#acf.menu.fun", "#acf.menu.fun.piledrivers", "pencil", CreateMenu)

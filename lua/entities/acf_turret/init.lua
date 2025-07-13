@@ -84,7 +84,7 @@ do	-- Spawn and Update funcs
 		local Model		= Turret.Model
 		local Size		= Data.RingSize
 
-		if (Size <= 12.5) and (Data.Turret == "Turret-H") then
+		if Turrets.WillUseSmallModel(Size) and (Data.Turret == "Turret-H") then
 			Model	= Turret.ModelSmall
 		end
 
@@ -575,7 +575,8 @@ do	-- Spawn and Update funcs
 		local SlewInput 	= SelfTbl.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
-		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12) ^ 2
+		local MotorDistance = IsValid(SelfTbl.Motor) and (SelfTbl.Motor.CompSize * 7.5) or 0
+		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12 + MotorDistance) ^ 2
 
 		if IsValid(SelfTbl.Motor) and SelfTbl.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
 			local USound = UnlinkSound:format(math.random(1, 3))
@@ -733,7 +734,7 @@ do -- Metamethods
 			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
-			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12) ^ 2) then return false, "This motor is too far from the turret!" end
+			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12 + Motor.CompSize * 7.5) ^ 2) then return false, "This motor is too far from the turret!" end
 
 			This.Motor		= Motor
 			Motor.Turret	= This
@@ -905,7 +906,7 @@ do -- Metamethods
 
 			self:CheckCoM(false)
 			local Tick		= Clock.DeltaTime
-			local Rotator	= self.Rotator
+			local Rotator	= SelfTbl.Rotator
 			if not IsValid(Rotator) then self:Remove() return end
 
 			local Scale		= SelfTbl.DamageScale * Tick
@@ -918,7 +919,7 @@ do -- Metamethods
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
 			if MaxImpulse == 0 then
-				SelfTbl.LastRotatorAngle	= Rotator:GetAngles()
+				SelfTbl.LastRotatorAngle = Rotator:GetAngles()
 
 				if SelfTbl.SoundPlaying == true then
 					self:SetSoundState(false)
@@ -928,24 +929,26 @@ do -- Metamethods
 				return true
 			end
 
-			if SelfTbl.UseVector and (SelfTbl.Manual == false) then SelfTbl.DesiredAngle = (SelfTbl.DesiredVector - Rotator:GetPos()):GetNormalized():Angle() end
+			if SelfTbl.UseVector and SelfTbl.Manual == false then
+				SelfTbl.DesiredAngle = (SelfTbl.DesiredVector - Rotator:GetPos()):GetNormalized():Angle()
+			end
 
 			local StabAmt	= math.Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
 			local StabSign	= -StabAmt < 0 and -1 or 1
 
 			local TargetBearing	= math.Round(SelfTbl.SlewFuncs.GetTargetBearing(self, StabAmt), 8)
 
-			local sign			= TargetBearing < 0 and -1 or 1
+			local Sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math.abs(TargetBearing)
 			local FinalAccel	= math.Clamp(TargetBearing, -MaxImpulse, MaxImpulse)
 			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math.abs(FinalAccel) / 2
 
-			if (StabSign == sign) then
+			if StabSign == Sign then
 				StabAmt = StabAmt * math.min(math.max(0, 1 - (math.abs(StabAmt) / MaxImpulse) ^ 2), 1)
 			end
 
 			if SelfTbl.Active then
-				SelfTbl.SlewRate = math.Clamp(SelfTbl.SlewRate + (math.abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -sign)) >= BrakingDist and sign or -sign)), -SlewMax, SlewMax)
+				SelfTbl.SlewRate = math.Clamp(SelfTbl.SlewRate + (math.abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -Sign)) >= BrakingDist and Sign or -Sign)), -SlewMax, SlewMax)
 
 				if SelfTbl.SlewRate ~= 0 and (Dist <= math.abs(FinalAccel)) and (SelfTbl.SlewRate <= FinalAccel) then
 					SelfTbl.SlewRate = 0

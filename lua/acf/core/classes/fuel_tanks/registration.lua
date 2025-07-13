@@ -1,7 +1,6 @@
 local Classes   = ACF.Classes
 local FuelTanks = Classes.FuelTanks
-local Entries   = {}
-
+local Entries   = Classes.GetOrCreateEntries(FuelTanks)
 
 function FuelTanks.Register(ID, Data)
 	local Group = Classes.AddGroup(ID, Entries, Data)

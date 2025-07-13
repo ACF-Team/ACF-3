@@ -6,6 +6,7 @@ local Ammo      = AmmoTypes.Register("AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Armor Piercing"
+	self.SpawnIcon   = "acf/icons/shell_ap.png"
 	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "#acf.descs.ammo.ap"
 	self.Blacklist = {

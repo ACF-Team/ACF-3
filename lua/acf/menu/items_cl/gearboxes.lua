@@ -41,7 +41,7 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("GearboxClass", Data.ID)
 
-		ACF.LoadSortedList(GearboxList, Data.Items, "ID")
+		ACF.LoadSortedList(GearboxList, Data.Items, "ID", "Model")
 	end
 
 	function GearboxList:OnSelect(Index, _, Data)

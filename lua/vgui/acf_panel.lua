@@ -183,12 +183,189 @@ function PANEL:AddHelp(Text)
 	return Panel
 end
 
+function PANEL:InjectMenuFuncs(Menu)
+	Menu:SetAlpha(0)
+
+	local OldRemove     = Menu.Remove
+	local OldSetVisible = Menu.SetVisible
+
+	function Menu:Remove()
+		self:AlphaTo(0, 0.08, 0, function()
+			if IsValid(self) then OldRemove(self) end
+		end)
+	end
+	function Menu:SetVisible(visible)
+		if visible then
+			OldSetVisible(self, visible)
+		end
+		self:AlphaTo(visible and 255 or 0, 0.08, 0, function() OldSetVisible(self, visible) end)
+	end
+	hook.Add("Think", Menu, function()
+		if Menu:IsVisible() then
+			Menu:AnimationThinkInternal()
+		end
+	end)
+end
+
 function PANEL:AddComboBox()
+	local ACFPanel = self
 	local Panel = self:AddPanel("DComboBox")
 	Panel:SetFont("ACF_Control")
 	Panel:SetSortItems(false)
 	Panel:SetDark(true)
 	Panel:SetWrap(true)
+
+	local function ReloadIconMaterial(self, Icon)
+		if Icon == self.LastIcon then return end
+		self.LastIcon = Icon
+
+		if IsValid(self.IconPanel) then
+			self.IconPanel:Remove()
+		end
+
+		if Icon == nil then
+			self:SetTextInset(8, 0)
+			return
+		end
+		self.IconPadding = 0
+
+		local Tall = self:GetTall()
+		local Ratio = Tall / 22
+
+		if string.GetExtensionFromFilename(Icon) == "mdl" then
+			self.IconPanel = self:Add("ModelImage")
+			local Size = 48
+			local ModelInfo = util.GetModelInfo(Icon)
+			-- Determine by bounding box how much we need to zoom in
+			-- The bounding box being more regular means zoom in less
+			-- This is only present in very recent gmod - the check should stay until
+			-- at least a new gmod update
+			if ModelInfo.HullMax ~= nil then
+				local CalculatedSize = ModelInfo.HullMax - ModelInfo.HullMin
+				local Abnormality = math.abs(CalculatedSize[3] - CalculatedSize[2] - CalculatedSize[1])
+
+				if Abnormality < 178 then
+					Size = math.Remap(Abnormality, 10, 160, 18, 64)
+				else
+					Size = math.Remap(Abnormality, 160, 300, 42, 64)
+				end
+			end
+			Size = Size * Ratio
+			self.IconPanel:SetSize(Size, Size)
+			self.IconPanel:SetModel(Icon)
+			self.IconPadding = 30
+		else
+			self.IconPanel = self:Add("DImage")
+			self.IconPanel:SetSize(16 * Ratio, 16 * Ratio)
+			self.IconPanel:SetKeepAspect(true)
+			self.IconPanel:SetMaterial(Material(Icon, "smooth"))
+			self.IconPadding = 26
+		end
+		self.IconPanel:SetMouseInputEnabled(false)
+
+		if not self.OldLayout then
+			self.OldLayout = self.PerformLayout
+			function self:PerformLayout(w, h)
+				if self.OldLayout then self:OldLayout(w, h) end
+
+				if IsValid(self.IconPanel) then
+					local center = h / 2
+					center = center - (self.IconPanel:GetTall() / 2)
+					self.IconPanel:SetPos(center + (self.IconOffset or 4), center)
+					self:SetTextInset(self.IconPadding, 0)
+				end
+			end
+		end
+	end
+
+	local OldThink = Panel.Think
+
+	function Panel:Think()
+		OldThink(self)
+		local Icon = self.ChoiceIcons[self:GetSelectedID()]
+
+		ReloadIconMaterial(Panel, Icon)
+	end
+
+	local function SetupOptionIcon(Combo, _, Option, Icon)
+		if Combo:GetSelected() == Option:GetText() then
+			Option.Highlight = true
+		end
+		Option:SetTall(28)
+		function Option:PerformLayout( w, h )
+			self:SizeToContents()
+			self:SetWide(self:GetWide() + 30)
+
+			local w = math.max(self:GetParent():GetWide(), self:GetWide())
+
+			self:SetSize(w, 28)
+
+			if IsValid(self.SubMenuArrow) then
+				self.SubMenuArrow:SetSize( 15, 15 )
+				self.SubMenuArrow:CenterVertical()
+				self.SubMenuArrow:AlignRight( 4 )
+			end
+
+			DButton.PerformLayout( self, w, h )
+		end
+		ReloadIconMaterial(Option, Icon)
+		Option.IconPadding = 38
+	end
+
+	function Panel:OpenMenu(pControlOpener)
+		if pControlOpener and pControlOpener == self.TextEntry then
+			return
+		end
+
+		-- Don't do anything if there aren't any options..
+		if #self.Choices == 0 then return end
+
+		-- If the menu still exists and hasn't been deleted
+		-- then just close it and don't open a new one.
+		if IsValid(self.Menu) then
+			self.Menu:Remove()
+			self.Menu = nil
+		end
+
+		self.Menu = DermaMenu( false, self )
+		ACFPanel:InjectMenuFuncs(self.Menu)
+		if self:GetSortItems() then
+			local sorted = {}
+			for k, v in pairs(self.Choices) do
+				local val = tostring(v)
+				if string.len(val) > 1 and not tonumber(val) and val:StartWith("#") then
+					val = language.GetPhrase(val:sub(2))
+				end
+
+				table.insert(sorted, { id = k, data = v, label = val })
+			end
+
+			for _, v in SortedPairsByMemberValue(sorted, "label") do
+				local option = self.Menu:AddOption(v.data, function() self:ChooseOption(v.data, v.id) end)
+
+				SetupOptionIcon(self, self.Menu, option, self.ChoiceIcons[v.id])
+
+				if self.Spacers[v.id] then
+					self.Menu:AddSpacer()
+				end
+			end
+		else
+			for k, v in pairs(self.Choices) do
+				local option = self.Menu:AddOption(v, function() self:ChooseOption(v, k) end)
+
+				SetupOptionIcon(self, self.Menu, option, self.ChoiceIcons[k])
+
+				if self.Spacers[k] then
+					self.Menu:AddSpacer()
+				end
+			end
+		end
+
+		local x, y = self:LocalToScreen(0, self:GetTall())
+
+		self.Menu:SetMinimumWidth(self:GetWide())
+		self.Menu:Open(x, y, false, self)
+	end
 
 	return Panel
 end
@@ -752,12 +929,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 		local Center = ModelData.GetModelCenter(Path)
 
 		if not Center then
-			if ModelData.IsOnStandby(Path) then
-				ModelData.CallOnReceive(Path, self, function()
-					self:UpdateModel(Path, Material)
-				end)
-			end
-
 			return self:DrawEntity(false)
 		end
 

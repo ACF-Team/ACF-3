@@ -31,6 +31,10 @@ local function TransmitScaleInfo(Entity, To)
 	if To then net.Send(To) else net.Broadcast() end
 end
 
+function ENT:TransmitScaleInfo(To)
+	TransmitScaleInfo(self, To)
+end
+
 net.Receive("ACF_Scalable_Entity", function(_, Player)
 	local Entity = ents.GetByIndex(net.ReadUInt(MAX_EDICT_BITS))
 
@@ -62,16 +66,11 @@ do -- Size and scale setter methods
 		local Data     = Entity.ScaleData
 		local PhysObj  = ApplyScale(Entity, Data, Scale)
 		local Size     = Data:GetSize(Scale)
-		local Previous = Entity.Size
 
 		Entity.Size  = Size
 		Entity.Scale = Scale
 
-		-- If it's not a new entity, then network the new size
-		-- Otherwise, the entity will request its size by itself
-		if Previous then
-			TransmitScaleInfo(Entity)
-		end
+		TransmitScaleInfo(Entity)
 
 		if IsValid(PhysObj) then
 			if Entity.OnResized then Entity:OnResized(Size, Scale) end

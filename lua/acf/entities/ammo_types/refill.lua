@@ -6,6 +6,7 @@ local Ammo   = Types.Register("Refill", "AP")
 
 function Ammo:OnLoaded()
 	self.Name        = "Refill"
+	self.SpawnIcon   = "acf/icons/shell_refill.png"
 	self.Model       = "models/Items/BoxSRounds.mdl"
 	self.Description = "#acf.descs.ammo.refill"
 	self.Blacklist   = {}

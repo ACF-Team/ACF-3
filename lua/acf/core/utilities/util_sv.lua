@@ -312,7 +312,8 @@ do -- Entity linking
 	This example demonstrates that any entity of the acf_engine class has the fields FuelTanks and Gearboxes in its entity table that reference their respective link sources.
 	This is done to localize the functions for optimization reasons.
 	]]--
-	local EntityLink = {}
+	local EntityLink = ACF.EntityLinkTable or {}
+	ACF.EntityLinkTable = EntityLink
 
 	--- Returns links to the entry.
 	--- @param Entity table The entity to check

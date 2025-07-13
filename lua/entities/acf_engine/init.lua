@@ -654,13 +654,14 @@ function ENT:CheckEngineLegality()
 	if not ACF.LegalChecks then return true end
 
 	local EntTable = self:GetTable()
+	local AllowArbitraryParents = ACF.AllowArbitraryParents
 
-	if not ACF.AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
+	if not AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
 		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
 	end
 
 	local Contraption = self:GetContraption()
-	if not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+	if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
 
 	return true
 end
@@ -716,9 +717,11 @@ function ENT:CalcMassRatio(SelfTbl)
 	local Con      = self:GetContraption()
 	local PhysMass = 0
 
-	local Physical = Contraption.GetEnts(self)
+	local Physical, _, Detached = Contraption.GetEnts(self)
 
-	for K in pairs(Physical) do
+	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
+	-- if DetachedPhysmassRatio == false
+	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
 
 		if IsValid(Phys) then
@@ -853,8 +856,8 @@ function ENT:CalcRPM(SelfTbl)
 
 		-- Split the torque fairly between the gearboxes who need it
 		for Ent, Link in pairs(BoxesTbl) do
-			Link:Transfer(Link.ReqTq * AvailRatio * MassRatio)
-			Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			Link:TransferGearbox(Ent, Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
+			--Ent:Act(Link.ReqTq * AvailRatio * MassRatio, DeltaTime, MassRatio)
 		end
 	end
 

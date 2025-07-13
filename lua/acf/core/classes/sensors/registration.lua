@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 local Sensors = Classes.Sensors
-local Entries = {}
+local Entries = Classes.GetOrCreateEntries(Sensors)
 
 
 function Sensors.Register(ID, Data)

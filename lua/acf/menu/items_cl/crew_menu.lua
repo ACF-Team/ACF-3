@@ -9,9 +9,10 @@ local function CreateMenu(Menu)
 
 	ACF.SetClientData("PrimaryClass", "acf_crew")
 	ACF.SetClientData("SecondaryClass", "N/A")
+	ACF.SetToolMode("acf_menu", "Spawner", "Crew")
 
 	Menu:AddTitle("#acf.menu.crew.settings")
-	Menu:AddPonderAddonCategory("acf", "crew")
+	Menu:AddPonderAddonCategory("acf", "tankbasics")
 
 	local CrewJob		= Menu:AddComboBox()
 	local CrewJobDesc	= Menu:AddLabel()
@@ -118,7 +119,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("CrewModelID", Data.ID)
 	end
 
-	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID")
+	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID", "Icon")
 	ACF.LoadSortedList(CrewModel, CrewModels.GetEntries(), "ID")
 end
 

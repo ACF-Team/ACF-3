@@ -473,11 +473,23 @@ function ACF.CreateAmmoMenu(Menu)
 	end)
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
+	local Title = Base:AddTitle()
 	local Desc = Base:AddLabel()
 	Desc:SetText("")
 
+	local function UpdateTitle()
+		local TitleText = language.GetPhrase("acf.menu.weapons.name_text")
+		local Caliber = ACF.GetClientNumber("Caliber", 0)
+		local AmmoName = Ammo and Ammo.Name or ""
+
+		return TitleText:format(Caliber, AmmoName)
+	end
+	Title:TrackClientData("Caliber", "SetText")
+	Title:DefineSetter(UpdateTitle)
+	Title:SetText("")
+
 	function List:LoadEntries(Class)
-		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")
+		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
 	end
 
 	function List:OnSelect(Index, _, Data)
@@ -489,7 +501,7 @@ function ACF.CreateAmmoMenu(Menu)
 		Ammo = Data
 
 		ACF.SetClientData("AmmoType", Data.ID)
-
+		Title:SetText(UpdateTitle())
 		Desc:SetText(Data.Description)
 
 		ACF.UpdateAmmoMenu(Menu)

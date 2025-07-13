@@ -49,7 +49,7 @@ end
 do -- Panel helpers
 	local Sorted = {}
 
-	function ACF.LoadSortedList(Panel, List, Member)
+	function ACF.LoadSortedList(Panel, List, Member, IconMember)
 		local Data = Sorted[List]
 
 		if not Data then
@@ -81,7 +81,7 @@ do -- Panel helpers
 		Panel:Clear()
 
 		for Index, Value in ipairs(Data.Choices) do
-			Panel:AddChoice(Value.Name, Value, Index == Current)
+			Panel:AddChoice(Value.Name, Value, Index == Current, IconMember and Value[IconMember] or nil)
 		end
 	end
 

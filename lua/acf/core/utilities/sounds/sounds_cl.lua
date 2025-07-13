@@ -17,13 +17,43 @@ do -- Valid sound check
 
 		if Valid == nil then
 			Valid = file.Exists(Path, "GAME")
-
+			if not Valid then
+				Valid = sound.GetProperties(Name) ~= nil
+			end
 			ValidSounds[Path] = Valid
 		end
 
 		return Valid
 	end
 end
+
+-- MARCH/TODO: universal ACF constant for speed of sound (maybe it already exists and I don't know :P)
+local SpeedOfSound = 343 * 39.37
+
+local function DistanceToOrigin(Origin)
+	if isentity(Origin) and IsValid(Origin) then
+		return LocalPlayer():EyePos():Distance(Origin:GetPos())
+	elseif isvector(Origin) then
+		return LocalPlayer():EyePos():Distance(Origin)
+	else
+		return 0
+	end
+end
+
+-- TODO: Consider if we're actually going to do this or not.
+-- It's not hard to add back in the future (we just wrap the calls around this)
+-- The bottom self-assignment is so the linter shuts up in the meantime
+local function DoDelayed(Origin, Call, Instant)
+	if Instant then return Call() end
+
+	local Delay = DistanceToOrigin(Origin) / SpeedOfSound
+	if Delay > 0.1 then
+		timer.Simple(Delay, function() Call() end)
+	else
+		Call()
+	end
+end
+DoDelayed = DoDelayed
 
 do -- Playing regular sounds
 	--- Plays a single, non-looping sound at the given origin.
@@ -96,7 +126,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 
 		-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
-			Sounds.DestroyAdjustableSound(Entity)
+			Sounds.DestroyAdjustableSound(Entity, true)
 		end)
 
 		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
@@ -104,7 +134,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 
 	--- Stops an existing adjustable sound on the origin.
 	--- @param Origin table The entity to stop the sound on
-	function Sounds.DestroyAdjustableSound(Origin)
+	function Sounds.DestroyAdjustableSound(Origin, _)
 		local Current = Origin.Sound
 		if not Current then return end
 

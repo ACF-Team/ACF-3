@@ -9,7 +9,7 @@ local istable    = istable
 local unpack     = unpack
 local Classes    = ACF.Classes
 local Entities   = Classes.Entities
-local Entries    = {}
+local Entries    = Classes.GetOrCreateEntries(Entities)
 
 --- Gets the entity table of a certain class
 --- If an entity table doesn't exist for the class, it will register one.
@@ -125,6 +125,7 @@ Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	return Value
 end)
 
+-- Single entity link.
 Entities.AddUserArgumentType("LinkedEntity",
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
@@ -135,13 +136,58 @@ Entities.AddUserArgumentType("LinkedEntity",
 
 			return NULL
 		end
+
+		return Value
 	end,
 	function(_, value)
 		return value:EntIndex()
 	end,
 	function(self, value, createdEnts)
-		self:Link(createdEnts[value])
-		return createdEnts[value]
+		local Ent = createdEnts[value]
+		if not IsValid(Ent) then return NULL end
+
+		return self:Link(Ent) and Ent or NULL
+	end
+)
+
+-- Entity link LUT where Key == Entity and Value == true.
+Entities.AddUserArgumentType("LinkedEntities",
+	function(Value, Specs)
+		if not istable(Value) then Value = {} return Value end
+		if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
+
+		if Specs.Classes then
+			-- Check everything. What's valid?
+			local NewTable = {}
+			for Entity in pairs(Value) do
+				if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
+					NewTable[Entity] = true
+				end
+			end
+
+			return NewTable
+		else
+			return Value
+		end
+	end,
+	function(_, Value)
+		local EntIndexTable = {}
+		for Entity in pairs(Value) do
+			EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
+		end
+		return EntIndexTable
+	end,
+	function(self, Value, CreatedEnts)
+		local EntTable = {}
+
+		for _, EntIndex in ipairs(Value) do
+			local Created = CreatedEnts[EntIndex]
+			if IsValid(Created) and self:Link(Created) then
+				EntTable[Created] = true
+			end
+		end
+
+		return EntTable
 	end
 )
 
@@ -163,6 +209,79 @@ function Entities.AddStrictArguments(Class, UserVariables)
 	AddArgumentRestrictions(Entity, Arguments)
 	return List
 end
+
+--[[
+
+MARCH: This is the IDEAL way to create new entities within ACF. It is still experimental so report bugs to me.
+We should try to refactor some critical components (fuel, for example) to use this system - which will likely require
+some backwards compat layer, etc... we'll figure that out when we get to that point. 
+
+AutoRegister calls should always be at the end of the file.
+Some properties should always be defined in shared.lua.
+See acf_baseplate's shared.lua for an example.
+
+Here's what this entity API exposes/uses:
+
+ENTITY METHODS AND FIELDS
+	ENT.ACF_Limit (typeof number)
+		Defines the maximum amount of entities of Classname, optional
+
+	ENT.ACF_UserVars
+		A table of (shared) key-value pairs. Key is the user variable name, value is a table defining
+			Type (string)
+			ClientData (boolean)
+			Type-specific parameters (...kvargs)
+
+	ENT:ACF_PreUpdateEntityData(ClientData)
+		Pre-update entity data hook, optional
+
+	ENT:ACF_PostUpdateEntityData(ClientData)
+		Post-update entity data hook, optional
+
+	ENT.ACF_OnVerifyClientData(ClientData)
+		Non-entity context clientdata verification. Called immediately after UserVar validation is performed
+
+	ENT.ACF_UserData (table)
+		The raw table behind ACF_GetUserVat/ACF_SetUserVar. WIll not perform any validation on sets
+
+	ENT:ACF_GetUserVar(Key)
+		Gets a user variable by Key
+
+	ENT:ACF_SetUserVar(Key, Value)
+		Sets a user variable by Key to Value. Automatically pulls the typedef for the user and performs the validator.
+
+	ENT:PreEntityCopy()
+		Identical to Garry's Mod's API but autoreg injects ACF_UserData logic before calling your custom PreEntityCopy
+
+	ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		Identical to Garry's Mod's API but autoreg injects ACF_UserData logic before calling your custom PostEntityPaste
+
+BASE TYPES
+	-- ClientData or internal data
+	Number {Default:double? (evals to Default ?? 0), Decimals:int, Min:double?, Max:double?}
+	String {Default:string? (evals to Default ?? "N/A")}
+	Boolean {Default:boolean? (evals to Defualt ?? false)}
+
+	-- Internal data only
+	SimpleClass {Default:string? (evals to Default ?? "N/A"), ClassName:string?}
+	LinkedEntity {Classes:string[]?} -- classes is an allowed classes list
+
+AUTOREG TYPE API (semi-internal...)
+	T ValidateUserVarDelegate<T>(T untrustedValue, table variableSpecifications)
+		Untrusted value comes from user land
+		Variable specifications is a reference to the table you made in ENT.ACF_UserVars[InsertKeyHere]
+
+	any PreCopyUserVarDelegate(Entity self, T currentValue)
+		Allows mutating the user variable to any other type (say, an entity -> entity index)
+		Is optional, but likely required if you defined PostPasteUserVarDelegate.
+
+	T PostPasteUserVarDelegate(Entity newEntity, any dupeUntrustedValue, table createdEntities);
+		Allows mutating the saved user variable to T again after a PreCopyUserVarDelegate
+		You do not need to validate untrusted value, it is validated immediately after this delegate is called
+		Is optional, but likely required if you defined PreCopyUserVarDelegate.
+
+	Entities.AddUserArgumentType(TypeName, ValidateUserVarDelegate, PreCopyUserVarDelegate?, PostPasteUserVarDelegate?)
+]]
 
 -- Automatically registers an entity. This MUST be the last line in entity/init.lua for everything to work properly
 -- Can be passed with an ENT table if you have some weird usecase, but auto defaults to _G.ENT
@@ -239,6 +358,12 @@ function Entities.AutoRegister(ENT)
 		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
+	end
+
+	if not ENT.ACF_PostMenuSpawn then
+		function ENT:ACF_PostMenuSpawn()
+			self:DropToFloor()
+		end
 	end
 
 	function ENT:ACF_GetUserVar(Key)

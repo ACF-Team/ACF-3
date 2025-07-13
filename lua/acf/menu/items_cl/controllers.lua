@@ -9,6 +9,13 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("All-In-One Controllers")
 	Menu:AddLabel("Allows you to easily setup a tank without requiring a complex wiring setup.")
 
+	local PreviewSettings = {
+		FOV = 120,
+		Height = 120,
+	}
+	local Preview = Menu:AddModelPreview("models/hunter/plates/plate025x025.mdl", true)
+	Preview:UpdateSettings(PreviewSettings)
+
 	local Instructions = Menu:AddCollapsible("Instructions", true, "icon16/computer_add.png")
 	Instructions:AddLabel("Place down the controller. Link each for the given effects: ")
 	Instructions:AddLabel("Seat -> Required to control anything")

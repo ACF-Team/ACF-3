@@ -1,7 +1,6 @@
 local Classes 	= ACF.Classes
 local Turrets 	= Classes.Turrets
-local Entries 	= {}
-
+local Entries   = Classes.GetOrCreateEntries(Turrets)
 
 function Turrets.Register(ID, Data)
 	local Group = Classes.AddGroup(ID, Entries, Data)

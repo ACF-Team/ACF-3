@@ -8,6 +8,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Flechette"
+	self.SpawnIcon   = "acf/icons/shell_fl.png"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
 	self.Description = "#acf.descs.ammo.fl"
 	self.Blacklist = {

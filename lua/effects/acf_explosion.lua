@@ -2,26 +2,12 @@ local TraceData = { start = true, endpos = true, mask = MASK_SOLID }
 local TraceLine = util.TraceLine
 local GetIndex  = ACF.GetAmmoDecalIndex
 local GetDecal  = ACF.GetRicochetDecal
+local Effects   = ACF.Utilities.Effects
 local Sounds    = ACF.Utilities.Sounds
-local Debug		= ACF.Debug
+local Debug     = ACF.Debug
 local White     = Color(255, 255, 255)
 local Yellow    = Color(255, 255, 0)
-
-local Colors = {
-	Default        = Color(120, 110, 100),
-	[MAT_GRATE]    = Color(170, 160, 144),
-	[MAT_CLIP]     = Color(170, 160, 144),
-	[MAT_METAL]    = Color(170, 160, 144),
-	[MAT_COMPUTER] = Color(170, 160, 144),
-	[MAT_CONCRETE] = Color(180, 172, 158),
-	[MAT_DIRT]     = Color(95, 80, 63),
-	[MAT_GRASS]    = Color(114, 100, 80),
-	[MAT_SLOSH]    = Color(104, 90, 70),
-	[MAT_SNOW]     = Color(154, 140, 110),
-	[MAT_FOLIAGE]  = Color(104, 90, 70),
-	[MAT_TILE]     = Color(150, 146, 141),
-	[MAT_SAND]     = Color(180, 155, 100),
-}
+local Colors    = Effects.MaterialColors
 
 function EFFECT:Init(Data)
 	self.Start = CurTime()
@@ -60,8 +46,9 @@ function EFFECT:Init(Data)
 		if Radius > 1 and (IsValid(Entity) or Impact.HitWorld) then
 			local Size = Radius * 0.66
 			local Type = GetIndex("HE")
-
-			util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
+			if Type then
+				util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
+			end
 		end
 	end
 end
@@ -78,25 +65,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 
 	if not IsValid(Emitter) then return end
 
-	for _ = 0, 3 do
-		local Flame = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
-
-		if Flame then
-			Flame:SetVelocity((HitNormal + VectorRand()) * 150 * Radius)
-			Flame:SetLifeTime(0)
-			Flame:SetDieTime(0.13)
-			Flame:SetStartAlpha(255)
-			Flame:SetEndAlpha(255)
-			Flame:SetStartSize(Radius * 8)
-			Flame:SetEndSize(Radius * 90)
-			Flame:SetRoll(math.random(120, 360))
-			Flame:SetRollDelta(math.Rand(-1, 1))
-			Flame:SetAirResistance(300)
-			Flame:SetGravity(Vector(0, 0, 4))
-			Flame:SetColor(255, 255, 255)
-		end
-	end
-
+	-- Debris flecks flown off by the explosion
 	for _ = 0, 5 * math.Clamp(Radius, 1, 30) * Mult do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
@@ -116,6 +85,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 		end
 	end
 
+	-- Embers flown off by the explosion
 	for _ = 0, 5 * math.Clamp(Radius, 7, 10) * Mult do
 		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
@@ -178,55 +148,74 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	end
 
 	local Density = math.Clamp(Radius, 10, 14) * 8
-	local Angle = HitNormal:Angle()
+	local HitNormalAngle = HitNormal:Angle()
+	local HitNormalForward = HitNormalAngle:Forward()
+	local Angle = HitNormalAngle
 
 	for _ = 0, Density * Mult do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(2, 4) * Radius)
+		local TracePoint = util.TraceLine {
+			start = Origin + (HitNormalForward * 2) * math.Rand(2, 4) * Radius,
+			endpos = (Origin + (Angle:Up() * math.Rand(-2, -100) * Radius)) - (HitNormalForward * 10)
+		}
 
-		if Smoke then
-			Smoke:SetVelocity(Angle:Up() * math.Rand(300, 400 * Radius))
-			Smoke:SetLifeTime(0)
-			Smoke:SetDieTime(math.Rand(0.5, 0.6) * DietimeMod)
-			Smoke:SetStartAlpha(math.Rand(100, 140))
-			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize(10 * Radius)
-			Smoke:SetEndSize(25 * Radius)
-			Smoke:SetRoll(math.Rand(0, 360))
-			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(55 * Radius)
-			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
-			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
+		-- debugoverlay.Line(TracePoint.StartPos, TracePoint.HitPos, 2, Color(255, 0, 0), true)
+		-- debugoverlay.Cross(TracePoint.StartPos, 4, 4, Color(255, 111, 111), true)
+		-- debugoverlay.Cross(TracePoint.HitPos, 4, 4, Color(120, 255, 142), true)
+
+		if TracePoint.Hit then
+			local TraceTime = TracePoint.StartPos:Distance(TracePoint.HitPos) / 2000
+			local AngleCopy = _G.Angle(Angle[1], Angle[2], Angle[3])
+			timer.Simple(TraceTime, function()
+				if not IsValid(Emitter) then return end
+				local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), TracePoint.HitPos)
+
+				if Smoke then
+					Smoke:SetVelocity((-AngleCopy:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
+					Smoke:SetLifeTime(0)
+					Smoke:SetDieTime(math.Rand(0.5, 0.6) * DietimeMod)
+					Smoke:SetStartAlpha(math.Rand(100, 140))
+					Smoke:SetEndAlpha(0)
+					Smoke:SetStartSize(10 * Radius)
+					Smoke:SetEndSize(25 * Radius)
+					Smoke:SetRoll(math.Rand(0, 360))
+					Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
+					Smoke:SetAirResistance(35 * Radius)
+					Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), -math.Rand(220, 400)))
+					Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
+				end
+
+				local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), TracePoint.HitPos)
+
+				if Smoke then
+					Smoke:SetVelocity((-AngleCopy:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
+					Smoke:SetLifeTime(0)
+					Smoke:SetDieTime(math.Rand(0.2, 0.4) * DietimeMod)
+					Smoke:SetStartAlpha(math.Rand(70, 120))
+					Smoke:SetEndAlpha(0)
+					Smoke:SetStartSize(5 * Radius)
+					Smoke:SetEndSize(10 * Radius)
+					Smoke:SetRoll(math.Rand(0, 360))
+					Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
+					Smoke:SetAirResistance(75 * Radius)
+					Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), -math.Rand(220, 400)))
+					Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
+				end
+			end)
 		end
 
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin + Angle:Up() * math.Rand(4, 12) * Radius)
-
-		if Smoke then
-			Smoke:SetVelocity(Angle:Up() * math.Rand(500, 1000 * Radius))
-			Smoke:SetLifeTime(0)
-			Smoke:SetDieTime(math.Rand(0.2, 0.4) * DietimeMod)
-			Smoke:SetStartAlpha(math.Rand(70, 120))
-			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize(5 * Radius)
-			Smoke:SetEndSize(10 * Radius)
-			Smoke:SetRoll(math.Rand(0, 360))
-			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(115 * Radius)
-			Smoke:SetGravity(Vector(math.Rand(-20, 20), math.Rand(-20, 20), math.Rand(10, 100)))
-			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
-		end
 
 		local EF = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
 
 		if EF then
 			EF:SetVelocity((Angle:Up() + HitNormal * math.random(0.3, 5)):GetNormalized() *  1)
 			EF:SetAirResistance(100)
-			EF:SetDieTime(0.13)
+			EF:SetDieTime(0.23)
 			EF:SetStartAlpha(240)
-			EF:SetEndAlpha(20)
-			EF:SetStartSize(10 * Radius)
-			EF:SetEndSize(8 * Radius)
+			EF:SetEndAlpha(0)
+			EF:SetStartSize(15 * Radius)
+			EF:SetEndSize(4 * Radius)
 			EF:SetRoll(800)
 			EF:SetRollDelta( math.random(-1, 1) )
 			EF:SetColor(255, 255, 255)
@@ -235,7 +224,29 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 		end
 	end
 
-	Emitter:Finish()
+	-- The initial explosion flash
+	for _ = 0, 3 do
+		local Flame = Emitter:Add("effects/muzzleflash" .. math.random(1, 4), Origin)
+
+		if Flame then
+			Flame:SetVelocity((HitNormal + VectorRand()) * 150 * Radius)
+			Flame:SetLifeTime(0)
+			Flame:SetDieTime(0.26)
+			Flame:SetStartAlpha(220)
+			Flame:SetEndAlpha(5)
+			Flame:SetStartSize(Radius * 8)
+			Flame:SetEndSize(Radius * 90)
+			Flame:SetRoll(math.random(120, 360))
+			Flame:SetRollDelta(math.Rand(-1, 1))
+			Flame:SetAirResistance(300)
+			Flame:SetGravity(Vector(0, 0, 4))
+			Flame:SetColor(255, 255, 255)
+		end
+	end
+
+	timer.Simple(0.5, function()
+		Emitter:Finish()
+	end)
 end
 
 function EFFECT:Airburst(Emitter, GroundHit, Origin, GroundOrigin, Radius, Direction, SmokeColor, GroundColor, Mult)
