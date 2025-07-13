@@ -1,5 +1,6 @@
 local ACF = ACF
 
+local CurTime = CurTime
 do -- Ricochet/Penetration materials
 	local Materials = {}
 	local MatCache = {}
