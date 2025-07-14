@@ -11,29 +11,32 @@ function EFFECT:Init(Data)
 
 	if Caliber <= 0 then return end
 
-	local Origin = Data:GetOrigin()
-	local DirVec = Data:GetNormal()
-	local Type = Data:GetDamageType()
+	local Origin   = Data:GetOrigin()
+	local DirVec   = Data:GetNormal()
+	local Type     = Data:GetDamageType()
+	local Velocity = Data:GetScale() -- Velocity of the projectile in gmod units
+	local Mass     = Data:GetMagnitude() -- Mass of the projectile in kg
 
 	TraceData.start = Origin - DirVec
-	TraceData.endpos = Origin + DirVec * 100
+	TraceData.endpos = Origin + DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
-
-	-- Placeholder
 	local EffectTable = {
 		Start = Origin,
 		Normal = Trace.HitNormal,
-		Magnitude = 0,
+		Magnitude = Mass,
+		DamageType = Type,
+		Radius = Caliber,
+		Scale = Velocity,
 	}
 
-	Effects.CreateEffect("ElectricSpark", EffectTable)
+	Effects.CreateEffect("cball_explode", EffectTable)
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1
 		local Scale = GetScale(DecalType, Caliber)
 
-		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, Color(255, 255, 255), Scale, Scale)
+		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, color_white, Scale, Scale)
 	end
 
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "impact")

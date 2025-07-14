@@ -9,9 +9,10 @@ local function CreateMenu(Menu)
 
 	ACF.SetClientData("PrimaryClass", "acf_crew")
 	ACF.SetClientData("SecondaryClass", "N/A")
+	ACF.SetToolMode("acf_menu", "Spawner", "Crew")
 
 	Menu:AddTitle("#acf.menu.crew.settings")
-	Menu:AddPonderAddonCategory("acf", "crew")
+	Menu:AddPonderAddonCategory("acf", "tankbasics")
 
 	local CrewJob		= Menu:AddComboBox()
 	local CrewJobDesc	= Menu:AddLabel()
@@ -23,12 +24,15 @@ local function CreateMenu(Menu)
 	local CrewPreview	= Base:AddModelPreview(nil, true)
 	local ReplaceOthers	= Base:AddCheckBox("#acf.menu.crew.replace_others")
 	local ReplaceSelf	= Base:AddCheckBox("#acf.menu.crew.replace_self")
+	local UseAnimation	= Base:AddCheckBox("#acf.menu.crew.use_animation")
 
 	ReplaceOthers:SetClientData("ReplaceOthers", "OnChange")
 	ReplaceSelf:SetClientData("ReplaceSelf", "OnChange")
+	UseAnimation:SetClientData("UseAnimation", "OnChange")
 
 	ReplaceOthers:SetChecked(true)
 	ReplaceSelf:SetChecked(true)
+	UseAnimation:SetChecked(false)
 
 	local Priority = Base:AddNumberWang("#acf.menu.crew.priority", ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 	Priority:SetClientData("CrewPriority", "OnValueChanged")

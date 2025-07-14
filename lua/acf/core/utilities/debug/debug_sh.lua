@@ -1,11 +1,15 @@
 local ACF	= ACF
 ACF.Debug	= {}
 
-local CVar	= CreateConVar("acf_developer", 0, FCVAR_REPLICATED, "Extra wrapper convar for debugoverlay, requires 'developer 1' as well. Only applies to ACF", 0, 1)
+local CVar	= CreateConVar("acf_developer", 0, FCVAR_REPLICATED, "Extra wrapper convar for debugoverlay, requires 'developer 1' as well. 1: Both 2: Server 3: Client", 0, 3)
 
 for k in pairs(debugoverlay) do
 	ACF.Debug[k] = function(...)
-		if CVar:GetBool() == false then return end
+		local var = CVar:GetInt()
+
+		if var == 0 then return end
+		if SERVER and var == 3 then return end
+		if CLIENT and var == 2 then return end
 
 		debugoverlay[k](...)
 	end
@@ -49,39 +53,6 @@ local EntityImpulses = {
 			end
 			if not DetonatedAtLeastOnce then
 				Player:ChatPrint("No target or target cannot be detonated")
-			end
-		end
-	},
-	-- needs more work, now doesnt work at all right now
-	shoot = {
-		Callback = function(Player, Target, Args)
-			local Now = Args[2] == "now"
-
-			if IsValid(Target) and Target.Shoot then
-				if Target.CanFire then
-					local oldFiring = Target.Firing
-					Target.Firing = true
-					if Target.CurrentShot > 0 then
-						Target:Shoot()
-						Target.Firing = oldFiring
-						return
-					elseif Now then
-						if Target.State == "Loading" and Target.ReloadTimer then
-							Target.ReloadTimer:Cancel(true)
-						else
-							Target:Load(true)
-						end
-					else
-						Target.Firing = oldFiring
-						Player:ChatPrint("Target cannot shoot right now.")
-					end
-				elseif Target.CanShoot then
-					return Target:Shoot()
-				else
-					Player:ChatPrint("Don't know how to shoot this target.")
-				end
-			else
-				Player:ChatPrint("No target.")
 			end
 		end
 	}

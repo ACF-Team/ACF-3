@@ -78,13 +78,13 @@ if CLIENT then
 		Player.ACF_Sus_Tool_Info = net.ReadTable()
 	end)
 
-	function DrawEntText(Entity, Text, Col)
+	local function DrawEntText(Entity, Text, Col)
 		local Pos = Entity:GetPos()
 		local SP = Pos:ToScreen()
 		draw.SimpleTextOutlined(Text, nil, SP.x, SP.y, Col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, black)
 	end
 
-	function DrawEntLink(Entity1, Entity2, Col)
+	local function DrawEntLink(Entity1, Entity2, Col)
 		local Pos1 = Entity1:GetPos()
 		local SP1 = Pos1:ToScreen()
 		local Pos2 = Entity2:GetPos()
@@ -94,7 +94,7 @@ if CLIENT then
 		surface.DrawLine(SP1.x, SP1.y, SP2.x, SP2.y)
 	end
 
-	function DrawArm(Wheel, Plate, Vec, Col)
+	local function DrawArm(Wheel, Plate, Vec, Col)
 		local WheelPos = Wheel:GetPos()
 		local SP = WheelPos:ToScreen()
 		local WorldPos = Plate:LocalToWorld(Plate:WorldToLocal(Wheel:GetPos()) + Vec)
@@ -146,13 +146,13 @@ if CLIENT then
 					if ArmType == 1 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
 						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
 					elseif ArmType == 2 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
 					elseif ArmType == 3 then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
 					end
 				end
 			end
@@ -389,16 +389,6 @@ elseif SERVER then -- Serverside-only stuff
 		local Player = self:GetOwner()
 		local Selections = self.Selections
 
-		-- Handle makespherical / disable collisions BEFORE making the constraints
-		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
-		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
-		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
-			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
-
-			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
-			if IsSpherical == 1 then MakeSpherical(Wheel) end
-		end
-
 		-- Handle making the suspension constraints
 		local SpringType = tonumber(Player:GetInfo("acf_sus_tool_springtype"))
 		local ArmType = tonumber(Player:GetInfo("acf_sus_tool_armtype"))
@@ -420,7 +410,21 @@ elseif SERVER then -- Serverside-only stuff
 
 		-- Cover edge cases
 		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
+		if IsValid(Baseplate:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a baseplate.") return end
 		if SpringType == 2 and not IsValid(ControlPlate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Control plate missing.") return end
+		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
+			if IsValid(Wheel:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a wheel.") end
+		end
+
+		-- Handle makespherical / disable collisions BEFORE making the constraints
+		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
+		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
+		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
+			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
+
+			if IsDisableCollisions == 1 then DisableCollisions(Wheel) end
+			if IsSpherical == 1 then MakeSpherical(Wheel) end
+		end
 
 		-- Determine left/right wheels
 		local LeftWheels, RightWheels = {}, {}
@@ -464,12 +468,13 @@ elseif SERVER then -- Serverside-only stuff
 					else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
 				else
 					HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
-					if ArmType == 1 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-					elseif ArmType == 2 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
-					elseif ArmType == 3 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
+					if ArmType == 1 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 2 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
+					elseif ArmType == 3 then ArmFork(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ) end
 
 					if SpringType == 2 and IsValid(ControlPlate) then
-						MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(Vector(0, 0, WheelCount * 6)), ControlPlate:GetAngles())
+						local LocalPos = Baseplate:WorldToLocal(Wheel:GetPos())
+						MakeHydraulicAndController(Player, Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), InOutSpeedMul, ControlPlate:LocalToWorld(LocalPos * 1 / math.abs(LocalPos.y) * 12), ControlPlate:GetAngles())
 					elseif SpringType == 3 then
 						MakeElastic(Wheel, Baseplate, Vector(0, 0, 0), Vector(SpringX, SpringY * Mirror, SpringZ), Elasticity, Damping, RelativeDamping)
 					end

@@ -79,7 +79,7 @@ end)
 
 -- Receive filter from server
 net.Receive("ACF_Controller_CamInfo", function()
-	Temp = net.ReadTable()
+	local Temp = net.ReadTable()
 	if #Temp > 0 then MyFilter = Temp end
 end)
 
@@ -179,7 +179,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local unit = MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
 		DrawText("SPD: " .. MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
 		DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
-		local unit = MyController:GetFuelUnit() == 0 and " L" or " H"
+		local unit = MyController:GetFuelUnit() == 0 and " L" or " G"
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 

@@ -4,6 +4,7 @@ ENT.PrintName       = "ACF Piledriver"
 ENT.WireDebugName   = "ACF Piledriver"
 ENT.PluralName      = "ACF Piledrivers"
 ENT.IsACFPiledriver = true
+ENT.IsACFEntity     = true
 
 cleanup.Register("acf_piledriver")
 

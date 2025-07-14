@@ -717,9 +717,11 @@ function ENT:CalcMassRatio(SelfTbl)
 	local Con      = self:GetContraption()
 	local PhysMass = 0
 
-	local Physical = Contraption.GetEnts(self)
+	local Physical, _, Detached = Contraption.GetEnts(self)
 
-	for K in pairs(Physical) do
+	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
+	-- if DetachedPhysmassRatio == false
+	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
 		local Phys = K:GetPhysicsObject() -- Should always exist, but just in case
 
 		if IsValid(Phys) then

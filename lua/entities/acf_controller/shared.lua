@@ -11,10 +11,11 @@ cleanup.Register("acf_controller")
 
 ENT.Editable = true
 function ENT:SetupDataTables()
-	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 10, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableAIOCam", { KeyName = "disableaiocam", Edit = { type = "Bool", order = 11, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableAIOHUD", { KeyName = "disableaiohud", Edit = { type = "Bool", order = 12, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableFiring", { KeyName = "disablefiring", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOCam", { KeyName = "disableaiocam", Edit = { type = "Bool", order = 10, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOHUD", { KeyName = "disableaiohud", Edit = { type = "Bool", order = 11, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableFiring", { KeyName = "disablefiring", Edit = { type = "Bool", order = 12, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "ThrottleIgnoresAD", { KeyName = "throttleignoresad", Edit = { type = "Bool", order = 14, category = "Miscellaneous" } } )
 	-- self:NetworkVar( "String", "KeyBinds", { KeyName = "keybinds", Edit = { readonly = true, order = 14, category = "Miscellaneous" } } )
 
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 20, category = "Camera Settings", min = 0.001, max = 90 } } )
@@ -37,7 +38,7 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", "ThrottleIdle", { KeyName = "throttleidle", Edit = { type = "Int", order = 60, category = "Drivetrain Settings", min = 0, max = 100 } } )
 	self:NetworkVar( "Int", "SpeedUnit", { KeyName = "speedunit", Edit = { type = "Combo", order = 61, category = "Drivetrain Settings", values = {KPH = 0, MPH = 1} } } )
-	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, H = 1} } } )
+	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, G = 1} } } )
 
 	self:NetworkVar( "Int", "BrakeEngagement", { KeyName = "brakeengagement", Edit = { type = "Combo", order = 71, category = "Brake Settings", values = {Manual = 0, Automatic = 1} } } )
 	self:NetworkVar( "Float", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Float", order = 73, category = "Brake Settings", min = 0.001, max = 1000 } } )

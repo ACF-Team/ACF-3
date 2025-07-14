@@ -1,0 +1,5 @@
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "aio")
+Storyboard:WithName("ACF AIO Controllers")
+Storyboard:WithModelIcon("models/hunter/plates/plate025x025.mdl")
+Storyboard:WithDescription("(WIP) Learn how to setup an AIO controller")
+Storyboard:WithIndexOrder(7)
