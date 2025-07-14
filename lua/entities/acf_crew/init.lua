@@ -57,6 +57,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 -- Pool network strings
 util.AddNetworkString("ACF_Crew_Links")
 util.AddNetworkString("ACF_Crew_Space")
+util.AddNetworkString("ACF_Crew_Spawn")
 
 --- Helper function that generates scanning information for the crew member
 local function GenerateScanSetup()
@@ -357,6 +358,7 @@ do
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
+		if Data.UseAnimation == nil then Data.UseAnimation = false end
 
 		if not isnumber(Data.CrewPriority) then -- Ammo priority is used to deliniate different stages
 			Data.CrewPriority = 1
@@ -367,6 +369,8 @@ do
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
+		VerifyData(Data)
+
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = CrewModel.Model
@@ -388,6 +392,7 @@ do
 		Entity.CrewModelID = Data.CrewModelID
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
+		Entity.UseAnimation = Data.UseAnimation or false
 		Entity.CrewPriority = Data.CrewPriority
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
@@ -411,9 +416,21 @@ do
 		Entity:UpdateOverlay(true)
 
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
+
+		-- TODO: Figure out how to "ClientInitialized" this
+		if Entity.UseAnimation == true then
+			timer.Simple(0, function()
+				if not IsValid(Entity) then return end
+
+				net.Start("ACF_Crew_Spawn")
+				net.WriteEntity(Entity)
+				net.WriteString(Entity.CrewModelID)
+				net.Broadcast()
+			end)
+		end
 	end
 
-	function ACF.MakeCrew(Player, Pos, Angle, Data)
+	function MakeCrew(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
@@ -495,12 +512,11 @@ do
 		CheckLegal(Entity)
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
-
 		return Entity
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
+	Entities.Register("acf_crew", MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
