@@ -55,7 +55,7 @@ local function UpdateArmor(_, Entity, Data, BecauseOfDupe)
 	if not Data then return end
 	if not ACF.Check(Entity, BecauseOfDupe) then return end
 
-	if Entity.IsACFEntity and not Entity.IsACFArmor then return end -- Disable armoring ACF entities (they should handle it themselves)
+	if Entity.IsACFEntity and not Entity.IsACFArmor and not Entity.IsACFBaseplate then return end -- Disable armoring ACF entities (they should handle it themselves)
 
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
