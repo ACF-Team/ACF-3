@@ -4,5 +4,6 @@ ENT.PrintName     = "ACF Fuel Tank"
 ENT.WireDebugName = "ACF Fuel Tank"
 ENT.PluralName    = "ACF Fuel Tanks"
 ENT.IsACFFuelTank = true
+ENT.IsACFEntity   = true
 
 cleanup.Register("acf_fueltank")
