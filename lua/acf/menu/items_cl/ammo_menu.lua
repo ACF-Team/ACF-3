@@ -383,6 +383,38 @@ local function AddGraph(Base, ToolData)
 	end
 end
 
+local function AddDiagram(Base, ToolData)
+	local Canvas = Base:AddPanel("Panel")
+	Canvas:DockMargin(0, 5, 0, 5)
+
+	local MenuSizeX = Base:GetParent():GetParent():GetWide()
+	Canvas:SetSize(MenuSizeX, MenuSizeX * 0.5)
+
+	Canvas:TrackClientData("Projectile")
+	Canvas:TrackClientData("Propellant")
+	Canvas:TrackClientData("FillerRatio")
+	Canvas:TrackClientData("LinerAngle")
+	Canvas:TrackClientData("StandoffRatio")
+	Canvas:TrackClientData("SmokeWPRatio")
+
+	Canvas:DefineSetter(function(Panel)
+		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+	end)
+
+	Canvas.Paint = function(self, w, h)
+		surface.SetDrawColor(Color(255, 255, 255))
+		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(Color(25, 25, 25))
+		surface.DrawOutlinedRect(0, 0, w, h)
+
+		local MaxWidth, MaxLength = 280, 1000
+
+		local cx, cy = w * 0.5, h * 0.5
+
+		
+	end
+end
+
 ---Returns the client bullet data currently being used by the menu.
 ---@return table<string, any> BulletData The client bullet data.
 function ACF.GetCurrentAmmoData()
@@ -421,6 +453,7 @@ function ACF.UpdateAmmoMenu(Menu)
 
 	AddPreview(Base, ToolData)
 	AddControls(Base, ToolData)
+	AddDiagram(Base, ToolData)
 	AddInformation(Base, ToolData)
 	AddGraph(Base, ToolData)
 

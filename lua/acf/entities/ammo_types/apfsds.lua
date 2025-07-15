@@ -80,6 +80,10 @@ function Ammo:BaseConvert(ToolData)
 	return Data, GUIData
 end
 
+function Ammo:RenderMenuShell()
+
+end
+
 if SERVER then
 	function Ammo:Network(Entity, BulletData)
 		Ammo.BaseClass.Network(self, Entity, BulletData)
