@@ -182,7 +182,7 @@ end
 local function OnRemove(Entity, Player)
 	plyCount:free(Player, 1)
 
-	instance.data.props.props[Entity] = nil
+	instance.data.props.propList:unregister(Entity)
 end
 
 local function RegisterEntity(Entity)
@@ -192,7 +192,7 @@ local function RegisterEntity(Entity)
 
 	plyCount:free(Player, -1)
 
-	instance.data.props.props[Entity] = true
+	instance.data.props.propList:register(instance, Entity)
 end
 
 --===============================================================================================--
@@ -201,7 +201,7 @@ end
 
 --- Returns true if functions returning sensitive info are restricted to owned props
 -- @shared
--- @return boolean True if restriced, False if not
+-- @return boolean True if restricted, False if not
 function acf_library.infoRestricted()
 	return ACF.RestrictInfo
 end
