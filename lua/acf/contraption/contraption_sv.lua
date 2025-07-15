@@ -334,6 +334,10 @@ do -- ASSUMING DIRECT CONTROL
 			end
 
 			function ENT:SetModel(Model)
+				-- MARCH: Just a notice - if you get "attempt to index field ACF (a nil value)" issues here,
+				-- DON'T just add a if self.ACF check - this is intended to be called on ACF entities
+				-- and they should have an ACF table, so you're just suppressing an issue here, only for it to
+				-- probably show up later... do more investigation into *why* self.ACF returned nil.
 				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
 
 				SetModel(self, Model)

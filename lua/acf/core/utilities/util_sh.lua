@@ -940,15 +940,23 @@ do -- Crew related
 		local RealLoop
 		local Cancelled = false
 		local Finished  = false
+		local Paused = false
 		function RealLoop()
 			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
 			UpdateDelta(Config)
-			local left = Loop(Config)
+
+			-- If the timer is paused, don't run the loop
+			-- This also causes the timer to continue running indefinitely yet not affect anything
+			local left = nil
+			if not Paused then
+				left = Loop(Config)
+			end
+
 			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
 
-			--Random step or Finishing step, whichever is faster.
+			-- Random step or Finishing step, whichever is faster.
 			local timeleft = left and math.min(left, rand) or rand
 			-- If time left then recurse, otherwise call Finish
 			if timeleft > 0.001 then
@@ -970,6 +978,20 @@ do -- Crew related
 				Finish(Config)
 			end
 		end
+
+		function ProxyObject:Pause()
+			Paused = true
+		end
+
+		function ProxyObject:Resume()
+			Paused = false
+		end
+
+		function ProxyObject:Finish()
+			Finished = true
+			Finish(Config)
+		end
+
 		return ProxyObject
 	end
 
