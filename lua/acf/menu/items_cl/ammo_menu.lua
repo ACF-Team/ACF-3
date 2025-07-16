@@ -398,20 +398,44 @@ local function AddDiagram(Base, ToolData)
 	Canvas:TrackClientData("SmokeWPRatio")
 
 	Canvas:DefineSetter(function(Panel)
-		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+		print(BulletData.ProjLength, BulletData.Caliber)
 	end)
 
 	Canvas.Paint = function(self, w, h)
 		surface.SetDrawColor(Color(255, 255, 255))
 		surface.DrawRect(0, 0, w, h)
+
 		surface.SetDrawColor(Color(25, 25, 25))
 		surface.DrawOutlinedRect(0, 0, w, h)
 
-		local MaxWidth, MaxLength = 280, 1000
+		surface.SetDrawColor(Color(0, 0, 0))
 
-		local cx, cy = w * 0.5, h * 0.5
+		local BL = BulletData.ProjLength * 10 -- Projectile length
+		local BC = BulletData.Caliber * 10 -- Caliber
 
-		
+		local PL = BulletData.PropLength * 10 -- Propellant length
+		local PC = BulletData.Caliber * 10 -- Propellant caliber
+
+		local TL = BulletData.Tracer * 10 -- Tracer length
+		local TC = BulletData.Caliber * 10 -- Tracer caliber
+
+		local CL = BL + PL + TL -- Cartridge length
+		local CC = BC -- Cartridge caliber
+
+		local r = 1 / 1000 * h -- Converts dimension to pixels
+
+		local DimensionText = "[%sx%s]mm"
+		draw.SimpleText(string.format(DimensionText, 1000 * w, 1000 * h), "DermaDefault", 0, h, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+
+		local cx, cy = w * 0.5, h * 0.5 -- Center x/y
+
+		local TX = cx - CL / 2 * r -- Tracer X position
+		local PX = TX + TL * r -- Propellant X position
+		local BX = PX + PL * r -- Projectile X position
+
+		surface.DrawOutlinedRect(TX, cy - TC / 2 * r, TL * r, TC * r) -- Tracer Cylinder
+		surface.DrawOutlinedRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder
+		surface.DrawOutlinedRect(BX, cy - BC / 2 * r, BL * r, BC * r) -- Projectile cylinder
 	end
 end
 
