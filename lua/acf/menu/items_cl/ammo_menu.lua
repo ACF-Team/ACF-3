@@ -398,8 +398,11 @@ local function AddDiagram(Base, ToolData)
 	Canvas:TrackClientData("SmokeWPRatio")
 
 	Canvas:DefineSetter(function(Panel)
-		print(BulletData.ProjLength, BulletData.Caliber)
+		PrintTable(BulletData)
 	end)
+
+	local Scale = Base:AddSlider("Diagram Scale", 0.1, 10, 1)
+	Scale:SetValue(1)
 
 	Canvas.Paint = function(self, w, h)
 		surface.SetDrawColor(Color(255, 255, 255))
@@ -422,10 +425,11 @@ local function AddDiagram(Base, ToolData)
 		local CL = BL + PL + TL -- Cartridge length
 		local CC = BC -- Cartridge caliber
 
-		local r = 1 / 1000 * h -- Converts dimension to pixels
+		local MaxSize = 1000 / Scale:GetValue() -- Maximum size of the diagram
+		local r = 1 / MaxSize * h -- Converts dimension to pixels
 
-		local DimensionText = "[%sx%s]mm"
-		draw.SimpleText(string.format(DimensionText, 1000 * w, 1000 * h), "DermaDefault", 0, h, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+		local DimensionText = "Scale: [%sx%s] mm"
+		draw.SimpleText(string.format(DimensionText, math.Round(MaxSize * w / h), math.Round(MaxSize)), "DermaDefault", 5, h - 5, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 
 		local cx, cy = w * 0.5, h * 0.5 -- Center x/y
 
