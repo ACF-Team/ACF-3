@@ -111,9 +111,9 @@ do -- Panel helpers
 		Panel:AddItem(Menu)
 
 		if GlobalID then
-		ACF[GlobalID] = Menu
+			ACF[GlobalID] = Menu
 
-		if ReloadCommand then
+			if ReloadCommand then
 				concommand.Add(ReloadCommand, function()
 					if not IsValid(ACF[GlobalID]) then return end
 
