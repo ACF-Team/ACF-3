@@ -1081,4 +1081,59 @@ end
 function PANEL:GenerateExample()
 end
 
+-- Instantiates a table of a given width and height and returns the DIconLayout object
+function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
+	Width = math.max(Width, 1)
+	Height = math.max(Height, 1)
+	BorderWidth = BorderWidth or 5
+	BorderColor = BorderColor or Color(0, 0, 0)
+
+	local Base = self:AddPanel("DIconLayout")
+	Base.TableIndex = {}
+	Base.TableWidth = Width
+	Base.TableHeight = Height
+	Base:DockMargin(0, 0, 0, 5)
+	--Base:Dock(FILL)
+	--Base:SetBackgroundColor(Color(0, 0, 0))
+	Base:SetBorder(BorderWidth)
+
+	-- Make sure the table has valid indices before trying to access them
+	for i = 1, Height do
+		table.insert(Base.TableIndex, {})
+	end
+
+	-- TEMP code for testing
+	for h = 1, Height do
+		for w = 1, Width do
+			local ListLabel = Base:Add("DLabel")
+			ListLabel:SetText("")
+			ListLabel:SetSize(60, 20)
+			ListLabel:SetColor(Color(0, 0, 0))
+			Base.TableIndex[h][w] = ListLabel
+		end
+	end
+
+	-- Set up setters for cell values
+	Base.SetCellValue = function(X, Y, Value, Font, Width, Height)
+		Font = Font or "ACF_Label"
+		Base.TableIndex[Y][X]:SetText(Value)
+		Base.TableIndex[Y][X]:SetFont(Font)
+		if Width and Height then
+			Base.TableIndex[Y][X]:SetSize(Width, Height)
+		end
+		Base:PerformLayout()
+	end
+
+	Base.SetCellsSize = function(Width, Height)
+		for y = 1, #Base.TableIndex do
+			for x = 1, #Base.TableIndex[1] do
+				Base.TableIndex[y][x]:SetSize(Width, Height)
+			end
+		end
+		Base:PerformLayout()
+	end
+
+	return Base
+end
+
 derma.DefineControl("ACF_Panel", "", PANEL, "Panel")
