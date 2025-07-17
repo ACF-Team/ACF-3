@@ -44,6 +44,10 @@ do -- Menu population functions
 		end
 	end
 
+	function ACF.GetMenuItem(Option, Name)
+		return Lookup[Option].Lookup[Name]
+	end
+
 	function ACF.AddMenuItem(Index, Option, Name, Icon, Action, Enabled)
 		if not Index then return end
 		if not Option then return end
