@@ -44,6 +44,10 @@ do -- Menu population functions
 		end
 	end
 
+	function ACF.GetMenuItem(Option, Name)
+		return Lookup[Option].Lookup[Name]
+	end
+
 	function ACF.AddMenuItem(Index, Option, Name, Icon, Action, Enabled)
 		if not Index then return end
 		if not Option then return end
@@ -255,12 +259,7 @@ do -- ACF Menu context panel
 		Tree:SetSelectedItem(First)
 	end
 
-	--- Generates the menu used in the main menu tool.
-	--- @param Panel panel The base panel to build the menu off of.
-	function ACF.CreateSpawnMenu(Panel)
-		local Menu = ACF.InitMenuBase(Panel, "SpawnMenu", "acf_reload_spawn_menu")
-		local Tree = Menu:AddPanel("DTree")
-
+	local function SetupMenuTree(Menu, Tree)
 		function Tree:OnNodeSelected(Node)
 			if self.Selected == Node then return end
 
@@ -287,6 +286,16 @@ do -- ACF Menu context panel
 
 		PopulateTree(Tree)
 	end
+
+	--- Generates the menu used in the main menu tool.
+	--- @param Panel panel The base panel to build the menu off of.
+	function ACF.CreateSpawnMenu(Panel)
+		local Menu = ACF.InitMenuBase(Panel, "SpawnMenu", "acf_reload_spawn_menu")
+		local Tree = Menu:AddPanel("DTree")
+		SetupMenuTree(Menu, Tree)
+	end
+
+	ACF.SetupMenuTree = SetupMenuTree
 end
 
 do -- Client and server settings
