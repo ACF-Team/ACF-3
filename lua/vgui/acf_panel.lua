@@ -1081,59 +1081,69 @@ end
 function PANEL:GenerateExample()
 end
 
--- Instantiates a table of a given width and height and returns the DIconLayout object
+-- Instantiates a table of a given width and height and returns the DIconLayout object.
 function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 	Width = math.max(Width, 1)
 	Height = math.max(Height, 1)
-	BorderWidth = BorderWidth or 5
+	BorderWidth = BorderWidth or 2
 	BorderColor = BorderColor or Color(0, 0, 0)
 
-	local Base = self:AddPanel("DIconLayout")
-	Base.TableIndex = {}
-	Base.TableWidth = Width
-	Base.TableHeight = Height
+	local Base = self:AddPanel("Panel")
 	Base:DockMargin(0, 0, 0, 5)
-	--Base:Dock(FILL)
-	--Base:SetBackgroundColor(Color(0, 0, 0))
-	Base:SetBorder(BorderWidth)
-
-	-- Make sure the table has valid indices before trying to access them
-	for i = 1, Height do
-		table.insert(Base.TableIndex, {})
+	function Base:PaintOver(Width, Height)
+		surface.SetDrawColor(BorderColor)
+		surface.DrawOutlinedRect(0, 0, Width, Height, BorderWidth)
 	end
 
-	-- TEMP code for testing
+	local PenTable = Base:Add("DIconLayout")
+	PenTable.TableIndex = {}
+	PenTable.TableWidth = Width
+	PenTable.TableHeight = Height
+	PenTable:Dock(LEFT)
+	PenTable:DockMargin(BorderWidth * 2, BorderWidth * 2, BorderWidth * 2, BorderWidth * 2)
+	PenTable:Layout()
+
+	-- Make sure the table has valid indices before trying to access them.
+	for i = 1, Height do
+		table.insert(PenTable.TableIndex, {})
+	end
+
+	-- Populate the table with empty cells ready for assignment.
 	for h = 1, Height do
 		for w = 1, Width do
-			local ListLabel = Base:Add("DLabel")
+			local ListLabel = PenTable:Add("DLabel")
 			ListLabel:SetText("")
 			ListLabel:SetSize(60, 20)
 			ListLabel:SetColor(Color(0, 0, 0))
-			Base.TableIndex[h][w] = ListLabel
+			ListLabel:DockPadding(BorderWidth, BorderWidth, BorderWidth, BorderWidth)
+			PenTable.TableIndex[h][w] = ListLabel
 		end
 	end
 
 	-- Set up setters for cell values
-	Base.SetCellValue = function(X, Y, Value, Font, Width, Height)
+	PenTable.SetCellValue = function(X, Y, Value, Font, Width, Height)
 		Font = Font or "ACF_Label"
-		Base.TableIndex[Y][X]:SetText(Value)
-		Base.TableIndex[Y][X]:SetFont(Font)
+		PenTable.TableIndex[Y][X]:SetText(Value)
+		PenTable.TableIndex[Y][X]:SetFont(Font)
 		if Width and Height then
-			Base.TableIndex[Y][X]:SetSize(Width, Height)
+			PenTable.TableIndex[Y][X]:SetSize(Width, Height)
 		end
-		Base:PerformLayout()
+		PenTable:PerformLayout()
 	end
 
-	Base.SetCellsSize = function(Width, Height)
-		for y = 1, #Base.TableIndex do
-			for x = 1, #Base.TableIndex[1] do
-				Base.TableIndex[y][x]:SetSize(Width, Height)
+	-- Set the size of all cells in the table to be this.
+	PenTable.SetCellsSize = function(Width, Height)
+		for y = 1, #PenTable.TableIndex do
+			for x = 1, #PenTable.TableIndex[1] do
+				PenTable.TableIndex[y][x]:SetSize(Width, Height)
 			end
 		end
-		Base:PerformLayout()
+		PenTable:SetMinimumSize(Width * #PenTable.TableIndex[1], Height * #PenTable.TableIndex)
+		Base:SetSize(Width * #PenTable.TableIndex[1] + 2 * BorderWidth, Height * #PenTable.TableIndex + 2 * BorderWidth)
+		PenTable:PerformLayout()
 	end
 
-	return Base
+	return PenTable
 end
 
 derma.DefineControl("ACF_Panel", "", PANEL, "Panel")

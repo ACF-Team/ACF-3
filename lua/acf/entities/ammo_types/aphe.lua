@@ -195,31 +195,14 @@ else
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
 		end)
 
-		Base:AddLabel("#acf.menu.ammo.pen_table_nominal")
-
-		local PenTable = Base:AddTable(5, 6, Color(0, 0, 0), 5)
-		PenTable.SetCellsSize(60, 20)
-		PenTable.SetCellValue(1, 1, "Range")
-		PenTable.SetCellValue(2, 1, "Velocity")
-		PenTable.SetCellValue(3, 1, "0 deg")
-		PenTable.SetCellValue(4, 1, "30 deg")
-		PenTable.SetCellValue(5, 1, "60 deg")
-		PenTable:TrackClientData("Projectile", "SetText")
-		PenTable:TrackClientData("Propellant")
-		PenTable:TrackClientData("FillerRatio")
-
-		PenTable:DefineSetter(function()
-			local ranges = {0, 100, 250, 500, 800}
-			for index, range in pairs(ranges) do
-				local Penetration, Velocity = self:GetRangedPenetration(BulletData, range)
-				PenTable.SetCellValue(1, 1 + index, math.floor(range) .. "m")
-				PenTable.SetCellValue(2, 1 + index, math.Round(Velocity) .. "m/s")
-				PenTable.SetCellValue(3, 1 + index, math.Round(Penetration) .. "mm")
-				PenTable.SetCellValue(4, 1 + index, math.Round(Penetration / 1.1547) .. "mm") --The magic number here is LOS armor divisor at 30 deg
-				PenTable.SetCellValue(5, 1 + index, math.Round(Penetration / 2) .. "mm") --The magic number here is LOS armor divisor at 60 deg
-			end
+		local MaxPen = Base:AddLabel()
+		MaxPen:TrackClientData("Projectile", "SetText")
+		MaxPen:TrackClientData("Propellant")
+		MaxPen:TrackClientData("FillerRatio")
+		MaxPen:DefineSetter(function()
+			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
+			local MaxPen	= math.Round(BulletData.MaxPen, 2)
+			return Text:format(MaxPen)
 		end)
-
-		Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

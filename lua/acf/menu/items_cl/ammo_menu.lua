@@ -257,6 +257,46 @@ local function AddInformation(Base, ToolData)
 	hook.Run("ACF_OnCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 end
 
+local function AddPenetrationTable(Base, ToolData)
+	--HE, Smoke, and Refills do not support this.
+	if ToolData.AmmoType == "SM" or ToolData.AmmoType == "HE" or ToolData.AmmoType == "Refill" then return end
+
+	-- Setup of penetration statistics table.
+	local PenTable = Base:AddTable(5, 6)
+	PenTable.SetCellsSize(55, 20)
+	PenTable.SetCellValue(1, 1, "Range")
+	PenTable.SetCellValue(2, 1, "Velocity")
+	PenTable.SetCellValue(3, 1, "0 deg")
+	PenTable.SetCellValue(4, 1, "30 deg")
+	PenTable.SetCellValue(5, 1, "60 deg")
+	PenTable:TrackClientData("Projectile", "SetText")
+	PenTable:TrackClientData("Propellant")
+	PenTable:TrackClientData("FillerRatio")
+	PenTable:TrackClientData("LinerAngle")
+	PenTable:TrackClientData("StandoffRatio")
+
+	PenTable:DefineSetter(function()
+		local Ranges = {0, 100, 250, 500, 800}
+		for index, range in pairs(Ranges) do
+			local Penetration, Velocity = Ammo:GetRangedPenetration(BulletData, range)
+
+			-- Chemical rounds require different functions for penetration.
+			if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+				Penetration = Ammo:GetPenetration(BulletData, BulletData.Standoff)
+			end
+
+			PenTable.SetCellValue(1, 1 + index, math.floor(range) .. "m")
+			PenTable.SetCellValue(2, 1 + index, math.Round(Velocity) .. "m/s")
+			PenTable.SetCellValue(3, 1 + index, math.Round(Penetration) .. "mm")
+			PenTable.SetCellValue(4, 1 + index, math.Round(Penetration / 1.1547) .. "mm") --The magic number here is LOS armor divisor at 30 deg.
+			PenTable.SetCellValue(5, 1 + index, math.Round(Penetration / 2) .. "mm") --The magic number here is LOS armor divisor at 60 deg.
+		end
+	end)
+
+	Base:AddLabel("#acf.menu.ammo.pen_table_nominal")
+	Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
+end
+
 local function AddGraph(Base, ToolData)
 	if Ammo.PreCreateAmmoGraph then
 		local Result = Ammo:PreCreateAmmoGraph(Base, ToolData, BulletData)
@@ -422,6 +462,7 @@ function ACF.UpdateAmmoMenu(Menu)
 	AddPreview(Base, ToolData)
 	AddControls(Base, ToolData)
 	AddInformation(Base, ToolData)
+	AddPenetrationTable(Base, ToolData)
 	AddGraph(Base, ToolData)
 
 	Menu:EndTemporal(Base)
