@@ -1086,7 +1086,7 @@ function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 	Width = math.max(Width, 1)
 	Height = math.max(Height, 1)
 	BorderWidth = BorderWidth or 2
-	BorderColor = BorderColor or NamedColor("Label.TextColor")
+	BorderColor = BorderColor or NamedColor("Slider.TextColor")
 
 	local Base = self:AddPanel("Panel")
 	Base:DockMargin(0, 0, 0, 5)
@@ -1116,9 +1116,9 @@ function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 		end
 	end
 
-	local FrameColor = NamedColor("Slider.TextColor") --TablePanel.TableIndex[1][1]:GetTextStyleColor()
+	-- Border of the table with dark mode support
 	function Base:PaintOver(Width, Height)
-		surface.SetDrawColor(FrameColor)
+		surface.SetDrawColor(BorderColor)
 		surface.DrawOutlinedRect(0, 0, Width, Height, BorderWidth)
 	end
 
