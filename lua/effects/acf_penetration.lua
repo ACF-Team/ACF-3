@@ -5,7 +5,6 @@ local GetDecal   = ACF.GetPenetrationDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
 local Effects    = ACF.Utilities.Effects
-local Sound      = "acf_base/fx/penetration%s.mp3"
 local White      = Color(255, 255, 255)
 
 function EFFECT:Init(Data)
@@ -17,8 +16,6 @@ function EFFECT:Init(Data)
 	local Index    = Data:GetDamageType()
 	local Emitter  = ParticleEmitter(Origin)
 	local Scale    = math.max(Mass * (Velocity * ACF.InchToMeter) * 0.01, 1) ^ 0.3
-	local Level    = math.Clamp(Mass * 200, 65, 500)
-	local Pitch    = math.Clamp(Velocity * 0.01, 25, 255)
 
 	TraceData.start = Origin - Normal
 	TraceData.endpos = Origin + Normal * Velocity
@@ -26,6 +23,10 @@ function EFFECT:Init(Data)
 	local Trace     = TraceLine(TraceData)
 	local HitNormal = Trace.HitNormal
 	local MatType   = Trace.MatType
+
+	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "penetration")
+
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 
 	if MatType == 71 or MatType == 73 or MatType == 77 or MatType == 80 then
 		self:Metal(Emitter, Origin, Scale, HitNormal)
@@ -39,8 +40,6 @@ function EFFECT:Init(Data)
 
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
-
-	Sounds.PlaySound(Trace.HitPos, Sound:format(math.random(1, 6)), Level, Pitch, 1)
 end
 
 function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)

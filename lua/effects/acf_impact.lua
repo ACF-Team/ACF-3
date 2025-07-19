@@ -4,6 +4,7 @@ local Effects    = ACF.Utilities.Effects
 local ValidDecal = ACF.IsValidAmmoDecal
 local GetDecal   = ACF.GetRicochetDecal
 local GetScale   = ACF.GetDecalScale
+local Sounds     = ACF.Utilities.Sounds
 
 function EFFECT:Init(Data)
 	local Caliber = Data:GetRadius() or 0
@@ -37,6 +38,11 @@ function EFFECT:Init(Data)
 
 		util.DecalEx(GetDecal(DecalType), Trace.Entity, Trace.HitPos, Trace.HitNormal, color_white, Scale, Scale)
 	end
+
+	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "impact")
+
+	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
+
 end
 
 function EFFECT:Think()
