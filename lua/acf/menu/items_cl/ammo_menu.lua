@@ -266,9 +266,9 @@ local function AddPenetrationTable(Base, ToolData)
 	PenTable.SetCellsSize(55, 20)
 	PenTable.SetCellValue(1, 1, "Range")
 	PenTable.SetCellValue(2, 1, "Velocity")
-	PenTable.SetCellValue(3, 1, "0 deg")
-	PenTable.SetCellValue(4, 1, "30 deg")
-	PenTable.SetCellValue(5, 1, "60 deg")
+	PenTable.SetCellValue(3, 1, "0 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
+	PenTable.SetCellValue(4, 1, "30 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
+	PenTable.SetCellValue(5, 1, "60 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable:TrackClientData("Projectile", "SetText")
 	PenTable:TrackClientData("Propellant")
 	PenTable:TrackClientData("FillerRatio")
@@ -285,11 +285,11 @@ local function AddPenetrationTable(Base, ToolData)
 				Penetration = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			end
 
-			PenTable.SetCellValue(1, 1 + index, math.floor(range) .. "m")
-			PenTable.SetCellValue(2, 1 + index, math.Round(Velocity) .. "m/s")
-			PenTable.SetCellValue(3, 1 + index, math.Round(Penetration) .. "mm")
-			PenTable.SetCellValue(4, 1 + index, math.Round(Penetration / 1.1547) .. "mm") --The magic number here is LOS armor divisor at 30 deg.
-			PenTable.SetCellValue(5, 1 + index, math.Round(Penetration / 2) .. "mm") --The magic number here is LOS armor divisor at 60 deg.
+			PenTable.SetCellValue(1, 1 + index, math.floor(range) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_m"))
+			PenTable.SetCellValue(2, 1 + index, math.Round(Velocity) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_ms"))
+			PenTable.SetCellValue(3, 1 + index, math.Round(Penetration) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm"))
+			PenTable.SetCellValue(4, 1 + index, math.Round(Penetration / 1.1547) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm")) --The magic number here is LOS armor divisor at 30 deg.
+			PenTable.SetCellValue(5, 1 + index, math.Round(Penetration / 2) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm")) --The magic number here is LOS armor divisor at 60 deg.
 		end
 	end)
 
