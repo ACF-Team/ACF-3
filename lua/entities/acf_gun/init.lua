@@ -588,7 +588,7 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			local function AttemptReload(This, Target, Instant)
-				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
+				if IsValid(This) and IsValid(Target) then
 					This:Load(Instant)
 				end
 			end

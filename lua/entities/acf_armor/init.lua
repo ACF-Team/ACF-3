@@ -40,7 +40,7 @@ do -- Spawning and Updating
 			Data.Width  = math.Clamp(Data.Width, 0.25, 420)
 			Data.Height = math.Clamp(Data.Height, 0.25, 420)
 
-			local MaxPossible = 50000 / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
+			local MaxPossible = ACF.MaximumMass / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
 			local MaxAllowed  = math.min(ACF.MaximumArmor, ACF.GetServerNumber("MaxThickness"))
 
 			Data.Thickness = math.min(Data.Thickness, MaxPossible)

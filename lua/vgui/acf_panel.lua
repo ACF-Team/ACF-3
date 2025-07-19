@@ -1081,4 +1081,71 @@ end
 function PANEL:GenerateExample()
 end
 
+-- Instantiates a table of a given width and height and returns the DIconLayout object.
+function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
+	Width = math.max(Width, 1)
+	Height = math.max(Height, 1)
+	BorderWidth = BorderWidth or 2
+	BorderColor = BorderColor or NamedColor("Slider.TextColor")
+
+	local Base = self:AddPanel("Panel")
+	Base:DockMargin(0, 0, 0, 5)
+
+	local TablePanel = Base:Add("DIconLayout")
+	TablePanel.TableIndex = {}
+	TablePanel.TableWidth = Width
+	TablePanel.TableHeight = Height
+	TablePanel:Dock(LEFT)
+	TablePanel:DockMargin(BorderWidth * 2, BorderWidth * 2, BorderWidth * 2, BorderWidth * 2)
+	TablePanel:Layout()
+
+	-- Make sure the table has valid indices before trying to access them.
+	for _ = 1, Height do
+		table.insert(TablePanel.TableIndex, {})
+	end
+
+	-- Populate the table with empty cells ready for assignment.
+	for h = 1, Height do
+		for w = 1, Width do
+			local ListLabel = TablePanel:Add("DLabel")
+			ListLabel:SetDark(true)
+			ListLabel:SetText("")
+			ListLabel:SetSize(60, 20)
+			ListLabel:DockPadding(BorderWidth, BorderWidth, BorderWidth, BorderWidth)
+			TablePanel.TableIndex[h][w] = ListLabel
+		end
+	end
+
+	-- Border of the table with dark mode support
+	function Base:PaintOver(Width, Height)
+		surface.SetDrawColor(BorderColor)
+		surface.DrawOutlinedRect(0, 0, Width, Height, BorderWidth)
+	end
+
+	-- Set up setters for cell values
+	TablePanel.SetCellValue = function(X, Y, Value, Font, Width, Height)
+		Font = Font or "ACF_Label"
+		TablePanel.TableIndex[Y][X]:SetText(Value)
+		TablePanel.TableIndex[Y][X]:SetFont(Font)
+		if Width and Height then
+			TablePanel.TableIndex[Y][X]:SetSize(Width, Height)
+		end
+		TablePanel:PerformLayout()
+	end
+
+	-- Set the size of all cells in the table to be this.
+	TablePanel.SetCellsSize = function(Width, Height)
+		for y = 1, #TablePanel.TableIndex do
+			for x = 1, #TablePanel.TableIndex[1] do
+				TablePanel.TableIndex[y][x]:SetSize(Width, Height)
+			end
+		end
+		TablePanel:SetMinimumSize(Width * #TablePanel.TableIndex[1], Height * #TablePanel.TableIndex)
+		Base:SetSize(Width * #TablePanel.TableIndex[1] + 2 * BorderWidth, Height * #TablePanel.TableIndex + 2 * BorderWidth)
+		TablePanel:PerformLayout()
+	end
+
+	return TablePanel
+end
+
 derma.DefineControl("ACF_Panel", "", PANEL, "Panel")

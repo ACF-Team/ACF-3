@@ -260,7 +260,5 @@ else
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
-
-		Menu:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end
