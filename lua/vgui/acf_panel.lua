@@ -1100,7 +1100,7 @@ function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 	TablePanel:Layout()
 
 	-- Make sure the table has valid indices before trying to access them.
-	for i = 1, Height do
+	for _ = 1, Height do
 		table.insert(TablePanel.TableIndex, {})
 	end
 
