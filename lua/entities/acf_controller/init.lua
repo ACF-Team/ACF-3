@@ -640,8 +640,8 @@ do
 		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
 
 		local MinSpeed, MaxSpeed = self:GetSpeedLow(), self:GetSpeedTop()
-		local MinBrake, MaxBrake = self:GetBrakeStrengthLow(), self:GetBrakeStrengthTop()
-		local BrakeStrength = self:GetBrakeStrengthLow()
+		local MinBrake, MaxBrake = self:GetBrakeStrength(), self:GetBrakeStrengthTop()
+		local BrakeStrength = MinBrake
 		if MinSpeed ~= MaxSpeed then -- User intends to use speed based braking
 			BrakeStrength = math.Remap(Speed, MinSpeed, MaxSpeed, MinBrake, MaxBrake)
 		end
