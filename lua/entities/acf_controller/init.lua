@@ -645,7 +645,6 @@ do
 		if MinSpeed ~= MaxSpeed then -- User intends to use speed based braking
 			BrakeStrength = math.Remap(Speed, MinSpeed, MaxSpeed, MinBrake, MaxBrake)
 		end
-		print(BrakeStrength)
 
 		if not ShouldAWD then
 			-- Tank steering
