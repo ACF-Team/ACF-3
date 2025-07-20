@@ -52,6 +52,7 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 local WIRE_OUTPUT_TO_IN_ENUM = {}
 for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
 
+-- Values default to zero anyways so only specify nonzero here
 local Defaults = {
 	ZoomSpeed = 10,
 	ZoomMin = 5,
@@ -71,16 +72,9 @@ local Defaults = {
 	HUDScale = 1,
 	HUDColor = Vector(1, 0.5, 0),
 
-	ThrottleIdle = 0,
-	SpeedUnit = 0,
-	FuelUnit = 0,
-
-	BrakeEngagement = 0,
-	BrakeStrength = 100,
+	BrakeStrength = 300,
 
 	ShiftTime = 100,
-	ShiftMinRPM = 0,
-	ShiftMaxRPM = 0
 }
 
 local Clock = Utilities.Clock
@@ -645,8 +639,13 @@ do
 		local Engines = SelfTbl.Engines
 		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
 
-		local BrakeStrength = self:GetBrakeStrength()
-
+		local MinSpeed, MaxSpeed = self:GetSpeedLow(), self:GetSpeedTop()
+		local MinBrake, MaxBrake = self:GetBrakeStrengthLow(), self:GetBrakeStrengthTop()
+		local BrakeStrength = self:GetBrakeStrengthLow()
+		if MinSpeed ~= MaxSpeed then -- User intends to use speed based braking
+			BrakeStrength = math.Remap(Speed, MinSpeed, MaxSpeed, MinBrake, MaxBrake)
+		end
+		print(BrakeStrength)
 
 		if not ShouldAWD then
 			-- Tank steering
