@@ -5,7 +5,6 @@ local GetDecal     = ACF.GetRicochetDecal
 local GetScale     = ACF.GetDecalScale
 local Effects      = ACF.Utilities.Effects
 local Sounds       = ACF.Utilities.Sounds
-local Sound        = "acf_base/fx/ricochet%s.mp3"
 local Colors       = Effects.MaterialColors
 
 function EFFECT:Init(Data)
