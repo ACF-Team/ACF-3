@@ -397,6 +397,7 @@ do
 	end
 
 	function ENT:AnalyzeRacks(Rack)
+		self.Racks[Rack] = true
 		self.Tertiary = Rack
 	end
 
@@ -408,7 +409,9 @@ do
 			if IsValid(Gun) then
 				if not FiringStates[Gun] and Fire then
 					Gun.Firing = true
-					if Gun.CanFire and Gun:CanFire() then Gun:Shoot() end
+					local GunCanFire = Gun.CanFire and Gun:CanFire()
+					local RackCanFire = Gun.CanShoot and Gun:CanShoot()
+					if (GunCanFire or RackCanFire) then Gun:Shoot() end
 				else
 					Gun.Firing = false
 				end
