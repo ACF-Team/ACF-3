@@ -457,7 +457,7 @@ local function AddDiagram(Base, ToolData)
 		local BC = BulletData.Caliber * 10 -- Caliber
 
 		local PL = BulletData.PropLength * 10 -- Propellant length
-		local PC = BulletData.Caliber * 10 -- Propellant caliber
+		local PC = BulletData.Caliber * 10 * ACF.AmmoCaseScale -- Propellant caliber
 
 		local TL = BulletData.Tracer * 10 -- Tracer length
 		local TC = BulletData.Caliber * 10 -- Tracer caliber
@@ -468,18 +468,23 @@ local function AddDiagram(Base, ToolData)
 		local MaxSize = 1000 / Scale:GetValue() -- Maximum size of the diagram
 		local r = 1 / MaxSize * h -- Converts dimension to pixels
 
-		local DimensionText = "Scale: [%sx%s] mm"
+		local DimensionText = "Window Size: [%sx%s] mm"
 		draw.SimpleText(string.format(DimensionText, math.Round(MaxSize * w / h), math.Round(MaxSize)), "DermaDefault", 5, h - 5, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 
 		local cx, cy = w * 0.5, h * 0.5 -- Center x/y
 
-		local TX = cx - CL / 2 * r -- Tracer X position
-		local PX = TX + TL * r -- Propellant X position
-		local BX = PX + PL * r -- Projectile X position
+		local PX = cx - CL / 2 * r -- Tracer X position
+		local TX = PX + PL * r -- Propellant X position
+		local BX = TX + TL * r -- Projectile X position
 
-		surface.DrawOutlinedRect(TX, cy - TC / 2 * r, TL * r, TC * r) -- Tracer Cylinder
-		surface.DrawOutlinedRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder
-		surface.DrawOutlinedRect(BX, cy - BC / 2 * r, BL * r, BC * r) -- Projectile cylinder
+		surface.SetDrawColor(Color(255, 93, 0))
+		surface.DrawRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder
+
+		surface.SetDrawColor(Color(0, 255, 0))
+		surface.DrawRect(TX, cy - TC / 2 * r, TL * r, TC * r) -- Tracer Cylinder
+
+		surface.SetDrawColor(Color(72, 72, 72))
+		surface.DrawRect(BX, cy - BC / 2 * r, BL * r, BC * r) -- Projectile cylinder
 	end
 end
 

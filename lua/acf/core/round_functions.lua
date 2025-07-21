@@ -59,8 +59,8 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	Data.Efficiency = Specs.Efficiency or 1
 
 	GUIData.MaxRoundLength = Length
-	GUIData.MinPropLength  = 0.01
-	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
+	GUIData.MinPropLength  = 0
+	GUIData.MinProjLength  = math.Round(Data.Caliber * 0, 2)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
 
