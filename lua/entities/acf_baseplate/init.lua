@@ -71,7 +71,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 			local Contraption = Ent:GetContraption()
 			if Contraption then
 				local Base = Contraption.Base
-				if Base == Entity and IsValid(Pod) and Pod:GetDriver() ~= Ply then
+				if Base == Entity and IsValid(Pod) and Pod:GetDriver() ~= Ply and not Entity:ACF_GetUserVar("DisableAltE") then
 					Ply:EnterVehicle(Pod)
 				end
 			end
@@ -82,7 +82,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 	Entity:CallOnRemove("ACF_RemoveVehiclePod", function(Ent)
 		hook.Remove("PlayerEnteredVehicle", "ACFBaseplateSeatEnter" .. Entity:EntIndex())
 		hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. Entity:EntIndex())
-		hook.Remove( "PlayerUse", "ACFBaseplateSeatEnterExternal" .. Entity:EntIndex())
+		hook.Remove("PlayerUse", "ACFBaseplateSeatEnterExternal" .. Entity:EntIndex())
 
 		local Owner = Entity:CPPIGetOwner()
 		if IsValid(Owner) then Owner:GodDisable() end
@@ -199,7 +199,8 @@ end
 local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
-	return Text:format(self.BaseplateClass.Name, self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100)
+	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
+	return Text:format(self.BaseplateClass.Name, self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100) .. AltEDisabled
 end
 
 function ENT:Think()
