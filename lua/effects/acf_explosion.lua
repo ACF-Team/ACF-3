@@ -54,10 +54,10 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Core(Origin, Radius)
-	local Pitch  = math.Clamp(123 - Radius * 3, 60, 120)
 
-	Sounds.PlaySound(Origin, "ambient/explosions/explode_9.wav", 105, Pitch, 1)
-	Sounds.PlaySound(Origin, "ambient/levels/streetwar/city_battle19.wav", 105, Pitch, 1)
+	local SoundData = Sounds.GetExplosionSoundPath(Radius)
+
+	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0, 4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
 end
 
 function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mult)
