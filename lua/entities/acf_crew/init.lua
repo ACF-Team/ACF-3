@@ -107,7 +107,7 @@ local function iterScan(crew, reps)
 	local filter = function(x)
 		local Owner = x:CPPIGetOwner()
 		if not IsValid(Owner) then return false end
-		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer())
+		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()])
 	end
 
 	-- Update reps hull traces

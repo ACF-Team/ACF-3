@@ -220,7 +220,9 @@ do -- ACF global vars
 		npc_dog = true,
 		phys_bone_follower = true,
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
-		starfall_prop = true
+		gmod_wire_expression2 = true,
+		starfall_processor = true,
+		sent_prop2mesh = true,
 	}
 
 	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search

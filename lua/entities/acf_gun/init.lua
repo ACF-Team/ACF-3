@@ -73,7 +73,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
 		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
@@ -104,7 +104,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
