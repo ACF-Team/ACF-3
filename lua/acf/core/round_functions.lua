@@ -60,7 +60,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0
-	GUIData.MinProjLength  = math.Round(Data.Caliber * 0, 2)
+	GUIData.MinProjLength  = math.Round(Data.Caliber * 2.5, 2)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
 
@@ -101,14 +101,45 @@ end
 -- See: http://www.navweaps.com/index_tech/tech-109.pdf
 -- Speed in m/s, Mass in kg, Caliber in mm
 -- Returns penetration in mm
+-- function ACF.Penetration(Speed, Mass, Caliber)
+-- 	local Constant = 0.0004689 -- The constant is actually called "s"
+
+-- 	Mass    = Mass * 2.20462 -- From kg to lb
+-- 	Speed   = Speed * 3.28084 -- From m/s to ft/s
+-- 	Caliber = Caliber * ACF.MmToInch
+
+-- 	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * ACF.InchToMm
+-- end
+
 function ACF.Penetration(Speed, Mass, Caliber)
-	local Constant = 0.0004689 -- The constant is actually called "s"
+	local Expl = 0
+	local apcbc = true
 
-	Mass    = Mass * 2.20462 -- From kg to lb
-	Speed   = Speed * 3.28084 -- From m/s to ft/s
-	Caliber = Caliber * ACF.MmToInch
+    local kfbr = 1900 -- Ballistic scaling factor (constant)
 
-	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * ACF.InchToMm
+    local tnt = (Expl / Mass) * 100
+
+    local kf_apcbc = (apcbc) and 1 or 0.9
+
+    -- The Knapp factor is based on the TNT/mass ratio.
+    local knap = 0
+    if tnt < 0.65 then
+        knap = 1
+    elseif tnt < 1.6 then
+        knap = 1 + (tnt - 0.65) * (0.93 - 1) / (1.6 - 0.65)
+    elseif tnt < 2 then
+        knap = 0.93 + (tnt - 1.6) * (0.9 - 0.93) / (2 - 1.6)
+    elseif tnt < 3 then
+        knap = 0.9 + (tnt - 2) * (0.85 - 0.9) / (3 - 2)
+    elseif tnt < 4 then
+        knap = 0.85 + (tnt - 3) * (0.75 - 0.85) / (4 - 3)
+    else
+        knap = 0.75
+    end
+
+    local result = ((math.pow(Speed, 1.43) * math.pow(Mass, 0.71)) / (math.pow(kfbr, 1.43) * math.pow(Caliber / 100, 1.07))) * 100 * knap * kf_apcbc
+
+    return result
 end
 
 function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)

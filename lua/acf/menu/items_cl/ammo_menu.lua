@@ -438,7 +438,7 @@ local function AddDiagram(Base, ToolData)
 	Canvas:TrackClientData("SmokeWPRatio")
 
 	Canvas:DefineSetter(function(Panel)
-		PrintTable(BulletData)
+		-- PrintTable(BulletData)
 	end)
 
 	local Scale = Base:AddSlider("Diagram Scale", 0.1, 10, 1)
@@ -462,6 +462,12 @@ local function AddDiagram(Base, ToolData)
 		local TL = BulletData.Tracer * 10 -- Tracer length
 		local TC = BulletData.Caliber * 10 -- Tracer caliber
 
+		local FillerRatio = ToolData.FillerRatio or 0
+		local Volume, Length, Radius = ACF.RoundShellCapacity(BulletData.PropMass, BulletData.ProjArea, BulletData.Caliber, BulletData.ProjLength)
+		-- print(Volume, Length, Radius, Volume * ACF.HEDensity)
+		local FL = Length * 10 -- Filler length
+		local FC = Radius * 10 -- Filler caliber
+
 		local CL = BL + PL + TL -- Cartridge length
 		local CC = BC -- Cartridge caliber
 
@@ -477,7 +483,7 @@ local function AddDiagram(Base, ToolData)
 		local TX = PX + PL * r -- Propellant X position
 		local BX = TX + TL * r -- Projectile X position
 
-		surface.SetDrawColor(Color(255, 93, 0))
+		surface.SetDrawColor(Color(255, 191, 0))
 		surface.DrawRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder
 
 		surface.SetDrawColor(Color(0, 255, 0))
@@ -485,6 +491,9 @@ local function AddDiagram(Base, ToolData)
 
 		surface.SetDrawColor(Color(72, 72, 72))
 		surface.DrawRect(BX, cy - BC / 2 * r, BL * r, BC * r) -- Projectile cylinder
+
+		surface.SetDrawColor(Color(255, 93, 0))
+		surface.DrawRect(BX, cy - FC / 2 * r * FillerRatio, FL * r * FillerRatio, FC * r * FillerRatio) -- Filler cylinder
 	end
 end
 
