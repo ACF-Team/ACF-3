@@ -280,6 +280,20 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end)
 
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWGunIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = true
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWGunUnIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = nil
+		end
+	end)
+
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
 		local ClassSounds = Class.Sounds

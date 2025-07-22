@@ -46,7 +46,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Int", "SpeedLow", { KeyName = "speedlow", Edit = { type = "Int", order = 74, category = "Brake Settings", min = 0.001, max = 1000 } } )
 	self:NetworkVar( "Int", "SpeedTop", { KeyName = "speedtop", Edit = { type = "Int", order = 75, category = "Brake Settings", min = 0.001, max = 1000 } } )
 
-	self:NetworkVar( "Int", "ShiftTime", { KeyName = "shifttime", Edit = { type = "Int", order = 80, category = "Shifting Settings", min = 100, max = 3000 } } )
+	self:NetworkVar( "Float", "ShiftTime", { KeyName = "shifttime", Edit = { type = "Int", order = 80, category = "Shifting Settings", min = 100, max = 3000 } } )
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 81, category = "Shifting Settings", min = 0, max = 10000 } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 82, category = "Shifting Settings", min = 0, max = 10000 } } )
 end

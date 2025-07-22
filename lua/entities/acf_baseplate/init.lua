@@ -37,7 +37,14 @@ do -- Random timer crew stuff
 		local Sum, Count = Sum1 + Sum2, Count1 + Count2
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
+		if self.BaseplateClass.Name == "Recreational" then
+			self.FuelCrewMod = 1 -- Recreational baseplates have no fuel consumption
+		end
 		return self.FuelCrewMod
+	end
+
+	function ENT:EnforceLooped()
+		if self.BaseplateClass.EnforceLooped then self.BaseplateClass.EnforceLooped(self) end
 	end
 end
 
@@ -149,6 +156,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 	ACF.ActiveBaseplatesTable[self] = true
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
 end
