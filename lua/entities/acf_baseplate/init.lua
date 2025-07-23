@@ -193,7 +193,7 @@ do
 	end)
 end
 
-function ENT:CFW_OnParentedTo(_, NewEntity)
+function ENT:CFW_PreParentedTo(_, NewEntity)
 	if IsValid(NewEntity) then
 		local Owner = self:CPPIGetOwner()
 		if IsValid(Owner) then
