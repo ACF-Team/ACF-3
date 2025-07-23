@@ -429,7 +429,7 @@ do
 		end
 	end
 
-	function ENT:ProcessGuns(SelfTbl, Driver)
+	function ENT:ProcessGuns(SelfTbl)
 		if SelfTbl:GetDisableFiring() then return end
 
 		local Fire1, Fire2, Fire3, Fire4 = GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK), GetKeyState(SelfTbl, IN_SPEED)
@@ -452,7 +452,7 @@ do
 	end
 
 	-- Aim turrets
-	function ENT:ProcessTurrets(SelfTbl, _, HitPos)
+	function ENT:ProcessTurrets(SelfTbl, HitPos)
 		local Turrets = SelfTbl.Turrets
 
 		if SelfTbl.TurretLocked then return end
@@ -623,7 +623,7 @@ do
 	end
 
 	--- Handles driving, gearing, clutches, latches and brakes
-	function ENT:ProcessDrivetrain(SelfTbl, Driver)
+	function ENT:ProcessDrivetrain(SelfTbl)
 		-- Log speed even if drivetrain is invalid
 		-- TODO: should this be map or player scale?
 		local Unit = self:GetSpeedUnit()
@@ -777,12 +777,13 @@ end
 
 local function OnKeyChanged(Controller, Key, Down)
 	local Output = IN_ENUM_TO_WIRE_OUTPUT[Key]
+	local SelfTbl = Controller:GetTable()
 	if Output ~= nil then
-		RecacheBindOutput(Controller, Controller:GetTable(), Output, Down and 1 or 0)
-		RecacheBindState(Controller, Controller:GetTable(), Key, Down)
+		RecacheBindOutput(Controller, SelfTbl, Output, Down and 1 or 0)
+		RecacheBindState(Controller, SelfTbl, Key, Down)
 	end
 
-	Controller:ToggleTurretLocks(Controller:GetTable(), Key, Down)
+	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
 end
 
 local function OnLinkedSeat(Controller, Target)
@@ -935,13 +936,13 @@ do
 		local _, _, HitPos = self:ProcessCameras(SelfTbl)
 
 		-- Aim turrets
-		if iters % 4 == 0 then self:ProcessTurrets(SelfTbl, Driver, HitPos) end
+		if iters % 4 == 0 then self:ProcessTurrets(SelfTbl, HitPos) end
 
 		-- Fire guns
-		if iters % 4 == 0 then self:ProcessGuns(SelfTbl, Driver) end
+		if iters % 4 == 0 then self:ProcessGuns(SelfTbl) end
 
 		-- Process gearboxes
-		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl, Driver) end
+		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl) end
 
 		local Interval = math.Round(self:GetShiftTime() * 66 / 1000)
 		if iters % Interval == 0 then self:ProcessDrivetrainLowFreq(SelfTbl) end
