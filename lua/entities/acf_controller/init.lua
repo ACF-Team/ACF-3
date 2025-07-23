@@ -272,7 +272,7 @@ do
 		local CamMode = net.ReadUInt(2)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
-		if Entity:CPPIGetOwner() ~= ply then return end
+		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
 		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
@@ -284,7 +284,7 @@ do
 		local CamAng = net.ReadAngle()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
-		if Entity:CPPIGetOwner() ~= ply then return end
+		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
 	end)
