@@ -78,12 +78,20 @@ local Defaults = {
 }
 
 local Clock = Utilities.Clock
-local DriverKeyDown = FindMetaTable("Player").KeyDown
 
 --- Sets a wire output if the cached value has changed
 local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
 	if SelfTbl.Outputs[Output].Value == Value then return end
 	WireLib.TriggerOutput(Entity, Output, Value)
+end
+
+local function RecacheBindState(Entity, SelfTbl, Key, Value)
+	if SelfTbl.KeyStates[Key] == Value then return end
+	SelfTbl.KeyStates[Key] = Value
+end
+
+local function GetKeyState(SelfTbl, Key)
+	return SelfTbl.KeyStates[Key] or false
 end
 
 --- Sets a networked variable if the cached value has changed
@@ -199,6 +207,8 @@ do
 		Entity.CamAng = Angle(0, 0, 0)		-- Camera angle (from client)
 		Entity.CamOffset = Vector() 		-- Camera offset (from client)
 		Entity.CamOrbit = 0					-- Camera orbit (from client)
+
+		Entity.KeyStates = {} 				-- Key states for the driver
 
 		Entity.Speed = 0
 
@@ -422,7 +432,7 @@ do
 	function ENT:ProcessGuns(SelfTbl, Driver)
 		if SelfTbl:GetDisableFiring() then return end
 
-		local Fire1, Fire2, Fire3, Fire4 = DriverKeyDown(Driver, IN_ATTACK), DriverKeyDown(Driver, IN_ATTACK2), DriverKeyDown(Driver, IN_WALK), DriverKeyDown(Driver, IN_SPEED)
+		local Fire1, Fire2, Fire3, Fire4 = GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK), GetKeyState(SelfTbl, IN_SPEED)
 
 		HandleFire(Fire1, SelfTbl.GunsPrimary)
 		HandleFire(Fire2, SelfTbl.GunsSecondary)
@@ -624,8 +634,8 @@ do
 
 		if not IsValid(SelfTbl.Gearbox) then return end
 
-		local W, A, S, D = DriverKeyDown(Driver, IN_FORWARD), DriverKeyDown(Driver, IN_MOVELEFT), DriverKeyDown(Driver, IN_BACK), DriverKeyDown(Driver, IN_MOVERIGHT)
-		local IsBraking = DriverKeyDown(Driver, IN_JUMP)
+		local W, A, S, D = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_MOVELEFT), GetKeyState(SelfTbl, IN_BACK), GetKeyState(SelfTbl, IN_MOVERIGHT)
+		local IsBraking = GetKeyState(SelfTbl, IN_JUMP)
 
 		if self:GetFlipAD() then A, D = D, A end
 
@@ -690,7 +700,7 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
-		local W, S = DriverKeyDown(self.Driver, IN_FORWARD), DriverKeyDown(self.Driver, IN_BACK)
+		local W, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
 
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0
@@ -768,7 +778,8 @@ end
 local function OnKeyChanged(Controller, Key, Down)
 	local Output = IN_ENUM_TO_WIRE_OUTPUT[Key]
 	if Output ~= nil then
-		RecacheBindOutput(Controller, Controller, Output, Down and 1 or 0)
+		RecacheBindOutput(Controller, Controller:GetTable(), Output, Down and 1 or 0)
+		RecacheBindState(Controller, Controller:GetTable(), Key, Down)
 	end
 
 	Controller:ToggleTurretLocks(Controller:GetTable(), Key, Down)
