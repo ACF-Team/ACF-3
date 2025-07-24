@@ -430,7 +430,7 @@ do
 		end
 	end
 
-	function MakeCrew(Player, Pos, Angle, Data)
+	function ACF.MakeCrew(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
@@ -512,11 +512,12 @@ do
 		CheckLegal(Entity)
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
+
 		return Entity
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
