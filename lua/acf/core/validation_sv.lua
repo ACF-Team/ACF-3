@@ -9,6 +9,15 @@ local Baddies	   = ACF.GlobalFilter
 local MinimumArmor = ACF.MinimumArmor
 local MaximumArmor = ACF.MaxThickness
 
+-- This particular message needs a delay in order to avoid erroneous shaming
+local function ShameNotSolid(Entity)
+	TimerSimple(1.1, function()
+		if not IsValid(Entity) then return end
+
+		ACF.Shame(Entity, "not being solid.")
+	end)
+end
+
 --[[ ACF Legality Check
 	ALL SENTS MUST HAVE:
 	ENT.ACF.PhysObj defined when spawned
@@ -38,10 +47,10 @@ function ACF.IsLegal(Entity)
 			return false, "Invalid Physics", "Custom physics objects cannot be applied to ACF entities."
 		end
 	end
-	if not Entity:IsSolid() then ACF.Shame(Entity, "not being solid.") return false, "Not Solid", "The entity is invisible to projectiles." end
+	if not Entity:IsSolid() then ShameNotSolid(Entity) return false, "Not Solid", "The entity is invisible to projectiles." end
 	if Entity.ClipData and next(Entity.ClipData) then ACF.Shame(Entity, "having visclips.") return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
-	if Entity.IsACFWeapon and not ACF.GunsCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
-	if Entity.IsRack and not ACF.RacksCanFire then return false, "Cannot fire", "Firing disabled by the servers ACF settings." end
+	if not ACF.GunsCanFire and Entity.IsACFWeapon then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
+	if not ACF.RacksCanFire and Entity.IsRack then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
 
 	local Legal, Reason, Message, Timeout
 	if Entity.ACF_IsLegal then
