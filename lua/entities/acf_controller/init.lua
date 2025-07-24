@@ -85,7 +85,7 @@ local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
 	WireLib.TriggerOutput(Entity, Output, Value)
 end
 
-local function RecacheBindState(Entity, SelfTbl, Key, Value)
+local function RecacheBindState(SelfTbl, Key, Value)
 	if SelfTbl.KeyStates[Key] == Value then return end
 	SelfTbl.KeyStates[Key] = Value
 end
@@ -780,7 +780,7 @@ local function OnKeyChanged(Controller, Key, Down)
 	local SelfTbl = Controller:GetTable()
 	if Output ~= nil then
 		RecacheBindOutput(Controller, SelfTbl, Output, Down and 1 or 0)
-		RecacheBindState(Controller, SelfTbl, Key, Down)
+		RecacheBindState(SelfTbl, Key, Down)
 	end
 
 	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
