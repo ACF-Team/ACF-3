@@ -173,6 +173,7 @@ do
 		Entity.Guns = {}					-- All guns
 		Entity.Racks = {}					-- All racks
 		Entity.Baseplate = nil				-- The baseplate of the vehicle
+		Entity.SteerPlates = {}				-- Steering plates, if any
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -689,7 +690,7 @@ do
 				return
 			end
 
-			SetLatches(SelfTbl, false)
+			SetAllBrakes(SelfTbl, 0) SetAllClutches(SelfTbl, CLUTCH_FLOW) SetLatches(SelfTbl, false) -- Revert braking if not braking
 			local TransferGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
 			SetAllTransfers(SelfTbl, TransferGear)
 		end
@@ -723,6 +724,12 @@ do
 		if Gear ~= SelfTbl.Gearbox.Gear then
 			SelfTbl.Gearbox:TriggerInput("Gear", Gear)
 		end
+	end
+
+	--- Handles steer plates
+	function ENT:ProcessSteerPlates(SelfTbl)
+		if not IsValid(SelfTbl.Seat) then return end
+
 	end
 end
 
@@ -890,6 +897,13 @@ local LinkConfigs = {
 			Controller:AnalyzeRacks(Target)
 		end
 	},
+	prop_physics = {
+		Field = "SteerPlates",
+		Single = false,
+		OnLinked = function(Controller, Target)
+			print(Controller, Target)
+		end
+	}
 }
 
 -- Register links to the controller with various classes
@@ -957,6 +971,8 @@ do
 
 		local Interval = math.Round(self:GetShiftTime() * 66 / 1000)
 		if iters % Interval == 0 then self:ProcessDrivetrainLowFreq(SelfTbl) end
+
+		if iters % 2 == 0 then self:ProcessSteerPlates(SelfTbl) end
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
