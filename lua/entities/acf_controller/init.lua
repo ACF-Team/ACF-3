@@ -627,6 +627,8 @@ do
 	function ENT:ProcessDrivetrain(SelfTbl)
 		-- Log speed even if drivetrain is invalid
 		-- TODO: should this be map or player scale?
+		if not IsValid(SelfTbl.Baseplate) then return end
+
 		local Unit = self:GetSpeedUnit()
 		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
 		local Speed = self.Baseplate:GetVelocity():Length() * Conv
@@ -874,20 +876,10 @@ local LinkConfigs = {
 		Field = "Baseplate",
 		Single = true,
 		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
+			if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
 		end,
 		OnUnlinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
-		end
-	},
-	acf_crew = {
-		Field = "Crew",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Link(Target.Pod) end
-		end,
-		OnUnlinked = function(Controller, Target)
-			if IsValid(Target.Pod) then Controller:Unlink(Target.Pod) end
+			if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
 		end
 	},
 	acf_rack = {
@@ -915,7 +907,6 @@ for Class, Data in pairs(LinkConfigs) do
 
 	-- Register the link/unlink functions for each class
 	ACF.RegisterClassLink("acf_controller", Class, function(Controller, Target)
-		if (Single and Controller[Field]) or (not Single and Controller[Field][Target]) then return false, "Controllers can only link to one of this entity type" end
 		if Controller:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "The controller is too far from this entity." end
 
 		if Single then Controller[Field] = Target
