@@ -738,8 +738,17 @@ end
 
 -- Handle a player entering or exiting the vehicle
 local function OnActiveChanged(Controller, Ply, Active)
-	RecacheBindOutput(Controller, Controller, "Driver", Ply)
-	RecacheBindOutput(Controller, Controller, "Active", Active and 1 or 0)
+	local SelfTbl = Controller:GetTable()
+
+	-- Reset all key states and outputs when getting in or out of the vehicle
+	Controller.KeyStates = {}
+	for Key, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
+		RecacheBindOutput(Controller, SelfTbl, Output, 0)
+		RecacheBindState(SelfTbl, Key, false)
+	end
+
+	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
+	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
@@ -924,13 +933,15 @@ end
 -- Entity methods
 do
 	-- Main logic loop
-	local iters = 0
 	function ENT:Think()
 		local SelfTbl = self:GetTable()
 		local Driver = SelfTbl.Driver
 		if not IsValid(Driver) then return end
 
 		if not self.Active then return end
+
+		SelfTbl.iters = SelfTbl.iters or 0
+		local iters = SelfTbl.iters
 
 		-- Process cameras
 		local _, _, HitPos = self:ProcessCameras(SelfTbl)
@@ -950,7 +961,7 @@ do
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
 
-		iters = iters + 1
+		SelfTbl.iters = iters + 1
 		self:UpdateOverlay()
 		self:NextThink(Clock.CurTime)
 		return true

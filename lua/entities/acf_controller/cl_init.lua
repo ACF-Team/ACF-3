@@ -217,7 +217,7 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	local ZoomFrac = (FOV - MinFOV) / (MaxFOV - MinFOV)
 	local Slew = MinSlew + ZoomFrac * (MaxSlew - MinSlew)
 
-	local TrueSlew = Slew * FrameTime()
+	local TrueSlew = Slew * 1 / 60 -- Previously used frametime, to keep average sensitivity the same, use 1/60 for 60 FPS
 	CamAng = Angle(math.Clamp(CamAng.pitch + y * TrueSlew, -90, 90), CamAng.yaw - x * TrueSlew, 0)
 
 	net.Start("ACF_Controller_CamData", true)
