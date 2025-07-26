@@ -73,7 +73,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
 		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
@@ -104,7 +104,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
@@ -277,6 +277,20 @@ do -- Spawn and Update functions --------------------------------
 			for Gun in pairs(Family.Guns) do
 				if IsValid(Gun) then Gun:DetermineParentState() end
 			end
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWGunIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = true
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWGunUnIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = nil
 		end
 	end)
 
@@ -588,7 +602,7 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			local function AttemptReload(This, Target, Instant)
-				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
+				if IsValid(This) and IsValid(Target) then
 					This:Load(Instant)
 				end
 			end

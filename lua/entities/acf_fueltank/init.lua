@@ -294,6 +294,20 @@ do -- Spawn and Update functions
 
 		return true, "Fuel tank updated successfully!" .. Feedback
 	end
+
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWFuelIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_fuel" then
+			contraption.Fuels = contraption.Fuels or {}
+			contraption.Fuels[ent] = true
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWFuelUnIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_fuel" then
+			contraption.Fuels = contraption.Fuels or {}
+			contraption.Fuels[ent] = nil
+		end
+	end)
 end
 
 --===============================================================================================--

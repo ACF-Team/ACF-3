@@ -57,6 +57,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 -- Pool network strings
 util.AddNetworkString("ACF_Crew_Links")
 util.AddNetworkString("ACF_Crew_Space")
+util.AddNetworkString("ACF_Crew_Spawn")
 
 --- Helper function that generates scanning information for the crew member
 local function GenerateScanSetup()
@@ -106,7 +107,7 @@ local function iterScan(crew, reps)
 	local filter = function(x)
 		local Owner = x:CPPIGetOwner()
 		if not IsValid(Owner) then return false end
-		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer())
+		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()])
 	end
 
 	-- Update reps hull traces
@@ -138,7 +139,7 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
-function ENT:CFW_OnParentedTo(OldParent, _)
+function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
 		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
@@ -357,6 +358,7 @@ do
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
+		if Data.UseAnimation == nil then Data.UseAnimation = false end
 
 		if not isnumber(Data.CrewPriority) then -- Ammo priority is used to deliniate different stages
 			Data.CrewPriority = 1
@@ -367,6 +369,8 @@ do
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
+		VerifyData(Data)
+
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = CrewModel.Model
@@ -388,11 +392,20 @@ do
 		Entity.CrewModelID = Data.CrewModelID
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
+		Entity.UseAnimation = Data.UseAnimation or false
 		Entity.CrewPriority = Data.CrewPriority
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = CrewType.ID
 
+		-- Various efficiency modifiers
+		Entity.ModelEff = 1
+		Entity.LeanEff = 1
+		Entity.SpaceEff = 1
+		Entity.MoveEff = 1
+		Entity.HealthEff = 1
+		Entity.TotalEff = 1
+		Entity.Focus = 1
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
@@ -411,6 +424,18 @@ do
 		Entity:UpdateOverlay(true)
 
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
+
+		-- TODO: Figure out how to "ClientInitialized" this
+		if Entity.UseAnimation == true then
+			timer.Simple(0, function()
+				if not IsValid(Entity) then return end
+
+				net.Start("ACF_Crew_Spawn")
+				net.WriteEntity(Entity)
+				net.WriteString(Entity.CrewModelID)
+				net.Broadcast()
+			end)
+		end
 	end
 
 	function ACF.MakeCrew(Player, Pos, Angle, Data)
@@ -449,15 +474,6 @@ do
 		-- Storing links
 		Entity.Targets = {} -- Targets linked to this crew (LUT)
 		Entity.TargetsByType = {} -- Targets linked to this crew by type (LUT)
-
-		-- Various efficiency modifiers
-		Entity.ModelEff = 1
-		Entity.LeanEff = 1
-		Entity.SpaceEff = 1
-		Entity.MoveEff = 1
-		Entity.HealthEff = 1
-		Entity.TotalEff = 1
-		Entity.Focus = 1
 
 		-- Various state variables
 		Entity.ShouldScan = false
@@ -500,7 +516,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")

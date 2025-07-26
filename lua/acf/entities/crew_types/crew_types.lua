@@ -256,8 +256,15 @@ CrewTypes.Register("Commander", {
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Contraption = Crew:GetContraption() or {}
-		local CrewCount = (Contraption.Crews and table.Count(Contraption.Crews) or 0) - 1 -- Excluding the commander
-		local Count = table.Count(Crew.Targets) + (CrewCount * 1 / ACF.CommanderCapacity) -- 1/3rd focus to each crew, 1 to each other target
+
+		local AliveCount = -1 -- Excluding the commander
+		for Crew, _ in pairs(Contraption.Crews or table_empty) do
+			if IsValid(Crew) and Crew.IsAlive then
+				AliveCount = AliveCount + 1
+			end
+		end
+
+		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end
 })

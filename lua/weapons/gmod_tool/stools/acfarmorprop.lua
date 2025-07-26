@@ -55,6 +55,8 @@ local function UpdateArmor(_, Entity, Data, BecauseOfDupe)
 	if not Data then return end
 	if not ACF.Check(Entity, BecauseOfDupe) then return end
 
+	if Entity.ACF_PreventArmoring then return end -- Disable armoring ACF entities (they should handle it themselves)
+
 	local PhysObj   = Entity.ACF.PhysObj
 	local Area      = Entity.ACF.Area
 	local Ductility = math.Clamp(Data.Ductility or 0, ACF.MinDuctility, ACF.MaxDuctility)
@@ -91,7 +93,7 @@ end
 if CLIENT then
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
 	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", ACF.MinDuctility, ACF.MaxDuctility)
-	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true, "", MinimumArmor, MaximumArmor)
+	local ArmorProp_Thickness = CreateClientConVar("acfarmorprop_thickness", 1, false, true, "", MinimumArmor, ACF.MaximumArmor)
 
 	local Sphere = CreateClientConVar("acfarmorprop_sphere_search", 0, false, true, "", 0, 1)
 	local Radius = CreateClientConVar("acfarmorprop_sphere_radius", 0, false, true, "", 0, 10000)
@@ -112,11 +114,13 @@ if CLIENT then
 		local Health = math.Round(Weapon:GetNWFloat("MaxHP"), 2)
 
 		local Area = ArmorProp_Area:GetFloat()
-		local Ductility = ArmorProp_Ductility:GetFloat()
-		local Thickness = ArmorProp_Thickness:GetFloat()
+		local Ductility = math.Clamp(ArmorProp_Ductility:GetFloat(), ACF.MinDuctility, ACF.MaxDuctility)
+		local Thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), MinimumArmor, MaximumArmor)
 
 		local NewMass, NewArmor, NewHealth = CalcArmor(Area, Ductility * 0.01, Thickness)
 		local BubbleText = language.GetPhrase("tool.acfarmorprop.bubble_text")
+		Mass = math.Clamp(Mass, ACF.MinimumMass, ACF.MaximumMass)
+		NewMass = math.Clamp(NewMass, ACF.MinimumMass, ACF.MaximumMass)
 		local Text = BubbleText:format(Mass, Armor, Health, math.Round(NewMass, 2), math.Round(NewArmor, 2), math.Round(NewHealth, 2))
 
 		AddWorldTip(nil, Text, nil, Ent:GetPos())
@@ -152,7 +156,6 @@ if CLIENT then
 		local Weapon = self.Weapon
 		local Health = math.Round(Weapon:GetNWFloat("HP", 0))
 		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0))
-
 
 		if Ent.GetArmor then -- Is procedural armor
 			local Material = Ent.ArmorType
@@ -235,8 +238,8 @@ if CLIENT then
 		local thickness = math.Clamp(ArmorProp_Thickness:GetFloat(), MinimumArmor, MaximumArmor)
 		local mass = CalcArmor(area, ductility, thickness)
 
-		if mass > 50000 or mass < 0.1 then
-			mass = math.Clamp(mass, 0.1, 50000)
+		if mass > ACF.MaximumMass or mass < ACF.MinimumMass then
+			mass = math.Clamp(mass, ACF.MinimumMass, ACF.MaximumMass)
 
 			thickness = ACF.CalcArmor(area, ductility, mass)
 			ArmorProp_Thickness:SetFloat(math.Clamp(thickness, MinimumArmor, MaximumArmor))
@@ -254,8 +257,8 @@ if CLIENT then
 		local ductility = math.Clamp(ArmorProp_Ductility:GetFloat() * 0.01, ACF.MinDuctility / 100, ACF.MaxDuctility / 100)
 		local mass = CalcArmor(area, ductility, thickness)
 
-		if mass > 50000 or mass < 0.1 then
-			mass = math.Clamp(mass, 0.1, 50000)
+		if mass > ACF.MaximumMass or mass < ACF.MinimumMass then
+			mass = math.Clamp(mass, ACF.MinimumMass, ACF.MaximumMass)
 
 			ductility = -(39 * area * thickness - mass * 50000) / (39 * area * thickness)
 			ArmorProp_Ductility:SetFloat(math.Clamp(ductility * 100, ACF.MinDuctility, ACF.MaxDuctility))
@@ -373,8 +376,8 @@ function TOOL:LeftClick(Trace)
 	if CLIENT then return true end
 	if not ACF.Check(Ent) then return false end
 
-	local Ductility = self:GetClientNumber("ductility")
-	local Thickness = self:GetClientNumber("thickness")
+	local Ductility = math.Clamp(self:GetClientNumber("ductility"), ACF.MinDuctility, ACF.MaxDuctility)
+	local Thickness = math.Clamp(self:GetClientNumber("thickness"), MinimumArmor, MaximumArmor)
 
 	duplicator.ClearEntityModifier(Ent, "mass")
 

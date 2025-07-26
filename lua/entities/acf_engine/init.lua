@@ -670,7 +670,7 @@ function ENT:UpdateEngineLegality()
 	self.EngineInvalid, self.EngineInvalidReason, self.EngineInvalidMessage = self:CheckEngineLegality()
 end
 
-function ENT:CFW_OnParentedTo(_, NewParent)
+function ENT:CFW_PreParentedTo(_, NewParent)
 	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
 	self.ACF_EngineParentValid = ParentValid
 end

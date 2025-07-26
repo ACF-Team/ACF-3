@@ -21,6 +21,12 @@ CrewModels.Register("Standing", {
     Preview = {
         FOV = 100,
     },
+    Animation = {
+        Model = "models/player/dod_german.mdl",
+        Sequence = "walk_all",
+        Position = Vector(0, -6, 1),
+        Angle = Angle(0, 90, 0),
+    },
 })
 
 CrewModels.Register("Sitting", {
@@ -38,5 +44,11 @@ CrewModels.Register("Sitting", {
     },
     Preview = {
         FOV = 100,
+    },
+    Animation = {
+        Model = "models/player/dod_german.mdl",
+        Sequence = "sit_rollercoaster",
+        Position = Vector(0, -20, 20),
+        Angle = Angle(0, 90, 0),
     },
 })

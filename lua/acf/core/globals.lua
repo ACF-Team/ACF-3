@@ -142,6 +142,8 @@ do -- ACF global vars
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
 	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
 	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
+	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
+	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
 	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
 	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
@@ -218,7 +220,9 @@ do -- ACF global vars
 		npc_dog = true,
 		phys_bone_follower = true,
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
-		starfall_prop = true
+		gmod_wire_expression2 = true,
+		starfall_processor = true,
+		sent_prop2mesh = true,
 	}
 
 	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search

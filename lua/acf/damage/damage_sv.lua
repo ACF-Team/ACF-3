@@ -105,8 +105,8 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 		local SourceDamage = DamageInfo()
 		local ForceMult = 25000 -- Arbitrary force multiplier; just change this to whatever feels the best
 
-		SourceDamage:SetAttacker(Attacker)
-		SourceDamage:SetInflictor(Inflictor)
+		SourceDamage:SetAttacker(IsValid(Attacker) and Attacker or game.GetWorld())
+		SourceDamage:SetInflictor(IsValid(Inflictor) and Inflictor or game.GetWorld())
 		SourceDamage:SetDamage(Damage)
 		SourceDamage:SetDamageForce(Direction * ForceMult)
 		SourceDamage:SetDamageType(Explosive and DMG_BLAST or DMG_BULLET)
