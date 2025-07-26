@@ -50,8 +50,9 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 81, category = "Shifting Settings", min = 0, max = 10000 } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 82, category = "Shifting Settings", min = 0, max = 10000 } } )
 
-	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 90, category = "Steering Settings", min = -0.5, max = 0.5} } )
-	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 91, category = "Steering Settings", min = -0.5, max = 0.5} } )
-	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 92, category = "Steering Settings", min = -0.5, max = 0.5} } )
-	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 93, category = "Steering Settings", min = -0.5, max = 0.5} } )
+	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 90, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 91, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 92, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 93, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 94, category = "Steering Settings", min = -45, max = 45} } )
 end

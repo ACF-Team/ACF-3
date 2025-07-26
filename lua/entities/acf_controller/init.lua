@@ -185,6 +185,7 @@ do
 		Entity.Wheels = {}					-- Wheels
 		Entity.Engines = {}					-- Engines
 		Entity.Fuels = {}					-- Fuel tanks
+		Entity.SteerPlatesSorted = {}		-- Steer plates sorted by their position
 
 		Entity.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
 		Entity.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
@@ -210,6 +211,8 @@ do
 		Entity.CamOrbit = 0					-- Camera orbit (from client)
 
 		Entity.KeyStates = {} 				-- Key states for the driver
+
+		Entity.SteerAngles = {} 			-- Steering angles for the wheels
 
 		Entity.Speed = 0
 
@@ -570,6 +573,14 @@ do
 		end
 	end
 
+	--- Steer a plate left or right
+	local function SetSteerPlate(SelfTbl, BasePlate, SteerPlate, TURN_ANGLE, TURN_RATE)
+		local TURN = SelfTbl.SteerAngles[SteerPlate] or 0
+		TURN = TURN + math.Clamp(TURN_ANGLE - TURN, -TURN_RATE, TURN_RATE)
+		SelfTbl.SteerAngles[SteerPlate] = TURN
+		SteerPlate:SetAngles(BasePlate:LocalToWorldAngles(Angle(0, TURN, 0)))
+	end
+
 	--- Intentionally Supported drivetrains:
 	--- Single Transaxial gearbox with dual clutch -> basic ww2 style
 	--- Single Transaxial gearbox with transfers -> basic neutral steer style
@@ -621,6 +632,8 @@ do
 
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
+
+		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
 	end
 
 	--- Handles driving, gearing, clutches, latches and brakes
@@ -695,6 +708,14 @@ do
 			SetAllBrakes(SelfTbl, 0) SetAllClutches(SelfTbl, CLUTCH_FLOW) SetLatches(SelfTbl, false) -- Revert braking if not braking
 			local TransferGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
 			SetAllTransfers(SelfTbl, TransferGear)
+
+			-- Setang steering stuff
+			local TURN_ANGLE = A and BrakeStrength or D and -BrakeStrength or 0
+			local TURN_RATE = self:GetSteerRate() or 0
+			local SteerPercents = {self:GetSteerPercent1(), self:GetSteerPercent2(), self:GetSteerPercent3(), self:GetSteerPercent4()}
+			for k, v in ipairs(SelfTbl.SteerPlatesSorted) do
+				if IsValid(v) then SetSteerPlate(SelfTbl, SelfTbl.Baseplate, v, TURN_ANGLE * SteerPercents[k], TURN_RATE) end
+			end
 		end
 	end
 
@@ -728,10 +749,12 @@ do
 		end
 	end
 
-	--- Handles steer plates
-	function ENT:ProcessSteerPlates(SelfTbl)
-		if not IsValid(SelfTbl.Seat) then return end
-
+	function ENT:AnalyzeSteerPlates(SteerPlate)
+		if not IsValid(SteerPlate) then return end
+		table.insert(self.SteerPlatesSorted, SteerPlate)
+		table.sort(self.SteerPlatesSorted, function(A, B)
+			return A:GetPos().x < B:GetPos().x
+		end)
 	end
 end
 
@@ -893,7 +916,7 @@ local LinkConfigs = {
 		Field = "SteerPlates",
 		Single = false,
 		OnLinked = function(Controller, Target)
-			print(Controller, Target)
+			Controller:AnalyzeSteerPlates(Target)
 		end
 	}
 }
@@ -962,8 +985,6 @@ do
 
 		local Interval = math.Round(self:GetShiftTime() * 66 / 1000)
 		if iters % Interval == 0 then self:ProcessDrivetrainLowFreq(SelfTbl) end
-
-		if iters % 2 == 0 then self:ProcessSteerPlates(SelfTbl) end
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
