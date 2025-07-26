@@ -186,6 +186,7 @@ do
 		Entity.Engines = {}					-- Engines
 		Entity.Fuels = {}					-- Fuel tanks
 		Entity.SteerPlatesSorted = {}		-- Steer plates sorted by their position
+		Entity.SteerPhysicsObjects = {}		-- Steering physics objects
 
 		Entity.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
 		Entity.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
@@ -713,8 +714,14 @@ do
 			local TURN_ANGLE = A and BrakeStrength or D and -BrakeStrength or 0
 			local TURN_RATE = self:GetSteerRate() or 0
 			local SteerPercents = {self:GetSteerPercent1(), self:GetSteerPercent2(), self:GetSteerPercent3(), self:GetSteerPercent4()}
-			for k, v in ipairs(SelfTbl.SteerPlatesSorted) do
-				if IsValid(v) then SetSteerPlate(SelfTbl, SelfTbl.Baseplate, v, TURN_ANGLE * SteerPercents[k], TURN_RATE) end
+			for Index, SteerPlate in ipairs(SelfTbl.SteerPlatesSorted) do
+				if IsValid(SteerPlate) then
+					SetSteerPlate(SelfTbl, SelfTbl.Baseplate, SteerPlate, TURN_ANGLE * SteerPercents[Index], TURN_RATE)
+
+					local PhysicsObject = SelfTbl.SteerPhysicsObjects[SteerPlate] or SteerPlate:GetPhysicsObject()
+					SelfTbl.SteerPhysicsObjects[SteerPlate] = PhysicsObject
+					PhysicsObject:EnableMotion(false)
+				end
 			end
 		end
 	end

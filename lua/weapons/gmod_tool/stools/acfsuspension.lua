@@ -467,6 +467,7 @@ elseif SERVER then -- Serverside-only stuff
 					if PlateIndex == 1 then Axis(Wheel, Plate) -- Non steered wheels
 					else BallSocket(Baseplate, Wheel) HullSocket(Wheel, Plate) end -- Steered wheels
 				else
+					Plate:SetAngles(Angle(0, 90, 0)) -- Set angles to north
 					HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
 					if ArmType == 1 then ArmForwardLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
 					elseif ArmType == 2 then ArmSidewaysLever(Wheel, Baseplate, ArmX, ArmY * Mirror, ArmZ)
