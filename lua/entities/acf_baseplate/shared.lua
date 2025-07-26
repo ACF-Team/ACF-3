@@ -3,8 +3,8 @@ DEFINE_BASECLASS "acf_base_scalable"
 ENT.PrintName     = "ACF Baseplate"
 ENT.WireDebugName = "ACF Baseplate"
 ENT.PluralName    = "ACF Baseplates"
-ENT.IsACFEntity = true
 ENT.IsACFBaseplate = true
+ENT.ACF_PreventArmoring = false
 
 ENT.ACF_UserVars = {
     ["BaseplateType"]  = {Type = "SimpleClass", ClassName = "BaseplateTypes", Default = "GroundVehicle", ClientData = true},

@@ -3,7 +3,6 @@ DEFINE_BASECLASS("acf_base_simple")
 ENT.PrintName     = "ACF Controller"
 ENT.WireDebugName = "ACF Controller"
 ENT.PluralName    = "ACF Controllers"
-ENT.IsACFEntity   = true
 ENT.IsACFController = true
 ENT.ACF_InvisibleToBallistics = true
 

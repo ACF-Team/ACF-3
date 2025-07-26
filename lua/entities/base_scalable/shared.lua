@@ -6,6 +6,7 @@ ENT.Contact        = "Don't"
 ENT.IsScalable     = true
 ENT.ScaleData      = { Type = false, Path = false }
 ENT.IsACFEntity    = true
+ENT.ACF_PreventArmoring = true
 
 function ENT:SetScaleData(Type, Path)
 	local Data = self.ScaleData
