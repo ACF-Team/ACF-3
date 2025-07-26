@@ -398,6 +398,14 @@ do
 		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = CrewType.ID
 
+		-- Various efficiency modifiers
+		Entity.ModelEff = 1
+		Entity.LeanEff = 1
+		Entity.SpaceEff = 1
+		Entity.MoveEff = 1
+		Entity.HealthEff = 1
+		Entity.TotalEff = 1
+		Entity.Focus = 1
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
@@ -466,15 +474,6 @@ do
 		-- Storing links
 		Entity.Targets = {} -- Targets linked to this crew (LUT)
 		Entity.TargetsByType = {} -- Targets linked to this crew by type (LUT)
-
-		-- Various efficiency modifiers
-		Entity.ModelEff = 1
-		Entity.LeanEff = 1
-		Entity.SpaceEff = 1
-		Entity.MoveEff = 1
-		Entity.HealthEff = 1
-		Entity.TotalEff = 1
-		Entity.Focus = 1
 
 		-- Various state variables
 		Entity.ShouldScan = false
