@@ -241,7 +241,7 @@ do	-- Metamethods and other important stuff
 			self:UpdateOverlay(true)
 		end
 
-		function ENT:CFW_AfterParentedTo(_, _)
+		function ENT:CFW_OnParentedTo(_, _)
 			self:ValidatePlacement()
 		end
 

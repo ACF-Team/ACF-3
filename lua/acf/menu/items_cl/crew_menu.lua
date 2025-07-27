@@ -24,12 +24,15 @@ local function CreateMenu(Menu)
 	local CrewPreview	= Base:AddModelPreview(nil, true)
 	local ReplaceOthers	= Base:AddCheckBox("#acf.menu.crew.replace_others")
 	local ReplaceSelf	= Base:AddCheckBox("#acf.menu.crew.replace_self")
+	local UseAnimation	= Base:AddCheckBox("#acf.menu.crew.use_animation")
 
 	ReplaceOthers:SetClientData("ReplaceOthers", "OnChange")
 	ReplaceSelf:SetClientData("ReplaceSelf", "OnChange")
+	UseAnimation:SetClientData("UseAnimation", "OnChange")
 
 	ReplaceOthers:SetChecked(true)
 	ReplaceSelf:SetChecked(true)
+	UseAnimation:SetChecked(false)
 
 	local Priority = Base:AddNumberWang("#acf.menu.crew.priority", ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 	Priority:SetClientData("CrewPriority", "OnValueChanged")

@@ -14,12 +14,14 @@ local InchToMm = ACF.InchToMm
 -- Bunched all of the definitions together due to some loading issue
 
 do	-- Turret drives
+	local Clamp = math.Clamp
+
 	local function ClampAngle(A, Amin, Amax)
 		local p, y, r
 
-		if A.p < Amin.p then p = Amin.p elseif A.p > Amax.p then p = Amax.p else p = A.p end
-		if A.y < Amin.y then y = Amin.y elseif A.y > Amax.y then y = Amax.y else y = A.y end
-		if A.r < Amin.r then r = Amin.r elseif A.r > Amax.r then r = Amax.r else r = A.r end
+		p = Clamp(A[1], Amin[1], Amax[1])
+		y = Clamp(A[2], Amin[2], Amax[2])
+		r = Clamp(A[3], Amin[3], Amax[3])
 
 		return Angle(p, y, r)
 	end
