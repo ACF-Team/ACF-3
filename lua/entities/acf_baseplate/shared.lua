@@ -15,3 +15,5 @@ ENT.ACF_UserVars = {
     ["Seat"]           = {Type = "LinkedEntity", Classes = {prop_vehicle_prisoner_pod = true}},
     ["AlreadyHasSeat"] = {Type = "Boolean", Default = false},
 }
+
+cleanup.Register("acf_baseplate")

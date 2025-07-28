@@ -414,7 +414,7 @@ function Entities.AutoRegister(ENT)
 
 		New:Spawn()
 		Player:AddCount("_" .. Class, New)
-		Player:AddCleanup("_" .. Class, New)
+		Player:AddCleanup(Class, New)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
