@@ -39,7 +39,7 @@ do
 
 	CrewPoses.RegisterItem("sit_camera", "Sitting", {
 		Name = "Camera Sit",
-		Position = Vector(0, -20, 20),
+		Position = Vector(0, -20, 16),
 		Angle = Angle(0, 90, 0),
 	})
 end

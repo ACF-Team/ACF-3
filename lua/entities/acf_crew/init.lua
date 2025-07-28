@@ -522,7 +522,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
