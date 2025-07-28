@@ -140,6 +140,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
 	else
 		ACF.Contraption.SetMass(self, 1000)
+		duplicator.StoreEntityModifier(self, "mass", { Mass = 1000 })
 	end
 
 	WireIO.SetupOutputs(self, Outputs, ClientData)
