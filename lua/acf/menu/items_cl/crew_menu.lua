@@ -1,6 +1,7 @@
 local ACF		= ACF
 local CrewTypes = ACF.Classes.CrewTypes
 local CrewModels = ACF.Classes.CrewModels
+local CrewPoses = ACF.Classes.CrewPoses
 
 local table_empty = {}
 
@@ -33,6 +34,30 @@ local function CreateMenu(Menu)
 	ReplaceOthers:SetChecked(true)
 	ReplaceSelf:SetChecked(true)
 	UseAnimation:SetChecked(false)
+
+	-- Thanks March <3
+	local _, _, PlayerModel = Base:AddTextEntry("Model")
+	PlayerModel:SetClientData("CrewPlayerModel", "OnValueChange")
+	PlayerModel.OnLoseFocus = function(self)
+		DTextEntry.OnLoseFocus(self)
+		self:OnValueChange(self:GetText())
+	end
+	PlayerModel:SetValue("models/player/dod_german.mdl")
+
+	local PoseBase = Base:AddPanel("ACF_Panel")
+	local PoseLabel = PoseBase:AddLabel("Pose")
+	PoseLabel:Dock(LEFT)
+	PoseLabel:DockMargin(5, 5, 0, 5)
+
+	local PlayerPose = PoseBase:AddComboBox()
+	function PlayerPose:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
+
+		self.ListData.Index	= Index
+		self.Selected		= Data
+
+		ACF.SetClientData("CrewPoseID", Data.ID)
+	end
 
 	local Priority = Base:AddNumberWang("#acf.menu.crew.priority", ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 	Priority:SetClientData("CrewPriority", "OnValueChanged")
@@ -120,6 +145,7 @@ local function CreateMenu(Menu)
 		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[CrewJob.Selected.ID] or 1)) end
 
 		ACF.SetClientData("CrewModelID", Data.ID)
+		ACF.LoadSortedList(PlayerPose, CrewPoses.GetItemEntries(Data.ID), "Name")
 	end
 
 	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID", "Icon")

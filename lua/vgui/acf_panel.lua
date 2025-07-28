@@ -155,6 +155,17 @@ function PANEL:AddCheckBox(Text, ConVar)
 	return Panel
 end
 
+function PANEL:AddTextEntry(Text)
+	local Panel = self:AddPanel("ACF_Panel")
+
+	local Label = Panel:AddLabel(Text)
+	local Entry = Panel:AddPanel("DTextEntry") -- Why this works? I don't know, but it does :)
+
+	Label:Dock(LEFT)
+	Label:DockMargin(5, 5, 0, 5)
+	return Panel, Label, Entry
+end
+
 function PANEL:AddTitle(Text)
 	local Panel = self:AddPanel("DLabel")
 	Panel:SetAutoStretchVertical(true)

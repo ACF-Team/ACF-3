@@ -365,7 +365,8 @@ do
 		end
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
-		if Data.ReplacedOnlyLower == nil then Data.ReplacedOnlyLower = false end
+		if Data.CrewPlayerModel == nil or Data.CrewPlayerModel == "" then Data.CrewPlayerModel = "models/player/dod_german.mdl" end
+		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260) -- Don't exceed max window length
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -397,6 +398,9 @@ do
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = CrewType.ID
+
+		Entity.CrewPoseID = Data.CrewPoseID
+		Entity.CrewPlayerModel = Data.CrewPlayerModel
 
 		-- Various efficiency modifiers
 		Entity.ModelEff = 1
@@ -433,6 +437,8 @@ do
 				net.Start("ACF_Crew_Spawn")
 				net.WriteEntity(Entity)
 				net.WriteString(Entity.CrewModelID)
+				net.WriteString(Entity.CrewPoseID)
+				net.WriteString(Entity.CrewPlayerModel)
 				net.Broadcast()
 			end)
 		end
