@@ -76,7 +76,7 @@ local function CreateMenu(Menu)
 	local ExtraNotes = Base:AddLabel()
 
 	local Instructions = Menu:AddCollapsible("#acf.menu.crew.instructions", false, "icon16/user_comment.png")
-	for I = 1, 5 do
+	for I = 1, 4 do
 		Instructions:AddLabel(language.GetPhrase("acf.menu.crew.instructions.desc" .. I))
 	end
 
