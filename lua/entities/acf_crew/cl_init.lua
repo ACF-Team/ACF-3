@@ -31,11 +31,16 @@ net.Receive("ACF_Crew_Spawn", function()
 	local ModelID = net.ReadString()
 	local PoseID = net.ReadString()
 	local PlayerModel = net.ReadString()
+	local PlayerModelBodygroups = net.ReadString()
+	local PlayerModelSkin = net.ReadUInt(6)
 	if not IsValid(Ent) then return end
 
 	Ent.ModelID = ModelID
 	Ent.PoseID = PoseID
 	Ent.PlayerModel = PlayerModel
+	Ent.PlayerModelBodygroups = PlayerModelBodygroups
+	Ent.PlayerModelSkin = PlayerModelSkin
+	print(PlayerModel, PlayerModelBodygroups, PlayerModelSkin)
 	Ent:CreateCrewHolo(ModelID, PoseID)
 end)
 
@@ -47,6 +52,8 @@ function ENT:CreateCrewHolo(ModelID, PoseID)
 	self.CrewHolo:SetPos(self:LocalToWorld(ClassData.Position))
 	self.CrewHolo:SetAngles(self:LocalToWorldAngles(ClassData.Angle))
 	self.CrewHolo:Spawn()
+	self.CrewHolo:SetBodyGroups(self.PlayerModelBodygroups)
+	self.CrewHolo:SetSkin(self.PlayerModelSkin)
 	self.CrewHolo:SetParent(self)
 	self.CrewHolo:ResetSequence(self.CrewHolo:LookupSequence(ClassData.ID))
 	self.CrewHolo:SetCycle(0)

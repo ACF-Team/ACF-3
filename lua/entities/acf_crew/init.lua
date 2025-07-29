@@ -366,7 +366,13 @@ do
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
 		if Data.CrewPlayerModel == nil or Data.CrewPlayerModel == "" then Data.CrewPlayerModel = "models/player/dod_german.mdl" end
-		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260) -- Don't exceed max window length
+		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260)
+
+		if Data.CrewPlayerModelBodygroups == nil then Data.CrewPlayerModelBodygroups = "" end
+		Data.CrewPlayerModelBodygroups = string.sub(Data.CrewPlayerModelBodygroups or "", 1, 63)
+
+		if Data.CrewPlayerModelSkin == nil then Data.CrewPlayerModelSkin = 0 end
+		Data.CrewPlayerModelSkin = math.Clamp(math.Round(Data.CrewPlayerModelSkin), 0, 63)
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -401,6 +407,8 @@ do
 
 		Entity.CrewPoseID = Data.CrewPoseID
 		Entity.CrewPlayerModel = Data.CrewPlayerModel
+		Entity.CrewPlayerModelBodygroups = Data.CrewPlayerModelBodygroups
+		Entity.CrewPlayerModelSkin = Data.CrewPlayerModelSkin
 
 		-- Various efficiency modifiers
 		Entity.ModelEff = 1
@@ -439,6 +447,8 @@ do
 				net.WriteString(Entity.CrewModelID)
 				net.WriteString(Entity.CrewPoseID)
 				net.WriteString(Entity.CrewPlayerModel)
+				net.WriteString(Entity.CrewPlayerModelBodygroups)
+				net.WriteUInt(Entity.CrewPlayerModelSkin, 6)
 				net.Broadcast()
 			end)
 		end
