@@ -812,7 +812,7 @@ end
 do
 	local BlockDamageHook = false
 
-	hook.Add("EntityTakeDamage", "ACF_EntityTakeDamage_BlockDamageInBaseplateSeats", function(Target, DmgInfo)
+	hook.Add("EntityTakeDamage", "ACF_EntityTakeDamage_BlockDamageInBaseplateSeats", function(Target, _)
 		if BlockDamageHook then return end -- to avoid crashes/allow ACF to stop damage for a bit
 		if not Target:IsPlayer() then return end
 		if not Target:InVehicle() then return end
@@ -852,7 +852,7 @@ end
 
 -- Track ACF damage inflictors
 do
-	hook.Add("ACF_OnDamageEntity", "ACF_OnDamageEntity_TrackInflictorInfo", function(Entity, DmgResult, DmgInfo)
+	hook.Add("ACF_OnDamageEntity", "ACF_OnDamageEntity_TrackInflictorInfo", function(Entity, _, DmgInfo)
 		local Contraption = Entity:GetContraption()
 		if not Contraption then return end
 
