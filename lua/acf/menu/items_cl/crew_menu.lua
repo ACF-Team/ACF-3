@@ -68,7 +68,7 @@ function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSki
 			Icon:SetTooltip(name)
 			Icon.playermodel = name
 			Icon.model_path = model
-			PanelSelect:AddPanel(Icon, {cl_playermodel = name})
+			PanelSelect:AddPanel(Icon)
 		end
 
 		local SetModel, SetModelBodygroups, SetModelSkin
