@@ -727,10 +727,11 @@ do
 				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
 					local Driver = ent:GetDriver()
 					if IsValid(Driver) then
-						Driver:Kill()
+						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
 					end
 				end
 			end
+			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end
 

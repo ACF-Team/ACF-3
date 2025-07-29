@@ -539,6 +539,7 @@ do -- ACF Activation and Damage -----------------
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
+		local Attacker = DmgInfo:GetAttacker()
 		local Inflictor = DmgInfo:GetInflictor()
 
 		if HitRes.Kill then
@@ -561,6 +562,7 @@ do -- ACF Activation and Damage -----------------
 		if (Ratio * self.Capacity / self.Ammo) > math.random() then
 			local CanBurn = hook.Run("ACF_PreBurnAmmo", self)
 
+			self.Attacker = Attacker
 			self.Inflictor = Inflictor
 
 			if CanBurn then
@@ -597,7 +599,7 @@ do -- ACF Activation and Damage -----------------
 		local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
 		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
 		local FragMass   = BulletData.ProjMass or Explosive * 0.5
-		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
+		local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)
 
