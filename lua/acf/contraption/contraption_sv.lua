@@ -138,7 +138,14 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented, Detached = Contraption.GetEnts(Ent)
+	local EntContraption = Ent:GetContraption()
+	local Physical, Parented, Detached
+	if EntContraption then
+		Physical, Parented, Detached = Contraption.GetEnts(Ent)
+	else
+		Physical, Parented, Detached = {[Ent] = true}, {}, {}
+	end
+
 	local Constraints = {}
 
 	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
