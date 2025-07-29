@@ -339,12 +339,17 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
+	local Attacker  = DmgInfo:GetAttacker()
+	local Inflictor = DmgInfo:GetInflictor()
+
 	if HitRes.Kill then
 		local CanExplode = HookRun("ACF_PreExplodeFuel", self)
 
 		if not CanExplode then return HitRes end
 
-		local Inflictor = DmgInfo:GetInflictor()
+		if IsValid(Attacker) and Attacker:IsPlayer() then
+			self.Attacker = Attacker
+		end
 
 		if IsValid(Inflictor) and Inflictor:IsPlayer() then
 			self.Inflictor = Inflictor
@@ -364,6 +369,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		if not CanExplode then return HitRes end
 
+		self.Attacker = Attacker
 		self.Inflictor = Inflictor
 
 		self:Detonate()
@@ -385,7 +391,7 @@ function ENT:Detonate()
 
 	local Position  = self:LocalToWorld(self:OBBCenter() + VectorRand() * (self:OBBMaxs() - self:OBBMins()) / 2)
 	local Explosive = (math.max(self.Fuel, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
-	local DmgInfo   = Objects.DamageInfo(self, self.Inflictor)
+	local DmgInfo   = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 	ACF.KillChildProps(self, Position, Explosive)
 
