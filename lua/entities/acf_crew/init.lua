@@ -510,9 +510,10 @@ do
 
 		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 2 / 66, MaxTime = 2 / 66, Delay = 0.1})
 
-		-- hook.Add("Think", Entity, function()
-		-- 	Entity:EnforceGForces()
-		-- end)
+		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
+		local Mat, _ = Material("sprops/sprops_grid_12x12")
+		if not Mat:IsError() then Entity:SetMaterial("sprops/sprops_grid_12x12")
+		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
 
 		-- Finish setting up the entity
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
