@@ -100,7 +100,7 @@ do -- Spawn and Update functions -----------------------
 				end
 
 				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-				if Gearbox.InvertGearRatios and abs(Gear) < 1 then
+				if Gearbox.InvertGearRatios and Gear ~= 0 and abs(Gear) < 1 then
 					Gear = math.Round(1 / Gear, 2)
 				end
 
@@ -118,7 +118,7 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-			if Gearbox.InvertGearRatios and abs(Final) < 1 then
+			if Gearbox.InvertGearRatios and Final ~= 0 and abs(Final) < 1 then
 				Final = math.Round(1 / Final, 2)
 			end
 
