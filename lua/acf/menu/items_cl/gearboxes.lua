@@ -26,6 +26,8 @@ local function CreateMenu(Menu)
 	local GearboxPreview = Base:AddModelPreview(nil, true)
 	local GearboxStats = Base:AddLabel()
 	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", ACF.GearboxMinSize, ACF.GearboxMaxSize, 2)
+	local GearboxInverted = Base:AddCheckBox("#acf.menu.gearboxes.inverted")
+	Base:AddLabel("#acf.menu.gearboxes.inverted_desc")
 	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 10, 0)
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
@@ -118,6 +120,8 @@ local function CreateMenu(Menu)
 
 		return Scale
 	end)
+
+	GearboxInverted:SetClientData("GearboxInvertRatios", "OnChange")
 
 	GearAmount:SetClientData("GearAmount", "OnValueChanged")
 	GearAmount:DefineSetter(function(Panel, _, _, Value)

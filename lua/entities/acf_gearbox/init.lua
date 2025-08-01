@@ -71,6 +71,8 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
+		Data.GearboxInvertRatios = tobool(Data.GearboxInvertRatios)
+
 		do -- Gears table verification
 			local Gears = Data.Gears
 
