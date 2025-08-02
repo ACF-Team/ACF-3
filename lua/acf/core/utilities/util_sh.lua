@@ -213,9 +213,19 @@ do -- Mobility functions
 		return Mass, Torque, TorqueRating
 	end
 
+	--- Returns the minimum and max gear ratio limits depending on whether legacy ratios are used.
 	function ACF.GetGearRatioLimits(UseLegacyRatios)
 		if UseLegacyRatios then return ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy end
 		return ACF.MinGearRatio, ACF.MaxGearRatio
+	end
+
+	--- Returns a function to pre-process gear ratios before they are sent to the server.
+	function ACF.GetGearRatioPreProcessor(UseLegacyRatios)
+		if UseLegacyRatios then
+			return function(Ratio) return math.Round(1 / Ratio, 3) end
+		else
+			return function(Ratio) return math.Round(Ratio, 3) end
+		end
 	end
 end
 
