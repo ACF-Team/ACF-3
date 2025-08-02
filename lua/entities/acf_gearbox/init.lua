@@ -71,7 +71,7 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
-		Data.GearboxInvertRatios = tobool(Data.GearboxInvertRatios)
+		Data.GearboxLegacyRatio = tobool(Data.GearboxLegacyRatio)
 
 		do -- Gears table verification
 			local Gears = Data.Gears
@@ -340,7 +340,7 @@ do -- Spawn and Update functions -----------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale")
+	Entities.Register("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale", "GearboxLegacyRatio")
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
@@ -540,7 +540,8 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		Entity.CVTRatio = Clamp(Value, 0, ACF.MaxCVTRatio)
+		if Entity.GearboxLegacyRatio then Value = 1 / Value end
+		Entity.CVTRatio = Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio)
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -725,7 +726,7 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nScale: %sx\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
+	local Text = "%s\nScale: %s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb\nRatio: %s"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
@@ -743,7 +744,9 @@ do -- Overlay Text -------------------------------------
 			end
 		end
 
-		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
+		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Intended)"
+
+		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output, RatioFormat)
 	end
 end ----------------------------------------------------
 
@@ -805,7 +808,7 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, ACF.MaxCVTRatio)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, ACF.MinCVTRatio, ACF.MaxCVTRatio)
 			else
 				local MinRPM  = SelfTbl.MinRPM
 				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)

@@ -20,3 +20,6 @@ ACF.PersistClientData("PlateSizeZ", 5)
 ACF.PersistClientData("TankSizeX", 24)
 ACF.PersistClientData("TankSizeY", 24)
 ACF.PersistClientData("TankSizeZ", 24)
+
+-- Gearbox
+ACF.PersistClientData("GearboxLegacyRatio", false)

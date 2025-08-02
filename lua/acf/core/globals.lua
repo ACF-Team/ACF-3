@@ -346,7 +346,10 @@ do -- ACF global vars
 	ACF.DefineSetting("TorqueMult", 5, "The arbitrary multiplier for the final amount of torque. Stopgap measure until a future engine update.", ACF.FloatDataCallback(0, 10, 2))
 	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
 	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
+	ACF.MinCVTRatio        = 1 -- The minimum value that a CVT's ratio can be set to
 	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to
+	ACF.MinGearRatioLegacy = -1 -- The minimum value that a gear's ratio can be set to (legacy)
+	ACF.MaxGearRatioLegacy = 1 -- The maximum value that a gear's ratio can be set to (legacy)
 end
 
 do -- ACF Convars & Particles

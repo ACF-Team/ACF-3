@@ -212,6 +212,11 @@ do -- Mobility functions
 
 		return Mass, Torque, TorqueRating
 	end
+
+	function ACF.GetGearRatioLimits(UseLegacyRatios)
+		if UseLegacyRatios then return ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy end
+		return ACF.MinGearRatio, ACF.MaxGearRatio
+	end
 end
 
 do -- Unit conversion
