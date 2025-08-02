@@ -71,6 +71,7 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
+		-- If the previous dupe didn't specify, assume the gearbox is not legacy (false)
 		Data.GearboxLegacyRatio = tobool(Data.GearboxLegacyRatio)
 
 		do -- Gears table verification
