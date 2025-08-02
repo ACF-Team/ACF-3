@@ -75,6 +75,7 @@ Gearboxes.Register("CVT", {
 		local Min     = math.Round(Gearbox.MinRPM)
 		local Max     = math.Round(Gearbox.MaxRPM)
 
+		if Gearbox.GearboxLegacyRatio then Reverse = 1 / Reverse end
 		return Text:format(Reverse, Min, Max)
 	end,
 })

@@ -731,6 +731,7 @@ do -- Overlay Text -------------------------------------
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
 		local Final     = math.Round(self.FinalDrive, 2)
+		if self.GearboxLegacyRatio then Final = 1 / Final end
 		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
 		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
@@ -740,12 +741,13 @@ do -- Overlay Text -------------------------------------
 			GearsText = ""
 
 			for I = 1, self.MaxGear do
-				GearsText = GearsText .. "Gear " .. I .. ": " .. math.Round(Gears[I], 2) .. "\n"
+				local Ratio = math.Round(Gears[I], 2)
+				if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+				GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
 			end
 		end
 
 		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Intended)"
-
 		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output, RatioFormat)
 	end
 end ----------------------------------------------------
@@ -784,7 +786,10 @@ do -- Gear Shifting ------------------------------------
 		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
-		WireLib.TriggerOutput(self, "Ratio", self.GearRatio)
+
+		local Ratio = self.GearRatio
+		if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+		WireLib.TriggerOutput(self, "Ratio", Ratio)
 	end
 end ----------------------------------------------------
 
@@ -819,7 +824,9 @@ do -- Movement -----------------------------------------
 
 			if SelfTbl.LastRatio ~= GearRatio then
 				SelfTbl.LastRatio = GearRatio
-				WireLib.TriggerOutput(self, "Ratio", GearRatio)
+				local Ratio = GearRatio
+				if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+				WireLib.TriggerOutput(self, "Ratio", Ratio)
 			end
 		end
 

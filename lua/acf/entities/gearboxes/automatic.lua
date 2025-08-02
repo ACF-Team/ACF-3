@@ -121,10 +121,14 @@ Gearboxes.Register("Auto", {
 			local KPH = math.Round(Points[I] / 10.936, 1)
 			local MPH = math.Round(Points[I] / 17.6, 1)
 
+			if Gearbox.GearboxLegacyRatio then Ratio = 1 / Ratio end
+
 			GearsText = GearsText .. GearText:format(I, Ratio, KPH, MPH)
 		end
 
-		return Text:format(GearsText, math.Round(Gearbox.Reverse, 2))
+		local Reverse = math.Round(Gears[Gearbox.GearCount], 2)
+		if Gearbox.GearboxLegacyRatio then Reverse = 1 / Reverse end
+		return Text:format(GearsText, Reverse)
 	end,
 })
 
