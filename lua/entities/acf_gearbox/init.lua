@@ -109,7 +109,7 @@ do -- Spawn and Update functions -----------------------
 					Gear = math.Round(1 / Gear, 2)
 				end
 
-				if ShouldConvertToLegacy then Gear = 1 / Gear end
+				local Gear = ACF.ConvertGearRatio(Gear, ShouldConvertToLegacy)
 
 				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
@@ -129,7 +129,7 @@ do -- Spawn and Update functions -----------------------
 				Final = math.Round(1 / Final, 2)
 			end
 
-			if ShouldConvertToLegacy then Final = 1 / Final end
+			local Final = ACF.ConvertGearRatio(Final, ShouldConvertToLegacy)
 
 			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
@@ -739,8 +739,7 @@ do -- Overlay Text -------------------------------------
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
-		local Final     = math.Round(self.FinalDrive, 2)
-		if self.GearboxLegacyRatio then Final = 1 / Final end
+		local Final     = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxLegacyRatio)
 		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
 		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
@@ -750,8 +749,7 @@ do -- Overlay Text -------------------------------------
 			GearsText = ""
 
 			for I = 1, self.MaxGear do
-				local Ratio = math.Round(Gears[I], 2)
-				if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
 				GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
 			end
 		end
@@ -796,8 +794,7 @@ do -- Gear Shifting ------------------------------------
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
 
-		local Ratio = self.GearRatio
-		if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxLegacyRatio)
 		WireLib.TriggerOutput(self, "Ratio", Ratio)
 	end
 end ----------------------------------------------------
@@ -833,8 +830,7 @@ do -- Movement -----------------------------------------
 
 			if SelfTbl.LastRatio ~= GearRatio then
 				SelfTbl.LastRatio = GearRatio
-				local Ratio = GearRatio
-				if self.GearboxLegacyRatio then Ratio = 1 / Ratio end
+				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxLegacyRatio)
 				WireLib.TriggerOutput(self, "Ratio", Ratio)
 			end
 		end

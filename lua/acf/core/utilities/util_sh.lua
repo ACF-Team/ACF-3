@@ -223,9 +223,9 @@ do -- Mobility functions
 	function ACF.ConvertGearRatio(Ratio, UseLegacyRatios)
 		if Ratio == 0 then return 0 end
 		if UseLegacyRatios then
-			return 1 / Ratio
+			return math.Round(1 / Ratio, 3)
 		end
-		return Ratio
+		return math.Round(Ratio, 3)
 	end
 end
 
