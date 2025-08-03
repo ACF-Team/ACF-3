@@ -178,6 +178,7 @@ do -- Default gearbox menus
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
 			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", MinGearRatio, MaxGearRatio, 2)
+			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
 

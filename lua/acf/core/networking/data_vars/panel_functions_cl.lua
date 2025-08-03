@@ -190,9 +190,7 @@ do -- Tracker and Setter panel functions
 	-- Panel:TrackServerData(Key, Setter)
 
 	for Realm in pairs(Queued) do
-		PanelMeta["Set" .. Realm .. "Data"] = function(Panel, Key, Setter, PreProcessor)
-			print(PreProcessor)
-
+		PanelMeta["Set" .. Realm .. "Data"] = function(Panel, Key, Setter)
 			if not isstring(Key) then return end
 
 			local Variables   = ACF[Realm .. "Data"]
