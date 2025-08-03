@@ -731,7 +731,7 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
-		local W, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
+		local _, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
 
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0

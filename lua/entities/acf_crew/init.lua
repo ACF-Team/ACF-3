@@ -317,24 +317,26 @@ do -- Random timer stuff
 
 	function ENT:EnforceGForces()
 		local Parent = self:GetParent()
-		if IsValid(Parent) then
-			local NewPos = self:LocalToWorld(self.CrewModel.ScanOffsetL)
-			local GForce, DeltaTime = ACF.UpdateGForceTracker(self.GForceTracker, NewPos)
+		if not IsValid(Parent) then return end
 
-			-- If specified, affect crew ergonomics based on G forces
-			local Effs = self.CrewType.GForceInfo.Efficiencies
-			if Effs then
-				self.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
-				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
-			end
-			WireLib.TriggerOutput(self, "GForce", GForce)
+		local SelfTbl = self:GetTable()
+		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local GForce, DeltaTime = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos)
 
-			-- If specified, apply damage to crew based on G forces
-			local Damages = self.CrewType.GForceInfo.Damages
-			if Damages and GForce > Damages.Min and self.IsAlive then
-				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * self.ACF.MaxHealth * DeltaTime
-				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
-			end
+		-- If specified, affect crew ergonomics based on G forces
+		local GForceInfo = SelfTbl.CrewType.GForceInfo
+		local Effs = GForceInfo.Efficiencies
+		if Effs then
+			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
+			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
+		end
+		WireLib.TriggerOutput(self, "GForce", GForce)
+
+		-- If specified, apply damage to crew based on G forces
+		local Damages = GForceInfo.Damages
+		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
+			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * SelfTbl.ACF.MaxHealth * DeltaTime
+			self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 		end
 	end
 end

@@ -908,32 +908,33 @@ do -- Movement -----------------------------------------
 	end
 
 	function ENT:Act(Torque, DeltaTime, MassRatio)
-		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
+		if SelfTbl.Disabled then return end
 
 		if Torque == 0 then
-			self.LastActive = Clock.CurTime
+			SelfTbl.LastActive = Clock.CurTime
 			return
 		end
 
-		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
-		local Slop = self.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
+		local Loss = Clamp(((1 - 0.4) / 0.5) * ((SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local Slop = SelfTbl.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
 		local ReactTq = 0
 		-- Calculate the ratio of total requested torque versus what's available, and then multiply it by the current gear ratio
 		local AvailTq = 0
-		local GearRatio = self.GearRatio
+		local GearRatio = SelfTbl.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / SelfTbl.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
-		for Ent, Link in pairs(self.GearboxOut) do
+		for Ent, Link in pairs(SelfTbl.GearboxOut) do
 			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 			--Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
-		local Braking = self.Braking
+		local Braking = SelfTbl.Braking
 
-		for Ent, Link in pairs(self.Wheels) do
+		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
 				local WheelTorque = Link.ReqTq * AvailTq
@@ -952,7 +953,7 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.LastActive = Clock.CurTime
+		SelfTbl.LastActive = Clock.CurTime
 	end
 end ----------------------------------------------------
 
