@@ -137,7 +137,6 @@ do -- Default gearbox menus
 	do -- Manual Gearbox Menu
 		function ACF.ManualGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
-			local PreProc = ACF.GetGearRatioPreProcessor(UseLegacyRatios)
 
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
@@ -156,11 +155,11 @@ do -- Default gearbox menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.SetClientData(Variable, PreProc(Default))
+				ACF.SetClientData(Variable, Default)
 
 				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Control = GearBase:AddSlider(SliderName, MinGearRatio, MaxGearRatio, 2)
-				Control:SetClientData(Variable, "OnValueChanged", PreProc)
+				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
 
@@ -179,7 +178,6 @@ do -- Default gearbox menus
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
 			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", MinGearRatio, MaxGearRatio, 2)
-			FinalDrive:SetClientData("FinalDrive", "OnValueChanged", PreProc)
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
 
@@ -226,7 +224,6 @@ do -- Default gearbox menus
 
 		function ACF.CVTGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
-			local PreProc = ACF.GetGearRatioPreProcessor(UseLegacyRatios)
 
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
@@ -249,7 +246,7 @@ do -- Default gearbox menus
 				ACF.SetClientData(Variable, Default)
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetClientData(Variable, "OnValueChanged", PreProc)
+				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, GearData.Decimals)
 
@@ -310,7 +307,6 @@ do -- Default gearbox menus
 
 		function ACF.AutomaticGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
-			local PreProc = ACF.GetGearRatioPreProcessor(UseLegacyRatios)
 
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
@@ -359,7 +355,7 @@ do -- Default gearbox menus
 
 				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Gear = GearBase:AddSlider(GearName, MinGearRatio, MaxGearRatio, 2)
-				Gear:SetClientData(GearVar, "OnValueChanged", PreProc)
+				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
 
@@ -406,10 +402,10 @@ do -- Default gearbox menus
 					ValuesData[Variable] = Default
 				end
 
-				ACF.SetClientData(Variable, PreProc(Default))
+				ACF.SetClientData(Variable, Default)
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetClientData(Variable, "OnValueChanged", PreProc)
+				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, GearData.Decimals)
 
@@ -441,7 +437,7 @@ do -- Default gearbox menus
 
 				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min or MinGearRatio, PanelData.Max or MaxGearRatio, PanelData.Decimals)
 				Panel:HideWang()
-				Panel:SetClientData(Variable, "OnValueChanged", PreProc)
+				Panel:SetClientData(Variable, "OnValueChanged")
 				Panel:DefineSetter(function(_, _, _, Value)
 					Value = math.Round(Value, PanelData.Decimals)
 
