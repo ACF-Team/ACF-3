@@ -6,6 +6,7 @@ local Contraption  = ACF.Contraption
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
+local BaddiesLess  = ACF.ArmorableGlobalFilterExceptions
 local MinimumArmor = ACF.MinimumArmor
 local MaximumArmor = ACF.MaxThickness
 
@@ -218,7 +219,7 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	if not IsValid(Entity) then return false end
 
 	local Class = Entity:GetClass()
-	if Baddies[Class] then return false end
+	if Baddies[Class] and not BaddiesLess[Class] then return false end
 
 	local PhysObj = Entity:GetPhysicsObject()
 	if not IsValid(PhysObj) then return false end

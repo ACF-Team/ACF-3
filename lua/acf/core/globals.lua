@@ -208,7 +208,9 @@ do -- ACF global vars
 	ACF.DragDiv              = 80 -- Drag fudge factor
 	ACF.Scale                = 1 -- Scale factor for ACF in the game world
 	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
-	ACF.GlobalFilter = { -- Global ACF filter
+	
+	-- WE WANT NO INTERACTION WITH THESE ENTITIES
+	ACF.GlobalFilter = {
 		gmod_ghost = true,
 		acf_debris = true,
 		prop_ragdoll = true,
@@ -222,6 +224,11 @@ do -- ACF global vars
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		gmod_wire_expression2 = true,
 		starfall_processor = true,
+		sent_prop2mesh = true,
+	}
+
+	-- THESE ENTITIES ARE FILTERED BUT CAN STILL BE ARMORED, FOR BACKWARDS COMPATIBILITY
+	ACF.ArmorableGlobalFilterExceptions = {
 		sent_prop2mesh = true,
 	}
 
