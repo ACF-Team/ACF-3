@@ -208,7 +208,7 @@ do -- ACF global vars
 	ACF.DragDiv              = 80 -- Drag fudge factor
 	ACF.Scale                = 1 -- Scale factor for ACF in the game world
 	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
-	
+
 	-- WE WANT NO INTERACTION WITH THESE ENTITIES
 	ACF.GlobalFilter = {
 		gmod_ghost = true,
