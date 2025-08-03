@@ -435,7 +435,7 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(Variable, Default)
 
-				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min or MinGearRatio, PanelData.Max or MaxGearRatio, PanelData.Decimals)
+				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
 				Panel:HideWang()
 				Panel:SetClientData(Variable, "OnValueChanged")
 				Panel:DefineSetter(function(_, _, _, Value)

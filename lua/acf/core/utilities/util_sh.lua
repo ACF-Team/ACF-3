@@ -219,13 +219,13 @@ do -- Mobility functions
 		return ACF.MinGearRatio, ACF.MaxGearRatio
 	end
 
-	--- Returns a function to pre-process gear ratios before they are sent to the server.
-	function ACF.GetGearRatioPreProcessor(UseLegacyRatios)
+	--- Optionally converts a gear to the legacy ratio format of 1/x, and avoids converting 0
+	function ACF.ConvertGearRatio(Ratio, UseLegacyRatios)
+		if Ratio == 0 then return 0 end
 		if UseLegacyRatios then
-			return function(Ratio) return math.Round(1 / Ratio, 3) end
-		else
-			return function(Ratio) return math.Round(Ratio, 3) end
+			return 1 / Ratio
 		end
+		return Ratio
 	end
 end
 

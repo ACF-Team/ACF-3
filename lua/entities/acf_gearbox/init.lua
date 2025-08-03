@@ -74,6 +74,10 @@ do -- Spawn and Update functions -----------------------
 		-- If the previous dupe didn't specify, assume the gearbox is not legacy (false)
 		Data.GearboxLegacyRatio = tobool(Data.GearboxLegacyRatio)
 
+		-- Set by the menu and meant to be turned off so it's not repeatedly set in dupes
+		local ShouldConvertToLegacy = tobool(Data.GearboxConvertRatio)
+		if ShouldConvertToLegacy then Data.GearboxConvertRatio = false end
+
 		do -- Gears table verification
 			local Gears = Data.Gears
 
@@ -105,6 +109,8 @@ do -- Spawn and Update functions -----------------------
 					Gear = math.Round(1 / Gear, 2)
 				end
 
+				if ShouldConvertToLegacy then Gear = 1 / Gear end
+
 				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
 		end
@@ -122,6 +128,8 @@ do -- Spawn and Update functions -----------------------
 			if Gearbox.InvertGearRatios and Final ~= 0 and abs(Final) < 1 then
 				Final = math.Round(1 / Final, 2)
 			end
+
+			if ShouldConvertToLegacy then Final = 1 / Final end
 
 			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
@@ -727,7 +735,7 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nScale: %s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb\nRatio: %s"
+	local Text = "%s\nScale: %s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nRatio: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
@@ -748,8 +756,8 @@ do -- Overlay Text -------------------------------------
 			end
 		end
 
-		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Intended)"
-		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output, RatioFormat)
+		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Realistic)"
+		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, RatioFormat, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
 	end
 end ----------------------------------------------------
 

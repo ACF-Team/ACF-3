@@ -31,6 +31,7 @@ local function CreateMenu(Menu)
 	-- Triggered once on menu creation and every time the inverted checkbox is toggled
 	function GearboxInverted:OnChange(Value)
 		ACF.SetClientData("GearboxLegacyRatio", Value)
+		ACF.SetClientData("GearboxConvertRatio", Value)
 
 		-- Regenerate the sub menu with the new ratio limits
 		GearboxPanel:ClearTemporal(Base)
