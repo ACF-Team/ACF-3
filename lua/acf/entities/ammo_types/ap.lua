@@ -141,9 +141,10 @@ if SERVER then
 			Bullet.Energy = Energy
 
 			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
+			local Overkill = HitRes.Overkill or 0 -- TODO: Sometimes Overkill ends up being nil, but that should never be the case??
 
-			if HitRes.Overkill > 0 then
-				table.insert(Filter, Target) --"Penetrate" (Ingoring the prop for the retry trace)
+			if Overkill > 0 then
+				table.insert(Filter, Target) -- "Penetrate" (Ignoring the prop for the retry trace)
 
 				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * ACF.MeterToInch
 
