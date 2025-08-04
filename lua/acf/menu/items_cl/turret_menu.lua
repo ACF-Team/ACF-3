@@ -20,7 +20,8 @@ local function CreateMenu(Menu)
 	local Base			= Menu:AddCollapsible("#acf.menu.turrets.components", nil, "icon16/cd_edit.png")
 	local ComponentName	= Base:AddTitle()
 	local ComponentDesc	= Base:AddLabel()
-	local ComponentPreview = Base:AddModelPreview(_, true)
+	local ComponentPreview = Base:AddModelPreview(nil, true, "Primary")
+	Base.ComponentPreview = ComponentPreview
 
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

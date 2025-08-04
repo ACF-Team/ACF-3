@@ -378,6 +378,56 @@ do -- Tool Functions Loader
 			self:SetOperation(Op.Index)
 		end
 
+		--- Restores the tool's mode to its last known state.
+		--- This includes setting the appropriate stage and operation based on previously saved client data.
+		function Tool:RestoreMode()
+			--- The ToolMode variable is in the format "Stage:Op", where Stage and Op are the current stage and operation.
+			--- self.Mode is the current acf tool itself (e.g. "acf_menu"/"acf_copy")
+			local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
+
+			if ToolMode then
+				-- Explode the ToolMode string to get stage and operation as an array, then unpack as a vararg
+				local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
+
+				self:SetMode(Stage, Op)
+			end
+		end
+
+		--- Handles deploys (when you switch to the acf tool or start using it) and calls the "OnDeploy" method if defined.
+		function Tool:Deploy()
+			self:RestoreMode()
+
+			if self.OpData then
+				local OnDeploy = self.OpData.OnDeploy
+
+				if OnDeploy then
+					OnDeploy(self)
+				end
+			end
+		end
+
+		--- Handles deploys (when you switch to another tool and holster the acf tool) and calls the "OnDeploy" method if defined.
+		function Tool:Holster()
+			if self.OpData then
+				local OnHolster = self.OpData.OnHolster
+
+				if OnHolster then
+					OnHolster(self)
+				end
+			end
+		end
+
+		--- Handles thinks (happen repeatedly while the tool is equipped) and calls the "OnThink" method if defined.
+		function Tool:Think()
+			if self.OpData then
+				local OnThink = self.OpData.OnThink
+
+				if OnThink then
+					OnThink(self)
+				end
+			end
+		end
+
 		if CLIENT then
 			Tool.Category = Category:GetBool() and "ACF" or "Construction"
 
@@ -405,21 +455,6 @@ do -- Tool Functions Loader
 				return self.OpData and isfunction(self.OpData.OnReload)
 			end
 		else
-			--- Restores the tool's mode to its last known state.
-			--- This includes setting the appropriate stage and operation based on previously saved client data.
-			function Tool:RestoreMode()
-				--- The ToolMode variable is in the format "Stage:Op", where Stage and Op are the current stage and operation.
-				--- self.Mode is the current acf tool itself (e.g. "acf_menu"/"acf_copy")
-				local ToolMode = ACF.GetClientString(self:GetOwner(), "ToolMode:" .. self.Mode)
-
-				if ToolMode then
-					-- Explode the ToolMode string to get stage and operation as an array, then unpack as a vararg
-					local Stage, Op = unpack(string.Explode(":", ToolMode), 1, 2)
-
-					self:SetMode(Stage, Op)
-				end
-			end
-
 			--- The rest of these bind into tool hooks (https://wiki.facepunch.com/gmod/TOOL_Hooks)
 
 			--- Handles left clicks and calls the "OnLeftClick" method for the current operation if defined.
@@ -462,41 +497,6 @@ do -- Tool Functions Loader
 				end
 
 				return false
-			end
-
-			--- Handles deploys (when you switch to the acf tool or start using it) and calls the "OnDeploy" method if defined.
-			function Tool:Deploy()
-				self:RestoreMode()
-
-				if self.OpData then
-					local OnDeploy = self.OpData.OnDeploy
-
-					if OnDeploy then
-						OnDeploy(self)
-					end
-				end
-			end
-
-			--- Handles deploys (when you switch to another tool and holster the acf tool) and calls the "OnDeploy" method if defined.
-			function Tool:Holster()
-				if self.OpData then
-					local OnHolster = self.OpData.OnHolster
-
-					if OnHolster then
-						OnHolster(self)
-					end
-				end
-			end
-
-			--- Handles thinks (happen repeatedly while the tool is equipped) and calls the "OnThink" method if defined.
-			function Tool:Think()
-				if self.OpData then
-					local OnThink = self.OpData.OnThink
-
-					if OnThink then
-						OnThink(self)
-					end
-				end
 			end
 		end
 	end
@@ -543,4 +543,202 @@ do -- Clientside Tool interaction
 			end
 		end
 	end
+end
+
+do -- Ghost entity handling
+	local ModelData = ACF.ModelData
+	local IsSinglePlayer = game.SinglePlayer()
+	local ShouldRun = not (SERVER and not IsSinglePlayer) and not (CLIENT and IsSinglePlayer)
+	local DrawingSecondary = false
+	local DefaultScale = Vector(1, 1, 1)
+	local ToolEnt
+	local GhostData = {
+		Primary = {Model = "models/props_borealis/bluebarrel001.mdl", Material = "", Scale = Vector(DefaultScale), AbsoluteScale = false},
+		Secondary = {Model = "", Material = "", Scale = Vector(DefaultScale), AbsoluteScale = false},
+	}
+	ACF.GhostEntityData = ACF.GhostEntityData or GhostData
+
+	local function MakeGhostEntity(Tool, Model, Position, Angles)
+		-- Release the old ghost entity
+		Tool:ReleaseGhostEntity()
+
+		-- Don't allow ragdolls/effects to be ghosts
+		if not util.IsValidProp(Model) then return end
+
+		if CLIENT then
+			Tool.GhostEntity = ents.CreateClientProp(Model)
+		else
+			Tool.GhostEntity = ents.Create("prop_physics")
+		end
+
+		-- If there's too many entities we might not spawn..
+		if not IsValid(Tool.GhostEntity) then
+			Tool.GhostEntity = nil
+			return
+		end
+
+		Tool.GhostEntity:SetModel(Model)
+		Tool.GhostEntity:SetPos(Position)
+		Tool.GhostEntity:SetAngles(Angles)
+		Tool.GhostEntity:Spawn()
+
+		-- We do not want physics at all
+		Tool.GhostEntity:PhysicsDestroy()
+
+		Tool.GhostEntity:SetMoveType(MOVETYPE_NONE)
+		Tool.GhostEntity:SetNotSolid(true)
+		Tool.GhostEntity:SetRenderMode(RENDERMODE_TRANSCOLOR)
+		Tool.GhostEntity:SetColor(Color(255, 255, 255, 150))
+
+		-- Do not save this thing in saves/dupes
+		Tool.GhostEntity.DoNotDuplicate = true
+
+		-- Mark this entity as ghost prop for other code
+		Tool.GhostEntity.IsToolGhost = true
+
+		return Tool.GhostEntity
+	end
+
+	local function GetModelDimensions(EntData)
+		local Scale = EntData.Scale
+		local ModelSize = ModelData.GetModelSize(EntData.Model)
+		local HeightOffset = Vector(0, 0, ModelSize.z / 2)
+
+		if Scale and not Scale:IsEqualTol(DefaultScale, 0) then
+			if not EntData.AbsoluteScale then
+				Scale = Scale / ModelSize
+			end
+
+			HeightOffset.z = (Scale.z * ModelSize.z) / 2
+		end
+		print("scale set = " .. tostring(Scale) .. " with AbsoluteScale = " .. tostring(EntData.AbsoluteScale))
+		--print(HeightOffset)
+		return HeightOffset, ModelSize, Scale
+	end
+
+	local function ModifyGhostEntity(GhostEnt, EntKey)
+		local EntData = GhostData[EntKey]
+		GhostEnt:SetModel(EntData.Model)
+
+		local Scale = EntData.Scale
+		GhostEnt.HeightOffset, GhostEnt.ModelSize, Scale = GetModelDimensions(EntData)
+
+		if Scale then
+			local ScaleMatrix = Matrix()
+			ScaleMatrix:Scale(Scale)
+			GhostEnt:EnableMatrix("RenderMultiply", ScaleMatrix)
+		end
+
+		if EntData.Material then
+			GhostEnt:SetMaterial(EntData.Material)
+		end
+	end
+
+	function ACF.CreateGhostEntity(Tool)
+		if not ShouldRun then --[[print("not running")]] return end
+
+		local EntKey  = DrawingSecondary and "Secondary" or "Primary"
+		local EntData = GhostData[EntKey]
+		print("trying to create ghost")
+		--print("first time predicted = " .. tostring(IsFirstTimePredicted()))
+		PrintTable(EntData)
+		if EntData.Model --[[and EntData.Model ~= ""]] then
+			--print("is valid prop = " .. tostring(util.IsValidProp(EntData.Model)))
+			--if not IsValid(Tool.GhostEntity) then
+				local Trace        = Tool:GetOwner():GetEyeTrace()
+				local HeightOffset = GetModelDimensions(EntData)
+				local Position     = Trace.HitPos + HeightOffset
+				local Angles       = Trace.HitNormal:Angle():Up():Angle()
+
+				local GhostEnt = MakeGhostEntity(Tool, EntData.Model, Position, Angles)
+				print(IsValid(GhostEnt))
+			--end
+
+			timer.Simple(0, function()
+				local GhostEnt = Tool.GhostEntity
+				if not IsValid(GhostEnt) then print("failed to create") return end
+				print(EntKey)
+				ToolEnt = Tool
+				print(Tool)
+				ModifyGhostEntity(GhostEnt, EntKey)
+			end)
+		end
+	end
+
+	function ACF.UpdateGhostEntity(NewGhostData)
+		if not ShouldRun or not istable(NewGhostData) then return end
+
+		for EntKey, EntData in pairs(NewGhostData) do
+			for DataKey, DataVal in pairs(EntData) do
+				GhostData[EntKey][DataKey] = DataVal
+				print("GhostData[" .. tostring(EntKey) .. "][" .. tostring(DataKey) .. "] = " .. tostring(DataVal))
+			end
+		end
+
+		timer.Simple(0, function()
+			local EntKey = DrawingSecondary and "Secondary" or "Primary"
+			if not ToolEnt then print("no toolent " .. tostring(ToolEnt)) return end
+
+			if not IsValid(ToolEnt.GhostEntity) then
+				--ACF.CreateGhostEntity(ToolEnt)
+				return
+			end
+
+			print("running update")
+			ModifyGhostEntity(ToolEnt.GhostEntity, EntKey)
+		end)
+	end
+
+	function ACF.RenderGhostEntity(Tool)
+		if not ShouldRun then return end
+
+		local GhostEnt = Tool.GhostEntity
+		if not IsValid(GhostEnt) then return end
+
+		local Player = Tool:GetOwner()
+		if not IsValid(Player) then return end
+
+		local Trace = Player:GetEyeTrace()
+		local TraceEnt = Trace.Entity
+		local ShouldDrawSecondary = Player:KeyDown(IN_SPEED)
+		local SecondaryClass = ACF.GetClientData("SecondaryClass")
+		local UpdateClass = ShouldDrawSecondary and SecondaryClass or ACF.GetClientData("PrimaryClass")
+		local Position, Angles
+
+		if DrawingSecondary ~= ShouldDrawSecondary and SecondaryClass ~= "N/A" then
+			local EntKey = DrawingSecondary and "Primary" or "Secondary"
+			DrawingSecondary = ShouldDrawSecondary
+			print(EntKey)
+			ModifyGhostEntity(GhostEnt, EntKey)
+		end
+
+		if IsValid(TraceEnt) and TraceEnt:GetClass() == UpdateClass then
+			Position = TraceEnt:GetPos()
+			Angles   = TraceEnt:GetAngles()
+		else
+			local HeightOffset = GhostEnt.HeightOffset or vector_origin
+			Position = Trace.HitPos + HeightOffset
+			Angles   = Trace.HitNormal:Angle():Up():Angle()
+		end
+
+		GhostEnt:SetPos(Position)
+		GhostEnt:SetAngles(Angles)
+	end
+
+	function ACF.ReleaseGhostEntity() --(Tool)
+		if not ShouldRun then return end
+
+		--if IsValid(Tool.GhostEntity) then
+			print("releasing")
+			--Tool:ReleaseGhostEntity()
+		--end
+	end
+
+	hook.Add("ACF_OnUpdateClientData", "ACF_HandleGhostEntities", function(_, Key)
+		if Key ~= "Primary" and Key ~= "Secondary" then return end
+
+		--if Value == "N/A" then
+			ACF.UpdateGhostEntity({[Key] = {Model = "", Material = "", Scale = DefaultScale, AbsoluteScale = false}})
+		--end
+	end)
 end

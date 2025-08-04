@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("#acf.menu.components.component_info", nil, "icon16/drive_edit.png")
 	local ComponentName = Base:AddTitle()
 	local ComponentDesc = Base:AddLabel()
-	local ComponentPreview = Base:AddModelPreview(nil, true)
+	local ComponentPreview = Base:AddModelPreview(nil, true, "Primary")
 
 	function ComponentClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

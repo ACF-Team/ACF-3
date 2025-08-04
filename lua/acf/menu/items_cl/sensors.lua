@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("#acf.menu.sensors.sensor_info", nil, "icon16/transmit_edit.png")
 	local SensorName = Base:AddTitle()
 	local SensorDesc = Base:AddLabel()
-	local SensorPreview = Base:AddModelPreview(nil, true)
+	local SensorPreview = Base:AddModelPreview(nil, true, "Primary")
 
 	function SensorClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end

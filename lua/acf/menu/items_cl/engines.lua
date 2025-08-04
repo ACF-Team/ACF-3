@@ -64,7 +64,7 @@ local function CreateMenu(Menu)
 	local EngineBase = Menu:AddCollapsible("#acf.menu.engines.engine_info", nil, "icon16/monitor_edit.png")
 	local EngineName = EngineBase:AddTitle()
 	local EngineDesc = EngineBase:AddLabel()
-	local EnginePreview = EngineBase:AddModelPreview(nil, true)
+	local EnginePreview = EngineBase:AddModelPreview(nil, true, "Primary")
 	local EngineStats = EngineBase:AddLabel()
 
 	local PowerGraph = Menu:AddGraph()
@@ -83,6 +83,7 @@ local function CreateMenu(Menu)
 
 	local Min = ACF.FuelMinSize
 	local Max = ACF.FuelMaxSize
+	local FuelPreview
 
 	local SizeX = Menu:AddSlider("#acf.menu.fuel.tank_length", Min, Max)
 	SizeX:SetClientData("TankSizeX", "OnValueChanged")
@@ -94,6 +95,10 @@ local function CreateMenu(Menu)
 		TankSize.x = X
 
 		FuelType:UpdateFuelText()
+
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize)
+		end
 
 		return X
 	end)
@@ -109,6 +114,10 @@ local function CreateMenu(Menu)
 
 		FuelType:UpdateFuelText()
 
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize)
+		end
+
 		return Y
 	end)
 
@@ -123,13 +132,17 @@ local function CreateMenu(Menu)
 
 		FuelType:UpdateFuelText()
 
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize)
+		end
+
 		return Z
 	end)
 
 	local FuelList = Menu:AddComboBox()
 	local FuelBase = Menu:AddCollapsible("#acf.menu.fuel.tank_info", nil, "icon16/cup_edit.png")
 	local FuelDesc = FuelBase:AddLabel()
-	local FuelPreview = FuelBase:AddModelPreview(nil, true)
+	FuelPreview = FuelBase:AddModelPreview(nil, true, "Secondary")
 	local FuelInfo = FuelBase:AddLabel()
 
 	ACF.SetClientData("PrimaryClass", "acf_engine")
@@ -235,6 +248,7 @@ local function CreateMenu(Menu)
 
 		FuelPreview:UpdateModel(Model, Material)
 		FuelPreview:UpdateSettings(Data.Preview or ClassData.Preview)
+		FuelPreview:SetModelScale(TankSize)
 
 		FuelType:UpdateFuelText()
 	end

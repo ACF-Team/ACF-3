@@ -235,7 +235,12 @@ do -- Generic Spawner/Linker operation creator
 
 					-- The call to SelectEntity will switch the mode to the linker
 					return SelectEntity(Entity, Name, Tool)
-				end
+				end,
+				--OnDeploy     = ACF.CreateGhostEntity,
+				--OnHolster    = ACF.ReleaseGhostEntity,
+				OnEnterOp    = ACF.CreateGhostEntity,
+				OnExitOp     = ACF.ReleaseGhostEntity,
+				OnThink      = ACF.RenderGhostEntity,
 			})
 
 			ACF.RegisterToolInfo("acf_menu", "Spawner", Name, {
@@ -354,13 +359,12 @@ ACF.CreateMenuOperation("Component", "component")
 ACF.CreateMenuOperation("Gearbox", "gearbox")
 ACF.CreateMenuOperation("Sensor", "sensor")
 ACF.CreateMenuOperation("Armor", "armor plate")
+ACF.CreateMenuOperation("Controller", "controller")
 
 ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
-
-ACF.CreateMenuOperation("Controller", "controller")
 
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
 	Text = "Attempts to convert the target entity into a baseplate.",

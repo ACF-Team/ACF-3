@@ -18,7 +18,7 @@ do -- Piledrivers menu
 		local ClassBase = Menu:AddCollapsible("#acf.menu.fun.piledrivers.piledriver_info", nil, "icon16/monitor_edit.png")
 		local ClassName = ClassBase:AddTitle()
 		local ClassDesc = ClassBase:AddLabel()
-		local ClassPreview = ClassBase:AddModelPreview(nil, true)
+		local ClassPreview = ClassBase:AddModelPreview(nil, true, "Primary")
 		local ClassInfo = ClassBase:AddLabel()
 		local ClassStats = ClassBase:AddLabel()
 
@@ -145,7 +145,7 @@ do -- Procedural Armor
 		local ClassBase    = Menu:AddCollapsible("#acf.menu.fun.armor.material_info")
 		local ClassName    = ClassBase:AddTitle()
 		local ClassDesc    = ClassBase:AddLabel()
-		local ClassPreview = ClassBase:AddModelPreview("models/holograms/hq_rcube_thin.mdl", true)
+		local ClassPreview = ClassBase:AddModelPreview("models/holograms/hq_rcube_thin.mdl", true, "Primary")
 		local ClassDens    = ClassBase:AddLabel()
 
 		function ClassList:OnSelect(Index, _, Data)

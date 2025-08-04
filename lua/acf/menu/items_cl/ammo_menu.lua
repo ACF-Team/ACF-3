@@ -4,6 +4,11 @@ local Classes   = ACF.Classes
 local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
 local Ammo, BulletData
+local GhostData = {Secondary = {
+	Model = "models/holograms/hq_rcube_thin.mdl",
+	Material = "phoenix_storms/Future_vents",
+	Scale = Vector(1, 1, 1),
+}}
 
 local GraphRed    = Color(200, 65, 65)
 local GraphBlue   = Color(65, 65, 200)
@@ -442,8 +447,10 @@ function ACF.CreateAmmoMenu(Menu)
 		local X = math.Round(Value)
 
 		Panel:SetValue(X)
-
 		BoxSize.x = X
+
+		GhostData.Secondary.Scale = BoxSize
+		ACF.UpdateGhostEntity(GhostData)
 
 		return X
 	end)
@@ -454,8 +461,10 @@ function ACF.CreateAmmoMenu(Menu)
 		local Y = math.Round(Value)
 
 		Panel:SetValue(Y)
-
 		BoxSize.y = Y
+
+		GhostData.Secondary.Scale = BoxSize
+		ACF.UpdateGhostEntity(GhostData)
 
 		return Y
 	end)
@@ -466,8 +475,10 @@ function ACF.CreateAmmoMenu(Menu)
 		local Z = math.Round(Value)
 
 		Panel:SetValue(Z)
-
 		BoxSize.z = Z
+
+		GhostData.Secondary.Scale = BoxSize
+		ACF.UpdateGhostEntity(GhostData)
 
 		return Z
 	end)

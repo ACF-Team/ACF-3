@@ -711,7 +711,7 @@ local function BoxSDF(P, Box)
 	return D1 + D2
 end
 
-function PANEL:AddModelPreview(Model, Rotate)
+function PANEL:AddModelPreview(Model, Rotate, GhostEntClass)
 	local Settings = {
 		Height   = 120,
 		FOV      = 60,
@@ -729,9 +729,40 @@ function PANEL:AddModelPreview(Model, Rotate)
 	Panel.LastMouseOffset = Vector(0, 0)
 
 	Panel.RotationDirection = 1
+	Panel.ModelScale = Vector(1, 1, 1)
+	Panel.ScaleMatrix = Matrix()
 
 	function Panel:SetRotateModel(Bool)
 		self.Rotate = tobool(Bool)
+	end
+
+	function Panel:SetModelScale(Scale, AbsoluteScale)
+		if not Scale then return end
+
+		if isnumber(Scale) then
+			Scale = Vector(Scale, Scale, Scale)
+		end
+
+		self.ModelScale = Scale
+
+		local BoxSize = self.BoxSize
+		local BaseCamDistance = 1.2 * math.max(BoxSize.x, math.max(BoxSize.y, BoxSize.z))
+		self.CamDistance = BaseCamDistance + math.max(Scale.x, math.max(Scale.y, Scale.z))
+		print("ok so the EVIL scale here is " .. tostring(Scale) .. " and also we got the NEFARIOUS " .. tostring(BoxSize))
+		print("and then we got our freakin " .. tostring(Scale / BoxSize))
+		local Entity = self:GetEntity()
+		Scale = AbsoluteScale and Scale or Scale / BoxSize
+		self.ScaleMatrix = Matrix()
+		self.ScaleMatrix:Scale(Scale)
+		Entity:EnableMatrix("RenderMultiply", self.ScaleMatrix)
+
+		if GhostEntClass == "Primary" or GhostEntClass == "Secondary" then
+			local GhostData = {
+				[GhostEntClass] = {Scale = Scale or Vector(1, 1, 1), AbsoluteScale = AbsoluteScale}
+			}
+
+			ACF.UpdateGhostEntity(GhostData)
+		end
 	end
 
 	function Panel:DrawEntity(Bool)
@@ -762,7 +793,6 @@ function PANEL:AddModelPreview(Model, Rotate)
 		end
 
 		local Size = ModelData.GetModelSize(Path)
-
 		local StartMatrix = Matrix()
 
 		-- looks a bit nicer with this
@@ -791,8 +821,15 @@ function PANEL:AddModelPreview(Model, Rotate)
 
 		if Material then
 			local Entity = self:GetEntity()
-
 			Entity:SetMaterial(Material)
+		end
+
+		if GhostEntClass == "Primary" or GhostEntClass == "Secondary" then
+			local GhostData = {
+				[GhostEntClass] = {Model = Path, Material = Material or "", Scale = self.ModelScale or Vector(1, 1, 1)}
+			}
+			print("updated model")
+			ACF.UpdateGhostEntity(GhostData)
 		end
 	end
 

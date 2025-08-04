@@ -23,7 +23,7 @@ local function CreateMenu(Menu)
 	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info", nil, "icon16/chart_curve_edit.png")
 	local GearboxName = Base:AddTitle()
 	local GearboxDesc = Base:AddLabel()
-	local GearboxPreview = Base:AddModelPreview(nil, true)
+	local GearboxPreview = Base:AddModelPreview(nil, true, "Primary")
 	local GearboxStats = Base:AddLabel()
 	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", ACF.GearboxMinSize, ACF.GearboxMaxSize, 2)
 	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 10, 0)
@@ -115,6 +115,7 @@ local function CreateMenu(Menu)
 		Current.Scale = Scale
 
 		SetStatsText(GearboxStats)
+		ACF.UpdateGhostEntity({Primary = {Scale = Vector(Scale, Scale, Scale), AbsoluteScale = true}})
 
 		return Scale
 	end)

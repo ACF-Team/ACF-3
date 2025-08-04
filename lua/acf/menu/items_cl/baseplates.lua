@@ -1,5 +1,5 @@
 local ACF = ACF
-
+--[[
 local GridMaterial = CreateMaterial("acf_bp_vis_grid2", "UnlitGeneric", {
 	["$basetexture"] = "hunter/myplastic",
 	["$model"] = 1,
@@ -7,8 +7,9 @@ local GridMaterial = CreateMaterial("acf_bp_vis_grid2", "UnlitGeneric", {
 	["$vertexalpha"] = 1,
 	["$vertexcolor"] = 1
 })
-
+]]
 local BaseplateTypes = ACF.Classes.BaseplateTypes
+local BaseplateScale = Vector(1, 1, 1)
 
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
@@ -28,6 +29,13 @@ local function CreateMenu(Menu)
 	local BaseplateName     = BaseplateBase:AddTitle()
 	local BaseplateDesc     = BaseplateBase:AddLabel()
 
+	local PreviewSettings = {
+		FOV = 120,
+		Height = 120,
+	}
+	local BaseplatePreview = BaseplateBase:AddModelPreview("models/holograms/cube.mdl", true, "Primary")
+	BaseplatePreview:UpdateSettings(PreviewSettings)
+
 	function ClassList:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
 
@@ -36,11 +44,13 @@ local function CreateMenu(Menu)
 
 		BaseplateName:SetText(Data.Name)
 		BaseplateDesc:SetText(Data.Description)
+		BaseplatePreview:UpdateModel("models/holograms/cube.mdl", "hunter/myplastic")
+		ACF.UpdateGhostEntity({Primary = {Scale = BaseplateScale, AbsoluteScale = false}})
 
 		ACF.SetClientData("BaseplateType", Data.ID)
 	end
 
-	local Vis = BaseplateBase:AddPanel("DPanel")
+	--[[local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
 
 	function Vis:Paint(ScrW, ScrH)
@@ -54,13 +64,15 @@ local function CreateMenu(Menu)
 
 		surface.SetDrawColor(255, 70, 70); surface.DrawRect((ScrW / 2) - 1, ScrH / 2, 3, H / 2 * Z)
 		surface.SetDrawColor(70, 255, 70); surface.DrawRect(ScrW / 2, (ScrH / 2) - 1, W / 2 * Z, 3)
-	end
+	end]]
 
 	SizeX:SetClientData("Width", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value, 2)
 
 		Panel:SetValue(X)
+		BaseplateScale.x = X
+		ACF.UpdateGhostEntity({Primary = {Scale = BaseplateScale, AbsoluteScale = false}})
 
 		return X
 	end)
@@ -70,6 +82,8 @@ local function CreateMenu(Menu)
 		local Y = math.Round(Value, 2)
 
 		Panel:SetValue(Y)
+		BaseplateScale.y = Y
+		ACF.UpdateGhostEntity({Primary = {Scale = BaseplateScale, AbsoluteScale = false}})
 
 		return Y
 	end)
@@ -79,6 +93,8 @@ local function CreateMenu(Menu)
 		local Z = math.Round(Value, 2)
 
 		Panel:SetValue(Z)
+		BaseplateScale.z = Z
+		ACF.UpdateGhostEntity({Primary = {Scale = BaseplateScale, AbsoluteScale = false}})
 
 		return Z
 	end)
