@@ -33,7 +33,7 @@ local function CreateMenu(Menu)
 
 		ACF.SetClientData("SensorClass", Data.ID)
 
-		ACF.LoadSortedList(SensorList, Data.Items, "ID")
+		ACF.LoadSortedList(SensorList, Data.Items, "ID", "Model")
 	end
 
 	function SensorList:OnSelect(Index, _, Data)
@@ -64,7 +64,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(SensorClass, Entries, "ID")
+	ACF.LoadSortedList(SensorClass, Entries, "ID", "SpawnModel")
 end
 
 ACF.AddMenuItem(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit", CreateMenu)

@@ -9,6 +9,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing High Explosive"
+	self.SpawnIcon   = "acf/icons/shell_aphe.png"
 	self.Model		 = "models/munitions/round_100mm_ap_shot.mdl"
 	self.Description = "#acf.descs.ammo.aphe"
 	self.Blacklist = {
@@ -194,21 +195,14 @@ else
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
 		end)
 
-		local PenStats = Base:AddLabel()
-		PenStats:TrackClientData("Projectile", "SetText")
-		PenStats:TrackClientData("Propellant")
-		PenStats:TrackClientData("FillerRatio")
-		PenStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, BulletData)
-
-			local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
-			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
-
-			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
+		local MaxPen = Base:AddLabel()
+		MaxPen:TrackClientData("Projectile", "SetText")
+		MaxPen:TrackClientData("Propellant")
+		MaxPen:TrackClientData("FillerRatio")
+		MaxPen:DefineSetter(function()
+			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
+			local MaxPen	= math.Round(BulletData.MaxPen, 2)
+			return Text:format(MaxPen)
 		end)
-
-		Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

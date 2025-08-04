@@ -8,6 +8,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Hollow Point"
+	self.SpawnIcon   = "acf/icons/shell_hp.png"
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "#acf.descs.ammo.hp"
 	self.Blacklist = ACF.GetWeaponBlacklist({

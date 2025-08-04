@@ -2,7 +2,6 @@ DEFINE_BASECLASS("base_wire_entity") -- Required to get the local BaseClass
 
 include("shared.lua")
 
-local ACF     = ACF
 local Standby = {}
 
 local function RequestEntityScaleInfo(Entity)
@@ -22,11 +21,6 @@ function ENT:Initialize()
 	BaseClass.Initialize(self)
 
 	self.Initialized = true
-
-	-- Instantly requesting ScaleData and Scale
-	if not Standby[self] then
-		RequestEntityScaleInfo(self)
-	end
 end
 
 function ENT:CalcAbsolutePosition() -- Faking sync
@@ -68,8 +62,6 @@ function ENT:GetOriginalSize()
 end
 
 do -- Size and scale setter methods
-	local ModelData = ACF.ModelData
-
 	local function ApplyScale(Entity, Data, Scale)
 		local Mesh = Data:GetMesh(Scale)
 
@@ -96,22 +88,6 @@ do -- Size and scale setter methods
 		local Data = Entity.ScaleData
 
 		if not Scale then
-			local Path = Data.Path
-
-			-- We have updated ScaleData but no ModelData yet
-			-- We'll wait for it and instantly tell the entity to rescale
-			if Path and ModelData.IsOnStandby(Path) then
-				ModelData.CallOnReceive(Path, Entity, function()
-					local Saved = Entity.SavedScale
-
-					if not Saved then return end
-
-					Entity:SetScale(Saved)
-
-					Entity.SavedScale = nil
-				end)
-			end
-
 			return false
 		end
 
@@ -152,21 +128,36 @@ do -- Size and scale setter methods
 	end
 end
 
+local function WaitForEntity(EntIndex, Then)
+	local Entity = ents.GetByIndex(EntIndex)
+	if IsValid(Entity) then Then(Entity) return end
+
+	hook.Add("NetworkEntityCreated", "ACF_WaitingForEntity" .. EntIndex, function(Ent)
+		if Ent:EntIndex() ~= EntIndex then return end
+
+		hook.Remove("OnEntityCreated", "ACF_WaitingForEntity" .. EntIndex)
+		Then(Ent)
+	end)
+end
+
 net.Receive("ACF_Scalable_Entity", function()
-	local Entity = ents.GetByIndex(net.ReadUInt(MAX_EDICT_BITS))
-
-	if not IsValid(Entity) then return end
-	if not Entity.IsScalable then return end
-
+	local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 	local Scale = Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
 	local Type  = net.ReadString()
 	local Path  = net.ReadString()
 
-	Entity:RemoveCallOnRemove("ACF_Scalable_Entity")
-	Entity:SetScaleData(Type, Path)
-	if not Entity:SetScale(Scale) then
-		Entity.SavedScale = Scale
-	end
+	WaitForEntity(EntIndex, function(Entity)
+		hook.Add("RenderScene", "ACF_RunThisASAP" .. EntIndex, function()
+			hook.Remove("RenderScene", "ACF_RunThisASAP" .. EntIndex)
+			if not IsValid(Entity) then return end
+			if not Entity.IsScalable then return end
+
+			Entity:SetScaleData(Type, Path)
+			if not Entity:SetScale(Scale) then
+				Entity.SavedScale = Scale
+			end
+		end)
+	end)
 end)
 
 do -- Dealing with visual clip's bullshit

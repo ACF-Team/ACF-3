@@ -71,6 +71,13 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
+		-- If the previous dupe didn't specify, assume the gearbox is not legacy (false)
+		Data.GearboxLegacyRatio = tobool(Data.GearboxLegacyRatio)
+
+		-- Set by the menu and meant to be turned off so it's not repeatedly set in dupes
+		local ShouldConvertToLegacy = tobool(Data.GearboxConvertRatio)
+		if ShouldConvertToLegacy then Data.GearboxConvertRatio = false end
+
 		do -- Gears table verification
 			local Gears = Data.Gears
 
@@ -98,10 +105,11 @@ do -- Spawn and Update functions -----------------------
 				end
 
 				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-				-- Why not do it for post scaleable pre inversion too? Might as well.
-				if abs(Gear) < 1 then
+				if Gearbox.InvertGearRatios and Gear ~= 0 and abs(Gear) < 1 then
 					Gear = math.Round(1 / Gear, 2)
 				end
+
+				local Gear = ACF.ConvertGearRatio(Gear, ShouldConvertToLegacy)
 
 				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
 			end
@@ -117,10 +125,11 @@ do -- Spawn and Update functions -----------------------
 			end
 
 			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-			-- Why not do it for post scaleable pre inversion too? Might as well.
-			if abs(Final) < 1 then
+			if Gearbox.InvertGearRatios and Final ~= 0 and abs(Final) < 1 then
 				Final = math.Round(1 / Final, 2)
 			end
+
+			local Final = ACF.ConvertGearRatio(Final, ShouldConvertToLegacy)
 
 			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
@@ -340,7 +349,7 @@ do -- Spawn and Update functions -----------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale")
+	Entities.Register("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale", "GearboxLegacyRatio")
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
@@ -540,7 +549,8 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		Entity.CVTRatio = Clamp(Value, 0, ACF.MaxCVTRatio)
+		if Entity.GearboxLegacyRatio then Value = 1 / Value end
+		Entity.CVTRatio = Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio)
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -725,11 +735,11 @@ do -- Unlinking ----------------------------------------
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
-	local Text = "%s\nScale: %sx\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
+	local Text = "%s\nScale: %s\nCurrent Gear: %s\n\n%s\nFinal Drive: %s\nRatio: %s\nTorque Rating: %s Nm / %s ft-lb\nTorque Output: %s Nm / %s ft-lb"
 
 	function ENT:UpdateOverlayText()
 		local GearsText = self.ClassData.GetGearsText and self.ClassData.GetGearsText(self)
-		local Final     = math.Round(self.FinalDrive, 2)
+		local Final     = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxLegacyRatio)
 		local Torque    = math.Round(self.MaxTorque * ACF.NmToFtLb)
 		local Output    = math.Round(self.TorqueOutput * ACF.NmToFtLb)
 
@@ -739,11 +749,13 @@ do -- Overlay Text -------------------------------------
 			GearsText = ""
 
 			for I = 1, self.MaxGear do
-				GearsText = GearsText .. "Gear " .. I .. ": " .. math.Round(Gears[I], 2) .. "\n"
+				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
+				GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
 			end
 		end
 
-		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
+		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Realistic)"
+		return Text:format(self.Name, self.ScaleMult, self.Gear, GearsText, Final, RatioFormat, self.MaxTorque, Torque, math.floor(self.TorqueOutput), Output)
 	end
 end ----------------------------------------------------
 
@@ -781,7 +793,9 @@ do -- Gear Shifting ------------------------------------
 		end
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
-		WireLib.TriggerOutput(self, "Ratio", self.GearRatio)
+
+		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxLegacyRatio)
+		WireLib.TriggerOutput(self, "Ratio", Ratio)
 	end
 end ----------------------------------------------------
 
@@ -805,7 +819,7 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, 1, ACF.MaxCVTRatio)
+				Gears[1] = Clamp(SelfTbl.CVTRatio, ACF.MinCVTRatio, ACF.MaxCVTRatio)
 			else
 				local MinRPM  = SelfTbl.MinRPM
 				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
@@ -816,7 +830,8 @@ do -- Movement -----------------------------------------
 
 			if SelfTbl.LastRatio ~= GearRatio then
 				SelfTbl.LastRatio = GearRatio
-				WireLib.TriggerOutput(self, "Ratio", GearRatio)
+				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxLegacyRatio)
+				WireLib.TriggerOutput(self, "Ratio", Ratio)
 			end
 		end
 
@@ -897,32 +912,33 @@ do -- Movement -----------------------------------------
 	end
 
 	function ENT:Act(Torque, DeltaTime, MassRatio)
-		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
+		if SelfTbl.Disabled then return end
 
 		if Torque == 0 then
-			self.LastActive = Clock.CurTime
+			SelfTbl.LastActive = Clock.CurTime
 			return
 		end
 
-		local Loss = Clamp(((1 - 0.4) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
-		local Slop = self.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
+		local Loss = Clamp(((1 - 0.4) / 0.5) * ((SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local Slop = SelfTbl.Automatic and 0.9 or 1 -- Internal torque loss from inefficiency
 		local ReactTq = 0
 		-- Calculate the ratio of total requested torque versus what's available, and then multiply it by the current gear ratio
 		local AvailTq = 0
-		local GearRatio = self.GearRatio
+		local GearRatio = SelfTbl.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / self.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / SelfTbl.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
-		for Ent, Link in pairs(self.GearboxOut) do
+		for Ent, Link in pairs(SelfTbl.GearboxOut) do
 			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 			--Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
-		local Braking = self.Braking
+		local Braking = SelfTbl.Braking
 
-		for Ent, Link in pairs(self.Wheels) do
+		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
 				local WheelTorque = Link.ReqTq * AvailTq
@@ -941,7 +957,7 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		self.LastActive = Clock.CurTime
+		SelfTbl.LastActive = Clock.CurTime
 	end
 end ----------------------------------------------------
 

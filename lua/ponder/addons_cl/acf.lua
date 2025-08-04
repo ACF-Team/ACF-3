@@ -28,11 +28,11 @@ Ponder.API.RegisterAddonCategory("acf", "mobility", {
     Description = "acf.storyboards.mobility.desc"
 })
 
-Ponder.API.RegisterAddonCategory("acf", "crew", {
-    Name = "Crew",
+Ponder.API.RegisterAddonCategory("acf", "tankbasics", {
+    Name = "Tank Basics",
     Order = 2,
-    ModelIcon = "models/chairs_playerstart/sitpose.mdl",
-    Description = "Learn how to use the crew system."
+    ModelIcon = "models/hunter/plates/plate025x025.mdl",
+    Description = "Learn how to setup a basic tank."
 })
 
 ACF.PonderModelCaches = {
@@ -43,7 +43,7 @@ ACF.PonderModelCaches = {
 
         -- Engine area
         {Name = "Engine", IdentifyAs = "Engine", Model = "models/engines/v12l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -84, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-        {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
+        {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_s.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", Scale = Vector(2, 2, 2)},
         {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
         {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
 

@@ -51,6 +51,7 @@ if SERVER then
 	RegisterPrivilege("acf.createGearbox", "Create ACF Gearbox", "Allows the user to create ACF Gearboxes", { usergroups = { default = 3 } })
 	RegisterPrivilege("acf.createWeapon", "Create ACF Weapon", "Allows the user to create ACF Weapons", { usergroups = { default = 3 } })
 	RegisterPrivilege("entities.acf", "ACF", "Allows the user to control ACF components", { entities = {} })
+	RegisterPrivilege("entities.acfLinkTo", "Perform ACF Links", "Allows the user to link two ACF components together", { usergroups = { default = 3 } })
 end
 
 local plyCount = SF.LimitObject("acf_components", "acf_components", -1, "The number of ACF components allowed to spawn via Starfall")
@@ -182,7 +183,7 @@ end
 local function OnRemove(Entity, Player)
 	plyCount:free(Player, 1)
 
-	instance.data.props.props[Entity] = nil
+	instance.data.props.propList:unregister(Entity)
 end
 
 local function RegisterEntity(Entity)
@@ -192,7 +193,44 @@ local function RegisterEntity(Entity)
 
 	plyCount:free(Player, -1)
 
-	instance.data.props.props[Entity] = true
+	instance.data.props.propList:register(instance, Entity)
+end
+
+local function CreateEntity(Pos, Ang, RawData, Class, ClassText)
+	local Player = instance.player
+
+	if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
+		SF.Throw("No permission to spawn ACF components", 2)
+	end
+
+	CheckType(Pos, vec_meta)
+	CheckType(Ang, ang_meta)
+	CheckLuaType(RawData, TYPE_TABLE)
+
+	local Position = SF.clampPos(vunwrap(Pos))
+	local Angles   = aunwrap(Ang)
+	local Data     = UnwrapTable(RawData)
+	local Undo     = not instance.data.props.undo
+
+	local EntSuccess, Entity
+	local ChipSuccess, ChipError = instance:runExternal(function()
+		EntSuccess, Entity = Entities.Spawn(Class, Player, Position, Angles, Data, Undo)
+	end)
+
+	if not EntSuccess or not ChipSuccess then
+		local ErrorText = tostring(ChipError or "No reason found.")
+		if IsValid(Entity) then Entity:Remove() end
+		SF.Throw("Unable to create ACF " .. ClassText .. " (" .. ErrorText .. ")", 2)
+
+		return
+	end
+
+	plyBurst:use(Player, 1)
+	plyCount:checkuse(Player, 1)
+
+	RegisterEntity(Entity)
+
+	return owrap(Entity)
 end
 
 --===============================================================================================--
@@ -201,7 +239,7 @@ end
 
 --- Returns true if functions returning sensitive info are restricted to owned props
 -- @shared
--- @return boolean True if restriced, False if not
+-- @return boolean True if restricted, False if not
 function acf_library.infoRestricted()
 	return ACF.RestrictInfo
 end
@@ -547,31 +585,7 @@ if SERVER then
 	function acf_library.createAmmo(pos, ang, data)
 		CheckPerms(instance, nil, "acf.createAmmo")
 
-		local Player = instance.player
-
-		if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
-			SF.Throw("No permission to spawn ACF components", 2)
-		end
-
-		CheckType(pos, vec_meta)
-		CheckType(ang, ang_meta)
-		CheckLuaType(data, TYPE_TABLE)
-
-		local Position = SF.clampPos(vunwrap(pos))
-		local Angles   = aunwrap(ang)
-		local Data     = UnwrapTable(data)
-		local Undo     = not instance.data.props.undo
-
-		local Success, Entity = Entities.Spawn("acf_ammo", Player, Position, Angles, Data, Undo)
-
-		if not Success then SF.Throw("Unable to create ACF Ammo Crate", 2) end
-
-		plyBurst:use(Player, 1)
-		plyCount:checkuse(Player, 1)
-
-		RegisterEntity(Entity)
-
-		return owrap(Entity)
+		return CreateEntity(pos, ang, data, "acf_ammo", "Ammo Crate")
 	end
 
 	--- Creates an ACF engine using the information from the data table argument
@@ -583,31 +597,7 @@ if SERVER then
 	function acf_library.createEngine(pos, ang, data)
 		CheckPerms(instance, nil, "acf.createEngine")
 
-		local Player = instance.player
-
-		if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
-			SF.Throw("No permission to spawn ACF components", 2)
-		end
-
-		CheckType(pos, vec_meta)
-		CheckType(ang, ang_meta)
-		CheckLuaType(data, TYPE_TABLE)
-
-		local Position = SF.clampPos(vunwrap(pos))
-		local Angles   = aunwrap(ang)
-		local Data     = UnwrapTable(data)
-		local Undo     = not instance.data.props.undo
-
-		local Success, Entity = Entities.Spawn("acf_engine", Player, Position, Angles, Data, Undo)
-
-		if not Success then SF.Throw("Unable to create ACF Engine", 2) end
-
-		plyBurst:use(Player, 1)
-		plyCount:checkuse(Player, 1)
-
-		RegisterEntity(Entity)
-
-		return owrap(Entity)
+		return CreateEntity(pos, ang, data, "acf_engine", "Engine")
 	end
 
 	--- Creates an ACF fuel tank using the information from the data table argument
@@ -619,31 +609,7 @@ if SERVER then
 	function acf_library.createFuelTank(pos, ang, data)
 		CheckPerms(instance, nil, "acf.createFuelTank")
 
-		local Player = instance.player
-
-		if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
-			SF.Throw("No permission to spawn ACF components", 2)
-		end
-
-		CheckType(pos, vec_meta)
-		CheckType(ang, ang_meta)
-		CheckLuaType(data, TYPE_TABLE)
-
-		local Position = SF.clampPos(vunwrap(pos))
-		local Angles   = aunwrap(ang)
-		local Data     = UnwrapTable(data)
-		local Undo     = not instance.data.props.undo
-
-		local Success, Entity = Entities.Spawn("acf_fueltank", Player, Position, Angles, Data, Undo)
-
-		if not Success then SF.Throw("Unable to create ACF Fuel Tank", 2) end
-
-		plyBurst:use(Player, 1)
-		plyCount:checkuse(Player, 1)
-
-		RegisterEntity(Entity)
-
-		return owrap(Entity)
+		return CreateEntity(pos, ang, data, "acf_fueltank", "Fuel Tank")
 	end
 
 	--- Creates an ACF gearbox using the information from the data table argument
@@ -655,31 +621,7 @@ if SERVER then
 	function acf_library.createGearbox(pos, ang, data)
 		CheckPerms(instance, nil, "acf.createGearbox")
 
-		local Player = instance.player
-
-		if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
-			SF.Throw("No permission to spawn ACF components", 2)
-		end
-
-		CheckType(pos, vec_meta)
-		CheckType(ang, ang_meta)
-		CheckLuaType(data, TYPE_TABLE)
-
-		local Position = SF.clampPos(vunwrap(pos))
-		local Angles   = aunwrap(ang)
-		local Data     = UnwrapTable(data)
-		local Undo     = not instance.data.props.undo
-
-		local Success, Entity = Entities.Spawn("acf_gearbox", Player, Position, Angles, Data, Undo)
-
-		if not Success then SF.Throw("Unable to create ACF Gearbox", 2) end
-
-		plyBurst:use(Player, 1)
-		plyCount:checkuse(Player, 1)
-
-		RegisterEntity(Entity)
-
-		return owrap(Entity)
+		return CreateEntity(pos, ang, data, "acf_gearbox", "Gearbox")
 	end
 
 	--- Creates an ACF weapon using the information from the data table argument
@@ -691,31 +633,7 @@ if SERVER then
 	function acf_library.createWeapon(pos, ang, data)
 		CheckPerms(instance, nil, "acf.createWeapon")
 
-		local Player = instance.player
-
-		if not hook.Run("CanTool", Player, { Hit = true, Entity = game.GetWorld() }, "acf_menu") then
-			SF.Throw("No permission to spawn ACF components", 2)
-		end
-
-		CheckType(pos, vec_meta)
-		CheckType(ang, ang_meta)
-		CheckLuaType(data, TYPE_TABLE)
-
-		local Position = SF.clampPos(vunwrap(pos))
-		local Angles   = aunwrap(ang)
-		local Data     = UnwrapTable(data)
-		local Undo     = not instance.data.props.undo
-
-		local Success, Entity = Entities.Spawn("acf_gun", Player, Position, Angles, Data, Undo)
-
-		if not Success then SF.Throw("Unable to create ACF Weapon", 2) end
-
-		plyBurst:use(Player, 1)
-		plyCount:checkuse(Player, 1)
-
-		RegisterEntity(Entity)
-
-		return owrap(Entity)
+		return CreateEntity(pos, ang, data, "acf_gun", "Weapon")
 	end
 
 	--- Returns true if This entity contains sensitive info and is not accessable to us
@@ -1090,8 +1008,17 @@ if SERVER then
 	-- @return boolean The result of the operation
 	-- @return string The result message
 	function ents_methods:acfLinkTo(target, notify)
+		if not ACF.AllowDynamicLinking then
+			if notify then
+				ACF.SendNotify(instance.player, false, "Dynamic linking has been disabled on this server.")
+			end
+
+			return false, "Dynamic linking has been disabled on this server."
+		end
+
 		CheckType(self, ents_metatable)
 		CheckType(target, ents_metatable)
+		CheckPerms(instance, nil, "entities.acfLinkTo")
 
 		local This = unwrap(self)
 		local Target = unwrap(target)

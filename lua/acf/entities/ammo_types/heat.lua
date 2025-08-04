@@ -10,6 +10,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "High Explosive Anti-Tank"
+	self.SpawnIcon   = "acf/icons/shell_heat.png"
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "#acf.descs.ammo.heat"
 	self.Blacklist = {
@@ -316,10 +317,10 @@ if SERVER then
 				JetInfo:SetType(DMG_BULLET)
 				JetDmg:SetDamage(_Cavity)
 
-				local Speed = Bullet.JetAvgVel
+				-- local Speed = Bullet.JetAvgVel
 
-				Bullet.Energy = {}
-				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
+				-- Bullet.Energy = {}
+				-- Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				-- if not Bullet.IsSpall and not Bullet.IsCookOff then

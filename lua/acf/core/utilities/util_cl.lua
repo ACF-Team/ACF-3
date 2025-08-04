@@ -49,7 +49,7 @@ end
 do -- Panel helpers
 	local Sorted = {}
 
-	function ACF.LoadSortedList(Panel, List, Member)
+	function ACF.LoadSortedList(Panel, List, Member, IconMember)
 		local Data = Sorted[List]
 
 		if not Data then
@@ -81,25 +81,28 @@ do -- Panel helpers
 		Panel:Clear()
 
 		for Index, Value in ipairs(Data.Choices) do
-			Panel:AddChoice(Value.Name, Value, Index == Current)
+			Panel:AddChoice(Value.Name, Value, Index == Current, IconMember and Value[IconMember] or nil)
 		end
 	end
 
 	--- Initializes the base menu panel for an ACF tool menu.
 	--- @param Panel panel The base panel to build the menu off of.
-	--- @param GlobalID string The identifier in the ACF global table where a reference to the menu panel should be stored.
+	--- @param GlobalID? string The identifier in the ACF global table where a reference to the menu panel should be stored. If not provided, will simply not be a singleton instance
 	--- @param ReloadCommand? string A concommand string to automatically add a button and concommand to refresh this menu.
 	function ACF.InitMenuBase(Panel, GlobalID, ReloadCommand)
-		if not IsValid(Panel) or not isstring(GlobalID) then return end
+		if not IsValid(Panel) then return end
 
-		local Menu = ACF[GlobalID]
+		local Menu
+		if GlobalID then
+			Menu = ACF[GlobalID]
 
-		-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
-		-- Because otherwise auto-refresh doesn't work.
-		-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
-		if IsValid(Menu) then
-			Menu:Remove()
-			Menu = nil
+			-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
+			-- Because otherwise auto-refresh doesn't work.
+			-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
+			if IsValid(Menu) then
+				Menu:Remove()
+				Menu = nil
+			end
 		end
 
 		Menu = vgui.Create("ACF_Panel")
@@ -107,19 +110,21 @@ do -- Panel helpers
 
 		Panel:AddItem(Menu)
 
-		ACF[GlobalID] = Menu
+		if GlobalID then
+			ACF[GlobalID] = Menu
 
-		if ReloadCommand then
-			concommand.Add(ReloadCommand, function()
-				if not IsValid(ACF[GlobalID]) then return end
+			if ReloadCommand then
+				concommand.Add(ReloadCommand, function()
+					if not IsValid(ACF[GlobalID]) then return end
 
-				local CreateMenuFunc = ACF["Create" .. GlobalID]
-				CreateMenuFunc(ACF[GlobalID].Panel)
-			end)
-		end
+					local CreateMenuFunc = ACF["Create" .. GlobalID]
+					CreateMenuFunc(ACF[GlobalID].Panel)
+				end)
+			end
 
-		if ReloadCommand then
-			Menu:AddMenuReload(ReloadCommand)
+			if ReloadCommand then
+				Menu:AddMenuReload(ReloadCommand)
+			end
 		end
 
 		return Menu
@@ -130,7 +135,9 @@ do -- Default gearbox menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, _, Menu, _)
+		function ACF.ManualGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
@@ -151,7 +158,7 @@ do -- Default gearbox menus
 				ACF.SetClientData(Variable, Default)
 
 				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
-				local Control = GearBase:AddSlider(SliderName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+				local Control = GearBase:AddSlider(SliderName, MinGearRatio, MaxGearRatio, 2)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -170,7 +177,7 @@ do -- Default gearbox menus
 
 			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
 
-			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", MinGearRatio, MaxGearRatio, 2)
 			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
 			FinalDrive:DefineSetter(function(Panel, _, _, Value)
 				Value = math.Round(Value, 2)
@@ -189,8 +196,6 @@ do -- Default gearbox menus
 			{
 				Name = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(2),
 				Variable = "Gear2",
-				Min = ACF.MinGearRatio,
-				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = -1,
 			},
@@ -213,14 +218,14 @@ do -- Default gearbox menus
 			{
 				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
-				Min = ACF.MinGearRatio,
-				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, _, Menu, _)
+		function ACF.CVTGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
 			Values[Class.ID] = Values[Class.ID] or {}
@@ -241,7 +246,7 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
+				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, GearData.Decimals)
@@ -262,16 +267,12 @@ do -- Default gearbox menus
 			{
 				Name = "#acf.menu.gearboxes.reverse_gear",
 				Variable = "Reverse",
-				Min = ACF.MinGearRatio,
-				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = -1,
 			},
 			{
 				Name = "#acf.menu.gearboxes.final_drive",
 				Variable = "FinalDrive",
-				Min = ACF.MinGearRatio,
-				Max = ACF.MaxGearRatio,
 				Decimals = 2,
 				Default = 1,
 			},
@@ -291,8 +292,6 @@ do -- Default gearbox menus
 				Name = "#acf.menu.gearboxes.total_ratio",
 				Variable = "TotalRatio",
 				Tooltip = "#acf.menu.gearboxes.total_ratio_desc",
-				Min = 0,
-				Max = 1,
 				Decimals = 2,
 				Default = 0.1,
 			},
@@ -307,7 +306,9 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, _, Menu, _)
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
@@ -346,7 +347,7 @@ do -- Default gearbox menus
 				local DefGear = ValuesData[GearVar]
 
 				if not DefGear then
-					DefGear = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
+					DefGear = math.Clamp(I * 0.1, MinGearRatio, MaxGearRatio)
 
 					ValuesData[GearVar] = DefGear
 				end
@@ -354,7 +355,7 @@ do -- Default gearbox menus
 				ACF.SetClientData(GearVar, DefGear)
 
 				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
-				local Gear = GearBase:AddSlider(GearName, ACF.MinGearRatio, ACF.MaxGearRatio, 2)
+				local Gear = GearBase:AddSlider(GearName, MinGearRatio, MaxGearRatio, 2)
 				Gear:SetClientData(GearVar, "OnValueChanged")
 				Gear:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, 2)
@@ -404,7 +405,7 @@ do -- Default gearbox menus
 
 				ACF.SetClientData(Variable, Default)
 
-				local Control = GearBase:AddSlider(GearData.Name, GearData.Min, GearData.Max, GearData.Decimals)
+				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
 				Control:SetClientData(Variable, "OnValueChanged")
 				Control:DefineSetter(function(Panel, _, _, Value)
 					Value = math.Round(Value, GearData.Decimals)

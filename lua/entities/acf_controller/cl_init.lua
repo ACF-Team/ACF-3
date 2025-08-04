@@ -79,7 +79,7 @@ end)
 
 -- Receive filter from server
 net.Receive("ACF_Controller_CamInfo", function()
-	Temp = net.ReadTable()
+	local Temp = net.ReadTable()
 	if #Temp > 0 then MyFilter = Temp end
 end)
 
@@ -87,7 +87,7 @@ UpdateCamera = function(ply)
 	CamOffset = MyController["GetCam" .. Mode .. "Offset"]()
 	CamOrbit = MyController["GetCam" .. Mode .. "Orbit"]()
 
-	net.Start("ACF_Controller_CamInfo")
+	net.Start("ACF_Controller_CamInfo", true)
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteUInt(Mode, 2)
 	net.SendToServer(ply)
@@ -179,7 +179,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local unit = MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
 		DrawText("SPD: " .. MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
 		DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
-		local unit = MyController:GetFuelUnit() == 0 and " L" or " H"
+		local unit = MyController:GetFuelUnit() == 0 and " L" or " G"
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 
@@ -217,10 +217,10 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	local ZoomFrac = (FOV - MinFOV) / (MaxFOV - MinFOV)
 	local Slew = MinSlew + ZoomFrac * (MaxSlew - MinSlew)
 
-	local TrueSlew = Slew * FrameTime()
+	local TrueSlew = Slew * 1 / 60 -- Previously used frametime, to keep average sensitivity the same, use 1/60 for 60 FPS
 	CamAng = Angle(math.Clamp(CamAng.pitch + y * TrueSlew, -90, 90), CamAng.yaw - x * TrueSlew, 0)
 
-	net.Start("ACF_Controller_CamData")
+	net.Start("ACF_Controller_CamData", true)
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteAngle(CamAng)
 	net.SendToServer()

@@ -32,7 +32,7 @@ local function CreateMenu(Menu)
 		ClassDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		ACF.SetToolMode("acf_menu", "Spawner", Data.ID)
-		ACF.LoadSortedList(ComponentClass, Data.Items, "Name")
+		ACF.LoadSortedList(ComponentClass, Data.Items, "Name", "Model")
 	end
 
 	function ComponentClass:OnSelect(Index, _, Data)
@@ -63,7 +63,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(ClassList, Entries, "ID")
+	ACF.LoadSortedList(ClassList, Entries, "ID", "SpawnModel")
 end
 
 ACF.AddMenuItem(51, "#acf.menu.entities", "#acf.menu.turrets", "shape_align_center", CreateMenu)

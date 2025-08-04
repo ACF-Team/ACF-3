@@ -196,6 +196,7 @@ do -- Tracker and Setter panel functions
 			local Variables   = ACF[Realm .. "Data"]
 			local SetFunction = ACF["Set" .. Realm .. "Data"]
 
+			-- Destiny, Key, Realm, Value, Store
 			StoreData("Panels", Panel, Realm, Key, "Setter")
 			StoreData(Realm, Key, "Setter", Panel)
 
@@ -204,7 +205,8 @@ do -- Tracker and Setter panel functions
 			Panel[Realm .. "Var"] = Key
 
 			if Variables[Key] == nil then
-				SetFunction(Key, Panel:GetValue())
+				local Value = Panel:GetValue()
+				SetFunction(Key, Value)
 			end
 
 			QueueRefresh(Realm, Key)

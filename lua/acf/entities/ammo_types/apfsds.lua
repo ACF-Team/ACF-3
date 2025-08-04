@@ -7,6 +7,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Armor Piercing Fin Stabilized"
+	self.SpawnIcon   = "acf/icons/shell_apfsds.png"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
 	self.Description = "#acf.descs.ammo.apfsds"
 	self.Blacklist = ACF.GetWeaponBlacklist({

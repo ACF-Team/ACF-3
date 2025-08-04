@@ -117,14 +117,15 @@ Gearboxes.Register("Auto", {
 		local GearsText = ""
 
 		for I = 1, Gearbox.MaxGear do
-			local Ratio = math.Round(Gears[I], 2)
+			local Ratio = ACF.ConvertGearRatio(Gears[I], Gearbox.GearboxLegacyRatio)
 			local KPH = math.Round(Points[I] / 10.936, 1)
 			local MPH = math.Round(Points[I] / 17.6, 1)
 
 			GearsText = GearsText .. GearText:format(I, Ratio, KPH, MPH)
 		end
 
-		return Text:format(GearsText, math.Round(Gearbox.Reverse, 2))
+		local Reverse = ACF.ConvertGearRatio(Gears[Gearbox.GearCount], Gearbox.GearboxLegacyRatio)
+		return Text:format(GearsText, Reverse)
 	end,
 })
 

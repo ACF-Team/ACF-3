@@ -262,6 +262,46 @@ local function AddInformation(Base, ToolData)
 	hook.Run("ACF_OnCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 end
 
+local function AddPenetrationTable(Base, ToolData)
+	--HE, Smoke, and Refills do not support this.
+	if ToolData.AmmoType == "SM" or ToolData.AmmoType == "HE" or ToolData.AmmoType == "Refill" then return end
+
+	-- Setup of penetration statistics table.
+	local PenTable = Base:AddTable(5, 6)
+	PenTable.SetCellsSize(55, 20)
+	PenTable.SetCellValue(1, 1, "Range")
+	PenTable.SetCellValue(2, 1, "Velocity")
+	PenTable.SetCellValue(3, 1, "0 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
+	PenTable.SetCellValue(4, 1, "30 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
+	PenTable.SetCellValue(5, 1, "60 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
+	PenTable:TrackClientData("Projectile", "SetText")
+	PenTable:TrackClientData("Propellant")
+	PenTable:TrackClientData("FillerRatio")
+	PenTable:TrackClientData("LinerAngle")
+	PenTable:TrackClientData("StandoffRatio")
+
+	PenTable:DefineSetter(function()
+		local Ranges = {0, 100, 250, 500, 800}
+		for index, range in pairs(Ranges) do
+			local Penetration, Velocity = Ammo:GetRangedPenetration(BulletData, range)
+
+			-- Chemical rounds require different functions for penetration.
+			if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+				Penetration = Ammo:GetPenetration(BulletData, BulletData.Standoff)
+			end
+
+			PenTable.SetCellValue(1, 1 + index, math.floor(range) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_m"))
+			PenTable.SetCellValue(2, 1 + index, math.Round(Velocity) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_ms"))
+			PenTable.SetCellValue(3, 1 + index, math.Round(Penetration) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm"))
+			PenTable.SetCellValue(4, 1 + index, math.Round(Penetration / 1.1547) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm")) --The magic number here is LOS armor divisor at 30 deg.
+			PenTable.SetCellValue(5, 1 + index, math.Round(Penetration / 2) .. " " .. language.GetPhrase("acf.menu.ammo.pen_table_mm")) --The magic number here is LOS armor divisor at 60 deg.
+		end
+	end)
+
+	Base:AddLabel("#acf.menu.ammo.pen_table_nominal")
+	Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
+end
+
 local function AddGraph(Base, ToolData)
 	if Ammo.PreCreateAmmoGraph then
 		local Result = Ammo:PreCreateAmmoGraph(Base, ToolData, BulletData)
@@ -427,6 +467,7 @@ function ACF.UpdateAmmoMenu(Menu)
 	AddPreview(Base, ToolData)
 	AddControls(Base, ToolData)
 	AddInformation(Base, ToolData)
+	AddPenetrationTable(Base, ToolData)
 	AddGraph(Base, ToolData)
 
 	Menu:EndTemporal(Base)
@@ -484,11 +525,23 @@ function ACF.CreateAmmoMenu(Menu)
 	end)
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
+	local Title = Base:AddTitle()
 	local Desc = Base:AddLabel()
 	Desc:SetText("")
 
+	local function UpdateTitle()
+		local TitleText = language.GetPhrase("acf.menu.weapons.name_text")
+		local Caliber = ACF.GetClientNumber("Caliber", 0)
+		local AmmoName = Ammo and Ammo.Name or ""
+
+		return TitleText:format(Caliber, AmmoName)
+	end
+	Title:TrackClientData("Caliber", "SetText")
+	Title:DefineSetter(UpdateTitle)
+	Title:SetText("")
+
 	function List:LoadEntries(Class)
-		ACF.LoadSortedList(self, GetAmmoList(Class), "Name")
+		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
 	end
 
 	function List:OnSelect(Index, _, Data)
@@ -500,7 +553,7 @@ function ACF.CreateAmmoMenu(Menu)
 		Ammo = Data
 
 		ACF.SetClientData("AmmoType", Data.ID)
-
+		Title:SetText(UpdateTitle())
 		Desc:SetText(Data.Description)
 
 		ACF.UpdateAmmoMenu(Menu)

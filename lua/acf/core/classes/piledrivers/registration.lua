@@ -1,6 +1,6 @@
 local Classes     = ACF.Classes
 local Piledrivers = Classes.Piledrivers
-local Entries     = {}
+local Entries     = Classes.GetOrCreateEntries(Piledrivers)
 
 
 function Piledrivers.Register(ID, Data)

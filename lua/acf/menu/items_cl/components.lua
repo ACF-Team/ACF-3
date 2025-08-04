@@ -31,6 +31,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
+		ACF.SetClientData("PrimaryClass", Data.Entity)
 		ACF.SetClientData("ComponentClass", Data.ID)
 
 		ACF.LoadSortedList(ComponentList, Data.Items, "ID")

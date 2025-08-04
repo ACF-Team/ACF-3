@@ -435,9 +435,6 @@ do -- Terminal ballistics --------------------------
 		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
 
 		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
-
-		-- print(Energy, FragSize, FragMass, FragSpeed, BaseCone)
-
 		local FragPos = Trace.HitPos
 		local FragDirInit = Bullet.Flight:GetNormalized()
 

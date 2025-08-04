@@ -1,5 +1,6 @@
 local ACF = ACF
 
+local CurTime = CurTime
 do -- Ricochet/Penetration materials
 	local Materials = {}
 	local MatCache = {}
@@ -197,7 +198,7 @@ do -- Mobility functions
 	--- @return number # The torque value of the gearbox in ft-lb
 	--- @return number # The torque rating of the gearbox in N/m
 	function ACF.GetGearboxStats(BaseMass, Scale, MaxTorque, GearCount)
-		local Mass = math.floor((BaseMass * (Scale ^ ACF.GearboxMassScale)) / 5) * 5 -- Round to the nearest five
+		local Mass = math.Round(BaseMass * (Scale ^ ACF.GearboxMassScale))
 
 		-- Torque calculations
 		local Torque, TorqueRating = 0, 0
@@ -210,6 +211,21 @@ do -- Mobility functions
 		end
 
 		return Mass, Torque, TorqueRating
+	end
+
+	--- Returns the minimum and max gear ratio limits depending on whether legacy ratios are used.
+	function ACF.GetGearRatioLimits(UseLegacyRatios)
+		if UseLegacyRatios then return ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy end
+		return ACF.MinGearRatio, ACF.MaxGearRatio
+	end
+
+	--- Optionally converts a gear to the legacy ratio format of 1/x, and avoids converting 0
+	function ACF.ConvertGearRatio(Ratio, UseLegacyRatios)
+		if Ratio == 0 then return 0 end
+		if UseLegacyRatios then
+			return math.Round(1 / Ratio, 3)
+		end
+		return math.Round(Ratio, 3)
 	end
 end
 
@@ -939,15 +955,23 @@ do -- Crew related
 		local RealLoop
 		local Cancelled = false
 		local Finished  = false
+		local Paused = false
 		function RealLoop()
 			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
 			UpdateDelta(Config)
-			local left = Loop(Config)
+
+			-- If the timer is paused, don't run the loop
+			-- This also causes the timer to continue running indefinitely yet not affect anything
+			local left = nil
+			if not Paused then
+				left = Loop(Config)
+			end
+
 			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
 
-			--Random step or Finishing step, whichever is faster.
+			-- Random step or Finishing step, whichever is faster.
 			local timeleft = left and math.min(left, rand) or rand
 			-- If time left then recurse, otherwise call Finish
 			if timeleft > 0.001 then
@@ -969,6 +993,20 @@ do -- Crew related
 				Finish(Config)
 			end
 		end
+
+		function ProxyObject:Pause()
+			Paused = true
+		end
+
+		function ProxyObject:Resume()
+			Paused = false
+		end
+
+		function ProxyObject:Finish()
+			Finished = true
+			Finish(Config)
+		end
+
 		return ProxyObject
 	end
 
@@ -1121,7 +1159,6 @@ do -- Reload related
 	function ACF.GenerateLuaSeat(Entity, Player, Pos, Angle, Model)
 		if not Player:CheckLimit("vehicles") then return end
 
-		-- print("GenerateLuaSeat", Entity, Player, Pos, Angle, Model)
 		local Pod = ents.Create("prop_vehicle_prisoner_pod")
 		Player:AddCount("vehicles", Pod)
 		if IsValid(Pod) and IsValid(Player) then
@@ -1153,27 +1190,28 @@ do -- Reload related
 		end
 	end
 
-	if WireLib then
-		if not ACF.WirelibDetour_GetClosestRealVehicle then
-			ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
-		end
-		local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
-		function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
-			if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
-				local Pod = Vehicle:ACF_GetSeatProxy()
-				if IsValid(Pod) then return Pod end
+	timer.Simple(1, function()
+		if WireLib then
+			if not ACF.WirelibDetour_GetClosestRealVehicle then
+				ACF.WirelibDetour_GetClosestRealVehicle = WireLib.GetClosestRealVehicle
 			end
+			local ACF_WirelibDetour_GetClosestRealVehicle = ACF.WirelibDetour_GetClosestRealVehicle
+			function WireLib.GetClosestRealVehicle(Vehicle, Position, Notify)
+				if IsValid(Vehicle) and Vehicle.ACF and Vehicle.ACF_GetSeatProxy then
+					local Pod = Vehicle:ACF_GetSeatProxy()
+					if IsValid(Pod) then return Pod end
+				end
 
-			return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+				return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+			end
 		end
-	end
+	end)
 
 	--- Configures a lua seat after it has been created.
 	--- Whenever the seat is created, this should be called after.
 	--- @param Pod any The seat to configure
 	--- @param Player any The owner of the seat
 	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
-		-- print("ConfigureLuaSeat", Entity, Pod, Player)
 		-- Just to be safe...
 		Pod.Owner = Player
 		Pod:CPPISetOwner(Player)
@@ -1190,16 +1228,79 @@ do -- Reload related
 		Pod:SetParent(Entity)
 
 		Pod:SetNoDraw(true)
-
-		-- hopefully, this concoction the pod super-not-solid without calling Pod:SetSolid at all
 		Pod:SetNotSolid(true)
-		Pod:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
-		local Count = Pod:GetPhysicsObjectCount()
-		for Idx = 0, Count - 1 do
-			local Phys = Pod:GetPhysicsObjectNum(Idx)
-			Phys:SetContents(CONTENTS_EMPTY)
-		end
+		-- MARCH: In Advanced Duplicator 2, pasting runs v.PostEntityPaste (if it exists), and then afterwards will call
+		-- v:SetNotSolid(v.SolidMod). For whatever reason, that is false when the seat gets duped. So this just tricks
+		-- the duplicator to make it not-solid. source: advdupe2/lua/advdupe2/sv_clipboard.lua
+		Pod.SolidMod = true
+
 		Pod.ACF_InvisibleToBallistics = true
 		Pod.ACF_InvisibleToTrace = true
 	end
+end
+
+do
+	--- Sets up a table to track G forces
+	--- Use with ACF.UpdateGForceTracker to update the G force tracker.
+	--- @param pos? Vector The initial position
+	--- @param vel? Vector The initial velocity
+	--- @param accel? Vector The initial acceleration
+	--- @return nil
+	function ACF.SetupGForceTracker(pos, vel, accel)
+		return {
+			Pos = pos or vector_origin,
+			Vel = vel or vector_origin,
+			Acc = accel or vector_origin,
+			LastPos = pos or vector_origin,
+			LastVel = vel or vector_origin,
+			LastAcc = accel or vector_origin,
+			LastTime = CurTime()
+		}
+	end
+
+	--- Returns the G force given the current position and the time since the last update.
+	--- @param tbl table The table storing the G force tracker data
+	--- @param newPos Vector The new position to update the tracker with
+	--- @param dt? number The delta time since the last update (defaults to time since last update)
+	--- @return number, number The G force experienced and the delta time since the last update
+	function ACF.UpdateGForceTracker(tbl, newPos, dt)
+		if not tbl then return end
+
+		local LastTime = tbl.LastTime or CurTime()
+		local DeltaTime = dt or (CurTime() - LastTime)
+
+		tbl.Pos = newPos or tbl.Pos
+		tbl.Vel = (tbl.Pos - tbl.LastPos) / DeltaTime
+		tbl.Acc = (tbl.Vel - tbl.LastVel) / DeltaTime
+
+		tbl.LastPos = tbl.Pos
+		tbl.LastVel = tbl.Vel
+		tbl.LastAcc = tbl.Acc
+		tbl.LastTime = LastTime + DeltaTime
+		return tbl.Acc:Length() / -ACF.Gravity.z, DeltaTime -- Since gravity is a vector...
+	end
+end
+
+-- Helper function to perform pairs() over one or two tables (note this doesn't take into account duplicate keys)
+function ACF.DuplexPairs(Table1, Table2)
+	local Switched = false
+
+	local function Enumerator(_, K)
+		local V
+
+		if Switched then
+			K, V = next(Table2, K)
+			return K, V
+		else
+			K, V = next(Table1, K)
+			if K == nil and Table2 ~= nil then
+				Switched = true
+				return next(Table2, nil)
+			else
+				return K, V
+			end
+		end
+	end
+
+	return Enumerator, nil, nil
 end

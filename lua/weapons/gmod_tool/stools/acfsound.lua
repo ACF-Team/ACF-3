@@ -40,9 +40,9 @@ local function IsReallyValid(trace, ply)
 	local class = trace.Entity:GetClass()
 
 	if not ACF.SoundToolSupport[class] then
-		if string.StartWith(class, "acf_") then
+		if SERVER and string.StartWith(class, "acf_") then
 			ACF.SendNotify(ply, false, "#tool.acfsound.unsupported_class")
-		else
+		elseif SERVER then
 			ACF.SendNotify(ply, false, "#tool.acfsound.unsupported_ent")
 		end
 

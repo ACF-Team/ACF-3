@@ -35,7 +35,6 @@ include("shared.lua")
 local ACF = ACF
 local HookRun     = hook.Run
 local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
 local WireIO      = Utilities.WireIO
 
 local Contraption = ACF.Contraption
@@ -58,6 +57,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 -- Pool network strings
 util.AddNetworkString("ACF_Crew_Links")
 util.AddNetworkString("ACF_Crew_Space")
+util.AddNetworkString("ACF_Crew_Spawn")
 
 --- Helper function that generates scanning information for the crew member
 local function GenerateScanSetup()
@@ -107,7 +107,7 @@ local function iterScan(crew, reps)
 	local filter = function(x)
 		local Owner = x:CPPIGetOwner()
 		if not IsValid(Owner) then return false end
-		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer())
+		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()])
 	end
 
 	-- Update reps hull traces
@@ -139,7 +139,7 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
-function ENT:CFW_OnParentedTo(OldParent, _)
+function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
 		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
@@ -255,8 +255,6 @@ do -- Random timer stuff
 	function ENT:UpdateHighFreq(cfg)
 		if self.Disabled then return end
 
-		local DeltaTime = cfg.DeltaTime
-
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = self.CrewType.LeanInfo
 		if LeanInfo then
@@ -264,39 +262,6 @@ do -- Random timer stuff
 			local Angle = math.deg(math.acos(LeanDot))
 			self.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
 			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
-		end
-
-		-- Avoid G force calculation on crew during building...
-		local Parent = self:GetParent()
-		if DeltaTime > 0 and IsValid(Parent) then
-			-- Calculate current G force on crew
-			self.Pos = self.Pos or self:GetPos()
-			self.Vel = self.Vel or self:GetVelocity()
-
-			local pos = self:GetPos()
-			local vel = (pos - self.Pos) / DeltaTime
-			local accel = (vel - self.Vel) / DeltaTime
-
-			self.Pos = pos
-			self.Vel = vel
-			self.Accel = accel
-
-			local GForce = accel:Length() / 600 -- G Force is acceleration / default source gravity
-
-			-- If specified, affect crew ergonomics based on G forces
-			local Effs = self.CrewType.GForceInfo.Efficiencies
-			if Effs then
-				self.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
-				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
-			end
-			WireLib.TriggerOutput(self, "GForce", GForce)
-
-			-- If specified, apply damage to crew based on G forces
-			local Damages = self.CrewType.GForceInfo.Damages
-			if Damages and GForce > Damages.Min and self.IsAlive then
-				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * 100 * DeltaTime
-				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
-			end
 		end
 
 		-- TODO: Clean this shit up man
@@ -311,6 +276,68 @@ do -- Random timer stuff
 		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
 
 		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
+	end
+
+	function ENT:EnforceLimits()
+		local Targets = self.Targets
+		local SelfContraption = self:GetContraption()
+		local IsParented = CheckParentState(self)
+		if IsParented and Targets ~= nil and next(Targets) then
+			local Pos = self:GetPos()
+			for Link in pairs(Targets) do
+				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
+
+				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
+				if OutOfRange or DiffAncestors then
+					local Sound = UnlinkSound:format(math.random(1, 3))
+					Link:EmitSound(Sound, 70, 100, ACF.Volume)
+					self:EmitSound(Sound, 70, 100, ACF.Volume)
+					self:Unlink(Link)
+					Link:Unlink(self)
+
+					local Reasons = {}
+					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
+					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
+					Reasons = table.concat(Reasons, ", and ")
+					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
+
+					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
+				end
+			end
+		end
+
+		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
+
+		EnforceLimits(self)
+
+		self:UpdateOverlay()
+	end
+
+	function ENT:EnforceGForces()
+		local Parent = self:GetParent()
+		if not IsValid(Parent) then return end
+
+		local SelfTbl = self:GetTable()
+		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local GForce, DeltaTime = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos)
+
+		-- If specified, affect crew ergonomics based on G forces
+		local GForceInfo = SelfTbl.CrewType.GForceInfo
+		local Effs = GForceInfo.Efficiencies
+		if Effs then
+			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
+			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
+		end
+		WireLib.TriggerOutput(self, "GForce", GForce)
+
+		-- If specified, apply damage to crew based on G forces
+		local Damages = GForceInfo.Damages
+		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
+			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * SelfTbl.ACF.MaxHealth * DeltaTime
+			self:DamageCrew(Damage, "player/pl_fallpain3.wav")
+		end
 	end
 end
 
@@ -333,16 +360,26 @@ do
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
+		if Data.UseAnimation == nil then Data.UseAnimation = false end
 
 		if not isnumber(Data.CrewPriority) then -- Ammo priority is used to deliniate different stages
 			Data.CrewPriority = 1
 		end
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
-		if Data.ReplacedOnlyLower == nil then Data.ReplacedOnlyLower = false end
+		if Data.CrewPlayerModel == nil or Data.CrewPlayerModel == "" then Data.CrewPlayerModel = "models/player/dod_german.mdl" end
+		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260)
+
+		if Data.CrewPlayerModelBodygroups == nil then Data.CrewPlayerModelBodygroups = "" end
+		Data.CrewPlayerModelBodygroups = string.sub(Data.CrewPlayerModelBodygroups or "", 1, 63)
+
+		if Data.CrewPlayerModelSkin == nil then Data.CrewPlayerModelSkin = 0 end
+		Data.CrewPlayerModelSkin = math.Clamp(math.Round(Data.CrewPlayerModelSkin), 0, 63)
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
+		VerifyData(Data)
+
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
 		Entity.ACF.Model = CrewModel.Model
@@ -364,11 +401,25 @@ do
 		Entity.CrewModelID = Data.CrewModelID
 		Entity.ReplaceOthers = Data.ReplaceOthers
 		Entity.ReplaceSelf = Data.ReplaceSelf
+		Entity.UseAnimation = Data.UseAnimation or false
 		Entity.CrewPriority = Data.CrewPriority
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = CrewType.ID
 
+		Entity.CrewPoseID = Data.CrewPoseID
+		Entity.CrewPlayerModel = Data.CrewPlayerModel
+		Entity.CrewPlayerModelBodygroups = Data.CrewPlayerModelBodygroups
+		Entity.CrewPlayerModelSkin = Data.CrewPlayerModelSkin
+
+		-- Various efficiency modifiers
+		Entity.ModelEff = 1
+		Entity.LeanEff = 1
+		Entity.SpaceEff = 1
+		Entity.MoveEff = 1
+		Entity.HealthEff = 1
+		Entity.TotalEff = 1
+		Entity.Focus = 1
 		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
 
 		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
@@ -387,6 +438,22 @@ do
 		Entity:UpdateOverlay(true)
 
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
+
+		-- TODO: Figure out how to "ClientInitialized" this
+		if Entity.UseAnimation == true then
+			timer.Simple(0, function()
+				if not IsValid(Entity) then return end
+
+				net.Start("ACF_Crew_Spawn")
+				net.WriteEntity(Entity)
+				net.WriteString(Entity.CrewModelID)
+				net.WriteString(Entity.CrewPoseID)
+				net.WriteString(Entity.CrewPlayerModel)
+				net.WriteString(Entity.CrewPlayerModelBodygroups)
+				net.WriteUInt(Entity.CrewPlayerModelSkin, 6)
+				net.Broadcast()
+			end)
+		end
 	end
 
 	function ACF.MakeCrew(Player, Pos, Angle, Data)
@@ -426,19 +493,12 @@ do
 		Entity.Targets = {} -- Targets linked to this crew (LUT)
 		Entity.TargetsByType = {} -- Targets linked to this crew by type (LUT)
 
-		-- Various efficiency modifiers
-		Entity.ModelEff = 1
-		Entity.LeanEff = 1
-		Entity.SpaceEff = 1
-		Entity.MoveEff = 1
-		Entity.HealthEff = 1
-		Entity.TotalEff = 1
-		Entity.Focus = 1
-
 		-- Various state variables
 		Entity.ShouldScan = false
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
 		Entity.IsAlive = true
+
+		Entity.GForceTracker = ACF.SetupGForceTracker(Entity:LocalToWorld(CrewModel.ScanOffsetL))
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
@@ -448,6 +508,14 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateMedFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+
+		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 4 / 66, MaxTime = 4 / 66, Delay = 0.1})
+
+		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
+		local Mat, _ = Material("sprops/sprops_grid_12x12")
+		if not Mat:IsError() then Entity:SetMaterial("sprops/sprops_grid_12x12")
+		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
 
 		-- Finish setting up the entity
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
@@ -467,7 +535,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
@@ -547,48 +615,6 @@ end
 
 -- Entity methods
 do
-	-- Think logic (mostly checks and stuff that updates frequently)
-	-- Hopefully runs after CFW is initialized
-	function ENT:Think()
-		-- Check links on this entity
-		local Targets = self.Targets
-		local SelfContraption = self:GetContraption()
-		local IsParented = CheckParentState(self)
-		if IsParented and Targets ~= nil and next(Targets) then
-			local Pos = self:GetPos()
-			for Link in pairs(Targets) do
-				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
-
-				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
-				if OutOfRange or DiffAncestors then
-					local Sound = UnlinkSound:format(math.random(1, 3))
-					Link:EmitSound(Sound, 70, 100, ACF.Volume)
-					self:EmitSound(Sound, 70, 100, ACF.Volume)
-					self:Unlink(Link)
-					Link:Unlink(self)
-
-					local Reasons = {}
-					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
-					if DiffAncestors then Reasons[#Reasons + 1] = "the two crews contraptions differed" end
-					Reasons = table.concat(Reasons, ", and ")
-					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
-
-					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
-				end
-			end
-		end
-
-		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
-		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
-
-		EnforceLimits(self)
-
-		self:UpdateOverlay()
-		self:NextThink(Clock.CurTime + math.Rand(1, 2))
-		return true
-	end
-
 	function ENT:ACF_Activate(Recalc)
 		local PhysObj = self.ACF.PhysObj
 		-- local Mass    = PhysObj:GetMass()
@@ -714,10 +740,11 @@ do
 				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
 					local Driver = ent:GetDriver()
 					if IsValid(Driver) then
-						Driver:Kill()
+						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
 					end
 				end
 			end
+			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end
 
@@ -965,8 +992,6 @@ do
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
-
-		self:NextThink(Clock.CurTime + 2) -- Hope CFW finishes merging contraptions after this point...
 
 		-- Restore previous links
 		if EntMods.CrewTargets then

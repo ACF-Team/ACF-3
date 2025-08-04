@@ -73,7 +73,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer()) end
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
 		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
@@ -104,7 +104,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer()) end
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
@@ -280,6 +280,20 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end)
 
+	hook.Add("cfw.contraption.entityAdded", "ACF_CFWGunIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = true
+		end
+	end)
+
+	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWGunUnIndex", function(contraption, ent)
+		if ent:GetClass() == "acf_gun" then
+			contraption.Guns = contraption.Guns or {}
+			contraption.Guns[ent] = nil
+		end
+	end)
+
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
 		local ClassSounds = Class.Sounds
@@ -374,7 +388,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity:SetNWString("Sound", Entity.SoundPath)
 		Entity:SetNWFloat("SoundPitch", Entity.SoundPitch)
 		Entity:SetNWFloat("SoundVolume", Entity.SoundVolume)
-		Entity:SetNWString("Class", Entity.Class)
+		Entity:SetNWString("ACF_Class", Entity.Class)
 
 		-- Adjustable barrel length
 		if Entity.Long then
@@ -588,7 +602,7 @@ do -- Metamethods --------------------------------
 			Crate:UpdateOverlay(true)
 
 			local function AttemptReload(This, Target, Instant)
-				if IsValid(This) and IsValid(Target) and Target:CanConsume() then
+				if IsValid(This) and IsValid(Target) then
 					This:Load(Instant)
 				end
 			end
@@ -945,6 +959,7 @@ do -- Metamethods --------------------------------
 					if Manual then -- Automatics don't change their rate of fire
 						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
 						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
+						self.ReloadTime = IdealTime / eff
 					end
 					return eff
 				end
@@ -1032,6 +1047,7 @@ do -- Metamethods --------------------------------
 				local ReloadLoop = function()
 					local eff = self:UpdateLoadMod()
 					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
+					self.MagReload = IdealTime / eff
 					return eff
 				end
 

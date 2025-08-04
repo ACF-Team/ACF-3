@@ -4,6 +4,7 @@ ENT.PrintName     = "ACF Armor"
 ENT.WireDebugName = "ACF Armor"
 ENT.PluralName    = "ACF Armor"
 ENT.IsACFArmor    = true
+ENT.ACF_PreventArmoring = false
 
 cleanup.Register("acf_armor")
 

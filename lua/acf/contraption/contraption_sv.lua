@@ -138,10 +138,19 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local Physical, Parented, Detached = Contraption.GetEnts(Ent)
+	local EntContraption = Ent:GetContraption()
+	local Physical, Parented, Detached
+	if EntContraption then
+		Physical, Parented, Detached = Contraption.GetEnts(Ent)
+	else
+		Physical, Parented, Detached = {[Ent] = true}, {}, {}
+	end
+
 	local Constraints = {}
 
-	for K in pairs(Physical) do
+	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
+	-- if DetachedPhysmassRatio == false
+	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
 		local Phys = K:GetPhysicsObject()
 
 		if not IsValid(Phys) then
@@ -198,14 +207,8 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 	local TotMass = Con and Con.totalMass or PhysMass
 
-	for K in pairs(Detached) do
+	for _ in pairs(Detached) do
 		OthN = OthN + 1
-
-		local Phys = K:GetPhysicsObject()
-
-		if IsValid(Phys) then
-			TotMass = TotMass + Phys:GetMass()
-		end
 	end
 
 	for K in pairs(Physical) do
@@ -338,6 +341,10 @@ do -- ASSUMING DIRECT CONTROL
 			end
 
 			function ENT:SetModel(Model)
+				-- MARCH: Just a notice - if you get "attempt to index field ACF (a nil value)" issues here,
+				-- DON'T just add a if self.ACF check - this is intended to be called on ACF entities
+				-- and they should have an ACF table, so you're just suppressing an issue here, only for it to
+				-- probably show up later... do more investigation into *why* self.ACF returned nil.
 				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
 
 				SetModel(self, Model)

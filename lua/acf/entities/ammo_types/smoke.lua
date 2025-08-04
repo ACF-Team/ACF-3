@@ -6,6 +6,7 @@ local Ammo      = AmmoTypes.Register("SM", "AP")
 
 function Ammo:OnLoaded()
 	self.Name		 = "Smoke"
+	self.SpawnIcon   = "acf/icons/shell_smoke.png"
 	self.Model		 = "models/munitions/round_100mm_shot.mdl"
 	self.Description = "#acf.descs.ammo.sm"
 	self.Blacklist = {

@@ -117,7 +117,7 @@ do	-- Overlay/networking for that
 		render.SetColorMaterial()
 
 		local Length = self:GetNW2Float("Length", 0)
-		local Class = self:GetNWString("Class")
+		local Class = self:GetNWString("ACF_Class")
 		local ClassData = Weapons.Get(Class)
 		if not ClassData then return end
 

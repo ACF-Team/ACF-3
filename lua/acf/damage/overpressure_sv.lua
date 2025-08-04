@@ -44,21 +44,23 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 		Angle = math.rad(Angle * 0.5) -- Convert deg to rads
 
 		for V in pairs(Squishies) do
-			local Position = V:EyePos()
-			local Direction = (Position - Origin):GetNormalized()
+			if IsValid(V) then -- MARCH: Tried to use a NULL entity! here. Should investigate *why* this happens later
+				local Position = V:EyePos()
+				local Direction = (Position - Origin):GetNormalized()
 
-			if math.acos(Forward:Dot(Direction)) < Angle then
-				local D = Position:Distance(Origin)
+				if math.acos(Forward:Dot(Direction)) < Angle then
+					local D = Position:Distance(Origin)
 
-				if D / ACF.MeterToInch <= Radius then
+					if D / ACF.MeterToInch <= Radius then
 
-					Data.endpos = Position + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
-					if CanSee(V, Data) then
-						local Damage = Energy * 175000 * (1 / D^3)
+						if CanSee(V, Data) then
+							local Damage = Energy * 175000 * (1 / D^3)
 
-						if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
-							V:TakeDamage(Damage, Inflictor, Source)
+							if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
+								V:TakeDamage(Damage, Inflictor, Source)
+							end
 						end
 					end
 				end
@@ -66,21 +68,23 @@ function ACF.Overpressure(Origin, Energy, Inflictor, Source, Forward, Angle)
 		end
 	else -- Spherical blast
 		for V in pairs(Squishies) do
-			local Position = V:EyePos()
+			if IsValid(V) then -- MARCH: Tried to use a NULL entity! here. Should investigate *why* this happens later
+				local Position = V:EyePos()
 
-			if CanSee(Origin, V) then
-				local D = Position:Distance(Origin)
+				if CanSee(Origin, V) then
+					local D = Position:Distance(Origin)
 
-				if D / ACF.MeterToInch <= Radius then
+					if D / ACF.MeterToInch <= Radius then
 
-					Data.endpos = Position + VectorRand() * 5
+						Data.endpos = Position + VectorRand() * 5
 
-					if CanSee(V, Data) then
-						local Damage = Energy * 150000 * (1 / D^3)
-						local Direction = (Source:GetPos() - V:GetPos()):GetNormalized()
+						if CanSee(V, Data) then
+							local Damage = Energy * 150000 * (1 / D^3)
+							local Direction = (Source:GetPos() - V:GetPos()):GetNormalized()
 
-						if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
-							V:TakeDamage(Damage, Inflictor, Source)
+							if not ACF.Damage.DoSquishyFlingKill(V, Damage, V:GetPos() + HitPosOffset, Inflictor, Source, Direction, true) then
+								V:TakeDamage(Damage, Inflictor, Source)
+							end
 						end
 					end
 				end

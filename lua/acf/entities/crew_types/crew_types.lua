@@ -57,6 +57,7 @@ end
 
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
+	Icon		= "icon16/wand.png",
 	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
 	ExtraNotes 	= "Loaders can be linked to any gun, but their focus is split between each. Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
 	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
@@ -106,6 +107,7 @@ CrewTypes.Register("Loader", {
 
 CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
+	Icon		= "icon16/gun.png",
 	Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting.",
 	ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change.",
 	LimitConVar	= {
@@ -155,6 +157,7 @@ CrewTypes.Register("Gunner", {
 
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
+	Icon		= "icon16/car.png",
 	Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting.",
 	ExtraNotes	= "Drivers can be linked to any engine and their focus does not change.",
 	LimitConVar	= {
@@ -197,6 +200,7 @@ CrewTypes.Register("Driver", {
 
 CrewTypes.Register("Commander", {
 	Name        = "Commander",
+	Icon		= "icon16/medal_gold_1.png",
 	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
 	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew.",
 	LimitConVar	= {
@@ -252,14 +256,22 @@ CrewTypes.Register("Commander", {
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Contraption = Crew:GetContraption() or {}
-		local CrewCount = (Contraption.Crews and table.Count(Contraption.Crews) or 0) - 1 -- Excluding the commander
-		local Count = table.Count(Crew.Targets) + (CrewCount * 1 / ACF.CommanderCapacity) -- 1/3rd focus to each crew, 1 to each other target
+
+		local AliveCount = -1 -- Excluding the commander
+		for Crew, _ in pairs(Contraption.Crews or table_empty) do
+			if IsValid(Crew) and Crew.IsAlive then
+				AliveCount = AliveCount + 1
+			end
+		end
+
+		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end
 })
 
 CrewTypes.Register("Pilot", {
 	Name        = "Pilot",
+	Icon		= "icon16/weather_clouds.png",
 	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft.",
 	ExtraNotes 	= "Pilots do not affect anything at the moment.",
 	LimitConVar	= {
@@ -270,8 +282,8 @@ CrewTypes.Register("Pilot", {
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
 	GForceInfo = {
 		Damages = {
-			Min = 6,	-- Damage starts being applied after this (Gs)
-			Max = 9,	-- Instant death after this (Gs)
+			Min = 9,	-- Damage starts being applied after this (Gs)
+			Max = 15,	-- Instant death after this (Gs)
 		}
 	},
 	LinkHandlers = {

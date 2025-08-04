@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 local Crates  = Classes.Crates
-local Entries = {}
+local Entries = Classes.GetOrCreateEntries(Crates)
 
 
 -- NOTE: This registration function should only be used for backwards compatibility

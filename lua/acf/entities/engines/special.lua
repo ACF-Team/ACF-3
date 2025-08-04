@@ -229,8 +229,8 @@ do -- Special V12 Engines
 		FlywheelMass = 0.1,
 		Pitch		 = 0.85,
 		RPM = {
-			Idle	= 1200,
-			Limit	= 12500,
+			Idle	= 1100,
+			Limit	= 8750,
 		},
 		Preview = {
 			FOV = 95,

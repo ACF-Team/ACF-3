@@ -63,6 +63,12 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 		return Result
 	end
 
+	--- Gets the stored entries table
+	--- Returns the original reference
+	--- Allows the class system to restore itself later
+	--- @return table # The stored entries table
+	function Namespace.GetStored() return Entries end
+
 	--- Gets all the entries in the namespace  
 	--- If aliases exist in the namespace, they will be included in the returned table
 	--- @return table<number,table> # An "array" (e.g. {class1,class2,...}) containing entries

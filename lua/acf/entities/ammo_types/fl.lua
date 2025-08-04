@@ -8,6 +8,7 @@ function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
 	self.Name		 = "Flechette"
+	self.SpawnIcon   = "acf/icons/shell_fl.png"
 	self.Model		 = "models/munitions/dart_100mm.mdl"
 	self.Description = "#acf.descs.ammo.fl"
 	self.Blacklist = {
@@ -259,7 +260,5 @@ else
 
 			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
 		end)
-
-		Menu:AddLabel("#acf.menu.ammo.approx_pen_warning")
 	end
 end

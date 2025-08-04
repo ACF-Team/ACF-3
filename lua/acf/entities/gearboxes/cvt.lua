@@ -71,7 +71,7 @@ Gearboxes.Register("CVT", {
 	GetGearsText = function(Gearbox)
 		local Text    = "Reverse Gear: %s\nTarget: %s - %s RPM"
 		local Gears   = Gearbox.Gears
-		local Reverse = math.Round(Gears[2], 2)
+		local Reverse = ACF.ConvertGearRatio(Gears[2], Gearbox.GearboxLegacyRatio)
 		local Min     = math.Round(Gearbox.MinRPM)
 		local Max     = math.Round(Gearbox.MaxRPM)
 

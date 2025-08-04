@@ -3,7 +3,6 @@ DEFINE_BASECLASS("acf_base_simple")
 ENT.PrintName     = "ACF Controller"
 ENT.WireDebugName = "ACF Controller"
 ENT.PluralName    = "ACF Controllers"
-ENT.IsACFEntity   = true
 ENT.IsACFController = true
 ENT.ACF_InvisibleToBallistics = true
 
@@ -11,10 +10,11 @@ cleanup.Register("acf_controller")
 
 ENT.Editable = true
 function ENT:SetupDataTables()
-	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 10, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableAIOCam", { KeyName = "disableaiocam", Edit = { type = "Bool", order = 11, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableAIOHUD", { KeyName = "disableaiohud", Edit = { type = "Bool", order = 12, category = "Miscellaneous" } } )
-	self:NetworkVar( "Bool", "DisableFiring", { KeyName = "disablefiring", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOCam", { KeyName = "disableaiocam", Edit = { type = "Bool", order = 10, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableAIOHUD", { KeyName = "disableaiohud", Edit = { type = "Bool", order = 11, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "DisableFiring", { KeyName = "disablefiring", Edit = { type = "Bool", order = 12, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
+	self:NetworkVar( "Bool", "ThrottleIgnoresAD", { KeyName = "throttleignoresad", Edit = { type = "Bool", order = 14, category = "Miscellaneous" } } )
 	-- self:NetworkVar( "String", "KeyBinds", { KeyName = "keybinds", Edit = { readonly = true, order = 14, category = "Miscellaneous" } } )
 
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 20, category = "Camera Settings", min = 0.001, max = 90 } } )
@@ -37,12 +37,21 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", "ThrottleIdle", { KeyName = "throttleidle", Edit = { type = "Int", order = 60, category = "Drivetrain Settings", min = 0, max = 100 } } )
 	self:NetworkVar( "Int", "SpeedUnit", { KeyName = "speedunit", Edit = { type = "Combo", order = 61, category = "Drivetrain Settings", values = {KPH = 0, MPH = 1} } } )
-	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, H = 1} } } )
+	self:NetworkVar( "Int", "FuelUnit", { KeyName = "fuelunit", Edit = { type = "Combo", order = 62, category = "Drivetrain Settings", values = {L = 0, G = 1} } } )
 
 	self:NetworkVar( "Int", "BrakeEngagement", { KeyName = "brakeengagement", Edit = { type = "Combo", order = 71, category = "Brake Settings", values = {Manual = 0, Automatic = 1} } } )
-	self:NetworkVar( "Float", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Float", order = 73, category = "Brake Settings", min = 0.001, max = 1000 } } )
+	self:NetworkVar( "Int", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Int", order = 72, category = "Brake Settings", min = 0.001, max = 1000 } } )
+	self:NetworkVar( "Int", "BrakeStrengthTop", { KeyName = "brakestrengthtop", Edit = { type = "Int", order = 73, category = "Brake Settings", min = 0.001, max = 1000 } } )
+	self:NetworkVar( "Int", "SpeedLow", { KeyName = "speedlow", Edit = { type = "Int", order = 74, category = "Brake Settings", min = 0.001, max = 1000 } } )
+	self:NetworkVar( "Int", "SpeedTop", { KeyName = "speedtop", Edit = { type = "Int", order = 75, category = "Brake Settings", min = 0.001, max = 1000 } } )
 
 	self:NetworkVar( "Float", "ShiftTime", { KeyName = "shifttime", Edit = { type = "Int", order = 80, category = "Shifting Settings", min = 100, max = 3000 } } )
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 81, category = "Shifting Settings", min = 0, max = 10000 } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 82, category = "Shifting Settings", min = 0, max = 10000 } } )
+
+	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 90, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 91, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 92, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 93, category = "Steering Settings", min = -1, max = 1} } )
+	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 94, category = "Steering Settings", min = -45, max = 45} } )
 end
