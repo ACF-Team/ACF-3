@@ -1093,11 +1093,9 @@ do	-- NET SURFER 2.0
 			local Inputs = {}
 			local OutputL = {}
 			local OutputR = {}
-			local Data = {
-				In = Entity.In.Pos,
-				OutL = Entity.OutL.Pos,
-				OutR = Entity.OutR.Pos
-			}
+			local In = Entity.In.Pos
+			local OutL = Entity.OutL.Pos
+			local OutR = Entity.OutR.Pos
 
 			if next(Entity.GearboxIn) then
 				for E in pairs(Entity.GearboxIn) do
@@ -1133,10 +1131,32 @@ do	-- NET SURFER 2.0
 
 			net.Start("ACF_RequestGearboxInfo")
 				net.WriteEntity(Entity)
-				net.WriteString(util.TableToJSON(Data))
-				net.WriteString(util.TableToJSON(Inputs))
-				net.WriteString(util.TableToJSON(OutputL))
-				net.WriteString(util.TableToJSON(OutputR))
+
+				net.WriteVector(In)
+				net.WriteVector(OutL)
+				net.WriteVector(OutR)
+
+				net.WriteUInt(#Inputs, 6)
+				net.WriteUInt(#OutputL, 6)
+				net.WriteUInt(#OutputR, 6)
+
+				if next(Inputs) then
+					for _, E in ipairs(Inputs) do
+						net.WriteUInt(E, MAX_EDICT_BITS)
+					end
+				end
+
+				if next(OutputL) then
+					for _, E in ipairs(OutputL) do
+						net.WriteUInt(E, MAX_EDICT_BITS)
+					end
+				end
+
+				if next(OutputR) then
+					for _, E in ipairs(OutputR) do
+						net.WriteUInt(E, MAX_EDICT_BITS)
+					end
+				end
 			net.Send(Ply)
 		end
 	end)
