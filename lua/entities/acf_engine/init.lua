@@ -982,11 +982,9 @@ do	-- NET SURFER 2.0
 		local Entity = net.ReadEntity()
 
 		if IsValid(Entity) then
-			local Outputs = {}
-			local FuelTanks = {}
-			local Data = {
-				Driveshaft	= Entity.Out.Pos
-			}
+			local Outputs    = {}
+			local FuelTanks  = {}
+			local Driveshaft = Entity.Out.Pos
 
 			if next(Entity.Gearboxes) then
 				for E in pairs(Entity.Gearboxes) do
@@ -1002,9 +1000,21 @@ do	-- NET SURFER 2.0
 
 			net.Start("ACF_RequestEngineInfo")
 				net.WriteEntity(Entity)
-				net.WriteString(util.TableToJSON(Data))
-				net.WriteString(util.TableToJSON(Outputs))
-				net.WriteString(util.TableToJSON(FuelTanks))
+				net.WriteVector(Driveshaft)
+				net.WriteUInt(#Outputs, 6)
+				net.WriteUInt(#FuelTanks, 6)
+
+				if next(Outputs) then
+					for _, E in ipairs(Outputs) do
+						net.WriteUInt(E, MAX_EDICT_BITS)
+					end
+				end
+
+				if next(FuelTanks) then
+					for _, E in ipairs(FuelTanks) do
+						net.WriteUInt(E, MAX_EDICT_BITS)
+					end
+				end
 			net.Send(Ply)
 		end
 	end)
