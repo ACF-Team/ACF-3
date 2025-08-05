@@ -68,6 +68,36 @@ do -- Spawning and Updating --------------------
 		"Entity (The ammo crate itself.) [ENTITY]",
 	}
 
+	local function NetworkAmmoData(Entity, Player)
+		if IsValid(Entity) and Entity.ExtraData then
+			net.Start("ACF_RequestAmmoData")
+				net.WriteEntity(Entity)
+
+				local ExtraData = Entity.ExtraData
+				local Enabled = ExtraData.Enabled
+				net.WriteBool(Enabled)
+
+				if Enabled then
+					net.WriteUInt(ExtraData.Capacity, 25)
+					net.WriteBool(ExtraData.IsRound)
+					net.WriteVector(ExtraData.RoundSize)
+					net.WriteAngle(ExtraData.LocalAng)
+					net.WriteVector(ExtraData.FitPerAxis)
+					net.WriteFloat(ExtraData.Spacing)
+					net.WriteUInt(ExtraData.MagSize, 10)
+					net.WriteBool(ExtraData.IsBoxed)
+					net.WriteUInt(ExtraData.AmmoStage, 5)
+					net.WriteBool(ExtraData.IsBelted)
+				end
+
+			if Player then
+				net.Send(Player)
+			else
+				net.Broadcast()
+			end
+		end
+	end
+
 	local function VerifyData(Data)
 		if Data.Id then -- Deprecated ammo data formats
 			local Crate = Crates.Get(Data.Id) -- Id is the crate model type, Crate holds its offset, size and id.
@@ -256,14 +286,10 @@ do -- Spawning and Updating --------------------
 				ExtraData = { Enabled = false }
 			end
 
-			Entity.CrateData = util.TableToJSON(ExtraData)
 			Entity.ExtraData = ExtraData
 
 			-- Send over the crate and ExtraData to the client to render the overlay
-			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
-				net.WriteString(Entity.CrateData)
-			net.Broadcast()
+			NetworkAmmoData(Entity)
 		end
 
 		-- Linked weapon unloading
@@ -296,12 +322,7 @@ do -- Spawning and Updating --------------------
 	net.Receive("ACF_RequestAmmoData", function(_, Player)
 		local Entity = net.ReadEntity()
 
-		if IsValid(Entity) and Entity.CrateData then
-			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
-				net.WriteString(Entity.CrateData)
-			net.Send(Player)
-		end
+		NetworkAmmoData(Entity, Player)
 	end)
 
 	-------------------------------------------------------------------------------

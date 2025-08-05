@@ -26,23 +26,21 @@ end
 
 net.Receive("ACF_RequestAmmoData", function()
 	local Entity = net.ReadEntity()
-	local Data = util.JSONToTable(net.ReadString())
-
 	if not IsValid(Entity) then return end
 
-	Entity.HasData = Data.Enabled
+	Entity.HasData = net.ReadBool()
 
-	if Data.Enabled then
-		Entity.Capacity = Data.Capacity
-		Entity.IsRound = Data.IsRound
-		Entity.RoundSize = Data.RoundSize
-		Entity.LocalAng = Data.LocalAng
-		Entity.FitPerAxis = Data.FitPerAxis
-		Entity.Spacing = Data.Spacing
-		Entity.MagSize = Data.MagSize
-		Entity.HasBoxedAmmo = Data.IsBoxed
-		Entity.AmmoStage = Data.AmmoStage
-		Entity.IsBelted = Data.IsBelted or false
+	if Entity.HasData then
+		Entity.Capacity = net.ReadUInt(25)
+		Entity.IsRound = net.ReadBool()
+		Entity.RoundSize = net.ReadVector()
+		Entity.LocalAng = net.ReadAngle()
+		Entity.FitPerAxis = net.ReadVector()
+		Entity.Spacing = net.ReadFloat()
+		Entity.MagSize = net.ReadUInt(10)
+		Entity.HasBoxedAmmo = net.ReadBool()
+		Entity.AmmoStage = net.ReadUInt(5)
+		Entity.IsBelted = net.ReadBool() or false
 	end
 
 	if Queued[Entity] then
