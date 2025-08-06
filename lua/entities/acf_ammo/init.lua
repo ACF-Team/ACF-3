@@ -82,7 +82,7 @@ do -- Spawning and Updating --------------------
 					net.WriteBool(ExtraData.IsRound)
 					net.WriteVector(ExtraData.RoundSize or vector_origin)
 					net.WriteAngle(ExtraData.LocalAng or angle_zero)
-					net.WriteVector(ExtraData.FitPerAxis)
+					net.WriteVector(ExtraData.FitPerAxis or vector_origin)
 					net.WriteFloat(ExtraData.Spacing)
 					net.WriteUInt(ExtraData.MagSize, 10)
 					net.WriteBool(ExtraData.IsBoxed)
