@@ -80,7 +80,7 @@ do -- Spawning and Updating --------------------
 				if Enabled then
 					net.WriteUInt(ExtraData.Capacity, 25)
 					net.WriteBool(ExtraData.IsRound)
-					net.WriteVector(ExtraData.RoundSize)
+					net.WriteVector(ExtraData.RoundSize or vector_origin)
 					net.WriteAngle(ExtraData.LocalAng)
 					net.WriteVector(ExtraData.FitPerAxis)
 					net.WriteFloat(ExtraData.Spacing)
