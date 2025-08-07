@@ -159,30 +159,22 @@ OneScale:Identity()
 OneScale:Scale(Vector(1, 1, 1))
 
 function ENT:Draw()
-    -- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
-    local LocalPlayer = LocalPlayer()
-    local Weapon      = LocalPlayer:GetActiveWeapon()
-    local LookedAt    = self:BeingLookedAtByLocalPlayer() and not LocalPlayer:InVehicle()
+    local RenderContext = ACF.RenderContext
+    local LookedAt      = RenderContext.LookAt == self
 
-    if LookedAt then
-        self:DrawEntityOutline()
-    end
+    if LookedAt then self:DrawEntityOutline() end
 
     self:EnableMatrix("RenderMultiply", OneScale)
     self:DrawModel()
 
-    if not LookedAt then return end
-    if HideInfo() then return end
+    if LookedAt then
+        if HideInfo() then return end
+        self:AddWorldTip()
 
-    self:AddWorldTip()
-
-    if LocalPlayer:InVehicle() then return end
-    if not IsValid(Weapon) then return end
-
-    local class = Weapon:GetClass()
-    if class ~= "weapon_physgun" and (class ~= "gmod_tool" or Weapon.current_mode ~= "acf_menu") then return end
-
-    self:DrawGizmos()
+        if not RenderContext.InVehicle and RenderContext.PhysOrTool and RenderContext.InACFMenu then
+            self:DrawGizmos()
+        end
+    end
 end
 
 function ENT:GetRenderMesh()
