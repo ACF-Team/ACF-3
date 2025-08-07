@@ -401,13 +401,20 @@ elseif CLIENT then
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
 
+	-- We cache these in upvalues rather than performing C calls a ton.
+	-- The HideInfoBubble function gets called a LOT!!!!
+	-- I have no idea if this will actually imrpove performance yet... we'll see
+	local ShowInfo_Value, LocalPlayer_InVehicle = 0, false
+	timer.Create("ACF_HideInfo_ResyncCData", 0.1, 0, function()
+		ShowInfo_Value = ShowInfo:GetInt()
+		local Player = LocalPlayer()
+		LocalPlayer_InVehicle = IsValid(Player) and Player:InVehicle() or false
+	end)
 	function ACF.HideInfoBubble()
-		local Value = ShowInfo:GetInt()
+		if ShowInfo_Value == 0 then return true end
+		if ShowInfo_Value == 2 then return false end
 
-		if Value == 0 then return true end
-		if Value == 2 then return false end
-
-		return LocalPlayer():InVehicle()
+		return LocalPlayer_InVehicle
 	end
 	---------------------------------------------
 

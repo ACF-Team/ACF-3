@@ -29,9 +29,6 @@ function ENT:CalcAbsolutePosition() -- Faking sync
 	local Angles   = self:GetAngles()
 
 	if IsValid(PhysObj) then
-		PhysObj:SetPos(Position)
-		PhysObj:SetAngles(Angles)
-		PhysObj:EnableMotion(false) -- Disable prediction
 		PhysObj:Sleep()
 	end
 
