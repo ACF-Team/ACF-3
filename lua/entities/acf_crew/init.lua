@@ -315,13 +315,14 @@ do -- Random timer stuff
 		self:UpdateOverlay()
 	end
 
+	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
 		local Parent = self:GetParent()
 		if not IsValid(Parent) then return end
 
 		local SelfTbl = self:GetTable()
 		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
-		local GForce, DeltaTime = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos)
+		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos)
 
 		-- If specified, affect crew ergonomics based on G forces
 		local GForceInfo = SelfTbl.CrewType.GForceInfo
@@ -510,7 +511,13 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 2 / 66, MaxTime = 2 / 66, Delay = 0.1})
+		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
+			Entity:EnforceGForces(cfg)
+		end)
+
+		Entity:CallOnRemove("GForceCalculation" .. Entity:EntIndex(), function()
+			hook.Remove("Tick", "GForceCalculation" .. Entity:EntIndex())
+		end)
 
 		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
 		local Mat, _ = Material("sprops/sprops_grid_12x12")

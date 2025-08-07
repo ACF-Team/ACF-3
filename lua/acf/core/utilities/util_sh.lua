@@ -1253,21 +1253,18 @@ do
 			Acc = accel or vector_origin,
 			LastPos = pos or vector_origin,
 			LastVel = vel or vector_origin,
-			LastAcc = accel or vector_origin,
-			LastTime = CurTime()
+			LastAcc = accel or vector_origin
 		}
 	end
+
+	local DeltaTime = engine.TickInterval()
 
 	--- Returns the G force given the current position and the time since the last update.
 	--- @param tbl table The table storing the G force tracker data
 	--- @param newPos Vector The new position to update the tracker with
-	--- @param dt? number The delta time since the last update (defaults to time since last update)
 	--- @return number, number The G force experienced and the delta time since the last update
-	function ACF.UpdateGForceTracker(tbl, newPos, dt)
+	function ACF.UpdateGForceTracker(tbl, newPos)
 		if not tbl then return end
-
-		local LastTime = tbl.LastTime or CurTime()
-		local DeltaTime = dt or (CurTime() - LastTime)
 
 		tbl.Pos = newPos or tbl.Pos
 		tbl.Vel = (tbl.Pos - tbl.LastPos) / DeltaTime
@@ -1276,8 +1273,7 @@ do
 		tbl.LastPos = tbl.Pos
 		tbl.LastVel = tbl.Vel
 		tbl.LastAcc = tbl.Acc
-		tbl.LastTime = LastTime + DeltaTime
-		return tbl.Acc:Length() / -ACF.Gravity.z, DeltaTime -- Since gravity is a vector...
+		return tbl.Acc:Length() / -ACF.Gravity.z -- Since gravity is a vector...
 	end
 end
 
