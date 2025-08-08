@@ -1263,12 +1263,12 @@ do
 	--- @param tbl table The table storing the G force tracker data
 	--- @param newPos Vector The new position to update the tracker with
 	--- @return number, number The G force experienced and the delta time since the last update
-	function ACF.UpdateGForceTracker(tbl, newPos)
+	function ACF.UpdateGForceTracker(tbl, newPos, sampleRate)
 		if not tbl then return end
 
 		tbl.Pos = newPos or tbl.Pos
-		tbl.Vel = (tbl.Pos - tbl.LastPos) / DeltaTime
-		tbl.Acc = (tbl.Vel - tbl.LastVel) / DeltaTime
+		tbl.Vel = (tbl.Pos - tbl.LastPos) / (DeltaTime * sampleRate)
+		tbl.Acc = (tbl.Vel - tbl.LastVel) / (DeltaTime * sampleRate)
 
 		tbl.LastPos = tbl.Pos
 		tbl.LastVel = tbl.Vel
