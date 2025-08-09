@@ -37,7 +37,6 @@ timer.Simple(Detours.Loaded and 0 or 5, function()
 
     local E2_SetAng E2_SetAng = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
         if not CanSetAng(Args[1]) then return end
-        print("Can!")
         return E2_SetAng(Scope, Args, ...)
     end)
     local SF_SetAng SF_SetAng = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
