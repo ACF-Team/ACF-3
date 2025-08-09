@@ -200,6 +200,9 @@ do -- Serverside settings
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
+
+		Base:AddCheckBox("Arbitrary manipulation"):LinkToServerData("AllowArbitraryManipulation")
+			Base:AddHelp("todo")
 	end)
 
 	ACF.AddServerSettings(301, "#acf.menu.settings.fun_menu", function(Base)
