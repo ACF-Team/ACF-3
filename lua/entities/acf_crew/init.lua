@@ -320,9 +320,18 @@ do -- Random timer stuff
 		local Parent = self:GetParent()
 		if not IsValid(Parent) then return end
 
+		local Contraption = self:GetContraption()
+		local Baseplate = Contraption and Contraption.Base
+		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+
+		local GForceIter = self.GForceIter or 0
+		GForceIter = GForceIter + 1
+		self.GForceIter = GForceIter
+		if GForceIter % SampleRate ~= 0 then return end
+
 		local SelfTbl = self:GetTable()
 		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
-		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos)
+		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
 		-- If specified, affect crew ergonomics based on G forces
 		local GForceInfo = SelfTbl.CrewType.GForceInfo
@@ -336,7 +345,7 @@ do -- Random timer stuff
 		-- If specified, apply damage to crew based on G forces
 		local Damages = GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
-			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * SelfTbl.ACF.MaxHealth * DeltaTime
+			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * SelfTbl.ACF.MaxHealth * DeltaTime * SampleRate
 			self:DamageCrew(Damage, "player/pl_fallpain3.wav")
 		end
 	end

@@ -14,6 +14,7 @@ ENT.ACF_UserVars = {
     ["DisableAltE"]    = {Type = "Boolean", Default = false, ClientData = true},
     ["Seat"]           = {Type = "LinkedEntity", Classes = {prop_vehicle_prisoner_pod = true}},
     ["AlreadyHasSeat"] = {Type = "Boolean", Default = false},
+    ["GForceTicks"] = {Type = "Number", Min = 1, Max = 7, Default = 1, Decimals = 0, ClientData = true}
 }
 
 cleanup.Register("acf_baseplate")
