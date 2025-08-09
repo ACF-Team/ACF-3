@@ -461,7 +461,7 @@ do -- Default gearbox menus
 				local TotalRatio = ValuesData.TotalRatio
 				local FinalDrive = ValuesData.FinalDrive
 				local WheelDiameter = ValuesData.WheelDiameter
-				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
+				local Multiplier = math.pi * UpshiftRPM / TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
 
 				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
