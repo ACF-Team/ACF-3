@@ -6,15 +6,20 @@ local function DoubleCurtime()
 	return engine.TickCount() * engine.TickInterval()
 end
 
-Clock.DeltaTime = engine.TickInterval()
-Clock.CurTime   = DoubleCurtime()
+Clock.DeltaTime        = engine.TickInterval()
+Clock.CurTime          = CurTime()
+Clock.PreciseCurTime   = CurTime()
 
 hook.Add("Think", "ACF Clock Update", function()
-	local Now   = DoubleCurtime()
-	local Delta = Now - Clock.CurTime
+	local Now     = CurTime()
+	local DbNow   = DoubleCurtime()
+	local Delta   = Now - Clock.CurTime
+	local DbDelta = Now - Clock.CurTime
 
-	Clock.DeltaTime = Delta
-	Clock.CurTime   = Now
+	Clock.DeltaTime        = Delta
+	Clock.PreciseDeltaTime = DbDelta
+	Clock.CurTime          = Now
+	Clock.PreciseCurTime   = DbNow
 
 	hook.Run("ACF_OnTick", New, Delta)
 end)
