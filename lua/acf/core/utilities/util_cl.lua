@@ -461,12 +461,15 @@ do -- Default gearbox menus
 				local TotalRatio = ValuesData.TotalRatio
 				local FinalDrive = ValuesData.FinalDrive
 				local WheelDiameter = ValuesData.WheelDiameter
-				local Multiplier = math.pi * UpshiftRPM / TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
-				if UseLegacyRatios then Multiplier = 1 / Multiplier end
+				local Multiplier = math.pi * UpshiftRPM * WheelDiameter / (60 * UnitMult)
+
+				if not UseLegacyRatios then Multiplier = Multiplier / TotalRatio / FinalDrive
+				else Multiplier = Multiplier * TotalRatio * FinalDrive end
+
 				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
-					if UseLegacyRatios then Gear = 1 / Gear end
-					ACF.SetClientData("Shift" .. I, Multiplier / Gear)
+					if not UseLegacyRatios then ACF.SetClientData("Shift" .. I, Multiplier / Gear)
+					else ACF.SetClientData("Shift" .. I, Multiplier * Gear)
 				end
 			end
 		end
