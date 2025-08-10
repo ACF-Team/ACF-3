@@ -323,6 +323,7 @@ do -- Random timer stuff
 		local Contraption = self:GetContraption()
 		local Baseplate = Contraption and Contraption.Base
 		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+		if Contraption.IsPickedUp then return end
 
 		local GForceIter = self.GForceIter or 0
 		GForceIter = GForceIter + 1

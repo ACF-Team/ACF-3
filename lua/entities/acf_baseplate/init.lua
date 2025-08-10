@@ -156,6 +156,25 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		end
 	end
 
+	hook.Add("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex(), function( _, ent )
+		local Contraption = ent.GetContraption and ent:GetContraption()
+		if Contraption ~= nil then
+			Contraption.IsPickedUp = true
+		end
+	end)
+
+	hook.Add("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex(), function( _, ent )
+		local Contraption = ent.GetContraption and ent:GetContraption()
+		if Contraption ~= nil then
+			Contraption.IsPickedUp = false
+		end
+	end)
+
+	self:CallOnRemove("ACF_RemovePickupHooks", function()
+		hook.Remove("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex())
+		hook.Remove("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex())
+	end)
+
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
