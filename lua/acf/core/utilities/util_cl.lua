@@ -469,7 +469,7 @@ do -- Default gearbox menus
 				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
 					if not UseLegacyRatios then ACF.SetClientData("Shift" .. I, Multiplier / Gear)
-					else ACF.SetClientData("Shift" .. I, Multiplier * Gear)
+					else ACF.SetClientData("Shift" .. I, Multiplier * Gear) end
 				end
 			end
 		end
