@@ -228,17 +228,16 @@ CrewTypes.Register("Commander", {
 	},
 	LinkHandlers = {
 		acf_gun = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 		},
 		acf_rack = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
 		},
 		acf_turret = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Commanders can only link to one entity." end
-				if Target.Turret == "Turret-V" then return false, "Commanders cannot link to vertical drives." end
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_turret") then return false, "Commanders can only link to one turret." end
 				return true, "Crew linked."
 			end
 		},
