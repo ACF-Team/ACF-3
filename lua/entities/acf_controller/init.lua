@@ -752,8 +752,20 @@ do
 		if RPM > MinRPM then Gear = Gear + 1
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
-		local Lower = (S and SelfTbl.ForwardGearCount + 1) or 1
-		local Upper = (S and SelfTbl.TotalGearCount) or SelfTbl.ForwardGearCount
+		-- Clean this up later
+		local CanNeutral = SelfTbl.GearboxEndCount == 2
+		local Lower, Upper = 1, SelfTbl.ForwardGearCount
+		if CanNeutral then
+			Lower = 1
+			Upper = SelfTbl.ForwardGearCount
+		elseif S then
+			Lower = SelfTbl.ForwardGearCount + 1
+			Upper = SelfTbl.TotalGearCount
+		end
+
+		--Lower = (S and SelfTbl.ForwardGearCount + 1) or 1
+		--Upper = (S and SelfTbl.TotalGearCount) or SelfTbl.ForwardGearCount
+
 		Gear = math.Clamp(Gear, Lower, Upper)
 		if Gear ~= SelfTbl.Gearbox.Gear then
 			SelfTbl.Gearbox:TriggerInput("Gear", Gear)
