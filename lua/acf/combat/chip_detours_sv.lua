@@ -1,5 +1,7 @@
--- Registers a bunch of legality detours.
+-- Purpose: Registers a bunch of legality detours for chip interactions with
+-- ACF entities and contraptions. Still a lot of work to do here...
 
+local ACF = ACF
 local Detours = ACF.Detours
 
 local function DisableEntity(Entity, Reason, Message)
@@ -82,6 +84,4 @@ timer.Simple(Detours.Loaded and 0 or 5, function()
             return SF_PhysObj_SetAng(Instance, PhysObj, ...)
         end)
     end
-
-    print("ACF detours loaded...") -- I forgot the print function :) note to self to find it
 end)
