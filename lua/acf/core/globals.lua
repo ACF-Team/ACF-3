@@ -154,7 +154,6 @@ do -- ACF global vars
 
 	ACF.DefineSetting("AllowFunEnts",            true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowArbitraryParents",   false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowArbitraryManipulation", false, "Arbitrary manipulation has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowSpecialEngines",     true,     "Special engines have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowDynamicLinking",     false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("ShowFunMenu",             true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())

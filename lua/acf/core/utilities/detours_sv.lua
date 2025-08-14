@@ -21,7 +21,6 @@ end
 
 local function PreCheck()
     if not ACF.LegalChecks then return true end
-    if ACF.AllowArbitraryManipulation then return true end
 end
 
 local function CanSetAng(Ent)
