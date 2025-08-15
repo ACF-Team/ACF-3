@@ -48,6 +48,12 @@ do
         return self.ACF_EntitiesCount > 0 and self.ACF_Baseplate
     end
 
+    function CONTRAPTION:ACF_GetContraptionType()
+        local Baseplate = self.ACF_Baseplate
+        if not IsValid(Baseplate) then return "" end -- We have no way of knowing...
+        return Baseplate:ACF_GetUserVar("BaseplateType")
+    end
+
     function CONTRAPTION:ACF_IsGroundVehicle()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
