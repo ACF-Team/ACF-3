@@ -197,13 +197,13 @@ local function SetAngleVelocityDetours()
     -- Propcore - Entity
     do
         local Func Func = Detours.Expression2("e:propSetAngVelocity(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetAngVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetAngVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:propSetAngVelocityInstant(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetAngVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetAngVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -212,14 +212,14 @@ local function SetAngleVelocityDetours()
     do
         local Func Func = Detours.Expression2("b:setAngVelocity(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setAngVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setAngVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setAngVelocityInstant(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setAngVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setAngVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -246,13 +246,13 @@ local function SetVelocityDetours()
     -- Propcore - Entity
     do
         local Func Func = Detours.Expression2("e:propSetVelocity(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:propSetVelocityInstant(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -261,14 +261,14 @@ local function SetVelocityDetours()
     do
         local Func Func = Detours.Expression2("b:setVelocity(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setVelocityInstant(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
