@@ -835,7 +835,7 @@ do
 		if IsValid(Baseplate) then
 			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
 			if Type ~= AllowedType then
-				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("Entity '%s' was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("%s was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
 				Entity:Remove()
 				return
 			end
