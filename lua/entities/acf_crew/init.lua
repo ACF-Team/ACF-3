@@ -324,8 +324,8 @@ do -- Random timer stuff
 		if not IsValid(Parent) then return end
 
 		local Contraption = self:GetContraption()
-		local Baseplate = Contraption and Contraption.Base
-		if not Baseplate then return end -- Why would this happen for a recent vehicle? no clue lol...
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
 		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
 		if Contraption.IsPickedUp then return end
 

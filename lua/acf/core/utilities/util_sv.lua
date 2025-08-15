@@ -813,17 +813,8 @@ do
 		local Contraption = Entity:GetContraption()
 		if not Contraption then return end
 
-		local Baseplate = Contraption.Base
-		if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
-			return Baseplate
-		end
-
-		return NULL
-	end
-
-	function ACF.GetContraptionBaseplate(Contraption)
-		local Baseplate = Contraption.Base
-		if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
+		local Baseplate = Contraption.ACF_Baseplate
+		if IsValid(Baseplate) then
 			return Baseplate
 		end
 

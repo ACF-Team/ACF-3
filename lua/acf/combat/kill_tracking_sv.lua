@@ -20,9 +20,9 @@ do
         local Contraption = Vehicle:GetContraption()
         if not Contraption then return end
 
-        local Base = Contraption.Base
-        if IsValid(Base) and Base:GetClass() == "acf_baseplate" then
-            return true -- Block damage, because there's a contraption, with a baseplate, with the acf_baseplate class
+        local Base = Contraption.ACF_Baseplate
+        if IsValid(Base) then
+            return true -- Block damage, because there's a contraption, with a baseplate
         end
     end)
 

@@ -77,7 +77,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 		if IsValid(Ent) then
 			local Contraption = Ent:GetContraption()
 			if Contraption then
-				local Base = Contraption.Base
+				local Base = Contraption.ACF_Baseplate
 				if Base == Entity and IsValid(Pod) and Pod:GetDriver() ~= Ply and not Entity:ACF_GetUserVar("DisableAltE") then
 					Ply:EnterVehicle(Pod)
 				end
@@ -197,32 +197,6 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 		end
 		ConfigureLuaSeat(self, self.Pod, self:CPPIGetOwner())
 	end
-end
-
-do
-	-- Maintain a record in the contraption of its current baseplate
-	hook.Add("cfw.contraption.entityAdded", "ACF_CFWBaseIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_baseplate" then
-			-- I don't think ent == contraption.Base would *ever* happen,
-			-- but at the same time, if Base == ent, then it's still a valid
-			-- scenario since there's still only one baseplate. Maybe this is
-			-- too paranoid.
-			if IsValid(contraption.Base) and ent ~= contraption.Base then
-				-- Destroy the new one! We can't have more than one on a contraption
-				ACF.SendNotify(ent:CPPIGetOwner(), false, "A contraption can only have one ACF baseplate. New baseplate removed.")
-				ent:Remove()
-				return
-			end
-
-			contraption.Base = ent
-		end
-	end)
-
-	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWBaseUnIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_baseplate" then
-			contraption.Base = nil
-		end
-	end)
 end
 
 function ENT:CFW_PreParentedTo(_, NewEntity)
