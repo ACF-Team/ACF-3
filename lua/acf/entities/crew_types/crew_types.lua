@@ -11,6 +11,20 @@ local CrewTypes	= ACF.Classes.CrewTypes
 
 local table_empty = {}
 
+local function EnforceBaseplateType(Crew, Contraption, AllowedType)
+	local Contraption = Crew:GetContraption()
+	if not Contraption then return end
+
+	local Baseplate = Contraption.Base
+	if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
+		local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+		if Type ~= AllowedType then
+			Crew:Remove()
+			return
+		end
+	end
+end
+
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
@@ -102,7 +116,8 @@ CrewTypes.Register("Loader", {
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
-	end
+	end,
+	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Gunner", {
@@ -152,7 +167,8 @@ CrewTypes.Register("Gunner", {
 	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
-	end
+	end,
+	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Driver", {
@@ -195,7 +211,8 @@ CrewTypes.Register("Driver", {
 	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
-	end
+	end,
+	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Commander", {
@@ -265,7 +282,8 @@ CrewTypes.Register("Commander", {
 
 		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
-	end
+	end,
+	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Pilot", {
@@ -316,12 +334,5 @@ CrewTypes.Register("Pilot", {
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
-	EnforceLimits = function(Crew)
-		-- Pilots exclude other crew
-		local Contraption = Crew:GetContraption() or {}
-		local Crews = Contraption.Crews or {}
-		for k in pairs(Crews) do
-			if k.CrewTypeID ~= "Pilot" then k:Remove() end
-		end
-	end
+	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Aircraft") end
 })
