@@ -131,7 +131,7 @@ timer.Simple(1, function()
     if wire_expression2_CallHook then
         local oldCallHook oldCallHook = Detours.New("wire_expression2_CallHook", function(HookName, ...)
             oldCallHook(HookName, ...)
-            if HookName == "PostInit" then
+            if HookName == "postinit" then
                 -- Reset our work done to expression 2 functions
                 for Sig, Obj in pairs(E2Detours) do
                     Storage[Sig] = nil
