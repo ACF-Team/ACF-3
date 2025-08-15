@@ -807,3 +807,26 @@ do
 		return true
 	end
 end
+
+do
+	function ACF.GetEntityBaseplate(Entity)
+		local Contraption = Entity:GetContraption()
+		if not Contraption then return end
+
+		local Baseplate = Contraption.Base
+		if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
+			return Baseplate
+		end
+
+		return NULL
+	end
+
+	function ACF.GetContraptionBaseplate(Contraption)
+		local Baseplate = Contraption.Base
+		if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
+			return Baseplate
+		end
+
+		return NULL
+	end
+end
