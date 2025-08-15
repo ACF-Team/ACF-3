@@ -96,7 +96,7 @@ function Detours.Expression2(E2HelperSig, Hook)
     if not Obj then
         Obj = {
             -- Try getting the original now
-            Original = CompileString("return " .. Signature)(),
+            Original = Detours.New(Signature, Hook),
             Hook = Hook
         }
         E2Detours[Signature] = Obj
@@ -139,6 +139,11 @@ timer.Simple(1, function()
                 end
             end
         end)
+
+        -- Run the detours now
+        for Sig, Obj in pairs(E2Detours) do
+            Obj.Original = Detours.New(Sig, Obj.Hook)
+        end
     end
 
     if SF then
