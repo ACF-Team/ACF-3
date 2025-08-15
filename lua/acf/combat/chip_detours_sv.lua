@@ -38,128 +38,263 @@ local function PreCheck()
     if not ACF.LegalChecks then return true end
 end
 
--- These are the methods to disable contraptions/families
-local function BlockEntManipulationIfApplicable(Ent, Type, DisableFunc)
-    DisableFunc = DisableFunc or DisableFamily
+local ATTEMPT_MESSAGE = "Attempted to call %s (a blocked usercall)."
+-- These names are... something... but I figure it's better we're explicit about functionality
+-- to make the detours easier to read. These are the methods to disable contraptions/families,
+-- based on a single entity or physics object.
+local function IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end -- thanks setang steering
 
     if Ent.IsACFEntity then
-        return DisableFunc(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
+        return DisableFamily(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
     return true
 end
 
-local function BlockPhysObjManipulationIfApplicable(PhysObj, Type, DisableFunc)
-    DisableFunc = DisableFunc or DisableFamily
+local function IfPhysObjManipulationOnACFEntity_ThenDisableFamily(PhysObj, Type)
     if PreCheck() then return true end
     if not IsValid(PhysObj) then return false end
     local Ent = PhysObj:GetEntity()
     if not IsValid(Ent) then return false end
 
     if Ent.IsACFEntity then
-        return DisableFunc(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
+        return DisableFamily(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
 
     return true
 end
 
-timer.Simple(Detours.Loaded and 0 or 5, function()
-    Detours.Loaded = true
+local function IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, Type, RequiredBaseplateType)
+    if PreCheck() then return true end
+    if not IsValid(Ent) then return false end
 
-    -- DETOURS: SetPos
+    local Contraption = Ent:GetContraption()
+    if not Contraption then return true end -- Allow the call on non-contraptions obviously
+
+    if Contraption:ACF_IsACFContraption() then
+        if RequiredBaseplateType ~= nil and Contraption:ACF_GetContraptionType() == RequiredBaseplateType then
+            -- Early return and allow the call
+            return true
+        end
+
+        return DisableContraption(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+    end
+
+    return true
+end
+
+local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(PhysObj, Type, RequiredBaseplateType)
+    if PreCheck() then return true end
+    if not IsValid(PhysObj) then return false end
+
+    local Ent = PhysObj:GetEntity()
+    return IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, Type, RequiredBaseplateType)
+end
+
+-- The following blocks are the actual detour implementations. They should have TARGET, METHODS, ON CALL comments for
+-- development clarity. The individual detour methods are stored in do-end blocks, to isolate the Func local. We could
+-- just write out the local for each different detour we do, but I really didnt feel like doing that. I don't think
+-- it impacts performance, or if it does, its probably so minimal that it's not even worth it. But correct me if I'm wrong...
+
+-- TARGET  : SetPos
+-- METHODS : Expression 2, Starfall (Entity & Physobj bindings)
+-- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire family.
+-- We do it this way to allow user-created building tools to work, while still
+-- providing programmatic enforcement during combat. 
+local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
-            BlockEntManipulationIfApplicable(Args[1], "e:setPos(v)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:setPos(v)")
             return Func(Scope, Args, ...)
         end)
     end
+
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
             return Func(Instance, Ent, ...)
         end)
     end
+
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
+            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
             return Func(Instance, PhysObj, ...)
         end)
     end
+end
 
-    -- DETOURS: SetAng
+-- TARGET  : SetAngles
+-- METHODS : Expression 2, Starfall (Entity & Physobj bindings)
+-- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire family.
+-- We do it this way to allow user-created building tools to work, while still
+-- providing programmatic enforcement during combat. 
+local function SetAngDetours()
     do
         local Func Func = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
-            BlockEntManipulationIfApplicable(Args[1], "e:setAng(a)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:setAng(a)")
             return Func(Scope, Args, ...)
         end)
     end
+
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setAng(a)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
             return Func(Instance, Ent, ...)
         end)
     end
+
     do
-        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAng", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAng(a)")
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngles", function(Instance, PhysObj, ...)
+            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
             return Func(Instance, PhysObj, ...)
         end)
     end
+end
 
-    -- DETOURS: AddAngleVelocity
+-- TARGET  : AddAngleVelocity
+-- METHODS : Starfall (Entity & Physobj bindings)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- There are no good uses for the direct velocity methods on aircraft, almost everyone uses applyForce/applyTorque methods.
+local function AddAngleVelocityDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addAngleVelocity", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)", DisableContraption)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addAngleVelocity", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)", DisableContraption)
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
-
-    -- DETOURS: AddVelocity
+end
+-- TARGET  : AddVelocity
+-- METHODS : Starfall (Entity & Physobj bindings)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- There are no good uses for the direct velocity methods on aircraft, almost everyone uses applyForce/applyTorque methods.
+local function AddVelocityDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addVelocity", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:addVelocity(v)", DisableContraption)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:addVelocity(v)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addVelocity", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addVelocity(v)", DisableContraption)
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addVelocity(v)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
+end
+-- TARGET  : SetAngleVelocity
+-- METHODS : Starfall (Entity & Physobj bindings)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- There are no good uses for the direct velocity methods on aircraft, almost everyone uses applyForce/applyTorque methods.
+local function SetAngleVelocityDetours()
+    -- Propcore - Entity
+    do
+        local Func Func = Detours.Expression2("e:propSetAngVelocity(v)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetAngVelocity(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("e:propSetAngVelocityInstant(v)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetAngVelocityInstant(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
 
-    -- DETOURS: SetAngleVelocity
+    -- Propcore - Bone
+    do
+        local Func Func = Detours.Expression2("b:setAngVelocity(v)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setAngVelocity(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("b:setAngVelocityInstant(v)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setAngVelocityInstant(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngleVelocity", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setAngleVelocity(a)", DisableContraption)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:setAngleVelocity(a)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngleVelocity", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngleVelocity(a)", DisableContraption)
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngleVelocity(a)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
+end
+-- TARGET  : SetVelocity
+-- METHODS : Starfall (Entity & Physobj bindings)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- There are no good uses for the direct velocity methods on aircraft, almost everyone uses applyForce/applyTorque methods.
+local function SetVelocityDetours()
+    -- Propcore - Entity
+    do
+        local Func Func = Detours.Expression2("e:propSetVelocity(v)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetVelocity(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("e:propSetVelocityInstant(v)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:propSetVelocityInstant(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
 
-    -- DETOURS: SetVelocity
+    -- Propcore - Bone
+    do
+        local Func Func = Detours.Expression2("b:setVelocity(v)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setVelocity(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("b:setVelocityInstant(v)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            if not IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, "b:setVelocityInstant(v)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setVelocity", function(Instance, Ent, ...)
-            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setVelocity(v)", DisableContraption)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:setVelocity(v)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setVelocity", function(Instance, PhysObj, ...)
-            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setVelocity(v)", DisableContraption)
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setVelocity(v)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
+end
+
+timer.Simple(Detours.Loaded and 0 or 5, function()
+    Detours.Loaded = true
+
+    SetPosDetours()
+    SetAngDetours()
+    AddAngleVelocityDetours()
+    AddVelocityDetours()
+    SetAngleVelocityDetours()
+    SetVelocityDetours()
 end)
