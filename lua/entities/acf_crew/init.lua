@@ -230,38 +230,40 @@ do -- Random timer stuff
 
 	function ENT:UpdateMedFreq(cfg)
 		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
 
-		-- If specified, affect crew ergonomics based on space 
-		local SpaceInfo = self.CrewType.SpaceInfo
-		if SpaceInfo and self.ShouldScan then
-			if not self.ScanIndex then
+		-- If specified, affect crew ergonomics based on space
+		local SpaceInfo = SelfTbl.CrewType.SpaceInfo
+		if SpaceInfo and SelfTbl.ShouldScan then
+			if not SelfTbl.ScanIndex then
 				-- If we haven't ran an initial scan, setup relevant information
-				self.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
-				self.ScanBox = self.ScanBox or Vector()
-				self.ScanHull = self.ScanHull or Vector(6, 6, 6)
-				self.ScanDisplacements, self.ScanLengths, self.ScanCount = GenerateScanSetup()
-				self.ScanIndex = 1
-				self.SpaceEff = iterScan(self, self.ScanCount)
+				SelfTbl.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
+				SelfTbl.ScanBox = SelfTbl.ScanBox or Vector()
+				SelfTbl.ScanHull = SelfTbl.ScanHull or Vector(6, 6, 6)
+				SelfTbl.ScanDisplacements, SelfTbl.ScanLengths, SelfTbl.ScanCount = GenerateScanSetup()
+				SelfTbl.ScanIndex = 1
+				SelfTbl.SpaceEff = iterScan(self, SelfTbl.ScanCount)
 			else
 				-- Routine scan run in a loop
-				self.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
+				SelfTbl.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
 			end
-			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
+			WireLib.TriggerOutput(self, "SpaceEff", SelfTbl.SpaceEff * 100)
 		end
 
-		if self.CrewType.UpdateMedFreq then self.CrewType.UpdateMedFreq(self, cfg) end
+		if SelfTbl.CrewType.UpdateMedFreq then SelfTbl.CrewType.UpdateMedFreq(self, cfg) end
 	end
 
 	function ENT:UpdateHighFreq(cfg)
 		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
 
 		-- If specified, affect crew ergonomics based on lean angle
-		local LeanInfo = self.CrewType.LeanInfo
+		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
 			local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
 			local Angle = math.deg(math.acos(LeanDot))
-			self.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
-			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
+			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
+			WireLib.TriggerOutput(self, "LeanEff", SelfTbl.LeanEff * 100)
 		end
 
 		-- TODO: Clean this shit up man
@@ -270,18 +272,19 @@ do -- Random timer stuff
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
-		else self.TotalEff = ACF.CrewFallbackCoef end
+		if self.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
+		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
 
-		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
+		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
-		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
+		if SelfTbl.CrewType.UpdateHighFreq then SelfTbl.CrewType.UpdateHighFreq(self, cfg) end
 	end
 
 	function ENT:EnforceLimits()
 		local Targets = self.Targets
 		local SelfContraption = self:GetContraption()
 		local IsParented = CheckParentState(self)
+		local SelfTbl = self:GetTable()
 		if IsParented and Targets ~= nil and next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
@@ -307,8 +310,8 @@ do -- Random timer stuff
 			end
 		end
 
-		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
-		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
+		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -326,12 +329,12 @@ do -- Random timer stuff
 		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
 		if Contraption.IsPickedUp then return end
 
-		local GForceIter = self.GForceIter or 0
+		local SelfTbl = self:GetTable()
+		local GForceIter = SelfTbl.GForceIter or 0
 		GForceIter = GForceIter + 1
-		self.GForceIter = GForceIter
+		SelfTbl.GForceIter = GForceIter
 		if GForceIter % SampleRate ~= 0 then return end
 
-		local SelfTbl = self:GetTable()
 		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
