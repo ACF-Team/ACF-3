@@ -127,23 +127,18 @@ function Detours.Starfall(Expression, Hook)
     end
 end
 
-timer.Simple(1, function()
-    if wire_expression2_CallHook then
-        local oldCallHook oldCallHook = Detours.New("wire_expression2_CallHook", function(HookName, ...)
-            oldCallHook(HookName, ...)
-            if HookName == "postinit" then
-                -- Reset our work done to expression 2 functions
-                for Sig, Obj in pairs(E2Detours) do
-                    Storage[Sig] = nil
-                    Obj.Original = Detours.New(Sig, Obj.Hook)
-                end
-            end
-        end)
+local function PatchExpression2Funcs()
+    for Sig, Obj in pairs(E2Detours) do
+        Storage[Sig] = nil
+        Obj.Original = Detours.New(Sig, Obj.Hook)
+    end
+end
 
-        -- Run the detours now
-        for Sig, Obj in pairs(E2Detours) do
-            Obj.Original = Detours.New(Sig, Obj.Hook)
-        end
+hook.Add("Expression2_PostLoadExtensions", "ACF_Detours_AfterExpression2Loaded", PatchExpression2Funcs)
+
+timer.Simple(1, function()
+    if wire_expression2_funcs then
+        PatchExpression2Funcs()
     end
 
     if SF then
