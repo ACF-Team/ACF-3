@@ -27,6 +27,8 @@ end
 
 local function BlockEntManipulationIfApplicable(Ent, Type)
     if PreCheck() then return true end
+    if not IsValid(Ent) then return false end -- thanks setang steering
+
     if Ent.IsACFEntity then
         return DisableFamily(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
     end
