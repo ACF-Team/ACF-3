@@ -829,4 +829,16 @@ do
 
 		return NULL
 	end
+
+	function ACF.EnforceBaseplateType(Entity, AllowedType)
+		local Baseplate = ACF.GetEntityBaseplate(Entity)
+		if IsValid(Baseplate) then
+			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+			if Type ~= AllowedType then
+				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("Entity '%s' was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				Entity:Remove()
+				return
+			end
+		end
+	end
 end

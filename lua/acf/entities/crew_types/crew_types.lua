@@ -11,21 +11,6 @@ local CrewTypes	= ACF.Classes.CrewTypes
 
 local table_empty = {}
 
-local function EnforceBaseplateType(Crew, AllowedType)
-	local Contraption = Crew:GetContraption()
-	if not Contraption then return end
-
-	local Baseplate = Contraption.Base
-	if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
-		local Type = Baseplate:ACF_GetUserVar("BaseplateType")
-		if Type ~= AllowedType then
-			ACF.SendNotify(Crew:CPPIGetOwner(), false, string.format("Crew member %s was removed due to being on an invalid baseplate (got %s, expected %s)", Crew, Type, AllowedType))
-			Crew:Remove()
-			return
-		end
-	end
-end
-
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
@@ -118,7 +103,7 @@ CrewTypes.Register("Loader", {
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
-	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Gunner", {
@@ -169,7 +154,7 @@ CrewTypes.Register("Gunner", {
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end,
-	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Driver", {
@@ -213,7 +198,7 @@ CrewTypes.Register("Driver", {
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end,
-	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Commander", {
@@ -284,7 +269,7 @@ CrewTypes.Register("Commander", {
 		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end,
-	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
 })
 
 CrewTypes.Register("Pilot", {
@@ -335,5 +320,5 @@ CrewTypes.Register("Pilot", {
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
-	EnforceLimits = function(Crew) EnforceBaseplateType(Crew, "Aircraft") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Aircraft") end
 })
