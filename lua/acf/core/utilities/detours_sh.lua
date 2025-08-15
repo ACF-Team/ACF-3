@@ -78,9 +78,7 @@ end
 function Detours.SENT(ClassName, MethodName, Hook)
     return Detours.New("scripted_ents.GetStored(\"" .. ClassName .. "\").t." .. MethodName, Hook)
 end
-function Detours.Expression2(E2HelperSig, Hook)
-    return Detours.New("wire_expression2_funcs[ACF.Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")][3]", Hook)
-end
+
 function Detours.Hook(HookName, UniqueName, Hook)
     return Detours.New("hook.GetTable[\"" .. HookName .. "\"][\"" .. UniqueName .. "\"]", Hook)
 end
@@ -89,6 +87,24 @@ function Detours.Metatable(MetatableName, FunctionName, Hook)
 end
 function Detours.WireGate(GateName, Hook)
     return Detours.New("GateActions[\"" .. GateName .. "\"]", Hook)
+end
+
+local E2Detours = {}
+function Detours.Expression2(E2HelperSig, Hook)
+    local Signature = "wire_expression2_funcs[ACF.Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")][3]"
+    local Obj = E2Detours[Signature]
+    if not Obj then
+        Obj = {
+            -- Try getting the original now
+            Original = CompileString("return " .. Signature)(),
+            Hook = Hook
+        }
+        E2Detours[Signature] = Obj
+    end
+
+    return function(...)
+        return Obj.Original(...)
+    end
 end
 
 -- Starfall is a bit more annoying about this...
@@ -112,29 +128,42 @@ function Detours.Starfall(Expression, Hook)
 end
 
 timer.Simple(1, function()
-    if not SF then return end -- Starfall isn't on the server :(
-
-    local function PatchInstance(Instance)
-        for _, HookMethods in pairs(SFDetours) do
-            local Getter, Setter, Hook = HookMethods.Getter, HookMethods.Setter, HookMethods.Hook
-            HookMethods.Original[Instance] = Getter(Instance)
-            local function NewHook(...)
-                Hook(Instance, ...)
+    if wire_expression2_CallHook then
+        local oldCallHook oldCallHook = Detours.New("wire_expression2_CallHook", function(HookName, ...)
+            oldCallHook(HookName, ...)
+            if HookName == "PostInit" then
+                -- Reset our work done to expression 2 functions
+                for Sig, Obj in pairs(E2Detours) do
+                    Storage[Sig] = nil
+                    Obj.Original = Detours.New(Sig, Obj.Hook)
+                end
             end
-            Setter(Instance, NewHook)
-        end
+        end)
     end
 
-    local OriginalCompile OriginalCompile = Detours.New("SF.Instance.Compile", function(...)
-        local OK, Instance = OriginalCompile(...)
-        if OK then
+    if SF then
+        local function PatchInstance(Instance)
+            for _, HookMethods in pairs(SFDetours) do
+                local Getter, Setter, Hook = HookMethods.Getter, HookMethods.Setter, HookMethods.Hook
+                HookMethods.Original[Instance] = Getter(Instance)
+                local function NewHook(...)
+                    Hook(Instance, ...)
+                end
+                Setter(Instance, NewHook)
+            end
+        end
+
+        local OriginalCompile OriginalCompile = Detours.New("SF.Instance.Compile", function(...)
+            local OK, Instance = OriginalCompile(...)
+            if OK then
+                PatchInstance(Instance)
+            end
+            return OK, Instance
+        end)
+
+        for Instance, _ in pairs(SF.allInstances) do
             PatchInstance(Instance)
         end
-        return OK, Instance
-    end)
-
-    for Instance, _ in pairs(SF.allInstances) do
-        PatchInstance(Instance)
     end
 end)
 
