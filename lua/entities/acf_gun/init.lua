@@ -153,7 +153,6 @@ do -- Random timer crew stuff
 	end
 end
 
-local HadValidParentState
 do -- Spawn and Update functions --------------------------------
 	local WireIO    = Utilities.WireIO
 	local Entities  = Classes.Entities
