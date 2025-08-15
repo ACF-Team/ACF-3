@@ -229,7 +229,7 @@ local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Heal
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
 	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
-	return Text:format(self.BaseplateClass.Name, self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
+	return Text:format(self.BaseplateClass.Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
 end
 
 function ENT:Think()
