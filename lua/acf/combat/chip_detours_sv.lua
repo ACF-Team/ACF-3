@@ -11,9 +11,22 @@ local function DisableEntity(Entity, Reason, Message)
     end
 end
 
+
+-- Crew are explicitly blocked from being disabled, since that will instantly kill all crew members
+-- Other entities are fair game though
 local function DisableFamily(Ent, Reason)
     for Entity in pairs(Ent:GetFamilyChildren()) do
-        if Entity.IsACFEntity then
+        if IsValid(Entity) and Entity.IsACFEntity and not Entity.IsACFCrew then
+            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
+        end
+    end
+
+    return false
+end
+
+local function DisableContraption(Ent, Reason)
+    for Entity in pairs(Ent:GetContraption().ents) do
+        if IsValid(Entity) and Entity.IsACFEntity and not Entity.IsACFCrew then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
         end
     end
@@ -25,24 +38,27 @@ local function PreCheck()
     if not ACF.LegalChecks then return true end
 end
 
-local function BlockEntManipulationIfApplicable(Ent, Type)
+-- These are the methods to disable contraptions/families
+local function BlockEntManipulationIfApplicable(Ent, Type, DisableFunc)
+    DisableFunc = DisableFunc or DisableFamily
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end -- thanks setang steering
 
     if Ent.IsACFEntity then
-        return DisableFamily(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
+        return DisableFunc(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
     end
     return true
 end
 
-local function BlockPhysObjManipulationIfApplicable(PhysObj, Type)
+local function BlockPhysObjManipulationIfApplicable(PhysObj, Type, DisableFunc)
+    DisableFunc = DisableFunc or DisableFamily
     if PreCheck() then return true end
     if not IsValid(PhysObj) then return false end
     local Ent = PhysObj:GetEntity()
     if not IsValid(Ent) then return false end
 
     if Ent.IsACFEntity then
-        return DisableFamily(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
+        return DisableFunc(Ent, ("Attempted to call %s (a blocked usercall)."):format(Type or "UNKNOWN"))
     end
 
     return true
@@ -53,37 +69,97 @@ timer.Simple(Detours.Loaded and 0 or 5, function()
 
     -- DETOURS: SetPos
     do
-        local E2_Ent_SetPos E2_Ent_SetPos = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
+        local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
             BlockEntManipulationIfApplicable(Args[1], "e:setPos(v)")
-            return E2_Ent_SetPos(Scope, Args, ...)
+            return Func(Scope, Args, ...)
         end)
-
-        local SF_Ent_SetPos SF_Ent_SetPos = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
             BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
-            return SF_Ent_SetPos(Instance, Ent, ...)
+            return Func(Instance, Ent, ...)
         end)
-
-        local SF_PhysObj_SetPos SF_PhysObj_SetPos = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
             BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
-            return SF_PhysObj_SetPos(Instance, PhysObj, ...)
+            return Func(Instance, PhysObj, ...)
         end)
     end
 
     -- DETOURS: SetAng
     do
-        local E2_Ent_SetAng E2_Ent_SetAng = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
+        local Func Func = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
             BlockEntManipulationIfApplicable(Args[1], "e:setAng(a)")
-            return E2_Ent_SetAng(Scope, Args, ...)
+            return Func(Scope, Args, ...)
         end)
-
-        local SF_Ent_SetAng SF_Ent_SetAng = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
             BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setAng(a)")
-            return SF_Ent_SetAng(Instance, Ent, ...)
+            return Func(Instance, Ent, ...)
         end)
-
-        local SF_PhysObj_SetAng SF_PhysObj_SetAng = Detours.Starfall("instance.Types.PhysObj.Methods.setAng", function(Instance, PhysObj, ...)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAng", function(Instance, PhysObj, ...)
             BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAng(a)")
-            return SF_PhysObj_SetAng(Instance, PhysObj, ...)
+            return Func(Instance, PhysObj, ...)
+        end)
+    end
+
+    -- DETOURS: AddAngleVelocity
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addAngleVelocity", function(Instance, Ent, ...)
+            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)", DisableContraption)
+            return Func(Instance, Ent, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addAngleVelocity", function(Instance, PhysObj, ...)
+            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)", DisableContraption)
+            return Func(Instance, PhysObj, ...)
+        end)
+    end
+
+    -- DETOURS: AddVelocity
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addVelocity", function(Instance, Ent, ...)
+            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:addVelocity(v)", DisableContraption)
+            return Func(Instance, Ent, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addVelocity", function(Instance, PhysObj, ...)
+            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addVelocity(v)", DisableContraption)
+            return Func(Instance, PhysObj, ...)
+        end)
+    end
+
+    -- DETOURS: SetAngleVelocity
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngleVelocity", function(Instance, Ent, ...)
+            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setAngleVelocity(a)", DisableContraption)
+            return Func(Instance, Ent, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngleVelocity", function(Instance, PhysObj, ...)
+            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngleVelocity(a)", DisableContraption)
+            return Func(Instance, PhysObj, ...)
+        end)
+    end
+
+    -- DETOURS: SetVelocity
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setVelocity", function(Instance, Ent, ...)
+            BlockEntManipulationIfApplicable(Instance.Types.Entity.Unwrap(Ent), "e:setVelocity(v)", DisableContraption)
+            return Func(Instance, Ent, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setVelocity", function(Instance, PhysObj, ...)
+            BlockPhysObjManipulationIfApplicable(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setVelocity(v)", DisableContraption)
+            return Func(Instance, PhysObj, ...)
         end)
     end
 end)
