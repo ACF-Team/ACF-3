@@ -11,7 +11,7 @@ local CrewTypes	= ACF.Classes.CrewTypes
 
 local table_empty = {}
 
-local function EnforceBaseplateType(Crew, Contraption, AllowedType)
+local function EnforceBaseplateType(Crew, AllowedType)
 	local Contraption = Crew:GetContraption()
 	if not Contraption then return end
 
@@ -19,6 +19,7 @@ local function EnforceBaseplateType(Crew, Contraption, AllowedType)
 	if Baseplate and Baseplate:GetClass() == "acf_baseplate" then
 		local Type = Baseplate:ACF_GetUserVar("BaseplateType")
 		if Type ~= AllowedType then
+			ACF.SendNotify(Crew:CPPIGetOwner(), false, string.format("Crew member %s was removed due to being on an invalid baseplate (got %s, expected %s)", Crew, Type, AllowedType))
 			Crew:Remove()
 			return
 		end
