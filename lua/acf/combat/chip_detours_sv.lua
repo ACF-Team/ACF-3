@@ -288,7 +288,7 @@ local function SetVelocityDetours()
     end
 end
 
-timer.Simple(Detours.Loaded and 0 or 5, function()
+local function TriggerDetourRebuild()
     Detours.Loaded = true
 
     SetPosDetours()
@@ -297,4 +297,6 @@ timer.Simple(Detours.Loaded and 0 or 5, function()
     AddVelocityDetours()
     SetAngleVelocityDetours()
     SetVelocityDetours()
-end)
+end
+ACF.TriggerDetourRebuild = TriggerDetourRebuild
+timer.Simple(Detours.Loaded and 0 or 5, TriggerDetourRebuild)
