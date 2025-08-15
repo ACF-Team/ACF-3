@@ -103,7 +103,7 @@ CrewTypes.Register("Loader", {
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
-	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Gunner", {
@@ -154,7 +154,7 @@ CrewTypes.Register("Gunner", {
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end,
-	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Driver", {
@@ -198,7 +198,7 @@ CrewTypes.Register("Driver", {
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
 	end,
-	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Commander", {
@@ -269,7 +269,7 @@ CrewTypes.Register("Commander", {
 		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end,
-	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Ground") end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Pilot", {
