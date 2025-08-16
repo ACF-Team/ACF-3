@@ -48,6 +48,15 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end -- thanks setang steering
 
+    local Family = Ent:GetFamily()
+    if not Family then
+        if Ent.IsACFEntity == true then
+            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            return false
+        end
+        return true
+    end
+
     local CalledOnCalleeOwned = Ent:CPPIGetOwner() == Player
     if Ent.IsACFEntity then
        return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
@@ -60,13 +69,7 @@ local function IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Player, PhysOb
     if PreCheck() then return true end
     if not IsValid(PhysObj) then return false end
     local Ent = PhysObj:GetEntity()
-    if not IsValid(Ent) then return false end
-
-    if Ent.IsACFEntity then
-        return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
-    end
-
-    return true
+    return IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
 end
 
 local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
@@ -74,7 +77,15 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
     if not IsValid(Ent) then return false end
 
     local Contraption = Ent:GetContraption()
-    if not Contraption then return true end -- Allow the call on non-contraptions obviously
+    -- Allow the call on non-contraptions, unless they are ACF entities.
+    -- So ACF entities/contraptions with ACF entities get blocked.
+    if not Contraption then
+        if Ent.IsACFEntity == true then
+            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            return false
+        end
+        return true
+    end
 
     if Contraption:ACF_IsACFContraption() then
         if PostContraptionCheck ~= nil then
