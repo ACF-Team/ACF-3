@@ -489,6 +489,16 @@ local function ApplyTorqueDetours()
     end
 end
 
+local function GmodThrusterDetours()
+    do
+        local Func Func = Detours.SENT("gmod_thruster", "PhysicsSimulate", function(self, ...)
+            if not self:IsOn() then return SIM_NOTHING end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Sandbox Thruster:PhysicsSimulate") then return end
+            return Func(self, ...)
+        end)
+    end
+end
+
 local function TriggerDetourRebuild()
     Detours.Loaded = true
 
@@ -500,6 +510,7 @@ local function TriggerDetourRebuild()
     SetVelocityDetours()
     ApplyForceDetours()
     ApplyTorqueDetours()
+    GmodThrusterDetours()
 end
 
 ACF.TriggerDetourRebuild = TriggerDetourRebuild
