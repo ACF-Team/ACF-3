@@ -252,7 +252,7 @@ do -- Spawn and Update functions -----------------------
 				-- This prevents aircraft baseplates from being used on grounded
 				-- vehicles.
 				local Stress = math.max(WheelPhys:GetStress())
-				if Stress > (WheelPhys:GetMass() / 2) then
+				if Stress > 15 then
 					Entity:Unlink(Ent)
 					ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive stress on connected + on an aircraft contraption!")
 					continue
