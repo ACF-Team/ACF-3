@@ -88,7 +88,7 @@ function Detours.Metatable(MetatableName, FunctionName, Hook)
     return Detours.New("FindMetaTable(\"" .. MetatableName .. "\")[\"" .. FunctionName .. "\"]", Hook)
 end
 function Detours.WireGate(GateName, Hook)
-    return Detours.New("GateActions[\"" .. GateName .. "\"]", Hook)
+    return Detours.New("GateActions[\"" .. GateName .. "\"].output", Hook)
 end
 
 local E2Detours = {}
