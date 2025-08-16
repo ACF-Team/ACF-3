@@ -14,9 +14,11 @@ end
 
 -- Crew are explicitly blocked from being disabled, since that will instantly kill all crew members
 -- Other entities are fair game though
-local function DisableFamily(Ent, Reason)
+-- The Player argument is to prevent a case where you could grief other peoples contraptions
+
+local function DisableFamily(Player, Ent, Reason)
     for Entity in pairs(Ent:GetFamilyChildren()) do
-        if IsValid(Entity) and Entity.IsACFEntity and not Entity.IsACFCrew then
+        if IsValid(Entity) and Entity:CPPIGetOwner() == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
         end
     end
@@ -24,9 +26,9 @@ local function DisableFamily(Ent, Reason)
     return false
 end
 
-local function DisableContraption(Ent, Reason)
+local function DisableContraption(Player, Ent, Reason)
     for Entity in pairs(Ent:GetContraption().ents) do
-        if IsValid(Entity) and Entity.IsACFEntity and not Entity.IsACFCrew then
+        if IsValid(Entity) and Entity:CPPIGetOwner() == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
         end
     end
@@ -42,30 +44,30 @@ local ATTEMPT_MESSAGE = "Attempted to call %s (a blocked usercall)."
 -- These names are... something... but I figure it's better we're explicit about functionality
 -- to make the detours easier to read. These are the methods to disable contraptions/families,
 -- based on a single entity or physics object.
-local function IfEntManipulationOnACFEntity_ThenDisableFamily(Ent, Type)
+local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end -- thanks setang steering
 
     if Ent.IsACFEntity then
-        return DisableFamily(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+        return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
     return true
 end
 
-local function IfPhysObjManipulationOnACFEntity_ThenDisableFamily(PhysObj, Type)
+local function IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Player, PhysObj, Type)
     if PreCheck() then return true end
     if not IsValid(PhysObj) then return false end
     local Ent = PhysObj:GetEntity()
     if not IsValid(Ent) then return false end
 
     if Ent.IsACFEntity then
-        return DisableFamily(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+        return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
 
     return true
 end
 
-local function IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, Type, PostContraptionCheck)
+local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end
 
@@ -78,18 +80,18 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, Typ
             if Override == true then return true end
         end
 
-        return DisableContraption(Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+        return DisableContraption(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
 
     return true
 end
 
-local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(PhysObj, Type, PostContraptionCheck)
+local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Player, PhysObj, Type, PostContraptionCheck)
     if PreCheck() then return true end
     if not IsValid(PhysObj) then return false end
 
     local Ent = PhysObj:GetEntity()
-    return IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, Type, PostContraptionCheck)
+    return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
@@ -109,21 +111,21 @@ end
 local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:setPos(v)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setPos(v)")
             return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
             return Func(Instance, Ent, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
-            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
+            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -137,21 +139,21 @@ end
 local function SetAngDetours()
     do
         local Func Func = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Args[1], "e:setAng(a)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setAng(a)")
             return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
+            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
             return Func(Instance, Ent, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngles", function(Instance, PhysObj, ...)
-            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
+            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -164,13 +166,13 @@ end
 local function AddAngleVelocityDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addAngleVelocity", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addAngleVelocity", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)") then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -182,13 +184,13 @@ end
 local function AddVelocityDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addVelocity", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:addVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:addVelocity(v)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addVelocity", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addVelocity(v)") then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addVelocity(v)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -201,13 +203,13 @@ local function SetAngleVelocityDetours()
     -- Propcore - Entity
     do
         local Func Func = Detours.Expression2("e:propSetAngVelocity(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetAngVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propSetAngVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:propSetAngVelocityInstant(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetAngVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propSetAngVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -216,14 +218,14 @@ local function SetAngleVelocityDetours()
     do
         local Func Func = Detours.Expression2("b:setAngVelocity(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setAngVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setAngVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setAngVelocityInstant(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setAngVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setAngVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -231,13 +233,13 @@ local function SetAngleVelocityDetours()
     -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngleVelocity", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:setAngleVelocity(a)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setAngleVelocity(a)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngleVelocity", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngleVelocity(a)") then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngleVelocity(a)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -250,13 +252,13 @@ local function SetVelocityDetours()
     -- Propcore - Entity
     do
         local Func Func = Detours.Expression2("e:propSetVelocity(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propSetVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:propSetVelocityInstant(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:propSetVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propSetVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -265,14 +267,14 @@ local function SetVelocityDetours()
     do
         local Func Func = Detours.Expression2("b:setVelocity(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setVelocity(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setVelocityInstant(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:setVelocityInstant(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setVelocityInstant(v)") then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -280,13 +282,13 @@ local function SetVelocityDetours()
     -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setVelocity", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:setVelocity(v)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setVelocity(v)") then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setVelocity", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setVelocity(v)") then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setVelocity(v)") then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -300,40 +302,40 @@ local function ApplyForceDetours()
     -- Expression 2
     do
         local Func Func = Detours.Expression2("applyForce(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:applyForce(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:applyForce(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:applyForce(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Expression2("applyOffsetForce(vv)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:applyOffsetForce(vv)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:applyOffsetForce(vv)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:applyOffsetForce(vv)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -341,26 +343,26 @@ local function ApplyForceDetours()
     -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.applyForceCenter", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:applyForceCenter(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:applyForceCenter(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.applyForceCenter", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyForceCenter(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyForceCenter(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.applyForceOffset", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:applyForceOffset(v, v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:applyForceOffset(v, v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.applyForceOffset", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyForceOffset(v, v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyForceOffset(v, v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -375,40 +377,40 @@ local function ApplyTorqueDetours()
     -- Expression 2
     do
         local Func Func = Detours.Expression2("applyAngForce(a)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:applyAngForce(a)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:applyAngForce(a)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Expression2("applyTorque(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("e:applyTorque(v)", function(Scope, Args, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Args[1], "e:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:applyTorque(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Ent, "b:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Scope, Args, ...)
         end)
     end
@@ -416,26 +418,26 @@ local function ApplyTorqueDetours()
     -- Starfall
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.applyAngForce", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.applyAngForce", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyAngForce(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.applyTorque", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.Types.Entity.Unwrap(Ent), "e:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.applyTorque", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
