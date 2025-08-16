@@ -8,13 +8,13 @@ end
 
 Clock.DeltaTime        = engine.TickInterval()
 Clock.CurTime          = CurTime()
-Clock.PreciseCurTime   = CurTime()
+Clock.PreciseCurTime   = DoubleCurtime()
 
 hook.Add("Think", "ACF Clock Update", function()
 	local Now     = CurTime()
 	local DbNow   = DoubleCurtime()
-	local Delta   = Now - Clock.CurTime
-	local DbDelta = Now - Clock.CurTime
+	local Delta   = Now   - Clock.CurTime
+	local DbDelta = DbNow - Clock.PreciseCurTime
 
 	Clock.DeltaTime        = Delta
 	Clock.PreciseDeltaTime = DbDelta
