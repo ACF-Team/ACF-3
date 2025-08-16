@@ -492,8 +492,8 @@ end
 local function GmodThrusterDetours()
     do
         local Func Func = Detours.SENT("gmod_thruster", "PhysicsSimulate", function(self, ...)
-            if not self:IsOn() then return SIM_NOTHING end
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Sandbox Thruster:PhysicsSimulate") then return end
+            if not self:IsOn() then return Func(self, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Sandbox Thruster:PhysicsSimulate") then return SIM_NOTHING end
             return Func(self, ...)
         end)
     end
@@ -502,16 +502,36 @@ end
 local function WireThrusterDetours()
     do
         local Func Func = Detours.SENT("gmod_wire_thruster", "PhysicsSimulate", function(self, ...)
-            if not self:IsOn() then return SIM_NOTHING end
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Thruster:PhysicsSimulate") then return end
+            if not self:IsOn() then return Func(self, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Thruster:PhysicsSimulate") then return SIM_NOTHING end
             return Func(self, ...)
         end)
     end
 
     do
         local Func Func = Detours.SENT("gmod_wire_vectorthruster", "PhysicsSimulate", function(self, ...)
-            if not self:IsOn() then return SIM_NOTHING end
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Vector Thruster:PhysicsSimulate") then return end
+            if not self:IsOn() then return Func(self, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Vector Thruster:PhysicsSimulate") then return SIM_NOTHING end
+            return Func(self, ...)
+        end)
+    end
+end
+
+local function GmodHoverballDetours()
+    do
+        local Func Func = Detours.SENT("gmod_hoverball", "PhysicsSimulate", function(self, ...)
+            if not self:GetEnabled() then return Func(self, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Sandbox Thruster:PhysicsSimulate") then return SIM_NOTHING end
+            return Func(self, ...)
+        end)
+    end
+end
+
+local function WireHoverballDetours()
+    do
+        local Func Func = Detours.SENT("gmod_wire_hoverball", "PhysicsSimulate", function(self, ...)
+            if not self:IsOn() then return Func(self, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Sandbox Thruster:PhysicsSimulate") then return SIM_NOTHING end
             return Func(self, ...)
         end)
     end
@@ -522,14 +542,20 @@ local function TriggerDetourRebuild()
 
     SetPosDetours()
     SetAngDetours()
+
     AddAngleVelocityDetours()
     AddVelocityDetours()
+
     SetAngleVelocityDetours()
     SetVelocityDetours()
     ApplyForceDetours()
     ApplyTorqueDetours()
+
     GmodThrusterDetours()
+    GmodHoverballDetours()
+
     WireThrusterDetours()
+    WireHoverballDetours()
 end
 
 ACF.TriggerDetourRebuild = TriggerDetourRebuild
