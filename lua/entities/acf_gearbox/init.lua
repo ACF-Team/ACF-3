@@ -219,9 +219,13 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	local function CheckRopes(Entity, Target)
+		local NiceName = Target == "Wheels" and "Prop" or "Gearbox"
 		local Ropes = Entity[Target]
 
 		if not next(Ropes) then return end
+
+		local Contraption = Entity:GetContraption()
+		local IsAircraft  = Contraption and Contraption:ACF_IsAircraft()
 
 		for Ent, Link in pairs(Ropes) do
 			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
@@ -230,11 +234,29 @@ do -- Spawn and Update functions -----------------------
 			-- make sure it is not stretched too far
 			if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
 				Entity:Unlink(Ent)
+				ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive distance!")
 				continue
 			end
 
 			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link) then
 				Entity:Unlink(Ent)
+				ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive driveshaft angle!")
+				continue
+			end
+
+			if IsAircraft then
+				local WheelPhys = Ent:GetPhysicsObject()
+				-- We check the physical stress of the BoxPhys.
+				-- If the stress is greater than half the mass of the BoxPhys,
+				-- we break the link connection and return.
+				-- This prevents aircraft baseplates from being used on grounded
+				-- vehicles.
+				local Stress = math.max(WheelPhys:GetStress())
+				if Stress > (WheelPhys:GetMass() / 2) then
+					Entity:Unlink(Ent)
+					ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive stress on connected + on an aircraft contraption!")
+					continue
+				end
 			end
 		end
 	end
