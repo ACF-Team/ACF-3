@@ -45,7 +45,7 @@ do
     local CONTRAPTION     = CFW.Classes.Contraption
 
     function CONTRAPTION:ACF_IsACFContraption()
-        return self.ACF_EntitiesCount > 0 and self.ACF_Baseplate
+        return self.ACF_EntitiesCount > 0
     end
 
     function CONTRAPTION:ACF_GetContraptionType()
