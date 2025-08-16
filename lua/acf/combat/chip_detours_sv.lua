@@ -40,7 +40,7 @@ local function PreCheck()
     if not ACF.LegalChecks then return true end
 end
 
-local ATTEMPT_MESSAGE = "Attempted to call %s (a blocked usercall)."
+local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
 -- These names are... something... but I figure it's better we're explicit about functionality
 -- to make the detours easier to read. These are the methods to disable contraptions/families,
 -- based on a single entity or physics object.
@@ -499,6 +499,24 @@ local function GmodThrusterDetours()
     end
 end
 
+local function WireThrusterDetours()
+    do
+        local Func Func = Detours.SENT("gmod_wire_thruster", "PhysicsSimulate", function(self, ...)
+            if not self:IsOn() then return SIM_NOTHING end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Thruster:PhysicsSimulate") then return end
+            return Func(self, ...)
+        end)
+    end
+
+    do
+        local Func Func = Detours.SENT("gmod_wire_vectorthruster", "PhysicsSimulate", function(self, ...)
+            if not self:IsOn() then return SIM_NOTHING end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(self:CPPIGetOwner(), self, "Wiremod Vector Thruster:PhysicsSimulate") then return end
+            return Func(self, ...)
+        end)
+    end
+end
+
 local function TriggerDetourRebuild()
     Detours.Loaded = true
 
@@ -511,6 +529,7 @@ local function TriggerDetourRebuild()
     ApplyForceDetours()
     ApplyTorqueDetours()
     GmodThrusterDetours()
+    WireThrusterDetours()
 end
 
 ACF.TriggerDetourRebuild = TriggerDetourRebuild
