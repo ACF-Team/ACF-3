@@ -4,6 +4,8 @@
 local ACF = ACF
 local Detours = ACF.Detours
 
+local ENTITY = FindMetaTable("Entity")
+
 local function DisableEntity(Entity, Reason, Message)
     local Disabled = Entity.Disabled
     if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
@@ -17,8 +19,8 @@ end
 -- The Player argument is to prevent a case where you could grief other peoples contraptions
 
 local function DisableFamily(Player, Ent, Reason)
-    for Entity in pairs(Ent:GetFamilyChildren()) do
-        if IsValid(Entity) and Entity:CPPIGetOwner() == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
+    for Entity in pairs(ENTITY.GetFamilyChildren(Ent)) do
+        if IsValid(Entity) and ENTITY.CPPIGetOwner(Entity) == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
         end
     end
@@ -27,8 +29,8 @@ local function DisableFamily(Player, Ent, Reason)
 end
 
 local function DisableContraption(Player, Ent, Reason)
-    for Entity in pairs(Ent:GetContraption().ents) do
-        if IsValid(Entity) and Entity:CPPIGetOwner() == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
+    for Entity in pairs(ENTITY.GetContraption(Ent).ents) do
+        if IsValid(Entity) and ENTITY.CPPIGetOwner(Entity) == Player and Entity.IsACFEntity and not Entity.IsACFCrew then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", Reason, 10)
         end
     end
