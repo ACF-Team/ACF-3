@@ -384,6 +384,20 @@ local function ApplyForceDetours()
             return Func(Instance, PhysObj, ...)
         end)
     end
+
+    -- Gates
+    do
+        local Func Func = Detours.WireGate("entity_applyf", function(Gate, Ent, Vec, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Gate:CPPIGetOwner(), Ent, "Gate 'Apply Force'", PostContraptionCheck_IsNotGroundVehicle) then return end
+            return Func(Gate, Ent, Vec, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.WireGate("entity_applyof", function(Gate, Ent, Vec, Offset, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Gate:CPPIGetOwner(), Ent, "Gate 'Apply Offset Force'", PostContraptionCheck_IsNotGroundVehicle) then return end
+            return Func(Gate, Ent, Vec, Offset, ...)
+        end)
+    end
 end
 
 -- TARGET  : ApplyTorque, ApplyAngForce
@@ -457,6 +471,20 @@ local function ApplyTorqueDetours()
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.applyTorque", function(Instance, PhysObj, ...)
             if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:applyTorque(v)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
+        end)
+    end
+
+    -- Gates
+    do
+        local Func Func = Detours.WireGate("entity_applyaf", function(Gate, Ent, Ang, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Gate:CPPIGetOwner(), Ent, "Gate 'Apply Angular Force'", PostContraptionCheck_IsNotGroundVehicle) then return end
+            return Func(Gate, Ent, Ang, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.WireGate("entity_applytorq", function(Gate, Ent, Vec, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Gate:CPPIGetOwner(), Ent, "Gate 'Apply Torque'", PostContraptionCheck_IsNotGroundVehicle) then return end
+            return Func(Gate, Ent, Vec, ...)
         end)
     end
 end
