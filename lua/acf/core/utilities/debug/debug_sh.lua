@@ -391,8 +391,6 @@ else
 
 			for _, PhysObj in ipairs(EntPhys) do
 				local Pos = Ent:LocalToWorld(PhysObj.Position)
-				local Ang = Ent:LocalToWorldAngles(PhysObj.Angles)
-
 				local ScreenPos = Pos:ToScreen()
 				draw.SimpleTextOutlined("Idx             : " .. PhysObj.Index, "ACF_DebugFixed", ScreenPos.x, ScreenPos.y, color_White, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 1, color_black)
 				draw.SimpleTextOutlined("Mass            : "   .. PhysObj.Mass, "ACF_DebugFixed", ScreenPos.x, ScreenPos.y + 16, color_White, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 1, color_black)
