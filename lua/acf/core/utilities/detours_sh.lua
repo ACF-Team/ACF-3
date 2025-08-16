@@ -10,9 +10,11 @@ function Detours.New(Expression, Hook)
     local Getter = CompileString("return function() return " .. Expression .. " end")()
     local Setter = CompileString("return function(value) " .. Expression .. " = value end")()
 
+    if not Getter or not Setter then ErrorNoHaltWithStack("Bad expression '" .. Expression .. "'") return end
+
     if not Storage[Expression] then
-        local f = Getter()
-        if not f then error("Bad expression '" .. Expression .. "'") end
+        local ok, f = pcall(Getter)
+        if not ok then ErrorNoHaltWithStack("Bad expression '" .. Expression .. "': " .. tostring(f)) return end
         Storage[Expression] = f
     end
 
