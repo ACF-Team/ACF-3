@@ -102,6 +102,8 @@ function Detours.Expression2(E2HelperSig, Hook)
             Hook = Hook
         }
         E2Detours[Signature] = Obj
+    else
+        Obj.Hook = Hook
     end
 
     return function(...)
