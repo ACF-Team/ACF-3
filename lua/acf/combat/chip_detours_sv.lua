@@ -97,7 +97,9 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
 end
 
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
-    return not Contraption:ACF_IsGroundVehicle()
+    if Contraption:ACF_IsAircraft() or Contraption:ACF_IsRecreational() then
+        return true
+    end
 end
 
 -- The following blocks are the actual detour implementations. They should have TARGET, METHODS, ON CALL comments for
