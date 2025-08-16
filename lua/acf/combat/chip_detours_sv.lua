@@ -48,10 +48,12 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end -- thanks setang steering
 
+    local CalledOnCalleeOwned = Ent:CPPIGetOwner() == Player
     if Ent.IsACFEntity then
-        return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+       return DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
-    return true
+
+    return true, CalledOnCalleeOwned
 end
 
 local function IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Player, PhysObj, Type)
@@ -111,22 +113,29 @@ end
 local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setPos(v)")
-            return Func(Scope, Args, ...)
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setPos(v)")
+            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("b:setPos(v)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Ent, "b:setPos(v)")
+            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
-            return Func(Instance, Ent, ...)
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
+            if CalledOnCalleeOwned then return Func(Instance, Ent, ...) end
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
-            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
-            return Func(Instance, PhysObj, ...)
+            local _, CalledOnCalleeOwned = IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
+            if CalledOnCalleeOwned then return Func(Instance, PhysObj, ...) end
         end)
     end
 end
@@ -139,22 +148,29 @@ end
 local function SetAngDetours()
     do
         local Func Func = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setAng(a)")
-            return Func(Scope, Args, ...)
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setAng(a)")
+            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("b:setAng(a)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Ent, "b:setAng(a)")
+            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
-            IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
-            return Func(Instance, Ent, ...)
+            local _, CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
+            if CalledOnCalleeOwned then return Func(Instance, Ent, ...) end
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngles", function(Instance, PhysObj, ...)
-            IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
-            return Func(Instance, PhysObj, ...)
+            local _, CalledOnCalleeOwned = IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
+            if CalledOnCalleeOwned then return Func(Instance, PhysObj, ...) end
         end)
     end
 end
