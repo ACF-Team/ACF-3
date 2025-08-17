@@ -50,19 +50,20 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return true end -- thanks setang steering
 
+    -- If the owner performed the call, allow it to go through, despite the fact we disabled the family
+    local CalledOnCalleeOwned = Ent:CPPIGetOwner() == Player
     local Family = Ent:GetFamily()
+
     if not Family then
         if Ent.IsACFEntity == true then
             DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
-            return false
+            return CalledOnCalleeOwned
         end
         return true
     end
 
-    local CalledOnCalleeOwned = Ent:CPPIGetOwner() == Player
     if Ent.IsACFEntity then
        DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
-       -- If the owner performed the call, allow it to go through, despite the fact we disabled the family
        return CalledOnCalleeOwned
     end
 
