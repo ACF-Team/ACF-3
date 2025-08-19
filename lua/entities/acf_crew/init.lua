@@ -353,7 +353,8 @@ do -- Random timer stuff
 			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
 			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
 			if SelfTbl.GForceStrain > 1 then
-				self:DamageCrew(Damage * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
+				local Excess = SelfTbl.GForceStrain - 1 -- "Unmanageable damage"
+				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
 		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
