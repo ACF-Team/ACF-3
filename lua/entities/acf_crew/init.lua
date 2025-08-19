@@ -350,9 +350,14 @@ do -- Random timer stuff
 		-- If specified, apply damage to crew based on G forces
 		local Damages = GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
-			local Damage = math.pow(ACF.Normalize(GForce, Damages.Min, Damages.Max), 4) * SelfTbl.ACF.MaxHealth * DeltaTime * SampleRate
-			self:DamageCrew(Damage, "player/pl_fallpain3.wav")
+			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
+			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
+			if SelfTbl.GForceStrain > 1 then
+				self:DamageCrew(Damage * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
+			end
 		end
+		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
+		WireLib.TriggerOutput(self, "Stamina", SelfTbl.GForceStrain)
 	end
 end
 
@@ -366,6 +371,7 @@ do
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
 		"GForce (The strength of GForce experienced)",
+		"Stamina (The stamina of the crew member)",
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
@@ -511,6 +517,7 @@ do
 		-- Various state variables
 		Entity.ShouldScan = false
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
+		Entity.GForceStrain = 0
 		Entity.IsAlive = true
 
 		Entity.GForceTracker = ACF.SetupGForceTracker(Entity:LocalToWorld(CrewModel.ScanOffsetL))
