@@ -120,7 +120,7 @@ do -- Random timer crew stuff
 
 				TraceConfig.start = wrp1
 				TraceConfig.endpos = wrp2
-				local tr2 = TraceLine(TraceConfig)
+				tr2 = TraceLine(TraceConfig)
 
 				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
 				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
