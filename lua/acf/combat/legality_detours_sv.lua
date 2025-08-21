@@ -8,11 +8,10 @@ local ENTITY = FindMetaTable("Entity")
 
 local function DisableEntity(Entity, Reason, Message)
     local Disabled = Entity.Disabled
-    if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
+    if not Disabled then -- Only complain if the reason has changed
         ACF.DisableEntity(Entity, Reason, Message, Timeout)
     end
 end
-
 
 -- Crew are explicitly blocked from being disabled, since that will instantly kill all crew members
 -- Other entities are fair game though
@@ -97,7 +96,6 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
             local Override = PostContraptionCheck(Contraption)
             if Override == true then return true end
         end
-
         return DisableContraption(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
     end
 
