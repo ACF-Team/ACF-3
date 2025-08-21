@@ -802,8 +802,9 @@ do
 			local Gearboxes = Entity.ACF_Gearboxes
 			if Gearboxes == nil then return false end
 			if not next(Gearboxes) then return false end
-			-- Ensure all gearboxes have no constraints on them
+			-- Ensure all gearboxes have no constraints on them and none are disabled by ACF
 			for Gearbox in pairs(Gearboxes) do
+				if Gearbox.Disabled then return false end
 				if constraint.HasConstraints(Gearbox) then return false end
 			end
 		end
