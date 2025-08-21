@@ -801,7 +801,11 @@ do
 		if Class == "prop_physics" then
 			local Gearboxes = Entity.ACF_Gearboxes
 			if Gearboxes == nil then return false end
-			if #Gearboxes < 0 then return false end
+			if not next(Gearboxes) then return false end
+			-- Ensure all gearboxes have no constraints on them
+			for Gearbox in pairs(Gearboxes) do
+				if constraint.HasConstraints(Gearbox) then return false end
+			end
 		end
 
 		return true
