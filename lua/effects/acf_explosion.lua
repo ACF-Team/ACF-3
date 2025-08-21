@@ -66,7 +66,8 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	if not IsValid(Emitter) then return end
 
 	-- Debris flecks flown off by the explosion
-	for _ = 0, 5 * math.Clamp(Radius, 1, 30) * Mult do
+	local DebrisParts = 5 * math.Clamp(Radius, 1, 30) * Mult
+	for _ = 0, DebrisParts do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
 		if Debris then
@@ -86,7 +87,8 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 	end
 
 	-- Embers flown off by the explosion
-	for _ = 0, 5 * math.Clamp(Radius, 7, 10) * Mult do
+	local EmberParts = 5 * math.Clamp(Radius, 7, 10) * Mult
+	for _ = 0, EmberParts do
 		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
 		if Embers then
@@ -109,7 +111,8 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 
 	local DietimeMod = math.Clamp(Radius, 1, 14)
 
-	for _ = 0, math.Clamp(Radius, 3, 14) * Mult do
+	local SmokeParts = math.Clamp(Radius, 3, 14) * Mult
+	for _ = 0, SmokeParts do
 		if Radius >= 4 then
 			local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
 
@@ -147,12 +150,13 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 		end
 	end
 
-	local Density = math.Clamp(Radius, 10, 14) * 8
+	local Density = math.Clamp(Radius, 10, 14) * math.Clamp(math.Remap(FrameTime(), 0, 0.02, 8, 1), 1, 8)
 	local HitNormalAngle = HitNormal:Angle()
 	local HitNormalForward = HitNormalAngle:Forward()
 	local Angle = HitNormalAngle
 
-	for _ = 0, Density * Mult do
+	local DustParts = Density * Mult
+	for _ = 0, DustParts do
 		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
 
 		local TracePoint = util.TraceLine {
@@ -240,6 +244,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Flame:SetColor(255, 255, 255)
 		end
 	end
+	-- print("DebrisParts", DebrisParts, "EmberParts", EmberParts, "SmokeParts", SmokeParts, "DustParts", DustParts)
 	Emitter:Finish()
 end
 
