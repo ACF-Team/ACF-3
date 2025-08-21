@@ -157,7 +157,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 
 	local DustParts = Density * Mult
 	for _ = 0, DustParts do
-		Angle:RotateAroundAxis(Angle:Forward(), 360 / Density)
+		Angle:RotateAroundAxis(Angle:Forward(), 360 / DustParts)
 
 		local TracePoint = util.TraceLine {
 			start = Origin + (HitNormalForward * 2) * math.Rand(2, 4) * Radius,
@@ -170,11 +170,10 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 
 		if TracePoint.Hit then
 			local TraceTime = TracePoint.StartPos:Distance(TracePoint.HitPos) / 2000
-			local AngleCopy = _G.Angle(Angle[1], Angle[2], Angle[3])
 			local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), TracePoint.HitPos)
 
 			if Smoke then
-				Smoke:SetVelocity((-AngleCopy:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
+				Smoke:SetVelocity((-Angle:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
 				Smoke:SetLifeTime(-TraceTime)
 				Smoke:SetDieTime(math.Rand(0.5, 0.6) * DietimeMod)
 				Smoke:SetStartAlpha(math.Rand(100, 140))
@@ -191,7 +190,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), TracePoint.HitPos)
 
 			if Smoke then
-				Smoke:SetVelocity((-AngleCopy:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
+				Smoke:SetVelocity((-Angle:Up() * math.Rand(70, 180 * Radius)) + (HitNormalForward * math.Rand(70 * Radius, 140 * Radius)))
 				Smoke:SetLifeTime(-TraceTime)
 				Smoke:SetDieTime(math.Rand(0.2, 0.4) * DietimeMod)
 				Smoke:SetStartAlpha(math.Rand(70, 120))
