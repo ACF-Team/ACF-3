@@ -42,6 +42,7 @@ local function GetWeaponSpecs(ToolData)
 	return Result
 end
 
+--- Determines the base stats of a round given ToolData and attaches the results to Data
 function ACF.RoundBaseGunpowder(ToolData, Data)
 	local Specs   = GetWeaponSpecs(ToolData)
 	local GUIData = {}
@@ -69,6 +70,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	return Data, GUIData
 end
 
+--- Updates the round specifications based on the provided ToolData and Data
 function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -179,6 +181,7 @@ function ACF.GetWeaponBlacklist(Whitelist)
 	return Result
 end
 
+--- Determines the maximum internal volume of a shell to survive firing
 function ACF.RoundShellCapacity(PropMass, ProjArea, Caliber, ProjLength)
 	local PropEnergy = ACF.PropImpetus * PropMass
 	local MinWall = 0.2 + ((PropEnergy / ProjArea) ^ 0.7) * 0.035 --The minimal shell wall thickness required to survive firing at the current energy level

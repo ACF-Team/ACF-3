@@ -423,6 +423,80 @@ local function AddGraph(Base, ToolData)
 	end
 end
 
+local function AddDiagram(Base, ToolData)
+	local Canvas = Base:AddPanel("Panel")
+	Canvas:DockMargin(0, 5, 0, 5)
+
+	local MenuSizeX = Base:GetParent():GetParent():GetWide()
+	Canvas:SetSize(MenuSizeX, MenuSizeX * 0.5)
+
+	Canvas:TrackClientData("Projectile")
+	Canvas:TrackClientData("Propellant")
+	Canvas:TrackClientData("FillerRatio")
+	Canvas:TrackClientData("LinerAngle")
+	Canvas:TrackClientData("StandoffRatio")
+	Canvas:TrackClientData("SmokeWPRatio")
+
+	Canvas:DefineSetter(function(Panel)
+		-- PrintTable(BulletData)
+	end)
+
+	local Scale = Base:AddSlider("Diagram Scale", 0.1, 10, 1)
+	Scale:SetValue(1)
+
+	Canvas.Paint = function(self, w, h)
+		surface.SetDrawColor(Color(255, 255, 255))
+		surface.DrawRect(0, 0, w, h)
+
+		surface.SetDrawColor(Color(25, 25, 25))
+		surface.DrawOutlinedRect(0, 0, w, h)
+
+		surface.SetDrawColor(Color(0, 0, 0))
+
+		local BL = BulletData.ProjLength * 10 -- Projectile length
+		local BC = BulletData.Caliber * 10 * (BulletData.ProjScale or 1) -- Caliber
+
+		local PL = BulletData.PropLength * 10 -- Propellant length
+		local PC = BulletData.Caliber * 10 * ACF.AmmoCaseScale -- Propellant caliber
+
+		local TL = BulletData.Tracer * 10 -- Tracer length
+		local TC = BC -- Tracer caliber
+
+		local FillerRatio = ToolData.FillerRatio or 0
+		local Volume, Length, Radius = ACF.RoundShellCapacity(BulletData.PropMass, BulletData.ProjArea, BulletData.Caliber, BulletData.ProjLength)
+		-- print(Volume, Length, Radius, Volume * ACF.HEDensity)
+		local FL = Length * 10 -- Filler length
+		local FC = Radius * 10 -- Filler caliber
+
+		local CL = BL + PL + TL -- Cartridge length
+		local CC = BC -- Cartridge caliber
+
+		local MaxSize = 1000 / Scale:GetValue() -- Maximum size of the diagram
+		local r = 1 / MaxSize * h -- Converts dimension to pixels
+
+		local DimensionText = "Window Size: [%sx%s] mm"
+		draw.SimpleText(string.format(DimensionText, math.Round(MaxSize * w / h), math.Round(MaxSize)), "DermaDefault", 5, h - 5, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+
+		local cx, cy = w * 0.5, h * 0.5 -- Center x/y
+
+		local PX = cx - CL / 2 * r -- Tracer X position
+		local TX = PX + PL * r -- Propellant X position
+		local BX = TX + TL * r -- Projectile X position
+
+		surface.SetDrawColor(Color(255, 191, 0))
+		surface.DrawRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder
+
+		surface.SetDrawColor(Color(0, 255, 0))
+		surface.DrawRect(TX, cy - TC / 2 * r, TL * r, TC * r) -- Tracer Cylinder
+
+		surface.SetDrawColor(Color(72, 72, 72))
+		surface.DrawRect(BX, cy - BC / 2 * r, BL * r, BC * r) -- Projectile cylinder
+
+		surface.SetDrawColor(Color(255, 93, 0))
+		surface.DrawRect(BX, cy - FC / 2 * r * FillerRatio, FL * r * FillerRatio, FC * r * FillerRatio) -- Filler cylinder
+	end
+end
+
 ---Returns the client bullet data currently being used by the menu.
 ---@return table<string, any> BulletData The client bullet data.
 function ACF.GetCurrentAmmoData()
@@ -461,6 +535,7 @@ function ACF.UpdateAmmoMenu(Menu)
 
 	AddPreview(Base, ToolData)
 	AddControls(Base, ToolData)
+	AddDiagram(Base, ToolData)
 	AddInformation(Base, ToolData)
 	AddPenetrationTable(Base, ToolData)
 	AddGraph(Base, ToolData)

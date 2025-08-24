@@ -271,6 +271,8 @@ do -- ACF global vars
 	ACF.RHADensity           = 7.84e-3 -- kg/cm^3
 	ACF.AluminumDensity      = 2.7e-3  -- kg/cm^3
 	ACF.CopperDensity        = 8.96e-3 -- kg/cm^3
+	ACF.WHADensity		 	 = 19.25e-3 -- kg/cm^3
+	ACF.DUDensity		 	 = 18.95e-3 -- kg/cm^3
 
 	-- Debris
 	ACF.ChildDebris          = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
