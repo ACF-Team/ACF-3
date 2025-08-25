@@ -90,7 +90,7 @@ else
 	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local TelescopeRatio = Base:AddSlider("#acf.menu.ammo.telescope_length", 0, 0.25, 2)
+		local TelescopeRatio = Base:AddSlider("#acf.menu.ammo.telescope_length", 0, 1, 2)
 		TelescopeRatio:SetClientData("TelescopeRatio", "OnValueChanged")
 		TelescopeRatio:TrackClientData("TelescopeRatio")
 		TelescopeRatio:DefineSetter(function(Panel, _, Key, Value)
