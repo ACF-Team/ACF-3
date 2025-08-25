@@ -82,12 +82,11 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	local PropVsProj = ToolData.PropVsProj or 0.5
 	local RoundLength = ToolData.RoundLength or 1
-	print(PropVsProj, RoundLength)
 
-	local Projectile = math.Clamp(RoundLength * PropVsProj, GUIData.MinProjLength, GUIData.MaxProjLength)
-	local Propellant = math.Clamp(RoundLength * (1 - PropVsProj), GUIData.MinPropLength, GUIData.MaxPropLength)
+	local Projectile = math.Clamp(RoundLength * (1 - PropVsProj), GUIData.MinProjLength, GUIData.MaxProjLength)
+	local Propellant = math.Clamp(RoundLength * PropVsProj, GUIData.MinPropLength, GUIData.MaxPropLength)
 
-	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)	
+	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
 
 	local ProjLength = math.Round(Projectile, 2) - Data.Tracer
 	local PropLength = math.Round(Propellant, 2)
