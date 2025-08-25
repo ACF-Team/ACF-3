@@ -183,6 +183,16 @@ local function AddControls(Base, ToolData)
 		return BulletData.PropLength
 	end)
 
+	local CasingScale = Base:AddSlider("#acf.menu.ammo.casing_scale", 1, 1.25, 2)
+	CasingScale:SetClientData("CasingScale", "OnValueChanged")
+	CasingScale:DefineSetter(function(Panel, _, Key, Value)
+		ToolData.CasingScale = math.Round(Value, 2)
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		return ToolData.CasingScale
+	end)
+
 	if Ammo.OnCreateAmmoControls then
 		Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 	end
@@ -499,7 +509,7 @@ local function AddDiagram(Base, ToolData)
 		local BC = BulletData.Caliber * 10 * (BulletData.ProjScale or 1) -- Caliber
 
 		local PL = BulletData.PropLength * 10 -- Propellant length
-		local PC = BulletData.Caliber * 10 * ACF.AmmoCaseScale -- Propellant caliber
+		local PC = BulletData.Caliber * 10 * BulletData.CasingScale -- Propellant caliber
 
 		local TL = BulletData.Tracer * 10 -- Tracer length
 		local TC = BC -- Tracer caliber

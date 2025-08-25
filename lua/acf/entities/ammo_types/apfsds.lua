@@ -89,4 +89,15 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
+
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
+		local TelescopeRatio = Base:AddSlider("#acf.menu.ammo.telescope_ratio", BulletData.MinConeAng, 90, 1)
+		TelescopeRatio:SetClientData("TelescopeRatio", "OnValueChanged")
+		TelescopeRatio:TrackClientData("Projectile")
+		TelescopeRatio:DefineSetter(function(Panel, _, Key, Value)
+			ToolData.TelescopeRatio = math.Round(Value, 2)
+
+			return BulletData.TelescopeRatio
+		end)
+	end
 end
