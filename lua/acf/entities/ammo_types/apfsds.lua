@@ -60,7 +60,6 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
-	Data.TelescopeLength = math.min(ToolData.TelescopeLength, Data.PropLength)
 
 	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
@@ -91,19 +90,19 @@ else
 	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local TelescopeLength = Base:AddSlider("#acf.menu.ammo.telescope_length", 0, BulletData.MaxRoundLength, 2)
-		TelescopeLength:SetClientData("TelescopeLength", "OnValueChanged")
-		TelescopeLength:TrackClientData("TelescopeLength")
-		TelescopeLength:DefineSetter(function(Panel, _, Key, Value)
-			ToolData.TelescopeLength = math.Round(Value, 2)
+		local TelescopeRatio = Base:AddSlider("#acf.menu.ammo.telescope_length", 0, 1, 2)
+		TelescopeRatio:SetClientData("TelescopeRatio", "OnValueChanged")
+		TelescopeRatio:TrackClientData("TelescopeRatio")
+		TelescopeRatio:DefineSetter(function(Panel, _, Key, Value)
+			ToolData.TelescopeRatio = math.Round(Value, 2)
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
-			ACF.SetClientData("TelescopeLength", BulletData.TelescopeLength)
+			ACF.SetClientData("TelescopeRatio", BulletData.TelescopeRatio)
 
-			Panel:SetValue(BulletData.TelescopeLength)
+			Panel:SetValue(BulletData.TelescopeRatio)
 
-			return BulletData.TelescopeLength
+			return BulletData.TelescopeRatio
 		end)
 	end
 end

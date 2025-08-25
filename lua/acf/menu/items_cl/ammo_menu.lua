@@ -535,7 +535,7 @@ local function AddDiagram(Base, ToolData)
 		cx = cx + self.Shift.x
 		cy = cy + self.Shift.y
 
-		local TLL = BulletData.TelescopeLength or 0
+		local TLL = BulletData.TelescopeRatio or 0
 
 		local PX = cx - CL / 2 * r -- Propellant X position
 		local TX = PX + PL * r -- Tracer X position
