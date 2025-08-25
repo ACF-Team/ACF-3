@@ -535,9 +535,11 @@ local function AddDiagram(Base, ToolData)
 		cx = cx + self.Shift.x
 		cy = cy + self.Shift.y
 
-		local PX = cx - CL / 2 * r -- Tracer X position
-		local TX = PX + PL * r -- Propellant X position
-		local BX = TX + TL * r -- Projectile X position
+		local TLL = BulletData.TelescopeLength or 0
+
+		local PX = cx - CL / 2 * r -- Propellant X position
+		local TX = PX + PL * r -- Tracer X position
+		local BX = TX + TL * r - TLL -- Projectile X position
 
 		surface.SetDrawColor(Color(255, 191, 0))
 		surface.DrawRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder

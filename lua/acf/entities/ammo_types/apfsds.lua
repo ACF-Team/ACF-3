@@ -60,6 +60,7 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 	Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
+	Data.TelescopeLength = math.min(ToolData.TelescopeLength, Data.PropLength)
 
 	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
@@ -98,11 +99,11 @@ else
 
 			Ammo:UpdateRoundData(ToolData, BulletData)
 
-			ACF.SetClientData("TelescopeLength", ToolData.TelescopeLength)
+			ACF.SetClientData("TelescopeLength", BulletData.TelescopeLength)
 
-			Panel:SetValue(ToolData.TelescopeLength)
+			Panel:SetValue(BulletData.TelescopeLength)
 
-			return ToolData.TelescopeLength
+			return BulletData.TelescopeLength
 		end)
 	end
 end
