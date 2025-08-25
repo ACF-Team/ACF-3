@@ -441,10 +441,52 @@ local function AddDiagram(Base, ToolData)
 		-- PrintTable(BulletData)
 	end)
 
-	local Scale = Base:AddSlider("Diagram Scale", 0.1, 10, 1)
-	Scale:SetValue(1)
+	Canvas.IsMouseDown = false
+	Canvas.InitialMouseOffset = Vector(0, 0)
+	Canvas.LastMouseOffset = Vector(0, 0)
+
+	Canvas.Shift = Vector(0, 0)
+	Canvas.Scale = 1.0
+
+	function Canvas:OnMousePressed(Button)
+		if Button ~= MOUSE_LEFT then return end
+
+		local MouseOffset = Vector(self:ScreenToLocal(input.GetCursorPos()))
+
+		if MouseOffset:WithinAABox(Vector(0, 0, -1), Vector(self:GetWide(), self:GetTall(), 1)) then
+			self.IsMouseDown = true
+			self.InitialMouseOffset = MouseOffset
+			self.LastMouseOffset = MouseOffset
+		end
+	end
+
+	function Canvas:OnMouseReleased(Button)
+		if Button ~= MOUSE_LEFT then return end
+
+		self.IsMouseDown = false
+	end
+
+	function Canvas:OnMouseWheeled(scrollDelta)
+		if not self.IsMouseDown then return end
+
+		Canvas.Scale = math.Clamp(Canvas.Scale + scrollDelta * 0.5, 1.0, 10)
+		return true
+	end
 
 	Canvas.Paint = function(self, w, h)
+		if self.IsMouseDown then
+			local MouseOffset = Vector(self:ScreenToLocal(input.GetCursorPos()))
+			local Delta = MouseOffset - self.LastMouseOffset
+			self.Shift = self.Shift + Delta
+			self.Shift.x = math.Clamp(self.Shift.x, -w * 0.5, w * 0.5)
+			self.Shift.y = math.Clamp(self.Shift.y, -h * 0.5, h * 0.5)
+			self.LastMouseOffset = MouseOffset
+		end
+
+		if self.IsMouseDown and not input.IsMouseDown(MOUSE_LEFT) then
+			self:OnMouseReleased(MOUSE_LEFT)
+		end
+
 		surface.SetDrawColor(Color(255, 255, 255))
 		surface.DrawRect(0, 0, w, h)
 
@@ -471,13 +513,15 @@ local function AddDiagram(Base, ToolData)
 		local CL = BL + PL + TL -- Cartridge length
 		local CC = BC -- Cartridge caliber
 
-		local MaxSize = 1000 / Scale:GetValue() -- Maximum size of the diagram
+		local MaxSize = 1000 / Canvas.Scale -- Maximum size of the diagram
 		local r = 1 / MaxSize * h -- Converts dimension to pixels
 
 		local DimensionText = "Window Size: [%sx%s] mm"
 		draw.SimpleText(string.format(DimensionText, math.Round(MaxSize * w / h), math.Round(MaxSize)), "DermaDefault", 5, h - 5, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 
 		local cx, cy = w * 0.5, h * 0.5 -- Center x/y
+		cx = cx + self.Shift.x
+		cy = cy + self.Shift.y
 
 		local PX = cx - CL / 2 * r -- Tracer X position
 		local TX = PX + PL * r -- Propellant X position
