@@ -485,7 +485,7 @@ local function AddDiagram(Base, ToolData)
 		return true
 	end
 
-	Canvas.Paint = function(self, w, h)
+	function Canvas:Paint(w, h)
 		if self.IsMouseDown then
 			local MouseOffset = Vector(self:ScreenToLocal(input.GetCursorPos()))
 			local Delta = MouseOffset - self.LastMouseOffset
@@ -502,8 +502,8 @@ local function AddDiagram(Base, ToolData)
 		surface.SetDrawColor(Color(255, 255, 255))
 		surface.DrawRect(0, 0, w, h)
 
-		surface.SetDrawColor(Color(25, 25, 25))
-		surface.DrawOutlinedRect(0, 0, w, h)
+		-- surface.SetDrawColor(Color(25, 25, 25))
+		-- surface.DrawOutlinedRect(0, 0, w, h)
 
 		surface.SetDrawColor(Color(0, 0, 0))
 
