@@ -135,11 +135,11 @@ local function AddControls(Base, ToolData)
 
 	if not Result then return end
 
-	local RoundLength = Base:AddLabel()
-	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
-	RoundLength:TrackClientData("Propellant")
-	RoundLength:TrackClientData("Tracer")
-	RoundLength:DefineSetter(function()
+	local TotalRoundLength = Base:AddLabel()
+	TotalRoundLength:TrackClientData("PropVsProj", "SetText", "GetText")
+	TotalRoundLength:TrackClientData("RoundLength")
+	TotalRoundLength:TrackClientData("Tracer")
+	TotalRoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
 		local MaxLength = BulletData.MaxRoundLength
@@ -147,40 +147,32 @@ local function AddControls(Base, ToolData)
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
-	Projectile:SetClientData("Projectile", "OnValueChanged")
-	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Projectile = Value
-
-		if not IsTracked then
-			BulletData.Priority = "Projectile"
-		end
+	local PropVsProj = Base:AddSlider("PropVsProj", 0, 1, 2)
+	PropVsProj:SetClientData("PropVsProj", "OnValueChanged")
+	PropVsProj:DefineSetter(function(Panel, _, _, Value, IsTracked)
+		ToolData.PropVsProj = Value
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Propellant", BulletData.PropLength)
+		ACF.SetClientData("PropVsProj", Value)
 
-		Panel:SetValue(BulletData.ProjLength)
+		Panel:SetValue(Value)
 
-		return BulletData.ProjLength
+		return Value
 	end)
 
-	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
-	Propellant:SetClientData("Propellant", "OnValueChanged")
-	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Propellant = Value
-
-		if not IsTracked then
-			BulletData.Priority = "Propellant"
-		end
+	local RoundLength = Base:AddSlider("RoundLength", 0, BulletData.MaxRoundLength, 2)
+	RoundLength:SetClientData("RoundLength", "OnValueChanged")
+	RoundLength:DefineSetter(function(Panel, _, _, Value, IsTracked)
+		ToolData.RoundLength = Value
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Projectile", BulletData.ProjLength)
+		ACF.SetClientData("RoundLength", Value)
 
-		Panel:SetValue(BulletData.PropLength)
+		Panel:SetValue(Value)
 
-		return BulletData.PropLength
+		return Value
 	end)
 
 	local CasingScale = Base:AddSlider("#acf.menu.ammo.casing_scale", 1, 1.25, 2)
