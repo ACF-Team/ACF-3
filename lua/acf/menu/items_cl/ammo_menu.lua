@@ -141,7 +141,7 @@ local function AddControls(Base, ToolData)
 	TotalRoundLength:TrackClientData("Tracer")
 	TotalRoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
-		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
+		local CurLength = BulletData.RoundLength
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
@@ -154,11 +154,13 @@ local function AddControls(Base, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("PropVsProj", Value)
+		ACF.SetClientData("PropVsProj", BulletData.PropVsProj)
+		ACF.SetClientData("Propellant", BulletData.PropLength)
+		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
-		Panel:SetValue(Value)
+		Panel:SetValue(BulletData.PropVsProj)
 
-		return Value
+		return BulletData.PropVsProj
 	end)
 
 	local RoundLength = Base:AddSlider("RoundLength", 0, BulletData.MaxRoundLength, 2)
@@ -168,11 +170,13 @@ local function AddControls(Base, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("RoundLength", Value)
+		ACF.SetClientData("RoundLength", BulletData.RoundLength)
+		ACF.SetClientData("Propellant", BulletData.PropLength)
+		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
-		Panel:SetValue(Value)
+		Panel:SetValue(BulletData.RoundLength)
 
-		return Value
+		return BulletData.RoundLength
 	end)
 
 	local CasingScale = Base:AddSlider("#acf.menu.ammo.casing_scale", 1, 1.25, 2)
@@ -274,6 +278,7 @@ local function AddPenetrationTable(Base, ToolData)
 	PenTable:TrackClientData("PropVsProj", "SetText")
 	PenTable:TrackClientData("RoundLength")
 	PenTable:TrackClientData("CasingScale")
+	PenTable:TrackClientData("TelescopeRatio")
 	PenTable:TrackClientData("FillerRatio")
 	PenTable:TrackClientData("LinerAngle")
 	PenTable:TrackClientData("StandoffRatio")
@@ -324,6 +329,7 @@ local function AddGraph(Base, ToolData)
 
 	Graph:TrackClientData("PropVsProj")
 	Graph:TrackClientData("RoundLength")
+	Graph:TrackClientData("TelescopeRatio")
 	Graph:TrackClientData("CasingScale")
 	Graph:TrackClientData("FillerRatio")
 	Graph:TrackClientData("LinerAngle")
@@ -436,6 +442,8 @@ local function AddDiagram(Base, ToolData)
 
 	Canvas:TrackClientData("PropVsProj")
 	Canvas:TrackClientData("RoundLength")
+	Canvas:TrackClientData("CasingScale")
+	Canvas:TrackClientData("TelescopeRatio")
 	Canvas:TrackClientData("FillerRatio")
 	Canvas:TrackClientData("LinerAngle")
 	Canvas:TrackClientData("StandoffRatio")
@@ -530,8 +538,8 @@ local function AddDiagram(Base, ToolData)
 		local TLL = BulletData.TelescopeRatio or 0
 
 		local PX = cx - CL / 2 * r -- Propellant X position
-		local TX = PX + PL * r -- Tracer X position
-		local BX = TX + TL * r - TLL -- Projectile X position
+		local TX = PX + (PL * (1 - TLL)) * r -- Tracer X position
+		local BX = TX + TL * r -- Projectile X position
 
 		surface.SetDrawColor(Color(255, 191, 0))
 		surface.DrawRect(PX, cy - PC / 2 * r, PL * r, PC * r) -- Propellant cylinder

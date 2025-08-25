@@ -55,10 +55,8 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	Data.Efficiency  = Specs.Efficiency or 1
 
 	GUIData.MaxRoundLength = Length
-	GUIData.MinPropLength  = 0.01
-	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
-	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
-	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
+	GUIData.MinPropToProj = 0.01
+	GUIData.MaxPropToProj = 0.75
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
@@ -80,13 +78,16 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	Data.Priority = Data.Priority or "Projectile"
 	Data.Tracer   = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 
-	local PropVsProj = ToolData.PropVsProj or 0.5
+	local PropVsProj = math.Clamp(ToolData.PropVsProj or 0.5, GUIData.MinPropToProj, GUIData.MaxPropToProj)
 	local RoundLength = ToolData.RoundLength or 1
+	Data.PropVsProj = PropVsProj
+	Data.RoundLength = RoundLength
 
-	local Projectile = math.Clamp(RoundLength * (1 - PropVsProj), GUIData.MinProjLength, GUIData.MaxProjLength)
-	local Propellant = math.Clamp(RoundLength * PropVsProj, GUIData.MinPropLength, GUIData.MaxPropLength)
-
-	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
+	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 0.25)
+	local Propellant = RoundLength * PropVsProj
+	local Projectile = RoundLength * (1 - PropVsProj) + Data.TelescopeRatio * Propellant
+	
+	print(Data.ProjLength, RoundLength * (1 - PropVsProj), Data.TelescopeRatio * Propellant, Data.PropLength)
 
 	local ProjLength = math.Round(Projectile, 2) - Data.Tracer
 	local PropLength = math.Round(Propellant, 2)

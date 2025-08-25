@@ -260,10 +260,13 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+			local PropLen = math.Round(BulletData.PropLength, 2)
+			local ProjLen = math.Round(BulletData.ProjLength, 2)
+
 			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 
-			return Text:format(MuzzleVel, ProjMass, PropMass)
+			return Text:format(MuzzleVel, ProjLen, PropLen, ProjMass, PropMass)
 		end)
 
 		local MaxPen = Base:AddLabel()
