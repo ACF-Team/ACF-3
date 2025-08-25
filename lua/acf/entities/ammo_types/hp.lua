@@ -124,6 +124,7 @@ else
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
 		RoundStats:TrackClientData("HollowRatio")
+		RoundStats:TrackClientData("CasingScale")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -152,6 +153,7 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("Projectile", "SetText")
 		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("CasingScale")
 		PenStats:TrackClientData("HollowRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

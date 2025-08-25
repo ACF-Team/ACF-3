@@ -82,11 +82,12 @@ if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
 
-	Entities.AddArguments("acf_ammo", "Projectile", "Propellant", "Tracer") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "Projectile", "Propellant", "CasingScale", "Tracer") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Entity.Projectile = nil
 		Entity.Propellant = nil
+		Entity.CasingScale = nil
 		Entity.Tracer = nil
 
 		-- Cleanup the leftovers aswell
@@ -246,12 +247,14 @@ else
 	function Ammo:OnCreateCrateInformation(_, Label)
 		Label:TrackClientData("Projectile")
 		Label:TrackClientData("Propellant")
+		Label:TrackClientData("CasingScale")
 	end
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("Projectile", "SetText")
 		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("CasingScale")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -267,6 +270,7 @@ else
 		MaxPen:TrackClientData("Projectile", "SetText")
 		MaxPen:TrackClientData("Propellant")
 		MaxPen:TrackClientData("FillerRatio")
+		MaxPen:TrackClientData("CasingScale")
 		MaxPen:DefineSetter(function()
 			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen	= math.Round(BulletData.MaxPen, 2)
