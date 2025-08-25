@@ -56,7 +56,6 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local Hole		= Data.ProjArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
 	local SabotMass = (Cylinder - Hole) * ACF.AluminumDensity -- A cylinder with a hole the size of the dart in it and im no math wizard so we're just going to take off 3/4 of the mass for the cutout since sabots are shaped like this: ][
 
-	print(Data.ProjArea, Data.ProjLength)
 	Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.WHADensity -- Volume of the projectile as a cylinder * density of steel
 	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
