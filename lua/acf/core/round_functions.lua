@@ -50,16 +50,9 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	if not Specs then return Data, GUIData end
 
 	local Length    = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
-	local Radius    = Specs.Caliber * 0.05 -- Radius in cm
-	local CasingScale = ToolData.CasingScale or ACF.AmmoCasingScale
-	print("Casing Scale", ToolData.CasingScale, CasingScale)
 
 	Data.Caliber    = Specs.Caliber * 0.1 -- Bullet caliber will have to stay in cm
-	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
-	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
-	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CasingScale) ^ 2
-	Data.Efficiency = Specs.Efficiency or 1
-	Data.CasingScale = CasingScale
+	Data.Efficiency  = Specs.Efficiency or 1
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
@@ -75,6 +68,14 @@ end
 --- Updates the round specifications based on the provided ToolData and Data
 function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
+
+	local Radius    = Data.Caliber / 2 -- Radius in cm
+	local CasingScale = ToolData.CasingScale or 1
+
+	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
+	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
+	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CasingScale) ^ 2
+	Data.CasingScale = CasingScale
 
 	Data.Priority = Data.Priority or "Projectile"
 	Data.Tracer   = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
