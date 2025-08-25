@@ -85,7 +85,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
 	if Data.Priority == "Projectile" then
-		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile * 0.25, GUIData.MaxPropLength)
+		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile, GUIData.MaxPropLength)
 	elseif Data.Priority == "Propellant" then
 		Projectile = math.min(Projectile, GUIData.MaxRoundLength - Propellant, GUIData.MaxProjLength)
 	end
