@@ -83,11 +83,10 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	Data.PropVsProj = PropVsProj
 	Data.RoundLength = RoundLength
 
+	-- Telescope ratio represents how much of the propellant length to embed the projectile length
 	Data.TelescopeRatio = math.Clamp(ToolData.TelescopeRatio or 0, 0, 0.25)
 	local Propellant = RoundLength * PropVsProj
 	local Projectile = RoundLength * (1 - PropVsProj) + Data.TelescopeRatio * Propellant
-	
-	print(Data.ProjLength, RoundLength * (1 - PropVsProj), Data.TelescopeRatio * Propellant, Data.PropLength)
 
 	local ProjLength = math.Round(Projectile, 2) - Data.Tracer
 	local PropLength = math.Round(Propellant, 2)
