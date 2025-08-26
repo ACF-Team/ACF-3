@@ -62,13 +62,26 @@ do -- Playing regular sounds
 	--- @param Level? integer The sound's level/attenuation from 0-127
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume)
+	--- @param UseBASS? boolean Whether the sound should be played through BASS instead; use this for things like volumes greater than 1
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS)
 		Volume = ACF.Volume * Volume
 
 		if isentity(Origin) and IsValid(Origin) then
 			Origin:EmitSound(Path, Level, Pitch, Volume)
 		elseif isvector(Origin) then
-			sound.Play(Path, Origin, Level, Pitch, Volume)
+			if UseBASS then
+				-- TODO: Find a way to apply level to this sound
+				sound.PlayFile("sound/" .. Path, "3d", function(Channel)
+					if IsValid(Channel) then
+						Channel:SetPos(Origin)
+						Channel:SetPlaybackRate(Pitch / 100)
+						Channel:SetVolume(Volume)
+						Channel:Play()
+					end
+				end)
+			else
+				sound.Play(Path, Origin, Level, Pitch, Volume)
+			end
 		end
 	end
 
