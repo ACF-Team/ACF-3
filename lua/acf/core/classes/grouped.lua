@@ -77,21 +77,35 @@ end
 --- If no such group exists, it will instead check for a group that has a group item with the given ID
 --- @param Namespace string The namespace to lookup the group in
 --- @param ID string The ID of the group, or the ID of a group item
---- @return table | nil # The group if found
+--- @return table? # The group if found
 function Classes.GetGroup(Namespace, ID)
 	if not istable(Namespace) then return end
 	if not isstring(ID) then return end
 
+	-- Find the class with this ID
 	local Class = Namespace.Get(ID)
 
 	if Class then return Class end
 
+	-- Or find the group with an item with this ID
 	local Groups = Namespace.GetList()
 
 	for _, Group in ipairs(Groups) do
 		local Item = Namespace.GetItem(Group.ID, ID)
 
 		if Item then return Group end
+	end
+end
+
+--- Gets a group item given its ID and the namespace it's group is stored in
+--- Only if the group and item exists will it return a valid item
+--- @param Namespace table The namespace to lookup the group in
+--- @param ID string The ID of the group item
+--- @return table?, table? # The group item if found and the group if found
+function Classes.GetGroupItem(Namespace, ID)
+	local Group = Classes.GetGroup(Namespace, ID)
+	if Group then
+		return Namespace.GetItem(Group.ID, ID), Group
 	end
 end
 

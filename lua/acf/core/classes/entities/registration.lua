@@ -142,6 +142,29 @@ Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	return Value
 end)
 
+-- If Value is a Group's ID or a Group Item's ID for the given Namespace then it will pass.
+Entities.AddUserArgumentType("GroupItem", function(Value, Specs)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	-- Get the namespace, e.g. ACF.Classes.FuelTanks
+	local Namespace = ACF.Classes[Specs.Namespace]
+	if not Namespace then error("Could not find namespace '" .. Specs.Namespace .. "'.") end
+
+	-- Get the group, e.g. ACF.Classes.GetGroup(ACF.Classes.FuelTanks, "Tank_1x8x2") -> "FTS_B"
+	local Group = Classes.GetGroup(Namespace, Value)
+	if not Group then error("Could not find group for '" .. Value .. "'.") end
+
+	if Group.ID == Value then return Value end -- If Value is a Group's ID then don't check if it is a group item
+
+	-- Get the group item, e.g. ACF.Classes.GetItem("FTS_B", "Tank_1x8x2") -> "Tank_1x8x2"
+	local GroupItem = Namespace.GetItem(Group.ID, Value)
+	if not GroupItem then error("Could not find group item '" .. Value .. "' in group '" .. Group.Name .. "'") end
+
+	return Value
+end)
+
 -- Single entity link.
 Entities.AddUserArgumentType("LinkedEntity",
 	function(Value, Specs)
