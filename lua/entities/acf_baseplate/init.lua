@@ -106,6 +106,18 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 	WireLib.TriggerOutput(Entity, "Vehicles", {Pod})
 end
 
+ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat)
+	This:ACF_SetUserVar("Seat", Seat)
+	print("Linking baseplate to seat", Seat, This)
+	return true, "seat link success"
+end)
+
+ACF.RegisterClassUnlink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat)
+	This:ACF_SetUserVar("Seat", nil)
+	print("Unlinking baseplate from seat", Seat, This)
+	return true, "seat unlink success"
+end)
+
 
 -- Might be a good idea to put this somewhere else later
 ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}

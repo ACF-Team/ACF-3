@@ -167,6 +167,7 @@ end)
 
 -- Single entity link.
 Entities.AddUserArgumentType("LinkedEntity",
+	-- Validator
 	function(Value, Specs)
 		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
 
@@ -179,9 +180,11 @@ Entities.AddUserArgumentType("LinkedEntity",
 
 		return Value
 	end,
+	-- Precopy
 	function(_, value)
 		return value:EntIndex()
 	end,
+	-- Postpaste
 	function(self, value, createdEnts)
 		local Ent = createdEnts[value]
 		if not IsValid(Ent) then return NULL end
@@ -460,6 +463,7 @@ function Entities.AutoRegister(ENT)
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
 	local PostEntityPaste = ENT.PostEntityPaste
+	local OnRemove        = ENT.OnRemove
 
 	--- Spawns the entity, verify the data, update/check the limits and check legality.
 	--- @param Player Player The player who is spawning the entity
@@ -506,6 +510,29 @@ function Entities.AutoRegister(ENT)
 		return New
 	end
 
+	--- Called when the entity is removed
+	local LinkableTypes = {
+		LinkedEntity = true,
+		LinkedEntities = true
+	}
+	function ENT:OnRemove()
+		hook.Run("ACF_OnEntityLast", Class, self)
+
+		-- Unlink each entity link
+		-- for k, v in pairs(self.ACF_UserData or {}) do
+		-- 	if not LinkableTypes[UserVars[k].Type] then continue end
+
+		-- 	for ent in pairs(v) do
+		-- 		if not IsValid(ent) then continue end
+
+		-- 		ent:Unlink(self)
+		-- 	end
+		-- end
+
+		if OnRemove then OnRemove(self) end
+		WireLib.Remove(self)
+	end
+
 	--- Runs the Validator and PreCopy for methods for each user var
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
@@ -515,6 +542,7 @@ function Entities.AutoRegister(ENT)
 				value = typedef.PreCopy(self, value)
 			end
 
+			print("Autoreg PreEntityCopy", k, v, value)
 			self.ACF_UserData[k] = value
 		end
 
