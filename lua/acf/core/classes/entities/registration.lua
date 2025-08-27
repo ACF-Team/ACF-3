@@ -9,12 +9,29 @@ local istable    = istable
 local unpack     = unpack
 local Classes    = ACF.Classes
 local Entities   = Classes.Entities
+
+--- Table mapping entity class names to their class tables
+--- @type table<string, table>
 local Entries    = Classes.GetOrCreateEntries(Entities)
+
+--- Represents the arguments of an entity class (and information about them)
+--- Note: For older parts of the code base, restrictions are done outside the API, so that may be empty.
+--- @class EntityTable
+--- @field Lookup table 		# Maps argument name to true
+--- @field Count number 		# The total number of arguments
+--- @field List table 			# An array of all arguments
+--- @field Restrictions table 	# Maps an argument name to its restrictions (See: ACF_UserVars)
+
+--- Represents an entity argument (and its restriction) in the new API
+--- @class Restriction
+--- @field Type string			# The type of the restriction
+--- @field ClientData bool		# Whether this property should be updated from the menu
+--- @field Default any			# The default value if none is provided
 
 --- Gets the entity table of a certain class
 --- If an entity table doesn't exist for the class, it will register one.
 --- @param Class table The class to get the entity table from
---- @return {Lookup:table, Count:number, List:table} # The entity table of this class
+--- @return EntityTable # The entity table of this class
 local function GetEntityTable(Class)
 	local Data = Entries[Class]
 
@@ -34,7 +51,7 @@ end
 
 --- Adds arguments to an entity for storage in duplicators
 --- The Entity.Lookup, Entity.Count and Entity.List variables allow us to iterate over this information in different ways. 
---- @param Entity entity The entity to add arguments to
+--- @param Entity EntityTable The entity table to add arguments to
 --- @param Arguments any[] # An array of arguments to attach to the entity (usually {...})
 --- @return any[] # An array of arguments attached to the entity
 local function AddArguments(Entity, Arguments)
@@ -43,25 +60,26 @@ local function AddArguments(Entity, Arguments)
 	local List   = Entity.List
 
 	for _, V in ipairs(Arguments) do
-		if Lookup[V] then continue end
+		if Lookup[V] then continue end	-- Ignore adding what's already registered
 
-		Count = Count + 1
-
-		Lookup[V]   = true
-		List[Count] = V
+		Count = Count + 1				-- Increment the count of arguments
+		Lookup[V]   = true				-- Index the entity argument as used
+		List[Count] = V					-- Append the entity argument to the list
 	end
 
-	Entity.Count = Count
+	Entity.Count = Count				-- Update the count of arguments
 
 	return List
 end
 
 local UserArgumentTypes = {}
 
+--- Populates the Restrictions table of an entity class under `Restrictions` after verifying the format is correct.
 local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 	local Restrictions = Entity.Restrictions
 
 	for k, v in pairs(ArgumentRestrictions) do
+		-- Basic check to make sure the argument restrictions have the proper format
 		if not v.Type                then error("Argument '" .. tostring(k or "<NIL>") .. "' didn't have a Type!") end
 		if not isstring(v.Type)      then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-string Type! (" .. tostring(v.Type) .. ")") end
 		if not UserArgumentTypes[v.Type] then error("Argument '" .. tostring(k or "<NIL>") .. "' has a non-registered Type! (" .. tostring(v.Type) .. ")") end
@@ -69,7 +87,6 @@ local function AddArgumentRestrictions(Entity, ArgumentRestrictions)
 		Restrictions[k] = v
 	end
 end
-
 
 --- Adds an argument type and verifier to the ArgumentTypes dictionary.
 --- @param Type string The type of data
@@ -216,6 +233,13 @@ MARCH: This is the IDEAL way to create new entities within ACF. It is still expe
 We should try to refactor some critical components (fuel, for example) to use this system - which will likely require
 some backwards compat layer, etc... we'll figure that out when we get to that point. 
 
+LEN: "Strict" entity arguments are intended to be validated using the new API (see: UserData/UserVars).
+"Non Strict" entity arguments exist mostly for backwards compatibility and are often validated outside the API.
+Also, You should be able to do everything with the API functions we documented in this comment block.
+If not, then please notify us and we will figure out how to support it.
+Finally, note that autoreg does not use duplicator.StoreEntityModifier, it seems to work through duplicator.RegisterEntityClass.
+
+
 AutoRegister calls should always be at the end of the file.
 Some properties should always be defined in shared.lua.
 See acf_baseplate's shared.lua for an example.
@@ -225,12 +249,15 @@ Here's what this entity API exposes/uses:
 ENTITY METHODS AND FIELDS
 	ENT.ACF_Limit (typeof number)
 		Defines the maximum amount of entities of Classname, optional
+		The convar will be "sbox_max_acf_<Classname>"
+		where Classname is the name of the folder containing the file Entities.Autoregister was called in.
+			E.g. entities/baseplates/shared.lua -> "baseplates"
 
 	ENT.ACF_UserVars
 		A table of (shared) key-value pairs. Key is the user variable name, value is a table defining
 			Type (string)
 			ClientData (boolean)
-			Type-specific parameters (...kvargs)
+			Type-specific parameters (...kvargs) (e.g. Min, Max, Default)
 
 	ENT:ACF_PreUpdateEntityData(ClientData)
 		Pre-update entity data hook, optional
@@ -239,7 +266,9 @@ ENTITY METHODS AND FIELDS
 		Post-update entity data hook, optional
 
 	ENT.ACF_OnVerifyClientData(ClientData)
-		Non-entity context clientdata verification. Called immediately after UserVar validation is performed
+		Non-entity context clientdata verification. Called immediately after UserVar validation is performed.
+		This is useful if you need to perform validation between entity arguments.
+		Similar in use to the VerifyData functions in the old API.
 
 	ENT.ACF_UserData (table)
 		The raw table behind ACF_GetUserVat/ACF_SetUserVar. WIll not perform any validation on sets
@@ -249,12 +278,21 @@ ENTITY METHODS AND FIELDS
 
 	ENT:ACF_SetUserVar(Key, Value)
 		Sets a user variable by Key to Value. Automatically pulls the typedef for the user and performs the validator.
+		If you don't want to perform validation on sets, you can directly set Entity.ACF_UserData[Key] = Value.
 
 	ENT:PreEntityCopy()
-		Identical to Garry's Mod's API but autoreg injects ACF_UserData logic before calling your custom PreEntityCopy
+		Identical to Garry's Mod's API but autoreg automatically saves your user vars from
+		the entity to the dupe before calling your custom PreEntityCopy.
+		In the old API this was done manually.
 
 	ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		Identical to Garry's Mod's API but autoreg injects ACF_UserData logic before calling your custom PostEntityPaste
+		Identical to Garry's Mod's API but autoreg automatically loads and validates your user vars from
+		the dupe to the entity, before calling your custom PostEntityPaste.
+		In the old API this was done manually.
+
+	ENT:PostMenuSpawn()
+		If specified, called by the menu tool after the entity has been spawned.
+		If not specified, menu tool will just drop it to the floor.
 
 BASE TYPES
 	-- ClientData or internal data
@@ -290,6 +328,8 @@ function Entities.AutoRegister(ENT)
 	if ENT == nil then ENT = _G.ENT end
 	if not ENT then error("Called Entities.AutoRegister(), but no entity was in the process of being created.") end
 
+	-- Class is the name of the subfolder within entities that Entities.Autoregister was called from
+	-- e.g. entities/baseplates/shared.lua -> "baseplates"
 	local Class  = string.Split(ENT.Folder, "/"); Class = Class[#Class]
 	ENT.ACF_Class = Class
 
@@ -314,8 +354,9 @@ function Entities.AutoRegister(ENT)
 		local List         = Entity.List
 		local Restrictions = Entity.Restrictions
 
+		-- Perform per argument verification
 		for _, argName in ipairs(List) do
-			if Restrictions[argName] then
+			if Restrictions[argName] then -- If we specified a restriction for this argument (mainly for the new API)
 				local RestrictionSpecs = Restrictions[argName]
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
@@ -324,19 +365,24 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
+		-- Perform general verification
 		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData) end
 	end
 
-	local function UpdateEntityData(self, ClientData, First)
-		local Entity = GetEntityTable(Class)
+	--- Updates the entity's user vars with ClientData
+	--- @param self table The entity to update
+	--- @param ClientData table The client data to use for the update
+	local function UpdateEntityData(self, ClientData)
+		local Entity = GetEntityTable(Class) -- THE ENTITY TABLE, NOT THE ENTITY ITSELF
 		local List   = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
 		self.ACF_UserData = self.ACF_UserData or {}
 
+		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
-			if UserVars[v].ClientData or First then
+			if UserVars[v].ClientData then
 				self.ACF_UserData[v] = ClientData[v]
 			end
 		end
@@ -346,6 +392,7 @@ function Entities.AutoRegister(ENT)
 		ACF.Activate(self, true)
 	end
 
+	--- Verifies then updates the entity with the provided client data
 	function ENT:Update(ClientData)
 		VerifyClientData(ClientData)
 
@@ -360,12 +407,14 @@ function Entities.AutoRegister(ENT)
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
 
+	--- Called elsewhere by the menu tool after spawning if specified
 	if not ENT.ACF_PostMenuSpawn then
 		function ENT:ACF_PostMenuSpawn()
 			self:DropToFloor()
 		end
 	end
 
+	--- Gets the value of a user variable
 	function ENT:ACF_GetUserVar(Key)
 		if not Key then error("Tried to get the value of a nil key.") end
 		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
@@ -373,6 +422,7 @@ function Entities.AutoRegister(ENT)
 		return self.ACF_UserData[Key]
 	end
 
+	--- Sets the value of a user variable after validating the value
 	function ENT:ACF_SetUserVar(Key, Value)
 		if not Key then error("Tried to set the value of a nil key.") end
 
@@ -384,11 +434,16 @@ function Entities.AutoRegister(ENT)
 
 		self.ACF_UserData[Key] = Typedef.Validator(Value, UserVar)
 	end
-
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
 	local PostEntityPaste = ENT.PostEntityPaste
 
+	--- Spawns the entity, verify the data, update/check the limits and check legality.
+	--- @param Player Player The player who is spawning the entity
+	--- @param Pos Vector The position to spawn the entity at
+	--- @param Angle Angle The angle to spawn the entity at
+	--- @param ClientData table The client data to use for the entity
+	--- @return Entity # The created entity
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
@@ -418,7 +473,7 @@ function Entities.AutoRegister(ENT)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
-		New:ACF_UpdateEntityData(ClientData, true)
+		New:ACF_UpdateEntityData(ClientData)
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
@@ -428,6 +483,7 @@ function Entities.AutoRegister(ENT)
 		return New
 	end
 
+	--- Runs the Validator and PreCopy for methods for each user var
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
@@ -439,11 +495,14 @@ function Entities.AutoRegister(ENT)
 			self.ACF_UserData[k] = value
 		end
 
+		-- Call original ENT.PreEntityCopy
 		if PreEntityCopy then PreEntityCopy(self) end
-		--Wire dupe info
+
+		-- Call the base class' PreEntityCopy (Wiremod base class probably uses this)
 		self.BaseClass.PreEntityCopy(self)
 	end
 
+	--- Runs the PostPaste and Validator methods for each user var
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local UserData = Ent.ACF_UserData
 		if not UserData then
@@ -462,7 +521,10 @@ function Entities.AutoRegister(ENT)
 			Ent.ACF_UserData[k] = check
 		end
 
+		-- Call original ENT.PostEntityPaste
 		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
+
+		-- Call the base class' PostEntityPaste (Wiremod base class probably uses this)
 		Ent.BaseClass.PostEntityPaste(Ent, Player, Ent, CreatedEntities)
 	end
 
@@ -544,6 +606,7 @@ function Entities.GetArguments(Class)
 	return List
 end
 
+-- Entity classes use the simple class system
 Classes.AddSimpleFunctions(Entities, Entries)
 
 if CLIENT then return end

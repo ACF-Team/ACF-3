@@ -6,6 +6,7 @@ ENT.PluralName    = "ACF Baseplates"
 ENT.IsACFBaseplate = true
 ENT.ACF_PreventArmoring = false
 
+-- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
 ENT.ACF_UserVars = {
     ["BaseplateType"]  = {Type = "SimpleClass", ClassName = "BaseplateTypes", Default = "GroundVehicle", ClientData = true},
     ["Width"]          = {Type = "Number", Min = 36, Max = 120,  Default = 36, Decimals = 2, ClientData = true},
