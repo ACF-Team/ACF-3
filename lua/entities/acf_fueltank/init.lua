@@ -60,10 +60,12 @@ do -- Spawn and Update functions
 		local Class = Classes.GetGroup(FuelTanks, Data.FuelTank)
 
 		if not Class then
+			-- This really shouldn't happen but just in case
 			Data.FuelTank = "Box"
 
 			Class = FuelTanks.Get("FTS_B")
 		elseif FuelTanks.IsAlias(Data.FuelTank) then
+			-- If the fuel tank is an alias, resolve it to the actual ID
 			Data.FuelTank = Class.ID
 		end
 
@@ -71,9 +73,11 @@ do -- Spawn and Update functions
 			local FuelTank = FuelTanks.GetItem(Class.ID, Data.FuelTank)
 
 			if FuelTank and FuelTank.Size then
+				-- Pre scaleable compatibility
 				Data.FuelTank = Class.ID
 				Data.Size     = Vector(FuelTank.Size)
 			elseif not isvector(Data.Size) then
+				-- Old size format compatibility
 				local X = ACF.CheckNumber(Data.TankSizeX, 24)
 				local Y = ACF.CheckNumber(Data.TankSizeY, 24)
 				local Z = ACF.CheckNumber(Data.TankSizeZ, 24)
@@ -155,6 +159,7 @@ do -- Spawn and Update functions
 
 		if Entity.FuelType == "Electric" then
 			Entity.Name = "Electric Battery"
+			-- Liters specified since fuel for other types measured in liters, so this is the only way to get an analog
 			Entity.Liters = Entity.Capacity -- Batteries capacity is different from internal volume
 			Entity.Capacity = Entity.Capacity * ACF.LiIonED
 		end
