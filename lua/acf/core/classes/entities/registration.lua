@@ -235,8 +235,10 @@ some backwards compat layer, etc... we'll figure that out when we get to that po
 
 LEN: "Strict" entity arguments are intended to be validated using the new API (see: UserData/UserVars).
 "Non Strict" entity arguments exist mostly for backwards compatibility and are often validated outside the API.
-You should be able to do everything with the API functions we documented in this comment block.
+Also, You should be able to do everything with the API functions we documented in this comment block.
 If not, then please notify us and we will figure out how to support it.
+Finally, note that autoreg does not use duplicator.StoreEntityModifier, it seems to work through duplicator.RegisterEntityClass.
+
 
 AutoRegister calls should always be at the end of the file.
 Some properties should always be defined in shared.lua.
@@ -247,6 +249,9 @@ Here's what this entity API exposes/uses:
 ENTITY METHODS AND FIELDS
 	ENT.ACF_Limit (typeof number)
 		Defines the maximum amount of entities of Classname, optional
+		The convar will be "sbox_max_acf_<Classname>"
+		where Classname is the name of the folder containing the file Entities.Autoregister was called in.
+			E.g. entities/baseplates/shared.lua -> "baseplates"
 
 	ENT.ACF_UserVars
 		A table of (shared) key-value pairs. Key is the user variable name, value is a table defining
@@ -276,8 +281,8 @@ ENTITY METHODS AND FIELDS
 		If you don't want to perform validation on sets, you can directly set Entity.ACF_UserData[Key] = Value.
 
 	ENT:PreEntityCopy()
-		Identical to Garry's Mod's API but autoreg automatically saves (via duplicator.StoreEntityModifier)
-		your user vars from the entity to the dupe before calling your custom PreEntityCopy
+		Identical to Garry's Mod's API but autoreg automatically saves your user vars from
+		the entity to the dupe before calling your custom PreEntityCopy.
 		In the old API this was done manually.
 
 	ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -323,6 +328,8 @@ function Entities.AutoRegister(ENT)
 	if ENT == nil then ENT = _G.ENT end
 	if not ENT then error("Called Entities.AutoRegister(), but no entity was in the process of being created.") end
 
+	-- Class is the name of the subfolder within entities that Entities.Autoregister was called from
+	-- e.g. entities/baseplates/shared.lua -> "baseplates"
 	local Class  = string.Split(ENT.Folder, "/"); Class = Class[#Class]
 	ENT.ACF_Class = Class
 
@@ -599,6 +606,7 @@ function Entities.GetArguments(Class)
 	return List
 end
 
+-- Entity classes use the simple class system
 Classes.AddSimpleFunctions(Entities, Entries)
 
 if CLIENT then return end
