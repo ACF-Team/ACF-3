@@ -1,36 +1,41 @@
 local ACF      = ACF
-local Client   = ACF.ClientData
-local Server   = ACF.ServerData
-local Queued   = { Client = {}, Server = {} }
-local LastSent = { Client = {}, Server = {} }
+local Client   = ACF.ClientData 				-- Client's record of its own data
+local Server   = ACF.ServerData 				-- Client's record of the server's data
+local Queued   = { Client = {}, Server = {} } 	-- For each realm, a LUT mapping variables to true if they need to be sent
+local LastSent = { Client = {}, Server = {} } 	-- For each realm, LUT mapping variables to their last sent value
 
+--- Determines what needs to be sent based on what was last sent (delta)
+--- @param Type string		# The type (realm) of data to check (Client or Server)
+--- @param Values table		# A LUT mapping the variable names to their current values
+--- @param Result table		# The result table to populate
 local function PrepareQueue(Type, Values, Result)
 	local Queue = Queued[Type]
 
 	if not next(Queue) then return end
 
-	local Sent = LastSent[Type]
-	local Data = {}
+	local Sent = LastSent[Type] -- For the given realm, LUT mapping variables to their last sent value
+	local Data = {}	-- Stores what needs to be sent
 
 	for K in pairs(Queue) do
 		local Value = Values[K]
 
-		if Value ~= Sent[K] then
-			Data[K] = Value
-		end
+		if Value ~= Sent[K] then Data[K] = Value end -- Send an update if the value has changed since last sent
 
-		Queue[K] = nil
+		Queue[K] = nil -- Clear out the queue of this item
 	end
 
-	Result[Type] = Data
+	Result[Type] = Data -- Result for this realm now stores what we need to send.
 end
 
+--- When called, determines what changes need to be sent and networks them from client to server.
 local function SendQueued()
 	local Result = {}
 
+	-- Note that Result looks like { Client = {}, Server = {}}
 	PrepareQueue("Client", Client, Result)
 	PrepareQueue("Server", Server, Result)
 
+	-- If there are new changes, send them to the server.
 	if next(Result) then
 		local JSON = util.TableToJSON(Result)
 
@@ -40,21 +45,26 @@ local function SendQueued()
 	end
 end
 
+--- Marks a given variable (by key) to be queued for sending.
+--- This is rate limitted to avoid net spam.
+--- @param Key string The key of the variable to key
+--- @param IsServer boolean Whether the key is a server key (or client key)
 local function NetworkData(Key, IsServer)
 	local Type    = IsServer and "Server" or "Client"
 	local Destiny = Queued[Type]
 
 	if Destiny[Key] then return end -- Already queued
 
-	Destiny[Key] = true
+	Destiny[Key] = true -- Mark this to be queued
 
-	-- Avoiding net message spam by sending all the events of a tick at once
+	-- When NetworkData is first called, a timer is created and left untouched, which will periodically call SendQueued.
+	-- This avoids spamming the server with net messages every time a data var is changed.
 	if timer.Exists("ACF Network Data Vars") then return end
-
 	timer.Create("ACF Network Data Vars", 0, 1, SendQueued)
 end
 
-do -- Server data var syncronization
+-- Deals with syncing the client's record of the server's data
+do
 	local function ProcessData(Values, Received)
 		if not Received then return end
 
@@ -69,16 +79,19 @@ do -- Server data var syncronization
 		end
 	end
 
+	-- NOTE: This only seems to run to send the ACF globals to a client when they first join?
 	net.Receive("ACF_DataVarNetwork", function(_, Player)
 		local Received = util.JSONToTable(net.ReadString())
 
-		if IsValid(Player) then return end -- NOTE: Can this even happen?
+		if IsValid(Player) then return end -- NOTE: Can this even happen? Craftian says no <3
 
 		ProcessData(Server, Received)
 	end)
 end
 
-do -- Client data getter functions
+-- Various getters to get client's record of its own data
+do
+	--- Gets the value of a client data var, or the default value if it doesn't exist.
 	local function GetData(Key, Default)
 		if Key == nil then return Default end
 
@@ -89,6 +102,7 @@ do -- Client data getter functions
 		return Default
 	end
 
+	--- Returns a LUT of each client data var to its value.
 	function ACF.GetAllClientData(NoCopy)
 		if NoCopy then return Client end
 
@@ -101,16 +115,19 @@ do -- Client data getter functions
 		return Result
 	end
 
+	--- Casts and returns a client data var as a boolean, or the default value.
 	function ACF.GetClientBool(Key, Default)
 		return tobool(GetData(Key, Default))
 	end
 
+	--- Casts and returns a client data var as a number, or the default value.
 	function ACF.GetClientNumber(Key, Default)
 		local Value = GetData(Key, Default)
 
 		return ACF.CheckNumber(Value, 0)
 	end
 
+	--- Casts and returns a client data var as a string, or the default value.
 	function ACF.GetClientString(Key, Default)
 		local Value = GetData(Key, Default)
 
@@ -121,7 +138,8 @@ do -- Client data getter functions
 	ACF.GetClientRaw = GetData
 end
 
-do -- Client data setter function
+--- Dealing with setting client setting its own data vars
+do
 	--- Sets a client data var and networks it to the server.
 	--- Internally calls the ACF_OnUpdateClientData hook
 	--- @param Key string The key of the datavar
@@ -142,7 +160,8 @@ do -- Client data setter function
 	end
 end
 
-do -- Server data setter function
+--- Dealing with client setting its own record of server data vars
+do
 	--- Proposes changes to server datavars and networks them to server.
 	--- Internally calls the ACF_OnUpdateServerData hook.
 	--- @param Key string The key of the datavar
