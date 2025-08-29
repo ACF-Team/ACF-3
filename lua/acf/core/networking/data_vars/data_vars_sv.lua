@@ -80,7 +80,7 @@ do
 
 	--- Processes received data for a given player and realm, updating their stored values and calling hooks as needed
 	--- @param Player table The player the data is received from
-	--- @param Type string The realm of data being processed ("Client" or "Server")
+	--- @param Type string The realm of data being processed ("Client"/"Server")
 	--- @param Values table A LUT mapping variable names to their current values
 	--- @param Received table The table of received data from the network message
 	local function ProcessData(Player, Type, Values, Received)

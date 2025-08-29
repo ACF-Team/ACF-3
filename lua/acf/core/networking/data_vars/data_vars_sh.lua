@@ -68,6 +68,7 @@ do -- Data persisting on either realm
 	local Values  = ACF[Realm .. "Data"]								-- ACF.ServerData/ACF.ClientData; The given realm's record of the server/client's data
 	local Folder  = "acf/data_vars"
 	local File    = SERVER and "stored_sv.json" or "stored_cl.json"
+	local Storing	-- Whether a store operation is currently queued
 
 	--- Stores the current persisted data to file
 	local function StoreData()
@@ -86,8 +87,6 @@ do -- Data persisting on either realm
 
 		ACF.SaveToJSON(Folder, File, Result, true)
 	end
-
-	local Storing	-- Whether a store operation is currently queued
 
 	--- Stores a variable's current value if it has changed from the last stored value
 	--- @param Key string The key of the variable to update
