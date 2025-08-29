@@ -398,7 +398,7 @@ function Entities.AutoRegister(ENT)
 	--- Updates the entity's user vars with ClientData
 	--- @param self table The entity to update
 	--- @param ClientData table The client data to use for the update
-	local function UpdateEntityData(self, ClientData)
+	local function UpdateEntityData(self, ClientData, First)
 		local Entity = GetEntityTable(Class) -- THE ENTITY TABLE, NOT THE ENTITY ITSELF
 		local List   = Entity.List
 
@@ -408,7 +408,7 @@ function Entities.AutoRegister(ENT)
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
-			if UserVars[v].ClientData then
+			if UserVars[v].ClientData or First then
 				self.ACF_UserData[v] = ClientData[v]
 			end
 		end
@@ -500,7 +500,7 @@ function Entities.AutoRegister(ENT)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
-		New:ACF_UpdateEntityData(ClientData)
+		New:ACF_UpdateEntityData(ClientData, true)
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end

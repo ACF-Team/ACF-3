@@ -142,16 +142,7 @@ do -- Serverside settings
 	ACF.AddMenuItem(101, "#acf.menu.settings", "#acf.menu.settings.server", "server", ACF.GenerateServerSettings)
 
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
-		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
-
-		-- What? Why is this different??
-		-- MARCH REPLY: I don't remember!!
-		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
-		Admins:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.general.allow_admin"):          LinkToServerData("ServerDataAllowAdmin")
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):          LinkToServerData("RestrictInfo")
