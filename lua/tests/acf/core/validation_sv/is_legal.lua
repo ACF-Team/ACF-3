@@ -140,7 +140,7 @@ return {
                 ACF.GunsCanFire = false
 
                 local Ent = State.Ent
-                Ent.IsACFWeapon = true
+                Ent.IsACFGun = true
 
                 local IsLegal, Err = ACF.IsLegal( Ent )
                 expect( IsLegal ).to.beFalse()

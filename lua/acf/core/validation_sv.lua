@@ -51,7 +51,7 @@ function ACF.IsLegal(Entity)
 	end
 	if not Entity:IsSolid() then ShameNotSolid(Entity) return false, "Not Solid", "The entity is invisible to projectiles." end
 	if EntTbl.ClipData and next(EntTbl.ClipData) then ACF.Shame(Entity, "having visclips.") return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
-	if not ACF.GunsCanFire and EntTbl.IsACFWeapon then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
+	if not ACF.GunsCanFire and EntTbl.IsACFGun then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
 	if not ACF.RacksCanFire and EntTbl.IsRack then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
 
 	local Legal, Reason, Message, Timeout

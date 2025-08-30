@@ -145,7 +145,7 @@ e2function number entity:acfIsGun()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFWeapon and 1 or 0
+	return this.IsACFGun and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF turret
