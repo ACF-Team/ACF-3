@@ -335,12 +335,13 @@ end
 
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes    = Damage.doPropDamage(self, DmgResult, DmgInfo) -- Calling the standard prop damage function
-	local NoExplode = self.FuelType == "Diesel" and not (Type == "HE" or Type == "HEAT")
+	local Inflictor = DmgInfo:GetInflictor()
+	local AmmoType  = (IsValid(Inflictor) and Inflictor.IsACFWeapon) and Inflictor.BulletData.Type or "Unknown"
+	local NoExplode = self.FuelType == "Diesel" and not (AmmoType == "HE" or AmmoType == "HEAT" or AmmoType == "APHE" or AmmoType == "HEATFS")
 
 	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
 
 	local Attacker  = DmgInfo:GetAttacker()
-	local Inflictor = DmgInfo:GetInflictor()
 
 	if HitRes.Kill then
 		local CanExplode = HookRun("ACF_PreExplodeFuel", self)
