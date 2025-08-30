@@ -514,7 +514,7 @@ do -- ACF Activation and Damage -----------------
 			local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
 
 			if VolumeRoll and AmmoRoll then
-				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency) -- Half weight projectile?
+				local Speed = ACF.MuzzleVelocity(BulletData.PropMass * 0.5, BulletData.ProjMass, BulletData.Efficiency) -- Half propellant projectile
 				local Pitch = math.max(255 - BulletData.PropMass * 100, 60) -- Pitch based on propellant mass
 
 				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
