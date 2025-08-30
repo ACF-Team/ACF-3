@@ -169,7 +169,7 @@ end)
 Entities.AddUserArgumentType("LinkedEntity",
 	-- Validator
 	function(Value, Specs)
-		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
+		if not IsValid(Value) or not isnumber(Value) then Value = NULL return Value end
 
 		if Specs.Classes then
 			local class = Value:GetClass()
@@ -542,7 +542,8 @@ function Entities.AutoRegister(ENT)
 				value = typedef.PreCopy(self, value)
 			end
 
-			print("Autoreg PreEntityCopy", k, v, value)
+			print("---")
+			PrintTable({k=k,v=v,value=value})
 			self.ACF_UserData[k] = value
 		end
 
@@ -565,6 +566,10 @@ function Entities.AutoRegister(ENT)
 			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
 
 			local check = UserData and UserData[k] or Ent[k]
+
+			print("---")
+			PrintTable({k=k,v=v,check=check,UserDataK=UserData and UserData[k],EntK=Ent[k]})
+
 			if typedef.PostPaste then
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end

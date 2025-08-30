@@ -367,7 +367,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	local Ratio = (HitRes.Damage / self.ACF.Health) ^ 0.75 -- Chance to explode from sheer damage, small shots = small chance
 	local ExplodeChance = (1 - (self.Fuel / self.Capacity)) ^ 0.75 -- Chance to explode from fumes in tank, less fuel = more explodey
-
+	print(ExplodeChance + Ratio, Ratio, ExplodeChance)
 	-- It's gonna blow
 	if math.random() < (ExplodeChance + Ratio) then
 		local CanExplode = HookRun("ACF_PreExplodeFuel", self)
