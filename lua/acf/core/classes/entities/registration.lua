@@ -101,7 +101,7 @@ function Entities.AddUserArgumentType(Type, Validator, PreCopy, PostPaste)
 	}
 end
 
-Entities.AddUserArgumentType("Number", function(Value, Specs)
+Entities.AddUserArgumentType("Number", function(Value, Specs, _)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
 
 	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
@@ -111,7 +111,7 @@ Entities.AddUserArgumentType("Number", function(Value, Specs)
 	return Value
 end)
 
-Entities.AddUserArgumentType("String", function(Value, Specs)
+Entities.AddUserArgumentType("String", function(Value, Specs, _)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -119,7 +119,7 @@ Entities.AddUserArgumentType("String", function(Value, Specs)
 	return Value
 end)
 
-Entities.AddUserArgumentType("Boolean", function(Value, Specs)
+Entities.AddUserArgumentType("Boolean", function(Value, Specs, _)
 	if not isbool(Value) then
 		Value = Specs.Default or false
 	end
@@ -127,7 +127,7 @@ Entities.AddUserArgumentType("Boolean", function(Value, Specs)
 	return Value
 end)
 
-Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
+Entities.AddUserArgumentType("SimpleClass", function(Value, Specs, _)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -142,34 +142,11 @@ Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	return Value
 end)
 
--- If Value is a Group's ID or a Group Item's ID for the given Namespace then it will pass.
-Entities.AddUserArgumentType("GroupItem", function(Value, Specs)
-	if not isstring(Value) then
-		Value = Specs.Default or "N/A"
-	end
-
-	-- Get the namespace, e.g. ACF.Classes.FuelTanks
-	local Namespace = ACF.Classes[Specs.Namespace]
-	if not Namespace then error("Could not find namespace '" .. Specs.Namespace .. "'.") end
-
-	-- Get the group, e.g. ACF.Classes.GetGroup(ACF.Classes.FuelTanks, "Tank_1x8x2") -> "FTS_B"
-	local Group = Classes.GetGroup(Namespace, Value)
-	if not Group then error("Could not find group for '" .. Value .. "'.") end
-
-	if Group.ID == Value then return Value end -- If Value is a Group's ID then don't check if it is a group item
-
-	-- Get the group item, e.g. ACF.Classes.GetItem("FTS_B", "Tank_1x8x2") -> "Tank_1x8x2"
-	local GroupItem = Namespace.GetItem(Group.ID, Value)
-	if not GroupItem then error("Could not find group item '" .. Value .. "' in group '" .. Group.Name .. "'") end
-
-	return Value
-end)
-
 -- Single entity link.
 Entities.AddUserArgumentType("LinkedEntity",
-	-- Validator
-	function(Value, Specs)
-		if not IsValid(Value) or not isnumber(Value) then Value = NULL return Value end
+	function(Value, Specs, OnSpawn)
+		if OnSpawn then return Value end
+		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
 
 		if Specs.Classes then
 			local class = Value:GetClass()
@@ -180,57 +157,14 @@ Entities.AddUserArgumentType("LinkedEntity",
 
 		return Value
 	end,
-	-- Precopy
 	function(_, value)
 		return value:EntIndex()
 	end,
-	-- Postpaste
 	function(self, value, createdEnts)
 		local Ent = createdEnts[value]
 		if not IsValid(Ent) then return NULL end
 
 		return self:Link(Ent) and Ent or NULL
-	end
-)
-
--- Entity link LUT where Key == Entity and Value == true.
-Entities.AddUserArgumentType("LinkedEntities",
-	function(Value, Specs)
-		if not istable(Value) then Value = {} return Value end
-		if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
-
-		if Specs.Classes then
-			-- Check everything. What's valid?
-			local NewTable = {}
-			for Entity in pairs(Value) do
-				if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
-					NewTable[Entity] = true
-				end
-			end
-
-			return NewTable
-		else
-			return Value
-		end
-	end,
-	function(_, Value)
-		local EntIndexTable = {}
-		for Entity in pairs(Value) do
-			EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
-		end
-		return EntIndexTable
-	end,
-	function(self, Value, CreatedEnts)
-		local EntTable = {}
-
-		for _, EntIndex in ipairs(Value) do
-			local Created = CreatedEnts[EntIndex]
-			if IsValid(Created) and self:Link(Created) then
-				EntTable[Created] = true
-			end
-		end
-
-		return EntTable
 	end
 )
 
@@ -296,8 +230,8 @@ ENTITY METHODS AND FIELDS
 		This is useful if you need to perform validation between entity arguments.
 		Similar in use to the VerifyData functions in the old API.
 
-	ENT.ACF_UserData (table)
-		The raw table behind ACF_GetUserVat/ACF_SetUserVar. WIll not perform any validation on sets
+	ENT.ACF_UserData(table)
+		The raw table behind ACF_GetUserVar/ACF_SetUserVar. WIll not perform any validation on sets
 
 	ENT:ACF_GetUserVar(Key)
 		Gets a user variable by Key
@@ -375,7 +309,7 @@ function Entities.AutoRegister(ENT)
 	end
 
 	-- Verification function
-	local function VerifyClientData(ClientData)
+	local function VerifyClientData(ClientData, OnSpawn)
 		local Entity       = GetEntityTable(Class)
 		local List         = Entity.List
 		local Restrictions = Entity.Restrictions
@@ -387,7 +321,7 @@ function Entities.AutoRegister(ENT)
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
 				local Value = ClientData[argName] or (ClientData.ACF_UserData and ClientData.ACF_UserData[argName] or nil)
-				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs)
+				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs, OnSpawn)
 			end
 		end
 
@@ -463,7 +397,6 @@ function Entities.AutoRegister(ENT)
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
 	local PostEntityPaste = ENT.PostEntityPaste
-	local OnRemove        = ENT.OnRemove
 
 	--- Spawns the entity, verify the data, update/check the limits and check legality.
 	--- @param Player Player The player who is spawning the entity
@@ -510,29 +443,6 @@ function Entities.AutoRegister(ENT)
 		return New
 	end
 
-	--- Called when the entity is removed
-	local LinkableTypes = {
-		LinkedEntity = true,
-		LinkedEntities = true
-	}
-	function ENT:OnRemove()
-		hook.Run("ACF_OnEntityLast", Class, self)
-
-		-- Unlink each entity link
-		-- for k, v in pairs(self.ACF_UserData or {}) do
-		-- 	if not LinkableTypes[UserVars[k].Type] then continue end
-
-		-- 	for ent in pairs(v) do
-		-- 		if not IsValid(ent) then continue end
-
-		-- 		ent:Unlink(self)
-		-- 	end
-		-- end
-
-		if OnRemove then OnRemove(self) end
-		WireLib.Remove(self)
-	end
-
 	--- Runs the Validator and PreCopy for methods for each user var
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
@@ -542,10 +452,11 @@ function Entities.AutoRegister(ENT)
 				value = typedef.PreCopy(self, value)
 			end
 
-			print("---")
-			PrintTable({k=k,v=v,value=value})
 			self.ACF_UserData[k] = value
 		end
+
+		print("PreEntityCopy")
+		PrintTable(self.ACF_UserData)
 
 		-- Call original ENT.PreEntityCopy
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -561,15 +472,14 @@ function Entities.AutoRegister(ENT)
 			Ent.ACF_UserData = {}
 		end
 
+		print("PostEntityPaste")
+		PrintTable(Ent.ACF_UserData)
+
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
 			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
 
 			local check = UserData and UserData[k] or Ent[k]
-
-			print("---")
-			PrintTable({k=k,v=v,check=check,UserDataK=UserData and UserData[k],EntK=Ent[k]})
-
 			if typedef.PostPaste then
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
