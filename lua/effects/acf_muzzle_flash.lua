@@ -33,10 +33,14 @@ function EFFECT:Init(Data)
 			Pitch = math.Clamp(Pitch * 100, 1, 255)
 
 			-- NOTE: Wiki documents level tops out at 180, but seems to fall off past 127
-			Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume * 2, true)
+			Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
-			if not (Class == "MG" or Class == "RAC") and SoundPressure > 127 then
-				Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure - 127, 1, 127), Pitch, Volume)
+			if not (Class == "MG" or Class == "RAC") then
+				Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
+
+				if SoundPressure > 127 then
+					Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure - 127, 1, 127), Pitch, Volume)
+				end
 			end
 		end
 
