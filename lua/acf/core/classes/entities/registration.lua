@@ -565,7 +565,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
 end
 
 --- Registers a class as a spawnable entity class
@@ -594,7 +594,7 @@ function Entities.Register(Class, Function, ...)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -615,7 +615,7 @@ function Entities.AddArguments(Class, ...)
 			return SpawnedEntity
 		end
 
-		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
 	end
 end
 
