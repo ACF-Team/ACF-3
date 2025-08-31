@@ -293,7 +293,7 @@ ENTITY METHODS AND FIELDS
 		This is useful if you need to perform validation between entity arguments.
 		Similar in use to the VerifyData functions in the old API.
 
-	ENT.ACF_UserData(table)
+	ENT.ACF_LiveData(table)
 		The raw table behind ACF_GetUserVar/ACF_SetUserVar. WIll not perform any validation on sets
 
 	ENT:ACF_GetUserVar(Key)
@@ -301,7 +301,7 @@ ENTITY METHODS AND FIELDS
 
 	ENT:ACF_SetUserVar(Key, Value)
 		Sets a user variable by Key to Value. Automatically pulls the typedef for the user and performs the validator.
-		If you don't want to perform validation on sets, you can directly set Entity.ACF_UserData[Key] = Value.
+		If you don't want to perform validation on sets, you can directly set Entity.ACF_LiveData[Key] = Value.
 
 	ENT:PreEntityCopy()
 		Identical to Garry's Mod's API but autoreg automatically saves your user vars from
@@ -383,7 +383,7 @@ function Entities.AutoRegister(ENT)
 				local RestrictionSpecs = Restrictions[argName]
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				local Value = ClientData[argName] or (ClientData.ACF_UserData and ClientData.ACF_UserData[argName] or nil)
+				local Value = ClientData[argName] or (ClientData.ACF_LiveData and ClientData.ACF_LiveData[argName] or nil)
 				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs, OnSpawn)
 			end
 		end
@@ -401,12 +401,12 @@ function Entities.AutoRegister(ENT)
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
-		self.ACF_UserData = self.ACF_UserData or {}
+		self.ACF_LiveData = self.ACF_LiveData or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
 			if UserVars[v].ClientData or First then
-				self.ACF_UserData[v] = ClientData[v]
+				self.ACF_LiveData[v] = ClientData[v]
 			end
 		end
 
@@ -442,7 +442,7 @@ function Entities.AutoRegister(ENT)
 		if not Key then error("Tried to get the value of a nil key.") end
 		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
 
-		return self.ACF_UserData[Key]
+		return self.ACF_LiveData[Key]
 	end
 
 	--- Sets the value of a user variable after validating the value
@@ -455,7 +455,7 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
-		self.ACF_UserData[Key] = Typedef.Validator(Value, UserVar)
+		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
@@ -510,16 +510,16 @@ function Entities.AutoRegister(ENT)
 	function ENT:PreEntityCopy()
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
-			local value     = typedef.Validator(self.ACF_UserData[k], v)
+			local value     = typedef.Validator(self.ACF_LiveData[k], v)
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
 			end
 
-			self.ACF_UserData[k] = value
+			self.ACF_LiveData[k] = value
 		end
 
 		print("PreEntityCopy")
-		PrintTable(self.ACF_UserData)
+		PrintTable(self.ACF_LiveData)
 
 		-- Call original ENT.PreEntityCopy
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -530,13 +530,13 @@ function Entities.AutoRegister(ENT)
 
 	--- Runs the PostPaste and Validator methods for each user var
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local UserData = Ent.ACF_UserData
+		local UserData = Ent.ACF_LiveData
 		if not UserData then
-			Ent.ACF_UserData = {}
+			Ent.ACF_LiveData = {}
 		end
 
 		print("PostEntityPaste")
-		PrintTable(Ent.ACF_UserData)
+		PrintTable(Ent.ACF_LiveData)
 
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
@@ -547,7 +547,7 @@ function Entities.AutoRegister(ENT)
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(check, v)
-			Ent.ACF_UserData[k] = check
+			Ent.ACF_LiveData[k] = check
 		end
 
 		-- Call original ENT.PostEntityPaste
@@ -565,7 +565,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData")
 end
 
 --- Registers a class as a spawnable entity class
@@ -594,7 +594,7 @@ function Entities.Register(Class, Function, ...)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -615,7 +615,7 @@ function Entities.AddArguments(Class, ...)
 			return SpawnedEntity
 		end
 
-		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData", unpack(List))
 	end
 end
 
