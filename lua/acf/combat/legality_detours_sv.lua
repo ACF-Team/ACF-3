@@ -198,13 +198,13 @@ end
 local function AddAngleVelocityDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.addAngleVelocity", function(Instance, Ent, ...)
-            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)") then return end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:addAngleVelocity(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, Ent, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.addAngleVelocity", function(Instance, PhysObj, ...)
-            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)") then return end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:addAngleVelocity(a)", PostContraptionCheck_IsNotGroundVehicle) then return end
             return Func(Instance, PhysObj, ...)
         end)
     end
