@@ -109,9 +109,7 @@ end
 ACF.RegisterClassLink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat)
 	This:ACF_SetUserVar("Seat", Seat)
 
-	local CurrentSeats = This:ACF_GetUserVar("Seats") or {}
-	CurrentSeats[Seat] = true
-	This:ACF_SetUserVar("Seats", CurrentSeats)
+	This:ACF_GetUserVar("Seats")[Seat] = true
 
 	print("Linking baseplate to seat", Seat, This)
 	return true, "seat link success"
@@ -120,9 +118,7 @@ end)
 ACF.RegisterClassUnlink("acf_baseplate", "prop_vehicle_prisoner_pod", function(This, Seat)
 	This:ACF_SetUserVar("Seat", nil)
 
-	local CurrentSeats = This:ACF_GetUserVar("Seats") or {}
-	CurrentSeats[Seat] = nil
-	This:ACF_SetUserVar("Seats", CurrentSeats)
+	This:ACF_GetUserVar("Seats")[Seat] = nil
 
 	print("Unlinking baseplate from seat", Seat, This)
 	return true, "seat unlink success"
