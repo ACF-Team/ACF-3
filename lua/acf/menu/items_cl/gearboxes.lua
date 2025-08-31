@@ -9,14 +9,44 @@ local function SetStatsText(GearboxStats)
 	GearboxStats:SetText(StatsText:format(ACF.GetProperMass(Mass), TorqueRating, Torque))
 end
 
+local CreateSubMenu
 local function CreateMenu(Menu)
 	local Entries = Gearboxes.GetEntries()
+
+	ACF.SetClientData("PrimaryClass", "acf_gearbox")
+	ACF.SetClientData("SecondaryClass", "N/A")
+	ACF.SetToolMode("acf_menu", "Spawner", "Gearbox")
 
 	Menu:AddTitle("#acf.menu.gearboxes.settings")
 	-- TODO: Remove this warning a few months after the scalable gearboxes update is added
 	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning1")
 	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning2")
+	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning3")
 
+	local GearboxInverted = Menu:AddCheckBox("#acf.menu.gearboxes.inverted")
+	Menu:AddHelp("#acf.menu.gearboxes.inverted_desc")
+
+	local GearboxPanel = Menu:AddPanel("ACF_Panel")
+
+	-- Triggered once on menu creation and every time the inverted checkbox is toggled
+	function GearboxInverted:OnChange(Value)
+		ACF.SetClientData("GearboxLegacyRatio", Value)
+		ACF.SetClientData("GearboxConvertRatio", Value)
+
+		-- Regenerate the sub menu with the new ratio limits
+		GearboxPanel:ClearTemporal(Base)
+		GearboxPanel:StartTemporal(Base)
+
+		CreateSubMenu(GearboxPanel, Entries, Value)
+
+		GearboxPanel:EndTemporal(Base)
+	end
+
+	-- Initialize sub menu and avoid overriding the setting
+	GearboxInverted:SetValue(ACF.GetClientData("GearboxLegacyRatio"))
+end
+
+CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList = Menu:AddComboBox()
 
@@ -27,11 +57,6 @@ local function CreateMenu(Menu)
 	local GearboxStats = Base:AddLabel()
 	local GearboxScale = Base:AddSlider("#acf.menu.gearboxes.scale", ACF.GearboxMinSize, ACF.GearboxMaxSize, 2)
 	local GearAmount = Base:AddSlider("#acf.menu.gearboxes.gear_amount", 3, 10, 0)
-
-	ACF.SetClientData("PrimaryClass", "acf_gearbox")
-	ACF.SetClientData("SecondaryClass", "N/A")
-
-	ACF.SetToolMode("acf_menu", "Spawner", "Gearbox")
 
 	function GearboxClass:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
@@ -101,7 +126,8 @@ local function CreateMenu(Menu)
 		end
 
 		if ClassData.CreateMenu then
-			ClassData:CreateMenu(ListData, Menu, Base)
+			-- Equivalently ClassData.CreateMenu(ClassData, ListData, Menu, Base, UseLegacyRatios)
+			ClassData:CreateMenu(ListData, Menu, Base, UseLegacyRatios)
 		end
 
 		Menu:EndTemporal(Base)

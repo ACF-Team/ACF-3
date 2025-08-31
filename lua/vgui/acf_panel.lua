@@ -146,13 +146,31 @@ function PANEL:AddCheckBox(Text, ConVar)
 		Panel:SetConVar(ConVar)
 	end
 
+	--- Updates the value of the checkbox to match the data var
+	--- And defines a setter function to react to OnChanged
+	--- If you want special logic for your DefineSetter, you can override after this call.
 	function Panel:LinkToServerData(Key)
 		local Value = ACF.GetSetting(Key)
 		self:SetValue(Value)
 		self:SetServerData(Key, "OnChange")
+		self:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+			return Value
+		end)
 	end
 
 	return Panel
+end
+
+function PANEL:AddTextEntry(Text)
+	local Panel = self:AddPanel("ACF_Panel")
+
+	local Label = Panel:AddLabel(Text)
+	local Entry = Panel:AddPanel("DTextEntry") -- Why this works? I don't know, but it does :)
+
+	Label:Dock(LEFT)
+	Label:DockMargin(5, 5, 0, 5)
+	return Panel, Label, Entry
 end
 
 function PANEL:AddTitle(Text)
@@ -383,12 +401,19 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 
 	Panel.Label:SetFont("ACF_Control")
 
+	--- Updates the value of the slider to match the data var
+	--- And defines a setter function to react to OnValueChanged
+	--- If you want special logic for your DefineSetter, you can override after this call.
 	function Panel:LinkToServerData(Key)
 		local Value, SettingData = ACF.GetSetting(Key)
 		Panel:SetDecimals(SettingData.Decimals or 0)
 		Panel:SetMinMax(SettingData.Min, SettingData.Max)
 		Panel:SetValue(Value)
 		self:SetServerData(Key, "OnValueChanged")
+		self:DefineSetter(function(Panel, _, _, Value)
+			Panel:SetValue(Value)
+			return Value
+		end)
 	end
 
 	return Panel

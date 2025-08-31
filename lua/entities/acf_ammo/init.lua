@@ -68,6 +68,36 @@ do -- Spawning and Updating --------------------
 		"Entity (The ammo crate itself.) [ENTITY]",
 	}
 
+	local function NetworkAmmoData(Entity, Player)
+		if IsValid(Entity) and Entity.ExtraData then
+			net.Start("ACF_RequestAmmoData")
+				net.WriteEntity(Entity)
+
+				local ExtraData = Entity.ExtraData
+				local Enabled = ExtraData.Enabled
+				net.WriteBool(Enabled)
+
+				if Enabled then
+					net.WriteUInt(ExtraData.Capacity, 25)
+					net.WriteBool(ExtraData.IsRound)
+					net.WriteVector(ExtraData.RoundSize or vector_origin)
+					net.WriteAngle(ExtraData.LocalAng or angle_zero)
+					net.WriteVector(ExtraData.FitPerAxis or vector_origin)
+					net.WriteFloat(ExtraData.Spacing)
+					net.WriteUInt(ExtraData.MagSize, 10)
+					net.WriteBool(ExtraData.IsBoxed)
+					net.WriteUInt(ExtraData.AmmoStage, 5)
+					net.WriteBool(ExtraData.IsBelted)
+				end
+
+			if Player then
+				net.Send(Player)
+			else
+				net.Broadcast()
+			end
+		end
+	end
+
 	local function VerifyData(Data)
 		if Data.Id then -- Deprecated ammo data formats
 			local Crate = Crates.Get(Data.Id) -- Id is the crate model type, Crate holds its offset, size and id.
@@ -256,14 +286,10 @@ do -- Spawning and Updating --------------------
 				ExtraData = { Enabled = false }
 			end
 
-			Entity.CrateData = util.TableToJSON(ExtraData)
 			Entity.ExtraData = ExtraData
 
 			-- Send over the crate and ExtraData to the client to render the overlay
-			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
-				net.WriteString(Entity.CrateData)
-			net.Broadcast()
+			NetworkAmmoData(Entity)
 		end
 
 		-- Linked weapon unloading
@@ -296,12 +322,7 @@ do -- Spawning and Updating --------------------
 	net.Receive("ACF_RequestAmmoData", function(_, Player)
 		local Entity = net.ReadEntity()
 
-		if IsValid(Entity) and Entity.CrateData then
-			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
-				net.WriteString(Entity.CrateData)
-			net.Send(Player)
-		end
+		NetworkAmmoData(Entity, Player)
 	end)
 
 	-------------------------------------------------------------------------------
@@ -493,7 +514,7 @@ do -- ACF Activation and Damage -----------------
 			local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
 
 			if VolumeRoll and AmmoRoll then
-				local Speed = ACF.MuzzleVelocity(BulletData.PropMass, BulletData.ProjMass * 0.5, BulletData.Efficiency) -- Half weight projectile?
+				local Speed = ACF.MuzzleVelocity(BulletData.PropMass * 0.5, BulletData.ProjMass, BulletData.Efficiency) -- Half propellant projectile
 				local Pitch = math.max(255 - BulletData.PropMass * 100, 60) -- Pitch based on propellant mass
 
 				Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
@@ -539,6 +560,7 @@ do -- ACF Activation and Damage -----------------
 
 		if self.Exploding or not self.IsExplosive then return HitRes end
 
+		local Attacker = DmgInfo:GetAttacker()
 		local Inflictor = DmgInfo:GetInflictor()
 
 		if HitRes.Kill then
@@ -561,6 +583,7 @@ do -- ACF Activation and Damage -----------------
 		if (Ratio * self.Capacity / self.Ammo) > math.random() then
 			local CanBurn = hook.Run("ACF_PreBurnAmmo", self)
 
+			self.Attacker = Attacker
 			self.Inflictor = Inflictor
 
 			if CanBurn then
@@ -597,7 +620,7 @@ do -- ACF Activation and Damage -----------------
 		local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
 		local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
 		local FragMass   = BulletData.ProjMass or Explosive * 0.5
-		local DmgInfo    = Objects.DamageInfo(self, self.Inflictor)
+		local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)
 

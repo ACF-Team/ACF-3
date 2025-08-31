@@ -230,38 +230,40 @@ do -- Random timer stuff
 
 	function ENT:UpdateMedFreq(cfg)
 		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
 
-		-- If specified, affect crew ergonomics based on space 
-		local SpaceInfo = self.CrewType.SpaceInfo
-		if SpaceInfo and self.ShouldScan then
-			if not self.ScanIndex then
+		-- If specified, affect crew ergonomics based on space
+		local SpaceInfo = SelfTbl.CrewType.SpaceInfo
+		if SpaceInfo and SelfTbl.ShouldScan then
+			if not SelfTbl.ScanIndex then
 				-- If we haven't ran an initial scan, setup relevant information
-				self.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
-				self.ScanBox = self.ScanBox or Vector()
-				self.ScanHull = self.ScanHull or Vector(6, 6, 6)
-				self.ScanDisplacements, self.ScanLengths, self.ScanCount = GenerateScanSetup()
-				self.ScanIndex = 1
-				self.SpaceEff = iterScan(self, self.ScanCount)
+				SelfTbl.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
+				SelfTbl.ScanBox = SelfTbl.ScanBox or Vector()
+				SelfTbl.ScanHull = SelfTbl.ScanHull or Vector(6, 6, 6)
+				SelfTbl.ScanDisplacements, SelfTbl.ScanLengths, SelfTbl.ScanCount = GenerateScanSetup()
+				SelfTbl.ScanIndex = 1
+				SelfTbl.SpaceEff = iterScan(self, SelfTbl.ScanCount)
 			else
 				-- Routine scan run in a loop
-				self.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
+				SelfTbl.SpaceEff = iterScan(self, SpaceInfo.ScanStep)
 			end
-			WireLib.TriggerOutput(self, "SpaceEff", self.SpaceEff * 100)
+			WireLib.TriggerOutput(self, "SpaceEff", SelfTbl.SpaceEff * 100)
 		end
 
-		if self.CrewType.UpdateMedFreq then self.CrewType.UpdateMedFreq(self, cfg) end
+		if SelfTbl.CrewType.UpdateMedFreq then SelfTbl.CrewType.UpdateMedFreq(self, cfg) end
 	end
 
 	function ENT:UpdateHighFreq(cfg)
 		if self.Disabled then return end
+		local SelfTbl = self:GetTable()
 
 		-- If specified, affect crew ergonomics based on lean angle
-		local LeanInfo = self.CrewType.LeanInfo
+		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
 			local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
 			local Angle = math.deg(math.acos(LeanDot))
-			self.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
-			WireLib.TriggerOutput(self, "LeanEff", self.LeanEff * 100)
+			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
+			WireLib.TriggerOutput(self, "LeanEff", SelfTbl.LeanEff * 100)
 		end
 
 		-- TODO: Clean this shit up man
@@ -270,18 +272,19 @@ do -- Random timer stuff
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if self.IsAlive then self.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
-		else self.TotalEff = ACF.CrewFallbackCoef end
+		if self.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
+		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
 
-		WireLib.TriggerOutput(self, "TotalEff", self.TotalEff * 100)
+		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
-		if self.CrewType.UpdateHighFreq then self.CrewType.UpdateHighFreq(self, cfg) end
+		if SelfTbl.CrewType.UpdateHighFreq then SelfTbl.CrewType.UpdateHighFreq(self, cfg) end
 	end
 
 	function ENT:EnforceLimits()
 		local Targets = self.Targets
 		local SelfContraption = self:GetContraption()
 		local IsParented = CheckParentState(self)
+		local SelfTbl = self:GetTable()
 		if IsParented and Targets ~= nil and next(Targets) then
 			local Pos = self:GetPos()
 			for Link in pairs(Targets) do
@@ -307,35 +310,55 @@ do -- Random timer stuff
 			end
 		end
 
-		self.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
-		self.OverlayErrors.LinkCheck = self.CrewTypeID ~= "Commander" and Targets == nil or table.Count(Targets) == 0 and "This crew must be linked!" or nil
+		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
 		self:UpdateOverlay()
 	end
 
+	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
 		local Parent = self:GetParent()
-		if IsValid(Parent) then
-			local NewPos = self:LocalToWorld(self.CrewModel.ScanOffsetL)
-			local GForce, DeltaTime = ACF.UpdateGForceTracker(self.GForceTracker, NewPos)
+		if not IsValid(Parent) then return end
 
-			-- If specified, affect crew ergonomics based on G forces
-			local Effs = self.CrewType.GForceInfo.Efficiencies
-			if Effs then
-				self.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
-				WireLib.TriggerOutput(self, "MoveEff", self.MoveEff * 100)
-			end
-			WireLib.TriggerOutput(self, "GForce", GForce)
+		local Contraption = self:GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
+		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+		if Contraption.IsPickedUp then return end
 
-			-- If specified, apply damage to crew based on G forces
-			local Damages = self.CrewType.GForceInfo.Damages
-			if Damages and GForce > Damages.Min and self.IsAlive then
-				local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * self.ACF.MaxHealth * DeltaTime
-				self:DamageCrew(Damage, "player/pl_fallpain3.wav")
+		local SelfTbl = self:GetTable()
+		local GForceIter = SelfTbl.GForceIter or 0
+		GForceIter = GForceIter + 1
+		SelfTbl.GForceIter = GForceIter
+		if GForceIter % SampleRate ~= 0 then return end
+
+		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
+
+		-- If specified, affect crew ergonomics based on G forces
+		local GForceInfo = SelfTbl.CrewType.GForceInfo
+		local Effs = GForceInfo.Efficiencies
+		if Effs then
+			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
+			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
+		end
+		WireLib.TriggerOutput(self, "GForce", GForce)
+
+		-- If specified, apply damage to crew based on G forces
+		local Damages = GForceInfo.Damages
+		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
+			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
+			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
+			if SelfTbl.GForceStrain > 1 then
+				local Excess = SelfTbl.GForceStrain - 1 -- "Unmanageable damage"
+				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
+		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
+		WireLib.TriggerOutput(self, "Stamina", SelfTbl.GForceStrain)
 	end
 end
 
@@ -349,6 +372,7 @@ do
 		"TotalEff",
 		"Oxygen (Seconds of breath left before drowning)",
 		"GForce (The strength of GForce experienced)",
+		"Stamina (The stamina of the crew member)",
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
@@ -365,7 +389,14 @@ do
 		end
 		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
-		if Data.ReplacedOnlyLower == nil then Data.ReplacedOnlyLower = false end
+		if Data.CrewPlayerModel == nil or Data.CrewPlayerModel == "" then Data.CrewPlayerModel = "models/player/dod_german.mdl" end
+		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260)
+
+		if Data.CrewPlayerModelBodygroups == nil then Data.CrewPlayerModelBodygroups = "" end
+		Data.CrewPlayerModelBodygroups = string.sub(Data.CrewPlayerModelBodygroups or "", 1, 63)
+
+		if Data.CrewPlayerModelSkin == nil then Data.CrewPlayerModelSkin = 0 end
+		Data.CrewPlayerModelSkin = math.Clamp(math.Round(Data.CrewPlayerModelSkin), 0, 63)
 	end
 
 	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
@@ -397,6 +428,11 @@ do
 		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
 		Entity.Name = CrewType.ID .. " Crew Member"
 		Entity.ShortName = CrewType.ID
+
+		Entity.CrewPoseID = Data.CrewPoseID
+		Entity.CrewPlayerModel = Data.CrewPlayerModel
+		Entity.CrewPlayerModelBodygroups = Data.CrewPlayerModelBodygroups
+		Entity.CrewPlayerModelSkin = Data.CrewPlayerModelSkin
 
 		-- Various efficiency modifiers
 		Entity.ModelEff = 1
@@ -433,6 +469,10 @@ do
 				net.Start("ACF_Crew_Spawn")
 				net.WriteEntity(Entity)
 				net.WriteString(Entity.CrewModelID)
+				net.WriteString(Entity.CrewPoseID)
+				net.WriteString(Entity.CrewPlayerModel)
+				net.WriteString(Entity.CrewPlayerModelBodygroups)
+				net.WriteUInt(Entity.CrewPlayerModelSkin, 6)
 				net.Broadcast()
 			end)
 		end
@@ -478,6 +518,7 @@ do
 		-- Various state variables
 		Entity.ShouldScan = false
 		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
+		Entity.GForceStrain = 0
 		Entity.IsAlive = true
 
 		Entity.GForceTracker = ACF.SetupGForceTracker(Entity:LocalToWorld(CrewModel.ScanOffsetL))
@@ -492,11 +533,18 @@ do
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceGForces(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 2 / 66, MaxTime = 2 / 66, Delay = 0.1})
+		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
+			Entity:EnforceGForces(cfg)
+		end)
 
-		-- hook.Add("Think", Entity, function()
-		-- 	Entity:EnforceGForces()
-		-- end)
+		Entity:CallOnRemove("GForceCalculation" .. Entity:EntIndex(), function()
+			hook.Remove("Tick", "GForceCalculation" .. Entity:EntIndex())
+		end)
+
+		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
+		local Mat, _ = Material("sprops/sprops_grid_12x12")
+		if not Mat:IsError() then Entity:SetMaterial("sprops/sprops_grid_12x12")
+		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
 
 		-- Finish setting up the entity
 		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
@@ -516,7 +564,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
@@ -721,10 +769,11 @@ do
 				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
 					local Driver = ent:GetDriver()
 					if IsValid(Driver) then
-						Driver:Kill()
+						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
 					end
 				end
 			end
+			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end
 

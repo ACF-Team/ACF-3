@@ -667,7 +667,11 @@ do
 
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
-		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
+		for Engine in pairs(Engines) do
+			if IsValid(Engine) then
+				Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0)
+			end
+		end
 
 		local MinSpeed, MaxSpeed = self:GetSpeedLow(), self:GetSpeedTop()
 		local MinBrake, MaxBrake = self:GetBrakeStrength(), self:GetBrakeStrengthTop()
@@ -731,7 +735,7 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
-		local W, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
+		local _, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
 
 		local Gear = Gearbox.Gear
 		local RPM, Count = 0, 0

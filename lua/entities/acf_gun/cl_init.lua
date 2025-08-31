@@ -27,20 +27,30 @@ function ENT:OnResized(_, Scale)
 	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), Scale)
 end
 
+local ENTITY = FindMetaTable("Entity")
+
 function ENT:Think()
 	self.BaseClass.Think(self)
 
 	local SelfTbl = self:GetTable()
-	local SinceFire = Clock.CurTime - SelfTbl.LastFire
+	local LastFire  = SelfTbl.LastFire
+	local CloseAnim = SelfTbl.CloseAnim
+	local Reload    = SelfTbl.Reload
+	local CurTime   = Clock.CurTime
 
-	self:SetCycle(SinceFire * SelfTbl.Rate / SelfTbl.RateScale)
+	if CurTime < LastFire + Reload and CloseAnim then
+		local CloseTime = SelfTbl.CloseTime
+		local RateScale = SelfTbl.RateScale
+		local SinceFire = CurTime - LastFire
 
-	if Clock.CurTime > SelfTbl.LastFire + SelfTbl.CloseTime and SelfTbl.CloseAnim then
-		self:ResetSequence(SelfTbl.CloseAnim)
-		self:SetCycle((SinceFire - SelfTbl.CloseTime) * SelfTbl.Rate / SelfTbl.RateScale)
-		SelfTbl.Rate = 1 / (SelfTbl.Reload - SelfTbl.CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
-		self:SetPlaybackRate(SelfTbl.Rate)
+		ENTITY.SetCycle(self, SinceFire * SelfTbl.Rate / RateScale)
+		ENTITY.ResetSequence(self, CloseAnim)
+		ENTITY.SetCycle(self, (SinceFire - CloseTime) * SelfTbl.Rate / RateScale)
+		SelfTbl.Rate = 1 / (SelfTbl.Reload - CloseTime) -- Base anim time is 1s, rate is in 1/10 of a second
+		ENTITY.SetPlaybackRate(self, SelfTbl.Rate)
 	end
+
+	ENTITY.SetNextClientThink(self, CurTime + (1 / 60))
 end
 
 function ENT:Animate(ReloadTime, LoadOnly)

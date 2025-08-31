@@ -1,5 +1,5 @@
 include("shared.lua")
-local CrewModels = ACF.Classes.CrewModels
+local CrewPoses = ACF.Classes.CrewPoses
 
 -- Deals with crew linking to non crew entities
 net.Receive("ACF_Crew_Links", function()
@@ -29,22 +29,33 @@ end)
 net.Receive("ACF_Crew_Spawn", function()
 	local Ent = net.ReadEntity()
 	local ModelID = net.ReadString()
+	local PoseID = net.ReadString()
+	local PlayerModel = net.ReadString()
+	local PlayerModelBodygroups = net.ReadString()
+	local PlayerModelSkin = net.ReadUInt(6)
 	if not IsValid(Ent) then return end
 
-	Ent.HoloCrewModelID = ModelID
-	Ent:CreateCrewHolo(ModelID)
+	Ent.ModelID = ModelID
+	Ent.PoseID = PoseID
+	Ent.PlayerModel = PlayerModel
+	Ent.PlayerModelBodygroups = PlayerModelBodygroups
+	Ent.PlayerModelSkin = PlayerModelSkin
+	print(PlayerModel, PlayerModelBodygroups, PlayerModelSkin)
+	Ent:CreateCrewHolo(ModelID, PoseID)
 end)
 
-function ENT:CreateCrewHolo(ModelID)
-	local ClassData = CrewModels.Get(ModelID)
+function ENT:CreateCrewHolo(ModelID, PoseID)
+	local ClassData = CrewPoses.GetItem(ModelID, PoseID)
 	if self.CrewHolo then self.CrewHolo:Remove() end -- Remove existing crew holo if it exists
 	if not ClassData then return end
-	self.CrewHolo = ClientsideModel(ClassData.Animation.Model)
-	self.CrewHolo:SetPos(self:LocalToWorld(ClassData.Animation.Position))
-	self.CrewHolo:SetAngles(self:LocalToWorldAngles(ClassData.Animation.Angle))
+	self.CrewHolo = ClientsideModel(self.PlayerModel)
+	self.CrewHolo:SetPos(self:LocalToWorld(ClassData.Position))
+	self.CrewHolo:SetAngles(self:LocalToWorldAngles(ClassData.Angle))
 	self.CrewHolo:Spawn()
+	self.CrewHolo:SetBodyGroups(self.PlayerModelBodygroups)
+	self.CrewHolo:SetSkin(self.PlayerModelSkin)
 	self.CrewHolo:SetParent(self)
-	self.CrewHolo:ResetSequence(self.CrewHolo:LookupSequence(ClassData.Animation.Sequence))
+	self.CrewHolo:ResetSequence(self.CrewHolo:LookupSequence(ClassData.ID))
 	self.CrewHolo:SetCycle(0)
 	self.CrewHolo:SetPlaybackRate(1)
 end
@@ -55,10 +66,10 @@ function ENT:OnRemove()
 end
 
 -- Initialize the crew holo if it doesn't already exist (PVS stuff)
-hook.Add("NetworkEntityCreated", "CrewClientModel", function(Entity)
-	if not IsValid(Entity) or Entity:GetClass() ~= "acf_crew" then return end
-	if Entity.HoloCrewModelID and not Entity.CrewHolo then Entity:CreateCrewHolo(Entity.HoloCrewModelID) end
-end)
+-- hook.Add("NetworkEntityCreated", "CrewClientModel", function(Entity)
+-- 	if not IsValid(Entity) or Entity:GetClass() ~= "acf_crew" then return end
+-- 	if Entity.PoseID and not Entity.CrewHolo then Entity:CreateCrewHolo(Entity.PoseID) end
+-- end)
 
 local green = Color(0, 255, 0, 100)
 local purple = Color(255, 0, 255, 100)

@@ -62,15 +62,17 @@ end
 --- @param Pitch integer The sound's pitch from 0-255
 --- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
-	if not IsValid(Origin) then return end
-
 	ShouldStop = ShouldStop or false
 	local Time = CurTime()
-	if not Origin.ACF then Origin.ACF = {} end
-	Origin.ACF.SoundTimer = Origin.ACF.SoundTimer or Time
+	local OriginTbl = Origin.ACF
+	if not OriginTbl then
+		OriginTbl = {}
+		Origin.ACF = OriginTbl
+	end
+	OriginTbl.SoundTimer = OriginTbl.SoundTimer or Time
 
 	-- Slowing down the rate of sending a bit
-	if Origin.ACF.SoundTimer <= Time or ShouldStop then
+	if OriginTbl.SoundTimer <= Time or ShouldStop then
 		net.Start("ACF_Sounds_Adjustable", true)
 			net.WriteEntity(Origin)
 			net.WriteBool(ShouldStop)
@@ -81,6 +83,6 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 			net.WriteUInt(Volume, 8)
 		end
 		net.SendPAS(Origin:GetPos())
-		Origin.ACF.SoundTimer = Time + 0.05
+		OriginTbl.SoundTimer = Time + 0.05
 	end
 end

@@ -18,10 +18,24 @@ do	-- NET SURFER 2.0
 	end)
 
 	net.Receive("ACF_RequestEngineInfo", function()
-		local Engine	= net.ReadEntity()
-		local Data		= util.JSONToTable(net.ReadString())
-		local Outputs	= util.JSONToTable(net.ReadString())
-		local Fuel		= util.JSONToTable(net.ReadString())
+		local Engine		= net.ReadEntity()
+		local Driveshaft	= net.ReadVector()
+		local Outputs		= {}
+		local Fuel			= {}
+		local OutputLen		= net.ReadUInt(6)
+		local FuelLen		= net.ReadUInt(6)
+
+		if OutputLen > 0 then
+			for I = 1, OutputLen do
+				Outputs[I] = net.ReadUInt(MAX_EDICT_BITS)
+			end
+		end
+
+		if FuelLen > 0 then
+			for I = 1, FuelLen do
+				Fuel[I] = net.ReadUInt(MAX_EDICT_BITS)
+			end
+		end
 
 		local OutEnts	= {}
 		local FuelTanks	= {}
@@ -44,10 +58,9 @@ do	-- NET SURFER 2.0
 			end
 		end
 
-		Engine.Outputs	= OutEnts
+		Engine.Outputs		= OutEnts
 		Engine.FuelTanks	= FuelTanks
-
-		Engine.Driveshaft	= Data.Driveshaft
+		Engine.Driveshaft	= Driveshaft
 
 		Engine.HasData	= true
 		Engine.Age		= Clock.CurTime + 5
@@ -167,8 +180,6 @@ do -- Rendering mobility links
 		if not SelfTbl.HasData then
 			self:RequestEngineInfo()
 			return
-		elseif Clock.CurTime > SelfTbl.Age then
-			self:RequestEngineInfo()
 		end
 
 		local OutPos = self:LocalToWorld(SelfTbl.Driveshaft)

@@ -744,7 +744,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFWeapon or false
+		return This.IsACFGun or false
 	end
 
 	--- Returns true if the entity is an ACF turret

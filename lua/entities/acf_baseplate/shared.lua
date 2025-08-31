@@ -6,6 +6,7 @@ ENT.PluralName    = "ACF Baseplates"
 ENT.IsACFBaseplate = true
 ENT.ACF_PreventArmoring = false
 
+-- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
 ENT.ACF_UserVars = {
     ["BaseplateType"]  = {Type = "SimpleClass", ClassName = "BaseplateTypes", Default = "GroundVehicle", ClientData = true},
     ["Width"]          = {Type = "Number", Min = 36, Max = 120,  Default = 36, Decimals = 2, ClientData = true},
@@ -14,4 +15,7 @@ ENT.ACF_UserVars = {
     ["DisableAltE"]    = {Type = "Boolean", Default = false, ClientData = true},
     ["Seat"]           = {Type = "LinkedEntity", Classes = {prop_vehicle_prisoner_pod = true}},
     ["AlreadyHasSeat"] = {Type = "Boolean", Default = false},
+    ["GForceTicks"] = {Type = "Number", Min = 1, Max = 7, Default = 1, Decimals = 0, ClientData = true}
 }
+
+cleanup.Register("acf_baseplate")

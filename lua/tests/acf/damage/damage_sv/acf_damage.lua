@@ -5,8 +5,10 @@ return {
         local Entries = hook.GetTable().ACF_PreDamageEntity
         local Hooks   = {}
 
-        State.Ent       = {}
         State.DmgResult = ACF.Damage.Objects.DamageResult()
+        State.Ent       = {
+            GetContraption = function() return nil end
+        }
 
         if Entries then
             for K, V in pairs( Entries ) do

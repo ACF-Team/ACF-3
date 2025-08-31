@@ -120,7 +120,7 @@ do -- Random timer crew stuff
 
 				TraceConfig.start = wrp1
 				TraceConfig.endpos = wrp2
-				local tr2 = TraceLine(TraceConfig)
+				tr2 = TraceLine(TraceConfig)
 
 				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
 				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
@@ -222,77 +222,6 @@ do -- Spawn and Update functions --------------------------------
 			hook.Run("ACF_OnVerifyData", "acf_gun", Data, Class)
 		end
 	end
-
-	-- self.ParentState is one of three values:
-	-- 0:  Unparented
-	-- -1: Invalid parent chain
-	-- 1:  Valid parent chain
-
-	function ENT:DetermineParentState()
-		local EntTable = self:GetTable()
-		if EntTable.ParentStateValid then return end
-
-		if not IsValid(self:GetParent()) then
-			self.ParentState = 0
-		elseif not ACF.CheckParentChain(self, {acf_turret = true, acf_turret_rotator = true}, "acf_baseplate") then
-			self.ParentState = -1
-		else
-			self.ParentState = 1
-		end
-	end
-
-	hook.Add("cfw.family.added", "ACF_Gun_FamilyChecks", function(Family, Ent)
-		if not IsValid(Ent) then return end -- CFW issue?
-
-		if Ent:GetClass() == "acf_gun" then
-			if Family.Guns then
-				Family.Guns[Ent] = true
-			else
-				Family.Guns = {[Ent] = true}
-			end
-
-			Family.HasGuns = true
-		end
-
-		if Family.HasGuns then
-			for Gun in pairs(Family.Guns) do
-				if IsValid(Gun) then Gun:DetermineParentState() end
-			end
-		end
-	end)
-
-	hook.Add("cfw.family.subbed", "ACF_Gun_FamilyChecks", function(Family, Ent)
-		if not IsValid(Ent) then return end -- CFW issue?
-
-		if Ent:GetClass() == "acf_gun" then
-			if Family.Guns then
-				Family.Guns[Ent] = nil
-			end
-
-			Family.HasGuns = next(Family.Guns) and true or nil
-			Ent:DetermineParentState()
-		end
-
-		if Family.HasGuns then
-			for Gun in pairs(Family.Guns) do
-				if IsValid(Gun) then Gun:DetermineParentState() end
-			end
-		end
-	end)
-
-	hook.Add("cfw.contraption.entityAdded", "ACF_CFWGunIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_gun" then
-			contraption.Guns = contraption.Guns or {}
-			contraption.Guns[ent] = true
-		end
-	end)
-
-	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWGunUnIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_gun" then
-			contraption.Guns = contraption.Guns or {}
-			contraption.Guns[ent] = nil
-		end
-	end)
 
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
@@ -469,7 +398,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.TurretLink	= false
 		Entity.HasInitialLoaded = false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
-		Entity.ParentState = 0
+		Entity.ParentState  = 0
 
 		duplicator.ClearEntityModifier(Entity, "mass")
 
@@ -749,12 +678,6 @@ do -- Metamethods --------------------------------
 					end)
 				end
 
-				return false
-			end
-
-			if self.ParentState ~= 1 and ACF.LegalChecks and not ACF.AllowArbitraryParents then
-				-- This NEEDS a better message, I can't find a good way to explain it right now
-				ACF.DisableEntity(self, "Invalid Parent Chain", "Guns can only be parented to turret entities and must have a baseplate root ancestor.", 5)
 				return false
 			end
 

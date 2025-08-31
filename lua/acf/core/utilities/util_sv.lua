@@ -801,9 +801,40 @@ do
 		if Class == "prop_physics" then
 			local Gearboxes = Entity.ACF_Gearboxes
 			if Gearboxes == nil then return false end
-			if #Gearboxes < 0 then return false end
+			if not next(Gearboxes) then return false end
+			-- Ensure all gearboxes have no constraints on them and none are disabled by ACF
+			for Gearbox in pairs(Gearboxes) do
+				if Gearbox.Disabled then return false end
+				if constraint.HasConstraints(Gearbox) then return false end
+			end
 		end
 
 		return true
+	end
+end
+
+do
+	function ACF.GetEntityBaseplate(Entity)
+		local Contraption = Entity:GetContraption()
+		if not Contraption then return end
+
+		local Baseplate = Contraption.ACF_Baseplate
+		if IsValid(Baseplate) then
+			return Baseplate
+		end
+
+		return NULL
+	end
+
+	function ACF.EnforceBaseplateType(Entity, AllowedType)
+		local Baseplate = ACF.GetEntityBaseplate(Entity)
+		if IsValid(Baseplate) then
+			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+			if Type ~= AllowedType then
+				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("%s was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				Entity:Remove()
+				return
+			end
+		end
 	end
 end

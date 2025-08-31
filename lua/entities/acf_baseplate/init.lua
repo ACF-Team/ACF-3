@@ -77,7 +77,7 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 		if IsValid(Ent) then
 			local Contraption = Ent:GetContraption()
 			if Contraption then
-				local Base = Contraption.Base
+				local Base = Contraption.ACF_Baseplate
 				if Base == Entity and IsValid(Pod) and Pod:GetDriver() ~= Ply and not Entity:ACF_GetUserVar("DisableAltE") then
 					Ply:EnterVehicle(Pod)
 				end
@@ -112,6 +112,7 @@ ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
+	if ClientData.BaseplateType ~= "Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
@@ -140,6 +141,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
 	else
 		ACF.Contraption.SetMass(self, 1000)
+		duplicator.StoreEntityModifier(self, "mass", { Mass = 1000 })
 	end
 
 	WireIO.SetupOutputs(self, Outputs, ClientData)
@@ -153,6 +155,25 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 			ConfigureLuaSeat(self, Pod, Owner)
 		end
 	end
+
+	hook.Add("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex(), function( _, ent )
+		local Contraption = ent.GetContraption and ent:GetContraption()
+		if Contraption ~= nil then
+			Contraption.IsPickedUp = true
+		end
+	end)
+
+	hook.Add("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex(), function( _, ent )
+		local Contraption = ent.GetContraption and ent:GetContraption()
+		if Contraption ~= nil then
+			Contraption.IsPickedUp = false
+		end
+	end)
+
+	self:CallOnRemove("ACF_RemovePickupHooks", function()
+		hook.Remove("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex())
+		hook.Remove("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex())
+	end)
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
@@ -178,21 +199,6 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 	end
 end
 
-do
-	-- Maintain a record in the contraption of its current baseplate
-	hook.Add("cfw.contraption.entityAdded", "ACF_CFWBaseIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_baseplate" then
-			contraption.Base = ent
-		end
-	end)
-
-	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWBaseUnIndex", function(contraption, ent)
-		if ent:GetClass() == "acf_baseplate" then
-			contraption.Base = nil
-		end
-	end)
-end
-
 function ENT:CFW_PreParentedTo(_, NewEntity)
 	if IsValid(NewEntity) then
 		local Owner = self:CPPIGetOwner()
@@ -204,11 +210,11 @@ function ENT:CFW_PreParentedTo(_, NewEntity)
 	return false
 end
 
-local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%"
+local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%\nTick Interval: %s"
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
 	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
-	return Text:format(self.BaseplateClass.Name, self.Size[1], self.Size[2], self.Size[3], (h / mh) * 100) .. AltEDisabled
+	return Text:format(self.BaseplateClass.Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
 end
 
 function ENT:Think()

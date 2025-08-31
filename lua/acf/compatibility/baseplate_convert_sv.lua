@@ -12,9 +12,13 @@ function RecursiveEntityRemove(ent, track)
     end
 end
 
+-- permutation is of the form (Axis mapped to X, Axis mapped to Y, Axis mapped to Z). Default is Vector(1, 2, 3) which means X -> X, Y -> Y, Z -> Z.
+-- addAngles is the angles to add to the model angles after the conversion
 local bpConvertibleModelPaths = {
-    { startWith = "models/sprops/rectangles", addAngles = Angle(0, 0, 0) },
-    { startWith = "models/sprops/misc/sq_holes", addAngles = Angle(0, 0, 90) },
+    { startWith = "models/sprops/rectangles", permutation = Vector(1, 2, 3), addAngles = Angle(0, 0, 0) },
+    { startWith = "models/sprops/misc/sq_holes", permutation = Vector(1, 2, 3), addAngles = Angle(0, 0, 90), warning = "This model normally has weird angles. Please make sure to check the angles after conversion." },
+    { startWith = "models/hunter/plates/plate", permutation = Vector(2, 1, 3), addAngles = Angle(0, -90, 0), warning = "This model normally has weird angles. Please make sure to check the angles after conversion." },
+    { startWith = "models/hunter/blocks/cube", permutation = Vector(2, 1, 3), addAngles = Angle(0, -90, 0), warning = "This model normally has weird angles. Please make sure to check the angles after conversion." },
 }
 
 function ACF.ConvertEntityToBaseplate(Player, Target)
@@ -52,7 +56,8 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     local Baseplate = Entities[Target:EntIndex()]
 
     -- Setup the dupe table to convert it to a baseplate
-    local w, l, t = BoxSize.x, BoxSize.y, BoxSize.z
+    local permutation = foundTranslation.permutation
+    local w, l, t = BoxSize[permutation.x], BoxSize[permutation.y], BoxSize[permutation.z]
     Baseplate.Class = "acf_baseplate"
     Baseplate.Length = w
     Baseplate.Width = l
@@ -86,6 +91,10 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     undo.AddEntity(NewBaseplate)
     undo.SetPlayer(Player)
     undo.Finish()
+
+    if foundTranslation.warning then
+        ACF.SendNotify(Player, false, foundTranslation.warning)
+    end
 
     return true, NewBaseplate
 end

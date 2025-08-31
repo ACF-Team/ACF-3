@@ -152,13 +152,13 @@ do -- ACF global vars
 	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
-	ACF.DefineSetting("AllowFunEnts",          true,    "Fun Entities have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowArbitraryParents", false,   "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowSpecialEngines",   true,    "Special engines have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowDynamicLinking",   false,   "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("ShowFunMenu",           true,    "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("DetachedPhysmassRatio", false,   "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",        false,   "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
+	ACF.DefineSetting("AllowFunEnts",            true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowArbitraryParents",   false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowSpecialEngines",     true,     "Special engines have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowDynamicLinking",     false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("ShowFunMenu",             true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("DetachedPhysmassRatio",   false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowProcArmor",          false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
 		ACF.GlobalFilter["acf_armor"] = not Value
 		return Value
 	end))
@@ -208,7 +208,9 @@ do -- ACF global vars
 	ACF.DragDiv              = 80 -- Drag fudge factor
 	ACF.Scale                = 1 -- Scale factor for ACF in the game world
 	ACF.Gravity              = Vector(0, 0, -GetConVar("sv_gravity"):GetInt())
-	ACF.GlobalFilter = { -- Global ACF filter
+
+	-- WE WANT NO INTERACTION WITH THESE ENTITIES
+	ACF.GlobalFilter = {
 		gmod_ghost = true,
 		acf_debris = true,
 		prop_ragdoll = true,
@@ -222,6 +224,11 @@ do -- ACF global vars
 		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		gmod_wire_expression2 = true,
 		starfall_processor = true,
+		sent_prop2mesh = true,
+	}
+
+	-- THESE ENTITIES ARE FILTERED BUT CAN STILL BE ARMORED, FOR BACKWARDS COMPATIBILITY
+	ACF.ArmorableGlobalFilterExceptions = {
 		sent_prop2mesh = true,
 	}
 
@@ -346,7 +353,10 @@ do -- ACF global vars
 	ACF.DefineSetting("TorqueMult", 5, "The arbitrary multiplier for the final amount of torque. Stopgap measure until a future engine update.", ACF.FloatDataCallback(0, 10, 2))
 	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
 	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
+	ACF.MinCVTRatio        = 1 -- The minimum value that a CVT's ratio can be set to
 	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to
+	ACF.MinGearRatioLegacy = -1 -- The minimum value that a gear's ratio can be set to (legacy)
+	ACF.MaxGearRatioLegacy = 1 -- The maximum value that a gear's ratio can be set to (legacy)
 end
 
 do -- ACF Convars & Particles
@@ -391,13 +401,20 @@ elseif CLIENT then
 	-- Display Info Bubble ----------------------
 	local ShowInfo = GetConVar("acf_show_entity_info")
 
+	-- We cache these in upvalues rather than performing C calls a ton.
+	-- The HideInfoBubble function gets called a LOT!!!!
+	-- I have no idea if this will actually imrpove performance yet... we'll see
+	local ShowInfo_Value, LocalPlayer_InVehicle = 0, false
+	timer.Create("ACF_HideInfo_ResyncCData", 0.1, 0, function()
+		ShowInfo_Value = ShowInfo:GetInt()
+		local Player = LocalPlayer()
+		LocalPlayer_InVehicle = IsValid(Player) and Player:InVehicle() or false
+	end)
 	function ACF.HideInfoBubble()
-		local Value = ShowInfo:GetInt()
+		if ShowInfo_Value == 0 then return true end
+		if ShowInfo_Value == 2 then return false end
 
-		if Value == 0 then return true end
-		if Value == 2 then return false end
-
-		return LocalPlayer():InVehicle()
+		return LocalPlayer_InVehicle
 	end
 	---------------------------------------------
 
