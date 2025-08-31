@@ -419,7 +419,7 @@ function Entities.AutoRegister(ENT)
 		local New = ents.Create(Class)
 		if not IsValid(New) then return end
 
-		VerifyClientData(ClientData)
+		VerifyClientData(ClientData, true)
 
 		New:SetPos(Pos)
 		New:SetAngles(Angle)
