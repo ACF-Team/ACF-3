@@ -168,6 +168,69 @@ Entities.AddUserArgumentType("LinkedEntity",
 	end
 )
 
+Entities.AddUserArgumentType("GroupItem", function(Value, Specs, _)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	-- Get the namespace, e.g. ACF.Classes.FuelTanks
+	local Namespace = ACF.Classes[Specs.Namespace]
+	if not Namespace then error("Could not find namespace '" .. Specs.Namespace .. "'.") end
+
+	-- Get the group, e.g. ACF.Classes.GetGroup(ACF.Classes.FuelTanks, "Tank_1x8x2") -> "FTS_B"
+	local Group = Classes.GetGroup(Namespace, Value)
+	if not Group then error("Could not find group for '" .. Value .. "'.") end
+
+	if Group.ID == Value then return Value end -- If Value is a Group's ID then don't check if it is a group item
+
+	-- Get the group item, e.g. ACF.Classes.GetItem("FTS_B", "Tank_1x8x2") -> "Tank_1x8x2"
+	local GroupItem = Namespace.GetItem(Group.ID, Value)
+	if not GroupItem then error("Could not find group item '" .. Value .. "' in group '" .. Group.Name .. "'") end
+
+	return Value
+end)
+
+-- Entity link LUT where Key == Entity and Value == true.
+Entities.AddUserArgumentType("LinkedEntities",
+	function(Value, Specs, OnSpawn)
+		if OnSpawn then Value = {} return Value end
+		if not istable(Value) then Value = {} return Value end
+
+		if Specs.Classes then
+			-- Check everything. What's valid?
+			local NewTable = {}
+			for Entity in pairs(Value) do
+				if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
+					NewTable[Entity] = true
+				end
+			end
+
+			return NewTable
+		else
+			return Value
+		end
+	end,
+	function(_, Value)
+		local EntIndexTable = {}
+		for Entity in pairs(Value) do
+			EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
+		end
+		return EntIndexTable
+	end,
+	function(self, Value, CreatedEnts)
+		local EntTable = {}
+
+		for _, EntIndex in ipairs(Value) do
+			local Created = CreatedEnts[EntIndex]
+			if IsValid(Created) and self:Link(Created) then
+				EntTable[Created] = true
+			end
+		end
+
+		return EntTable
+	end
+)
+
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
 --- @param DataKeys table A key-value table, where key is the name of the data and value defines the type and restrictions of the data.
