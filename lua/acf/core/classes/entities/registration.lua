@@ -388,6 +388,9 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
+		print("VerifyClientData")
+		PrintTable(ClientData)
+
 		-- Perform general verification
 		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData) end
 	end
@@ -476,6 +479,9 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
+		-- print("Entity.Spawn")
+		-- PrintTable(ClientData)
+
 		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData)
 		if CanSpawn == false then return false end
 
@@ -500,8 +506,8 @@ function Entities.AutoRegister(ENT)
 		New.ACF_UserData = New.ACF_UserData or {}
 		New.ACF_LiveData = New.ACF_LiveData or {}
 		for k, _ in pairs(UserVars) do
-			New.ACF_UserData[k] = ClientData[k]
-			New.ACF_LiveData[k] = ClientData[k]
+			New.ACF_UserData[k] = ClientData[k] or ClientData.ACF_UserData and ClientData.ACF_UserData[k] or nil
+			New.ACF_LiveData[k] = ClientData[k] or ClientData.ACF_LiveData and ClientData.ACF_LiveData[k] or nil
 		end
 
 		New:ACF_UpdateEntityData(ClientData, true)
@@ -576,7 +582,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data")
 end
 
 --- Registers a class as a spawnable entity class
@@ -605,7 +611,7 @@ function Entities.Register(Class, Function, ...)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -626,7 +632,7 @@ function Entities.AddArguments(Class, ...)
 			return SpawnedEntity
 		end
 
-		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", unpack(List))
 	end
 end
 
