@@ -193,7 +193,7 @@ end)
 -- Entity link LUT where Key == Entity and Value == true.
 Entities.AddUserArgumentType("LinkedEntities",
 	function(Value, Specs, OnSpawn)
-		if OnSpawn then return Value end
+		if OnSpawn then Value = {} return Value end
 		if not istable(Value) then Value = {} return Value end
 
 		if Specs.Classes then
@@ -453,7 +453,6 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
-		
 		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
 		print("Set " .. Key .. " to " .. tostring(Value) .. " validated " .. tostring(self.ACF_LiveData[Key]))
 	end
