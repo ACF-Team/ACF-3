@@ -193,7 +193,7 @@ end)
 -- Entity link LUT where Key == Entity and Value == true.
 Entities.AddUserArgumentType("LinkedEntities",
 	function(Value, Specs, OnSpawn)
-		if OnSpawn then Value = {} return Value end
+		if OnSpawn then return Value end
 		if not istable(Value) then Value = {} return Value end
 
 		if Specs.Classes then
@@ -293,7 +293,7 @@ ENTITY METHODS AND FIELDS
 		This is useful if you need to perform validation between entity arguments.
 		Similar in use to the VerifyData functions in the old API.
 
-	ENT.ACF_LiveData(table)
+	ENT.ACF_LiveData (table)
 		The raw table behind ACF_GetUserVar/ACF_SetUserVar. WIll not perform any validation on sets
 
 	ENT:ACF_GetUserVar(Key)
@@ -400,8 +400,6 @@ function Entities.AutoRegister(ENT)
 		local List   = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
-		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
-		self.ACF_LiveData = self.ACF_LiveData or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
@@ -455,7 +453,9 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
+		
 		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
+		print("Set " .. Key .. " to " .. tostring(Value) .. " validated " .. tostring(self.ACF_LiveData[Key]))
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
@@ -468,6 +468,7 @@ function Entities.AutoRegister(ENT)
 	--- @param ClientData table The client data to use for the entity
 	--- @return Entity # The created entity
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
+
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
 				if not ACF_Limit() then return end
@@ -496,6 +497,14 @@ function Entities.AutoRegister(ENT)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
+		New.ACF = New.ACF or {}
+		New.ACF_UserData = New.ACF_UserData or {}
+		New.ACF_LiveData = New.ACF_LiveData or {}
+		for k, _ in pairs(UserVars) do
+			New.ACF_UserData[k] = ClientData[k]
+			New.ACF_LiveData[k] = ClientData[k]
+		end
+
 		New:ACF_UpdateEntityData(ClientData, true)
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
@@ -515,11 +524,11 @@ function Entities.AutoRegister(ENT)
 				value = typedef.PreCopy(self, value)
 			end
 
-			self.ACF_LiveData[k] = value
+			self.ACF_UserData[k] = value -- Flush live data to user data
 		end
 
 		print("PreEntityCopy")
-		PrintTable(self.ACF_LiveData)
+		PrintTable(self.ACF_UserData)
 
 		-- Call original ENT.PreEntityCopy
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -530,13 +539,16 @@ function Entities.AutoRegister(ENT)
 
 	--- Runs the PostPaste and Validator methods for each user var
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local UserData = Ent.ACF_LiveData
+		local UserData = Ent.ACF_UserData
 		if not UserData then
-			Ent.ACF_LiveData = {}
+			print("No UserData found")
+			Ent.ACF_UserData = {}
+		else
+			print("UserData found")
 		end
 
 		print("PostEntityPaste")
-		PrintTable(Ent.ACF_LiveData)
+		PrintTable(Ent.ACF_UserData)
 
 		for k, v in pairs(UserVars) do
 			local typedef    = UserArgumentTypes[v.Type]
@@ -547,7 +559,7 @@ function Entities.AutoRegister(ENT)
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(check, v)
-			Ent.ACF_LiveData[k] = check
+			Ent.ACF_LiveData[k] = check -- Flush user data to live data	
 		end
 
 		-- Call original ENT.PostEntityPaste
@@ -565,7 +577,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
 end
 
 --- Registers a class as a spawnable entity class
@@ -594,7 +606,7 @@ function Entities.Register(Class, Function, ...)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData", unpack(List))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
 end
 
 --- Adds extra arguments to a class which has already been called in Entities.Register  
@@ -615,7 +627,7 @@ function Entities.AddArguments(Class, ...)
 			return SpawnedEntity
 		end
 
-		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_LiveData", unpack(List))
+		duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(List))
 	end
 end
 
