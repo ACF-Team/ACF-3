@@ -133,7 +133,7 @@ end)
 ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
+	ClientData.Size = Vector(ClientData.ACF_UserData.Length, ClientData.ACF_UserData.Width, ClientData.ACF_UserData.Thickness)
 	if ClientData.BaseplateType ~= "Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
 end
 

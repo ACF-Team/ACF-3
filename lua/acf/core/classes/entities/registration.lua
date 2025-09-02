@@ -502,12 +502,15 @@ function Entities.AutoRegister(ENT)
 
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
 
+		print("ClientData UserData")
+		PrintTable(ClientData.ACF_UserData)
+
 		New.ACF = New.ACF or {}
-		New.ACF_UserData = New.ACF_UserData or {}
-		New.ACF_LiveData = New.ACF_LiveData or {}
+		New.ACF_UserData = {}
+		New.ACF_LiveData = {}
 		for k, _ in pairs(UserVars) do
-			New.ACF_UserData[k] = ClientData[k] or ClientData.ACF_UserData and ClientData.ACF_UserData[k] or nil
-			New.ACF_LiveData[k] = ClientData[k] or ClientData.ACF_LiveData and ClientData.ACF_LiveData[k] or nil
+			New.ACF_UserData[k] = ClientData.ACF_UserData and ClientData.ACF_UserData[k] or ClientData[k] or nil
+			New.ACF_LiveData[k] = ClientData.ACF_LiveData and ClientData.ACF_LiveData[k] or ClientData[k] or nil
 		end
 
 		New:ACF_UpdateEntityData(ClientData, true)
