@@ -663,7 +663,7 @@ do
 		-- Only two transfer setups can reasonably be expected to neutral steer
 		local IsNeutral = not IsLateral and IsTurning
 		local CanNeutral = SelfTbl.GearboxEndCount == 2
-		local ShouldAWD = SelfTbl.GearboxEndCount > 2
+		local ShouldAWD = SelfTbl.GearboxEndCount > 2 or self:GetForceAWD()
 
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
