@@ -175,6 +175,7 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.weapons.gun_fire"):             LinkToServerData("GunsCanFire")
 		Base:AddCheckBox("#acf.menu.settings.weapons.gun_smoke"):            LinkToServerData("GunsCanSmoke")
 		Base:AddCheckBox("#acf.menu.settings.weapons.rack_fire"):            LinkToServerData("RacksCanFire")
+		Base:AddCheckBox("#acf.menu.settings.weapons.baseplate_damage"):     LinkToServerData("AllowBaseplateDamage")
 		Base:AddSlider("#acf.menu.settings.weapons.squishy_mult"):           LinkToServerData("SquishyDamageMult")
 	end)
 

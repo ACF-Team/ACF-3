@@ -3,13 +3,12 @@ local ACF = ACF
 do
     local BlockDamageHook = false
 
-    -- Purpose: Make players invincible while in ACF baseplate seats. 
+    -- Purpose: Make players invincible while in ACF baseplate seats.
     -- We don't want other damage systems to interact with ACF combat.
     -- Deaths instead will happen when the crew dies.
     hook.Add("EntityTakeDamage", "ACF_EntityTakeDamage_BlockDamageInBaseplateSeats", function(Target, _)
-        if BlockDamageHook then -- to avoid crashes/allow ACF to stop damage for a bit
-            return
-        end
+        if BlockDamageHook then return end -- To avoid crashes/allow ACF to stop damage for a bit
+        if ACF.AllowBaseplateDamage then return end
 
         if not Target:IsPlayer() then return end
         if not Target:InVehicle() then return end

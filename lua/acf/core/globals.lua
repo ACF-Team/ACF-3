@@ -117,26 +117,27 @@ do -- ACF global vars
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
 
 	-- General Settings
-	ACF.DefineSetting("AllowAdminData",     false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RestrictInfo",       true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("LegalChecks",        true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("NameAndShame",       false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("VehicleLegalChecks", true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowAdminData",       false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RestrictInfo",         true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("NameAndShame",         false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
 
-	ACF.DefineSetting("GunsCanFire",        true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("GunsCanSmoke",       true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RacksCanFire",       true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RequireFuel",        true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("SquishyDamageMult",  1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
+	ACF.DefineSetting("GunsCanFire",          true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("GunsCanSmoke",         true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RacksCanFire",         true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RequireFuel",          true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
 	ACF.Threshold = 264.7
-	ACF.DefineSetting("HealthFactor",       1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
+	ACF.DefineSetting("HealthFactor",         1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
 
 	ACF.ArmorMod = 1
-	ACF.DefineSetting("ArmorFactor",        1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
+	ACF.DefineSetting("ArmorFactor",          1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
-	ACF.DefineSetting("FuelFactor",         1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
+	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
 	ACF.MinimumArmor         = 1     -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
@@ -144,13 +145,13 @@ do -- ACF global vars
 	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
 	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
-	ACF.DefineSetting("MaxThickness",       300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
+	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
 
-	ACF.DefineSetting("SmokeWind",          20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
+	ACF.DefineSetting("SmokeWind",            20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
 
-	ACF.DefineSetting("HEPush",             true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("KEPush",             true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RecoilPush",         true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("HEPush",               true,   "Explosive energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KEPush",               true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RecoilPush",           true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",            true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowArbitraryParents",   false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
@@ -163,18 +164,18 @@ do -- ACF global vars
 		return Value
 	end))
 
-	ACF.DefineSetting("WorkshopContent",    true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("WorkshopExtras",     false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 
-	ACF.DefineSetting("CreateDebris",       true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("CreateFireballs",    false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("FireballMult",       1,      nil, ACF.FloatDataCallback(0.01, 1, 2))
+	ACF.DefineSetting("CreateDebris",         true,   "Networking debris has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("CreateFireballs",      false,  "Debris fireballs have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("FireballMult",         1,      nil, ACF.FloatDataCallback(0.01, 1, 2))
 
-	ACF.DefineSetting("EnableSafezones",    true,   "Safezones have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("NoclipOutsideZones", true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("EnableSafezones",      true,   "Safezones have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("NoclipOutsideZones",   true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
-	ACF.DefineSetting("MaxDriveshaftAngle", 85,    nil, ACF.FloatDataCallback(85, 180, 0))
+	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0))
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
