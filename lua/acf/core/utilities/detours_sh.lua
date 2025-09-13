@@ -93,7 +93,7 @@ end
 
 local E2Detours = {}
 function Detours.Expression2(E2HelperSig, Hook)
-    local Signature = "wire_expression2_funcs[ACF.Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")][3]"
+    local Signature = "(wire_expression2_funcs[ACF.Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")] or {})[3]"
     local Obj = E2Detours[Signature]
     if not Obj then
         Obj = {
