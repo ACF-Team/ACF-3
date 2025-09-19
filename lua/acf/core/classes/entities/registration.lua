@@ -270,15 +270,19 @@ ENTITY METHODS AND FIELDS
 		This is useful if you need to perform validation between entity arguments.
 		Similar in use to the VerifyData functions in the old API.
 
-	ENT.ACF_UserData (table)
+	ENT.ACF_LiveData (table)
 		The raw table behind ACF_GetUserVat/ACF_SetUserVar. WIll not perform any validation on sets
+
+	ENT.ACF_UserData (table)
+		On PreEntityCopy, this table is populated by ACF_LiveData and variable pre-paste transformers for duplication. 
+		On PostEntityPaste, this table populates ACF_LiveData using variable post-paste transformers.
 
 	ENT:ACF_GetUserVar(Key)
 		Gets a user variable by Key
 
 	ENT:ACF_SetUserVar(Key, Value)
 		Sets a user variable by Key to Value. Automatically pulls the typedef for the user and performs the validator.
-		If you don't want to perform validation on sets, you can directly set Entity.ACF_UserData[Key] = Value.
+		If you don't want to perform validation on sets, you can directly set Entity.ACF_LiveData[Key] = Value.
 
 	ENT:PreEntityCopy()
 		Identical to Garry's Mod's API but autoreg automatically saves your user vars from
@@ -321,6 +325,10 @@ AUTOREG TYPE API (semi-internal...)
 	Entities.AddUserArgumentType(TypeName, ValidateUserVarDelegate, PreCopyUserVarDelegate?, PostPasteUserVarDelegate?)
 ]]
 
+-- NEW CHANGE: ACF_UserData has been split into ACF_UserData and ACF_LiveData. The reason being that
+-- we need a "live real time" version (which is now UserData) and a "saveable without overwriting the real time
+-- data" (which is now SavedUserData).
+
 -- Automatically registers an entity. This MUST be the last line in entity/init.lua for everything to work properly
 -- Can be passed with an ENT table if you have some weird usecase, but auto defaults to _G.ENT
 --- @param ENT table A scripted entity class definition (see https://wiki.facepunch.com/gmod/Structures/ENT)
@@ -360,7 +368,7 @@ function Entities.AutoRegister(ENT)
 				local RestrictionSpecs = Restrictions[argName]
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				local Value = ClientData[argName] or (ClientData.ACF_UserData and ClientData.ACF_UserData[argName] or nil)
+				local Value = ClientData[argName]
 				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs)
 			end
 		end
@@ -378,12 +386,12 @@ function Entities.AutoRegister(ENT)
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
-		self.ACF_UserData = self.ACF_UserData or {}
+		self.ACF_LiveData = self.ACF_LiveData or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
 			if UserVars[v].ClientData or First then
-				self.ACF_UserData[v] = ClientData[v]
+				self.ACF_LiveData[v] = ClientData[v]
 			end
 		end
 
@@ -419,7 +427,7 @@ function Entities.AutoRegister(ENT)
 		if not Key then error("Tried to get the value of a nil key.") end
 		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
 
-		return self.ACF_UserData[Key]
+		return self.ACF_LiveData[Key]
 	end
 
 	--- Sets the value of a user variable after validating the value
@@ -432,7 +440,7 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
-		self.ACF_UserData[Key] = Typedef.Validator(Value, UserVar)
+		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local PreEntityCopy   = ENT.PreEntityCopy
@@ -485,9 +493,15 @@ function Entities.AutoRegister(ENT)
 
 	--- Runs the Validator and PreCopy for methods for each user var
 	function ENT:PreEntityCopy()
+		if not self.ACF_UserData then
+			self.ACF_UserData = {}
+		else
+			table.Empty(self.ACF_UserData)
+		end
+
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
-			local value     = typedef.Validator(self.ACF_UserData[k], v)
+			local value     = typedef.Validator(self.ACF_LiveData[k], v)
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
 			end
@@ -504,7 +518,7 @@ function Entities.AutoRegister(ENT)
 
 	--- Runs the PostPaste and Validator methods for each user var
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local UserData = Ent.ACF_UserData
+		local UserData = Ent.ACF_UserData or Ent.ACF_LiveData
 		if not UserData then
 			Ent.ACF_UserData = {}
 		end
@@ -518,7 +532,7 @@ function Entities.AutoRegister(ENT)
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(check, v)
-			Ent.ACF_UserData[k] = check
+			Ent.ACF_LiveData[k] = check
 		end
 
 		-- Call original ENT.PostEntityPaste
@@ -531,12 +545,12 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_VerifyClientData = VerifyClientData
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
-	local function SpawnFunction(Player, Pos, Angle, Data)
-		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, Data, true)
+	local function SpawnFunction(Player, Pos, Angle, UserData)
+		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
 end
 
 --- Registers a class as a spawnable entity class
