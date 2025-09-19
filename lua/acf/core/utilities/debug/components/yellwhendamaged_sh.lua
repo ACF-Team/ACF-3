@@ -39,7 +39,7 @@ if SERVER then
 	local function DoYell(Entity, _, _)
 		for Player, LUT in pairs(RequestedYellEnts) do
 			if LUT['*'] or LUT[Entity:EntIndex()] then
-				Player:ChatPrint("Damage occured on " .. tostring(Entity))
+				Player:ChatPrint("Damage occurred on " .. tostring(Entity))
 			end
 		end
 	end
