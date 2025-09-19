@@ -34,7 +34,7 @@ if SERVER then
 		if Player == NULL then print("Cannot use this command from a dedicated server!") return end
 		if not FunDebuggingFunctions:GetBool() then Player:ChatPrint("Fun debugging functions aren't enabled...") return end
 		ProcessLastTyped_YellAbout(Player, Request)
-	end, nil, "ACF physics visualizer for testing", FCVAR_USERINFO)
+	end, nil, "ACF damage notification for testing", FCVAR_USERINFO)
 
 	local function DoYell(Entity, _, _)
 		for Player, LUT in pairs(RequestedYellEnts) do
