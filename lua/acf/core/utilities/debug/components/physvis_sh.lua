@@ -249,6 +249,10 @@ local function ProcessLastTyped_YellAbout(Player, Request)
 	local LUT = {}
 	local Pieces = string.Split(Request, " ")
 	for _, Piece in ipairs(Pieces) do
+		if Piece == '*' then
+			LUT['*'] = true
+			break
+		end
 		local Idx = tonumber(Piece)
 		if Idx then LUT[Idx] = true end
 	end
@@ -277,9 +281,9 @@ if SERVER then
 		ProcessLastTyped_YellAbout(Player, Request)
 	end, nil, "ACF physics visualizer for testing", FCVAR_USERINFO)
 
-	local function DoYell(Entity, DmgResult, DmgInfo)
+	local function DoYell(Entity, _, _)
 		for Player, LUT in pairs(RequestedYellEnts) do
-			if LUT[Entity:EntIndex()] then
+			if LUT['*'] or LUT[Entity:EntIndex()] then
 				Player:ChatPrint("Damage occured on " .. tostring(Entity))
 			end
 		end
