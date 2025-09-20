@@ -59,6 +59,10 @@ CreateControl = function(Base)
 
 	if IsScalable then -- Scalable
 		local Bounds = Current.Class.Caliber
+		-- Set default caliber value before creating the slider to prevent nil value errors
+		local DefaultCaliber = ACF.GetClientNumber("Caliber", Bounds.Base)
+		ACF.SetClientData("Caliber", DefaultCaliber, true)
+
 		local Slider = Base:AddSlider("#acf.menu.caliber", Bounds.Min, Bounds.Max, 2)
 		Slider:SetClientData("Caliber", "OnValueChanged")
 		Slider:DefineSetter(function(Panel, _, _, Value)

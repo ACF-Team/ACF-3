@@ -477,6 +477,14 @@ function ACF.CreateAmmoMenu(Menu)
 	local Min  = ACF.AmmoMinSize
 	local Max  = ACF.AmmoMaxSize
 
+	-- Set default crate size values before creating sliders to prevent nil value errors
+	local DefaultSizeX = ACF.GetClientNumber("CrateSizeX", (Min + Max) / 2)
+	local DefaultSizeY = ACF.GetClientNumber("CrateSizeY", (Min + Max) / 2)
+	local DefaultSizeZ = ACF.GetClientNumber("CrateSizeZ", (Min + Max) / 2)
+	ACF.SetClientData("CrateSizeX", DefaultSizeX, true)
+	ACF.SetClientData("CrateSizeY", DefaultSizeY, true)
+	ACF.SetClientData("CrateSizeZ", DefaultSizeZ, true)
+
 	local SizeX = Menu:AddSlider("#acf.menu.ammo.crate_length", Min, Max)
 	SizeX:SetClientData("CrateSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)

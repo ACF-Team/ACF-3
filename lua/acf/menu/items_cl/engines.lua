@@ -84,6 +84,14 @@ local function CreateMenu(Menu)
 	local Min = ACF.FuelMinSize
 	local Max = ACF.FuelMaxSize
 
+	-- Set default fuel tank size values before creating sliders to prevent nil value errors
+	local DefaultTankSizeX = ACF.GetClientNumber("TankSizeX", (Min + Max) / 2)
+	local DefaultTankSizeY = ACF.GetClientNumber("TankSizeY", (Min + Max) / 2)
+	local DefaultTankSizeZ = ACF.GetClientNumber("TankSizeZ", (Min + Max) / 2)
+	ACF.SetClientData("TankSizeX", DefaultTankSizeX, true)
+	ACF.SetClientData("TankSizeY", DefaultTankSizeY, true)
+	ACF.SetClientData("TankSizeZ", DefaultTankSizeZ, true)
+
 	local SizeX = Menu:AddSlider("#acf.menu.fuel.tank_length", Min, Max)
 	SizeX:SetClientData("TankSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
