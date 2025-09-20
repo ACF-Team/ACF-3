@@ -20,6 +20,16 @@ local function CreateMenu(Menu)
 
 	local ClassList    = Menu:AddComboBox()
 
+	-- Set default baseplate size values before creating sliders to prevent nil value errors
+	local DefaultWidth = ACF.GetClientNumber("Width", (36 + 120) / 2)
+	local DefaultLength = ACF.GetClientNumber("Length", (36 + 420) / 2)
+	local DefaultThickness = ACF.GetClientNumber("Thickness", (0.5 + 3) / 2)
+	local DefaultGForceTicks = ACF.GetClientNumber("GForceTicks", (1 + 7) / 2)
+	ACF.SetClientData("Width", DefaultWidth, true)
+	ACF.SetClientData("Length", DefaultLength, true)
+	ACF.SetClientData("Thickness", DefaultThickness, true)
+	ACF.SetClientData("GForceTicks", DefaultGForceTicks, true)
+
 	local SizeX        = Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 120, 2)
 	local SizeY        = Menu:AddSlider("#acf.menu.baseplates.plate_length", 36, 420, 2)
 	local SizeZ        = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", 0.5, 3, 2)
