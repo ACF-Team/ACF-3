@@ -12,12 +12,10 @@ local function CreateMenu(Menu)
     Menu:AddLabel(MenuDesc)
 
     local playerContainer = Menu:AddPanel("DPanel")
-    playerContainer:Dock(TOP)
-    playerContainer:SetSize(0, 300)
+    playerContainer:Dock(FILL)
 
     local playerList = playerContainer:Add("DScrollPanel")
-    playerList:Dock(TOP)
-    playerList:SetSize(0, 300)
+    playerList:Dock(FILL)
 
     local highlight = Color(162, 206, 255, 194)
     local function PopulatePlayerList()
@@ -67,10 +65,34 @@ local function CreateMenu(Menu)
     end)
 
     local btn2 = Menu:AddButton("#acf.menu.scanner.refresh_players")
-    btn2:Dock(TOP)
+    btn2:Dock(BOTTOM)
     function btn2:DoClickInternal()
         PopulatePlayerList()
     end
 end
 
-ACF.AddMenuItem(401, "#acf.menu.scanner", "#acf.menu.scanner.menu_name", "transmit", CreateMenu)
+list.Set("DesktopWindows", "ACF3Scanner", {
+    title	= "ACF Scanner",
+    icon	= "materials/icon16/transmit.png",
+    width	= 480,
+    height	= 640,
+    init	= function(_, window)
+        window:SetTitle("ACF Scanner")
+        window:SetSize(math.min( ScrW() - 16, window:GetWide() ), math.min( ScrH() - 16, window:GetTall() ))
+        window:SetSizable( true )
+        window:SetMinWidth(window:GetWide())
+        window:SetMinHeight(window:GetTall())
+        window:Center()
+        local Back = window:Add("DPanel")
+        Back:Dock(FILL)
+        Back:DockPadding(8, 8, 8, 8)
+        local Panel = Back:Add("ACF_Panel")
+        Panel:Dock(FILL)
+        CreateMenu(Panel)
+    end
+})
+
+-- TODO: Remove this sometime in 2026, that'll be enough time
+ACF.AddMenuItem(401, "#acf.menu.scanner", "#acf.menu.scanner.menu_name", "transmit", function(Panel)
+    Panel:AddTitle("This functionality has been moved to the Context Menu.")
+end)
