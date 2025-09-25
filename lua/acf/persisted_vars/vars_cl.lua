@@ -6,10 +6,10 @@ ACF.PersistClientData("AmmoRefillColor", Color(255, 255, 0, 10))
 ACF.PersistClientData("FuelRefillColor", Color(76, 201, 250, 10))
 ACF.PersistClientData("DualClutch", false)
 
--- Crate size
-ACF.PersistClientData("CrateSizeX", 24)
-ACF.PersistClientData("CrateSizeY", 24)
-ACF.PersistClientData("CrateSizeZ", 24)
+-- Crate projectile counts
+ACF.PersistClientData("CrateProjectilesX", 3)
+ACF.PersistClientData("CrateProjectilesY", 3)
+ACF.PersistClientData("CrateProjectilesZ", 3)
 
 -- Plate size
 ACF.PersistClientData("PlateSizeX", 24)
