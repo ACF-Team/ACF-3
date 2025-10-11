@@ -109,6 +109,7 @@ end
 
 -- Might be a good idea to put this somewhere else later
 ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}
+ACF.ActiveBaseplatesArray = ACF.ActiveBaseplatesArray or {}
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
@@ -179,7 +180,12 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 	ACF.ActiveBaseplatesTable[self] = true
-	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
+	table.insert(ACF.ActiveBaseplatesArray, self)
+
+	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent)
+		ACF.ActiveBaseplatesTable[ent] = nil
+		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
+	end)
 end
 
 function ENT:PostEntityPaste(_, _, CreatedEntities)
@@ -217,10 +223,6 @@ function ENT:UpdateOverlayText()
 	return Text:format(self.BaseplateClass.Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
 end
 
-function ENT:Think()
-	self:BaseplateRepulsion()
-end
-
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if Ent == Self then return false end
 
@@ -241,18 +243,64 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 
 	local Vel         = Physics:GetVelocity()
 	local Contraption = Ent:GetContraption()
-	local Mass        = Contraption == nil and Ent:GetPhysicsObject():GetMass() or Contraption.totalMass
+	local PhysMass    = Physics:GetMass()
+	local TotalMass	  = Contraption and Contraption.TotalMass or PhysMass
 
-	return true, Physics, Pos, Vel, Contraption, Mass, Radius
+	return true, Physics, Pos, Vel, Contraption, PhysMass, TotalMass, Radius
 end
 
-local function CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
-	local Dir = SelfPos - VictimPos
+local function CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
+	local Dir = Pos2 - Pos1
+	local Dist = Dir:Length()
 	Dir:Normalize()
 
-	local Intersection = ((VictimPos + (Dir * VictimRadius)) - (SelfPos + (-Dir * SelfRadius))):Length()
-	return Intersection, Dir, SelfPos + (Dir * (SelfRadius + (Intersection / 2)))
+	local Intersection = Dist - Radius1 - Radius2
+	return Intersection, Dir, (Pos1 * Radius1 + Pos2 * Radius2) / (Radius1 + Radius2)
 end
+
+hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
+	local BaseplatesArray = ACF.ActiveBaseplatesArray
+	local Count = #ACF.ActiveBaseplatesArray
+	if Count < 2 then return end
+	for i = 1, Count do
+		for j = 1, Count do
+			if i >= j then continue end
+			local BP1, BP2 = BaseplatesArray[i], BaseplatesArray[j]
+
+			if not BP1.Size or not BP2.Size then continue end
+			if BP1:IsPlayerHolding() or BP2:IsPlayerHolding() then continue end
+
+			Valid1, Physics1, Pos1, Vel1, Contraption1, PhysMass1, TotalMass1, Radius1 = GetBaseplateProperties(BP1)
+			Valid2, Physics2, Pos2, Vel2, Contraption2, PhysMass2, TotalMass2, Radius2 = GetBaseplateProperties(BP2)
+
+			if not Valid1 or not Valid2 then continue end
+			if Contraption1 == Contraption2 then continue end
+
+			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
+			debugoverlay.Sphere(Pos1, Radius1, 1, Color(255, 255, 255))
+			debugoverlay.Sphere(Pos2, Radius2, 1, Color(255, 255, 255))
+			debugoverlay.Cross(IntersectionCenter, 5, 1, Color(255, 0, 0))
+
+			if IntersectionDistance > 0 then continue end
+
+			local CollisionForce1 = ((Vel1 / 4) + ( IntersectionDirection * IntersectionDistance * 150)) * 100
+			local CollisionForce2 = ((Vel2 / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * 100
+
+			local BP1Force = CollisionForce1 * math.Clamp(PhysMass1 / TotalMass1, 0, 1)
+			local BP2Force = CollisionForce2 * math.Clamp(PhysMass2 / TotalMass2, 0, 1)
+
+			local BP1LinImpulse, BP1AngImpulse = Physics1:CalculateForceOffset(BP1Force, IntersectionCenter)
+			Physics1:ApplyForceCenter(BP1LinImpulse)
+			Physics1:ApplyTorqueCenter(Physics1:LocalToWorldVector(BP1AngImpulse * 2)) -- Are you sure this was a good idea?
+			BP1:PlayBaseplateRepulsionSound(Vel1)
+
+			local BP2LinImpulse, BP2AngImpulse = Physics2:CalculateForceOffset(BP2Force, IntersectionCenter)
+			Physics2:ApplyForceCenter(BP2LinImpulse)
+			Physics2:ApplyTorqueCenter(Physics2:LocalToWorldVector(BP2AngImpulse * 2)) -- Are you sure this was a good idea?
+			BP2:PlayBaseplateRepulsionSound(Vel2)
+		end
+	end
+end)
 
 function ENT:BaseplateRepulsion()
 	if not self.Size then return end
