@@ -244,7 +244,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	local Vel         = Physics:GetVelocity()
 	local Contraption = Ent:GetContraption()
 	local PhysMass    = Physics:GetMass()
-	local TotalMass	  = Contraption and Contraption.TotalMass or PhysMass
+	local TotalMass	  = Contraption and Contraption.totalMass or PhysMass
 
 	return true, Physics, Pos, Vel, Contraption, PhysMass, TotalMass, Radius
 end
@@ -260,7 +260,7 @@ end
 
 hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 	local BaseplatesArray = ACF.ActiveBaseplatesArray
-	local Count = #ACF.ActiveBaseplatesArray
+	local Count = #BaseplatesArray
 	if Count < 2 then return end
 	for i = 1, Count do
 		for j = 1, Count do
@@ -277,9 +277,6 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 			if Contraption1 == Contraption2 then continue end
 
 			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
-			debugoverlay.Sphere(Pos1, Radius1, 1, Color(255, 255, 255))
-			debugoverlay.Sphere(Pos2, Radius2, 1, Color(255, 255, 255))
-			debugoverlay.Cross(IntersectionCenter, 5, 1, Color(255, 0, 0))
 
 			if IntersectionDistance > 0 then continue end
 
