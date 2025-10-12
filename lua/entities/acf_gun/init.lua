@@ -79,7 +79,7 @@ do -- Random timer crew stuff
 		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
 		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
 
-		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
+		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and tr.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
 		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
 
@@ -94,8 +94,7 @@ do -- Random timer crew stuff
 		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 
 		-- Check space behind breech
-		if self.BulletData and self.ClassData.BreechConfigs then
-
+		if ACF.LegalChecks and self.BulletData and self.ClassData.BreechConfigs then
 			-- Check assuming 2 piece for now.
 			local ShellLength = ((self.BulletData.PropLength or 0) + (self.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
 			local p1 = self.BreechPos
