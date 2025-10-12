@@ -87,16 +87,14 @@ do -- ACF.trace
 				local HitEntity = Output.Entity
 				local OldFilter = TraceData.filter
 
-
 				TraceData.filter = function(ent)
 					if ent == HitEntity then return false end
 					if ent:GetClass() == "phys_bone_follower" then
-						local mins, maxs = ent:OBBMins(), ent:OBBMaxs()
-						local pos = ent:GetPos()
-						local ang = ent:GetAngles()
-
-						debugoverlay.BoxAngles(pos, mins, maxs, ang, 10, Color(0, 255, 0, 100))
 						return false
+					end
+
+					for _, V in ipairs(OldFilter) do
+						if ent == V then return false end
 					end
 
 					return true
