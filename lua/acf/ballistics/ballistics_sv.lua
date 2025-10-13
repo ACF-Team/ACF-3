@@ -83,8 +83,6 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	Bullet.Iterations = Bullet.Iterations + 1
-	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -135,8 +133,6 @@ function Ballistics.CreateBullet(BulletData)
 
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
-	Bullet.LastPos	   = Bullet.Pos
-	Bullet.Iterations  = 0
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
 		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
@@ -256,13 +252,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	FlightTr.mask 	= Bullet.Mask
 	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos - (Bullet.Pos - Bullet.LastPos) * (Bullet.Iterations > 1 and 2 or 0) -- Compensate for high velocity and low tickrate by extending the trace backwards
+	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	Debug.Cross(Bullet.Pos, 4, 30, Bullet.Color, true)
-	-- Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
