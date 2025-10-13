@@ -91,8 +91,8 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 		hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. Entity:EntIndex())
 		hook.Remove("PlayerUse", "ACFBaseplateSeatEnterExternal" .. Entity:EntIndex())
 
-		local Owner = Entity:CPPIGetOwner()
-		if IsValid(Owner) then Owner:GodDisable() end
+		--local Owner = Entity:CPPIGetOwner()
+		--if IsValid(Owner) then Owner:GodDisable() end
 
 		SafeRemoveEntity(Ent.Pod)
 
