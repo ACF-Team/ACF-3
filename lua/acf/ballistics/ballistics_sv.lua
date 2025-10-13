@@ -115,7 +115,6 @@ function Ballistics.CalcBulletFlight(Bullet)
 	end
 
 	Bullet.Iterations = Bullet.Iterations + 1
-	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
 
 	if Bullet.NextPredictedHit then
@@ -212,7 +211,6 @@ function Ballistics.CreateBullet(BulletData)
 
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
-	Bullet.LastPos	   = Bullet.Pos
 	Bullet.Iterations  = 0
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
@@ -333,7 +331,7 @@ function Ballistics.DoBulletsFlight(Bullet, OnlyEvaluate)
 
 	FlightTr.mask 	= Bullet.Mask
 	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos - (Bullet.Pos - Bullet.LastPos) * (Bullet.Iterations > 1 and 2 or 0) -- Compensate for high velocity and low tickrate by extending the trace backwards
+	FlightTr.start 	= Bullet.Pos
 	FlightTr.endpos = Bullet.NextPos
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
