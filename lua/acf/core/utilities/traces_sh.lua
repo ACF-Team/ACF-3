@@ -35,7 +35,6 @@ end
 do -- ACF.trace
 	-- Does NOT modify the original filter
 	local util           = util
-	local angle_zero     = Angle(0, 0, 0)
 	local physBoneHavers = {
 		npc_dog            = true,
 		npc_strider        = true,
@@ -105,7 +104,6 @@ do -- ACF.trace
 
 				-- Restore the original filter
 				TraceData.filter = OldFilter
-
 			elseif ACF.GlobalFilter[Output.Entity:GetClass()] or TestTraceable(Output.Entity) or ACF.CheckClips(Output.Entity, Output.HitPos) then
 				local OldFilter = TraceData.filter
 				local Filter    = { Output.Entity }

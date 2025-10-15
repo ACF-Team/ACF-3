@@ -18,7 +18,8 @@ return {
                 local Trace = {}
                 local Entity = {
                     IsPlayer = stub().returns( true ),
-                    IsNPC = stub().returns( false )
+                    IsNPC = stub().returns( false ),
+                    IsNextBot = stub().returns( false )
                 }
 
                 local Type = ACF.Ballistics.GetImpactType( Trace, Entity )
@@ -32,7 +33,23 @@ return {
                 local Trace = {}
                 local Entity = {
                     IsPlayer = stub().returns( false ),
-                    IsNPC = stub().returns( true )
+                    IsNPC = stub().returns( true ),
+                    IsNextBot = stub().returns( false )
+                }
+
+                local Type = ACF.Ballistics.GetImpactType( Trace, Entity )
+                expect( Type ).to.equal( "Prop" )
+            end
+        },
+
+        {
+            name = "Returns Prop if impacting a NextBot Entity",
+            func = function()
+                local Trace = {}
+                local Entity = {
+                    IsPlayer = stub().returns( false ),
+                    IsNPC = stub().returns( false ),
+                    IsNextBot = stub().returns( true )
                 }
 
                 local Type = ACF.Ballistics.GetImpactType( Trace, Entity )
@@ -47,6 +64,7 @@ return {
                 local Entity = {
                     IsPlayer = stub().returns( false ),
                     IsNPC = stub().returns( false ),
+                    IsNextBot = stub().returns( false ),
                     CPPIGetOwner = function()
                         return { IsValid = stub().returns( true ) }
                     end
@@ -64,6 +82,7 @@ return {
                 local Entity = {
                     IsPlayer = stub().returns( false ),
                     IsNPC = stub().returns( false ),
+                    IsNextBot = stub().returns( false ),
                     CPPIGetOwner = function()
                         return { IsValid = stub().returns( false ) }
                     end

@@ -26,7 +26,7 @@ local DefaultPermission = false
 		true if the entity should be damaged, false if the entity should be protected from the damage.
 ]]
 local function modepermission(owner, attacker, ent)
-	if IsValid(ent) and ent:IsPlayer() or ent:IsNPC() then return end
+	if IsValid(ent) and (ent:IsPlayer() or ent:IsNPC() or ent:IsNextBot()) then return end
 
 	if not (owner.SteamID or attacker.SteamID) then return DefaultPermission end
 

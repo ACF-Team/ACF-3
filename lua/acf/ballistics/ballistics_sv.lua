@@ -249,7 +249,7 @@ end
 
 function Ballistics.GetImpactType(Trace, Entity)
 	if Trace.HitWorld then return "World" end
-	if Entity:IsPlayer() or Entity:IsNPC() then return "Prop" end
+	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then return "Prop" end
 
 	return IsValid(Entity:CPPIGetOwner()) and "Prop" or "World"
 end
