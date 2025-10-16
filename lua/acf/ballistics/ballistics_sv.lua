@@ -55,41 +55,6 @@ function Ballistics.RemoveBullet(Bullet)
 	end
 end
 
--- MARCH: I made quite a few ballistics changes to try to fix tracebug in the vast majority of cases.
--- What happens is the following. 
---     - The x is a trace start, the o is a trace end. The bullet always moves itself from X to O every think frame.
---     - The [|||] is a contraption moving in the opposite direction to the trace. [ is the start, | is internals, ] is the end.
---     - ThinkAllSystems() refers to IGameSystem::FrameUpdatePostEntityThinkAllSystems() (Source SDK method that runs physics simulation on the active physenv)
---[[
-	[tick 1] ThinkAllSystems()   x                  [|||]
-	[tick 1] GM:Think            x-------------o [|||]
-	RESULT: Trace stopped at o. Did not hit anything.
-
-	[tick 2] ThinkAllSystems()                 x [|||]
-	[tick 2] GM:Think                         [x||]
-											ZOOMED IN
-									[||x----o!|||||||||||||||]
-										(pretend o just hit something really important and everything else was dead air)
-]]
--- The solution I've come up with is to perform a 2nd trace after our initial bullet flight trace. We mutate the bullet
--- to pretend like its going forward with the next iteration, and run DoBulletsFlight again with only evaluation on (ie. no changes
--- happen to the bullet). We then restore the bullet back. But we keep track of what happened in this 2nd trace... we keep the entity hit,
--- and the local position to the entity.
--- If we previously hit an entirely different entity than the one we hit now, then we'll use the previous 2nd trace info.
--- Otherwise, we'll use the current trace.
-
-function Ballistics.CalculateBulletParameters(Bullet, ClockTime)
-	local DeltaTime  = ClockTime - Bullet.LastThink
-	local Flight     = Bullet.Flight
-	local Drag       = Flight:GetNormalized() * (Bullet.DragCoef * Flight:LengthSqr()) / ACF.DragDiv
-	local Accel      = Bullet.Accel or ACF.Gravity
-	local Correction = 0.5 * (Accel - Drag) * DeltaTime
-
-	return DeltaTime, Flight, Drag, Accel, Correction
-end
-
-local TICK_INTERVAL = engine.TickInterval()
-
 function Ballistics.CalcBulletFlight(Bullet)
 	local ClockTime = Clock.CurTime
 
@@ -101,67 +66,24 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PreCalcFlight()
 	end
 
-	local DeltaTime, Flight, Drag, Accel, Correction = Ballistics.CalculateBulletParameters(Bullet, ClockTime)
+	local DeltaTime  = ClockTime - Bullet.LastThink
+	local Flight     = Bullet.Flight
+	local Drag       = Flight:GetNormalized() * (Bullet.DragCoef * Flight:LengthSqr()) / ACF.DragDiv
+	local Accel      = Bullet.Accel or ACF.Gravity
+	local Correction = 0.5 * (Accel - Drag) * DeltaTime
 
 	Bullet.NextPos   = Bullet.Pos + ACF.Scale * DeltaTime * (Flight + Correction)
 	Bullet.Flight    = Flight + (Accel - Drag) * DeltaTime
 	Bullet.LastThink = ClockTime
 	Bullet.DeltaTime = DeltaTime
 
-	local TraceInfo = Ballistics.DoBulletsFlight(Bullet)
+	Ballistics.DoBulletsFlight(Bullet)
 
 	if Bullet.PostCalcFlight then
 		Bullet:PostCalcFlight()
 	end
 
-	Bullet.Iterations = Bullet.Iterations + 1
 	Bullet.Pos = Bullet.NextPos
-
-	if TraceInfo and Bullet.NextPredictedHit then
-		local NowEnt, ThenEnt = TraceInfo.NextPredictedHitEntity, Bullet.NextPredictedHitEntity
-		local NowValid, ThenValid = IsValid(NowEnt), IsValid(ThenEnt)
-
-		if not TraceInfo.Hit or NowValid ~= ThenValid or NowEnt ~= ThenEnt then
-			-- Something changed in what we hit. Try the old trace.
-			TraceInfo.Hit = true
-			TraceInfo.Entity = ThenEnt
-			if ThenValid then
-				TraceInfo.HitPos = ThenEnt:LocalToWorld(Bullet.NextPredictedHitPosLocal) or TraceInfo.HitPos
-			else
-				TraceInfo.HitPos = Bullet.NextPredictedHitPos or TraceInfo.HitPos
-			end
-			Ballistics.TestHit(Bullet, TraceInfo)
-		end
-	end
-
-	local _, NextFlight, NextDrag, NextAccel, NextCorrection = Ballistics.CalculateBulletParameters(Bullet, ClockTime)
-	local PrevNextPos, PrevFlight, PrevLastThink, PrevDeltaTime = Bullet.NextPos, Bullet.Flight, Bullet.LastThink, Bullet.DeltaTime
-
-	Bullet.NextPos   = Bullet.Pos + ACF.Scale * TICK_INTERVAL * (NextFlight + NextCorrection)
-	Bullet.Flight    = NextFlight + (NextAccel - NextDrag) * TICK_INTERVAL
-	Bullet.LastThink = ClockTime + TICK_INTERVAL
-	Bullet.DeltaTime = TICK_INTERVAL
-
-	local NextTraceInfo = Ballistics.DoBulletsFlight(Bullet, true)
-
-	Bullet.NextPos = PrevNextPos
-	Bullet.Flight = PrevFlight
-	Bullet.LastThink = PrevLastThink
-	Bullet.DeltaTime = PrevDeltaTime
-
-	if NextTraceInfo and NextTraceInfo.Hit then
-		Bullet.NextPredictedHit = true
-		Bullet.NextPredictedHitEntity = NextTraceInfo.Entity
-		if IsValid(NextTraceInfo.Entity) then
-			Bullet.NextPredictedHitPosLocal = NextTraceInfo.Entity:WorldToLocal(NextTraceInfo.HitPos)
-		else
-			Bullet.NextPredictedHitPos = NextTraceInfo.HitPos
-		end
-	else
-		Bullet.NextPredictedHit = false
-		Bullet.NextPredictedHitEntity = nil
-		Bullet.NextPredictedHitPosLocal = nil
-	end
 end
 
 function Ballistics.GetBulletIndex()
@@ -211,7 +133,6 @@ function Ballistics.CreateBullet(BulletData)
 
 	Bullet.Index       = Index
 	Bullet.LastThink   = Clock.CurTime
-	Bullet.Iterations  = 0
 	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
 		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
@@ -303,7 +224,7 @@ function Ballistics.TestFilter(Entity, Bullet)
 	return true
 end
 
-function Ballistics.DoBulletsFlight(Bullet, OnlyEvaluate)
+function Ballistics.DoBulletsFlight(Bullet)
 	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
 
 	if not CanFly then return end
@@ -336,23 +257,17 @@ function Ballistics.DoBulletsFlight(Bullet, OnlyEvaluate)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	if OnlyEvaluate then
-		return traceRes
-	end
-
-	Debug.Cross(Bullet.Pos, 4, 30, Bullet.Color, true)
-	-- Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
+	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
-			Ballistics.RemoveBullet(Bullet)
-			return traceRes
+			return Ballistics.RemoveBullet(Bullet)
 		else
 			local DeltaTime = Bullet.DeltaTime
 			local DeltaFuze = Clock.CurTime - Bullet.Fuze
 			local Lerp = DeltaFuze / DeltaTime
 
-			if (not traceRes.Hit or Lerp < traceRes.Fraction) then -- Fuze went off before running into something
+			if not traceRes.Hit or Lerp < traceRes.Fraction then -- Fuze went off before running into something
 				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
 				Bullet.DetByFuze = true
 
@@ -364,16 +279,11 @@ function Ballistics.DoBulletsFlight(Bullet, OnlyEvaluate)
 
 				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
 
-				return traceRes
+				return
 			end
 		end
 	end
 
-	Ballistics.TestHit(Bullet, traceRes)
-	return traceRes
-end
-
-function Ballistics.TestHit(Bullet, traceRes)
 	if traceRes.Hit then
 		if traceRes.HitSky then
 			if traceRes.HitNormal == -vector_up then
