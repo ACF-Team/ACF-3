@@ -117,7 +117,7 @@ function Ballistics.CalcBulletFlight(Bullet)
 	Bullet.Iterations = Bullet.Iterations + 1
 	Bullet.Pos = Bullet.NextPos
 
-	if Bullet.NextPredictedHit then
+	if TraceInfo and Bullet.NextPredictedHit then
 		local NowEnt, ThenEnt = TraceInfo.NextPredictedHitEntity, Bullet.NextPredictedHitEntity
 		local NowValid, ThenValid = IsValid(NowEnt), IsValid(ThenEnt)
 
@@ -149,7 +149,7 @@ function Ballistics.CalcBulletFlight(Bullet)
 	Bullet.LastThink = PrevLastThink
 	Bullet.DeltaTime = PrevDeltaTime
 
-	if NextTraceInfo.Hit then
+	if NextTraceInfo and NextTraceInfo.Hit then
 		Bullet.NextPredictedHit = true
 		Bullet.NextPredictedHitEntity = NextTraceInfo.Entity
 		if IsValid(NextTraceInfo.Entity) then
