@@ -126,9 +126,9 @@ function Ballistics.CalcBulletFlight(Bullet)
 			TraceInfo.Hit = true
 			TraceInfo.Entity = ThenEnt
 			if ThenValid then
-				TraceInfo.HitPos = ThenEnt:LocalToWorld(Bullet.NextPredictedHitPosLocal)
+				TraceInfo.HitPos = ThenEnt:LocalToWorld(Bullet.NextPredictedHitPosLocal) or TraceInfo.HitPos
 			else
-				TraceInfo.HitPos = Bullet.NextPredictedHitPos
+				TraceInfo.HitPos = Bullet.NextPredictedHitPos or TraceInfo.HitPos
 			end
 			Ballistics.TestHit(Bullet, TraceInfo)
 		end
