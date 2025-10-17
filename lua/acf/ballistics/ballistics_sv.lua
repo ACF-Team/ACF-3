@@ -83,6 +83,7 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
+	Bullet.LastPos = Bullet.Pos
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -252,10 +253,32 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	FlightTr.mask 	= Bullet.Mask
 	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos
-	FlightTr.endpos = Bullet.NextPos
+	local traceRes = nil
+	if Bullet.LastPos then
+		-- Determine if tracebug has occured by tracing backwards and checking if we're unexpectedly inside of something.
+		FlightTr.start = Bullet.Pos
+		FlightTr.endpos = Bullet.LastPos
 
-	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
+		traceRes = ACF.trace(FlightTr)
+		-- If tracebug has occured, we will either be in the middle of an entity, or something unexpected is within the path of the last pos
+		-- and the current pos. We will override traceRes with a new trace.
+		if traceRes.Fraction < 1 then
+			FlightTr.start = Bullet.LastPos
+			FlightTr.endpos = Bullet.Pos
+			traceRes = ACF.trace(FlightTr)
+		else
+			traceRes = nil
+		end
+	end
+
+	-- If tracebug didn't occur or wasn't possible to occur, traceRes will be nil, which means
+	-- we need to do a typical trace-forwards
+	if not traceRes then
+		FlightTr.start 	= Bullet.Pos
+		FlightTr.endpos = Bullet.NextPos
+
+		traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
+	end
 
 	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
 
