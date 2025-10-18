@@ -223,6 +223,7 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	net.Start("ACF_Controller_CamData", true)
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteAngle(CamAng)
+	net.WriteFloat(FOV)
 	net.SendToServer()
 end)
 

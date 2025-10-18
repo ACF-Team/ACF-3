@@ -297,11 +297,13 @@ do
 	net.Receive("ACF_Controller_CamData", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamAng = net.ReadAngle()
+		local FOV = net.ReadFloat()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
+		Entity.Driver:SetFOV(FOV, 0)
 	end)
 
 	local CamTraceConfig = {}
