@@ -30,6 +30,7 @@ util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
 util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
+util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -297,13 +298,21 @@ do
 	net.Receive("ACF_Controller_CamData", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamAng = net.ReadAngle()
-		local FOV = net.ReadFloat()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
-		Entity.Driver:SetFOV(FOV, 0)
+	end)
+
+	net.Receive("ACF_Controller_Zoom", function(_, ply)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local FOV = net.ReadFloat()
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		if Entity.Driver ~= ply then return end
+		if Entity:GetDisableAIOCam() then return end
+		ply:SetFOV(FOV, 0, nil)
 	end)
 
 	local CamTraceConfig = {}
@@ -807,7 +816,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
 	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
 
-	if not Active then Ply:SetFOV(0, 0) end
+	if not Active then Ply:SetFOV(0, 0, nil) end
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
