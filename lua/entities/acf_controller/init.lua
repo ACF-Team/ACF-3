@@ -807,6 +807,8 @@ local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
 	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
 
+	if not Active then Ply:SetFOV(0, 0) end
+
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
 	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
