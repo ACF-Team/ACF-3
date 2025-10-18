@@ -403,7 +403,7 @@ do -- Spawn and Update functions
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
 
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
