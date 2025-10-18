@@ -312,6 +312,7 @@ do
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
+		Entity.FOV = FOV
 		ply:SetFOV(FOV, 0, nil)
 	end)
 
@@ -816,7 +817,8 @@ local function OnActiveChanged(Controller, Ply, Active)
 	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
 	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
 
-	if not Active then Ply:SetFOV(0, 0, nil) end
+	Controller.FOV = Controller.FOV or 90
+	Ply:SetFOV(Active and Controller.FOV or 0, 0, nil)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
