@@ -12,8 +12,6 @@ local ApplyTo = {
 
 local ParentChainObj = {acf_turret = true, acf_turret_rotator = true}
 local function LethalHasValidParentState(self)
-    if self.ACF_ParentState == nil then return end -- This SHOULDNT happen, but if it DOES, don't break things
-
     if self.ACF_ParentState ~= 1 and ACF.LegalChecks and not ACF.AllowArbitraryParents then
         -- This NEEDS a better message, I can't find a good way to explain it right now
         ACF.DisableEntity(self, "Invalid Parent Chain", (self.PluralName or self:GetClass()) .. " can only be parented to turret entities and must have a baseplate root ancestor.", 5)
