@@ -147,7 +147,7 @@ local function PlayerContraptionCheck(Entity)
 end
 
 -- Purpose: Hook into all lethals pre-fire, check valid player contraption state
-hook.Add("ACF_PreFireWeapon", "ACF_PreventBadParentChain", function(Ent)
+hook.Add("ACF_PreFireWeapon", "ACF_CheckPlayerContraptionLethals", function(Ent)
     if not ACF.LethalEntityPlayerChecks then return end
 
     local ValidPlayerContraptionState = PlayerContraptionCheck(Ent)
