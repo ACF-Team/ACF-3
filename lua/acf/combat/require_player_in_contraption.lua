@@ -16,17 +16,17 @@ end
 
 -- CFW hooks to initialize state and handle splitting
 hook.Add("cfw.contraption.created", "ACF_CFW_TrackPlayersInContraptions", function(Contraption)
-    Contraption.Players = {}
+    Contraption.ACF_TrackPlayers = {}
 end)
 
 local PlayersCopy = {}
 hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function(ParentContraption, ChildContraption)
-    ParentContraption.Players = ParentContraption.Players or {}
-    ChildContraption.Players  = ChildContraption.Players or {}
+    ParentContraption.ACF_TrackPlayers = ParentContraption.ACF_TrackPlayers or {}
+    ChildContraption.ACF_TrackPlayers  = ChildContraption.ACF_TrackPlayers or {}
 
     -- For each player in the parent contraption, reassign it if need be
     for k in pairs(PlayersCopy) do PlayersCopy[k] = nil end
-    for k, v in pairs(ParentContraption.Players) do PlayersCopy[k] = v end
+    for k, v in pairs(ParentContraption.ACF_TrackPlayers) do PlayersCopy[k] = v end
 
     for Player in pairs(PlayersCopy) do
         if IsValid(Player) then
@@ -34,17 +34,17 @@ hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function
             if IsValid(Vehicle) then
                 local NewContraption = Vehicle:GetContraption()
                 if NewContraption ~= nil then
-                    ParentContraption.Players[Player] = nil
-                    NewContraption.Players[Player] = true
+                    ParentContraption.ACF_TrackPlayers[Player] = nil
+                    NewContraption.ACF_TrackPlayers[Player] = true
                     -- ^^ may actually do a no op because NewContraption could be ParentContraption after all
                 else -- The vehicle is no longer a part of any contraption
-                    ParentContraption.Players[Player] = nil
+                    ParentContraption.ACF_TrackPlayers[Player] = nil
                 end
             else -- The players vehicle is no longer even valid, so discard the player
-                ParentContraption.Players[Player] = nil
+                ParentContraption.ACF_TrackPlayers[Player] = nil
             end
         else -- The player isn't valid?
-            ParentContraption.Players[Player] = nil
+            ParentContraption.ACF_TrackPlayers[Player] = nil
         end
     end
 
@@ -59,7 +59,7 @@ hook.Add("PlayerEnteredVehicle", "ACF_CFW_TrackPlayersInContraptions", function(
     local Contraption = Vehicle:GetContraption()
     if not Contraption then return end
 
-    Contraption.Players[Player] = true
+    Contraption.ACF_TrackPlayers[Player] = true
     ResetContraptionTimes(Contraption)
 end)
 
@@ -67,7 +67,7 @@ hook.Add("PlayerLeaveVehicle", "ACF_CFW_TrackPlayersInContraptions", function(Pl
     local Contraption = Vehicle:GetContraption()
     if not Contraption then return end
 
-    Contraption.Players[Player] = nil
+    Contraption.ACF_TrackPlayers[Player] = nil
     ResetContraptionTimes(Contraption)
 end)
 
@@ -87,7 +87,7 @@ local function NextValid(Table, PrevKey)
 end
 
 function ACF.PlayersInContraptionIterator(Contraption)
-    return NextValid, Contraption.Players, nil
+    return NextValid, Contraption.ACF_TrackPlayers, nil
 end
 
 local QueryTimes = {}
@@ -148,6 +148,8 @@ end
 
 -- Purpose: Hook into all lethals pre-fire, check valid player contraption state
 hook.Add("ACF_PreFireWeapon", "ACF_PreventBadParentChain", function(Ent)
+    if not ACF.CheckLethalEntityPlayerDistances then return end
+
     local ValidPlayerContraptionState = PlayerContraptionCheck(Ent)
     if ValidPlayerContraptionState ~= OK then
         ACF.DisableEntity(Ent, "Player Error", string.format("%s %s.", Ent.PluralName or Ent:GetClass(), ERROR_MESSAGES[ValidPlayerContraptionState]), 5)
