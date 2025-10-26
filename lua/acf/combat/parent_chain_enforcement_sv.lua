@@ -4,10 +4,14 @@
 -- 1:  Valid parent chain
 
 -- We only want to track these.
+local PARENT_CHAIN_APPLY_LETHAL    = 1
+local PARENT_CHAIN_APPLY_DYN_CHECK = 2
 local ApplyTo = {
-    ["acf_gun"] = true,
-    ["acf_rack"] = true,
-    ["acf_piledriver"] = true,
+    ["acf_gun"]        = PARENT_CHAIN_APPLY_LETHAL,
+    ["acf_rack"]       = PARENT_CHAIN_APPLY_LETHAL,
+    ["acf_piledriver"] = PARENT_CHAIN_APPLY_LETHAL,
+    ["acf_crew"]       = PARENT_CHAIN_APPLY_DYN_CHECK,
+    ["acf_turret"]     = PARENT_CHAIN_APPLY_DYN_CHECK,
 }
 
 local ParentChainObj = {acf_turret = true, acf_turret_rotator = true}
@@ -22,6 +26,10 @@ local function LethalHasValidParentState(self)
         ACF.DisableEntity(self, "Invalid Parent Chain", (self.PluralName or self:GetClass()) .. " can only be parented to turret entities and must have a baseplate root ancestor.", 5)
         return false
     end
+end
+
+function ACF.IsParentChainStateOK(Entity)
+    return Entity.ACF_ParentState == PARENT_CHAIN_STATE_PARENT_CHAIN_OK
 end
 
 local function DetermineParentState(self)

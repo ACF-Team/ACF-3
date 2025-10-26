@@ -155,12 +155,10 @@ end
 
 -- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
 local function CheckParentState(crew)
-	local Family = crew:GetFamily()
-
-	if not Family or Family.ancestor == crew then
+	if not ACF.IsParentChainStateOK(crew) then
 		crew.Disabled = {
 			Reason = "Bad Parent",
-			Message = "Must be parented to something!"
+			Message = "Must be parented correctly!"
 		}
 		crew.TotalEff = 0
 		return false
