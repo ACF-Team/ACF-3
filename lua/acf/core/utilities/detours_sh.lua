@@ -1,6 +1,9 @@
-ACF.Detours = ACF.Detours or {}
+local ParentTableName = "ACF"
+local ParentTable = _G[ParentTableName]
 
-local Detours = ACF.Detours
+ParentTable.Detours = ParentTable.Detours or {}
+
+local Detours = ParentTable.Detours
 Detours.Storage = Detours.Storage or {}
 
 local Storage = Detours.Storage
@@ -93,7 +96,7 @@ end
 
 local E2Detours = {}
 function Detours.Expression2(E2HelperSig, Hook)
-    local Signature = "(wire_expression2_funcs[ACF.Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")] or {})[3]"
+    local Signature = "(wire_expression2_funcs[" .. ParentTableName .. ".Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")] or {})[3]"
     local Obj = E2Detours[Signature]
     if not Obj then
         Obj = {
@@ -138,7 +141,7 @@ local function PatchExpression2Funcs()
     end
 end
 
-hook.Add("Expression2_PostLoadExtensions", "ACF_Detours_AfterExpression2Loaded", PatchExpression2Funcs)
+hook.Add("Expression2_PostLoadExtensions", ParentTableName .. "_Detours_AfterExpression2Loaded", PatchExpression2Funcs)
 
 timer.Simple(1, function()
     if wire_expression2_funcs then
