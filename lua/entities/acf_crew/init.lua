@@ -308,7 +308,7 @@ do -- Random timer stuff
 			end
 		end
 
-		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented correctly!\n(parent to zero or more turret entities, ending in a baseplate)" or nil
 		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
