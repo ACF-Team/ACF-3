@@ -150,6 +150,7 @@ timer.Simple(1, function()
 
     if SF then
         local function PatchInstance(Instance)
+            hook.Run(ParentTableName .. "Detours_Starfall_PrePatchInstance", Instance)
             for _, HookMethods in pairs(SFDetours) do
                 local Getter, Setter, Hook = HookMethods.Getter, HookMethods.Setter, HookMethods.Hook
                 HookMethods.Original[Instance] = Getter(Instance)
