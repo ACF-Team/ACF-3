@@ -101,7 +101,6 @@ function Detours.Expression2(E2HelperSig, Hook)
     if not Obj then
         Obj = {
             -- Try getting the original now
-            Original = Detours.New(Signature, Hook),
             Hook = Hook
         }
         E2Detours[Signature] = Obj
@@ -144,10 +143,6 @@ end
 hook.Add("Expression2_PostLoadExtensions", ParentTableName .. "_Detours_AfterExpression2Loaded", PatchExpression2Funcs)
 
 timer.Simple(1, function()
-    if wire_expression2_funcs then
-        PatchExpression2Funcs()
-    end
-
     if SF then
         local function PatchInstance(Instance)
             hook.Run(ParentTableName .. "Detours_Starfall_PrePatchInstance", Instance)
@@ -174,7 +169,6 @@ timer.Simple(1, function()
         end
     end
 end)
-
 
 -- Some examples of this library
 --[[
