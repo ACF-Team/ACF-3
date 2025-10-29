@@ -487,7 +487,7 @@ do
 		if not Player:CheckLimit(Limit) then return false end
 
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_crew", Player, Data, CrewModel, CrewType)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_crew", Player, Data, CrewModel, CrewType)
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_crew")
@@ -545,7 +545,7 @@ do
 		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
 
 		-- Finish setting up the entity
-		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
+		HookRun("ACF_OnSpawnEntity", "acf_crew", Entity, Data, CrewModel, CrewType)
 
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
@@ -575,7 +575,7 @@ do
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
 		local CrewType = CrewTypes.Get(Data.CrewTypeID)
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self)
@@ -598,7 +598,7 @@ do
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
+		HookRun("ACF_OnUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
 
 		self:UpdateOverlay(true)
 
