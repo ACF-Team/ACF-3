@@ -201,6 +201,23 @@ do -- Spawning and Updating --------------------
 		end
 	end
 
+	function ENT:SetAmmo(Ammo, TimeToNetwork)
+		self.Ammo = Ammo
+		WireLib.TriggerOutput(self, "Ammo", self.Ammo)
+
+		if not TimeToNetwork then
+			Entity:SetNWInt("Ammo", self.Ammo)
+		else
+			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
+
+			TimerCreate("ACF Network Ammo " .. self:EntIndex(), 0.5, 1, function()
+				if not IsValid(self) then return end
+
+				self:SetNWInt("Ammo", self.Ammo)
+			end)
+		end
+	end
+
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
 		local Scalable    = Class.IsScalable
@@ -263,12 +280,8 @@ do -- Spawning and Updating --------------------
 			local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
 			Entity.Capacity = Rounds
-			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
 			Entity.MagSize  = MagSize
-
-			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
-
-			Entity:SetNWInt("Ammo", Entity.Ammo) -- Sent to client for use in overlay
+			Entity:SetAmmo(math.floor(Entity.Capacity * Percentage))
 
 			if ExtraData then
 				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
@@ -779,16 +792,8 @@ do -- Ammo Consumption -------------------------
 		self:UpdateOverlay()
 		self:UpdateMass()
 
-		WireLib.TriggerOutput(self, "Ammo", self.Ammo)
+		self:SetAmmo(self.Ammo, 0.5)
 		WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
-
-		if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
-
-		TimerCreate("ACF Network Ammo " .. self:EntIndex(), 0.5, 1, function()
-			if not IsValid(self) then return end
-
-			self:SetNWInt("Ammo", self.Ammo)
-		end)
 	end
 
 	--- Restocks the ammocrate if appropriate
