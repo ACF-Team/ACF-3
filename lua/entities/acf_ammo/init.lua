@@ -791,12 +791,10 @@ do -- Ammo Consumption -------------------------
 	end
 
 	function ENT:Consume(Num)
-		self.Ammo = math.Clamp(self.Ammo - (Num or 1), 0, self.Capacity)
+		self:SetAmmo(math.Clamp(self.Ammo - (Num or 1), 0, self.Capacity), 0.5)
 
 		self:UpdateOverlay()
 		self:UpdateMass()
-
-		self:SetAmmo(self.Ammo, 0.5)
 		WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 	end
 
