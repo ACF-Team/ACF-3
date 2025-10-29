@@ -339,4 +339,11 @@ function ENT:ACF_PostMenuSpawn()
 	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 end
 
+function ENT:PhysicsCollide(CollisionData, Collider)
+	local Hook = self.BaseplateClass.PhysicsCollide
+	if Hook then
+		Hook(self, CollisionData, Collider)
+	end
+end
+
 Entities.Register()
