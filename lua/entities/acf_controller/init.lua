@@ -152,7 +152,7 @@ do
 		VerifyData(Data)
 
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_controller", Player, Data)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_controller")
@@ -230,7 +230,7 @@ do
 		UpdateController(Entity, Data)
 
 		-- Finish setting up the entity
-		hook.Run("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
+		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
 
 		WireIO.SetupInputs(Entity, Inputs, Data)
 		WireIO.SetupOutputs(Entity, Outputs, Data)
@@ -253,7 +253,7 @@ do
 		-- Called when updating the entity
 		VerifyData(Data)
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_controller", self, Data)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_controller", self, Data)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		HookRun("ACF_OnEntityLast", "acf_controller", self)
@@ -264,7 +264,7 @@ do
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_controller", self, Data)
+		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
 
 		self:UpdateOverlay(true)
 
