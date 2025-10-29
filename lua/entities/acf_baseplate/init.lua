@@ -119,6 +119,10 @@ end
 function ENT:ACF_PostUpdateEntityData(ClientData)
 	self.BaseplateClass = ACF.Classes.BaseplateTypes.Get(ClientData.BaseplateType)
 	self:SetSize(ClientData.Size)
+	local Hook = self.BaseplateClass.OnInitialize
+	if Hook then
+		Hook(self)
+	end
 end
 
 function ENT:ACF_PreSpawn(_, _, _, _)
