@@ -207,6 +207,7 @@ do -- Spawning and Updating --------------------
 		SelfTable.Ammo = Ammo
 		WireLib.TriggerOutput(self, "Ammo", SelfTable.Ammo)
 
+		SelfTable.ACF_InvisibleToTrace = SelfTable.Ammo <= 0
 
 		if not TimeToNetwork then
 			self:SetNWInt("Ammo", SelfTable.Ammo)
