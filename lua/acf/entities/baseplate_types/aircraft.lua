@@ -25,7 +25,7 @@ function Baseplate:PhysicsCollide(Data)
                 Player:Kill()
             end
             for Entity in pairs(Contraption.ents) do
-                ACF.HEKill(Entity, Data.HitNormal, Data.Speed * 100, Data.HitPos)
+                ACF.HEKill(Entity, Data.HitNormal, Data.Speed * 100, Data.HitPos, nil, true)
             end
         end)
     end
