@@ -621,7 +621,7 @@ do -- ACF Activation and Damage -----------------
 		return HitRes
 	end
 
-	function ENT:Detonate()
+	function ENT:Detonate(VisualOnly)
 		if self.Exploding then return end
 
 		local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
@@ -640,8 +640,9 @@ do -- ACF Activation and Damage -----------------
 		local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)
-
-		Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+		if not VisualOnly then
+			Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+		end
 		Damage.explosionEffect(Position, nil, Explosive)
 
 		constraint.RemoveAll(self)
