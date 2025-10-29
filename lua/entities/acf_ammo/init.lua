@@ -202,18 +202,21 @@ do -- Spawning and Updating --------------------
 	end
 
 	function ENT:SetAmmo(Ammo, TimeToNetwork)
-		self.Ammo = Ammo
-		WireLib.TriggerOutput(self, "Ammo", self.Ammo)
+		local SelfTable = self:GetTable()
+
+		SelfTable.Ammo = Ammo
+		WireLib.TriggerOutput(self, "Ammo", SelfTable.Ammo)
+
 
 		if not TimeToNetwork then
-			Entity:SetNWInt("Ammo", self.Ammo)
+			self:SetNWInt("Ammo", SelfTable.Ammo)
 		else
 			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
 
-			TimerCreate("ACF Network Ammo " .. self:EntIndex(), 0.5, 1, function()
+			TimerCreate("ACF Network Ammo " .. self:EntIndex(), TimeToNetwork, 1, function()
 				if not IsValid(self) then return end
 
-				self:SetNWInt("Ammo", self.Ammo)
+				self:SetNWInt("Ammo", SelfTable.Ammo)
 			end)
 		end
 	end
