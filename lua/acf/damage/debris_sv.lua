@@ -41,7 +41,7 @@ local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	}
 end
 
-function ACF.KillChildProps(Entity, BlastPos, Energy)
+function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 	local Explosives = {}
 	local Children 	 = Contraption.GetAllChildren(Entity)
 	local Count		 = 0
@@ -85,7 +85,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy)
 		for Ent in pairs(Explosives) do
 			Ent.Inflictor = Entity.Inflictor
 
-			Ent:Detonate()
+			Ent:Detonate(DoNotExplode)
 		end
 	end
 end
@@ -105,10 +105,10 @@ local function Gib(Entity, DmgInfo)
 	end)
 end
 
-function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is an optional world-pos input for flinging away children props more realistically
+function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo, DoNotExplode) -- blast pos is an optional world-pos input for flinging away children props more realistically
 	-- if it hasn't been processed yet, check for children
 	if not Entity.ACF_Killed then
-		ACF.KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy)
+		ACF.KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy, DoNotExplode)
 	end
 
 	local Radius = Entity:BoundingRadius()
@@ -165,13 +165,13 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo) -- blast pos is a
 	return Debris
 end
 
-function ACF.APKill(Entity, Normal, Power, DmgInfo)
+function ACF.APKill(Entity, Normal, Power, DmgInfo, DoNotExplode)
 	if not IsValid(Entity) then return end
 
 	local Class = Entity:GetClass()
 	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
 
-	ACF.KillChildProps(Entity, Entity:GetPos(), Power) -- kill the children of this ent, instead of disappearing them from removing parent
+	ACF.KillChildProps(Entity, Entity:GetPos(), Power, DoNotExplode) -- kill the children of this ent, instead of disappearing them from removing parent
 
 	if not CanBreak then DebrisNetter(Entity, Normal, Power, true, false) end -- if we can't break the prop into its own gibs, then use ACF's system
 
