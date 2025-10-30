@@ -404,6 +404,9 @@ function Entities.AutoRegister(ENT)
 	function ENT:Update(ClientData)
 		VerifyClientData(ClientData)
 
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", Class, self, ClientData)
+		if CanUpdate == false then return CanUpdate, Reason end
+
 		hook.Run("ACF_OnEntityLast", Class, self)
 
 		ACF.SaveEntity(self)
