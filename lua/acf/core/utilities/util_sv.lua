@@ -827,6 +827,7 @@ do
 	end
 
 	function ACF.EnforceBaseplateType(Entity, AllowedType)
+		AllowedType = ACF.Classes.BaseplateTypes.Get(AllowedType)
 		local Baseplate = ACF.GetEntityBaseplate(Entity)
 		if IsValid(Baseplate) then
 			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
