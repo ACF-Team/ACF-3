@@ -112,7 +112,7 @@ function NumberType.Validator(Value, Specs)
 end
 
 local StringType = Entities.AddUserArgumentType("String")
-function StringType.Validator(Value, Specs)
+function StringType.Validator(Specs, Value)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -121,7 +121,7 @@ function StringType.Validator(Value, Specs)
 end
 
 local BooleanType = Entities.AddUserArgumentType("Boolean")
-function BooleanType.Validator(Value, Specs)
+function BooleanType.Validator(Specs, Value)
 	if not isbool(Value) then
 		Value = Specs.Default or false
 	end
@@ -130,7 +130,7 @@ function BooleanType.Validator(Value, Specs)
 end
 
 local SimpleClassType = Entities.AddUserArgumentType("SimpleClass")
-function SimpleClassType.Validator(Value, Specs)
+function SimpleClassType.Validator(Specs, Value)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -147,7 +147,7 @@ end
 
 -- Single entity link.
 local LinkedEntityType = Entities.AddUserArgumentType("LinkedEntity")
-function LinkedEntityType.Validator(Value, Specs)
+function LinkedEntityType.Validator(Specs, Value)
 	if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
 
 	if Specs.Classes then
@@ -171,7 +171,7 @@ end
 
 -- Entity link LUT where Key == Entity and Value == true.
 local LinkedEntitiesType = Entities.AddUserArgumentType("LinkedEntities")
-function LinkedEntitiesType.Validator(Value, Specs)
+function LinkedEntitiesType.Validator(Specs, Value)
 	if not istable(Value) then Value = {} return Value end
 	if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
 
@@ -374,7 +374,7 @@ function Entities.AutoRegister(ENT)
 				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
 				local Value = ClientData[argName]
-				ClientData[argName] = ArgumentVerification.Validator(Value, RestrictionSpecs)
+				ClientData[argName] = ArgumentVerification.Validator(RestrictionSpecs, Value)
 			end
 		end
 
@@ -457,7 +457,7 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
-		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
+		self.ACF_LiveData[Key] = Typedef.Validator(UserVar, Value)
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local OnRemove        = ENT.OnRemove
@@ -533,7 +533,7 @@ function Entities.AutoRegister(ENT)
 
 		for k, v in pairs(UserVars) do
 			local typedef   = UserArgumentTypes[v.Type]
-			local value     = typedef.Validator(self.ACF_LiveData[k], v)
+			local value     = typedef.Validator(v, self.ACF_LiveData[k])
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
 			end
@@ -563,7 +563,7 @@ function Entities.AutoRegister(ENT)
 			if typedef.PostPaste then
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
-			check = typedef.Validator(check, v)
+			check = typedef.Validator(v, check)
 			Ent.ACF_LiveData[k] = check
 		end
 
