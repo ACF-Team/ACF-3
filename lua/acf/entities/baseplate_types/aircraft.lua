@@ -9,7 +9,6 @@ end
 
 function Baseplate:OnInitialize()
     self:SetCollisionGroup(COLLISION_GROUP_WORLD)
-    print(self)
 end
 
 function Baseplate:PhysicsCollide(Data)
