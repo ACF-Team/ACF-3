@@ -6,6 +6,13 @@ ENT.PluralName    = "ACF Armor"
 ENT.IsACFArmor    = true
 ENT.ACF_PreventArmoring = false
 
+ENT.ACF_UserVars = {
+    ["ArmorType"]  = {Type = "SimpleClass", ClassName = "ArmorTypes", Default = "RHA", ClientData = true},
+    ["Width"]      = {Type = "Number", Min = 0.25, Max = 420, Default = 24, Decimals = 2, ClientData = true},
+    ["Height"]     = {Type = "Number", Min = 0.25, Max = 420, Default = 24, Decimals = 2, ClientData = true},
+    ["Thickness"]  = {Type = "Number", Default = 5, Decimals = 0, ClientData = true},
+}
+
 cleanup.Register("acf_armor")
 
 local Debug		= ACF.Debug
