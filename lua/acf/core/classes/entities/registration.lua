@@ -90,18 +90,18 @@ end
 
 --- Adds an argument type and verifier to the ArgumentTypes dictionary.
 --- @param Type string The type of data
---- @param Validator function The verification function. Arguments are: Value:any, Restrictions:table. Must return a Value of the same type and NOT nil!
-function Entities.AddUserArgumentType(Type, Validator, PreCopy, PostPaste)
+function Entities.AddUserArgumentType(Type, Def)
 	if UserArgumentTypes[Type] then return end
+	Def = Def or {}
 
-	UserArgumentTypes[Type] = {
-		Validator = Validator,
-		PreCopy   = PreCopy,
-		PostPaste = PostPaste
-	}
+	-- Def can contain Validator, PreCopy, PostPaste, ToRuntime, ToData
+
+	UserArgumentTypes[Type] = Def
+	return Def
 end
 
-Entities.AddUserArgumentType("Number", function(Value, Specs)
+local NumberType = Entities.AddUserArgumentType("Number")
+function NumberType.Validator(Value, Specs)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
 
 	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
@@ -109,25 +109,28 @@ Entities.AddUserArgumentType("Number", function(Value, Specs)
 	if Specs.Max then Value = math.min(Value, Specs.Max) end
 
 	return Value
-end)
+end
 
-Entities.AddUserArgumentType("String", function(Value, Specs)
+local StringType = Entities.AddUserArgumentType("String")
+function StringType.Validator(Value, Specs)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
 
 	return Value
-end)
+end
 
-Entities.AddUserArgumentType("Boolean", function(Value, Specs)
+local BooleanType = Entities.AddUserArgumentType("Boolean")
+function BooleanType.Validator(Value, Specs)
 	if not isbool(Value) then
 		Value = Specs.Default or false
 	end
 
 	return Value
-end)
+end
 
-Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
+local SimpleClassType = Entities.AddUserArgumentType("SimpleClass")
+function SimpleClassType.Validator(Value, Specs)
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -140,73 +143,71 @@ Entities.AddUserArgumentType("SimpleClass", function(Value, Specs)
 	end
 
 	return Value
-end)
+end
 
 -- Single entity link.
-Entities.AddUserArgumentType("LinkedEntity",
-	function(Value, Specs)
-		if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
+local LinkedEntityType = Entities.AddUserArgumentType("LinkedEntity")
+function LinkedEntityType.Validator(Value, Specs)
+	if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
 
-		if Specs.Classes then
-			local class = Value:GetClass()
-			if Specs.Classes[class] then return Value end
+	if Specs.Classes then
+		local class = Value:GetClass()
+		if Specs.Classes[class] then return Value end
 
-			return NULL
-		end
-
-		return Value
-	end,
-	function(_, value)
-		return value:EntIndex()
-	end,
-	function(self, value, createdEnts)
-		local Ent = createdEnts[value]
-		if not IsValid(Ent) then return NULL end
-
-		return self:Link(Ent) and Ent or NULL
+		return NULL
 	end
-)
+
+	return Value
+end
+function LinkedEntityType.PreCopy(_, value)
+	return value:EntIndex()
+end
+function LinkedEntityType.PostPaste(self, value, createdEnts)
+	local Ent = createdEnts[value]
+	if not IsValid(Ent) then return NULL end
+
+	return self:Link(Ent) and Ent or NULL
+end
 
 -- Entity link LUT where Key == Entity and Value == true.
-Entities.AddUserArgumentType("LinkedEntities",
-	function(Value, Specs)
-		if not istable(Value) then Value = {} return Value end
-		if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
+local LinkedEntitiesType = Entities.AddUserArgumentType("LinkedEntities")
+function LinkedEntitiesType.Validator(Value, Specs)
+	if not istable(Value) then Value = {} return Value end
+	if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
 
-		if Specs.Classes then
-			-- Check everything. What's valid?
-			local NewTable = {}
-			for Entity in pairs(Value) do
-				if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
-					NewTable[Entity] = true
-				end
-			end
-
-			return NewTable
-		else
-			return Value
-		end
-	end,
-	function(_, Value)
-		local EntIndexTable = {}
+	if Specs.Classes then
+		-- Check everything. What's valid?
+		local NewTable = {}
 		for Entity in pairs(Value) do
-			EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
-		end
-		return EntIndexTable
-	end,
-	function(self, Value, CreatedEnts)
-		local EntTable = {}
-
-		for _, EntIndex in ipairs(Value) do
-			local Created = CreatedEnts[EntIndex]
-			if IsValid(Created) and self:Link(Created) then
-				EntTable[Created] = true
+			if IsValid(Entity) and Specs.Classes[Entity:GetClass()] then
+				NewTable[Entity] = true
 			end
 		end
 
-		return EntTable
+		return NewTable
+	else
+		return Value
 	end
-)
+end
+function LinkedEntitiesType.PreCopy(_, Value)
+	local EntIndexTable = {}
+	for Entity in pairs(Value) do
+		EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
+	end
+	return EntIndexTable
+end
+function LinkedEntitiesType.PostPaste(self, Value, CreatedEnts)
+	local EntTable = {}
+
+	for _, EntIndex in ipairs(Value) do
+		local Created = CreatedEnts[EntIndex]
+		if IsValid(Created) and self:Link(Created) then
+			EntTable[Created] = true
+		end
+	end
+
+	return EntTable
+end
 
 --- Adds extra arguments to a class which has been created via Entities.AutoRegister() (or Entities.Register() with no arguments)
 --- @param Class string A class previously registered as an entity class
