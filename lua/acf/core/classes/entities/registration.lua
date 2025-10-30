@@ -395,7 +395,7 @@ function Entities.AutoRegister(ENT)
 	--- Updates a specific user var and calls the getter cache.
 	local function SetLiveData(self, Key, Value)
 		self.ACF_LiveData[Key] = Value
-		local RestrictionSpecs = GetEntityTable(Class).Entity.Restrictions[Key]
+		local RestrictionSpecs = GetEntityTable(Class).Restrictions[Key]
 		if RestrictionSpecs then
 			local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
 			local Getter    = TypeSpecs.Getter
@@ -415,6 +415,7 @@ function Entities.AutoRegister(ENT)
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
 		self.ACF_LiveData = self.ACF_LiveData or {}
+		self.ACF_CustomGetterCache = self.ACF_CustomGetterCache or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
@@ -584,8 +585,7 @@ function Entities.AutoRegister(ENT)
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(v, check)
-			SetLiveData(self, Key, Value)
-			Ent.ACF_LiveData[k] = check
+			SetLiveData(self, k, check)
 		end
 
 		-- Call original ENT.PostEntityPaste
