@@ -37,14 +37,15 @@ do -- Random timer crew stuff
 		local Sum, Count = Sum1 + Sum2, Count1 + Count2
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		if self.BaseplateClass.Name == "Recreational" then
+		if self:ACF_GetUserVar("BaseplateType").Name == "Recreational" then
 			self.FuelCrewMod = 1 -- Recreational baseplates have no fuel consumption
 		end
 		return self.FuelCrewMod
 	end
 
 	function ENT:EnforceLooped()
-		if self.BaseplateClass.EnforceLooped then self.BaseplateClass.EnforceLooped(self) end
+		local BaseplateClass = self:ACF_GetUserVar("BaseplateType")
+		if BaseplateClass.EnforceLooped then BaseplateClass.EnforceLooped(self) end
 	end
 end
 
@@ -117,9 +118,8 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
-	self.BaseplateClass = ACF.Classes.BaseplateTypes.Get(ClientData.BaseplateType)
 	self:SetSize(ClientData.Size)
-	local Hook = self.BaseplateClass.OnInitialize
+	local Hook = self:ACF_GetUserVar("BaseplateType").OnInitialize
 	if Hook then
 		Hook(self)
 	end
@@ -224,7 +224,7 @@ local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Heal
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
 	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
-	return Text:format(self.BaseplateClass.Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
+	return Text:format(self:ACF_GetUserVar("BaseplateType").Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
 end
 
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
@@ -344,7 +344,7 @@ function ENT:ACF_PostMenuSpawn()
 end
 
 function ENT:PhysicsCollide(CollisionData, Collider)
-	local Hook = self.BaseplateClass.PhysicsCollide
+	local Hook = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
 	if Hook then
 		Hook(self, CollisionData, Collider)
 	end
