@@ -1,6 +1,7 @@
 include("shared.lua")
 
-local Armors = ACF.Classes.ArmorTypes
+local Classes = ACF.Classes
+local Armors = Classes.ArmorTypes
 
 function ENT:Update()
     local Name  = self:GetNW2String("ArmorType", "RHA")
@@ -11,3 +12,5 @@ function ENT:Update()
     self.Tensile    = Armor.Tensile
     self.Density    = Armor.Density
 end
+
+Classes.Entities.Register()

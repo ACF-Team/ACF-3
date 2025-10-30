@@ -264,11 +264,20 @@ ENTITY METHODS AND FIELDS
 			ClientData (boolean)
 			Type-specific parameters (...kvargs) (e.g. Min, Max, Default)
 
+	ENT.ACF_GetHookArguments(ClientData)
+		Non-entity context function used to pass entity-specific arguments around throughout the entity's logic,
+		usually in hook calls leading to external sources (e.g. ACF_Pre/OnSpawnEntity)
+
 	ENT:ACF_PreUpdateEntityData(ClientData)
 		Pre-update entity data hook, optional
 
 	ENT:ACF_PostUpdateEntityData(ClientData)
 		Post-update entity data hook, optional
+
+	ENT.ACF_PreVerifyClientData(ClientData)
+		Non-entity context clientdata verification. Called immediately before UserVar validation is performed.
+		This is useful if you need to perform validation between entity arguments.
+		Similar in use to the VerifyData functions in the old API.
 
 	ENT.ACF_OnVerifyClientData(ClientData)
 		Non-entity context clientdata verification. Called immediately after UserVar validation is performed.
@@ -314,7 +323,7 @@ BASE TYPES
 	-- ClientData or internal data
 	Number {Default:double? (evals to Default ?? 0), Decimals:int, Min:double?, Max:double?}
 	String {Default:string? (evals to Default ?? "N/A")}
-	Boolean {Default:boolean? (evals to Defualt ?? false)}
+	Boolean {Default:boolean? (evals to Default ?? false)}
 
 	-- Internal data only
 	SimpleClass {Default:string? (evals to Default ?? "N/A"), ClassName:string?}
@@ -368,11 +377,22 @@ function Entities.AutoRegister(ENT)
 		)
 	end
 
+	--- Used in various places throughout an entity to provide a variable number of entity-specific arguments.
+	--- Does nothing by default.
+	if not ENT.ACF_GetHookArguments then
+		function ENT:ACF_GetHookArguments()
+			return nil
+		end
+	end
+
 	-- Verification function
 	local function VerifyClientData(ClientData)
 		local Entity       = GetEntityTable(Class)
 		local List         = Entity.List
 		local Restrictions = Entity.Restrictions
+
+		-- Perform general verification
+		if ENT.ACF_PreVerifyClientData then ENT.ACF_PreVerifyClientData(ClientData, ENT.ACF_GetHookArguments(ClientData)) end
 
 		-- Perform per argument verification
 		for _, argName in ipairs(List) do
@@ -386,10 +406,10 @@ function Entities.AutoRegister(ENT)
 		end
 
 		-- Perform general verification
-		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData) end
+		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData, ENT.ACF_GetHookArguments(ClientData)) end
 
 		-- Perform external verification
-		hook.Run("ACF_OnVerifyData", Class, ClientData)
+		hook.Run("ACF_OnVerifyData", Class, ClientData, ENT.ACF_GetHookArguments(ClientData))
 	end
 
 	--- Updates a specific user var and calls the getter cache.
@@ -426,6 +446,15 @@ function Entities.AutoRegister(ENT)
 
 		if self.ACF_PostUpdateEntityData then self:ACF_PostUpdateEntityData(ClientData) end
 
+		-- Storing all the relevant information on the entity for duping
+		local DataStore = self.DataStore
+
+		if DataStore then
+			for _, V in ipairs(DataStore) do
+				self[V] = ClientData[V]
+			end
+		end
+
 		ACF.Activate(self, true)
 	end
 
@@ -433,7 +462,7 @@ function Entities.AutoRegister(ENT)
 	function ENT:Update(ClientData)
 		VerifyClientData(ClientData)
 
-		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", Class, self, ClientData)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", Class, self, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		local OldClassData = self.ClassData
@@ -448,7 +477,7 @@ function Entities.AutoRegister(ENT)
 		UpdateEntityData(self, ClientData)
 		ACF.RestoreEntity(self)
 
-		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
+		hook.Run("ACF_OnUpdateEntity", Class, self, ClientData, ENT.ACF_GetHookArguments(ClientData))
 
 		return true, (self.PrintName or Class) .. " updated successfully!"
 	end
@@ -499,8 +528,8 @@ function Entities.AutoRegister(ENT)
 				if not Player:CheckLimit("_" .. Class) then return false end
 			end
 		end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData)
+		print(istable(ClientData))
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		if CanSpawn == false then return false end
 
 		local New = ents.Create(Class)
@@ -518,7 +547,7 @@ function Entities.AutoRegister(ENT)
 		Player:AddCount("_" .. Class, New)
 		Player:AddCleanup(Class, New)
 
-		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData)
+		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData, ENT.ACF_GetHookArguments(ClientData))
 
 		New:ACF_UpdateEntityData(ClientData, true)
 		if New.ACF_PostSpawn then
@@ -603,7 +632,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", "ACF_UserData")
 end
 
 --- Registers a class as a spawnable entity class
