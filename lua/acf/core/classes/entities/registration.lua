@@ -101,7 +101,7 @@ function Entities.AddUserArgumentType(Type, Def)
 end
 
 local NumberType = Entities.AddUserArgumentType("Number")
-function NumberType.Validator(Value, Specs)
+function NumberType.Validator(Specs, Value)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
 
 	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
