@@ -226,8 +226,6 @@ do -- Spawn and Update functions
 
 		ActiveTanks[Tank] = true
 
-		ACF.CheckLegal(Tank)
-
 		return Tank
 	end
 

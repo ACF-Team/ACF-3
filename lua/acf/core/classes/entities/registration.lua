@@ -285,6 +285,10 @@ ENTITY METHODS AND FIELDS
 		Sets a user variable by Key to Value. Automatically pulls the typedef for the user and performs the validator.
 		If you don't want to perform validation on sets, you can directly set Entity.ACF_LiveData[Key] = Value.
 
+	ENT:OnRemove(IsFullUpdate)
+		Identical to Garry's Mod's API with some generic ACF removal behavior surrounding your custom OnRemove.
+		In the old API this was done manually.
+
 	ENT:PreEntityCopy()
 		Identical to Garry's Mod's API but autoreg automatically saves your user vars from
 		the entity to the dupe before calling your custom PreEntityCopy.
@@ -376,6 +380,9 @@ function Entities.AutoRegister(ENT)
 
 		-- Perform general verification
 		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData) end
+
+		-- Perform external verification
+		hook.Run("ACF_OnVerifyData", Class, ClientData)
 	end
 
 	--- Updates the entity's user vars with ClientData
@@ -405,7 +412,16 @@ function Entities.AutoRegister(ENT)
 	function ENT:Update(ClientData)
 		VerifyClientData(ClientData)
 
-		hook.Run("ACF_OnEntityLast", Class, self)
+		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", Class, self, ClientData)
+		if CanUpdate == false then return CanUpdate, Reason end
+
+		local OldClassData = self.ClassData
+
+		if OldClassData and OldClassData.OnLast then
+			OldClassData.OnLast(self, OldClassData)
+		end
+
+		hook.Run("ACF_OnEntityLast", Class, self, OldClassData)
 
 		ACF.SaveEntity(self)
 		UpdateEntityData(self, ClientData)
@@ -444,6 +460,7 @@ function Entities.AutoRegister(ENT)
 		self.ACF_LiveData[Key] = Typedef.Validator(Value, UserVar)
 	end
 	local ACF_Limit       = ENT.ACF_Limit
+	local OnRemove        = ENT.OnRemove
 	local PreEntityCopy   = ENT.PreEntityCopy
 	local PostEntityPaste = ENT.PostEntityPaste
 
@@ -487,9 +504,23 @@ function Entities.AutoRegister(ENT)
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
 
-		ACF.CheckLegal(New)
-
 		return New
+	end
+
+	--- Runs some generic removal behavior when the entity is deleted
+	function ENT:OnRemove(IsFullUpdate)
+		local ClassData = self.ClassData
+
+		if ClassData and ClassData.OnLast then
+			ClassData.OnLast(self, ClassData)
+		end
+
+		hook.Run("ACF_OnEntityLast", Class, self, ClassData)
+
+		-- Call original ENT.OnRemove if any unique behavior needs to be run
+		if OnRemove then OnRemove(self, IsFullUpdate) end
+
+		WireLib.Remove(self)
 	end
 
 	--- Runs the Validator and PreCopy for methods for each user var
@@ -671,6 +702,8 @@ do -- Spawning and updating
 		if Entity.Outputs and Entity.Outputs.Entity then
 			WireLib.TriggerOutput(Entity, "Entity", Entity)
 		end
+
+		ACF.CheckLegal(Entity)
 
 		return true, Entity
 	end

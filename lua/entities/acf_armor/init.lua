@@ -61,7 +61,7 @@ do -- Spawning and Updating
 
 		local Size = Data.Size
 
-		Entity.ArmorClass = Armor
+		Entity.ClassData  = Armor
 		Entity.Tensile    = Armor.Tensile
 		Entity.Density    = Armor.Density
 
@@ -124,7 +124,7 @@ do -- Spawning and Updating
 		VerifyData(Data)
 
 		local Armor    = Armors.Get(Data.ArmorType)
-		local OldArmor = self.ArmorClass
+		local OldArmor = self.ClassData
 
 		if OldArmor.OnLast then
 			OldArmor:OnLast(self)
@@ -133,9 +133,7 @@ do -- Spawning and Updating
 		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldArmor)
 
 		ACF.SaveEntity(self)
-
 		UpdatePlate(self, Data, Armor)
-
 		ACF.RestoreEntity(self)
 
 		if Armor.OnUpdate then
@@ -213,7 +211,7 @@ do -- Mass Update
 
 	local function UpdateMass(Entity)
 		local Size = Entity.Size
-		local Mass = Entity.ArmorClass:GetMass(Size.x * Size.y * Size.z)
+		local Mass = Entity.ClassData:GetMass(Size.x * Size.y * Size.z)
 
 		Contraption.SetMass(Entity, Mass)
 	end
@@ -234,7 +232,7 @@ do -- Mass Update
 end
 
 function ENT:OnRemove()
-	local Armor = self.ArmorClass
+	local Armor = self.ClassData
 
 	if Armor.OnLast then
 		Armor.OnLast(self, Armor)
@@ -249,6 +247,6 @@ do -- Wire overlay text
 	local OverlayText = "Armor Type: %s\nPlate Size: %.1f x %.1f x %.1f"
 
 	function ENT:UpdateOverlayText()
-		return OverlayText:format(self.ArmorClass.Name, self.Size[1], self.Size[2], self.Size[3])
+		return OverlayText:format(self.ClassData.Name, self.Size[1], self.Size[2], self.Size[3])
 	end
 end
