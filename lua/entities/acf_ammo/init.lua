@@ -409,8 +409,6 @@ do -- Spawning and Updating --------------------
 
 		ActiveCrates[Crate] = true -- ActiveCrates is a table stored globally that holds all the active crates
 
-		ACF.CheckLegal(Crate)
-
 		return Crate
 	end
 

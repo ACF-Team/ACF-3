@@ -407,8 +407,6 @@ do -- Spawn and Update functions
 
 		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
-		ACF.CheckLegal(Entity)
-
 		return Entity
 	end
 

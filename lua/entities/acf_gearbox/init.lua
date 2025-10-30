@@ -357,8 +357,6 @@ do -- Spawn and Update functions -----------------------
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
 
-		ACF.CheckLegal(Entity)
-
 		timer.Create("ACF Gearbox Clock " .. Entity:EntIndex(), 3, 0, function()
 			if IsValid(Entity) then
 				CheckRopes(Entity, "GearboxOut")

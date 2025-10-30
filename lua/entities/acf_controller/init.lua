@@ -21,7 +21,6 @@ local Contraption = ACF.Contraption
 local hook	   = hook
 local Classes	= ACF.Classes
 local Entities   = Classes.Entities
-local CheckLegal = ACF.CheckLegal
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
 local TraceLine = util.TraceLine
@@ -144,8 +143,6 @@ do
 
 		local PhysObj = Entity.ACF.PhysObj
 		if IsValid(PhysObj) then Contraption.SetMass(Entity, 1) end
-
-		Entity:UpdateOverlay(true)
 	end
 
 	function ACF.MakeController(Player, Pos, Ang, Data)
@@ -224,7 +221,6 @@ do
 
 		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
-		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_controller")
 
 		UpdateController(Entity, Data)
@@ -235,18 +231,12 @@ do
 		WireIO.SetupInputs(Entity, Inputs, Data)
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
-
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
 		return Entity
 	end
 
-	-- Bare minimum arguments to reconstruct an armor controller
+	-- Bare minimum arguments to reconstruct an all-in-one controller
 	Entities.Register("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
@@ -266,9 +256,7 @@ do
 
 		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
 
-		self:UpdateOverlay(true)
-
-		return true, "Armor Controller updated successfully!"
+		return true, "All-In-One Controller updated successfully!"
 	end
 
 	local GearboxEndMap = {

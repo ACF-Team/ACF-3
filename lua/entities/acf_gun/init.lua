@@ -423,8 +423,6 @@ do -- Spawn and Update functions --------------------------------
 			UpdateTotalAmmo(Entity)
 		end)
 
-		ACF.CheckLegal(Entity)
-
 		return Entity
 	end
 

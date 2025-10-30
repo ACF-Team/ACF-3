@@ -486,8 +486,6 @@ function Entities.AutoRegister(ENT)
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
 
-		ACF.CheckLegal(New)
-
 		return New
 	end
 
@@ -670,6 +668,8 @@ do -- Spawning and updating
 		if Entity.Outputs and Entity.Outputs.Entity then
 			WireLib.TriggerOutput(Entity, "Entity", Entity)
 		end
+
+		ACF.CheckLegal(Entity)
 
 		return true, Entity
 	end

@@ -43,7 +43,6 @@ local Classes	= ACF.Classes
 local CrewTypes = Classes.CrewTypes
 local CrewModels = Classes.CrewModels
 local Entities   = Classes.Entities
-local CheckLegal = ACF.CheckLegal
 local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
@@ -181,7 +180,7 @@ local function EnforceLimits(crew)
 		local Count = Crews and table.Count(Crews) or 0
 
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this Contraption.")
+			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
 			crew:Remove()
 		end
 	end
@@ -215,7 +214,7 @@ do -- Random timer stuff
 		end
 		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
 		if self.Oxygen <= 0 and self.IsAlive then
-			self:KillCrew( "player/pl_drown1.wav")
+			self:KillCrew("player/pl_drown1.wav")
 		end
 		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
 
@@ -455,8 +454,6 @@ do
 			Contraption.SetMass(Entity, CrewType.Mass)
 		end
 
-		Entity:UpdateOverlay(true)
-
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
 
 		-- TODO: Figure out how to "ClientInitialized" this
@@ -506,7 +503,6 @@ do
 		Entity.ShortName = CrewType.ID
 		Entity.EntType = "Crew"
 
-		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_crew")
 
 		-- Storing links
@@ -550,11 +546,6 @@ do
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
 		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
 
@@ -599,8 +590,6 @@ do
 		ACF.RestoreEntity(self)
 
 		HookRun("ACF_OnUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
-
-		self:UpdateOverlay(true)
 
 		return true, "Crew updated successfully!"
 	end
