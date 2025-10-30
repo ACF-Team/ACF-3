@@ -627,12 +627,40 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_VerifyClientData = VerifyClientData
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
-	local function SpawnFunction(Player, Pos, Angle, UserData)
+	local UserVarsKeys = table.GetKeys(UserVars)
+
+	local function SpawnFunction(Player, Pos, Angle, UserData, ...)
+		local ShouldTransferLegacyData = false
+
+		if not istable(UserData) then
+			local NewUserData, ArgCount = table.Pack(...)
+
+			-- ACF_UserData doesn't exist, but other arguments do.
+			-- This most likely means that the entity is one that was duped before it was converted to use
+			-- the autoregistration system. Let's build a replacement table for it and clear the old data.
+			if ArgCount > 0 then
+				UserData = {}
+
+				for Index, ArgValue in ipairs(NewUserData) do
+					UserData[UserVarsKeys[Index]] = ArgValue
+				end
+
+				ShouldTransferLegacyData = true
+			end
+		end
+
 		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
+
+		if ShouldTransferLegacyData then
+			for _, KeyName in ipairs(UserVarsKeys) do
+				duplicator.ClearEntityModifier(SpawnedEntity, KeyName)
+			end
+		end
+
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "Data", "ACF_UserData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(UserVarsKeys))
 end
 
 --- Registers a class as a spawnable entity class
