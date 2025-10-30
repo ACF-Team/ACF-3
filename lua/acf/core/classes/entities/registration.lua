@@ -94,7 +94,7 @@ function Entities.AddUserArgumentType(Type, Def)
 	if UserArgumentTypes[Type] then return end
 	Def = Def or {}
 
-	-- Def can contain Validator, PreCopy, PostPaste, ToRuntime, ToData
+	-- Def can contain Validator, PreCopy, PostPaste, Getter
 
 	UserArgumentTypes[Type] = Def
 	return Def
@@ -143,6 +143,10 @@ function SimpleClassType.Validator(Specs, Value)
 	end
 
 	return Value
+end
+
+function SimpleClassType.Getter(self, Specs, Key)
+	return ACF.Classes[Specs.ClassName].Get(Key)
 end
 
 -- Single entity link.
@@ -271,8 +275,11 @@ ENTITY METHODS AND FIELDS
 		This is useful if you need to perform validation between entity arguments.
 		Similar in use to the VerifyData functions in the old API.
 
+	ENT.ACF_CustomGetterCache (table)
+		ACF_GetUserVar/ACF_SetUserVar will check this table before ACF_LiveData for types with custom getters
+
 	ENT.ACF_LiveData (table)
-		The raw table behind ACF_GetUserVat/ACF_SetUserVar. WIll not perform any validation on sets
+		The raw table behind ACF_GetUserVar/ACF_SetUserVar. Will not perform any validation on sets
 
 	ENT.ACF_UserData (table)
 		On PreEntityCopy, this table is populated by ACF_LiveData and variable pre-paste transformers for duplication. 
@@ -385,12 +392,25 @@ function Entities.AutoRegister(ENT)
 		hook.Run("ACF_OnVerifyData", Class, ClientData)
 	end
 
+	--- Updates a specific user var and calls the getter cache.
+	local function SetLiveData(self, Key, Value)
+		self.ACF_LiveData[Key] = Value
+		local RestrictionSpecs = GetEntityTable(Class).Entity.Restrictions[Key]
+		if RestrictionSpecs then
+			local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
+			local Getter    = TypeSpecs.Getter
+			if Getter then
+				self.ACF_CustomGetterCache[Key] = Getter(self, RestrictionSpecs, Value)
+			end
+		end
+	end
+
 	--- Updates the entity's user vars with ClientData
 	--- @param self table The entity to update
 	--- @param ClientData table The client data to use for the update
 	local function UpdateEntityData(self, ClientData, First)
-		local Entity = GetEntityTable(Class) -- THE ENTITY TABLE, NOT THE ENTITY ITSELF
-		local List   = Entity.List
+		local Entity       = GetEntityTable(Class) -- THE ENTITY TABLE, NOT THE ENTITY ITSELF
+		local List         = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
@@ -399,7 +419,7 @@ function Entities.AutoRegister(ENT)
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
 			if UserVars[v].ClientData or First then
-				self.ACF_LiveData[v] = ClientData[v]
+				SetLiveData(self, v, ClientData[v])
 			end
 		end
 
@@ -444,7 +464,7 @@ function Entities.AutoRegister(ENT)
 		if not Key then error("Tried to get the value of a nil key.") end
 		if not UserVars[Key] then error("No user-variable named '" .. Key .. "'.") end
 
-		return self.ACF_LiveData[Key]
+		return self.ACF_CustomGetterCache[Key] or self.ACF_LiveData[Key]
 	end
 
 	--- Sets the value of a user variable after validating the value
@@ -457,7 +477,7 @@ function Entities.AutoRegister(ENT)
 		local Typedef = UserArgumentTypes[UserVar.Type]
 		if not Typedef then error(UserVar.Type .. " is not a valid type") end
 
-		self.ACF_LiveData[Key] = Typedef.Validator(UserVar, Value)
+		SetLiveData(self, Key, Typedef.Validator(UserVar, Value))
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local OnRemove        = ENT.OnRemove
@@ -564,6 +584,7 @@ function Entities.AutoRegister(ENT)
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
 			check = typedef.Validator(v, check)
+			SetLiveData(self, Key, Value)
 			Ent.ACF_LiveData[k] = check
 		end
 
