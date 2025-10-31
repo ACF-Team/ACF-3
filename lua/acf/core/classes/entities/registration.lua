@@ -149,6 +149,34 @@ function SimpleClassType.Getter(self, Specs, Key)
 	return ACF.Classes[Specs.ClassName].Get(Key)
 end
 
+local GroupClassType = Entities.AddUserArgumentType("GroupClass")
+function GroupClassType.Validator(Specs, Value)
+	if not isstring(Value) then
+		Value = Specs.Default or "N/A"
+	end
+
+	local ClassDef = ACF.Classes[Specs.ClassName]
+	if not ClassDef then error("Bad classname '" .. Specs.ClassName .. "'.") end
+
+	local Class = ACF.Classes.GetGroup(ClassDef, Value)
+
+	if not Class then
+		Class = ClassDef.Get(Specs.DefaultGroupName)
+		Value = Specs.DefaultItemName
+	end
+
+	if not ClassDef.GetItem(Class.ID, Value) then
+		error("Classdef resolve failed. Likely data corruption/outdated contraption + default value not set by entity implementor. (value was " .. Value .. ")")
+	end
+
+	return Value
+end
+
+function GroupClassType.Getter(self, Specs, Key)
+	local _, Item = ACF.Classes.GetGroup(ACF.Classes[Specs.ClassName], Key)
+	return Item
+end
+
 -- Single entity link.
 local LinkedEntityType = Entities.AddUserArgumentType("LinkedEntity")
 function LinkedEntityType.Validator(Specs, Value)
