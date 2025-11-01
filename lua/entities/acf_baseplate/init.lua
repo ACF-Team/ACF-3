@@ -8,7 +8,7 @@ local Entities 		= Classes.Entities
 local Utilities   	= ACF.Utilities
 local WireIO      	= Utilities.WireIO
 
-ENT.ACF_Limit                     = 16
+ENT.ACF_Limit                     = 2
 ENT.ACF_UserWeighable             = true
 ENT.ACF_KillableButIndestructible = true
 ENT.ACF_HealthUpdatesWireOverlay  = true
@@ -37,14 +37,15 @@ do -- Random timer crew stuff
 		local Sum, Count = Sum1 + Sum2, Count1 + Count2
 		local Val = (Count > 0) and (Sum / Count) or 0
 		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		if self.BaseplateClass.Name == "Recreational" then
+		if self:ACF_GetUserVar("BaseplateType").Name == "Recreational" then
 			self.FuelCrewMod = 1 -- Recreational baseplates have no fuel consumption
 		end
 		return self.FuelCrewMod
 	end
 
 	function ENT:EnforceLooped()
-		if self.BaseplateClass.EnforceLooped then self.BaseplateClass.EnforceLooped(self) end
+		local BaseplateClass = self:ACF_GetUserVar("BaseplateType")
+		if BaseplateClass.EnforceLooped then BaseplateClass.EnforceLooped(self) end
 	end
 end
 
@@ -91,8 +92,8 @@ local function ConfigureLuaSeat(Entity, Pod, Player)
 		hook.Remove("PlayerLeaveVehicle", "ACFBaseplateSeatExit" .. Entity:EntIndex())
 		hook.Remove("PlayerUse", "ACFBaseplateSeatEnterExternal" .. Entity:EntIndex())
 
-		local Owner = Entity:CPPIGetOwner()
-		if IsValid(Owner) then Owner:GodDisable() end
+		--local Owner = Entity:CPPIGetOwner()
+		--if IsValid(Owner) then Owner:GodDisable() end
 
 		SafeRemoveEntity(Ent.Pod)
 
@@ -109,6 +110,7 @@ end
 
 -- Might be a good idea to put this somewhere else later
 ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}
+ACF.ActiveBaseplatesArray = ACF.ActiveBaseplatesArray or {}
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
@@ -116,8 +118,11 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
-	self.BaseplateClass = ACF.Classes.BaseplateTypes.Get(ClientData.BaseplateType)
 	self:SetSize(ClientData.Size)
+	local Hook = self:ACF_GetUserVar("BaseplateType").OnInitialize
+	if Hook then
+		Hook(self)
+	end
 end
 
 function ENT:ACF_PreSpawn(_, _, _, _)
@@ -175,11 +180,16 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		hook.Remove("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex())
 	end)
 
-	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
-	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
-	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	ACF.ActiveBaseplatesTable[self] = true
-	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent) ACF.ActiveBaseplatesTable[ent] = nil end)
+	table.insert(ACF.ActiveBaseplatesArray, self)
+
+	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent)
+		ACF.ActiveBaseplatesTable[ent] = nil
+		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
+	end)
 end
 
 function ENT:PostEntityPaste(_, _, CreatedEntities)
@@ -214,11 +224,7 @@ local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Heal
 function ENT:UpdateOverlayText()
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
 	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
-	return Text:format(self.BaseplateClass.Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
-end
-
-function ENT:Think()
-	self:BaseplateRepulsion()
+	return Text:format(self:ACF_GetUserVar("BaseplateType").Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
 end
 
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
@@ -241,18 +247,61 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 
 	local Vel         = Physics:GetVelocity()
 	local Contraption = Ent:GetContraption()
-	local Mass        = Contraption == nil and Ent:GetPhysicsObject():GetMass() or Contraption.totalMass
+	local PhysMass    = Physics:GetMass()
+	local TotalMass	  = Contraption and Contraption.totalMass or PhysMass
 
-	return true, Physics, Pos, Vel, Contraption, Mass, Radius
+	return true, Physics, Pos, Vel, Contraption, PhysMass, TotalMass, Radius
 end
 
-local function CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
-	local Dir = SelfPos - VictimPos
+local function CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
+	local Dir = Pos2 - Pos1
+	local Dist = Dir:Length()
 	Dir:Normalize()
 
-	local Intersection = ((VictimPos + (Dir * VictimRadius)) - (SelfPos + (-Dir * SelfRadius))):Length()
-	return Intersection, Dir, SelfPos + (Dir * (SelfRadius + (Intersection / 2)))
+	local Intersection = Dist - Radius1 - Radius2
+	return Intersection, Dir, (Pos1 * Radius1 + Pos2 * Radius2) / (Radius1 + Radius2)
 end
+
+hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
+	local BaseplatesArray = ACF.ActiveBaseplatesArray
+	local Count = #BaseplatesArray
+	if Count < 2 then return end
+	for i = 1, Count do
+		for j = 1, Count do
+			if i >= j then continue end
+			local BP1, BP2 = BaseplatesArray[i], BaseplatesArray[j]
+
+			if not BP1.Size or not BP2.Size then continue end
+			if BP1:IsPlayerHolding() or BP2:IsPlayerHolding() then continue end
+
+			Valid1, Physics1, Pos1, Vel1, Contraption1, PhysMass1, TotalMass1, Radius1 = GetBaseplateProperties(BP1)
+			Valid2, Physics2, Pos2, Vel2, Contraption2, PhysMass2, TotalMass2, Radius2 = GetBaseplateProperties(BP2)
+
+			if not Valid1 or not Valid2 then continue end
+			if Contraption1 == Contraption2 then continue end
+
+			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
+
+			if IntersectionDistance > 0 then continue end
+
+			local CollisionForce1 = ((Vel1 / 4) + ( IntersectionDirection * IntersectionDistance * 150)) * 100
+			local CollisionForce2 = ((Vel2 / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * 100
+
+			local BP1Force = CollisionForce1 * math.Clamp(PhysMass1 / TotalMass1, 0, 1)
+			local BP2Force = CollisionForce2 * math.Clamp(PhysMass2 / TotalMass2, 0, 1)
+
+			local BP1LinImpulse, BP1AngImpulse = Physics1:CalculateForceOffset(BP1Force, IntersectionCenter)
+			Physics1:ApplyForceCenter(BP1LinImpulse)
+			Physics1:ApplyTorqueCenter(Physics1:LocalToWorldVector(BP1AngImpulse * 2)) -- Are you sure this was a good idea?
+			BP1:PlayBaseplateRepulsionSound(Vel1)
+
+			local BP2LinImpulse, BP2AngImpulse = Physics2:CalculateForceOffset(BP2Force, IntersectionCenter)
+			Physics2:ApplyForceCenter(BP2LinImpulse)
+			Physics2:ApplyTorqueCenter(Physics2:LocalToWorldVector(BP2AngImpulse * 2)) -- Are you sure this was a good idea?
+			BP2:PlayBaseplateRepulsionSound(Vel2)
+		end
+	end
+end)
 
 function ENT:BaseplateRepulsion()
 	if not self.Size then return end
@@ -292,6 +341,13 @@ end
 function ENT:ACF_PostMenuSpawn()
 	self:DropToFloor()
 	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
+end
+
+function ENT:PhysicsCollide(CollisionData, Collider)
+	local Hook = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
+	if Hook then
+		Hook(self, CollisionData, Collider)
+	end
 end
 
 Entities.Register()

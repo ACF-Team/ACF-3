@@ -201,6 +201,27 @@ do -- Spawning and Updating --------------------
 		end
 	end
 
+	function ENT:SetAmmo(Ammo, TimeToNetwork)
+		local SelfTable = self:GetTable()
+
+		SelfTable.Ammo = Ammo
+		WireLib.TriggerOutput(self, "Ammo", SelfTable.Ammo)
+
+		SelfTable.ACF_InvisibleToTrace = SelfTable.Ammo <= 0
+
+		if not TimeToNetwork then
+			self:SetNWInt("Ammo", SelfTable.Ammo)
+		else
+			if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
+
+			TimerCreate("ACF Network Ammo " .. self:EntIndex(), TimeToNetwork, 1, function()
+				if not IsValid(self) then return end
+
+				self:SetNWInt("Ammo", SelfTable.Ammo)
+			end)
+		end
+	end
+
 	local function UpdateCrate(Entity, Data, Class, Weapon, Ammo)
 		local Name, ShortName, WireName = Ammo:GetCrateName()
 		local Scalable    = Class.IsScalable
@@ -263,12 +284,8 @@ do -- Spawning and Updating --------------------
 			local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
 			Entity.Capacity = Rounds
-			Entity.Ammo     = math.floor(Entity.Capacity * Percentage)
 			Entity.MagSize  = MagSize
-
-			WireLib.TriggerOutput(Entity, "Ammo", Entity.Ammo)
-
-			Entity:SetNWInt("Ammo", Entity.Ammo) -- Sent to client for use in overlay
+			Entity:SetAmmo(math.floor(Entity.Capacity * Percentage))
 
 			if ExtraData then
 				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
@@ -391,8 +408,6 @@ do -- Spawning and Updating --------------------
 		Crate:TriggerInput("Load", 1)
 
 		ActiveCrates[Crate] = true -- ActiveCrates is a table stored globally that holds all the active crates
-
-		ACF.CheckLegal(Crate)
 
 		return Crate
 	end
@@ -604,7 +619,7 @@ do -- ACF Activation and Damage -----------------
 		return HitRes
 	end
 
-	function ENT:Detonate()
+	function ENT:Detonate(VisualOnly)
 		if self.Exploding then return end
 
 		local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
@@ -623,8 +638,9 @@ do -- ACF Activation and Damage -----------------
 		local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 		ACF.KillChildProps(self, Position, Explosive)
-
-		Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+		if not VisualOnly then
+			Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+		end
 		Damage.explosionEffect(Position, nil, Explosive)
 
 		constraint.RemoveAll(self)
@@ -774,21 +790,11 @@ do -- Ammo Consumption -------------------------
 	end
 
 	function ENT:Consume(Num)
-		self.Ammo = math.Clamp(self.Ammo - (Num or 1), 0, self.Capacity)
+		self:SetAmmo(math.Clamp(self.Ammo - (Num or 1), 0, self.Capacity), 0.5)
 
 		self:UpdateOverlay()
 		self:UpdateMass()
-
-		WireLib.TriggerOutput(self, "Ammo", self.Ammo)
 		WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
-
-		if TimerExists("ACF Network Ammo " .. self:EntIndex()) then return end
-
-		TimerCreate("ACF Network Ammo " .. self:EntIndex(), 0.5, 1, function()
-			if not IsValid(self) then return end
-
-			self:SetNWInt("Ammo", self.Ammo)
-		end)
 	end
 
 	--- Restocks the ammocrate if appropriate

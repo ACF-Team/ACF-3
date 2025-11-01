@@ -168,7 +168,7 @@ local function CreateMenu(Menu)
 		ACF.SetClientData("Engine", Data.ID)
 
 		EngineName:SetText(Data.Name)
-		EngineDesc:SetText((ClassDesc and (ClassDesc .. "\n\n") or "") .. Data.Description)
+		EngineDesc:SetText((ClassDesc and (language.GetPhrase(ClassDesc) .. "\n\n") or "") .. language.GetPhrase(Data.Description))
 
 		EnginePreview:UpdateModel(Data.Model)
 		EnginePreview:UpdateSettings(Data.Preview)

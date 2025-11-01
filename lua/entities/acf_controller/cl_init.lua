@@ -226,6 +226,7 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	net.SendToServer()
 end)
 
+local LastFOV = FOV
 hook.Add("PlayerBindPress", "ACFControllerScroll", function(ply, bind, _)
 	local delta = bind == "invnext" and 1 or bind == "invprev" and -1 or nil
 	if not delta then return end
@@ -237,6 +238,14 @@ hook.Add("PlayerBindPress", "ACFControllerScroll", function(ply, bind, _)
 	local MaxFOV = MyController:GetZoomMax()
 	local SpeedFOV = MyController:GetZoomSpeed()
 	FOV = math.Clamp(FOV + delta * SpeedFOV, MinFOV, MaxFOV)
+
+	if FOV ~= LastFOV then
+		LastFOV = FOV
+		net.Start("ACF_Controller_Zoom", true)
+		net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
+		net.WriteFloat(FOV)
+		net.SendToServer()
+	end
 
 	return true
 end)

@@ -43,7 +43,6 @@ local Classes	= ACF.Classes
 local CrewTypes = Classes.CrewTypes
 local CrewModels = Classes.CrewModels
 local Entities   = Classes.Entities
-local CheckLegal = ACF.CheckLegal
 local TraceHull = util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
@@ -155,12 +154,10 @@ end
 
 -- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
 local function CheckParentState(crew)
-	local Family = crew:GetFamily()
-
-	if not Family or Family.ancestor == crew then
+	if not ACF.IsParentChainStateOK(crew) then
 		crew.Disabled = {
 			Reason = "Bad Parent",
-			Message = "Must be parented to something!"
+			Message = "Must be parented correctly!"
 		}
 		crew.TotalEff = 0
 		return false
@@ -183,7 +180,7 @@ local function EnforceLimits(crew)
 		local Count = Crews and table.Count(Crews) or 0
 
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. "limit for this Contraption.")
+			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
 			crew:Remove()
 		end
 	end
@@ -217,7 +214,7 @@ do -- Random timer stuff
 		end
 		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
 		if self.Oxygen <= 0 and self.IsAlive then
-			self:KillCrew( "player/pl_drown1.wav")
+			self:KillCrew("player/pl_drown1.wav")
 		end
 		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
 
@@ -310,7 +307,7 @@ do -- Random timer stuff
 			end
 		end
 
-		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented!" or nil
+		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented correctly!\n(parent to zero or more turret entities, ending in a baseplate)" or nil
 		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
@@ -457,8 +454,6 @@ do
 			Contraption.SetMass(Entity, CrewType.Mass)
 		end
 
-		Entity:UpdateOverlay(true)
-
 		if Entity.CrewType.OnUpdate then Entity.CrewType.OnUpdate(Entity) end
 
 		-- TODO: Figure out how to "ClientInitialized" this
@@ -489,7 +484,7 @@ do
 		if not Player:CheckLimit(Limit) then return false end
 
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_crew", Player, Data, CrewModel, CrewType)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_crew", Player, Data, CrewModel, CrewType)
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_crew")
@@ -508,7 +503,6 @@ do
 		Entity.ShortName = CrewType.ID
 		Entity.EntType = "Crew"
 
-		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_crew")
 
 		-- Storing links
@@ -547,16 +541,11 @@ do
 		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
 
 		-- Finish setting up the entity
-		hook.Run("ACF_OnEntitySpawn", "acf_crew", Entity, Data, CrewModel, CrewType)
+		HookRun("ACF_OnSpawnEntity", "acf_crew", Entity, Data, CrewModel, CrewType)
 
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
 		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 
 		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
 
@@ -577,7 +566,7 @@ do
 		local CrewModel = CrewModels.Get(Data.CrewModelID)
 		local CrewType = CrewTypes.Get(Data.CrewTypeID)
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self)
@@ -600,9 +589,7 @@ do
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_crew", self, Data, CrewModel, CrewType)
-
-		self:UpdateOverlay(true)
+		HookRun("ACF_OnUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
 
 		return true, "Crew updated successfully!"
 	end

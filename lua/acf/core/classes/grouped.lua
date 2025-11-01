@@ -91,7 +91,7 @@ function Classes.GetGroup(Namespace, ID)
 	for _, Group in ipairs(Groups) do
 		local Item = Namespace.GetItem(Group.ID, ID)
 
-		if Item then return Group end
+		if Item then return Group, Item end
 	end
 end
 

@@ -3,148 +3,80 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
-local ACF = ACF
-local Contraption	= ACF.Contraption
+local ACF         = ACF
+local Classes     = ACF.Classes
+local Contraption = ACF.Contraption
+local Entities    = Classes.Entities
 
 do -- Spawning and Updating
-	local Classes  = ACF.Classes
-	local Armors   = Classes.ArmorTypes
-	local Entities = Classes.Entities
+	local Armors = Classes.ArmorTypes
 
-	local function VerifyData(Data)
-		if not isstring(Data.ArmorType) then
-			Data.ArmorType = "RHA"
+	function ENT.ACF_GetHookArguments(Data)
+		return Armors.Get(Data.ArmorType)
+	end
+
+	function ENT.ACF_PreVerifyClientData(Data)
+		-- Verifying dimension values
+		if not isnumber(Data.Width) then
+			Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
 		end
 
-		local Armor = Armors.Get(Data.ArmorType)
-
-		if not Armor then
-			Data.ArmorType = RHA
-
-			Armor = Armors.Get("RHA")
+		if not isnumber(Data.Height) then
+			Data.Height = ACF.CheckNumber(Data.PlateSizeY, 24)
 		end
 
-		do -- Verifying dimension values
-			if not isnumber(Data.Width) then
-				Data.Width = ACF.CheckNumber(Data.PlateSizeX, 24)
-			end
-
-			if not isnumber(Data.Height) then
-				Data.Height = ACF.CheckNumber(Data.PlateSizeY, 24)
-			end
-
-			if not isnumber(Data.Thickness) then
-				Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
-			end
-
-			Data.Width  = math.Clamp(Data.Width, 0.25, 420)
-			Data.Height = math.Clamp(Data.Height, 0.25, 420)
-
-			local MaxPossible = ACF.MaximumMass / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
-			local MaxAllowed  = math.min(ACF.MaximumArmor, ACF.GetServerNumber("MaxThickness"))
-
-			Data.Thickness = math.min(Data.Thickness, MaxPossible)
-			Data.Size      = Vector(Data.Width, Data.Height, math.Clamp(Data.Thickness, ACF.MinimumArmor, MaxAllowed) * ACF.MmToInch)
-		end
-
-		do -- External verifications
-			if Armor.VerifyData then
-				Armor:VerifyData(Data)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_armor", Data, Armor)
+		if not isnumber(Data.Thickness) then
+			Data.Thickness = ACF.CheckNumber(Data.PlateSizeZ, 5)
 		end
 	end
 
-	local function UpdatePlate(Entity, Data, Armor)
-		Entity.ACF = Entity.ACF or {}
+	function ENT.ACF_OnVerifyClientData(Data)
+		local Armor = Armors.Get(Data.ArmorType)
 
+		-- Verifying dimension values
+		local MaxPossible = ACF.MaximumMass / (Data.Width * Data.Height * Armor.Density * ACF.gCmToKgIn) * ACF.InchToMm
+		local MaxAllowed  = math.min(ACF.MaximumArmor, ACF.GetServerNumber("MaxThickness"))
+
+		Data.Thickness = math.min(Data.Thickness, MaxPossible)
+		Data.Size      = Vector(Data.Width, Data.Height, math.Clamp(Data.Thickness, ACF.MinimumArmor, MaxAllowed) * ACF.MmToInch)
+
+		-- External verifications
+		if Armor.VerifyData then
+			Armor:VerifyData(Data)
+		end
+	end
+
+	function ENT:ACF_PostUpdateEntityData(Data)
+		local Armor = self:ACF_GetUserVar("ArmorType")
 		local Size = Data.Size
 
-		Entity.ArmorClass = Armor
-		Entity.Tensile    = Armor.Tensile
-		Entity.Density    = Armor.Density
+		self.ClassData  = Armor
+		self.Tensile    = Armor.Tensile
+		self.Density    = Armor.Density
 
-		Entity:SetNW2String("ArmorType", Armor.ID)
-		Entity:SetSize(Size)
+		self:SetNW2String("ArmorType", Armor.ID)
+		self:SetSize(Size)
 
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		ACF.Activate(Entity, true)
-
-		Entity:UpdateMass(true)
-	end
-
-	function ACF.MakeArmor(Player, Pos, Angle, Data)
-		if not Player:CheckLimit("_acf_armor") then return end
-
-		local Plate = ents.Create("acf_armor")
-
-		if not IsValid(Plate) then return end
-
-		VerifyData(Data)
-
-		local Armor = Armors.Get(Data.ArmorType)
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_armor", Player, Data, Armor)
-		if CanSpawn == false then return false end
-
-		Player:AddCount("_acf_armor", Plate)
-		Player:AddCleanup("_acf_armor", Plate)
-
-		Plate:SetScaledModel("models/holograms/hq_rcube_thin.mdl")
-		Plate:SetMaterial("phoenix_storms/metalfloor_2-3")
-		Plate:SetAngles(Angle)
-		Plate:SetPos(Pos)
-		Plate:Spawn()
-
-		Plate.DataStore = Entities.GetArguments("acf_armor")
-
-		duplicator.ClearEntityModifier(Plate, "mass")
-
-		UpdatePlate(Plate, Data, Armor)
-
-		if Armor.OnSpawn then
-			Armor:OnSpawn(Plate, Data)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_armor", Plate, Data, Armor)
-
-		return Plate
-	end
-
-	Entities.Register("acf_armor", ACF.MakeArmor, "Width", "Height", "Thickness", "ArmorType")
-
-	------------------- Updating ---------------------
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-
-		local Armor    = Armors.Get(Data.ArmorType)
-		local OldArmor = self.ArmorClass
-
-		if OldArmor.OnLast then
-			OldArmor:OnLast(self)
-		end
-
-		hook.Run("ACF_OnEntityLast", "acf_armor", self, OldArmor)
-
-		ACF.SaveEntity(self)
-
-		UpdatePlate(self, Data, Armor)
-
-		ACF.RestoreEntity(self)
+		self:UpdateMass(true)
 
 		if Armor.OnUpdate then
-			Armor:OnUpdate(Plate, Data)
+			Armor:OnUpdate(self, Data)
 		end
+	end
 
-		hook.Run("ACF_OnUpdateEntity", "acf_armor", self, Data, Armor)
+	function ENT:ACF_PreSpawn()
+		self:SetScaledModel("models/holograms/hq_rcube_thin.mdl")
+		self:SetMaterial("phoenix_storms/metalfloor_2-3")
+	end
 
-		return true, "Armor plate updated successfully!"
+	function ENT:ACF_PostSpawn(_, _, _, Data)
+		duplicator.ClearEntityModifier(self, "mass")
+
+		local Armor = self:ACF_GetUserVar("ArmorType")
+
+		if Armor.OnSpawn then
+			Armor:OnSpawn(self, Data)
+		end
 	end
 end
 
@@ -213,7 +145,7 @@ do -- Mass Update
 
 	local function UpdateMass(Entity)
 		local Size = Entity.Size
-		local Mass = Entity.ArmorClass:GetMass(Size.x * Size.y * Size.z)
+		local Mass = Entity.ClassData:GetMass(Size.x * Size.y * Size.z)
 
 		Contraption.SetMass(Entity, Mass)
 	end
@@ -233,22 +165,12 @@ do -- Mass Update
 	end
 end
 
-function ENT:OnRemove()
-	local Armor = self.ArmorClass
-
-	if Armor.OnLast then
-		Armor.OnLast(self, Armor)
-	end
-
-	hook.Run("ACF_OnEntityLast", "acf_armor", self, Armor)
-
-	WireLib.Remove(self)
-end
-
 do -- Wire overlay text
 	local OverlayText = "Armor Type: %s\nPlate Size: %.1f x %.1f x %.1f"
 
 	function ENT:UpdateOverlayText()
-		return OverlayText:format(self.ArmorClass.Name, self.Size[1], self.Size[2], self.Size[3])
+		return OverlayText:format(self.ClassData.Name, self.Size[1], self.Size[2], self.Size[3])
 	end
 end
+
+Entities.Register()

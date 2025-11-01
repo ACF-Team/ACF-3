@@ -37,9 +37,9 @@ do
 		local LocalPly = LocalPlayer()
 
 		for _, Target in player.Iterator() do
-			if (IsValid(Target)) then
+			if IsValid(Target) then
 				local Check = Menu:AddCheckBox(Target:Nick())
-				Check.SteamID = Target:SteamID()
+				Check.Target = Target
 				if Target == LocalPly then Check:SetDisabled(true) end
 				PlayerChecks[#PlayerChecks + 1] = Check
 			end

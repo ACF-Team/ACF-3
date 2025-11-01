@@ -153,13 +153,14 @@ do -- ACF global vars
 	ACF.DefineSetting("KEPush",               true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",           true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
-	ACF.DefineSetting("AllowFunEnts",            true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowArbitraryParents",   false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowSpecialEngines",     true,     "Special engines have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowDynamicLinking",     false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("ShowFunMenu",             true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("DetachedPhysmassRatio",   false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",          false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
+	ACF.DefineSetting("AllowFunEnts",              true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowSpecialEngines",       true,     "Special engines have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowProcArmor",            false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
 		ACF.GlobalFilter["acf_armor"] = not Value
 		return Value
 	end))

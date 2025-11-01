@@ -539,7 +539,8 @@ function Permissions.PermissionsRaw(ownerid, attackerid, value)
 	if not ownerid then return end
 	local ownerprefs = Permissions.GetDamagePermissions(ownerid)
 
-	if attackerid then
+	-- Ensure that the value is a valid SteamID
+	if isstring(attackerid) and #attackerid == 17 and string.StartsWith(attackerid, "STEAM_") then
 		local old = ownerprefs[attackerid] and true or nil
 		local new = value and true or nil
 		ownerprefs[attackerid] = new
@@ -562,43 +563,43 @@ end
 
 hook.Add("PlayerDisconnected", "ACF_PermissionDisconnect", onDisconnect)
 
-local function plyBySID(steamid)
-	for _, v in player.Iterator() do
-		if v:SteamID() == steamid then return v end
-	end
-
-	return false
-end
-
 -- -- -- -- -- Client sync -- -- -- -- --
 -- All code below modified from the NADMOD client permissions menu, by Nebual
 -- http://www.facepunch.com/showthread.php?t=1221183
 util.AddNetworkString("ACF_dmgfriends")
 
-net.Receive("ACF_dmgfriends", function(_, ply)
-	if not ply:IsValid() then return end
-	local perms = net.ReadTable()
-	local ownerid = ply:SteamID()
-	local changed
+net.Receive("ACF_dmgfriends", function(_, Ply)
+	if not IsValid(Ply) then return end
+
+	local PlayerCount = net.ReadUInt(8)
+	local Perms = {}
+
+	for _ = 1, PlayerCount do
+		local Target = net.ReadPlayer()
+		local Check = net.ReadBool()
+		if not IsValid(Target) then continue end
+
+		Perms[Target] = Check
+	end
+
+	local OwnerID = Ply:SteamID()
+	local Changed
 	local Success = true
 
-	for k, v in pairs(perms) do
-		changed = Permissions.PermissionsRaw(ownerid, k, v)
+	for Target, Check in pairs(Perms) do
+		local ID = Target:SteamID()
+		Changed = Permissions.PermissionsRaw(OwnerID, ID, Check)
 
-		if changed then
-			local targ = plyBySID(k)
+		if Changed then
+			local Note = Check and "given you" or "removed your"
+			local PlyNick = string.Trim(string.format("%q", Ply:Nick()), "\"") -- Ensuring that the name is Lua safe
 
-			if targ then
-				local note = v and "given you" or "removed your"
-				local nick = string.Trim(string.format("%q", ply:Nick()), "\"") -- Ensuring that the name is Lua safe
-
-				ACF.SendNotify(targ, true, nick .. " has " .. note .. " permission to damage their objects with ACF!")
-			end
+			ACF.SendNotify(Target, true, PlyNick .. " has " .. Note .. " permission to damage their objects with ACF!")
 		end
 	end
 
 	local FeedbackMessage = Success and "Successfully updated your ACF damage permissions!" or "Failed to update your ACF damage permissions."
-	ACF.SendNotify(ply, Success, FeedbackMessage)
+	ACF.SendNotify(Ply, Success, FeedbackMessage)
 end)
 
 function Permissions.RefreshPlyDPFriends(ply)

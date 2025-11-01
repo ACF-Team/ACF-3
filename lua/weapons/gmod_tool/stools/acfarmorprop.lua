@@ -105,7 +105,7 @@ if CLIENT then
 		local Ent = Trace.Entity
 
 		if not IsValid(Ent) then return false end
-		if Ent:IsPlayer() or Ent:IsNPC() then return false end
+		if Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() then return false end
 		if Ent.GetArmor then return end
 
 		local Weapon = self.Weapon
@@ -372,7 +372,7 @@ function TOOL:LeftClick(Trace)
 	local Ent = Trace.Entity
 
 	if not IsValid(Ent) then return false end
-	if Ent:IsPlayer() or Ent:IsNPC() then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() then return false end
 	if CLIENT then return true end
 	if not ACF.Check(Ent) then return false end
 
@@ -394,7 +394,7 @@ function TOOL:RightClick(Trace)
 	local Ent = Trace.Entity
 
 	if not IsValid(Ent) then return false end
-	if Ent:IsPlayer() or Ent:IsNPC() then return false end
+	if Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() then return false end
 	if CLIENT then return true end
 	if not ACF.Check(Ent) then return false end
 
@@ -437,7 +437,7 @@ do -- Armor readout
 				if not Ent:IsWeapon() then -- We don't want to count weapon entities
 					OtherNum = OtherNum + 1
 				end
-			elseif not (Ent:IsPlayer() or Ent:IsNPC()) then -- These will pass the ACF check, but we don't want them either
+			elseif not (Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot()) then -- These will pass the ACF check, but we don't want them either
 				local Owner   = Ent:CPPIGetOwner() or game.GetWorld()
 				local PhysObj = Ent.ACF.PhysObj
 				local Class   = Ent:GetClass()
@@ -500,7 +500,7 @@ do -- Armor readout
 				local Ent = Trace.Entity
 
 				if not IsValid(Ent) then return false end
-				if Ent:IsPlayer() or Ent:IsNPC() then return false end
+				if Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() then return false end
 
 				return true
 			end,

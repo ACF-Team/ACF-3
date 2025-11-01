@@ -51,25 +51,25 @@ do
     function CONTRAPTION:ACF_GetContraptionType()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return "" end -- We have no way of knowing...
-        return Baseplate:ACF_GetUserVar("BaseplateType")
+        return Baseplate:ACF_GetUserVar("BaseplateType").ID
     end
 
     function CONTRAPTION:ACF_IsGroundVehicle()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return Baseplate:ACF_GetUserVar("BaseplateType") == "GroundVehicle"
+        return Baseplate:ACF_GetUserVar("BaseplateType").ID == "GroundVehicle"
     end
 
     function CONTRAPTION:ACF_IsAircraft()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return Baseplate:ACF_GetUserVar("BaseplateType") == "Aircraft"
+        return Baseplate:ACF_GetUserVar("BaseplateType").ID == "Aircraft"
     end
 
     function CONTRAPTION:ACF_IsRecreational()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return Baseplate:ACF_GetUserVar("BaseplateType") == "Recreational"
+        return Baseplate:ACF_GetUserVar("BaseplateType").ID == "Recreational"
     end
 
     -- todo

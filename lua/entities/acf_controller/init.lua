@@ -21,7 +21,6 @@ local Contraption = ACF.Contraption
 local hook	   = hook
 local Classes	= ACF.Classes
 local Entities   = Classes.Entities
-local CheckLegal = ACF.CheckLegal
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
 local TraceLine = util.TraceLine
@@ -30,6 +29,7 @@ util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
 util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
+util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -143,15 +143,13 @@ do
 
 		local PhysObj = Entity.ACF.PhysObj
 		if IsValid(PhysObj) then Contraption.SetMass(Entity, 1) end
-
-		Entity:UpdateOverlay(true)
 	end
 
 	function ACF.MakeController(Player, Pos, Ang, Data)
 		VerifyData(Data)
 
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_controller", Player, Data)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_controller")
@@ -223,36 +221,29 @@ do
 
 		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
-		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_controller")
 
 		UpdateController(Entity, Data)
 
 		-- Finish setting up the entity
-		hook.Run("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
+		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
 
 		WireIO.SetupInputs(Entity, Inputs, Data)
 		WireIO.SetupOutputs(Entity, Outputs, Data)
-
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
 		return Entity
 	end
 
-	-- Bare minimum arguments to reconstruct an armor controller
+	-- Bare minimum arguments to reconstruct an all-in-one controller
 	Entities.Register("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
 		-- Called when updating the entity
 		VerifyData(Data)
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_controller", self, Data)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_controller", self, Data)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		HookRun("ACF_OnEntityLast", "acf_controller", self)
@@ -263,11 +254,9 @@ do
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_controller", self, Data)
+		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
 
-		self:UpdateOverlay(true)
-
-		return true, "Armor Controller updated successfully!"
+		return true, "All-In-One Controller updated successfully!"
 	end
 
 	local GearboxEndMap = {
@@ -302,6 +291,17 @@ do
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
+	end)
+
+	net.Receive("ACF_Controller_Zoom", function(_, ply)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local FOV = net.ReadFloat()
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		if Entity.Driver ~= ply then return end
+		if Entity:GetDisableAIOCam() then return end
+		Entity.FOV = FOV
+		ply:SetFOV(FOV, 0, nil)
 	end)
 
 	local CamTraceConfig = {}
@@ -804,6 +804,9 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
 	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
+
+	Controller.FOV = Controller.FOV or 90
+	Ply:SetFOV(Active and Controller.FOV or 0, 0, nil)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL

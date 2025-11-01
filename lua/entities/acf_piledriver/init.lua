@@ -161,6 +161,9 @@ do -- Spawning and Updating --------------------
 
 		if not Player:CheckLimit(Limit) then return end
 
+		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_piledriver", Player, Data, Class)
+		if CanSpawn == false then return end
+
 		local Entity = ents.Create("acf_piledriver")
 
 		if not IsValid(Entity) then return end
@@ -191,7 +194,7 @@ do -- Spawning and Updating --------------------
 
 		WireLib.TriggerOutput(Entity, "State", "Loading")
 
-		ACF.CheckLegal(Entity)
+		hook.Run("ACF_OnSpawnEntity", "acf_piledriver", Entity, Data, Class)
 
 		return Entity
 	end
