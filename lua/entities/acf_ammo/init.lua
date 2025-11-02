@@ -78,16 +78,29 @@ do -- Spawning and Updating --------------------
 				net.WriteBool(Enabled)
 
 				if Enabled then
-					net.WriteUInt(ExtraData.Capacity, 25)
-					net.WriteBool(ExtraData.IsRound)
+					-- Send stored projectile counts for client rendering
+					local CountX = Entity.CrateProjectilesX or 3
+					local CountY = Entity.CrateProjectilesY or 3
+					local CountZ = Entity.CrateProjectilesZ or 3
+
+					net.WriteUInt(ExtraData.Capacity or 0, 25)
+					net.WriteBool(ExtraData.IsRound or false)
 					net.WriteVector(ExtraData.RoundSize or vector_origin)
 					net.WriteAngle(ExtraData.LocalAng or angle_zero)
-					net.WriteVector(ExtraData.FitPerAxis or vector_origin)
-					net.WriteFloat(ExtraData.Spacing)
-					net.WriteUInt(ExtraData.MagSize, 10)
-					net.WriteBool(ExtraData.IsBoxed)
-					net.WriteUInt(ExtraData.AmmoStage, 5)
-					net.WriteBool(ExtraData.IsBelted)
+					net.WriteVector(Vector(CountX, CountY, CountZ)) -- Send stored projectile counts
+					net.WriteFloat(ExtraData.Spacing or 0)
+					net.WriteUInt(ExtraData.MagSize or 0, 10)
+					net.WriteUInt(ExtraData.AmmoStage or 0, 5)
+					net.WriteBool(ExtraData.IsBelted or false)
+
+					local HasModel = ExtraData.RoundModel ~= nil
+
+					net.WriteBool(HasModel)
+
+					if HasModel then
+						net.WriteString(ExtraData.RoundModel)
+						net.WriteVector(ExtraData.RoundOffset)
+					end
 				end
 
 			if Player then
@@ -113,28 +126,29 @@ do -- Spawning and Updating --------------------
 				Data.Size = Vector(X, Y, Z)
 			end
 
-			Data.Weapon   = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG", 
+			Data.Weapon   = Data.RoundId -- Note that RoundId is of the old weapon id form, e.g. "14.5mmMG",
 			Data.AmmoType = Data.RoundType
-		elseif not isvector(Data.Size) then -- This could just be an else statement? Not sure though.
-			-- Current ammo data format
+		elseif not isvector(Data.Size) then
+			-- Legacy format - convert old CrateSize fields to Size vector
 			local X = ACF.CheckNumber(Data.CrateSizeX, 24)
 			local Y = ACF.CheckNumber(Data.CrateSizeY, 24)
 			local Z = ACF.CheckNumber(Data.CrateSizeZ, 24)
 
 			Data.Size = Vector(X, Y, Z)
+
 		end
 
 		do -- The rest under applies to all ammo data formats
-			-- Clamping size
+			-- Clamping size (preserve precision for projectile-count-based sizing)
 			local Min  = ACF.AmmoMinSize
 			local Max  = ACF.AmmoMaxSize
 			local Size = Data.Size
 
-			Size.x = math.Clamp(math.Round(Size.x), Min, Max)
-			Size.y = math.Clamp(math.Round(Size.y), Min, Max)
-			Size.z = math.Clamp(math.Round(Size.z), Min, Max)
+			Size.x = math.Clamp(Size.x, Min, Max)
+			Size.y = math.Clamp(Size.y, Min, Max)
+			Size.z = math.Clamp(Size.z, Min, Max)
 
-			-- Destiny (string) may be already defined as "Weapons"/"Missiles", otherwise find the weapony source/"Weapons" 
+			-- Destiny (string) may be already defined as "Weapons"/"Missiles", otherwise find the weapony source/"Weapons"
 			if not isstring(Data.Destiny) then
 				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
 			end
@@ -229,7 +243,26 @@ do -- Spawning and Updating --------------------
 		local WeaponName  = Scalable and Caliber .. "mm " .. Class.Name or Weapon.Name
 		local WeaponShort = Scalable and Caliber .. "mm" .. Class.ID or Weapon.ID
 
-		Entity:SetSize(Data.Size)
+		-- Compute bullet data early for sizing so crate OBB matches projectile bounds
+		local prelimBullet = Ammo:ServerConvert( Data )
+
+		-- Determine projectile counts: prefer explicit counts; else derive from provided size
+		local countX, countY, countZ = Data.CrateProjectilesX, Data.CrateProjectilesY, Data.CrateProjectilesZ
+		local hasExplicitCounts = countX ~= nil and countY ~= nil and countZ ~= nil
+		if not hasExplicitCounts then
+			countX, countY, countZ =  ACF.GetProjectileCountsFromCrateSize( Data.Size, Class, Data, prelimBullet )
+		end
+
+		-- Store projectile counts
+		Data.CrateProjectilesX = countX or 3
+		Data.CrateProjectilesY = countY or 3
+		Data.CrateProjectilesZ = countZ or 3
+
+		-- Recompute crate size to shrink-wrap projectile arrangement
+		-- For legacy crates, counts are derived to fit within the original bounds, so this will only shrink or match
+		Data.Size = ACF.GetCrateSizeFromProjectileCounts( Data.CrateProjectilesX, Data.CrateProjectilesY, Data.CrateProjectilesZ, Class, Data, prelimBullet )
+
+		Entity:SetSize( Data.Size )
 
 		do -- Updating round data
 			local OldAmmo = Entity.RoundData
@@ -260,6 +293,20 @@ do -- Spawning and Updating --------------------
 			Entity[V] = Data[V]
 		end
 
+		-- Store projectile counts, defaulting to calculated values if not provided
+		Entity.CrateProjectilesX = Data.CrateProjectilesX or 3
+		Entity.CrateProjectilesY = Data.CrateProjectilesY or 3
+		Entity.CrateProjectilesZ = Data.CrateProjectilesZ or 3
+
+		-- If projectile counts weren't provided, calculate them from size for backward compatibility
+		if not Data.CrateProjectilesX or not Data.CrateProjectilesY or not Data.CrateProjectilesZ then
+			local CountX, CountY, CountZ = ACF.GetProjectileCountsFromCrateSize(Data.Size, Class, Data, Entity.BulletData)
+
+			Entity.CrateProjectilesX = CountX
+			Entity.CrateProjectilesY = CountY
+			Entity.CrateProjectilesZ = CountZ
+		end
+
 		-- Initialize some of the entity properties
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
 		Entity.ShortName  = ShortName or WeaponShort .. " " .. Ammo.ID
@@ -277,35 +324,51 @@ do -- Spawning and Updating --------------------
 		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
 		do -- Ammo count calculation
-			local Size       = Entity:GetSize()
 			local BulletData = Entity.BulletData
 			local Percentage = Entity.Capacity and Entity.Ammo / math.max(Entity.Capacity, 1) or 1
-			local Rounds, ExtraData = ACF.GetAmmoCrateCapacity(Size, Class, Data, BulletData)
 			local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
+
+			-- Calculate capacity from stored projectile counts
+			local CountX = Entity.CrateProjectilesX or 3
+			local CountY = Entity.CrateProjectilesY or 3
+			local CountZ = Entity.CrateProjectilesZ or 3
+			local Rounds = CountX * CountY * CountZ
 
 			Entity.Capacity = Rounds
 			Entity.MagSize  = MagSize
 			Entity:SetAmmo(math.floor(Entity.Capacity * Percentage))
 
-			if ExtraData then
-				local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon)
+			local ExtraData = {}
+			if Rounds > 0 then
+				local BeltFed = ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon) or false
+				local Round = Weapon and Weapon.Round or Class.Round
+				local RoundLength, RoundDiameter, RoundModel, RoundOffset = ACF.GetModelDimensions(Round)
 
-				-- for future use in reloading
-				Entity.IsBelted = ExtraData.IsBelted -- Ammunition is belted
-				-- Entity.IsBoxed = ExtraData.IsBoxed -- Ammunition is boxed
-				--Entity.IsTwoPiece = ExtraData.IsTwoPiece -- Ammunition is broken down to two pieces
-				ExtraData.AmmoStage = Data.AmmoStage
-				ExtraData.MagSize = ExtraData.IsBoxed and MagSize or 0
-				ExtraData.IsRound = not (ExtraData.IsBoxed or ExtraData.IsTwoPiece or ExtraData.IsRacked or ExtraData.IsBelted)
-				ExtraData.Capacity = Entity.Capacity
+				if not RoundLength then
+					RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
+					RoundLength = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
+					RoundLength = RoundLength / ACF.InchToCm
+					RoundDiameter = RoundDiameter / ACF.InchToCm
+				end
+
+				Entity.IsBelted = BeltFed
+				ExtraData.AmmoStage = Data.AmmoStage or 0
+				ExtraData.IsRound = true
+				ExtraData.Capacity = Entity.Capacity or 0
 				ExtraData.Enabled = true
+				ExtraData.RoundSize = Vector(RoundLength, RoundDiameter, RoundDiameter)
+				ExtraData.LocalAng = Angle(0, 0, 0)
+				ExtraData.Spacing = 0
+				ExtraData.MagSize = Entity.MagSize or 0
+				ExtraData.IsBelted = BeltFed or false
+				ExtraData.RoundModel = RoundModel
+				ExtraData.RoundOffset = RoundOffset
 			else
 				ExtraData = { Enabled = false }
 			end
 
 			Entity.ExtraData = ExtraData
 
-			-- Send over the crate and ExtraData to the client to render the overlay
 			NetworkAmmoData(Entity)
 		end
 
@@ -412,7 +475,7 @@ do -- Spawning and Updating --------------------
 		return Crate
 	end
 
-	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage")
+	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 
@@ -661,13 +724,12 @@ do -- Entity Inputs -----------------------------
 end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
-	local Text = "%s\n\nSize: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
+	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg\nPropellant Mass: %s kg\nCartridge Length: %s cm\nIdeal Shot Reload: %s s\nIdeal Mag Reload: %s s\nMag Mass: %s kg"
 
 	function ENT:UpdateOverlayText()
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
-		local X, Y, Z = self:GetSize():Unpack()
 		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
 		local ExtraInfo = ACF.GetOverlayText(self)
 		local BulletInfo = ""
@@ -679,9 +741,10 @@ do -- Entity Overlay ----------------------------
 			Status = "Not linked to a weapon!"
 		end
 
-		X = math.Round(X, 2)
-		Y = math.Round(Y, 2)
-		Z = math.Round(Z, 2)
+		-- Get ammo storage configuration from stored projectile counts
+		local CountX = self.CrateProjectilesX or 1
+		local CountY = self.CrateProjectilesY or 1
+		local CountZ = self.CrateProjectilesZ or 1
 
 		if self.BulletData.Type ~= "Refill" then
 			local Projectile = math.Round(self.BulletData.ProjMass, 2)
@@ -700,7 +763,7 @@ do -- Entity Overlay ----------------------------
 			AmmoInfo = "\n\n" .. AmmoInfo
 		end
 
-		return Text:format(Status, X, Y, Z, AmmoType, self.Ammo, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Ammo, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
 	end
 end ---------------------------------------------
 
@@ -736,7 +799,7 @@ do -- Ammo Consumption -------------------------
 	end
 
 	--- Returns all crates in the first stage with a valid crate
-	--- Needed in case your first stage crates get destroyed 
+	--- Needed in case your first stage crates get destroyed
 	local function FindFirstStage(contraption)
 		for i = ACF.AmmoStageMin, ACF.AmmoStageMax do
 			local temp = FindCratesAtStage(contraption, i) or {}
