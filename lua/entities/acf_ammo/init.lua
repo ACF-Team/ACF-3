@@ -92,6 +92,15 @@ do -- Spawning and Updating --------------------
 					net.WriteUInt(ExtraData.MagSize or 0, 10)
 					net.WriteUInt(ExtraData.AmmoStage or 0, 5)
 					net.WriteBool(ExtraData.IsBelted or false)
+
+					local HasModel = ExtraData.RoundModel ~= nil
+
+					net.WriteBool(HasModel)
+
+					if HasModel then
+						net.WriteString(ExtraData.RoundModel)
+						net.WriteVector(ExtraData.RoundOffset)
+					end
 				end
 
 			if Player then
@@ -312,45 +321,37 @@ do -- Spawning and Updating --------------------
 
 			Entity:SetNWInt("Ammo", Entity.Ammo) -- Sent to client for use in overlay
 
-			-- Create ExtraData for client rendering
 			local ExtraData = {}
 			if Rounds > 0 then
 				local BeltFed = ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon) or false
+				local Round = Weapon and Weapon.Round or Class.Round
+				local RoundLength, RoundDiameter, RoundModel, RoundOffset = ACF.GetModelDimensions(Round)
 
-				-- Calculate round dimensions for client visual display
-				local roundDiameter = Caliber * ACF.AmmoCaseScale * 0.1 -- mm to cm
-				local roundLength = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
-
-				-- Handle special projectile sizes (missiles, etc.)
-				local Round = Class.Round or WeaponClass.Round
-				if Round and Round.ActualWidth then
-					local Scale = Weapon and 1 or Caliber / (Class.Caliber and Class.Caliber.Base or 50)
-					roundDiameter = Round.ActualWidth * Scale
-					roundLength = Round.ActualLength * Scale
+				if not RoundLength then
+					RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
+					RoundLength = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
+					RoundLength = RoundLength / ACF.InchToCm
+					RoundDiameter = RoundDiameter / ACF.InchToCm
 				end
 
-				-- For visual display, we need the base round size (without spacing)
-				-- The client will handle spacing in its rendering logic
-				roundLength = roundLength / ACF.InchToCm
-				roundDiameter = roundDiameter / ACF.InchToCm
-
-				Entity.IsBelted    = BeltFed
+				Entity.IsBelted = BeltFed
 				ExtraData.AmmoStage = Data.AmmoStage or 0
-				ExtraData.IsRound   = true -- All ammunition uses individual round rendering
-				ExtraData.Capacity  = Entity.Capacity or 0
-				ExtraData.Enabled   = true
-				ExtraData.RoundSize = Vector(roundLength, roundDiameter, roundDiameter)
-				ExtraData.LocalAng  = Angle(0, 0, 0)
-				ExtraData.Spacing   = 0
-				ExtraData.MagSize   = Entity.MagSize or 0
-				ExtraData.IsBelted  = BeltFed or false
+				ExtraData.IsRound = true
+				ExtraData.Capacity = Entity.Capacity or 0
+				ExtraData.Enabled = true
+				ExtraData.RoundSize = Vector(RoundLength, RoundDiameter, RoundDiameter)
+				ExtraData.LocalAng = Angle(0, 0, 0)
+				ExtraData.Spacing = 0
+				ExtraData.MagSize = Entity.MagSize or 0
+				ExtraData.IsBelted = BeltFed or false
+				ExtraData.RoundModel = RoundModel
+				ExtraData.RoundOffset = RoundOffset
 			else
 				ExtraData = { Enabled = false }
 			end
 
 			Entity.ExtraData = ExtraData
 
-			-- Send over the crate and ExtraData to the client to render the overlay
 			NetworkAmmoData(Entity)
 		end
 

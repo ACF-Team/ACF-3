@@ -38,9 +38,19 @@ net.Receive("ACF_RequestAmmoData", function()
 		Entity.ProjectileCounts = net.ReadVector()
 		Entity.Spacing = net.ReadFloat()
 		Entity.MagSize = net.ReadUInt(10)
-		-- Entity.HasBoxedAmmo = net.ReadBool() -- Removed: no longer using boxed ammo logic
+
 		Entity.AmmoStage = net.ReadUInt(5)
 		Entity.IsBelted = net.ReadBool() or false
+
+		local HasModel = net.ReadBool()
+
+		if HasModel then
+			Entity.RoundModel  = net.ReadString()
+			Entity.RoundOffset = net.ReadVector()
+		else
+			Entity.RoundModel  = nil
+			Entity.RoundOffset = nil
+		end
 	end
 
 	if Queued[Entity] then
@@ -119,6 +129,9 @@ do -- Ammo overlay
 	local Red    = Color(255, 0, 0, 65)
 	local Yellow = Color(255, 255, 0, 65)
 
+	-- Hexagonal packing constant
+	local HEX_SPACING = 0.866 -- sqrt(3)/2 for hexagonal packing
+
 	local function GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, Direction, IsBelted, Fits)
 		-- Use actual round size (no padding) for visual spacing
 		local useLinearPacking = (Fits.y == 1 or Fits.z == 1)
@@ -134,8 +147,7 @@ do -- Ammo overlay
 			SizeZ = (Z - 1) * RoundSize.z * RoundAngle:Up() * Direction
 		else
 			-- Hexagonal packing - offset alternating rows
-			local HexRowSpacing = RoundSize.y * 0.866 -- sqrt(3)/2 ≈ 0.866
-			SizeY = (Y - 1) * HexRowSpacing * RoundAngle:Right() * Direction
+			SizeY = (Y - 1) * RoundSize.y * HEX_SPACING * RoundAngle:Right() * Direction
 
 			-- Z dimension with hexagonal offset for alternating Y rows
 			local ZOffset = ((Y - 1) % 2) * RoundSize.z * 0.5 -- Offset every other row
@@ -156,6 +168,7 @@ do -- Ammo overlay
 			end
 		end
 		ModelCache = {}
+		ModelBoundsCache = {}
 	end
 
 	-- Clean up models when the game shuts down
@@ -163,6 +176,11 @@ do -- Ammo overlay
 
 	-- Helper function to get the appropriate model for an ammo type
 	local function GetAmmoModel(Entity)
+		-- Use missile model if available (sent from server)
+		if Entity.RoundModel then
+			return Entity.RoundModel
+		end
+
 		-- Default model for all rounds (no more box logic)
 		local Model = "models/munitions/round_100mm.mdl"
 
@@ -190,62 +208,74 @@ do -- Ammo overlay
 		return ModelCache[ModelPath]
 	end
 
-	-- Helper function to calculate model scale based on actual round dimensions
-	local function GetModelScale(RoundSize, Model)
-		-- Get the actual model bounds to calculate real scaling
-		local TempModel = ClientsideModel(Model, RENDERGROUP_OPAQUE)
-		if not IsValid(TempModel) then
-			-- Fallback to default scaling if model can't be loaded
-			return Vector(1, 1, 1)
+	local ModelBoundsCache = {}
+
+	local function GetModelBounds(ModelPath)
+		if ModelBoundsCache[ModelPath] then
+			return ModelBoundsCache[ModelPath]
 		end
 
-		local ModelMins, ModelMaxs = TempModel:GetRenderBounds()
-		local ModelSize = ModelMaxs - ModelMins
-		TempModel:Remove()
+		local Model = GetCachedModel(ModelPath)
+		if not IsValid(Model) then return nil end
 
-		-- Model axes: X=7.235, Y=7.235, Z=43.233 (diameter, diameter, length)
-		-- RoundSize axes: X=length, Y=diameter, Z=diameter
-		local ScaleX = RoundSize.y / ModelSize.x  -- Model's X (diameter) = RoundSize Y (diameter)
-		local ScaleY = RoundSize.z / ModelSize.y  -- Model's Y (diameter) = RoundSize Z (diameter)
-		local ScaleZ = RoundSize.x / ModelSize.z  -- Model's Z (length) = RoundSize X (length)
+		local Mins, Maxs = Model:GetModelBounds()
+		local Size = Maxs - Mins
 
-		-- Apply scale factors (no additional fudge; match actual round size)
-		local DiameterScaleFactor = 1.0
-		local LengthScaleFactor = 1.0
-		ScaleX = ScaleX * DiameterScaleFactor
-		ScaleY = ScaleY * DiameterScaleFactor
-		ScaleZ = ScaleZ * LengthScaleFactor
+		ModelBoundsCache[ModelPath] = Size
 
-		return Vector(ScaleX, ScaleY, ScaleZ)
+		return Size
 	end
 
-	-- Ensure a pool of reusable clientside models exists for this crate
-	local function EnsureModelPool(Entity, Count, ModelPath, ModelScale)
-		Entity._RoundModels = Entity._RoundModels or {}
-		Entity._RoundModelPath = Entity._RoundModelPath or ModelPath
-		Entity._ScaleVec = Entity._ScaleVec or ModelScale
-		Entity._ScaleMatrix = Entity._ScaleMatrix or (function()
-			local M = Matrix()
-			M:SetScale(ModelScale)
-			return M
-		end)()
+	local function GetModelScale(RoundSize, ModelPath, HasCustomModel)
+		local ModelSize = GetModelBounds(ModelPath)
+		if not ModelSize then return Vector(1, 1, 1) end
 
-		-- If model changed, clear old pool
+		if HasCustomModel then
+			return Vector(
+				RoundSize.x / ModelSize.x,
+				RoundSize.y / ModelSize.y,
+				RoundSize.z / ModelSize.z
+			)
+		end
+
+		return Vector(
+			RoundSize.y / ModelSize.x,
+			RoundSize.z / ModelSize.y,
+			RoundSize.x / ModelSize.z
+		)
+	end
+
+	local function ScaleChanged(Old, New)
+		return not Old or Old.x ~= New.x or Old.y ~= New.y or Old.z ~= New.z
+	end
+
+	local function EnsureModelPool(Entity, Count, ModelPath, ModelScale)
+		if not Entity._RoundModels then
+			Entity._RoundModels = {}
+			Entity._RoundModelPath = ModelPath
+			Entity._ScaleVec = ModelScale
+			Entity._ScaleMatrix = Matrix()
+			Entity._ScaleMatrix:SetScale(ModelScale)
+		end
+
 		if Entity._RoundModelPath ~= ModelPath then
-			for _, Mdl in ipairs(Entity._RoundModels) do if IsValid(Mdl) then Mdl:Remove() end end
+			for _, Mdl in ipairs(Entity._RoundModels) do
+				if IsValid(Mdl) then Mdl:Remove() end
+			end
 			Entity._RoundModels = {}
 			Entity._RoundModelPath = ModelPath
 		end
 
-		-- If scale changed, update matrix and reapply to existing models
-		if not Entity._ScaleVec or Entity._ScaleVec.x ~= ModelScale.x or Entity._ScaleVec.y ~= ModelScale.y or Entity._ScaleVec.z ~= ModelScale.z then
+		if ScaleChanged(Entity._ScaleVec, ModelScale) then
 			Entity._ScaleVec = ModelScale
-			Entity._ScaleMatrix = Entity._ScaleMatrix or Matrix()
 			Entity._ScaleMatrix:SetScale(ModelScale)
-			for _, Mdl in ipairs(Entity._RoundModels) do if IsValid(Mdl) then Mdl:EnableMatrix("RenderMultiply", Entity._ScaleMatrix) end end
+			for _, Mdl in ipairs(Entity._RoundModels) do
+				if IsValid(Mdl) then
+					Mdl:EnableMatrix("RenderMultiply", Entity._ScaleMatrix)
+				end
+			end
 		end
 
-		-- Ensure pool size
 		for i = #Entity._RoundModels + 1, Count do
 			local Mdl = ClientsideModel(ModelPath, RENDERGROUP_OPAQUE)
 			if IsValid(Mdl) then
@@ -258,51 +288,49 @@ do -- Ammo overlay
 	end
 
 	local function DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Total)
-
-		-- Determine packing method based on arrangement
-		local useLinearPacking = (Fits.y == 1 or Fits.z == 1)
-
-		-- Use crate dimensions computed from actual round size (no padding)
 		local arrangement = Vector(Fits.x, Fits.y, Fits.z)
 		local crateDimensions = ACF.GetCrateDimensions(arrangement, RoundSize)
-
-		-- Start at inner faces so centers align exactly with crate bounds
 		local StartPosX = -crateDimensions.x * 0.5 + RoundSize.x * 0.5
 		local StartPosY = -crateDimensions.y * 0.5 + RoundSize.y * 0.5
 		local StartPosZ = -crateDimensions.z * 0.5 + RoundSize.z * 0.5
-
 		local StartPos = StartPosX * RoundAngle:Forward() + StartPosY * RoundAngle:Right() + StartPosZ * RoundAngle:Up()
-		local Count    = 0
-
-		-- Get the appropriate model and scale for this ammo type
+		local Count = 0
 		local ModelPath = GetAmmoModel(Entity)
-		local ModelScale = Entity._ModelScale
-		if not ModelScale or Entity._RoundModelPath ~= ModelPath or not Entity._ModelScaleRound
-			or Entity._ModelScaleRound.x ~= RoundSize.x or Entity._ModelScaleRound.y ~= RoundSize.y or Entity._ModelScaleRound.z ~= RoundSize.z then
-			ModelScale = GetModelScale(RoundSize, ModelPath)
-			Entity._ModelScale = ModelScale
-			Entity._ModelScaleRound = Vector(RoundSize.x, RoundSize.y, RoundSize.z)
-		end
-		EnsureModelPool(Entity, Total, ModelPath, ModelScale)
+		local HasCustomModel = Entity.RoundModel ~= nil
+		local NeedRecalc = not Entity._ModelScale
+			or Entity._CachedModelPath ~= ModelPath
+			or ScaleChanged(Entity._CachedRoundSize, RoundSize)
 
-		-- Precompute projectile world angle for this frame
+		if NeedRecalc then
+			Entity._ModelScale = GetModelScale(RoundSize, ModelPath, HasCustomModel)
+			Entity._CachedModelPath = ModelPath
+			Entity._CachedRoundSize = Vector(RoundSize.x, RoundSize.y, RoundSize.z)
+		end
+
+		EnsureModelPool(Entity, Total, ModelPath, Entity._ModelScale)
+
 		local ProjectileAngle = Angle(RoundAngle.p, RoundAngle.y, RoundAngle.r)
-		ProjectileAngle:RotateAroundAxis(RoundAngle:Right(), -90)
+		if not HasCustomModel then
+			ProjectileAngle:RotateAroundAxis(RoundAngle:Right(), -90)
+		end
 
 		for X = 1, Fits.x do
 			for Y = 1, Fits.y do
 				for Z = 1, Fits.z do
 					local LocalPos = GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, 1, Entity.IsBelted, Fits)
-					local C = Entity.IsRound and Blue or Entity.IsBelted and Yellow or Orange
 					local RoundPos = Center + StartPos + LocalPos
 
-
-
-					-- Draw 3D models for round ammo
 					if Entity.IsRound then
-						-- Adjust position since model origin is at the base of the cartridge
-						-- We want the center of the round to be at RoundPos
-						local ModelPos = RoundPos - RoundAngle:Forward() * (RoundSize.x * 0.5)
+						local ModelPos = RoundPos
+
+						if HasCustomModel and Entity.RoundOffset then
+							local Offset = Entity.RoundOffset
+							ModelPos = ModelPos + RoundAngle:Forward() * Offset.x
+								+ RoundAngle:Right() * Offset.y
+								+ RoundAngle:Up() * Offset.z
+						elseif not HasCustomModel then
+							ModelPos = RoundPos - RoundAngle:Forward() * (RoundSize.x * 0.5)
+						end
 
 						local idx = Count + 1
 						local M = Entity._RoundModels and Entity._RoundModels[idx]
@@ -312,7 +340,7 @@ do -- Ammo overlay
 							M:DrawModel()
 						end
 					else
-						-- Draw wireframe box for non-round ammo (boxed, belted, etc.)
+						local C = Entity.IsBelted and Yellow or Orange
 						render.DrawWireframeBox(RoundPos, RoundAngle, -RoundSize * 0.5, RoundSize * 0.5, C)
 					end
 

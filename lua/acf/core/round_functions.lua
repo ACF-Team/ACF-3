@@ -239,47 +239,60 @@ end
 
 do -- Ammo crate capacity calculation
 
+	local function GetModelDimensions(Round)
+		if not Round or not (Round.Model or Round.RackModel) then
+			return nil
+		end
+
+		local ModelPath = Round.RackModel or Round.Model
+		local ModelData = ACF.ModelData.GetModelData(ModelPath)
+
+		if not ModelData or not ModelData.Size then
+			return nil
+		end
+
+		local Size     = ModelData.Size
+		local Center   = ModelData.Center
+		local Length   = Size.x
+		local Diameter = math.max(Size.y, Size.z)
+		local Offset   = Vector(-Center.x, 0, 0)
+
+		return Length, Diameter, ModelPath, Offset
+	end
+
+	ACF.GetModelDimensions = GetModelDimensions
+
 	local function GetRoundProperties(Class, ToolData, BulletData)
 		local Weapon  = Class.Lookup and Class.Lookup[ToolData.Weapon]
 		local Caliber = Weapon and Weapon.Caliber or ToolData.Caliber
 		local Round   = Weapon and Weapon.Round or Class.Round
+		local Length, Diameter = GetModelDimensions(Round)
 
-		-- Calculate round dimensions
-		local diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM -- mm to cm
-		local length = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
-
-		-- Handle special projectile sizes (missiles, etc.)
-		if Round and Round.ActualWidth then
-			local scale = Weapon and 1 or Caliber / (Class.Caliber and Class.Caliber.Base or 50)
-			diameter = Round.ActualWidth * scale
-			length = Round.ActualLength * scale
+		if Length then
+			return Vector(Length, Diameter, Diameter)
 		end
 
-		-- Convert to source units without padding for crate sizing
-		-- Crates are shrink-wrapped to the exact projectile arrangement bounds
-		local roundSize = Vector(length, diameter, diameter) / ACF.InchToCm
+		Diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM
+		Length = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
 
-		return roundSize
+		return Vector(Length, Diameter, Diameter) / ACF.InchToCm
 	end
 
 	function ACF.GetCrateDimensions(arrangement, roundSize)
 		if arrangement.y == 1 or arrangement.z == 1 then
-			-- Linear packing when cross-section is 1 in either axis
 			return Vector(arrangement.x, arrangement.y, arrangement.z) * roundSize
-		else
-			-- Hexagonal packing
-			local yDimension = (arrangement.y - 1) * roundSize.y * 0.866 + roundSize.y -- sqrt(3)/2 ≈ 0.866 (hexagonal spacing)
-			local zDimension = arrangement.z * roundSize.z + roundSize.z * 0.5
-
-			return Vector(
-				arrangement.x * roundSize.x,
-				yDimension,
-				zDimension
-			)
 		end
+
+		local yDimension = (arrangement.y - 1) * roundSize.y * 0.866 + roundSize.y
+		local zDimension = arrangement.z * roundSize.z + roundSize.z * 0.5
+
+		return Vector(
+			arrangement.x * roundSize.x,
+			yDimension,
+			zDimension
+		)
 	end
 
-	-- Calculate crate size from projectile counts
 	function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
 		if BulletData.Type == "Refill" then
 			local volume = CountX * CountY * CountZ / 0.01
@@ -290,7 +303,6 @@ do -- Ammo crate capacity calculation
 		local roundSize = GetRoundProperties(Class, ToolData, BulletData)
 		local arrangement = Vector(CountX, CountY, CountZ)
 
-		-- Calculate the exact dimensions needed to fit the projectile arrangement
 		return ACF.GetCrateDimensions(arrangement, roundSize)
 	end
 
