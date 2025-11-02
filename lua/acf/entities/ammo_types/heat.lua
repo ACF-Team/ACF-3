@@ -309,7 +309,7 @@ if SERVER then
 			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
 				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.35
+				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.14
 
 				-- Damage result, Damage info
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
