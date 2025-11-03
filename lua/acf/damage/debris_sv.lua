@@ -64,7 +64,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 		else
 			Ent:SetParent()
 
-			if Ent.IsExplosive and not Ent.Exploding then
+			if Ent.IsExplosive and not Ent.Exploding and not DoNotExplode then
 				Explosives[Ent] = true
 				Children[Ent] 	= nil
 			else
@@ -90,11 +90,10 @@ function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 	end
 
 	-- explode stuff last, so we don't re-process all that junk again in a new explosion
-	if next(Explosives) then
+	if not DoNotExplode and next(Explosives) then
 		for Ent in pairs(Explosives) do
 			Ent.Inflictor = Entity.Inflictor
-
-			Ent:Detonate(DoNotExplode)
+			Ent:Detonate()
 		end
 	end
 end

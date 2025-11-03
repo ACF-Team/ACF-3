@@ -382,7 +382,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:Detonate(VisualOnly)
+function ENT:Detonate()
 	if self.Exploding then return end
 
 	self.Exploding = true -- Prevent multiple explosions
@@ -393,9 +393,7 @@ function ENT:Detonate(VisualOnly)
 
 	ACF.KillChildProps(self, Position, Explosive)
 
-	if not VisualOnly then
-		Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
-	end
+	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
 	constraint.RemoveAll(self)
