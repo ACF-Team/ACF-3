@@ -254,12 +254,22 @@ local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
     end)
 end
 
+local DoNotDebris = {
+    primitive_shape = true,
+    primitive_staircase = true,
+    primitive_ladder = true,
+    primitive_airfoil = true,
+    primitive_rail_slider = true
+}
+
 -- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
 hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent, IsFullUpdate)
     if IsFullUpdate then return end
 
     local EntID = Ent:EntIndex()
     if EntID == -1 then return end
+
+    if DoNotDebris[Ent:GetClass()] then return end
 
     EntData[EntID] = {
         Model = Ent:GetModel(),
