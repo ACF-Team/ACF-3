@@ -346,7 +346,7 @@ do -- Spawning and Updating --------------------
 
 				if not RoundLength then
 					RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
-					RoundLength = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
+					RoundLength = BulletData.PropLength + BulletData.ProjLength
 					RoundLength = RoundLength / ACF.InchToCm
 					RoundDiameter = RoundDiameter / ACF.InchToCm
 				end

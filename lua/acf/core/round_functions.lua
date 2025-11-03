@@ -77,7 +77,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	Data.Priority = Data.Priority or "Projectile"
 	Data.Tracer   = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 
-	local Projectile = math.Clamp(ToolData.Projectile + Data.Tracer, GUIData.MinProjLength, GUIData.MaxProjLength)
+	local Projectile = math.Clamp(ToolData.Projectile, GUIData.MinProjLength, GUIData.MaxProjLength)
 	local Propellant = math.Clamp(ToolData.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
 
 	if Data.Priority == "Projectile" then
@@ -86,7 +86,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 		Projectile = math.min(Projectile, GUIData.MaxRoundLength - Propellant, GUIData.MaxProjLength)
 	end
 
-	local ProjLength = math.Round(Projectile, 2) - Data.Tracer
+	local ProjLength = math.Round(Projectile, 2)
 	local PropLength = math.Round(Propellant, 2)
 	local ProjVolume = Data.ProjArea * ProjLength
 	local PropVolume = Data.PropArea * PropLength
@@ -273,7 +273,7 @@ do -- Ammo crate capacity calculation
 		end
 
 		Diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM
-		Length = BulletData.PropLength + BulletData.ProjLength + BulletData.Tracer
+		Length = BulletData.PropLength + BulletData.ProjLength
 
 		return Vector(Length, Diameter, Diameter) / ACF.InchToCm
 	end
