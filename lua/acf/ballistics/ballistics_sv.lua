@@ -105,14 +105,8 @@ function Ballistics.GetBulletIndex()
 	return Index
 end
 
-local BulletCopy = {}
-
 function Ballistics.IterateBullets()
-	-- Shallow copy for iterations sake
-	for Key in pairs(BulletCopy) do BulletCopy[Key] = nil end
-	for Key, Value in pairs(Bullets) do BulletCopy[Key] = Value end
-
-	for _, Bullet in pairs(BulletCopy) do
+	for _, Bullet in pairs(Bullets) do
 		if not Bullet.HandlesOwnIteration then
 			Ballistics.CalcBulletFlight(Bullet)
 		end
