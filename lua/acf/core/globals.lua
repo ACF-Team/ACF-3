@@ -362,9 +362,7 @@ do -- ACF global vars
 	ACF.MaxGearRatioLegacy = 1 -- The maximum value that a gear's ratio can be set to (legacy)
 end
 
-do -- ACF Convars & Particles
-	CreateConVar("sbox_max_acf_ammo", 32, FCVAR_ARCHIVE + FCVAR_NOTIFY, "Maximum amount of ACF ammo crates a player can create.")
-
+do -- ACF Particles
 	game.AddParticles("particles/acf_muzzleflashes.pcf")
 	game.AddParticles("particles/explosion1.pcf")
 	game.AddParticles("particles/rocket_motor.pcf")

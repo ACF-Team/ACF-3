@@ -1,9 +1,10 @@
 DEFINE_BASECLASS "acf_base_scalable"
 
-ENT.PrintName     = "ACF Baseplate"
-ENT.WireDebugName = "ACF Baseplate"
-ENT.PluralName    = "ACF Baseplates"
+ENT.PrintName      = "ACF Baseplate"
+ENT.WireDebugName  = "ACF Baseplate"
+ENT.PluralName     = "ACF Baseplates"
 ENT.IsACFBaseplate = true
+ENT.ACF_Limit      = 2
 ENT.ACF_PreventArmoring = false
 
 -- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)

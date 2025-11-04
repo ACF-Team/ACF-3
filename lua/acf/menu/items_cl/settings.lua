@@ -226,4 +226,16 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.debris.fireball_mult"):     LinkToServerData("FireballMult")
 			Base:AddHelp("#acf.menu.settings.debris.fireball_mult_desc")
 	end)
+
+	ACF.AddServerSettings(601, "#acf.menu.settings.entity_limits", function(Base)
+		for Limit, LimitData in SortedPairs(ACF.Classes.SboxLimits) do
+			local LimitName = string.TrimLeft(Limit, "_")
+			local LimitSlider = Base:AddSlider(LimitName, LimitData.Min or 0, LimitData.Max or 64)
+			LimitSlider:SetConVar("sbox_max" .. Limit)
+
+			if LimitData.Text and LimitData.Text ~= "" then
+				LimitSlider:SetTooltip(LimitData.Text)
+			end
+		end
+	end)
 end

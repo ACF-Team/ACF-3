@@ -8,7 +8,6 @@ local Entities 		= Classes.Entities
 local Utilities   	= ACF.Utilities
 local WireIO      	= Utilities.WireIO
 
-ENT.ACF_Limit                     = 2
 ENT.ACF_UserWeighable             = true
 ENT.ACF_KillableButIndestructible = true
 ENT.ACF_HealthUpdatesWireOverlay  = true

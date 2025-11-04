@@ -394,16 +394,15 @@ function Entities.AutoRegister(ENT)
 	local UserVars = ENT.ACF_UserVars or {}
 	Entities.AddStrictArguments(Class, UserVars)
 
-	if CLIENT then return end
-
 	if isnumber(ENT.ACF_Limit) then
-		CreateConVar(
-			"sbox_max_" .. Class,
-			ENT.ACF_Limit,
-			FCVAR_ARCHIVE + FCVAR_NOTIFY,
-			"Maximum amount of " .. (ENT.PluralName or (Class .. " entities")) .. " a player can create."
-		)
+		Classes.AddSboxLimit({
+			Name   = "_" .. Class,
+			Amount = ENT.ACF_Limit,
+			Text   = "Maximum amount of " .. (ENT.PluralName or (Class .. " entities")) .. " a player can create."
+		})
 	end
+
+	if CLIENT then return end
 
 	--- Used in various places throughout an entity to provide a variable number of entity-specific arguments.
 	--- Does nothing by default.
