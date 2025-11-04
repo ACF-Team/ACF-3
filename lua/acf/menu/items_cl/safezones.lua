@@ -393,6 +393,8 @@ end
 
 local function BeginEditSafezone(_, SafezoneName, Min, Max)
 	CancelSafezone()
+	lastCalc = CurTime()
+
 	if SafezoneName then
 		Min, Max = unpack(Permissions.Safezones[SafezoneName])
 	end
