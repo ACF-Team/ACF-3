@@ -48,6 +48,94 @@ local function GetEmptyMass()
 end
 
 
+---Calculates the maximum projectile count for a given axis that keeps the dimension under the per-axis limit
+---@param Axis number Which axis to check (1=X, 2=Y, 3=Z)
+---@param CountY number Current Y count (ignored if Axis == 2)
+---@param CountZ number Current Z count (ignored if Axis == 3)
+---@param ToolData table The current tool data
+---@param BulletData table The current bullet data
+---@return number MaxCount The maximum count value for this axis
+local function CalculateMaxCount(Axis, CountY, CountZ, ToolData, BulletData)
+	local Class = GetWeaponClass(ToolData)
+	if not (Class and BulletData) then return 50 end -- Default max if no data
+
+	-- Get the round size (dimensions of a single projectile)
+	-- This properly handles missiles with custom models via GetModelDimensions
+	local roundSize = ACF.GetCrateSizeFromProjectileCounts(1, 1, 1, Class, ToolData, BulletData)
+	if not roundSize then return 50 end
+
+	-- Use per-axis limits: X is length (192), Y and Z are width (96)
+	local MaxSize = (Axis == 1) and ACF.AmmoMaxLength or ACF.AmmoMaxWidth
+
+	local MaxCount
+
+	if Axis == 1 then
+		-- X axis: simple linear packing (length)
+		MaxCount = math.floor(MaxSize / roundSize.x)
+	elseif Axis == 2 then
+		-- Y axis: hexagonal packing when CountZ > 1 (diameter)
+		if CountZ == 1 then
+			MaxCount = math.floor(MaxSize / roundSize.y)
+		else
+			-- Inverted from: dimension = (count - 1) * size * 0.866 + size
+			MaxCount = math.floor((MaxSize - roundSize.y * 0.134) / (roundSize.y * 0.866))
+		end
+	elseif Axis == 3 then
+		-- Z axis: offset packing when CountY > 1 (diameter)
+		if CountY == 1 then
+			MaxCount = math.floor(MaxSize / roundSize.z)
+		else
+			-- Inverted from: dimension = count * size * 1.5
+			MaxCount = math.floor(MaxSize / (roundSize.z * 1.5))
+		end
+	end
+
+	-- Clamp to reasonable bounds
+	return math.max(1, math.min(MaxCount or 50, 50))
+end
+
+-- Store references to the count sliders so we can update them
+local CountSliders = {}
+
+---Updates the maximum values for the projectile count sliders based on current round dimensions
+---@param ToolData table The current tool data
+---@param BulletData table The current bullet data
+---@param SkipMissiles boolean If true, skip update for missiles (used when projectile/propellant sliders change)
+local function UpdateProjectileCountLimits(ToolData, BulletData, SkipMissiles)
+	if not (CountSliders.X and CountSliders.Y and CountSliders.Z) then return end
+
+	-- Skip for missiles only when called from projectile/propellant sliders
+	-- (missiles use fixed model dimensions that don't change with those sliders)
+	if SkipMissiles and ToolData.Destiny == "Missiles" then return end
+
+	local CurrentX = ACF.GetClientNumber("CrateProjectilesX", 3)
+	local CurrentY = ACF.GetClientNumber("CrateProjectilesY", 3)
+	local CurrentZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
+
+	-- Calculate and apply max values for each axis
+	local MaxX = CalculateMaxCount(1, CurrentY, CurrentZ, ToolData, BulletData)
+	local MaxY = CalculateMaxCount(2, CurrentY, CurrentZ, ToolData, BulletData)
+	local MaxZ = CalculateMaxCount(3, CurrentY, CurrentZ, ToolData, BulletData)
+
+	CountSliders.X:SetMax(MaxX)
+	CountSliders.Y:SetMax(MaxY)
+	CountSliders.Z:SetMax(MaxZ)
+
+	-- Clamp current values if they exceed new max
+	if CurrentX > MaxX then
+		CountSliders.X:SetValue(MaxX)
+		ACF.SetClientData("CrateProjectilesX", MaxX)
+	end
+	if CurrentY > MaxY then
+		CountSliders.Y:SetValue(MaxY)
+		ACF.SetClientData("CrateProjectilesY", MaxY)
+	end
+	if CurrentZ > MaxZ then
+		CountSliders.Z:SetValue(MaxZ)
+		ACF.SetClientData("CrateProjectilesZ", MaxZ)
+	end
+end
+
 ---Updates the BoxSize global variable and Size client data based on current projectile counts and ammo configuration.
 ---@param ToolData table The current tool data
 ---@param BulletData table The current bullet data
@@ -158,10 +246,9 @@ local function AddControls(Base, ToolData)
 	local RoundLength = Base:AddLabel()
 	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
 	RoundLength:TrackClientData("Propellant")
-	RoundLength:TrackClientData("Tracer")
 	RoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
-		local CurLength = BulletData.ProjLength + BulletData.PropLength + BulletData.Tracer
+		local CurLength = BulletData.ProjLength + BulletData.PropLength
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
@@ -182,6 +269,9 @@ local function AddControls(Base, ToolData)
 
 		Panel:SetValue(BulletData.ProjLength)
 
+		-- Update projectile count limits when round dimensions change (skip for missiles)
+		UpdateProjectileCountLimits(ToolData, BulletData, true)
+
 		return BulletData.ProjLength
 	end)
 
@@ -199,6 +289,9 @@ local function AddControls(Base, ToolData)
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
 		Panel:SetValue(BulletData.PropLength)
+
+		-- Update projectile count limits when round dimensions change (skip for missiles)
+		UpdateProjectileCountLimits(ToolData, BulletData, true)
 
 		return BulletData.PropLength
 	end)
@@ -500,6 +593,9 @@ function ACF.UpdateAmmoMenu(Menu)
 	AddGraph(Base, ToolData)
 
 	Menu:EndTemporal(Base)
+
+	-- Update projectile count limits after menu is created
+	UpdateProjectileCountLimits(ToolData, BulletData)
 end
 
 ---Creates the basic information and panels on the ammunition menu.
@@ -521,9 +617,7 @@ function ACF.CreateAmmoMenu(Menu)
 	CountX:SetClientData("CrateProjectilesX", "OnValueChanged")
 	CountX:DefineSetter(function(Panel, _, _, Value)
 		local Count = math.max(1, math.Round(Value))
-
 		Panel:SetValue(Count)
-
 		return Count
 	end)
 
@@ -531,9 +625,7 @@ function ACF.CreateAmmoMenu(Menu)
 	CountY:SetClientData("CrateProjectilesY", "OnValueChanged")
 	CountY:DefineSetter(function(Panel, _, _, Value)
 		local Count = math.max(1, math.Round(Value))
-
 		Panel:SetValue(Count)
-
 		return Count
 	end)
 
@@ -541,11 +633,14 @@ function ACF.CreateAmmoMenu(Menu)
 	CountZ:SetClientData("CrateProjectilesZ", "OnValueChanged")
 	CountZ:DefineSetter(function(Panel, _, _, Value)
 		local Count = math.max(1, math.Round(Value))
-
 		Panel:SetValue(Count)
-
 		return Count
 	end)
+
+	-- Store references for updating max values later
+	CountSliders.X = CountX
+	CountSliders.Y = CountY
+	CountSliders.Z = CountZ
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", nil, "icon16/chart_bar_edit.png")
 	local Title = Base:AddTitle()

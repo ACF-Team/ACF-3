@@ -7,9 +7,9 @@ do
 	-- Both combined should ensure that no matter where ACF.DefineSetting is called, it will be registered
 	-- (but for official addon stuff, we should just define it here)
 
-	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I 
-	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and 
-	-- globals is the first file that would load...  
+	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I
+	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and
+	-- globals is the first file that would load...
 
 	ACF.__DefinedSettings = ACF.__DefinedSettings or {}
 
@@ -49,7 +49,7 @@ do
 		return ACF[Key], ACF.__DefinedSettings[Key]
 	end
 
-	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(), 
+	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(),
 	-- SettingData is set to a new table; this is meant to be used in a data callback context (to write things
 	-- like minimum and maximum values for the panel, for example)
 	function ACF.GetWorkingSetting()
@@ -241,7 +241,8 @@ do -- ACF global vars
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
-	ACF.AmmoMaxSize          = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
+	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.AmmoRefillColor      = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
 	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
@@ -313,7 +314,7 @@ do -- ACF global vars
 	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
 	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
 
-	-- Crew 
+	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
 	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides

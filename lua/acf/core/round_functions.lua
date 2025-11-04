@@ -296,7 +296,7 @@ do -- Ammo crate capacity calculation
 	function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
 		if BulletData.Type == "Refill" then
 			local volume = CountX * CountY * CountZ / 0.01
-			local sideLength = math.max(ACF.AmmoMinSize, math.min(ACF.AmmoMaxSize, volume ^ (1/3)))
+			local sideLength = math.max(ACF.AmmoMinSize, math.min(ACF.AmmoMaxWidth, volume ^ (1/3)))
 			return Vector(sideLength, sideLength, sideLength)
 		end
 

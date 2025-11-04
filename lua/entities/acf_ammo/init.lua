@@ -141,12 +141,11 @@ do -- Spawning and Updating --------------------
 		do -- The rest under applies to all ammo data formats
 			-- Clamping size (preserve precision for projectile-count-based sizing)
 			local Min  = ACF.AmmoMinSize
-			local Max  = ACF.AmmoMaxSize
 			local Size = Data.Size
 
-			Size.x = math.Clamp(Size.x, Min, Max)
-			Size.y = math.Clamp(Size.y, Min, Max)
-			Size.z = math.Clamp(Size.z, Min, Max)
+			Size.x = math.Clamp(Size.x, Min, ACF.AmmoMaxLength)
+			Size.y = math.Clamp(Size.y, Min, ACF.AmmoMaxWidth)
+			Size.z = math.Clamp(Size.z, Min, ACF.AmmoMaxWidth)
 
 			-- Destiny (string) may be already defined as "Weapons"/"Missiles", otherwise find the weapony source/"Weapons"
 			if not isstring(Data.Destiny) then
