@@ -948,6 +948,7 @@ if CLIENT then
         posOffset = Vector(-35, 0, 70)
         angOffset = EyeAngles()
         scanningPlayer = target
+        lastCalc = CurTime()
 
         scanning.BuildPanel()
     end

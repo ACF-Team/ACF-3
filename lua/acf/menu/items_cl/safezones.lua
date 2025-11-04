@@ -393,6 +393,8 @@ end
 
 local function BeginEditSafezone(_, SafezoneName, Min, Max)
 	CancelSafezone()
+	lastCalc = CurTime()
+
 	if SafezoneName then
 		Min, Max = unpack(Permissions.Safezones[SafezoneName])
 	end
@@ -435,7 +437,7 @@ local function BeginEditSafezone(_, SafezoneName, Min, Max)
 				elseif Permissions.Safezones[Name] then
 					Derma_Query("A safezone with the name '" .. Name .. "' already exists.", "Safezone name not unique", "Back to Editor", function() end, "Try Again", TryPrompt)
 				else
-					SafezoneName = Name
+					EditName = Name
 					SaveSafezone()
 				end
 			end
