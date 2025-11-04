@@ -130,7 +130,11 @@ function PANEL:AddButton(Text, Command, ...)
 	Panel:SetFont("ACF_Control")
 
 	if Command then
-		Panel:SetConsoleCommand(Command, ...)
+		if isfunction(Command) then
+			Panel.DoClick = Command
+		else
+			Panel:SetConsoleCommand(Command, ...)
+		end
 	end
 
 	return Panel

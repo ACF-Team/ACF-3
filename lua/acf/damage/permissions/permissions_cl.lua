@@ -72,5 +72,7 @@ do -- Safezones logic
 
 			Permissions.Safezones[ZoneName] = {ZoneMins, ZoneMaxs}
 		end
+
+		hook.Run("ACF_OnUpdateSafezones", Permissions.Safezones, ZonesCount)
 	end)
 end

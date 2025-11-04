@@ -335,7 +335,7 @@ hook.Add("CalcView", "ACF_SafezoneCreation_CalcView", function(_, pos, ang, fov,
 
 	local appliedZoom = mouseZoom * (CurTime() - lastCalc)
 
-	if not inChat then
+	if not IsValid(vgui.GetKeyboardFocus()) then
 		if input.IsKeyDown(KEY_W)        then xMove = xMove + appliedZoom end
 		if input.IsKeyDown(KEY_S)        then xMove = xMove - appliedZoom end
 		if input.IsKeyDown(KEY_A)        then yMove = yMove + appliedZoom end
@@ -387,12 +387,15 @@ local function SaveSafezone()
 	RunConsoleCommand("acf_addsafezone", EditName,
 		tostring(EditMin.Origin.x), tostring(EditMin.Origin.y), tostring(EditMin.Origin.z),
 		tostring(EditMax.Origin.x), tostring(EditMax.Origin.y), tostring(EditMax.Origin.z))
+	RunConsoleCommand("acf_savesafezones")
 	CancelSafezone()
 end
 
-local function BeginEditSafezone(_, SafezoneName)
+local function BeginEditSafezone(_, SafezoneName, Min, Max)
 	CancelSafezone()
-	local Min, Max = unpack(Permissions.Safezones[SafezoneName])
+	if SafezoneName then
+		Min, Max = unpack(Permissions.Safezones[SafezoneName])
+	end
 	EditingSafezone = true
 	EditName = SafezoneName
 	EditMin:Init(Min)
@@ -411,26 +414,61 @@ local function BeginEditSafezone(_, SafezoneName)
 	UI:SetPaintBackground(false)
 
 	local Save = UI:Add("DButton")
-	Save:SetText("Save safezone '" .. SafezoneName .. "'")
-	Save:SetSize(384, 48)
+	Save:SetText(SafezoneName and "Save safezone '" .. SafezoneName .. "'" or "Save new safezone")
+	Save:SetSize(300, 48)
+
+	local Cancel = UI:Add("DButton")
+	Cancel:SetText("Cancel")
+	Cancel:SetSize(300, 48)
 
 	function Save:DoClick()
-		SaveSafezone()
+		if SafezoneName then
+			SaveSafezone()
+		else
+			-- Prompt
+			local TryPrompt, TryEnter
+			function TryEnter(Name)
+				Name = string.Trim(Name)
+
+				if not Name or #Name == 0 then
+					Derma_Query("Must provide a name!", "No name provided", "Back to Editor", function() end, "Try Again", TryPrompt)
+				elseif Permissions.Safezones[Name] then
+					Derma_Query("A safezone with the name '" .. Name .. "' already exists.", "Safezone name not unique", "Back to Editor", function() end, "Try Again", TryPrompt)
+				else
+					SafezoneName = Name
+					SaveSafezone()
+				end 
+			end
+			function TryPrompt()
+				Derma_StringRequest("Enter a name for the safezone.", "Must be unique!", "", function() end, TryEnter, "Back to Editor", "Save")
+			end
+			TryPrompt()
+		end
+	end
+
+	function Cancel:DoClick()
+		CancelSafezone()
 	end
 
 	function UI:PerformLayout(w, h)
-		Save:SetPos((w / 2) - (Save:GetWide() / 2), (h / 2) - (Save:GetTall() / 2))
+		local Padding = 4
+		Save:SetPos((w / 2) - (Save:GetWide() / 1) - Padding, (h / 2) - (Save:GetTall() / 2))
+		Cancel:SetPos((w / 2) + Padding, (h / 2) - (Cancel:GetTall() / 2))
 	end
 end
+
+local function BeginNewSafezone()
+	BeginEditSafezone(nil, nil, LocalPlayer():GetPos() - Vector(256, 256, 0), LocalPlayer():GetPos() + Vector(256, 256, 512))
+end
+
+concommand.Add("acf_beginnewsafezone", function(_, _, args)
+	BeginNewSafezone()
+end)
 
 concommand.Add("acf_begineditsafezone", function(_, _, args)
 	if not Permissions.Safezones[args[1]] then return print("No such safezone.") end
 	BeginEditSafezone(_, args[1])
 end)
-
-local function BeginNewSafezone()
-	BeginEditSafezone(nil, LocalPlayer():GetPos() - Vector(64), LocalPlayer():GetPos() + Vector(64))
-end
 
 do
 	local function RequestSafezones()
@@ -451,8 +489,27 @@ do
 		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
 		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
 		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.noclip"):LinkToServerData("NoclipOutsideZones")
-		SafezonesBase:AddButton("#acf.menu.permissions.safezones.save", "acf_savesafezones")
-		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", "acf_reloadsafezones")
+		local List = SafezonesBase:AddListView()
+		List:AddColumn("#acf.menu.permissions.safezones.all")
+
+		local function Update()
+			if not IsValid(List) then return end
+			for Safezone in pairs(Permissions.Safezones) do
+				List:AddLine(Safezone)
+			end
+		end
+		Update()
+
+
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.new", "acf_beginnewsafezone")
+		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", function()
+			RunConsoleCommand("acf_reloadsafezones")
+			List:Clear()
+			hook.Add("ACF_OnUpdateSafezones", "ACF_UpdatePanel", function()
+				hook.Remove("ACF_OnUpdateSafezones", "ACF_UpdatePanel")
+				Update()
+			end)
+		end)
 	end
 
 	ACF.AddMenuItem(3, "#acf.menu.permissions", "Safezones", "shield", CreateMenu)
