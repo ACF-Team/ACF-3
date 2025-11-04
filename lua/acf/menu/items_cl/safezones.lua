@@ -437,7 +437,7 @@ local function BeginEditSafezone(_, SafezoneName, Min, Max)
 				else
 					SafezoneName = Name
 					SaveSafezone()
-				end 
+				end
 			end
 			function TryPrompt()
 				Derma_StringRequest("Enter a name for the safezone.", "Must be unique!", "", function() end, TryEnter, "Back to Editor", "Save")
@@ -461,7 +461,7 @@ local function BeginNewSafezone()
 	BeginEditSafezone(nil, nil, LocalPlayer():GetPos() - Vector(256, 256, 0), LocalPlayer():GetPos() + Vector(256, 256, 512))
 end
 
-concommand.Add("acf_beginnewsafezone", function(_, _, args)
+concommand.Add("acf_beginnewsafezone", function()
 	BeginNewSafezone()
 end)
 
@@ -499,7 +499,6 @@ do
 			end
 		end
 		Update()
-
 
 		SafezonesBase:AddButton("#acf.menu.permissions.safezones.new", "acf_beginnewsafezone")
 		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", function()

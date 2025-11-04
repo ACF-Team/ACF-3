@@ -424,10 +424,10 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 end
 
 function PANEL:AddListView()
-	local LineHeight = 20
 	local Panel = self:AddPanel("DListView")
 	Panel:SetMultiSelect(false)
 	Panel:SetWidth(30)
+	Panel:SetDataHeight(20)
 
 	local AddColumn = Panel.AddColumn
 	local AddLine = Panel.AddLine
@@ -450,7 +450,7 @@ function PANEL:AddListView()
 			end
 		end
 
-		self:SetHeight(LineHeight * #self.Lines)
+		self:SetHeight(self:GetHeaderHeight() + (self:GetDataHeight() * #self.Lines))
 
 		return Line
 	end
