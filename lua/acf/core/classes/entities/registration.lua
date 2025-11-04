@@ -555,7 +555,7 @@ function Entities.AutoRegister(ENT)
 				if not Player:CheckLimit("_" .. Class) then return false end
 			end
 		end
-		print(istable(ClientData))
+
 		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		if CanSpawn == false then return false end
 
