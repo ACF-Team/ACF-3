@@ -92,6 +92,11 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("TankSizeY", DefaultTankSizeY, true)
 	ACF.SetClientData("TankSizeZ", DefaultTankSizeZ, true)
 
+	local function UpdateSize()
+		-- MARCH: STEVE REMOVE THIS ONCE YOU FIX IT (Or leave it if you are fine with this)
+		ACF.SetClientData("Size", TankSize, true)
+	end
+
 	local SizeX = Menu:AddSlider("#acf.menu.fuel.tank_length", Min, Max)
 	SizeX:SetClientData("TankSizeX", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
@@ -102,7 +107,7 @@ local function CreateMenu(Menu)
 		TankSize.x = X
 
 		FuelType:UpdateFuelText()
-
+		UpdateSize()
 		return X
 	end)
 
@@ -116,7 +121,7 @@ local function CreateMenu(Menu)
 		TankSize.y = Y
 
 		FuelType:UpdateFuelText()
-
+		UpdateSize()
 		return Y
 	end)
 
@@ -130,7 +135,7 @@ local function CreateMenu(Menu)
 		TankSize.z = Z
 
 		FuelType:UpdateFuelText()
-
+		UpdateSize()
 		return Z
 	end)
 
