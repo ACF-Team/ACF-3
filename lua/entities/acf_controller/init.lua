@@ -119,125 +119,104 @@ do
 		"Entity (The controller entity itself) [ENTITY]",
 	}
 
-	local function VerifyData(Data)
-		if Data.AIOUseDefaults then
-			Data.AIODefaults = Defaults
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		if ClientData.AIOUseDefaults then
+			ClientData.AIODefaults = Defaults
 		end
 	end
 
-	local function UpdateController(Entity, Data)
+	function ENT:ACF_PostUpdateEntityData(Data)
 		-- Update model info and physics
 		-- TODO: May need to change this depending on the dproperty stuff
-		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = "models/hunter/plates/plate025x025.mdl"
-		Entity:SetModel("models/hunter/plates/plate025x025.mdl")
+		self.ACF = self.ACF or {}
+		self.ACF.Model = "models/hunter/plates/plate025x025.mdl"
+		self:SetModel("models/hunter/plates/plate025x025.mdl")
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		for _, V in ipairs(Entity.DataStore) do Entity[V] = Data[V] end
+		for _, V in ipairs(self.DataStore) do self[V] = Data[V] end
 
-		Entity:SetNWString("WireName", "ACF All In One Controller") -- Set overlay wire entity name
+		self:SetNWString("WireName", "ACF All In One Controller") -- Set overlay wire entity name
 
-		ACF.Activate(Entity, true)
+		ACF.Activate(self, true)
 
-		local PhysObj = Entity.ACF.PhysObj
-		if IsValid(PhysObj) then Contraption.SetMass(Entity, 1) end
+		local PhysObj = self.ACF.PhysObj
+		if IsValid(PhysObj) then Contraption.SetMass(self, 1) end
 	end
 
-	function ACF.MakeController(Player, Pos, Ang, Data)
-		VerifyData(Data)
-
+	function ENT:ACF_PreSpawn(Player, Pos, Ang, Data)
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_controller")
-		if not IsValid(Entity) then return end
-
-		Entity:SetPlayer(Player)
-		Entity:SetAngles(Ang)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.Name = "ACF AIO Controller"
-		Entity.ShortName = "ACF AIO Controller"
-		Entity.EntType = "ACF AIO Controller"
+		self.Name = "ACF AIO Controller"
+		self.ShortName = "ACF AIO Controller"
+		self.EntType = "ACF AIO Controller"
 
 		-- Determined from links
-		Entity.Seat = nil					-- The single seat
-		Entity.Gearbox = nil				-- Main gearbox of the vehicle
-		Entity.Turrets = {}					-- Turrets, both horizontal and vertical
-		Entity.Guns = {}					-- All guns
-		Entity.Racks = {}					-- All racks
-		Entity.Baseplate = nil				-- The baseplate of the vehicle
-		Entity.SteerPlates = {}				-- Steering plates, if any
+		self.Seat = nil					-- The single seat
+		self.Gearbox = nil				-- Main gearbox of the vehicle
+		self.Turrets = {}					-- Turrets, both horizontal and vertical
+		self.Guns = {}					-- All guns
+		self.Racks = {}					-- All racks
+		self.Baseplate = nil				-- The baseplate of the vehicle
+		self.SteerPlates = {}				-- Steering plates, if any
 
 		-- Determined automatically
-		Entity.Driver = nil					-- The player driving the vehicle
-		Entity.GunsPrimary = {}				-- Primary guns (Main gun, cannon, etc)
-		Entity.GunsSecondary = {}			-- Secondary guns (Machine guns, etc)
-		Entity.GunsSmoke = {}				-- Smoke and flare launchers
-		Entity.GearboxEnds = {}				-- Gearboxes connected to a wheel
-		Entity.GearboxIntermediates = {}	-- Or otherwise
-		Entity.Wheels = {}					-- Wheels
-		Entity.Engines = {}					-- Engines
-		Entity.Fuels = {}					-- Fuel tanks
-		Entity.SteerPlatesSorted = {}		-- Steer plates sorted by their position
-		Entity.SteerPhysicsObjects = {}		-- Steering physics objects
+		self.Driver = nil					-- The player driving the vehicle
+		self.GunsPrimary = {}				-- Primary guns (Main gun, cannon, etc)
+		self.GunsSecondary = {}			-- Secondary guns (Machine guns, etc)
+		self.GunsSmoke = {}				-- Smoke and flare launchers
+		self.GearboxEnds = {}				-- Gearboxes connected to a wheel
+		self.GearboxIntermediates = {}	-- Or otherwise
+		self.Wheels = {}					-- Wheels
+		self.Engines = {}					-- Engines
+		self.Fuels = {}					-- Fuel tanks
+		self.SteerPlatesSorted = {}		-- Steer plates sorted by their position
+		self.SteerPhysicsObjects = {}		-- Steering physics objects
 
-		Entity.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
-		Entity.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
-		Entity.LeftWheels = {}				-- Wheels connected to the left drive wheel
-		Entity.RightWheels = {}				-- Wheels connected to the right drive wheel
+		self.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
+		self.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
+		self.LeftWheels = {}				-- Wheels connected to the left drive wheel
+		self.RightWheels = {}				-- Wheels connected to the right drive wheel
 
-		Entity.GearboxLeft = nil			-- A Gearbox connected to the left drive wheel
-		Entity.GearboxRight = nil			-- A Gearbox connected to the right drive wheel
-		Entity.GearboxLeftDir = nil			-- Direction of that left gearbox's output
-		Entity.GearboxRightDir = nil		-- Direction of that right gearbox's output
+		self.GearboxLeft = nil			-- A Gearbox connected to the left drive wheel
+		self.GearboxRight = nil			-- A Gearbox connected to the right drive wheel
+		self.GearboxLeftDir = nil			-- Direction of that left gearbox's output
+		self.GearboxRightDir = nil		-- Direction of that right gearbox's output
 
-		Entity.ControllerWelds = {}			-- Keep track of the welds we created
+		self.ControllerWelds = {}			-- Keep track of the welds we created
 
 		-- State and meta variables
-		Entity.TurretLocked = false			-- Whether the turret is locked or not
-		Entity.LargestCaliber = 0			-- Largest caliber gun of the vehicle
-		Entity.FuelCapacity = 0				-- Total fuel capacity of the vehicle
-		Entity.Active = false				-- Whether the controller is active or not
+		self.TurretLocked = false			-- Whether the turret is locked or not
+		self.LargestCaliber = 0			-- Largest caliber gun of the vehicle
+		self.FuelCapacity = 0				-- Total fuel capacity of the vehicle
+		self.Active = false				-- Whether the controller is active or not
 
-		Entity.CamMode = 0					-- Camera mode (from client)
-		Entity.CamAng = Angle(0, 0, 0)		-- Camera angle (from client)
-		Entity.CamOffset = Vector() 		-- Camera offset (from client)
-		Entity.CamOrbit = 0					-- Camera orbit (from client)
+		self.CamMode = 0					-- Camera mode (from client)
+		self.CamAng = Angle(0, 0, 0)		-- Camera angle (from client)
+		self.CamOffset = Vector() 		-- Camera offset (from client)
+		self.CamOrbit = 0					-- Camera orbit (from client)
 
-		Entity.KeyStates = {} 				-- Key states for the driver
+		self.KeyStates = {} 				-- Key states for the driver
 
-		Entity.SteerAngles = {} 			-- Steering angles for the wheels
+		self.SteerAngles = {} 			-- Steering angles for the wheels
 
-		Entity.Speed = 0
+		self.Speed = 0
 
-		Entity.Primary = nil
-		Entity.Secondary = nil
-		Entity.Tertiary = nil
+		self.Primary = nil
+		self.Secondary = nil
+		self.Tertiary = nil
 
-		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
+		self.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
-		Entity.DataStore = Entities.GetArguments("acf_controller")
+		self.DataStore = Entities.GetArguments("acf_controller")
 
-		UpdateController(Entity, Data)
+		WireIO.SetupInputs(self, Inputs, Data)
+		WireIO.SetupOutputs(self, Outputs, Data)
 
-		-- Finish setting up the entity
-		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
+		if Data.AIODefaults then self:RestoreNetworkVars(Data.AIODefaults) end
 
-		WireIO.SetupInputs(Entity, Inputs, Data)
-		WireIO.SetupOutputs(Entity, Outputs, Data)
-
-		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
-
-		return Entity
+		return self
 	end
-
-	-- Bare minimum arguments to reconstruct an all-in-one controller
-	Entities.Register("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
 		-- Called when updating the entity
@@ -1090,3 +1069,5 @@ do
 		WireLib.Remove(self)
 	end
 end
+
+Entities.Register()
