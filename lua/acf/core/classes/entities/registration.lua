@@ -665,9 +665,8 @@ function Entities.AutoRegister(ENT)
 			-- ACF_UserData doesn't exist, but other arguments do.
 			-- This most likely means that the entity is one that was duped before it was converted to use
 			-- the autoregistration system. Let's build a replacement table for it and clear the old data.
+			UserData = {}
 			if ArgCount > 0 then
-				UserData = {}
-
 				for Index, ArgValue in ipairs(NewUserData) do
 					UserData[UserVarsKeys[Index]] = ArgValue
 				end
