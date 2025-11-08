@@ -48,10 +48,6 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_DUCK] = "Duck",
 }
 
--- Reverse lookup
-local WIRE_OUTPUT_TO_IN_ENUM = {}
-for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
-
 -- Values default to zero anyways so only specify nonzero here
 local Defaults = {
 	ZoomSpeed = 10,
@@ -118,12 +114,6 @@ do
 		"Driver (The player driving the vehicle.) [ENTITY]",
 		"Entity (The controller entity itself) [ENTITY]",
 	}
-
-	function ENT.ACF_OnVerifyClientData(ClientData)
-		if ClientData.AIOUseDefaults then
-			ClientData.AIODefaults = Defaults
-		end
-	end
 
 	function ENT:ACF_PostUpdateEntityData(Data)
 		-- Update model info and physics
@@ -213,29 +203,11 @@ do
 		WireIO.SetupInputs(self, Inputs, Data)
 		WireIO.SetupOutputs(self, Outputs, Data)
 
-		if Data.AIODefaults then self:RestoreNetworkVars(Data.AIODefaults) end
-
 		return self
 	end
 
-	function ENT:Update(Data)
-		-- Called when updating the entity
-		VerifyData(Data)
-
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_controller", self, Data)
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		HookRun("ACF_OnEntityLast", "acf_controller", self)
-
-		ACF.SaveEntity(self)
-
-		UpdateController(self, Data)
-
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
-
-		return true, "All-In-One Controller updated successfully!"
+	function ENT:ACF_PostMenuSpawn()
+		self:RestoreNetworkVars(Defaults)
 	end
 
 	local GearboxEndMap = {
@@ -1029,9 +1001,6 @@ do
 				end
 			end
 		end
-
-		-- Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
 	end
 
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -1049,9 +1018,6 @@ do
 				EntMods[Field] = nil
 			end
 		end
-
-		--Wire dupe info
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 
 	function ENT:OnRemove()
