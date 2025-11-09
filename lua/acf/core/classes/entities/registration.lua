@@ -587,11 +587,11 @@ function Entities.AutoRegister(ENT)
 		end
 
 		if Wire_Inputs then
-			WireIO.SetupInputs(Entity, Wire_Inputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
+			WireIO.SetupInputs(self, Wire_Inputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		end
 
 		if Wire_Outputs then
-			WireIO.SetupOutputs(Entity, Wire_Outputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
+			WireIO.SetupOutputs(self, Wire_Outputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		end
 
 		if self.ACF_PostUpdateEntityData then self:ACF_PostUpdateEntityData(ClientData) end
