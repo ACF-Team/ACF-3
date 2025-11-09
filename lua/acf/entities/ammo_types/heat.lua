@@ -231,10 +231,10 @@ if SERVER then
 	end
 
 	function Ammo:GetCrateText(BulletData)
-		local Text = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm\nBlast Radius: %s m\n", "Blast Energy: %s KJ"
+		local Text = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm\nBlast Radius: %s m\n", "Blast Energy: %s kJ"
 		local Data = self:GetDisplayData(BulletData)
 
-		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), math.Round(Data.BoomFillerMass * ACF.HEPower, 2))
+		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), ACF.NiceNumber(math.Round(Data.BoomFillerMass * ACF.HEPower, 2)))
 	end
 
 	function Ammo:Detonate(Bullet, HitPos)

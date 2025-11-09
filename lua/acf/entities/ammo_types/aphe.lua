@@ -113,10 +113,10 @@ if SERVER then
 
 	function Ammo:GetCrateText(BulletData)
 		local BaseText = Ammo.BaseClass.GetCrateText(self, BulletData)
-		local Text	   = BaseText .. "\nBlast Radius: %s m\nBlast Energy: %s KJ"
+		local Text	   = BaseText .. "\nBlast Radius: %s m\nBlast Energy: %s kJ"
 		local Data	   = self:GetDisplayData(BulletData)
 
-		return Text:format(math.Round(Data.BlastRadius, 2), math.Round(BulletData.FillerMass * ACF.HEPower, 2))
+		return Text:format(math.Round(Data.BlastRadius, 2), ACF.NiceNumber(math.Round(BulletData.FillerMass * ACF.HEPower, 2)))
 	end
 
 	function Ammo:OnFlightEnd(Bullet, Trace)
