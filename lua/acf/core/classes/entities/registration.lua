@@ -508,6 +508,8 @@ function Entities.AutoRegister(ENT)
 	local UserVars = ENT.ACF_UserVars or {}
 	Entities.AddStrictArguments(Class, UserVars)
 
+	local Wire_Inputs, Wire_Outputs = ENT.ACF_WireInputs, ENT.ACF_WireOutputs 
+
 	if isnumber(ENT.ACF_Limit) then
 		Classes.AddSboxLimit({
 			Name   = "_" .. Class,
@@ -581,6 +583,14 @@ function Entities.AutoRegister(ENT)
 			if UserVars[v].ClientData or First then
 				SetLiveData(self, v, ClientData[v])
 			end
+		end
+
+		if Wire_Inputs then
+			WireIO.SetupInputs(Entity, Wire_Inputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
+		end
+
+		if Wire_Outputs then
+			WireIO.SetupOutputs(Entity, Wire_Outputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		end
 
 		if self.ACF_PostUpdateEntityData then self:ACF_PostUpdateEntityData(ClientData) end
