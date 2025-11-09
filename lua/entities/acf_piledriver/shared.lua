@@ -17,13 +17,13 @@ ENT.ACF_UserVars = {
 	["Caliber"]  = {
 		Type       = "Number",
 		Min        = function(Ctx)
-			return Ctx:ResolveClientData("Caliber").Bounds.Min
+			return Ctx:ResolveClientData("Weapon").Caliber.Min
 		end,
 		Max        = function(Ctx)
-			return Ctx:ResolveClientData("Caliber").Bounds.Max
+			return Ctx:ResolveClientData("Weapon").Caliber.Max
 		end,
 		Default    = function(Ctx)
-			return Ctx:ResolveClientData("Caliber").Bounds.Base
+			return Ctx:ResolveClientData("Weapon").Caliber.Base
 		end,
 		Decimals   = 2,
 		ClientData = true
