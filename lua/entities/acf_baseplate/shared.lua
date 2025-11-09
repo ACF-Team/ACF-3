@@ -19,4 +19,9 @@ ENT.ACF_UserVars = {
     ["GForceTicks"]    = {Type = "Number",       Min = 1,   Max = 7,   Default = 1,  Decimals = 0, ClientData = true}
 }
 
+ENT.ACF_WireOutputs = {
+    "Entity (The entity itself) [ENTITY]",
+    "Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
+}
+
 cleanup.Register("acf_baseplate")
