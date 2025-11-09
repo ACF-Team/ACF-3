@@ -690,6 +690,9 @@ function Entities.AutoRegister(ENT)
 		Player:AddCount("_" .. Class, New)
 		Player:AddCleanup(Class, New)
 
+		if New.ACF_OnSpawn then
+			New:ACF_OnSpawn(Player, Pos, Angle, ClientData)
+		end
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData, ENT.ACF_GetHookArguments(ClientData))
 
 		New:ACF_UpdateEntityData(ClientData, true)
