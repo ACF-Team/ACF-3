@@ -655,6 +655,25 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
 	local UserVarsKeys = table.GetKeys(UserVars)
+	local BackwardsCompatKeys
+	-- Check if the entity defined a method to get backwards compatibility keys.
+	-- This needs to return a sequential table of all keys to read, and those keys CANNOT be userdata keys!
+	if ENT.ACF_GetBackwardsCompatibilityDataKeys then
+		BackwardsCompatKeys = ENT.ACF_GetBackwardsCompatibilityDataKeys()
+		for I = 1, #BackwardsCompatKeys do
+			if UserVars[BackwardsCompatKeys[I]] then
+				error("Error while performing ACF entity autoregistration: ACF_GetBackwardsCompatibilityDataKeys returned key " ..
+			          "'" .. BackwardsCompatKeys[I] .. "' at index " .. I .. " which conflicts with an already existing uservar key.")
+			end
+		end
+	else
+		BackwardsCompatKeys = {}
+	end
+
+	local ReadKeys = table.Copy(UserVarsKeys)
+	for I = 1, #BackwardsCompatKeys do
+		ReadKeys[#ReadKeys + 1] = BackwardsCompatKeys[I]
+	end
 
 	local function SpawnFunction(Player, Pos, Angle, UserData, ...)
 		local ShouldTransferLegacyData = false
@@ -665,11 +684,10 @@ function Entities.AutoRegister(ENT)
 			-- ACF_UserData doesn't exist, but other arguments do.
 			-- This most likely means that the entity is one that was duped before it was converted to use
 			-- the autoregistration system. Let's build a replacement table for it and clear the old data.
+			UserData = {} -- Always create a table
 			if ArgCount > 0 then
-				UserData = {}
-
 				for Index, ArgValue in ipairs(NewUserData) do
-					UserData[UserVarsKeys[Index]] = ArgValue
+					UserData[ReadKeys[Index]] = ArgValue
 				end
 
 				ShouldTransferLegacyData = true
@@ -679,7 +697,7 @@ function Entities.AutoRegister(ENT)
 		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
 
 		if ShouldTransferLegacyData then
-			for _, KeyName in ipairs(UserVarsKeys) do
+			for _, KeyName in ipairs(ReadKeys) do
 				duplicator.ClearEntityModifier(SpawnedEntity, KeyName)
 			end
 		end
@@ -687,7 +705,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(UserVarsKeys))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(ReadKeys))
 end
 
 --- Registers a class as a spawnable entity class
