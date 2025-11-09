@@ -1,8 +1,4 @@
 local ACF      		= ACF
-local Classes  		= ACF.Classes
-local Entities 		= Classes.Entities
-local Utilities   	= ACF.Utilities
-local WireIO      	= Utilities.WireIO
 
 function ENT:UpdateAccuracyMod()
     self.CrewsByType = self.CrewsByType or {}
