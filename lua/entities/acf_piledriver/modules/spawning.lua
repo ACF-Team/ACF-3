@@ -6,13 +6,16 @@ local Contraption = ACF.Contraption
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 
-function ENT:ACF_PreSpawn(Player, _, _, Data)
+function ENT.ACF_Limit(Player, Data)
     local Class = Piledrivers.Get(Data.Weapon)
     local Limit = Class.LimitConVar.Name
 
-    if not Player:CheckLimit(Limit) then return end
+    return Player:CheckLimit(Limit)
+end
 
+function ENT:ACF_PreSpawn(_, _, _, Data)
     self.ACF          = {}
+    local Class = Piledrivers.Get(Data.Weapon)
     Contraption.SetModel(self, Class.Model)
 end
 
