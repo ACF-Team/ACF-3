@@ -28,12 +28,18 @@ local function VerifyData(Data)
 
 	-- Build size from FuelSizeX/Y/Z
 	local Min, Max = ACF.ContainerMinSize, ACF.ContainerMaxSize
+	-- ACF-3 backwards compatibility. Fuel size was saved as Size for a while.
+	if isvector(Data.Size) and (not Data.FuelSizeX or not Data.FuelSizeY or not not Data.FuelSizeZ) then
+		Data.FuelSizeX = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
+		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
+		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
+	else
+		local X = Clamp(ACF.CheckNumber(Data.FuelSizeX, 24), Min, Max)
+		local Y = Clamp(ACF.CheckNumber(Data.FuelSizeY, 24), Min, Max)
+		local Z = Clamp(ACF.CheckNumber(Data.FuelSizeZ, 24), Min, Max)
 
-	local X = Clamp(ACF.CheckNumber(Data.FuelSizeX, 24), Min, Max)
-	local Y = Clamp(ACF.CheckNumber(Data.FuelSizeY, 24), Min, Max)
-	local Z = Clamp(ACF.CheckNumber(Data.FuelSizeZ, 24), Min, Max)
-
-	Data.Size = Vector(X, Y, Z)
+		Data.Size = Vector(X, Y, Z)
+	end
 
 	-- Ensure shape is set
 	if not Data.FuelShape then Data.FuelShape = "Box" end
