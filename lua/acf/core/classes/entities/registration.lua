@@ -182,8 +182,8 @@ function GroupClassType.Validator(Ctx, Value)
 end
 
 function GroupClassType.Getter(self, Ctx, Key)
-	local _, Item = ACF.Classes.GetGroup(ACF.Classes[Ctx:GetSpecs().ClassName], Key)
-	return Item
+	local Group, Item = ACF.Classes.GetGroup(ACF.Classes[Ctx:GetSpecs().ClassName], Key)
+	return Item or Group
 end
 
 -- Single entity link.
