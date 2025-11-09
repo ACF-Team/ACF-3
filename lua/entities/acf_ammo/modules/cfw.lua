@@ -20,7 +20,7 @@ end)
 
 hook.Add("cfw.contraption.entityRemoved", "ACF_CFWAmmoUnIndex", function(contraption, ent)
 	if ent:GetClass() ~= "acf_ammo" then return end
-
+	if not contraption.Ammos then return end
 	contraption.Ammos[ent] = nil
 
 	local Stage = ent.AmmoStage

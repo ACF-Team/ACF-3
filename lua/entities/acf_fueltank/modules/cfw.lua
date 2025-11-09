@@ -14,6 +14,6 @@ end)
 
 hook.Add("cfw.contraption.entityRemoved", "ACF_CFWFuelUnIndex", function(contraption, ent)
 	if ent:GetClass() ~= "acf_fueltank" then return end
-
+	if not contraption.Fuels then return end
 	contraption.Fuels[ent] = nil
 end)
