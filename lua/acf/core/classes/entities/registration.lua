@@ -508,7 +508,8 @@ function Entities.AutoRegister(ENT)
 	local UserVars = ENT.ACF_UserVars or {}
 	Entities.AddStrictArguments(Class, UserVars)
 
-	local Wire_Inputs, Wire_Outputs = ENT.ACF_WireInputs, ENT.ACF_WireOutputs 
+	local WireIO   = ACF.Utilities.WireIO
+	local Wire_Inputs, Wire_Outputs = ENT.ACF_WireInputs, ENT.ACF_WireOutputs
 
 	if isnumber(ENT.ACF_Limit) then
 		Classes.AddSboxLimit({
