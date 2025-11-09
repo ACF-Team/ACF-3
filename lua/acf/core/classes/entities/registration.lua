@@ -667,7 +667,7 @@ function Entities.AutoRegister(ENT)
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
-				if not ACF_Limit() then return end
+				if not ACF_Limit(Player, ClientData) then return end
 			elseif isnumber(ACF_Limit) then
 				if not Player:CheckLimit("_" .. Class) then return false end
 			end
