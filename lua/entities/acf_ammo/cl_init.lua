@@ -9,6 +9,8 @@ killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 
 local function updateAmmoCount( entity, ammo )
 	if not IsValid( entity ) then return end
+	-- Networking fail - is there a better way to handle this...
+	if entity:GetClass() ~= "acf_ammo" then return end
 	if not entity.HasData then
 		if entity.HasData == nil then
 			entity:RequestAmmoData()
