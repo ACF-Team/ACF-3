@@ -27,12 +27,14 @@ local function CopyMesh(Mesh, Scale)
 	return Result
 end
 
-local function GetScaleFactor(Scale)
-	if isnumber(Scale) then
-		return Scale * Scale * Scale
-	end
+local function GetVolume(Mesh)
+	local Entity = ModelData.Entity
 
-	return Scale.x * Scale.y * Scale.z
+	Entity:PhysicsInitMultiConvex(Mesh)
+
+	local PhysObj = Entity:GetPhysicsObject()
+
+	return PhysObj:GetVolume()
 end
 
 function ModelData.SanitizeMesh(PhysObj)
@@ -73,7 +75,9 @@ function ModelData.GetModelVolume(Model, Scale)
 		return Data.Volume
 	end
 
-	return Data.Volume * GetScaleFactor(Scale)
+	local Mesh = CopyMesh(Data.Mesh, Scale)
+
+	return GetVolume(Mesh)
 end
 
 function ModelData.GetModelCenter(Model, Scale)
