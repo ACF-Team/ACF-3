@@ -1,6 +1,12 @@
-function ENT:ACF_PreUpdateEntityData(Data)
-    local Class = self:ACF_GetUserVar("Weapon")
+local ACF         = ACF
+local Classes     = ACF.Classes
+local Piledrivers = Classes.Piledrivers
+local Contraption = ACF.Contraption
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
 
+function ENT:ACF_PreUpdateEntityData(Data)
+    local Class = Piledrivers.Get(Data.Weapon)
     local Caliber = Data.Caliber
     local Scale   = Caliber / Class.Caliber.Base
 
@@ -11,6 +17,7 @@ function ENT:ACF_PreUpdateEntityData(Data)
 end
 
 function ENT:ACF_PostUpdateEntityData(Data)
+    local Class = Piledrivers.Get(Data.Weapon)
     local Caliber = Data.Caliber
     local Scale   = Caliber / Class.Caliber.Base
     local Mass    = math.floor(Class.Mass * Scale)
@@ -34,9 +41,9 @@ function ENT:ACF_PostUpdateEntityData(Data)
 
         Data.AmmoType   = "HP"
         Data.Projectile = self.SpikeLength
+        Data.Destiny    = "Piledrivers" -- Required for duping to work right
 
         Ammo.SpikeLength = self.SpikeLength
-
         local BulletData  = Ammo:ServerConvert(Data)
         BulletData.Crate  = self:EntIndex()
         BulletData.Filter = { self }

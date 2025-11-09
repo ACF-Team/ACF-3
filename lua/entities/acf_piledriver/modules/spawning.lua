@@ -1,6 +1,10 @@
-local ACF       = ACF
-local Classes   = ACF.Classes
-local AmmoTypes = Classes.AmmoTypes
+local ACF         = ACF
+local Classes     = ACF.Classes
+local AmmoTypes   = Classes.AmmoTypes
+local Piledrivers = Classes.Piledrivers
+local Contraption = ACF.Contraption
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
 
 function ENT:ACF_PreSpawn(Player, _, _, Data)
     local Class = Piledrivers.Get(Data.Weapon)
@@ -25,5 +29,5 @@ function ENT:ACF_OnSpawn(_)
 end
 
 function ENT:ACF_PostSpawn()
-    WireLib.TriggerOutput(Entity, "State", "Loading")
+    WireLib.TriggerOutput(self, "State", "Loading")
 end
