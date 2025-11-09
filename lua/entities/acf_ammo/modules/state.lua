@@ -52,3 +52,15 @@ function ENT:Consume(Amount)
 		self:SetNWInt("Ammo", self.Amount)
 	end)
 end
+
+function ENT:Enable()
+	WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
+
+	self:UpdateMass(true)
+end
+
+function ENT:Disable()
+	WireLib.TriggerOutput(self, "Loading", 0)
+
+	self:UpdateMass(true)
+end

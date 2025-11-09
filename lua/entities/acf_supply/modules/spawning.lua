@@ -109,6 +109,7 @@ function ACF.MakeSupply(Player, Pos, Angle, Data)
 	Supply.ACF.Model = Model
 	Supply.Shape = Shape
 
+	Supply:SetMaterial("phoenix_storms/Future_vents")
 	Supply:SetScaledModel(Model)
 	Supply:SetAngles(Angle)
 	Supply:SetPos(Pos)
