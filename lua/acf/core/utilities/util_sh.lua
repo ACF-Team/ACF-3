@@ -1300,3 +1300,24 @@ function ACF.DuplexPairs(Table1, Table2)
 
 	return Enumerator, nil, nil
 end
+
+do
+	function ACF.NiceNumber(n)
+		local s = tostring(n)
+		local sign = ""
+
+		if n < 0 then
+			sign = "-"
+			s = s:sub(2)
+		end
+
+		-- Insert commas
+		local result = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+
+		if result:sub(1,1) == "," then
+			result = result:sub(2)
+		end
+
+		return sign .. result
+	end
+end
