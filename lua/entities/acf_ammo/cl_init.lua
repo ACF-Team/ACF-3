@@ -20,7 +20,9 @@ local function updateAmmoCount( entity, ammo )
 	local maxDisplayRounds = math.max( 0, MaxRounds:GetInt() )
 
 	entity.Ammo = ammo or entity:GetNWInt( "Ammo", 0 )
-	entity.DisplayAmmo = math.min( entity.Ammo, maxDisplayRounds )
+	local newDisplayAmmo = math.min( entity.Ammo, maxDisplayRounds )
+
+	entity:SetAmount( newDisplayAmmo )
 end
 
 net.Receive( "ACF_RequestAmmoData", function()
@@ -101,14 +103,15 @@ net.Receive( "ACF_RequestAmmoData", function()
 
 	-- Clear existing models since data changed
 	if entity._RoundModels then
-		for _, model in ipairs( entity._RoundModels ) do
+		for _, model in pairs( entity._RoundModels ) do
 			if IsValid( model ) then
 				model:Remove()
 			end
 		end
-
-		entity._RoundModels = nil
 	end
+
+	entity._RoundModels = nil
+	entity.DisplayAmmo = nil
 
 	if Queued[entity] then
 		Queued[entity] = nil
@@ -139,47 +142,17 @@ function ENT:RequestAmmoData()
 	net.SendToServer()
 end
 
-function ENT:OnResized( size )
-	self.HitBoxes = {
-		Main = {
-			Pos = self:OBBCenter(),
-			Scale = size,
-			Angle = Angle(),
-			Sensitive = false
-		}
-	}
-
-	self.HasData = nil
-end
-
 function ENT:OnFullUpdate()
 	net.Start( "ACF_RequestAmmoData" )
 		net.WriteEntity( self )
 	net.SendToServer()
 end
 
-
-local function cleanupRoundModels( entity )
-	if not entity._RoundModels then return end
-
-	for _, model in ipairs( entity._RoundModels ) do
-		if IsValid( model ) then
-			model:Remove()
-		end
-	end
-
-	entity._RoundModels = nil
-end
-
-function ENT:OnRemove()
-	cleanupRoundModels( self )
-	cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
-end
-
 do -- Ammo overlay rendering
 	local drawBoxes   = GetConVar( "acf_drawboxes" )
 	local wireOutline = GetConVar( "wire_drawoutline" )
 
+	-- Hexagonal packing constants
 	local HEX_SPACING_FACTOR = 0.866 -- sqrt(3)/2 for hexagonal packing
 	local HEX_OFFSET_FACTOR  = 0.5
 
@@ -201,32 +174,72 @@ do -- Ammo overlay rendering
 		return Vector( localX, localY, localZ )
 	end
 
-	local function createRoundModels( entity )
-		-- Use pre-calculated cached data
-		local modelPath      = entity.CachedModelPath
-		local modelScale     = entity.CachedModelScale
-		local localAngle     = entity.CachedLocalAngle
-		local hasCustomModel = entity.CachedHasCustom
-		local roundSize      = entity.RoundSize
-		local fits           = entity.ProjectileCounts
-		local total          = entity.DisplayAmmo
+	local function cleanupRoundModels( entity )
+		if not entity._RoundModels then return end
 
-		-- Create scale matrix once for all models
+		for _, model in pairs( entity._RoundModels ) do
+			if IsValid( model ) then
+				model:Remove()
+			end
+		end
+
+		entity._RoundModels = nil
+	end
+
+	function ENT:SetAmount( count )
+		if not self.HasData then return end
+
+		-- Handle special case: initializing with 0 ammo
+		if count == 0 then
+			if not self._RoundModels then
+				self._RoundModels = {}
+			end
+			return
+		end
+
+		-- Models don't exist yet - create all from scratch
+		if not self._RoundModels then
+			self._RoundModels = {}
+			self.DisplayAmmo = 0
+		end
+
+		local previous = self.DisplayAmmo
+		self.DisplayAmmo = count
+
+		-- No change
+		if count == previous then return end
+
+		-- Decrease: remove excess models
+		if count < previous then
+			local models = self._RoundModels
+			for i = previous, count + 1, -1 do
+				local m = models[i]
+				models[i] = nil
+				if IsValid( m ) then m:Remove() end
+			end
+			return
+		end
+
+		-- Increase: add new models from previous+1 to count
+		local modelPath      = self.CachedModelPath
+		local modelScale     = self.CachedModelScale
+		local localAngle     = self.CachedLocalAngle
+		local hasCustomModel = self.CachedHasCustom
+		local roundSize      = self.RoundSize
+		local fits           = self.ProjectileCounts
+
 		local scaleMatrix = Matrix()
 		scaleMatrix:SetScale( modelScale )
 
-		-- Calculate world angle once for all models
-		local worldAngle = entity:LocalToWorldAngles( localAngle )
+		local worldAngle = self:LocalToWorldAngles( localAngle )
 
-		-- Calculate offset once for all models
 		local modelOffset = Vector( 0, 0, 0 )
-		if hasCustomModel and entity.RoundOffset then
-			modelOffset = entity.RoundOffset
-		elseif entity.CachedDefaultOffset then
-			modelOffset = -entity.CachedDefaultOffset
+		if hasCustomModel and self.RoundOffset then
+			modelOffset = self.RoundOffset
+		elseif self.CachedDefaultOffset then
+			modelOffset = -self.CachedDefaultOffset
 		end
 
-		-- Calculate crate dimensions and starting position
 		local crateDimensions = ACF.GetCrateDimensions( fits, roundSize )
 		local localStartPos = Vector(
 			-crateDimensions.x * 0.5 + roundSize.x * 0.5,
@@ -234,41 +247,34 @@ do -- Ammo overlay rendering
 			-crateDimensions.z * 0.5 + roundSize.z * 0.5
 		)
 
-		-- Create all models
-		local models = {}
-		local count  = 0
+		local models = self._RoundModels
+		local index = 1
 
 		for x = 1, fits.x do
 			for y = 1, fits.y do
 				for z = 1, fits.z do
-					local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
-					local localModelPos = localStartPos + localGridPos + modelOffset
+					-- Only create models we don't have yet
+					if index > previous and index <= count then
+						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
+						local localModelPos = localStartPos + localGridPos + modelOffset
 
-					-- Create and configure model
-					local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
-					if IsValid( model ) then
-						model:SetParent( entity )
-						model:SetPos( entity:LocalToWorld( localModelPos ) )
-						model:SetAngles( worldAngle )
-						model:SetNoDraw( true )
-						model:DrawShadow( false )
-						model:EnableMatrix( "RenderMultiply", scaleMatrix )
-						models[#models + 1] = model
+						local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
+						if IsValid( model ) then
+							model:SetParent( self )
+							model:SetPos( self:LocalToWorld( localModelPos ) )
+							model:SetAngles( worldAngle )
+							model:SetNoDraw( true )
+							model:DrawShadow( false )
+							model:EnableMatrix( "RenderMultiply", scaleMatrix )
+							models[index] = model
+						end
 					end
 
-					count = count + 1
-					if count == total then break end
+					index = index + 1
+					if index > count then return end
 				end
-				if count == total then break end
 			end
-			if count == total then break end
 		end
-
-		return models
-	end
-
-	function ENT:CanDrawOverlay()
-		return drawBoxes:GetBool()
 	end
 
 	function ENT:Draw()
@@ -276,7 +282,7 @@ do -- Ammo overlay rendering
 		if not IsValid( ply ) then return end
 
 		local looking          = ply:GetEyeTrace().Entity == self
-		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData and self.DisplayAmmo > 0
+		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData and ( self.DisplayAmmo or 0 ) > 0
 
 		-- Not looking at the crate or ammo drawing is disabled
 		if not canShowInternals then
@@ -308,17 +314,17 @@ do -- Ammo overlay rendering
 			self:DrawEntityOutline()
 		end
 
-		-- Draw ammo inside contianer
-		-- Create models if needed (only once)
+		-- Create models if needed
 		if not self._RoundModels then
-			self._RoundModels = createRoundModels( self )
-			return -- Skip first frame to avoid rendering before models are ready
+			self:SetAmount( self.DisplayAmmo )
 		end
 
 		-- Draw models
-		for _, model in ipairs( self._RoundModels ) do
-			if IsValid( model ) then
-				model:DrawModel()
+		if self._RoundModels then
+			for _, model in pairs( self._RoundModels ) do
+				if IsValid( model ) then
+					model:DrawModel()
+				end
 			end
 		end
 
@@ -329,6 +335,22 @@ do -- Ammo overlay rendering
 		if Wire_Render then
 			Wire_Render( self )
 		end
+	end
+
+	function ENT:OnResized( size )
+		self.HasData = nil
+		self.DisplayAmmo = nil
+
+		cleanupRoundModels(self)
+	end
+
+	function ENT:OnRemove()
+		cleanupRoundModels( self )
+		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
+	end
+
+	function ENT:CanDrawOverlay()
+		return drawBoxes:GetBool()
 	end
 end
 

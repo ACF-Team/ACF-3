@@ -510,7 +510,6 @@ do -- Metamethods --------------------------------
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
-			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
 			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end

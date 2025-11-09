@@ -72,22 +72,22 @@ do -- Clientside settings
 
 		Base:AddHelp("#acf.menu.settings.effects_visual_elements.particle_mult_desc")
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_refill")
-		local AmmoRefillColor = Base:AddPanel("DColorMixer")
-		AmmoRefillColor:SetColor(ACF.AmmoRefillColor)
-		AmmoRefillColor:SetClientData("AmmoRefillColor", "ValueChanged")
-		AmmoRefillColor:DefineSetter(function(_, _, _, Value)
-			ACF.AmmoRefillColor = Value
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_supply")
+		local AmmoSupplyColor = Base:AddPanel("DColorMixer")
+		AmmoSupplyColor:SetColor(ACF.AmmoSupplyColor)
+		AmmoSupplyColor:SetClientData("AmmoSupplyColor", "ValueChanged")
+		AmmoSupplyColor:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoSupplyColor = Value
 
 			return Value
 		end)
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_refill")
-		local FuelRefillColor = Base:AddPanel("DColorMixer")
-		FuelRefillColor:SetColor(ACF.FuelRefillColor)
-		FuelRefillColor:SetClientData("FuelRefillColor", "ValueChanged")
-		FuelRefillColor:DefineSetter(function(_, _, _, Value)
-			ACF.FuelRefillColor = Value
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_supply")
+		local FuelSupplyColor = Base:AddPanel("DColorMixer")
+		FuelSupplyColor:SetColor(ACF.FuelSupplyColor)
+		FuelSupplyColor:SetClientData("FuelSupplyColor", "ValueChanged")
+		FuelSupplyColor:DefineSetter(function(_, _, _, Value)
+			ACF.FuelSupplyColor = Value
 
 			return Value
 		end)

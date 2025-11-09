@@ -17,63 +17,57 @@ Effects.MaterialColors = {
 	[MAT_SAND]     = Color(180, 155, 100),
 }
 
-do -- Resupply effect (applies to ammo and fuel)
+do -- Resupply effect
 	local render   = render
-	local Distance = ACF.RefillDistance
+	local Distance = ACF.SupplyDistance
 
-	local Refills = {}
-	Effects.Refills = Refills
+	local Supplies = {}
+	Effects.Supplies = Supplies
 
 	local function DrawSpheres(bDrawingDepth, _, isDraw3DSkybox)
 		if bDrawingDepth or isDraw3DSkybox then return end
 		render.SetColorMaterial()
 
-		for Entity in pairs(Refills) do
+		for Entity in pairs(Supplies) do
 			local Pos = Entity:GetPos()
-			local RefillColor
+			local SupplyColor = ACF.SupplyColor
 
-			if Entity:GetClass() == "acf_fueltank" then
-				RefillColor = ACF.FuelRefillColor
-			else
-				RefillColor = ACF.AmmoRefillColor
-			end
-
-			render.DrawSphere(Pos, Distance, 50, 50, RefillColor)
-			render.DrawSphere(Pos, -Distance, 50, 50, RefillColor)
+			render.DrawSphere(Pos, Distance, 50, 50, SupplyColor)
+			render.DrawSphere(Pos, -Distance, 50, 50, SupplyColor)
 		end
 	end
 
 	local function Remove(Entity)
 		if not IsValid(Entity) then return end
 
-		Refills[Entity] = nil
+		Supplies[Entity] = nil
 
-		Entity:RemoveCallOnRemove("ACF_Refill")
+		Entity:RemoveCallOnRemove("ACF_Supply")
 
-		if not next(Refills) then
-			hook.Remove("PostDrawOpaqueRenderables", "ACF_Refill")
+		if not next(Supplies) then
+			hook.Remove("PostDrawOpaqueRenderables", "ACF_Supply")
 		end
 	end
 
 	local function Add(Entity)
 		if not IsValid(Entity) then return end
 
-		if not next(Refills) then
-			hook.Add("PostDrawOpaqueRenderables", "ACF_Refill", DrawSpheres)
+		if not next(Supplies) then
+			hook.Add("PostDrawOpaqueRenderables", "ACF_Supply", DrawSpheres)
 		end
 
-		Refills[Entity] = true
+		Supplies[Entity] = true
 
-		Entity:CallOnRemove("ACF_Refill", Remove)
+		Entity:CallOnRemove("ACF_Supply", Remove)
 	end
 
-	net.Receive("ACF_RefillEffect", function()
+	net.Receive("ACF_SupplyEffect", function()
 		local Entity = net.ReadEntity()
 
 		Add(Entity)
 	end)
 
-	net.Receive("ACF_StopRefillEffect", function()
+	net.Receive("ACF_StopSupplyEffect", function()
 		local Entity = net.ReadEntity()
 
 		Remove(Entity)

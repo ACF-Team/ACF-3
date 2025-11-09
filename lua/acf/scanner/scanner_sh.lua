@@ -84,12 +84,11 @@ local function readEntityPacket()
 
     return ent, mi, ma, ents, nodrawEnts
 end
-local function writeAmmoFuelPacket(ent, isRefill)
+local function writeAmmoFuelPacket(ent)
     net_WriteEntity(ent)
-    net_WriteBool(isRefill)
 end
 local function readAmmoFuelPacket()
-    return net_ReadEntity(), net_ReadBool()
+    return net_ReadEntity()
 end
 
 local scannerTypes = {}
@@ -130,7 +129,6 @@ local playerC       = DefineScannerType(nil, "Player",         Color(150, 200, 2
 
 DefineScannerType("acf_gun",                   "ACF Gun",                 Color(100, 130, 255), "G",   {drawModelOverlay = true})
 DefineScannerType("acf_ammo",                  "ACF Ammo Crate",          Color(255, 50, 35),   "A",   {drawBounds = true, drawMarker = true})
-local ammoRefill = DefineScannerType(nil,      "ACF Ammo Refill",         Color(255, 50, 35),   "AR",  {drawBounds = true, drawMarker = true})
 
 DefineScannerType("acf_rack",                  "ACF Missile Rack",        Color(100, 230, 255), "RK",  {drawModelOverlay = true})
 DefineScannerType("acf_radar",                 "ACF Radar",               Color(255, 200, 50),  "R",   {drawModelOverlay = true})
@@ -139,7 +137,6 @@ DefineScannerType("prop_vehicle_prisoner_pod", "Seat/Pod",                Color(
 DefineScannerType("acf_engine",                "ACF Engine",              Color(200, 255, 100), "E",   {drawModelOverlay = true})
 DefineScannerType("acf_gearbox",               "ACF Gearbox",             Color(148, 148, 20),  "GB",  {drawModelOverlay = true, drawOverlay = true})
 DefineScannerType("acf_fueltank",              "ACF Fueltank",            Color(200, 180, 230), "F",   {drawBounds = true})
-local fuelRefill = DefineScannerType(nil,      "ACF Fueltank Refill",     Color(200, 180, 230), "FR",  {drawBounds = true})
 
 DefineScannerType("acf_piledriver",            "ACF Piledriver",          Color(255, 100, 90),  "PD",  {})
 DefineScannerType("acf_computer",              "ACF Computer",            Color(235, 235, 255), "E",   {drawModelOverlay = true})
@@ -404,12 +401,12 @@ if SERVER then
 
                     net_WriteUInt(#ammoCrates, MAX_EDICT_BITS)
                     for _, v in ipairs(ammoCrates) do
-                        writeAmmoFuelPacket(v, v.AmmoType == "Refill")
+                        writeAmmoFuelPacket(v)
                     end
 
                     net_WriteUInt(#fuelTanks, MAX_EDICT_BITS)
                     for _, v in ipairs(fuelTanks) do
-                        writeAmmoFuelPacket(v, v.SupplyFuel == true)
+                        writeAmmoFuelPacket(v)
                     end
 
                     net_Send(kPlayer)
@@ -997,13 +994,13 @@ if CLIENT then
 
         local ammoCrateLen = net_ReadUInt(14)
         for _ = 1, ammoCrateLen do
-            local ent, isRefill = readAmmoFuelPacket()
-            ammoCrateLookup[ent] = isRefill
+            local ent = readAmmoFuelPacket()
+            ammoCrateLookup[ent] = true
         end
         local fuelTankLen = net_ReadUInt(14)
         for _ = 1, fuelTankLen do
-            local ent, isRefill = readAmmoFuelPacket()
-            fuelTankLookup[ent] = isRefill
+            local ent = readAmmoFuelPacket()
+            fuelTankLookup[ent] = true
         end
     end)
     NetReceive("ForceScanningEnd", function()
@@ -1183,7 +1180,7 @@ if CLIENT then
         m:SetAngles(ent:GetAngles())
         cam.PushModelMatrix(m)
 
-        -- This renders the physical mesh as a solid mass using stencils. 
+        -- This renders the physical mesh as a solid mass using stencils.
         -- The stencil operations are so it can render the physmesh with color as other methods didnt work for me.
         -- Basically just draws the model to a stencil mask and that model renders with the color given to this method
         render.SetStencilWriteMask(0xFF)
@@ -1517,11 +1514,6 @@ if CLIENT then
                     local scanDef = scannerTypes[class]
                     if scanDef ~= nil then
                         if scanDef.drawMarker then
-                            if class == "acf_ammo" and ammoCrateLookup[ent] then
-                                scanDef = ammoRefill
-                            elseif class == "acf_fueltank" and fuelTankLookup[ent] then
-                                scanDef = fuelRefill
-                            end
                             local pXY = ent:GetPos():ToScreen()
                             local pX, pY = pXY.x, pXY.y
                             DrawMarker(scanDef, pX, pY, ent)
