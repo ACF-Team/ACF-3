@@ -210,7 +210,7 @@ do -- Ammo overlay rendering
 		if count == previous then return end
 
 		-- Decrease: remove excess models
-		if count < previous then
+		if previous ~= nil and count < previous then
 			local models = self._RoundModels
 			for i = previous, count + 1, -1 do
 				local m = models[i]
@@ -254,7 +254,7 @@ do -- Ammo overlay rendering
 			for y = 1, fits.y do
 				for z = 1, fits.z do
 					-- Only create models we don't have yet
-					if index > previous and index <= count then
+					if (previous == nil or index > previous) and index <= count then
 						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
 						local localModelPos = localStartPos + localGridPos + modelOffset
 
