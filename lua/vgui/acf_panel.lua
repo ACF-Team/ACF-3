@@ -1177,4 +1177,51 @@ function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 	return TablePanel
 end
 
+for TypeName, TypeDef in ACF.Classes.Entities.IterateTypes() do
+	if TypeDef.CreateMenuItem then
+		PANEL["Add" .. TypeName .. "UserVar"] = function(self, Ctx, Text, VarName, ...)
+			Ctx:SetCurrentVar(VarName) -- Initialize the variable for the validation context now so
+			-- the specs calls just work in CreateMenuItem. If the consumer wants VarName, it's available
+			-- in the context...
+			local Panel = TypeDef.CreateMenuItem(self, Ctx, Text, ...)
+			return Panel
+		end
+	else
+		PANEL["Add" .. TypeName .. "UserVar"] = function() error("ACF auto-register type '" .. TypeName .. "' does not contain a CreateMenuItem method") end
+	end
+end
+
+-- Called after a menu item has been fully built (ie. something in menu/items_cl)
+-- Was designed because class views wait until all elements are available, but I'm trying to flesh
+-- out a less annoying API with autoregister
+function PANEL:EnqueuePostBuildFn(PostBuildFn)
+	if not self.PostBuildFnQueue then
+		self.PostBuildFnQueue = {PostBuildFn}
+	else
+		self.PostBuildFnQueue[#self.PostBuildFnQueue + 1] = PostBuildFn
+	end
+end
+
+function PANEL:ClearPostBuildFns()
+	self.PostBuildFnQueue = nil
+end
+
+function PANEL:ExecutePostBuildFns()
+	local Enqueued = self.PostBuildFnQueue
+	if not Enqueued then return end
+	for _, Fn in ipairs(Enqueued) do
+		Fn(self)
+	end
+	self:ClearPostBuildFns()
+end
+
+function PANEL:SendUserVarChangedSignal(Producer, KeyChanged, Value)
+	for _, Panel in ipairs(self:GetChildren()) do
+		if Panel ~= Producer and Panel.ACF_OnUpdate then
+			Panel.ACF_OnUpdate(Panel, KeyChanged, Producer, Value)
+		end
+		PANEL.SendUserVarChangedSignal(Panel, Producer, KeyChanged, Value)
+	end
+end
+
 derma.DefineControl("ACF_Panel", "", PANEL, "Panel")

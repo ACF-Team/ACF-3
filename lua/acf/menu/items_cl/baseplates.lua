@@ -8,51 +8,31 @@ local GridMaterial = CreateMaterial("acf_bp_vis_grid2", "UnlitGeneric", {
 	["$vertexcolor"] = 1
 })
 
-local BaseplateTypes = ACF.Classes.BaseplateTypes
-
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
 	ACF.SetClientData("PrimaryClass", "acf_baseplate")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
+	local VerificationCtx = ACF.Classes.Entities.VerificationContext("acf_baseplate")
+	VerificationCtx:StartClientData(ACF.GetAllClientData(true))
+
 	Menu:AddTitle("#acf.menu.baseplates.settings")
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
-	local ClassList    = Menu:AddComboBox()
-
-	-- Set default baseplate size values before creating sliders to prevent nil value errors
-	local DefaultWidth = ACF.GetClientNumber("Width", (36 + 120) / 2)
-	local DefaultLength = ACF.GetClientNumber("Length", (36 + 420) / 2)
-	local DefaultThickness = ACF.GetClientNumber("Thickness", (0.5 + 3) / 2)
-	local DefaultGForceTicks = ACF.GetClientNumber("GForceTicks", (1 + 7) / 2)
-	ACF.SetClientData("Width", DefaultWidth, true)
-	ACF.SetClientData("Length", DefaultLength, true)
-	ACF.SetClientData("Thickness", DefaultThickness, true)
-	ACF.SetClientData("GForceTicks", DefaultGForceTicks, true)
-
-	local SizeX        = Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 120, 2)
-	local SizeY        = Menu:AddSlider("#acf.menu.baseplates.plate_length", 36, 420, 2)
-	local SizeZ        = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", 0.5, 3, 2)
-
-	local DisableAltE  = Menu:AddCheckBox("#acf.menu.baseplates.disable_alt_e")
-	local GForceTicks = Menu:AddSlider("#acf.menu.baseplates.gforce_ticks", 1, 7, 0)
+						 Menu:AddSimpleClassUserVar(VerificationCtx, "",                                     "BaseplateType", "Name", "Icon")
+	local SizeX        = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_width",     "Width")
+	local SizeY        = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_length",    "Length")
+						 Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness", "Thickness")
+						 Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",   "DisableAltE")
+						 Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",    "GForceTicks")
 	Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
 
 	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
 	local BaseplateName     = BaseplateBase:AddTitle()
 	local BaseplateDesc     = BaseplateBase:AddLabel()
 
-	function ClassList:OnSelect(Index, _, Data)
-		if self.Selected == Data then return end
-
-		self.ListData.Index = Index
-		self.Selected       = Data
-
-		BaseplateName:SetText(Data.Name)
-		BaseplateDesc:SetText(Data.Description)
-
-		ACF.SetClientData("BaseplateType", Data.ID)
-	end
+	BaseplateName.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Name) end end
+	BaseplateDesc.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Description) end end
 
 	local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
@@ -70,55 +50,12 @@ local function CreateMenu(Menu)
 		surface.SetDrawColor(70, 255, 70); surface.DrawRect(ScrW / 2, (ScrH / 2) - 1, W / 2 * Z, 3)
 	end
 
-	SizeX:SetClientData("Width", "OnValueChanged")
-	SizeX:DefineSetter(function(Panel, _, _, Value)
-		local X = math.Round(Value, 2)
-
-		Panel:SetValue(X)
-
-		return X
-	end)
-
-	SizeY:SetClientData("Length", "OnValueChanged")
-	SizeY:DefineSetter(function(Panel, _, _, Value)
-		local Y = math.Round(Value, 2)
-
-		Panel:SetValue(Y)
-
-		return Y
-	end)
-
-	SizeZ:SetClientData("Thickness", "OnValueChanged")
-	SizeZ:DefineSetter(function(Panel, _, _, Value)
-		local Z = math.Round(Value, 2)
-
-		Panel:SetValue(Z)
-
-		return Z
-	end)
-
-	GForceTicks:SetClientData("GForceTicks", "OnValueChanged")
-	GForceTicks:DefineSetter(function(Panel, _, _, Value)
-		local Ticks = math.Round(Value, 0)
-
-		Panel:SetValue(Ticks)
-
-		return Ticks
-	end)
-
-	DisableAltE:SetClientData("DisableAltE", "OnChange")
-
 	local BaseplateConvertInfo = Menu:AddCollapsible("#acf.menu.baseplates.convert")
 	local BaseplateConvertText = ""
-
 	for I = 1, 6 do
 		BaseplateConvertText = BaseplateConvertText .. language.GetPhrase("acf.menu.baseplates.convert_info" .. I)
 	end
-
 	BaseplateConvertInfo:AddLabel(BaseplateConvertText)
-	local Entries = BaseplateTypes.GetEntries()
-	ACF.LoadSortedList(ClassList, Entries, "Name", "Icon")
-	ClassList:ChooseOptionID(2)
 end
 
 ACF.AddMenuItem(50, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)

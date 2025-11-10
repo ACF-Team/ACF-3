@@ -100,6 +100,8 @@ function Entities.AddUserArgumentType(Type, Def)
 	return Def
 end
 
+function Entities.IterateTypes() return pairs(UserArgumentTypes) end
+
 local NumberType = Entities.AddUserArgumentType("Number")
 function NumberType.Validator(Ctx, Value)
 	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Ctx:GetSpec("Default") or 0) end
@@ -109,6 +111,32 @@ function NumberType.Validator(Ctx, Value)
 	if Ctx:HasSpec("Max")      then Value = math.min(Value, Ctx:GetSpec("Max")) end
 
 	return Value
+end
+
+function NumberType.CreateMenuItem(ACF_Panel, Ctx, Text)
+	local Min, Max = Ctx:HasSpec("Min") and Ctx:GetSpec("Min") or nil, Ctx:HasSpec("Max") and Ctx:GetSpec("Max") or nil
+	local Decimals = Ctx:HasSpec("Decimals") and Ctx:GetSpec("Decimals") or nil
+	local Slider = ACF_Panel:AddSlider(Text, Min, Max, Decimals)
+
+	local VarName = Ctx.VarName
+
+	Slider:SetClientData(VarName, "OnValueChanged")
+	Slider:DefineSetter(function(Panel, _, _, Value)
+		if Decimals then
+			Value = math.Round(Value, Decimals)
+		end
+		if Min then Value = math.max(Min, Value) end
+		if Max then Value = math.min(Max, Value) end
+
+		Panel:SetValue(Value)
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(Panel, VarName, Value)
+		end
+
+		return Value
+	end)
+
+	return Slider
 end
 
 local StringType = Entities.AddUserArgumentType("String")
@@ -131,6 +159,25 @@ function BooleanType.Validator(Ctx, Value)
 	return Value
 end
 
+
+function BooleanType.CreateMenuItem(ACF_Panel, Ctx, Text)
+	local CheckBox = ACF_Panel:AddCheckBox(Text)
+	local VarName = Ctx.VarName
+
+	CheckBox:SetClientData(VarName, "OnChange")
+	CheckBox:DefineSetter(function(Panel, _, _, Value)
+		Panel:SetValue(Value)
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(Panel, VarName, Value)
+		end
+
+		return Value
+	end)
+
+	return CheckBox
+end
+
+
 local SimpleClassType = Entities.AddUserArgumentType("SimpleClass")
 function SimpleClassType.Validator(Ctx, Value)
 	local Specs = Ctx:GetSpecs()
@@ -151,6 +198,38 @@ end
 function SimpleClassType.Getter(self, Ctx, Key)
 	local Specs = Ctx:GetSpecs()
 	return ACF.Classes[Specs.ClassName].Get(Key)
+end
+
+function SimpleClassType.CreateMenuItem(ACF_Panel, Ctx, _, NameKey, IconKey)
+	local VarName = Ctx.VarName
+	local Entries = ACF.Classes[Ctx:GetSpec("ClassName")].GetEntries()
+	local List    = ACF_Panel:AddComboBox()
+
+	function List:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
+
+		self.ListData.Index = Index
+		self.Selected       = Data
+
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(self, VarName, Data)
+		end
+
+		ACF.SetClientData(VarName, Data.ID)
+	end
+
+	local Default = Ctx:GetSpec("Default")
+	ACF_Panel:EnqueuePostBuildFn(function()
+		ACF.LoadSortedList(List, Entries, NameKey or "Name", IconKey or "Icon")
+		for K, Option in ipairs(List.Data) do
+			if Option.ID == Default then
+				List:ChooseOptionID(K)
+				break
+			end
+		end
+	end)
+
+	return List
 end
 
 local GroupClassType = Entities.AddUserArgumentType("GroupClass")
@@ -280,6 +359,7 @@ end
 -- Sets the current var context. This is used by the internal verify client data methods.
 function VerificationContext_MT_methods:SetCurrentVar(VarName)
 	local RestrictionSpecs = self.Restrictions[VarName]
+	if not RestrictionSpecs then error("No restriction specs for " .. VarName) end
 	local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
 
 	self.VarName = VarName
