@@ -779,7 +779,6 @@ do
 		table.sort(self.SteerPlatesSorted, function(A, B)
 			return A:GetPos().y > B:GetPos().y
 		end)
-		PrintTable(self.SteerPlatesSorted)
 	end
 end
 
