@@ -209,6 +209,12 @@ function Damage.doPropDamage(Entity, DmgResult)
 	local Health = EntACF.Health
 	local HitRes = DmgResult:Compute()
 
+	-- Mark contraption as in combat when taking damage
+	local Contraption = Entity:GetContraption()
+	if Contraption then
+		Contraption.InCombat = engine.TickCount()
+	end
+
 	if HitRes.Damage >= Health then
 		if Entity.ACF_KillableButIndestructible then
 			HitRes.Kill = false

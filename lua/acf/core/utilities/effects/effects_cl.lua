@@ -20,6 +20,7 @@ Effects.MaterialColors = {
 do -- Resupply effect
 	local render   = render
 	local Distance = ACF.SupplyDistance
+	local SupplyColor = Color(255, 255, 150, 10) -- Soft yellow color for supply effect
 
 	local Supplies = {}
 	Effects.Supplies = Supplies
@@ -30,7 +31,6 @@ do -- Resupply effect
 
 		for Entity in pairs(Supplies) do
 			local Pos = Entity:GetPos()
-			local SupplyColor = ACF.SupplyColor
 
 			render.DrawSphere(Pos, Distance, 50, 50, SupplyColor)
 			render.DrawSphere(Pos, -Distance, 50, 50, SupplyColor)

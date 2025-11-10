@@ -1,9 +1,10 @@
-local ACF          = ACF
-local Utilities    = ACF.Utilities
-local ActiveCrates = ACF.AmmoCrates or {}
-local ActiveTanks  = ACF.FuelTanks or {}
-local Clock        = Utilities.Clock
-local SupplyDist2  = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
+local ACF           = ACF
+local Utilities     = ACF.Utilities
+local ActiveCrates  = ACF.AmmoCrates or {}
+local ActiveTanks   = ACF.FuelTanks or {}
+local Clock         = Utilities.Clock
+local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
+local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
 
 local function SupplyEffect(Entity)
 	net.Start("ACF_SupplyEffect")
@@ -36,6 +37,12 @@ local function CanSupply(Supply, Target, Distance2)
 	local Cap    = Target.Capacity
 
 	if (Cap - Amount) <= 0.005 then return false end -- Treat near-full as full to avoid micro top-ups
+
+	-- Check if target's contraption is in combat
+	local TC = Target:GetContraption()
+	if TC and TC.InCombat and (engine.TickCount() - TC.InCombat) < CombatTimeout then
+		return false -- Still in combat, cannot refill
+	end
 
 	return Distance2 <= SupplyDist2
 end

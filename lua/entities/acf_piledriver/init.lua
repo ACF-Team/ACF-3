@@ -366,6 +366,12 @@ do -- Firing ------------------------------------
 
 			self.Loading = true
 
+			-- Mark contraption as in combat when firing
+			local Contraption = self:GetContraption()
+			if Contraption then
+				Contraption.InCombat = engine.TickCount()
+			end
+
 			timer.Simple(0.35, function()
 				if not IsValid(self) then return end
 

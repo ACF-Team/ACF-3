@@ -727,6 +727,12 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
+			-- Mark contraption as in combat when firing
+			local Contraption = self:GetContraption()
+			if Contraption then
+				Contraption.InCombat = engine.TickCount()
+			end
+
 			local Energy = ACF.Kinetic(BulletData.MuzzleVel * ACF.MeterToInch, BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
