@@ -493,7 +493,7 @@ do -- Entity linking
 		-- The reason 3 exists is because some methods (PreLinkCheck, Check) do not need to be available
 		-- and execution can continue if they aren't available. However, PerformClassLink needs to know
 		-- if a check function exists before calling StartWatchingLink
-	local function PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, Fn, ExpectFn)
+	local function PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, Fn, ExpectFn, ...)
 		local SourceToTargetFn = SourceToTarget and SourceToTarget[Fn] or nil
 		local TargetToSourceFn = TargetToSource and TargetToSource[Fn] or nil
 
@@ -507,12 +507,12 @@ do -- Entity linking
 
 		local OK, Msg
 		if SourceToTargetFn then
-			OK, Msg = SourceToTargetFn(Source, Target)
+			OK, Msg = SourceToTargetFn(Source, Target, ...)
 			if not OK then return false, Msg end
 		end
 
 		if (SUPPORT_BIDIRECTIONAL_LINKING or not SourceToTargetFn) and TargetToSourceFn then
-			OK, Msg = TargetToSourceFn(Target, Source)
+			OK, Msg = TargetToSourceFn(Target, Source, ...)
 			if not OK then return false, Msg end
 		end
 
@@ -564,7 +564,7 @@ do -- Entity linking
 		if not OK then return false, Msg end
 
 		local HasCheck
-		OK, Msg, HasCheck = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check")
+		OK, Msg, HasCheck = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check", nil, true)
 		if not OK then return false, Msg end
 
 		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "PreLinkCheck")
