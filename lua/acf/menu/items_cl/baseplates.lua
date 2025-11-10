@@ -31,8 +31,8 @@ local function CreateMenu(Menu)
 	local BaseplateName     = BaseplateBase:AddTitle()
 	local BaseplateDesc     = BaseplateBase:AddLabel()
 
-	BaseplateName.ACF_OnUpdate = function(self, _, _, Value) self:SetText(Value.Name) end
-	BaseplateDesc.ACF_OnUpdate = function(self, _, _, Value) self:SetText(Value.Description) end
+	BaseplateName.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Name) end end
+	BaseplateDesc.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Description) end end
 
 	local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
