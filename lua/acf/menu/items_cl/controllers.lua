@@ -57,7 +57,7 @@ local function CreateMenu(Menu)
 	Settings:AddLabel("Steer Percent 1/2/3/4 are per wheel multipliers on top of the car's steer angle.")
 	Settings:AddLabel("Steer Rate is the speed at which the wheels turn towards their target steer angle.")
 	Settings:AddLabel("You may need to check Force AWD if the AIO predicts the wrong drivetrain.")
-	
+
 	local TroubleShooting = Menu:AddCollapsible("Troubleshooting", true, "icon16/computer_error.png")
 	TroubleShooting:AddLabel("If you're using a single gearbox, make sure all your forward gears come before your reverse gears in the readout.")
 

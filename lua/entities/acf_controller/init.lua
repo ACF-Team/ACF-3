@@ -777,8 +777,9 @@ do
 		if not IsValid(SteerPlate) then return end
 		table.insert(self.SteerPlatesSorted, SteerPlate)
 		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().y < B:GetPos().y
+			return A:GetPos().y > B:GetPos().y
 		end)
+		PrintTable(self.SteerPlatesSorted)
 	end
 end
 
