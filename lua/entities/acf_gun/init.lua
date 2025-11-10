@@ -548,6 +548,7 @@ do -- Metamethods --------------------------------
 
 		ACF.RegisterClassLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
 			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
+			return true
 		end)
 
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
