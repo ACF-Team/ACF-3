@@ -476,7 +476,7 @@ do -- Entity linking
 		local SourceToTarget = ClassLink[SourceClass] and ClassLink[SourceClass][TargetClass] or nil
 		local TargetToSource = ClassLink[TargetClass] and ClassLink[TargetClass][SourceClass] or nil
 
-		if not Func1 and not Func2 then return false, "Links between these two entities are impossible" end
+		if not SourceToTarget and not TargetToSource then return false, "Links between these two entities are impossible" end
 
 		return true, nil, SourceToTarget, TargetToSource
 	end
