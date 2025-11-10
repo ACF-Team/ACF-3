@@ -150,6 +150,23 @@ do -- Random timer crew stuff
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 		return self.AccuracyCrewMod
 	end
+
+	function ENT:CheckBreechClipping()
+		local BreechRef = self.BreechReference
+		if not IsValid(BreechRef) then return false end
+		local ReferenceBreechPos = BreechRef:LocalToWorld(self.BreechLocalToRef)
+		local CurrentBreechPos = self:LocalToWorld(self.BreechPos)
+
+		TraceConfig.start = ReferenceBreechPos
+		TraceConfig.endpos = CurrentBreechPos
+		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
+		local tr = TraceLine(TraceConfig)
+
+		if tr.Hit then self.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
+		else self.OverlayErrors.BreechClipping = nil end
+
+		debugoverlay.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+	end
 end
 
 do -- Spawn and Update functions --------------------------------
@@ -414,6 +431,7 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
@@ -620,6 +638,20 @@ do -- Metamethods --------------------------------
 			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic)
 			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
+
+		-- Logging breech locations
+		function ENT:CFW_OnParentedTo(_, NewParent)
+			local Ref = NewParent
+			if not IsValid(Ref) then return end
+			if Ref:GetClass() == "acf_turret_rotator" then Ref = NewParent.Turret end
+
+			local MuzzlePos = self:GetAttachment(1).Pos
+			local Length = (self:OBBMaxs().x - self:OBBMins().x)
+			local BreechPos = MuzzlePos - self:GetForward() * Length
+			self.BreechReference = Ref
+			self.BreechLocalToRef = Ref:WorldToLocal(BreechPos)	-- Local Reference position of breech
+			self.BreechLocalToGun = self:WorldToLocal(BreechPos)	-- Local Current position of breech
+		end
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
