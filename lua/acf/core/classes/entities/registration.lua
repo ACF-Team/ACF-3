@@ -372,6 +372,7 @@ local function VerificationContext(Class)
 		Restrictions = Entity.Restrictions
 	}, VerificationContext_MT)
 end
+ACF.Classes.Entities.VerificationContext = VerificationContext
 
 --[[
 
