@@ -512,14 +512,16 @@ do -- Metamethods --------------------------------
 	local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 	-- Used to determine if a crate should be unlinked or not
-	local function CheckCrate(Gun, Crate, GunPos)
+	local function CheckCrate(Gun, Crate, GunPos, First)
 		local CrateUnlinked = false
 
 		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
+			if First then
+				local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Sounds.SendSound(Crate, Sound, 70, 100, 1)
-			Sounds.SendSound(Gun, Sound, 70, 100, 1)
+				Sounds.SendSound(Crate, Sound, 70, 100, 1)
+				Sounds.SendSound(Gun, Sound, 70, 100, 1)
+			end
 
 			CrateUnlinked = Gun:Unlink(Crate)
 		end
@@ -546,8 +548,10 @@ do -- Metamethods --------------------------------
 			return true
 		end)
 
-		ACF.RegisterClassLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
-			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
+		ACF.RegisterClassLinkCheck("acf_gun", "acf_ammo", function(This, Crate, First)
+			if CheckCrate(This, Crate, This:GetPos(), First) then
+				return false, "This crate is too far away from this weapon."
+			end
 			return true
 		end)
 
