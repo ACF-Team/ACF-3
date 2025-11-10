@@ -531,11 +531,12 @@ do -- Metamethods --------------------------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
-		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
+			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
 
@@ -543,14 +544,6 @@ do -- Metamethods --------------------------------
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
-			return true
-		end)
-
-		ACF.RegisterClassLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
-			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
-		end)
-
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
 			This.Crates[Crate]  = true
 			Crate.Weapons[This] = true
 
