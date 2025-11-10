@@ -388,7 +388,7 @@ do
 		local FuelLevel = 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
 		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Fuel end
+			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
 	end

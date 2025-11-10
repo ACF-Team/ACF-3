@@ -1099,8 +1099,6 @@ do -- Reload related
 	--- @param BulletData table Bullet data
 	--- @param Override table Override data, either from an entity or a table
 	function ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData, Override)
-		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
-
 		-- If the weapon has a cyclic rate, use it, otherwise calculate the reload time based on the bullet data
 		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		if Cyclic then return 60 / Cyclic, false end
@@ -1120,8 +1118,6 @@ do -- Reload related
 	--- @param BulletData table Bullet data
 	--- @param Override table Override data, either from an entity or a table
 	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
-		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
-
 		-- Use the override if possible
 		local MagSizeOverride = Override and Override.MagSize
 

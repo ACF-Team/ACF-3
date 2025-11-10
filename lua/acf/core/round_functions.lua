@@ -294,12 +294,6 @@ do -- Ammo crate capacity calculation
 	end
 
 	function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
-		if BulletData.Type == "Refill" then
-			local volume = CountX * CountY * CountZ / 0.01
-			local sideLength = math.max(ACF.AmmoMinSize, math.min(ACF.AmmoMaxWidth, volume ^ (1/3)))
-			return Vector(sideLength, sideLength, sideLength)
-		end
-
 		local roundSize = GetRoundProperties(Class, ToolData, BulletData)
 		local arrangement = Vector(CountX, CountY, CountZ)
 
@@ -309,14 +303,6 @@ do -- Ammo crate capacity calculation
 	-- Infer projectile counts from a given crate Size (backwards compatibility)
 	-- This inverts ACF.GetCrateSizeFromProjectileCounts using the same packing rules
 	function ACF.GetProjectileCountsFromCrateSize( Size, Class, ToolData, BulletData )
-		-- Refill crates don't depend on projectile geometry; approximate a near-cubic split
-		if BulletData.Type == "Refill" then
-			local side   = math.min( Size.x, Size.y, Size.z )
-			local rounds = math.max( 1, math.floor( ( side ^ 3 ) * 0.01 + 0.5 ) )
-			local n      = math.max( 1, math.floor( rounds ^ ( 1 / 3 ) + 0.5 ) )
-			local rem    = math.max( 1, math.floor( rounds / ( n * n ) + 0.5 ) )
-			return n, n, rem
-		end
 
 		local roundSize = GetRoundProperties( Class, ToolData, BulletData )
 		local eps = 1e-6
