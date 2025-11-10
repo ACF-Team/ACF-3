@@ -520,26 +520,25 @@ do -- Entity linking
 	end
 
 	local function WeakKeyLUT() return setmetatable({}, {__mode = 'k'}) end
-
 	local LinkWatchers = ACF.ClassLinkWatchers or WeakKeyLUT()
 	ACF.ClassLinkWatchers = LinkWatchers
 
 	function ACF.StartWatchingLink(Source, Target)
-		local SourceToTarget = LinkWatchers[Source]
-		if not SourceToTarget then
-			SourceToTarget = WeakKeyLUT()
-			LinkWatchers[Source] = SourceToTarget
-		end
-
-		SourceToTarget[Target] = ACF.AugmentedTimer(
+		LinkWatchers[Source] = LinkWatchers[Source] or WeakKeyLUT()
+		LinkWatchers[Target] = LinkWatchers[Target] or WeakKeyLUT()
+		local Timer = ACF.AugmentedTimer(
 			function() ACF.PerformClassLinkCheck(Source, Target) end,
 			function() return IsValid(Source) and IsValid(Target) end,
-			function() if LinkWatchers[Source] then LinkWatchers[Source][Target] = nil end end,
+			function()
+				ACF.StopWatchingLink(Source, Target)
+			end,
 			{
 				MinTime = 0.75,
 				MaxTime = 2
 			}
 		)
+		LinkWatchers[Source][Target] = Timer
+		LinkWatchers[Target][Source] = Timer
 	end
 
 	function ACF.StopWatchingLink(Source, Target)
@@ -548,8 +547,17 @@ do -- Entity linking
 
 		local TargetTimer = SourceToTarget[Target]
 		if not TargetTimer then return end
+		TargetTimer:Cancel(true)
 
-		TargetTimer:Finish()
+		if LinkWatchers[Source] then
+			LinkWatchers[Source][Target] = nil
+			if not next(LinkWatchers[Source]) then LinkWatchers[Source] = nil end
+		end
+		if LinkWatchers[Target] then
+			LinkWatchers[Target][Source] = nil
+			if not next(LinkWatchers[Target]) then LinkWatchers[Target] = nil end
+		end
+
 	end
 
 	--- Attempts to perform a link from Source -> Target, while calling one or more check validators/link functions on the
@@ -569,7 +577,6 @@ do -- Entity linking
 
 		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "PreLinkCheck")
 		if not OK then return false, Msg end
-
 		if FromChip then
 			local Time = math.max(SourceToTarget.ChipDelay or 0, SourceToTarget.ChipDelay or 0)
 			if Time > 0 then

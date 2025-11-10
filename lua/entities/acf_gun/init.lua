@@ -523,7 +523,8 @@ do -- Metamethods --------------------------------
 				Sounds.SendSound(Gun, Sound, 70, 100, 1)
 			end
 
-			CrateUnlinked = Gun:Unlink(Crate)
+			Gun:Unlink(Crate)
+			CrateUnlinked = true
 		end
 
 		return CrateUnlinked
