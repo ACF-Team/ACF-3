@@ -364,13 +364,12 @@ function VerificationContext_MT_methods:ResolveClientData(Key)
 	return Value
 end
 
-local function VerificationContext(Class, UserVars)
+local function VerificationContext(Class)
 	local Entity = GetEntityTable(Class)
 	return setmetatable({
 		Class        = Class,
 		List         = Entity.List,
-		Restrictions = Entity.Restrictions,
-		UserVars     = UserVars
+		Restrictions = Entity.Restrictions
 	}, VerificationContext_MT)
 end
 
@@ -529,7 +528,7 @@ function Entities.AutoRegister(ENT)
 		end
 	end
 
-	local VerificationCtx = VerificationContext(Class, UserVars)
+	local VerificationCtx = VerificationContext(Class)
 
 	-- Verification function
 	local function VerifyClientData(ClientData)
