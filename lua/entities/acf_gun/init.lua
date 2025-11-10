@@ -152,6 +152,8 @@ do -- Random timer crew stuff
 	end
 
 	function ENT:CheckBreechClipping()
+		if not ACF.LegalChecks then return end
+
 		local BreechRef = self.BreechReference
 		if not IsValid(BreechRef) then return false end
 		local ReferenceBreechPos = BreechRef:LocalToWorld(self.BreechLocalToRef)
@@ -162,8 +164,12 @@ do -- Random timer crew stuff
 		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
-		if tr.Hit then self.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
-		else self.OverlayErrors.BreechClipping = nil end
+		if tr.Hit then
+			self.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
+			self:Disable()
+		else
+			self.OverlayErrors.BreechClipping = nil
+		end
 
 		debugoverlay.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
 	end
