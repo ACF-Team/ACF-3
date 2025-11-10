@@ -516,7 +516,7 @@ do -- Metamethods --------------------------------
 		local CrateUnlinked = false
 
 		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
-			if First then
+			if not First then
 				local Sound = UnlinkSound:format(math.random(1, 3))
 
 				Sounds.SendSound(Crate, Sound, 70, 100, 1)
@@ -860,7 +860,6 @@ do -- Metamethods --------------------------------
 					end
 				end
 			end
-
 			return Crate
 		end
 
