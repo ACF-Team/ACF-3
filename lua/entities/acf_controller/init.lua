@@ -73,6 +73,7 @@ local Defaults = {
 	HUDColor = Vector(1, 0.5, 0),
 
 	BrakeStrength = 300,
+	SpeedTop = 60,
 
 	ShiftTime = 100,
 }
@@ -776,7 +777,7 @@ do
 		if not IsValid(SteerPlate) then return end
 		table.insert(self.SteerPlatesSorted, SteerPlate)
 		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().x < B:GetPos().x
+			return A:GetPos().y < B:GetPos().y
 		end)
 	end
 end
