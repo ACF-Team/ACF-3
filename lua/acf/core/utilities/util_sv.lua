@@ -448,7 +448,7 @@ do -- Entity linking
 		return ClassLink[Class1][Class2]
 	end
 
-	--- Attempts to retrieve link information from Class 1 to Class2, otherwise tries Class 2 to Class1. If link exists in either direction, return nil.
+	--- Attempts to retrieve link information from Class 1 to Class2, otherwise tries Class 2 to Class1. If link doesn't exist in either direction, return nil.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
 	--- @return LinkData? LinkData The returned link
