@@ -17,3 +17,10 @@ function ENT:PhysicsCollide(CollisionData, Collider)
 		Hook(self, CollisionData, Collider)
 	end
 end
+
+function ENT:Think()
+	local Hook = self:ACF_GetUserVar("BaseplateType").Think
+	if Hook then
+		return Hook(self)
+	end
+end
