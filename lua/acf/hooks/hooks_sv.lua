@@ -2,14 +2,14 @@
 local Hooks = ACF.Utilities.Hooks
 
 Hooks.Add("ACF_Base_Server", function(Gamemode)
-	--- Called when the player has properly loaded onto the server.  
+	--- Called when the player has properly loaded onto the server.
 	--- It's possible to use network messages in this hook, unlike PlayerInitialSpawn.
 	--- @param Player entity The player entity that just finished loading.
 	function Gamemode:ACF_OnLoadPlayer()
 	end
 
-	--- Called when the bullet will attempt to use the default flight behavior.  
-	--- All the values on the bullet are still updated towards the next position, even if this hook returns false.  
+	--- Called when the bullet will attempt to use the default flight behavior.
+	--- All the values on the bullet are still updated towards the next position, even if this hook returns false.
 	--- To prevent this, set Bullet.HandlesOwnIteration to true.
 	--- @param Bullet table The bullet object that will attempt to fly in the current tick.
 	--- @return boolean # False if the bullet shouldn't run the default flight behavior in the currect tick.
@@ -25,7 +25,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
-	--- Called after the default legality checks have failed to mark the entity as illegal.  
+	--- Called after the default legality checks have failed to mark the entity as illegal.
 	--- It is advised to not return true to prevent conflict between everything that uses this function.
 	--- @param Entity entity The entity that is currectly being checked for legality.
 	--- @return boolean # True if the entity is legal, false otherwise.
@@ -36,7 +36,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
-	--- Called when an ACF entity creates or updates its Wire inputs.  
+	--- Called when an ACF entity creates or updates its Wire inputs.
 	--- It's recommended to just push entries into the List parameter.
 	--- @param Entity entity The entity to create or update Wire inputs on.
 	--- @param List table A numerically indexed list of inputs.
@@ -45,7 +45,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnSetupInputs()
 	end
 
-	--- Called when an ACF entity creates or updates its Wire outputs.  
+	--- Called when an ACF entity creates or updates its Wire outputs.
 	--- It's recommended to just push entries into the List parameter.
 	--- @param Entity entity The entity to create or update Wire outputs on.
 	--- @param List table A numerically indexed list of outputs.
@@ -54,7 +54,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnSetupOutputs()
 	end
 
-	--- Called when an entity is attempted to be pushed by ACF.KEShove.  
+	--- Called when an entity is attempted to be pushed by ACF.KEShove.
 	--- This won't be called if the entity is not valid.
 	--- @param Entity entity The entity that's trying to be pushed.
 	--- @param Position vector The world position at which the entity is attempted to be pushed.
@@ -95,7 +95,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnVerifyData()
 	end
 
-	--- Called before an entity is attempted to be spawned.  
+	--- Called before an entity is attempted to be spawned.
 	--- This will happen after the Data table is verified.
 	--- @param Class string The class of the entity that's about to be spawned.
 	--- @param Player entity The player attempting to spawn the entity.
@@ -114,7 +114,7 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnSpawnEntity()
 	end
 
-	--- Called before an entity is attempted to be updated.  
+	--- Called before an entity is attempted to be updated.
 	--- This will happen after the Data table is verified.
 	--- @param Class string The class of the entity that's about to be updated.
 	--- @param Entity entity The entity that's about to be updated.
@@ -155,15 +155,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnAmmoLast()
 	end
 
-	--- Called when an ammo crate attempts to replenish another one.
-	--- @param Refill entity The ammo crate that will be providing ammunition.
-	--- @param Crate entity The ammo crate that will get replenished.
-	--- @param Amount number The quantity of ammunition that will get replenished.
-	--- @return boolean # True if the crate can be replenished by the refill with the given amount, false otherwise.
-	function Gamemode:ACF_PreRefillAmmo()
-		return true
-	end
-
 	--- Called any time an ammo crate gets damaged and is about to start burning its ammunition.
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can start burning, false otherwise.
@@ -175,15 +166,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can explode, false otherwise.
 	function Gamemode:ACF_PreExplodeAmmo()
-		return true
-	end
-
-	--- Called when a fuel tank attempts to replenish another one.
-	--- @param Refill entity The tank that will be providing fuel.
-	--- @param FuelTank entity The tank that will be replenished.
-	--- @param Amount number The quantity of fuel that will get replenished.
-	--- @return boolean # True if the FuelTank can be replenished by the Refill with the given amount, false otherwise.
-	function Gamemode:ACF_PreRefillFuel()
 		return true
 	end
 

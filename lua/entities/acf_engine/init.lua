@@ -799,7 +799,7 @@ function ENT:CalcRPM(SelfTbl)
 
 		SelfTbl.FuelUsage = 60 * Consumption / DeltaTime
 
-		FuelTank:Consume(Consumption, FuelTank:GetTable())
+		FuelTank:Consume(Consumption)
 	elseif ACF.RequireFuel then -- Stay active if fuel consumption is disabled
 		SetActive(self, false, SelfTbl)
 
