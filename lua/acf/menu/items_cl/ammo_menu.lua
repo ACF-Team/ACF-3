@@ -205,7 +205,7 @@ local function AddTracer(Base, ToolData)
 	end
 
 	local TracerText = language.GetPhrase("acf.menu.ammo.tracer")
-	local Tracer = Base:AddCheckBox(TracerText:format(0))
+	local Tracer = Base:AddCheckBox(TracerText)
 	Tracer:SetClientData("Tracer", "OnChange")
 	Tracer:DefineSetter(function(Panel, _, _, Value)
 		ToolData.Tracer = Value
@@ -215,7 +215,6 @@ local function AddTracer(Base, ToolData)
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 		ACF.SetClientData("Propellant", BulletData.PropLength)
 
-		Panel:SetText(TracerText:format(BulletData.Tracer))
 		Panel:SetValue(ToolData.Tracer)
 
 		return ToolData.Tracer
