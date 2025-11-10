@@ -618,10 +618,7 @@ do -- Entity linking
 
 		OK, WhyNot = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check")
 		if not OK then
-			local UnlinkOK, UnlinkWhyNot = ACF.PerformClassUnlink(Source, Target)
-			if not UnlinkOK then
-				WhyNot = WhyNot .. "\n  Additionally, while unlinking these entities, a second error occured:\n    " .. UnlinkWhyNot
-			end
+			ACF.PerformClassUnlink(Source, Target)
 			return false, WhyNot
 		end
 
