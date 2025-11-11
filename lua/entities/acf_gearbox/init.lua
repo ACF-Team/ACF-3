@@ -698,6 +698,7 @@ do -- Linking ------------------------------------------
 	ACF.RegisterClassLink("acf_gearbox", "prop_physics", LinkWheel)
 	ACF.RegisterClassLink("acf_gearbox", "acf_gearbox", LinkGearbox)
 	ACF.RegisterClassLink("acf_gearbox", "tire", LinkWheel)
+	ACF.RegisterClassLink("acf_gearbox", "acf_wheel", LinkWheel)
 end ----------------------------------------------------
 
 do -- Unlinking ----------------------------------------
@@ -752,6 +753,7 @@ do -- Unlinking ----------------------------------------
 	ACF.RegisterClassUnlink("acf_gearbox", "prop_physics", UnlinkWheel)
 	ACF.RegisterClassUnlink("acf_gearbox", "acf_gearbox", UnlinkGearbox)
 	ACF.RegisterClassUnlink("acf_gearbox", "tire", UnlinkWheel)
+	ACF.RegisterClassUnlink("acf_gearbox", "acf_wheel", UnlinkWheel)
 end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------

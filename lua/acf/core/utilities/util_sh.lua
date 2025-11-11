@@ -329,7 +329,7 @@ do
 		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
 		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
 		if Input == nil then
-			if InputEntity:GetClass() == "prop_physics" then
+			if InputEntity:GetClass() == "prop_physics" or InputEntity:GetClass() == "acf_wheel" then
 				local Degrees = math.deg(math.acos((InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)))
 				return Degrees
 			else
