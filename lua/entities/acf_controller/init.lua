@@ -463,8 +463,17 @@ do
 
 		if SelfTbl.TurretLocked then return end
 
+		local Primary = self.Primary
+		local ReloadAngle = self:GetReloadAngle()
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
 		for Turret, _ in pairs(Turrets) do
-			if IsValid(Turret) then Turret:InputDirection(HitPos) end
+			if IsValid(Turret) then
+				if ShouldLevel and Turret == Primary.BreechReference then
+					Turret:InputDirection(ReloadAngle)
+				else
+					Turret:InputDirection(HitPos)
+				end
+			end
 		end
 	end
 end
