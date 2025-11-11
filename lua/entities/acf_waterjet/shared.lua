@@ -1,0 +1,18 @@
+DEFINE_BASECLASS "acf_base_scalable"
+
+ENT.PrintName      = "ACF Waterjet"
+ENT.WireDebugName  = "ACF Waterjet"
+ENT.PluralName     = "ACF Waterjets"
+ENT.ACF_Limit      = 2
+ENT.ACF_PreventArmoring = true
+
+-- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
+ENT.ACF_UserVars = {
+    ["Size"]           = {Type = "Number",       Min = 0.5,  Max = 3, Default = 1, Decimals = 2, ClientData = true},
+}
+
+ENT.ACF_WireInputs = {
+    "Yaw (Steer Angle)"
+}
+
+cleanup.Register("acf_waterjet")
