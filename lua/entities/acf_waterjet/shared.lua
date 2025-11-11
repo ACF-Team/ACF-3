@@ -8,7 +8,7 @@ ENT.ACF_PreventArmoring = true
 
 -- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
 ENT.ACF_UserVars = {
-    ["Size"]           = {Type = "Number",       Min = 0.5,  Max = 3, Default = 1, Decimals = 2, ClientData = true},
+    ["WaterjetSize"]           = {Type = "Number", Min = 0.5,  Max = 2, Default = 1, Decimals = 2, ClientData = true},
 }
 
 ENT.ACF_WireInputs = {
