@@ -183,13 +183,15 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 
-	local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-	if IsValid(Primary) then
-		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MyFilter )
-		local sp = HitPos:ToScreen()
-		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		SetDrawColor( Ready and green or red )
-		DrawCircle( sp.x, sp.y, 10 * Scale)
+	for _, v in ipairs({"Primary", "Secondary", "Tertiary"}) do
+		local Entity = MyController:GetNWEntity( "AHS_" .. v, MyController )
+		if IsValid(Entity) then
+			local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
+			local sp = HitPos:ToScreen()
+			local Ready = MyController:GetNWBool("AHS_" .. v .. "_RD", false)
+			SetDrawColor( Ready and green or red )
+			DrawCircle( sp.x, sp.y, 10 * Scale)
+		end
 	end
 end)
 
