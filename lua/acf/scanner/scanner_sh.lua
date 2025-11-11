@@ -11,7 +11,6 @@ end
 local scanning = {}
 ACF.Scanning = scanning
 
-local net_ReadBool = net.ReadBool
 local net_ReadEntity = net.ReadEntity
 local net_ReadString = net.ReadString
 local net_ReadUInt = net.ReadUInt
@@ -20,7 +19,6 @@ local net_Send = net.Send
 local net_Broadcast = net.Broadcast
 local net_SendToServer = net.SendToServer
 local net_Start = net.Start
-local net_WriteBool = net.WriteBool
 local net_WriteEntity = net.WriteEntity
 local net_WriteString = net.WriteString
 local net_WriteUInt = net.WriteUInt

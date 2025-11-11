@@ -54,7 +54,7 @@ end
 
 local function CreateMenu(Menu)
 	local EngineEntries = Engines.GetEntries()
-	local FuelEntries   = FuelTanks.GetEntries()
+	-- local FuelEntries   = FuelTanks.GetEntries()
 
 	Menu:AddTitle("#acf.menu.engines.settings")
 
@@ -211,7 +211,7 @@ local function CreateMenu(Menu)
 		ACF.LoadSortedList(FuelType, Data.Fuel, "ID")
 	end
 
-	function FuelShape:OnSelect(Index, _, Data)
+	function FuelShape:OnSelect(_, _, Data)
 		ACF.SetClientData("FuelShape", Data)
 
 		-- Update preview model based on shape

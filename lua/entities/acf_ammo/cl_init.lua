@@ -339,7 +339,7 @@ do -- Ammo overlay rendering
 		end
 	end
 
-	function ENT:OnResized( size )
+	function ENT:OnResized( _ )
 		self.HasData = nil
 		self.DisplayAmmo = nil
 

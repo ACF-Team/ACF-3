@@ -1334,7 +1334,7 @@ do
 		-- Insert commas
 		local result = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
 
-		if result:sub(1,1) == "," then
+		if result:sub(1, 1) == "," then
 			result = result:sub(2)
 		end
 
