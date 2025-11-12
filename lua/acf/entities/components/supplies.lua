@@ -17,7 +17,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 	Name        = "Supply Crate",
 	Description = "A scalable container that supplies fuel and ammo.",
 	Model       = "models/holograms/hq_rcube_thin.mdl",
-	CreateMenu = function(Data, Menu)
+	CreateMenu = function(_, Menu)
 		-- Shape selector
 		local SupplyShape = Menu:AddComboBox()
 
@@ -62,7 +62,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 			CapacityLabel:SetText(string.format("Capacity: %s kg\nEmpty mass: %s kg\nTransfer rate: %s kg/s", math.Round(Capacity, 2), math.Round(EmptyMass, 2), math.Round(TransferRate, 2)))
 		end
 
-		function SupplyShape:OnSelect(Index, _, Data)
+		function SupplyShape:OnSelect(_, _, Data)
 			ACF.SetClientData("SupplyShape", Data)
 			UpdateSupplyText()
 		end
