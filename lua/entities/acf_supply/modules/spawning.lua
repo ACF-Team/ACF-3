@@ -4,10 +4,8 @@ local Classes   = ACF.Classes
 local WireLib   = WireLib
 local Entities  = Classes.Entities
 local WireIO    = Utilities.WireIO
-local Clamp     = math.Clamp
 local Round     = math.Round
 local HookRun   = hook.Run
-local Clock     = Clock
 
 local Inputs = {
 	"Active (If set to a non-zero value, it will allow this unit to supply mass.)",
@@ -95,9 +93,7 @@ function ACF.MakeSupply(Player, Pos, Angle, Data)
 	local Shape = Data.SupplyShape or "Box"
 	local Model = ACF.ContainerShapeModels[Shape]
 
-	if Player.CheckLimit then
-		if not Player:CheckLimit(Limit) then return end
-	end
+	if Player.CheckLimit and not Player:CheckLimit(Limit) then return end
 
 	local CanSpawn = HookRun("ACF_PreSpawnEntity", "acf_supply", Player, Data)
 	if CanSpawn == false then return false end
