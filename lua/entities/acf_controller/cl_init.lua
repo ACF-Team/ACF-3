@@ -184,7 +184,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	end
 
 	for _, v in ipairs({"Primary", "Secondary", "Tertiary"}) do
-		local Entity = MyController:GetNWEntity( "AHS_" .. v, MyController )
+		local Entity = MyController:GetNWEntity( "AHS_" .. v, nil )
 		if IsValid(Entity) then
 			local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
 			local sp = HitPos:ToScreen()
