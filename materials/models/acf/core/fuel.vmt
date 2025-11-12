@@ -1,0 +1,16 @@
+"VertexLitGeneric"
+{
+    "$basetexture" "Props/metalcrate001d"
+    "$surfaceprop" "metal"
+
+    "$detail" "detail\metal_detail_01"
+    "$detailscale" "1"
+    "$detailblendfactor" .25
+    "$detailblendmode" "0"
+
+    "$envmaptint" "[ 0.2 0.2 0.2 ]"
+    "$envmap" "env_cubemap"
+    "$normalmapalphaenvmapmask" 1
+	"$envmapcontrast" 1
+    "$envmapsaturation" 1
+}

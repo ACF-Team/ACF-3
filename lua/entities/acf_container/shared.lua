@@ -9,9 +9,9 @@ ENT.RenderGroup = RENDERGROUP_BOTH
 
 -- Shape model definitions
 local ShapeModels = {
-	Box      = "models/holograms/hq_rcube.mdl",
-	Sphere   = "models/holograms/hq_sphere.mdl",
-	Cylinder = "models/holograms/hq_rcylinder.mdl"
+	Box      = "models/acf/core/s_fuel.mdl",
+	Sphere   = "models/acf/core/s_sphere.mdl",
+	Cylinder = "models/acf/core/s_fuel_cyl.mdl"
 }
 
 -- Shape calculation functions
