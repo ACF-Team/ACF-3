@@ -1,6 +1,5 @@
 local ACF         = ACF
 local Clamp       = math.Clamp
-local Round       = math.Round
 local HookRun     = hook.Run
 local Classes     = ACF.Classes
 local Utilities   = ACF.Utilities

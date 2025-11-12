@@ -2,7 +2,6 @@ local ACF         = ACF
 local Classes     = ACF.Classes
 local EngineTypes = Classes.EngineTypes
 local FuelTypes   = Classes.FuelTypes
-local FuelTanks   = Classes.FuelTanks
 local Engines     = Classes.Engines
 local TankSize    = Vector()
 local HPColor     = Color(255, 65, 65)

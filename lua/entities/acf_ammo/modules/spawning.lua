@@ -109,7 +109,7 @@ do -- Spawn/Update/Remove
 		end
 	end
 
-	local function UpdateCrateSize(Entity, Data, Class, Weapon, Ammo)
+	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
 		-- Convert current tool data once to get projectile geometry
 		local Bullet = Ammo:ServerConvert(Data)
 
