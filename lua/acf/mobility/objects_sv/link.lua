@@ -65,6 +65,11 @@ do
 
 		ActWheel(self, Entity, Torque, DeltaTime)
 	end
+
+	-- Used to transfer torque to a generic effector, e.g. propeller
+	function Meta:TransferEffector(Effector, Torque, DeltaTime, MassRatio)
+		Effector:Act(Torque, DeltaTime, MassRatio)
+	end
 end
 
 function Meta:ToString()
