@@ -1,57 +1,66 @@
-local ACF = ACF
-local Damage = ACF.Damage
-local Utilities = ACF.Utilities
-local Clock = Utilities.Clock
-local Sounds = Utilities.Sounds
+local ACF         = ACF
+local Damage      = ACF.Damage
+local Objects     = ACF.Damage.Objects
+local Utilities   = ACF.Utilities
+local Clock       = Utilities.Clock
+local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
-local TimerRemove = timer.Remove
-
 
 local function CookoffCrate(Entity)
-	if Entity.Amount < 1 or Entity.Damaged < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
-		TimerRemove("ACF Crate Cookoff " .. Entity:EntIndex())
+	if Entity.Ammo < 1 or Entity.Burning < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
+		timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
 
-		Entity.Damaged = nil
+		Entity.Burning = nil
 
 		Entity:Detonate()
-	elseif Entity.RoundData then -- Spew bullets out everywhere
+	elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
 		local BulletData = Entity.BulletData
 		local VolumeRoll = math.Rand(0, 150) > math.min(BulletData.RoundVolume ^ 0.5, 150 * 0.25) -- The larger the round volume, the less the chance of detonation (25% chance at minimum)
-		local AmmoRoll   = math.Rand(0, 1) <= Entity.Amount / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
+		local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
 
 		if VolumeRoll and AmmoRoll then
-			local Speed = BulletData.MuzzleVel * 0.5 + math.Rand(0, BulletData.MuzzleVel)
-			local Inaccuracy = math.VRand():GetNormalized() * (math.random() ^ 0.5) * (1 - BulletData.FrArea / BulletData.ProjArea)
+			local Speed = ACF.MuzzleVelocity(BulletData.PropMass * 0.5, BulletData.ProjMass, BulletData.Efficiency) -- Half propellant projectile
+			local Pitch = math.max(255 - BulletData.PropMass * 100, 60) -- Pitch based on propellant mass
 
-			BulletData.Owner = Entity.Inflictor
-			BulletData.Gun = Entity
+			Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 140, Pitch, 1)
 
-			Entity.RoundData:Create(Entity, VectorRand():GetNormalized() + Inaccuracy, Speed)
+			BulletData.Pos       = Entity:LocalToWorld(Entity:OBBCenter() + VectorRand() * Entity:GetSize() * 0.5) -- Random position in the ammo crate
+			BulletData.Flight    = VectorRand():GetNormalized() * Speed * ACF.MeterToInch + Entity:GetAncestor():GetVelocity() -- Random direction including baseplate speed
+			BulletData.IsCookOff = true
 
-			Entity:Consume(1)
+			BulletData.Owner  = Entity.Inflictor or Entity.Owner
+			BulletData.Gun    = Entity
+			BulletData.Crate  = Entity:EntIndex()
 
-			Sounds.SendSound(Entity, "ambient/explosions/explode_4.wav", 100, math.Rand(75, 100), ACF.Volume)
+			Entity.RoundData:Create(Entity, BulletData)
 
-			local Effect = EffectData()
-			Effect:SetOrigin(Entity:GetPos())
-			Effect:SetNormal(VectorRand():GetNormalized())
-			Effect:SetScale(math.max(BulletData.RoundVolume ^ 0.5 * 0.5, 1))
-			Effect:SetMagnitude(2)
-
-			util.Effect("ACF_Cookoff", Effect)
+			Entity:Consume()
 		end
 	end
 end
 
 
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-	local HitRes = ACF.PropDamage(self, DmgResult, DmgInfo) -- Calling the standard damage prop function
+	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo) -- Calling the standard damage prop function
 
-	local Inflictor = DmgInfo.Inflictor
-	local Attacker = DmgInfo.Attacker
+	if self.Exploding then return HitRes end
 
-	-- Cookoff chance
-	if self.Damaged then return HitRes end -- Already cooking off
+	local Inflictor, Attacker = DmgInfo.Inflictor, DmgInfo.Attacker
+
+	-- If killed: detonate immediately
+	if HitRes.Kill then
+		self.Attacker  = Attacker
+		self.Inflictor = Inflictor
+
+		if self.Amount > 0 then
+			self:Detonate()
+		end
+
+		return HitRes
+	end
+
+	-- If not killed: Roll dice to cook off
+	if self.Burning then return HitRes end -- Already cooking off
 
 	local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
@@ -62,7 +71,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		self.Inflictor = Inflictor
 
 		if CanBurn then
-			self.Damaged = Clock.CurTime + (5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
+			self.Burning = Clock.CurTime + (5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
 
 			local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
 
@@ -79,26 +88,33 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:Detonate()
-	local Position = self:GetPos()
+function ENT:Detonate(VisualOnly)
+	if self.Exploding then return end
 
-	local AmmoPower = self.Amount ^ 0.7
-	local BulletPower = self.BulletData.FillerMass or 0
-	local Explosive = AmmoPower * BulletPower * 0.25
+	local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
 
-	local FragMass = self.BulletData.ProjMass or 0
+	if not CanExplode then return end
 
-	local DmgInfo = {
-		Attacker = self.Attacker or self,
-		Inflictor = self.Inflictor or self,
-	}
+	self.Exploding = true
+
+	local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5) -- Random position within the crate
+	local BulletData = self.BulletData
+	local Filler     = BulletData.FillerMass or 0
+	local Propellant = BulletData.PropMass or 0
+	local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
+	local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
+	local FragMass   = BulletData.ProjMass or Explosive * 0.5
+	local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 	ACF.KillChildProps(self, Position, Explosive)
-	Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+
+	if not VisualOnly then
+		Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
+	end
+
 	Damage.explosionEffect(Position, nil, Explosive)
 
 	constraint.RemoveAll(self)
 
 	self:Remove()
 end
-

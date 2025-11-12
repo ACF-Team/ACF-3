@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 include("modules/cfw.lua")
+include("modules/damage.lua")
 include("modules/spawning.lua")
 include("modules/state.lua")
 include("modules/crew.lua")
