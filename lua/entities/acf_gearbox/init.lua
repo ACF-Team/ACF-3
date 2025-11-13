@@ -332,6 +332,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.SoundPath      = Class.Sound
 		Entity.Engines        = {}
 		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
+		Entity.Effectors	  = {}
 		Entity.GearboxIn      = {}
 		Entity.GearboxOut     = {}
 		Entity.TotalReqTq     = 0
