@@ -165,10 +165,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					DmgInfo:SetHitPos(HitPos)
 					DmgInfo:SetHitGroup(Trace.HitGroup)
 
-					print("Target: " .. tostring(HitEnt))
-					print("Distance: " .. math.Round(Distance, 2))
-					print("Armor: " .. EntArmor)
-
 					do -- Blast damage
 						local Feathering  = 1 - math.min(0.99, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
 						local BlastArea   = EntArea / ACF.Threshold * Feathering
@@ -181,9 +177,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 						Losses      = BlastResult.Loss * 0.5
 						Penetration = BlastPen > EntArmor
-
-						print("Blast Penetration: " .. tostring(BlastPen))
-						print("Blast Penetrated: " .. tostring(BlastPen > EntArmor))
 					end
 
 					do -- Fragment damage
@@ -201,9 +194,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 							FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
 							Losses      = Losses + FragResult.Loss * 0.5
 							Penetration = Penetration or FragResult.Overkill > 0
-
-							print("Frag Penetration: " .. tostring(FragPen))
-							print("Frag Penetrated: " .. tostring(FragResult.Overkill > 0))
 						end
 					end
 
