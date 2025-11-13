@@ -129,7 +129,7 @@ function ACF.MakeSupply(Player, Pos, Angle, Data)
 	return Supply
 end
 
-Entities.Register("acf_supply", ACF.MakeSupply, "SupplyShape", "Size", "Amount")
+Entities.Register("acf_supply", ACF.MakeSupply, "SupplyShape", "SupplySizeX", "SupplySizeY", "SupplySizeZ", "Size", "Amount")
 
 function ENT:Update(Data)
 	VerifyData(Data)
