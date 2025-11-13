@@ -158,12 +158,16 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 					local AreaFraction  = Area / MaxSphere
 					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
-					local BlastResult, FragResult, Losses
+					local BlastResult, FragResult, Losses, Penetration
 
 					Debug.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
 
 					DmgInfo:SetHitPos(HitPos)
 					DmgInfo:SetHitGroup(Trace.HitGroup)
+
+					print("Target: " .. tostring(HitEnt))
+					print("Distance: " .. math.Round(Distance, 2))
+					print("Armor: " .. EntArmor)
 
 					do -- Blast damage
 						local Feathering  = 1 - math.min(0.99, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
@@ -176,21 +180,30 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 						BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 						Losses      = BlastResult.Loss * 0.5
+						Penetration = BlastPen > EntArmor
+
+						print("Blast Penetration: " .. tostring(BlastPen))
+						print("Blast Penetrated: " .. tostring(BlastPen > EntArmor))
 					end
 
 					do -- Fragment damage
 						local FragHit = math.floor(Fragments * AreaFraction)
 
 						if FragHit > 0 then
-							local Loss    = BaseFragV * Distance / Radius
-							local FragVel = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
-							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
+							local Loss      = BaseFragV * Distance / Radius
+							local FragVel   = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
+							local FragPen   = ACF.Penetration(FragVel, FragMass, FragCaliber)
+							local HitAngle  = ACF.GetHitAngle(Trace, Direction)
+							local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
 
 							DmgInfo:SetType(DMG_BULLET)
 
-							FragResult = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
-							Losses     = Losses + FragResult.Loss * 0.5
+							FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
+							Losses      = Losses + FragResult.Loss * 0.5
+							Penetration = Penetration or FragResult.Overkill > 0
+
+							print("Frag Penetration: " .. tostring(FragPen))
+							print("Frag Penetrated: " .. tostring(FragResult.Overkill > 0))
 						end
 					end
 
@@ -218,8 +231,17 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						end
 
 						Loop = true -- Check for new targets since something died, maybe we'll find something new
-					elseif ACF.HEPush then -- Just damaged, not killed, so push on it some
-						ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
+					else
+						if Penetration then
+							Filter[#Filter + 1] = HitEnt
+							Targets[HitEnt]     = nil
+
+							Loop = true
+						end
+
+						if ACF.HEPush then -- Just damaged, not killed, so push on it some
+							ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
+						end
 					end
 
 					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
