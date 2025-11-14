@@ -109,7 +109,7 @@ end)
 
 
 -- Calculates the required torque for the waterjet to function
-function ENT:Calc(InputRPM, InputInertia)
+function ENT:Calc(InputRPM, _)
 	if not self.InWater then return 0 end
 	if not IsValid(self.Ancestor) then return 0 end
 
@@ -122,7 +122,7 @@ function ENT:Calc(InputRPM, InputInertia)
 end
 
 -- Applies torque to the waterjet
-function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
+function ENT:Act(Torque, _, MassRatio, FlyRPM)
 	self:SetNW2Float("ACF_WaterjetRPM", FlyRPM)
 
 	if not self.InWater then return end
