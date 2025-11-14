@@ -1118,34 +1118,26 @@ do	-- NET SURFER 2.0
 			local OutL = Entity.OutL.Pos
 			local OutR = Entity.OutR.Pos
 
-			if next(Entity.GearboxIn) then
-				for E in pairs(Entity.GearboxIn) do
-					Inputs[#Inputs + 1] = E:EntIndex()
-				end
-			end
+			local SingleTargets, CoupleTargets =
+				{ Entity.GearboxIn, Entity.Engines },
+				{ Entity.GearboxOut, Entity.Wheels, Entity.Effectors }
 
-			if next(Entity.Engines) then
-				for E in pairs(Entity.Engines) do
-					Inputs[#Inputs + 1] = E:EntIndex()
-				end
-			end
-
-			if next(Entity.GearboxOut) then
-				for E, L in pairs(Entity.GearboxOut) do
-					if L.Side == 0 then
-						OutputL[#OutputL + 1] = E:EntIndex()
-					else
-						OutputR[#OutputR + 1] = E:EntIndex()
+			for _, Singles in ipairs(SingleTargets) do
+				if next(Singles) then
+					for E in pairs(Entity.GearboxIn) do
+						Inputs[#Inputs + 1] = E:EntIndex()
 					end
 				end
 			end
 
-			if next(Entity.Wheels) then
-				for E, L in pairs(Entity.Wheels) do
-					if L.Side == 0 then
-						OutputL[#OutputL + 1] = E:EntIndex()
-					else
-						OutputR[#OutputR + 1] = E:EntIndex()
+			for _, Couples in ipairs(CoupleTargets) do
+				if next(Couples) then
+					for E, L in pairs(Entity.GearboxOut) do
+						if L.Side == 0 then
+							OutputL[#OutputL + 1] = E:EntIndex()
+						else
+							OutputR[#OutputR + 1] = E:EntIndex()
+						end
 					end
 				end
 			end
