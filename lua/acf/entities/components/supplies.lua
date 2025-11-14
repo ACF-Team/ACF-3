@@ -17,6 +17,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 	Name        = "Supply Crate",
 	Description = "A scalable container that supplies fuel and ammo.",
 	Model       = "models/holograms/hq_rcube_thin.mdl",
+	Preview = {FOV = 120},
 	CreateMenu = function(_, Menu)
 		-- Shape selector
 		local SupplyShape = Menu:AddComboBox()

@@ -89,6 +89,7 @@ local function CreateMenu(Menu)
 	local DefaultShape = ACF.GetClientData("FuelShape") or "Box"
 	ACF.SetClientData("FuelShape", DefaultShape, true)
 	FuelShape:ChooseOptionID(DefaultShape == "Sphere" and 2 or DefaultShape == "Cylinder" and 3 or 1)
+	FuelShape:OnSelect(nil, nil, DefaultShape)
 
 	local Min = ACF.ContainerMinSize
 	local Max = ACF.ContainerMaxSize
@@ -215,6 +216,7 @@ local function CreateMenu(Menu)
 
 		-- Update preview model based on shape
 		FuelPreview:UpdateModel(ACF.ContainerShapeModels[Data], "models/props_canal/metalcrate001d")
+		FuelPreview:UpdateSettings({ FOV = 120 })
 
 		FuelType:UpdateFuelText()
 	end

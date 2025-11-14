@@ -10,6 +10,7 @@ Components.RegisterItem("WTJ-IMP", "WTJ", {
 	Name        = "Water Jet",
 	Description = "Entity capable of aiding with movement in water.",
 	Model       = "models/maxofs2d/hover_propeller.mdl",
+	Preview = {FOV = 100},
 	CreateMenu = function(_, Menu)
 		local SizeX = Menu:AddSlider("Size", 0.5, 1, 2)
 		SizeX:SetClientData("WaterjetSize", "OnValueChanged")
