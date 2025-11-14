@@ -40,7 +40,7 @@ local function GenerateLinkTable(Entity, Target)
 end
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.WaterjetSize = math.Clamp(ClientData.WaterjetSize or 1, 0.5, 2)
+	ClientData.WaterjetSize = math.Clamp(ClientData.WaterjetSize or 1, 0.5, 1)
 	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
 end
 
@@ -53,16 +53,16 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 
 	self.SlewRatePitch = 5
 	self.SlewRateYaw = 5
-	self.ArcPitch = 15
-	self.ArcYaw = 15
+	self.ArcPitch = 5
+	self.ArcYaw = 5
 	self.Pitch = 0
 	self.Yaw = 0
 	self.TargetPitch = 0
 	self.TargetYaw = 0
 
-	self.CQ = 10
-	self.CT = 0.01
-	self.Rho = 1000 -- Density of water in kg/m^3
+	self.CQ = 10 				-- Torque coefficient
+	self.CT = 0.025 			-- Force coefficient
+	self.Rho = 1000 			-- Density of water in kg/m^3
 	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters (model is 10u in diameter by default)
 
 	self.Gearboxes = {}
@@ -114,10 +114,11 @@ function ENT:Calc(InputRPM, InputInertia)
 	if not IsValid(self.Ancestor) then return 0 end
 
 	local SelfTbl = self:GetTable()
+	local HealthRatio = (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
 	local n = InputRPM / (2 * 3.14)         		-- Rotation rate (Rad/s)
 	local CQ, Rho, D = SelfTbl.CQ, SelfTbl.Rho, SelfTbl.Diameter
 	local Q_req = CQ * Rho * n * n * D * D * D * D 	-- Required torque to rotate
-	return Q_req
+	return Q_req * HealthRatio
 end
 
 -- Applies torque to the waterjet
@@ -128,6 +129,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	if not IsValid(self.Ancestor) then return end
 
 	local SelfTbl = self:GetTable()
+	local HealthRatio = (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
 	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
 	local CT, Rho, D = SelfTbl.CT, SelfTbl.Rho, SelfTbl.Diameter
 	local T = CT * Rho * n * n * D * D * D * D  -- Force generated
@@ -136,7 +138,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	local Sign = Torque >= 0 and 1 or -1
 	local Ang = Angle(SelfTbl.Pitch * SelfTbl.ArcPitch, 0, SelfTbl.Yaw * SelfTbl.ArcYaw)
 	local Dir = -self:LocalToWorldAngles(Ang):Up()
-	Phys:ApplyForceOffset(Dir * T * Sign * MassRatio, self:GetPos())
+	Phys:ApplyForceOffset(Dir * T * Sign * MassRatio * HealthRatio, self:GetPos())
 end
 
 function ENT:Think()
