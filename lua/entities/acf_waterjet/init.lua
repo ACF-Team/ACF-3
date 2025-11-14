@@ -118,7 +118,7 @@ function ENT:Calc(InputRPM, InputInertia)
 	local n = InputRPM / (2 * 3.14)         		-- Rotation rate (Rad/s)
 	local CQ, Rho, D = SelfTbl.CQ, SelfTbl.Rho, SelfTbl.Diameter
 	local Q_req = CQ * Rho * n * n * D * D * D * D 	-- Required torque to rotate
-	return Q_req * HealthRatio
+	return Q_req / HealthRatio
 end
 
 -- Applies torque to the waterjet
