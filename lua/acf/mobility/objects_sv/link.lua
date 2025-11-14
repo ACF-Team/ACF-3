@@ -43,7 +43,7 @@ do
 	end
 
 	-- Used to transfer torque from one gearbox to another
-	function Meta:TransferGearbox(Gearbox, Torque, DeltaTime, MassRatio)
+	function Meta:TransferGearbox(Gearbox, Torque, DeltaTime, MassRatio, FlyRPM)
 		--[[
 		local P1 = self.Source:LocalToWorld(self.Origin)
 		local P2 = self.Target:LocalToWorld(self.TargetPos)
@@ -51,7 +51,7 @@ do
 		Debug.Text(LerpVector(0.5, P1, P2), math.Round(Torque, 1) .. " Nm", 0.05, false)
 		]]
 
-		Gearbox:Act(Torque, DeltaTime, MassRatio)
+		Gearbox:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	end
 
 	-- Used to transfer torque from a gearbox to a wheel or other entity
@@ -67,8 +67,8 @@ do
 	end
 
 	-- Used to transfer torque to a generic effector, e.g. propeller
-	function Meta:TransferEffector(Effector, Torque, DeltaTime, MassRatio)
-		Effector:Act(Torque, DeltaTime, MassRatio)
+	function Meta:TransferEffector(Effector, Torque, DeltaTime, MassRatio, FlyRPM)
+		Effector:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	end
 end
 

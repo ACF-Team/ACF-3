@@ -52,13 +52,16 @@ function ENT:ACF_PreSpawn(_, _, _, _)
 	self:SetScaledModel("models/maxofs2d/hover_propeller.mdl")
 end
 
-function ENT:ACF_PostSpawn(_, _, _, _)
+function ENT:ACF_PostUpdateEntityData(ClientData)
+	print("Updated")
 	self.PropAng = 0
 	self.PropAngVel = 0
 	self.PropAngAccel = 0
 
-	self.C_Q = 1
-	self.C_T = 1
+	self.CQ = 1
+	self.CT = 1
+	self.Rho = 1000 -- Density of water in kg/m^3
+	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters
 
 	self.Gearboxes = {}
 end
@@ -105,17 +108,33 @@ end)
 
 -- Calculates the required torque for the waterjet to function
 function ENT:Calc(InputRPM, InputInertia)
-
+	if not self.InWater then return 0 end
+	local SelfTbl = self:GetTable()
+	local n = InputRPM / (2 * 3.14)         		-- Rotation rate (Rad/s)
+	local CQ, Rho, D = SelfTbl.CQ, SelfTbl.Rho, SelfTbl.Diameter
+	local Q_req = CQ * Rho * n * n * D * D * D * D 	-- Required torque to rotate
+	return Q_req
 end
 
-function ENT:Act(Torque, DeltaTime, MassRatio)
+-- Applies torque to the waterjet
+function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
+	if not self.InWater then return end
+	local SelfTbl = self:GetTable()
+	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
+	local CT, Rho, D = SelfTbl.CT, SelfTbl.Rho, SelfTbl.Diameter
+	local T = CT * Rho * n * n * D * D * D * D  -- Force generated
 
+	-- TODO CACHE BASEPLATE/PARENT
+	local Parent = self:GetParent()
+	if not IsValid(Parent) then Parent = self end
+	local Phys = Parent:GetPhysicsObject()
+	Phys:ApplyForceOffset(Parent:GetForward() * T, self:GetPos())
 end
 
 function ENT:Think()
 	local Center = self:GetPos()
-	if bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER then end
-	self:NextThink(CurTime())
+	self.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+	self:NextThink(CurTime() + 0.1)
 	return true
 end
 
