@@ -12,8 +12,8 @@ ENT.ACF_UserVars = {
 }
 
 ENT.ACF_WireInputs = {
-    "Pitch (Horizontal Steer Angle)",
-    "Yaw (Vertical Steer Angle)",
+    "Pitch (Horizontal Steer Angle, -1 to 1)",
+    "Yaw (Vertical Steer Angle, -1 to 1)",
 }
 
 cleanup.Register("acf_waterjet")
