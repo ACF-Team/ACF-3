@@ -996,7 +996,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Effector, Link in pairs(SelfTbl.Effectors) do
-			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM, AvailTq >= 0 and 1 or -1)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime

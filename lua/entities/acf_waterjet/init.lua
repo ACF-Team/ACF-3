@@ -53,13 +53,8 @@ function ENT:ACF_PreSpawn(_, _, _, _)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
-	print("Updated")
-	self.PropAng = 0
-	self.PropAngVel = 0
-	self.PropAngAccel = 0
-
-	self.CQ = 1
-	self.CT = 1
+	self.CQ = 100
+	self.CT = 0.1
 	self.Rho = 1000 -- Density of water in kg/m^3
 	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters
 
@@ -117,7 +112,7 @@ function ENT:Calc(InputRPM, InputInertia)
 end
 
 -- Applies torque to the waterjet
-function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
+function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
 	if not self.InWater then return end
 	local SelfTbl = self:GetTable()
 	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
@@ -128,7 +123,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	local Parent = self:GetParent()
 	if not IsValid(Parent) then Parent = self end
 	local Phys = Parent:GetPhysicsObject()
-	Phys:ApplyForceOffset(Parent:GetForward() * T, self:GetPos())
+	Phys:ApplyForceOffset(Parent:GetForward() * T * Direction, self:GetPos())
 end
 
 function ENT:Think()

@@ -67,8 +67,8 @@ do
 	end
 
 	-- Used to transfer torque to a generic effector, e.g. propeller
-	function Meta:TransferEffector(Effector, Torque, DeltaTime, MassRatio, FlyRPM)
-		Effector:Act(Torque, DeltaTime, MassRatio, FlyRPM)
+	function Meta:TransferEffector(Effector, Torque, DeltaTime, MassRatio, FlyRPM, Direction)
+		Effector:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
 	end
 end
 
