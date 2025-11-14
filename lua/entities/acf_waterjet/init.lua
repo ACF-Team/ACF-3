@@ -113,6 +113,8 @@ end
 
 -- Applies torque to the waterjet
 function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
+	self:SetNW2Float("ACF_WaterjetRPM", FlyRPM)
+
 	if not self.InWater then return end
 	local SelfTbl = self:GetTable()
 	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
@@ -127,6 +129,7 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
 end
 
 function ENT:Think()
+	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local Center = self:GetPos()
 	self.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
 	self:NextThink(CurTime() + 0.1)
