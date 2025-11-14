@@ -1124,7 +1124,7 @@ do	-- NET SURFER 2.0
 
 			for _, Singles in ipairs(SingleTargets) do
 				if next(Singles) then
-					for E in pairs(Entity.GearboxIn) do
+					for E in pairs(Singles) do
 						Inputs[#Inputs + 1] = E:EntIndex()
 					end
 				end
@@ -1132,7 +1132,7 @@ do	-- NET SURFER 2.0
 
 			for _, Couples in ipairs(CoupleTargets) do
 				if next(Couples) then
-					for E, L in pairs(Entity.GearboxOut) do
+					for E, L in pairs(Couples) do
 						if L.Side == 0 then
 							OutputL[#OutputL + 1] = E:EntIndex()
 						else
