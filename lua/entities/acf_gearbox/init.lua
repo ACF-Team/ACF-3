@@ -332,6 +332,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.SoundPath      = Class.Sound
 		Entity.Engines        = {}
 		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
+		Entity.Effectors	  = {}
 		Entity.GearboxIn      = {}
 		Entity.GearboxOut     = {}
 		Entity.TotalReqTq     = 0
@@ -922,6 +923,23 @@ do -- Movement -----------------------------------------
 			end
 		end
 
+		for Effector, Link in pairs(SelfTbl.Effectors) do
+			local Clutch = Link.Side == 0 and LClutch or RClutch
+
+			Link.ReqTq = 0
+
+			if not Effector.Disabled then
+				local Inertia = 0
+
+				if GearRatio ~= 0 then
+					Inertia = InputInertia * GearRatio
+				end
+
+				Link.ReqTq = abs(Effector:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
+				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
+			end
+		end
+
 		SelfTbl.TotalReqTq = TotalReqTq
 		TorqueOutput = min(TotalReqTq, SelfTbl.MaxTorque)
 		SelfTbl.TorqueOutput = TorqueOutput
@@ -931,7 +949,7 @@ do -- Movement -----------------------------------------
 		return TorqueOutput
 	end
 
-	function ENT:Act(Torque, DeltaTime, MassRatio)
+	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = self:GetTable()
 		if SelfTbl.Disabled then return end
 
@@ -952,7 +970,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Ent, Link in pairs(SelfTbl.GearboxOut) do
-			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio)
+			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
 			--Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
 
@@ -975,6 +993,10 @@ do -- Movement -----------------------------------------
 			if IsValid(BoxPhys) then
 				BoxPhys:ApplyTorqueCenter(self:GetRight() * Clamp(2 * deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
 			end
+		end
+
+		for Effector, Link in pairs(SelfTbl.Effectors) do
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime
@@ -1058,6 +1080,16 @@ do -- Duplicator Support -------------------------------
 			duplicator.StoreEntityModifier(self, "ACFGearboxes", Entities)
 		end
 
+		if next(self.Effectors) then
+			local Entities = {}
+
+			for Ent in pairs(self.Effectors) do
+				Entities[#Entities + 1] = Ent:EntIndex()
+			end
+
+			duplicator.StoreEntityModifier(self, "ACFEffectors", Entities)
+		end
+
 		--Wire dupe info
 		self.BaseClass.PreEntityCopy(self)
 	end
@@ -1092,6 +1124,14 @@ do -- Duplicator Support -------------------------------
 			EntMods.ACFGearboxes = nil
 		end
 
+		if EntMods.ACFEffectors then
+			for _, EntID in ipairs(EntMods.ACFEffectors) do
+				self:Link(CreatedEntities[EntID])
+			end
+
+			EntMods.ACFEffectors = nil
+		end
+
 		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 	end
 end ----------------------------------------------------
@@ -1117,34 +1157,26 @@ do	-- NET SURFER 2.0
 			local OutL = Entity.OutL.Pos
 			local OutR = Entity.OutR.Pos
 
-			if next(Entity.GearboxIn) then
-				for E in pairs(Entity.GearboxIn) do
-					Inputs[#Inputs + 1] = E:EntIndex()
-				end
-			end
+			local SingleTargets, CoupleTargets =
+				{ Entity.GearboxIn, Entity.Engines },
+				{ Entity.GearboxOut, Entity.Wheels, Entity.Effectors }
 
-			if next(Entity.Engines) then
-				for E in pairs(Entity.Engines) do
-					Inputs[#Inputs + 1] = E:EntIndex()
-				end
-			end
-
-			if next(Entity.GearboxOut) then
-				for E, L in pairs(Entity.GearboxOut) do
-					if L.Side == 0 then
-						OutputL[#OutputL + 1] = E:EntIndex()
-					else
-						OutputR[#OutputR + 1] = E:EntIndex()
+			for _, Singles in ipairs(SingleTargets) do
+				if next(Singles) then
+					for E in pairs(Singles) do
+						Inputs[#Inputs + 1] = E:EntIndex()
 					end
 				end
 			end
 
-			if next(Entity.Wheels) then
-				for E, L in pairs(Entity.Wheels) do
-					if L.Side == 0 then
-						OutputL[#OutputL + 1] = E:EntIndex()
-					else
-						OutputR[#OutputR + 1] = E:EntIndex()
+			for _, Couples in ipairs(CoupleTargets) do
+				if next(Couples) then
+					for E, L in pairs(Couples) do
+						if L.Side == 0 then
+							OutputL[#OutputL + 1] = E:EntIndex()
+						else
+							OutputR[#OutputR + 1] = E:EntIndex()
+						end
 					end
 				end
 			end
@@ -1235,6 +1267,10 @@ do -- Miscellaneous ------------------------------------
 
 		for Gearbox in pairs(self.GearboxOut) do
 			self:Unlink(Gearbox)
+		end
+
+		for Effector in pairs(self.Effectors) do
+			self:Unlink(Effector)
 		end
 
 		timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
