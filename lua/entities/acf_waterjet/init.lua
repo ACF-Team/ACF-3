@@ -44,28 +44,26 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
 end
 
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetScale(ClientData.Size)
-end
-
 function ENT:ACF_PreSpawn(_, _, _, _)
 	self:SetScaledModel("models/maxofs2d/hover_propeller.mdl")
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
+	self:SetScale(ClientData.Size)
+
 	self.SlewRatePitch = 5
 	self.SlewRateYaw = 5
-	self.ArcPitch = 5
-	self.ArcYaw = 5
+	self.ArcPitch = 15
+	self.ArcYaw = 15
 	self.Pitch = 0
 	self.Yaw = 0
 	self.TargetPitch = 0
 	self.TargetYaw = 0
 
-	self.CQ = 100
-	self.CT = 0.5
+	self.CQ = 10
+	self.CT = 0.01
 	self.Rho = 1000 -- Density of water in kg/m^3
-	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters
+	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters (model is 10u in diameter by default)
 
 	self.Gearboxes = {}
 end
@@ -113,6 +111,8 @@ end)
 -- Calculates the required torque for the waterjet to function
 function ENT:Calc(InputRPM, InputInertia)
 	if not self.InWater then return 0 end
+	if not IsValid(self.Ancestor) then return 0 end
+
 	local SelfTbl = self:GetTable()
 	local n = InputRPM / (2 * 3.14)         		-- Rotation rate (Rad/s)
 	local CQ, Rho, D = SelfTbl.CQ, SelfTbl.Rho, SelfTbl.Diameter
@@ -125,12 +125,13 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	self:SetNW2Float("ACF_WaterjetRPM", FlyRPM)
 
 	if not self.InWater then return end
+	if not IsValid(self.Ancestor) then return end
+
 	local SelfTbl = self:GetTable()
 	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
 	local CT, Rho, D = SelfTbl.CT, SelfTbl.Rho, SelfTbl.Diameter
 	local T = CT * Rho * n * n * D * D * D * D  -- Force generated
 
-	if not IsValid(self.Ancestor) then return end
 	local Phys = self.AncestorPhys
 	local Sign = Torque >= 0 and 1 or -1
 	local Ang = Angle(SelfTbl.Pitch * SelfTbl.ArcPitch, 0, SelfTbl.Yaw * SelfTbl.ArcYaw)
