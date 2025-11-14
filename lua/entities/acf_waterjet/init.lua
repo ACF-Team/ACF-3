@@ -41,7 +41,7 @@ end
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.WaterjetSize = math.Clamp(ClientData.WaterjetSize or 1, 0.5, 2)
-	ClientData.Size = Vector(ClientData.WaterjetSize,ClientData.WaterjetSize,ClientData.WaterjetSize)
+	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
@@ -53,8 +53,17 @@ function ENT:ACF_PreSpawn(_, _, _, _)
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
+	self.SlewRatePitch = 5
+	self.SlewRateYaw = 5
+	self.ArcPitch = 5
+	self.ArcYaw = 5
+	self.Pitch = 0
+	self.Yaw = 0
+	self.TargetPitch = 0
+	self.TargetYaw = 0
+
 	self.CQ = 100
-	self.CT = 0.1
+	self.CT = 0.5
 	self.Rho = 1000 -- Density of water in kg/m^3
 	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters
 
@@ -112,7 +121,7 @@ function ENT:Calc(InputRPM, InputInertia)
 end
 
 -- Applies torque to the waterjet
-function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
+function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 	self:SetNW2Float("ACF_WaterjetRPM", FlyRPM)
 
 	if not self.InWater then return end
@@ -121,17 +130,30 @@ function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, Direction)
 	local CT, Rho, D = SelfTbl.CT, SelfTbl.Rho, SelfTbl.Diameter
 	local T = CT * Rho * n * n * D * D * D * D  -- Force generated
 
-	-- TODO CACHE BASEPLATE/PARENT
-	local Parent = self:GetParent()
-	if not IsValid(Parent) then Parent = self end
-	local Phys = Parent:GetPhysicsObject()
-	Phys:ApplyForceOffset(Parent:GetForward() * T * Direction, self:GetPos())
+	if not IsValid(self.Ancestor) then return end
+	local Phys = self.AncestorPhys
+	local Sign = Torque >= 0 and 1 or -1
+	local Ang = Angle(SelfTbl.Pitch * SelfTbl.ArcPitch, 0, SelfTbl.Yaw * SelfTbl.ArcYaw)
+	local Dir = -self:LocalToWorldAngles(Ang):Up()
+	Phys:ApplyForceOffset(Dir * T * Sign * MassRatio, self:GetPos())
 end
 
 function ENT:Think()
 	self:SetNW2Float("ACF_WaterjetRPM", 0)
+	local SelfTbl = self:GetTable()
 	local Center = self:GetPos()
-	self.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+	SelfTbl.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+
+	SelfTbl.Pitch = math.Clamp(SelfTbl.Pitch + (SelfTbl.TargetPitch - SelfTbl.Pitch) * SelfTbl.SlewRatePitch * 0.1, -1, 1)
+	SelfTbl.Yaw = math.Clamp(SelfTbl.Yaw + (SelfTbl.TargetYaw - SelfTbl.Yaw) * SelfTbl.SlewRateYaw * 0.1, -1, 1)
+
+	-- Cache ancestor
+	local Ancestor = self:GetAncestor()
+	if IsValid(Ancestor) then
+		SelfTbl.Ancestor = Ancestor
+		SelfTbl.AncestorPhys = Ancestor:GetPhysicsObject()
+	end
+
 	self:NextThink(CurTime() + 0.1)
 	return true
 end
