@@ -345,7 +345,11 @@ do -- ASSUMING DIRECT CONTROL
 				-- DON'T just add a if self.ACF check - this is intended to be called on ACF entities
 				-- and they should have an ACF table, so you're just suppressing an issue here, only for it to
 				-- probably show up later... do more investigation into *why* self.ACF returned nil.
-				if self.IsACFEntity then Contraption.SetModel(self, self.ACF.Model) return end
+				if self.IsACFEntity then
+					if not self.ACF then error("Entity " .. tostring(self) .. " missing an ACF table.\nStack traceback for additional clarity (AdvDupe2 likes to be annoying about these...)\n\n" .. debug.traceback()) end
+					Contraption.SetModel(self, self.ACF.Model)
+					return
+				end
 
 				SetModel(self, Model)
 			end
