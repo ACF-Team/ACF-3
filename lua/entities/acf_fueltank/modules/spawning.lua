@@ -28,10 +28,28 @@ local function VerifyData(Data)
 	-- Build size from FuelSizeX/Y/Z
 	local Min, Max = ACF.ContainerMinSize, ACF.ContainerMaxSize
 	-- ACF-3 backwards compatibility. Fuel size was saved as Size for a while.
-	if isvector(Data.Size) and (not Data.FuelSizeX or not Data.FuelSizeY or not not Data.FuelSizeZ) then
+	if isvector(Data.Size) and (not Data.FuelSizeX or not Data.FuelSizeY or not Data.FuelSizeZ) then
 		Data.FuelSizeX = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
-		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
-		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
+		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data.Size[2], 24), Min, Max)
+		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data.Size[3], 24), Min, Max)
+
+		Data.Size = Vector(Data.FuelSizeX, Data.FuelSizeY, Data.FuelSizeZ)
+
+		if isstring(Data.FuelTank) then
+			Data.FuelShape = Data.FuelTank == "Drum" and "Cylinder" or "Box"
+		end
+	-- Pre-scalable ACF-3 backwards compatibility for boxes. The X and Y values are swapped on purpose to match old tank models.
+	elseif isstring(Data.FuelTank) and string.StartsWith(Data.FuelTank, "Tank_") then
+		local TankSize = string.Split(string.TrimLeft(Data.FuelTank, "Tank_"), "x")
+		local X = Clamp(ACF.CheckNumber(tonumber(TankSize[2]) * 10, 24), Min, Max)
+		local Y = Clamp(ACF.CheckNumber(tonumber(TankSize[1]) * 10, 24), Min, Max)
+		local Z = Clamp(ACF.CheckNumber(tonumber(TankSize[3]) * 10, 24), Min, Max)
+
+		Data.Size = Vector(X, Y, Z)
+	-- Pre-scalable ACF-3 backwards compatibility for fuel drums.
+	elseif isstring(Data.FuelTank) and Data.FuelTank == "Fuel_Drum" then
+		Data.FuelShape = "Cylinder"
+		Data.Size = Vector(28, 28, 45)
 	else
 		local X = Clamp(ACF.CheckNumber(Data.FuelSizeX, 24), Min, Max)
 		local Y = Clamp(ACF.CheckNumber(Data.FuelSizeY, 24), Min, Max)

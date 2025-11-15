@@ -191,7 +191,7 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):                       LinkToServerData("NameAndShame")
 
 		Base:AddCheckBox("#acf.menu.settings.general.lethal_entity_player_checks"): LinkToServerData("LethalEntityPlayerChecks")
-		Base:AddHelp("#acf.menu.settings.fun_menu.lethal_entity_player_checks_desc")
+			Base:AddHelp("#acf.menu.settings.general.lethal_entity_player_checks_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
