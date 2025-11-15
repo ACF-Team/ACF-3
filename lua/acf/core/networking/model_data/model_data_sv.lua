@@ -91,12 +91,14 @@ do -- Model data getter method
 		if not IsValid(PhysObj) then return end
 
 		local Min, Max = PhysObj:GetAABB()
+		local Mesh     = ModelData.SanitizeMesh(PhysObj)
 
 		Data = {
-			Mesh   = ModelData.SanitizeMesh(PhysObj),
+			Mesh   = Mesh,
 			Volume = PhysObj:GetVolume(),
 			Center = (Min + Max) * 0.5,
 			Size   = Max - Min,
+			BVH    = ModelData.BuildBVH(Mesh),
 		}
 
 		Models[Path] = Data

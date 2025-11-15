@@ -15,13 +15,18 @@ function ModelData.GetModelData(Model)
 
 	local PhysObj = EntTest:GetPhysicsObject()
 	local Min, Max = PhysObj:GetAABB()
+	local Mesh    = ModelData.SanitizeMesh(PhysObj)
+
 	Data = {
-		Mesh   = ModelData.SanitizeMesh(PhysObj),
+		Mesh   = Mesh,
 		Volume = PhysObj:GetVolume(),
 		Center = (Min + Max) * 0.5,
-		Size   = Max - Min
+		Size   = Max - Min,
+		BVH    = ModelData.BuildBVH(Mesh),
 	}
+
 	timer.Simple(0, function() if IsValid(EntTest) then EntTest:Remove() end end)
+
 	Models[Path] = Data
 
 	-- backwards compat
