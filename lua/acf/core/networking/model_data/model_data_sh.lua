@@ -57,7 +57,8 @@ do -- BVH
 	-- Node: AABB surrounding a set of triangles. May have 0 or 2 children.
 	-- Leaf: Node with no children (triangle count <= LeafSize)
 
-	local Huge         = math.huge
+	local Huge   = math.huge
+	local Unpack = FindMetaTable("Vector").Unpack
 
 	do -- BVH Building
 		-- This is Bounding Volume Hierarchy (BVH) using Surface Area Heuristic (SAH) splitting
@@ -338,9 +339,9 @@ do -- BVH
 					local A, B, C = Hull[I], Hull[I + 1], Hull[I + 2]
 
 					if C then -- Make sure we have complete triangles
-						local Ax, Ay, Az = A.x, A.y, A.z
-						local Bx, By, Bz = B.x, B.y, B.z
-						local Cx, Cy, Cz = C.x, C.y, C.z
+						local Ax, Ay, Az = Unpack(A)
+						local Bx, By, Bz = Unpack(B)
+						local Cx, Cy, Cz = Unpack(C)
 
 						-- Edges
 						local E1x = Bx - Ax
@@ -491,7 +492,6 @@ do -- BVH
 			end
 		end
 
-		local Unpack = FindMetaTable("Vector").Unpack
 		local ANG_0  = Angle()
 		local VEC_0  = Vector()
 
