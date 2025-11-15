@@ -914,6 +914,10 @@ local LinkConfigs = {
 		Field = "Turrets",
 		Single = false
 	},
+	acf_engine = {
+		Field = "Engines",
+		Single = false
+	},
 	acf_gun = {
 		Field = "Guns",
 		Single = false,
