@@ -919,8 +919,7 @@ end
 
 function PANEL:AddModelPreview(Model, Rotate)
 	local Settings = {
-		Height   = 120,
-		FOV      = 60,
+		Height   = 120,				-- Default height of the panel
 
 		Pitch    = 15,				-- Default pitch angle, camera will kinda bob up and down with nonzero setting
 		Rotation = Angle(0, -35, 0) -- Default rotation rate
@@ -989,6 +988,14 @@ function PANEL:AddModelPreview(Model, Rotate)
 		self:SetModel(Path)
 		self:SetCamPos(Center + Vector(-self.CamDistance, 0, 0))
 
+		local ModelInfo = util.GetModelInfo(Path)
+		local Dimensions = (ModelInfo.HullMax - ModelInfo.HullMin)
+		local Size = Dimensions:Length()
+		local FOV = math.deg(math.atan(Size / (self.CamDistance)))
+		local ClampedFOV = math.min(2 * FOV, 150) -- Probably won't need more than 150 FOV
+		self.DefaultFOV = ClampedFOV
+		self:SetFOV(ClampedFOV)
+
 		if Material then
 			local Entity = self:GetEntity()
 
@@ -1000,7 +1007,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 		if not istable(Data) then Data = nil end
 
 		self:SetHeight(Data and Data.Height or Settings.Height)
-		self:SetFOV(Data and Data.FOV or Settings.FOV)
+		self:SetFOV(Data and Data.FOV or self.DefaultFOV)
 	end
 
 	function Panel:OnMousePressed(Button)

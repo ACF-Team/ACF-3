@@ -216,7 +216,6 @@ local function CreateMenu(Menu)
 
 		-- Update preview model based on shape
 		FuelPreview:UpdateModel(ACF.ContainerShapeModels[Data], "models/props_canal/metalcrate001d")
-		FuelPreview:UpdateSettings({ FOV = 120 })
 
 		FuelType:UpdateFuelText()
 	end
