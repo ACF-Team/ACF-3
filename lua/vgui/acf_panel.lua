@@ -991,7 +991,7 @@ function PANEL:AddModelPreview(Model, Rotate)
 		local ModelInfo = util.GetModelInfo(Path)
 		local Dimensions = (ModelInfo.HullMax - ModelInfo.HullMin)
 		local Size = Dimensions:Length()
-		local FOV = math.deg(math.atan(Size / (self.CamDistance)))
+		local FOV = math.deg(math.atan(Size / self.CamDistance))
 		local ClampedFOV = math.min(2 * FOV, 150) -- Probably won't need more than 150 FOV
 		self.DefaultFOV = ClampedFOV
 		self:SetFOV(ClampedFOV)
