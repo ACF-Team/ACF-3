@@ -73,6 +73,7 @@ local Defaults = {
 	HUDColor = Vector(1, 0.5, 0),
 
 	BrakeStrength = 300,
+	SpeedTop = 60,
 
 	ShiftTime = 100,
 }
@@ -388,7 +389,7 @@ do
 		local FuelLevel = 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
 		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Fuel end
+			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
 	end
@@ -462,8 +463,17 @@ do
 
 		if SelfTbl.TurretLocked then return end
 
+		local Primary = self.Primary
+		local ReloadAngle = self:GetReloadAngle()
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
 		for Turret, _ in pairs(Turrets) do
-			if IsValid(Turret) then Turret:InputDirection(HitPos) end
+			if IsValid(Turret) then
+				if ShouldLevel and Turret == Primary.BreechReference then
+					Turret:InputDirection(ReloadAngle)
+				else
+					Turret:InputDirection(HitPos)
+				end
+			end
 		end
 	end
 end
@@ -706,7 +716,7 @@ do
 		else
 			-- Car steering
 			if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
-				SetAllBrakes(SelfTbl, BrakeStrength) SetAllClutches(SelfTbl, CLUTCH_BLOCK) SetLatches(SelfTbl, true)
+				SetAllBrakes(SelfTbl, BrakeStrength) SetAllClutches(SelfTbl, CLUTCH_BLOCK)
 				return
 			end
 
@@ -776,7 +786,7 @@ do
 		if not IsValid(SteerPlate) then return end
 		table.insert(self.SteerPlatesSorted, SteerPlate)
 		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().x < B:GetPos().x
+			return A:GetPos().y > B:GetPos().y
 		end)
 	end
 end

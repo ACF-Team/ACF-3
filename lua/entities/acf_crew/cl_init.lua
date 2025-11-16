@@ -40,7 +40,7 @@ net.Receive("ACF_Crew_Spawn", function()
 	Ent.PlayerModel = PlayerModel
 	Ent.PlayerModelBodygroups = PlayerModelBodygroups
 	Ent.PlayerModelSkin = PlayerModelSkin
-	print(PlayerModel, PlayerModelBodygroups, PlayerModelSkin)
+
 	Ent:CreateCrewHolo(ModelID, PoseID)
 end)
 

@@ -100,19 +100,48 @@ function Entities.AddUserArgumentType(Type, Def)
 	return Def
 end
 
-local NumberType = Entities.AddUserArgumentType("Number")
-function NumberType.Validator(Specs, Value)
-	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Specs.Default or 0) end
+function Entities.IterateTypes() return pairs(UserArgumentTypes) end
 
-	if Specs.Decimals then Value = math.Round(Value, Specs.Decimals) end
-	if Specs.Min then Value = math.max(Value, Specs.Min) end
-	if Specs.Max then Value = math.min(Value, Specs.Max) end
+local NumberType = Entities.AddUserArgumentType("Number")
+function NumberType.Validator(Ctx, Value)
+	if not isnumber(Value) then Value = ACF.CheckNumber(Value, Ctx:GetSpec("Default") or 0) end
+
+	if Ctx:HasSpec("Decimals") then Value = math.Round(Value, Ctx:GetSpec("Decimals")) end
+	if Ctx:HasSpec("Min")      then Value = math.max(Value, Ctx:GetSpec("Min")) end
+	if Ctx:HasSpec("Max")      then Value = math.min(Value, Ctx:GetSpec("Max")) end
 
 	return Value
 end
 
+function NumberType.CreateMenuItem(ACF_Panel, Ctx, Text)
+	local Min, Max = Ctx:HasSpec("Min") and Ctx:GetSpec("Min") or nil, Ctx:HasSpec("Max") and Ctx:GetSpec("Max") or nil
+	local Decimals = Ctx:HasSpec("Decimals") and Ctx:GetSpec("Decimals") or nil
+	local Slider = ACF_Panel:AddSlider(Text, Min, Max, Decimals)
+
+	local VarName = Ctx.VarName
+
+	Slider:SetClientData(VarName, "OnValueChanged")
+	Slider:DefineSetter(function(Panel, _, _, Value)
+		if Decimals then
+			Value = math.Round(Value, Decimals)
+		end
+		if Min then Value = math.max(Min, Value) end
+		if Max then Value = math.min(Max, Value) end
+
+		Panel:SetValue(Value)
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(Panel, VarName, Value)
+		end
+
+		return Value
+	end)
+
+	return Slider
+end
+
 local StringType = Entities.AddUserArgumentType("String")
-function StringType.Validator(Specs, Value)
+function StringType.Validator(Ctx, Value)
+	local Specs = Ctx:GetSpecs()
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -121,7 +150,8 @@ function StringType.Validator(Specs, Value)
 end
 
 local BooleanType = Entities.AddUserArgumentType("Boolean")
-function BooleanType.Validator(Specs, Value)
+function BooleanType.Validator(Ctx, Value)
+	local Specs = Ctx:GetSpecs()
 	if not isbool(Value) then
 		Value = Specs.Default or false
 	end
@@ -129,8 +159,28 @@ function BooleanType.Validator(Specs, Value)
 	return Value
 end
 
+
+function BooleanType.CreateMenuItem(ACF_Panel, Ctx, Text)
+	local CheckBox = ACF_Panel:AddCheckBox(Text)
+	local VarName = Ctx.VarName
+
+	CheckBox:SetClientData(VarName, "OnChange")
+	CheckBox:DefineSetter(function(Panel, _, _, Value)
+		Panel:SetValue(Value)
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(Panel, VarName, Value)
+		end
+
+		return Value
+	end)
+
+	return CheckBox
+end
+
+
 local SimpleClassType = Entities.AddUserArgumentType("SimpleClass")
-function SimpleClassType.Validator(Specs, Value)
+function SimpleClassType.Validator(Ctx, Value)
+	local Specs = Ctx:GetSpecs()
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -145,12 +195,46 @@ function SimpleClassType.Validator(Specs, Value)
 	return Value
 end
 
-function SimpleClassType.Getter(self, Specs, Key)
+function SimpleClassType.Getter(self, Ctx, Key)
+	local Specs = Ctx:GetSpecs()
 	return ACF.Classes[Specs.ClassName].Get(Key)
 end
 
+function SimpleClassType.CreateMenuItem(ACF_Panel, Ctx, _, NameKey, IconKey)
+	local VarName = Ctx.VarName
+	local Entries = ACF.Classes[Ctx:GetSpec("ClassName")].GetEntries()
+	local List    = ACF_Panel:AddComboBox()
+
+	function List:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
+
+		self.ListData.Index = Index
+		self.Selected       = Data
+
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(self, VarName, Data)
+		end
+
+		ACF.SetClientData(VarName, Data.ID)
+	end
+
+	local Default = Ctx:GetSpec("Default")
+	ACF_Panel:EnqueuePostBuildFn(function()
+		ACF.LoadSortedList(List, Entries, NameKey or "Name", IconKey or "Icon")
+		for K, Option in ipairs(List.Data) do
+			if Option.ID == Default then
+				List:ChooseOptionID(K)
+				break
+			end
+		end
+	end)
+
+	return List
+end
+
 local GroupClassType = Entities.AddUserArgumentType("GroupClass")
-function GroupClassType.Validator(Specs, Value)
+function GroupClassType.Validator(Ctx, Value)
+	local Specs = Ctx:GetSpecs()
 	if not isstring(Value) then
 		Value = Specs.Default or "N/A"
 	end
@@ -158,23 +242,27 @@ function GroupClassType.Validator(Specs, Value)
 	local ClassDef = ACF.Classes[Specs.ClassName]
 	if not ClassDef then error("Bad classname '" .. Specs.ClassName .. "'.") end
 
-	local Class = ACF.Classes.GetGroup(ClassDef, Value)
+	local Group, Item = ACF.Classes.GetGroup(ClassDef, Value)
 
-	if not Class then
-		Class = ClassDef.Get(Specs.DefaultGroupName)
-		Value = Specs.DefaultItemName
+	if not Item then
+		Item = Group
 	end
 
-	if not ClassDef.GetItem(Class.ID, Value) then
+	if not Item then
+		Item = ACF.Classes.GetGroup(ClassDef, Specs.Default or "N/A")
+		Value = Specs.Default or "N/A"
+	end
+
+	if not Item then
 		error("Classdef resolve failed. Likely data corruption/outdated contraption + default value not set by entity implementor. (value was " .. Value .. ")")
 	end
 
 	return Value
 end
 
-function GroupClassType.Getter(self, Specs, Key)
-	local _, Item = ACF.Classes.GetGroup(ACF.Classes[Specs.ClassName], Key)
-	return Item
+function GroupClassType.Getter(self, Ctx, Key)
+	local Group, Item = ACF.Classes.GetGroup(ACF.Classes[Ctx:GetSpecs().ClassName], Key)
+	return Item or Group
 end
 
 -- Single entity link.
@@ -259,6 +347,112 @@ function Entities.AddStrictArguments(Class, UserVariables)
 	AddArgumentRestrictions(Entity, Arguments)
 	return List
 end
+
+-- Verification context object
+local VerificationContext_MT_methods = {}
+local VerificationContext_MT = {__index = VerificationContext_MT_methods}
+
+function VerificationContext_MT_methods:GetCurrentVarName()
+	return self.VarName
+end
+
+-- Sets the current var context. This is used by the internal verify client data methods.
+function VerificationContext_MT_methods:SetCurrentVar(VarName)
+	local RestrictionSpecs = self.Restrictions[VarName]
+	if not RestrictionSpecs then error("No restriction specs for " .. VarName) end
+	local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
+
+	self.VarName = VarName
+	self.RestrictionSpecs = RestrictionSpecs
+	self.ArgTypeInfo = ArgumentVerification
+end
+
+-- Checks if the current variable has restrictions or not.
+function VerificationContext_MT_methods:CurrentVarHasRestrictions()
+	return self.ArgTypeInfo ~= nil
+end
+
+-- Calls ipairs on the internal var list
+function VerificationContext_MT_methods:IterateVars()
+	return ipairs(self.List)
+end
+
+-- Gets the specs of the current variable, if in a variable validation context.
+function VerificationContext_MT_methods:GetSpecs()
+	return self.RestrictionSpecs or error("Not in variable validation context!")
+end
+
+function VerificationContext_MT_methods:HasSpec(Key)
+	return self.RestrictionSpecs == nil and error("Not in variable validation context!") or self.RestrictionSpecs[Key] ~= nil
+end
+
+-- Gets the type object of the current variable
+function VerificationContext_MT_methods:GetType()
+	return self.ArgTypeInfo or error("Not in variable validation context!")
+end
+
+-- Gets a specification index by name. NeverCallbackFn is optional. If not provided/false, then
+-- functions are considered of the delegate T DetermineSpecValueFn<T>(ValidationContext ctx, string key)
+function VerificationContext_MT_methods:GetSpec(Key, NeverCallbackFn)
+	local Spec = self:GetSpecs()[Key]
+	if isfunction(Spec) then
+		if NeverCallbackFn then
+			return Spec
+		else
+			return Spec(self, Key)
+		end
+	else
+		return Spec
+	end
+end
+
+-- Validates the current variable.
+function VerificationContext_MT_methods:ValidateCurrentVar(Value)
+	local ArgumentVerification = self.ArgTypeInfo
+	if not ArgumentVerification then error("No verification function for type '" .. tostring(self.RestrictionSpecs.Type or "<NIL>") .. "'") end
+
+	return ArgumentVerification.Validator(self, Value)
+end
+
+function VerificationContext_MT_methods:StartClientData(ClientData)
+	self.ClientData = ClientData
+end
+
+function VerificationContext_MT_methods:EndClientData()
+	self.ClientData = nil
+end
+
+function VerificationContext_MT_methods:IsValidatingClientData()
+	return self.ClientData ~= nil
+end
+
+-- Resolves a client data variable immediately. Note that this does not store the result - this is intentional
+function VerificationContext_MT_methods:ResolveClientData(Key)
+	if not self:IsValidatingClientData() then error("Cannot resolve client data when the verification context isn't working with client data!") end
+
+	local RestoreVar = self:GetCurrentVarName()
+	self:SetCurrentVar(Key)
+	local Value
+	do
+		local Type  = self:GetType()
+		Value = self:ValidateCurrentVar(Value)
+		if Type.Getter then
+			Value = Type.Getter(NULL, self, Value)
+		end
+	end
+	self:SetCurrentVar(RestoreVar)
+	return Value
+end
+
+local function VerificationContext(Class)
+	local Entity = GetEntityTable(Class)
+	return setmetatable({
+		Class        = Class,
+		List         = Entity.List,
+		Restrictions = Entity.Restrictions
+	}, VerificationContext_MT)
+end
+ACF.Classes.Entities.VerificationContext = VerificationContext
 
 --[[
 
@@ -394,16 +588,18 @@ function Entities.AutoRegister(ENT)
 	local UserVars = ENT.ACF_UserVars or {}
 	Entities.AddStrictArguments(Class, UserVars)
 
-	if CLIENT then return end
+	local WireIO   = ACF.Utilities.WireIO
+	local Wire_Inputs, Wire_Outputs = ENT.ACF_WireInputs, ENT.ACF_WireOutputs
 
 	if isnumber(ENT.ACF_Limit) then
-		CreateConVar(
-			"sbox_max_" .. Class,
-			ENT.ACF_Limit,
-			FCVAR_ARCHIVE + FCVAR_NOTIFY,
-			"Maximum amount of " .. (ENT.PluralName or (Class .. " entities")) .. " a player can create."
-		)
+		Classes.AddSboxLimit({
+			Name   = "_" .. Class,
+			Amount = ENT.ACF_Limit,
+			Text   = "Maximum amount of " .. (ENT.PluralName or (Class .. " entities")) .. " a player can create."
+		})
 	end
+
+	if CLIENT then return end
 
 	--- Used in various places throughout an entity to provide a variable number of entity-specific arguments.
 	--- Does nothing by default.
@@ -413,25 +609,22 @@ function Entities.AutoRegister(ENT)
 		end
 	end
 
+	local VerificationCtx = VerificationContext(Class)
+
 	-- Verification function
 	local function VerifyClientData(ClientData)
-		local Entity       = GetEntityTable(Class)
-		local List         = Entity.List
-		local Restrictions = Entity.Restrictions
-
 		-- Perform general verification
 		if ENT.ACF_PreVerifyClientData then ENT.ACF_PreVerifyClientData(ClientData, ENT.ACF_GetHookArguments(ClientData)) end
 
+		VerificationCtx:StartClientData(ClientData)
 		-- Perform per argument verification
-		for _, argName in ipairs(List) do
-			if Restrictions[argName] then -- If we specified a restriction for this argument (mainly for the new API)
-				local RestrictionSpecs = Restrictions[argName]
-				local ArgumentVerification = UserArgumentTypes[RestrictionSpecs.Type]
-				if not ArgumentVerification then error("No verification function for type '" .. tostring(RestrictionSpecs.Type or "<NIL>") .. "'") end
-				local Value = ClientData[argName]
-				ClientData[argName] = ArgumentVerification.Validator(RestrictionSpecs, Value)
+		for _, argName in VerificationCtx:IterateVars() do
+			VerificationCtx:SetCurrentVar(argName)
+			if VerificationCtx:CurrentVarHasRestrictions() then
+				ClientData[argName] = VerificationCtx:ValidateCurrentVar(ClientData[argName])
 			end
 		end
+		VerificationCtx:EndClientData()
 
 		-- Perform general verification
 		if ENT.ACF_OnVerifyClientData then ENT.ACF_OnVerifyClientData(ClientData, ENT.ACF_GetHookArguments(ClientData)) end
@@ -445,10 +638,11 @@ function Entities.AutoRegister(ENT)
 		self.ACF_LiveData[Key] = Value
 		local RestrictionSpecs = GetEntityTable(Class).Restrictions[Key]
 		if RestrictionSpecs then
+			VerificationCtx:SetCurrentVar(Key)
 			local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
 			local Getter    = TypeSpecs.Getter
 			if Getter then
-				self.ACF_CustomGetterCache[Key] = Getter(self, RestrictionSpecs, Value)
+				self.ACF_CustomGetterCache[Key] = Getter(self, VerificationCtx, Value)
 			end
 		end
 	end
@@ -470,6 +664,14 @@ function Entities.AutoRegister(ENT)
 			if UserVars[v].ClientData or First then
 				SetLiveData(self, v, ClientData[v])
 			end
+		end
+
+		if Wire_Inputs then
+			WireIO.SetupInputs(self, Wire_Inputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
+		end
+
+		if Wire_Outputs then
+			WireIO.SetupOutputs(self, Wire_Outputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		end
 
 		if self.ACF_PostUpdateEntityData then self:ACF_PostUpdateEntityData(ClientData) end
@@ -529,13 +731,7 @@ function Entities.AutoRegister(ENT)
 	function ENT:ACF_SetUserVar(Key, Value)
 		if not Key then error("Tried to set the value of a nil key.") end
 
-		local UserVar = UserVars[Key]
-		if not UserVar then error("No user-variable named '" .. Key .. "'.") end
-
-		local Typedef = UserArgumentTypes[UserVar.Type]
-		if not Typedef then error(UserVar.Type .. " is not a valid type") end
-
-		SetLiveData(self, Key, Typedef.Validator(UserVar, Value))
+		SetLiveData(self, Key, Value)
 	end
 	local ACF_Limit       = ENT.ACF_Limit
 	local OnRemove        = ENT.OnRemove
@@ -551,12 +747,12 @@ function Entities.AutoRegister(ENT)
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
-				if not ACF_Limit() then return end
+				if not ACF_Limit(Player, ClientData) then return end
 			elseif isnumber(ACF_Limit) then
 				if not Player:CheckLimit("_" .. Class) then return false end
 			end
 		end
-		print(istable(ClientData))
+
 		local CanSpawn = hook.Run("ACF_PreSpawnEntity", Class, Player, ClientData, ENT.ACF_GetHookArguments(ClientData))
 		if CanSpawn == false then return false end
 
@@ -575,6 +771,9 @@ function Entities.AutoRegister(ENT)
 		Player:AddCount("_" .. Class, New)
 		Player:AddCleanup(Class, New)
 
+		if New.ACF_OnSpawn then
+			New:ACF_OnSpawn(Player, Pos, Angle, ClientData)
+		end
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData, ENT.ACF_GetHookArguments(ClientData))
 
 		New:ACF_UpdateEntityData(ClientData, true)
@@ -609,15 +808,19 @@ function Entities.AutoRegister(ENT)
 			table.Empty(self.ACF_UserData)
 		end
 
-		for k, v in pairs(UserVars) do
-			local typedef   = UserArgumentTypes[v.Type]
-			local value     = typedef.Validator(v, self.ACF_LiveData[k])
+		VerificationCtx:StartClientData(self.ACF_UserData)
+		for Var in pairs(UserVars) do
+			VerificationCtx:SetCurrentVar(Var)
+			local typedef   = VerificationCtx:GetType()
+			local value     = VerificationCtx:ValidateCurrentVar(self.ACF_LiveData[Var])
+
 			if typedef.PreCopy then
 				value = typedef.PreCopy(self, value)
 			end
 
-			self.ACF_UserData[k] = value
+			self.ACF_UserData[Var] = value
 		end
+		VerificationCtx:EndClientData()
 
 		-- Call original ENT.PreEntityCopy
 		if PreEntityCopy then PreEntityCopy(self) end
@@ -633,17 +836,20 @@ function Entities.AutoRegister(ENT)
 			Ent.ACF_UserData = {}
 		end
 
-		for k, v in pairs(UserVars) do
-			local typedef    = UserArgumentTypes[v.Type]
-			if not typedef then ErrorNoHaltWithStack(v.Type .. " is not a valid type") continue end
+		VerificationCtx:StartClientData(UserData)
 
-			local check = UserData and UserData[k] or Ent[k]
+		for Key in pairs(UserVars) do
+			VerificationCtx:SetCurrentVar(Key)
+			local typedef = VerificationCtx:GetType()
+
+			local check = UserData and UserData[Key] or Ent[Key]
 			if typedef.PostPaste then
 				check = typedef.PostPaste(Ent, check, CreatedEntities)
 			end
-			check = typedef.Validator(v, check)
-			SetLiveData(self, k, check)
+
+			SetLiveData(self, Key, check)
 		end
+		VerificationCtx:EndClientData()
 
 		-- Call original ENT.PostEntityPaste
 		if PostEntityPaste then PostEntityPaste(Ent, Player, Ent, CreatedEntities) end
@@ -656,6 +862,25 @@ function Entities.AutoRegister(ENT)
 	ENT.ACF_UpdateEntityData = UpdateEntityData
 
 	local UserVarsKeys = table.GetKeys(UserVars)
+	local BackwardsCompatKeys
+	-- Check if the entity defined a method to get backwards compatibility keys.
+	-- This needs to return a sequential table of all keys to read, and those keys CANNOT be userdata keys!
+	if ENT.ACF_GetBackwardsCompatibilityDataKeys then
+		BackwardsCompatKeys = ENT.ACF_GetBackwardsCompatibilityDataKeys()
+		for I = 1, #BackwardsCompatKeys do
+			if UserVars[BackwardsCompatKeys[I]] then
+				error("Error while performing ACF entity autoregistration: ACF_GetBackwardsCompatibilityDataKeys returned key " ..
+			          "'" .. BackwardsCompatKeys[I] .. "' at index " .. I .. " which conflicts with an already existing uservar key.")
+			end
+		end
+	else
+		BackwardsCompatKeys = {}
+	end
+
+	local ReadKeys = table.Copy(UserVarsKeys)
+	for I = 1, #BackwardsCompatKeys do
+		ReadKeys[#ReadKeys + 1] = BackwardsCompatKeys[I]
+	end
 
 	local function SpawnFunction(Player, Pos, Angle, UserData, ...)
 		local ShouldTransferLegacyData = false
@@ -666,11 +891,10 @@ function Entities.AutoRegister(ENT)
 			-- ACF_UserData doesn't exist, but other arguments do.
 			-- This most likely means that the entity is one that was duped before it was converted to use
 			-- the autoregistration system. Let's build a replacement table for it and clear the old data.
+			UserData = {} -- Always create a table
 			if ArgCount > 0 then
-				UserData = {}
-
 				for Index, ArgValue in ipairs(NewUserData) do
-					UserData[UserVarsKeys[Index]] = ArgValue
+					UserData[ReadKeys[Index]] = ArgValue
 				end
 
 				ShouldTransferLegacyData = true
@@ -680,7 +904,7 @@ function Entities.AutoRegister(ENT)
 		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
 
 		if ShouldTransferLegacyData then
-			for _, KeyName in ipairs(UserVarsKeys) do
+			for _, KeyName in ipairs(ReadKeys) do
 				duplicator.ClearEntityModifier(SpawnedEntity, KeyName)
 			end
 		end
@@ -688,7 +912,7 @@ function Entities.AutoRegister(ENT)
 		return SpawnedEntity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(UserVarsKeys))
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData", unpack(ReadKeys))
 end
 
 --- Registers a class as a spawnable entity class

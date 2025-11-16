@@ -2,13 +2,6 @@ local Classes     = ACF.Classes
 local CrewTypes   = Classes.CrewTypes
 local Entries     = Classes.GetOrCreateEntries(CrewTypes)
 
-CreateConVar(
-	"sbox_max_acf_crew",
-	8,
-	FCVAR_ARCHIVE + FCVAR_NOTIFY,
-	"Maximum amount of ACF crew members a player can create."
-)
-
 function CrewTypes.Register(ID, Data)
 	local Simple = Classes.AddSimple(ID, Entries, Data)
 	if Simple.LimitConVar then Classes.AddSboxLimit(Simple.LimitConVar) end
@@ -16,3 +9,8 @@ function CrewTypes.Register(ID, Data)
 end
 
 Classes.AddSimpleFunctions(CrewTypes, Entries)
+Classes.AddSboxLimit({
+	Name   = "_acf_crew",
+	Amount = 8,
+	Text   = "Maximum amount of ACF crew members a player can create."
+})

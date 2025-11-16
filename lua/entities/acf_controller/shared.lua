@@ -16,6 +16,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", "FlipAD", { KeyName = "flipad", Edit = { type = "Bool", order = 13, category = "Miscellaneous" } } )
 	self:NetworkVar( "Bool", "ThrottleIgnoresAD", { KeyName = "throttleignoresad", Edit = { type = "Bool", order = 14, category = "Miscellaneous" } } )
 	self:NetworkVar( "Bool", "ForceAWD", { KeyName = "forceawd", Edit = { type = "Bool", order = 15, category = "Miscellaneous" } } )
+	self:NetworkVar( "Float", "ReloadAngle", { KeyName = "reloadangle", Edit = { type = "Float", order = 16, category = "Miscellaneous", min = -30, max = 30 } } )
 	-- self:NetworkVar( "String", "KeyBinds", { KeyName = "keybinds", Edit = { readonly = true, order = 14, category = "Miscellaneous" } } )
 
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 20, category = "Camera Settings", min = 0.001, max = 90 } } )

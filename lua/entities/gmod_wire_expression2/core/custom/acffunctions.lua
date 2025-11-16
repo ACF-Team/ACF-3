@@ -779,7 +779,7 @@ __e2setcost(10)
 e2function number entity:acfFuel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if this.Fuel then return Round(this.Fuel, 2) end
+	if this.Amount then return Round(this.Amount, 2) end
 
 	local Fuel = 0
 	local Source = ACF.GetLinkSource(this:GetClass(), "FuelTanks")
@@ -787,7 +787,7 @@ e2function number entity:acfFuel()
 	if not Source then return 0 end
 
 	for Tank in pairs(Source(this)) do
-		Fuel = Fuel + Tank.Fuel
+		Fuel = Fuel + Tank.Amount
 	end
 
 	return Round(Fuel, 2)
@@ -797,7 +797,7 @@ end
 e2function number entity:acfFuelLevel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if this.Capacity then return Round((this.Fuel or 0) / this.Capacity, 2) end
+	if this.Capacity then return Round((this.Amount or 0) / this.Capacity, 2) end
 
 	local Fuel = 0
 	local Capacity = 0
@@ -806,7 +806,7 @@ e2function number entity:acfFuelLevel()
 	if not Source then return 0 end
 
 	for Tank in pairs(Source(this)) do
-		Fuel = Fuel + Tank.Fuel
+		Fuel = Fuel + Tank.Amount
 		Capacity = Capacity + Tank.Capacity
 	end
 

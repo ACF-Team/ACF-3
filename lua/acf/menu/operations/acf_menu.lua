@@ -65,7 +65,7 @@ do -- Generic Spawner/Linker operation creator
 		if Success then
 			local PhysObj = Result:GetPhysicsObject()
 			if Result.ACF_PostMenuSpawn then
-				Result:ACF_PostMenuSpawn()
+				Result:ACF_PostMenuSpawn(Trace)
 			else
 				Result:DropToFloor()
 			end

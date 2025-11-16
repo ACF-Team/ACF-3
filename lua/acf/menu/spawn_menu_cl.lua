@@ -276,12 +276,15 @@ do -- ACF Menu context panel
 			ACF.SetToolMode("acf_menu", "Main", "Idle")
 			ACF.SetClientData("Destiny")
 
+			Menu:ClearPostBuildFns()
 			Menu:ClearTemporal()
 			Menu:StartTemporal()
 
-			Node.Action(Menu)
+			-- Fixes menu errors just killing everything
+			xpcall(function() Node.Action(Menu) end, function(err) ErrorNoHaltWithStack(err) end)
 
 			Menu:EndTemporal()
+			Menu:ExecutePostBuildFns()
 		end
 
 		PopulateTree(Tree)

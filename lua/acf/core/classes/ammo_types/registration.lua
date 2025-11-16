@@ -7,3 +7,8 @@ function AmmoTypes.Register(ID, Base)
 end
 
 Classes.AddSimpleFunctions(AmmoTypes, Entries)
+Classes.AddSboxLimit({
+	Name   = "_acf_ammo",
+	Amount = 32,
+	Text   = "Maximum amount of ACF ammo crates a player can create."
+})

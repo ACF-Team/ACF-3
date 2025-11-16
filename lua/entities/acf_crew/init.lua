@@ -537,8 +537,11 @@ do
 
 		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
 		local Mat, _ = Material("sprops/sprops_grid_12x12")
-		if not Mat:IsError() then Entity:SetMaterial("sprops/sprops_grid_12x12")
-		else Entity:SetMaterial("phoenix_storms/Indenttiles2") end
+		local MatPath = ""
+		if not Mat:IsError() then MatPath = "sprops/sprops_grid_12x12"
+		else MatPath = "phoenix_storms/Indenttiles2" end
+		Entity:SetMaterial(MatPath)
+		Entity.MaterialPath = MatPath
 
 		-- Finish setting up the entity
 		HookRun("ACF_OnSpawnEntity", "acf_crew", Entity, Data, CrewModel, CrewType)
@@ -655,6 +658,14 @@ do
 	-- You can't bring back a dead crew so there is no enable...
 	function ENT:Disable()
 		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
+	end
+
+	-- Only meant to be called by gamemodes like AAS. This function isn't called otherwise.
+	function ENT:Restore()
+		self.ACF.Armour = self.ACF.MaxArmour
+		self.ACF.Health = self.ACF.MaxHealth
+		self.IsAlive = true
+		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
 	end
 
 	--- Attempts to replace self with another crew member
