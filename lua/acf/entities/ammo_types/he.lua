@@ -12,6 +12,7 @@ function Ammo:OnLoaded()
 	self.Description = "#acf.descs.ammo.he"
 	self.Blacklist = {
 		MG = true,
+		RAC = true,
 	}
 end
 
