@@ -115,7 +115,6 @@ local Remap        = math.Remap
 local max          = math.max
 local min          = math.min
 local TimerCreate  = timer.Create
-local TimerSimple  = timer.Simple
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
@@ -179,9 +178,13 @@ end
 
 local function SetActive(Entity, Value, EntTbl)
 	EntTbl = EntTbl or Entity:GetTable()
-	if EntTbl.Active == tobool(Value) then return end
 
-	if not EntTbl.Active then -- Was off, turn on
+	local ActBool = tobool(Value)
+
+	if EntTbl.Active == NewActive then return end -- Already in the desired state
+	if ActBool and EntTbl.Disabled then return end -- Can't activate a disabled engine
+
+	if ActBool then -- Was off, turn on
 		EntTbl.Active = true
 
 		Entity:CalcMassRatio(EntTbl)
@@ -192,11 +195,7 @@ local function SetActive(Entity, Value, EntTbl)
 
 		Entity:UpdateSound(EntTbl)
 
-		TimerSimple(TickInterval(), function()
-			if not IsValid(Entity) then return end
-
-			Entity:CalcRPM(EntTbl)
-		end)
+		Entity:NextThink(Clock.CurTime + TickInterval())
 
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
 			if not IsValid(Entity) then return end
@@ -206,7 +205,7 @@ local function SetActive(Entity, Value, EntTbl)
 
 			Entity:CalcMassRatio(EntTbl)
 		end)
-	else
+	else -- Was on, turn off
 		EntTbl.Active = false
 		EntTbl.FlyRPM = 0
 		EntTbl.Torque = 0
@@ -371,7 +370,7 @@ do -- Spawn and Update functions
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		Entity:UpdateEngineLegality() -- Defaults to unparented
+		ACF.CheckLegal(Entity)
 
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
@@ -648,13 +647,10 @@ function ENT:DestroySound()
 	self.Sound      = nil
 end
 
-function ENT:CheckEngineLegality()
-	if not ACF.LegalChecks then return true end
-
-	local EntTable = self:GetTable()
+function ENT:ACF_IsLegal()
 	local AllowArbitraryParents = ACF.AllowArbitraryParents
 
-	if not AllowArbitraryParents and not EntTable.ACF_EngineParentValid then
+	if not AllowArbitraryParents and not self.ACF_EngineParentValid then
 		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
 	end
 
@@ -662,10 +658,6 @@ function ENT:CheckEngineLegality()
 	if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
 
 	return true
-end
-
-function ENT:UpdateEngineLegality()
-	self.EngineInvalid, self.EngineInvalidReason, self.EngineInvalidMessage = self:CheckEngineLegality()
 end
 
 function ENT:CFW_PreParentedTo(_, NewParent)
@@ -687,7 +679,7 @@ hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
-			Engine:UpdateEngineLegality()
+			ACF.CheckLegal(Engine)
 		end
 	end
 end)
@@ -704,7 +696,7 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", functi
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
-			Engine:UpdateEngineLegality()
+			ACF.CheckLegal(Engine)
 		end
 	end
 end)
@@ -757,18 +749,29 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	end
 end
 
+
+function ENT:Think()
+	local SelfTbl = self:GetTable()
+
+	if not SelfTbl.Active then return end
+	if SelfTbl.Disabled then return end
+
+	self:CalcRPM(SelfTbl)
+
+	-- CalcRPM can turn the engine off or disable it (e.g. no fuel or legality issues)
+	if not SelfTbl.Active or SelfTbl.Disabled then return end
+
+	self:NextThink(CurTime() + TickInterval())
+
+	return true
+end
+
 function ENT:CalcRPM(SelfTbl)
 	-- Reusing these entity table pointers helps us cut down on __index calls
 	-- This helps to massively improve performance throughout the entire drivetrain
 	SelfTbl = SelfTbl or self:GetTable()
-	if not SelfTbl.Active then return end
 
 	if not ACF.AllowSpecialEngines and SelfTbl.IsSpecial then return end
-	if SelfTbl.Disabled then return end
-
-	if not SelfTbl.EngineInvalid then
-		ACF.DisableEntity(self, SelfTbl.EngineInvalidReason, SelfTbl.EngineInvalidMessage, math.random(5, 7))
-	end
 
 	local ClockTime  = Clock.CurTime
 	local DeltaTime  = ClockTime - SelfTbl.LastThink
@@ -865,11 +868,6 @@ function ENT:CalcRPM(SelfTbl)
 	self:UpdateSound(SelfTbl)
 	self:UpdateOutputs(SelfTbl)
 
-	TimerSimple(TickInterval(), function()
-		if not IsValid(self) then return end
-
-		self:CalcRPM(SelfTbl)
-	end)
 end
 
 function ENT:PreEntityCopy()
