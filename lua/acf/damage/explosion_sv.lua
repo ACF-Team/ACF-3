@@ -3,6 +3,7 @@ local math         = math
 local util         = util
 local ACF          = ACF
 local Damage       = ACF.Damage
+local ModelData    = ACF.ModelData
 local Objects      = Damage.Objects
 local White        = Color(255, 255, 255)
 local Blue         = Color(0, 0, 255)
@@ -38,40 +39,35 @@ end
 -- @param Entity The entity to get a random position from.
 -- @param A world position based on the shape and size of the given entity.
 function Damage.getRandomPos(Entity)
-	local IsChar = Entity.ACF.Type == "Squishy"
+	local IsChar = EntACF and EntACF.Type == "Squishy"
 
 	if IsChar then
 		-- Scale down the "hitbox" since most of the character is in the middle
-		local Mins = Entity:OBBMins() * 0.65
-		local Maxs = Entity:OBBMaxs() * 0.65
+		local Mins, Maxs = Entity:GetCollisionBounds()
 		local X    = math.Rand(Mins[1], Maxs[1])
 		local Y    = math.Rand(Mins[2], Maxs[2])
 		local Z    = math.Rand(Mins[3], Maxs[3])
 
-		return Entity:LocalToWorld(Vector(X, Y, Z))
+		return Entity:LocalToWorld(Vector(X, Y, Z) * 0.65)
 	end
 
-	local PhysObj   = Entity:GetPhysicsObject()
-	local ValidPhys = IsValid(PhysObj)
-	local Mesh      = ValidPhys and PhysObj:GetMesh() or nil
+	if Entity._IsSpherical then
+		local Radius = Entity:BoundingRadius() * 0.5
 
-	if not Mesh then -- Spherical collisions
-		local Mins = Entity:OBBMins()
-		local Maxs = Entity:OBBMaxs()
-		local X    = math.Rand(Mins[1], Maxs[1])
-		local Y    = math.Rand(Mins[2], Maxs[2])
-		local Z    = math.Rand(Mins[3], Maxs[3])
-		local Rand = Vector(X, Y, Z)
-
-		-- Attempt to a random point in the sphere
-		return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5))
+		return Entity:GetPos() + VectorRand() * math.Rand(1, Radius)
 	else
-		local Rand = math.random(3, #Mesh / 3) * 3
-		local P    = Vector()
+		local Model = Entity:GetModel()
+		local Scale = ModelData.GetEntityScale(Entity)
+		local Mesh  = ModelData.GetModelMesh(Model, Scale)
 
-		for I = Rand - 2, Rand do P = P + Mesh[I].pos end
+		local Hull     = Mesh[math.random(1, #Mesh)]
+		local TriCount = math.floor(#Hull / 3) -- Number of triangles in the hull
+		local TriIndex = math.random(0, TriCount - 1) -- Random triangle selection
+		local Base     = TriIndex * 3 + 1 -- Multiply back up to the real index
 
-		return Entity:LocalToWorld(P / 3) -- Attempt to hit a point on a face of the mesh
+		local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2] -- Get the three vertices of the triangle
+
+		return Entity:LocalToWorld((V1 + V2 + V3) / 3)
 	end
 end
 
