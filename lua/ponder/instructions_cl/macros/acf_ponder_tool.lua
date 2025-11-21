@@ -23,6 +23,8 @@ function ACFMenu:Run(chapter, parameters)
     return tAdd + timeForEachClick
 end
 
+---
+
 local CaptionIndex = 0 -- Systime as UUID? lol...
 local Caption = Ponder.API.NewInstructionMacro("Caption")
 function Caption:Run(chapter, parameters)
@@ -59,6 +61,10 @@ function Caption:Run(chapter, parameters)
 
     return tAdd, Name
 end
+
+---
+
+
 
 ---
 
