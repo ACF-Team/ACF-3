@@ -374,12 +374,12 @@ if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
 
 	hook.Add("ACF_OnLoadPersistedData", "ACF Workshop Content", function()
-		if ACF.WorkshopContent then
+		if ACF.ServerData.WorkshopContent then
 			resource.AddWorkshop("2183798463") -- Playermodel Seats
 			resource.AddWorkshop("3248769144") -- ACF-3 Base
 		end
 
-		if ACF.WorkshopExtras then
+		if ACF.ServerData.WorkshopExtras then
 			resource.AddWorkshop("2099387099") -- ACF-3 Removed Sounds
 			resource.AddWorkshop("2782407502") -- ACF-3 Removed Models
 		end
