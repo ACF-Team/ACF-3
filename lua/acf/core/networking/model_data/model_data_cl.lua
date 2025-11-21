@@ -14,6 +14,13 @@ function ModelData.GetModelData(Model)
 	EntTest:Spawn()
 
 	local PhysObj = EntTest:GetPhysicsObject()
+
+	if not IsValid(PhysObj) then
+		if IsValid(EntTest) then EntTest:Remove() end
+
+		return
+	end
+
 	local Min, Max = PhysObj:GetAABB()
 	Data = {
 		Mesh   = ModelData.SanitizeMesh(PhysObj),
