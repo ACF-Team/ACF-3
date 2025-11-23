@@ -31,11 +31,3 @@ Chapter:AddInstruction("Caption", {
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
 }):DelayByLength()
-
-Chapter:AddInstruction("ACF.CreateMainMenu", {
-    Name = "MainMenuCPanel",
-    Size = {400, 600},
-    Select = "#acf.menu.baseplates",
-    ScrollTo = "#acf.menu.baseplates.plate_thickness",
-    Fast = true,
-}):DelayByLength()
