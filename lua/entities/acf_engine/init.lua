@@ -181,7 +181,7 @@ local function SetActive(Entity, Value, EntTbl)
 
 	local ActBool = tobool(Value)
 
-	if EntTbl.Active == NewActive then return end -- Already in the desired state
+	if EntTbl.Active == ActBool then return end -- Already in the desired state
 	if ActBool and EntTbl.Disabled then return end -- Can't activate a disabled engine
 
 	if ActBool then -- Was off, turn on
