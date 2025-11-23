@@ -15,18 +15,30 @@ do
         end
     end
 
+    local RecursiveFindPanelByName function RecursiveFindPanelByName(Parent, Select)
+        for _, Panel in ipairs(Parent:GetChildren()) do
+            local Text = Panel:GetText()
+            if Text == Select then return Panel end
+            local Subnode = RecursiveFindPanelByName(Panel, Select)
+            if Subnode then
+                return Subnode
+            end
+        end
+    end
+
     function CreateMenu:First(playback)
         self.Type = "DPanel"
         local env   = playback.Environment
         local panel = env:NewNamedObject("VGUIPanel", self.Name, self.Type, self.Parent)
 
-        local Menu = panel:Add("DForm")
-        Menu:Dock(FILL)
-        local Base = ACF.InitMenuBase(Menu)
-        local Tree = Base:AddPanel("DTree")
-        ACF.SetupMenuTree(Base, Tree)
-        local Found = RecursiveFindNodeByName(Tree:Root(), language.GetPhrase(self.Select))
-        Tree:SetSelectedItem(Found)
+        local Scroll = panel:Add("DScrollPanel")
+        Scroll:Dock(FILL)
+        local CPanel = Scroll:Add("ControlPanel")
+        CPanel:Dock(FILL)
+        local Menu, Tree = ACF.CreateSpawnMenu(CPanel)
+        panel.Menu = Menu
+        panel.Tree = Tree
+
         Ponder.VGUI_Support.RunMethods(env, panel, self.Calls, self.Properties)
     end
 
@@ -42,8 +54,9 @@ do
     chapter1:AddInstruction("ACF.CreateMenu", {
         Name = "Test",
         Select = "#acf.menu.baseplates",
+        ScrollTo = "#acf.menu.baseplates.plate_thickness",
         Calls = {
-            {Method = "SetSize", Args = {300, 800}},
+            {Method = "SetSize", Args = {300, 400}},
             {Method = "Center", Args = {}},
         },
         Time = 0,
