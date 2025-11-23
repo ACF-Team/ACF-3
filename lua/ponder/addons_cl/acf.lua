@@ -30,9 +30,16 @@ Ponder.API.RegisterAddonCategory("acf", "mobility", {
 
 Ponder.API.RegisterAddonCategory("acf", "tankbasics", {
     Name = "Tank Basics",
-    Order = 2,
+    Order = 1,
     ModelIcon = "models/hunter/plates/plate025x025.mdl",
     Description = "Learn how to setup a basic tank."
+})
+
+Ponder.API.RegisterAddonCategory("acf", "tankextras", {
+    Name = "Tank Extras",
+    Order = 1,
+    ModelIcon = "models/hunter/plates/plate025x025.mdl",
+    Description = "Learn more advanced features for your tank."
 })
 
 ACF.PonderModelCaches = {

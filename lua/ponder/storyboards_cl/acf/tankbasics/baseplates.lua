@@ -3,7 +3,7 @@ Storyboard:WithName("Baseplates")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/hunter/plates/plate1x2.mdl")
 Storyboard:WithDescription("Learn the basics of crew.")
-Storyboard:WithIndexOrder(5)
+Storyboard:WithIndexOrder(100)
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Spawning")
