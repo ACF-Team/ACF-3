@@ -42,6 +42,13 @@ Ponder.API.RegisterAddonCategory("acf", "tankextras", {
     Description = "Learn more advanced features for your tank."
 })
 
+Ponder.API.RegisterAddonCategory("acf", "missilesbasics", {
+    Name = "Missiles Basics",
+    Order = 0,
+    ModelIcon = "models/missiles/at3.mdl",
+    Description = "Learn about the missiles addon."
+})
+
 ACF.PonderModelCaches = {
     -- Import tank skeleton
     -- (Baseplate: 2x5, Engine: V12L, Gearbox: Transaxial L, Main Gun: 125mmC, RWS Gun: 20mmMG)

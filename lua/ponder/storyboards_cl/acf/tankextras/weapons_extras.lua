@@ -1,9 +1,9 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "drivetrain")
-Storyboard:WithName("Drivetrains")
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankextras", "weapon_extras")
+Storyboard:WithName("Weapon Extras")
 Storyboard:WithBaseEntity(nil)
-Storyboard:WithModelIcon("models/engines/v12l.mdl")
-Storyboard:WithDescription("Learn how to make your tank move")
-Storyboard:WithIndexOrder(99)
+Storyboard:WithModelIcon("models/munitions/round_100mm_ap.mdl")
+Storyboard:WithDescription("Learn about the different weapon and ammo types")
+Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------
 

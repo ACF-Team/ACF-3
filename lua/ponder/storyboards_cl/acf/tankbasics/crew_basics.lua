@@ -2,7 +2,7 @@ local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "crew_basics")
 Storyboard:WithName("Crew Basics")
 Storyboard:WithModelIcon("models/chairs_playerstart/sitpose.mdl")
 Storyboard:WithDescription("Learn the basics of crew.")
-Storyboard:WithIndexOrder(4)
+Storyboard:WithIndexOrder(96)
 local Tank = ACF.PonderModelCaches.TankSkeleton
 
 local TorsoOffsets = {

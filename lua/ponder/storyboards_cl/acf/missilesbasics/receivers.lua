@@ -1,8 +1,7 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "weapons")
-Storyboard:WithName("Weapons")
-Storyboard:WithBaseEntity(nil)
-Storyboard:WithModelIcon("models/munitions/round_100mm.mdl")
-Storyboard:WithDescription("Learn how to destroy other tanks")
+local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "receivers")
+Storyboard:WithName("Receivers")
+Storyboard:WithModelIcon("models/bluemetaknight/laser_detector.mdl")
+Storyboard:WithDescription("Learn about laser and radar warning receivers")
 Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------
