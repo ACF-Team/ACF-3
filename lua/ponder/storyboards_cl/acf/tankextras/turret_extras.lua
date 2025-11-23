@@ -2,7 +2,7 @@ local Storyboard = Ponder.API.NewStoryboard("acf", "tankextras", "turret_extras"
 Storyboard:WithName("Turret Extras")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/acf/core/t_drive_e.mdl")
-Storyboard:WithDescription("Learn about stabilizers and center of mass")
+Storyboard:WithDescription("Learn about motors, stabilizers and center of mass")
 Storyboard:WithIndexOrder(98)
 
 -------------------------------------------------------------------------------------------------

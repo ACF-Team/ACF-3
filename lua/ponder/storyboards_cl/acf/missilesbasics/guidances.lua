@@ -1,5 +1,5 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "missiles")
-Storyboard:WithName("Missiles")
+local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "guidances")
+Storyboard:WithName("Guidances")
 Storyboard:WithModelIcon("models/props_lab/monitor01b.mdl")
 Storyboard:WithDescription("Learn about the different guidance methods for missiles")
 Storyboard:WithIndexOrder(99)
