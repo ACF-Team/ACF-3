@@ -109,7 +109,7 @@ local OK                      = 1
 local ERROR_MESSAGES = {
     [NO_CONTRAPTION]     = "must be part of a contraption",
     [NO_PLAYER]          = "require that a player is inside of the current contraption",
-    [NO_PLAYER_IN_RANGE] = "require that a player in the contraption is within range of the lethal entity"
+    [NO_PLAYER_IN_RANGE] = "cannot fire without a nearby seated player in the same contraption"
 }
 
 local function PlayerContraptionCheck(Entity)
