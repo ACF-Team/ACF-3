@@ -1,3 +1,4 @@
+--- ACF toolgun usage
 local ACFMenu = Ponder.API.NewInstructionMacro("ACF Menu")
 local SelectedColor = Color(100, 255, 100, 255)
 local ClearedColor = Color(255, 255, 255, 255)
@@ -23,7 +24,7 @@ function ACFMenu:Run(chapter, parameters)
     return tAdd + timeForEachClick
 end
 
----
+--- Displaying caption text easily
 
 local CaptionIndex = 0 -- Systime as UUID? lol...
 local Caption = Ponder.API.NewInstructionMacro("Caption")
@@ -62,11 +63,7 @@ function Caption:Run(chapter, parameters)
     return tAdd, Name
 end
 
----
-
-
-
----
+--- Displaying state text that updates every frame
 
 local StateText = Ponder.API.NewInstruction("StateText")
 StateText.Name                     = ""
@@ -119,7 +116,7 @@ function StateText:Last(playback)
     env:RemoveTextByName(self.Name)
 end
 
----
+--- Flashing a group of models with a color
 
 local FlashModel = Ponder.API.NewInstructionMacro("FlashModel")
 function FlashModel:Run(chapter, parameters)
@@ -146,6 +143,8 @@ function FlashModel:Run(chapter, parameters)
     return tAdd + length / 2
 end
 
+--- Placing multiple models
+
 local PlaceModels = Ponder.API.NewInstructionMacro("PlaceModels")
 function PlaceModels:Run(chapter, parameters)
     local length = parameters.Length or 1
@@ -171,6 +170,8 @@ function PlaceModels:Run(chapter, parameters)
     end
     return tAdd + timeForEachClick
 end
+
+--- Removing multiple models
 
 local RemoveModels = Ponder.API.NewInstructionMacro("RemoveModels")
 function RemoveModels:Run(chapter, parameters)
