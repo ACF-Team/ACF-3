@@ -1,7 +1,7 @@
 do
     local storyboard = Ponder.API.NewStoryboard("ponder", "tests", "vgui-poc")
 
-    local CreateMenu = Ponder.API.NewInstruction("ACF.CreateMenu")
+    local CreateMenu = Ponder.API.NewInstruction("ACF.CreateMainMenu")
     CreateMenu.Length = 0.5
 
     local RecursiveFindNodeByName function RecursiveFindNodeByName(Parent, Select)
@@ -42,6 +42,12 @@ do
         Ponder.VGUI_Support.RunMethods(env, panel, self.Calls, self.Properties)
     end
 
+    ---
+
+
+
+    ---
+
     -- Set storyboard properties
     storyboard:WithName("Ponder - VGUI Functions")
     storyboard:WithModelIcon("models/props_junk/wood_crate001a.mdl")
@@ -51,7 +57,7 @@ do
     local chapter1 = storyboard:Chapter()
 
     -- Set up the initial camera position
-    chapter1:AddInstruction("ACF.CreateMenu", {
+    chapter1:AddInstruction("ACF.CreateMainMenu", {
         Name = "Test",
         Select = "#acf.menu.baseplates",
         ScrollTo = "#acf.menu.baseplates.plate_thickness",
