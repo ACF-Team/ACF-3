@@ -47,8 +47,8 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 			if not BP1.Size or not BP2.Size then continue end
 			if BP1:IsPlayerHolding() or BP2:IsPlayerHolding() then continue end
 
-			Valid1, Physics1, Pos1, Vel1, Contraption1, PhysMass1, TotalMass1, Radius1 = GetBaseplateProperties(BP1)
-			Valid2, Physics2, Pos2, Vel2, Contraption2, PhysMass2, TotalMass2, Radius2 = GetBaseplateProperties(BP2)
+			local Valid1, Physics1, Pos1, Vel1, Contraption1, PhysMass1, TotalMass1, Radius1 = GetBaseplateProperties(BP1)
+			local Valid2, Physics2, Pos2, Vel2, Contraption2, PhysMass2, TotalMass2, Radius2 = GetBaseplateProperties(BP2)
 
 			if not Valid1 or not Valid2 then continue end
 			if Contraption1 == Contraption2 then continue end

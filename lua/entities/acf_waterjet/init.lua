@@ -3,9 +3,10 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
-local ACF      		= ACF
+local ACF         = ACF
 local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
+local Sounds      = ACF.Utilities.Sounds
 
 local function GenerateLinkTable(Entity, Target)
 	local InPos = Target.In and Target.In.Pos or Vector()
@@ -44,7 +45,7 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
 end
 
-function ENT:ACF_PreSpawn(_, _, _, _)
+function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/maxofs2d/hover_propeller.mdl")
 end
 
@@ -63,14 +64,13 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	self.CQ = 10 				-- Torque coefficient
 	self.CT = 0.025 			-- Force coefficient
 	self.Rho = 1000 			-- Density of water in kg/m^3
-	self.Diameter = ClientData.WaterjetSize * 10 * 0.0254 -- Convert from inches to meters (model is 10u in diameter by default)
+	self.Diameter = ClientData.WaterjetSize * 10 * ACF.InchToMeter -- Convert from inches to meters (model is 10u in diameter by default)
 
 	self.Gearboxes = {}
 end
 
 function ENT:ACF_PostMenuSpawn()
 	self:DropToFloor()
-	self:SetAngles(self:GetAngles() + Angle(0, 0, 0))
 end
 
 ACF.RegisterClassLink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
@@ -85,7 +85,7 @@ ACF.RegisterClassLink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 
 	Gearbox:InvalidateClientInfo()
 
-	return true, "Weapon linked successfully."
+	return true, "Waterjet linked successfully."
 end)
 
 ACF.RegisterClassUnlink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
@@ -94,7 +94,7 @@ ACF.RegisterClassUnlink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 	Gearbox.Effectors[This] = nil
 	This.Gearboxes[Gearbox] = nil
 
-	return true, "Weapon unlinked successfully."
+	return true, "Waterjet unlinked successfully."
 end)
 
 ACF.AddInputAction("acf_waterjet", "Pitch", function(Entity, Value)
@@ -107,43 +107,83 @@ ACF.AddInputAction("acf_waterjet", "Yaw", function(Entity, Value)
 	Entity.TargetYaw = Value
 end)
 
+function ENT:UpdateSound(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+
+	local Path      = self:ACF_GetUserVar("SoundPath")
+	local LastSound = SelfTbl.LastSound
+
+	if Path ~= LastSound and LastSound ~= nil then
+		self:DestroySound()
+
+		SelfTbl.LastSound = Path
+	end
+
+	if Path == "" then return end
+
+	local Pitch = 100 * self:ACF_GetUserVar("SoundPitch")
+	local Volume = self:ACF_GetUserVar("SoundVolume")
+
+	if SelfTbl.Sound then
+		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
+	else
+		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+		SelfTbl.Sound = true
+	end
+end
+
+function ENT:DestroySound()
+	Sounds.SendAdjustableSound(self, true)
+
+	self.LastSound  = nil
+	self.Sound      = nil
+end
 
 -- Calculates the required torque for the waterjet to function
-function ENT:Calc(InputRPM, _)
-	if not self.InWater then return 0 end
-	if not IsValid(self.Ancestor) then return 0 end
-
+function ENT:Calc(InputRPM)
 	local SelfTbl = self:GetTable()
-	local HealthRatio = (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
-	local n = InputRPM / (2 * 3.14)         		-- Rotation rate (Rad/s)
+
+	if not SelfTbl.InWater then return 0 end
+	if not IsValid(SelfTbl.Ancestor) then return 0 end
+
+	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
+	local N = InputRPM / (2 * math.pi) -- Rotation rate (Rad/s)
 	local CQ, Rho, D = SelfTbl.CQ, SelfTbl.Rho, SelfTbl.Diameter
-	local Q_req = CQ * Rho * n * n * D * D * D * D 	-- Required torque to rotate
+	local Q_req = CQ * Rho * N * N * D * D * D * D -- Required torque to rotate
+
 	return Q_req / HealthRatio
 end
 
 -- Applies torque to the waterjet
 function ENT:Act(Torque, _, MassRatio, FlyRPM)
+	local SelfTbl = self:GetTable()
 	self:SetNW2Float("ACF_WaterjetRPM", FlyRPM)
 
-	if not self.InWater then return end
-	if not IsValid(self.Ancestor) then return end
+	if not SelfTbl.InWater then return end
+	if not IsValid(SelfTbl.Ancestor) then return end
 
-	local SelfTbl = self:GetTable()
-	local HealthRatio = (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
-	local n = FlyRPM / (2 * 3.14)         	-- Rotation rate (Rad/s)
+	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
+	local N = FlyRPM / (2 * math.pi) -- Rotation rate (Rad/s)
 	local CT, Rho, D = SelfTbl.CT, SelfTbl.Rho, SelfTbl.Diameter
-	local T = CT * Rho * n * n * D * D * D * D  -- Force generated
+	local T = CT * Rho * N * N * D * D * D * D -- Force generated
 
 	local Phys = self.AncestorPhys
 	local Sign = Torque >= 0 and 1 or -1
 	local Ang = Angle(SelfTbl.Pitch * SelfTbl.ArcPitch, 0, SelfTbl.Yaw * SelfTbl.ArcYaw)
 	local Dir = -self:LocalToWorldAngles(Ang):Up()
+
 	Phys:ApplyForceOffset(Dir * T * Sign * MassRatio * HealthRatio, self:GetPos())
+	self:UpdateSound(SelfTbl)
 end
 
 function ENT:Think()
-	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local SelfTbl = self:GetTable()
+
+	if SelfTbl.Sound and self:GetNW2Float("ACF_WaterjetRPM", 0) == 0 then
+		self:DestroySound()
+	end
+
+	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local Center = self:GetPos()
 	SelfTbl.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
 
@@ -158,12 +198,13 @@ function ENT:Think()
 	end
 
 	self:NextThink(CurTime() + 0.1)
+
 	return true
 end
 
-local Text = "%s"
+local Text = "Scale: %.2f\n\nPitch: %.2f\nYaw: %.2f"
 function ENT:UpdateOverlayText()
-	return Text:format("LOL")
+	return Text:format(self:ACF_GetUserVar("WaterjetSize"), self.Pitch, self.Yaw)
 end
 
 ACF.Classes.Entities.Register()

@@ -119,3 +119,29 @@ Sounds.acf_turret_motor = {
 		if IsValid(Ent.Turret) then Ent.Turret:UpdateSound() end
 	end
 }
+
+Sounds.acf_waterjet = {
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent:ACF_GetUserVar("SoundPath"),
+			Pitch  = Ent:ACF_GetUserVar("SoundPitch"),
+			Volume = Ent:ACF_GetUserVar("SoundVolume"),
+		}
+	end,
+	SetSound = function(Ent, SoundData)
+		local Sound = SoundData.Sound:Trim():lower()
+
+		Ent:ACF_SetUserVar("SoundPath", Sound)
+		Ent:ACF_SetUserVar("SoundPitch", SoundData.Pitch)
+		Ent:ACF_SetUserVar("SoundVolume", SoundData.Volume)
+
+		Ent:UpdateSound()
+	end,
+	ResetSound = function(Ent)
+		Ent:ACF_SetUserVar("SoundPath", "ambient/machines/spin_loop.wav")
+		Ent:ACF_SetUserVar("SoundPitch", 1)
+		Ent:ACF_SetUserVar("SoundVolume", 0.2)
+
+		Ent:UpdateSound()
+	end
+}
