@@ -4,8 +4,6 @@ Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/hunter/plates/plate1x2.mdl")
 Storyboard:WithDescription("Learn the basics of crew.")
 Storyboard:WithIndexOrder(5)
-local Tank = ACF.PonderModelCaches.TankSkeleton
-
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Spawning")
