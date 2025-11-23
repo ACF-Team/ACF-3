@@ -87,7 +87,7 @@ function CreateMainMenu:Run(chapter, parameters)
         Length = parameters.Fast and 0 or 0.5,
     }):DelayByLength()
 
-    chapter:AddInstruction("ACF.InitializeMenuCPanel", {
+    chapter:AddInstruction("ACF.CreateMenuCPanel", {
         Name = parameters.Name,
         Label = parameters.Label or "ACF Menu",
         Length = parameters.Fast and 0 or 0.5,
