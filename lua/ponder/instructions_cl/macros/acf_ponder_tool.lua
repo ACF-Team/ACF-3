@@ -16,7 +16,7 @@ function ACFMenu:Run(chapter, parameters)
     end
 
     chapter:AddInstruction("MoveToolgunTo", {Time = tAdd, Target = parameters.Target, Easing = parameters.Easing})
-    chapter:AddInstruction("ClickToolgun", {Time = tAdd + timeForEachClick, Target = parameters.Target})
+    chapter:AddInstruction("Click", {Time = tAdd + timeForEachClick, Target = parameters.Target})
     for _, child in ipairs(parameters.Children) do
         chapter:AddInstruction("ColorModel", {Time = tAdd + timeForEachClick, Target = child, Length = 0.1, Color = ClearedColor})
     end
