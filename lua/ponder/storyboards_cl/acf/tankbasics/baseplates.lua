@@ -6,19 +6,21 @@ Storyboard:WithDescription("Learn the basics of baseplates.")
 Storyboard:WithIndexOrder(100)
 
 -------------------------------------------------------------------------------------------------
-local Chapter = Storyboard:Chapter("Spawning")
+local Chapter = Storyboard:Chapter("Selecting")
+Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
     Text = "Start by selecting the acf menu tool, then in the menu, select baseplates.",
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
-    Length = 3,
+    TextLength = 3,
 })
 
 Chapter:AddInstruction("ShowToolgun", {
     Tool = language.GetPhrase("tool.acf_menu.menu_name")
 }):DelayByLength()
 
+-- ACF menu initialization
 Chapter:AddInstruction("PlacePanel", {
     Name = "MainMenuCPanel",
     Type = "DPanel",
@@ -34,13 +36,15 @@ Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label =
 Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
 Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.baseplates"}):DelayByLength()
 
-Chapter:AddDelay(2)
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Options")
+Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
     Text = "Scroll down and set the Length and Width to your desired size (recommended 192x96 for starters).",
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
-    Length = 3,
+    TextLength = 3,
 })
 
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.baseplates.plate_thickness"}):DelayByLength()
@@ -48,13 +52,15 @@ Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_length", Value = 192}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_width", Value = 96}):DelayByLength()
 
-Chapter:AddDelay(2)
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Spawning")
+Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
     Text = "Press Mouse1 (Left Click) to spawn a baseplate where you're aiming.",
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
-    Length = 5,
+    TextLength = 3,
 })
 
 Chapter:AddInstruction("ClickToolgun", {}):DelayByLength()
@@ -62,29 +68,160 @@ Chapter:AddInstruction("ClickToolgun", {}):DelayByLength()
 Chapter:AddInstruction("PlaceModel", {
     Name = "Baseplate1",
     IdentifyAs = "acf_baseplate",
-    Model = "models/hunter/plates/plate1x2.mdl",
+    Model = "models/hunter/plates/plate2x4.mdl",
     Position = Vector(0, 0, 0),
     ComeFrom = Vector(0, 0, 0)
 }):DelayByLength()
 
-Chapter:AddDelay(2)
+Chapter:AddDelay(1)
 
 Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 1}):DelayByLength()
 
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
-Chapter:AddDelay(2)
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Orientation")
+Chapter:AddDelay(1)
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Baseplates are the core of any ACF contraption and are required for your vehicles to work.",
+    Text = "It should have automatically faced north when spawned.\nAlways build with them facing north.",
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
 }))
 
 Chapter:AddInstruction("Caption", {
-    Text = "They should automatically face north when spawned.\nMake sure to keep it this way.",
+    Text = "North",
+    Horizontal = TEXT_ALIGN_RIGHT,
+    Position = Vector(0, -100, 0),
+    ParentTo = "Baseplate1",
+    TextLength = 3,
+    UseEntity = true,
+})
+
+Chapter:AddInstruction("Caption", {
+    Text = "South",
+    Horizontal = TEXT_ALIGN_RIGHT,
+    Position = Vector(0, 100, 0),
+    ParentTo = "Baseplate1",
+    TextLength = 3,
+    UseEntity = true,
+})
+
+Chapter:AddInstruction("Caption", {
+    Text = "East",
+    Horizontal = TEXT_ALIGN_RIGHT,
+    Position = Vector(-100, 0, 0),
+    ParentTo = "Baseplate1",
+    TextLength = 3,
+    UseEntity = true,
+})
+
+Chapter:AddInstruction("Caption", {
+    Text = "West",
+    Horizontal = TEXT_ALIGN_RIGHT,
+    Position = Vector(100, 0, 0),
+    ParentTo = "Baseplate1",
+    TextLength = 3,
+    UseEntity = true,
+})
+
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 0, Height = 2000}):DelayByLength()
+Chapter:AddDelay(2)
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 55, Distance = 1300, Height = 600}):DelayByLength()
+
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Info")
+Chapter:AddDelay(1)
+
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {
+    Text = "Baseplates are the core of any ACF contraption and are REQUIRED for your vehicles to work.",
+    Horizontal = TEXT_ALIGN_CENTER,
+    Position = Vector(0.5, 0.15, 0),
+}))
+
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Baseplate Seats")
+Chapter:AddDelay(1)
+
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {
+    Text = "Baseplates contain seats which are invisible to damage and view.\nPress ALT + E to sit in them.",
+    Horizontal = TEXT_ALIGN_CENTER,
+    Position = Vector(0.5, 0.15, 0),
+}))
+
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Baseplate Seats (Wiremod)")
+Chapter:AddDelay(1)
+
+Chapter:AddInstruction("Caption", {
+    Text = "(Optional) If you are familliar with Wiremod, you can link pod/cam/egp controllers by right click linking them to the baseplate with the wire tool.",
     Horizontal = TEXT_ALIGN_CENTER,
     Position = Vector(0.5, 0.15, 0),
 })
 
-Chapter:AddInstruction("RemoveModel", {Name = "Baseplate1"}):DelayByLength()
+-- Spawn in pod controller
+Chapter:AddInstruction("PlaceModel", {
+    Name = "Pod1",
+    IdentifyAs = "Pod Controller",
+    Model = "models/jaanus/wiretool/wiretool_range.mdl",
+    Position = Vector(-80, 0, 0),
+    ComeFrom = Vector(0, 0, 30)
+})
+Chapter:AddInstruction("ColorModel", {Target = "Pod1", Color = Color(255, 0, 0)})
+
+-- Link pod to baseplate
+Chapter:AddInstruction("ShowToolgun", {
+    Tool = language.GetPhrase("tool.wire_adv.name")
+}):DelayByLength()
+Chapter:AddDelay(1)
+Chapter:AddInstruction("MoveToolgunTo", {Target = "Pod1", Easing = math.ease.InOutQuad}):DelayByLength()
+Chapter:AddInstruction("ClickToolgun", {Target = "Pod1"}):DelayByLength()
+Chapter:AddInstruction("MoveToolgunTo", {Target = "Baseplate1", Easing = math.ease.InOutQuad}):DelayByLength()
+Chapter:AddInstruction("ClickToolgun", {Target = "Baseplate1"}):DelayByLength()
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
+Chapter:AddDelay(1)
+Chapter:AddInstruction("RemoveModel", {Name = "Pod1"}):DelayByLength()
+
+Chapter:AddDelay(1)
+local Chapter = Storyboard:Chapter("Baseplate Collisions")
+Chapter:AddDelay(1)
+
+Chapter:AddInstruction("Caption", {
+    Text = "Baseplates will collide with other baseplates.",
+    Horizontal = TEXT_ALIGN_CENTER,
+    Position = Vector(0.5, 0.15, 0),
+})
+
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 45, Distance = 3000}):DelayByLength()
+
+Chapter:AddInstruction("PlaceModel", {
+    Name = "Baseplate2",
+    IdentifyAs = "acf_baseplate",
+    Model = "models/hunter/plates/plate2x4.mdl",
+    Position = Vector(0, 300, 0),
+    ComeFrom = Vector(0, 0, 32)
+}):DelayByLength()
+
+Chapter:AddInstruction("TransformModel", {
+    Target = "Baseplate2",
+    Position = Vector(0, 190, 0),
+    Rotation = Angle(0, 0, 0),
+    Length = 0.5,
+}):DelayByLength()
+
+Chapter:AddInstruction("TransformModel", {
+    Target = "Baseplate2",
+    Position = Vector(0, 286, 0),
+    Rotation = Angle(0, 0, 0),
+    Length = 0.75,
+})
+
+Chapter:AddInstruction("TransformModel", {
+    Target = "Baseplate1",
+    Position = Vector(0, -96, 0),
+    Rotation = Angle(0, 0, 0),
+    Length = 0.75,
+}):DelayByLength()
+
+
