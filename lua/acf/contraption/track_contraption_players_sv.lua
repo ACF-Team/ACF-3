@@ -106,7 +106,7 @@ function ResetTime(Entity)
     QueryTimes[Entity] = nil
     Entity:RemoveCallOnRemove("ACF_CleanUpPlayerContraptionCheck")
 end
-
+--[[
 local Clock = ACF.Utilities.Clock
 
 local NO_CONTRAPTION          = 0
@@ -164,3 +164,4 @@ hook.Add("ACF_PreFireWeapon", "ACF_CheckPlayerContraptionLethals", function(Ent)
         return false
     end
 end)
+]]
