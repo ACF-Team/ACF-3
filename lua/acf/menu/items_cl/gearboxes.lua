@@ -48,7 +48,9 @@ end
 
 CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 	local GearboxClass = Menu:AddComboBox()
+	GearboxClass:SetName("GearboxClass")
 	local GearboxList = Menu:AddComboBox()
+	GearboxList:SetName("GearboxList")
 
 	local Base = Menu:AddCollapsible("#acf.menu.gearboxes.gearbox_info", nil, "icon16/chart_curve_edit.png")
 	local GearboxName = Base:AddTitle()

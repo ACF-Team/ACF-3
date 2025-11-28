@@ -69,7 +69,8 @@ Chapter:AddInstruction("ClickToolgun", {}):DelayByLength()
 Chapter:AddInstruction("PlaceModel", {
     Name = "Baseplate1",
     IdentifyAs = "acf_baseplate",
-    Model = "models/hunter/plates/plate2x4.mdl",
+    Model = "models/hunter/plates/plate2x5.mdl",
+    Scale = Vector(1, 1.25, 1),
     Position = Vector(0, 0, 0),
     ComeFrom = Vector(0, 0, 0)
 }):DelayByLength()
@@ -198,7 +199,7 @@ Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 45, Distance = 
 Chapter:AddInstruction("PlaceModel", {
     Name = "Baseplate2",
     IdentifyAs = "acf_baseplate",
-    Model = "models/hunter/plates/plate2x4.mdl",
+    Model = "models/hunter/plates/plate2x5.mdl",
     Position = Vector(0, 300, 0),
     ComeFrom = Vector(0, 0, 32)
 }):DelayByLength()

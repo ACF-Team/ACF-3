@@ -106,7 +106,7 @@ function CreateMainMenu:Run(chapter, parameters)
     return tAdd
 end
 
---- Sets the value of an acf panel slider
+--- Various helpers to set the values of elements in the ACF menu
 local SetACFPanelSlider = Ponder.API.NewInstruction("ACF.SetPanelSlider")
 SetACFPanelSlider.Length = 1
 
