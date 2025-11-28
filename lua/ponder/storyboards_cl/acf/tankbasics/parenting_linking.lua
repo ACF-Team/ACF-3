@@ -9,50 +9,16 @@ Storyboard:WithIndexOrder(98)
 local Chapter = Storyboard:Chapter("Setup")
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -225, Distance = 2000}):DelayByLength()
 
-Chapter:AddInstruction("PlaceModel", {
-    Name = "Baseplate1",
-    IdentifyAs = "acf_baseplate",
-    Model = "models/hunter/plates/plate2x5.mdl",
-    Position = Vector(0, 0, 0),
-    Angles = Angle(0, 0, 0),
-    Scale = Vector(1, 1.25, 1),
-    ComeFrom = Vector(0, 0, 50)
-}):DelayByLength()
-
-Chapter:AddInstruction("PlaceModel", {
-    Name = "Engine1",
-    Model = "models/engines/v12l.mdl",
-    Position = Vector(0, -84, 3),
-    Angles = Angle(0, 90, 0),
-    ParentTo = "Baseplate1",
-}):DelayByLength()
-
-Chapter:AddInstruction("PlaceModel", {
-    Name = "FuelTank1",
-    Model = "models/acf/core/s_fuel.mdl",
-    Position = Vector(36, -84, 15),
-    Scale = Vector(6, 2, 2),
-    Angles = Angle(0, 90, 0),
-    ParentTo = "Baseplate1",
-}):DelayByLength()
-
-Chapter:AddInstruction("PlaceModel", {
-    Name = "FuelTank2",
-    Model = "models/acf/core/s_fuel.mdl",
-    Position = Vector(-36, -84, 15),
-    Scale = Vector(6, 2, 2),
-    Angles = Angle(0, 90, 0),
-    ParentTo = "Baseplate1",
-}):DelayByLength()
-
-Chapter:AddInstruction("PlaceModel", {
-    Name = "Gearbox1",
-    Model = "models/engines/transaxial_s.mdl",
-    Position = Vector(0, -144, 3),
-    Angles = Angle(0, 90, 0),
-    Scale = Vector(2, 2, 2),
-    ParentTo = "Baseplate1",
-}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
+    Length = 0.5,
+    Models = {
+        {Name = "Base", IdentifyAs = "Base", Model = "models/hunter/plates/plate2x5.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1.25, 1), },
+        {Name = "Engine", IdentifyAs = "Engine", Model = "models/engines/v12l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -84, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
+        {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_s.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", Scale = Vector(2, 2, 2)},
+        {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
+        {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
+    }
+}))
 
 
 local Chapter = Storyboard:Chapter("Parenting & Linking")
@@ -108,8 +74,8 @@ local Chapter = Storyboard:Chapter("Parenting Usage")
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Left click all the entities except the baseplate, then right click the baseplate."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {
-    Children = {"Engine1", "FuelTank1", "FuelTank2", "Gearbox1"},
-    Parent = "Baseplate1",
+    Children = {"Engine", "FuelTank1", "FuelTank2", "Gearbox"},
+    Parent = "Base",
     Easing = math.ease.InOutQuad,
     Length = 4,
 }))
@@ -122,14 +88,14 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "All entities are now
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Parenting Demonstration")
 Chapter:AddInstruction("TransformModel", {
-    Target = "Baseplate1",
+    Target = "Base",
     Position = Vector(0, 0, 100),
     Rotation = Angle(0, 360, 0),
     Length = 2,
 }):DelayByLength()
 
 Chapter:AddInstruction("TransformModel", {
-    Target = "Baseplate1",
+    Target = "Base",
     Position = Vector(0, 0, 0),
     Rotation = Angle(0, 0, 0),
     Length = 2,
@@ -146,8 +112,8 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The ACF Menu tool ca
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Right click the engine and right click the gearbox to link them together."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
-    Children = {"Engine1"},
-    Target = "Gearbox1",
+    Children = {"Engine"},
+    Target = "Gearbox",
     Easing = math.ease.InOutQuad,
     Length = 2,
 }))
@@ -158,7 +124,7 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Hold shift + right c
 
 Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
     Children = {"FuelTank1", "FuelTank2"},
-    Target = "Engine1",
+    Target = "Engine",
     Easing = math.ease.InOutQuad,
     Length = 3,
 }))
