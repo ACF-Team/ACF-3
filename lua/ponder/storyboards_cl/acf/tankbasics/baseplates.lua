@@ -16,9 +16,7 @@ Chapter:AddInstruction("Caption", {
     TextLength = 3,
 })
 
-Chapter:AddInstruction("ShowToolgun", {
-    Tool = language.GetPhrase("tool.acf_menu.menu_name")
-}):DelayByLength()
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
 
 -- ACF menu initialization
 Chapter:AddInstruction("PlacePanel", {

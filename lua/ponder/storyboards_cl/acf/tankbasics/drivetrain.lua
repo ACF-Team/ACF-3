@@ -5,48 +5,6 @@ Storyboard:WithModelIcon("models/engines/v12l.mdl")
 Storyboard:WithDescription("Learn how to make your tank move")
 Storyboard:WithIndexOrder(99)
 
-------------------------------------------------------------------------------------------------
-local RecursiveFindPanelByName function RecursiveFindPanelByName(Parent, Select)
-    for _, Panel in ipairs(Parent:GetChildren()) do
-        if Panel:GetName() == Select then return Panel end
-        local Subnode = RecursiveFindPanelByName(Panel, Select)
-        if Subnode then return Subnode end
-    end
-end
-
-local SetACFPanelComboBox = Ponder.API.NewInstruction("ACF.SetPanelComboBox")
-SetACFPanelComboBox.Length = 1
-
-function SetACFPanelComboBox:First(playback)
-    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-    local ComboBox = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.ComboBoxName))
-    if IsValid(ComboBox) and ComboBox.ChooseOptionID then
-        ACF.DisableClientData = true
-        ComboBox:ChooseOptionID(self.OptionID)
-        ACF.DisableClientData = false
-    end
-end
-
-local RecursiveFindPanelByText function RecursiveFindPanelByText(Parent, Select)
-    for _, Panel in ipairs(Parent:GetChildren()) do
-        if Panel:GetText() == Select then return Panel end
-        local Subnode = RecursiveFindPanelByText(Panel, Select)
-        if Subnode then return Subnode end
-    end
-end
-
-local SetACFPanelCheckBox = Ponder.API.NewInstruction("ACF.SetPanelCheckBox")
-SetACFPanelCheckBox.Length = 1
-function SetACFPanelCheckBox:First(playback)
-    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-    local CheckBox = RecursiveFindPanelByText(panel.Base, language.GetPhrase(self.CheckBoxName))
-    if IsValid(CheckBox) and CheckBox.SetValue then
-        ACF.DisableClientData = true
-        CheckBox:SetValue(self.Value)
-        ACF.DisableClientData = false
-    end
-end
-
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Setup")
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -45, Distance = 2000}):DelayByLength()
@@ -58,7 +16,7 @@ Chapter:AddInstruction("PlaceModel", {
     Position = Vector(0, 0, 0),
     Angles = Angle(0, 0, 0),
     Scale = Vector(1, 1.25, 1),
-    ComeFrom = Vector(0, 0, 0)
+    ComeFrom = Vector(0, 0, 50)
 }):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {
@@ -184,7 +142,7 @@ Chapter:AddInstruction("PlaceModel", {
     Model = "models/acf/core/s_fuel.mdl",
     Position = Vector(96, 0, 0),
     Scale = Vector(6, 2, 2),
-    Angle = Angle(0, 0, 0),
+    Angles = Angle(0, 0, 0),
 }):DelayByLength()
 
 Chapter:AddInstruction("PlaceModel", {
@@ -192,7 +150,7 @@ Chapter:AddInstruction("PlaceModel", {
     Model = "models/acf/core/s_fuel.mdl",
     Position = Vector(96, 48, 0),
     Scale = Vector(6, 2, 2),
-    Angle = Angle(0, 0, 0),
+    Angles = Angle(0, 0, 0),
 }):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {
@@ -331,3 +289,12 @@ Chapter:AddInstruction("TransformModel", {
     Rotation = Angle(0, 90, 0),
     Length = 1,
 }):DelayByLength()
+
+Chapter:AddDelay(1)
+Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 1}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {
+    Text = "This tutorial continues in the 'Parenting & Linking' storyboard.",
+    Horizontal = TEXT_ALIGN_CENTER,
+    Position = Vector(0.5, 0.15, 0),
+}))
+Chapter:RecommendStoryboard("acf.tankbasics.parenting_linking")

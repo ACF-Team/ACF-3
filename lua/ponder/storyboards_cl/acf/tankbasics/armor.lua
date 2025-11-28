@@ -3,7 +3,7 @@ Storyboard:WithName("Armor")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/props_c17/streetsign004f.mdl")
 Storyboard:WithDescription("Learn how to protect your tank")
-Storyboard:WithIndexOrder(94)
+Storyboard:WithIndexOrder(93)
 
 -------------------------------------------------------------------------------------------------
 

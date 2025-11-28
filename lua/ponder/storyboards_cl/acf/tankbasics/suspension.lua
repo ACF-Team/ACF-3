@@ -3,7 +3,7 @@ Storyboard:WithName("Suspension")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/xeon133/offroad/off-road-80.mdl")
 Storyboard:WithDescription("Learn how to make your tank move")
-Storyboard:WithIndexOrder(98)
+Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------
 

@@ -3,7 +3,7 @@ Storyboard:WithName("Turrets")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/acf/core/t_trun.mdl")
 Storyboard:WithDescription("Learn how to aim at things")
-Storyboard:WithIndexOrder(97)
+Storyboard:WithIndexOrder(96)
 
 -------------------------------------------------------------------------------------------------
 

@@ -3,7 +3,7 @@ Storyboard:WithName("Weapons")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/munitions/round_100mm.mdl")
 Storyboard:WithDescription("Learn how to destroy other tanks")
-Storyboard:WithIndexOrder(96)
+Storyboard:WithIndexOrder(95)
 
 -------------------------------------------------------------------------------------------------
 
