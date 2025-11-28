@@ -21,13 +21,23 @@ InitializeMainMenu.Length = 1
 
 function InitializeMainMenu:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-
     local Base = ACF.InitMenuBase(panel.CPanel)
     local Tree = Base:AddPanel("DTree")
     ACF.SetupMenuTree(Base, Tree)
-
     panel.Base = Base
     panel.Tree = Tree
+end
+
+--- Initializing a custom ACF menu on a given CPanel
+
+local InitializeCustomMenu = Ponder.API.NewInstruction("ACF.InitializeCustomACFMenu")
+InitializeCustomMenu.Length = 1
+
+function InitializeCustomMenu:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local Base = ACF.InitMenuBase(panel.CPanel)
+    panel.Base = Base
+    self.CreateMenu(Base)
 end
 
 --- Initializing a custom menu on a given CPanel
@@ -37,9 +47,7 @@ InitializeCustomMenu.Length = 1
 
 function InitializeCustomMenu:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-
     self.BuildCPanel(panel.CPanel)
-
     panel.Base = panel
 end
 

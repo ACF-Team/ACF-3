@@ -1,28 +1,7 @@
 local ACF = ACF
 
 --- Creates/recreates the menu for this tool
-function ACF.CreateSuspensionToolMenu(Panel)
-    local Menu = ACF.InitMenuBase(Panel, "SuspensionToolMenu", "acf_reload_suspension_menu")
-
-    -- Handles recreating the menu, useful if you change elements.
-    if not IsValid(Menu) then
-        Menu = vgui.Create("ACF_Panel")
-        Menu.Panel = Panel
-
-        Panel:AddItem(Menu)
-
-        ACF.ArmorMenu = Menu
-    else
-        Menu:ClearAllTemporal()
-        Menu:ClearAll()
-    end
-
-    local Reload = Menu:AddButton("Reload Menu")
-    Reload:SetTooltip("You can also type 'acf_reload_suspension_menu' in console.")
-    function Reload:DoClickInternal()
-        RunConsoleCommand("acf_reload_suspension_menu")
-    end
-
+function ACF.CreateSuspensionToolMenu(Menu)
     Menu:AddTitle("ACF Suspension Tool")
     Menu:AddLabel("This tool helps create constraints for basic drivetrains.")
     Menu:AddLabel("You can hover over any of these elements to see their description.")
