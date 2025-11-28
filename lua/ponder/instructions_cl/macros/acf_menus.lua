@@ -30,6 +30,19 @@ function InitializeMainMenu:First(playback)
     panel.Tree = Tree
 end
 
+--- Initializing a custom menu on a given CPanel
+
+local InitializeCustomMenu = Ponder.API.NewInstruction("ACF.InitializeCustomMenu")
+InitializeCustomMenu.Length = 1
+
+function InitializeCustomMenu:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+
+    self.BuildCPanel(panel.CPanel)
+
+    panel.Base = panel
+end
+
 --- Selecting a node in the menu tree by name
 
 local RecursiveFindNodeByName function RecursiveFindNodeByName(Parent, Select)
@@ -69,40 +82,6 @@ function ScrollToMenuPanel:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
     local Target = RecursiveFindPanelByText(panel.Base, language.GetPhrase(self.Scroll))
     if Target then panel.Scroll:ScrollToChild(Target) end
-end
-
---- Combines all the work of creating a menu into an easy macro
-
-local CreateMainMenu = Ponder.API.NewInstructionMacro("ACF.CreateMainMenu")
-function CreateMainMenu:Run(chapter, parameters)
-    local length = parameters.Length or 1
-    local timePerAction = length / 3
-
-    local tAdd = 0
-    chapter:AddInstruction("PlacePanel", {
-        Name = parameters.Name,
-        Type = "DPanel",
-        Calls = {
-            {Method = "SetSize", Args = parameters.Size or {300, 700}},
-            {Method = "Center", Args = {}},
-        },
-        Time = tAdd,
-    })
-    tAdd = tAdd + timePerAction
-
-    chapter:AddInstruction("ACF.CreateMenuCPanel", {
-        Name = parameters.Name,
-        Label = parameters.Label or "ACF Menu",
-        Time = tAdd,
-    })
-    tAdd = tAdd + timePerAction
-
-    chapter:AddInstruction("ACF.InitializeMainMenu", {
-        Name = parameters.Name,
-        Time = tAdd,
-    })
-    tAdd = tAdd + timePerAction
-    return tAdd
 end
 
 --- Various helpers to set the values of elements in the ACF menu
