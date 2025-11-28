@@ -2,7 +2,7 @@ local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "suspension")
 Storyboard:WithName("Suspension")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/xeon133/offroad/off-road-40.mdl")
-Storyboard:WithDescription("Lean to use the suspension tool")
+Storyboard:WithDescription("Learn to use the suspension tool")
 Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------

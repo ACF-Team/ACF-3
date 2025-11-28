@@ -42,6 +42,13 @@ Ponder.API.RegisterAddonCategory("acf", "tankextras", {
     Description = "Learn more advanced features for your tank."
 })
 
+Ponder.API.RegisterAddonCategory("acf", "carbasics", {
+    Name = "Car Basics",
+    Order = 1,
+    ModelIcon = "models/sprops/trans/stwheels/stwheel_2.mdl",
+    Description = "Learn how to setup a basic car."
+})
+
 Ponder.API.RegisterAddonCategory("acf", "missilesbasics", {
     Name = "Missiles Basics",
     Order = 0,
