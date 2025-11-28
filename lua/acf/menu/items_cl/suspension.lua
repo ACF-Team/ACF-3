@@ -17,6 +17,7 @@ function ACF.CreateSuspensionToolMenu(Menu)
 
     -- Spring related
     local SpringType = GeneralSettings:AddComboBox()
+    SpringType:SetName("Spring Type")
     SpringType:AddChoice("Spring Type: Rigid (None)", 1)
     SpringType:AddChoice("Spring Type: Hydraulic", 2)
     SpringType:AddChoice("Spring Type: Elastic", 3)

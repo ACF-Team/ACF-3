@@ -80,8 +80,6 @@ if CLIENT then
 			Menu.Panel = Panel
 
 			Panel:AddItem(Menu)
-
-			ACF.ArmorMenu = Menu
 		else
 			Menu:ClearAllTemporal()
 			Menu:ClearAll()

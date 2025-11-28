@@ -7,6 +7,10 @@ Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------
 
+
+
+-------------------------------------------------------------------------------------------------
+
 local Chapter = Storyboard:Chapter("Setup")
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -225, Distance = 2000}):DelayByLength()
 
@@ -53,6 +57,7 @@ Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
 }))
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now power from the engine can reach the wheels."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The suspension tool will consider these drive wheels / sprockets that all the other wheels will be slaved to."}))
 
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
@@ -61,7 +66,6 @@ local Chapter = Storyboard:Chapter("Suspension Tool Usage")
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("ACF Suspension Tool")}):DelayByLength()
-
 
 Chapter:AddInstruction("PlacePanel", {
     Name = "SuspensionMenuCPanel",
@@ -75,4 +79,12 @@ Chapter:AddInstruction("PlacePanel", {
 }):DelayByLength()
 Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "SuspensionMenuCPanel", Label = "ACF Menu"}):DelayByLength()
 Chapter:AddInstruction("ACF.InitializeCustomACFMenu", {Name = "SuspensionMenuCPanel", CreateMenu = ACF.CreateSuspensionToolMenu}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select the suspension tool and left click on each wheel to add suspension.\nRight click to remove suspension."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "We recommend beginners use rigid suspension, since it is the easiest and most optimized."}))
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "SuspensionMenuCPanel", ComboBoxName = "Spring Type", OptionID = 1}):DelayByLength()
+
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "First shift + right click the baseplate."}))
+Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"Base"}}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select (in any order) all wheels you want attached with right click."}))
+Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"LWheel1", "LWheel2", "LWheel3", "LWheel4", "RWheel1", "RWheel2", "RWheel3", "RWheel4"}}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Clear the drivetrain of any previously existing constraints for optimization."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press the create button once to create the suspension. Avoid doing this multiple times to prevent redundant constraints."}))
