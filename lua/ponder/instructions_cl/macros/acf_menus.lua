@@ -114,6 +114,8 @@ function SetACFPanelSlider:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
     local Slider = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.SliderName))
     if IsValid(Slider) and Slider.SetValue then
+        ACF.DisableClientData = true
         Slider:SetValue(self.Value)
+        ACF.DisableClientData = false
     end
 end

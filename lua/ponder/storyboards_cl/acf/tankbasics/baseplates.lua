@@ -51,6 +51,7 @@ Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll
 
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_length", Value = 192}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_width", Value = 96}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_thickness", Value = 1.5}):DelayByLength()
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Spawning")
@@ -170,9 +171,7 @@ Chapter:AddInstruction("PlaceModel", {
 Chapter:AddInstruction("ColorModel", {Target = "Pod1", Color = Color(255, 0, 0)})
 
 -- Link pod to baseplate
-Chapter:AddInstruction("ShowToolgun", {
-    Tool = language.GetPhrase("tool.wire_adv.name")
-}):DelayByLength()
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.wire_adv.name")}):DelayByLength()
 Chapter:AddDelay(1)
 Chapter:AddInstruction("MoveToolgunTo", {Target = "Pod1", Easing = math.ease.InOutQuad}):DelayByLength()
 Chapter:AddInstruction("ClickToolgun", {Target = "Pod1"}):DelayByLength()
@@ -195,6 +194,7 @@ Chapter:AddInstruction("Caption", {
 
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 45, Distance = 3000}):DelayByLength()
 
+-- Animate Collision
 Chapter:AddInstruction("PlaceModel", {
     Name = "Baseplate2",
     IdentifyAs = "acf_baseplate",
@@ -224,4 +224,5 @@ Chapter:AddInstruction("TransformModel", {
     Length = 0.75,
 }):DelayByLength()
 
+Chapter:RecommendStoryboard("acf.tankbasics.drivetrain")
 
