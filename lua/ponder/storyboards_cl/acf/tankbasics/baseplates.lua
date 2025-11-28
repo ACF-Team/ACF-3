@@ -10,10 +10,8 @@ local Chapter = Storyboard:Chapter("Selecting")
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
-    Text = "Start by selecting the acf menu tool, then in the menu, select baseplates.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-    TextLength = 3,
+    Text = "Start by selecting the acf menu tool, then in the menu, select baseplates.", 
+    Length = 3
 })
 
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
@@ -40,8 +38,6 @@ Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
     Text = "Scroll down and set the Length and Width to your desired size (recommended 192x96 for starters).",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
     TextLength = 3,
 })
 
@@ -57,8 +53,6 @@ Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
     Text = "Press Mouse1 (Left Click) to spawn a baseplate where you're aiming.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
     TextLength = 3,
 })
 
@@ -83,11 +77,7 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Orientation")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "It should have automatically faced north when spawned.\nAlways build with them facing north.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "It should have automatically faced north when spawned.\nAlways build with them facing north."}))
 
 Chapter:AddInstruction("Caption", {
     Text = "North",
@@ -133,31 +123,19 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Info")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Baseplates are the core of any ACF contraption and are REQUIRED for your vehicles to work.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Baseplates are the core of any ACF contraption and are REQUIRED for your vehicles to work."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Baseplate Seats")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Baseplates contain seats which are invisible to damage and view.\nPress ALT + E to sit in them.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Baseplates contain seats which are invisible to damage and view.\nPress ALT + E to sit in them."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Baseplate Seats (Wiremod)")
 Chapter:AddDelay(1)
 
-Chapter:AddInstruction("Caption", {
-    Text = "(Optional) If you are familliar with Wiremod, you can link pod/cam/egp controllers by right click linking them to the baseplate with the wire tool.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-})
+Chapter:AddInstruction("Caption", {Text = "(Optional) If you are familliar with Wiremod, you can link pod/cam/egp controllers by right click linking them to the baseplate with the wire tool."})
 
 -- Spawn in pod controller
 Chapter:AddInstruction("PlaceModel", {
@@ -185,11 +163,7 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Baseplate Collisions")
 Chapter:AddDelay(1)
 
-Chapter:AddInstruction("Caption", {
-    Text = "Baseplates will collide with other baseplates.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-})
+Chapter:AddInstruction("Caption", {Text = "Baseplates will collide with other baseplates."})
 
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 45, Distance = 3000}):DelayByLength()
 

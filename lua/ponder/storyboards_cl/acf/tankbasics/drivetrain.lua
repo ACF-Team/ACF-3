@@ -19,20 +19,12 @@ Chapter:AddInstruction("PlaceModel", {
     ComeFrom = Vector(0, 0, 50)
 }):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Now that you have a baseplate, let's make it move.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now that you have a baseplate, let's make it move."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Engines Intro")
 Chapter:AddDelay(1)
-Chapter:AddInstruction("Caption", {
-    Text = "Select engines from the menu, then click on the drop downs to select the engine class and model you want.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-})
+Chapter:AddInstruction("Caption", {Text = "Select engines from the menu, then click on the drop downs to select the engine class and model you want."})
 
 Chapter:AddInstruction("PlacePanel", {
     Name = "MainMenuCPanel",
@@ -56,11 +48,7 @@ Chapter:AddDelay(1)
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "EngineList", OptionID = 7}):DelayByLength()
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Press Mouse1 (Left Click) to spawn an engine",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn an engine"}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "Engine1",
@@ -71,11 +59,7 @@ Chapter:AddInstruction("PlaceModel", {
 
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Engines provide power to move your tank.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Engines provide power to move your tank."}))
 
 local Chapter = Storyboard:Chapter("Engines Placement")
 Chapter:AddInstruction("Caption", {
@@ -87,11 +71,7 @@ Chapter:AddInstruction("Caption", {
     TextLength = 3,
 })
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Move them onto your baseplate with the driveshaft pointing towards the back.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Move them onto your baseplate with the driveshaft pointing towards the back."}))
 
 Chapter:AddInstruction("TransformModel", {
     Target = "Engine1",
@@ -109,17 +89,8 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Fuel Intro")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Engines reqiure a fuel tank to function.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
-
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Scroll to the fuel tank section and set a size (E.g. 72x24x24)",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Engines reqiure a fuel tank to function."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Scroll to the fuel tank section and set a size (E.g. 72x24x24)"}))
 
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.fuel.tank_info"}):DelayByLength()
 
@@ -131,11 +102,7 @@ Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderNam
 
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Press SHIFT + Mouse1 (Left Click) to spawn a fuel tank",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press SHIFT + Mouse1 (Left Click) to spawn a fuel tank"}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "FuelTank1",
@@ -153,18 +120,10 @@ Chapter:AddInstruction("PlaceModel", {
     Angles = Angle(0, 0, 0),
 }):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Fuel tanks store fuel based on their volume.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Fuel tanks store fuel based on their volume."}))
 
 local Chapter = Storyboard:Chapter("Fuel Placement")
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Move them onto your baseplate like so.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Move them onto your baseplate like so."}))
 
 Chapter:AddInstruction("TransformModel", {
     Target = "FuelTank1",
@@ -184,11 +143,7 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Gearbox Intro")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Next, Select gearboxes from the menu.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Next, Select gearboxes from the menu."}))
 
 Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.gearboxes"}):DelayByLength()
 
@@ -217,38 +172,18 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.scale", Value = 2}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Dual clutches allow you to break either side independently.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Dual clutches allow you to break either side independently."}))
 Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MainMenuCPanel", CheckBoxName = "#acf.menu.gearboxes.dual_clutch", Value = true}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Gearing roughly determines your preference for speed (towards 1) or torque (towards 10).",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Gear 2 is a gear used to reverse the tank. Usually torque is preferred.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gearing roughly determines your preference for speed (towards 1) or torque (towards 10)."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gear 2 is a gear used to reverse the tank. Usually torque is preferred."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = string.format(language.GetPhrase("#acf.menu.gearboxes.gear_number"), 2), Value = 2}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Final drive is a multiplier applied to all gears 'at the end' of the gearbox.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Final drive is a multiplier applied to all gears 'at the end' of the gearbox."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.final_drive", Value = 1}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Minimum and Maximum Target RPMs come from our engine specs.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Minimum and Maximum Target RPMs come from our engine specs."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.min_target_rpm", Value = 1250}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.max_target_rpm", Value = 1880}):DelayByLength()
 
@@ -277,11 +212,7 @@ Chapter:AddInstruction("Caption", {
     TextLength = 3,
 })
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Move it onto your baseplate like so, with the input shaft pointing towards the engine.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Move it onto your baseplate like so, with the input shaft pointing towards the engine."}))
 
 Chapter:AddInstruction("TransformModel", {
     Target = "Gearbox1",
@@ -292,9 +223,5 @@ Chapter:AddInstruction("TransformModel", {
 
 Chapter:AddDelay(1)
 Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 1}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "This tutorial continues in the 'Parenting & Linking' storyboard.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "This tutorial continues in the 'Parenting & Linking' storyboard."}))
 Chapter:RecommendStoryboard("acf.tankbasics.parenting_linking")

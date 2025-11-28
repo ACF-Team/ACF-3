@@ -57,21 +57,9 @@ Chapter:AddInstruction("PlaceModel", {
 
 local Chapter = Storyboard:Chapter("Parenting & Linking")
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.multi_parent.listname")}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "The Multi Parent tool can parent two entities together.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Parented entities will move and rotate together.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Parenting is considerably more optimized than constraints like welds, so use it whenever possible.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The Multi Parent tool can parent two entities together."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Parented entities will move and rotate together."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Parenting is considerably more optimized than constraints like welds, so use it whenever possible."}))
 
 local Chapter = Storyboard:Chapter("Parenting Menu")
 
@@ -107,17 +95,9 @@ Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MultiParentMenuCPanel", 
 Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MultiParentMenuCPanel", CheckBoxName = "#tool.multi_parent.weight", Value = false}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MultiParentMenuCPanel", CheckBoxName = "#tool.multi_parent.disableshadow", Value = false}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "It is highly recommended to use the settings shown here.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "It is highly recommended to use the settings shown here."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "!!!Make sure to have weld and nocollide disabled to keep your builds optimized.!!!",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "!!!Make sure to have weld and nocollide disabled to keep your builds optimized.!!!"}))
 
 Chapter:AddDelay(1)
 
@@ -125,11 +105,7 @@ Chapter:AddInstruction("RemovePanel", {Name = "MultiParentMenuCPanel"}):DelayByL
 
 local Chapter = Storyboard:Chapter("Parenting Usage")
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Left click all the entities except the baseplate, then right click the baseplate.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Left click all the entities except the baseplate, then right click the baseplate."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {
     Children = {"Engine1", "FuelTank1", "FuelTank2", "Gearbox1"},
@@ -141,11 +117,7 @@ Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "All entities are now parented to the baseplate.\nMoving or rotating the baseplate will also move and rotate the other entities.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "All entities are now parented to the baseplate.\nMoving or rotating the baseplate will also move and rotate the other entities."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Parenting Demonstration")
@@ -169,17 +141,9 @@ Chapter:AddDelay(1)
 
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "The ACF Menu tool can link ACF entities to other entities.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The ACF Menu tool can link ACF entities to other entities."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Right click the engine and right click the gearbox to link them together.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Right click the engine and right click the gearbox to link them together."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
     Children = {"Engine1"},
@@ -188,17 +152,9 @@ Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
     Length = 2,
 }))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Now the gearbox can receive power from the engine.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the gearbox can receive power from the engine."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Hold shift + right click on each fuel tank (multi select) and then right click the engine to link them together.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Hold shift + right click on each fuel tank (multi select) and then right click the engine to link them together."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
     Children = {"FuelTank1", "FuelTank2"},
@@ -207,16 +163,8 @@ Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
     Length = 3,
 }))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Now the engine can receive fuel from the fuel tanks.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the engine can receive fuel from the fuel tanks."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "If you look at the engine, you can see a visualization of all linked entities in your drivetrain.",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "If you look at the engine, you can see a visualization of all linked entities in your drivetrain."}))
 
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()

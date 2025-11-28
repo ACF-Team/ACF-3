@@ -36,8 +36,8 @@ InitializeCustomMenu.Length = 1
 function InitializeCustomMenu:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
     local Base = ACF.InitMenuBase(panel.CPanel)
-    panel.Base = Base
     self.CreateMenu(Base)
+    panel.Base = Base
 end
 
 --- Initializing a custom menu on a given CPanel
