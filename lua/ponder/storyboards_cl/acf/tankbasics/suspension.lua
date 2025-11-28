@@ -7,10 +7,6 @@ Storyboard:WithIndexOrder(97)
 
 -------------------------------------------------------------------------------------------------
 
-
-
--------------------------------------------------------------------------------------------------
-
 local Chapter = Storyboard:Chapter("Setup")
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -225, Distance = 2000}):DelayByLength()
 
@@ -26,7 +22,7 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
 }))
 
 local Chapter = Storyboard:Chapter("Adding Wheels")
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn out 6 wheels from the spawn menu.\nWe are using (models/xeon133/offroad/off-road-40.mdl) for this example."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn out 8 wheels from the spawn menu.\nWe are using (models/xeon133/offroad/off-road-40.mdl) for this example."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
     Length = 4,
@@ -88,3 +84,4 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select (in any order
 Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"LWheel1", "LWheel2", "LWheel3", "LWheel4", "RWheel1", "RWheel2", "RWheel3", "RWheel4"}}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Clear the drivetrain of any previously existing constraints for optimization."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press the create button once to create the suspension. Avoid doing this multiple times to prevent redundant constraints."}))
+Chapter:RecommendStoryboard("acf.tankbasics.turrets")

@@ -134,3 +134,4 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the engine can r
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "If you look at the engine, you can see a visualization of all linked entities in your drivetrain."}))
 
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:RecommendStoryboard("acf.tankbasics.suspension")
