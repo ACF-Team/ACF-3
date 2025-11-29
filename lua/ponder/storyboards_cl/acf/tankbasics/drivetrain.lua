@@ -188,11 +188,7 @@ Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderNam
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.max_target_rpm", Value = 1880}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Press Mouse1 (Left Click) to spawn a gearbox",
-    Horizontal = TEXT_ALIGN_CENTER,
-    Position = Vector(0.5, 0.15, 0),
-}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn a gearbox"}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "Gearbox1",

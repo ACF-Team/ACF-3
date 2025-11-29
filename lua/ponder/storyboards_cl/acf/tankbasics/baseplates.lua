@@ -37,15 +37,20 @@ local Chapter = Storyboard:Chapter("Options")
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
-    Text = "Scroll down and set the Length and Width to your desired size (recommended 192x96 for starters).",
+    Text = "Scroll down and set the Length and Width to your desired size. For this example, use 240x96x1.5.",
     TextLength = 3,
 })
 
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.baseplates.plate_thickness"}):DelayByLength()
 
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_length", Value = 192}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_length", Value = 240}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_width", Value = 96}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.baseplates.plate_thickness", Value = 1.5}):DelayByLength()
+
+Chapter:AddInstruction("Caption", {
+    Text = "Average tank baseplates are typically around 144x78x1.5. This depends on the size of your tank.",
+    TextLength = 3,
+})
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Spawning")
