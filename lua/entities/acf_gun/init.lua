@@ -312,6 +312,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
