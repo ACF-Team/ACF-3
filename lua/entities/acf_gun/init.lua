@@ -159,9 +159,9 @@ do -- Random timer crew stuff
 			for v, _ in pairs(Rotator:GetChildren()) do
 				if v.IsACFEntity then Filter[v] = true end
 			end
-			self.BarrelFilter = Filter
+			self.RotationFilter = Filter
 		else
-			self.BarrelFilter = { self }
+			self.RotationFilter = { [self] = true }
 		end
 	end
 
@@ -175,7 +175,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.BarrelFilter[x]) end
+		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
 		local tr = TraceLine(TraceConfig)
 
 		if tr.Hit then
