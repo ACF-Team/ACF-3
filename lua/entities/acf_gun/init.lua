@@ -167,6 +167,8 @@ do -- Random timer crew stuff
 
 	function ENT:CheckBreechClipping()
 		if not ACF.LegalChecks then return end
+		if self.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
+		if self.Weapon == "SL" then return end -- Skip for smoke launchers
 
 		local BreechRef = self.BreechReference
 		if not IsValid(BreechRef) then return false end
