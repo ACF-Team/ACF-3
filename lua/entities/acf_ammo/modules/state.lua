@@ -12,7 +12,7 @@ end
 function ENT:SetAmount(Amount)
 	local OldAmount = self.Amount or 0
 
-	-- Use base container logic, then mirror Amount to legacy Ammo field for gun compatibility
+	-- Use base container logic
 	self.BaseClass.SetAmount(self, Amount)
 	self.Ammo = self.Amount
 
@@ -21,7 +21,7 @@ function ENT:SetAmount(Amount)
 		self:EmitSound("acf_base/fx/resupply_single.mp3", 70, 100, 0.5)
 	end
 
-	-- Keep trace invisibility and network the change (buffered to avoid spam)
+	-- Keep trace invisibility and network the change
 	self.ACF_InvisibleToTrace = self.Amount <= 0
 
 	local ID = "ACF Ammo Buffer " .. self:EntIndex()
@@ -32,7 +32,6 @@ function ENT:SetAmount(Amount)
 		self:SetNWInt("Ammo", self.Amount)
 	end)
 end
-
 
 function ENT:Consume(Amount)
 	-- Default to consuming 1 round when Amount is unspecified (gun calls Crate:Consume())
@@ -47,8 +46,9 @@ function ENT:Consume(Amount)
 	local ID = "ACF Ammo Buffer " .. self:EntIndex()
 	if TimerExists(ID) then return end
 
-	TimerCreate(ID, 0, 1, function()
+	TimerCreate(ID, 0.25, 1, function()
 		if not IsValid(self) then return end
+
 		self:SetNWInt("Ammo", self.Amount)
 	end)
 end
