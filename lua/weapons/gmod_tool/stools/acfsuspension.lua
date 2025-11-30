@@ -71,28 +71,7 @@ if CLIENT then
 	local green = Color(0, 255, 0)
 	local black = Color(0, 0, 0)
 
-	TOOL.BuildCPanel = function(Panel)
-		local Menu = ACF.InitMenuBase(Panel, "SuspensionToolMenu", "acf_reload_suspension_menu")
-
-		-- Handles recreating the menu, useful if you change elements.
-		if not IsValid(Menu) then
-			Menu = vgui.Create("ACF_Panel")
-			Menu.Panel = Panel
-
-			Panel:AddItem(Menu)
-		else
-			Menu:ClearAllTemporal()
-			Menu:ClearAll()
-		end
-
-		local Reload = Menu:AddButton("Reload Menu")
-		Reload:SetTooltip("You can also type 'acf_reload_suspension_menu' in console.")
-		function Reload:DoClickInternal()
-			RunConsoleCommand("acf_reload_suspension_menu")
-		end
-
-		ACF.CreateSuspensionToolMenu(Menu)
-	end
+	TOOL.BuildCPanel = ACF.CreateSuspensionToolMenu
 
 	net.Receive("ACF_Sus_Tool", function()
 		local Player = LocalPlayer()

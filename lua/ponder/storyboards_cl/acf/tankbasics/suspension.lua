@@ -74,7 +74,7 @@ Chapter:AddInstruction("PlacePanel", {
     Length = 0.25,
 }):DelayByLength()
 Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "SuspensionMenuCPanel", Label = "ACF Menu"}):DelayByLength()
-Chapter:AddInstruction("ACF.InitializeCustomACFMenu", {Name = "SuspensionMenuCPanel", CreateMenu = ACF.CreateSuspensionToolMenu}):DelayByLength()
+Chapter:AddInstruction("ACF.InitializeCustomACFMenu", {Name = "SuspensionMenuCPanel", CreateMenu = ACF.CreateSuspensionToolMenuHeadless}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "We recommend beginners use rigid suspension, since it is the easiest and most optimized."}))
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "SuspensionMenuCPanel", ComboBoxName = "Spring Type", OptionID = 1}):DelayByLength()
 

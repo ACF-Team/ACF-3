@@ -7,18 +7,59 @@ Storyboard:WithIndexOrder(93)
 
 -------------------------------------------------------------------------------------------------
 
-local Chapter = Storyboard:Chapter("Armor Tool Menu")
-Chapter:AddInstruction("PlacePanel", {
-    Name = "SuspensionMenuCPanel",
-    Type = "DPanel",
-    Calls = {
-        {Method = "SetSize", Args = {300, 700}},
-        {Method = "SetPos", Args = {1500, 0}},
-        {Method = "CenterVertical", Args = {}},
-    },
-    Length = 0.25,
-}):DelayByLength()
-Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "SuspensionMenuCPanel", Label = "ACF Menu"}):DelayByLength()
-Chapter:AddInstruction("ACF.InitializeCustomMenu", {Name = "SuspensionMenuCPanel", BuildCPanel = ACF.CreateArmorPropertiesMenu}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "We recommend beginners use rigid suspension, since it is the easiest and most optimized."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "SuspensionMenuCPanel", ComboBoxName = "Spring Type", OptionID = 1}):DelayByLength()
+local Chapter = Storyboard:Chapter("Armor Intro")
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 0, Angle = 45, Distance = 2000}):DelayByLength()
+
+-- Setup fail test
+Chapter:AddInstruction("PlaceModel", {Name = "Gun1", IdentifyAs = "Cannon", Model = "models/tankgun_new/tankgun_100mm.mdl", Angles = Angle(0, 180, 0), Position = Vector(200, 0, 0), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("PlaceModel", {Name = "Ammo1", IdentifyAs = "Ammo", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 180, 0), Position = Vector(200, 0, -24), Scale = Vector(2, 2, 2), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("MaterialModel", {Target = "Ammo1", Material = "phoenix_storms/future_vents"})
+Chapter:AddInstruction("PlaceModel", {Name = "Crew1", IdentifyAs = "Crew", Model = "models/chairs_playerstart/standingpose.mdl", Angles = Angle(0, -90, 0), Position = Vector(-200, 0, -48), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("MaterialModel", {Target = "Crew1", Material = "sprops/trans/lights/light_plastic"})
+Chapter:AddInstruction("PlaceModel", {Name = "Shell1", IdentifyAs = "Cannon", Model = "models/munitions/round_100mm.mdl", Angles = Angle(-90, 0, 0), Position = Vector(200, 0, 0), ComeFrom = Vector(0, 0, 0)})
+
+-- Setup success test
+Chapter:AddInstruction("PlaceModel", {Name = "Gun2", IdentifyAs = "Cannon", Model = "models/tankgun_new/tankgun_100mm.mdl", Angles = Angle(0, 180, 0), Position = Vector(200, -100, 0), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("PlaceModel", {Name = "Ammo2", IdentifyAs = "Ammo", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, 180, 0), Position = Vector(200, -100, -24), Scale = Vector(2, 2, 2), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("MaterialModel", {Target = "Ammo2", Material = "phoenix_storms/future_vents"})
+Chapter:AddInstruction("PlaceModel", {Name = "Crew2", IdentifyAs = "Crew", Model = "models/chairs_playerstart/standingpose.mdl", Angles = Angle(0, -90, 0), Position = Vector(-200, -100, -48), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("MaterialModel", {Target = "Crew2", Material = "sprops/trans/lights/light_plastic"})
+Chapter:AddInstruction("PlaceModel", {Name = "Shell2", IdentifyAs = "Cannon", Model = "models/munitions/round_100mm.mdl", Angles = Angle(-90, 0, 0), Position = Vector(200, -100, 0), ComeFrom = Vector(0, 0, 0)})
+Chapter:AddInstruction("PlaceModel", {Name = "ArmorPlate2", IdentifyAs = "Armor Plate", Model = "models/hunter/plates/plate1x2.mdl", Angles = Angle(0, 90, 90), Position = Vector(-180, -100, 0), ComeFrom = Vector(0, 50, 0)})
+
+-- 
+
+Chapter:AddDelay(2)
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Armor can protect your vital components from damage."}))
+Chapter:AddDelay(2)
+
+Chapter:AddInstruction("PlaySound", {Sound = "acf_base/weapons/cannon_new.mp3"})
+Chapter:AddInstruction("SetSequence", {Name = "Gun1", Sequence = "shoot"})
+Chapter:AddInstruction("TransformModel", {Target = "Shell1", Position = Vector(-3800, 0, 0), Length = 1})
+
+Chapter:AddDelay(0.1)
+Chapter:AddInstruction("PlaySound", {Sound = "npc/zombie/zombie_voice_idle6.wav"})
+Chapter:AddInstruction("MaterialModel", {Target = "Crew1", Material = "models/flesh"})
+
+Chapter:AddDelay(2)
+
+Chapter:AddInstruction("PlaySound", {Sound = "acf_base/weapons/cannon_new.mp3"})
+Chapter:AddInstruction("SetSequence", {Name = "Gun2", Sequence = "shoot"})
+Chapter:AddInstruction("TransformModel", {Target = "Shell2", Position = Vector(-200, -100, 0), Length = 0.1})
+Chapter:AddDelay(0.1)
+Chapter:AddInstruction("RemoveModel", {Name = "Shell2"})
+
+-- Remove all models
+Chapter:AddDelay(1)
+Chapter:AddInstruction("RemoveModel", {Name = "Gun1"})
+Chapter:AddInstruction("RemoveModel", {Name = "Ammo1"})
+Chapter:AddInstruction("RemoveModel", {Name = "Crew1"})
+Chapter:AddInstruction("RemoveModel", {Name = "Gun2"})
+Chapter:AddInstruction("RemoveModel", {Name = "Ammo2"})
+Chapter:AddInstruction("RemoveModel", {Name = "Crew2"})
+Chapter:AddInstruction("RemoveModel", {Name = "ArmorPlate2"})
+Chapter:AddDelay(1)
+
+local Chapter = Storyboard:Chapter("Armor Angle")
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 0, Angle = 0, Distance = 2000}):DelayByLength()
+Chapter:AddDelay(1)
