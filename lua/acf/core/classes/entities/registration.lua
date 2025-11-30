@@ -149,6 +149,23 @@ function StringType.Validator(Ctx, Value)
 	return Value
 end
 
+function StringType.CreateMenuItem(ACF_Panel, Ctx, Text)
+	local TextBox = ACF_Panel:AddTextEntry(Text)
+	local VarName = Ctx.VarName
+
+	TextBox:SetClientData(VarName, "OnChange")
+	TextBox:DefineSetter(function(Panel, _, _, Value)
+		Panel:SetValue(Value)
+		if IsValid(ACF_Panel) then
+			ACF_Panel:SendUserVarChangedSignal(Panel, VarName, Value)
+		end
+
+		return Value
+	end)
+
+	return TextBox
+end
+
 local BooleanType = Entities.AddUserArgumentType("Boolean")
 function BooleanType.Validator(Ctx, Value)
 	local Specs = Ctx:GetSpecs()
