@@ -24,6 +24,7 @@ local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
 local TraceLine = util.TraceLine
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local Debug		 = ACF.Debug
 
 -- Helper functions
 local function UpdateTotalAmmo(Entity)
@@ -76,8 +77,8 @@ do -- Random timer crew stuff
 		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
-		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
-		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
+		Debug.Line(CrewPos, tr.HitPos, 1, Green, true)
+		Debug.Line(tr.HitPos, BreechPos, 1, Red, true)
 
 		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and tr.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
@@ -106,8 +107,8 @@ do -- Random timer crew stuff
 			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
-			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
-			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
+			Debug.Line(wp1, tr.HitPos, 1, Green, true)
+			Debug.Line(tr.HitPos, wp2, 1, Red, true)
 
 			-- Additional Randomized check just in case
 			local tr2
@@ -121,8 +122,8 @@ do -- Random timer crew stuff
 				TraceConfig.endpos = wrp2
 				tr2 = TraceLine(TraceConfig)
 
-				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
-				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
+				Debug.Line(wrp1, tr2.HitPos, 1, Green, true)
+				Debug.Line(tr2.HitPos, wrp2, 1, Red, true)
 			end
 
 			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
@@ -151,8 +152,23 @@ do -- Random timer crew stuff
 		return self.AccuracyCrewMod
 	end
 
+	function ENT:UpdateFilter()
+		local Rotator = self:GetParent().Rotator
+		local Filter = {}
+		if IsValid(Rotator) then
+			for v, _ in pairs(Rotator:GetChildren()) do
+				if v.IsACFEntity then Filter[v] = true end
+			end
+			self.RotationFilter = Filter
+		else
+			self.RotationFilter = { [self] = true }
+		end
+	end
+
 	function ENT:CheckBreechClipping()
 		if not ACF.LegalChecks then return end
+		if self.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
+		if self.Weapon == "SL" then return end -- Skip for smoke launchers
 
 		local BreechRef = self.BreechReference
 		if not IsValid(BreechRef) then return false end
@@ -161,7 +177,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
+		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
 		local tr = TraceLine(TraceConfig)
 
 		if tr.Hit then
@@ -171,7 +187,7 @@ do -- Random timer crew stuff
 			self.OverlayErrors.BreechClipping = nil
 		end
 
-		debugoverlay.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
+		Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
 	end
 end
 
@@ -296,6 +312,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
@@ -438,6 +455,7 @@ do -- Spawn and Update functions --------------------------------
 		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
