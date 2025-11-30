@@ -1,12 +1,15 @@
-local Clock = ACF.Utilities.Clock
+local Clock        = ACF.Utilities.Clock
+local Run          = hook.Run
+local TickCount    = engine.TickCount
+local TickInterval = engine.TickInterval
 
 -- This is weird, but in theory, we can get a pseudo-double-curtime with this, suitable for clock operations.
 -- I mean in theory, gpGlobals curtime is calculated this way... right?
 local function DoubleCurtime()
-	return engine.TickCount() * engine.TickInterval()
+	return TickCount() * TickInterval()
 end
 
-Clock.DeltaTime        = engine.TickInterval()
+Clock.DeltaTime        = TickInterval()
 Clock.CurTime          = CurTime()
 Clock.PreciseCurTime   = DoubleCurtime()
 
@@ -21,5 +24,5 @@ hook.Add("Think", "ACF Clock Update", function()
 	Clock.CurTime          = Now
 	Clock.PreciseCurTime   = DbNow
 
-	hook.Run("ACF_OnTick", New, Delta)
+	Run("ACF_OnTick", New, Delta)
 end)

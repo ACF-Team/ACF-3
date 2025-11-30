@@ -23,9 +23,18 @@ local function SendQueue()
 	end
 end
 
+local DoNotDebris = {
+	primitive_shape = true,
+	primitive_staircase = true,
+	primitive_ladder = true,
+	primitive_airfoil = true,
+	primitive_rail_slider = true
+}
+
 local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	if not ACF.GetServerBool("CreateDebris") then return end
 	if Queue[Entity] then return end
+	if DoNotDebris[Entity:GetClass()] then return end
 
 	if not next(Queue) then
 		timer.Create("ACF_DebrisQueue", 0, 1, SendQueue)
@@ -55,7 +64,7 @@ function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 		else
 			Ent:SetParent()
 
-			if Ent.IsExplosive and not Ent.Exploding then
+			if Ent.IsExplosive and not Ent.Exploding and not DoNotExplode then
 				Explosives[Ent] = true
 				Children[Ent] 	= nil
 			else
@@ -81,11 +90,10 @@ function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 	end
 
 	-- explode stuff last, so we don't re-process all that junk again in a new explosion
-	if next(Explosives) then
+	if not DoNotExplode and next(Explosives) then
 		for Ent in pairs(Explosives) do
 			Ent.Inflictor = Entity.Inflictor
-
-			Ent:Detonate(DoNotExplode)
+			Ent:Detonate()
 		end
 	end
 end

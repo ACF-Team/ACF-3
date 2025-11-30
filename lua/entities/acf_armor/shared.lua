@@ -2,8 +2,9 @@ DEFINE_BASECLASS("acf_base_scalable")
 
 ENT.PrintName     = "ACF Armor Plate"
 ENT.WireDebugName = "ACF Armor Plate"
-ENT.PluralName    = "ACF Armor Plate"
+ENT.PluralName    = "ACF Armor Plates"
 ENT.IsACFArmor    = true
+ENT.ACF_Limit     = 50
 ENT.ACF_PreventArmoring = false
 
 ENT.ACF_UserVars = {

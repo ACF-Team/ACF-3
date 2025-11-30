@@ -329,7 +329,7 @@ do
 		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
 		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
 		if Input == nil then
-			if InputEntity:GetClass() == "prop_physics" then
+			if InputEntity:GetClass() ~= "acf_gearbox" then
 				local Degrees = math.deg(math.acos((InputEntity:GetPos() - OP):GetNormalized():Dot(OutputWorldDir)))
 				return Degrees
 			else
@@ -1099,8 +1099,6 @@ do -- Reload related
 	--- @param BulletData table Bullet data
 	--- @param Override table Override data, either from an entity or a table
 	function ACF.CalcReloadTime(Caliber, Class, Weapon, BulletData, Override)
-		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
-
 		-- If the weapon has a cyclic rate, use it, otherwise calculate the reload time based on the bullet data
 		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		if Cyclic then return 60 / Cyclic, false end
@@ -1120,8 +1118,6 @@ do -- Reload related
 	--- @param BulletData table Bullet data
 	--- @param Override table Override data, either from an entity or a table
 	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
-		if BulletData.Type == "Refill" then return 1, false end -- None of the later calculations make sense if this is a refill
-
 		-- Use the override if possible
 		local MagSizeOverride = Override and Override.MagSize
 
@@ -1203,6 +1199,30 @@ do -- Reload related
 				end
 
 				return ACF_WirelibDetour_GetClosestRealVehicle(Vehicle, Position, Notify)
+			end
+		end
+
+		if SF then
+			local tool = weapons.GetStored("gmod_tool").Tool.starfall_component
+			if not ACF.Starfall_DetourComponentRightClick then
+				ACF.Starfall_DetourComponentRightClick = tool.RightClick
+			end
+
+			local ACF_Starfall_DetourComponentRightClick = ACF.Starfall_DetourComponentRightClick
+
+			function tool:RightClick(trace)
+				if not trace.HitPos or not (trace.Entity and trace.Entity:IsValid()) or trace.Entity:IsPlayer() then return false end
+				if CLIENT then return true end
+
+				local ent = trace.Entity
+				if self:GetStage() == 1 and self.Component:GetClass() == "starfall_hud" and ent.ACF and ent.ACF_GetSeatProxy then
+					self.Component:LinkVehicle(ent:ACF_GetSeatProxy())
+					self:SetStage(0)
+					SF.AddNotify(self:GetOwner(), "Linked to vehicle successfully.", "GENERIC" , 4, "DRIP2")
+					return true
+				end
+
+				return ACF_Starfall_DetourComponentRightClick(self, trace)
 			end
 		end
 	end)
@@ -1299,4 +1319,25 @@ function ACF.DuplexPairs(Table1, Table2)
 	end
 
 	return Enumerator, nil, nil
+end
+
+do
+	function ACF.NiceNumber(n)
+		local s = tostring(n)
+		local sign = ""
+
+		if n < 0 then
+			sign = "-"
+			s = s:sub(2)
+		end
+
+		-- Insert commas
+		local result = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+
+		if result:sub(1, 1) == "," then
+			result = result:sub(2)
+		end
+
+		return sign .. result
+	end
 end

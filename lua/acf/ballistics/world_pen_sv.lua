@@ -72,7 +72,7 @@ function Ballistics.DigTrace(From, To, Filter)
 
             return false
         else -- Penetration
-            return true, Back.HitPos
+            return true, Dig.StartPos
         end
     end
 end

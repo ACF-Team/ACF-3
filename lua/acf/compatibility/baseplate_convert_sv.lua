@@ -59,15 +59,16 @@ function ACF.ConvertEntityToBaseplate(Player, Target)
     local permutation = foundTranslation.permutation
     local w, l, t = BoxSize[permutation.x], BoxSize[permutation.y], BoxSize[permutation.z]
     Baseplate.Class = "acf_baseplate"
-    Baseplate.Length = w
-    Baseplate.Width = l
-    Baseplate.Thickness = t
+    Baseplate.ACF_UserData = Baseplate.ACF_UserData or {}
+    Baseplate.ACF_UserData.Length = w
+    Baseplate.ACF_UserData.Width = l
+    Baseplate.ACF_UserData.Thickness = t
     Baseplate.PhysicsObjects[0].Angle = Baseplate.PhysicsObjects[0].Angle + foundTranslation.addAngles
 
     -- Swap width/thickness if necessary
     if foundTranslation.addAngles.z == 90 then
-        Baseplate.Width = t
-        Baseplate.Thickness = l
+        Baseplate.ACF_UserData.Width = t
+        Baseplate.ACF_UserData.Thickness = l
     end
 
     -- Delete everything now

@@ -155,15 +155,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	function Gamemode:ACF_OnAmmoLast()
 	end
 
-	--- Called when an ammo crate attempts to replenish another one.
-	--- @param Refill entity The ammo crate that will be providing ammunition.
-	--- @param Crate entity The ammo crate that will get replenished.
-	--- @param Amount number The quantity of ammunition that will get replenished.
-	--- @return boolean # True if the crate can be replenished by the refill with the given amount, false otherwise.
-	function Gamemode:ACF_PreRefillAmmo()
-		return true
-	end
-
 	--- Called any time an ammo crate gets damaged and is about to start burning its ammunition.
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can start burning, false otherwise.
@@ -175,15 +166,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- @param Entity entity The affected ammo crate.
 	--- @return boolean # True if the ammo crate can explode, false otherwise.
 	function Gamemode:ACF_PreExplodeAmmo()
-		return true
-	end
-
-	--- Called when a fuel tank attempts to replenish another one.
-	--- @param Refill entity The tank that will be providing fuel.
-	--- @param FuelTank entity The tank that will be replenished.
-	--- @param Amount number The quantity of fuel that will get replenished.
-	--- @return boolean # True if the FuelTank can be replenished by the Refill with the given amount, false otherwise.
-	function Gamemode:ACF_PreRefillFuel()
 		return true
 	end
 

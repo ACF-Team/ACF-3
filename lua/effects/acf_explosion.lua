@@ -140,12 +140,12 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Smoke:SetDieTime(math.Rand(0.8, 1) * DietimeMod)
 			Smoke:SetStartAlpha(math.Rand(150, 200))
 			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize((80 + ScaleAdd * 0.3) * Radmod)
-			Smoke:SetEndSize((90 + ScaleAdd * 0.34) * Radmod)
+			Smoke:SetStartSize(((50 + (SmokeParts * 4)) + ScaleAdd * 0.3) * Radmod)
+			Smoke:SetEndSize(((85 + (SmokeParts * 4)) + ScaleAdd * 0.34) * Radmod)
 			Smoke:SetRoll(math.Rand(150, 360))
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
 			Smoke:SetAirResistance(14 * Radius)
-			Smoke:SetGravity(Vector(math.random(-2, 2) * Radius, math.random(-2, 2) * Radius, -math.random(50, 70) * Radius))
+			Smoke:SetGravity(Vector(math.random(-2, 2) * Radius, math.random(-2, 2) * Radius, (math.random(2, 5) + (SmokeParts * 1)) * Radius))
 			Smoke:SetColor(SmokeColor.r, SmokeColor.g, SmokeColor.b)
 		end
 	end

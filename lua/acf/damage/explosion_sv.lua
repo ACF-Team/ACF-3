@@ -3,6 +3,7 @@ local math         = math
 local util         = util
 local ACF          = ACF
 local Damage       = ACF.Damage
+local ModelData    = ACF.ModelData
 local Objects      = Damage.Objects
 local White        = Color(255, 255, 255)
 local Blue         = Color(0, 0, 255)
@@ -38,40 +39,35 @@ end
 -- @param Entity The entity to get a random position from.
 -- @param A world position based on the shape and size of the given entity.
 function Damage.getRandomPos(Entity)
-	local IsChar = Entity.ACF.Type == "Squishy"
+	local IsChar = EntACF and EntACF.Type == "Squishy"
 
 	if IsChar then
 		-- Scale down the "hitbox" since most of the character is in the middle
-		local Mins = Entity:OBBMins() * 0.65
-		local Maxs = Entity:OBBMaxs() * 0.65
+		local Mins, Maxs = Entity:GetCollisionBounds()
 		local X    = math.Rand(Mins[1], Maxs[1])
 		local Y    = math.Rand(Mins[2], Maxs[2])
 		local Z    = math.Rand(Mins[3], Maxs[3])
 
-		return Entity:LocalToWorld(Vector(X, Y, Z))
+		return Entity:LocalToWorld(Vector(X, Y, Z) * 0.65)
 	end
 
-	local PhysObj   = Entity:GetPhysicsObject()
-	local ValidPhys = IsValid(PhysObj)
-	local Mesh      = ValidPhys and PhysObj:GetMesh() or nil
+	if Entity._IsSpherical then
+		local Radius = Entity:BoundingRadius() * 0.5
 
-	if not Mesh then -- Spherical collisions
-		local Mins = Entity:OBBMins()
-		local Maxs = Entity:OBBMaxs()
-		local X    = math.Rand(Mins[1], Maxs[1])
-		local Y    = math.Rand(Mins[2], Maxs[2])
-		local Z    = math.Rand(Mins[3], Maxs[3])
-		local Rand = Vector(X, Y, Z)
-
-		-- Attempt to a random point in the sphere
-		return Entity:LocalToWorld(Rand:GetNormalized() * math.Rand(1, Entity:BoundingRadius() * 0.5))
+		return Entity:GetPos() + VectorRand() * math.Rand(1, Radius)
 	else
-		local Rand = math.random(3, #Mesh / 3) * 3
-		local P    = Vector()
+		local Model = Entity:GetModel()
+		local Scale = ModelData.GetEntityScale(Entity)
+		local Mesh  = ModelData.GetModelMesh(Model, Scale)
 
-		for I = Rand - 2, Rand do P = P + Mesh[I].pos end
+		local Hull     = Mesh[math.random(1, #Mesh)]
+		local TriCount = math.floor(#Hull / 3) -- Number of triangles in the hull
+		local TriIndex = math.random(0, TriCount - 1) -- Random triangle selection
+		local Base     = TriIndex * 3 + 1 -- Multiply back up to the real index
 
-		return Entity:LocalToWorld(P / 3) -- Attempt to hit a point on a face of the mesh
+		local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2] -- Get the three vertices of the triangle
+
+		return Entity:LocalToWorld((V1 + V2 + V3) / 3)
 	end
 end
 
@@ -158,7 +154,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
 					local AreaFraction  = Area / MaxSphere
 					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
-					local BlastResult, FragResult, Losses
+					local BlastResult, FragResult, Losses, Penetration
 
 					Debug.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
 
@@ -176,21 +172,24 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 						BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 						Losses      = BlastResult.Loss * 0.5
+						Penetration = BlastPen > EntArmor
 					end
 
 					do -- Fragment damage
 						local FragHit = math.floor(Fragments * AreaFraction)
 
 						if FragHit > 0 then
-							local Loss    = BaseFragV * Distance / Radius
-							local FragVel = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
-							local FragPen = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local FragDmg = Objects.DamageResult(FragArea, FragPen, EntArmor, nil, nil, Fragments)
+							local Loss      = BaseFragV * Distance / Radius
+							local FragVel   = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
+							local FragPen   = ACF.Penetration(FragVel, FragMass, FragCaliber)
+							local HitAngle  = ACF.GetHitAngle(Trace, Direction)
+							local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
 
 							DmgInfo:SetType(DMG_BULLET)
 
-							FragResult = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
-							Losses     = Losses + FragResult.Loss * 0.5
+							FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
+							Losses      = Losses + FragResult.Loss * 0.5
+							Penetration = Penetration or FragResult.Overkill > 0
 						end
 					end
 
@@ -218,8 +217,17 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 						end
 
 						Loop = true -- Check for new targets since something died, maybe we'll find something new
-					elseif ACF.HEPush then -- Just damaged, not killed, so push on it some
-						ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
+					else
+						if Penetration then
+							Filter[#Filter + 1] = HitEnt
+							Targets[HitEnt]     = nil
+
+							Loop = true
+						end
+
+						if ACF.HEPush then -- Just damaged, not killed, so push on it some
+							ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
+						end
 					end
 
 					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props

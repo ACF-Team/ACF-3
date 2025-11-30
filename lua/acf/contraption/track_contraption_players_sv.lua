@@ -51,6 +51,14 @@ hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function
     -- Reset the parent and child contraption states
     ResetContraptionTimes(ParentContraption)
     ResetContraptionTimes(ChildContraption)
+--[[
+    print("Parent: ")
+    print("    Table Address : " .. tostring(ParentContraption))
+    print("    Player Count  : " .. table.Count(ParentContraption.ACF_TrackPlayers))
+    print("Child: ")
+    print("    Table Address : " .. tostring(ChildContraption))
+    print("    Player Count  : " .. table.Count(ChildContraption.ACF_TrackPlayers))
+]]
 end)
 
 -- Engine hooks to track players entering vehicles
@@ -98,7 +106,7 @@ function ResetTime(Entity)
     QueryTimes[Entity] = nil
     Entity:RemoveCallOnRemove("ACF_CleanUpPlayerContraptionCheck")
 end
-
+--[[
 local Clock = ACF.Utilities.Clock
 
 local NO_CONTRAPTION          = 0
@@ -156,3 +164,4 @@ hook.Add("ACF_PreFireWeapon", "ACF_CheckPlayerContraptionLethals", function(Ent)
         return false
     end
 end)
+]]

@@ -7,9 +7,9 @@ do
 	-- Both combined should ensure that no matter where ACF.DefineSetting is called, it will be registered
 	-- (but for official addon stuff, we should just define it here)
 
-	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I 
-	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and 
-	-- globals is the first file that would load...  
+	-- It would be ideal if we could put this stuff somewhere else for organization's sake, but for that I
+	-- think we'd need to modify gloader, since iirc load order starts with Addon/core/[A-Z order] and
+	-- globals is the first file that would load...
 
 	ACF.__DefinedSettings = ACF.__DefinedSettings or {}
 
@@ -49,7 +49,7 @@ do
 		return ACF[Key], ACF.__DefinedSettings[Key]
 	end
 
-	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(), 
+	-- Returns the current settings table. Note that immediately upon the execution of ACF.DefineSetting(),
 	-- SettingData is set to a new table; this is meant to be used in a data callback context (to write things
 	-- like minimum and maximum values for the panel, for example)
 	function ACF.GetWorkingSetting()
@@ -236,13 +236,18 @@ do -- ACF global vars
 
 	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
 
+	-- Containers (Ammo, Fuel, Supply)
+	ACF.ContainerArmor       = 5 -- How many millimeters of armor all containers have
+	ACF.AmmoArmor            = ACF.ContainerArmor -- Backwards compatibility
+	ACF.FuelArmor            = ACF.ContainerArmor -- Backwards compatibility
+
 	-- Ammo
-	ACF.AmmoArmor            = 5 -- How many millimeters of armor ammo crates have
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
 	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
-	ACF.AmmoMaxSize          = 96 -- Defines the highest possible length of ammo crates for all their axises, in gmu
-	ACF.AmmoRefillColor      = Color(255, 255, 0, 10) -- The color to use for the ammo refill effect
+	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
+	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
+	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
 	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
 
@@ -293,6 +298,9 @@ do -- ACF global vars
 		acf_computer = true,
 		acf_radar = true,
 		acf_receiver = true,
+		acf_groundloader = true,
+		acf_supply = true,
+		acf_waterjet = true,
 		prop_physics = true,
 		prop_vehicle_prisoner_pod = true
 	}
@@ -302,18 +310,16 @@ do -- ACF global vars
 	ACF.GunInaccuracyScale   = 0.5 -- A multiplier for gun accuracy. Must be between 0.5 and 4
 	ACF.GunInaccuracyBias    = 2 -- Higher numbers make shots more likely to be inaccurate. Choose between 0.5 to 4. Default is 2 (unbiased).
 
-	-- Fuel/Refills
-	ACF.FuelMinSize        = 6 -- Defines the shortest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelMaxSize        = 96 -- Defines the highest possible length of fuel tanks for all their axises, in gmu
-	ACF.FuelArmor          = 1 -- How many millimeters of armor fuel tanks have
-	ACF.FuelRefillColor    = Color(76, 201, 250, 10) -- The color to use for the fuel refill effect
-	ACF.TankVolumeMul      = 1 -- Multiplier for fuel tank capacity, 1.0 is approx real world
+	-- Containers (Fuel/Supply)
+	ACF.ContainerMinSize   = 6 -- Defines the shortest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
+	ACF.ContainerMaxSize   = 96 -- Defines the highest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
+	ACF.FuelSupplyColor    = Color(76, 201, 250, 10) -- The color to use for the fuel supply effect
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
-	ACF.RefillDistance     = 300 -- Distance in which ammo crate starts refilling.
-	ACF.RefillSpeed        = 700 -- (ACF.RefillSpeed / RoundMass) / Distance
-	ACF.RefuelSpeed        = 20 -- Liters per second * ACF.FuelRate
+	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
+	ACF.SupplyMassRate     = 0.00009417 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
+	ACF.RefuelSpeed        = 700 -- Refueling speed for fuel tanks
 
-	-- Crew 
+	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
 	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
@@ -374,7 +380,6 @@ if SERVER then
 		if ACF.WorkshopContent then
 			resource.AddWorkshop("2183798463") -- Playermodel Seats
 			resource.AddWorkshop("3248769144") -- ACF-3 Base
-			resource.AddWorkshop("3248769787") -- ACF-3 Missiles
 		end
 
 		if ACF.WorkshopExtras then

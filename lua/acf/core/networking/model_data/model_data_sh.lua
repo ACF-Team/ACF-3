@@ -97,3 +97,15 @@ function ModelData.GetModelSize(Model, Scale)
 
 	return Data.Size * Scale
 end
+
+function ModelData.GetEntityScale(Entity)
+	if Entity.IsScalable and Entity.GetScale then
+		local Scale = Entity:GetScale()
+
+		if IsValidScale(Scale) then
+			return Scale
+		end
+	end
+
+	return Entity:GetModelScale()
+end

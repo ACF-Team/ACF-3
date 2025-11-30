@@ -24,6 +24,7 @@ local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
 local TraceLine = util.TraceLine
 local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local Debug		 = ACF.Debug
 
 -- Helper functions
 local function UpdateTotalAmmo(Entity)
@@ -76,8 +77,8 @@ do -- Random timer crew stuff
 		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
-		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
-		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
+		Debug.Line(CrewPos, tr.HitPos, 1, Green, true)
+		Debug.Line(tr.HitPos, BreechPos, 1, Red, true)
 
 		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and tr.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
@@ -106,8 +107,8 @@ do -- Random timer crew stuff
 			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
-			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
-			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
+			Debug.Line(wp1, tr.HitPos, 1, Green, true)
+			Debug.Line(tr.HitPos, wp2, 1, Red, true)
 
 			-- Additional Randomized check just in case
 			local tr2
@@ -121,8 +122,8 @@ do -- Random timer crew stuff
 				TraceConfig.endpos = wrp2
 				tr2 = TraceLine(TraceConfig)
 
-				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
-				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
+				Debug.Line(wrp1, tr2.HitPos, 1, Green, true)
+				Debug.Line(tr2.HitPos, wrp2, 1, Red, true)
 			end
 
 			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
@@ -149,6 +150,44 @@ do -- Random timer crew stuff
 
 		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
 		return self.AccuracyCrewMod
+	end
+
+	function ENT:UpdateFilter()
+		local Rotator = self:GetParent().Rotator
+		local Filter = {}
+		if IsValid(Rotator) then
+			for v, _ in pairs(Rotator:GetChildren()) do
+				if v.IsACFEntity then Filter[v] = true end
+			end
+			self.RotationFilter = Filter
+		else
+			self.RotationFilter = { [self] = true }
+		end
+	end
+
+	function ENT:CheckBreechClipping()
+		if not ACF.LegalChecks then return end
+		if self.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
+		if self.Weapon == "SL" then return end -- Skip for smoke launchers
+
+		local BreechRef = self.BreechReference
+		if not IsValid(BreechRef) then return false end
+		local ReferenceBreechPos = BreechRef:LocalToWorld(self.BreechLocalToRef)
+		local CurrentBreechPos = self:LocalToWorld(self.BreechPos)
+
+		TraceConfig.start = ReferenceBreechPos
+		TraceConfig.endpos = CurrentBreechPos
+		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
+		local tr = TraceLine(TraceConfig)
+
+		if tr.Hit then
+			self.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
+			self:Disable()
+		else
+			self.OverlayErrors.BreechClipping = nil
+		end
+
+		Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and Color(255, 0, 0) or Color(0, 255, 0), true)
 	end
 end
 
@@ -273,6 +312,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
@@ -414,6 +454,8 @@ do -- Spawn and Update functions --------------------------------
 
 		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
@@ -488,16 +530,19 @@ do -- Metamethods --------------------------------
 	local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 	-- Used to determine if a crate should be unlinked or not
-	local function CheckCrate(Gun, Crate, GunPos)
+	local function CheckCrate(Gun, Crate, GunPos, First)
 		local CrateUnlinked = false
 
 		if Crate:GetPos():DistToSqr(GunPos) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
+			if not First then
+				local Sound = UnlinkSound:format(math.random(1, 3))
 
-			Sounds.SendSound(Crate, Sound, 70, 100, 1)
-			Sounds.SendSound(Gun, Sound, 70, 100, 1)
+				Sounds.SendSound(Crate, Sound, 70, 100, 1)
+				Sounds.SendSound(Gun, Sound, 70, 100, 1)
+			end
 
-			CrateUnlinked = Gun:Unlink(Crate)
+			Gun:Unlink(Crate)
+			CrateUnlinked = true
 		end
 
 		return CrateUnlinked
@@ -507,13 +552,11 @@ do -- Metamethods --------------------------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
-		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
+		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
-			if Crate.IsRefill then return false, "Refill crates cannot be linked to weapons." end
 			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
-			if Crate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far away from this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
 
@@ -521,6 +564,17 @@ do -- Metamethods --------------------------------
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
+			return true
+		end)
+
+		ACF.RegisterClassLinkCheck("acf_gun", "acf_ammo", function(This, Crate, First)
+			if CheckCrate(This, Crate, This:GetPos(), First) then
+				return false, "This crate is too far away from this weapon."
+			end
+			return true
+		end)
+
+		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
 			This.Crates[Crate]  = true
 			Crate.Weapons[This] = true
 
@@ -620,6 +674,20 @@ do -- Metamethods --------------------------------
 			Entity.Cyclic     = math.Clamp(Value, 30, Entity.BaseCyclic)
 			Entity.ReloadTime = 60 / Entity.Cyclic
 		end)
+
+		-- Logging breech locations
+		function ENT:CFW_OnParentedTo(_, NewParent)
+			local Ref = NewParent
+			if not IsValid(Ref) then return end
+			if Ref:GetClass() == "acf_turret_rotator" then Ref = NewParent.Turret end
+
+			local MuzzlePos = self:GetAttachment(1).Pos
+			local Length = (self:OBBMaxs().x - self:OBBMins().x)
+			local BreechPos = MuzzlePos - self:GetForward() * Length
+			self.BreechReference = Ref
+			self.BreechLocalToRef = Ref:WorldToLocal(BreechPos)	-- Local Reference position of breech
+			self.BreechLocalToGun = self:WorldToLocal(BreechPos)	-- Local Current position of breech
+		end
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
@@ -728,6 +796,12 @@ do -- Metamethods --------------------------------
 			self:MuzzleEffect()
 			self:Recoil()
 
+			-- Mark contraption as in combat when firing
+			local Contraption = self:GetContraption()
+			if Contraption then
+				Contraption.InCombat = engine.TickCount()
+			end
+
 			local Energy = ACF.Kinetic(BulletData.MuzzleVel * ACF.MeterToInch, BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
@@ -805,7 +879,6 @@ do -- Metamethods --------------------------------
 					end
 				end
 			end
-
 			return Crate
 		end
 
