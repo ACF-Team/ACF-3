@@ -51,16 +51,13 @@ net.Receive( "ACF_RequestAmmoData", function()
 	entity.Spacing          = net.ReadFloat()
 	entity.MagSize          = net.ReadUInt( 10 )
 	entity.AmmoStage        = net.ReadUInt( 5 )
-	entity.IsBelted         = net.ReadBool() or false
+	entity.IsBelted         = net.ReadBool()
 
 	local hasCustomModel = net.ReadBool()
 
 	if hasCustomModel then
 		entity.RoundModel  = net.ReadString()
 		entity.RoundOffset = net.ReadVector()
-	else
-		entity.RoundModel  = nil
-		entity.RoundOffset = nil
 	end
 
 	-- Determine model path
@@ -105,9 +102,7 @@ net.Receive( "ACF_RequestAmmoData", function()
 
 	-- Cache calculated data for model creation
 	entity.CachedModelPath     = modelPath
-	entity.CachedModelScale    = modelScale
 	entity.CachedLocalAngle    = localAngle
-	entity.CachedHasCustom     = hasCustomModel
 	entity.CachedDefaultOffset = not hasCustomModel and Vector( entity.RoundSize.x * 0.5, 0, 0 ) or nil
 
 	-- Cache model scale matrix
@@ -125,9 +120,8 @@ net.Receive( "ACF_RequestAmmoData", function()
 
 	entity.CachedModelOffset = modelOffset
 
-	-- Cache crate dimensions and start position
+	-- Cache crate start position
 	local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize )
-	entity.CachedCrateDimensions = crateDimensions
 	entity.CachedLocalStartPos = Vector(
 		-crateDimensions.x * 0.5 + entity.RoundSize.x * 0.5,
 		-crateDimensions.y * 0.5 + entity.RoundSize.y * 0.5,
@@ -224,11 +218,13 @@ do -- Ammo overlay rendering
 		if not self.HasData then return end
 
 		-- Models don't exist yet - create table from scratch
+		local previous
 		if not self._RoundModels then
 			self._RoundModels = {}
+			previous = 0
+		else
+			previous = self.DisplayAmmo or 0
 		end
-
-		local previous = self.DisplayAmmo or 0
 		self.DisplayAmmo = count
 
 		-- No change
@@ -265,7 +261,7 @@ do -- Ammo overlay rendering
 			for y = 1, fits.y do
 				for z = 1, fits.z do
 					-- Only create models we don't have yet
-					if (previous == nil or index > previous) and index <= count then
+					if index > previous and index <= count then
 						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
 						local localModelPos = localStartPos + localGridPos + modelOffset
 
@@ -305,12 +301,6 @@ do -- Ammo overlay rendering
 				self:DrawModel()
 			end
 
-			return
-		end
-
-		-- This crate hasn't been looked at before: Request information about it
-		if not self.HasData then
-			self:RequestAmmoData()
 			return
 		end
 
