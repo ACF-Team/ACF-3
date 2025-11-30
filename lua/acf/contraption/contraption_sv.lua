@@ -1,4 +1,4 @@
--- Contraption-aware functionality
+	-- Contraption-aware functionality
 
 local ACF = ACF
 local Contraption = ACF.Contraption
