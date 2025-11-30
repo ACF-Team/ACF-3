@@ -159,14 +159,16 @@ do -- Random timer crew stuff
 			for v, _ in pairs(Rotator:GetChildren()) do
 				if v.IsACFEntity then Filter[v] = true end
 			end
-			self.BarrelFilter = Filter
+			self.RotationFilter = Filter
 		else
-			self.BarrelFilter = { self }
+			self.RotationFilter = { [self] = true }
 		end
 	end
 
 	function ENT:CheckBreechClipping()
 		if not ACF.LegalChecks then return end
+		if self.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
+		if self.Weapon == "SL" then return end -- Skip for smoke launchers
 
 		local BreechRef = self.BreechReference
 		if not IsValid(BreechRef) then return false end
@@ -175,7 +177,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.BarrelFilter[x]) end
+		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
 		local tr = TraceLine(TraceConfig)
 
 		if tr.Hit then
@@ -310,6 +312,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.WeaponData	= Data.WeaponData
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
+		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
 		Entity.MagSize      = math.floor(MagSize)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic

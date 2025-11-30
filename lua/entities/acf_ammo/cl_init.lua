@@ -19,12 +19,19 @@ local function updateAmmoCount( entity, ammo )
 		return
 	end
 
+	-- Avoid redundant GetNWInt call when ammo is already provided
+	local newAmmo = ammo or entity:GetNWInt( "Ammo", 0 )
+
+	-- Early-out if ammo hasn't changed
+	if entity.Ammo == newAmmo then return end
+
+	entity.Ammo = newAmmo
+
 	local maxDisplayRounds = math.max( 0, MaxRounds:GetInt() )
+	entity.TargetDisplayAmmo = math.min( newAmmo, maxDisplayRounds )
 
-	entity.Ammo = ammo or entity:GetNWInt( "Ammo", 0 )
-	local newDisplayAmmo = math.min( entity.Ammo, maxDisplayRounds )
-
-	entity:SetAmount( newDisplayAmmo )
+	-- Don't call SetAmount here - models are only created/updated in Draw()
+	-- when the player is actually looking at this crate
 end
 
 net.Receive( "ACF_RequestAmmoData", function()
@@ -44,16 +51,13 @@ net.Receive( "ACF_RequestAmmoData", function()
 	entity.Spacing          = net.ReadFloat()
 	entity.MagSize          = net.ReadUInt( 10 )
 	entity.AmmoStage        = net.ReadUInt( 5 )
-	entity.IsBelted         = net.ReadBool() or false
+	entity.IsBelted         = net.ReadBool()
 
 	local hasCustomModel = net.ReadBool()
 
 	if hasCustomModel then
 		entity.RoundModel  = net.ReadString()
 		entity.RoundOffset = net.ReadVector()
-	else
-		entity.RoundModel  = nil
-		entity.RoundOffset = nil
 	end
 
 	-- Determine model path
@@ -98,10 +102,31 @@ net.Receive( "ACF_RequestAmmoData", function()
 
 	-- Cache calculated data for model creation
 	entity.CachedModelPath     = modelPath
-	entity.CachedModelScale    = modelScale
 	entity.CachedLocalAngle    = localAngle
-	entity.CachedHasCustom     = hasCustomModel
 	entity.CachedDefaultOffset = not hasCustomModel and Vector( entity.RoundSize.x * 0.5, 0, 0 ) or nil
+
+	-- Cache model scale matrix
+	local scaleMatrix = Matrix()
+	scaleMatrix:SetScale( modelScale )
+	entity.CachedScaleMatrix = scaleMatrix
+
+	-- Cache model offset
+	local modelOffset = Vector( 0, 0, 0 )
+	if hasCustomModel and entity.RoundOffset then
+		modelOffset = entity.RoundOffset
+	elseif entity.CachedDefaultOffset then
+		modelOffset = -entity.CachedDefaultOffset
+	end
+
+	entity.CachedModelOffset = modelOffset
+
+	-- Cache crate start position
+	local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize )
+	entity.CachedLocalStartPos = Vector(
+		-crateDimensions.x * 0.5 + entity.RoundSize.x * 0.5,
+		-crateDimensions.y * 0.5 + entity.RoundSize.y * 0.5,
+		-crateDimensions.z * 0.5 + entity.RoundSize.z * 0.5
+	)
 
 	-- Clear existing models since data changed
 	if entity._RoundModels then
@@ -112,8 +137,9 @@ net.Receive( "ACF_RequestAmmoData", function()
 		end
 	end
 
-	entity._RoundModels = nil
-	entity.DisplayAmmo = nil
+	entity._RoundModels      = nil
+	entity.DisplayAmmo       = nil
+	entity.TargetDisplayAmmo = nil
 
 	if Queued[entity] then
 		Queued[entity] = nil
@@ -191,63 +217,42 @@ do -- Ammo overlay rendering
 	function ENT:SetAmount( count )
 		if not self.HasData then return end
 
-		-- Handle special case: initializing with 0 ammo
-		if count == 0 then
-			if not self._RoundModels then
-				self._RoundModels = {}
-			end
-			return
-		end
-
-		-- Models don't exist yet - create all from scratch
+		-- Models don't exist yet - create table from scratch
+		local previous
 		if not self._RoundModels then
 			self._RoundModels = {}
-			self.DisplayAmmo = 0
+			previous = 0
+		else
+			previous = self.DisplayAmmo or 0
 		end
-
-		local previous = self.DisplayAmmo
 		self.DisplayAmmo = count
 
 		-- No change
 		if count == previous then return end
 
-		-- Decrease: remove excess models
-		if previous ~= nil and count < previous then
+		-- Decrease: remove excess models (includes going to 0)
+		if count < previous then
 			local models = self._RoundModels
 			for i = previous, count + 1, -1 do
 				local m = models[i]
 				models[i] = nil
 				if IsValid( m ) then m:Remove() end
 			end
+
 			return
 		end
 
 		-- Increase: add new models from previous+1 to count
-		local modelPath      = self.CachedModelPath
-		local modelScale     = self.CachedModelScale
-		local localAngle     = self.CachedLocalAngle
-		local hasCustomModel = self.CachedHasCustom
-		local roundSize      = self.RoundSize
-		local fits           = self.ProjectileCounts
+		local modelPath     = self.CachedModelPath
+		local localAngle    = self.CachedLocalAngle
+		local roundSize     = self.RoundSize
+		local fits          = self.ProjectileCounts
+		local scaleMatrix   = self.CachedScaleMatrix
+		local modelOffset   = self.CachedModelOffset
+		local localStartPos = self.CachedLocalStartPos
 
-		local scaleMatrix = Matrix()
-		scaleMatrix:SetScale( modelScale )
-
+		-- WorldAngle must be recalculated as entity orientation can change
 		local worldAngle = self:LocalToWorldAngles( localAngle )
-
-		local modelOffset = Vector( 0, 0, 0 )
-		if hasCustomModel and self.RoundOffset then
-			modelOffset = self.RoundOffset
-		elseif self.CachedDefaultOffset then
-			modelOffset = -self.CachedDefaultOffset
-		end
-
-		local crateDimensions = ACF.GetCrateDimensions( fits, roundSize )
-		local localStartPos = Vector(
-			-crateDimensions.x * 0.5 + roundSize.x * 0.5,
-			-crateDimensions.y * 0.5 + roundSize.y * 0.5,
-			-crateDimensions.z * 0.5 + roundSize.z * 0.5
-		)
 
 		local models = self._RoundModels
 		local index = 1
@@ -256,7 +261,7 @@ do -- Ammo overlay rendering
 			for y = 1, fits.y do
 				for z = 1, fits.z do
 					-- Only create models we don't have yet
-					if (previous == nil or index > previous) and index <= count then
+					if index > previous and index <= count then
 						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
 						local localModelPos = localStartPos + localGridPos + modelOffset
 
@@ -284,7 +289,7 @@ do -- Ammo overlay rendering
 		if not IsValid( ply ) then return end
 
 		local looking          = ply:GetEyeTrace().Entity == self
-		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData and ( self.DisplayAmmo or 0 ) > 0
+		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData
 
 		-- Not looking at the crate or ammo drawing is disabled
 		if not canShowInternals then
@@ -299,12 +304,6 @@ do -- Ammo overlay rendering
 			return
 		end
 
-		-- This crate hasn't been looked at before: Request information about it
-		if not self.HasData then
-			self:RequestAmmoData()
-			return
-		end
-
 		-- Optional info bubble hiding
 		local hideInfo = ACF and ACF.HideInfoBubble
 		if not ( hideInfo and hideInfo() ) then
@@ -316,9 +315,10 @@ do -- Ammo overlay rendering
 			self:DrawEntityOutline()
 		end
 
-		-- Create models if needed
-		if not self._RoundModels then
-			self:SetAmount( self.DisplayAmmo )
+		-- Sync models with target ammo count (only when looking at crate)
+		local targetAmmo = self.TargetDisplayAmmo or 0
+		if self.DisplayAmmo ~= targetAmmo or not self._RoundModels then
+			self:SetAmount( targetAmmo )
 		end
 
 		-- Draw models
@@ -342,6 +342,7 @@ do -- Ammo overlay rendering
 	function ENT:OnResized( _ )
 		self.HasData = nil
 		self.DisplayAmmo = nil
+		self.TargetDisplayAmmo = nil
 
 		cleanupRoundModels(self)
 	end
