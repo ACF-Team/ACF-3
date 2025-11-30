@@ -1,3 +1,5 @@
+if true then return end
+
 local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "radars")
 Storyboard:WithName("Radars")
 Storyboard:WithModelIcon("models/radar/radar_sp_sml.mdl")

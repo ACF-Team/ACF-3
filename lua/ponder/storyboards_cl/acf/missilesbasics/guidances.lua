@@ -1,3 +1,5 @@
+if true then return end
+
 local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "guidances")
 Storyboard:WithName("Guidances")
 Storyboard:WithModelIcon("models/props_lab/monitor01b.mdl")

@@ -1,3 +1,5 @@
+if true then return end
+
 local Storyboard = Ponder.API.NewStoryboard("acf", "tankextras", "turret_extras")
 Storyboard:WithName("Turret Extras")
 Storyboard:WithBaseEntity(nil)

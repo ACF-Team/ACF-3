@@ -1,3 +1,5 @@
+if true then return end
+
 local Storyboard = Ponder.API.NewStoryboard("acf", "missilesbasics", "receivers")
 Storyboard:WithName("Receivers")
 Storyboard:WithModelIcon("models/bluemetaknight/laser_detector.mdl")
