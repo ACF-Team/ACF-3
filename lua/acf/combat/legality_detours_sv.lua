@@ -45,6 +45,16 @@ local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
 -- These names are... something... but I figure it's better we're explicit about functionality
 -- to make the detours easier to read. These are the methods to disable contraptions/families,
 -- based on a single entity or physics object.
+
+-- Because some entities don't have IsACFEntity, because this addon just loves to be confusing
+local ACF_Entities_That_Are_Stupidly_Inconsistent = {
+    ["acf_turret_rotator"] = true
+}
+local function IsACFEntity(Ent)
+    if ACF_Entities_That_Are_Stupidly_Inconsistent[Ent:GetClass()] then return true end
+    return Ent.IsACFEntity
+end
+
 local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     if PreCheck() then return true end
     if not IsValid(Ent) then return true end -- thanks setang steering
@@ -54,14 +64,14 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
     local Family = Ent:GetFamily()
 
     if not Family then
-        if Ent.IsACFEntity == true then
-            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+        if IsACFEntity(Ent) == true then
+            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
             return CalledOnCalleeOwned
         end
         return true
     end
 
-    if Ent.IsACFEntity then
+    if IsACFEntity(Ent) then
        DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
        return CalledOnCalleeOwned
     end
@@ -84,8 +94,8 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
     -- Allow the call on non-contraptions, unless they are ACF entities.
     -- So ACF entities/contraptions with ACF entities get blocked.
     if not Contraption then
-        if Ent.IsACFEntity == true then
-            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+        if IsACFEntity(Ent) == true then
+            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
             return false
         end
         return true
