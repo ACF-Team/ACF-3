@@ -91,7 +91,7 @@ local function CreateMenu(Menu)
 	local DefaultShape = ACF.GetClientData("FuelShape") or "Box"
 	ACF.SetClientData("FuelShape", DefaultShape, true)
 	FuelShape:ChooseOptionID(DefaultShape == "Sphere" and 2 or DefaultShape == "Cylinder" and 3 or 1)
-	timer.Simple(0, function() if IsValid(FuelShape) then FuelShape:OnSelect(nil, nil, DefaultShape) end end)-- Frown
+	timer.Simple(0, function() if IsValid(FuelShape) then FuelShape:OnSelect(nil, nil, DefaultShape) end end) -- Frown
 
 	local Min = ACF.ContainerMinSize
 	local Max = ACF.ContainerMaxSize

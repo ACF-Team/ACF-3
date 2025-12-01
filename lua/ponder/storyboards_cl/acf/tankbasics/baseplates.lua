@@ -10,7 +10,7 @@ local Chapter = Storyboard:Chapter("Selecting")
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("Caption", {
-    Text = "Start by selecting the acf menu tool, then in the menu, select baseplates.", 
+    Text = "Start by selecting the ACF Menu tool, then in the menu, select Baseplates.",
     Length = 3
 })
 
