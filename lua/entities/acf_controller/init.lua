@@ -552,6 +552,7 @@ do
 
 	--- Creates/Removes weld constraints from the Left/Right Wheels to baseplate or between them.
 	local function SetLatches(SelfTbl, Engage)
+		if SelfTbl:GetDisableWeldBrake() == 1 then return end
 		for Wheel in pairs(SelfTbl.Wheels) do
 			local AlreadyHasWeld = SelfTbl.ControllerWelds[Wheel]
 			if Engage and not AlreadyHasWeld then
@@ -716,7 +717,7 @@ do
 		else
 			-- Car steering
 			if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
-				SetAllBrakes(SelfTbl, BrakeStrength) SetAllClutches(SelfTbl, CLUTCH_BLOCK)
+				SetAllBrakes(SelfTbl, BrakeStrength) SetAllClutches(SelfTbl, CLUTCH_BLOCK) SetLatches(SelfTbl, true)
 				return
 			end
 
