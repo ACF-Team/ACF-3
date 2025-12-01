@@ -355,9 +355,6 @@ local function AddCrateInformation(Base, ToolData)
 		return CrateText:format(ACF.ContainerArmor, Mass, Rounds)
 	end)
 
-		-- Note about crate scaling behavior
-		Base:AddLabel("#acf.menu.ammo.crate_scaling")
-
 	if Ammo.OnCreateCrateInformation then
 		Ammo:OnCreateCrateInformation(Base, Crate, ToolData, BulletData)
 	end

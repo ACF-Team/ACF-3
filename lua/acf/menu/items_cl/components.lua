@@ -50,7 +50,7 @@ local function CreateMenu(Menu)
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
-		ComponentPreview:UpdateModel(Data.Model)
+		ComponentPreview:UpdateModel(Data.Model, Data.Material or "")
 		ComponentPreview:UpdateSettings(Data.Preview)
 
 		Menu:ClearTemporal(Base)
