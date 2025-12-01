@@ -64,8 +64,8 @@ do -- Clientside settings
 		local Ropes = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.rope_links")
 		Ropes:SetConVar("acf_mobilityropelinks")
 
-		local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
-		AdvShafts:SetConVar("acf_advancedmobilityropelinks")
+		-- local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
+		-- AdvShafts:SetConVar("acf_advancedmobilityropelinks")
 
 		local Particles = Base:AddSlider("#acf.menu.settings.effects_visual_elements.particle_mult", 0.1, 1, 2)
 		Particles:SetConVar("acf_cl_particlemul")
