@@ -155,10 +155,17 @@ do -- Random timer crew stuff
 	function ENT:UpdateFilter()
 		local Rotator = self:GetParent().Rotator
 		local Filter = {}
+
 		if IsValid(Rotator) then
-			for v, _ in pairs(Rotator:GetChildren()) do
-				if v.IsACFEntity then Filter[v] = true end
+			for K, V in pairs(Rotator:GetChildren()) do
+				local Child = isnumber(K) and V or K
+				if not IsValid(Child) then continue end
+
+				if Child.IsACFEntity then
+					Filter[Child] = true
+				end
 			end
+
 			self.RotationFilter = Filter
 		else
 			self.RotationFilter = { [self] = true }
