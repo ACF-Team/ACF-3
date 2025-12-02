@@ -1,8 +1,9 @@
 local ACF           = ACF
 local Utilities     = ACF.Utilities
+local Clock         = Utilities.Clock
+local Sounds        = Utilities.Sounds
 local ActiveCrates  = ACF.AmmoCrates or {}
 local ActiveTanks   = ACF.FuelTanks or {}
-local Clock         = Utilities.Clock
 local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
 local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
 
@@ -145,8 +146,7 @@ function ENT:Think()
 				Target:Consume(-Units)
 				RefilledAmmo = true
 
-				Sounds.SendSound(self, "items/ammo_pickup.wav", 70, 100, 0.5)
-				Sounds.SendSound(Target, "items/ammo_pickup.wav", 70, 100, 0.5)
+				Sounds.SendSound(self, "acf_base/fx/resupply_single.mp3", 70, 100, 0.5)
 
 				local TransferredMass = Units * UnitMass
 

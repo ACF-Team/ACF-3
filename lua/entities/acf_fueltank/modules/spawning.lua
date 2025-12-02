@@ -261,25 +261,27 @@ end
 
 
 do -- Overlay text
-	local Text = "%s\n\n%s\n%s"
+	local Text = "%s%s\n\nFuel Type: %s\n%s"
 
 	function ENT:UpdateOverlayText()
 		local Status = self:CanConsume() and "Active" or "Idle"
-		local Name = self.Name or "Fuel Tank"
-		local FuelAmount = math.Round(self.Amount, 0)
-		local FuelCapacity = math.Round(self.Capacity, 0)
+		local LeakStatus = self.Leaking > 0 and "Leaking\n" or ""
+		local FuelTypeID = self.FuelType
 
 		-- Use fuel type's overlay text if available
-		local FuelType = ACF.Classes.FuelTypes.Get(self.FuelType)
-		local FuelInfo
+		local FuelType = Classes.FuelTypes.Get(FuelTypeID)
+		local FuelInfo = ""
 
 		if FuelType and FuelType.FuelTankOverlayText then
 			FuelInfo = FuelType.FuelTankOverlayText(self.Amount)
 		else
+			local FuelAmount = math.Round(self.Amount, 2)
+			local FuelCapacity = math.Round(self.Capacity, 2)
+
 			FuelInfo = "Fuel: " .. FuelAmount .. " L / " .. FuelCapacity .. " L"
 		end
 
-		return Text:format(Status, Name, FuelInfo)
+		return Text:format(Status, LeakStatus, FuelTypeID, FuelInfo)
 	end
 end
 
