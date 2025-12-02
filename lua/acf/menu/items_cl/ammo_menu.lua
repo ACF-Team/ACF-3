@@ -90,8 +90,8 @@ local function CalculateMaxCount(Axis, CountY, CountZ, ToolData, BulletData)
 		end
 	end
 
-	-- Clamp to reasonable bounds
-	return math.max(1, math.min(MaxCount or 50, 50))
+	-- Ensure at least 1 round
+	return math.max(1, MaxCount)
 end
 
 -- Store references to the count sliders so we can update them
