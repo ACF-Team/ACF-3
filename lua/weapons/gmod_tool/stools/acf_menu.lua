@@ -7,28 +7,6 @@ if CLIENT then
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
-	function RenderContraption(Entity)
-		surface.SetDrawColor(0, 0, 0, 200)
-		surface.DrawRect( 100, 200, 400, 400 )
-
-		surface.SetTextColor(255, 255, 255, 255)
-		surface.SetFont("DermaLarge")
-		surface.SetTextPos( 110, 210 )
-		surface.DrawText("Baseplate: " .. tostring(Entity.BaseplateType))
-		surface.SetTextPos( 110, 240 )
-		surface.DrawText("Name: " .. tostring(Entity.Name))
-		surface.SetTextPos( 110, 270 )
-		surface.DrawText("Cost: " .. tostring(Entity.Cost))
-		surface.SetTextPos( 110, 300 )
-		surface.DrawText("Entity Count: " .. tostring(Entity.Count))
-		surface.SetTextPos( 110, 330 )
-		surface.DrawText("Total Mass: " .. tostring(Entity.TotalMass) .. " kg")
-		surface.SetTextPos( 110, 360 )
-		surface.DrawText("Max Pen: " .. tostring(Entity.MaxPen) .. " mm")
-		surface.SetTextPos( 110, 390 )
-		surface.DrawText("Max Nominal: " .. tostring(Entity.MaxNominal) .. " mm")
-	end
-
 	function TOOL:DrawHUD()
 		local Trace = LocalPlayer():GetEyeTrace()
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
@@ -42,8 +20,6 @@ if CLIENT then
 			net.SendToServer()
 			self.LastEntity = Entity
 		end
-
-		if Entity.Cost then RenderContraption(Entity) end
 
 		if not Entity.DrawOverlay then return end
 

@@ -12,13 +12,17 @@ hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraptio
 	local PhysObj = Entity:GetPhysicsObject()
 	Contraption.Cost = Contraption.Cost + 0.1 + (IsValid(PhysObj) and math.max(0.01, PhysObj:GetMass() / 500) or 0)
 
-	if Entity.IsACFEntity and Entity.IsACFAmmoCrate then
-		Contraption.AmmoTypes[Entity.AmmoType] = true
+	if Entity.IsACFEntity then
+		if Entity.IsACFAmmoCrate then
+			Contraption.AmmoTypes[Entity.AmmoType] = true
 
-		local Bullet  = Entity.BulletData
-		local Display = Entity.RoundData:GetDisplayData(Bullet)
-		local MaxPen  = math.Round(Display.MaxPen)
-		Contraption.MaxPen = math.max(Contraption.MaxPen or 0, MaxPen)
+			local Bullet  = Entity.BulletData
+			local Display = Entity.RoundData:GetDisplayData(Bullet)
+			local MaxPen  = math.Round(Display.MaxPen)
+			Contraption.MaxPen = math.max(Contraption.MaxPen or 0, MaxPen)
+		elseif Entity.IsACFEngine then
+			Contraption.HorsePower = (Contraption.HorsePower or 0) + Entity.PeakPower
+		end
 	end
 
 	if Entity.ACF then
@@ -48,6 +52,7 @@ if CLIENT then
 		Entity.TotalMass = net.ReadUInt(24)
 		Entity.MaxPen = net.ReadUInt(10)
 		Entity.MaxNominal = net.ReadUInt(10)
+		Entity.HorsePower = net.ReadUInt(10)
 		-- print("Received Data", Entity)
 	end)
 elseif SERVER then
@@ -72,6 +77,7 @@ elseif SERVER then
 		net.WriteUInt(Contraption.totalMass or 0, 24)
 		net.WriteUInt(Contraption.MaxPen or 0, 10)
 		net.WriteUInt(Contraption.MaxNominal or 0, 10)
+		net.WriteUInt(Contraption.HorsePower or 0, 10)
 		net.Send(Player)
 	end)
 end
