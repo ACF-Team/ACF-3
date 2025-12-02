@@ -1,4 +1,3 @@
-
 hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
 	print("cfw.contraption.created", Contraption)
 	Contraption.Cost = 0
@@ -41,43 +40,3 @@ end)
 hook.Add("cfw.contraption.removed", "ACF_CFW_CostTrack", function(Contraption)
 	print("cfw.contraption.removed", Contraption)
 end)
-
-if CLIENT then
-	net.Receive("ReqContraption", function()
-		local Entity = net.ReadEntity()
-		Entity.Name = net.ReadString()
-		Entity.BaseplateType = net.ReadString()
-		Entity.Cost = math.Round(net.ReadFloat(), 2)
-		Entity.Count = net.ReadUInt(9)
-		Entity.TotalMass = net.ReadUInt(24)
-		Entity.MaxPen = net.ReadUInt(10)
-		Entity.MaxNominal = net.ReadUInt(10)
-		Entity.HorsePower = net.ReadUInt(10)
-		-- print("Received Data", Entity)
-	end)
-elseif SERVER then
-	util.AddNetworkString( "ReqContraption" )
-
-	net.Receive("ReqContraption", function(Len, Player)
-		local Entity = net.ReadEntity()
-
-		if not IsValid(Entity) then return end
-		if not Entity.GetContraption then return end
-
-		local Contraption = Entity:GetContraption()
-
-		if not Contraption then return end
-
-		net.Start("ReqContraption")
-		net.WriteEntity(Entity)
-		net.WriteString(Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:ACF_GetUserVar("Name") or "Unknown")
-		net.WriteString(Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:ACF_GetUserVar("BaseplateType").ID or "Unknown")
-		net.WriteFloat(Contraption.Cost or 0)
-		net.WriteUInt(Contraption.count or 0, 9)
-		net.WriteUInt(Contraption.totalMass or 0, 24)
-		net.WriteUInt(Contraption.MaxPen or 0, 10)
-		net.WriteUInt(Contraption.MaxNominal or 0, 10)
-		net.WriteUInt(Contraption.HorsePower or 0, 10)
-		net.Send(Player)
-	end)
-end

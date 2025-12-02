@@ -12,15 +12,6 @@ if CLIENT then
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity
 
-		if not IsValid(Entity) then self.LastEntity = nil return end
-
-		if self.LastEntity ~= Entity then
-			net.Start("ReqContraption")
-			net.WriteEntity(Entity)
-			net.SendToServer()
-			self.LastEntity = Entity
-		end
-
 		if not Entity.DrawOverlay then return end
 
 		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
