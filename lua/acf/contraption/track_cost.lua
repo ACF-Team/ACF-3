@@ -3,8 +3,8 @@ hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
 	print("cfw.contraption.created", Contraption)
 	Contraption.Cost = 0
 	Contraption.AmmoTypes = {}
-	Contraption.MaxPenRound = 0
-	Contraption.MaxNominalArmor = 0
+	Contraption.MaxPen = 0
+	Contraption.MaxNominal = 0
 end)
 
 hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
@@ -14,7 +14,15 @@ hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraptio
 
 	if Entity.IsACFEntity and Entity.IsACFAmmoCrate then
 		Contraption.AmmoTypes[Entity.AmmoType] = true
-		-- Contraption.MaxPenRound = math.max(Contraption.MaxPenRound, Entity.AmmoData and Entity.AmmoData.MinPen or 0)
+
+		local Bullet  = Entity.BulletData
+		local Display = Entity.RoundData:GetDisplayData(Bullet)
+		local MaxPen  = math.Round(Display.MaxPen)
+		Contraption.MaxPen = math.max(Contraption.MaxPen or 0, MaxPen)
+	end
+
+	if Entity.ACF then
+		Contraption.MaxNominal = math.max(Contraption.MaxNominal or 0, math.Round(Entity.ACF.Armour or 0))
 	end
 end)
 
@@ -38,6 +46,8 @@ if CLIENT then
 		Entity.Cost = math.Round(net.ReadFloat(), 2)
 		Entity.Count = net.ReadUInt(9)
 		Entity.TotalMass = net.ReadUInt(24)
+		Entity.MaxPen = net.ReadUInt(10)
+		Entity.MaxNominal = net.ReadUInt(10)
 		-- print("Received Data", Entity)
 	end)
 elseif SERVER then
@@ -60,6 +70,8 @@ elseif SERVER then
 		net.WriteFloat(Contraption.Cost or 0)
 		net.WriteUInt(Contraption.count or 0, 9)
 		net.WriteUInt(Contraption.totalMass or 0, 24)
+		net.WriteUInt(Contraption.MaxPen or 0, 10)
+		net.WriteUInt(Contraption.MaxNominal or 0, 10)
 		net.Send(Player)
 	end)
 end

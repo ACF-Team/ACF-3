@@ -23,7 +23,10 @@ if CLIENT then
 		surface.DrawText("Entity Count: " .. tostring(Entity.Count))
 		surface.SetTextPos( 110, 330 )
 		surface.DrawText("Total Mass: " .. tostring(Entity.TotalMass) .. " kg")
-
+		surface.SetTextPos( 110, 360 )
+		surface.DrawText("Max Pen: " .. tostring(Entity.MaxPen) .. " mm")
+		surface.SetTextPos( 110, 390 )
+		surface.DrawText("Max Nominal: " .. tostring(Entity.MaxNominal) .. " mm")
 	end
 
 	function TOOL:DrawHUD()
