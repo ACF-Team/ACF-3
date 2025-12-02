@@ -278,7 +278,7 @@ do -- Overlay text
 			local FuelAmount = math.Round(self.Amount, 2)
 			local FuelCapacity = math.Round(self.Capacity, 2)
 
-			FuelInfo = "Fuel: " .. FuelAmount .. " L / " .. FuelCapacity .. " L"
+			FuelInfo = "Fuel: " .. FuelAmount .. " / " .. FuelCapacity .. " L"
 		end
 
 		return Text:format(Status, LeakStatus, FuelTypeID, FuelInfo)
