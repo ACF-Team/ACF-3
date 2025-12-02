@@ -127,14 +127,13 @@ do -- Local repository status checking
 end
 
 do -- Repository functions
-	function ACF.AddRepository(Owner, Name, File)
+	function ACF.AddRepository(Owner, Name)
 		if not isstring(Owner) then return end
 		if not isstring(Name) then return end
-		if not isstring(File) then return end
 		if Repos[Name] then return end
 
-		local DebugInfo = debug.getinfo( 2, "S" )
-		local AddonFolder = string.Split( DebugInfo.short_src, "/lua/" )[1]
+		local DebugInfo = debug.getinfo(2, "S")
+		local AddonFolder = string.Split(DebugInfo.short_src, "/lua/")[1]
 
 		Repos[Name] = {
 			[Realm] = {
@@ -166,7 +165,7 @@ do -- Repository functions
 		return Data and Data[Realm]
 	end
 
-	ACF.AddRepository("ACF-Team", "ACF-3", "lua/autorun/acf_loader.lua")
+	ACF.AddRepository("ACF-Team", "ACF-3")
 end
 
 do -- Branch functions
