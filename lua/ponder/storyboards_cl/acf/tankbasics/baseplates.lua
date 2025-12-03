@@ -140,7 +140,7 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Baseplate Seats (Wiremod)")
 Chapter:AddDelay(1)
 
-Chapter:AddInstruction("Caption", {Text = "(Optional) If you are familliar with Wiremod, you can link pod/cam/egp controllers by right click linking them to the baseplate with the wire tool."})
+Chapter:AddInstruction("Caption", {Text = "(Optional) If you are familiar with Wiremod, you can link Pod/Cam/EGP controllers by right click linking them to the baseplate with the wire tool."})
 
 -- Spawn in pod controller
 Chapter:AddInstruction("PlaceModel", {

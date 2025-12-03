@@ -64,7 +64,7 @@ Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(
 Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(-12, 48, 18), Rotation = Angle(0, 90, 0), Length = 1}):DelayByLength()
 Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(0, 48, 18), Rotation = Angle(0, 90, 0), Length = 1}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Here is how it looks from the sides"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Here is how it looks from the sides."}))
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 90, Height = 0}):DelayByLength()
 Chapter:AddDelay(1)
 Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = 0, Height = 0}):DelayByLength()

@@ -38,7 +38,7 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
     }
 }))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Make sure they are all parallel to the baseplate.\nIdeally use PA to align them properly, or physgun if you don't know PA yet."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Make sure they are all parallel to the baseplate.\nIdeally use Precision Alignment to align them properly, or the physics gun if you don't know Precision Alignment yet."}))
 
 local Chapter = Storyboard:Chapter("Linking Wheels")
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()

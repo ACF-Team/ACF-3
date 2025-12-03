@@ -63,7 +63,7 @@ Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MultiParentMenuCPanel", 
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "It is highly recommended to use the settings shown here."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "!!!Make sure to have weld and nocollide disabled to keep your builds optimized.!!!"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "IMPORTANT: Make sure to have weld and nocollide disabled to keep your builds optimized!"}))
 
 Chapter:AddDelay(1)
 

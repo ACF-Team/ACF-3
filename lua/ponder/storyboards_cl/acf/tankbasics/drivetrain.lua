@@ -2,7 +2,7 @@ local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "drivetrain")
 Storyboard:WithName("Drivetrains")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/engines/v12l.mdl")
-Storyboard:WithDescription("Learn how to make your tank move")
+Storyboard:WithDescription("Learn how to make your tank move.")
 Storyboard:WithIndexOrder(99)
 
 -------------------------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ Chapter:AddDelay(1)
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "EngineList", OptionID = 7}):DelayByLength()
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn an engine"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn an engine."}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "Engine1",
@@ -89,8 +89,8 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Fuel Intro")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Engines reqiure a fuel tank to function."}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Scroll to the fuel tank section and set a size (E.g. 72x24x24)"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Engines require a fuel tank to function."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Scroll to the Fuel Tank section and set a size (E.g. 72x24x24)"}))
 
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.fuel.tank_info"}):DelayByLength()
 
@@ -102,7 +102,7 @@ Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderNam
 
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press SHIFT + Mouse1 (Left Click) to spawn a fuel tank"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press SHIFT + Mouse1 (Left Click) to spawn a fuel tank."}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "FuelTank1",
@@ -143,7 +143,7 @@ Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Gearbox Intro")
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Next, Select gearboxes from the menu."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Next, select Gearboxes from the menu."}))
 
 Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.gearboxes"}):DelayByLength()
 
@@ -172,14 +172,14 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.scale", Value = 2}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Dual clutches allow you to break either side independently."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Dual clutches allow you to brake either side independently."}))
 Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MainMenuCPanel", CheckBoxName = "#acf.menu.gearboxes.dual_clutch", Value = true}):DelayByLength()
 
 Chapter:AddDelay(1)
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gearing roughly determines your preference for speed (towards 1) or torque (towards 10)."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gear 2 is a gear used to reverse the tank. Usually torque is preferred."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = string.format(language.GetPhrase("#acf.menu.gearboxes.gear_number"), 2), Value = 2}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Final drive is a multiplier applied to all gears 'at the end' of the gearbox."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Final Drive is a multiplier applied to all gears 'at the end' of the gearbox."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.final_drive", Value = 1}):DelayByLength()
 
 Chapter:AddDelay(1)
@@ -188,7 +188,7 @@ Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderNam
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.max_target_rpm", Value = 1880}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn a gearbox"}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn a gearbox."}))
 
 Chapter:AddInstruction("PlaceModel", {
     Name = "Gearbox1",

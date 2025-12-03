@@ -173,7 +173,7 @@ local Chapter = Storyboard:Chapter("Drivers")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Drivers affect the fuel consumption rate of your engines.\nLink and Parent them to your baseplate.\nThey can only be linked to one entity.",
+    Text = "Drivers affect the fuel consumption rate of your engines.\nLink and parent them to your baseplate.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -189,7 +189,7 @@ local Chapter = Storyboard:Chapter("Gunners")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Gunners affect the accuracy of your guns.\nLink and Parent them to your turret ring/baseplate, which ever the guns are located on.\nThey can only be linked to one entity.",
+    Text = "Gunners affect the accuracy of your guns.\nLink and parent them to your turret ring/baseplate, whichever the guns are located on.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
