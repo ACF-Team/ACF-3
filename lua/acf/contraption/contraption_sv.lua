@@ -150,7 +150,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
 	-- if DetachedPhysmassRatio == false
-	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
+	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do	
 		local Phys = K:GetPhysicsObject()
 
 		if not IsValid(Phys) then
@@ -234,6 +234,17 @@ function Contraption.CalcMassRatio(Ent, Tally)
 
 		return Power, Fuel, PhysN, ParN, ConN, IsValid(Owner) and Owner:Name() or "Unknown", OthN, TotMass, PhysMass
 	end
+end
+
+function Contraption.GetCostInfo(Ent)
+	local Contraption = Ent:GetContraption()
+
+	local Name = Contraption and Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:GetNWString("WireName") or "N/A"
+	local BaseplateType = Contraption and Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:ACF_GetUserVar("BaseplateType").Name or "N/A"
+	local Cost = Contraption and Contraption.Cost or 0
+	local AmmoTypes = Contraption and table.GetKeys(Contraption.AmmoTypes or {}) or {}
+	local MaxNominal = Contraption and Contraption.MaxNominal or 0
+	return Name, BaseplateType, Cost, AmmoTypes, MaxNominal
 end
 
 do -- ASSUMING DIRECT CONTROL
