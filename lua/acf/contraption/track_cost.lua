@@ -217,8 +217,13 @@ end)
 
 hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
 	-- print("cfw.contraption.entityAdded", Contraption, Entity)
-	Contraption.Cost = Contraption.Cost + ACF.RequisitionCosts.CalcCost(Entity)
-
+	local Class = Entity:GetClass()
+	if ACF.RequisitionCosts.CalcSingleFilter[Class] then
+		local Cost = ACF.RequisitionCosts.CalcCost(Entity)
+		Contraption.Cost = Contraption.Cost + Cost
+		Contraption.CostsByClass = Contraption.CostsByClass or {}
+		Contraption.CostsByClass[Entity:GetClass()] = (Contraption.CostsByClass[Entity:GetClass()] or 0) + Cost
+	end
 	if Entity.IsACFEntity then
 		if Entity.IsACFAmmoCrate then
 			Contraption.AmmoTypes[Entity.AmmoType] = true
