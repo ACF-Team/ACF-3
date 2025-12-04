@@ -11,6 +11,7 @@ timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
     local Weapon = LocalPlayer:GetActiveWeapon()
 
     -- Cancel out if invalid lookat entity.
+    local LastLookAt = RenderContext.LookAt
     local Lookat = LocalPlayer:GetEyeTrace().Entity
     if
         IsValid(Lookat) and
@@ -19,6 +20,10 @@ timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
         RenderContext.LookAt = Lookat
     else
         RenderContext.LookAt = nil
+    end
+
+    if LastLookAt ~= Lookat then
+        hook.Run("ACF_RenderContext_LookAtChanged", LastLookAt, Lookat)
     end
 
     local class                   = IsValid(Weapon) and Weapon:GetClass() or nil
