@@ -482,7 +482,7 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
+	local Text = "%s\n\nStorage:%sx%sx%s\nSize:%sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
 
 	function ENT:UpdateOverlayText()
@@ -503,6 +503,10 @@ do -- Overlay
 		local CountY = self.CrateProjectilesY or 1
 		local CountZ = self.CrateProjectilesZ or 1
 
+		local SizeX = math.Round(self.Size.x)
+		local SizeY = math.Round(self.Size.y)
+		local SizeZ = math.Round(self.Size.z)
+
 		local Projectile = math.Round(self.BulletData.ProjMass, 2)
 		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 
@@ -512,6 +516,6 @@ do -- Overlay
 			AmmoInfo = "\n\n" .. AmmoInfo
 		end
 
-		return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		return Text:format(Status, CountX, CountY, CountZ, SizeX, SizeY, SizeZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
 	end
 end
