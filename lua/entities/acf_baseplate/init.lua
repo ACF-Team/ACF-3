@@ -12,10 +12,10 @@ ACF.ActiveBaseplatesTable = ACF.ActiveBaseplatesTable or {}
 ACF.ActiveBaseplatesArray = ACF.ActiveBaseplatesArray or {}
 
 include("modules/crew.lua")
+include("modules/overlay.lua")
 include("modules/repulsion.lua")
 include("modules/seats.lua")
 include("modules/spawning.lua")
 include("modules/state.lua")
-include("modules/wiremod.lua")
 
 ACF.Classes.Entities.Register()

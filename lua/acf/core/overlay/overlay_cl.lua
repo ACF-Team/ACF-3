@@ -98,9 +98,6 @@ do
 
         local State = Target.ACF_OverlayState
         if not State then return end
-
-        -- print("ACF Overlay State")
-        -- PrintTable(State)
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)

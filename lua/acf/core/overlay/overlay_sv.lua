@@ -48,10 +48,9 @@ function Overlay.StartOverlay(Player, Entity)
     -- Allocate a fully zeroed out state
     local PlayerState = Overlay.GetPerPlayerPerEntityState(Player, Entity)
 
-    local OverlayState = Entity.ACF_OverlayState
-    if not OverlayState then
-        OverlayState = ACF.Overlay.State()
-        Entity.ACF_OverlayState = OverlayState
+    local OverlayState = Entity.GetOverlayState
+    if OverlayState then
+        OverlayState = OverlayState(Entity)
     end
 
     ACF.Overlay.UpdateOverlayForPlayer(Entity, Player, OverlayState, PlayerState, true)

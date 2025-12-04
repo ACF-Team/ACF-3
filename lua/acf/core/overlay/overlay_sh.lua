@@ -50,7 +50,7 @@ do
 
         local TypeChange = net.ReadBool()
         if TypeChange then
-            DeprivedSlot.Type = writer.ReadUInt(Overlay.ELEMENT_TYPE_BITS)
+            DeprivedSlot.Type = Reader.ReadUInt(Overlay.ELEMENT_TYPE_BITS)
         end
 
         local NetworkingNumData
@@ -406,7 +406,7 @@ do
             -- Copy varargs to data.
             Slot.NumData = select('#', ...)
             for I = 1, Slot.NumData do
-                Slot[I] = select(I, ...)
+                Slot.Data[I] = select(I, ...)
             end
         end
 
@@ -429,7 +429,15 @@ do
         -- Gets the element slot, accounting for NumElements.
         function State:GetElementSlot(Idx)
             if Idx > self.NumElements then return nil end
-            return self.Elements[Idx]
+            return self.ElementSlots[Idx]
+        end
+    end
+
+    -- Write existing macros.
+    for TypeName in pairs(Overlay.ElementTypes) do
+        -- Write a macro to the OverlayState class's metatable.
+        Overlay.State["Add" .. TypeName] = function(self, ...)
+            self:AddElement(TypeName, ...)
         end
     end
 end
