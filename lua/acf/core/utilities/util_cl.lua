@@ -684,6 +684,17 @@ do -- Default turret menus
 				TurretData.RingHeight	= TurretClass.GetRingHeight({Type = Data.ID, Ratio = Data.Size.Ratio}, N)
 				TurretData.MaxMass		= MaxMass
 
+				-- :( this addon is a prison
+				if Menu.ComponentPreview then
+					local RingHeight = TurretClass.GetRingHeight({Type = Data.ID, Ratio = Data.Size.Ratio}, N)
+
+					if Data.ID == "Turret-H" then
+						Menu.ComponentPreview:SetModelScale(Vector(N, N, RingHeight))
+					else
+						Menu.ComponentPreview:SetModelScale(N / 20)
+					end
+				end
+
 				EstDist:SetMinMax(0, math.max(N * 2, 24))
 				MaxSpeed:SetValue(0)
 

@@ -93,6 +93,7 @@ local function CreateMenu(Menu)
 
 	local Min = ACF.ContainerMinSize
 	local Max = ACF.ContainerMaxSize
+	local FuelPreview
 
 	-- Set default fuel tank size values before creating sliders to prevent nil value errors
 	local DefaultFuelSizeX = ACF.GetClientNumber("FuelSizeX", (Min + Max) / 2)
@@ -117,6 +118,11 @@ local function CreateMenu(Menu)
 		TankSize.x = X
 
 		FuelType:UpdateFuelText()
+
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize * 12)
+		end
+
 		UpdateSize()
 		return X
 	end)
@@ -131,6 +137,11 @@ local function CreateMenu(Menu)
 		TankSize.y = Y
 
 		FuelType:UpdateFuelText()
+
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize * 12)
+		end
+
 		UpdateSize()
 		return Y
 	end)
@@ -143,8 +154,14 @@ local function CreateMenu(Menu)
 		Panel:SetValue(Z)
 
 		TankSize.z = Z
+		print("TANKSIZE", TankSize)
 
 		FuelType:UpdateFuelText()
+
+		if FuelPreview then
+			FuelPreview:SetModelScale(TankSize * 12)
+		end
+
 		UpdateSize()
 		return Z
 	end)

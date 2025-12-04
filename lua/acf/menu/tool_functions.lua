@@ -611,7 +611,7 @@ do -- Ghost entity handling
 
 			HeightOffset.z = (Scale.z * ModelSize.z) / 2
 		end
-		print("scale set = " .. tostring(Scale) .. " with AbsoluteScale = " .. tostring(EntData.AbsoluteScale))
+		-- print("scale set = " .. tostring(Scale) .. " with AbsoluteScale = " .. tostring(EntData.AbsoluteScale))
 		--print(HeightOffset)
 		return HeightOffset, ModelSize, Scale
 	end
@@ -684,7 +684,7 @@ do -- Ghost entity handling
 				return
 			end
 
-			print("running update")
+			-- print("running update")
 			ModifyGhostEntity(ToolEnt.GhostEntity, EntKey)
 		end)
 	end

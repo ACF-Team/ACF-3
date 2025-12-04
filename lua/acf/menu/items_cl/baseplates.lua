@@ -25,7 +25,7 @@ local function CreateMenu(Menu)
 					    	Menu:AddSimpleClassUserVar(VerificationCtx, "",                                     "BaseplateType", "Name", "Icon")
 	local SizeX           = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_width",     "Width")
 	local SizeY           = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_length",    "Length")
-						    Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness", "Thickness")
+	local SizeZ			  = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness", "Thickness")
 						    Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",   "DisableAltE")
 	local GForceTicks     = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",    "GForceTicks")
 	local GForceTicksInfo = Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
@@ -33,6 +33,13 @@ local function CreateMenu(Menu)
 	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
 	local BaseplateName     = BaseplateBase:AddTitle()
 	local BaseplateDesc     = BaseplateBase:AddLabel()
+
+	local PreviewSettings = {
+		FOV = 120,
+		Height = 120,
+	}
+	local BaseplatePreview = BaseplateBase:AddModelPreview("models/holograms/cube.mdl", true, "Primary")
+	BaseplatePreview:UpdateSettings(PreviewSettings)
 
 	BaseplateName.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Name) end end
 	BaseplateDesc.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Description) end end
