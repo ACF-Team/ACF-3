@@ -37,11 +37,17 @@ end
 
 -- Rendering
 do
+    local Target
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
-
+        print(Target)
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
-        Overlay.StartOverlay(New, true)
+        if IsValid(New) then
+            Overlay.StartOverlay(New, true)
+        else
+            Overlay.EndOverlay(true)
+        end
+        Target = New
     end)
 end
