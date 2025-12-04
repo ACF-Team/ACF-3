@@ -8,7 +8,7 @@ local table_empty = {}
 -- todo: outfitter, fittr support?
 -- local MODEL_SOURCE_STANDARD = 0
 
-function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSkin)
+local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSkin)
 	local Selector = vgui.Create("DFrame")
 	Selector:SetSize(ScrW() / 2.25, ScrH() / 1.5)
 	Selector:MakePopup()
@@ -21,14 +21,14 @@ function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSki
 	Selector:SetIcon("icon16/user_suit.png")
 	Selector:SetTitle("ACF - Crew Playermodel Selector")
 
-	local Sheet = Selector:Add "DPropertySheet"
+	local Sheet = Selector:Add("DPropertySheet")
 	Sheet:Dock(FILL)
 
 	do
-		local PlayermodelsPanel = Sheet:Add "DPanel"
+		local PlayermodelsPanel = Sheet:Add("DPanel")
 		Sheet:AddSheet("Standard Playermodels", PlayermodelsPanel, "icon16/user.png")
 
-		local ModelView = PlayermodelsPanel:Add "DModelPanel"
+		local ModelView = PlayermodelsPanel:Add("DModelPanel")
 		ModelView:Dock(LEFT)
 		ModelView:SetSize(400, 0)
 		ModelView:SetFOV(36)
@@ -61,8 +61,8 @@ function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSki
 		ExtraModelInfo:Dock(BOTTOM)
 		ExtraModelInfo:SetSize(0, 150)
 
-		for name, model in SortedPairs( player_manager.AllValidModels() ) do
-			local Icon = vgui.Create "SpawnIcon"
+		for name, model in SortedPairs(player_manager.AllValidModels()) do
+			local Icon = vgui.Create("SpawnIcon")
 			Icon:SetModel(model)
 			Icon:SetSize(64, 64)
 			Icon:SetTooltip(name)

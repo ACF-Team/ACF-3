@@ -1,10 +1,18 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
-ENT.PrintName     = "ACF Armor"
-ENT.WireDebugName = "ACF Armor"
-ENT.PluralName    = "ACF Armor"
+ENT.PrintName     = "ACF Armor Plate"
+ENT.WireDebugName = "ACF Armor Plate"
+ENT.PluralName    = "ACF Armor Plates"
 ENT.IsACFArmor    = true
+ENT.ACF_Limit     = 50
 ENT.ACF_PreventArmoring = false
+
+ENT.ACF_UserVars = {
+    ["ArmorType"]  = {Type = "SimpleClass", ClassName = "ArmorTypes", Default = "RHA", ClientData = true},
+    ["Width"]      = {Type = "Number", Min = 0.25, Max = 420, Default = 24, Decimals = 2, ClientData = true},
+    ["Height"]     = {Type = "Number", Min = 0.25, Max = 420, Default = 24, Decimals = 2, ClientData = true},
+    ["Thickness"]  = {Type = "Number", Default = 5, Decimals = 0, ClientData = true},
+}
 
 cleanup.Register("acf_armor")
 

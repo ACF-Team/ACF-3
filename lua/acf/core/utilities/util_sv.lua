@@ -435,7 +435,8 @@ do -- Entity linking
 	--- @field ChipDelay number? The delay associated with the link if done via chip
 
 	--- @type table<string,table<string,LinkData>>
-	local ClassLink = { }
+	local ClassLink = ACF.ClassLinks or {}
+	ACF.ClassLinks = ClassLink
 
 	--- Initializes a link in the ClassLink table if it doesn't already exist and returns the result.
 	--- The Link is initialized directionally (InitLink(Class1,Class2) != InitLink(Class2,Class1))
@@ -448,7 +449,7 @@ do -- Entity linking
 		return ClassLink[Class1][Class2]
 	end
 
-	--- Attempts to retrieve link information from Class 1 to Class2, otherwise tries Class 2 to Class1. If link exists in either direction, return nil.
+	--- Attempts to retrieve link information from Class 1 to Class2, otherwise tries Class 2 to Class1. If link doesn't exist in either direction, return nil.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
 	--- @return LinkData? LinkData The returned link
@@ -459,13 +460,194 @@ do -- Entity linking
 		return nil, false
 	end
 
+	-- Trying to move the linking logic down here instead.
+	-- This also allows dual-direction link testing.
+	local ENTITY = FindMetaTable("Entity")
+
+	local LinkText   = "%s can't be linked to %s."
+	local UnlinkText = "%s can't be unlinked from %s."
+
+	local function ValidateSourceTarget(Source, Target)
+		if not IsValid(Source) then return false, "Attempted to link from an invalid entity." end
+		if not IsValid(Target) then return false, "Attempted to link to an invalid entity." end
+		if Source == Target then return false, "Can't link an entity to itself." end
+
+		local SourceClass, TargetClass = ENTITY.GetClass(Source), ENTITY.GetClass(Target)
+		local SourceToTarget = ClassLink[SourceClass] and ClassLink[SourceClass][TargetClass] or nil
+		local TargetToSource = ClassLink[TargetClass] and ClassLink[TargetClass][SourceClass] or nil
+
+		if not SourceToTarget and not TargetToSource then return false, "Links between these two entities are impossible" end
+
+		return true, nil, SourceToTarget, TargetToSource
+	end
+
+	local SUPPORT_BIDIRECTIONAL_LINKING = false -- Not really needed right now but in theory this flag would
+	-- allow bidirectional linking methods (ie. if acf_ammo -> acf_gun and acf_gun -> acf_ammo links exist,
+	-- then both methods could be called). The old way was to call the first one to exist - so we'll just
+	-- stick with that for now.
+
+	-- Returns:
+		-- 1. Should the caller continue.
+		-- 2. If not, what should the caller return as an error message.
+		-- 3. If the caller should continue, was the operation successful.
+		-- The reason 3 exists is because some methods (PreLinkCheck, Check) do not need to be available
+		-- and execution can continue if they aren't available. However, PerformClassLink needs to know
+		-- if a check function exists before calling StartWatchingLink
+	local function PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, Fn, ExpectFn, ...)
+		local SourceToTargetFn = SourceToTarget and SourceToTarget[Fn] or nil
+		local TargetToSourceFn = TargetToSource and TargetToSource[Fn] or nil
+
+		if not SourceToTargetFn and not TargetToSourceFn then
+			if not ExpectFn then
+				return true, nil, false
+			else
+				return false, ExpectFn:format(SourceClass, TargetClass)
+			end
+		end
+
+		local OK, Msg
+		if SourceToTargetFn then
+			OK, Msg = SourceToTargetFn(Source, Target, ...)
+			if not OK then return false, Msg end
+		end
+
+		if (SUPPORT_BIDIRECTIONAL_LINKING or not SourceToTargetFn) and TargetToSourceFn then
+			OK, Msg = TargetToSourceFn(Target, Source, ...)
+			if not OK then return false, Msg end
+		end
+
+		return true, Msg, true
+	end
+
+	local function WeakKeyLUT() return setmetatable({}, {__mode = 'k'}) end
+	local LinkWatchers = ACF.ClassLinkWatchers or WeakKeyLUT()
+	ACF.ClassLinkWatchers = LinkWatchers
+
+	function ACF.StartWatchingLink(Source, Target)
+		LinkWatchers[Source] = LinkWatchers[Source] or WeakKeyLUT()
+		LinkWatchers[Target] = LinkWatchers[Target] or WeakKeyLUT()
+		local Timer = ACF.AugmentedTimer(
+			function() ACF.PerformClassLinkCheck(Source, Target) end,
+			function() return IsValid(Source) and IsValid(Target) end,
+			function()
+				ACF.StopWatchingLink(Source, Target)
+			end,
+			{
+				MinTime = 0.75,
+				MaxTime = 2
+			}
+		)
+		LinkWatchers[Source][Target] = Timer
+		LinkWatchers[Target][Source] = Timer
+	end
+
+	function ACF.StopWatchingLink(Source, Target)
+		local SourceToTarget = LinkWatchers[Source]
+		if not SourceToTarget then return end
+
+		local TargetTimer = SourceToTarget[Target]
+		if not TargetTimer then return end
+		TargetTimer:Cancel(true)
+
+		if LinkWatchers[Source] then
+			LinkWatchers[Source][Target] = nil
+			if not next(LinkWatchers[Source]) then LinkWatchers[Source] = nil end
+		end
+		if LinkWatchers[Target] then
+			LinkWatchers[Target][Source] = nil
+			if not next(LinkWatchers[Target]) then LinkWatchers[Target] = nil end
+		end
+
+	end
+
+	--- Attempts to perform a link from Source -> Target, while calling one or more check validators/link functions on the
+	--- two types
+	--- @param Class1 Entity The source
+	--- @param Class2 Entity The target
+	--- @param FromChip boolean Was this link done by a chip (such as E2, Starfall)
+	--- @return boolean OK Was this link successful
+	--- @return Msg? Link message
+	function ACF.PerformClassLink(Source, Target, FromChip)
+		local OK, Msg, SourceToTarget, TargetToSource = ValidateSourceTarget(Source, Target)
+		if not OK then return false, Msg end
+
+		local HasCheck
+		OK, Msg, HasCheck = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check", nil, true)
+		if not OK then return false, Msg end
+
+		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "PreLinkCheck")
+		if not OK then return false, Msg end
+		if FromChip then
+			local Time = math.max(SourceToTarget.ChipDelay or 0, SourceToTarget.ChipDelay or 0)
+			if Time > 0 then
+				timer.Simple(Time, function() ACF.PerformClassLink(Source, Target, false) end)
+				return true
+			end
+		end
+
+		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Link", LinkText)
+		if not OK then return false, Msg end
+
+		if HasCheck then
+			ACF.StartWatchingLink(Source, Target)
+		end
+
+		return true, Msg
+	end
+
+	--- Attempts to perform an unlink from Source -> Target, while calling one or more check validators/unlink functions on the
+	--- two types
+	--- @param Class1 Entity The source
+	--- @param Class2 Entity The target
+	--- @return boolean OK Was this unlink successful
+	--- @return string? Msg Unlink message
+	function ACF.PerformClassUnlink(Source, Target)
+		local OK, Msg, SourceToTarget, TargetToSource = ValidateSourceTarget(Source, Target)
+		if not OK then return false, Msg end
+
+		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Unlink", UnlinkText)
+		if not OK then return false, Msg end
+
+		ACF.StopWatchingLink(Source, Target)
+
+		return true, Msg
+	end
+
+	--- Attempts to validate a link from Source -> Target, while calling one or more check validators functions on the
+	--- two types. If the link is not valid, the link is destroyed.
+	--- @param Class1 Entity The source
+	--- @param Class2 Entity The target
+	--- @return boolean OK Is this link still valid?
+	--- @return string? WhyNot Why is this link not valid? (nil if OK == true)
+	function ACF.PerformClassLinkCheck(Source, Target)
+		local OK, WhyNot, SourceToTarget, TargetToSource = ValidateSourceTarget(Source, Target)
+		if not OK then return false, WhyNot end
+
+		OK, WhyNot = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check")
+		if not OK then
+			ACF.PerformClassUnlink(Source, Target)
+			return false, WhyNot
+		end
+
+		return true
+	end
+
+	--- Adds a pre-link check. These are only used on the first check of the links validity - ie. "Is this entity already linked?"
+	--- @param Class1 string The first class in the link
+	--- @param Class2 string The other class in the link
+	--- @param PreLinkCheck LinkFunction The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
+	function ACF.RegisterClassPreLinkCheck(Class1, Class2, PreLinkCheck)
+		local LinkData = ACF.InitLink(Class1, Class2)
+		LinkData.PreLinkCheck = PreLinkCheck
+	end
+
 	--- Registers that two classes can be linked, as well as how to handle entities of their class being linked.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
 	--- @param Function LinkFunction The linking function defined between an entity of Class1 and an entity of Class2; this should always return a boolean for link status and a string for link message
 	function ACF.RegisterClassLink(Class1, Class2, Function)
 		local LinkData = ACF.InitLink(Class1, Class2)
-		LinkData.Link = Function
+		LinkData.Link         = Function
 	end
 
 	--- Registers that two classes can be unlinked, as well as how to handle entities of their class being unlinked.
@@ -477,11 +659,12 @@ do -- Entity linking
 		LinkData.Unlink = Function
 	end
 
-	--- Registers a validation check between two classes.
+	--- Registers a validation check between two classes. This function will run at a randomized interval continuously, as long as the link
+	--- is alive.
 	--- @param Class1 string The first class in the link
 	--- @param Class2 string The other class in the link
 	--- @param Function LinkFunction The checking function defined between an entity of Class1 and an entity of Class2
-	function ACF.RegisterClassCheck(Class1, Class2, Function)
+	function ACF.RegisterClassLinkCheck(Class1, Class2, Function)
 		local LinkData = ACF.InitLink(Class1, Class2)
 		LinkData.Check = Function
 	end
@@ -801,77 +984,41 @@ do
 		if Class == "prop_physics" then
 			local Gearboxes = Entity.ACF_Gearboxes
 			if Gearboxes == nil then return false end
-			if #Gearboxes < 0 then return false end
+			if not next(Gearboxes) then return false end
+			-- Ensure all gearboxes have no constraints on them and none are disabled by ACF
+			for Gearbox in pairs(Gearboxes) do
+				if Gearbox.Disabled then return false end
+				if constraint.HasConstraints(Gearbox) then return false end
+			end
 		end
 
 		return true
 	end
 end
 
--- Player damage hooks and functions
 do
-	local BlockDamageHook = false
-
-	hook.Add("EntityTakeDamage", "ACF_EntityTakeDamage_BlockDamageInBaseplateSeats", function(Target, _)
-		if BlockDamageHook then return end -- to avoid crashes/allow ACF to stop damage for a bit
-		if not Target:IsPlayer() then return end
-		if not Target:InVehicle() then return end
-
-		local Vehicle = Target:GetVehicle()
-		if not IsValid(Vehicle) then return end
-
-		local Contraption = Vehicle:GetContraption()
-		if not Contraption then return end
-
-		local Base = Contraption.Base
-		if IsValid(Base) and Base:GetClass() == "acf_baseplate" then
-			return true -- Block damage, because there's a contraption, with a baseplate, with the acf_baseplate class
-		end
-	end)
-
-	function ACF.KillPlayer(Victim, Attacker, Inflictor)
-		if not IsValid(Victim) then return end
-		if not Victim:IsPlayer() then return end
-
-		BlockDamageHook = true do
-			local DmgInfo = DamageInfo()
-			DmgInfo:SetDamage(Victim:Health())
-			DmgInfo:SetDamageType(DMG_GENERIC)
-			if IsValid(Attacker) then DmgInfo:SetAttacker(Attacker) end
-			if IsValid(Inflictor) then DmgInfo:SetInflictor(Inflictor) end
-			Victim:TakeDamageInfo(DmgInfo)
-		end BlockDamageHook = false
-
-		-- Last chance... if DmgInfo didn't work, just ensure the player died.
-		if Victim:Alive() then
-			Victim:Kill()
-		end
-	end
-	-- ACF.KillPlayer(Player(2), Player(3))
-end
-
--- Track ACF damage inflictors
-do
-	hook.Add("ACF_OnDamageEntity", "ACF_OnDamageEntity_TrackInflictorInfo", function(Entity, _, DmgInfo)
+	function ACF.GetEntityBaseplate(Entity)
 		local Contraption = Entity:GetContraption()
 		if not Contraption then return end
 
-		Contraption.ACF_LastDamageTime = CurTime()
-		Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
-		Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
-	end)
-
-	hook.Add("CanPlayerEnterVehicle", "ACF_CanPlayerEnterVehicle_BlockEnterVehicleOnDeadContraption", function(Player, Vehicle)
-		local Contraption = Vehicle:GetContraption()
-		if not Contraption then return end
-		local Now = CurTime()
-
-		if Contraption.ACF_AllCrewKilled then
-			if (Now - (Contraption.ACF_LastNotifyDeathTime or 0)) > 1 then
-				ACF.SendNotify(Player, false, "This contraption is no longer usable.")
-				Contraption.ACF_LastNotifyDeathTime = Now
-			end
-			return false
+		local Baseplate = Contraption.ACF_Baseplate
+		if IsValid(Baseplate) then
+			return Baseplate
 		end
-	end)
+
+		return NULL
+	end
+
+	function ACF.EnforceBaseplateType(Entity, AllowedType)
+		AllowedType = ACF.Classes.BaseplateTypes.Get(AllowedType)
+		local Baseplate = ACF.GetEntityBaseplate(Entity)
+		if IsValid(Baseplate) then
+			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+			if Type ~= AllowedType then
+				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("%s was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				Entity:Remove()
+				return
+			end
+		end
+	end
 end

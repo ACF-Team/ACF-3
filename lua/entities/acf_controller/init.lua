@@ -21,7 +21,6 @@ local Contraption = ACF.Contraption
 local hook	   = hook
 local Classes	= ACF.Classes
 local Entities   = Classes.Entities
-local CheckLegal = ACF.CheckLegal
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
 local TraceLine = util.TraceLine
@@ -30,6 +29,7 @@ util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
 util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
+util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -73,6 +73,7 @@ local Defaults = {
 	HUDColor = Vector(1, 0.5, 0),
 
 	BrakeStrength = 300,
+	SpeedTop = 60,
 
 	ShiftTime = 100,
 }
@@ -143,15 +144,13 @@ do
 
 		local PhysObj = Entity.ACF.PhysObj
 		if IsValid(PhysObj) then Contraption.SetMass(Entity, 1) end
-
-		Entity:UpdateOverlay(true)
 	end
 
 	function ACF.MakeController(Player, Pos, Ang, Data)
 		VerifyData(Data)
 
 		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreEntitySpawn", "acf_controller", Player, Data)
+		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
 		if CanSpawn == false then return false end
 
 		local Entity = ents.Create("acf_controller")
@@ -223,36 +222,29 @@ do
 
 		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
-		Entity.Owner = Player -- MUST be stored on ent for PP
 		Entity.DataStore = Entities.GetArguments("acf_controller")
 
 		UpdateController(Entity, Data)
 
 		-- Finish setting up the entity
-		hook.Run("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
+		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
 
 		WireIO.SetupInputs(Entity, Inputs, Data)
 		WireIO.SetupOutputs(Entity, Outputs, Data)
-
-		WireLib.TriggerOutput(Entity, "Entity", Entity)
-
-		Entity:UpdateOverlay(true)
-
-		CheckLegal(Entity)
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
 		return Entity
 	end
 
-	-- Bare minimum arguments to reconstruct an armor controller
+	-- Bare minimum arguments to reconstruct an all-in-one controller
 	Entities.Register("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
 		-- Called when updating the entity
 		VerifyData(Data)
 
-		local CanUpdate, Reason = HookRun("ACF_PreEntityUpdate", "acf_controller", self, Data)
+		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_controller", self, Data)
 		if CanUpdate == false then return CanUpdate, Reason end
 
 		HookRun("ACF_OnEntityLast", "acf_controller", self)
@@ -263,11 +255,9 @@ do
 
 		ACF.RestoreEntity(self)
 
-		HookRun("ACF_OnEntityUpdate", "acf_controller", self, Data)
+		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
 
-		self:UpdateOverlay(true)
-
-		return true, "Armor Controller updated successfully!"
+		return true, "All-In-One Controller updated successfully!"
 	end
 
 	local GearboxEndMap = {
@@ -302,6 +292,17 @@ do
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
+	end)
+
+	net.Receive("ACF_Controller_Zoom", function(_, ply)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local FOV = net.ReadFloat()
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		if Entity.Driver ~= ply then return end
+		if Entity:GetDisableAIOCam() then return end
+		Entity.FOV = FOV
+		ply:SetFOV(FOV, 0, nil)
 	end)
 
 	local CamTraceConfig = {}
@@ -388,7 +389,7 @@ do
 		local FuelLevel = 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
 		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Fuel end
+			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
 	end
@@ -462,8 +463,17 @@ do
 
 		if SelfTbl.TurretLocked then return end
 
+		local Primary = self.Primary
+		local ReloadAngle = self:GetReloadAngle()
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
 		for Turret, _ in pairs(Turrets) do
-			if IsValid(Turret) then Turret:InputDirection(HitPos) end
+			if IsValid(Turret) then
+				if ShouldLevel and Turret == Primary.BreechReference then
+					Turret:InputDirection(ReloadAngle)
+				else
+					Turret:InputDirection(HitPos)
+				end
+			end
 		end
 	end
 end
@@ -542,6 +552,7 @@ do
 
 	--- Creates/Removes weld constraints from the Left/Right Wheels to baseplate or between them.
 	local function SetLatches(SelfTbl, Engage)
+		if SelfTbl:GetDisableWeldBrake() == 1 then return end
 		for Wheel in pairs(SelfTbl.Wheels) do
 			local AlreadyHasWeld = SelfTbl.ControllerWelds[Wheel]
 			if Engage and not AlreadyHasWeld then
@@ -663,11 +674,15 @@ do
 		-- Only two transfer setups can reasonably be expected to neutral steer
 		local IsNeutral = not IsLateral and IsTurning
 		local CanNeutral = SelfTbl.GearboxEndCount == 2
-		local ShouldAWD = SelfTbl.GearboxEndCount > 2
+		local ShouldAWD = SelfTbl.GearboxEndCount > 2 or self:GetForceAWD()
 
 		-- Throttle the engines
 		local Engines = SelfTbl.Engines
-		for Engine in pairs(Engines) do Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0) end
+		for Engine in pairs(Engines) do
+			if IsValid(Engine) then
+				Engine:TriggerInput("Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0)
+			end
+		end
 
 		local MinSpeed, MaxSpeed = self:GetSpeedLow(), self:GetSpeedTop()
 		local MinBrake, MaxBrake = self:GetBrakeStrength(), self:GetBrakeStrengthTop()
@@ -748,8 +763,20 @@ do
 		if RPM > MinRPM then Gear = Gear + 1
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
-		local Lower = (S and SelfTbl.ForwardGearCount + 1) or 1
-		local Upper = (S and SelfTbl.TotalGearCount) or SelfTbl.ForwardGearCount
+		-- Clean this up later
+		local CanNeutral = SelfTbl.GearboxEndCount == 2
+		local Lower, Upper = 1, SelfTbl.ForwardGearCount
+		if CanNeutral then
+			Lower = 1
+			Upper = SelfTbl.ForwardGearCount
+		elseif S then
+			Lower = SelfTbl.ForwardGearCount + 1
+			Upper = SelfTbl.TotalGearCount
+		end
+
+		--Lower = (S and SelfTbl.ForwardGearCount + 1) or 1
+		--Upper = (S and SelfTbl.TotalGearCount) or SelfTbl.ForwardGearCount
+
 		Gear = math.Clamp(Gear, Lower, Upper)
 		if Gear ~= SelfTbl.Gearbox.Gear then
 			SelfTbl.Gearbox:TriggerInput("Gear", Gear)
@@ -760,7 +787,7 @@ do
 		if not IsValid(SteerPlate) then return end
 		table.insert(self.SteerPlatesSorted, SteerPlate)
 		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().x < B:GetPos().x
+			return A:GetPos().y > B:GetPos().y
 		end)
 	end
 end
@@ -788,6 +815,9 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
 	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
+
+	Controller.FOV = Controller.FOV or 90
+	Ply:SetFOV(Active and Controller.FOV or 0, 0, nil)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL

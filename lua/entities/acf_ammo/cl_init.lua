@@ -1,67 +1,163 @@
 local ACF       = ACF
-local MaxRounds = GetConVar("acf_maxroundsdisplay")
-local Refills   = ACF.Utilities.Effects.Refills
+local MaxRounds = GetConVar( "acf_maxroundsdisplay" )
 local Queued    = {}
 
-include("shared.lua")
+include( "shared.lua" )
 
-killicon.Add("acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor)
+killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 
-local function UpdateAmmoCount(Entity, Ammo)
-	if not IsValid(Entity) then return end
-	if not Entity.HasData then
-		if Entity.HasData == nil then
-			Entity:RequestAmmoData()
+
+local function updateAmmoCount( entity, ammo )
+	if not IsValid( entity ) then return end
+	-- Networking fail - is there a better way to handle this...
+	if entity:GetClass() ~= "acf_ammo" then return end
+	if not entity.HasData then
+		if entity.HasData == nil then
+			entity:RequestAmmoData()
 		end
 
 		return
 	end
 
-	local MaxDisplayRounds = MaxRounds:GetInt()
+	-- Avoid redundant GetNWInt call when ammo is already provided
+	local newAmmo = ammo or entity:GetNWInt( "Ammo", 0 )
 
-	Entity.Ammo = Ammo or Entity:GetNWInt("Ammo", 0)
-	Entity.FinalAmmo = Entity.HasBoxedAmmo and math.floor(Entity.Ammo / Entity.MagSize) or Entity.Ammo
-	Entity.BulkDisplay = Entity.FinalAmmo > MaxDisplayRounds
+	-- Early-out if ammo hasn't changed
+	if entity.Ammo == newAmmo then return end
+
+	entity.Ammo = newAmmo
+
+	local maxDisplayRounds = math.max( 0, MaxRounds:GetInt() )
+	entity.TargetDisplayAmmo = math.min( newAmmo, maxDisplayRounds )
+
+	-- Don't call SetAmount here - models are only created/updated in Draw()
+	-- when the player is actually looking at this crate
 end
 
-net.Receive("ACF_RequestAmmoData", function()
-	local Entity = net.ReadEntity()
-	local Data = util.JSONToTable(net.ReadString())
+net.Receive( "ACF_RequestAmmoData", function()
+	local entity = net.ReadEntity()
+	if not IsValid( entity ) then return end
 
-	if not IsValid(Entity) then return end
+	entity.HasData = net.ReadBool()
 
-	Entity.HasData = Data.Enabled
+	if not entity.HasData then return end
 
-	if Data.Enabled then
-		Entity.Capacity = Data.Capacity
-		Entity.IsRound = Data.IsRound
-		Entity.RoundSize = Data.RoundSize
-		Entity.LocalAng = Data.LocalAng
-		Entity.FitPerAxis = Data.FitPerAxis
-		Entity.Spacing = Data.Spacing
-		Entity.MagSize = Data.MagSize
-		Entity.HasBoxedAmmo = Data.IsBoxed
-		Entity.AmmoStage = Data.AmmoStage
-		Entity.IsBelted = Data.IsBelted or false
+	-- Read network data
+	entity.Capacity         = net.ReadUInt( 25 )
+	entity.IsRound          = net.ReadBool()
+	entity.RoundSize        = net.ReadVector()
+	entity.LocalAng         = net.ReadAngle()
+	entity.ProjectileCounts = net.ReadVector()
+	entity.Spacing          = net.ReadFloat()
+	entity.MagSize          = net.ReadUInt( 10 )
+	entity.AmmoStage        = net.ReadUInt( 5 )
+	entity.IsBelted         = net.ReadBool()
+
+	local hasCustomModel = net.ReadBool()
+
+	if hasCustomModel then
+		entity.RoundModel  = net.ReadString()
+		entity.RoundOffset = net.ReadVector()
 	end
 
-	if Queued[Entity] then
-		Queued[Entity] = nil
+	-- Determine model path
+	local modelPath = entity.RoundModel
+
+	if not modelPath then
+		modelPath = "models/munitions/round_100mm.mdl"
+
+		if entity.BulletData and entity.BulletData.Type then
+			local ammoType = ACF.Classes.AmmoTypes.Get( entity.BulletData.Type )
+			if ammoType and ammoType.Model then
+				modelPath = ammoType.Model
+			end
+		end
 	end
 
-	UpdateAmmoCount(Entity)
-end)
+	-- Calculate model scale
+	local modelSize  = ACF.ModelData.GetModelSize( modelPath )
+	local modelScale = Vector( 1, 1, 1 )
+
+	if modelSize then
+		if hasCustomModel then
+			modelScale = Vector(
+				entity.RoundSize.x / modelSize.x,
+				entity.RoundSize.y / modelSize.y,
+				entity.RoundSize.z / modelSize.z
+			)
+		else
+			modelScale = Vector(
+				entity.RoundSize.y / modelSize.x,
+				entity.RoundSize.z / modelSize.y,
+				entity.RoundSize.x / modelSize.z
+			)
+		end
+	end
+
+	-- Calculate projectile angle
+	local localAngle = Angle( entity.LocalAng )
+	if not hasCustomModel then
+		localAngle:RotateAroundAxis( entity.LocalAng:Right(), -90 )
+	end
+
+	-- Cache calculated data for model creation
+	entity.CachedModelPath     = modelPath
+	entity.CachedLocalAngle    = localAngle
+	entity.CachedDefaultOffset = not hasCustomModel and Vector( entity.RoundSize.x * 0.5, 0, 0 ) or nil
+
+	-- Cache model scale matrix
+	local scaleMatrix = Matrix()
+	scaleMatrix:SetScale( modelScale )
+	entity.CachedScaleMatrix = scaleMatrix
+
+	-- Cache model offset
+	local modelOffset = Vector( 0, 0, 0 )
+	if hasCustomModel and entity.RoundOffset then
+		modelOffset = entity.RoundOffset
+	elseif entity.CachedDefaultOffset then
+		modelOffset = -entity.CachedDefaultOffset
+	end
+
+	entity.CachedModelOffset = modelOffset
+
+	-- Cache crate start position
+	local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize )
+	entity.CachedLocalStartPos = Vector(
+		-crateDimensions.x * 0.5 + entity.RoundSize.x * 0.5,
+		-crateDimensions.y * 0.5 + entity.RoundSize.y * 0.5,
+		-crateDimensions.z * 0.5 + entity.RoundSize.z * 0.5
+	)
+
+	-- Clear existing models since data changed
+	if entity._RoundModels then
+		for _, model in pairs( entity._RoundModels ) do
+			if IsValid( model ) then
+				model:Remove()
+			end
+		end
+	end
+
+	entity._RoundModels      = nil
+	entity.DisplayAmmo       = nil
+	entity.TargetDisplayAmmo = nil
+
+	if Queued[entity] then
+		Queued[entity] = nil
+	end
+
+	updateAmmoCount( entity )
+end )
 
 function ENT:Initialize()
-	self:SetNWVarProxy("Ammo", function(_, _, _, Ammo)
-		UpdateAmmoCount(self, Ammo)
-	end)
+	self:SetNWVarProxy( "Ammo", function( _, _, _, ammo )
+		updateAmmoCount( self, ammo )
+	end )
 
-	cvars.AddChangeCallback("acf_maxroundsdisplay", function()
-		UpdateAmmoCount(self)
-	end, "Ammo Crate " .. self:EntIndex())
+	cvars.AddChangeCallback( "acf_maxroundsdisplay", function()
+		updateAmmoCount( self )
+	end, "Ammo Crate " .. self:EntIndex() )
 
-	self.BaseClass.Initialize(self)
+	self.BaseClass.Initialize( self )
 end
 
 function ENT:RequestAmmoData()
@@ -69,113 +165,231 @@ function ENT:RequestAmmoData()
 
 	Queued[self] = true
 
-	net.Start("ACF_RequestAmmoData")
-		net.WriteEntity(self)
+	net.Start( "ACF_RequestAmmoData" )
+		net.WriteEntity( self )
 	net.SendToServer()
-end
-
-function ENT:OnResized(Size)
-	self.HitBoxes = {
-		Main = {
-			Pos = self:OBBCenter(),
-			Scale = Size,
-			Angle = Angle(),
-			Sensitive = false
-		}
-	}
-
-	self.HasData = nil
 end
 
 function ENT:OnFullUpdate()
-	net.Start("ACF_RequestAmmoData")
-		net.WriteEntity(self)
+	net.Start( "ACF_RequestAmmoData" )
+		net.WriteEntity( self )
 	net.SendToServer()
 end
 
-function ENT:OnRemove()
-	Refills[self] = nil
+do -- Ammo overlay rendering
+	local drawBoxes   = GetConVar( "acf_drawboxes" )
+	local wireOutline = GetConVar( "wire_drawoutline" )
 
-	cvars.RemoveChangeCallback("acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex())
-end
+	-- Hexagonal packing constants
+	local HEX_SPACING_FACTOR = 0.866 -- sqrt(3)/2 for hexagonal packing
+	local HEX_OFFSET_FACTOR  = 0.5
 
-do -- Ammo overlay
-	local DrawBoxes = GetConVar("acf_drawboxes")
+	local function getLocalPosition( x, y, z, roundSize, fits )
+		local useLinearPacking = ( fits.y == 1 or fits.z == 1 )
+		local localX           = ( x - 1 ) * roundSize.x
+		local localY, localZ
 
-	-- Ammo overlay colors
-	local Blue   = Color(0, 127, 255, 65)
-	local Orange = Color(255, 127, 0, 65)
-	local Green  = Color(0, 255, 0, 65)
-	local Red    = Color(255, 0, 0, 65)
-	local Yellow = Color(255, 255, 0, 65)
+		if useLinearPacking then
+			localY = ( y - 1 ) * roundSize.y
+			localZ = ( z - 1 ) * roundSize.z
+		else
+			localY = ( y - 1 ) * roundSize.y * HEX_SPACING_FACTOR
 
-	local function GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, Direction, IsBelted)
-		local AlteredSpacing = IsBelted and 0 or Spacing
-		local SizeX = (X - 1) * (RoundSize.x + AlteredSpacing) * RoundAngle:Forward() * Direction
-		local SizeY = (Y - 1) * (RoundSize.y + AlteredSpacing) * RoundAngle:Right() * Direction
-		local SizeZ = (Z - 1) * (RoundSize.z + AlteredSpacing) * RoundAngle:Up() * Direction
+			local zOffset = ( ( y - 1 ) % 2 ) * roundSize.z * HEX_OFFSET_FACTOR
+			localZ        = ( z - 1 ) * roundSize.z + zOffset
+		end
 
-		return SizeX + SizeY + SizeZ
+		return Vector( localX, localY, localZ )
 	end
 
-	local function DrawRounds(Entity, Center, Spacing, Fits, RoundSize, RoundAngle, Total)
-		local StartPos = GetPosition(Fits.x, Fits.y, Fits.z, RoundSize, Spacing, RoundAngle, 1, Entity.IsBelted) * 0.5
-		local Count    = 0
+	local function cleanupRoundModels( entity )
+		if not entity._RoundModels then return end
 
-		for X = 1, Fits.x do
-			for Y = 1, Fits.y do
-				for Z = 1, Fits.z do
-					local LocalPos = GetPosition(X, Y, Z, RoundSize, Spacing, RoundAngle, -1, Entity.IsBelted)
-					local C = Entity.IsRound and Blue or Entity.HasBoxedAmmo and Green or Entity.IsBelted and Yellow or Orange
+		for _, model in pairs( entity._RoundModels ) do
+			if IsValid( model ) then
+				model:Remove()
+			end
+		end
 
-					render.DrawWireframeBox(Center + StartPos + LocalPos, RoundAngle, -RoundSize * 0.5, RoundSize * 0.5, C)
+		entity._RoundModels = nil
+	end
 
-					Count = Count + 1
+	function ENT:SetAmount( count )
+		if not self.HasData then return end
 
-					if Count == Total then return end
+		-- Models don't exist yet - create table from scratch
+		local previous
+		if not self._RoundModels then
+			self._RoundModels = {}
+			previous = 0
+		else
+			previous = self.DisplayAmmo or 0
+		end
+		self.DisplayAmmo = count
+
+		-- No change
+		if count == previous then return end
+
+		-- Decrease: remove excess models (includes going to 0)
+		if count < previous then
+			local models = self._RoundModels
+			for i = previous, count + 1, -1 do
+				local m = models[i]
+				models[i] = nil
+				if IsValid( m ) then m:Remove() end
+			end
+
+			return
+		end
+
+		-- Increase: add new models from previous+1 to count
+		local modelPath     = self.CachedModelPath
+		local localAngle    = self.CachedLocalAngle
+		local roundSize     = self.RoundSize
+		local fits          = self.ProjectileCounts
+		local scaleMatrix   = self.CachedScaleMatrix
+		local modelOffset   = self.CachedModelOffset
+		local localStartPos = self.CachedLocalStartPos
+
+		-- WorldAngle must be recalculated as entity orientation can change
+		local worldAngle = self:LocalToWorldAngles( localAngle )
+
+		local models = self._RoundModels
+		local index = 1
+
+		for x = 1, fits.x do
+			for y = 1, fits.y do
+				for z = 1, fits.z do
+					-- Only create models we don't have yet
+					if index > previous and index <= count then
+						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
+						local localModelPos = localStartPos + localGridPos + modelOffset
+
+						local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
+						if IsValid( model ) then
+							model:SetParent( self )
+							model:SetPos( self:LocalToWorld( localModelPos ) )
+							model:SetAngles( worldAngle )
+							model:SetNoDraw( true )
+							model:DrawShadow( false )
+							model:EnableMatrix( "RenderMultiply", scaleMatrix )
+							models[index] = model
+						end
+					end
+
+					index = index + 1
+					if index > count then return end
 				end
 			end
 		end
 	end
 
-	function ENT:CanDrawOverlay() -- This is called to see if DrawOverlay can be called
-		return DrawBoxes:GetBool()
-	end
+	function ENT:Draw()
+		local ply = LocalPlayer()
+		if not IsValid( ply ) then return end
 
-	local orange = Color(255, 127, 0)
-	function ENT:DrawStage()
-		local CratePos = self:GetPos():ToScreen()
-		cam.Start2D()
-			-- TODO: REMOVE AMMO COUNT WHEN DONE DEVELOPMENT
-			draw.SimpleTextOutlined("S: " .. (self.AmmoStage or -1), "ACF_Title", CratePos.x, CratePos.y, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
-			draw.SimpleTextOutlined("A: " .. (self.Ammo or -1), "ACF_Title", CratePos.x, CratePos.y + 15, orange, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
-		cam.End2D()
-	end
+		local looking          = ply:GetEyeTrace().Entity == self
+		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData
 
-	function ENT:DrawOverlay() -- Trace is passed as first argument, but not needed
-		if not self.HasData then
-			if self.HasData == nil and self.RequestAmmoData then
-				self:RequestAmmoData()
+		-- Not looking at the crate or ammo drawing is disabled
+		if not canShowInternals then
+			cleanupRoundModels( self )
+
+			if self.BaseClass and self.BaseClass.Draw then
+				self.BaseClass.Draw( self )
+			else
+				self:DrawModel()
 			end
 
 			return
 		end
-		if self.FinalAmmo <= 0 then return end
-		if not self.LocalAng then return end
 
-		local RoundAngle = self:LocalToWorldAngles(self.LocalAng)
-		local Center = self:LocalToWorld(self:OBBCenter())
-		local RoundSize = self.RoundSize
-		local Spacing = self.Spacing
-		local Fits = self.FitPerAxis
-		local BorderShift = Vector(0.5, 0.5, 0.5)
-
-		if not self.BulkDisplay then
-			DrawRounds(self, Center, Spacing, Fits, RoundSize, RoundAngle, self.FinalAmmo)
-		else -- Basic bitch box that scales according to ammo, only for bulk display
-			local AmmoPerc = self.Ammo / self.Capacity
-			render.DrawWireframeBox(Center, self:GetAngles(), self:OBBMins() + BorderShift, (self:OBBMaxs() - BorderShift) * Vector(1, 1, (2 * AmmoPerc) - 1), Red)
+		-- Optional info bubble hiding
+		local hideInfo = ACF and ACF.HideInfoBubble
+		if not ( hideInfo and hideInfo() ) then
+			self:AddWorldTip()
 		end
+
+		-- Optional wireframe outline
+		if wireOutline and wireOutline:GetBool() then
+			self:DrawEntityOutline()
+		end
+
+		-- Sync models with target ammo count (only when looking at crate)
+		local targetAmmo = self.TargetDisplayAmmo or 0
+		if self.DisplayAmmo ~= targetAmmo or not self._RoundModels then
+			self:SetAmount( targetAmmo )
+		end
+
+		-- Draw models
+		if self._RoundModels then
+			for _, model in pairs( self._RoundModels ) do
+				if IsValid( model ) then
+					model:DrawModel()
+				end
+			end
+		end
+
+		render.CullMode( MATERIAL_CULLMODE_CW )
+		self:DrawModel()
+		render.CullMode( MATERIAL_CULLMODE_CCW )
+
+		if Wire_Render then
+			Wire_Render( self )
+		end
+	end
+
+	function ENT:OnResized( _ )
+		self.HasData = nil
+		self.DisplayAmmo = nil
+		self.TargetDisplayAmmo = nil
+
+		cleanupRoundModels(self)
+	end
+
+	function ENT:OnRemove()
+		cleanupRoundModels( self )
+		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
+	end
+
+	function ENT:CanDrawOverlay()
+		return drawBoxes:GetBool()
+	end
+end
+
+do -- Ammo stage drawing
+	function ENT:DrawStage()
+		local cratePos = self:GetPos():ToScreen()
+		local orange   = Color( 255, 127, 0 )
+
+		cam.Start2D()
+			draw.SimpleTextOutlined(
+				"S: " .. ( self.AmmoStage or -1 ),
+				"ACF_Title",
+				cratePos.x,
+				cratePos.y,
+				orange,
+				TEXT_ALIGN_CENTER,
+				TEXT_ALIGN_CENTER,
+				1,
+				color_black
+			)
+
+			draw.SimpleTextOutlined(
+				"A: " .. ( self.Ammo or -1 ),
+				"ACF_Title",
+				cratePos.x,
+				cratePos.y + 15,
+				orange,
+				TEXT_ALIGN_CENTER,
+				TEXT_ALIGN_CENTER,
+				1,
+				color_black
+			)
+		cam.End2D()
+	end
+
+	function ENT:DrawOverlay()
 		self:DrawStage()
 	end
 end

@@ -744,7 +744,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFWeapon or false
+		return This.IsACFGun or false
 	end
 
 	--- Returns true if the entity is an ACF turret
@@ -1745,7 +1745,7 @@ if SERVER then
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
-		if This.Fuel then return math.Round(This.Fuel, 2) end
+		if This.Amount then return math.Round(This.Amount, 2) end
 
 		local Source = ACF.GetLinkSource(This:GetClass(), "FuelTanks")
 
@@ -1754,7 +1754,7 @@ if SERVER then
 		local Fuel = 0
 
 		for Tank in pairs(Source(This)) do
-			Fuel = Fuel + Tank.Fuel
+			Fuel = Fuel + Tank.Amount
 		end
 
 		return math.Round(Fuel, 2)
@@ -1771,7 +1771,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 		if This.Capacity then
-			return math.Round(This.Fuel or 0 / This.Capacity, 2)
+			return math.Round((This.Amount or 0) / This.Capacity, 2)
 		end
 
 		local Source = ACF.GetLinkSource(This:GetClass(), "FuelTanks")
@@ -1783,7 +1783,7 @@ if SERVER then
 
 		for Tank in pairs(Source(This)) do
 			Capacity = Capacity + Tank.Capacity
-			Fuel = Fuel + Tank.Fuel
+			Fuel = Fuel + Tank.Amount
 		end
 
 		return math.Round(Fuel / Capacity, 2)

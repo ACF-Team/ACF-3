@@ -133,6 +133,12 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		Menu:EndTemporal(Base)
 	end
 
+	-- Set default gearbox values before linking sliders to prevent nil value errors
+	local DefaultGearboxScale = ACF.GetClientNumber("GearboxScale", (ACF.GearboxMinSize + ACF.GearboxMaxSize) / 2)
+	local DefaultGearAmount = ACF.GetClientNumber("GearAmount", (3 + 10) / 2)
+	ACF.SetClientData("GearboxScale", DefaultGearboxScale, true)
+	ACF.SetClientData("GearAmount", DefaultGearAmount, true)
+
 	GearboxScale:SetClientData("GearboxScale", "OnValueChanged")
 	GearboxScale:DefineSetter(function(Panel, _, _, Value)
 		local Scale = math.Round(Value, 2)

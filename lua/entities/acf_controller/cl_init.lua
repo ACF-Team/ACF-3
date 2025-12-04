@@ -183,13 +183,15 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 
-	local Primary = MyController:GetNWEntity( "AHS_Primary", MyController )
-	if IsValid(Primary) then
-		local HitPos = ranger( Primary:GetPos(), Primary:GetForward(), 99999, MyFilter )
-		local sp = HitPos:ToScreen()
-		local Ready = MyController:GetNWBool("AHS_Primary_RD", false)
-		SetDrawColor( Ready and green or red )
-		DrawCircle( sp.x, sp.y, 10 * Scale)
+	for _, v in ipairs({"Primary", "Secondary", "Tertiary"}) do
+		local Entity = MyController:GetNWEntity( "AHS_" .. v, nil )
+		if IsValid(Entity) then
+			local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
+			local sp = HitPos:ToScreen()
+			local Ready = MyController:GetNWBool("AHS_" .. v .. "_RD", false)
+			SetDrawColor( Ready and green or red )
+			DrawCircle( sp.x, sp.y, 10 * Scale)
+		end
 	end
 end)
 
@@ -226,6 +228,7 @@ hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
 	net.SendToServer()
 end)
 
+local LastFOV = FOV
 hook.Add("PlayerBindPress", "ACFControllerScroll", function(ply, bind, _)
 	local delta = bind == "invnext" and 1 or bind == "invprev" and -1 or nil
 	if not delta then return end
@@ -237,6 +240,14 @@ hook.Add("PlayerBindPress", "ACFControllerScroll", function(ply, bind, _)
 	local MaxFOV = MyController:GetZoomMax()
 	local SpeedFOV = MyController:GetZoomSpeed()
 	FOV = math.Clamp(FOV + delta * SpeedFOV, MinFOV, MaxFOV)
+
+	if FOV ~= LastFOV then
+		LastFOV = FOV
+		net.Start("ACF_Controller_Zoom", true)
+		net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
+		net.WriteFloat(FOV)
+		net.SendToServer()
+	end
 
 	return true
 end)

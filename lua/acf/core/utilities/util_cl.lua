@@ -27,17 +27,21 @@ do -- Networked notifications
 	local notification = notification
 	local Messages = ACF.Utilities.Messages
 	local ReceiveShame = GetConVar("acf_legalshame")
-
+	local LastNotificationSoundTime = 0
 	net.Receive("ACF_Notify", function()
-		local Type = NOTIFY_ERROR
+		local IsOK = net.ReadBool()
+		local Msg  = net.ReadString()
+		local Type = IsOK and NOTIFY_GENERIC or NOTIFY_ERROR
 
-		if net.ReadBool() then
-			Type = NOTIFY_GENERIC
-		else
+		local Now = SysTime()
+		local DeltaTime = Now - LastNotificationSoundTime
+
+		if not IsOK and DeltaTime > 0.2 then -- Rate limit sounds. Helps with lots of sudden errors not killing your ears
 			surface.PlaySound("buttons/button10.wav")
+			LastNotificationSoundTime = Now
 		end
 
-		notification.AddLegacy(net.ReadString(), Type, 7)
+		notification.AddLegacy(Msg, Type, 7)
 	end)
 
 	net.Receive("ACF_NameAndShame", function()
@@ -461,12 +465,15 @@ do -- Default gearbox menus
 				local TotalRatio = ValuesData.TotalRatio
 				local FinalDrive = ValuesData.FinalDrive
 				local WheelDiameter = ValuesData.WheelDiameter
-				local Multiplier = math.pi * UpshiftRPM * TotalRatio * FinalDrive * WheelDiameter / (60 * UnitMult)
+				local Multiplier = math.pi * UpshiftRPM * WheelDiameter / (60 * UnitMult)
+
+				if not UseLegacyRatios then Multiplier = Multiplier / TotalRatio / FinalDrive
+				else Multiplier = Multiplier * TotalRatio * FinalDrive end
 
 				for I = 1, Gears do
 					local Gear = ValuesData["Gear" .. I]
-
-					ACF.SetClientData("Shift" .. I, Gear * Multiplier)
+					if not UseLegacyRatios then ACF.SetClientData("Shift" .. I, Multiplier / Gear)
+					else ACF.SetClientData("Shift" .. I, Multiplier * Gear) end
 				end
 			end
 		end

@@ -72,22 +72,22 @@ do -- Clientside settings
 
 		Base:AddHelp("#acf.menu.settings.effects_visual_elements.particle_mult_desc")
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_refill")
-		local AmmoRefillColor = Base:AddPanel("DColorMixer")
-		AmmoRefillColor:SetColor(ACF.AmmoRefillColor)
-		AmmoRefillColor:SetClientData("AmmoRefillColor", "ValueChanged")
-		AmmoRefillColor:DefineSetter(function(_, _, _, Value)
-			ACF.AmmoRefillColor = Value
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_supply")
+		local AmmoSupplyColor = Base:AddPanel("DColorMixer")
+		AmmoSupplyColor:SetColor(ACF.AmmoSupplyColor)
+		AmmoSupplyColor:SetClientData("AmmoSupplyColor", "ValueChanged")
+		AmmoSupplyColor:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoSupplyColor = Value
 
 			return Value
 		end)
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_refill")
-		local FuelRefillColor = Base:AddPanel("DColorMixer")
-		FuelRefillColor:SetColor(ACF.FuelRefillColor)
-		FuelRefillColor:SetClientData("FuelRefillColor", "ValueChanged")
-		FuelRefillColor:DefineSetter(function(_, _, _, Value)
-			ACF.FuelRefillColor = Value
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_supply")
+		local FuelSupplyColor = Base:AddPanel("DColorMixer")
+		FuelSupplyColor:SetColor(ACF.FuelSupplyColor)
+		FuelSupplyColor:SetClientData("FuelSupplyColor", "ValueChanged")
+		FuelSupplyColor:DefineSetter(function(_, _, _, Value)
+			ACF.FuelSupplyColor = Value
 
 			return Value
 		end)
@@ -142,16 +142,7 @@ do -- Serverside settings
 	ACF.AddMenuItem(101, "#acf.menu.settings", "#acf.menu.settings.server", "server", ACF.GenerateServerSettings)
 
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
-		local Admins = Base:AddCheckBox("#acf.menu.settings.general.allow_admin")
-
-		-- What? Why is this different??
-		-- MARCH REPLY: I don't remember!!
-		Admins:SetServerData("ServerDataAllowAdmin", "OnChange")
-		Admins:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		Base:AddCheckBox("#acf.menu.settings.general.allow_admin"):          LinkToServerData("ServerDataAllowAdmin")
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.general.restrict_info"):          LinkToServerData("RestrictInfo")
@@ -184,6 +175,7 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.weapons.gun_fire"):             LinkToServerData("GunsCanFire")
 		Base:AddCheckBox("#acf.menu.settings.weapons.gun_smoke"):            LinkToServerData("GunsCanSmoke")
 		Base:AddCheckBox("#acf.menu.settings.weapons.rack_fire"):            LinkToServerData("RacksCanFire")
+		Base:AddCheckBox("#acf.menu.settings.weapons.baseplate_damage"):     LinkToServerData("AllowBaseplateDamage")
 		Base:AddSlider("#acf.menu.settings.weapons.squishy_mult"):           LinkToServerData("SquishyDamageMult")
 	end)
 
@@ -194,9 +186,12 @@ do -- Serverside settings
 	end)
 
 	ACF.AddServerSettings(201, "#acf.menu.settings.legal_checks", function(Base)
-		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):         LinkToServerData("LegalChecks")
-		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"): LinkToServerData("VehicleLegalChecks")
-		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):       LinkToServerData("NameAndShame")
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):                         LinkToServerData("LegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"):                 LinkToServerData("VehicleLegalChecks")
+		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):                       LinkToServerData("NameAndShame")
+
+		Base:AddCheckBox("#acf.menu.settings.general.lethal_entity_player_checks"): LinkToServerData("LethalEntityPlayerChecks")
+			Base:AddHelp("#acf.menu.settings.general.lethal_entity_player_checks_desc")
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
@@ -230,5 +225,17 @@ do -- Serverside settings
 
 		Base:AddSlider("#acf.menu.settings.debris.fireball_mult"):     LinkToServerData("FireballMult")
 			Base:AddHelp("#acf.menu.settings.debris.fireball_mult_desc")
+	end)
+
+	ACF.AddServerSettings(601, "#acf.menu.settings.entity_limits", function(Base)
+		for Limit, LimitData in SortedPairs(ACF.Classes.SboxLimits) do
+			local LimitName = string.TrimLeft(Limit, "_")
+			local LimitSlider = Base:AddSlider(LimitName, LimitData.Min or 0, LimitData.Max or 64)
+			LimitSlider:SetConVar("sbox_max" .. Limit)
+
+			if LimitData.Text and LimitData.Text ~= "" then
+				LimitSlider:SetTooltip(LimitData.Text)
+			end
+		end
 	end)
 end

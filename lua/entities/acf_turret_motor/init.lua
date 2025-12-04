@@ -131,8 +131,6 @@ do	-- Spawn and Update funcs
 
 		HookRun("ACF_OnSpawnEntity", "acf_turret_motor", Entity, Data, Class, Motor)
 
-		ACF.CheckLegal(Entity)
-
 		return Entity
 	end
 

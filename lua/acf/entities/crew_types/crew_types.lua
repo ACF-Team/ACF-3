@@ -102,7 +102,8 @@ CrewTypes.Register("Loader", {
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
-	end
+	end,
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Gunner", {
@@ -152,7 +153,8 @@ CrewTypes.Register("Gunner", {
 	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
-	end
+	end,
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Driver", {
@@ -195,7 +197,8 @@ CrewTypes.Register("Driver", {
 	end,
 	UpdateFocus = function(Crew)
 		Crew.Focus = 1
-	end
+	end,
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Commander", {
@@ -228,17 +231,16 @@ CrewTypes.Register("Commander", {
 	},
 	LinkHandlers = {
 		acf_gun = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 		},
 		acf_rack = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
 		},
 		acf_turret = {
-			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Commanders can only link to one entity." end
-				if Target.Turret == "Turret-V" then return false, "Commanders cannot link to vertical drives." end
+			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
+				if CheckCount(Crew, "acf_turret") then return false, "Commanders can only link to one turret." end
 				return true, "Crew linked."
 			end
 		},
@@ -266,7 +268,8 @@ CrewTypes.Register("Commander", {
 
 		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
-	end
+	end,
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
 
 CrewTypes.Register("Pilot", {
@@ -282,8 +285,8 @@ CrewTypes.Register("Pilot", {
 	Mass = 200,			-- Pilots weigh more due to life support systems and G suits
 	GForceInfo = {
 		Damages = {
-			Min = 9,	-- Damage starts being applied after this (Gs)
-			Max = 15,	-- Instant death after this (Gs)
+			Min = 6,	-- Damage starts being applied after this (Gs)
+			Max = 12,	-- Instant death after this (Gs)
 		}
 	},
 	LinkHandlers = {
@@ -317,12 +320,5 @@ CrewTypes.Register("Pilot", {
 		local Count = table.Count(Crew.Targets)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
-	EnforceLimits = function(Crew)
-		-- Pilots exclude other crew
-		local Contraption = Crew:GetContraption() or {}
-		local Crews = Contraption.Crews or {}
-		for k in pairs(Crews) do
-			if k.CrewTypeID ~= "Pilot" then k:Remove() end
-		end
-	end
+	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Aircraft") end
 })

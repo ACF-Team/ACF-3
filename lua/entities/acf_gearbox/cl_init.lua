@@ -23,10 +23,33 @@ do	-- NET SURFER 2.0
 
 	net.Receive("ACF_RequestGearboxInfo", function()
 		local Gearbox	= net.ReadEntity()
-		local Data		= util.JSONToTable(net.ReadString())
-		local Inputs	= util.JSONToTable(net.ReadString())
-		local OutL		= util.JSONToTable(net.ReadString())
-		local OutR		= util.JSONToTable(net.ReadString())
+		local InPos		= net.ReadVector()
+		local OutLPos	= net.ReadVector()
+		local OutRPos	= net.ReadVector()
+		local Inputs	= {}
+		local OutL		= {}
+		local OutR		= {}
+		local InputLen	= net.ReadUInt(6)
+		local OutLLen	= net.ReadUInt(6)
+		local OutRLen	= net.ReadUInt(6)
+
+		if InputLen > 0 then
+			for I = 1, InputLen do
+				Inputs[I] = net.ReadUInt(MAX_EDICT_BITS)
+			end
+		end
+
+		if OutLLen > 0 then
+			for I = 1, OutLLen do
+				OutL[I] = net.ReadUInt(MAX_EDICT_BITS)
+			end
+		end
+
+		if OutRLen > 0 then
+			for I = 1, OutRLen do
+				OutR[I] = net.ReadUInt(MAX_EDICT_BITS)
+			end
+		end
 
 		local InEnts	= {}
 		local OutLEnts	= {}
@@ -53,6 +76,7 @@ do	-- NET SURFER 2.0
 				OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos}
 			end
 		end
+
 		for _, E in ipairs(OutR) do
 			local Ent = Entity(E)
 
@@ -71,12 +95,12 @@ do	-- NET SURFER 2.0
 		Gearbox.OutputsL	= OutLEnts
 		Gearbox.OutputsR	= OutREnts
 
-		Gearbox.In		= Data.In
-		Gearbox.OutL	= Data.OutL
-		Gearbox.OutR	= Data.OutR
-		Gearbox.Mid		= (Data.OutL + Data.OutR) / 2
+		Gearbox.In		= InPos
+		Gearbox.OutL	= OutLPos
+		Gearbox.OutR	= OutRPos
+		Gearbox.Mid		= (OutLPos + OutRPos) / 2
 
-		Gearbox.IsStraight = (Data.OutL == Data.OutR)
+		Gearbox.IsStraight = (OutLPos == OutRPos)
 
 		Gearbox.HasData	= true
 		Gearbox.Age		= Clock.CurTime + 5
@@ -257,8 +281,6 @@ do -- Rendering mobility links
 		if not SelfTbl.HasData then
 			self:RequestGearboxInfo()
 			return
-		elseif Clock.CurTime > SelfTbl.Age then
-			self:RequestGearboxInfo()
 		end
 
 		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
@@ -268,7 +290,6 @@ do -- Rendering mobility links
 			local E = T.Ent
 
 			if IsValid(E) then
-
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, RopeColor)
 			end
@@ -278,7 +299,6 @@ do -- Rendering mobility links
 			local E = T.Ent
 
 			if IsValid(E) then
-
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, RopeColor)
 			end

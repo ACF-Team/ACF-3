@@ -37,9 +37,9 @@ do
 		local LocalPly = LocalPlayer()
 
 		for _, Target in player.Iterator() do
-			if (IsValid(Target)) then
+			if IsValid(Target) then
 				local Check = Menu:AddCheckBox(Target:Nick())
-				Check.SteamID = Target:SteamID()
+				Check.Target = Target
 				if Target == LocalPly then Check:SetDisabled(true) end
 				PlayerChecks[#PlayerChecks + 1] = Check
 			end
@@ -90,11 +90,6 @@ do
 		net.SendToServer()
 	end
 
-	local function RequestSafezones()
-		net.Start("ACF_OnUpdateSafezones")
-		net.SendToServer()
-	end
-
 	net.Receive("ACF_refreshpermissions", function()
 		PermissionModes = net.ReadTable()
 		CurrentPermission = net.ReadString()
@@ -105,7 +100,6 @@ do
 
 	timer.Simple(0, function()
 		RequestUpdate()
-		RequestSafezones()
 	end)
 
 	local function CreateMenu(Menu)
@@ -116,8 +110,6 @@ do
 		CurrentMode = Menu:AddLabel(string.format(CurrentModeTxt, CurrentPermission))
 
 		if not LocalPlayer():IsAdmin() then return end
-
-		ACF.SetToolMode("acf_menu", "ZoneModifier", "Update")
 
 		List = Menu:AddListView()
 		List:AddColumn("#acf.menu.permissions.mode")
@@ -163,13 +155,6 @@ do
 			local Mode = Line and Line:GetValue(1)
 			RunConsoleCommand("acf_setdefaultpermissionmode", Mode)
 		end
-
-		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones", nil, "icon16/lock_edit.png")
-		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
-		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
-		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.noclip"):LinkToServerData("NoclipOutsideZones")
-		SafezonesBase:AddButton("#acf.menu.permissions.safezones.save", "acf_savesafezones")
-		SafezonesBase:AddButton("#acf.menu.permissions.safezones.reload", "acf_reloadsafezones")
 	end
 
 	ACF.AddMenuItem(2, "#acf.menu.permissions", "#acf.menu.permissions.set_mode", "server_edit", CreateMenu)

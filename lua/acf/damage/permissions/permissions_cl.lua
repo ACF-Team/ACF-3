@@ -9,15 +9,22 @@ function Permissions.ApplyPermissions(Checks)
 	local Perms = {}
 
 	for _, Check in pairs(Checks) do
-		if not Check.SteamID then
-			Error("Encountered player checkbox without an attached SteamID!")
+		if not IsValid(Check.Target) then
+			Error("Encountered player checkbox without an attached player!")
+			continue
 		end
 
-		Perms[Check.SteamID] = Check:GetChecked()
+		Perms[Check.Target] = Check:GetChecked()
 	end
 
 	net.Start("ACF_dmgfriends")
-	net.WriteTable(Perms)
+	net.WriteUInt(table.Count(Perms), 8)
+
+	for Target, Check in pairs(Perms) do
+		net.WritePlayer(Target)
+		net.WriteBool(Check)
+	end
+
 	net.SendToServer()
 end
 
@@ -65,5 +72,7 @@ do -- Safezones logic
 
 			Permissions.Safezones[ZoneName] = {ZoneMins, ZoneMaxs}
 		end
+
+		hook.Run("ACF_OnUpdateSafezones", Permissions.Safezones, ZonesCount)
 	end)
 end

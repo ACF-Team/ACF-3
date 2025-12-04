@@ -324,8 +324,6 @@ do	-- Spawn and Update funcs
 
 		HookRun("ACF_OnSpawnEntity", "acf_turret", Entity, Data, Class, Turret)
 
-		ACF.CheckLegal(Entity)
-
 		return Entity
 	end
 
@@ -1069,8 +1067,12 @@ do -- Metamethods
 
 			if DmgInfo.Attacker and IsValid(DmgInfo.Attacker) then
 				local Attacker = DmgInfo.Attacker
+				-- If the damage source is from an ammo crate or fueltank, store the time this damage took place...
+				local Cookoff = (Attacker:GetClass() == "acf_ammo" or Attacker:GetClass() == "acf_fueltank") and Attacker.Exploding == true
+				if Cookoff then	self.ShouldCookoff = Clock.CurTime end
 
-				if ((Attacker:GetClass() == "acf_ammo") or (Attacker:GetClass() == "acf_fueltank")) and (Attacker.Exploding == true and (HitRes.Damage >= self.ACF.Health) and (self.Disconnect == false)) then
+				-- If damaged by a cookoff in the last second, and the turret will die, then launch the turret
+				if (self.ShouldCookoff and (Clock.CurTime - self.ShouldCookoff) < 1) and HitRes.Damage >= self.ACF.Health and self.Disconnect == false then
 					self.Disconnect	= true
 
 					self:SetParent(nil)

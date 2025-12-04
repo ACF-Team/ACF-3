@@ -14,9 +14,23 @@ end
 function ENT:Update()
 end
 
--- Copied from base_wire_entity: DoNormalDraw's notip arg isn't accessible from ENT:Draw defined there.
+local ENTITY = FindMetaTable("Entity")
+
 function ENT:Draw()
-	self:DoNormalDraw(HideInfo(), HideInfo())
+	local HaloTip = not HideInfo()
+
+	local RenderContext = ACF.RenderContext
+	local LookedAt = RenderContext.LookAt == self
+
+	if HaloTip and LookedAt then
+		if RenderContext.ShouldDrawOutline then
+			self:DrawEntityOutline()
+		end
+		ENTITY.DrawModel(self)
+		self:AddWorldTip()
+	else
+		ENTITY.DrawModel(self)
+	end
 
 	WireRender(self)
 end
