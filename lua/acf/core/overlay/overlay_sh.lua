@@ -21,6 +21,7 @@ do
     if SERVER then util.AddNetworkString(OVERLAY_MSG_STRINGTABLEIDX) end
 
     Overlay.Receivers = Overlay.Receivers or {}
+    local Receivers = Overlay.Receivers
 
     function Overlay.NetStart(MessageType, Unreliable)
         net.Start(OVERLAY_MSG_STRINGTABLEIDX, Unreliable)

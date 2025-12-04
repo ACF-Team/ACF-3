@@ -26,10 +26,6 @@ end
 
 -- Server update decoding
 do
-    Overlay.NetReceive(Overlay.S2C_OVERLAY_FULL_UPDATE, function()
-
-    end)
-
     Overlay.NetReceive(Overlay.S2C_OVERLAY_DELTA_UPDATE, function()
 
     end)
@@ -37,7 +33,7 @@ end
 
 -- Rendering
 do
-    local Target
+    local Target = ACF.RenderContext.LookAt
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         print(Target)
     end)
