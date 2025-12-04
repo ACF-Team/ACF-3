@@ -66,7 +66,8 @@ CreateControl = function(Base)
 	end
 
 	if IsScalable then -- Scalable
-		local Bounds = Current.Class.Caliber
+		local Class = Current.Class
+		local Bounds = Class.Caliber
 		-- Set default caliber value before creating the slider to prevent nil value errors
 		local DefaultCaliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 		ACF.SetClientData("Caliber", DefaultCaliber, true)

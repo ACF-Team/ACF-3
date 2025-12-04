@@ -157,6 +157,9 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
 		ACF.SetClientData("AmmoSizeX", BoxSize.x)
 		ACF.SetClientData("AmmoSizeY", BoxSize.y)
 		ACF.SetClientData("AmmoSizeZ", BoxSize.z)
+
+		GhostData.Secondary.Scale = BoxSize
+		ACF.UpdateGhostEntity(GhostData)
 	end
 end
 
