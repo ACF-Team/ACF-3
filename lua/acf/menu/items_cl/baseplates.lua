@@ -51,6 +51,15 @@ local function CreateMenu(Menu)
 	end
 	GForceTicksInfo.ACF_OnUpdate = GForceTicks.ACF_OnUpdate
 
+	local function UpdatePreviewSize()
+		local X, Y, Z = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
+		print(X, Y, Z)
+	end
+	UpdatePreviewSize()
+	SizeX.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeX then UpdatePreviewSize() end end
+	SizeY.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeY then UpdatePreviewSize() end end
+	SizeZ.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeZ then UpdatePreviewSize() end end
+
 	--[[local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
 

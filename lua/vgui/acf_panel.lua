@@ -1260,6 +1260,9 @@ function PANEL:ExecutePostBuildFns()
 end
 
 function PANEL:SendUserVarChangedSignal(Producer, KeyChanged, Value)
+	if self == Producer and self.ACF_OnUpdate then
+		self:ACF_OnUpdate(KeyChanged, Producer, Value)
+	end
 	for _, Panel in ipairs(self:GetChildren()) do
 		if Panel ~= Producer and Panel.ACF_OnUpdate then
 			Panel.ACF_OnUpdate(Panel, KeyChanged, Producer, Value)
