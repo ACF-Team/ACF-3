@@ -27,7 +27,6 @@ function ENT:Draw()
 			self:DrawEntityOutline()
 		end
 		ENTITY.DrawModel(self)
-		self:AddWorldTip()
 	else
 		ENTITY.DrawModel(self)
 	end
