@@ -602,6 +602,15 @@ function ACF.CreateAmmoMenu(Menu)
 		return Count
 	end)
 
+	local Size = Menu:AddLabel("")
+	Size:TrackClientData("CrateProjectilesX", "SetText")
+	Size:TrackClientData("CrateProjectilesY", "SetText")
+	Size:TrackClientData("CrateProjectilesZ", "SetText")
+	Size:DefineSetter(function()
+		local SizeText = language.GetPhrase("#acf.menu.ammo.crate_size")
+		return SizeText:format(math.Round(BoxSize.x, 2), math.Round(BoxSize.y, 2), math.Round(BoxSize.z, 2))
+	end)
+
 	-- Store references for updating max values later
 	CountSliders.X = CountX
 	CountSliders.Y = CountY
