@@ -60,6 +60,7 @@ do
             NetworkingNumData = DeprivedSlot:NumElementData()
         end
 
+        local OneDataPieceChanged = false
         for I = 1, NetworkingNumData do
             local IsDeviation = Reader.ReadBool()
             if IsDeviation then
@@ -67,8 +68,10 @@ do
                 if Changed then
                     local Data = Reader.ReadType()
                     DeprivedSlot:SetElementData(I, Data)
+                    OneDataPieceChanged = true
                 end
             else
+                OneDataPieceChanged = true
                 local IsAddition = Reader.ReadBool()
                 if IsAddition then
                     local Data = Reader.ReadType()
@@ -77,7 +80,10 @@ do
             end
         end
 
+        DeprivedSlot.ChangedSinceLastUpdate = OneDataPieceChanged
         DeprivedSlot.NumData = NetworkingNumData
+
+        return OneDataPieceChanged
     end
 
     -- Decodes a bit reader to an ideal state.
@@ -95,12 +101,16 @@ do
             NetworkingSlots = DeprivedState:NumElementSlots()
         end
 
+        local OneSlotChanged = false
         for I = 1, NetworkingSlots do
             local IsDeviation = Reader.ReadBool()
             if IsDeviation then
                 local DeprivedSlot = DeprivedState:GetElementSlot(I)
-                Overlay.DeltaDecodeSlot(DeprivedSlot, Reader)
+                if Overlay.DeltaDecodeSlot(DeprivedSlot, Reader) then
+                    OneSlotChanged = true
+                end
             else
+                OneSlotChanged = true
                 local IsAddition = Reader.ReadBool()
                 if IsAddition then
                     local DeprivedSlot = DeprivedState:AllocElementSlot()
@@ -111,6 +121,7 @@ do
             end
         end
 
+        DeprivedState.ChangedSinceLastUpdate = OneSlotChanged
         DeprivedState.NumElements = NetworkingSlots
     end
 
@@ -315,6 +326,8 @@ do
             self.Type    = -1
             self.Data    = {}
             self.NumData = 0
+
+            self.ChangedSinceLastUpdate = false
         end
 
         -- Bounded ipairs.
@@ -349,6 +362,8 @@ do
         function State:__new()
             self.ElementSlots = {}
             self.NumElements = 0
+
+            self.ChangedSinceLastUpdate = false
         end
 
         -- Prepares a write to the state.

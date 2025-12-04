@@ -62,6 +62,7 @@ do
         Ent.ACF_OverlayState = Enqueued.State
         AwaitingQueue[Idx] = nil
     end)
+
     Overlay.NetReceive(Overlay.S2C_OVERLAY_DELTA_UPDATE, function()
         local Full  = net.ReadBool()
         local EntID = net.ReadUInt(MAX_EDICT_BITS)
