@@ -55,10 +55,10 @@ local function CreateMenu(Menu)
 		local X, Y, Z = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
 		print(X, Y, Z)
 	end
-	UpdatePreviewSize()
-	SizeX.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeX then UpdatePreviewSize() end end
-	SizeY.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeY then UpdatePreviewSize() end end
-	SizeZ.ACF_OnUpdate = function(_, _, Producer) if Producer == SizeZ then UpdatePreviewSize() end end
+	local function ProducerSelfUpdate(Self, _, Producer) if Self == Producer then UpdatePreviewSize() end end
+	SizeX.ACF_OnUpdate = ProducerSelfUpdate
+	SizeY.ACF_OnUpdate = ProducerSelfUpdate
+	SizeZ.ACF_OnUpdate = ProducerSelfUpdate
 
 	--[[local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
