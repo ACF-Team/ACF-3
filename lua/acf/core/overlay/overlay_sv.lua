@@ -7,10 +7,6 @@ ACF.Overlay = Overlay
 local WeakKeyMT = {__mode = 'k'}
 local function WeaklyKeyedLUT() return setmetatable({}, WeakKeyMT) end
 
--- Serverside per-entity overlay state.
-Overlay.EntityStates = Overlay.EntityStates or WeaklyKeyedLUT()
-local EntityStates = Overlay.EntityStates
-
 -- Serverside per-player-per-entity delta state.
 -- When StartOverlay is called, this triggers a full update, ie. their state for that entity is wiped and set to zero-delta,
 -- and a full update packet is written to the player. EndOverlay also does the same thing but fully clears it.
@@ -50,7 +46,15 @@ end
 function Overlay.StartOverlay(Player, Entity)
     if not IsValid(Entity) then return end
     -- Allocate a fully zeroed out state
-    Overlay.GetPerPlayerPerEntityState(Player, Entity)
+    local PlayerState = Overlay.GetPerPlayerPerEntityState(Player, Entity)
+
+    local OverlayState = Entity.ACF_OverlayState
+    if not OverlayState then
+        OverlayState = ACF.Overlay.State()
+        Entity.ACF_OverlayState = OverlayState
+    end
+
+    ACF.Overlay.UpdateOverlayForPlayer(Entity, Player, OverlayState, PlayerState, true)
 end
 
 -- End a player viewing an overlay on a particular entity.
@@ -69,21 +73,22 @@ function Overlay.EndOverlay(Player, Entity)
 end
 
 -- Entities call this function serverside to update their overlay elements.
-function Overlay.UpdateOverlay(Entity, State)
-    EntityStates[Entity] = State -- This object is likely the same - the state shouldn't be recreated every time
-    -- this is called, but just in case, we set the table index anyway here
+function Overlay.UpdateOverlayForPlayer(Entity, Player, EntityState, PlayerState, Full)
+    -- Is the entity being tracked by the player?
+    if PlayerState and IsValid(Player) then
+        -- Delta encode PlayerState to match EntityState.
+        Overlay.NetStart(Overlay.S2C_OVERLAY_DELTA_UPDATE)
+        net.WriteBool(Full)
+        net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+        -- Delta encode PlayerState to match EntityState, with the net library writer, and write the state changes to PlayerState itself.
+        Overlay.DeltaEncodeState(PlayerState, EntityState, net, true, Full)
+        net.Send(Player)
+    end
+end
 
+function Overlay.UpdateOverlay(Entity, State, Full)
     for Player, EntityStates in pairs(PerPlayerStates) do
-        local PlayerState = EntityStates[Player]
-
-        -- Is the entity being tracked by the player?
-        if PlayerState and IsValid(Player) then
-            -- Delta encode PlayerState to match State.
-            Overlay.NetStart(Overlay.S2C_OVERLAY_DELTA_UPDATE)
-            -- Delta encode PlayerState to match State, with the net library writer, and write the state changes to PlayerState itself.
-            Overlay.DeltaEncodeState(PlayerState, State, net, true)
-            net.Send(Player)
-        end
+        Overlay.UpdateOverlayForPlayer(Entity, Player, State, EntityStates[Player], Full)
     end
 end
 

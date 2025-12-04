@@ -10,36 +10,47 @@ ENT.OverlayDelay = 1 -- Time in seconds between each overlay update
 -- You should overwrite these
 function ENT:Enable() end
 function ENT:Disable() end
-function ENT:UpdateOverlayText() end
+function ENT:UpdateOverlayState()
+
+end
 
 do -- Entity Overlay ----------------------------
-	local Disable = "Disabled: %s\n%s"
 	local Name    = "ACF Overlay Buffer %s"
 	local timer   = timer
 
-	local function GetText(Entity)
-		if Entity.Disabled then
-			return Entity:GetDisableText()
+	function ENT:GetOverlayState()
+		local OverlayState = self.OverlayState
+		if not OverlayState then
+			OverlayState = ACF.Overlay.State()
+			self.OverlayState = OverlayState
+			self:UpdateOverlay(true)
 		end
 
-		return Entity:UpdateOverlayText()
-	end
-
-	function ENT:GetDisableText()
-		local Disabled = self.Disabled
-
-		return Disable:format(Disabled.Reason, Disabled.Message)
+		return OverlayState
 	end
 
 	function ENT:UpdateOverlay(Instant)
+		local OverlayState = self.OverlayState
+		if not OverlayState then
+			OverlayState = ACF.Overlay.State()
+			self.OverlayState = OverlayState
+		end
+
 		if Instant then
-			return self:SetOverlayText(GetText(self))
+			OverlayState:Begin()
+			self:UpdateOverlayState(OverlayState)
+			OverlayState:End()
+			ACF.Overlay.UpdateOverlay(self, OverlayState)
+			return
 		end
 
 		if self.OverlayCooldown then -- This entity has been updated too recently
 			self.QueueOverlay = true -- Mark it to update when buffer time has expired
 		else
-			self:SetOverlayText(GetText(self))
+			OverlayState:Begin()
+			self:UpdateOverlayState(OverlayState)
+			OverlayState:End()
+			ACF.Overlay.UpdateOverlay(self, OverlayState)
 
 			self.OverlayCooldown = true
 
@@ -51,7 +62,7 @@ do -- Entity Overlay ----------------------------
 				if self.QueueOverlay then
 					self.QueueOverlay = nil
 
-					self:UpdateOverlay()
+					self:UpdateOverlay(false)
 				end
 			end)
 		end

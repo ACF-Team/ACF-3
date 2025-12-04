@@ -114,14 +114,14 @@ do
         DeprivedState.NumElements = NetworkingSlots
     end
 
-    function Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToSlot)
+    function Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToSlot, Full)
         if Writer == nil then
             Writer = net
         end
 
         -- Determine if the type changed. Encoded as true if it did, and false if it didn't.
         -- True means read the new type.
-        local TypeChange = DeprivedSlot.Type ~= IdealSlot.Type
+        local TypeChange = Full or DeprivedSlot.Type ~= IdealSlot.Type
         Writer.WriteBool(TypeChange)
         if TypeChange then
             Writer.WriteUInt(IdealSlot.Type, Overlay.ELEMENT_TYPE_BITS)
@@ -129,11 +129,11 @@ do
 
         local DeprivedNumData   = DeprivedSlot:NumElementData()
         local IdealNumData      = IdealSlot:NumElementData()
-        local NetworkingNumData = math.max(IdealNumData, DeprivedNumData)
+        local NetworkingNumData = Full and IdealNumData or math.max(IdealNumData, DeprivedNumData)
 
         -- Same as before for state slots, we encode if the amount of data has changed.
         local DataDifference = IdealNumData - DeprivedNumData
-        if DataDifference ~= 0 then
+        if DataDifference ~= 0 or Full then
             Writer.WriteBool(true)
             Writer.WriteUInt(NetworkingNumData, Overlay.MAX_ELEMENT_DATA_BITS)
         else
@@ -141,9 +141,9 @@ do
         end
 
         for I = 1, NetworkingNumData do
-            local IsAddition     = not DeprivedSlot:HasElementData(I) and IdealSlot:HasElementData(I)
-            local IsSubtraction  = DeprivedSlot:HasElementData(I) and not IdealSlot:HasElementData(I)
-            local IsDeviation    = not IsAddition and not IsSubtraction
+            local IsAddition     = Full or (not DeprivedSlot:HasElementData(I) and IdealSlot:HasElementData(I))
+            local IsSubtraction  = not Full and (DeprivedSlot:HasElementData(I) and not IdealSlot:HasElementData(I))
+            local IsDeviation    = not Full and (not IsAddition and not IsSubtraction)
 
             -- We encode two booleans here always.
             -- The first boolean determines if this data being networked is a deviation, or an addition/subtraction.
@@ -184,7 +184,7 @@ do
     end
 
     -- Delta encodes a state to a bit writer. If WriteToState is true, then DeprivedState will be upgraded.
-    function Overlay.DeltaEncodeState(DeprivedState, IdealState, Writer, WriteToState)
+    function Overlay.DeltaEncodeState(DeprivedState, IdealState, Writer, WriteToState, Full)
         if Writer == nil then
             Writer = net
         end
@@ -200,7 +200,7 @@ do
         -- be upgraded, for whatever reason)
         local SlotDifference = IdealNumSlots - DeprivedNumSlots
         -- Tell the receiver the difference the new amount of slots.
-        if SlotDifference ~= 0 then
+        if SlotDifference ~= 0 or Full then
             Writer.WriteBool(true)
             Writer.WriteUInt(NetworkingSlots, Overlay.MAX_ELEMENT_BITS)
         else
@@ -223,22 +223,22 @@ do
         -- Subtraction encodes write only the two booleans. The data will be destroyed on the other end.
 
         for I = 1, NetworkingSlots do
-            local IsAddition     = not DeprivedState:HasElementSlot(I) and IdealState:HasElementSlot(I)
-            local IsSubtraction  = DeprivedState:HasElementSlot(I) and not IdealState:HasElementSlot(I)
-            local IsDeviation    = not IsAddition and not IsSubtraction
+            local IsAddition     = Full or (not DeprivedState:HasElementSlot(I) and IdealState:HasElementSlot(I))
+            local IsSubtraction  = not Full and (DeprivedState:HasElementSlot(I) and not IdealState:HasElementSlot(I))
+            local IsDeviation    = not Full and (not IsAddition and not IsSubtraction)
 
             if IsDeviation then -- Write differences
                 Writer.WriteBool(true)
                 local DeprivedSlot = DeprivedState:GetElementSlot(I)
                 local IdealSlot    = IdealState:GetElementSlot(I)
-                Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToState)
+                Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToState, Full)
             elseif IsAddition then -- Write new slot
                 Writer.WriteBool(false)
                 Writer.WriteBool(true)
 
                 local DeprivedSlot = DeprivedState:AllocElementSlot()
                 local IdealSlot    = IdealState:GetElementSlot(I)
-                Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToState)
+                Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToState, Full)
             elseif IsSubtraction then -- Delete slot
                 Writer.WriteBool(false)
                 Writer.WriteBool(false)
@@ -283,6 +283,11 @@ do
         }
         -- Recalculate bits required to network element types
         Overlay.ELEMENT_TYPE_BITS = BitsRequired(Idx)
+
+        -- Write a macro to the OverlayState class's metatable.
+        Overlay.State["Add" .. Name] = function(self, ...)
+            self:AddElement(Name, ...)
+        end
     end
 end
 
