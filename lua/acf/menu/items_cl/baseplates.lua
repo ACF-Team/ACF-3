@@ -53,12 +53,13 @@ local function CreateMenu(Menu)
 
 	local function UpdatePreviewSize()
 		local X, Y, Z = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
-		print(X, Y, Z)
+		BaseplatePreview:SetModelScale(Vector(X, Y, Z))
 	end
 	local function ProducerSelfUpdate(Self, _, Producer) if Self == Producer then UpdatePreviewSize() end end
 	SizeX.ACF_OnUpdate = ProducerSelfUpdate
 	SizeY.ACF_OnUpdate = ProducerSelfUpdate
 	SizeZ.ACF_OnUpdate = ProducerSelfUpdate
+	UpdatePreviewSize()
 
 	--[[local Vis = BaseplateBase:AddPanel("DPanel")
 	Vis:SetSize(30, 256)
