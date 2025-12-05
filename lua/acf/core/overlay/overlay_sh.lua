@@ -53,11 +53,13 @@ do
             DeprivedSlot.Type = Reader.ReadUInt(Overlay.ELEMENT_TYPE_BITS)
         end
 
-        local NetworkingNumData
+        local NetworkingNumData, IdealNumData
         if Reader.ReadBool() then
             NetworkingNumData = Reader.ReadUInt(Overlay.MAX_ELEMENT_DATA_BITS)
+            IdealNumData = Reader.ReadUInt(Overlay.MAX_ELEMENT_DATA_BITS)
         else
             NetworkingNumData = DeprivedSlot:NumElementData()
+            IdealNumData = NetworkingNumData
         end
 
         local OneDataPieceChanged = false
@@ -81,7 +83,7 @@ do
         end
 
         DeprivedSlot.ChangedSinceLastUpdate = OneDataPieceChanged
-        DeprivedSlot.NumData = NetworkingNumData
+        DeprivedSlot.NumData = IdealNumData
 
         return OneDataPieceChanged
     end
@@ -94,11 +96,13 @@ do
 
         -- Read if slots have changed. If not, we can use the deprived state.
         local SlotsChanged   = Reader.ReadBool()
-        local NetworkingSlots
+        local NetworkingSlots, IdealSlots
         if SlotsChanged then
             NetworkingSlots = Reader.ReadUInt(Overlay.MAX_ELEMENT_BITS)
+            IdealSlots = Reader.ReadUInt(Overlay.MAX_ELEMENT_BITS)
         else
             NetworkingSlots = DeprivedState:NumElementSlots()
+            IdealSlots = NetworkingSlots
         end
 
         local OneSlotChanged = false
@@ -122,7 +126,7 @@ do
         end
 
         DeprivedState.ChangedSinceLastUpdate = OneSlotChanged
-        DeprivedState.NumElements = NetworkingSlots
+        DeprivedState.NumElements = IdealSlots
     end
 
     function Overlay.DeltaEncodeSlot(DeprivedSlot, IdealSlot, Writer, WriteToSlot, Full)
@@ -147,6 +151,7 @@ do
         if DataDifference ~= 0 or Full then
             Writer.WriteBool(true)
             Writer.WriteUInt(NetworkingNumData, Overlay.MAX_ELEMENT_DATA_BITS)
+            Writer.WriteUInt(IdealNumData, Overlay.MAX_ELEMENT_DATA_BITS)
         else
             Writer.WriteBool(false)
         end
@@ -214,6 +219,7 @@ do
         if SlotDifference ~= 0 or Full then
             Writer.WriteBool(true)
             Writer.WriteUInt(NetworkingSlots, Overlay.MAX_ELEMENT_BITS)
+            Writer.WriteUInt(IdealNumSlots, Overlay.MAX_ELEMENT_BITS)
         else
             Writer.WriteBool(false)
         end
