@@ -87,7 +87,7 @@ end
 
 function Overlay.UpdateOverlay(Entity, State, Full)
     for Player, EntityStates in pairs(PerPlayerStates) do
-        Overlay.UpdateOverlayForPlayer(Entity, Player, State, EntityStates[Player], Full)
+        Overlay.UpdateOverlayForPlayer(Entity, Player, State, EntityStates[Entity], Full)
     end
 end
 
