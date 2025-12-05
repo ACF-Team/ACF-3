@@ -191,6 +191,24 @@ do
         antialias = true,
         extended = true
     })
+    surface.CreateFont("ACF_OverlaySubText", {
+        font = Conduit,
+        size = 15,
+        weight = 500,
+        blursize = 0,
+        scanlines = 0,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlaySubKeyText", {
+        font = Conduit,
+        size = 15,
+        weight = 900,
+        blursize = 0,
+        scanlines = 0,
+        antialias = true,
+        extended = true
+    })
 end
 
 
@@ -286,8 +304,8 @@ do
     function Overlay.GetKVDividerX()
         return 0
     end
-    function Overlay.DrawKVDivider()
-        Overlay.SimpleText(":", Overlay.MAIN_FONT, Overlay.GetKVDividerX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    function Overlay.DrawKVDivider(XPlus, FONT)
+        Overlay.SimpleText(":", FONT or Overlay.MAIN_FONT, Overlay.GetKVDividerX() + (XPlus or 0), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     end
 
     function Overlay.BreakWidths()
@@ -442,9 +460,11 @@ do
             Overlay.HEADER_FONT          = "GModWorldtip"
             Overlay.SUBHEADER_BACK_FONT  = "GModWorldtip"
             Overlay.SUBHEADER_FONT       = "GModWorldtip"
-            Overlay.KEY_TEXT_FONT        = "GModWorldtip"
             Overlay.BOLD_TEXT_FONT       = "GModWorldtip"
+            Overlay.KEY_TEXT_FONT        = "GModWorldtip"
             Overlay.VALUE_TEXT_FONT      = "GModWorldtip"
+            Overlay.SUBKEY_TEXT_FONT     = "GModWorldtip"
+            Overlay.SUBVALUE_TEXT_FONT   = "GModWorldtip"
             Overlay.MAIN_FONT            = "GModWorldtip"
             Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
         else
@@ -463,9 +483,11 @@ do
             Overlay.HEADER_FONT          = "ACF_OverlayHeader"
             Overlay.SUBHEADER_BACK_FONT  = "ACF_OverlaySubHeaderBackground"
             Overlay.SUBHEADER_FONT       = "ACF_OverlaySubHeader"
-            Overlay.KEY_TEXT_FONT        = "ACF_OverlayKeyText"
             Overlay.BOLD_TEXT_FONT       = "ACF_OverlayBoldText"
+            Overlay.KEY_TEXT_FONT        = "ACF_OverlayKeyText"
             Overlay.VALUE_TEXT_FONT      = "ACF_OverlayText"
+            Overlay.SUBKEY_TEXT_FONT     = "ACF_OverlaySubKeyText"
+            Overlay.SUBVALUE_TEXT_FONT   = "ACF_OverlaySubText"
             Overlay.MAIN_FONT            = "ACF_OverlayText"
             Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
         end
@@ -686,12 +708,22 @@ function Overlay.BasicLabel(Slot, DataIndex, Color)
     Overlay.AppendSlotSize(X, Y)
 end
 
+-- 1 is the primary mode. 2 is the secondary mode.
+-- Sub keyvlues use 2 to move themselves in the value field.
+Overlay.KeyValueRenderMode = 1
+
 function Overlay.BasicKeyValueRender(Slot, Key, Value)
     -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
-    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Key or Slot.Data[1] or "Key")
-    local W2, H2 = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, Value or Slot.Data[2] or "Value")
+    local W1, H1, W2, H2
+    if Overlay.KeyValueRenderMode == 1 then
+        W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Key or Slot.Data[1] or "Key")
+        W2, H2 = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, Value or Slot.Data[2] or "Value")
+    else
+        W1, H1 = Overlay.GetTextSize(Overlay.SUBKEY_TEXT_FONT, Key or Slot.Data[1] or "Key")
+        W2, H2 = Overlay.GetTextSize(Overlay.SUBVALUE_TEXT_FONT, Value or Slot.Data[2] or "Value")
+    end
 
     local W = math.max(W1, W2) + 8
     local H = math.max(H1, H2)
@@ -703,13 +735,17 @@ function Overlay.BasicKeyValueRender(Slot, Key, Value)
 end
 
 function Overlay.BasicKeyValuePostRender(Slot, Key, Value)
-    Overlay.SimpleText(Key or Slot.Data[1] or "Key", Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-    Overlay.DrawKVDivider()
+    local KEY_FONT   = Overlay.KeyValueRenderMode == 1 and Overlay.KEY_TEXT_FONT or Overlay.SUBKEY_TEXT_FONT
+    local VALUE_FONT = Overlay.KeyValueRenderMode == 1 and Overlay.VALUE_TEXT_FONT or Overlay.SUBVALUE_TEXT_FONT
+    local X_OFFSET   = Overlay.KeyValueRenderMode == 1 and 0 or 8
+
+    Overlay.SimpleText(Key or Slot.Data[1] or "Key", KEY_FONT, Overlay.GetKVKeyX() + X_OFFSET, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    Overlay.DrawKVDivider(0, KEY_FONT)
 
     local X, Y = 0, 0
-    for _, Line in pairs(string.Explode("\n", Slot.Data[2])) do
+    for _, Line in pairs(string.Explode("\n", Value or Slot.Data[2] or "Value")) do
         if #Line == 0 then continue end
-        local _, W, H = Overlay.SimpleText(Line, Overlay.VALUE_TEXT_FONT, Overlay.GetKVValueX(), Y, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        local _, W, H = Overlay.SimpleText(Line, VALUE_FONT, Overlay.GetKVValueX(), Y + 1, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
         X = math.max(W, X)
         Y = Y + H
     end
