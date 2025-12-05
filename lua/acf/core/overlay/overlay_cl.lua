@@ -198,8 +198,6 @@ end
 
 -- Rendering
 do
-    local Target = ACF.RenderContext.LookAt
-
     local TargetX, TargetY = 0, 0
     local TotalW, TotalH = 0, 0
     local TotalY         = 0
@@ -418,7 +416,7 @@ do
     Overlay.ActiveOverlays = Overlays
 
     -- Hack...
-    local LookAtTarget = ACF.RenderContext.LookAt
+    local LookAtTarget = ACF.RenderContext and ACF.RenderContext.LookAt or NULL
 
     local OverlayMatrix = Matrix()
     local OverlayScale  = Vector(0, 0, 0)
@@ -487,7 +485,7 @@ do
 
                     -- Move TargetX, TargetY to be on the left side
                     TargetX = TargetX - (TotalW / 2) - 32
-                    TargetY = TargetY - (TotalH / 2) - 32 
+                    TargetY = TargetY - (TotalH / 2) - 32
 
                     -- Set up scaling
                     OverlayMatrix:Identity()

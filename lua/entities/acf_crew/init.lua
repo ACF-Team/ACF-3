@@ -602,7 +602,7 @@ do
 		return true, "Crew updated successfully!"
 	end
 
-	function ENT:UpdateOverlayText()
+	function ENT:ACF_UpdateOverlayState(State)
 		local Status = self.IsAlive and "Alive" or "Dead"
 		local ErrorCount = table.Count(self.OverlayErrors)
 		if ErrorCount > 0 then
@@ -614,20 +614,17 @@ do
 			Status = Status .. "\n\n" .. Error
 		end
 
-		local str = string.format("%s\n\nRole: %s\nHealth: %s%%\nLean: %s%%\nSpace: %s%%\nMove: %s%%\nFocus: %s%%\nTotal: %s%%\n\nReplaces Others: %s\nReplaceable: %s\nPriority: %s",
-			Status,
-			self.CrewTypeID,
-			math.Round(self.HealthEff * 100, 2),
-			math.Round(self.LeanEff * 100, 2),
-			math.Round(self.SpaceEff * 100, 2),
-			math.Round(self.MoveEff * 100, 2),
-			math.Round(self.Focus * 100, 2),
-			math.Round(self.TotalEff * 100, 2),
-			self.ReplaceOthers,
-			self.ReplaceSelf,
-			self.CrewPriority
-		)
-		return str
+		State:AddLabel(Status or "")
+		State:AddKeyValue("Role", self.CrewTypeID)
+		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2))
+		State:AddNumber("Lean", math.Round(self.LeanEff * 100, 2))
+		State:AddNumber("Space", math.Round(self.SpaceEff * 100, 2))
+		State:AddNumber("Move", math.Round(self.MoveEff * 100, 2))
+		State:AddNumber("Focus", math.Round(self.Focus * 100, 2))
+		State:AddNumber("Total", math.Round(self.TotalEff * 100, 2))
+		State:AddKeyValue("Replaces Others", self.ReplacesOthers and "Yes" or "No")
+		State:AddKeyValue("Replaceable", self.ReplaceSelf and "Yes" or "No")
+		State:AddNumber("Priority", self.CrewPriority)
 	end
 
 	function ENT:Use(Activator)
