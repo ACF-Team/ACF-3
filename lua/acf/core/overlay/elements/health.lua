@@ -78,10 +78,10 @@ local function RenderBar(Slot, MinColor, MaxColor)
     local BackTextColor = LerpColor(Health / MaxHealth, MinColor, MaxColor)
     BackTextColor:SetSaturation(0.3)
     BackTextColor:SetBrightness(1)
-    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    Overlay.SimpleText(InnerText, "ACF_OverlayHealthText", X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    for _ = 1, 3 do
+        Overlay.SimpleText(InnerText, Overlay.PROGRESS_BAR_TEXT_BACKGROUND, X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    Overlay.SimpleText(InnerText, Oevrlay.PROGRESS_BAR_TEXT, X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 function ELEMENT.PostRender(_, Slot)

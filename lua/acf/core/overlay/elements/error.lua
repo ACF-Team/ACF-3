@@ -5,7 +5,7 @@ function ELEMENT.Render(_, Slot)
     local X, Y = 0, 0
     for _, Line in pairs(string.Explode("\n", Slot.Data[1])) do
         if #Line == 0 then continue end
-        local _, W, H = Overlay.SimpleText(Line, "ACF_OverlayBoldText", 0, Y, Overlay.COLOR_ERROR_TEXT, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        local _, W, H = Overlay.SimpleText(Line, Overlay.BOLD_TEXT_FONT, 0, Y, Overlay.COLOR_ERROR_TEXT, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
         X = math.max(W, X)
         Y = Y + H
     end

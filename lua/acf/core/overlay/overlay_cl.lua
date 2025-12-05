@@ -199,6 +199,7 @@ do
     local FadeInTime  = 0
     local FadeOutTime = 0
     local FadeTime    = 0
+    local DoAnimation  = true
 
     local OVERALL_RECT_PADDING        = 16
     local HORIZONTAL_EXTERIOR_PADDING = 92
@@ -386,27 +387,71 @@ do
         return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
     end
 
-    local COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
-    local COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
-    local COLOR_TEXT                   = Color(236, 252, 255, 245)
-    local COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
-    local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
-    local COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
-    local COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
-    local COLOR_ERROR_TEXT             = Color(255, 255, 255)
+    local COLOR_DROP_SHADOW
+    local COLOR_PRIMARY_BACKGROUND
+    local COLOR_TEXT
+    local COLOR_TEXT_DARK
+    local COLOR_PRIMARY_COLOR
+    local COLOR_BORDER_LIGHT_COLOR
+    local COLOR_SECONDARY_COLOR
+    local COLOR_TERTIARY_COLOR
+    local COLOR_ERROR_TEXT
 
-    Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
-    Overlay.COLOR_TEXT = COLOR_TEXT
-    Overlay.COLOR_TEXT_DARK = COLOR_TEXT_DARK
-    Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
-    Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
-    Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
+    local UseWireOverlayStyle = CreateClientConVar("acf_overlay_wiremod_style", "0", true, false, "If true, the overlay UI will try to replicate Wiremod's overlay style to the best of its ability.", 0, 1)
+
     -- Todo
-    Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
-    Overlay.HEADER_FONT = "ACF_OverlayHeader"
-    Overlay.KEY_TEXT_FONT = "ACF_OverlayKeyText"
-    Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
-    Overlay.MAIN_FONT = "ACF_OverlayText"
+    local function SetupStyle(WireOverlayStyle)
+        if WireOverlayStyle then
+            COLOR_DROP_SHADOW            = Color(2, 9, 14, 0)
+            COLOR_PRIMARY_BACKGROUND     = Color(0, 0, 0, 204)
+            COLOR_TEXT                   = Color(236, 252, 255, 245)
+            COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
+            COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
+            COLOR_BORDER_LIGHT_COLOR     = Color(0, 0, 0, 255)
+            COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
+            COLOR_TERTIARY_COLOR         = Color(0, 0, 0, 245)
+            COLOR_ERROR_TEXT             = Color(255, 255, 255)
+            Overlay.HEADER_BACK_FONT             = "GModWorldtip"
+            Overlay.HEADER_FONT                  = "GModWorldtip"
+            Overlay.KEY_TEXT_FONT                = "GModWorldtip"
+            Overlay.BOLD_TEXT_FONT               = "GModWorldtip"
+            Overlay.VALUE_TEXT_FONT              = "GModWorldtip"
+            Overlay.MAIN_FONT                    = "GModWorldtip"
+            Overlay.PROGRESS_BAR_TEXT            = "ACF_OverlayHealthText"
+            Overlay.PROGRESS_BAR_TEXT_BACKGROUND = "ACF_OverlayHealthTextBackground"
+        else
+            COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
+            COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
+            COLOR_TEXT                   = Color(236, 252, 255, 245)
+            COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
+            COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
+            COLOR_BORDER_LIGHT_COLOR     = Color(150, 200, 210, 245)
+            COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
+            COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
+            COLOR_ERROR_TEXT             = Color(255, 255, 255)
+            Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
+            Overlay.HEADER_FONT = "ACF_OverlayHeader"
+            Overlay.KEY_TEXT_FONT = "ACF_OverlayKeyText"
+            Overlay.BOLD_TEXT_FONT = "ACF_OverlayBoldText"
+            Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
+            Overlay.MAIN_FONT = "ACF_OverlayText"
+            Overlay.PROGRESS_BAR_TEXT = "ACF_OverlayHealthText"
+            Overlay.PROGRESS_BAR_TEXT_BACKGROUND = "ACF_OverlayHealthTextBackground"
+        end
+
+        Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
+        Overlay.COLOR_TEXT = COLOR_TEXT
+        Overlay.COLOR_TEXT_DARK = COLOR_TEXT_DARK
+        Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
+        Overlay.COLOR_BORDER_LIGHT_COLOR = COLOR_BORDER_LIGHT_COLOR
+        Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
+        Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
+        DoAnimation = not WireOverlayStyle
+    end
+    SetupStyle(UseWireOverlayStyle:GetBool())
+    cvars.AddChangeCallback("acf_overlay_wiremod_style", function()
+        SetupStyle(UseWireOverlayStyle:GetBool())
+    end)
 
     local Overlays = Overlay.ActiveOverlays or {}
     Overlay.ActiveOverlays = Overlays
@@ -433,13 +478,18 @@ do
                 TargetX, TargetY = ScrW() / 2, ScrH() / 2
 
                 Overlay.ResetRenderState()
-                FadeInTime = math.Clamp((RealTime() - (Target.ACF_OverlayStartTime or 0)) * 6, 0, 1)
-                if Target.ACF_OverlayStopTime then
-                    FadeOutTime = math.Clamp((RealTime() - (Target.ACF_OverlayStopTime or 0)) * 9, 0, 1)
+                if DoAnimation then
+                    FadeInTime = math.Clamp((RealTime() - (Target.ACF_OverlayStartTime or 0)) * 6, 0, 1)
+                    if Target.ACF_OverlayStopTime then
+                        FadeOutTime = math.Clamp((RealTime() - (Target.ACF_OverlayStopTime or 0)) * 9, 0, 1)
+                    else
+                        FadeOutTime = 0
+                    end
+                    FadeTime = FadeInTime - FadeOutTime
                 else
-                    FadeOutTime = 0
+                    FadeInTime = 1
+                    FadeOutTime = Target.ACF_OverlayStopTime ~= nil and 1 or 0
                 end
-                FadeTime = FadeInTime - FadeOutTime
                 if FadeOutTime == 1 then
                     -- Early exit
                     Overlays[Target] = nil
@@ -517,7 +567,7 @@ do
                     cam.PopModelMatrix()
 
                     local BORDER_SIZE = 2
-                    surface.SetDrawColor(COLOR_PRIMARY_COLOR)
+                    surface.SetDrawColor(COLOR_BORDER_LIGHT_COLOR)
                     surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
                     surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
                     surface.SetDrawColor(COLOR_TERTIARY_COLOR)
