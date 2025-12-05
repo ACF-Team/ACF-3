@@ -673,3 +673,37 @@ do
         end
     end)
 end
+
+function Overlay.BasicKeyValueRender(Slot, Key, Value)
+    -- Our horizontal positions here are dependent on the final size of everything.
+    -- So those will be adjusted in PostRender, and we'll allocate our size here.
+
+    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Key or Slot.Data[1] or "Key")
+    local W2, H2 = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, Value or Slot.Data[2] or "Value")
+
+    local W = math.max(W1, W2) + 8
+    local H = math.max(H1, H2)
+
+    -- Allocate our slots size
+    Overlay.AppendSlotSize(W, H)
+    -- For key-values; push Key's size.
+    Overlay.PushWidths(W1, W2)
+end
+
+function Overlay.BasicKeyValuePostRender(Slot, Key, Value)
+    Overlay.SimpleText(Key or Slot.Data[1] or "Key", Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    Overlay.DrawKVDivider()
+    Overlay.SimpleText(Value or Slot.Data[2] or "Value", Overlay.VALUE_TEXT_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+end
+
+function Overlay.BasicLabel(Slot, DataIndex, Color)
+    local X, Y = 0, 0
+    for _, Line in pairs(string.Explode("\n", Slot.Data[DataIndex or 1])) do
+        if #Line == 0 then continue end
+        local _, W, H = Overlay.SimpleText(Line, Overlay.BOLD_TEXT_FONT, 0, Y, Color or Overlay.COLOR_TEXT, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        X = math.max(W, X)
+        Y = Y + H
+    end
+    if X == 0 then Y = 0 end
+    Overlay.AppendSlotSize(X, Y)
+end
