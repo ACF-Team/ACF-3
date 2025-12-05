@@ -19,8 +19,7 @@ function ELEMENT.Render(_, Slot)
 
     local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
     local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Slot))
-    W2 = W2 + 32
-    Overlay.AppendSlotSize(math.max(W1, W2), math.max(H1, H2))
+    Overlay.AppendSlotSize(W1 + W2 + 32, math.max(H1, H2))
     Overlay.PushWidths(W1, W2)
 end
 
