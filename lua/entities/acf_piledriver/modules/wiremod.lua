@@ -30,5 +30,5 @@ function ENT:ACF_UpdateOverlayState(State)
     State:AddNumber("Max Penetration", MaxPen, " mm")
     State:AddNumber("Spike Velocity", MuzVel, " m/s")
     State:AddNumber("Spike Length", Length, " cm")
-    State:AddNumber("Spike Mass", Mass)
+    State:AddKeyValue("Spike Mass", Mass)
 end
