@@ -417,8 +417,10 @@ do
     local OverlayMatrix = Matrix()
     local OverlayScale  = Vector(0, 0, 0)
     local OverlayOffset = Vector(0, 0, 0)
+    local ShouldDraw = GetConVar("cl_drawworldtooltips")
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         -- Update COLOR_ERROR_TEXT
+        if not ShouldDraw:GetBool() then return end
         COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
         COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
         for Target in pairs(Overlays) do
