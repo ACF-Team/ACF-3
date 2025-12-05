@@ -202,7 +202,7 @@ do
     local TotalW, TotalH = 0, 0
     local TotalY         = 0
     local SlotW, SlotH = 0, 0
-    local KeyWidth = 0
+    local KeyWidth, ValueWidth = 0, 0
     local LastKeyBreakIdx = 0
     local SlotDataCache  = {}
     local RenderCalls    = {}
@@ -214,7 +214,7 @@ do
     local FadeTime    = 0
 
     local OVERALL_RECT_PADDING        = 16
-    local HORIZONTAL_EXTERIOR_PADDING = 64
+    local HORIZONTAL_EXTERIOR_PADDING = 92
     local PER_SLOT_VERTICAL_PADDING   = 8
 
     Overlay.OVERALL_RECT_PADDING = OVERALL_RECT_PADDING
@@ -236,6 +236,7 @@ do
         SlotW,  SlotH  = 0, 0
         TotalY = 0
         KeyWidth = 0
+        ValueWidth = 0
         CurrentSlotIdx = 0
         LastKeyBreakIdx = 0
         NumRenderCalls = 0
@@ -247,6 +248,7 @@ do
         Cache.W = SlotW
         Cache.H = SlotH
         Cache.KeyWidth = KeyWidth
+        Cache.ValueWidth = ValueWidth
 
         TotalW = math.max(TotalW, SlotW)
         TotalH = TotalH + SlotH + PER_SLOT_VERTICAL_PADDING
@@ -261,28 +263,33 @@ do
 
     -- This function keeps every slot that came before it (up to the last key break idx)
     -- up to date with the current key width. 
-    function Overlay.PushKeyWidth(W)
-        KeyWidth = math.max(KeyWidth, W)
+    function Overlay.PushWidths(KeyW, ValueW)
+        KeyWidth   = math.max(KeyWidth, KeyW)
+        ValueWidth = math.max(ValueWidth, ValueW)
         for I = CurrentSlotIdx - 1, math.max(LastKeyBreakIdx, 1), -1 do
             Overlay.GetSlotDataCache(I).KeyWidth = KeyWidth
+            Overlay.GetSlotDataCache(I).ValueWidth = ValueWidth
         end
     end
 
+    function Overlay.GetKeyValueWidth() return KeyWidth + ValueWidth + 64 end
+
     function Overlay.GetKVKeyX()
-        return (-TotalW / 2) + (Overlay.HORIZONTAL_EXTERIOR_PADDING / 2)
+        return -16
     end
     function Overlay.GetKVValueX()
-        return (TotalW / 2) - (Overlay.HORIZONTAL_EXTERIOR_PADDING / 2)
+        return 16
     end
     function Overlay.GetKVDividerX()
-        return Overlay.GetKVKeyX() + Overlay.GetKeyWidth() + 12
+        return 0
     end
     function Overlay.DrawKVDivider()
         Overlay.SimpleText(":", Overlay.MAIN_FONT, Overlay.GetKVDividerX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     end
 
-    function Overlay.BreakKeyWidth()
+    function Overlay.BreakWidths()
         KeyWidth = 0
+        ValueWidth = 0
         LastKeyBreakIdx = CurrentSlotIdx
     end
 
@@ -315,6 +322,7 @@ do
     end
 
     function Overlay.GetKeyWidth() return KeyWidth end
+    function Overlay.GetValueWidth() return ValueWidth end
 
     function Overlay.GetOverlaySize()
         if not CanAccessOverlaySize then error("Can only call Overlay.GetOverlaySize in a post-render context.") end
@@ -469,10 +477,11 @@ do
                         CurrentSlotIdx = Idx
                         -- Reload slot state for post-render.
                         local SlotCache = Overlay.GetSlotDataCache(Idx)
-                        TotalY   = SlotCache.Y
-                        SlotW    = SlotCache.W
-                        SlotH    = SlotCache.H
-                        KeyWidth = SlotCache.KeyWidth
+                        TotalY     = SlotCache.Y
+                        SlotW      = SlotCache.W
+                        SlotH      = SlotCache.H
+                        KeyWidth   = SlotCache.KeyWidth
+                        ValueWidth = SlotCache.ValueWidth
                         -- Post render
                         local TypeIdx  = ElementSlot.Type
                         local Type     = Overlay.GetElementType(TypeIdx)

@@ -9,10 +9,9 @@ function ELEMENT.Render(_, Slot)
     local W, H = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
     -- Allocate our slots size
     -- We want at least 160 pixels for a health bar
-    local HW = math.min(160, W)
-    Overlay.AppendSlotSize(HW, H)
+    Overlay.AppendSlotSize(W, H)
     -- For key-values; push Key's size.
-    Overlay.PushKeyWidth(W)
+    Overlay.PushWidths(W, 160)
 end
 
 local HEALTH_BAD = Color(255, 40, 30)
@@ -43,13 +42,12 @@ function ELEMENT.PostRender(_, Slot)
     local Ratio = Health / MaxHealth
 
     local KeyX      = Overlay.GetKVKeyX()
-    local DividerX  = Overlay.GetKVDividerX()
     local ValueX    = Overlay.GetKVValueX()
 
-    Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    local X, Y = DividerX, 1
-    local W, H = (ValueX - DividerX), SlotH - 2
+    local X, Y = ValueX, 1
+    local W, H = 114, SlotH - 2
 
     local BarColor = LerpColor(Ratio, HEALTH_BAD, HEALTH_GOOD)
     Overlay.DrawRect(X, Y, W * Ratio, H, BarColor)

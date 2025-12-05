@@ -615,6 +615,7 @@ do
 		end
 
 		State:AddLabel(Status or "")
+		State:AddWidthBreak()
 		State:AddKeyValue("Role", self.CrewTypeID)
 		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2))
 		State:AddNumber("Lean", math.Round(self.LeanEff * 100, 2))

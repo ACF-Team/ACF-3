@@ -17,3 +17,11 @@ function ELEMENT.Render(_, _)
 end
 
 Overlay.DefineElementType("Divider", ELEMENT)
+
+local ELEMENT = {}
+
+function ELEMENT.Render(_, _)
+    Overlay.BreakKeyWidth()
+end
+
+Overlay.DefineElementType("WidthBreak", ELEMENT)

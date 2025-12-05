@@ -14,13 +14,13 @@ function ELEMENT.Render(_, Slot)
     -- Allocate our slots size
     Overlay.AppendSlotSize(W, H)
     -- For key-values; push Key's size.
-    Overlay.PushKeyWidth(W1)
+    Overlay.PushWidths(W1, W2)
 end
 
 function ELEMENT.PostRender(_, Slot)
-    Overlay.SimpleText(Slot.Data[1], Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(Slot.Data[1], Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    Overlay.SimpleText(tostring(Slot.Data[2]), Overlay.VALUE_TEXT_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(tostring(Slot.Data[2]), Overlay.VALUE_TEXT_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 end
 
 Overlay.DefineElementType("Number", ELEMENT)
