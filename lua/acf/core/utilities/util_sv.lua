@@ -527,7 +527,7 @@ do -- Entity linking
 		LinkWatchers[Source] = LinkWatchers[Source] or WeakKeyLUT()
 		LinkWatchers[Target] = LinkWatchers[Target] or WeakKeyLUT()
 		local Timer = ACF.AugmentedTimer(
-			function() 
+			function()
 				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
 				if not Status then
 					ACF.SendNotify(Source:CPPIGetOwner(), false, Message or "A link has been automatically removed.")
