@@ -97,28 +97,55 @@ do
 
     local TargetX, TargetY = 0, 0
     local TotalW, TotalH = 0, 0
+    local TotalY         = 0
     local SlotW, SlotH = 0, 0
+    local SlotDataCache  = {}
     local RenderCalls    = {}
     local NumRenderCalls = 0
+    local CanAccessOverlaySize = false
 
     local OVERALL_RECT_PADDING      = 16
     local PER_SLOT_VERTICAL_PADDING = 8
 
+    Overlay.OVERALL_RECT_PADDING = OVERALL_RECT_PADDING
+    Overlay.PER_SLOT_VERTICAL_PADDING = PER_SLOT_VERTICAL_PADDING
+
+    function Overlay.GetSlotDataCache(Idx)
+        local Cache = SlotDataCache[Idx]
+        if not Cache then
+            Cache = {}
+            SlotDataCache[Idx] = Cache
+        end
+
+        return Cache
+    end
+
     function Overlay.ResetRenderState()
         TotalW, TotalH = 0, 0
         SlotW,  SlotH  = 0, 0
+        TotalY = 0
         NumRenderCalls = 0
     end
 
-    function Overlay.PushSlotSizeToTotal()
+    function Overlay.PushSlotSizeToTotal(SlotIdx)
+        local Cache = Overlay.GetSlotDataCache(SlotIdx)
+        Cache.Y = TotalH
+        Cache.W = SlotW
+        Cache.H = SlotH
+
         TotalW = math.max(TotalW, SlotW)
         TotalH = TotalH + SlotH + PER_SLOT_VERTICAL_PADDING
         SlotW,  SlotH  = 0, 0
+        TotalY = TotalH
     end
 
     function Overlay.AppendSlotSize(W, H)
         SlotW = math.max(SlotW, W)
         SlotH = SlotH + H
+    end
+
+    function Overlay.GetCached(Idx)
+        return RenderCalls[Idx]
     end
 
     function Overlay.CacheRenderCall(Method, ...)
@@ -139,14 +166,28 @@ do
         return Idx
     end
 
-    function Overlay.SimpleText(Text, Font, X, Y, Color, XAlign, YAlign)
+    function Overlay.GetTextSize(Font, Text)
         surface.SetFont(Font)
         local W, H = surface.GetTextSize(Text)
+        return W, H
+    end
+
+    function Overlay.GetOverlaySize()
+        if not CanAccessOverlaySize then error("Can only call Overlay.GetOverlaySize in a post-render context.") end
+        return TotalW, TotalH
+    end
+
+    function Overlay.GetTargetPos()
+        return TargetX, TargetY
+    end
+
+    function Overlay.SimpleText(Text, Font, X, Y, Color, XAlign, YAlign)
+        local W, H = Overlay.GetTextSize(Font, Text)
 
         -- Adjust bounds for non-centered alignment...
         if XAlign ~= TEXT_ALIGN_CENTER then W = W * 2 end
         Overlay.AppendSlotSize(W, H)
-        return Overlay.CacheRenderCall(draw.SimpleText, Text, Font, X, Y + TotalH, Color, XAlign, YAlign)
+        return Overlay.CacheRenderCall(draw.SimpleText, Text, Font, X, Y + TotalY, Color, XAlign, YAlign)
     end
 
     local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 200)
@@ -158,6 +199,10 @@ do
     Overlay.COLOR_TEXT = COLOR_TEXT
     Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
     Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
+
+    -- Todo
+    Overlay.HEADER_FONT = "DermaLarge"
+    Overlay.MAIN_FONT   = "DermaDefault"
 
     local OverlayMatrix = Matrix()
     local OverlayOffset = Vector(0, 0, 0)
@@ -171,13 +216,13 @@ do
         TargetX, TargetY = Pos.x, Pos.y
 
         Overlay.ResetRenderState()
-        for _, ElementSlot in State:GetElementSlots() do
+        for Idx, ElementSlot in State:GetElementSlots() do
             local TypeIdx  = ElementSlot.Type
             local Type     = Overlay.GetElementType(TypeIdx)
             if Type.Render then
                 Type.Render(Target, ElementSlot)
             end
-            Overlay.PushSlotSizeToTotal()
+            Overlay.PushSlotSizeToTotal(Idx)
         end
 
         local Clipping = DisableClipping(true)
@@ -185,6 +230,22 @@ do
         -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
         TotalH = (TotalH + OVERALL_RECT_PADDING) - PER_SLOT_VERTICAL_PADDING
         TotalH = math.max(TotalH, 0)
+
+        -- Disable the barrier
+        CanAccessOverlaySize = true
+        -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
+        for Idx, ElementSlot in State:GetElementSlots() do
+            local SlotCache = Overlay.GetSlotDataCache(Idx)
+            TotalY = SlotCache.Y
+            local TypeIdx  = ElementSlot.Type
+            local Type     = Overlay.GetElementType(TypeIdx)
+            if Type.PostRender then
+                Type.PostRender(Target, ElementSlot)
+            end
+        end
+        TotalY = TotalH
+        CanAccessOverlaySize = false
+
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
         surface.DrawRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH)
