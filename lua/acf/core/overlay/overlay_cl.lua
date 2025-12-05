@@ -372,6 +372,11 @@ do
         surface.DrawRect(X, Y, W, H)
     end
 
+    local function DrawTexturedRectRotated(X, Y, W, H, Rotation, Color)
+        surface.SetDrawColor(Color)
+        surface.DrawTexturedRectRotated(X, Y, W, H, Rotation)
+    end
+
     local function DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV, Color)
         surface.SetDrawColor(Color)
         surface.DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV)
@@ -400,6 +405,11 @@ do
     function Overlay.DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV, Color)
         Overlay.AppendSlotSize(W, H)
         return Overlay.CacheRenderCall(DrawTexturedRectUV, X, Y + TotalY, W, H, SU, SV, EU, EV, Color)
+    end
+
+    function Overlay.DrawTexturedRectRotated(X, Y, W, H, Rotation, Color)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawTexturedRectRotated, X, Y + TotalY, W, H, Rotation, Color)
     end
 
     function Overlay.DrawOutlinedRect(X, Y, W, H, Color, Thickness)
@@ -739,7 +749,7 @@ function Overlay.BasicKeyValuePostRender(Slot, Key, Value)
     local VALUE_FONT = Overlay.KeyValueRenderMode == 1 and Overlay.VALUE_TEXT_FONT or Overlay.SUBVALUE_TEXT_FONT
     local X_OFFSET   = Overlay.KeyValueRenderMode == 1 and 0 or 8
 
-    Overlay.SimpleText(Key or Slot.Data[1] or "Key", KEY_FONT, Overlay.GetKVKeyX() + X_OFFSET, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    local X = Overlay.SimpleText(Key or Slot.Data[1] or "Key", KEY_FONT, Overlay.GetKVKeyX() + X_OFFSET, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider(0, KEY_FONT)
 
     local X, Y = 0, 0
@@ -749,4 +759,6 @@ function Overlay.BasicKeyValuePostRender(Slot, Key, Value)
         X = math.max(W, X)
         Y = Y + H
     end
+
+    return X
 end

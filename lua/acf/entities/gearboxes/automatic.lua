@@ -110,7 +110,7 @@ Gearboxes.Register("Auto", {
 		Gearbox.Hold       = nil
 	end,
 	WriteGearOverlay = function(Gearbox, State)
-		local GearText  = "%s, Upshift @ %s kph / %s mph"
+		local GearText  = ", Upshift @ %s kph / %s mph"
 		local Points    = Gearbox.ShiftPoints
 		local Gears     = Gearbox.Gears
 
@@ -119,11 +119,11 @@ Gearboxes.Register("Auto", {
 			local KPH = math.Round(Points[I] / 10.936, 1)
 			local MPH = math.Round(Points[I] / 17.6, 1)
 
-			State:AddKeyValue("Gear " .. I, GearText:format(Ratio, KPH, MPH))
+			State:AddGearRatio("Gear " .. I, Ratio, GearText:format(KPH, MPH), Gearbox.GearboxLegacyRatio)
 		end
 
 		local Reverse = ACF.ConvertGearRatio(Gears[Gearbox.GearCount], Gearbox.GearboxLegacyRatio)
-		State:AddKeyValue("Reverse Gear", Reverse)
+		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
 	end,
 })
 

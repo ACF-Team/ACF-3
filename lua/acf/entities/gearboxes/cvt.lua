@@ -75,7 +75,7 @@ Gearboxes.Register("CVT", {
 		local Min     = math.Round(Gearbox.MinRPM)
 		local Max     = math.Round(Gearbox.MaxRPM)
 
-		State:AddKeyValue("Reverse Gear", Reverse)
+		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
 		State:AddKeyValue("Target", Text:format(Min, Max))
 	end,
 })

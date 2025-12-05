@@ -783,14 +783,14 @@ do -- Overlay Text -------------------------------------
 
 			for I = 1, self.MaxGear do
 				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
-				State:AddKeyValue("Gear " .. I, Ratio)
+				State:AddGearRatio("Gear " .. I, Ratio, "", self.GearboxLegacyRatio)
 			end
 		end
 		State:AddDivider()
 		State:AddNumber("Final Drive", Final)
-		State:AddKeyValue("Ratio", RatioFormat) -- todo: AddGearRatio for this specifically. Do this before final PR
-		State:AddKeyValue("Torque Rating", ("%s Nm / 5S ft-lb"):format(self.MaxTorque, Torque))
-		State:AddKeyValue("Torque Output", ("%s Nm / 5S ft-lb"):format(math.floor(self.TorqueOutput), Output))
+		State:AddKeyValue("Ratio", RatioFormat)
+		State:AddKeyValue("Torque Rating", ("%s Nm / %s ft-lb"):format(self.MaxTorque, Torque))
+		State:AddKeyValue("Torque Output", ("%s Nm / %s ft-lb"):format(math.floor(self.TorqueOutput), Output))
 	end
 end ----------------------------------------------------
 
