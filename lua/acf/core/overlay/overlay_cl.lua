@@ -99,6 +99,7 @@ do
     local TotalW, TotalH = 0, 0
     local TotalY         = 0
     local SlotW, SlotH = 0, 0
+    local KeyWidth = 0
     local SlotDataCache  = {}
     local RenderCalls    = {}
     local NumRenderCalls = 0
@@ -124,6 +125,7 @@ do
         TotalW, TotalH = 0, 0
         SlotW,  SlotH  = 0, 0
         TotalY = 0
+        KeyWidth = 0
         NumRenderCalls = 0
     end
 
@@ -132,6 +134,7 @@ do
         Cache.Y = TotalH
         Cache.W = SlotW
         Cache.H = SlotH
+        Cache.KeyWidth = KeyWidth
 
         TotalW = math.max(TotalW, SlotW)
         TotalH = TotalH + SlotH + PER_SLOT_VERTICAL_PADDING
@@ -142,6 +145,14 @@ do
     function Overlay.AppendSlotSize(W, H)
         SlotW = math.max(SlotW, W)
         SlotH = SlotH + H
+    end
+
+    function Overlay.PushKeyWidth(W)
+        KeyWidth = math.max(KeyWidth, W)
+    end
+
+    function Overlay.BreakKeyWidth()
+        KeyWidth = 0
     end
 
     function Overlay.GetCached(Idx)
@@ -171,6 +182,8 @@ do
         local W, H = surface.GetTextSize(Text)
         return W, H
     end
+
+    function Overlay.GetKeyWidth() return KeyWidth end
 
     function Overlay.GetOverlaySize()
         if not CanAccessOverlaySize then error("Can only call Overlay.GetOverlaySize in a post-render context.") end

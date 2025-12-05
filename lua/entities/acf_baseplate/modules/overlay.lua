@@ -2,6 +2,7 @@ local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Heal
 function ENT:UpdateOverlayState(State)
 	State:AddHeader("ACF Baseplate")
 	State:AddKeyValue("Type", self:ACF_GetUserVar("BaseplateType").Name)
+	State:AddSize("Size", self:ACF_GetUserVar("BaseplateType").Name)
 
 	local h, mh = self.ACF.Health, self.ACF.MaxHealth
 	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""

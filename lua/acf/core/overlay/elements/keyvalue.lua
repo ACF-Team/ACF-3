@@ -13,13 +13,15 @@ function ELEMENT.Render(_, Slot)
 
     -- Allocate our slots size
     Overlay.AppendSlotSize(W, H)
+    -- For key-values; push Key's size.
+    Overlay.PushKeyWidth(W1)
 end
 
 function ELEMENT.PostRender(_, Slot)
     local TotalW, TotalH = Overlay.GetOverlaySize()
 
     Overlay.SimpleText(Slot.Data[1], Overlay.MAIN_FONT, (-TotalW / 2) + (Overlay.OVERALL_RECT_PADDING / 2), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-    Overlay.SimpleText(":", Overlay.MAIN_FONT, 0, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(":", Overlay.MAIN_FONT, (-TotalW / 2) + (Overlay.OVERALL_RECT_PADDING / 2) + Overlay.GetKeyWidth(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     Overlay.SimpleText(Slot.Data[2], Overlay.MAIN_FONT, (TotalW / 2) - (Overlay.OVERALL_RECT_PADDING / 2), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 end
 
