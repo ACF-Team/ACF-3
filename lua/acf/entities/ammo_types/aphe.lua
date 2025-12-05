@@ -112,12 +112,11 @@ if SERVER then
 		Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
 	end
 
-	function Ammo:GetCrateText(BulletData)
-		local BaseText = Ammo.BaseClass.GetCrateText(self, BulletData)
-		local Text	   = BaseText .. "\nBlast Radius: %s m\nBlast Energy: %s kJ"
-		local Data	   = self:GetDisplayData(BulletData)
-
-		return Text:format(math.Round(Data.BlastRadius, 2), ACF.NiceNumber(math.Round(BulletData.FillerMass * ACF.HEPower, 2)))
+	function Ammo:UpdateCrateOverlay(BulletData, State)
+		Ammo.BaseClass.UpdateCrateOverlay(self, BulletData, State)
+		local Data = self:GetDisplayData(BulletData)
+		State:AddNumber("Blast Radius", Data.BlastRadius, " m", 2)
+		State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ", 2)
 	end
 
 	function Ammo:OnFlightEnd(Bullet, Trace)

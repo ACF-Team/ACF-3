@@ -482,9 +482,6 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
-
-	-- This sucks. Make GetCrateText and GetOverlayText return components so we dont have to do this splitting garbage.
 	local function SplitPieces(State, Data)
 		for _, Line in ipairs(string.Explode("\n", Data)) do
 			if #Line ~= 0 then
@@ -497,9 +494,7 @@ do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
-		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
 		local ExtraInfo = ACF.GetOverlayText(self)
-		local BulletInfo = ""
 
 		if next(self.Weapons) then
 			if self:CanConsume() then
@@ -517,11 +512,6 @@ do -- Overlay
 		local CountY = self.CrateProjectilesY or 1
 		local CountZ = self.CrateProjectilesZ or 1
 
-		local Projectile = math.Round(self.BulletData.ProjMass, 2)
-		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
-
-		BulletInfo = BulletText:format(Cartridge, Projectile)
-
 		if AmmoInfo and AmmoInfo ~= "" then
 			AmmoInfo = AmmoInfo
 		end
@@ -530,11 +520,15 @@ do -- Overlay
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
-		-- This sucks
+
+		local Projectile = math.Round(self.BulletData.ProjMass, 2)
+		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 		State:AddHeader("Bullet Info", 2)
-		SplitPieces(State, BulletInfo)
+		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
+		State:AddNumber("Projectile Mass", Projectile, " kg", 2)
+
 		State:AddHeader("Ammo Info", 2)
-		SplitPieces(State, AmmoInfo)
+		self.RoundData:UpdateCrateOverlay(self.BulletData, State)
 		if #ExtraInfo > 0 then
 			State:AddHeader("Extra Info", 2)
 			SplitPieces(State, ExtraInfo)

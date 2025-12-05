@@ -122,11 +122,11 @@ if SERVER then
 	function Ammo:GetCrateName()
 	end
 
-	function Ammo:GetCrateText(BulletData)
+	function Ammo:UpdateCrateOverlay(BulletData, State)
 		local Data = self:GetDisplayData(BulletData)
-		local Text = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm"
-
-		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2))
+		print(BulletData.MuzzleVel)
+		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
+		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)

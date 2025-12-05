@@ -3,12 +3,14 @@ local ELEMENT = {}
 
 function ELEMENT.Render(_, Slot)
     local Unit = Slot.NumData >= 3 and Slot.Data[3] or ""
-    Overlay.BasicKeyValueRender(Slot, nil, tostring(Slot.Data[2]) .. Unit)
+    local Decimals = Slot.NumData >= 4 and Slot.Data[4] or 2
+    Overlay.BasicKeyValueRender(Slot, nil, ACF.NiceNumber(Slot.Data[2], Decimals) .. Unit)
 end
 
 function ELEMENT.PostRender(_, Slot)
     local Unit = Slot.NumData >= 3 and Slot.Data[3] or ""
-    Overlay.BasicKeyValuePostRender(Slot, nil, tostring(Slot.Data[2]) .. Unit)
+    local Decimals = Slot.NumData >= 4 and Slot.Data[4] or 2
+    Overlay.BasicKeyValuePostRender(Slot, nil, ACF.NiceNumber(Slot.Data[2], Decimals) .. Unit)
 end
 
 Overlay.DefineElementType("Number", ELEMENT)
