@@ -485,6 +485,16 @@ do -- Overlay
 	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
 
+	-- This sucks. Make GetCrateText and GetOverlayText return components so we dont have to do this splitting garbage.
+	local function SplitPieces(State, Data)
+		for _, Line in ipairs(string.Explode("\n", Data)) do
+			if #Line ~= 0 then
+				local Parts = string.Explode(":", Line)
+				State:AddKeyValue(Parts[1], Parts[2])
+			end
+		end
+	end
+
 	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
@@ -518,8 +528,14 @@ do -- Overlay
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
-		State:AddLabel(BulletInfo)
-		State:AddLabel(AmmoInfo)
-		State:AddLabel(ExtraInfo)
+		-- This sucks
+		State:AddHeader("Bullet Info")
+		SplitPieces(State, BulletInfo)
+		State:AddHeader("Ammo Info")
+		SplitPieces(State, AmmoInfo)
+		if #ExtraInfo > 0 then
+			State:AddHeader("Extra Info")
+			SplitPieces(State, ExtraInfo)
+		end
 	end
 end
