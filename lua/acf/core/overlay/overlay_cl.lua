@@ -725,7 +725,7 @@ function Overlay.BasicKeyValueRender(Slot, Key, Value)
         W2, H2 = Overlay.GetTextSize(Overlay.SUBVALUE_TEXT_FONT, Value or Slot.Data[2] or "Value")
     end
 
-    local W = math.max(W1, W2) + 8
+    local W = math.max(W1 * 2, W2 * 2)
     local H = math.max(H1, H2)
 
     -- Allocate our slots size
