@@ -609,12 +609,12 @@ do
 			Status = Status .. " (" .. ErrorCount .. " errors)"
 		end
 
-		-- Compile error messages
-		for _, Error in pairs(self.OverlayErrors) do
-			Status = Status .. "\n\n" .. Error
-		end
+		-- Compile error message
 
 		State:AddLabel(Status or "")
+		for _, Error in pairs(self.OverlayErrors) do
+			State:AddError(Error)
+		end
 		State:AddWidthBreak()
 		State:AddKeyValue("Role", self.CrewTypeID)
 		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2))

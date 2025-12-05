@@ -400,7 +400,7 @@ do
     end
 
     local COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
-    local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 200)
+    local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 204)
     local COLOR_TEXT                   = Color(236, 252, 255, 245)
     local COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
     local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
@@ -413,7 +413,7 @@ do
     Overlay.COLOR_TEXT_DARK = COLOR_TEXT_DARK
     Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
     Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
-
+    Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
     -- Todo
     Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
     Overlay.HEADER_FONT = "ACF_OverlayHeader"
@@ -433,7 +433,7 @@ do
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         -- Update COLOR_ERROR_TEXT
         COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
-        COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime()) + 1) / 2, 0.2, 0.4))
+        COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.1, 0.3))
         for Target in pairs(Overlays) do
             if not IsValid(Target) then
                 Overlays[Target] = nil
