@@ -211,6 +211,9 @@ do
     local NumRenderCalls = 0
     local CurrentSlotIdx = 0
     local CanAccessOverlaySize = false
+    local FadeInTime  = 0
+    local FadeOutTime = 0
+    local FadeTime    = 0
 
     local OVERALL_RECT_PADDING        = 16
     local HORIZONTAL_EXTERIOR_PADDING = 64
@@ -411,100 +414,147 @@ do
     Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
     Overlay.MAIN_FONT = "ACF_OverlayText"
 
+    local Overlays = Overlay.ActiveOverlays or {}
+    Overlay.ActiveOverlays = Overlays
+
+    -- Hack...
+    local LookAtTarget = ACF.RenderContext.LookAt
+
     local OverlayMatrix = Matrix()
+    local OverlayScale  = Vector(0, 0, 0)
     local OverlayOffset = Vector(0, 0, 0)
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
-        if not IsValid(Target) then return end
+        for Target in pairs(Overlays) do
+            if not IsValid(Target) then
+                Overlays[Target] = nil
+            else
+                local State = Target.ACF_OverlayState
+                if not State then return end
 
-        local State = Target.ACF_OverlayState
-        if not State then return end
+                TargetX, TargetY = ScrW() / 2, ScrH() / 2
 
-        TargetX, TargetY = ScrW() / 2, ScrH() / 2
+                Overlay.ResetRenderState()
+                FadeInTime = math.Clamp((RealTime() - (Target.ACF_OverlayStartTime or 0)) * 6, 0, 1)
+                if Target.ACF_OverlayStopTime then
+                    FadeOutTime = math.Clamp((RealTime() - (Target.ACF_OverlayStopTime or 0)) * 9, 0, 1)
+                else
+                    FadeOutTime = 0
+                end
+                FadeTime = FadeInTime - FadeOutTime
+                if FadeOutTime == 1 then
+                    -- Early exit
+                    Overlays[Target] = nil
+                else
+                    local Alpha = surface.GetAlphaMultiplier()
+                    surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime))
 
-        Overlay.ResetRenderState()
-        for Idx, ElementSlot in State:GetElementSlots() do
-            CurrentSlotIdx = Idx
-            local TypeIdx  = ElementSlot.Type
-            local Type     = Overlay.GetElementType(TypeIdx)
-            if Type.Render then
-                Type.Render(Target, ElementSlot)
+                    for Idx, ElementSlot in State:GetElementSlots() do
+                        CurrentSlotIdx = Idx
+                        local TypeIdx  = ElementSlot.Type
+                        local Type     = Overlay.GetElementType(TypeIdx)
+                        if Type.Render then
+                            Type.Render(Target, ElementSlot)
+                        end
+                        Overlay.PushSlotSizeToTotal(Idx)
+                    end
+
+                    local Clipping = DisableClipping(true)
+                    TotalW = TotalW + OVERALL_RECT_PADDING + HORIZONTAL_EXTERIOR_PADDING
+                    -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
+                    TotalH = (TotalH + OVERALL_RECT_PADDING) - PER_SLOT_VERTICAL_PADDING
+                    TotalH = math.max(TotalH, 0)
+
+                    -- Disable the barrier
+                    CanAccessOverlaySize = true
+                    -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
+                    for Idx, ElementSlot in State:GetElementSlots() do
+                        CurrentSlotIdx = Idx
+                        -- Reload slot state for post-render.
+                        local SlotCache = Overlay.GetSlotDataCache(Idx)
+                        TotalY   = SlotCache.Y
+                        SlotW    = SlotCache.W
+                        SlotH    = SlotCache.H
+                        KeyWidth = SlotCache.KeyWidth
+                        -- Post render
+                        local TypeIdx  = ElementSlot.Type
+                        local Type     = Overlay.GetElementType(TypeIdx)
+                        if Type.PostRender then
+                            Type.PostRender(Target, ElementSlot)
+                        end
+                    end
+                    TotalY = TotalH
+                    CanAccessOverlaySize = false
+
+                    -- Move TargetX, TargetY to be on the left side
+                    TargetX = TargetX - (TotalW / 2) - 32
+                    TargetY = TargetY - (TotalH / 2) - 32 
+
+                    -- Set up scaling
+                    OverlayMatrix:Identity()
+                    local XScale = 1
+                    local YScale = 1
+
+                    -- Cool animations for scaling
+                    XScale = 1 + (math.ease.InBack(FadeOutTime) * 0.3)
+                    YScale = math.ease.OutBack(math.ease.InCubic(FadeInTime)) - (math.ease.InBack(FadeOutTime))
+
+                    OverlayScale:SetUnpacked(XScale, YScale, 1)
+                    OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / (2 / YScale))) + PER_SLOT_VERTICAL_PADDING), 0)
+                    OverlayMatrix:Translate(OverlayOffset)
+                    OverlayMatrix:Scale(OverlayScale)
+
+                    -- Draw background
+                    surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
+                    local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / (2 / XScale)), TargetY - (TotalH / (2 / YScale)), TotalW * XScale, TotalH * YScale
+                    surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
+
+                    cam.PushModelMatrix(OverlayMatrix)
+                    -- Draw all cached calls.
+                    for I = 1, NumRenderCalls do
+                        local Cache = RenderCalls[I]
+                        Cache.Method(unpack(Cache.Data, 1, Cache.ArgC))
+                    end
+                    cam.PopModelMatrix()
+
+                    local BORDER_SIZE = 2
+                    surface.SetDrawColor(COLOR_PRIMARY_COLOR)
+                    surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
+                    surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
+                    surface.SetDrawColor(COLOR_TERTIARY_COLOR)
+                    surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
+                    surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
+
+                    -- This kinda sucks... todo
+                    surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
+                    surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
+
+                    -- Draw a drop shadow
+                    surface.SetDrawColor(COLOR_DROP_SHADOW)
+                    local DROP_SHADOW_SIZE = 2
+                    surface.DrawRect(BoxX + BoxW, BoxY, DROP_SHADOW_SIZE, BoxH + DROP_SHADOW_SIZE)
+                    surface.DrawRect(BoxX, BoxY + BoxH, BoxW, DROP_SHADOW_SIZE)
+
+                    DisableClipping(Clipping)
+                    surface.SetAlphaMultiplier(Alpha)
+                end
             end
-            Overlay.PushSlotSizeToTotal(Idx)
         end
-
-        local Clipping = DisableClipping(true)
-        TotalW = TotalW + OVERALL_RECT_PADDING + HORIZONTAL_EXTERIOR_PADDING
-        -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
-        TotalH = (TotalH + OVERALL_RECT_PADDING) - PER_SLOT_VERTICAL_PADDING
-        TotalH = math.max(TotalH, 0)
-
-        -- Disable the barrier
-        CanAccessOverlaySize = true
-        -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
-        for Idx, ElementSlot in State:GetElementSlots() do
-            CurrentSlotIdx = Idx
-            -- Reload slot state for post-render.
-            local SlotCache = Overlay.GetSlotDataCache(Idx)
-            TotalY   = SlotCache.Y
-            SlotW    = SlotCache.W
-            SlotH    = SlotCache.H
-            KeyWidth = SlotCache.KeyWidth
-            -- Post render
-            local TypeIdx  = ElementSlot.Type
-            local Type     = Overlay.GetElementType(TypeIdx)
-            if Type.PostRender then
-                Type.PostRender(Target, ElementSlot)
-            end
-        end
-        TotalY = TotalH
-        CanAccessOverlaySize = false
-
-        -- Move TargetX, TargetY to be on the left side
-        TargetX = TargetX - (TotalW / 2) - 32
-        TargetY = TargetY - (TotalH / 2) - 32
-        -- Draw background
-        surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
-        local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH
-        surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
-
-        OverlayMatrix:Identity()
-        OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / 2)) + PER_SLOT_VERTICAL_PADDING), 0)
-        OverlayMatrix:Translate(OverlayOffset)
-        cam.PushModelMatrix(OverlayMatrix)
-        -- Draw all cached calls.
-        for I = 1, NumRenderCalls do
-            local Cache = RenderCalls[I]
-            Cache.Method(unpack(Cache.Data, 1, Cache.ArgC))
-        end
-        cam.PopModelMatrix()
-
-        local BORDER_SIZE = 2
-        surface.SetDrawColor(COLOR_PRIMARY_COLOR)
-        surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
-        surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
-        surface.SetDrawColor(COLOR_TERTIARY_COLOR)
-        surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
-        surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
-
-        -- This kinda sucks... todo
-        surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
-        surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
-
-        -- Draw a drop shadow
-        surface.SetDrawColor(COLOR_DROP_SHADOW)
-        local DROP_SHADOW_SIZE = 2
-        surface.DrawRect(BoxX + BoxW, BoxY, DROP_SHADOW_SIZE, BoxH + DROP_SHADOW_SIZE)
-        surface.DrawRect(BoxX, BoxY + BoxH, BoxW, DROP_SHADOW_SIZE)
-
-        DisableClipping(Clipping)
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
         if IsValid(New) then
+            Overlays[New] = true
+            New.ACF_OverlayStartTime = RealTime()
+            New.ACF_OverlayStopTime  = nil
             Overlay.StartOverlay(New, true)
         else
             Overlay.EndOverlay(true)
         end
-        Target = New
+        if LookAtTarget ~= New then
+            if IsValid(LookAtTarget) then
+                LookAtTarget.ACF_OverlayStopTime = RealTime()
+            end
+            LookAtTarget = New
+        end
     end)
 end
