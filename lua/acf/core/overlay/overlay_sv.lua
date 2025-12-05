@@ -45,7 +45,7 @@ end
 -- Start a player viewing an overlay on a particular entity.
 function Overlay.StartOverlay(Player, Entity)
     if not IsValid(Entity) then return end
-    if not Entity.IsACFEntity then return end
+    if not Entity.ACF_UpdateOverlayState then return end
     -- Allocate a fully zeroed out state
     local PlayerState = Overlay.GetPerPlayerPerEntityState(Player, Entity)
 

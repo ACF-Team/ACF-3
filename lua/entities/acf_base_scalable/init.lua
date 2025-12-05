@@ -10,7 +10,7 @@ ENT.OverlayDelay = 1 -- Time in seconds between each overlay update
 -- You should overwrite these
 function ENT:Enable() end
 function ENT:Disable() end
-function ENT:UpdateOverlayState() end
+function ENT:ACF_UpdateOverlayState() end
 
 do -- Entity Overlay ----------------------------
 	local Name    = "ACF Overlay Buffer %s"
@@ -31,7 +31,7 @@ do -- Entity Overlay ----------------------------
 		OverlayState:Begin()
 		local WireName = self:GetNWString("WireName")
 		OverlayState:AddHeader(#WireName == 0 and self.PrintName or WireName)
-		self:UpdateOverlayState(OverlayState)
+		self:ACF_UpdateOverlayState(OverlayState)
 		OverlayState:End()
 		ACF.Overlay.UpdateOverlay(self, OverlayState)
 	end
