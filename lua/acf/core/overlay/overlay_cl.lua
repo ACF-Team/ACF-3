@@ -598,9 +598,9 @@ do
 
                     -- Draw a drop shadow
                     surface.SetDrawColor(COLOR_DROP_SHADOW)
-                    local DROP_SHADOW_SIZE = 2
-                    surface.DrawRect(BoxX + BoxW, BoxY, DROP_SHADOW_SIZE, BoxH + DROP_SHADOW_SIZE)
-                    surface.DrawRect(BoxX, BoxY + BoxH, BoxW, DROP_SHADOW_SIZE)
+                    local DROP_SHADOW_SIZE = 4
+                    surface.DrawRect(BoxX + BoxW, BoxY + DROP_SHADOW_SIZE, DROP_SHADOW_SIZE, BoxH)
+                    surface.DrawRect(BoxX + DROP_SHADOW_SIZE, BoxY + BoxH, BoxW - DROP_SHADOW_SIZE, DROP_SHADOW_SIZE)
 
                     DisableClipping(Clipping)
                     surface.SetAlphaMultiplier(Alpha)

@@ -264,9 +264,9 @@ do
 		[1] = "One Final, Dual Clutch",
 		[2] = "Two Final, Dual Clutch"
 	}
-	function ENT:UpdateOverlayText()
-		local str = string.format("All In One Controller\nPredicted Drivetrain: %s", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
-		return str
+
+	function ENT:ACF_UpdateOverlayState(State)
+		State:AddKeyValue("Predicted Drivetrain", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
 	end
 end
 
