@@ -562,7 +562,7 @@ do -- Metamethods --------------------------------
 		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
 		-- Exceptions for aircraft (maybe this should be refined later?)
 		local function BeltFedCheck(Entity, Crate)
-			if Entity.IsBelted and IsValid(Entity:GetParent()) and not Entity:GetContraption().ACF_IsAircraft and Entity:FindPropagator() ~= Crate:GetParent() then return false end
+			if Entity.IsBelted and Entity.Weapon ~= "MG" and IsValid(Entity:GetParent()) and not Entity:GetContraption().ACF_IsAircraft and Entity:FindPropagator() ~= Crate:GetParent() then return false end
 			return true
 		end
 
