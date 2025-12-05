@@ -12,11 +12,6 @@ local function GetVectorStringPiecesFromSlot(Slot)
     return ("x: %.2f   "):format(X), ("y: %.2f   "):format(Y), ("z: %.2f"):format(Z)
 end
 
-local function GetVectorStringFromSlot(Slot)
-    local X, Y, Z = GetVectorStringPiecesFromSlot(Slot)
-    return ("%s%s%s"):format(X, Y, Z)
-end
-
 function ELEMENT.Render(_, Slot)
     -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
