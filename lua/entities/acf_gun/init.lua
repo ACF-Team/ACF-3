@@ -559,6 +559,13 @@ do -- Metamethods --------------------------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
+		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
+		-- Exceptions for aircraft (maybe this should be refined later?)
+		local function BeltFedCheck(Entity, Crate)
+			if Entity.IsBelted and Entity.Weapon ~= "MG" and IsValid(Entity:GetParent()) and not Entity:GetContraption().ACF_IsAircraft and Entity:FindPropagator() ~= Crate:GetParent() then return false end
+			return true
+		end
+
 		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
@@ -566,10 +573,11 @@ do -- Metamethods --------------------------------
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
-
 			if Blacklist[This.Class] then
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
+
+			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 
 			return true
 		end)
@@ -578,6 +586,8 @@ do -- Metamethods --------------------------------
 			if CheckCrate(This, Crate, This:GetPos(), First) then
 				return false, "This crate is too far away from this weapon."
 			end
+
+			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 			return true
 		end)
 
