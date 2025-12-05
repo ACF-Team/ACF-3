@@ -297,8 +297,7 @@ do
         local State = Target.ACF_OverlayState
         if not State then return end
 
-        local Pos = Target:GetPos():ToScreen()
-        TargetX, TargetY = Pos.x, Pos.y
+        TargetX, TargetY = ScrW() / 2, ScrH() / 2
 
         Overlay.ResetRenderState()
         for Idx, ElementSlot in State:GetElementSlots() do
@@ -338,6 +337,9 @@ do
         TotalY = TotalH
         CanAccessOverlaySize = false
 
+        -- Move TargetX, TargetY to be on the left side
+        TargetX = TargetX - (TotalW / 2) - 32
+        TargetY = TargetY - (TotalH / 2) - 32
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
         surface.DrawRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH)
