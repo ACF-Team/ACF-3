@@ -6,20 +6,6 @@ ACF.AddInputAction("acf_piledriver", "Fire", function(Entity, Value)
     Entity:Shoot()
 end)
 
-local Text  = "Spike Velocity: %s m/s\nSpike Length: %s cm\nSpike Mass: %s"
-local Empty = "▯"
-local Full  = "▮"
-
-local function GetChargeBar(Percentage)
-    local Bar = ""
-
-    for I = 0.05, 0.95, 0.1 do
-        Bar = Bar .. (I <= Percentage and Full or Empty)
-    end
-
-    return Bar
-end
-
 -------------------------------------------------------------------------------
 
 ENT.OverlayDelay = 0.1
@@ -45,6 +31,4 @@ function ENT:ACF_UpdateOverlayState(State)
     State:AddNumber("Spike Velocity", MuzVel, " m/s")
     State:AddNumber("Spike Length", Length, " cm")
     State:AddNumber("Spike Mass", Mass)
-
-    -- return Text:format(self.State, Current, Total, Shots, Percent, State, Rate, RoF, MaxPen, MuzVel, Length, Mass)
 end
