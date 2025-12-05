@@ -390,11 +390,13 @@ do
         return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
     end
 
+    local COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
     local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 200)
     local COLOR_TEXT                   = Color(236, 252, 255, 245)
     local COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
     local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
     local COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
+    local COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
 
     Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
     Overlay.COLOR_TEXT = COLOR_TEXT
@@ -462,7 +464,8 @@ do
         TargetY = TargetY - (TotalH / 2) - 32
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
-        surface.DrawRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH)
+        local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH
+        surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
 
         OverlayMatrix:Identity()
         OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / 2)) + PER_SLOT_VERTICAL_PADDING), 0)
@@ -474,10 +477,26 @@ do
             Cache.Method(unpack(Cache.Data, 1, Cache.ArgC))
         end
         cam.PopModelMatrix()
-        DisableClipping(Clipping)
 
+        local BORDER_SIZE = 2
         surface.SetDrawColor(COLOR_PRIMARY_COLOR)
-        surface.DrawOutlinedRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH, 1)
+        surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
+        surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
+        surface.SetDrawColor(COLOR_TERTIARY_COLOR)
+        surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
+        surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
+
+        -- This kinda sucks... todo
+        surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
+        surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
+
+        -- Draw a drop shadow
+        surface.SetDrawColor(COLOR_DROP_SHADOW)
+        local DROP_SHADOW_SIZE = 2
+        surface.DrawRect(BoxX + BoxW, BoxY, DROP_SHADOW_SIZE, BoxH + DROP_SHADOW_SIZE)
+        surface.DrawRect(BoxX, BoxY + BoxH, BoxW, DROP_SHADOW_SIZE)
+
+        DisableClipping(Clipping)
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
