@@ -29,6 +29,14 @@ do -- Entity Overlay ----------------------------
 		return OverlayState
 	end
 
+	local function DoUpdate(self, OverlayState)
+		OverlayState:Begin()
+		local WireName = self:GetNWString("WireName")
+		OverlayState:AddHeader(#WireName == 0 and self.PrintName or WireName)
+		self:UpdateOverlayState(OverlayState)
+		OverlayState:End()
+		ACF.Overlay.UpdateOverlay(self, OverlayState)
+	end
 	function ENT:UpdateOverlay(Instant)
 		local OverlayState = self.OverlayState
 		if not OverlayState then
@@ -37,20 +45,14 @@ do -- Entity Overlay ----------------------------
 		end
 
 		if Instant then
-			OverlayState:Begin()
-			self:UpdateOverlayState(OverlayState)
-			OverlayState:End()
-			ACF.Overlay.UpdateOverlay(self, OverlayState)
+			DoUpdate(self, OverlayState)
 			return
 		end
 
 		if self.OverlayCooldown then -- This entity has been updated too recently
 			self.QueueOverlay = true -- Mark it to update when buffer time has expired
 		else
-			OverlayState:Begin()
-			self:UpdateOverlayState(OverlayState)
-			OverlayState:End()
-			ACF.Overlay.UpdateOverlay(self, OverlayState)
+			DoUpdate(self, OverlayState)
 
 			self.OverlayCooldown = true
 

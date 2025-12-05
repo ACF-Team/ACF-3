@@ -1,6 +1,4 @@
 function ENT:UpdateOverlayState(State)
-	State:AddHeader("ACF Baseplate")
-
 	local BaseplateType = self:ACF_GetUserVar("BaseplateType")
 	State:AddKeyValue("Type", BaseplateType.Name)
 	State:AddSize("Size", self.Size[2], self.Size[1], self.Size[3])
