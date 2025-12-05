@@ -60,22 +60,21 @@ local FakeScanlines = Material("vgui/gradient_down")
 local ClipDir_1 = Vector(1, 0, 0)
 local ClipDir_2 = Vector(-1, 0, 0)
 local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
-    local SlotW, SlotH  = Overlay.GetSlotSize()
+    local TotalW = Overlay.GetOverlaySize()
 
     local Text      = Slot.Data[1]
     local Health    = Slot.Data[2]
     local MaxHealth = Slot.Data[3]
     local InnerText, Ratio = (TextMethod or GetText)(Slot)
-    local W2 = math.max(SlotW / 1.5, Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, InnerText))
 
-
-    local KeyX      = Overlay.GetKVKeyX()
     local ValueX    = Overlay.GetKVValueX()
+    local _, H1 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, Text)
+    local _, H2 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, (TextMethod or GetText)(Slot))
 
     Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
     local X, Y = ValueX, 0
-    local W, H = math.min(W2, SlotW / 1.1), SlotH
+    local W, H = (TotalW / 2) - 32, math.max(H1, H2)
 
     local CV = Overlay.GetOverlayOffset()
     local ClipTextRatio = (CV[1] + X) + (W * Ratio)

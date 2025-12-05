@@ -262,27 +262,30 @@ end
 
 
 do -- Overlay text
-	local Text = "%s%s\n\nFuel Type: %s\n%s"
+	function ENT:ACF_UpdateOverlayState(State)
+		if self:CanConsume() then
+			State:AddSuccess("Active")
+		else
+			State:AddWarning("Idle")
+		end
 
-	function ENT:UpdateOverlayText()
-		local Status = self:CanConsume() and "Active" or "Idle"
-		local LeakStatus = self.Leaking > 0 and "Leaking\n" or ""
+		if self.Leaking > 0 then
+			State:AddWarning("WARNING: Leaking!")
+		end
+
 		local FuelTypeID = self.FuelType
-
-		-- Use fuel type's overlay text if available
 		local FuelType = Classes.FuelTypes.Get(FuelTypeID)
-		local FuelInfo = ""
 
-		if FuelType and FuelType.FuelTankOverlayText then
-			FuelInfo = FuelType.FuelTankOverlayText(self.Amount)
+		State:AddKeyValue("Fuel Type", FuelTypeID)
+
+		if FuelType and FuelType.FuelTankOverlay then
+			FuelInfo = FuelType.FuelTankOverlay(self.Amount, State)
 		else
 			local FuelAmount = math.Round(self.Amount, 2)
 			local FuelCapacity = math.Round(self.Capacity, 2)
 
-			FuelInfo = "Fuel: " .. FuelAmount .. " / " .. FuelCapacity .. " L"
+			State:AddProgressBar("Remaining Fuel", FuelAmount, FuelCapacity, " L")
 		end
-
-		return Text:format(Status, LeakStatus, FuelTypeID, FuelInfo)
 	end
 end
 
