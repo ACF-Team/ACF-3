@@ -24,7 +24,7 @@ function ENT:ACF_UpdateOverlayState(State)
 
     State:AddLabel(self.State)
     State:AddProgressBar("Charges Left", Current, Total)
-    State:AddTimeLeft("Recharge State", CurTime() + ((1 / Rate) - (self.SingleCharge / Rate)), 1 / Rate)
+    State:AddTimeLeft("Recharge State", CurTime() + ((1 / Rate) - (self.SingleCharge / Rate)), 1 / Rate, true)
     State:AddNumber("Recharge Rate", Rate, " charges/s")
     State:AddNumber("Rate of Fire", RoF, " RPM")
     State:AddNumber("Max Penetration", MaxPen, " mm")

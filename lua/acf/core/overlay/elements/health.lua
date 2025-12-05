@@ -17,6 +17,9 @@ local function GetTextTime(Slot)
 
     local Remaining = math.max(0, NextTime - CurTime())
     local Ratio = math.Clamp(Remaining / TotalTime, 0, 1)
+    if Slot.NumData >= 4 and Slot.Data[4] == true then
+        Ratio = 1 - Ratio
+    end
     return ("%.1f seconds"):format(Remaining), Ratio
 end
 
