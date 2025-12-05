@@ -62,21 +62,29 @@ do
             IdealNumData = NetworkingNumData
         end
 
+        --print("        Type changed : " .. tostring(TypeChange))
+        --print("        New type     : " .. tostring(DeprivedSlot.Type))
+
         local OneDataPieceChanged = false
         for I = 1, NetworkingNumData do
             local IsDeviation = Reader.ReadBool()
             if IsDeviation then
+                --print("        Is deviation : " .. tostring(IsDeviation))
                 local Changed = Reader.ReadBool()
+                --print("          Changed      : " .. tostring(Changed))
                 if Changed then
                     local Data = Reader.ReadType()
+                    --print("          Data: " .. tostring(Data))
                     DeprivedSlot:SetElementData(I, Data)
                     OneDataPieceChanged = true
                 end
             else
                 OneDataPieceChanged = true
                 local IsAddition = Reader.ReadBool()
+                --print("        Is addition  : " .. tostring(IsAddition))
                 if IsAddition then
                     local Data = Reader.ReadType()
+                    --print("          Data: " .. tostring(Data))
                     DeprivedSlot:SetElementData(I, Data)
                 end
             end
@@ -104,11 +112,15 @@ do
             NetworkingSlots = DeprivedState:NumElementSlots()
             IdealSlots = NetworkingSlots
         end
-
+        --print("Delta decode started.")
+        --print("  Networking Slots: " .. NetworkingSlots)
+        --print("  Total Slots:      " .. IdealSlots)
         local OneSlotChanged = false
         for I = 1, NetworkingSlots do
             local IsDeviation = Reader.ReadBool()
+            --print("    Slot #" .. I)
             if IsDeviation then
+                --print("      Deviation: " .. tostring(IsDeviation))
                 local DeprivedSlot = DeprivedState:GetElementSlot(I)
                 if Overlay.DeltaDecodeSlot(DeprivedSlot, Reader) then
                     OneSlotChanged = true
@@ -116,6 +128,7 @@ do
             else
                 OneSlotChanged = true
                 local IsAddition = Reader.ReadBool()
+                --print("      Addition: " .. tostring(IsAddition))
                 if IsAddition then
                     local DeprivedSlot = DeprivedState:AllocElementSlot()
                     Overlay.DeltaDecodeSlot(DeprivedSlot, Reader)

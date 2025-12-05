@@ -3,12 +3,10 @@
 local Overlay = ACF.Overlay or {}
 ACF.Overlay = Overlay
 
-local EntityStates = Overlay.EntityStates or {}
-Overlay.EntityStates = EntityStates
-
 -- Sending C2S messages
 do
     function Overlay.StartOverlay(Entity, ClearPrevious)
+        Entity.ACF_OverlayState = nil -- Reset for full update
         Overlay.NetStart(Overlay.C2S_OVERLAY_START)
         net.WriteBool(ClearPrevious == true)
         net.WriteEntity(Entity)
@@ -24,26 +22,6 @@ do
             net.WriteEntity(Entity)
         end
         net.SendToServer()
-    end
-end
-
-function Overlay.UpdateOverlay(Entity, State, Full)
-    EntityStates[Entity] = State -- This object is likely the same - the state shouldn't be recreated every time
-    -- this is called, but just in case, we set the table index anyway here
-
-    for Player, EntityStates in pairs(PerPlayerStates) do
-        local PlayerState = EntityStates[Player]
-
-        -- Is the entity being tracked by the player?
-        if PlayerState and IsValid(Player) then
-            -- Delta encode PlayerState to match State.
-            Overlay.NetStart(Overlay.S2C_OVERLAY_DELTA_UPDATE)
-            net.WriteBool(Full)
-            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
-            -- Delta encode PlayerState to match State, with the net library writer, and write the state changes to PlayerState itself.
-            Overlay.DeltaEncodeState(PlayerState, State, net, true, Full)
-            net.Send(Player)
-        end
     end
 end
 
