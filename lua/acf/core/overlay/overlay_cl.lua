@@ -49,6 +49,29 @@ end
 
 -- Server update decoding
 do
+    -- TODO: Why is the shared file not providing this?!?!?!?
+    local OVERLAY_MSG_TYPE_BITS      = 2
+    local OVERLAY_MSG_STRINGTABLEIDX = "ACF_RequestOverlay"
+    Overlay.Receivers = Overlay.Receivers or {}
+    local Receivers = Overlay.Receivers
+
+    function Overlay.NetStart(MessageType, Unreliable)
+        net.Start(OVERLAY_MSG_STRINGTABLEIDX, Unreliable)
+        net.WriteUInt(MessageType, OVERLAY_MSG_TYPE_BITS)
+    end
+
+    function Overlay.NetReceive(Type, Func)
+        Receivers[Type] = Func
+    end
+
+    net.Receive(OVERLAY_MSG_STRINGTABLEIDX, function(...)
+        local Type = net.ReadUInt(OVERLAY_MSG_TYPE_BITS)
+        local Recv = Receivers[Type]
+        if Recv then
+            Recv(...)
+        end
+    end)
+
     local AwaitingQueue = {}
     hook.Add("NetworkEntityCreated", "ACF_Overlay_AwaitingNetworking", function(Ent)
         local Idx      = Ent:EntIndex()
@@ -100,15 +123,19 @@ do
     local TotalY         = 0
     local SlotW, SlotH = 0, 0
     local KeyWidth = 0
+    local LastKeyBreakIdx = 0
     local SlotDataCache  = {}
     local RenderCalls    = {}
     local NumRenderCalls = 0
+    local CurrentSlotIdx = 0
     local CanAccessOverlaySize = false
 
-    local OVERALL_RECT_PADDING      = 16
-    local PER_SLOT_VERTICAL_PADDING = 8
+    local OVERALL_RECT_PADDING        = 16
+    local HORIZONTAL_EXTERIOR_PADDING = 64
+    local PER_SLOT_VERTICAL_PADDING   = 8
 
     Overlay.OVERALL_RECT_PADDING = OVERALL_RECT_PADDING
+    Overlay.HORIZONTAL_EXTERIOR_PADDING = HORIZONTAL_EXTERIOR_PADDING
     Overlay.PER_SLOT_VERTICAL_PADDING = PER_SLOT_VERTICAL_PADDING
 
     function Overlay.GetSlotDataCache(Idx)
@@ -126,6 +153,8 @@ do
         SlotW,  SlotH  = 0, 0
         TotalY = 0
         KeyWidth = 0
+        CurrentSlotIdx = 0
+        LastKeyBreakIdx = 0
         NumRenderCalls = 0
     end
 
@@ -144,15 +173,34 @@ do
 
     function Overlay.AppendSlotSize(W, H)
         SlotW = math.max(SlotW, W)
-        SlotH = SlotH + H
+        SlotH = math.max(SlotH, H)
     end
 
+    -- This function keeps every slot that came before it (up to the last key break idx)
+    -- up to date with the current key width. 
     function Overlay.PushKeyWidth(W)
         KeyWidth = math.max(KeyWidth, W)
+        for I = CurrentSlotIdx - 1, math.max(LastKeyBreakIdx, 1), -1 do
+            Overlay.GetSlotDataCache(I).KeyWidth = KeyWidth
+        end
+    end
+
+    function Overlay.GetKVKeyX()
+        return (-TotalW / 2) + (Overlay.HORIZONTAL_EXTERIOR_PADDING / 2)
+    end
+    function Overlay.GetKVValueX()
+        return (TotalW / 2) - (Overlay.HORIZONTAL_EXTERIOR_PADDING / 2)
+    end
+    function Overlay.GetKVDividerX()
+        return Overlay.GetKVKeyX() + Overlay.GetKeyWidth() + 12
+    end
+    function Overlay.DrawKVDivider()
+        Overlay.SimpleText(":", Overlay.MAIN_FONT, Overlay.GetKVDividerX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     end
 
     function Overlay.BreakKeyWidth()
         KeyWidth = 0
+        LastKeyBreakIdx = CurrentSlotIdx
     end
 
     function Overlay.GetCached(Idx)
@@ -190,6 +238,10 @@ do
         return TotalW, TotalH
     end
 
+    function Overlay.GetSlotSize()
+        return SlotW, SlotH
+    end
+
     function Overlay.GetTargetPos()
         return TargetX, TargetY
     end
@@ -200,7 +252,27 @@ do
         -- Adjust bounds for non-centered alignment...
         if XAlign ~= TEXT_ALIGN_CENTER then W = W * 2 end
         Overlay.AppendSlotSize(W, H)
-        return Overlay.CacheRenderCall(draw.SimpleText, Text, Font, X, Y + TotalY, Color, XAlign, YAlign)
+        return Overlay.CacheRenderCall(draw.SimpleText, Text, Font, X, Y + TotalY, Color, XAlign, YAlign), W, H
+    end
+
+    local function DrawRect(X, Y, W, H, Color)
+        surface.SetDrawColor(Color)
+        surface.DrawRect(X, Y, W, H)
+    end
+
+    local function DrawOutlinedRect(X, Y, W, H, Color, Thickness)
+        surface.SetDrawColor(Color)
+        surface.DrawOutlinedRect(X, Y, W, H, Thickness or 1)
+    end
+
+    function Overlay.DrawRect(X, Y, W, H, Color)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawRect, X, Y + TotalY, W, H, Color)
+    end
+
+    function Overlay.DrawOutlinedRect(X, Y, W, H, Color, Thickness)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
     end
 
     local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 200)
@@ -230,6 +302,7 @@ do
 
         Overlay.ResetRenderState()
         for Idx, ElementSlot in State:GetElementSlots() do
+            CurrentSlotIdx = Idx
             local TypeIdx  = ElementSlot.Type
             local Type     = Overlay.GetElementType(TypeIdx)
             if Type.Render then
@@ -239,7 +312,7 @@ do
         end
 
         local Clipping = DisableClipping(true)
-        TotalW = TotalW + OVERALL_RECT_PADDING
+        TotalW = TotalW + OVERALL_RECT_PADDING + HORIZONTAL_EXTERIOR_PADDING
         -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
         TotalH = (TotalH + OVERALL_RECT_PADDING) - PER_SLOT_VERTICAL_PADDING
         TotalH = math.max(TotalH, 0)
@@ -248,8 +321,14 @@ do
         CanAccessOverlaySize = true
         -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
         for Idx, ElementSlot in State:GetElementSlots() do
+            CurrentSlotIdx = Idx
+            -- Reload slot state for post-render.
             local SlotCache = Overlay.GetSlotDataCache(Idx)
-            TotalY = SlotCache.Y
+            TotalY   = SlotCache.Y
+            SlotW    = SlotCache.W
+            SlotH    = SlotCache.H
+            KeyWidth = SlotCache.KeyWidth
+            -- Post render
             local TypeIdx  = ElementSlot.Type
             local Type     = Overlay.GetElementType(TypeIdx)
             if Type.PostRender then
@@ -274,6 +353,9 @@ do
         end
         cam.PopModelMatrix()
         DisableClipping(Clipping)
+
+        surface.SetDrawColor(COLOR_PRIMARY_COLOR)
+        surface.DrawOutlinedRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH, 1)
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)

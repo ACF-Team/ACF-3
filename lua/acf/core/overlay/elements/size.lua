@@ -23,4 +23,4 @@ function ELEMENT.PostRender(_, Slot)
     Overlay.SimpleText(Slot.Data[2], Overlay.MAIN_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 end
 
-Overlay.DefineElementType("KeyValue", ELEMENT)
+Overlay.DefineElementType("Size", ELEMENT)

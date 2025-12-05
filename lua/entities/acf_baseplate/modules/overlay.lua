@@ -1,10 +1,15 @@
-local Text = "%s Baseplate\n\nBaseplate Size: %.1f x %.1f x %.1f\nBaseplate Health: %.1f%%\nTick Interval: %s"
 function ENT:UpdateOverlayState(State)
 	State:AddHeader("ACF Baseplate")
-	State:AddKeyValue("Type", self:ACF_GetUserVar("BaseplateType").Name)
-	State:AddSize("Size", self:ACF_GetUserVar("BaseplateType").Name)
 
-	local h, mh = self.ACF.Health, self.ACF.MaxHealth
-	local AltEDisabled = self:ACF_GetUserVar("DisableAltE") and "\n(Alt + E Entry Disabled)" or ""
-	return Text:format(self:ACF_GetUserVar("BaseplateType").Name, self.Size[2], self.Size[1], self.Size[3], (h / mh) * 100, self:ACF_GetUserVar("GForceTicks")) .. AltEDisabled
+	local BaseplateType = self:ACF_GetUserVar("BaseplateType")
+	State:AddKeyValue("Type", BaseplateType.Name)
+	State:AddSize("Size", self.Size[2], self.Size[1], self.Size[3])
+	State:AddHealth(self.ACF.Health, self.ACF.MaxHealth)
+
+	if BaseplateType.ID == "Aircraft" then
+		State:AddNumber("G-Force Ticks", self:ACF_GetUserVar("GForceTicks"))
+	end
+	if self:ACF_GetUserVar("DisableAltE") then
+		State:AddLabel("Alt + E Entry Disabled")
+	end
 end
