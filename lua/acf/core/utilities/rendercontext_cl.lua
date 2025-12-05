@@ -22,8 +22,8 @@ timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
         RenderContext.LookAt = nil
     end
 
-    if LastLookAt ~= Lookat then
-        hook.Run("ACF_RenderContext_LookAtChanged", LastLookAt, Lookat)
+    if LastLookAt ~= RenderContext.LookAt then
+        hook.Run("ACF_RenderContext_LookAtChanged", LastLookAt, RenderContext.LookAt)
     end
 
     local class                   = IsValid(Weapon) and Weapon:GetClass() or nil
