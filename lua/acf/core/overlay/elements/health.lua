@@ -39,10 +39,14 @@ function ELEMENT.PostRender(_, Slot)
 
     local Ratio = Health / MaxHealth
 
-    Overlay.SimpleText(Text, Overlay.MAIN_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    local KeyX      = Overlay.GetKVKeyX()
+    local DividerX  = Overlay.GetKVDividerX()
+    local ValueX    = Overlay.GetKVValueX()
+
+    Overlay.SimpleText(Text, Overlay.MAIN_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    local X, Y =  Overlay.GetKVDividerX(), 4
-    local W, H = ((Overlay.GetKVValueX() - Overlay.GetKVKeyX()) - (Overlay.HORIZONTAL_EXTERIOR_PADDING / 2)) * Ratio, SlotH - 4
+    local X, Y = DividerX, 3
+    local W, H = (ValueX - DividerX) * Ratio, SlotH - 4
     -- Overlay.DrawOutlinedRect()
     Overlay.DrawRect(X, Y, W, H, LerpColor(Health / MaxHealth, HEALTH_BAD, HEALTH_GOOD))
 end
