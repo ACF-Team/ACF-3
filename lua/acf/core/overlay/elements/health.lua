@@ -1,21 +1,29 @@
 local Overlay = ACF.Overlay
 local ELEMENT = {}
 
+local function GetText(Health, MaxHealth)
+    local Ratio = Health / MaxHealth
+    return ("%d/%d (%.1f%%)"):format(Health, MaxHealth, Ratio * 100)
+end
+
 function ELEMENT.Render(_, Slot)
    -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
-    local Text = Slot.NumData <= 2 and "Health" or Slot.Data[1]
-    local W, H = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
-    -- Allocate our slots size
-    -- We want at least 160 pixels for a health bar
-    Overlay.AppendSlotSize(W, H)
-    -- For key-values; push Key's size.
-    Overlay.PushWidths(W, 160)
+    local Text      = Slot.NumData <= 2 and "Health"     or Slot.Data[1]
+    local Health    = Slot.NumData <= 2 and Slot.Data[1] or Slot.Data[2]
+    local MaxHealth = Slot.NumData <= 2 and Slot.Data[2] or Slot.Data[3]
+
+    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
+    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Health, MaxHealth))
+    Overlay.AppendSlotSize(math.max(W1, W2), math.max(H1, H2))
+    Overlay.PushWidths(W1, W2)
 end
 
-local HEALTH_BAD = Color(255, 40, 30)
+local HEALTH_BAD  = Color(255, 40, 30)
 local HEALTH_GOOD = Color(30, 255, 50)
+local PROGRESS_EMPTY   = Color(66, 96, 116)
+local PROGRESS_FULL    = Color(112, 191, 243)
 local ColorCache = Color(255, 255, 255)
 local function LerpColor(T, A, B)
     local R1, G1, B1, A1 = A:Unpack()
@@ -32,12 +40,13 @@ end
 
 local FakeScanlines = Material("vgui/gradient_down")
 
-function ELEMENT.PostRender(_, Slot)
-    local _, SlotH  = Overlay.GetSlotSize()
+local function RenderBar(Slot, MinColor, MaxColor)
+    local SlotW, SlotH  = Overlay.GetSlotSize()
 
     local Text      = Slot.NumData <= 2 and "Health"     or Slot.Data[1]
     local Health    = Slot.NumData <= 2 and Slot.Data[1] or Slot.Data[2]
     local MaxHealth = Slot.NumData <= 2 and Slot.Data[2] or Slot.Data[3]
+    local W2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Health, MaxHealth))
 
     local Ratio = Health / MaxHealth
 
@@ -47,9 +56,9 @@ function ELEMENT.PostRender(_, Slot)
     Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
     local X, Y = ValueX, 1
-    local W, H = 114, SlotH - 2
+    local W, H = math.min(W2, SlotW / 1.1), SlotH - 2
 
-    local BarColor = LerpColor(Ratio, HEALTH_BAD, HEALTH_GOOD)
+    local BarColor = LerpColor(Ratio, MinColor, MaxColor)
     Overlay.DrawRect(X, Y, W * Ratio, H, BarColor)
     Overlay.SetMaterial(FakeScanlines)
     local BarScanlinesColor = BarColor:Copy()
@@ -58,16 +67,26 @@ function ELEMENT.PostRender(_, Slot)
     Overlay.DrawTexturedRectUV(X, Y, W * Ratio, H, 0, Now, 0, Now + 8, BarScanlinesColor)
     Overlay.NoTexture()
 
-    local BackColor = LerpColor(Ratio, HEALTH_BAD, HEALTH_GOOD)
+    local BackColor = LerpColor(Ratio, MinColor, MaxColor)
     BackColor:SetBrightness(0.3)
     Overlay.DrawOutlinedRect(X, Y, W * Ratio, H, BackColor, 2)
 
-    local InnerText = ("%d/%d (%.1f%%)"):format(Health, MaxHealth, Ratio * 100)
-    local BackTextColor = LerpColor(Health / MaxHealth, HEALTH_BAD, HEALTH_GOOD)
+    local InnerText = GetText(Health, MaxHealth)
+    local BackTextColor = LerpColor(Health / MaxHealth, MinColor, MaxColor)
     BackTextColor:SetSaturation(0.6)
     Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     Overlay.SimpleText(InnerText, "ACF_OverlayHealthText", X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
+function ELEMENT.PostRender(_, Slot)
+    RenderBar(Slot, HEALTH_BAD, HEALTH_GOOD)
+end
 
 Overlay.DefineElementType("Health", ELEMENT)
+
+local PROGRESS_BAR = {}
+PROGRESS_BAR.Render = ELEMENT.Render
+function PROGRESS_BAR.PostRender(_, Slot)
+    RenderBar(Slot, PROGRESS_EMPTY, PROGRESS_FULL)
+end
+Overlay.DefineElementType("ProgressBar", PROGRESS_BAR)

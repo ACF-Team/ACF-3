@@ -485,7 +485,7 @@ do -- Overlay
 	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
 
-	function ENT:UpdateOverlayText()
+	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
 		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
@@ -512,6 +512,14 @@ do -- Overlay
 			AmmoInfo = "\n\n" .. AmmoInfo
 		end
 
-		return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		-- return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		State:AddLabel(Status)
+		State:AddDivider()
+		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
+		State:AddKeyValue("Ammo Type", AmmoType)
+		State:AddProgressBar("Contents", self.Amount, self.Capacity)
+		State:AddLabel(BulletInfo)
+		State:AddLabel(AmmoInfo)
+		State:AddLabel(ExtraInfo)
 	end
 end
