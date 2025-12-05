@@ -37,6 +37,7 @@ end
 ]]--
 function ACF.IsLegal(Entity)
 	if not ACF.LegalChecks then return true end -- Legal checks are disabled
+	if Entity.ACF_IsNotLegalityChecked then return true end -- This entity is exempt from legality checks
 
 	local EntTbl = Entity:GetTable()
 	local Phys = Entity:GetPhysicsObject()

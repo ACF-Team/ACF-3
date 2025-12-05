@@ -177,30 +177,9 @@ function ENT:OnFullUpdate()
 end
 
 do -- Ammo overlay rendering
-	local drawBoxes   = GetConVar( "acf_drawboxes" )
-	local wireOutline = GetConVar( "wire_drawoutline" )
-
-	-- Hexagonal packing constants
-	local HEX_SPACING_FACTOR = 0.866 -- sqrt(3)/2 for hexagonal packing
-	local HEX_OFFSET_FACTOR  = 0.5
-
-	local function getLocalPosition( x, y, z, roundSize, fits )
-		local useLinearPacking = ( fits.y == 1 or fits.z == 1 )
-		local localX           = ( x - 1 ) * roundSize.x
-		local localY, localZ
-
-		if useLinearPacking then
-			localY = ( y - 1 ) * roundSize.y
-			localZ = ( z - 1 ) * roundSize.z
-		else
-			localY = ( y - 1 ) * roundSize.y * HEX_SPACING_FACTOR
-
-			local zOffset = ( ( y - 1 ) % 2 ) * roundSize.z * HEX_OFFSET_FACTOR
-			localZ        = ( z - 1 ) * roundSize.z + zOffset
-		end
-
-		return Vector( localX, localY, localZ )
-	end
+	local drawBoxes      = GetConVar( "acf_drawboxes" )
+	local wireOutline    = GetConVar( "wire_drawoutline" )
+	local getRoundOffset = ACF.GetRoundOffset
 
 	local function cleanupRoundModels( entity )
 		if not entity._RoundModels then return end
@@ -262,7 +241,7 @@ do -- Ammo overlay rendering
 				for z = 1, fits.z do
 					-- Only create models we don't have yet
 					if index > previous and index <= count then
-						local localGridPos  = getLocalPosition( x, y, z, roundSize, fits )
+						local localGridPos  = getRoundOffset( x, y, z, roundSize, fits )
 						local localModelPos = localStartPos + localGridPos + modelOffset
 
 						local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )

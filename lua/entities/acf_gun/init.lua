@@ -155,10 +155,17 @@ do -- Random timer crew stuff
 	function ENT:UpdateFilter()
 		local Rotator = self:GetParent().Rotator
 		local Filter = {}
+
 		if IsValid(Rotator) then
-			for v, _ in pairs(Rotator:GetChildren()) do
-				if v.IsACFEntity then Filter[v] = true end
+			for K, V in pairs(Rotator:GetChildren()) do
+				local Child = isnumber(K) and V or K
+				if not IsValid(Child) then continue end
+
+				if Child.IsACFEntity then
+					Filter[Child] = true
+				end
 			end
+
 			self.RotationFilter = Filter
 		else
 			self.RotationFilter = { [self] = true }
@@ -552,6 +559,15 @@ do -- Metamethods --------------------------------
 		WireLib.AddOutputAlias("AmmoCount", "Total Ammo")
 		WireLib.AddOutputAlias("Muzzle Weight", "Projectile Mass")
 
+		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
+		-- Exceptions for aircraft (maybe this should be refined later?)
+		local function BeltFedCheck(Entity, Crate)
+			if Entity.IsBelted and IsValid(Entity:GetParent()) and not Entity:GetContraption().ACF_IsAircraft then
+				if Entity:FindPropagator() ~= Crate:GetParent() then return false end
+			end
+			return true
+		end
+
 		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
@@ -559,10 +575,11 @@ do -- Metamethods --------------------------------
 			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
 
 			local Blacklist = Crate.RoundData.Blacklist
-
 			if Blacklist[This.Class] then
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
+
+			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 
 			return true
 		end)
@@ -571,6 +588,8 @@ do -- Metamethods --------------------------------
 			if CheckCrate(This, Crate, This:GetPos(), First) then
 				return false, "This crate is too far away from this weapon."
 			end
+
+			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 			return true
 		end)
 

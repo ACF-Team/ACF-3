@@ -58,7 +58,9 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.engines.settings")
 
 	local EngineClass = Menu:AddComboBox()
+	EngineClass:SetName("EngineClass")
 	local EngineList = Menu:AddComboBox()
+	EngineList:SetName("EngineList")
 
 	local EngineBase = Menu:AddCollapsible("#acf.menu.engines.engine_info", nil, "icon16/monitor_edit.png")
 	local EngineName = EngineBase:AddTitle()
@@ -89,7 +91,7 @@ local function CreateMenu(Menu)
 	local DefaultShape = ACF.GetClientData("FuelShape") or "Box"
 	ACF.SetClientData("FuelShape", DefaultShape, true)
 	FuelShape:ChooseOptionID(DefaultShape == "Sphere" and 2 or DefaultShape == "Cylinder" and 3 or 1)
-	timer.Simple(0, function() FuelShape:OnSelect(nil, nil, DefaultShape) end) -- Frown
+	timer.Simple(0, function() if IsValid(FuelShape) then FuelShape:OnSelect(nil, nil, DefaultShape) end end) -- Frown
 
 	local Min = ACF.ContainerMinSize
 	local Max = ACF.ContainerMaxSize

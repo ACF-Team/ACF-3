@@ -17,6 +17,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 	Name        = "Supply Crate",
 	Description = "A scalable container that supplies fuel and ammo.",
 	Model       = "models/holograms/hq_rcube_thin.mdl",
+	Material    = "phoenix_storms/future_vents",
 	Preview = {FOV = 120},
 	CreateMenu = function(_, Menu)
 		-- Shape selector
@@ -60,7 +61,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 			local EmptyMass = Area * Wall * ACF.InchToCmCu * ACF.SteelDensity
 			local TransferRate = ACF.SupplyMassRate * (Volume / 1000)
 
-			CapacityLabel:SetText(string.format("Capacity: %s kg\nEmpty mass: %s kg\nTransfer rate: %s kg/s", math.Round(Capacity, 2), math.Round(EmptyMass, 2), math.Round(TransferRate, 2)))
+			CapacityLabel:SetText(string.format("Capacity : %s kg\nEmpty Mass : %s kg\nTransfer Rate : %s kg/s", math.Round(Capacity, 2), math.Round(EmptyMass, 2), math.Round(TransferRate, 2)))
 		end
 
 		function SupplyShape:OnSelect(_, _, Data)

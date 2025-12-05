@@ -146,6 +146,7 @@ do
 	--- @param Value any The value the datavar
 	--- @param Forced boolean Whether to send regardless of if the value has changed
 	function ACF.SetClientData(Key, Value, Forced)
+		if ACF.DisableClientData then return end
 		if not isstring(Key) then return end
 
 		Value = Value or false

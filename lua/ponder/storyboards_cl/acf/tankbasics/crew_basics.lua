@@ -2,7 +2,7 @@ local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "crew_basics")
 Storyboard:WithName("Crew Basics")
 Storyboard:WithModelIcon("models/chairs_playerstart/sitpose.mdl")
 Storyboard:WithDescription("Learn the basics of crew.")
-Storyboard:WithIndexOrder(4)
+Storyboard:WithIndexOrder(94)
 local Tank = ACF.PonderModelCaches.TankSkeleton
 
 local TorsoOffsets = {
@@ -11,6 +11,25 @@ local TorsoOffsets = {
 }
 
 -------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("Disclaimer")
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Some of the components shown have not been covered yet, e.g. motors. Ignore them for now. Parenting is not shown visually but mentioned in text."}))
+
+local Chapter = Storyboard:Chapter("Crew Menu")
+Chapter:AddInstruction("PlacePanel", {
+    Name = "MainMenuCPanel",
+    Type = "DPanel",
+    Calls = {
+        {Method = "SetSize", Args = {300, 700}},
+        {Method = "SetPos", Args = {1500, 0}},
+        {Method = "CenterVertical", Args = {}},
+    },
+    Length = 0.25,
+}):DelayByLength()
+
+Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label = "ACF Menu"}):DelayByLength()
+Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
+Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.crew"}):DelayByLength()
+
 local Chapter = Storyboard:Chapter("Spawning")
 
 -- Place crews
@@ -45,6 +64,7 @@ Chapter:AddInstruction("ShowText", {
 })
 Chapter:AddDelay(4)
 Chapter:AddInstruction("HideText", {Name = "Explain"})
+Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel"}):DelayByLength()
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Models")
@@ -153,7 +173,7 @@ local Chapter = Storyboard:Chapter("Drivers")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Drivers affect the fuel consumption rate of your engines.\nLink them to your baseplate. They can only be linked to one entity.",
+    Text = "Drivers affect the fuel consumption rate of your engines.\nLink and parent them to your baseplate.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -169,7 +189,7 @@ local Chapter = Storyboard:Chapter("Gunners")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Gunners affect the accuracy of your guns.\nLink them to your turret ring/baseplate, which ever the guns are located on.\nThey can only be linked to one entity.",
+    Text = "Gunners affect the accuracy of your guns.\nLink and parent them to your turret ring/baseplate, whichever the guns are located on.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -185,7 +205,7 @@ local Chapter = Storyboard:Chapter("Loaders")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Loaders affect the reload speed of your guns. Link them to your gun(s).",
+    Text = "Loaders affect the reload speed of your guns. Link them to your gun(s). Parent them to the horizontal turret ring.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -201,7 +221,7 @@ local Chapter = Storyboard:Chapter("Commanders")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Commanders affect the efficiency of your crew. They work without linking.",
+    Text = "Commanders affect the efficiency of your crew. They work without linking. Parent them to the horizontal turret ring.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })

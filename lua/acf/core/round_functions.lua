@@ -239,6 +239,10 @@ end
 
 do -- Ammo crate capacity calculation
 
+	-- Packing constants
+	local HEX_SPACING = 0.866 -- sqrt(3)/2 for hexagonal packing Y-axis spacing
+	local HEX_OFFSET  = 0.5   -- Z-axis offset for alternating rows
+
 	local function GetModelDimensions(Round)
 		if not Round or not (Round.Model or Round.RackModel) then
 			return nil
@@ -278,63 +282,83 @@ do -- Ammo crate capacity calculation
 		return Vector(Length, Diameter, Diameter) / ACF.InchToCm
 	end
 
+	-- Returns true if hex packing uses less space than square packing
+	local function ShouldUseHexPacking(countY, countZ)
+		if countY <= 1 or countZ <= 1 then return false end
+
+		local squareArea = countY * countZ
+		local hexArea    = ((countY - 1) * HEX_SPACING + 1) * (countZ + HEX_OFFSET)
+
+		return hexArea < squareArea
+	end
+
+	-- Hex packing given a count and round size
+	local function HexDimY(count, size) return (count - 1) * size * HEX_SPACING + size end
+	local function HexDimZ(count, size) return count * size + size * HEX_OFFSET end
+
+	-- Inverse: how many fit in a given dimension
+	local function HexCountY(dim, size) return math.floor((dim - size) / (size * HEX_SPACING) + 1) end
+	local function HexCountZ(dim, size) return math.floor((dim - size * HEX_OFFSET) / size) end
+
 	function ACF.GetCrateDimensions(arrangement, roundSize)
-		if arrangement.y == 1 or arrangement.z == 1 then
-			return Vector(arrangement.x, arrangement.y, arrangement.z) * roundSize
+		if ShouldUseHexPacking(arrangement.y, arrangement.z) then
+			local dimensions = Vector(
+				arrangement.x * roundSize.x,
+				HexDimY(arrangement.y, roundSize.y),
+				HexDimZ(arrangement.z, roundSize.z)
+			)
+
+			return dimensions, true
 		end
 
-		local yDimension = (arrangement.y - 1) * roundSize.y * 0.866 + roundSize.y
-		local zDimension = arrangement.z * roundSize.z + roundSize.z * 0.5
+		return Vector(arrangement.x, arrangement.y, arrangement.z) * roundSize, false
+	end
 
-		return Vector(
-			arrangement.x * roundSize.x,
-			yDimension,
-			zDimension
-		)
+	function ACF.GetRoundOffset(x, y, z, roundSize, arrangement)
+		local localX = (x - 1) * roundSize.x
+
+		if ShouldUseHexPacking(arrangement.y, arrangement.z) then
+			return Vector(
+				localX,
+				(y - 1) * roundSize.y * HEX_SPACING,
+				(z - 1) * roundSize.z + ((y - 1) % 2) * roundSize.z * HEX_OFFSET
+			)
+		end
+
+		return Vector(localX, (y - 1) * roundSize.y, (z - 1) * roundSize.z)
 	end
 
 	function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
 		local roundSize = GetRoundProperties(Class, ToolData, BulletData)
-		local arrangement = Vector(CountX, CountY, CountZ)
 
-		return ACF.GetCrateDimensions(arrangement, roundSize)
+		return ACF.GetCrateDimensions(Vector(CountX, CountY, CountZ), roundSize)
 	end
 
-	-- Infer projectile counts from a given crate Size (backwards compatibility)
-	-- This inverts ACF.GetCrateSizeFromProjectileCounts using the same packing rules
-	function ACF.GetProjectileCountsFromCrateSize( Size, Class, ToolData, BulletData )
+	function ACF.GetMaxCounts(roundSize, maxLength, maxWidth, currentY, currentZ)
+		local maxX       = math.max(1, math.floor(maxLength / roundSize.x))
+		local maxYSquare = math.floor(maxWidth / roundSize.y)
+		local maxZSquare = math.floor(maxWidth / roundSize.z)
+		local maxYHex    = HexCountY(maxWidth, roundSize.y)
+		local maxZHex    = HexCountZ(maxWidth, roundSize.z)
 
-		local roundSize = GetRoundProperties( Class, ToolData, BulletData )
-		local eps = 1e-6
+		local maxY = ShouldUseHexPacking(maxYHex, currentZ) and maxYHex or maxYSquare
+		local maxZ = ShouldUseHexPacking(currentY, maxZHex) and maxZHex or maxZSquare
 
-		-- X is always linear in our packing model
-		local countX = math.max( 1, math.floor( ( Size.x + eps ) / math.max( roundSize.x, eps ) ) )
+		return maxX, math.max(1, maxY), math.max(1, maxZ)
+	end
 
-		-- Determine if linear packing applies on Y/Z (either axis count == 1)
-		local yLinear = math.max( 1, math.floor( ( Size.y + eps ) / math.max( roundSize.y, eps ) ) )
-		local zLinear = math.max( 1, math.floor( ( Size.z + eps ) / math.max( roundSize.z, eps ) ) )
+	function ACF.GetProjectileCountsFromCrateSize(Size, Class, ToolData, BulletData)
+		local roundSize = GetRoundProperties(Class, ToolData, BulletData)
+		local countX    = math.max(1, math.floor(Size.x / roundSize.x))
+		local sqY, sqZ  = math.floor(Size.y / roundSize.y), math.floor(Size.z / roundSize.z)
+		local hexY      = HexCountY(Size.y, roundSize.y)
+		local hexZ      = HexCountZ(Size.z, roundSize.z)
 
-		if yLinear == 1 or zLinear == 1 then
-			-- Linear packing in cross-section
-			return countX, yLinear, zLinear
+		if ShouldUseHexPacking(hexY, hexZ) then
+			return countX, math.max(1, hexY), math.max(1, hexZ)
 		end
 
-		-- Hexagonal packing inversion for Y/Z cross-section
-		local hexSpacing = roundSize.y * 0.866 -- sqrt(3)/2
-		local hexOffset  = roundSize.z * 0.5
-
-		local countY = 1
-		if Size.y > roundSize.y then
-			countY = math.max( 1, math.floor( ( ( Size.y - roundSize.y ) / math.max( hexSpacing, eps ) ) + 1 + eps ) )
-		end
-
-		local countZ = math.max( 1, math.floor( ( ( Size.z - hexOffset ) / math.max( roundSize.z, eps ) ) + eps ) )
-
-		-- Safety: ensure counts are at least 1
-		countY = math.max( 1, countY )
-		countZ = math.max( 1, countZ )
-
-		return countX, countY, countZ
+		return countX, math.max(1, sqY), math.max(1, sqZ)
 	end
 
 end

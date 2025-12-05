@@ -558,6 +558,11 @@ do
 	-- Bare minimum arguments to reconstruct a crew
 	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
+	-- Compatibility with ACE crew entities
+	Entities.Register("ace_crewseat_driver", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("ace_crewseat_gunner", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("ace_crewseat_loader", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
 	ACF.RegisterLinkSource("acf_engine", "Crew")
