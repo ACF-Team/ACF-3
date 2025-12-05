@@ -1123,14 +1123,11 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nLoading Location: %s"
-
-		function ENT:UpdateOverlayText()
+		function ENT:ACF_UpdateOverlayState(State)
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / self.ReloadTime)
 			local CrateAmmo = 0
 			local Status
-
 			if not next(self.Crates) then
 				Status = "Not linked to an ammo crate!"
 			else
@@ -1155,7 +1152,12 @@ do -- Metamethods --------------------------------
 
 			local BreechIndex = self.BreechIndex or 1
 			local BreechName = self.ClassData.BreechConfigs and self.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
-			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo, BreechName)
+
+			State:AddKeyValue("Status", Status)
+			State:AddKeyValue("Firerate", Firerate .. " RPM")
+			State:AddNumber("Shots Left", self.CurrentShot)
+			State:AddNumber("Ammo Available", CrateAmmo)
+			State:AddKeyValue("Loading Location", BreechName)
 		end
 	end -----------------------------------------
 
