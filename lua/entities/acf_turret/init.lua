@@ -706,7 +706,7 @@ do -- Overlay
 		State:AddNumber("Max Rotation", SlewMax, " deg/s")
 		State:AddNumber("Accel", SlewAccel, " deg/s^2")
 		State:AddNumber("Teeth", SelfTbl.TurretData.Teeth, " t")
-		State:AddProgressBar("Current Mass", MaxMass / 2, MaxMass, " kg")
+		State:AddProgressBar("Current Mass", TotalMass, MaxMass, " kg")
 
 		if SelfTbl.HasArc then
 			State:AddKeyValue("Arc", SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg)
