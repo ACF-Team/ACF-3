@@ -343,7 +343,7 @@ do
         surface.DrawRect(TargetX - (TotalW / 2), TargetY - (TotalH / 2), TotalW, TotalH)
 
         OverlayMatrix:Identity()
-        OverlayOffset:SetUnpacked(TargetX, (TargetY - (TotalH / 2)) + PER_SLOT_VERTICAL_PADDING, 0)
+        OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / 2)) + PER_SLOT_VERTICAL_PADDING), 0)
         OverlayMatrix:Translate(OverlayOffset)
         cam.PushModelMatrix(OverlayMatrix)
         -- Draw all cached calls.
