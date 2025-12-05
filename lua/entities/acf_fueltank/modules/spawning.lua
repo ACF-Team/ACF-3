@@ -23,15 +23,16 @@ local Outputs = {
 }
 
 local function VerifyData(Data)
-	local Class = FuelTanks.Get("FTS_S")
-
 	-- Build size from FuelSizeX/Y/Z
+	local Class = FuelTanks.Get("FTS_S")
 	local Min, Max = ACF.ContainerMinSize, ACF.ContainerMaxSize
-	-- ACF-3 backwards compatibility. Fuel size was saved as Size for a while.
-	if isvector(Data.Size) and (not Data.FuelSizeX or not Data.FuelSizeY or not Data.FuelSizeZ) then
-		Data.FuelSizeX = Clamp(ACF.CheckNumber(Data.Size[1], 24), Min, Max)
-		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data.Size[2], 24), Min, Max)
-		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data.Size[3], 24), Min, Max)
+
+	-- ACF-3/ACE backwards compatibility. Fuel size was saved as Size for a while in ACF-3, and ACE still saves it as SizeId.
+	if (isvector(Data.Size) or isvector(Data.SizeId)) and (not Data.FuelSizeX or not Data.FuelSizeY or not Data.FuelSizeZ) then
+		local SizeData = isvector(Data.SizeId) and "SizeId" or "Size"
+		Data.FuelSizeX = Clamp(ACF.CheckNumber(Data[SizeData][1], 24), Min, Max)
+		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data[SizeData][2], 24), Min, Max)
+		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data[SizeData][3], 24), Min, Max)
 
 		Data.Size = Vector(Data.FuelSizeX, Data.FuelSizeY, Data.FuelSizeZ)
 
@@ -261,25 +262,27 @@ end
 
 
 do -- Overlay text
-	local Text = "%s\n\n%s\n%s"
+	local Text = "%s%s\n\nFuel Type: %s\n%s"
 
 	function ENT:UpdateOverlayText()
 		local Status = self:CanConsume() and "Active" or "Idle"
-		local Name = self.Name or "Fuel Tank"
-		local FuelAmount = math.Round(self.Amount, 0)
-		local FuelCapacity = math.Round(self.Capacity, 0)
+		local LeakStatus = self.Leaking > 0 and "Leaking\n" or ""
+		local FuelTypeID = self.FuelType
 
 		-- Use fuel type's overlay text if available
-		local FuelType = ACF.Classes.FuelTypes.Get(self.FuelType)
-		local FuelInfo
+		local FuelType = Classes.FuelTypes.Get(FuelTypeID)
+		local FuelInfo = ""
 
 		if FuelType and FuelType.FuelTankOverlayText then
 			FuelInfo = FuelType.FuelTankOverlayText(self.Amount)
 		else
-			FuelInfo = "Fuel: " .. FuelAmount .. " L / " .. FuelCapacity .. " L"
+			local FuelAmount = math.Round(self.Amount, 2)
+			local FuelCapacity = math.Round(self.Capacity, 2)
+
+			FuelInfo = "Fuel: " .. FuelAmount .. " / " .. FuelCapacity .. " L"
 		end
 
-		return Text:format(Status, Name, FuelInfo)
+		return Text:format(Status, LeakStatus, FuelTypeID, FuelInfo)
 	end
 end
 

@@ -1,5 +1,6 @@
 local ACF = ACF
-local Repository, MenuBase
+local Repositories = ACF.Repositories
+local MenuBase
 
 local function LoadCommit(Base, Commit)
 	local Date = Commit.Date
@@ -17,13 +18,15 @@ local function LoadCommit(Base, Commit)
 	end
 end
 
-local function AddStatus(Name, Branches)
-	local Data        = Repository[Name]
+local function AddStatus(RepoName, Repository, RealmName, Branches)
+	local Data        = Repository[RealmName]
 	local Branch      = Branches[Data.Head] or Branches.master
-	local Base        = MenuBase:AddCollapsible(language.GetPhrase("acf.menu.updates.realm_status"):format(Name), nil, "icon16/server.png")
+	local IconSuffix  = Data.Status ~= "Up to date" and "_error.png" or ".png"
+	local Icon        = RealmName == "Server" and "icon16/server" .. IconSuffix or "icon16/computer" .. IconSuffix
+	local Base        = MenuBase:AddCollapsible(language.GetPhrase("acf.menu.updates.realm_status"):format(RepoName, RealmName), nil, Icon)
 	local DefaultText = language.GetPhrase("acf.menu.updates.unknown")
 
-	Base:SetTooltip(language.GetPhrase("acf.menu.updates.realm_tooltip"):format(Name))
+	Base:SetTooltip(language.GetPhrase("acf.menu.updates.realm_tooltip"):format(RealmName))
 
 	function Base:OnMousePressed(Code)
 		if Code ~= MOUSE_LEFT then return end
@@ -60,15 +63,19 @@ end
 
 local function UpdateMenu()
 	if not IsValid(MenuBase) then return end
-	if not Repository then return end
-
-	local Branches = Repository.Branches
+	if not next(Repositories) then return end
 
 	MenuBase:ClearTemporal()
 	MenuBase:StartTemporal()
 
-	AddStatus("Server", Branches)
-	AddStatus("Client", Branches)
+	for RepoName, Repository in SortedPairs(Repositories) do
+		if not Repository then continue end
+
+		local Branches = Repository.Branches
+
+		AddStatus(RepoName, Repository, "Server", Branches)
+		AddStatus(RepoName, Repository, "Client", Branches)
+	end
 
 	MenuBase:EndTemporal()
 end
@@ -83,10 +90,4 @@ end
 
 ACF.AddMenuItem(1, "#acf.menu.about", "#acf.menu.updates", "newspaper", CreateMenu)
 
-hook.Add("ACF_OnFetchRepository", "ACF Updates Menu", function(Name, Repo)
-	if Name ~= "ACF-3" then return end
-
-	Repository = Repo
-
-	UpdateMenu()
-end)
+hook.Add("ACF_OnFetchRepository", "ACF Updates Menu", UpdateMenu)

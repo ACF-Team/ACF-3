@@ -64,15 +64,15 @@ do -- Clientside settings
 		local Ropes = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.rope_links")
 		Ropes:SetConVar("acf_mobilityropelinks")
 
-		local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
-		AdvShafts:SetConVar("acf_advancedmobilityropelinks")
+		-- local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
+		-- AdvShafts:SetConVar("acf_advancedmobilityropelinks")
 
 		local Particles = Base:AddSlider("#acf.menu.settings.effects_visual_elements.particle_mult", 0.1, 1, 2)
 		Particles:SetConVar("acf_cl_particlemul")
 
 		Base:AddHelp("#acf.menu.settings.effects_visual_elements.particle_mult_desc")
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_supply")
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.ammo_refill")
 		local AmmoSupplyColor = Base:AddPanel("DColorMixer")
 		AmmoSupplyColor:SetColor(ACF.AmmoSupplyColor)
 		AmmoSupplyColor:SetClientData("AmmoSupplyColor", "ValueChanged")
@@ -82,7 +82,7 @@ do -- Clientside settings
 			return Value
 		end)
 
-		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_supply")
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.fuel_refill")
 		local FuelSupplyColor = Base:AddPanel("DColorMixer")
 		FuelSupplyColor:SetColor(ACF.FuelSupplyColor)
 		FuelSupplyColor:SetClientData("FuelSupplyColor", "ValueChanged")

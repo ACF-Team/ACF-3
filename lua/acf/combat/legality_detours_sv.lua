@@ -55,7 +55,7 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
 
     if not Family then
         if Ent.IsACFEntity == true then
-            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
             return CalledOnCalleeOwned
         end
         return true
@@ -85,7 +85,7 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
     -- So ACF entities/contraptions with ACF entities get blocked.
     if not Contraption then
         if Ent.IsACFEntity == true then
-            DisableEntity(Entity, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
             return false
         end
         return true

@@ -46,7 +46,7 @@ function Caption:Run(chapter, parameters)
         Text = parameters.Text,
         Horizontal = parameters.Horizontal or TEXT_ALIGN_CENTER,
         PositionRelativeToScreen = not UseEntity and true or false,
-        Position = parameters.Position or Vector(0.5, 0.25, 0),
+        Position = parameters.Position or Vector(0.5, 0.15, 0),
         ParentTo = parameters.ParentTo or nil,
     })
     tAdd = tAdd + FadeInOutTime + TextLength

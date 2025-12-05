@@ -1,14 +1,17 @@
 local ACF           = ACF
 local Utilities     = ACF.Utilities
+local Clock         = Utilities.Clock
+local Sounds        = Utilities.Sounds
 local ActiveCrates  = ACF.AmmoCrates or {}
 local ActiveTanks   = ACF.FuelTanks or {}
-local Clock         = Utilities.Clock
 local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
 local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
 
-local function SupplyEffect(Entity)
+local function SupplyEffect(Entity, RefilledAmmo, RefilledFuel)
 	net.Start("ACF_SupplyEffect")
 		net.WriteEntity(Entity)
+		net.WriteBool(RefilledAmmo)
+		net.WriteBool(RefilledFuel)
 	net.Broadcast()
 end
 
@@ -18,10 +21,10 @@ local function StopSupplyEffect(Entity)
 	net.Broadcast()
 end
 
-local function SetEffectState(Entity, Active)
+local function SetEffectState(Entity, Active, RefilledAmmo, RefilledFuel)
 	if Active and not Entity.EffectActive then
 		Entity.EffectActive = true
-		SupplyEffect(Entity)
+		SupplyEffect(Entity, RefilledAmmo, RefilledFuel)
 	elseif not Active and Entity.EffectActive then
 		Entity.EffectActive = nil
 		StopSupplyEffect(Entity)
@@ -110,9 +113,6 @@ function ENT:Think()
 		return true
 	end
 
-	-- Show effect if we're trying to refill anything
-	SetEffectState(self, true)
-
 	-- Determine how much mass we can transfer
 	local TransferRate = ACF.SupplyMassRate * self.Volume
 	local Budget       = math.min(TransferRate * math.max(DT, 0), self.Amount)
@@ -121,6 +121,7 @@ function ENT:Think()
 
 	local PerTargetBudget = Budget / Count
 	local UsedBudget = 0
+	local RefilledAmmo, RefilledFuel = false, false
 
 	for i = 1, Count do
 		local Remaining = self.Amount - UsedBudget
@@ -143,6 +144,9 @@ function ENT:Think()
 			if Units > 0 then
 				-- There is enough: Transfer as many as possible
 				Target:Consume(-Units)
+				RefilledAmmo = true
+
+				Sounds.SendSound(self, "acf_base/fx/resupply_single.mp3", 70, 100, 0.5)
 
 				local TransferredMass = Units * UnitMass
 
@@ -165,10 +169,22 @@ function ENT:Think()
 			local Units = math.min(TransferMass / UnitMass, Need)
 
 			Target:Consume(-Units)
+			RefilledFuel = true
+
+			if Target.FuelType == "Electric" then
+				Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+				Sounds.SendSound(Target, "ambient/energy/newspark04.wav", 70, 100, 0.5)
+			else
+				Sounds.SendSound(self, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+				Sounds.SendSound(Target, "vehicles/jetski/jetski_no_gas_start.wav", 70, 120, 0.5)
+			end
 
 			UsedBudget = UsedBudget + Units * UnitMass
 		end
 	end
+
+	-- Show effect if we're trying to refill anything
+	SetEffectState(self, true, RefilledAmmo, RefilledFuel)
 
 	if UsedBudget > 0 then
 		self:Consume(UsedBudget)

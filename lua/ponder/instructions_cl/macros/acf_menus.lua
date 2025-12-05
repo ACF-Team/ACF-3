@@ -1,7 +1,7 @@
 --- Creating the CPanel acf menus are created on
 
 local CreateMenuCPanel = Ponder.API.NewInstruction("ACF.CreateMenuCPanel")
-CreateMenuCPanel.Length = 0.5
+CreateMenuCPanel.Length = 1
 
 function CreateMenuCPanel:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
@@ -17,17 +17,38 @@ end
 --- Initializing the main menu and its tree on a given CPanel
 
 local InitializeMainMenu = Ponder.API.NewInstruction("ACF.InitializeMainMenu")
-InitializeMainMenu.Length = 0.5
+InitializeMainMenu.Length = 1
 
 function InitializeMainMenu:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-
     local Base = ACF.InitMenuBase(panel.CPanel)
     local Tree = Base:AddPanel("DTree")
     ACF.SetupMenuTree(Base, Tree)
-
     panel.Base = Base
     panel.Tree = Tree
+end
+
+--- Initializing a custom ACF menu on a given CPanel
+
+local InitializeCustomMenu = Ponder.API.NewInstruction("ACF.InitializeCustomACFMenu")
+InitializeCustomMenu.Length = 1
+
+function InitializeCustomMenu:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local Base = ACF.InitMenuBase(panel.CPanel)
+    self.CreateMenu(Base)
+    panel.Base = Base
+end
+
+--- Initializing a custom menu on a given CPanel
+
+local InitializeCustomMenu = Ponder.API.NewInstruction("ACF.InitializeCustomMenu")
+InitializeCustomMenu.Length = 1
+
+function InitializeCustomMenu:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    self.BuildCPanel(panel.CPanel)
+    panel.Base = panel
 end
 
 --- Selecting a node in the menu tree by name
@@ -44,7 +65,7 @@ local RecursiveFindNodeByName function RecursiveFindNodeByName(Parent, Select)
 end
 
 local SelectMenuTreeNode = Ponder.API.NewInstruction("ACF.SelectMenuTreeNode")
-SelectMenuTreeNode.Length = 0.5
+SelectMenuTreeNode.Length = 1
 
 function SelectMenuTreeNode:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
@@ -54,61 +75,66 @@ end
 
 --- Scrolling to a panel in the menu by name
 
-local RecursiveFindPanelByName function RecursiveFindPanelByName(Parent, Select)
+local RecursiveFindPanelByText function RecursiveFindPanelByText(Parent, Select)
     for _, Panel in ipairs(Parent:GetChildren()) do
-        local Text = Panel:GetText()
-        if Text == Select then return Panel end
-        local Subnode = RecursiveFindPanelByName(Panel, Select)
+        if Panel:GetText() == Select then return Panel end
+        local Subnode = RecursiveFindPanelByText(Panel, Select)
         if Subnode then return Subnode end
     end
 end
 
 local ScrollToMenuPanel = Ponder.API.NewInstruction("ACF.ScrollToMenuPanel")
-ScrollToMenuPanel.Length = 0.5
+ScrollToMenuPanel.Length = 1
 
 function ScrollToMenuPanel:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-    local Target = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.ScrollTo))
+    local Target = RecursiveFindPanelByText(panel.Base, language.GetPhrase(self.Scroll))
     if Target then panel.Scroll:ScrollToChild(Target) end
 end
 
---- Combines all the work of creating a menu into an easy macro
+--- Various helpers to set the values of elements in the ACF menu
+local SetACFPanelSlider = Ponder.API.NewInstruction("ACF.SetPanelSlider")
+SetACFPanelSlider.Length = 1
 
-local CreateMainMenu = Ponder.API.NewInstructionMacro("ACF.CreateMainMenu")
-function CreateMainMenu:Run(chapter, parameters)
-    chapter:AddInstruction("PlacePanel", {
-        Name = parameters.Name,
-        Type = "DPanel",
-        Calls = {
-            {Method = "SetSize", Args = parameters.Size or {300, 700}},
-            {Method = "Center", Args = {}},
-        },
-        Length = parameters.Fast and 0 or 0.5,
-    }):DelayByLength()
-
-    chapter:AddInstruction("ACF.CreateMenuCPanel", {
-        Name = parameters.Name,
-        Label = parameters.Label or "ACF Menu",
-        Length = parameters.Fast and 0 or 0.5,
-    }):DelayByLength()
-
-    chapter:AddInstruction("ACF.InitializeMainMenu", {
-        Name = parameters.Name,
-        Length = parameters.Fast and 0 or 0.5,
-    }):DelayByLength()
-
-    if parameters.Select then
-        chapter:AddInstruction("ACF.SelectMenuTreeNode", {
-            Name = parameters.Name,
-            Select = parameters.Select,
-            Length = parameters.Fast and 0.25 or 0.5,
-        }):DelayByLength()
+function SetACFPanelSlider:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local Slider = RecursiveFindPanelByText(panel.Base, language.GetPhrase(self.SliderName))
+    if IsValid(Slider) and Slider.SetValue then
+        ACF.DisableClientData = true
+        Slider:SetValue(self.Value)
+        ACF.DisableClientData = false
     end
+end
 
-    if parameters.ScrollTo then
-        chapter:AddInstruction("ACF.ScrollToMenuPanel", {
-            Name = parameters.Name,
-            ScrollTo = parameters.ScrollTo,
-        }):DelayByLength()
+local RecursiveFindPanelByName function RecursiveFindPanelByName(Parent, Select)
+    for _, Panel in ipairs(Parent:GetChildren()) do
+        if Panel:GetName() == Select then return Panel end
+        local Subnode = RecursiveFindPanelByName(Panel, Select)
+        if Subnode then return Subnode end
+    end
+end
+
+local SetACFPanelComboBox = Ponder.API.NewInstruction("ACF.SetPanelComboBox")
+SetACFPanelComboBox.Length = 1
+
+function SetACFPanelComboBox:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local ComboBox = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.ComboBoxName))
+    if IsValid(ComboBox) and ComboBox.ChooseOptionID then
+        ACF.DisableClientData = true
+        ComboBox:ChooseOptionID(self.OptionID)
+        ACF.DisableClientData = false
+    end
+end
+
+local SetACFPanelCheckBox = Ponder.API.NewInstruction("ACF.SetPanelCheckBox")
+SetACFPanelCheckBox.Length = 1
+function SetACFPanelCheckBox:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local CheckBox = RecursiveFindPanelByText(panel.Base, language.GetPhrase(self.CheckBoxName))
+    if IsValid(CheckBox) and CheckBox.SetValue then
+        ACF.DisableClientData = true
+        CheckBox:SetValue(self.Value)
+        ACF.DisableClientData = false
     end
 end

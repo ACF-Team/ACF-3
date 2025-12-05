@@ -1,8 +1,8 @@
-local Storyboard = Ponder.API.NewStoryboard("acf", "tankbasics", "crew_extras")
+local Storyboard = Ponder.API.NewStoryboard("acf", "tankextras", "crew_extras")
 Storyboard:WithName("Crew Extras")
 Storyboard:WithModelIcon("models/chairs_playerstart/sitpose.mdl")
 Storyboard:WithDescription("Learn about Efficiencies, Focus and Replacement")
-Storyboard:WithIndexOrder(3)
+Storyboard:WithIndexOrder(99)
 
 local Tank = ACF.PonderModelCaches.TankSkeleton
 
@@ -10,12 +10,12 @@ local Chapter = Storyboard:Chapter("Efficiencies")
 Chapter:AddDelay(1)
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Each crew member has an efficiency, which represents how effective they are at doing their tasks.\nValues in the menu for stuff like reload rate are based on an \"Ideal\" crew member, who is at 100% efficiency.\nEfficiency generally falls within 0% to 100%.",
+    Text = "Each crew member has an efficiency, which represents how effective they are at doing their tasks.\nValues in the menu for stuff like reload rate are based on an \"ideal\" crew member, who is at 100% efficiency.\nEfficiency generally falls within 0% to 100%.",
     Position = Vector(0.5, 0.15, 0),
 }))
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {
-    Text = "Some factors that affect efficiency are the crew's posture, their global lean, their health, their acceleration and their space and their commander's efficiency.",
+    Text = "Some factors that affect efficiency are the crew's posture, their global lean, their health, their acceleration, their space, and their commander's efficiency.",
     Position = Vector(0.5, 0.15, 0),
 }))
 
@@ -97,7 +97,7 @@ Chapter:AddInstruction("StateText", {
     Position = Vector(0.7, 0.15, 0),
     Length = 6,
     TextFunction = function(progress)
-        return "Lean Eff: " .. math.floor((1-progress) * 100) .. "%"
+        return "Lean Eff: " .. math.floor((1 - progress) * 100) .. "%"
     end
 })
 
@@ -115,7 +115,7 @@ Chapter:AddDelay(1)
 Chapter:AddInstruction("ShowText", {
     Name = "Explain",
     Dimension = "2D",
-    Text = "Health efficiency is based on the percentage of the crew's health.\nStay Alive.",
+    Text = "Health efficiency is based on the percentage of the crew's health.\nStay alive.",
     Horizontal = TEXT_ALIGN_CENTER,
     PositionRelativeToScreen = true,
     Position = Vector(0.5, 0.15, 0)
