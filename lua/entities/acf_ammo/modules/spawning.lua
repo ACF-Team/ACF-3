@@ -500,12 +500,17 @@ do -- Overlay
 		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
 		local ExtraInfo = ACF.GetOverlayText(self)
 		local BulletInfo = ""
-		local Status
 
 		if next(self.Weapons) then
-			Status = self:CanConsume() and "Providing Ammo" or (self.Amount ~= 0 and "Idle" or "Empty")
+			if self:CanConsume() then
+				State:AddSuccess("Providing Ammo")
+			elseif self.Amount ~= 0 then
+				State:AddWarning("Idle")
+			else
+				State:AddError("Empty")
+			end
 		else
-			Status = "Not linked to a weapon!"
+			State:AddError("Not linked to a weapon!")
 		end
 
 		local CountX = self.CrateProjectilesX or 1
@@ -521,19 +526,17 @@ do -- Overlay
 			AmmoInfo = AmmoInfo
 		end
 
-		-- return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
-		State:AddLabel(Status)
 		State:AddDivider()
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 		-- This sucks
-		State:AddHeader("Bullet Info")
+		State:AddHeader("Bullet Info", 2)
 		SplitPieces(State, BulletInfo)
-		State:AddHeader("Ammo Info")
+		State:AddHeader("Ammo Info", 2)
 		SplitPieces(State, AmmoInfo)
 		if #ExtraInfo > 0 then
-			State:AddHeader("Extra Info")
+			State:AddHeader("Extra Info", 2)
 			SplitPieces(State, ExtraInfo)
 		end
 	end

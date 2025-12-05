@@ -135,6 +135,26 @@ do
         antialias = true,
         extended = true
     })
+
+    surface.CreateFont("ACF_OverlaySubHeaderBackground", {
+        font = Conduit,
+        size = 32,
+        weight = 500,
+        blursize = 6,
+        scanlines = 4,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlaySubHeader", {
+        font = Conduit,
+        size = 32,
+        weight = 500,
+        blursize = 0,
+        scanlines = 2,
+        antialias = true,
+        extended = true
+    })
+
     surface.CreateFont("ACF_OverlayText", {
         font = Conduit,
         size = 20,
@@ -418,13 +438,15 @@ do
             COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
             COLOR_WARNING_TEXT           = Color(255, 255, 255)
             COLOR_ERROR_TEXT             = Color(255, 255, 255)
-            Overlay.HEADER_BACK_FONT             = "GModWorldtip"
-            Overlay.HEADER_FONT                  = "GModWorldtip"
-            Overlay.KEY_TEXT_FONT                = "GModWorldtip"
-            Overlay.BOLD_TEXT_FONT               = "GModWorldtip"
-            Overlay.VALUE_TEXT_FONT              = "GModWorldtip"
-            Overlay.MAIN_FONT                    = "GModWorldtip"
-            Overlay.PROGRESS_BAR_TEXT            = "ACF_OverlayHealthText"
+            Overlay.HEADER_BACK_FONT     = "GModWorldtip"
+            Overlay.HEADER_FONT          = "GModWorldtip"
+            Overlay.SUBHEADER_BACK_FONT  = "GModWorldtip"
+            Overlay.SUBHEADER_FONT       = "GModWorldtip"
+            Overlay.KEY_TEXT_FONT        = "GModWorldtip"
+            Overlay.BOLD_TEXT_FONT       = "GModWorldtip"
+            Overlay.VALUE_TEXT_FONT      = "GModWorldtip"
+            Overlay.MAIN_FONT            = "GModWorldtip"
+            Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
         else
             COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
             COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
@@ -437,13 +459,15 @@ do
             COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
             COLOR_WARNING_TEXT           = Color(255, 255, 255)
             COLOR_ERROR_TEXT             = Color(255, 255, 255)
-            Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
-            Overlay.HEADER_FONT = "ACF_OverlayHeader"
-            Overlay.KEY_TEXT_FONT = "ACF_OverlayKeyText"
-            Overlay.BOLD_TEXT_FONT = "ACF_OverlayBoldText"
-            Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
-            Overlay.MAIN_FONT = "ACF_OverlayText"
-            Overlay.PROGRESS_BAR_TEXT = "ACF_OverlayHealthText"
+            Overlay.HEADER_BACK_FONT     = "ACF_OverlayHeaderBackground"
+            Overlay.HEADER_FONT          = "ACF_OverlayHeader"
+            Overlay.SUBHEADER_BACK_FONT  = "ACF_OverlaySubHeaderBackground"
+            Overlay.SUBHEADER_FONT       = "ACF_OverlaySubHeader"
+            Overlay.KEY_TEXT_FONT        = "ACF_OverlayKeyText"
+            Overlay.BOLD_TEXT_FONT       = "ACF_OverlayBoldText"
+            Overlay.VALUE_TEXT_FONT      = "ACF_OverlayText"
+            Overlay.MAIN_FONT            = "ACF_OverlayText"
+            Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
         end
 
         Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
@@ -472,11 +496,18 @@ do
     local OverlayScale  = Vector(0, 0, 0)
     local OverlayOffset = Vector(0, 0, 0)
     function Overlay.GetOverlayOffset() return OverlayOffset end
+
+    local ShouldDraw
+    local ShouldAdjustOverlayForToolHelp
+
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         if not next(Overlays) then return end
 
         if not ShouldDraw then
             ShouldDraw = GetConVar("cl_drawworldtooltips")
+        end
+        if not ShouldAdjustOverlayForToolHelp then
+            ShouldAdjustOverlayForToolHelp = GetConVar("gmod_drawhelp")
         end
         if not ShouldDraw:GetBool() then return end
 
@@ -485,6 +516,8 @@ do
         COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
         COLOR_WARNING_TEXT:SetUnpacked(255, 220, 50)
         COLOR_WARNING_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
+
+        local IsToolMode = LocalPlayer():GetActiveWeapon():GetClass() == "gmod_tool"
 
         for Target in pairs(Overlays) do
             if not IsValid(Target) then
@@ -565,6 +598,20 @@ do
                     -- Cool animations for scaling
                     XScale = 1 + (math.ease.InBack(FadeOutTime) * 0.3)
                     YScale = math.ease.OutBack(math.ease.InCubic(FadeInTime)) - (math.ease.InBack(FadeOutTime))
+
+                    -- Now that we know sizes, ensure we don't overflow past negative Y, and also add some buffer room
+                    -- so we don't overflow the text in the toolmenu
+                    local TempBoxY = TargetY - (TotalH / (2 / YScale))
+                    local MinimumY = 64
+                    if IsToolMode and ShouldAdjustOverlayForToolHelp:GetBool() then
+                        MinimumY = 216
+                    end
+                    if TempBoxY < MinimumY then
+                        -- How much?
+                        local Offset = MinimumY - TempBoxY
+                        TargetY = TargetY + Offset
+                    end
+
 
                     OverlayScale:SetUnpacked(XScale, YScale, 1)
                     OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / (2 / YScale))) + PER_SLOT_VERTICAL_PADDING), 0)
