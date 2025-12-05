@@ -136,7 +136,6 @@ do
     }
 
     local function GetFontForOS(I) return not system.IsWindows() and Fonts[I][2] or Fonts[I][1] end
-    local Segment16 = GetFontForOS(1)
     local Prototype = GetFontForOS(2)
     local Conduit = GetFontForOS(3)
 
@@ -173,6 +172,24 @@ do
         weight = 900,
         blursize = 0,
         scanlines = 0,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlayHealthText", {
+        font = Prototype,
+        size = 16,
+        weight = 500,
+        blursize = 0,
+        scanlines = 2,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlayHealthTextBackground", {
+        font = Prototype,
+        size = 16,
+        weight = 500,
+        blursize = 4,
+        scanlines = 2,
         antialias = true,
         extended = true
     })
@@ -325,6 +342,16 @@ do
         surface.DrawRect(X, Y, W, H)
     end
 
+    local function DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV, Color)
+        surface.SetDrawColor(Color)
+        surface.DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV)
+    end
+
+    local function DrawTexturedRect(X, Y, W, H, Color)
+        surface.SetDrawColor(Color)
+        surface.DrawTexturedRect(X, Y, W, H)
+    end
+
     local function DrawOutlinedRect(X, Y, W, H, Color, Thickness)
         surface.SetDrawColor(Color)
         surface.DrawOutlinedRect(X, Y, W, H, Thickness or 1)
@@ -335,6 +362,29 @@ do
         return Overlay.CacheRenderCall(DrawRect, X, Y + TotalY, W, H, Color)
     end
 
+    function Overlay.DrawTexturedRect(X, Y, W, H, Color)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawTexturedRect, X, Y + TotalY, W, H, Color)
+    end
+
+    function Overlay.DrawTexturedRectUV(X, Y, W, H, SU, SV, EU, EV, Color)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawTexturedRectUV, X, Y + TotalY, W, H, SU, SV, EU, EV, Color)
+    end
+
+    function Overlay.DrawOutlinedRect(X, Y, W, H, Color, Thickness)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
+    end
+
+    function Overlay.SetMaterial(Mat)
+        return Overlay.CacheRenderCall(surface.SetMaterial, Mat)
+    end
+
+    function Overlay.NoTexture()
+        return Overlay.CacheRenderCall(draw.NoTexture)
+    end
+
     function Overlay.DrawOutlinedRect(X, Y, W, H, Color, Thickness)
         Overlay.AppendSlotSize(W, H)
         return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
@@ -342,11 +392,13 @@ do
 
     local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 200)
     local COLOR_TEXT                   = Color(236, 252, 255, 245)
+    local COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
     local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
     local COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
 
     Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
     Overlay.COLOR_TEXT = COLOR_TEXT
+    Overlay.COLOR_TEXT_DARK = COLOR_TEXT_DARK
     Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
     Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
 

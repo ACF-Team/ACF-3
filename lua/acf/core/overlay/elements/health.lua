@@ -27,8 +27,11 @@ local function LerpColor(T, A, B)
         Lerp(T, B1, B2),
         Lerp(T, A1, A2)
     )
+    ColorCache:SetBrightness(1)
     return ColorCache:Copy()
 end
+
+local FakeScanlines = Material("vgui/gradient_down")
 
 function ELEMENT.PostRender(_, Slot)
     local _, SlotH  = Overlay.GetSlotSize()
@@ -45,10 +48,27 @@ function ELEMENT.PostRender(_, Slot)
 
     Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    local X, Y = DividerX, 3
-    local W, H = (ValueX - DividerX) * Ratio, SlotH - 4
-    -- Overlay.DrawOutlinedRect()
-    Overlay.DrawRect(X, Y, W, H, LerpColor(Health / MaxHealth, HEALTH_BAD, HEALTH_GOOD))
+    local X, Y = DividerX, 1
+    local W, H = (ValueX - DividerX), SlotH - 2
+
+    local BarColor = LerpColor(Ratio, HEALTH_BAD, HEALTH_GOOD)
+    Overlay.DrawRect(X, Y, W * Ratio, H, BarColor)
+    Overlay.SetMaterial(FakeScanlines)
+    local BarScanlinesColor = BarColor:Copy()
+    BarScanlinesColor:SetBrightness(0.8)
+    local Now = RealTime() % 1
+    Overlay.DrawTexturedRectUV(X, Y, W * Ratio, H, 0, Now, 0, Now + 8, BarScanlinesColor)
+    Overlay.NoTexture()
+
+    local BackColor = LerpColor(Ratio, HEALTH_BAD, HEALTH_GOOD)
+    BackColor:SetBrightness(0.3)
+    Overlay.DrawOutlinedRect(X, Y, W * Ratio, H, BackColor, 2)
+
+    local InnerText = ("%d/%d (%.1f%%)"):format(Health, MaxHealth, Ratio * 100)
+    local BackTextColor = LerpColor(Health / MaxHealth, HEALTH_BAD, HEALTH_GOOD)
+    BackTextColor:SetSaturation(0.6)
+    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    Overlay.SimpleText(InnerText, "ACF_OverlayHealthText", X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 
