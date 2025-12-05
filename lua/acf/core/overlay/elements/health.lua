@@ -31,7 +31,6 @@ local function LerpColor(T, A, B)
 end
 
 function ELEMENT.PostRender(_, Slot)
-    local TotalW    = Overlay.GetOverlaySize()
     local _, SlotH  = Overlay.GetSlotSize()
 
     local Text      = Slot.NumData <= 2 and "Health"     or Slot.Data[1]
