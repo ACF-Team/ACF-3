@@ -16,7 +16,7 @@ function ModelData.GetModelData(Model)
 	local PhysObj = EntTest:GetPhysicsObject()
 
 	if not IsValid(PhysObj) then
-		if IsValid(EntTest) then EntTest:Remove() end
+		timer.Simple(0, function() if IsValid(EntTest) then EntTest:Remove() end end)
 
 		return
 	end
