@@ -244,11 +244,17 @@ do -- Ammo crate capacity calculation
 	local HEX_OFFSET  = 0.5   -- Z-axis offset for alternating rows
 
 	local function GetModelDimensions(Round)
-		if not Round or not (Round.Model or Round.RackModel) then
-			return nil
+		local ModelPath = (not Round.IgnoreRackModel and Round.RackModel) or Round.Model
+
+		-- Use ActualLength and ActualWidth if provided
+		if Round.ActualLength and Round.ActualWidth then
+			local ModelData = ACF.ModelData.GetModelData(ModelPath)
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+
+			return Round.ActualLength, Round.ActualWidth, ModelPath, Offset
 		end
 
-		local ModelPath = Round.RackModel or Round.Model
+		-- Use the dimensions of the actual model otherwise
 		local ModelData = ACF.ModelData.GetModelData(ModelPath)
 
 		if not ModelData or not ModelData.Size then
