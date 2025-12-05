@@ -8,17 +8,27 @@ local function GetText(Slot)
     local Decimals  = Slot.NumData >= 5 and Slot.Data[5] or 0
 
     local Ratio = Health / MaxHealth
-    return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100)
+    return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio
 end
 
-function ELEMENT.Render(_, Slot)
+local function GetTextTime(Slot)
+    local NextTime    = Slot.Data[2]
+    local TotalTime   = Slot.Data[3]
+
+    local Remaining = math.max(0, NextTime - CurTime())
+    local Ratio = math.Clamp(Remaining / TotalTime, 0, 1)
+    return ("%.1f seconds"):format(Remaining), Ratio
+end
+
+
+function ELEMENT.Render(_, Slot, TextMethod)
    -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
     local Text      = Slot.Data[1]
 
     local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
-    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Slot))
+    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, (TextMethod or GetText)(Slot))
     Overlay.AppendSlotSize(W1 + W2 + 32, math.max(H1, H2))
     Overlay.PushWidths(W1, W2)
 end
@@ -43,15 +53,15 @@ end
 
 local FakeScanlines = Material("vgui/gradient_down")
 
-local function RenderBar(Slot, MinColor, MaxColor)
+local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
     local SlotW, SlotH  = Overlay.GetSlotSize()
 
     local Text      = Slot.Data[1]
     local Health    = Slot.Data[2]
     local MaxHealth = Slot.Data[3]
-    local W2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Slot))
+    local InnerText, Ratio = (TextMethod or GetText)(Slot)
+    local W2 = math.max(SlotW / 1.5, Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, InnerText))
 
-    local Ratio = Health / MaxHealth
 
     local KeyX      = Overlay.GetKVKeyX()
     local ValueX    = Overlay.GetKVValueX()
@@ -74,7 +84,6 @@ local function RenderBar(Slot, MinColor, MaxColor)
     BackColor:SetBrightness(0.3)
     Overlay.DrawOutlinedRect(X, Y, W, H, BackColor, 2)
 
-    local InnerText = GetText(Slot)
     local BackTextColor = LerpColor(Health / MaxHealth, MinColor, MaxColor)
     BackTextColor:SetSaturation(0.3)
     BackTextColor:SetBrightness(1)
@@ -96,3 +105,10 @@ function PROGRESS_BAR.PostRender(_, Slot)
     RenderBar(Slot, PROGRESS_EMPTY, PROGRESS_FULL)
 end
 Overlay.DefineElementType("ProgressBar", PROGRESS_BAR)
+
+local TIME_LEFT = {}
+TIME_LEFT.Render = ELEMENT.Render
+function TIME_LEFT.PostRender(_, Slot)
+    RenderBar(Slot, PROGRESS_EMPTY, PROGRESS_FULL, GetTextTime)
+end
+Overlay.DefineElementType("TimeLeft", TIME_LEFT)
