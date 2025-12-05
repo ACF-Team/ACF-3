@@ -10,7 +10,6 @@ function ELEMENT.Render(_, Slot)
         Y = Y + H
     end
     if X == 0 then Y = 0 end
-    print(X, Y)
     Overlay.AppendSlotSize(X, Y)
 end
 
