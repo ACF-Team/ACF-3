@@ -165,12 +165,4 @@ do -- Mass Update
 	end
 end
 
-do -- Wire overlay text
-	local OverlayText = "Armor Type: %s\nPlate Size: %.1f x %.1f x %.1f"
-
-	function ENT:UpdateOverlayText()
-		return OverlayText:format(self.ClassData.Name, self.Size[1], self.Size[2], self.Size[3])
-	end
-end
-
 Entities.Register()
