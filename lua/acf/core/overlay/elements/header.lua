@@ -9,3 +9,11 @@ function ELEMENT.Render(_, Slot)
 end
 
 Overlay.DefineElementType("Header", ELEMENT)
+
+local ELEMENT = {}
+
+function ELEMENT.Render(_, _)
+    Overlay.AppendSlotSize(0, 16)
+end
+
+Overlay.DefineElementType("Divider", ELEMENT)
