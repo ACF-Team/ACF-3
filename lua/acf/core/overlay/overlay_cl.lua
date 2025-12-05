@@ -387,7 +387,7 @@ do
     end
 
     local COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
-    local COLOR_PRIMARY_BACKGROUND     = Color(14, 49, 70, 204)
+    local COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
     local COLOR_TEXT                   = Color(236, 252, 255, 245)
     local COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
     local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
