@@ -30,8 +30,9 @@ function ELEMENT.Render(_, Slot, TextMethod)
 
     local Text      = Slot.Data[1]
 
-    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
-    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, (TextMethod or GetText)(Slot))
+    local W1, H1 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, Text)
+    local W2, H2 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, (TextMethod or GetText)(Slot))
+    H2 = H2 + 4
     Overlay.AppendSlotSize(W1 + W2 + 32, math.max(H1, H2))
     Overlay.PushWidths(W1, W2)
 end
@@ -56,6 +57,8 @@ end
 
 local FakeScanlines = Material("vgui/gradient_down")
 
+local ClipDir_1 = Vector(1, 0, 0)
+local ClipDir_2 = Vector(-1, 0, 0)
 local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
     local SlotW, SlotH  = Overlay.GetSlotSize()
 
@@ -63,7 +66,7 @@ local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
     local Health    = Slot.Data[2]
     local MaxHealth = Slot.Data[3]
     local InnerText, Ratio = (TextMethod or GetText)(Slot)
-    local W2 = math.max(SlotW / 1.5, Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, InnerText))
+    local W2 = math.max(SlotW / 1.5, Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, InnerText))
 
 
     local KeyX      = Overlay.GetKVKeyX()
@@ -73,6 +76,13 @@ local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
     Overlay.DrawKVDivider()
     local X, Y = ValueX, 0
     local W, H = math.min(W2, SlotW / 1.1), SlotH
+
+    local CV = Overlay.GetOverlayOffset()
+    local ClipTextRatio = (CV[1] + X) + (W * Ratio)
+
+    Overlay.PushCustomClipPlane(ClipDir_1, ClipTextRatio)
+    Overlay.SimpleText(InnerText, Overlay.PROGRESS_BAR_TEXT, X + (W / 2), Y + (H / 2) - 1, Overlay.COLOR_TEXT, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    Overlay.PopCustomClipPlane()
 
     local BarColor = LerpColor(Ratio, MinColor, MaxColor)
     Overlay.DrawRect(X, Y, W * Ratio, H, BarColor)
@@ -90,10 +100,10 @@ local function RenderBar(Slot, MinColor, MaxColor, TextMethod)
     local BackTextColor = LerpColor(Health / MaxHealth, MinColor, MaxColor)
     BackTextColor:SetSaturation(0.3)
     BackTextColor:SetBrightness(1)
-    for _ = 1, 3 do
-        Overlay.SimpleText(InnerText, Overlay.PROGRESS_BAR_TEXT_BACKGROUND, X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    Overlay.SimpleText(InnerText, Overlay.PROGRESS_BAR_TEXT, X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+    Overlay.PushCustomClipPlane(ClipDir_2, -ClipTextRatio)
+    Overlay.SimpleText(InnerText, Overlay.PROGRESS_BAR_TEXT, X + (W / 2), Y + (H / 2) - 1, Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    Overlay.PopCustomClipPlane()
 end
 
 function ELEMENT.PostRender(_, Slot)

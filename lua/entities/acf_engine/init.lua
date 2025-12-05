@@ -548,18 +548,14 @@ function ENT:UpdateOutputs(SelfTbl)
 	end
 end
 
-local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
-
 function ENT:ACF_UpdateOverlayState(State)
-	local Status
 	if not ACF.AllowSpecialEngines and self.IsSpecial then
-		Status = "Disabled: Special engines are disabled."
+		State:AddError("Disabled: Special engines are disabled.")
 	elseif self.Active then
-		Status = "Active"
+		State:AddWarning("Active")
 	else
-		Status = "Idle"
+		State:AddWarning("Idle")
 	end
-	State:AddLabel(Status)
 	State:AddKeyValue("Type", self.Name)
 	State:AddKeyValue("Power", ("%s kW / %s hp"):format(Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)))
 	State:AddKeyValue("Torque", ("%s Nm / %s ft-lb"):format(Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)))

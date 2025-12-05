@@ -603,18 +603,16 @@ do
 	end
 
 	function ENT:ACF_UpdateOverlayState(State)
-		local Status = self.IsAlive and "Alive" or "Dead"
-		local ErrorCount = table.Count(self.OverlayErrors)
-		if ErrorCount > 0 then
-			Status = Status .. " (" .. ErrorCount .. " errors)"
+		if self.IsAlive then
+			State:AddSuccess("Alive")
+		else
+			State:AddError("Dead")
 		end
 
-		-- Compile error message
-
-		State:AddLabel(Status or "")
 		for _, Error in pairs(self.OverlayErrors) do
 			State:AddError(Error)
 		end
+
 		State:AddWidthBreak()
 		State:AddKeyValue("Role", self.CrewTypeID)
 		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2), "%")

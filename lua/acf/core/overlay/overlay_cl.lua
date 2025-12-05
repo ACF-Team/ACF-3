@@ -114,7 +114,7 @@ do
     }
 
     local function GetFontForOS(I) return not system.IsWindows() and Fonts[I][2] or Fonts[I][1] end
-    local Prototype = GetFontForOS(2)
+    -- local Prototype = GetFontForOS(2)
     local Conduit = GetFontForOS(3)
 
     surface.CreateFont("ACF_OverlayHeaderBackground", {
@@ -163,20 +163,11 @@ do
         extended = true
     })
     surface.CreateFont("ACF_OverlayHealthText", {
-        font = Prototype,
+        font = Conduit,
         size = 19,
-        weight = 500,
+        weight = 900,
         blursize = 0,
-        scanlines = 2,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlayHealthTextBackground", {
-        font = Prototype,
-        size = 19,
-        weight = 500,
-        blursize = 2,
-        scanlines = 2,
+        scanlines = 0,
         antialias = true,
         extended = true
     })
@@ -208,6 +199,10 @@ do
     Overlay.OVERALL_RECT_PADDING = OVERALL_RECT_PADDING
     Overlay.HORIZONTAL_EXTERIOR_PADDING = HORIZONTAL_EXTERIOR_PADDING
     Overlay.PER_SLOT_VERTICAL_PADDING = PER_SLOT_VERTICAL_PADDING
+
+    function Overlay.GetFadeInTime() return FadeInTime end
+    function Overlay.GetFadeOutTime() return FadeOutTime end
+    function Overlay.GetFadeTime() return FadeTime end
 
     function Overlay.GetSlotDataCache(Idx)
         local Cache = SlotDataCache[Idx]
@@ -387,6 +382,14 @@ do
         return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
     end
 
+    function Overlay.PushCustomClipPlane(Normal, Distance)
+        return Overlay.CacheRenderCall(render.PushCustomClipPlane, Normal, Distance)
+    end
+
+    function Overlay.PopCustomClipPlane()
+        return Overlay.CacheRenderCall(render.PopCustomClipPlane)
+    end
+
     local COLOR_DROP_SHADOW
     local COLOR_PRIMARY_BACKGROUND
     local COLOR_TEXT
@@ -395,6 +398,8 @@ do
     local COLOR_BORDER_LIGHT_COLOR
     local COLOR_SECONDARY_COLOR
     local COLOR_TERTIARY_COLOR
+    local COLOR_SUCCESS_TEXT
+    local COLOR_WARNING_TEXT
     local COLOR_ERROR_TEXT
 
     local UseWireOverlayStyle = CreateClientConVar("acf_overlay_wiremod_style", "0", true, false, "If true, the overlay UI will try to replicate Wiremod's overlay style to the best of its ability.", 0, 1)
@@ -410,6 +415,8 @@ do
             COLOR_BORDER_LIGHT_COLOR     = Color(0, 0, 0, 255)
             COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
             COLOR_TERTIARY_COLOR         = Color(0, 0, 0, 245)
+            COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
+            COLOR_WARNING_TEXT           = Color(255, 255, 255)
             COLOR_ERROR_TEXT             = Color(255, 255, 255)
             Overlay.HEADER_BACK_FONT             = "GModWorldtip"
             Overlay.HEADER_FONT                  = "GModWorldtip"
@@ -418,7 +425,6 @@ do
             Overlay.VALUE_TEXT_FONT              = "GModWorldtip"
             Overlay.MAIN_FONT                    = "GModWorldtip"
             Overlay.PROGRESS_BAR_TEXT            = "ACF_OverlayHealthText"
-            Overlay.PROGRESS_BAR_TEXT_BACKGROUND = "ACF_OverlayHealthTextBackground"
         else
             COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
             COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
@@ -428,6 +434,8 @@ do
             COLOR_BORDER_LIGHT_COLOR     = Color(150, 200, 210, 245)
             COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
             COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
+            COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
+            COLOR_WARNING_TEXT           = Color(255, 255, 255)
             COLOR_ERROR_TEXT             = Color(255, 255, 255)
             Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
             Overlay.HEADER_FONT = "ACF_OverlayHeader"
@@ -436,7 +444,6 @@ do
             Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
             Overlay.MAIN_FONT = "ACF_OverlayText"
             Overlay.PROGRESS_BAR_TEXT = "ACF_OverlayHealthText"
-            Overlay.PROGRESS_BAR_TEXT_BACKGROUND = "ACF_OverlayHealthTextBackground"
         end
 
         Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
@@ -445,6 +452,8 @@ do
         Overlay.COLOR_PRIMARY_COLOR = COLOR_PRIMARY_COLOR
         Overlay.COLOR_BORDER_LIGHT_COLOR = COLOR_BORDER_LIGHT_COLOR
         Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
+        Overlay.COLOR_SUCCESS_TEXT = COLOR_SUCCESS_TEXT
+        Overlay.COLOR_WARNING_TEXT = COLOR_WARNING_TEXT
         Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
         DoAnimation = not WireOverlayStyle
     end
@@ -462,12 +471,21 @@ do
     local OverlayMatrix = Matrix()
     local OverlayScale  = Vector(0, 0, 0)
     local OverlayOffset = Vector(0, 0, 0)
-    local ShouldDraw = GetConVar("cl_drawworldtooltips")
+    function Overlay.GetOverlayOffset() return OverlayOffset end
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
-        -- Update COLOR_ERROR_TEXT
+        if not next(Overlays) then return end
+
+        if not ShouldDraw then
+            ShouldDraw = GetConVar("cl_drawworldtooltips")
+        end
         if not ShouldDraw:GetBool() then return end
+
+        -- Update COLOR_ERROR_TEXT and COLOR_WARNING_TEXT
         COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
         COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
+        COLOR_WARNING_TEXT:SetUnpacked(255, 220, 50)
+        COLOR_WARNING_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
+
         for Target in pairs(Overlays) do
             if not IsValid(Target) then
                 Overlays[Target] = nil
