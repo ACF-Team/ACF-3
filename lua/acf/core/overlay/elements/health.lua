@@ -6,7 +6,7 @@ function ELEMENT.Render(_, Slot)
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
     local Text = Slot.NumData <= 2 and "Health" or Slot.Data[1]
-    local W, H = Overlay.GetTextSize(Overlay.MAIN_FONT, Text)
+    local W, H = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
     -- Allocate our slots size
     -- We want at least 160 pixels for a health bar
     local HW = math.min(160, W)
@@ -43,7 +43,7 @@ function ELEMENT.PostRender(_, Slot)
     local DividerX  = Overlay.GetKVDividerX()
     local ValueX    = Overlay.GetKVValueX()
 
-    Overlay.SimpleText(Text, Overlay.MAIN_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
     local X, Y = DividerX, 3
     local W, H = (ValueX - DividerX) * Ratio, SlotH - 4

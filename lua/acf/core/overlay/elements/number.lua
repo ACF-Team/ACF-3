@@ -5,8 +5,8 @@ function ELEMENT.Render(_, Slot)
     -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
-    local W1, H1 = Overlay.GetTextSize(Overlay.MAIN_FONT, Slot.Data[1] or "Key")
-    local W2, H2 = Overlay.GetTextSize(Overlay.MAIN_FONT, tostring(Slot.Data[2]))
+    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Slot.Data[1] or "Key")
+    local W2, H2 = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, tostring(Slot.Data[2]))
 
     local W = math.max(W1, W2) + 8
     local H = math.max(H1, H2)
@@ -18,9 +18,9 @@ function ELEMENT.Render(_, Slot)
 end
 
 function ELEMENT.PostRender(_, Slot)
-    Overlay.SimpleText(Slot.Data[1], Overlay.MAIN_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(Slot.Data[1], Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    Overlay.SimpleText(tostring(Slot.Data[2]), Overlay.MAIN_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(tostring(Slot.Data[2]), Overlay.VALUE_TEXT_FONT, Overlay.GetKVValueX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 end
 
 Overlay.DefineElementType("Number", ELEMENT)

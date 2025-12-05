@@ -50,6 +50,16 @@ end
 -- Server update decoding
 do
     -- TODO: Why is the shared file not providing this?!?!?!?
+    Overlay.MAX_ELEMENTS               = 128
+    Overlay.MAX_ELEMENT_BITS           = 7
+
+    Overlay.MAX_ELEMENT_DATA           = 64
+    Overlay.MAX_ELEMENT_DATA_BITS      = 6
+
+    Overlay.C2S_OVERLAY_START          = 0
+    Overlay.C2S_OVERLAY_END            = 1
+    Overlay.S2C_OVERLAY_DELTA_UPDATE   = 2
+
     local OVERLAY_MSG_TYPE_BITS      = 2
     local OVERLAY_MSG_STRINGTABLEIDX = "ACF_RequestOverlay"
     Overlay.Receivers = Overlay.Receivers or {}
@@ -113,6 +123,61 @@ do
         -- Delta encoded requires a baseline, after all...
     end)
 end
+
+-- Fonts
+do
+    -- "On Linux, using the embedded font name tends to be unreliable. I recommend using the font's (case-sensitive) file name, 
+    --  like 'Roboto-Regular.ttf', instead. You can use system.IsLinux to help determine which name to use."
+    --      - https://wiki.facepunch.com/gmod/Finding_the_Font_Name
+    local Fonts = {
+        {"Segment16", "16segments-basic.ttf"},
+        {"Prototype", "prototype.ttf"},
+        {"Conduit ITC Light", "conduit.ttf"},
+    }
+
+    local function GetFontForOS(I) return not system.IsWindows() and Fonts[I][2] or Fonts[I][1] end
+    local Segment16 = GetFontForOS(1)
+    local Prototype = GetFontForOS(2)
+    local Conduit = GetFontForOS(3)
+
+    surface.CreateFont("ACF_OverlayHeaderBackground", {
+        font = Conduit,
+        size = 40,
+        weight = 900,
+        blursize = 6,
+        scanlines = 4,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlayHeader", {
+        font = Conduit,
+        size = 40,
+        weight = 900,
+        blursize = 0,
+        scanlines = 2,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlayText", {
+        font = Conduit,
+        size = 20,
+        weight = 500,
+        blursize = 0,
+        scanlines = 0,
+        antialias = true,
+        extended = true
+    })
+    surface.CreateFont("ACF_OverlayKeyText", {
+        font = Conduit,
+        size = 20,
+        weight = 900,
+        blursize = 0,
+        scanlines = 0,
+        antialias = true,
+        extended = true
+    })
+end
+
 
 -- Rendering
 do
@@ -286,8 +351,11 @@ do
     Overlay.COLOR_SECONDARY_COLOR = COLOR_SECONDARY_COLOR
 
     -- Todo
-    Overlay.HEADER_FONT = "DermaLarge"
-    Overlay.MAIN_FONT   = "DermaDefault"
+    Overlay.HEADER_BACK_FONT = "ACF_OverlayHeaderBackground"
+    Overlay.HEADER_FONT = "ACF_OverlayHeader"
+    Overlay.KEY_TEXT_FONT = "ACF_OverlayKeyText"
+    Overlay.VALUE_TEXT_FONT = "ACF_OverlayText"
+    Overlay.MAIN_FONT = "ACF_OverlayText"
 
     local OverlayMatrix = Matrix()
     local OverlayOffset = Vector(0, 0, 0)
