@@ -429,7 +429,7 @@ do
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
-        if IsValid(New) then
+        if IsValid(New) and New.IsACFEntity then
             Overlay.StartOverlay(New, true)
         else
             Overlay.EndOverlay(true)
