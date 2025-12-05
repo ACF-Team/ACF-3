@@ -696,28 +696,35 @@ do	-- Spawn and Update funcs
 end
 
 do -- Overlay
-	function ENT:UpdateOverlayText()
+	function ENT:ACF_UpdateOverlayState(State)
 		local SelfTbl	= self:GetTable()
 		local SlewMax	= math.Round(SelfTbl.MaxSlewRate * SelfTbl.DamageScale, 2)
 		local SlewAccel	= math.Round(SelfTbl.SlewAccel * SelfTbl.DamageScale, 4)
 		local TotalMass	= math.Round(SelfTbl.TurretData.TotalMass, 1)
 		local MaxMass	= math.Round(SelfTbl.MaxMass, 1)
 
-		local Text = "Max " .. SlewMax .. " deg/s\nAccel: " .. SlewAccel .. " deg/s^2\nTeeth: " .. SelfTbl.TurretData.Teeth .. " t\nCurrent Mass: " .. TotalMass .. " kg / " .. MaxMass .. " kg max"
+		State:AddNumber("Max Rotation", SlewMax, " deg/s")
+		State:AddNumber("Accel", SlewAccel, " deg/s^2")
+		State:AddNumber("Teeth", SelfTbl.TurretData.Teeth, " t")
+		State:AddProgressBar("Current Mass", TotalMass, MaxMass, " kg")
 
-		if SelfTbl.HasArc then Text = Text .. "\nArc: " .. SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg end
-
-		if IsValid(SelfTbl.Motor) then Text = Text .. "\nMotor: " .. tostring(SelfTbl.Motor) end
-
-		if IsValid(SelfTbl.Gyro) then Text = Text .. "\nGyro: " .. tostring(SelfTbl.Gyro) end
-
-		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
-			Text = Text .. "\n\nMotor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%"
-		elseif SelfTbl.Stabilized then
-			Text = Text .. "\n\nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%"
+		if SelfTbl.HasArc then
+			State:AddKeyValue("Arc", SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg)
 		end
 
-		return Text
+		if IsValid(SelfTbl.Motor) then
+			State:AddKeyValue("Motor", tostring(SelfTbl.Motor))
+		end
+
+		if IsValid(SelfTbl.Gyro) then
+			State:AddKeyValue("Gyro", tostring(SelfTbl.Gyro))
+		end
+
+		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
+			State:AddLabel("Motor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
+		elseif SelfTbl.Stabilized then
+			State:AddLabel("nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
+		end
 	end
 end
 

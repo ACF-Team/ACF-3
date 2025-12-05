@@ -482,7 +482,6 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
 	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
 
 	-- This sucks. Make GetCrateText and GetOverlayText return components so we dont have to do this splitting garbage.
@@ -519,7 +518,7 @@ do -- Overlay
 		BulletInfo = BulletText:format(Cartridge, Projectile)
 
 		if AmmoInfo and AmmoInfo ~= "" then
-			AmmoInfo = "\n\n" .. AmmoInfo
+			AmmoInfo = AmmoInfo
 		end
 
 		-- return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)

@@ -177,7 +177,7 @@ do
     })
     surface.CreateFont("ACF_OverlayHealthText", {
         font = Prototype,
-        size = 16,
+        size = 19,
         weight = 500,
         blursize = 0,
         scanlines = 2,
@@ -186,9 +186,9 @@ do
     })
     surface.CreateFont("ACF_OverlayHealthTextBackground", {
         font = Prototype,
-        size = 16,
+        size = 19,
         weight = 500,
-        blursize = 4,
+        blursize = 2,
         scanlines = 2,
         antialias = true,
         extended = true
@@ -406,6 +406,7 @@ do
     local COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
     local COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
     local COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
+    local COLOR_ERROR_TEXT             = Color(255, 255, 255)
 
     Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
     Overlay.COLOR_TEXT = COLOR_TEXT
@@ -430,6 +431,9 @@ do
     local OverlayScale  = Vector(0, 0, 0)
     local OverlayOffset = Vector(0, 0, 0)
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
+        -- Update COLOR_ERROR_TEXT
+        COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
+        COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime()) + 1) / 2, 0.2, 0.4))
         for Target in pairs(Overlays) do
             if not IsValid(Target) then
                 Overlays[Target] = nil

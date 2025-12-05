@@ -1,21 +1,25 @@
 local Overlay = ACF.Overlay
 local ELEMENT = {}
 
-local function GetText(Health, MaxHealth)
+local function GetText(Slot)
+    local Health    = Slot.Data[2]
+    local MaxHealth = Slot.Data[3]
+    local Unit      = Slot.NumData >= 4 and Slot.Data[4] or ""
+    local Decimals  = Slot.NumData >= 5 and Slot.Data[5] or 0
+
     local Ratio = Health / MaxHealth
-    return ("%d/%d (%.1f%%)"):format(Health, MaxHealth, Ratio * 100)
+    return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100)
 end
 
 function ELEMENT.Render(_, Slot)
    -- Our horizontal positions here are dependent on the final size of everything.
     -- So those will be adjusted in PostRender, and we'll allocate our size here.
 
-    local Text      = Slot.NumData <= 2 and "Health"     or Slot.Data[1]
-    local Health    = Slot.NumData <= 2 and Slot.Data[1] or Slot.Data[2]
-    local MaxHealth = Slot.NumData <= 2 and Slot.Data[2] or Slot.Data[3]
+    local Text      = Slot.Data[1]
 
     local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Text)
-    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Health, MaxHealth))
+    local W2, H2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Slot))
+    W2 = W2 + 32
     Overlay.AppendSlotSize(math.max(W1, W2), math.max(H1, H2))
     Overlay.PushWidths(W1, W2)
 end
@@ -43,10 +47,10 @@ local FakeScanlines = Material("vgui/gradient_down")
 local function RenderBar(Slot, MinColor, MaxColor)
     local SlotW, SlotH  = Overlay.GetSlotSize()
 
-    local Text      = Slot.NumData <= 2 and "Health"     or Slot.Data[1]
-    local Health    = Slot.NumData <= 2 and Slot.Data[1] or Slot.Data[2]
-    local MaxHealth = Slot.NumData <= 2 and Slot.Data[2] or Slot.Data[3]
-    local W2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Health, MaxHealth))
+    local Text      = Slot.Data[1]
+    local Health    = Slot.Data[2]
+    local MaxHealth = Slot.Data[3]
+    local W2 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, GetText(Slot))
 
     local Ratio = Health / MaxHealth
 
@@ -55,8 +59,8 @@ local function RenderBar(Slot, MinColor, MaxColor)
 
     Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
-    local X, Y = ValueX, 1
-    local W, H = math.min(W2, SlotW / 1.1), SlotH - 2
+    local X, Y = ValueX, 0
+    local W, H = math.min(W2, SlotW / 1.1), SlotH
 
     local BarColor = LerpColor(Ratio, MinColor, MaxColor)
     Overlay.DrawRect(X, Y, W * Ratio, H, BarColor)
@@ -69,11 +73,14 @@ local function RenderBar(Slot, MinColor, MaxColor)
 
     local BackColor = LerpColor(Ratio, MinColor, MaxColor)
     BackColor:SetBrightness(0.3)
-    Overlay.DrawOutlinedRect(X, Y, W * Ratio, H, BackColor, 2)
+    Overlay.DrawOutlinedRect(X, Y, W, H, BackColor, 2)
 
-    local InnerText = GetText(Health, MaxHealth)
+    local InnerText = GetText(Slot)
     local BackTextColor = LerpColor(Health / MaxHealth, MinColor, MaxColor)
-    BackTextColor:SetSaturation(0.6)
+    BackTextColor:SetSaturation(0.3)
+    BackTextColor:SetBrightness(1)
+    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     Overlay.SimpleText(InnerText, "ACF_OverlayHealthTextBackground", X + (W / 2), Y + (H / 2), BackTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     Overlay.SimpleText(InnerText, "ACF_OverlayHealthText", X + (W / 2), Y + (H / 2), Overlay.COLOR_TEXT_DARK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
