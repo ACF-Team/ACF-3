@@ -166,6 +166,15 @@ do
         antialias = true,
         extended = true
     })
+    surface.CreateFont("ACF_OverlayBoldText", {
+        font = Conduit,
+        size = 20,
+        weight = 900,
+        blursize = 0,
+        scanlines = 0,
+        antialias = true,
+        extended = true
+    })
     surface.CreateFont("ACF_OverlayKeyText", {
         font = Conduit,
         size = 20,
@@ -433,7 +442,7 @@ do
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         -- Update COLOR_ERROR_TEXT
         COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
-        COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.1, 0.3))
+        COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
         for Target in pairs(Overlays) do
             if not IsValid(Target) then
                 Overlays[Target] = nil
