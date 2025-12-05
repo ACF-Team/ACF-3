@@ -482,19 +482,9 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local function SplitPieces(State, Data)
-		for _, Line in ipairs(string.Explode("\n", Data)) do
-			if #Line ~= 0 then
-				local Parts = string.Explode(":", Line)
-				State:AddKeyValue(Parts[1], Parts[2])
-			end
-		end
-	end
-
 	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
-		local ExtraInfo = ACF.GetOverlayText(self)
 
 		if next(self.Weapons) then
 			if self:CanConsume() then
@@ -529,9 +519,6 @@ do -- Overlay
 
 		State:AddHeader("Ammo Info", 2)
 		self.RoundData:UpdateCrateOverlay(self.BulletData, State)
-		if #ExtraInfo > 0 then
-			State:AddHeader("Extra Info", 2)
-			SplitPieces(State, ExtraInfo)
-		end
+		ACF.AddAdditionalOverlays(self, State)
 	end
 end
