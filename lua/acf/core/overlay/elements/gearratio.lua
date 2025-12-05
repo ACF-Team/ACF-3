@@ -18,7 +18,7 @@ function ELEMENT.PostRender(_, Slot)
 
     local Ratio   = Slot.Data[2]
     local Legacy  = Slot.NumData >= 4 and Slot.Data[4]
-    local Reverse = Slot.NumData >= 5 and Slot.Data[5]
+    -- local Reverse = Slot.NumData >= 5 and Slot.Data[5]
     local InTime = ((RealTime() % 60) * 360) / 5
     local OutTime
     if Legacy then
