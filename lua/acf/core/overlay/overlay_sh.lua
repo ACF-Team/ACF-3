@@ -391,6 +391,7 @@ do
         function State:__new()
             self.ElementSlots = {}
             self.NumElements = 0
+            self.ReliantStack = {}
 
             self.ChangedSinceLastUpdate = false
         end
@@ -398,6 +399,7 @@ do
         -- Prepares a write to the state.
         function State:Begin()
             self.NumElements = 0
+            table.Empty(self.ReliantStack)
         end
 
         -- Ends a write to the state.
@@ -437,6 +439,33 @@ do
 
             self.NumElements = SlotIdx
             return self.ElementSlots[SlotIdx]
+        end
+
+        -- Marks the last slot as "reliant". It will be removed if no data was written afterwards.
+        function State:MarkReliantSlot()
+            self.ReliantStack[#self.ReliantStack + 1] = {
+                ReliantIdx = self.NumElements
+            }
+        end
+
+        -- Discards the last reliant slot if nothing else was written.
+        function State:DiscardReliantSlot()
+            local Slot = self.ReliantStack[#self.ReliantStack]
+            if not Slot then return end
+
+            table.remove(self.ReliantStack, #self.ReliantStack)
+            if self.NumElements == Slot.ReliantIdx then
+                -- Discard that element.
+                table.remove(self.ElementSlots, Slot.ReliantIdx)
+                -- Update everyone else in the stack so their idxs are correct
+                for I = 1, #self.ReliantStack do
+                    local StackItem = self.ReliantStack[I]
+                    if StackItem.ReliantIdx > Slot.ReliantIdx then
+                        StackItem.ReliantIdx = StackItem.ReliantIdx - 1
+                    end
+                end
+                self.NumElements = self.NumElements - 1
+            end
         end
 
         -- Adds an element to the overlay state.

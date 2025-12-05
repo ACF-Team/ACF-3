@@ -807,7 +807,9 @@ do -- Extra overlays
 
 		for Name, Function in pairs(Class) do
 			State:AddHeader(Name, 2)
-			Function(Entity, State)
+			State:MarkReliantSlot() -- ^^ targets this
+				Function(Entity, State)
+			State:DiscardReliantSlot()
 		end
 	end
 end
