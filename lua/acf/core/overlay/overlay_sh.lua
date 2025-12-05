@@ -269,6 +269,9 @@ do
     local ElementTypes = Overlay.ElementTypes or {}
     Overlay.ElementTypes = ElementTypes
 
+    local ElementTypesByIdx = Overlay.ElementTypesByIdx or {}
+    Overlay.ElementTypesByIdx = ElementTypesByIdx
+
     local ElementBits = Overlay.ELEMENT_TYPE_BITS or 1
     Overlay.ELEMENT_TYPE_BITS = ElementBits
 
@@ -280,6 +283,12 @@ do
         local TypeData = ElementTypes[Name]
         return TypeData and TypeData.Idx or error(string.format("Invalid type '%s' given to GetElementTypeIdx", Name))
     end
+
+    function Overlay.GetElementType(Idx)
+        local TypeData = ElementTypesByIdx[Idx]
+        return TypeData and TypeData.TypeDef or error(string.format("Invalid type idx '%d' given to GetElementTypeIdx", Idx))
+    end
+
     function Overlay.DefineElementType(Name, TypeDef)
         -- If the overlay element already exists, perform a rewrite without recalculating element type bits.
         if ElementTypes[Name] then
@@ -292,6 +301,7 @@ do
             TypeDef = TypeDef,
             Idx = Idx
         }
+        ElementTypesByIdx[Idx] = ElementTypes[Name]
         -- Recalculate bits required to network element types
         Overlay.ELEMENT_TYPE_BITS = BitsRequired(Idx)
 
@@ -337,7 +347,7 @@ do
             return I, A.Data[I]
         end
 
-        function ElementSlot:GetElementData() return IterElementData(self) end
+        function ElementSlot:GetElementData() return IterElementData, self, 0 end
         function ElementSlot:NumElementData() return self.NumData end
 
         -- Does the data exist? Takes into account NumData rather than Data.
@@ -432,7 +442,7 @@ do
             return I, A.ElementSlots[I]
         end
 
-        function State:GetElementSlots() return IterElementSlots(self) end
+        function State:GetElementSlots() return IterElementSlots, self, 0 end
         function State:NumElementSlots() return self.NumElements end
 
         -- Does the slot exist? Takes into account NumElements rather than Elements.
