@@ -7,12 +7,16 @@ timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
     local LocalPlayer = _G.LocalPlayer()
     if not IsValid(LocalPlayer) then return end
 
+    local EyeTrace = LocalPlayer:GetEyeTrace()
+    if not EyeTrace then return end
+
     RenderContext.ViewSetup = render.GetViewSetup()
     local Weapon = LocalPlayer:GetActiveWeapon()
 
     -- Cancel out if invalid lookat entity.
     local LastLookAt = RenderContext.LookAt
-    local Lookat = LocalPlayer:GetEyeTrace().Entity
+
+    local Lookat = EyeTrace.Entity
     if
         IsValid(Lookat) and
         Lookat:GetPos():Distance(RenderContext.ViewSetup.origin) < (Lookat.MaxWorldTipDistance or 256)
