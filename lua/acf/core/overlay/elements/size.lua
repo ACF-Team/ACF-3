@@ -13,10 +13,12 @@ local function GetVectorStringFromSlot(Slot)
 end
 
 function ELEMENT.Render(_, Slot)
+    Overlay.KeyValueRenderMode = 1
     Overlay.BasicKeyValueRender(Slot, nil, GetVectorStringFromSlot(Slot))
 end
 
 function ELEMENT.PostRender(_, Slot)
+    Overlay.KeyValueRenderMode = 1
     Overlay.BasicKeyValuePostRender(Slot, nil, GetVectorStringFromSlot(Slot))
 end
 
