@@ -450,57 +450,31 @@ do
     local COLOR_WARNING_TEXT
     local COLOR_ERROR_TEXT
 
-    local UseWireOverlayStyle = CreateClientConVar("acf_overlay_wiremod_style", "0", true, false, "If true, the overlay UI will try to replicate Wiremod's overlay style to the best of its ability.", 0, 1)
-
     -- Todo
     local function SetupStyle(WireOverlayStyle)
-        if WireOverlayStyle then
-            COLOR_DROP_SHADOW            = Color(2, 9, 14, 0)
-            COLOR_PRIMARY_BACKGROUND     = Color(0, 0, 0, 204)
-            COLOR_TEXT                   = Color(236, 252, 255, 245)
-            COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
-            COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
-            COLOR_BORDER_LIGHT_COLOR     = Color(0, 0, 0, 255)
-            COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
-            COLOR_TERTIARY_COLOR         = Color(0, 0, 0, 245)
-            COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
-            COLOR_WARNING_TEXT           = Color(255, 255, 255)
-            COLOR_ERROR_TEXT             = Color(255, 255, 255)
-            Overlay.HEADER_BACK_FONT     = "GModWorldtip"
-            Overlay.HEADER_FONT          = "GModWorldtip"
-            Overlay.SUBHEADER_BACK_FONT  = "GModWorldtip"
-            Overlay.SUBHEADER_FONT       = "GModWorldtip"
-            Overlay.BOLD_TEXT_FONT       = "GModWorldtip"
-            Overlay.KEY_TEXT_FONT        = "GModWorldtip"
-            Overlay.VALUE_TEXT_FONT      = "GModWorldtip"
-            Overlay.SUBKEY_TEXT_FONT     = "GModWorldtip"
-            Overlay.SUBVALUE_TEXT_FONT   = "GModWorldtip"
-            Overlay.MAIN_FONT            = "GModWorldtip"
-            Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
-        else
-            COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
-            COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
-            COLOR_TEXT                   = Color(236, 252, 255, 245)
-            COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
-            COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
-            COLOR_BORDER_LIGHT_COLOR     = Color(150, 200, 210, 245)
-            COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
-            COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
-            COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
-            COLOR_WARNING_TEXT           = Color(255, 255, 255)
-            COLOR_ERROR_TEXT             = Color(255, 255, 255)
-            Overlay.HEADER_BACK_FONT     = "ACF_OverlayHeaderBackground"
-            Overlay.HEADER_FONT          = "ACF_OverlayHeader"
-            Overlay.SUBHEADER_BACK_FONT  = "ACF_OverlaySubHeaderBackground"
-            Overlay.SUBHEADER_FONT       = "ACF_OverlaySubHeader"
-            Overlay.BOLD_TEXT_FONT       = "ACF_OverlayBoldText"
-            Overlay.KEY_TEXT_FONT        = "ACF_OverlayKeyText"
-            Overlay.VALUE_TEXT_FONT      = "ACF_OverlayText"
-            Overlay.SUBKEY_TEXT_FONT     = "ACF_OverlaySubKeyText"
-            Overlay.SUBVALUE_TEXT_FONT   = "ACF_OverlaySubText"
-            Overlay.MAIN_FONT            = "ACF_OverlayText"
-            Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
-        end
+        COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
+        COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
+        COLOR_TEXT                   = Color(236, 252, 255, 245)
+        COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
+        COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
+        COLOR_BORDER_LIGHT_COLOR     = Color(150, 200, 210, 245)
+        COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
+        COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
+        COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
+        COLOR_WARNING_TEXT           = Color(255, 255, 255)
+        COLOR_ERROR_TEXT             = Color(255, 255, 255)
+
+        Overlay.HEADER_BACK_FONT     = "ACF_OverlayHeaderBackground"
+        Overlay.HEADER_FONT          = "ACF_OverlayHeader"
+        Overlay.SUBHEADER_BACK_FONT  = "ACF_OverlaySubHeaderBackground"
+        Overlay.SUBHEADER_FONT       = "ACF_OverlaySubHeader"
+        Overlay.BOLD_TEXT_FONT       = "ACF_OverlayBoldText"
+        Overlay.KEY_TEXT_FONT        = "ACF_OverlayKeyText"
+        Overlay.VALUE_TEXT_FONT      = "ACF_OverlayText"
+        Overlay.SUBKEY_TEXT_FONT     = "ACF_OverlaySubKeyText"
+        Overlay.SUBVALUE_TEXT_FONT   = "ACF_OverlaySubText"
+        Overlay.MAIN_FONT            = "ACF_OverlayText"
+        Overlay.PROGRESS_BAR_TEXT    = "ACF_OverlayHealthText"
 
         Overlay.COLOR_PRIMARY_BACKGROUND = COLOR_PRIMARY_BACKGROUND
         Overlay.COLOR_TEXT = COLOR_TEXT
@@ -513,10 +487,7 @@ do
         Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
         DoAnimation = not WireOverlayStyle
     end
-    SetupStyle(UseWireOverlayStyle:GetBool())
-    cvars.AddChangeCallback("acf_overlay_wiremod_style", function()
-        SetupStyle(UseWireOverlayStyle:GetBool())
-    end)
+    SetupStyle()
 
     local Overlays = Overlay.ActiveOverlays or {}
     Overlay.ActiveOverlays = Overlays
