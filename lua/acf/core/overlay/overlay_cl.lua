@@ -432,11 +432,6 @@ do
         return Overlay.CacheRenderCall(draw.NoTexture)
     end
 
-    function Overlay.DrawOutlinedRect(X, Y, W, H, Color, Thickness)
-        Overlay.AppendSlotSize(W, H)
-        return Overlay.CacheRenderCall(DrawOutlinedRect, X, Y + TotalY, W, H, Color, Thickness)
-    end
-
     function Overlay.PushCustomClipPlane(Normal, Distance)
         return Overlay.CacheRenderCall(render.PushCustomClipPlane, Normal, Distance)
     end
