@@ -1,6 +1,6 @@
 -- Thank you for most of the base cost logic liddul <3
-ACF.RequisitionCosts = {}
-ACF.RequisitionCosts.CalcSingleFilter = {
+ACF.CostSystem = {}
+ACF.CostSystem.CalcSingleFilter = {
 	gmod_wire_expression2	= 0.75,
 	starfall_processor		= 0.75,
 	acf_piledriver			= 5,
@@ -25,7 +25,7 @@ ACF.RequisitionCosts.CalcSingleFilter = {
 	acf_groundloader		= 1,
 }
 
-ACF.RequisitionCosts.ACFGunCost = { -- anything not on here costs 1
+ACF.CostSystem.ACFGunCost = { -- anything not on here costs 1
 	SB	= 1, -- old smoothbores, leaving
 	C	= 0.5,
 	SC	= 0.3,
@@ -42,7 +42,7 @@ ACF.RequisitionCosts.ACFGunCost = { -- anything not on here costs 1
 	FGL	= 0.125
 }
 
-ACF.RequisitionCosts.ACFAmmoModifier = { -- Anything not in here is 0.2
+ACF.CostSystem.ACFAmmoModifier = { -- Anything not in here is 0.2
 	AP		= 0.4,
 	APCR	= 0.6,
 	APDS	= 0.8,
@@ -58,7 +58,7 @@ ACF.RequisitionCosts.ACFAmmoModifier = { -- Anything not in here is 0.2
 	FLR		= 0.05,
 }
 
-ACF.RequisitionCosts.ACFMissileModifier = { -- Default 5
+ACF.CostSystem.ACFMissileModifier = { -- Default 5
 	ATGM	= 8,
 	AAM		= 5,
 	ARM		= 2.5,
@@ -71,7 +71,7 @@ ACF.RequisitionCosts.ACFMissileModifier = { -- Default 5
 	UAR		= 3,
 }
 
-ACF.RequisitionCosts.ACFRadars = { -- Should be prohibitively expensive, defaults to 50
+ACF.CostSystem.ACFRadars = { -- Should be prohibitively expensive, defaults to 50
 	-- Missile detecting radars
 	["LargeDIR-AM"]		= 30,
 	["MediumDIR-AM"]	= 15,
@@ -91,7 +91,7 @@ ACF.RequisitionCosts.ACFRadars = { -- Should be prohibitively expensive, default
 	["SmallOMNI-TGT"]	= 30,
 }
 
-ACF.RequisitionCosts.SpecialModelFilter = { -- any missile rack not in here costs 10 points
+ACF.CostSystem.SpecialModelFilter = { -- any missile rack not in here costs 10 points
 	["models/failz/b8.mdl"]			= 20,
 	["models/failz/lau_61.mdl"]		= 15,
 	["models/failz/ub_16.mdl"]		= 15,
@@ -140,11 +140,11 @@ ACF.RequisitionCosts.SpecialModelFilter = { -- any missile rack not in here cost
 }
 
 local CostFilter = {}
-CostFilter["acf_gun"] = function(E) return (ACF.RequisitionCosts.ACFGunCost[E.Class] or 1) * E.Caliber end
+CostFilter["acf_gun"] = function(E) return (ACF.CostSystem.ACFGunCost[E.Class] or 1) * E.Caliber end
 CostFilter["acf_engine"] = function(E) return math.max(5, (E.PeakTorque / 160) + (E.PeakPower / 80)) end
 CostFilter["acf_rack"] = function(E)
-	if ACF.RequisitionCosts.SpecialModelFilter[E:GetModel()] then
-		return ACF.RequisitionCosts.SpecialModelFilter[E:GetModel()]
+	if ACF.CostSystem.SpecialModelFilter[E:GetModel()] then
+		return ACF.CostSystem.SpecialModelFilter[E:GetModel()]
 	else
 		return 10
 	end
@@ -152,8 +152,8 @@ end
 CostFilter["acf_radar"] = function(E)
 	local ID = E.ShortName
 
-	if ACF.RequisitionCosts.ACFRadars[ID] then
-		return ACF.RequisitionCosts.ACFRadars[ID]
+	if ACF.CostSystem.ACFRadars[ID] then
+		return ACF.CostSystem.ACFRadars[ID]
 	else
 		return 50
 	end
@@ -162,9 +162,9 @@ CostFilter["acf_ammo"] = function(E)
 	if E.AmmoType == "Refill" then
 		return E.Capacity * 0.05
 	elseif E.IsMissileAmmo then -- Only present on crates that actually hold ACF-3 Missiles ammo, courtesy of a hook intercept in ACF-3 Missiles
-		return E.Capacity * (ACF.RequisitionCosts.ACFAmmoModifier[E.AmmoType] or 0.2) * (ACF.RequisitionCosts.ACFMissileModifier[E.Class] or 10) * math.max(1,(E.Caliber / 100) ^ 1.5)
+		return E.Capacity * (ACF.CostSystem.ACFAmmoModifier[E.AmmoType] or 0.2) * (ACF.CostSystem.ACFMissileModifier[E.Class] or 10) * math.max(1,(E.Caliber / 100) ^ 1.5)
 	else
-		return E.Capacity * (ACF.RequisitionCosts.ACFAmmoModifier[E.AmmoType] or 0.2) * ((E.Caliber / 100) ^ 2) * (ACF.RequisitionCosts.ACFGunCost[E.Class] or 1)
+		return E.Capacity * (ACF.CostSystem.ACFAmmoModifier[E.AmmoType] or 0.2) * ((E.Caliber / 100) ^ 2) * (ACF.CostSystem.ACFGunCost[E.Class] or 1)
 	end
 end
 
@@ -194,10 +194,10 @@ CostFilter["primitive_shape"] = ArmorCalc
 CostFilter["gmod_wire_gate"] = ArmorCalc
 CostFilter["acf_baseplate"] = ArmorCalc
 
-function ACF.RequisitionCosts.CalcCost(E)
+function ACF.CostSystem.CalcCost(E)
 	local Class = E:GetClass()
-	if not ACF.RequisitionCosts.CalcSingleFilter[Class] then return 0 end
-	local Cost = ACF.RequisitionCosts.CalcSingleFilter[Class] or 1
+	if not ACF.CostSystem.CalcSingleFilter[Class] then return 0 end
+	local Cost = ACF.CostSystem.CalcSingleFilter[Class] or 1
 
 	if CostFilter[Class] then
 		Cost = CostFilter[Class](E)
@@ -206,10 +206,21 @@ function ACF.RequisitionCosts.CalcCost(E)
 	return Cost
 end
 
+function ACF.CostSystem.CalcCostFromContraption(Contraption)
+
+end
+
+function ACF.CostSystem.CalcCostsFromEnts(Ents)
+
+end
+
+function ACF.CostSystem.CalcCostsFromEntsByClass(EntsByClass)
+
+end
+
 
 hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
 	-- print("cfw.contraption.created", Contraption)
-	Contraption.Cost = 0
 	Contraption.AmmoTypes = {}
 	Contraption.MaxPen = 0
 	Contraption.MaxNominal = 0
@@ -217,13 +228,6 @@ end)
 
 hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
 	-- print("cfw.contraption.entityAdded", Contraption, Entity)
-	local Class = Entity:GetClass()
-	if ACF.RequisitionCosts.CalcSingleFilter[Class] then
-		local Cost = ACF.RequisitionCosts.CalcCost(Entity)
-		Contraption.Cost = Contraption.Cost + Cost
-		Contraption.CostsByClass = Contraption.CostsByClass or {}
-		Contraption.CostsByClass[Entity:GetClass()] = (Contraption.CostsByClass[Entity:GetClass()] or 0) + Cost
-	end
 	if Entity.IsACFEntity then
 		if Entity.IsACFAmmoCrate then
 			Contraption.AmmoTypes[Entity.AmmoType] = true
