@@ -682,6 +682,8 @@ hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
+			if not IsValid(Engine) then continue end
+
 			ACF.CheckLegal(Engine)
 		end
 	end
@@ -699,6 +701,8 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", functi
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
+			if not IsValid(Engine) then continue end
+
 			ACF.CheckLegal(Engine)
 		end
 	end
