@@ -5,13 +5,14 @@ local COG = Material("icon16/cog.png", "mips smooth")
 
 function ELEMENT.Render(_, Slot)
     local Text = Slot.NumData >= 3 and Slot.Data[3] or ""
+    Overlay.KeyValueRenderMode = 1
     Overlay.BasicKeyValueRender(Slot, nil, ACF.NiceNumber(Slot.Data[2], Decimals) .. Text)
 end
 
 function ELEMENT.PostRender(_, Slot)
     local Text = Slot.NumData >= 3 and Slot.Data[3] or ""
     local KEY_FONT   = Overlay.KeyValueRenderMode == 1 and Overlay.KEY_TEXT_FONT or Overlay.SUBKEY_TEXT_FONT
-
+    Overlay.KeyValueRenderMode = 1
     Overlay.BasicKeyValuePostRender(Slot, nil, ACF.NiceNumber(Slot.Data[2], Decimals) .. Text)
 
     local XOffset = Overlay.GetTextSize(KEY_FONT, Slot.Data[1]) + 16

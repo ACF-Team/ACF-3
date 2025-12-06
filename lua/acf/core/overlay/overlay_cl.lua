@@ -264,6 +264,7 @@ do
         TotalY = 0
         KeyWidth = 0
         ValueWidth = 0
+        Overlay.KeyValueRenderMode = 1
         CurrentSlotIdx = 0
         LastKeyBreakIdx = 0
         NumRenderCalls = 0
