@@ -22,7 +22,7 @@ function ELEMENT.Render(_, Slot)
     local YW, YH = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, Y)
     local ZW, ZH = Overlay.GetTextSize(Overlay.VALUE_TEXT_FONT, Z)
 
-    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Slot[1] or "Key")
+    local W1, H1 = Overlay.GetTextSize(Overlay.KEY_TEXT_FONT, Slot.Data[1] or "Key")
 
     local W = math.max(W1 * 2, (XW + YW + ZW) * 2)
     local H = math.max(H1, XH, YH, ZH)
