@@ -366,7 +366,7 @@ do
             return I, A.Data[I]
         end
 
-        function ElementSlot:GetElementData() return IterElementData, self, 0 end
+        function ElementSlot:IterateElementData() return IterElementData, self, 0 end
         function ElementSlot:NumElementData() return self.NumData end
 
         -- Does the data exist? Takes into account NumData rather than Data.
@@ -490,7 +490,7 @@ do
             return I, A.ElementSlots[I]
         end
 
-        function State:GetElementSlots() return IterElementSlots, self, 0 end
+        function State:IterateElementSlots() return IterElementSlots, self, 0 end
         function State:NumElementSlots() return self.NumElements end
 
         -- Does the slot exist? Takes into account NumElements rather than Elements.

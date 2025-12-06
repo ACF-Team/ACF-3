@@ -597,7 +597,7 @@ do
                         surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime) * math.ease.OutCirc(1 - FadeOutTime))
                     end
 
-                    for Idx, ElementSlot in State:GetElementSlots() do
+                    for Idx, ElementSlot in State:IterateElementSlots() do
                         CurrentSlotIdx = Idx
                         local TypeIdx  = ElementSlot.Type
                         local Type     = Overlay.GetElementType(TypeIdx)
@@ -616,7 +616,7 @@ do
                     -- Disable the barrier
                     CanAccessOverlaySize = true
                     -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
-                    for Idx, ElementSlot in State:GetElementSlots() do
+                    for Idx, ElementSlot in State:IterateElementSlots() do
                         CurrentSlotIdx = Idx
                         -- Reload slot state for post-render.
                         local SlotCache = Overlay.GetSlotDataCache(Idx)
