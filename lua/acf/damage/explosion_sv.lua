@@ -1,21 +1,46 @@
-local ents         = ents
-local math         = math
-local util         = util
-local ACF          = ACF
-local Damage       = ACF.Damage
-local ModelData    = ACF.ModelData
-local Objects      = Damage.Objects
-local White        = Color(255, 255, 255)
-local Red          = Color(255, 0, 0)
-local Green        = Color(0, 255, 0)
-local TraceData    = {
+local ACF        = ACF
+local Damage     = ACF.Damage
+local ModelData  = ACF.ModelData
+local Objects    = Damage.Objects
+local Ballistics = ACF.Ballistics
+local Debug      = ACF.Debug
+
+-- library functions
+local ents       = ents
+local util       = util
+local math       = math
+local sqrt       = math.sqrt
+local floor      = math.floor
+local max        = math.max
+local min        = math.min
+local pi         = math.pi
+local random     = math.random
+local Rand       = math.Rand
+local IsValid    = IsValid
+local Sort       = table.sort
+local ACFTrace   = ACF.trace
+
+-- ACF constants
+local HEPower    = ACF.HEPower
+local HEFrag     = ACF.HEFrag
+local InchToCm   = ACF.InchToCm
+local Threshold  = ACF.Threshold
+local InchToMeter = ACF.InchToMeter
+
+-- Debugging
+local White      = Color(255, 255, 255)
+local Red        = Color(255, 0, 0)
+local Green      = Color(0, 255, 0)
+
+-- Trace data
+local TraceResult = {}
+local TraceData  = {
 	start  = true,
 	endpos = true,
 	filter = true,
 	mask   = MASK_SOLID + CONTENTS_AUX,
+	output = TraceResult
 }
-local Ballistics	= ACF.Ballistics
-local Debug			= ACF.Debug
 
 local function SortByDistSqr(a, b)
 	return a.DistSqr < b.DistSqr
@@ -48,9 +73,9 @@ local function getRandomPos(Entity)
 	if IsChar then
 		-- Scale down the "hitbox" since most of the character is in the middle
 		local Mins, Maxs = Entity:GetCollisionBounds()
-		local X    = math.Rand(Mins[1], Maxs[1])
-		local Y    = math.Rand(Mins[2], Maxs[2])
-		local Z    = math.Rand(Mins[3], Maxs[3])
+		local X    = Rand(Mins[1], Maxs[1])
+		local Y    = Rand(Mins[2], Maxs[2])
+		local Z    = Rand(Mins[3], Maxs[3])
 
 		return Entity:LocalToWorld(Vector(X, Y, Z) * 0.65)
 	end
@@ -58,27 +83,33 @@ local function getRandomPos(Entity)
 	if Entity._IsSpherical then
 		local Radius = Entity:BoundingRadius() * 0.5
 
-		return Entity:GetPos() + VectorRand() * math.Rand(1, Radius)
+		return Entity:GetPos() + VectorRand() * Rand(1, Radius)
 	end
 
 	local Model    = Entity:GetModel()
 	local Data     = ModelData.GetModelData(Model) -- Used instead of GetModelMesh, which does a full copy
 	local Mesh     = Data.Mesh                     -- Accessing the raw mesh, read-only
-	local Hull     = Mesh[math.random(1, #Mesh)]   -- Random hull
-	local TriCount = math.floor(#Hull / 3)         -- Number of triangles in the hull
-	local TriIndex = math.random(0, TriCount - 1)  -- Random triangle selection
+	local Hull     = Mesh[random(1, #Mesh)]        -- Random hull
+	local TriCount = floor(#Hull / 3)              -- Number of triangles in the hull
+	local TriIndex = random(0, TriCount - 1)       -- Random triangle selection
 	local Base     = TriIndex * 3 + 1              -- Multiply back up to the real index
 
 	-- Get the three vertices of the triangle
 	local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2]
-	local Centroid   = (V1 + V2 + V3) / 3
+
+	-- Sample a random point within the triangle using barycentric coordinates
+	local r1, r2 = random(), random()
+
+	if r1 + r2 > 1 then r1, r2 = 1 - r1, 1 - r2 end
+
+	local Point = V1 + r1 * (V2 - V1) + r2 * (V3 - V1)
 
 	-- Apply scale only to the single sampled point
 	local Scale = ModelData.GetEntityScale(Entity)
 
-	Centroid = Centroid * Scale
+	Point = Point * Scale
 
-	return Entity:LocalToWorld(Centroid)
+	return Entity:LocalToWorld(Point)
 end
 
 --- Creates an explosion at the given position.
@@ -88,23 +119,23 @@ end
 -- @param Filter Optional, a list of entities that will not be affected by the explosion.
 -- @param DmgInfo A DamageInfo object.
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
-	local Power       = FillerMass * ACF.HEPower
+	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
 	local Found       = ents.FindInSphere(Position, Radius)
 
 	do -- Screen shaking
-		local Amp = math.min(Power * 0.0005, 50)
+		local Amp = min(Power * 0.0005, 50)
 		util.ScreenShake(Position, Amp, Amp, Amp / 15, Radius * 10)
 	end
 
 	if not next(Found) then return end -- No targets found, nothing to do
 
-	local MaxSphere   = 4 * math.pi * (Radius * ACF.InchToCm) ^ 2
-	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
+	local MaxSphere    = 4 * pi * (Radius * InchToCm) ^ 2
+	local Fragments    = max(floor(FillerMass / FragMass * HEFrag ^ 0.5), 2)
 	local FragMassCalc = FragMass / Fragments
-	local BaseFragV   = (Power * 50000 / FragMassCalc / Fragments) ^ 0.5
-	local FragArea    = (FragMassCalc / 7.8) ^ 0.33
-	local FragCaliber = 20 * (FragMassCalc / math.pi) ^ 0.5
+	local BaseFragV    = (Power * 50000 / FragMassCalc / Fragments) ^ 0.5
+	local FragArea     = (FragMassCalc / 7.8) ^ 0.33
+	local FragCaliber  = 20 * (FragMassCalc / pi) ^ 0.5
 
 	if not Filter then Filter = {} end
 
@@ -127,12 +158,14 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		if Damage.isValidTarget(Entity) then
 			local RandomPos   = getRandomPos(Entity)
 			local Delta       = RandomPos - Position
-			local TraceEndPos = Position + Delta:GetNormalized() * (Delta:Length() + 24)
+			local DistSqr     = Delta:LengthSqr()
+			local Dist        = sqrt(DistSqr)
+			local TraceEndPos = Position + Delta * ((Dist + 24) / Dist)
 
 			local Data = {
 				Entity      = Entity,
 				TraceEndPos = TraceEndPos,
-				DistSqr     = Delta:LengthSqr(),
+				DistSqr     = DistSqr,
 				Processed   = false,
 			}
 
@@ -147,7 +180,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	if TargetCount == 0 then return end
 
 	-- Sort by distance (closest first)
-	table.sort(TargetList, SortByDistSqr)
+	Sort(TargetList, SortByDistSqr)
 
 	-- Phase 2: Process targets
 	-- Iterate through targets and check for occlusion
@@ -167,10 +200,9 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 		TraceData.endpos = Data.TraceEndPos
 
-		local Trace  = ACF.trace(TraceData)
-		local HitPos = Trace.HitPos
+		ACFTrace(TraceData)
 
-		if Trace.HitWorld then
+		if TraceResult.HitWorld then
 			-- Hit world - this entity is permanently blocked from this angle
 			-- Don't mark as processed - give another chance if we happen to hit it while tracing towards another target
 			Debug.Line(Position, Data.TraceEndPos, 15, Green, true)
@@ -178,7 +210,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			continue
 		end
 
-		local HitEnt = Trace.Entity
+		local HitPos = TraceResult.HitPos
+		local HitEnt = TraceResult.Entity
 
 		if HitEnt ~= Entity then
 			-- We hit something that wasn't our intended target
@@ -190,12 +223,14 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 				if IsValid(HitEnt) and Damage.isValidTarget(HitEnt) then
 					local RandomPos   = getRandomPos(HitEnt)
 					local Delta       = RandomPos - Position
-					local TraceEndPos = Position + Delta:GetNormalized() * (Delta:Length() + 24)
+					local DistSqr     = Delta:LengthSqr()
+					local Dist        = sqrt(DistSqr)
+					local TraceEndPos = Position + Delta * ((Dist + 24) / Dist)
 
 					BlockerData = {
 						Entity      = HitEnt,
 						TraceEndPos = TraceEndPos,
-						DistSqr     = Delta:LengthSqr(),
+						DistSqr     = DistSqr,
 						Processed   = false,
 					}
 
@@ -240,10 +275,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Delta         = HitPos - Position
 		local Distance      = Delta:Length()
 		local Direction     = Delta / Distance -- Normalize without second sqrt
-		local Sphere        = math.max(4 * math.pi * (Distance * ACF.InchToCm) ^ 2, 1)
+		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1)
 		local EntArea       = HitEnt.ACF.Area
 		local EntArmor      = HitEnt.ACF.Armour
-		local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere
+		local Area          = min(EntArea / Sphere, 0.5) * MaxSphere
 		local AreaFraction  = Area / MaxSphere
 		local PowerFraction = Power * AreaFraction
 		local BlastResult, FragResult, Losses, Penetration
@@ -251,11 +286,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		Debug.Line(Position, HitPos, 15, Red, true)
 
 		DmgInfo:SetHitPos(HitPos)
-		DmgInfo:SetHitGroup(Trace.HitGroup)
+		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
 		do -- Blast damage
-			local Feathering  = 1 - math.min(0.99, Distance / Radius) ^ 0.5
-			local BlastArea   = EntArea / ACF.Threshold * Feathering
+			local Feathering  = 1 - min(0.99, Distance / Radius) ^ 0.5
+			local BlastArea   = EntArea / Threshold * Feathering
 			local BlastEnergy = PowerFraction ^ 0.3 * BlastArea
 			local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
 			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
@@ -268,13 +303,13 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = math.floor(Fragments * AreaFraction)
+			local FragHit = floor(Fragments * AreaFraction)
 
 			if FragHit > 0 then
 				local Loss      = BaseFragV * Distance / Radius
-				local FragVel   = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
+				local FragVel   = max(BaseFragV - Loss, 0) * InchToMeter
 				local FragPen   = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
-				local HitAngle  = ACF.GetHitAngle(Trace, Direction)
+				local HitAngle  = ACF.GetHitAngle(TraceResult, Direction)
 				local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
 
 				DmgInfo:SetType(DMG_BULLET)
@@ -286,7 +321,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Killed or penetrated
-			local Killed = BlastResult.Kill or FragKill
+			local Killed = BlastResult.Kill or (FragResult and FragResult.Kill)
 
 			if Killed or Penetration then
 				Filter[#Filter + 1] = HitEnt
