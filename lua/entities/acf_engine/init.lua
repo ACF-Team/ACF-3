@@ -552,7 +552,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	if not ACF.AllowSpecialEngines and self.IsSpecial then
 		State:AddError("Disabled: Special engines are disabled.")
 	elseif self.Active then
-		State:AddWarning("Active")
+		State:AddSuccess("Active")
 	else
 		State:AddWarning("Idle")
 	end
