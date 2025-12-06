@@ -557,18 +557,19 @@ do
         end
         if not ShouldDraw:GetBool() then return end
 
+        local Ply = LocalPlayer()
+        if Ply:InVehicle() then return end
+
         -- Update COLOR_ERROR_TEXT and COLOR_WARNING_TEXT
         COLOR_ERROR_TEXT:SetUnpacked(COLOR_ERROR_TEXT_DEFAULT:Unpack())
         COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
         COLOR_WARNING_TEXT:SetUnpacked(COLOR_WARNING_TEXT_DEFAULT:Unpack())
         COLOR_WARNING_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
 
-        local IsToolMode = LocalPlayer():GetActiveWeapon():GetClass() == "gmod_tool"
+        local IsToolMode = Ply:GetActiveWeapon():GetClass() == "gmod_tool"
 
         for Target in pairs(Overlays) do
-            if not IsValid(Target) then
-                Overlays[Target] = nil
-            else
+            if IsValid(Target) then
                 local State = Target.ACF_OverlayState
                 if not State then continue end
 
