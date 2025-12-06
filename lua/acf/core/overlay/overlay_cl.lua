@@ -103,6 +103,7 @@ do
 end
 
 -- Fonts
+local RegisterFonts
 do
     -- "On Linux, using the embedded font name tends to be unreliable. I recommend using the font's (case-sensitive) file name, 
     --  like 'Roboto-Regular.ttf', instead. You can use system.IsLinux to help determine which name to use."
@@ -117,98 +118,102 @@ do
     -- local Prototype = GetFontForOS(2)
     local Conduit = GetFontForOS(3)
 
-    surface.CreateFont("ACF_OverlayHeaderBackground", {
-        font = Conduit,
-        size = 40,
-        weight = 900,
-        blursize = 6,
-        scanlines = 4,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlayHeader", {
-        font = Conduit,
-        size = 40,
-        weight = 900,
-        blursize = 0,
-        scanlines = 2,
-        antialias = true,
-        extended = true
-    })
+    function RegisterFonts(Scale)
+        -- Designed for a 1080p monitor, this scales it down.
+        Scale = Scale * (ScrH() / 1080)
+        surface.CreateFont("ACF_OverlayHeaderBackground", {
+            font = Conduit,
+            size = 40 * Scale,
+            weight = 900,
+            blursize = 6,
+            scanlines = 4,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlayHeader", {
+            font = Conduit,
+            size = 40 * Scale,
+            weight = 900,
+            blursize = 0,
+            scanlines = 2,
+            antialias = true,
+            extended = true
+        })
 
-    surface.CreateFont("ACF_OverlaySubHeaderBackground", {
-        font = Conduit,
-        size = 32,
-        weight = 500,
-        blursize = 6,
-        scanlines = 4,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlaySubHeader", {
-        font = Conduit,
-        size = 32,
-        weight = 500,
-        blursize = 0,
-        scanlines = 2,
-        antialias = true,
-        extended = true
-    })
+        surface.CreateFont("ACF_OverlaySubHeaderBackground", {
+            font = Conduit,
+            size = 32 * Scale,
+            weight = 500,
+            blursize = 6,
+            scanlines = 4,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlaySubHeader", {
+            font = Conduit,
+            size = 32 * Scale,
+            weight = 500,
+            blursize = 0,
+            scanlines = 2,
+            antialias = true,
+            extended = true
+        })
 
-    surface.CreateFont("ACF_OverlayText", {
-        font = Conduit,
-        size = 20,
-        weight = 500,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlayBoldText", {
-        font = Conduit,
-        size = 20,
-        weight = 900,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlayKeyText", {
-        font = Conduit,
-        size = 20,
-        weight = 900,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlayHealthText", {
-        font = Conduit,
-        size = 19,
-        weight = 900,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlaySubText", {
-        font = Conduit,
-        size = 15,
-        weight = 500,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
-    surface.CreateFont("ACF_OverlaySubKeyText", {
-        font = Conduit,
-        size = 15,
-        weight = 900,
-        blursize = 0,
-        scanlines = 0,
-        antialias = true,
-        extended = true
-    })
+        surface.CreateFont("ACF_OverlayText", {
+            font = Conduit,
+            size = 20 * Scale,
+            weight = 500,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlayBoldText", {
+            font = Conduit,
+            size = 20 * Scale,
+            weight = 900,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlayKeyText", {
+            font = Conduit,
+            size = 20 * Scale,
+            weight = 900,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlayHealthText", {
+            font = Conduit,
+            size = 19 * Scale,
+            weight = 900,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlaySubText", {
+            font = Conduit,
+            size = 15 * Scale,
+            weight = 500,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+        surface.CreateFont("ACF_OverlaySubKeyText", {
+            font = Conduit,
+            size = 15 * Scale,
+            weight = 900,
+            blursize = 0,
+            scanlines = 0,
+            antialias = true,
+            extended = true
+        })
+    end
 end
 
 
@@ -228,7 +233,8 @@ do
     local FadeInTime  = 0
     local FadeOutTime = 0
     local FadeTime    = 0
-    local DoAnimation  = true
+    local DoScaleAnimation  = true
+    local DoAlphaAnimation  = true
 
     local OVERALL_RECT_PADDING        = 16
     local HORIZONTAL_EXTERIOR_PADDING = 92
@@ -447,8 +453,8 @@ do
     local COLOR_SECONDARY_COLOR
     local COLOR_TERTIARY_COLOR
     local COLOR_SUCCESS_TEXT
-    local COLOR_WARNING_TEXT
-    local COLOR_ERROR_TEXT
+    local COLOR_WARNING_TEXT = Color(0, 0, 0)
+    local COLOR_ERROR_TEXT = Color(0, 0, 0)
 
     -- These are copied into warning/error text
     local COLOR_WARNING_TEXT_DEFAULT
@@ -457,12 +463,17 @@ do
     -- User convars
     local registered = {}
     local function RegisterCvar(name, default, desc)
-        local str = ("%s %s %s %s"):format(default.r, default.g, default.b, default.a)
+        local str = default
+        if IsColor(default) then
+            str = ("%s %s %s %s"):format(default.r, default.g, default.b, default.a)
+        else
+            str = tostring(str)
+        end
         registered[#registered + 1] = "acf_overlay_" .. string.lower(name)
         return CreateClientConVar("acf_overlay_" .. string.lower(name), str, true, false, "ACF Overlay; " .. desc .. ".")
     end
 
-    local COLOR_DROP_SHADOW_CVAR        = RegisterCvar("COLOR_DROP_SHADOW",         Color(2, 9, 14, 227),     "the drop shadow color")
+    local COLOR_DROP_SHADOW_CVAR        = RegisterCvar("COLOR_DROP_SHADOW",        Color(2, 9, 14, 227),     "the drop shadow color")
     local COLOR_PRIMARY_BACKGROUND_CVAR = RegisterCvar("COLOR_PRIMARY_BACKGROUND", Color(11, 32, 46, 204),    "the primary background color")
     local COLOR_TEXT_CVAR               = RegisterCvar("COLOR_TEXT",               Color(236, 252, 255, 245), "the primary text color")
     local COLOR_TEXT_DARK_CVAR          = RegisterCvar("COLOR_TEXT_DARK",          Color(32, 38, 39, 245),    "the dark text color")
@@ -474,7 +485,11 @@ do
     local COLOR_WARNING_TEXT_CVAR       = RegisterCvar("COLOR_WARNING_TEXT",       Color(255, 220, 50),      "the warning text color")
     local COLOR_ERROR_TEXT_CVAR         = RegisterCvar("COLOR_ERROR_TEXT",         Color(255, 50, 50),      "the error text color")
 
-    local function SetupStyle(WireOverlayStyle)
+    local SCALE_CVAR                    = RegisterCvar("SCALE",                    "1",      "scale multiplier")
+    local SCALE_ANIM_CVAR               = RegisterCvar("DO_SCALE_ANIMATION",       "1",      "controls if scale is multiplied on fadein/fadeout")
+    local ALPHA_ANIM_CVAR               = RegisterCvar("DO_ALPHA_ANIMATION",       "1",     "controls if alpha is multiplied on fadein/fadeout")
+
+    local function SetupStyle()
         COLOR_DROP_SHADOW            = string.ToColor(COLOR_DROP_SHADOW_CVAR:GetString())
         COLOR_PRIMARY_BACKGROUND     = string.ToColor(COLOR_PRIMARY_BACKGROUND_CVAR:GetString())
         COLOR_TEXT                   = string.ToColor(COLOR_TEXT_CVAR:GetString())
@@ -508,7 +523,13 @@ do
         Overlay.COLOR_SUCCESS_TEXT = COLOR_SUCCESS_TEXT
         Overlay.COLOR_WARNING_TEXT = COLOR_WARNING_TEXT
         Overlay.COLOR_ERROR_TEXT = COLOR_ERROR_TEXT
-        DoAnimation = not WireOverlayStyle
+        Overlay.COLOR_WARNING_TEXT_DEFAULT = COLOR_WARNING_TEXT_DEFAULT
+        Overlay.COLOR_ERROR_TEXT_DEFAULT = COLOR_ERROR_TEXT_DEFAULT
+
+        DoScaleAnimation = SCALE_ANIM_CVAR:GetBool()
+        DoAlphaAnimation = ALPHA_ANIM_CVAR:GetBool()
+
+        RegisterFonts(SCALE_CVAR:GetFloat())
     end
     SetupStyle()
     for _, v in ipairs(registered) do
@@ -558,7 +579,7 @@ do
                 TargetX, TargetY = ScrW() / 2, ScrH() / 2
 
                 Overlay.ResetRenderState()
-                if DoAnimation then
+                if DoScaleAnimation or DoAlphaAnimation then
                     FadeInTime = math.Clamp((RealTime() - (Target.ACF_OverlayStartTime or 0)) * 6, 0, 1)
                     if Target.ACF_OverlayStopTime then
                         FadeOutTime = math.Clamp((RealTime() - (Target.ACF_OverlayStopTime or 0)) * 9, 0, 1)
@@ -570,12 +591,15 @@ do
                     FadeInTime = 1
                     FadeOutTime = Target.ACF_OverlayStopTime ~= nil and 1 or 0
                 end
+
                 if FadeOutTime == 1 then
                     -- Early exit
                     Overlays[Target] = nil
                 else
                     local Alpha = surface.GetAlphaMultiplier()
-                    surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime))
+                    if DoAlphaAnimation then
+                        surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime) * math.ease.OutCirc(1 - FadeOutTime))
+                    end
 
                     for Idx, ElementSlot in State:GetElementSlots() do
                         CurrentSlotIdx = Idx
@@ -625,8 +649,10 @@ do
                     local YScale = 1
 
                     -- Cool animations for scaling
-                    XScale = 1 + (math.ease.InBack(FadeOutTime) * 0.3)
-                    YScale = math.ease.OutBack(math.ease.InCubic(FadeInTime)) - (math.ease.InBack(FadeOutTime))
+                    if DoScaleAnimation then
+                        XScale = 1 + (math.ease.InBack(FadeOutTime) * 0.3)
+                        YScale = math.ease.OutBack(math.ease.InCubic(FadeInTime)) - (math.ease.InBack(FadeOutTime))
+                    end
 
                     -- Now that we know sizes, ensure we don't overflow past negative Y, and also add some buffer room
                     -- so we don't overflow the text in the toolmenu
