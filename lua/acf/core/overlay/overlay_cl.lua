@@ -534,7 +534,6 @@ do
 
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         if not next(Overlays) then return end
-
         if not ShouldDraw then
             ShouldDraw = GetConVar("cl_drawworldtooltips")
         end
@@ -556,7 +555,7 @@ do
                 Overlays[Target] = nil
             else
                 local State = Target.ACF_OverlayState
-                if not State then return end
+                if not State then continue end
 
                 TargetX, TargetY = ScrW() / 2, ScrH() / 2
 
