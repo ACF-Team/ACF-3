@@ -101,6 +101,7 @@ local function RenderBar(Slot, TextMethod)
 
     local Text      = Slot.Data[1]
     local InnerText, Ratio, MinC, MaxC, ColorInterp = TextMethod(Slot)
+    Ratio = math.Clamp(Ratio, 0, 1)
     ColorInterp     = ColorInterp or Linear
 
     local ValueX    = Overlay.GetKVValueX()
