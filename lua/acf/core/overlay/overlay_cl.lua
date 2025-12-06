@@ -450,19 +450,42 @@ do
     local COLOR_WARNING_TEXT
     local COLOR_ERROR_TEXT
 
-    -- Todo
+    -- These are copied into warning/error text
+    local COLOR_WARNING_TEXT_DEFAULT
+    local COLOR_ERROR_TEXT_DEFAULT
+
+    -- User convars
+    local registered = {}
+    local function RegisterCvar(name, default, desc)
+        local str = ("%s %s %s %s"):format(default.r, default.g, default.b, default.a)
+        registered[#registered + 1] = "acf_overlay_" .. string.lower(name)
+        return CreateClientConVar("acf_overlay_" .. string.lower(name), str, true, false, "ACF Overlay; " .. desc .. ".")
+    end
+
+    local COLOR_DROP_SHADOW_CVAR        = RegisterCvar("COLOR_DROP_SHADOW",         Color(2, 9, 14, 227),     "the drop shadow color")
+    local COLOR_PRIMARY_BACKGROUND_CVAR = RegisterCvar("COLOR_PRIMARY_BACKGROUND", Color(11, 32, 46, 204),    "the primary background color")
+    local COLOR_TEXT_CVAR               = RegisterCvar("COLOR_TEXT",               Color(236, 252, 255, 245), "the primary text color")
+    local COLOR_TEXT_DARK_CVAR          = RegisterCvar("COLOR_TEXT_DARK",          Color(32, 38, 39, 245),    "the dark text color")
+    local COLOR_PRIMARY_COLOR_CVAR      = RegisterCvar("COLOR_PRIMARY_COLOR",      Color(150, 200, 210, 245), "the primary color")
+    local COLOR_BORDER_LIGHT_COLOR_CVAR = RegisterCvar("COLOR_BORDER_LIGHT_COLOR", Color(150, 200, 210, 245), "the light border color")
+    local COLOR_SECONDARY_COLOR_CVAR    = RegisterCvar("COLOR_SECONDARY_COLOR",    Color(60, 90, 105, 245),   "the secondary color")
+    local COLOR_TERTIARY_COLOR_CVAR     = RegisterCvar("COLOR_TERTIARY_COLOR",     Color(84, 116, 131, 245),  "the tertiary color")
+    local COLOR_SUCCESS_TEXT_CVAR       = RegisterCvar("COLOR_SUCCESS_TEXT",       Color(166, 255, 170),      "the success text color")
+    local COLOR_WARNING_TEXT_CVAR       = RegisterCvar("COLOR_WARNING_TEXT",       Color(255, 220, 50),      "the warning text color")
+    local COLOR_ERROR_TEXT_CVAR         = RegisterCvar("COLOR_ERROR_TEXT",         Color(255, 50, 50),      "the error text color")
+
     local function SetupStyle(WireOverlayStyle)
-        COLOR_DROP_SHADOW            = Color(2, 9, 14, 227)
-        COLOR_PRIMARY_BACKGROUND     = Color(11, 32, 46, 204)
-        COLOR_TEXT                   = Color(236, 252, 255, 245)
-        COLOR_TEXT_DARK              = Color(32, 38, 39, 245)
-        COLOR_PRIMARY_COLOR          = Color(150, 200, 210, 245)
-        COLOR_BORDER_LIGHT_COLOR     = Color(150, 200, 210, 245)
-        COLOR_SECONDARY_COLOR        = Color(60, 90, 105, 245)
-        COLOR_TERTIARY_COLOR         = Color(84, 116, 131, 245)
-        COLOR_SUCCESS_TEXT           = Color(166, 255, 170)
-        COLOR_WARNING_TEXT           = Color(255, 255, 255)
-        COLOR_ERROR_TEXT             = Color(255, 255, 255)
+        COLOR_DROP_SHADOW            = string.ToColor(COLOR_DROP_SHADOW_CVAR:GetString())
+        COLOR_PRIMARY_BACKGROUND     = string.ToColor(COLOR_PRIMARY_BACKGROUND_CVAR:GetString())
+        COLOR_TEXT                   = string.ToColor(COLOR_TEXT_CVAR:GetString())
+        COLOR_TEXT_DARK              = string.ToColor(COLOR_TEXT_DARK_CVAR:GetString())
+        COLOR_PRIMARY_COLOR          = string.ToColor(COLOR_PRIMARY_COLOR_CVAR:GetString())
+        COLOR_BORDER_LIGHT_COLOR     = string.ToColor(COLOR_BORDER_LIGHT_COLOR_CVAR:GetString())
+        COLOR_SECONDARY_COLOR        = string.ToColor(COLOR_SECONDARY_COLOR_CVAR:GetString())
+        COLOR_TERTIARY_COLOR         = string.ToColor(COLOR_TERTIARY_COLOR_CVAR:GetString())
+        COLOR_SUCCESS_TEXT           = string.ToColor(COLOR_SUCCESS_TEXT_CVAR:GetString())
+        COLOR_WARNING_TEXT_DEFAULT   = string.ToColor(COLOR_WARNING_TEXT_CVAR:GetString())
+        COLOR_ERROR_TEXT_DEFAULT     = string.ToColor(COLOR_ERROR_TEXT_CVAR:GetString())
 
         Overlay.HEADER_BACK_FONT     = "ACF_OverlayHeaderBackground"
         Overlay.HEADER_FONT          = "ACF_OverlayHeader"
@@ -488,6 +511,10 @@ do
         DoAnimation = not WireOverlayStyle
     end
     SetupStyle()
+    for _, v in ipairs(registered) do
+        cvars.AddChangeCallback(v, SetupStyle)
+    end
+
 
     local Overlays = Overlay.ActiveOverlays or {}
     Overlay.ActiveOverlays = Overlays
@@ -514,9 +541,9 @@ do
         if not ShouldDraw:GetBool() then return end
 
         -- Update COLOR_ERROR_TEXT and COLOR_WARNING_TEXT
-        COLOR_ERROR_TEXT:SetUnpacked(255, 50, 50)
+        COLOR_ERROR_TEXT:SetUnpacked(COLOR_ERROR_TEXT_DEFAULT:Unpack())
         COLOR_ERROR_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
-        COLOR_WARNING_TEXT:SetUnpacked(255, 220, 50)
+        COLOR_WARNING_TEXT:SetUnpacked(COLOR_WARNING_TEXT_DEFAULT:Unpack())
         COLOR_WARNING_TEXT:SetSaturation(Lerp((math.sin(RealTime() * 7) + 1) / 2, 0.4, 0.55))
 
         local IsToolMode = LocalPlayer():GetActiveWeapon():GetClass() == "gmod_tool"
