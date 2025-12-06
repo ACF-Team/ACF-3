@@ -1322,8 +1322,9 @@ function ACF.DuplexPairs(Table1, Table2)
 end
 
 do
-	function ACF.NiceNumber(n)
-		local s = tostring(n)
+	function ACF.NiceNumber(n, round)
+		if not n then return "NULL" end
+		local s = tostring(round and math.Round(n, round) or n)
 		local sign = ""
 
 		if n < 0 then
@@ -1331,13 +1332,22 @@ do
 			s = s:sub(2)
 		end
 
+		local integer, fraction
+		local sep = s:find("%.")
+		if sep then
+			integer = s:sub(1, sep - 1)
+			fraction = s:sub(sep + 1)
+		else
+			integer = s
+		end
+
 		-- Insert commas
-		local result = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+		local result = integer:reverse():gsub("(%d%d%d)", "%1,"):reverse()
 
 		if result:sub(1, 1) == "," then
 			result = result:sub(2)
 		end
 
-		return sign .. result
+		return sign .. result .. (fraction and "." .. fraction or "")
 	end
 end

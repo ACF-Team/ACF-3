@@ -202,9 +202,10 @@ function ENT:Think()
 	return true
 end
 
-local Text = "Scale: %.2f\n\nPitch: %.2f\nYaw: %.2f"
-function ENT:UpdateOverlayText()
-	return Text:format(self:ACF_GetUserVar("WaterjetSize"), self.Pitch, self.Yaw)
+function ENT:ACF_UpdateOverlayState(State)
+	State:AddNumber("Scale", self:ACF_GetUserVar("WaterjetSize"))
+	State:AddNumber("Pitch", self.Pitch)
+	State:AddNumber("Yaw", self.Yaw)
 end
 
 ACF.Classes.Entities.Register()

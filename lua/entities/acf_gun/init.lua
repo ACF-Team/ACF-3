@@ -1133,28 +1133,24 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nLoading Location: %s"
-
-		function ENT:UpdateOverlayText()
+		function ENT:ACF_UpdateOverlayState(State)
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / self.ReloadTime)
 			local CrateAmmo = 0
-			local Status
-
-			if not next(self.Crates) then
-				Status = "Not linked to an ammo crate!"
+			if next(self.OverlayErrors) then
+				for _, Error in pairs(self.OverlayErrors) do
+					State:AddError(Error)
+				end
 			else
-				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
-			end
-
-			local ErrorCount = table.Count(self.OverlayErrors)
-			if ErrorCount > 0 then
-				Status = Status .. " (" .. ErrorCount .. " errors)"
-			end
-
-			-- Compile error messages
-			for _, Error in pairs(self.OverlayErrors) do
-				Status = Status .. "\n\n" .. Error
+				if not next(self.Crates) then
+					State:AddError("Not linked to an ammo crate!")
+				else
+					if self.State == "Loaded" then
+						State:AddSuccess("Loaded with " .. AmmoType)
+					else
+						State:AddWarning(self.State)
+					end
+				end
 			end
 
 			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates
@@ -1165,7 +1161,11 @@ do -- Metamethods --------------------------------
 
 			local BreechIndex = self.BreechIndex or 1
 			local BreechName = self.ClassData.BreechConfigs and self.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
-			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo, BreechName)
+
+			State:AddKeyValue("Firerate", Firerate .. " RPM")
+			State:AddNumber("Shots Left", self.CurrentShot)
+			State:AddNumber("Ammo Available", CrateAmmo)
+			State:AddKeyValue("Loading Location", BreechName)
 		end
 	end -----------------------------------------
 

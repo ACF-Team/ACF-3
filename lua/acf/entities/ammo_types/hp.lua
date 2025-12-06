@@ -91,12 +91,11 @@ if SERVER then
 		Entity:SetNW2String("AmmoType", "HP")
 	end
 
-	function Ammo:GetCrateText(BulletData)
-		local BaseText = Ammo.BaseClass.GetCrateText(self, BulletData)
-		local Data	   = self:GetDisplayData(BulletData)
-		local Text	   = BaseText .. "\nExpanded Caliber: %s mm\nImparted Energy: %s KJ"
-
-		return Text:format(math.Round(BulletData.Diameter * 10, 2), math.Round(Data.MaxKETransfert, 2))
+	function Ammo:UpdateCrateOverlay(BulletData, State)
+		Ammo.BaseClass.UpdateCrateOverlay(self, BulletData, State)
+		local Data = self:GetDisplayData(BulletData)
+		State:AddNumber("Expanded Caliber", BulletData.Diameter * 10, " mm")
+		State:AddNumber("Imparted Energy", Data.MaxKETransfert, " kJ")
 	end
 else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")

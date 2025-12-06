@@ -482,40 +482,43 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local Text = "%s\n\nStorage:%sx%sx%s\nSize:%sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
-
-	function ENT:UpdateOverlayText()
+	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
-		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
-		local ExtraInfo = ACF.GetOverlayText(self)
-		local BulletInfo = ""
-		local Status
 
 		if next(self.Weapons) then
-			Status = self:CanConsume() and "Providing Ammo" or (self.Amount ~= 0 and "Idle" or "Empty")
+			if self:CanConsume() then
+				State:AddSuccess("Providing Ammo")
+			elseif self.Amount ~= 0 then
+				State:AddWarning("Idle")
+			else
+				State:AddError("Empty")
+			end
 		else
-			Status = "Not linked to a weapon!"
+			State:AddError("Not linked to a weapon!")
 		end
 
 		local CountX = self.CrateProjectilesX or 1
 		local CountY = self.CrateProjectilesY or 1
 		local CountZ = self.CrateProjectilesZ or 1
 
-		local SizeX = math.Round(self.Size.x)
-		local SizeY = math.Round(self.Size.y)
-		local SizeZ = math.Round(self.Size.z)
+		if AmmoInfo and AmmoInfo ~= "" then
+			AmmoInfo = AmmoInfo
+		end
+
+		State:AddDivider()
+		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
+		State:AddKeyValue("Ammo Type", AmmoType)
+		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 
 		local Projectile = math.Round(self.BulletData.ProjMass, 2)
 		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
+		State:AddHeader("Bullet Info", 2)
+		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
+		State:AddNumber("Projectile Mass", Projectile, " kg", 2)
 
-		BulletInfo = BulletText:format(Cartridge, Projectile)
-
-		if AmmoInfo and AmmoInfo ~= "" then
-			AmmoInfo = "\n\n" .. AmmoInfo
-		end
-
-		return Text:format(Status, CountX, CountY, CountZ, SizeX, SizeY, SizeZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		State:AddHeader("Ammo Info", 2)
+		self.RoundData:UpdateCrateOverlay(self.BulletData, State)
+		ACF.AddAdditionalOverlays(self, State)
 	end
 end

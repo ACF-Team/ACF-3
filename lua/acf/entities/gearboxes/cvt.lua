@@ -68,14 +68,15 @@ Gearboxes.Register("CVT", {
 		Gearbox.CVT      = nil
 		Gearbox.CVTRatio = nil
 	end,
-	GetGearsText = function(Gearbox)
-		local Text    = "Reverse Gear: %s\nTarget: %s - %s RPM"
+	WriteGearOverlay = function(Gearbox, State)
+		local Text    = "%s - %s RPM"
 		local Gears   = Gearbox.Gears
 		local Reverse = ACF.ConvertGearRatio(Gears[2], Gearbox.GearboxLegacyRatio)
 		local Min     = math.Round(Gearbox.MinRPM)
 		local Max     = math.Round(Gearbox.MaxRPM)
 
-		return Text:format(Reverse, Min, Max)
+		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
+		State:AddKeyValue("Target", Text:format(Min, Max))
 	end,
 })
 
