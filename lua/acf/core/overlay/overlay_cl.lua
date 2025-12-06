@@ -546,8 +546,10 @@ do
 
     local ShouldDraw
     local ShouldAdjustOverlayForToolHelp
+    local HideInfoBubble = ACF.HideInfoBubble
 
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
+        if HideInfoBubble() then return end
         if not next(Overlays) then return end
         if not ShouldDraw then
             ShouldDraw = GetConVar("cl_drawworldtooltips")
@@ -558,7 +560,6 @@ do
         if not ShouldDraw:GetBool() then return end
 
         local Ply = LocalPlayer()
-        if Ply:InVehicle() then return end
 
         -- Update COLOR_ERROR_TEXT and COLOR_WARNING_TEXT
         COLOR_ERROR_TEXT:SetUnpacked(COLOR_ERROR_TEXT_DEFAULT:Unpack())
