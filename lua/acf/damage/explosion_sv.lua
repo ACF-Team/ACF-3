@@ -6,7 +6,6 @@ local Damage       = ACF.Damage
 local ModelData    = ACF.ModelData
 local Objects      = Damage.Objects
 local White        = Color(255, 255, 255)
-local Blue         = Color(0, 0, 255)
 local Red          = Color(255, 0, 0)
 local Green        = Color(0, 255, 0)
 local TraceData    = {
