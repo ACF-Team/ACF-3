@@ -43,7 +43,7 @@ end
 -- @param Entity The entity to get a random position from.
 -- @param A world position based on the shape and size of the given entity.
 local function getRandomPos(Entity)
-	local IsChar = EntACF and EntACF.Type == "Squishy"
+	local IsChar = Entity.ACF and Entity.ACF.Type == "Squishy"
 
 	if IsChar then
 		-- Scale down the "hitbox" since most of the character is in the middle
@@ -59,20 +59,26 @@ local function getRandomPos(Entity)
 		local Radius = Entity:BoundingRadius() * 0.5
 
 		return Entity:GetPos() + VectorRand() * math.Rand(1, Radius)
-	else
-		local Model = Entity:GetModel()
-		local Scale = ModelData.GetEntityScale(Entity)
-		local Mesh  = ModelData.GetModelMesh(Model, Scale)
-
-		local Hull     = Mesh[math.random(1, #Mesh)]
-		local TriCount = math.floor(#Hull / 3) -- Number of triangles in the hull
-		local TriIndex = math.random(0, TriCount - 1) -- Random triangle selection
-		local Base     = TriIndex * 3 + 1 -- Multiply back up to the real index
-
-		local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2] -- Get the three vertices of the triangle
-
-		return Entity:LocalToWorld((V1 + V2 + V3) / 3)
 	end
+
+	local Model    = Entity:GetModel()
+	local Data     = ModelData.GetModelData(Model) -- Used instead of GetModelMesh, which does a full copy
+	local Mesh     = Data.Mesh                     -- Accessing the raw mesh, read-only
+	local Hull     = Mesh[math.random(1, #Mesh)]   -- Random hull
+	local TriCount = math.floor(#Hull / 3)         -- Number of triangles in the hull
+	local TriIndex = math.random(0, TriCount - 1)  -- Random triangle selection
+	local Base     = TriIndex * 3 + 1              -- Multiply back up to the real index
+
+	-- Get the three vertices of the triangle
+	local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2]
+	local Centroid   = (V1 + V2 + V3) / 3
+
+	-- Apply scale only to the single sampled point
+	local Scale = ModelData.GetEntityScale(Entity)
+
+	Centroid = Centroid * Scale
+
+	return Entity:LocalToWorld(Centroid)
 end
 
 --- Creates an explosion at the given position.
