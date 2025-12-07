@@ -136,12 +136,21 @@ do -- Random timer crew stuff
 	end
 
 	--- Finds the turret ring or baseplate from a gun
-	function ENT:FindPropagator()
+	--- If an entity is specified, returns the first match
+	--- This should be improved later.
+	function ENT:FindPropagator(Test)
 		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
+		if Temp == Test then return Temp end
+
+		-- Possibly a vertical turret
+		Temp = (IsValid(Temp) and Temp.IsACFTurret and Temp.Turret == "Turret-V") and Temp:GetParent() or Temp
+		if Temp == Test then return Temp end
+
+		-- Followed by a Horizontal or baseplate
+		Temp = (IsValid(Temp) and (Temp.IsACFTurret and Temp.Turret == "Turret-H") or Temp.IsACFBaseplate) and Temp or nil
+		if Temp == Test then return Temp end
+
+		return Temp
 	end
 
 	function ENT:UpdateAccuracyMod(Config)
@@ -562,7 +571,15 @@ do -- Metamethods --------------------------------
 		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
 		-- Exceptions for aircraft (maybe this should be refined later?)
 		local function BeltFedCheck(Entity, Crate)
-			if Entity.IsBelted and Entity.Weapon ~= "MG" and IsValid(Entity:GetParent()) and not Entity:GetContraption():ACF_IsAircraft() and Entity:FindPropagator() ~= Crate:GetParent() then return false end
+			-- Check only runs if both entities have parents
+			-- This is fine due to other restrictions in place
+			if not IsValid(Entity:GetParent()) then return true end
+
+			local CrateParent = Crate:GetParent()
+			if not IsValid(CrateParent) then return true end
+
+			-- Roughly: Crate must be a possible propagator, with exceptions for machineguns and aircraft
+			if Entity.IsBelted and Entity.Weapon ~= "MG" and not Entity:GetContraption():ACF_IsAircraft() and Entity:FindPropagator(CrateParent) ~= CrateParent then return false end
 			return true
 		end
 
