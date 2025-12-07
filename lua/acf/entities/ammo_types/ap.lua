@@ -124,7 +124,6 @@ if SERVER then
 
 	function Ammo:UpdateCrateOverlay(BulletData, State)
 		local Data = self:GetDisplayData(BulletData)
-		print(BulletData.MuzzleVel)
 		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
 		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
 	end
