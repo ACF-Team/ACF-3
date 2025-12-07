@@ -723,7 +723,7 @@ do -- Overlay
 		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
 			State:AddLabel("Motor stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
 		elseif SelfTbl.Stabilized then
-			State:AddLabel("nNaturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
+			State:AddLabel("Naturally stabilized at " .. math.Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
 		end
 	end
 end
