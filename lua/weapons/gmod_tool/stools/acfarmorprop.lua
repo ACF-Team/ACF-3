@@ -73,23 +73,6 @@ hook.Add("ACF_OnUpdateServerData", "ACF_ArmorTool_MaxThickness", function(_, Key
 	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
 end)
 
-function TOOL:CheckForReload()
-	local isFirstTimePredicted = IsFirstTimePredicted()
-	if not isFirstTimePredicted then return end
-
-	local Player = self:GetOwner()
-	if Player:KeyPressed(IN_RELOAD) then
-		local Trace = Player:GetEyeTrace()
-
-		local ran = self:GetContraptionReadout(Trace)
-		if ran then
-			-- Get tool entity
-			local Weapon = self.Weapon
-			Weapon:DoShootEffect( Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, isFirstTimePredicted )
-		end
-	end
-end
-
 if CLIENT then
 	local ArmorProp_Area = CreateClientConVar("acfarmorprop_area", 0, false, true) -- we don't want this one to save
 	local ArmorProp_Ductility = CreateClientConVar("acfarmorprop_ductility", 0, false, true, "", ACF.MinDuctility, ACF.MaxDuctility)
@@ -406,14 +389,27 @@ function TOOL:RightClick(Trace)
 	return true
 end
 
+function TOOL:CheckForReload()
+	local isFirstTimePredicted = IsFirstTimePredicted()
+	if not isFirstTimePredicted then return end
+
+	local Player = self:GetOwner()
+	if Player:KeyPressed(IN_RELOAD) then
+		local Trace = Player:GetEyeTrace()
+
+		local ran = self:GetContraptionReadout(Trace, Player:KeyDown(IN_SPEED))
+		if ran then
+			-- Get tool entity
+			local Weapon = self.Weapon
+			Weapon:DoShootEffect( Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, isFirstTimePredicted )
+		end
+	end
+end
+
+
 do -- Armor readout
 	local Contraption = ACF.Contraption
 	local Messages    = ACF.Utilities.Messages
-
-	local Text1 = "--- Contraption Readout (Owner: %s) ---"
-	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
-	local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
-	local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
 
 	-- Emulates the stuff done by ACF.CalcMassRatio except with a given set of entities
 	local function ProcessList(Entities)
@@ -509,6 +505,10 @@ do -- Armor readout
 				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = Contraption.CalcMassRatio(Ent, true)
 
 				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
+			end,
+			GetCost = function(_, Trace)
+				local Contraption_ = IsValid(Trace.Entity) and Trace.Entity:GetContraption() or {}
+				return ACF.CostSystem.CalcCostsFromContraption(Contraption_)
 			end
 		},
 		Sphere = {
@@ -519,6 +519,10 @@ do -- Armor readout
 				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
 
 				return ProcessList(Ents)
+			end,
+			GetCost = function(Tool, Trace)
+				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
+				return ACF.CostSystem.CalcCostsFromEnts(Ents)
 			end
 		}
 	}
@@ -529,23 +533,43 @@ do -- Armor readout
 		return Modes.Default
 	end
 
+	local Text1 = "--- Contraption Readout (Owner: %s) ---"
+	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
+	local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
+	local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
+	local Text5 = "Name: %s | Type: %s"
+	local Text6 = "Cost: %s | Ammo: %s | Max Nominal: %s mm"
+
 	-- Total up mass of constrained ents
-	function TOOL:GetContraptionReadout(Trace)
+	function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 		local Mode = GetReadoutMode(self)
 
 		if not Mode.CanCheck(self, Trace) then return false end
 		if CLIENT then return true end
 
-		local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
-		local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
-		local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
-		local ParentTotal = Total - PhysTotal
-		local Player = self:GetOwner()
+		local Cost, Breakdown = Mode.GetCost(self, Trace)
+		if UseCostBreakdown then
+			local Player = self:GetOwner()
+			Messages.SendChat(Player, nil, "--- Contraption Cost Breakdown ---")
+			for Item, ItemCost in pairs(Breakdown) do
+				Messages.SendChat(Player, nil, "| " .. Item .. ": " .. math.Round(ItemCost, 2))
+			end
+			Messages.SendChat(Player, nil, "TOTAL COST: ", math.Round(Cost, 2))
+		else
+			local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
+			local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
+			local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
+			local ParentTotal = Total - PhysTotal
+			local Player = self:GetOwner()
+			local BaseplateName, BaseplateType, AmmoTypes, MaxNominal = Contraption.GetMiscInfo(Trace.Entity)
 
-		Messages.SendChat(Player, nil, Text1:format(Name))
-		Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
-		Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
-		Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
+			Messages.SendChat(Player, nil, Text1:format(Name))
+			Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
+			Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
+			Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
+			Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))
+			Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), table.concat(AmmoTypes, ", "), math.Round(MaxNominal, 2)))
+		end
 
 		return true
 	end
