@@ -243,7 +243,7 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			Flame:SetColor(255, 255, 255)
 		end
 	end
-	-- print("DebrisParts", DebrisParts, "EmberParts", EmberParts, "SmokeParts", SmokeParts, "DustParts", DustParts)
+
 	Emitter:Finish()
 end
 
