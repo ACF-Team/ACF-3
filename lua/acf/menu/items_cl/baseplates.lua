@@ -25,7 +25,6 @@ local function CreateMenu(Menu)
 						    Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness", "Thickness")
 						    Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",   "DisableAltE")
 	local GForceTicks     = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",    "GForceTicks")
-	-- local Name            = Menu:AddStringUserVar(     VerificationCtx, "#acf.menu.baseplates.name",            "Name")
 	local GForceTicksInfo = Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
 
 	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")

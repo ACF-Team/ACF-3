@@ -12,6 +12,7 @@ if CLIENT then
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity
 
+		if not IsValid(Entity) then return end
 		if not Entity.DrawOverlay then return end
 
 		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
