@@ -505,6 +505,10 @@ do -- Armor readout
 				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = Contraption.CalcMassRatio(Ent, true)
 
 				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
+			end,
+			GetCost = function(_, Trace)
+				local Contraption_ = IsValid(Trace.Entity) and Trace.Entity:GetContraption() or {}
+				return ACF.CostSystem.CalcCostsFromContraption(Contraption_)
 			end
 		},
 		Sphere = {
@@ -515,6 +519,10 @@ do -- Armor readout
 				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
 
 				return ProcessList(Ents)
+			end,
+			GetCost = function(Tool, Trace)
+				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
+				return ACF.CostSystem.CalcCostsFromEnts(Ents)
 			end
 		}
 	}
@@ -533,30 +541,33 @@ do -- Armor readout
 	local Text6 = "Cost: %s | Ammo: %s | Max Nominal: %s mm"
 
 	-- Total up mass of constrained ents
-	function TOOL:GetContraptionReadout(Trace, CostBreakdown)
+	function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 		local Mode = GetReadoutMode(self)
 
 		if not Mode.CanCheck(self, Trace) then return false end
 		if CLIENT then return true end
 
-		if CostBreakdown then
+		local Cost, Breakdown = Mode.GetCost(self, Trace)
+		if UseCostBreakdown then
 			local Player = self:GetOwner()
-
 			Messages.SendChat(Player, nil, "--- Contraption Cost Breakdown ---")
+			for Item, ItemCost in pairs(Breakdown) do
+				Messages.SendChat(Player, nil, "| " .. Item .. ": " .. math.Round(ItemCost, 2))
+			end
+			Messages.SendChat(Player, nil, "TOTAL COST: ", math.Round(Cost, 2))
 		else
 			local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
 			local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
 			local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
 			local ParentTotal = Total - PhysTotal
 			local Player = self:GetOwner()
-
-			local Name, BaseplateType, Cost, AmmoTypes, MaxNominal = Contraption.GetCostInfo(Trace.Entity)
+			local BaseplateName, BaseplateType, AmmoTypes, MaxNominal = Contraption.GetMiscInfo(Trace.Entity)
 
 			Messages.SendChat(Player, nil, Text1:format(Name))
 			Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
 			Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
 			Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
-			Messages.SendChat(Player, nil, Text5:format(Name, BaseplateType))
+			Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))
 			Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), table.concat(AmmoTypes, ", "), math.Round(MaxNominal, 2)))
 		end
 
