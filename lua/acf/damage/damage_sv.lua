@@ -49,14 +49,6 @@ function Damage.Network(Entity, Target, NewHealth, MaxHealth)
 	Queue[Entity] = Value
 end
 
---- Returns the penetration of a blast.
--- @param Energy The energy of the blast in KJ.
--- @param Area The area of the blast in cm2.
--- @return The penetration of the blast in RHA mm.
-function Damage.getBlastPenetration(Energy, Area)
-	return Energy / Area * 0.25 -- NOTE: 0.25 is what ACF.KEtoRHA used to be set at.
-end
-
 --- Helper function used to generate DamageResult and DamageInfo objects from projectile information.
 -- @param Bullet A bullet object.
 -- @param Trace The result table of a trace.

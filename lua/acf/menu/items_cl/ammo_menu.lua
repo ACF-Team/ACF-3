@@ -8,6 +8,7 @@ local Ammo, BulletData
 local GraphRed    = Color(200, 65, 65)
 local GraphBlue   = Color(65, 65, 200)
 local GraphRedAlt = Color(255, 65, 65)
+local Damage  = ACF.Damage
 
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
@@ -449,21 +450,27 @@ local function AddGraph(Base, ToolData)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
 		elseif ToolData.AmmoType == "HE" then
-			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
+			local FragPenetrationText = language.GetPhrase("acf.menu.ammo.frag_penetration")
+			local BlastPenetrationText = language.GetPhrase("acf.menu.ammo.blast_penetration")
 
-			Panel:SetYLabel(BlastRadiusText)
-			Panel:SetXLabel("")
+			-- Panel:SetYLabel(FragPenetrationText)
+			Panel:SetXLabel("#acf.menu.ammo.distance")
 
 			Panel:SetYSpacing(10)
 
-			Panel:SetXRange(0, 10)
-			Panel:SetYRange(0, BulletData.BlastRadius * 2)
+			Panel:SetXRange(0, BulletData.BlastRadius * 1.25)
+			Panel:SetYRange(0, Damage.getFragPenetrationSimple(BulletData.FillerMass, BulletData.ProjMass, 0) * 1.25)
 
-			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
-
-			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
-				return BulletData.BlastRadius
+			Panel:PlotFunction(FragPenetrationText, GraphRed, function(X)
+				return Damage.getFragPenetrationSimple(BulletData.FillerMass, BulletData.ProjMass, X * 39.37)
 			end)
+
+			-- Reference: models/sprops/rectangles/size_5/rect_48x48x3.mdl
+			local ReferenceArea = 17556.013944065
+			Panel:PlotFunction(BlastPenetrationText, GraphBlue, function(X)
+				return Damage.getBlastPenetrationSimple(BulletData.FillerMass, ReferenceArea, X * 39.37)
+			end)
+
 		elseif ToolData.AmmoType == "SM" then
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
 			Panel:SetXLabel("#acf.menu.ammo.time")
