@@ -108,7 +108,7 @@ local function RenderBar(Slot, TextMethod)
     local _, H1 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, Text)
     local _, H2 = Overlay.GetTextSize(Overlay.PROGRESS_BAR_TEXT, InnerText)
 
-    Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, KeyX, 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    Overlay.SimpleText(Text, Overlay.KEY_TEXT_FONT, Overlay.GetKVKeyX(), 0, Overlay.COLOR_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     Overlay.DrawKVDivider()
     local X, Y = ValueX, 0
     local W, H = (TotalW / 2) - 32, math.max(H1, H2)
