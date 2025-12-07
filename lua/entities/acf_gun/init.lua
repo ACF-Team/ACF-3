@@ -571,6 +571,8 @@ do -- Metamethods --------------------------------
 		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
 		-- Exceptions for aircraft (maybe this should be refined later?)
 		local function BeltFedCheck(Entity, Crate)
+			if not ACF.LegalChecks then return true end
+
 			-- Check only runs if both entities have parents
 			-- This is fine due to other restrictions in place
 			if not IsValid(Entity:GetParent()) then return true end
