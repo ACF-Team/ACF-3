@@ -136,12 +136,21 @@ do -- Random timer crew stuff
 	end
 
 	--- Finds the turret ring or baseplate from a gun
-	function ENT:FindPropagator()
+	--- If an entity is specified, returns the first match
+	--- This should be improved later.
+	function ENT:FindPropagator(Test)
 		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
+		if Temp == Test then return Temp end
+
+		-- Possibly a vertical turret
+		Temp = (IsValid(Temp) and Temp.IsACFTurret and Temp.Turret == "Turret-V") and Temp:GetParent() or Temp
+		if Temp == Test then return Temp end
+
+		-- Followed by a Horizontal or baseplate
+		Temp = (IsValid(Temp) and (Temp.IsACFTurret and Temp.Turret == "Turret-H") or Temp.IsACFBaseplate) and Temp or nil
+		if Temp == Test then return Temp end
+
+		return Temp
 	end
 
 	function ENT:UpdateAccuracyMod(Config)
@@ -562,7 +571,17 @@ do -- Metamethods --------------------------------
 		-- Requires belt fed weapons to have their ammo crate mounted on the same turret ring/baseplate
 		-- Exceptions for aircraft (maybe this should be refined later?)
 		local function BeltFedCheck(Entity, Crate)
-			if Entity.IsBelted and IsValid(Entity:GetParent()) and not Entity:GetContraption().ACF_IsAircraft and Entity:FindPropagator() ~= Crate:GetParent() then return false end
+			if not ACF.LegalChecks then return true end
+
+			-- Check only runs if both entities have parents
+			-- This is fine due to other restrictions in place
+			if not IsValid(Entity:GetParent()) then return true end
+
+			local CrateParent = Crate:GetParent()
+			if not IsValid(CrateParent) then return true end
+
+			-- Roughly: Crate must be a possible propagator, with exceptions for machineguns and aircraft
+			if Entity.IsBelted and Entity.Weapon ~= "MG" and not Entity:GetContraption():ACF_IsAircraft() and Entity:FindPropagator(CrateParent) ~= CrateParent then return false end
 			return true
 		end
 
@@ -1133,28 +1152,24 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
-		local Text = "%s\n\nRate of Fire: %s rpm\nShots Left: %s\nAmmo Available: %s\nLoading Location: %s"
-
-		function ENT:UpdateOverlayText()
+		function ENT:ACF_UpdateOverlayState(State)
 			local AmmoType  = self.BulletData.Type .. (self.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / self.ReloadTime)
 			local CrateAmmo = 0
-			local Status
-
-			if not next(self.Crates) then
-				Status = "Not linked to an ammo crate!"
+			if next(self.OverlayErrors) then
+				for _, Error in pairs(self.OverlayErrors) do
+					State:AddError(Error)
+				end
 			else
-				Status = self.State == "Loaded" and "Loaded with " .. AmmoType or self.State
-			end
-
-			local ErrorCount = table.Count(self.OverlayErrors)
-			if ErrorCount > 0 then
-				Status = Status .. " (" .. ErrorCount .. " errors)"
-			end
-
-			-- Compile error messages
-			for _, Error in pairs(self.OverlayErrors) do
-				Status = Status .. "\n\n" .. Error
+				if not next(self.Crates) then
+					State:AddError("Not linked to an ammo crate!")
+				else
+					if self.State == "Loaded" then
+						State:AddSuccess("Loaded with " .. AmmoType)
+					else
+						State:AddWarning(self.State)
+					end
+				end
 			end
 
 			for Crate in pairs(self.Crates) do -- Tally up the amount of ammo being provided by active crates
@@ -1165,7 +1180,11 @@ do -- Metamethods --------------------------------
 
 			local BreechIndex = self.BreechIndex or 1
 			local BreechName = self.ClassData.BreechConfigs and self.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
-			return Text:format(Status, Firerate, self.CurrentShot, CrateAmmo, BreechName)
+
+			State:AddKeyValue("Firerate", Firerate .. " RPM")
+			State:AddNumber("Shots Left", self.CurrentShot)
+			State:AddNumber("Ammo Available", CrateAmmo)
+			State:AddKeyValue("Loading Location", BreechName)
 		end
 	end -----------------------------------------
 

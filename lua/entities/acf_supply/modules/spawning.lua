@@ -160,10 +160,8 @@ function ENT:Update(Data)
 end
 
 do
-	local Text = "%s\n\nMass Remaining: %s kg\nCapacity: %s kg"
-
-	function ENT:UpdateOverlayText()
-		local Status = self:CanConsume() and "Supplying" or "Idle"
-		return Text:format(Status, Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2))
+	function ENT:ACF_UpdateOverlayState(State)
+		State:AddLabel(self:CanConsume() and "Supplying" or "Idle")
+		State:AddProgressBar("Mass Remaining", Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2), " kg", 2)
 	end
 end

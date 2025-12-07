@@ -81,11 +81,11 @@ if SERVER then
 		Entity:SetNW2String("AmmoType", "HE")
 	end
 
-	function Ammo:GetCrateText(BulletData)
-		local Text = "Muzzle Velocity: %s m/s\nBlast Radius: %s m\nBlast Energy: %s kJ"
+	function Ammo:UpdateCrateOverlay(BulletData, State)
 		local Data = self:GetDisplayData(BulletData)
-
-		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.BlastRadius, 2), ACF.NiceNumber(math.Round(BulletData.FillerMass * ACF.HEPower, 2)))
+		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
+		State:AddNumber("Blast Radius", Data.BlastRadius, " m")
+		State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ")
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)

@@ -129,25 +129,18 @@ if SERVER then
 		Entity:SetNW2Float("WPMass", BulletData.WPMass)
 	end
 
-	function Ammo:GetCrateText(BulletData)
-		local Text = "Muzzle Velocity: %s m/s%s%s"
+	function Ammo:UpdateCrateOverlay(BulletData, State)
 		local Data = self:GetDisplayData(BulletData)
-		local WPText, SMText = "", ""
 
-
+		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
 		if Data.WPFiller > 0 then
-			local Template = "\nWP Radius: %s m to %s m\nWP Lifetime: %s s"
-
-			WPText = Template:format(Data.WPRadiusMin, Data.WPRadiusMax, Data.WPLife)
+			State:AddKeyValue("WP Radius", ("%s m to %s m"):format(Data.WPRadiusMin, Data.WPRadiusMax))
+			State:AddKeyValue("WP Lifetime", ("%s s"):format(Data.WPLife))
 		end
-
 		if Data.SMFiller > 0 then
-			local Template = "\nSM Radius: %s m to %s m\nSM Lifetime: %s s"
-
-			SMText = Template:format(Data.SMRadiusMin, Data.SMRadiusMax, Data.SMLife)
+			State:AddKeyValue("SM Radius", ("%s m to %s m"):format(Data.SMRadiusMin, Data.SMRadiusMax))
+			State:AddKeyValue("SM Lifetime", ("%s s"):format(Data.SMLife))
 		end
-
-		return Text:format(math.Round(BulletData.MuzzleVel, 2), WPText, SMText)
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)

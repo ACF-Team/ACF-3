@@ -283,12 +283,6 @@ do -- Ammo overlay rendering
 			return
 		end
 
-		-- Optional info bubble hiding
-		local hideInfo = ACF and ACF.HideInfoBubble
-		if not ( hideInfo and hideInfo() ) then
-			self:AddWorldTip()
-		end
-
 		-- Optional wireframe outline
 		if wireOutline and wireOutline:GetBool() then
 			self:DrawEntityOutline()
