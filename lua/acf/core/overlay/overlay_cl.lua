@@ -548,6 +548,140 @@ do
     local ShouldAdjustOverlayForToolHelp
     local HideInfoBubble = ACF.HideInfoBubble
 
+    function Overlay.DrawOverlay(State, Target, TargetX, TargetY, StartTime, StopTime, IsToolMode)
+        Overlay.ResetRenderState()
+        if DoScaleAnimation or DoAlphaAnimation then
+            FadeInTime = math.Clamp((RealTime() - (StartTime or 0)) * 6, 0, 1)
+            if StopTime then
+                FadeOutTime = math.Clamp((RealTime() - (StopTime or 0)) * 9, 0, 1)
+            else
+                FadeOutTime = 0
+            end
+            FadeTime = FadeInTime - FadeOutTime
+        else
+            FadeInTime = 1
+            FadeOutTime = StopTime ~= nil and 1 or 0
+        end
+
+        if FadeOutTime == 1 then
+            -- Early exit
+            return false
+        end
+
+        local Alpha = surface.GetAlphaMultiplier()
+        if DoAlphaAnimation then
+            surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime) * math.ease.OutCirc(1 - FadeOutTime))
+        end
+
+        for Idx, ElementSlot in State:IterateElementSlots() do
+            CurrentSlotIdx = Idx
+            local TypeIdx  = ElementSlot.Type
+            local Type     = Overlay.GetElementType(TypeIdx)
+            if Type.Render then
+                Type.Render(Target, ElementSlot)
+            end
+            Overlay.PushSlotSizeToTotal(Idx)
+        end
+
+        local Clipping = DisableClipping(true)
+        TotalW = TotalW + OVERALL_RECT_PADDING + HORIZONTAL_EXTERIOR_PADDING
+        -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
+        TotalH = (TotalH + OVERALL_RECT_PADDING) - PER_SLOT_VERTICAL_PADDING
+        TotalH = math.max(TotalH, 0)
+
+        -- Disable the barrier
+        CanAccessOverlaySize = true
+        -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
+        for Idx, ElementSlot in State:IterateElementSlots() do
+            CurrentSlotIdx = Idx
+            -- Reload slot state for post-render.
+            local SlotCache = Overlay.GetSlotDataCache(Idx)
+            TotalY     = SlotCache.Y
+            SlotW      = SlotCache.W
+            SlotH      = SlotCache.H
+            KeyWidth   = SlotCache.KeyWidth
+            ValueWidth = SlotCache.ValueWidth
+            -- Post render
+            local TypeIdx  = ElementSlot.Type
+            local Type     = Overlay.GetElementType(TypeIdx)
+            if Type.PostRender then
+                Type.PostRender(Target, ElementSlot)
+            end
+        end
+        TotalY = TotalH
+        CanAccessOverlaySize = false
+
+        -- Move TargetX, TargetY to be on the left side
+        TargetX = TargetX - (TotalW / 2) - 32
+        TargetY = TargetY - (TotalH / 2) - 32
+
+        -- Set up scaling
+        OverlayMatrix:Identity()
+        local XScale = 1
+        local YScale = 1
+
+        -- Cool animations for scaling
+        if DoScaleAnimation then
+            XScale = 1 + (math.ease.InBack(FadeOutTime) * 0.3)
+            YScale = math.ease.OutBack(math.ease.InCubic(FadeInTime)) - (math.ease.InBack(FadeOutTime))
+        end
+
+        -- Now that we know sizes, ensure we don't overflow past negative Y, and also add some buffer room
+        -- so we don't overflow the text in the toolmenu
+        local TempBoxY = TargetY - (TotalH / (2 / YScale))
+        local MinimumY = 64
+        if IsToolMode and ShouldAdjustOverlayForToolHelp:GetBool() then
+            MinimumY = 216
+        end
+        if TempBoxY < MinimumY then
+            -- How much?
+            local Offset = MinimumY - TempBoxY
+            TargetY = TargetY + Offset
+        end
+
+
+        OverlayScale:SetUnpacked(XScale, YScale, 1)
+        OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / (2 / YScale))) + PER_SLOT_VERTICAL_PADDING), 0)
+        OverlayMatrix:Translate(OverlayOffset)
+        OverlayMatrix:Scale(OverlayScale)
+
+        -- Draw background
+        surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
+        local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / (2 / XScale)), TargetY - (TotalH / (2 / YScale)), TotalW * XScale, TotalH * YScale
+        surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
+
+        cam.PushModelMatrix(OverlayMatrix)
+        -- Draw all cached calls.
+        for I = 1, NumRenderCalls do
+            local Cache = RenderCalls[I]
+            Cache.Method(unpack(Cache.Data, 1, Cache.ArgC))
+        end
+        cam.PopModelMatrix()
+
+        local BORDER_SIZE = 2
+        surface.SetDrawColor(COLOR_BORDER_LIGHT_COLOR)
+        surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
+        surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
+        surface.SetDrawColor(COLOR_TERTIARY_COLOR)
+        surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
+        surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
+
+        -- This kinda sucks... todo
+        surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
+        surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
+
+        -- Draw a drop shadow
+        surface.SetDrawColor(COLOR_DROP_SHADOW)
+        local DROP_SHADOW_SIZE = 4
+        surface.DrawRect(BoxX + BoxW, BoxY + DROP_SHADOW_SIZE, DROP_SHADOW_SIZE, BoxH)
+        surface.DrawRect(BoxX + DROP_SHADOW_SIZE, BoxY + BoxH, BoxW - DROP_SHADOW_SIZE, DROP_SHADOW_SIZE)
+
+        DisableClipping(Clipping)
+        surface.SetAlphaMultiplier(Alpha)
+
+        return true
+    end
+
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
         if HideInfoBubble() then return end
         if not next(Overlays) then return end
