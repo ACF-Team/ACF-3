@@ -160,10 +160,6 @@ do -- ACF global vars
 	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",            false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
-		ACF.GlobalFilter["acf_armor"] = not Value
-		return Value
-	end))
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
@@ -223,7 +219,6 @@ do -- ACF global vars
 		npc_strider = true,
 		npc_dog = true,
 		phys_bone_follower = true,
-		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		gmod_wire_expression2 = true,
 		starfall_processor = true,
 		sent_prop2mesh = true,
@@ -308,7 +303,6 @@ do -- ACF global vars
 		acf_engine = true,
 		acf_piledriver = true,
 		acf_rack = true,
-		acf_armor = true,
 		acf_baseplate = true,
 		acf_turret_computer = true,
 		acf_turret_gyro = true,

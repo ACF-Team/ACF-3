@@ -11,7 +11,6 @@ CostSystem.CalcSingleFilter = {
 	acf_gearbox				= 0,
 	acf_fueltank			= 0,
 	prop_physics			= 1,
-	acf_armor				= 1,
 	acf_gun					= 1,
 	acf_ammo				= 1,
 	acf_radar				= 10,
@@ -175,7 +174,6 @@ local ArmorCalc = function(E)
 	end
 end
 
-CostFilter["acf_armor"] = ArmorCalc
 CostFilter["prop_physics"] = ArmorCalc
 CostFilter["primitive_shape"] = ArmorCalc
 CostFilter["gmod_wire_gate"] = ArmorCalc
