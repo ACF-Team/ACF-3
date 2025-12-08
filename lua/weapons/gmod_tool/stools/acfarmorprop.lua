@@ -507,8 +507,14 @@ do -- Armor readout
 				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
 			end,
 			GetCost = function(_, Trace)
-				local Contraption_ = IsValid(Trace.Entity) and Trace.Entity:GetContraption() or {}
-				return ACF.CostSystem.CalcCostsFromContraption(Contraption_)
+				if not IsValid(Trace.Entity) then return 0, {} end
+
+				local Contraption_ = Trace.Entity:GetContraption()
+				if Contraption_ then
+					return ACF.CostSystem.CalcCostsFromContraption(Contraption_)
+				else
+					return ACF.CostSystem.CalcCostsFromEnts({Trace.Entity})
+				end
 			end
 		},
 		Sphere = {
