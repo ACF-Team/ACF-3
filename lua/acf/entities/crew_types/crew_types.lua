@@ -60,6 +60,7 @@ CrewTypes.Register("Loader", {
 	Icon		= "icon16/wand.png",
 	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
 	ExtraNotes 	= "Loaders can be linked to any gun, but their focus is split between each. Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
+	Cost	= 1,
 	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
 		Amount	= 4,
@@ -111,6 +112,7 @@ CrewTypes.Register("Gunner", {
 	Icon		= "icon16/gun.png",
 	Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting.",
 	ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change.",
+	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
 		Amount	= 4,
@@ -162,6 +164,7 @@ CrewTypes.Register("Driver", {
 	Icon		= "icon16/car.png",
 	Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting.",
 	ExtraNotes	= "Drivers can be linked to any engine and their focus does not change.",
+	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
 		Amount	= 2,
@@ -206,6 +209,7 @@ CrewTypes.Register("Commander", {
 	Icon		= "icon16/medal_gold_1.png",
 	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
 	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew.",
+	Cost	= 2,
 	LimitConVar	= {
 		Name	= "_acf_crew_commander",
 		Amount	= 1,
@@ -277,6 +281,7 @@ CrewTypes.Register("Pilot", {
 	Icon		= "icon16/weather_clouds.png",
 	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft.",
 	ExtraNotes 	= "Pilots do not affect anything at the moment.",
+	Cost	= 5,
 	LimitConVar	= {
 		Name	= "_acf_crew_pilot",
 		Amount	= 2,

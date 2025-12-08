@@ -284,6 +284,10 @@ do	-- Metamethods and other important stuff
 			return true
 		end
 
+		function ENT:GetCost()
+			return self.CompSize * 2
+		end
+
 		function ENT:GetInfo()
 			return {Teeth = self.Teeth, Speed = self.Speed, Torque = self.Torque * self.DamageScale, Efficiency = self.Efficiency, Accel = self.Accel}
 		end

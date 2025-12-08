@@ -776,6 +776,10 @@ do
 		end
 	end
 
+	function ENT:GetCost()
+		return self.CrewType.Cost or 1
+	end
+
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		local HitRes = DmgResult:Compute()
 

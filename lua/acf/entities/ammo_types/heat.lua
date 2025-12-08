@@ -207,8 +207,13 @@ if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
 	local Objects    = Damage.Objects
+	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
+
+	function Ammo:GetCost(BulletData)
+		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)
+	end
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)

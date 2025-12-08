@@ -1186,6 +1186,13 @@ do -- Metamethods --------------------------------
 			State:AddNumber("Ammo Available", CrateAmmo)
 			State:AddKeyValue("Loading Location", BreechName)
 		end
+
+		--[[ To be added back when march fixes this function
+		ACF.RegisterAdditionalOverlay("acf_gun", "Cost", function(Gun, State)
+			State:AddNumber("Cost", 666)
+			State:AddNumber("Another cost", 667)
+		end)
+		]]
 	end -----------------------------------------
 
 	do	-- Other networking
@@ -1288,6 +1295,13 @@ do -- Metamethods --------------------------------
 			end
 
 			return true
+		end
+
+		function ENT:GetCost()
+			local selftbl		= self:GetTable()
+			local CostScalar	= selftbl.ClassData.CostScalar or 1
+
+			return CostScalar * selftbl.Caliber
 		end
 
 		function ENT:OnRemove()
