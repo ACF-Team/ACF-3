@@ -27,6 +27,7 @@ CostSystem.CalcSingleFilter = {
 	acf_groundloader		= 20,
 }
 
+--[[	These are no longer required, but will be left as reference for now
 CostSystem.ACFGunCost = { -- anything not on here costs 1
 	SB	= 1, -- old smoothbores, leaving
 	C	= 0.4,
@@ -59,6 +60,7 @@ CostSystem.ACFAmmoModifier = { -- Anything not in here is 0.2
 	GLATGM	= 1.5,
 	FLR		= 0.05,
 }
+]]
 
 CostSystem.ACFMissileModifier = { -- Default 5
 	ATGM	= 8,
@@ -146,8 +148,6 @@ CostSystem.SpecialModelFilter = { -- any missile rack not in here costs 10 point
 --------------------------------------------------------------------------------
 
 local CostFilter = {}
-CostFilter["acf_gun"] = function(E) return (CostSystem.ACFGunCost[E.Class] or 1) * E.Caliber end
-CostFilter["acf_engine"] = function(E) return math.max(5, (E.PeakTorque / 160) + (E.PeakPower / 80)) end
 CostFilter["acf_rack"] = function(E)
 	if CostSystem.SpecialModelFilter[E:GetModel()] then
 		return CostSystem.SpecialModelFilter[E:GetModel()]
@@ -163,22 +163,6 @@ CostFilter["acf_radar"] = function(E)
 	else
 		return 50
 	end
-end
-CostFilter["acf_ammo"] = function(E)
-	if E.AmmoType == "Refill" then
-		return E.Capacity * 0.05
-	elseif E.IsMissileAmmo then -- Only present on crates that actually hold ACF-3 Missiles ammo, courtesy of a hook intercept in ACF-3 Missiles
-		return E.Capacity * (CostSystem.ACFAmmoModifier[E.AmmoType] or 0.2) * (CostSystem.ACFMissileModifier[E.Class] or 10) * math.max(1, (E.Caliber / 100) ^ 1.5)
-	else
-		return E.Capacity * (CostSystem.ACFAmmoModifier[E.AmmoType] or 0.2) * ((E.Caliber / 100) ^ 2) * (CostSystem.ACFGunCost[E.Class] or 1)
-	end
-end
-
-CostFilter["acf_turret_motor"] = function(E)
-	return E.CompSize * 2
-end
-CostFilter["acf_turret_gyro"] = function(E)
-	return E.IsDual and 8 or 4
 end
 
 local ArmorCalc = function(E)
@@ -201,6 +185,8 @@ CostFilter["acf_baseplate"] = ArmorCalc
 
 -- Calculates the cost of a single entity
 function CostSystem.CalcCost(E)
+	if E.GetCost then return E:GetCost() end
+
 	local Class = E:GetClass()
 	if not CostSystem.CalcSingleFilter[Class] then return 0 end
 	local Cost = CostSystem.CalcSingleFilter[Class] or 1

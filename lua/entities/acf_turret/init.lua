@@ -1132,6 +1132,17 @@ do -- Metamethods
 			if IsValid(self.Motor) then self.Motor:ValidatePlacement() end
 		end
 
+		function ENT:GetCost()
+			local selftbl	= self:GetTable()
+			local Size		= selftbl.TurretData.RingSize
+
+			if selftbl.Turret == "Turret-H" then
+				return 0.1 * Size
+			else
+				return 0.2 * Size
+			end
+		end
+
 		function ENT:OnRemove()
 			-- TODO: Destroy sound when that gets added
 

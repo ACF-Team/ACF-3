@@ -51,6 +51,13 @@ function Ammo:BaseConvert(ToolData)
 end
 
 if SERVER then
+	local Conversion	= ACF.PointConversion
+
+	-- Since APCR
+	function Ammo:GetCost(BulletData)
+		return (BulletData.ProjMass * Conversion.Steel * 2.5) + (BulletData.PropMass * Conversion.Propellant)
+	end
+
 	function Ammo:Network(Entity, BulletData)
 		Ammo.BaseClass.Network(self, Entity, BulletData)
 
