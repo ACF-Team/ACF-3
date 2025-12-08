@@ -345,6 +345,8 @@ do -- Spawn and Update functions
 
 		ACF.Activate(Entity, true)
 
+		print(Entity:GetCost())
+
 		Contraption.SetMass(Entity, Mass)
 	end
 
@@ -939,6 +941,12 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+end
+
+function ENT:GetCost()
+	local selftbl = self:GetTable()
+
+	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
 end
 
 function ENT:OnRemove()
