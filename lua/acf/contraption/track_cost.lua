@@ -168,7 +168,7 @@ local ArmorCalc = function(E)
 	local phys = E:GetPhysicsObject()
 
 	if IsValid(phys) then
-		return 0.1 + math.max(0.01, phys:GetMass() / 500)
+		return 0.1 + math.max(0.01, phys:GetMass() / 250)
 	else
 		return 1
 	end
