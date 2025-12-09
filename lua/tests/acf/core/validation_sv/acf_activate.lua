@@ -11,6 +11,7 @@ return {
             ACF = {},
             GetPhysicsObject = function() return PhysObj end,
             GetTable = function() return State.Ent end,
+            GetModel = function() return "" end,
         }
 
         stub( ACF.Contraption, "SetMass" ).with( function( e, mass )

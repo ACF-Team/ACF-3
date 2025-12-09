@@ -75,6 +75,31 @@ do -- Model data getter method
 
 		return Entity:GetPhysicsObject()
 	end
+
+	-------------------------------------------------------------------
+
+	-- Basically the same as below, just doesn't return anything, to be used to pre-load as a contraption spawns in
+	function ModelData.Populate(Model)
+		local Path = ModelData.GetModelPath(Model)
+
+		if not Path then return end
+		if Models[Path] then return end
+
+		local PhysObj = CreatePhysObj(Path)
+		if not IsValid(PhysObj) then return end
+
+		local Min, Max = PhysObj:GetAABB()
+
+		local Data = {
+			Mesh   = ModelData.SanitizeMesh(PhysObj),
+			Volume = PhysObj:GetVolume(),
+			Center = (Min + Max) * 0.5,
+			Size   = Max - Min,
+		}
+
+		Models[Path] = Data
+	end
+
 	-------------------------------------------------------------------
 
 	function ModelData.GetModelData(Model)

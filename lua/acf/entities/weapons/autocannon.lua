@@ -47,7 +47,7 @@ Weapons.Register("AC", {
 		Amount = 4,
 		Text = "Maximum amount of ACF auto cannons a player can create."
 	},
-	CostScalar	= 1.1
+	CostScalar	= 0.75
 })
 
 Weapons.RegisterItem("20mmAC", "AC", {

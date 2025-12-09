@@ -345,8 +345,6 @@ do -- Spawn and Update functions
 
 		ACF.Activate(Entity, true)
 
-		print(Entity:GetCost())
-
 		Contraption.SetMass(Entity, Mass)
 	end
 
