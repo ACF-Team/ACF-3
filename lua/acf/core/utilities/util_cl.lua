@@ -982,3 +982,188 @@ do -- Default turret menus
 		end
 	end
 end
+
+do -- Link distance gizmo stuff
+	local EntGizmoDifferences = {}
+
+	local ColorLinkOk             = Color(55, 235, 55, 255)
+	local ColorLinkFail           = Color(255, 88, 88)
+	local ColorLinkFailDistMissed = Color(255, 200, 81)
+	local ColorLink               = Color(205, 235, 255, 255)
+
+	function ACF.ToolCL_RegisterLinkGizmoData(From, To, Callback)
+		EntGizmoDifferences[From] = EntGizmoDifferences[From] or {}
+		EntGizmoDifferences[To] = EntGizmoDifferences[To] or {}
+
+		EntGizmoDifferences[From][To] = Callback
+		EntGizmoDifferences[To][From] = Callback
+	end
+
+	function ACF.ToolCL_GetLinkGizmoData(EntFrom, EntTo)
+		local FromTbl = EntGizmoDifferences[EntFrom:GetClass()]
+		if not FromTbl then return end
+
+		local ToTbl = FromTbl[EntTo:GetClass()]
+		if not ToTbl then return end
+
+		return true, ToTbl(EntFrom, EntTo)
+	end
+
+	function ACF.ToolCL_CanLink(From, To)
+		if not IsValid(From) then return false, "Link target not valid!" end
+		if not IsValid(To) then return false, "Target not valid!" end
+
+		if From == To then return false, "Cannot link an entity to itself!" end
+
+		local HadData, CanLink, WhyNot, RenderData = ACF.ToolCL_GetLinkGizmoData(From, To)
+		if not HadData then return false, "No link data." end
+		return CanLink == nil and true or CanLink, WhyNot, RenderData
+	end
+
+	local LinkDistanceTooFar = {
+		Text = "The entity is too far away.",
+		Renderer = function(Data)
+			local FromPos, ToPos = Data.FromPos, Data.ToPos
+			local Normal         = (ToPos - FromPos):GetNormalized()
+			local ToMaxDist      = FromPos + (Normal * Data.MaxDist)
+
+			render.SetColorMaterial()
+			render.DepthRange(0, 0)
+			render.DrawBeam(FromPos, ToMaxDist, 2, 0, 1, color_black)
+			render.DrawBeam(ToMaxDist, ToPos, 2, 0, 1, color_black)
+			render.DrawBeam(FromPos, ToMaxDist, 1, 0, 1, ColorLinkFailDistMissed)
+			render.DrawBeam(ToMaxDist, ToPos, 1, 0, 1, ColorLinkFail)
+			render.DepthRange(0, 1)
+		end
+	}
+
+	local function GenericLinkDistanceCheck(From, To)
+		local FromPos, ToPos = From:GetPos(), To:GetPos()
+		local Dist    = FromPos:Distance(ToPos)
+		local MaxDist = ACF.LinkDistance
+		if Dist > MaxDist then return false, LinkDistanceTooFar, {FromPos = FromPos, ToPos = ToPos, Dist = Dist, MaxDist = MaxDist} end
+	end
+
+	local function MobilityLinkDistanceCheck(From, To)
+		local FromPos, ToPos = From:GetPos(), To:GetPos()
+		local Dist    = FromPos:Distance(ToPos)
+		local MaxDist = ACF.MobilityLinkDistance
+		if Dist > MaxDist then return false, LinkDistanceTooFar, {FromPos = FromPos, ToPos = ToPos, Dist = Dist, MaxDist = MaxDist} end
+	end
+
+	local function AlwaysLinkableCheck()
+		return true
+	end
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_gun", GenericLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_ammo", "acf_rack", GenericLinkDistanceCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_motor", GenericLinkDistanceCheck) -- TODO: Make this use the actual link distance check used in turrets
+	ACF.ToolCL_RegisterLinkGizmoData("acf_turret", "acf_turret_gyro", GenericLinkDistanceCheck)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_engine", "acf_gearbox", function(From, To)
+		--[[
+		local Out = From.Out
+
+		if From:GetClass() == "acf_gearbox" then
+			local InPos = To.In and To.In.Pos or Vector()
+			local InPosWorld = To:LocalToWorld(InPos)
+
+			Out = From:WorldToLocal(InPosWorld).y < 0 and From.OutL or From.OutR
+		end
+
+		if ACF.IsDriveshaftAngleExcessive(To, To.In, From, Out) then
+			return false, { Text = "The driveshaft angle is excessive." }, {FromPos = From:GetPos(), ToPos = To:GetPos()}
+		end
+		]]
+		return MobilityLinkDistanceCheck(From, To)
+	end)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_engine", "acf_fueltank", MobilityLinkDistanceCheck)
+
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gun", "acf_turret_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_gun", "acf_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_rack", "acf_computer", AlwaysLinkableCheck)
+	ACF.ToolCL_RegisterLinkGizmoData("acf_rack", "acf_radar", AlwaysLinkableCheck)
+
+	local HUDText = {}
+
+	local function DrawText(Text, Color, X, Y)
+		if not Y then
+			local XY = X:ToScreen()
+			X, Y = XY.x, XY.y
+		end
+
+		HUDText[#HUDText + 1] = {Text = Text, X = X, Y = Y, Color = Color}
+	end
+
+	local DistText   = "Distance: %.1f units"
+	local DistTextOK = "✓ OK"
+	local DistTextNo = "✗ Cannot link: %s"
+
+	hook.Add("PostDrawTranslucentRenderables", "ACF_PostDrawTranslucentRenderables_LinkDistanceVis", function()
+		if not ACF.ToolCL_InLinkState() then return end
+		table.Empty(HUDText)
+
+		local LocalPly        = LocalPlayer()
+		local PlayerPos       = LocalPly:GetPos()
+		local EyeTrace        = LocalPly:GetEyeTrace()
+		local LookEnt         = EyeTrace.Entity
+		local LookPos         = EyeTrace.HitPos
+		local LookingAtEntity = IsValid(LookEnt)
+		local LinkEnts        = ACF.ToolCL_GetLinkedEnts()
+
+		for Ent in pairs(LinkEnts) do
+			if IsValid(Ent) then
+				local TargPos = LookingAtEntity and LookEnt:GetPos() or LookPos
+				local EntPos  = Ent:GetPos()
+
+				local Dist = EntPos:Distance(TargPos)
+				local PlayerToTarget = math.Clamp(PlayerPos:Distance(TargPos) / 1.5, 0, Dist / 2)
+				local InBetween = TargPos + ((EntPos - TargPos):GetNormalized() * math.Clamp(Dist, 0, PlayerToTarget))
+
+				local LinkColor = ColorLink
+				local RenderOverride, RenderData
+
+				if LookingAtEntity then
+					local CanLink, Why, Data = ACF.ToolCL_CanLink(Ent, LookEnt, Dist)
+					LinkColor = CanLink and ColorLinkOk or ColorLinkFail
+					local linkText = CanLink and DistTextOK or DistTextNo:format(Why.Text and Why.Text or Why)
+					if not CanLink then
+						RenderOverride = Why.Renderer
+						RenderData = Data
+					end
+					DrawText(linkText, LinkColor, InBetween)
+				else
+					DrawText(DistText:format(Dist), LinkColor, InBetween)
+				end
+
+				if RenderOverride then
+					RenderOverride(RenderData, From, To)
+				else
+					render.SetColorMaterial()
+					render.DepthRange(0, 0)
+					render.DrawBeam(EntPos, TargPos, 2, 0, 1, color_black)
+					render.DrawBeam(EntPos, TargPos, 1, 0, 1, LinkColor)
+					render.DepthRange(0, 1)
+				end
+			end
+		end
+	end)
+
+	hook.Add("HUDPaint", "ACF_HUDPaint_LinkDistanceVis", function()
+		if not ACF.ToolCL_InLinkState() then return end
+
+		local W, H = ScrW(), ScrH()
+		local Padding = 16
+
+		for _, V in ipairs(HUDText) do
+			surface.SetFont("ACF_Title")
+			local TX, TY = surface.GetTextSize(V.Text)
+			TX = TX / 2
+			TY = TY / 2
+			local X, Y = math.Clamp(V.X, TX + Padding, W - TX - Padding), math.Clamp(V.Y, TY + Padding, H - TY - Padding)
+
+			draw.SimpleTextOutlined(V.Text, "ACF_Title", X, Y, V.Color or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		end
+	end)
+end

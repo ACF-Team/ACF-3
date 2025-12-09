@@ -9,6 +9,51 @@ do -- Generic Spawner/Linker operation creator
 	local NameFormat = "%s [ID: %s]"
 	local PlayerEnts = {}
 
+	local InLinkState  = false
+
+	if CLIENT then
+		net.Receive("ACF_MenuLinking", function()
+			local StateChange = net.ReadUInt(2)
+
+			if StateChange == 0 then     -- Entering link state
+				InLinkState = true
+				table.Empty(PlayerEnts)
+			elseif StateChange == 1 then -- Exiting link state
+				InLinkState = false
+				table.Empty(PlayerEnts)
+			elseif StateChange == 2 then -- Adding entity to link table
+				PlayerEnts[net.ReadEntity()] = true
+			elseif StateChange == 3 then -- Removing entity from link table
+				PlayerEnts[net.ReadEntity()] = false
+			end
+		end)
+	end
+
+	local function UpdateLinkState(Player, State, Entity)
+		if CLIENT then return end
+
+		net.Start("ACF_MenuLinking")
+		net.WriteUInt(State, 2)
+
+		if State > 1 then
+			net.WriteEntity(Entity)
+		end
+
+		net.Send(Player)
+	end
+
+	function ACF.ToolCL_InLinkState()
+		return InLinkState
+	end
+
+	function ACF.ToolCL_GetLinkedEnts()
+		return PlayerEnts
+	end
+
+	if SERVER then
+		util.AddNetworkString("ACF_MenuLinking")
+	end
+
 	local function GetPlayerEnts(Player)
 		local Ents = PlayerEnts[Player]
 
@@ -90,6 +135,7 @@ do -- Generic Spawner/Linker operation creator
 		Entity:SetColor(EntColor)
 
 		Ents[Entity] = nil
+		UpdateLinkState(Player, 3, Entity)
 
 		if not next(Ents) then
 			Tool:SetMode("Spawner", Name)
@@ -104,9 +150,11 @@ do -- Generic Spawner/Linker operation creator
 
 		if not next(Ents) then
 			Tool:SetMode("Linker", Name)
+			UpdateLinkState(Player, 0)
 		end
 
 		Ents[Entity] = Entity:GetColor()
+		UpdateLinkState(Player, 2, Entity)
 
 		Entity:CallOnRemove("ACF_ToolLinking", UnselectEntity, Name, Tool)
 		Entity:SetColor(Green)
@@ -267,14 +315,15 @@ do -- Generic Spawner/Linker operation creator
 					if Trace.HitWorld then Tool:Holster() return true end
 
 					local Entity = Trace.Entity
-
-					if not IsValid(Entity) then return false end
-
 					local Player = Tool:GetOwner()
-					local Ents   = GetPlayerEnts(Player)
+
+					if not IsValid(Entity) then UpdateLinkState(Player, 1) return false end
+
+					local Ents = GetPlayerEnts(Player)
 
 					if not Player:KeyDown(IN_SPEED) then
 						LinkEntities(Player, Name, Tool, Entity, Ents)
+						UpdateLinkState(Player, 1)
 
 						return true
 					end
@@ -296,6 +345,8 @@ do -- Generic Spawner/Linker operation creator
 					for Entity in pairs(Ents) do
 						UnselectEntity(Entity, Name, Tool)
 					end
+
+					UpdateLinkState(Player, 1)
 				end,
 			})
 
