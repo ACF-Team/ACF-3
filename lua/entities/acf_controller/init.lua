@@ -30,6 +30,7 @@ util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
 util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
+util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -57,7 +58,7 @@ local Defaults = {
 	ZoomSpeed = 10,
 	ZoomMin = 5,
 	ZoomMax = 90,
-	SlewMin = 0.15,
+	SlewMin = 1,
 	SlewMax = 1,
 
 	CamCount = 2,
@@ -198,6 +199,8 @@ do
 		Entity.GearboxRightDir = nil		-- Direction of that right gearbox's output
 
 		Entity.ControllerWelds = {}			-- Keep track of the welds we created
+
+		Entity.PrimaryAmmoCountsByType = {}
 
 		-- State and meta variables
 		Entity.TurretLocked = false			-- Whether the turret is locked or not
@@ -473,6 +476,34 @@ do
 				else
 					Turret:InputDirection(HitPos)
 				end
+			end
+		end
+	end
+
+	function ENT:ProcessAmmo(SelfTbl)
+		local Contraption = self:GetContraption()
+		if Contraption == nil then return end
+
+		-- Determine current counts
+		local PrimaryGun = SelfTbl.Primary
+		if not IsValid(PrimaryGun) then return end
+
+		local PrimaryAmmoCountsByType = {}
+		for Crate, _ in pairs(PrimaryGun.Crates) do
+			if IsValid(Crate) then
+				local AmmoType = Crate.RoundData.ID
+				PrimaryAmmoCountsByType[AmmoType] = (PrimaryAmmoCountsByType[AmmoType] or 0) + (Crate.Amount or 0)
+			end
+		end
+
+		for AmmoType, Count in pairs(PrimaryAmmoCountsByType) do
+			if SelfTbl.PrimaryAmmoCountsByType[AmmoType] ~= Count then
+				SelfTbl.PrimaryAmmoCountsByType[AmmoType] = Count
+				net.Start("ACF_Controller_Ammo")
+				net.WriteEntity(self)
+				net.WriteString(AmmoType)
+				net.WriteInt(Count, 16)
+				net.Broadcast()
 			end
 		end
 	end
@@ -1016,6 +1047,9 @@ do
 
 		-- Fire guns
 		if iters % 4 == 0 then self:ProcessGuns(SelfTbl) end
+
+		-- Process ammo counts
+		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
 
 		-- Process gearboxes
 		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl) end

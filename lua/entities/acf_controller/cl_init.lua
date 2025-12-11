@@ -2,13 +2,15 @@ DEFINE_BASECLASS("acf_base_simple")
 
 include("shared.lua")
 
--- Locallization for performance...
+-- Localization for performance...
 local ScrW = ScrW
 local ScrH = ScrH
 local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
 local DrawCircle = surface.DrawCircle
 local DrawText = draw.DrawText
+
+local AmmoTypes    = ACF.Classes.AmmoTypes
 
 local TraceLine = util.TraceLine
 
@@ -81,6 +83,29 @@ end)
 net.Receive("ACF_Controller_CamInfo", function()
 	local Temp = net.ReadTable()
 	if #Temp > 0 then MyFilter = Temp end
+end)
+
+-- Receive ammo count info from server
+net.Receive("ACF_Controller_Ammo", function()
+	local Ent = net.ReadEntity()
+	local AmmoType = net.ReadString()
+	local AmmoCount = net.ReadUInt(16)
+
+	if not IsValid(Ent) then return end
+
+	Ent.PrimaryAmmoCountsByType = Ent.PrimaryAmmoCountsByType or {}
+	if not Ent.PrimaryAmmoCountsByType[AmmoType] then
+		Ent.PrimaryAmmoCountsByType[AmmoType] = 0
+
+		Ent.MaterialsByType = Ent.MaterialsByType or {}
+		local IconName = AmmoTypes.Get(AmmoType).SpawnIcon -- Something bad has happened if this doesn't work
+		Ent.MaterialsByType[AmmoType] = Material(IconName)
+
+		Ent.TypesSorted = Ent.TypesSorted or {}
+		table.insert(Ent.TypesSorted, AmmoType)
+		table.sort(Ent.TypesSorted)
+	end
+	Ent.PrimaryAmmoCountsByType[AmmoType] = AmmoCount
 end)
 
 UpdateCamera = function(ply)
@@ -192,6 +217,27 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 			SetDrawColor( Ready and green or red )
 			DrawCircle( sp.x, sp.y, 10 * Scale)
 		end
+	end
+
+	local SelectedAmmoType = MyController:GetNWString("AHS_Primary_AT", "")
+	local Index = 0
+	for _, AmmoType in pairs(MyController.TypesSorted or {}) do
+		local Material = MyController.MaterialsByType and MyController.MaterialsByType[AmmoType]
+		local AmmoCount = MyController.PrimaryAmmoCountsByType and MyController.PrimaryAmmoCountsByType[AmmoType] or 0
+		local ax = x - 400 * Scale + (46 * Index * Scale)
+		local ay = y - 246 * Scale
+
+		surface.SetDrawColor(Col)
+		if AmmoType == SelectedAmmoType then surface.DrawOutlinedRect(ax - 2, ay - 2, 44 * Scale, 44 * Scale) end
+
+		surface.DrawOutlinedRect(ax, ay, 40 * Scale, 40 * Scale)
+
+		surface.SetDrawColor(255, 255, 255, 255)
+		surface.SetMaterial(Material)
+		surface.DrawTexturedRect(ax + 4, ay + 4, 32 * Scale, 32 * Scale)
+
+		DrawText(AmmoCount, "DermaDefault", ax + 4, ay + 4, Col, TEXT_ALIGN_LEFT)
+		Index = Index + 1
 	end
 end)
 
