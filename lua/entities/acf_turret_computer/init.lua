@@ -614,6 +614,10 @@ do	-- Metamethods and other important stuff
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 		end
 
+		function ENT:GetCost()
+			return 5
+		end
+
 		function ENT:SetActive(Active, Reason)
 			local Trigger = (self.Active ~= Active) or (self.InactiveReason ~= Reason)
 			if not Active then

@@ -941,6 +941,12 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 end
 
+function ENT:GetCost()
+	local selftbl = self:GetTable()
+
+	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+end
+
 function ENT:OnRemove()
 	local Class = self.ClassData
 

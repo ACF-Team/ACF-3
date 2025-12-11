@@ -236,6 +236,17 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	end
 end
 
+function Contraption.GetMiscInfo(Ent)
+	local Contraption = Ent:GetContraption()
+	if not Contraption then return "N/A", "N/A", {}, 0 end
+
+	local Name = Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:GetNWString("WireName") or "N/A"
+	local BaseplateType = Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:ACF_GetUserVar("BaseplateType").Name or "N/A"
+	local AmmoTypes = table.GetKeys(Contraption.AmmoTypes or {}) or {}
+	local MaxNominal = Contraption.MaxNominal or 0
+	return Name, BaseplateType, AmmoTypes, MaxNominal
+end
+
 do -- ASSUMING DIRECT CONTROL
 
 	local BlockedTools = {

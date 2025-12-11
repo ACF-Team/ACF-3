@@ -81,6 +81,7 @@ end
 if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
+	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "Projectile", "Propellant", "Tracer") -- Adding extra info to ammo crates
 
@@ -126,6 +127,10 @@ if SERVER then
 		local Data = self:GetDisplayData(BulletData)
 		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
 		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
+	end
+
+	function Ammo:GetCost(BulletData)
+		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)

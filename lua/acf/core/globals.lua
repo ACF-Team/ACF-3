@@ -160,10 +160,6 @@ do -- ACF global vars
 	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",            false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
-		ACF.GlobalFilter["acf_armor"] = not Value
-		return Value
-	end))
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
@@ -223,7 +219,6 @@ do -- ACF global vars
 		npc_strider = true,
 		npc_dog = true,
 		phys_bone_follower = true,
-		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		gmod_wire_expression2 = true,
 		starfall_processor = true,
 		sent_prop2mesh = true,
@@ -274,10 +269,28 @@ do -- ACF global vars
 	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
 
 	-- Material densities
-	ACF.SteelDensity         = 7.9e-3  -- kg/cm^3
-	ACF.RHADensity           = 7.84e-3 -- kg/cm^3
-	ACF.AluminumDensity      = 2.7e-3  -- kg/cm^3
-	ACF.CopperDensity        = 8.96e-3 -- kg/cm^3
+	ACF.SteelDensity         = 7.9e-3 	-- kg/cm^3
+	ACF.RHADensity           = 7.84e-3	-- kg/cm^3
+	ACF.AluminumDensity      = 2.7e-3 	-- kg/cm^3
+	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
+	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
+
+	-- Material conversion to points, kg * modifier
+	ACF.PointConversion		 = {
+		Steel		= 0.04,	-- Projectile steel
+		Aluminum	= 0.25,	-- Sabot material
+		Copper		= 0.15,	-- Liner for HEAT cones
+		Tungsten	= 0.3,	-- Expensive
+		CompB		= 0.1,	-- Normal explosives
+		Octol		= 0.7,	-- Snowflakium, needs to be expensive as a balancing measure
+
+		WP			= 0.01,	-- White phosphorus
+		SF			= 0.02,	-- Smoke filler
+
+		FlareMix	= 0.025,	-- Just some generic mix of hot flammable garbage
+
+		Propellant	= 0.025,	-- Propellant powder
+	}
 
 	-- Debris
 	ACF.ChildDebris          = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
@@ -290,7 +303,6 @@ do -- ACF global vars
 		acf_engine = true,
 		acf_piledriver = true,
 		acf_rack = true,
-		acf_armor = true,
 		acf_baseplate = true,
 		acf_turret_computer = true,
 		acf_turret_gyro = true,

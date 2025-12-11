@@ -206,8 +206,6 @@ do -- Serverside settings
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.show_fun"):LinkToServerData("ShowFunMenu")
 			Base:AddHelp("#acf.menu.settings.fun_menu.show_fun_desc")
-
-		Base:AddCheckBox("#acf.menu.settings.fun_menu.allow_proc_armor"):LinkToServerData("AllowProcArmor")
 	end)
 
 	ACF.AddServerSettings(401, "#acf.menu.settings.workshop", function(Base)

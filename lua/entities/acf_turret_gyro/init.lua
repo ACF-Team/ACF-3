@@ -234,6 +234,10 @@ do	-- Metamethods and other important stuff
 			return true
 		end
 
+		function ENT:GetCost()
+			return self.IsDual and 8 or 4
+		end
+
 		function ENT:GetInfo()
 			return self.DamageScale
 		end

@@ -51,7 +51,8 @@ Weapons.Register("LAC", {
 		Name = "_acf_lightautocannon",
 		Amount = 4,
 		Text = "Maximum amount of ACF light auto cannons a player can create."
-	}
+	},
+	CostScalar	= 0.5
 })
 
 Weapons.RegisterItem("20mmHMG", "LAC", {

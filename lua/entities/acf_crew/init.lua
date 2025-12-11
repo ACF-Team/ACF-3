@@ -621,7 +621,7 @@ do
 		State:AddNumber("Move", math.Round(self.MoveEff * 100, 2), "%")
 		State:AddNumber("Focus", math.Round(self.Focus * 100, 2), "%")
 		State:AddNumber("Total", math.Round(self.TotalEff * 100, 2), "%")
-		State:AddKeyValue("Replaces Others", self.ReplacesOthers and "Yes" or "No")
+		State:AddKeyValue("Replaces Others", self.ReplaceOthers and "Yes" or "No")
 		State:AddKeyValue("Replaceable", self.ReplaceSelf and "Yes" or "No")
 		State:AddNumber("Priority", self.CrewPriority)
 	end
@@ -774,6 +774,10 @@ do
 			end
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
+	end
+
+	function ENT:GetCost()
+		return self.CrewType.Cost or 1
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
