@@ -355,24 +355,3 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		Power = Power - PowerFraction * Losses
 	end
 end
-
-concommand.Add("acf_explode", function(Player, _, Args)
-	if not IsValid(Player) then return end
-
-	local Trace    = Player:GetEyeTrace()
-	local Position = Trace.HitPos
-
-	local FillerMass = tonumber(Args[1]) or 10
-	local FragMass   = tonumber(Args[2]) or 5
-	local DmgInfo    = Objects.DamageInfo()
-
-	local StartTime = SysTime()
-	Damage.createExplosion(Position, FillerMass, FragMass, nil, DmgInfo)
-	local EndTime   = SysTime()
-	local ElapsedMs = (EndTime - StartTime) * 1000
-
-	Damage.explosionEffect(Position, nil, FillerMass)
-
-	print(string.format("explosion: %.3f ms (Filler: %.1fkg, Casing: %.1fkg)", ElapsedMs, FillerMass, FragMass))
-
-end, nil, "Spawn an ACF explosion at your aim position. Usage: acf_explode [filler_kg] [casing_kg]")
