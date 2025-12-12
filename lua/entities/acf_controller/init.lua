@@ -479,6 +479,28 @@ do
 			end
 		end
 	end
+end
+
+-- Ammo related
+do
+	net.Receive("ACF_Controller_Ammo", function(_, ply)
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local SelectAmmoType = net.ReadString()
+		local ForceReload = net.ReadBool()
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		if Entity.Driver ~= ply then return end
+
+		local PrimaryGun = Entity.Primary
+		if not IsValid(PrimaryGun) then return end
+		for Crate, _ in pairs(PrimaryGun.Crates) do
+			if IsValid(Crate) then
+				local AmmoType = Crate.RoundData.ID
+				Crate:TriggerInput("Load", AmmoType == SelectAmmoType and 1 or 0)
+			end
+		end
+		if ForceReload then PrimaryGun:TriggerInput("Reload", 1) end
+	end)
 
 	function ENT:ProcessAmmo(SelfTbl)
 		local Contraption = self:GetContraption()
