@@ -587,14 +587,14 @@ do
 
 	--- Sets the brakes of the left/right transfers
 	local function SetBrakes(SelfTbl, L, R)
-		SelfTbl.GearboxLeft:TriggerInput(SelfTbl.GearboxLeftDir .. " Brake", L)
-		SelfTbl.GearboxRight:TriggerInput(SelfTbl.GearboxRightDir .. " Brake", R)
+		if IsValid(SelfTbl.GearboxLeft) then SelfTbl.GearboxLeft:TriggerInput(SelfTbl.GearboxLeftDir .. " Brake", L) end
+		if IsValid(SelfTbl.GearboxLeft) then  SelfTbl.GearboxRight:TriggerInput(SelfTbl.GearboxRightDir .. " Brake", R) end
 	end
 
 	--- Sets the clutches of the left/right transfers
 	local function SetClutches(SelfTbl, L, R)
-		SelfTbl.GearboxLeft:TriggerInput(SelfTbl.GearboxLeftDir .. " Clutch", L)
-		SelfTbl.GearboxRight:TriggerInput(SelfTbl.GearboxRightDir .. " Clutch", R)
+		if IsValid(SelfTbl.GearboxLeft) then SelfTbl.GearboxLeft:TriggerInput(SelfTbl.GearboxLeftDir .. " Clutch", L) end
+		if IsValid(SelfTbl.GearboxLeft) then SelfTbl.GearboxRight:TriggerInput(SelfTbl.GearboxRightDir .. " Clutch", R) end
 	end
 
 	--- Sets the gears of the left/right transfers
