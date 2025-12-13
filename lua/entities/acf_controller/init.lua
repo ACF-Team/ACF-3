@@ -599,8 +599,8 @@ do
 
 	--- Sets the gears of the left/right transfers
 	local function SetTransfers(SelfTbl, L, R)
-		SelfTbl.GearboxLeft:TriggerInput("Gear", L)
-		SelfTbl.GearboxRight:TriggerInput("Gear", R)
+		if IsValid(SelfTbl.GearboxLeft) then SelfTbl.GearboxLeft:TriggerInput("Gear", L) end
+		if IsValid(SelfTbl.GearboxRight) then SelfTbl.GearboxRight:TriggerInput("Gear", R) end
 	end
 
 	--- Creates/Removes weld constraints from the Left/Right Wheels to baseplate or between them.
