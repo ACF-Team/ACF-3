@@ -37,6 +37,7 @@ local function CreateMenu(Menu)
 	Controls:AddLabel("Space: Brakes")
 	Controls:AddLabel("CTRL: Switch Cameras")
 	Controls:AddLabel("R: Unlock turret")
+	Controls:AddLabel("1/2/3: Select next ammo type (double tap to force reload)")
 
 	local Settings = Menu:AddCollapsible("Settings", true, "icon16/computer_edit.png")
 	Settings:AddLabel("Some defaults are applied when you place a controller with the tool. You can change these by editing its properties using the context menu (C + right click).")
