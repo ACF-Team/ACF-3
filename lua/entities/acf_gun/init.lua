@@ -162,7 +162,8 @@ do -- Random timer crew stuff
 	end
 
 	function ENT:UpdateFilter()
-		local Rotator = self:GetParent().Rotator
+		local Vertical = self:GetParent()
+		local Rotator = Vertical.Rotator
 		local Filter = {}
 
 		if IsValid(Rotator) then
@@ -179,6 +180,7 @@ do -- Random timer crew stuff
 		else
 			self.RotationFilter = { [self] = true }
 		end
+		self.RotationFilter[Vertical] = true
 	end
 
 	function ENT:CheckBreechClipping()
