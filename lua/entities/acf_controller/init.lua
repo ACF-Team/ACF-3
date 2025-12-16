@@ -395,6 +395,18 @@ do
 			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
+		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
+
+		local AliveCrew = 0
+		local TotalCrew = 0
+		local Contraption = self:GetContraption()
+		local Crew = Contraption and Contraption.Crews or {}
+		for CrewMember, _ in pairs(Crew) do
+			if CrewMember.IsAlive then AliveCrew = AliveCrew + 1 end
+			TotalCrew = TotalCrew + 1
+		end
+		RecacheBindNW(self, SelfTbl, "AHS_Crew", AliveCrew, self.SetNWInt)
+		RecacheBindNW(self, SelfTbl, "AHS_CrewCap", TotalCrew, self.SetNWInt) -- Should only run once effectively
 	end
 end
 
