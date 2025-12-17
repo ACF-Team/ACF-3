@@ -174,6 +174,7 @@ do
 		Entity.Racks = {}					-- All racks
 		Entity.Baseplate = nil				-- The baseplate of the vehicle
 		Entity.SteerPlates = {}				-- Steering plates, if any
+		Entity.TurretComputer = nil			-- The turret computer, if any
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -326,6 +327,7 @@ do
 		local Tr = TraceLine(CamTraceConfig)
 
 		local HitPos = Tr.HitPos or vector_origin
+		self.HitPos = HitPos
 		RecacheBindOutput(self, SelfTbl, "HitPos", HitPos)
 
 		return CamPos, CamAng, HitPos
@@ -479,12 +481,25 @@ do
 		if SelfTbl.TurretLocked then return end
 
 		local Primary = self.Primary
+		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
+		local ShouldElevate = IsValid(self.TurretComputer)
+
+		-- Liddul... if you can hear me...
+		local SuperElevation = IsValid(Primary) and self.TurretComputer and self.TurretComputer.Outputs.Elevation.Value or nil
+		if SuperElevation ~= nil and SuperElevation ~= self.LastSuperElevation then
+			local TrueSuperElevation = SuperElevation - (self.LasePitch or 0) -- Compute pitch offset to account for drop
+			self.Additive = (self.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+		end
+		self.LastSuperElevation = SuperElevation
+
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
-				if ShouldLevel and Turret == Primary.BreechReference then
+				if Turret == BreechReference and ShouldLevel then
 					Turret:InputDirection(ReloadAngle)
+				elseif Turret == BreechReference and ShouldElevate then
+					Turret:InputDirection(HitPos + Vector(0, 0, self.Additive or 0))
 				else
 					Turret:InputDirection(HitPos)
 				end
@@ -929,6 +944,18 @@ local function OnKeyChanged(Controller, Key, Down)
 	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
 end
 
+local function OnButtonChanged(Controller, Button, Down)
+	if not IsFirstTimePredicted() then return end
+	if Button == MOUSE_MIDDLE and Down and IsValid(Controller.TurretComputer) then
+		Controller.TurretComputer.Inputs.Position.Value = Controller.HitPos
+		Controller.TurretComputer:TriggerInput("Calculate Superelevation", 1)
+
+		local Diff = (Controller.Primary:GetPos() - Controller.HitPos)
+		Controller.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
+		Controller.LaseDist = Diff:Length()
+	end
+end
+
 local function OnLinkedSeat(Controller, Target)
 	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
 		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
@@ -948,6 +975,18 @@ local function OnLinkedSeat(Controller, Target)
 		if not IsValid(Controller) or not IsValid(Target) then return end
 		if Ply ~= Controller.Driver then return end
 		OnKeyChanged(Controller, Key, false)
+	end)
+
+	hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnButtonChanged(Controller, Key, true)
+	end)
+
+	hook.Add("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnButtonChanged(Controller, Key, false)
 	end)
 
 	-- Remove the hooks when the controller is removed
@@ -996,6 +1035,10 @@ local LinkConfigs = {
 		OnLinked = function(Controller, Target)
 			Controller:AnalyzeGuns(Target)
 		end
+	},
+	acf_turret_computer = {
+		Field = "TurretComputer",
+		Single = true
 	},
 	acf_baseplate = {
 		Field = "Baseplate",
