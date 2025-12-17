@@ -109,6 +109,7 @@ net.Receive("ACF_Controller_Ammo", function()
 end)
 
 local function SelectAmmoType(Index)
+	if MyController:GetDisableAmmoSelect() then return end
 	local NewAmmoType = MyController.TypesSorted and MyController.TypesSorted[Index] or nil
 	local ForceSwitch = MyController.SelectedAmmoType == NewAmmoType
 	if not NewAmmoType then return end
