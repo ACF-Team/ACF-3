@@ -111,6 +111,7 @@ end)
 local function SelectAmmoType(Index)
 	local NewAmmoType = MyController.TypesSorted and MyController.TypesSorted[Index] or nil
 	local ForceSwitch = MyController.SelectedAmmoType == NewAmmoType
+	if not NewAmmoType then return end
 	net.Start("ACF_Controller_Ammo")
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteString(NewAmmoType)
