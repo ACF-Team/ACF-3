@@ -154,7 +154,8 @@ end
 -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
 -- } )
 
-
+local ColorReady = Color(0, 255, 0, 255)
+local ColorNotReady = Color(255, 0, 0, 255)
 
 local function DrawReload(Entity, Ready, Radius)
 	if IsValid(Entity) then
