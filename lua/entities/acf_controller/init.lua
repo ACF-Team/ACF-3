@@ -508,6 +508,20 @@ do
 	end
 end
 
+-- Guidance related
+do
+	function ENT:ProcessGuidance(SelfTbl)
+		local GuideComp = SelfTbl.GuidanceComputer
+		if not IsValid(GuideComp) then return end
+
+		-- We just want to know if there are any in air we should be lasing for...
+		local InAir = 0
+		if SelfTbl.Primary then InAir = InAir + (SelfTbl.Primary.Outputs["In Air"].Value or 0) end
+		if SelfTbl.Tertiary then InAir = InAir + (SelfTbl.Tertiary.Outputs["In Air"].Value or 0) end
+		GuideComp:TriggerInput("Lase", InAir > 0 and 1 or 0)
+	end
+end
+
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
@@ -1040,6 +1054,14 @@ local LinkConfigs = {
 		Field = "TurretComputer",
 		Single = true
 	},
+	acf_computer = {
+		Field = "GuidanceComputer",
+		Single = true,
+		PreLink = function(_, Target)
+			if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
+			return true
+		end
+	},
 	acf_baseplate = {
 		Field = "Baseplate",
 		Single = true,
@@ -1070,6 +1092,7 @@ local LinkConfigs = {
 for Class, Data in pairs(LinkConfigs) do
 	local Field = Data.Field
 	local Single = Data.Single
+	local PreLink = Data.PreLink
 	local OnLinked = Data.OnLinked
 	local OnUnlinked = Data.OnUnlinked
 
@@ -1081,6 +1104,9 @@ for Class, Data in pairs(LinkConfigs) do
 
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
+
+		local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
+		if not PreLinkResult then return false, PreLinkMsg end
 
 		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
@@ -1126,6 +1152,8 @@ do
 
 		-- Fire guns
 		if iters % 4 == 0 then self:ProcessGuns(SelfTbl) end
+
+		if iters % 1 == 0 then self:ProcessGuidance(SelfTbl) end
 
 		-- Process ammo counts
 		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
