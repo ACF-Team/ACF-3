@@ -121,6 +121,7 @@ local function SelectAmmoType(Index)
 end
 
 hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
+	if not IsFirstTimePredicted() then return end
 	if not IsValid(MyController) then return end
 
 	if Button == KEY_1 then SelectAmmoType(1)
