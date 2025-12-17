@@ -154,25 +154,7 @@ end
 -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
 -- } )
 
--- TODO: Maybe use render targets instead
-local ColorReady = Color(0, 255, 0, 255)
-local ColorNotReady = Color(255, 0, 0, 255)
-local function DrawProgressRing(Entity, fidelity, x, y, r1, r2, percent)
-	local step = (360 / fidelity)
-	local cutoff = math.ceil(percent * fidelity)
-	for i = 1, fidelity do
-		local curang = ((i-1) * step + step / 2) - 90
-		local a1 = math.rad(curang - step / 2)
-		local a2 = math.rad(curang + step / 2)
-		surface.SetDrawColor(i > cutoff and ColorNotReady or ColorReady)
-		surface.DrawPoly({
-			{x = x + r1 * math.cos(a1), y = y + r1 * math.sin(a1)},
-			{x = x + r2 * math.cos(a1), y = y + r2 * math.sin(a1)},
-			{x = x + r2 * math.cos(a2), y = y + r2 * math.sin(a2)},
-			{x = x + r1 * math.cos(a2), y = y + r1 * math.sin(a2)},
-		})
-	end
-end
+
 
 local function DrawReload(Entity, Ready, Radius)
 	if IsValid(Entity) then
@@ -186,7 +168,6 @@ local function DrawReload(Entity, Ready, Radius)
 end
 
 -- HUD RELATED
-local red = Color(255, 0, 0, 255)
 local green = Color(0, 255, 0, 255)
 hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	if not IsValid(MyController) then return end
