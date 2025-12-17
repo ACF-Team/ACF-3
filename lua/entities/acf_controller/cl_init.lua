@@ -154,7 +154,36 @@ end
 -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
 -- } )
 
-local SmokeLauncherMaterial = Material("models/launcher/40mmsl.mdl", "smooth")
+-- TODO: Maybe use render targets instead
+local ColorReady = Color(0, 255, 0, 255)
+local ColorNotReady = Color(255, 0, 0, 255)
+local function DrawProgressRing(Entity, fidelity, x, y, r1, r2, percent)
+	local step = (360 / fidelity)
+	local cutoff = math.ceil(percent * fidelity)
+	for i = 1, fidelity do
+		local curang = ((i-1) * step + step / 2) - 90
+		local a1 = math.rad(curang - step / 2)
+		local a2 = math.rad(curang + step / 2)
+		surface.SetDrawColor(i > cutoff and ColorNotReady or ColorReady)
+		surface.DrawPoly({
+			{x = x + r1 * math.cos(a1), y = y + r1 * math.sin(a1)},
+			{x = x + r2 * math.cos(a1), y = y + r2 * math.sin(a1)},
+			{x = x + r2 * math.cos(a2), y = y + r2 * math.sin(a2)},
+			{x = x + r1 * math.cos(a2), y = y + r1 * math.sin(a2)},
+		})
+	end
+end
+
+local function DrawReload(Entity, Ready, Radius)
+	if IsValid(Entity) then
+		local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
+		local sp = HitPos:ToScreen()
+		SetDrawColor( Ready and ColorReady or ColorNotReady )
+		DrawCircle( sp.x, sp.y, Radius)
+		-- local r2 = 10 * Scale / k
+		-- DrawProgressRing(32, sp.x, sp.y, r2 - 2, r2, 1)
+	end
+end
 
 -- HUD RELATED
 local red = Color(255, 0, 0, 255)
@@ -214,16 +243,19 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Primary", nil ), MyController:GetNWBool("AHS_Primary_RD", false), 10 * Scale / 1)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Secondary_AT", ""), MyController:GetNWInt("AHS_Secondary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Secondary", nil ), MyController:GetNWBool("AHS_Secondary_RD", false), 10 * Scale / 2)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Tertiary_AT", ""), MyController:GetNWInt("AHS_Tertiary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Tertiary", nil ), MyController:GetNWBool("AHS_Tertiary_RD", false), 10 * Scale / 3)
 
 		-- Speed, Gear, Fuel, Crew
 		local unit = MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
@@ -236,17 +268,6 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText("Fuel: " .. Fuel .. unit .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		DrawText("Crew: " .. MyController:GetNWInt("AHS_Crew") .. " / " .. MyController:GetNWInt("AHS_CrewCap"), "DermaDefault", x + 310 * Scale, y + 270 * Scale, Col, TEXT_ALIGN_LEFT)
-	end
-
-	for k, v in ipairs({"Primary", "Secondary", "Tertiary"}) do
-		local Entity = MyController:GetNWEntity( "AHS_" .. v, nil )
-		if IsValid(Entity) then
-			local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
-			local sp = HitPos:ToScreen()
-			local Ready = MyController:GetNWBool("AHS_" .. v .. "_RD", false)
-			SetDrawColor( Ready and green or red )
-			DrawCircle( sp.x, sp.y, 10 * Scale / k)
-		end
 	end
 
 	local LoadedAmmoType = MyController:GetNWString("AHS_Primary_AT", "")
