@@ -1076,6 +1076,8 @@ for Class, Data in pairs(LinkConfigs) do
 	-- Register the link/unlink functions for each class
 	ACF.RegisterClassLink("acf_controller", Class, function(Controller, Target)
 		if Controller:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "The controller is too far from this entity." end
+		if Single and IsValid(Controller[Field]) then return false, "This controller is already linked to another entity of this type." end
+		if not Single and Controller[Field][Target] then return false, "This controller is already linked to this entity." end
 
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
