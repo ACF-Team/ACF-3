@@ -1105,8 +1105,10 @@ for Class, Data in pairs(LinkConfigs) do
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
 
-		local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
-		if not PreLinkResult then return false, PreLinkMsg end
+		if PreLink then
+			local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
+			if not PreLinkResult then return false, PreLinkMsg end
+		end
 
 		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
