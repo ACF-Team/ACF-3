@@ -108,6 +108,17 @@ net.Receive("ACF_Controller_Ammo", function()
 	Ent.PrimaryAmmoCountsByType[AmmoType] = AmmoCount
 end)
 
+net.Receive("ACF_Controller_Receiver", function()
+	local Ent = net.ReadEntity()
+	local Direction = net.ReadVector()
+	if not IsValid(Ent) then return end
+
+	Ent.ReceiverDirections = Ent.ReceiverDirections or {}
+	Ent.ReceiverDirections[Ent] = Direction
+	Ent.ReceiverTimes = Ent.ReceiverTimes or {}
+	Ent.ReceiverTimes[Ent] = CurTime()
+end)
+
 local function SelectAmmoType(Index)
 	if MyController:GetDisableAmmoSelect() then return end
 	local NewAmmoType = MyController.TypesSorted and MyController.TypesSorted[Index] or nil
@@ -287,6 +298,17 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		surface.DrawTexturedRect(ax + 4 * Scale, ay + 4 * Scale, 32 * Scale, 32 * Scale)
 
 		DrawText(AmmoCount, "DermaDefault", ax + 4 * Scale, ay + 4 * Scale, Col, TEXT_ALIGN_LEFT)
+	end
+
+	for Receiver, Direction in pairs(MyController.ReceiverDirections or {}) do
+		if not IsValid(Receiver) then continue end
+		local Time = MyController.ReceiverTimes and MyController.ReceiverTimes[Receiver] or 0
+		if CurTime() - Time > 5 then continue end
+
+		local HitPos = ranger( Receiver:GetPos(), Direction:GetNormalized(), 99999, MyFilter )
+		local sp = HitPos:ToScreen()
+		SetDrawColor( Color(0, 255, 255, 255) )
+		DrawCircle( sp.x, sp.y, 5)
 	end
 end)
 

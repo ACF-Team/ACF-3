@@ -31,6 +31,7 @@ util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera mod
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
 util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
+util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -174,7 +175,9 @@ do
 		Entity.Racks = {}					-- All racks
 		Entity.Baseplate = nil				-- The baseplate of the vehicle
 		Entity.SteerPlates = {}				-- Steering plates, if any
+		Entity.GuidanceComputer = nil		-- The guidance computer, if any
 		Entity.TurretComputer = nil			-- The turret computer, if any
+		Entity.Receivers = {}				-- LWR/RWRs
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -217,6 +220,8 @@ do
 		Entity.KeyStates = {} 				-- Key states for the driver
 
 		Entity.SteerAngles = {} 			-- Steering angles for the wheels
+
+		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
 
 		Entity.Speed = 0
 
@@ -522,6 +527,25 @@ do
 	end
 end
 
+-- Receiver related
+do
+	function ENT:AnalyzeReceivers(Receiver)
+		-- self.Receiver = Receiver
+	end
+
+	function ENT:ProcessReceiver(SelfTbl)
+		for Receiver, _ in pairs(SelfTbl.Receivers) do
+			if IsValid(Receiver) and Receiver.Outputs.Detected.Value > 0 and SelfTbl.ReceiverDirections[Receiver] ~= Receiver.Outputs.Direction.Value then
+				SelfTbl.ReceiverDirections[Receiver] = Receiver.Outputs.Direction.Value
+				net.Start("ACF_Controller_Receivers")
+				net.WriteEntity(self)
+				net.WriteVector(Receiver.Outputs.Direction.Value)
+				net.Send(self.Driver)
+			end
+		end
+	end
+end
+
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
@@ -566,7 +590,7 @@ do
 				net.WriteEntity(self)
 				net.WriteString(AmmoType)
 				net.WriteInt(Count, 16)
-				net.Broadcast()
+				net.Send(self.Driver)
 			end
 		end
 	end
@@ -1062,6 +1086,13 @@ local LinkConfigs = {
 			return true
 		end
 	},
+	acf_receiver = {
+		Field = "Receivers",
+		Single = false,
+		OnLinked = function(Controller, Target)
+			Controller:AnalyzeReceivers(Target)
+		end
+	},
 	acf_baseplate = {
 		Field = "Baseplate",
 		Single = true,
@@ -1162,6 +1193,9 @@ do
 
 		-- Process ammo counts
 		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
+
+		-- Process receivers
+		if iters % 10 == 0 then self:ProcessReceiver(SelfTbl) end
 
 		-- Process gearboxes
 		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl) end
