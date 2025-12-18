@@ -223,6 +223,10 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
 		-- Ammo type | Ammo count | Time left
+		surface.SetDrawColor(0, 0, 0, 100)
+		surface.DrawRect(x - 400 * Scale, y + 205 * Scale, 125 * Scale, 70 * Scale)
+		surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 90 * Scale)
+
 		SetDrawColor( Col )
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
@@ -250,7 +254,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 
 		local Fuel = MyController:GetNWFloat("AHS_Fuel")
 		local FuelCap = MyController:GetNWFloat("AHS_FuelCap")
-		DrawText("Fuel: " .. Fuel .. unit .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		DrawText("Crew: " .. MyController:GetNWInt("AHS_Crew") .. " / " .. MyController:GetNWInt("AHS_CrewCap"), "DermaDefault", x + 310 * Scale, y + 270 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
