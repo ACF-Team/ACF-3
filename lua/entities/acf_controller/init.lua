@@ -1121,6 +1121,9 @@ for Class, Data in pairs(LinkConfigs) do
 	end)
 
 	ACF.RegisterClassUnlink("acf_controller", Class, function(Controller, Target)
+		if Single and Controller[Field] ~= Target then return false, "This controller is not linked to this entity." end
+		if not Single and not Controller[Field][Target] then return false, "This controller is not linked to this entity." end
+
 		if Single then Controller[Field] = nil
 		else Controller[Field][Target] = nil end
 
