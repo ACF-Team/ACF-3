@@ -51,7 +51,7 @@ end
 
 local function CalculateBoxIntersection(Mins1, Maxs1, Mins2, Maxs2)
 	if not util.IsBoxIntersectingBox(Mins1, Maxs1, Mins2, Maxs2) then return false end
-	
+
 	local min1x, min1y, min1z = Mins1:Unpack()
 	local max1x, max1y, max1z = Maxs1:Unpack()
 	local min2x, min2y, min2z = Mins2:Unpack()
