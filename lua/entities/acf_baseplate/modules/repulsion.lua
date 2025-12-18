@@ -53,6 +53,8 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 			if not Valid1 or not Valid2 then continue end
 			if Contraption1 == Contraption2 then continue end
 
+			if not ACF.DoesContraptionHavePlayers(Contraption1) or not ACF.DoesContraptionHavePlayers(Contraption2) then continue end
+
 			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
 
 			if IntersectionDistance > 0 then continue end
