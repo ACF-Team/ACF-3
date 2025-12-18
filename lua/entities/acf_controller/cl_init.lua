@@ -9,6 +9,7 @@ local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
 local DrawCircle = surface.DrawCircle
 local DrawText = draw.DrawText
+local DrawLine = surface.DrawLine
 
 local AmmoTypes    = ACF.Classes.AmmoTypes
 
@@ -108,15 +109,14 @@ net.Receive("ACF_Controller_Ammo", function()
 	Ent.PrimaryAmmoCountsByType[AmmoType] = AmmoCount
 end)
 
-net.Receive("ACF_Controller_Receiver", function()
+net.Receive("ACF_Controller_Receivers", function()
 	local Ent = net.ReadEntity()
+	local Receiver = net.ReadEntity()
 	local Direction = net.ReadVector()
 	if not IsValid(Ent) then return end
 
-	Ent.ReceiverDirections = Ent.ReceiverDirections or {}
-	Ent.ReceiverDirections[Ent] = Direction
-	Ent.ReceiverTimes = Ent.ReceiverTimes or {}
-	Ent.ReceiverTimes[Ent] = CurTime()
+	Ent.ReceiverData = Ent.ReceiverData or {}
+	Ent.ReceiverData[Receiver] = {Direction, CurTime()}
 end)
 
 local function SelectAmmoType(Index)
@@ -177,13 +177,12 @@ local function DrawReload(Entity, Ready, Radius)
 		local sp = HitPos:ToScreen()
 		SetDrawColor( Ready and ColorReady or ColorNotReady )
 		DrawCircle( sp.x, sp.y, Radius)
-		-- local r2 = 10 * Scale / k
-		-- DrawProgressRing(32, sp.x, sp.y, r2 - 2, r2, 1)
 	end
 end
 
 -- HUD RELATED
 local green = Color(0, 255, 0, 255)
+local cyan = Color(0, 255, 255, 255)
 hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	if not IsValid(MyController) then return end
 
@@ -300,15 +299,18 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText(AmmoCount, "DermaDefault", ax + 4 * Scale, ay + 4 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 
-	for Receiver, Direction in pairs(MyController.ReceiverDirections or {}) do
+	for Receiver, Data in pairs(MyController.ReceiverData or {}) do
 		if not IsValid(Receiver) then continue end
-		local Time = MyController.ReceiverTimes and MyController.ReceiverTimes[Receiver] or 0
-		if CurTime() - Time > 5 then continue end
-
-		local HitPos = ranger( Receiver:GetPos(), Direction:GetNormalized(), 99999, MyFilter )
-		local sp = HitPos:ToScreen()
-		SetDrawColor( Color(0, 255, 255, 255) )
-		DrawCircle( sp.x, sp.y, 5)
+		local Direction, Time = Data[1], Data[2]
+		local Frac = (CurTime() - Time) / 5
+		if Frac < 1 then
+			local RP = Receiver:GetPos()
+			local HitPos = ranger( RP, Direction:GetNormalized(), 99999, MyFilter )
+			local SP1 = RP:ToScreen()
+			local SP2 = HitPos:ToScreen()
+			SetDrawColor(0, 255, 255, (1 - Frac) * 255)
+			DrawLine(SP1.x, SP1.y, SP2.x, SP2.y)
+		end
 	end
 end)
 

@@ -222,6 +222,7 @@ do
 		Entity.SteerAngles = {} 			-- Steering angles for the wheels
 
 		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
+		Entity.ReceiverDetecteds = {}			-- LWS/RWS receiver detected states
 
 		Entity.Speed = 0
 
@@ -529,17 +530,18 @@ end
 
 -- Receiver related
 do
-	function ENT:AnalyzeReceivers(Receiver)
-		-- self.Receiver = Receiver
-	end
-
-	function ENT:ProcessReceiver(SelfTbl)
+	function ENT:ProcessReceivers(SelfTbl)
 		for Receiver, _ in pairs(SelfTbl.Receivers) do
-			if IsValid(Receiver) and Receiver.Outputs.Detected.Value > 0 and SelfTbl.ReceiverDirections[Receiver] ~= Receiver.Outputs.Direction.Value then
-				SelfTbl.ReceiverDirections[Receiver] = Receiver.Outputs.Direction.Value
+			local Detected = Receiver.Outputs.Detected.Value
+			local Direction = Receiver.Outputs.Direction.Value
+			if IsValid(Receiver) and (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
+				SelfTbl.ReceiverDirections[Receiver] = Direction
+				SelfTbl.ReceiverDetecteds[Receiver] = Detected
+				if Detected == 0 then return end
 				net.Start("ACF_Controller_Receivers")
 				net.WriteEntity(self)
-				net.WriteVector(Receiver.Outputs.Direction.Value)
+				net.WriteEntity(Receiver)
+				net.WriteVector(Direction)
 				net.Send(self.Driver)
 			end
 		end
@@ -1088,10 +1090,7 @@ local LinkConfigs = {
 	},
 	acf_receiver = {
 		Field = "Receivers",
-		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeReceivers(Target)
-		end
+		Single = false
 	},
 	acf_baseplate = {
 		Field = "Baseplate",
@@ -1195,7 +1194,7 @@ do
 		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
 
 		-- Process receivers
-		if iters % 10 == 0 then self:ProcessReceiver(SelfTbl) end
+		if iters % 10 == 0 then self:ProcessReceivers(SelfTbl) end
 
 		-- Process gearboxes
 		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl) end
