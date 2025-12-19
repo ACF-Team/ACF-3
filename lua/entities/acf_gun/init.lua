@@ -230,7 +230,7 @@ do -- Spawn and Update functions --------------------------------
 		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
 		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
 		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
-		"In Air (Returns 1 if the glatgm is airborne.)",
+		"In Air (Returns 1 if the GLATGM is airborne.)",
 		"Entity (The weapon itself.) [ENTITY]",
 	}
 
