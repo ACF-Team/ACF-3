@@ -525,6 +525,7 @@ do
 		if SelfTbl.Primary then InAir = InAir + (SelfTbl.Primary.Outputs["In Air"].Value or 0) end
 		if SelfTbl.Tertiary then InAir = InAir + (SelfTbl.Tertiary.Outputs["In Air"].Value or 0) end
 		GuideComp:TriggerInput("Lase", InAir > 0 and 1 or 0)
+		GuideComp:TriggerInput("HitPos", SelfTbl.HitPos)
 	end
 end
 
