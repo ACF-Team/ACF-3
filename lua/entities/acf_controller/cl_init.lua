@@ -109,8 +109,10 @@ net.Receive("ACF_Controller_Ammo", function()
 end)
 
 local function SelectAmmoType(Index)
+	if MyController:GetDisableAmmoSelect() then return end
 	local NewAmmoType = MyController.TypesSorted and MyController.TypesSorted[Index] or nil
 	local ForceSwitch = MyController.SelectedAmmoType == NewAmmoType
+	if not NewAmmoType then return end
 	net.Start("ACF_Controller_Ammo")
 	net.WriteUInt(MyController:EntIndex(), MAX_EDICT_BITS)
 	net.WriteString(NewAmmoType)
@@ -120,6 +122,7 @@ local function SelectAmmoType(Index)
 end
 
 hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
+	if not IsFirstTimePredicted() then return end
 	if not IsValid(MyController) then return end
 
 	if Button == KEY_1 then SelectAmmoType(1)
@@ -154,8 +157,21 @@ end
 -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
 -- } )
 
+local ColorReady = Color(0, 255, 0, 255)
+local ColorNotReady = Color(255, 0, 0, 255)
+
+local function DrawReload(Entity, Ready, Radius)
+	if IsValid(Entity) then
+		local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
+		local sp = HitPos:ToScreen()
+		SetDrawColor( Ready and ColorReady or ColorNotReady )
+		DrawCircle( sp.x, sp.y, Radius)
+		-- local r2 = 10 * Scale / k
+		-- DrawProgressRing(32, sp.x, sp.y, r2 - 2, r2, 1)
+	end
+end
+
 -- HUD RELATED
-local red = Color(255, 0, 0, 255)
 local green = Color(0, 255, 0, 255)
 hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	if not IsValid(MyController) then return end
@@ -186,6 +202,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
 	elseif HudType == 1 then
+		-- View border
 		DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
 		DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
 
@@ -205,38 +222,41 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
 		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
+		-- Ammo type | Ammo count | Time left
+		surface.SetDrawColor(0, 0, 0, 100)
+		surface.DrawRect(x - 400 * Scale, y + 205 * Scale, 125 * Scale, 70 * Scale)
+		surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 90 * Scale)
+
 		SetDrawColor( Col )
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Primary", nil ), MyController:GetNWBool("AHS_Primary_RD", false), 10 * Scale / 1)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Secondary_AT", ""), MyController:GetNWInt("AHS_Secondary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Secondary", nil ), MyController:GetNWBool("AHS_Secondary_RD", false), 10 * Scale / 2)
 
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Tertiary_AT", ""), MyController:GetNWInt("AHS_Tertiary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
 		local TimeLeft = math.Round(MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
 		DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+		DrawReload(MyController:GetNWEntity( "AHS_Tertiary", nil ), MyController:GetNWBool("AHS_Tertiary_RD", false), 10 * Scale / 3)
 
+		-- Speed, Gear, Fuel, Crew
 		local unit = MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
 		DrawText("SPD: " .. MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
 		DrawText("Gear: " .. MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
 		local unit = MyController:GetFuelUnit() == 0 and " L" or " G"
-		DrawText("Fuel: " .. MyController:GetNWFloat("AHS_Fuel") .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
-	end
 
-	for _, v in ipairs({"Primary", "Secondary", "Tertiary"}) do
-		local Entity = MyController:GetNWEntity( "AHS_" .. v, nil )
-		if IsValid(Entity) then
-			local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, MyFilter )
-			local sp = HitPos:ToScreen()
-			local Ready = MyController:GetNWBool("AHS_" .. v .. "_RD", false)
-			SetDrawColor( Ready and green or red )
-			DrawCircle( sp.x, sp.y, 10 * Scale)
-		end
+		local Fuel = MyController:GetNWFloat("AHS_Fuel")
+		local FuelCap = MyController:GetNWFloat("AHS_FuelCap")
+		DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+
+		DrawText("Crew: " .. MyController:GetNWInt("AHS_Crew") .. " / " .. MyController:GetNWInt("AHS_CrewCap"), "DermaDefault", x + 310 * Scale, y + 270 * Scale, Col, TEXT_ALIGN_LEFT)
 	end
 
 	local LoadedAmmoType = MyController:GetNWString("AHS_Primary_AT", "")

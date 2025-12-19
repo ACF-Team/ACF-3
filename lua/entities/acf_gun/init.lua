@@ -162,7 +162,8 @@ do -- Random timer crew stuff
 	end
 
 	function ENT:UpdateFilter()
-		local Rotator = self:GetParent().Rotator
+		local Vertical = self:GetParent()
+		local Rotator = Vertical.Rotator
 		local Filter = {}
 
 		if IsValid(Rotator) then
@@ -179,6 +180,7 @@ do -- Random timer crew stuff
 		else
 			self.RotationFilter = { [self] = true }
 		end
+		self.RotationFilter[Vertical] = true
 	end
 
 	function ENT:CheckBreechClipping()
@@ -228,6 +230,7 @@ do -- Spawn and Update functions --------------------------------
 		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
 		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
 		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
+		"In Air (Returns 1 if the GLATGM is airborne.)",
 		"Entity (The weapon itself.) [ENTITY]",
 	}
 
@@ -827,7 +830,14 @@ do -- Metamethods --------------------------------
 			BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
 			BulletData.Filter = self.BarrelFilter
 
-			AmmoType:Create(self, BulletData) -- Spawn projectile
+			-- Set in air if GLATGM is used
+			local GLATGM = AmmoType:Create(self, BulletData)
+			if IsValid(GLATGM) and AmmoType.ID == "GLATGM" then
+				WireLib.TriggerOutput(self, "In Air", 1)
+				GLATGM:CallOnRemove("GunResetInAir", function()
+					if IsValid(self) then WireLib.TriggerOutput(self, "In Air", 0) end
+				end)
+			end
 
 			self:MuzzleEffect()
 			self:Recoil()

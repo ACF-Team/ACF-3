@@ -174,6 +174,7 @@ do
 		Entity.Racks = {}					-- All racks
 		Entity.Baseplate = nil				-- The baseplate of the vehicle
 		Entity.SteerPlates = {}				-- Steering plates, if any
+		Entity.TurretComputer = nil			-- The turret computer, if any
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -326,6 +327,7 @@ do
 		local Tr = TraceLine(CamTraceConfig)
 
 		local HitPos = Tr.HitPos or vector_origin
+		self.HitPos = HitPos
 		RecacheBindOutput(self, SelfTbl, "HitPos", HitPos)
 
 		return CamPos, CamAng, HitPos
@@ -395,6 +397,18 @@ do
 			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
+		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
+
+		local AliveCrew = 0
+		local TotalCrew = 0
+		local Contraption = self:GetContraption()
+		local Crew = Contraption and Contraption.Crews or {}
+		for CrewMember, _ in pairs(Crew) do
+			if CrewMember.IsAlive then AliveCrew = AliveCrew + 1 end
+			TotalCrew = TotalCrew + 1
+		end
+		RecacheBindNW(self, SelfTbl, "AHS_Crew", AliveCrew, self.SetNWInt)
+		RecacheBindNW(self, SelfTbl, "AHS_CrewCap", TotalCrew, self.SetNWInt) -- Should only run once effectively
 	end
 end
 
@@ -467,17 +481,44 @@ do
 		if SelfTbl.TurretLocked then return end
 
 		local Primary = self.Primary
+		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
+		local ShouldElevate = IsValid(self.TurretComputer)
+
+		-- Liddul... if you can hear me...
+		local SuperElevation = IsValid(Primary) and self.TurretComputer and self.TurretComputer.Outputs.Elevation.Value or nil
+		if SuperElevation ~= nil and SuperElevation ~= self.LastSuperElevation then
+			local TrueSuperElevation = SuperElevation - (self.LasePitch or 0) -- Compute pitch offset to account for drop
+			self.Additive = (self.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+		end
+		self.LastSuperElevation = SuperElevation
+
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
-				if ShouldLevel and Turret == Primary.BreechReference then
+				if Turret == BreechReference and ShouldLevel then
 					Turret:InputDirection(ReloadAngle)
+				elseif Turret == BreechReference and ShouldElevate then
+					Turret:InputDirection(HitPos + Vector(0, 0, self.Additive or 0))
 				else
 					Turret:InputDirection(HitPos)
 				end
 			end
 		end
+	end
+end
+
+-- Guidance related
+do
+	function ENT:ProcessGuidance(SelfTbl)
+		local GuideComp = SelfTbl.GuidanceComputer
+		if not IsValid(GuideComp) then return end
+
+		-- We just want to know if there are any in air we should be lasing for...
+		local InAir = 0
+		if SelfTbl.Primary then InAir = InAir + (SelfTbl.Primary.Outputs["In Air"].Value or 0) end
+		if SelfTbl.Tertiary then InAir = InAir + (SelfTbl.Tertiary.Outputs["In Air"].Value or 0) end
+		GuideComp:TriggerInput("Lase", InAir > 0 and 1 or 0)
 	end
 end
 
@@ -917,6 +958,18 @@ local function OnKeyChanged(Controller, Key, Down)
 	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
 end
 
+local function OnButtonChanged(Controller, Button, Down)
+	if not IsFirstTimePredicted() then return end
+	if Button == MOUSE_MIDDLE and Down and IsValid(Controller.TurretComputer) then
+		Controller.TurretComputer.Inputs.Position.Value = Controller.HitPos
+		Controller.TurretComputer:TriggerInput("Calculate Superelevation", 1)
+
+		local Diff = (Controller.Primary:GetPos() - Controller.HitPos)
+		Controller.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
+		Controller.LaseDist = Diff:Length()
+	end
+end
+
 local function OnLinkedSeat(Controller, Target)
 	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
 		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
@@ -936,6 +989,18 @@ local function OnLinkedSeat(Controller, Target)
 		if not IsValid(Controller) or not IsValid(Target) then return end
 		if Ply ~= Controller.Driver then return end
 		OnKeyChanged(Controller, Key, false)
+	end)
+
+	hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnButtonChanged(Controller, Key, true)
+	end)
+
+	hook.Add("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Controller:EntIndex(), function(Ply, Key)
+		if not IsValid(Controller) or not IsValid(Target) then return end
+		if Ply ~= Controller.Driver then return end
+		OnButtonChanged(Controller, Key, false)
 	end)
 
 	-- Remove the hooks when the controller is removed
@@ -985,6 +1050,18 @@ local LinkConfigs = {
 			Controller:AnalyzeGuns(Target)
 		end
 	},
+	acf_turret_computer = {
+		Field = "TurretComputer",
+		Single = true
+	},
+	acf_computer = {
+		Field = "GuidanceComputer",
+		Single = true,
+		PreLink = function(_, Target)
+			if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
+			return true
+		end
+	},
 	acf_baseplate = {
 		Field = "Baseplate",
 		Single = true,
@@ -1015,15 +1092,23 @@ local LinkConfigs = {
 for Class, Data in pairs(LinkConfigs) do
 	local Field = Data.Field
 	local Single = Data.Single
+	local PreLink = Data.PreLink
 	local OnLinked = Data.OnLinked
 	local OnUnlinked = Data.OnUnlinked
 
 	-- Register the link/unlink functions for each class
 	ACF.RegisterClassLink("acf_controller", Class, function(Controller, Target)
 		if Controller:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "The controller is too far from this entity." end
+		if Single and IsValid(Controller[Field]) then return false, "This controller is already linked to another entity of this type." end
+		if not Single and Controller[Field][Target] then return false, "This controller is already linked to this entity." end
 
 		if Single then Controller[Field] = Target
 		else Controller[Field][Target] = true end
+
+		if PreLink then
+			local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
+			if not PreLinkResult then return false, PreLinkMsg end
+		end
 
 		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
@@ -1036,6 +1121,9 @@ for Class, Data in pairs(LinkConfigs) do
 	end)
 
 	ACF.RegisterClassUnlink("acf_controller", Class, function(Controller, Target)
+		if Single and Controller[Field] ~= Target then return false, "This controller is not linked to this entity." end
+		if not Single and not Controller[Field][Target] then return false, "This controller is not linked to this entity." end
+
 		if Single then Controller[Field] = nil
 		else Controller[Field][Target] = nil end
 
@@ -1069,6 +1157,8 @@ do
 
 		-- Fire guns
 		if iters % 4 == 0 then self:ProcessGuns(SelfTbl) end
+
+		if iters % 1 == 0 then self:ProcessGuidance(SelfTbl) end
 
 		-- Process ammo counts
 		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
