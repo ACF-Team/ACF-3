@@ -50,10 +50,6 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_DUCK] = "Duck",
 }
 
--- Reverse lookup
-local WIRE_OUTPUT_TO_IN_ENUM = {}
-for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
-
 -- Values default to zero anyways so only specify nonzero here
 local Defaults = {
 	ZoomSpeed = 10,
@@ -244,6 +240,8 @@ do
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateOverlay() end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 1})
+
 		return Entity
 	end
 
@@ -277,6 +275,11 @@ do
 
 	function ENT:ACF_UpdateOverlayState(State)
 		State:AddKeyValue("Predicted Drivetrain", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
+
+		local Contraption = self:GetContraption()
+		if Contraption == nil or Contraption.ACF_Baseplate ~= self.Baseplate then
+			State:AddWarning("Must be parented to baseplate or its contraption")
+		end
 	end
 end
 
