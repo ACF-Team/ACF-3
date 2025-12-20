@@ -12,8 +12,6 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-include("modules/drivetrain.lua")
-
 -- Localizations
 local ACF = ACF
 local HookRun     = hook.Run
@@ -59,6 +57,7 @@ include("modules/ammo.lua")
 include("modules/camera.lua")
 include("modules/hud.lua")
 include("modules/fire_control.lua")
+include("modules/overlay.lua")
 
 do
 	local Inputs = {
@@ -226,20 +225,6 @@ do
 		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
 
 		return true, "All-In-One Controller updated successfully!"
-	end
-
-	local GearboxEndMap = {
-		[1] = "One Final, Dual Clutch",
-		[2] = "Two Final, Dual Clutch"
-	}
-
-	function ENT:ACF_UpdateOverlayState(State)
-		State:AddKeyValue("Predicted Drivetrain", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
-
-		local Contraption = self:GetContraption()
-		if Contraption == nil or Contraption.ACF_Baseplate ~= self.Baseplate then
-			State:AddWarning("Must be parented to baseplate or its contraption")
-		end
 	end
 end
 
