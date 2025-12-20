@@ -1,3 +1,5 @@
+local _, _, _, RecacheBindNW = include("../modules_sh/helpers_sh.lua")
+
 -- Hud related
 do
 	local BallCompStatusToCode = {

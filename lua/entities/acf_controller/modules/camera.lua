@@ -1,3 +1,5 @@
+local RecacheBindOutput, _, _, _ = include("../modules_sh/helpers_sh.lua")
+
 -- Camera related
 do
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)

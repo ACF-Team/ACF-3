@@ -1,3 +1,5 @@
+local RecacheBindOutput, _, GetKeyState, _ = include("../modules_sh/helpers_sh.lua")
+
 -- Turret related
 do
 	function ENT:AnalyzeGuns(Gun)

@@ -1,4 +1,4 @@
-local RecacheBindOutput, RecacheBindState, GetKeyState, RecacheBindNW = include("../modules_sh/helpers_sh.lua")
+local RecacheBindOutput, _, GetKeyState, _ = include("../modules_sh/helpers_sh.lua")
 
 -- Drivetrain related
 do

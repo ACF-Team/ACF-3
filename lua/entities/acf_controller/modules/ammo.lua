@@ -1,5 +1,3 @@
-local RecacheBindOutput, RecacheBindState, GetKeyState, RecacheBindNW = include("../modules_sh/helpers_sh.lua")
-
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
