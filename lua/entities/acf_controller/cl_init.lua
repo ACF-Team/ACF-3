@@ -23,6 +23,8 @@ function ENT:Draw(...)
 	BaseClass.Draw(self, ...)
 end
 
+include("modules_cl/overlay.lua")
+
 -- Note: Since this file is sent to each client, locals are unique to each player...
 -- General
 local MyController = nil -- The controller the player is using, or nil.
@@ -407,13 +409,3 @@ hook.Add("CalcView", "ACFControllerView", function(Player, _, _, _)
 
 	return View
 end)
-
-function ENT:DrawOverlay()
-	if self.Targets then
-		for Target in pairs(self.Targets) do
-			local Target = Entity(Target)
-			if not IsValid(Target) then continue end
-			render.DrawWireframeBox(Target:GetPos(), Target:GetAngles(), Target:OBBMins(), Target:OBBMaxs(), green, true)
-		end
-	end
-end
