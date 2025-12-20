@@ -31,6 +31,7 @@ util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera mod
 util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
 util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
+util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -48,10 +49,6 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_WALK] = "Alt",
 	[IN_DUCK] = "Duck",
 }
-
--- Reverse lookup
-local WIRE_OUTPUT_TO_IN_ENUM = {}
-for IN, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do WIRE_OUTPUT_TO_IN_ENUM[Output] = IN end
 
 -- Values default to zero anyways so only specify nonzero here
 local Defaults = {
@@ -174,7 +171,9 @@ do
 		Entity.Racks = {}					-- All racks
 		Entity.Baseplate = nil				-- The baseplate of the vehicle
 		Entity.SteerPlates = {}				-- Steering plates, if any
+		Entity.GuidanceComputer = nil		-- The guidance computer, if any
 		Entity.TurretComputer = nil			-- The turret computer, if any
+		Entity.Receivers = {}				-- LWR/RWRs
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -218,11 +217,15 @@ do
 
 		Entity.SteerAngles = {} 			-- Steering angles for the wheels
 
+		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
+		Entity.ReceiverDetecteds = {}			-- LWS/RWS receiver detected states
+
 		Entity.Speed = 0
 
 		Entity.Primary = nil
 		Entity.Secondary = nil
 		Entity.Tertiary = nil
+		Entity.Smoke = nil
 
 		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
@@ -237,6 +240,8 @@ do
 		WireIO.SetupOutputs(Entity, Outputs, Data)
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
+
+		ACF.AugmentedTimer(function(_) Entity:UpdateOverlay() end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 1})
 
 		return Entity
 	end
@@ -271,6 +276,11 @@ do
 
 	function ENT:ACF_UpdateOverlayState(State)
 		State:AddKeyValue("Predicted Drivetrain", GearboxEndMap[self.GearboxEndCount] or "All Wheel Drive")
+
+		local Contraption = self:GetContraption()
+		if Contraption == nil or Contraption.ACF_Baseplate ~= self.Baseplate then
+			State:AddWarning("Must be parented to baseplate or its contraption")
+		end
 	end
 end
 
@@ -356,6 +366,23 @@ end
 
 -- Hud related
 do
+	local BallCompStatusToCode = {
+		-- Busy
+		["Calculating..."] = 1,
+		["Processing..."] = 1,
+		["Tracking"] = 1,
+		["Adjusting..."] = 1,
+		-- Success
+		["Ready"] = 2,
+		["Super elevation calculated!"] = 2,
+		["Firing solution found!"] = 2,
+		-- Error
+		["Target unable to be reached!"] = 3,
+		["Gun unlinked!"] = 3,
+		["Took too long!"] = 3,
+		["Disabled"] = 3,
+	}
+
 	function ENT:ProcessHUDs(SelfTbl)
 		-- Network various statistics
 		if IsValid(SelfTbl.Primary) then
@@ -386,6 +413,18 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary", SelfTbl.Tertiary, self.SetNWEntity)
 		else
 			SelfTbl.Tertiary = next(self.Racks)
+		end
+
+		if IsValid(SelfTbl.Smoke) then
+			RecacheBindNW(self, SelfTbl, "AHS_Smoke_SL", SelfTbl.Smoke.TotalAmmo or 0, self.SetNWInt)
+		else
+			SelfTbl.Smoke = next(self.GunsSmoke)
+		end
+
+		if IsValid(SelfTbl.TurretComputer) then
+			local Status = SelfTbl.TurretComputer.Status
+			local Code = BallCompStatusToCode[Status] or 0
+			RecacheBindNW(self, SelfTbl, "AHS_TurretComp_Status", Code, self.SetNWInt)
 		end
 
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
@@ -487,21 +526,31 @@ do
 		local ShouldElevate = IsValid(self.TurretComputer)
 
 		-- Liddul... if you can hear me...
-		local SuperElevation = IsValid(Primary) and self.TurretComputer and self.TurretComputer.Outputs.Elevation.Value or nil
-		if SuperElevation ~= nil and SuperElevation ~= self.LastSuperElevation then
-			local TrueSuperElevation = SuperElevation - (self.LasePitch or 0) -- Compute pitch offset to account for drop
-			self.Additive = (self.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+		local TurretComputer = self.TurretComputer
+		local SuperElevation
+		if TurretComputer  then
+			if TurretComputer.Computer == "DIR-BalComp" then SuperElevation = TurretComputer.Outputs.Elevation.Value
+			elseif TurretComputer.Computer == "IND-BalComp" then SuperElevation = TurretComputer.Outputs.Angle[1]
+			end
 		end
-		self.LastSuperElevation = SuperElevation
+
+		if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
+			local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
+			local CounterDrop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+			SelfTbl.Additive = Vector(0, 0, CounterDrop)
+		end
+		SelfTbl.LastSuperElevation = SuperElevation
+
+		SelfTbl.Additive = SelfTbl.Additive or vector_origin
 
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
 				if Turret == BreechReference and ShouldLevel then
 					Turret:InputDirection(ReloadAngle)
 				elseif Turret == BreechReference and ShouldElevate then
-					Turret:InputDirection(HitPos + Vector(0, 0, self.Additive or 0))
+					Turret:InputDirection(HitPos + self.Additive)
 				else
-					Turret:InputDirection(HitPos)
+					Turret:InputDirection(HitPos + self.Additive)
 				end
 			end
 		end
@@ -519,6 +568,27 @@ do
 		if SelfTbl.Primary then InAir = InAir + (SelfTbl.Primary.Outputs["In Air"].Value or 0) end
 		if SelfTbl.Tertiary then InAir = InAir + (SelfTbl.Tertiary.Outputs["In Air"].Value or 0) end
 		GuideComp:TriggerInput("Lase", InAir > 0 and 1 or 0)
+		GuideComp:TriggerInput("HitPos", SelfTbl.HitPos)
+	end
+end
+
+-- Receiver related
+do
+	function ENT:ProcessReceivers(SelfTbl)
+		for Receiver, _ in pairs(SelfTbl.Receivers) do
+			local Detected = Receiver.Outputs.Detected.Value
+			local Direction = Receiver.Outputs.Direction.Value
+			if IsValid(Receiver) and (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
+				SelfTbl.ReceiverDirections[Receiver] = Direction
+				SelfTbl.ReceiverDetecteds[Receiver] = Detected
+				if Detected == 0 then return end
+				net.Start("ACF_Controller_Receivers")
+				net.WriteEntity(self)
+				net.WriteEntity(Receiver)
+				net.WriteVector(Direction)
+				net.Send(self.Driver)
+			end
+		end
 	end
 end
 
@@ -566,7 +636,7 @@ do
 				net.WriteEntity(self)
 				net.WriteString(AmmoType)
 				net.WriteInt(Count, 16)
-				net.Broadcast()
+				net.Send(self.Driver)
 			end
 		end
 	end
@@ -1062,6 +1132,10 @@ local LinkConfigs = {
 			return true
 		end
 	},
+	acf_receiver = {
+		Field = "Receivers",
+		Single = false
+	},
 	acf_baseplate = {
 		Field = "Baseplate",
 		Single = true,
@@ -1162,6 +1236,9 @@ do
 
 		-- Process ammo counts
 		if iters % 66 == 0 then self:ProcessAmmo(SelfTbl) end
+
+		-- Process receivers
+		if iters % 10 == 0 then self:ProcessReceivers(SelfTbl) end
 
 		-- Process gearboxes
 		if iters % 4 == 0 then self:ProcessDrivetrain(SelfTbl) end
