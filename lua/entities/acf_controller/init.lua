@@ -55,9 +55,11 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 local Clock = Utilities.Clock
 local Defaults = include("modules/defaults.lua")
 local RecacheBindOutput, RecacheBindState, GetKeyState, RecacheBindNW = include("modules_sh/helpers_sh.lua")
+
 include("modules/drivetrain.lua")
 include("modules/ammo.lua")
-
+include("modules/camera.lua")
+include("modules/hud.lua")
 
 do
 	local Inputs = {
@@ -239,171 +241,6 @@ do
 		if Contraption == nil or Contraption.ACF_Baseplate ~= self.Baseplate then
 			State:AddWarning("Must be parented to baseplate or its contraption")
 		end
-	end
-end
-
--- Camera related
-do
-	net.Receive("ACF_Controller_CamInfo", function(_, ply)
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local CamMode = net.ReadUInt(2)
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		if Entity.Driver ~= ply then return end
-		if Entity:GetDisableAIOCam() then return end
-		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
-		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
-		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
-	end)
-
-	net.Receive("ACF_Controller_CamData", function(_, ply)
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local CamAng = net.ReadAngle()
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		if Entity.Driver ~= ply then return end
-		if Entity:GetDisableAIOCam() then return end
-		Entity.CamAng = CamAng
-	end)
-
-	net.Receive("ACF_Controller_Zoom", function(_, ply)
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local FOV = net.ReadFloat()
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		if Entity.Driver ~= ply then return end
-		if Entity:GetDisableAIOCam() then return end
-		Entity.FOV = FOV
-		ply:SetFOV(FOV, 0, nil)
-	end)
-
-	local CamTraceConfig = {}
-	function ENT:ProcessCameras(SelfTbl)
-		if self:GetDisableAIOCam() then return end
-		local CamAng = SelfTbl.CamAng or angle_zero
-		RecacheBindOutput(self, SelfTbl, "CamAng", CamAng)
-
-		local CamDir = CamAng:Forward()
-		local CamOffset = SelfTbl.CamOffset or vector_origin
-		local CamPos = self:LocalToWorld(CamOffset)
-
-		-- debugoverlay.Line(CamPos, CamPos + CamDir * 100, 0.1, Color(255, 0, 0), true)
-
-		CamTraceConfig.start = CamPos
-		CamTraceConfig.endpos = CamPos + CamDir * 99999
-		CamTraceConfig.filter = SelfTbl.Filter or {self}
-		local Tr = TraceLine(CamTraceConfig)
-
-		local HitPos = Tr.HitPos or vector_origin
-		self.HitPos = HitPos
-		RecacheBindOutput(self, SelfTbl, "HitPos", HitPos)
-
-		return CamPos, CamAng, HitPos
-	end
-
-	-- Cam related
-	function ENT:AnalyzeCams()
-		if self.UsesWireFilter then return end -- So we don't override the wire based filter
-
-		-- Just get it from the contraption lol...
-		local Filter = {self} -- Atleast filter the controller itself
-		local Contraption = self:GetContraption()
-		if Contraption ~= nil then
-			-- And the contraption too if it's valid
-			local LUT = Contraption.ents
-			Filter = {}
-			for v, _ in pairs(LUT) do
-				if IsValid(v) then Filter[#Filter + 1] = v end
-			end
-		end
-		self.Filter = Filter
-	end
-end
-
--- Hud related
-do
-	local BallCompStatusToCode = {
-		-- Busy
-		["Calculating..."] = 1,
-		["Processing..."] = 1,
-		["Tracking"] = 1,
-		["Adjusting..."] = 1,
-		-- Success
-		["Ready"] = 2,
-		["Super elevation calculated!"] = 2,
-		["Firing solution found!"] = 2,
-		-- Error
-		["Target unable to be reached!"] = 3,
-		["Gun unlinked!"] = 3,
-		["Took too long!"] = 3,
-		["Disabled"] = 3,
-	}
-
-	function ENT:ProcessHUDs(SelfTbl)
-		-- Network various statistics
-		if IsValid(SelfTbl.Primary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", SelfTbl.Primary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", SelfTbl.Primary.BulletData.Type or 0, self.SetNWString)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_NF", SelfTbl.Primary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_RD", SelfTbl.Primary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary", SelfTbl.Primary, self.SetNWEntity)
-		else
-			SelfTbl.Primary = next(self.GunsPrimary)
-		end
-
-		if IsValid(SelfTbl.Secondary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", SelfTbl.Secondary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", SelfTbl.Secondary.BulletData.Type or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_NF", SelfTbl.Secondary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RD", SelfTbl.Secondary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary", SelfTbl.Secondary, self.SetNWEntity)
-		else
-			SelfTbl.Secondary = next(self.GunsSecondary)
-		end
-
-		if IsValid(SelfTbl.Tertiary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", SelfTbl.Tertiary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.Type or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_NF", SelfTbl.Tertiary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RD", SelfTbl.Tertiary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary", SelfTbl.Tertiary, self.SetNWEntity)
-		else
-			SelfTbl.Tertiary = next(self.Racks)
-		end
-
-		if IsValid(SelfTbl.Smoke) then
-			RecacheBindNW(self, SelfTbl, "AHS_Smoke_SL", SelfTbl.Smoke.TotalAmmo or 0, self.SetNWInt)
-		else
-			SelfTbl.Smoke = next(self.GunsSmoke)
-		end
-
-		if IsValid(SelfTbl.TurretComputer) then
-			local Status = SelfTbl.TurretComputer.Status
-			local Code = BallCompStatusToCode[Status] or 0
-			RecacheBindNW(self, SelfTbl, "AHS_TurretComp_Status", Code, self.SetNWInt)
-		end
-
-		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
-		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
-
-		local FuelLevel = 0
-		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
-		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
-		end
-		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
-
-		local AliveCrew = 0
-		local TotalCrew = 0
-		local Contraption = self:GetContraption()
-		local Crew = Contraption and Contraption.Crews or {}
-		for CrewMember, _ in pairs(Crew) do
-			if CrewMember.IsAlive then AliveCrew = AliveCrew + 1 end
-			TotalCrew = TotalCrew + 1
-		end
-		RecacheBindNW(self, SelfTbl, "AHS_Crew", AliveCrew, self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_CrewCap", TotalCrew, self.SetNWInt) -- Should only run once effectively
 	end
 end
 
