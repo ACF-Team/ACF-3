@@ -1,3 +1,4 @@
+local TraceLine = util.TraceLine
 local RecacheBindOutput, _, _, _ = include("../modules_sh/helpers_sh.lua")
 
 -- Camera related

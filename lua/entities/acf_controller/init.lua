@@ -25,8 +25,6 @@ local Classes	= ACF.Classes
 local Entities   = Classes.Entities
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
-local TraceLine = util.TraceLine
-
 util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
 util.AddNetworkString("ACF_Controller_Active")	-- Relay active state to client
 util.AddNetworkString("ACF_Controller_CamInfo")	-- Relay entities and camera modes
