@@ -169,12 +169,10 @@ end
 -- } )
 
 local CrewMaterial = Material("materials/icon16/status_online.png")
-
 local ComputerMaterial = Material("materials/icon16/computer.png")
 local ComputerCalculateMaterial = Material("materials/icon16/computer_key.png")
 local ComputerSuccessMaterial = Material("materials/icon16/computer_go.png")
 local ComputerErrorMaterial = Material("materials/icon16/computer_error.png")
-
 local SmokeMaterial = Material("acf/icons/shell_smoke.png")
 
 local ColorReady = Color(0, 255, 0, 255)
