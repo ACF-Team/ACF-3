@@ -225,6 +225,7 @@ do
 		Entity.Primary = nil
 		Entity.Secondary = nil
 		Entity.Tertiary = nil
+		Entity.Smoke = nil
 
 		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
 
@@ -365,6 +366,23 @@ end
 
 -- Hud related
 do
+	local BallCompStatusToCode = {
+		-- Busy
+		["Calculating..."] = 1,
+		["Processing..."] = 1,
+		["Tracking"] = 1,
+		["Adjusting..."] = 1,
+		-- Success
+		["Ready"] = 2,
+		["Super elevation calculated!"] = 2,
+		["Firing solution found!"] = 2,
+		-- Error
+		["Target unable to be reached!"] = 3,
+		["Gun unlinked!"] = 3,
+		["Took too long!"] = 3,
+		["Disabled"] = 3,
+	}
+
 	function ENT:ProcessHUDs(SelfTbl)
 		-- Network various statistics
 		if IsValid(SelfTbl.Primary) then
@@ -395,6 +413,19 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary", SelfTbl.Tertiary, self.SetNWEntity)
 		else
 			SelfTbl.Tertiary = next(self.Racks)
+		end
+
+		if IsValid(SelfTbl.Smoke) then
+			RecacheBindNW(self, SelfTbl, "AHS_Smoke_SL", SelfTbl.Smoke.TotalAmmo or 0, self.SetNWInt)
+		else
+			SelfTbl.Smoke = next(self.GunsSmoke)
+		end
+
+		if IsValid(SelfTbl.TurretComputer) then
+			local Status = SelfTbl.TurretComputer.Status
+			local Code = BallCompStatusToCode[Status] or 0
+			-- print(Code, Status)
+			RecacheBindNW(self, SelfTbl, "AHS_TurretComp_Status", Code, self.SetNWInt)
 		end
 
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
@@ -496,21 +527,31 @@ do
 		local ShouldElevate = IsValid(self.TurretComputer)
 
 		-- Liddul... if you can hear me...
-		local SuperElevation = IsValid(Primary) and self.TurretComputer and self.TurretComputer.Outputs.Elevation.Value or nil
-		if SuperElevation ~= nil and SuperElevation ~= self.LastSuperElevation then
-			local TrueSuperElevation = SuperElevation - (self.LasePitch or 0) -- Compute pitch offset to account for drop
-			self.Additive = (self.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+		local TurretComputer = self.TurretComputer
+		local SuperElevation
+		if TurretComputer  then
+			if TurretComputer.Computer == "DIR-BalComp" then SuperElevation = TurretComputer.Outputs.Elevation.Value
+			elseif TurretComputer.Computer == "IND-BalComp" then SuperElevation = TurretComputer.Outputs.Angle[1]
+			end
 		end
-		self.LastSuperElevation = SuperElevation
+
+		if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
+			local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
+			local CounterDrop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+			SelfTbl.Additive = Vector(0, 0, CounterDrop)
+		end
+		SelfTbl.LastSuperElevation = SuperElevation
+
+		SelfTbl.Additive = SelfTbl.Additive or vector_origin
 
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
 				if Turret == BreechReference and ShouldLevel then
 					Turret:InputDirection(ReloadAngle)
 				elseif Turret == BreechReference and ShouldElevate then
-					Turret:InputDirection(HitPos + Vector(0, 0, self.Additive or 0))
+					Turret:InputDirection(HitPos + self.Additive)
 				else
-					Turret:InputDirection(HitPos)
+					Turret:InputDirection(HitPos + self.Additive)
 				end
 			end
 		end

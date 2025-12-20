@@ -168,6 +168,16 @@ end
 -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
 -- } )
 
+local CrewMaterial = Material("materials/icon16/status_online.png")
+
+local ComputerMaterial = Material("materials/icon16/computer.png")
+local ComputerCalculateMaterial = Material("materials/icon16/computer_key.png")
+local ComputerSuccessMaterial = Material("materials/icon16/computer_go.png")
+local ComputerErrorMaterial = Material("materials/icon16/computer_error.png")
+
+local GearMaterial = Material("materials/icon16/cog.png")
+local SmokeMaterial = Material("acf/icons/shell_smoke.png")
+
 local ColorReady = Color(0, 255, 0, 255)
 local ColorNotReady = Color(255, 0, 0, 255)
 
@@ -178,6 +188,17 @@ local function DrawReload(Entity, Ready, Radius)
 		SetDrawColor( Ready and ColorReady or ColorNotReady )
 		DrawCircle( sp.x, sp.y, Radius)
 	end
+end
+
+local function DrawPictograph(mat, text, x, y, scale, col_fg, col_bg, col_sh)
+	surface.SetDrawColor(col_sh)
+	surface.DrawRect(x, y, 40 * scale, 40 * scale)
+	surface.SetDrawColor(col_bg)
+	surface.DrawOutlinedRect(x, y, 40 * scale, 40 * scale)
+	surface.SetDrawColor(col_fg)
+	surface.SetMaterial(mat)
+	surface.DrawTexturedRect(x + 4 * scale, y + 4 * scale, 32 * scale, 32 * scale)
+	DrawText(text, "DermaDefault", x + 4 * scale, y + 4 * scale, col_bg, TEXT_ALIGN_LEFT)
 end
 
 -- HUD RELATED
@@ -232,11 +253,11 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawRect( x + 340 * Scale, y - 200 * Scale, 60 * Scale, thick )
 		DrawRect( x + 340 * Scale, y + 200 * Scale, 60 * Scale, thick )
 
-		-- Ammo type | Ammo count | Time left
-		surface.SetDrawColor(0, 0, 0, 100)
+		surface.SetDrawColor(0, 0, 0, 200)
 		surface.DrawRect(x - 400 * Scale, y + 205 * Scale, 125 * Scale, 70 * Scale)
-		surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 90 * Scale)
+		surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 70 * Scale)
 
+		-- Ammo type | Ammo count | Time left
 		SetDrawColor( Col )
 		local AmmoType, AmmoCount = MyController:GetNWString("AHS_Primary_AT", ""), MyController:GetNWInt("AHS_Primary_SL", 0)
 		DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
@@ -266,7 +287,17 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local FuelCap = MyController:GetNWFloat("AHS_FuelCap")
 		DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
-		DrawText("Crew: " .. MyController:GetNWInt("AHS_Crew") .. " / " .. MyController:GetNWInt("AHS_CrewCap"), "DermaDefault", x + 310 * Scale, y + 270 * Scale, Col, TEXT_ALIGN_LEFT)
+		local ax, ay = x + 360 * Scale, y - 246 * Scale
+		DrawPictograph(CrewMaterial, MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
+
+		local ax, ay = x + 314 * Scale, y - 246 * Scale
+		DrawPictograph(SmokeMaterial, MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
+
+		local ax, ay = x + 268 * Scale, y - 246 * Scale
+		local BallCompStatus = MyController:GetNWInt("AHS_TurretComp_Status", 0)
+		local BallCompMaterial = BallCompStatus == 1 and ComputerCalculateMaterial or BallCompStatus == 2 and ComputerSuccessMaterial or BallCompStatus == 3 and ComputerErrorMaterial or ComputerMaterial
+		print(BallCompStatus)
+		DrawPictograph(BallCompMaterial, "", ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
 	end
 
 	local LoadedAmmoType = MyController:GetNWString("AHS_Primary_AT", "")
@@ -276,27 +307,13 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local ax = x - 400 * Scale + (46 * (Index - 1) * Scale)
 		local ay = y - 246 * Scale
 
-		-- Backing surface
-		surface.SetDrawColor(0, 0, 0, 100)
-		surface.DrawRect(ax, ay, 40 * Scale, 40 * Scale)
-
-		-- Outline
-		surface.SetDrawColor(Col)
-		surface.DrawOutlinedRect(ax, ay, 40 * Scale, 40 * Scale)
-
 		-- Outline currently selected ammo type
 		if AmmoType == MyController.SelectedAmmoType then
 			surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
 		end
 
-		-- Light up the currently loaded ammo type and dim the rest
-		if AmmoType == LoadedAmmoType then surface.SetDrawColor(255, 255, 255, 255)
-		else surface.SetDrawColor(150, 150, 150, 255) end
-
-		surface.SetMaterial(Material)
-		surface.DrawTexturedRect(ax + 4 * Scale, ay + 4 * Scale, 32 * Scale, 32 * Scale)
-
-		DrawText(AmmoCount, "DermaDefault", ax + 4 * Scale, ay + 4 * Scale, Col, TEXT_ALIGN_LEFT)
+		local Lighting = AmmoType == LoadedAmmoType and Color(255, 255, 255, 255) or Color(150, 150, 150, 255)
+		DrawPictograph(Material, AmmoCount, ax, ay, Scale, Lighting, Col, Color(0, 0, 0, 200))
 	end
 
 	for Receiver, Data in pairs(MyController.ReceiverData or {}) do
