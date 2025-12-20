@@ -296,7 +296,6 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		local ax, ay = x + 268 * Scale, y - 246 * Scale
 		local BallCompStatus = MyController:GetNWInt("AHS_TurretComp_Status", 0)
 		local BallCompMaterial = BallCompStatus == 1 and ComputerCalculateMaterial or BallCompStatus == 2 and ComputerSuccessMaterial or BallCompStatus == 3 and ComputerErrorMaterial or ComputerMaterial
-		print(BallCompStatus)
 		DrawPictograph(BallCompMaterial, "", ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
 	end
 

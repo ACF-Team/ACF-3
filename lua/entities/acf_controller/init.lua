@@ -424,7 +424,6 @@ do
 		if IsValid(SelfTbl.TurretComputer) then
 			local Status = SelfTbl.TurretComputer.Status
 			local Code = BallCompStatusToCode[Status] or 0
-			-- print(Code, Status)
 			RecacheBindNW(self, SelfTbl, "AHS_TurretComp_Status", Code, self.SetNWInt)
 		end
 
