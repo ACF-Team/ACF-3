@@ -52,56 +52,12 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 	[IN_DUCK] = "Duck",
 }
 
--- Values default to zero anyways so only specify nonzero here
-local Defaults = {
-	ZoomSpeed = 10,
-	ZoomMin = 5,
-	ZoomMax = 90,
-	SlewMin = 1,
-	SlewMax = 1,
-
-	CamCount = 2,
-	Cam1Offset = Vector(0, 0, 150),
-	Cam1Orbit = 300,
-	Cam2Offset = Vector(0, 0, 150),
-	Cam2Orbit = 0,
-	Cam3Offset = Vector(0, 0, 0),
-	Cam3Orbit = 0,
-
-	HUDType = 1,
-	HUDScale = 1,
-	HUDColor = Vector(1, 0.5, 0),
-
-	BrakeStrength = 300,
-	SpeedTop = 60,
-
-	ShiftTime = 100,
-}
-
 local Clock = Utilities.Clock
+local Defaults = include("modules/defaults.lua")
+local RecacheBindOutput, RecacheBindState, GetKeyState, RecacheBindNW = include("modules_sh/helpers_sh.lua")
+include("modules/drivetrain.lua")
+include("modules/ammo.lua")
 
---- Sets a wire output if the cached value has changed
-local function RecacheBindOutput(Entity, SelfTbl, Output, Value)
-	if SelfTbl.Outputs[Output].Value == Value then return end
-	WireLib.TriggerOutput(Entity, Output, Value)
-end
-
-local function RecacheBindState(SelfTbl, Key, Value)
-	if SelfTbl.KeyStates[Key] == Value then return end
-	SelfTbl.KeyStates[Key] = Value
-end
-
-local function GetKeyState(SelfTbl, Key)
-	return SelfTbl.KeyStates[Key] or false
-end
-
---- Sets a networked variable if the cached value has changed
-local function RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
-	SelfTbl.CacheNW = SelfTbl.CacheNW or {}
-	if SelfTbl.CacheNW[Key] == Value then return end
-	SelfTbl.CacheNW[Key] = Value
-	SetNWFunc(Entity, Key, Value)
-end
 
 do
 	local Inputs = {
@@ -344,10 +300,8 @@ do
 
 		return CamPos, CamAng, HitPos
 	end
-end
 
--- Cam related
-do
+	-- Cam related
 	function ENT:AnalyzeCams()
 		if self.UsesWireFilter then return end -- So we don't override the wire based filter
 
@@ -588,56 +542,6 @@ do
 				net.WriteEntity(self)
 				net.WriteEntity(Receiver)
 				net.WriteVector(Direction)
-				net.Send(self.Driver)
-			end
-		end
-	end
-end
-
--- Ammo related
-do
-	net.Receive("ACF_Controller_Ammo", function(_, ply)
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local SelectAmmoType = net.ReadString()
-		local ForceReload = net.ReadBool()
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		if Entity.Driver ~= ply then return end
-
-		local PrimaryGun = Entity.Primary
-		if not IsValid(PrimaryGun) then return end
-		for Crate, _ in pairs(PrimaryGun.Crates) do
-			if IsValid(Crate) then
-				local AmmoType = Crate.RoundData.ID
-				Crate:TriggerInput("Load", AmmoType == SelectAmmoType and 1 or 0)
-			end
-		end
-		if ForceReload then PrimaryGun:TriggerInput("Reload", 1) end
-	end)
-
-	function ENT:ProcessAmmo(SelfTbl)
-		local Contraption = self:GetContraption()
-		if Contraption == nil then return end
-
-		-- Determine current counts
-		local PrimaryGun = SelfTbl.Primary
-		if not IsValid(PrimaryGun) then return end
-
-		local PrimaryAmmoCountsByType = {}
-		for Crate, _ in pairs(PrimaryGun.Crates) do
-			if IsValid(Crate) then
-				local AmmoType = Crate.RoundData.ID
-				PrimaryAmmoCountsByType[AmmoType] = (PrimaryAmmoCountsByType[AmmoType] or 0) + (Crate.Amount or 0)
-			end
-		end
-
-		for AmmoType, Count in pairs(PrimaryAmmoCountsByType) do
-			if SelfTbl.PrimaryAmmoCountsByType[AmmoType] ~= Count then
-				SelfTbl.PrimaryAmmoCountsByType[AmmoType] = Count
-				net.Start("ACF_Controller_Ammo")
-				net.WriteEntity(self)
-				net.WriteString(AmmoType)
-				net.WriteInt(Count, 16)
 				net.Send(self.Driver)
 			end
 		end
