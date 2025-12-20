@@ -175,7 +175,6 @@ local ComputerCalculateMaterial = Material("materials/icon16/computer_key.png")
 local ComputerSuccessMaterial = Material("materials/icon16/computer_go.png")
 local ComputerErrorMaterial = Material("materials/icon16/computer_error.png")
 
-local GearMaterial = Material("materials/icon16/cog.png")
 local SmokeMaterial = Material("acf/icons/shell_smoke.png")
 
 local ColorReady = Color(0, 255, 0, 255)
@@ -204,6 +203,9 @@ end
 -- HUD RELATED
 local green = Color(0, 255, 0, 255)
 local cyan = Color(0, 255, 255, 255)
+local white = Color(255, 255, 255, 255)
+local dimmed = Color(150, 150, 150, 255)
+local shade = Color(0, 0, 0, 200)
 hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 	if not IsValid(MyController) then return end
 
@@ -288,15 +290,15 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 		DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
 		local ax, ay = x + 360 * Scale, y - 246 * Scale
-		DrawPictograph(CrewMaterial, MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
+		DrawPictograph(CrewMaterial, MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, white, Col, shade)
 
 		local ax, ay = x + 314 * Scale, y - 246 * Scale
-		DrawPictograph(SmokeMaterial, MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
+		DrawPictograph(SmokeMaterial, MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, white, Col, shade)
 
 		local ax, ay = x + 268 * Scale, y - 246 * Scale
 		local BallCompStatus = MyController:GetNWInt("AHS_TurretComp_Status", 0)
 		local BallCompMaterial = BallCompStatus == 1 and ComputerCalculateMaterial or BallCompStatus == 2 and ComputerSuccessMaterial or BallCompStatus == 3 and ComputerErrorMaterial or ComputerMaterial
-		DrawPictograph(BallCompMaterial, "", ax, ay, Scale, Color(255, 255, 255, 255), Col, Color(0, 0, 0, 200))
+		DrawPictograph(BallCompMaterial, "", ax, ay, Scale, white, Col, shade)
 	end
 
 	local LoadedAmmoType = MyController:GetNWString("AHS_Primary_AT", "")
@@ -311,8 +313,8 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 			surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
 		end
 
-		local Lighting = AmmoType == LoadedAmmoType and Color(255, 255, 255, 255) or Color(150, 150, 150, 255)
-		DrawPictograph(Material, AmmoCount, ax, ay, Scale, Lighting, Col, Color(0, 0, 0, 200))
+		local Lighting = AmmoType == LoadedAmmoType and white or dimmed
+		DrawPictograph(Material, AmmoCount, ax, ay, Scale, Lighting, Col, shade)
 	end
 
 	for Receiver, Data in pairs(MyController.ReceiverData or {}) do
@@ -324,7 +326,7 @@ hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
 			local HitPos = ranger( RP, Direction:GetNormalized(), 99999, MyFilter )
 			local SP1 = RP:ToScreen()
 			local SP2 = HitPos:ToScreen()
-			SetDrawColor(0, 255, 255, (1 - Frac) * 255)
+			SetDrawColor(cyan.r, cyan.g, cyan.b, (1 - Frac) * 255)
 			DrawLine(SP1.x, SP1.y, SP2.x, SP2.y)
 		end
 	end
