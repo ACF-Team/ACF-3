@@ -33,7 +33,7 @@ do
         -- (in theory, I never tested if it could happen, but better safe than sorry...)
         BlockDamageHook = true do
             local DmgInfo = DamageInfo()
-            DmgInfo:SetDamage(Victim:Health())
+            DmgInfo:SetDamage(math.huge)
             DmgInfo:SetDamageType(DMG_GENERIC)
             if IsValid(Attacker) then DmgInfo:SetAttacker(Attacker) end
             if IsValid(Inflictor) then DmgInfo:SetInflictor(Inflictor) end

@@ -1,9 +1,10 @@
-local ACF        = ACF
-local Damage     = ACF.Damage
-local ModelData  = ACF.ModelData
-local Objects    = Damage.Objects
-local Ballistics = ACF.Ballistics
-local Debug      = ACF.Debug
+local ACF         = ACF
+local Damage      = ACF.Damage
+local ModelData   = ACF.ModelData
+local Objects     = Damage.Objects
+local Ballistics  = ACF.Ballistics
+local Debug       = ACF.Debug
+local EventViewer = ACF.EventViewer
 
 -- library functions
 local ents       = ents
@@ -119,9 +120,19 @@ end
 -- @param Filter Optional, a list of entities that will not be affected by the explosion.
 -- @param DmgInfo A DamageInfo object.
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
+	local ExplosionName
+	if EventViewer.Enabled() then
+		ExplosionName = "ACF Explosion @ " .. SysTime()
+		EventViewer.StartEvent(ExplosionName)
+	end
+
 	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
 	local Found       = ents.FindInSphere(Position, Radius)
+
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion", Position, Power, Radius, Found)
+	end
 
 	do -- Screen shaking
 		local Amp = min(Power * 0.0005, 50)
@@ -146,7 +157,9 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	DmgInfo:SetOrigin(Position)
 
-
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion Init", Position, FillerMass, FragMass, Filter, MaxSphere, Fragments)
+	end
 	-- Phase 1: Build sorted target list
 	-- Validate targets, sort by distance, cache target positions
 
