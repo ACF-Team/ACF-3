@@ -1,3 +1,5 @@
+local RecacheBindOutput, RecacheBindState, GetKeyState, RecacheBindNW = include("../modules_sh/helpers_sh.lua")
+
 -- Drivetrain related
 do
 	local CLUTCH_FLOW = 0
