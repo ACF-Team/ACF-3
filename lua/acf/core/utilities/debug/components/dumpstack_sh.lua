@@ -1,6 +1,10 @@
 -- MARCH: Dumps the call stack along with stack-frame locals
 -- Useful for immediate at a glance looking at globals in SRCDS
 
+-- NOTE: It is probably a good idea to just leave this here instead of demoting it down to devtools.
+-- Something right now is using it for a rare error too.
+-- Overall for easier debugging, I can see this being useful to have in the base addon.
+
 function ACF.DumpStack(Message, StartAt)
 	StartAt = StartAt or 0
 
