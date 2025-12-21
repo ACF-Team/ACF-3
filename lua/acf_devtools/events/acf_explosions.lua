@@ -27,7 +27,7 @@ do
 end
 
 do
-    local CreateExplosion_Init = DefineEvent("Damage.createExplosion Init")
+    local CreateExplosion_Init = EventViewer.DefineEvent("Damage.createExplosion Init")
     CreateExplosion_Init.Icon = "icon16/bomb.png"
     function CreateExplosion_Init.BuildNode(Node, FillerMass, FragMass, _, MaxSphere, Fragments)
         EventViewer.AddKeyValueNode(Node, "Filler Mass", FillerMass, "icon16/bricks.png")

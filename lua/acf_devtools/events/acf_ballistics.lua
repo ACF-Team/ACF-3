@@ -56,7 +56,7 @@ do
     Ballistics_OnImpact_Ricochet.BuildNode = GenericFlight_BuildNode
     Ballistics_OnImpact_Ricochet.Render3D = DrawImpact
 
-    local Ballistics_OnImpact_Unknown = DefineEvent("Ballistics.OnImpact.Unknown")
+    local Ballistics_OnImpact_Unknown = EventViewer.DefineEvent("Ballistics.OnImpact.Unknown")
     Ballistics_OnImpact_Unknown.Icon = "icon16/collision_on.png"
     Ballistics_OnImpact_Unknown.BuildNode = GenericFlight_BuildNode
     Ballistics_OnImpact_Unknown.Render3D = DrawImpact
