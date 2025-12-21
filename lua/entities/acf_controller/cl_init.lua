@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_simple")
 
 include("shared.lua")
 
--- Localization for performance...
+-- Boilerplate
 function ENT:Initialize(...)
 	BaseClass.Initialize(self, ...)
 end
@@ -12,6 +12,7 @@ function ENT:Draw(...)
 end
 
 -- Note: Since this file is sent to each client, locals are unique to each player...
+-- This is similar to doing entity.value or self.value, but for the client itself.
 local State = {
 	MyController = nil,
 	MyFilter = nil,
