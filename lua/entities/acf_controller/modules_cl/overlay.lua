@@ -1,4 +1,4 @@
-do
+return function(_)
 	function ENT:DrawOverlay()
 		if self.Targets then
 			for Target in pairs(self.Targets) do
