@@ -53,6 +53,7 @@ do
 
 		if IsValid(SelfTbl.Smoke) then
 			RecacheBindNW(self, SelfTbl, "AHS_Smoke_SL", SelfTbl.Smoke.TotalAmmo or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Smoke_RD", SelfTbl.Smoke.State == "Loaded" or false, self.SetNWBool)
 		else
 			SelfTbl.Smoke = next(self.GunsSmoke)
 		end
@@ -73,6 +74,17 @@ do
 		end
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
 		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
+
+		local RPM = 0
+		local EngineCount = 0
+		for Engine in pairs(SelfTbl.Engines) do
+			if IsValid(Engine) then
+				RPM = RPM + Engine.FlyRPM
+				EngineCount = EngineCount + 1
+			end
+		end
+		local AvgRPM = EngineCount > 0 and RPM / EngineCount or 0
+		RecacheBindNW(self, SelfTbl, "AHS_RPM", math.Round(AvgRPM / 100) * 100, self.SetNWInt)
 
 		local AliveCrew = 0
 		local TotalCrew = 0

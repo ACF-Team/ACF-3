@@ -110,6 +110,8 @@ return function(State)
 
     local ColorReady = Color(0, 255, 0, 255)
     local ColorNotReady = Color(255, 0, 0, 255)
+    local ColorReadyDull = Color(0, 255, 0, 100)
+    local ColorNotReadyDull = Color(255, 0, 0, 100)
 
     local function DrawReload(Entity, Ready, Radius)
         if IsValid(Entity) then
@@ -189,7 +191,7 @@ return function(State)
 
             surface.SetDrawColor(0, 0, 0, 200)
             surface.DrawRect(x - 400 * Scale, y + 205 * Scale, 125 * Scale, 70 * Scale)
-            surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 70 * Scale)
+            surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 90 * Scale)
 
             -- Ammo type | Ammo count | Time left
             SetDrawColor( Col )
@@ -215,11 +217,12 @@ return function(State)
             local unit = State.MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
             DrawText("SPD: " .. State.MyController:GetNWFloat("AHS_Speed") .. unit, Font, x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
             DrawText("Gear: " .. State.MyController:GetNWFloat("AHS_Gear"), Font, x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
-            local unit = State.MyController:GetFuelUnit() == 0 and " L" or " G"
+            DrawText("RPM: " .. State.MyController:GetNWFloat("AHS_RPM"), Font, x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
+            local unit = State.MyController:GetFuelUnit() == 0 and " L" or " G"
             local Fuel = State.MyController:GetNWFloat("AHS_Fuel")
             local FuelCap = State.MyController:GetNWFloat("AHS_FuelCap")
-            DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, Font, x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, Font, x + 310 * Scale, y + 270 * Scale, Col, TEXT_ALIGN_LEFT)
 
             -- Ballistic Computer, Smoke Launchers, Crew
             local ax, ay = x + 268 * Scale, y - 246 * Scale
@@ -228,7 +231,7 @@ return function(State)
             DrawPictograph(BallCompMaterial, "", Font, ax, ay, Scale, white, Col, shade)
 
             local ax, ay = x + 314 * Scale, y - 246 * Scale
-            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), Font, ax, ay, Scale, white, Col, shade)
+            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), Font, ax, ay, Scale, white, Col, State.MyController:GetNWBool("AHS_Smoke_RD", false) and ColorReadyDull or ColorNotReadyDull)
 
             local ax, ay = x + 360 * Scale, y - 246 * Scale
             DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
