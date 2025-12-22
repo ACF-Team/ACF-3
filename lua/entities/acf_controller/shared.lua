@@ -67,13 +67,13 @@ local EditAIOSettings = {
 	PrependSpacer = true,
 	MenuIcon = "icon16/image_edit.png",
 
-	Filter = function(self, ent, ply)
+	Filter = function(_, ent, _)
 		if not IsValid(ent) then return false end
 		if not ent.IsACFController then return false end
 		return true
 	end,
 
-	Action = function(self, ent)
+	Action = function(_, ent)
 		-- Create a popout window with the control embedded in it
 		local window = g_ContextMenu:Add( "DFrame" )
 		window:SetSize(400, 500)
@@ -120,7 +120,7 @@ local EditAIOSettings = {
 	end
 }
 
-hook.Add( "CanProperty", "block_aio_default_property", function( ply, property, ent )
+hook.Add( "CanProperty", "block_aio_default_property", function( _, property, ent )
 	if (property == "editentity" and ent.IsACFController) then return false end
 end )
 
