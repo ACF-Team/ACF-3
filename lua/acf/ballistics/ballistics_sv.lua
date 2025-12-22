@@ -1,15 +1,18 @@
-local hook       = hook
-local ACF        = ACF
-local Ballistics = ACF.Ballistics
-local Damage     = ACF.Damage
-local Clock      = ACF.Utilities.Clock
-local Effects    = ACF.Utilities.Effects
-local Debug		 = ACF.Debug
+local hook        = hook
+local ACF         = ACF
+local Ballistics  = ACF.Ballistics
+local Damage      = ACF.Damage
+local Clock       = ACF.Utilities.Clock
+local Effects     = ACF.Utilities.Effects
+local EventViewer = ACF.EventViewer
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
 Ballistics.HighestIndex    = Ballistics.HighestIndex or 0
 Ballistics.SkyboxGraceZone = 100
+
+local function GetEventViewerName(Idx) return "Ballistics - Bullet #" .. Idx end
+
 
 local Bullets      = Ballistics.Bullets
 local Unused       = Ballistics.UnusedIndexes
@@ -48,6 +51,9 @@ function Ballistics.RemoveBullet(Bullet)
 		Bullet:OnRemoved()
 	end
 
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(GetEventViewerName(Index), "Ballistics.RemoveBullet")
+	end
 	Bullet.Removed = true
 
 	if not next(Bullets) then
@@ -113,6 +119,7 @@ function Ballistics.IterateBullets()
 	end
 end
 
+
 local RequiredBulletDataProperties = {"Pos", "Flight"}
 function Ballistics.CreateBullet(BulletData)
 	local Index = Ballistics.GetBulletIndex()
@@ -148,6 +155,12 @@ function Ballistics.CreateBullet(BulletData)
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
 	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
 		Bullet.Filter[#Bullet.Filter + 1] = Bullet.Owner:GetVehicle()
+	end
+
+	if EventViewer.Enabled() then
+		EventViewer.StartEvent(GetEventViewerName(Index))
+		-- Network the whole bullet state when event viewer is active.
+		EventViewer.AppendEvent(GetEventViewerName(Index), "Ballistics.CreateBullet", Bullet)
 	end
 
 	-- TODO: Make bullets use a metatable instead
@@ -187,6 +200,9 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 
 		Ballistics.BulletClient(Bullet, "Update", 2, Trace.HitPos)
 		Ballistics.DoBulletsFlight(Bullet)
+		if EventViewer.Enabled() then
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Penetrated", Trace.StartPos, Trace.HitPos, Trace)
+		end
 	elseif Retry == "Ricochet" then
 		if Bullet.OnRicocheted then
 			Bullet.OnRicocheted(Bullet, Trace)
@@ -194,13 +210,18 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 
 		Ballistics.BulletClient(Bullet, "Update", 3, Trace.HitPos)
 		Ballistics.DoBulletsFlight(Bullet)
+		if EventViewer.Enabled() then
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Ricochet", Trace.StartPos, Trace.HitPos, Trace)
+		end
 	else
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
 		end
 
 		Ballistics.BulletClient(Bullet, "Update", 1, Trace.HitPos)
-
+		if EventViewer.Enabled() then
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Unknown", Trace.StartPos, Trace.HitPos, Trace)
+		end
 		Ammo:OnFlightEnd(Bullet, Trace)
 	end
 end
@@ -258,8 +279,6 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
 
-	Debug.Line(Bullet.Pos, traceRes.HitPos, 30, Bullet.Color)
-
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
 			return Ballistics.RemoveBullet(Bullet)
@@ -279,10 +298,18 @@ function Ballistics.DoBulletsFlight(Bullet)
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
 				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
+				if EventViewer.Enabled() then
+					EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight.Fuze")
+				end
 
 				return
 			end
 		end
+	end
+
+
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight", Bullet.Pos, Bullet.NextPos, FlightTr)
 	end
 
 	if traceRes.Hit then
@@ -344,8 +371,6 @@ do -- Terminal ballistics --------------------------
 		local Entity   = Trace.Entity
 		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
-
-		Debug.Cross(Trace.HitPos, 6, 30, Bullet.Color, true)
 
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets

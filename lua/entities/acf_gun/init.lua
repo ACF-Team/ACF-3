@@ -727,35 +727,41 @@ do -- Metamethods --------------------------------
 			self.BreechLocalToRef = Ref:WorldToLocal(BreechPos)	-- Local Reference position of breech
 			self.BreechLocalToGun = self:WorldToLocal(BreechPos)	-- Local Current position of breech
 		end
+
+		-- Logging contraption wide bullet filter
+		hook.Add("cfw.contraption.created", "ACF_CFW_BulletFilter", function(Contraption)
+			Contraption.BulletFilter = {}
+		end)
+
+		hook.Add("cfw.contraption.entityAdded", "ACF_CFW_BulletFilter", function(Contraption, Entity)
+			table.insert(Contraption.BulletFilter, Entity)
+		end)
 	end -----------------------------------------
 
 	do -- Shooting ------------------------------
 		local Effects   = Utilities.Effects
-		local TraceRes  = {} -- Output for traces
+		local TraceRes  = {} -- Cached result of clipping trace
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
+		local TraceRes2 = {} -- Cached result of blocking trace
 
-		function ENT:BarrelCheck()
-			local owner  = self:GetPlayer()
-			local filter = self.BarrelFilter
-
+		function ENT:BarrelCheck(filter)
+			-- Determine location to start bullet (first non contraption entity hit)
 			TraceData.start	 = self:GetPos()
 			TraceData.endpos = self:LocalToWorld(self.Muzzle)
 			TraceData.filter = filter
-
+			TraceData.output = TraceRes
+			TraceData.whitelist = false -- We want to ignore the contraption and only hit other players' props
 			ACF.trace(TraceData)
 
-			while TraceRes.HitNonWorld do
-				local Entity = TraceRes.Entity
+			-- Determine if the muzzle is blocked (first contraption entity hit)
+			TraceData.start	 = self:LocalToWorld(self.Muzzle) + self:GetForward() -- For some guns, the attachment is still within the hitbox
+			TraceData.endpos = TraceData.start + self:GetForward() * 1000 -- Check 1000 units ahead
+			TraceData.filter = filter
+			TraceData.output = TraceRes2
+			TraceData.whitelist = true -- We want to only hit the contraption and ignore other players' props
+			ACF.trace(TraceData)
 
-				if Entity.IsACFEntity and not (Entity.IsACFArmor or Entity.IsACFTurret) then break end
-				if Entity:CPPIGetOwner() ~= owner then break end
-
-				filter[#filter + 1] = Entity
-
-				ACF.trace(TraceData)
-			end
-
-			return TraceRes.HitPos
+			return TraceRes.HitPos, TraceRes2.Hit
 		end
 
 		function ENT:CanFire()
@@ -823,12 +829,22 @@ do -- Metamethods --------------------------------
 
 			self.CurrentUser = self:GetUser(self.Inputs.Fire.Src) -- Must be updated on every shot
 
-			BulletData.Owner  = self.CurrentUser
-			BulletData.Gun	   = self -- because other guns share this table
-			BulletData.Pos    = self:BarrelCheck()
-			BulletData.Flight = Dir * BulletData.MuzzleVel * ACF.MeterToInch + Velocity
-			BulletData.Fuze   = self.Fuze -- Must be set when firing as the table is shared
-			BulletData.Filter = self.BarrelFilter
+			local Contraption = self:GetContraption()
+			local IsBlocked = false
+			BulletData.Filter 			= Contraption and Contraption.BulletFilter or { self }
+			BulletData.Owner  			= self.CurrentUser
+			BulletData.Gun	   			= self -- because other guns share this table
+			BulletData.Pos, IsBlocked   = self:BarrelCheck(BulletData.Filter)
+			BulletData.Flight 			= Dir * BulletData.MuzzleVel * ACF.MeterToInch + Velocity
+			BulletData.Fuze   			= self.Fuze -- Must be set when firing as the table is shared
+
+			local Energy = ACF.Kinetic(BulletData.MuzzleVel * ACF.MeterToInch, BulletData.ProjMass).Kinetic
+			if IsBlocked then
+				-- Sounds.SendSound(self, "weapons/pistol/pistol_empty.wav", 70, 100, 1)
+				ACF.HEKill(self, BulletData.Flight, Energy, BulletData.Pos, nil, true)
+				ACF.Damage.explosionEffect(BulletData.Pos, BulletData.Flight, Energy / 1000)
+				return
+			end
 
 			-- Set in air if GLATGM is used
 			local GLATGM = AmmoType:Create(self, BulletData)
@@ -848,7 +864,6 @@ do -- Metamethods --------------------------------
 				Contraption.InCombat = engine.TickCount()
 			end
 
-			local Energy = ACF.Kinetic(BulletData.MuzzleVel * ACF.MeterToInch, BulletData.ProjMass).Kinetic
 
 			if Energy > 50 then -- Why yes, this is completely arbitrary! 20mm AC AP puts out about 115, 40mm GL HE puts out about 20
 				ACF.Overpressure(self:LocalToWorld(self.Muzzle) - self:GetForward() * 5, Energy, BulletData.Owner, self, self:GetForward(), 30)
