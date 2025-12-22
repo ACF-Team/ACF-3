@@ -1,4 +1,5 @@
 local RecacheBindOutput, _, GetKeyState, _ = include("../modules_sh/helpers_sh.lua")
+local TimerSimple = timer.Simple
 
 -- Turret related
 do
@@ -29,19 +30,25 @@ do
 
 	-- Fire guns
 	-- TODO:  Add fire sequencing
-	local FiringStates = {}
-	local function HandleFire(Fire, Guns)
+	local function HandleFire(Fire, Guns, OverrideDelay)
+		local Gun = next(Guns)
+		if not Gun then return end
+
+		local Delay = OverrideDelay or Gun.ReloadTime or 0
+		local Counter = 0
 		for Gun in pairs(Guns) do
-			if IsValid(Gun) then
-				if not FiringStates[Gun] and Fire then
-					Gun.Firing = true
-					local GunCanFire = Gun.CanFire and Gun:CanFire()
-					local RackCanFire = Gun.CanShoot and Gun:CanShoot()
-					if (GunCanFire or RackCanFire) then Gun:Shoot() end
-				else
-					Gun.Firing = false
+			local CurrentGun = Gun
+			if CurrentGun.Firing == Fire then continue end -- Don't make a timer if nothing changed
+			CurrentGun.Firing = Fire
+			local TrueDelay = Counter * Delay -- It's called good luck
+			TimerSimple(TrueDelay, function()
+				if IsValid(CurrentGun) and Fire then
+					local GunCanFire = CurrentGun.CanFire and CurrentGun:CanFire()
+					local RackCanFire = CurrentGun.CanShoot and CurrentGun:CanShoot()
+					if (GunCanFire or RackCanFire) then CurrentGun:Shoot() end
 				end
-			end
+			end)
+			Counter = Counter + 1
 		end
 	end
 
@@ -52,7 +59,7 @@ do
 
 		HandleFire(Fire1, SelfTbl.GunsPrimary)
 		HandleFire(Fire2, SelfTbl.GunsSecondary)
-		HandleFire(Fire3, SelfTbl.Racks)
+		HandleFire(Fire3, SelfTbl.Racks, SelfTbl:GetFireDelay())
 		HandleFire(Fire4, SelfTbl.GunsSmoke)
 	end
 
@@ -117,10 +124,19 @@ do
 			if not IsValid(GuideComp) then return end
 
 			-- We just want to know if there are any in air we should be lasing for...
-			local InAir = 0
-			if SelfTbl.Primary then InAir = InAir + (SelfTbl.Primary.Outputs["In Air"].Value or 0) end
-			if SelfTbl.Tertiary then InAir = InAir + (SelfTbl.Tertiary.Outputs["In Air"].Value or 0) end
-			GuideComp:TriggerInput("Lase", InAir > 0 and 1 or 0)
+			local FoundInAir = false
+
+			for Gun in pairs(SelfTbl.GunsPrimary) do
+				if FoundInAir then break end
+				if Gun.Outputs["In Air"].Value > 0 then FoundInAir = true end
+			end
+
+			for Rack in pairs(SelfTbl.Racks) do
+				if FoundInAir then break end
+				if Rack.Outputs["In Air"].Value > 0 then FoundInAir = true end
+			end
+
+			GuideComp:TriggerInput("Lase", FoundInAir and 1 or 0)
 			GuideComp:TriggerInput("HitPos", SelfTbl.HitPos)
 		end
 	end

@@ -246,6 +246,7 @@ return function(State)
 
             -- Outline currently selected ammo type
             if AmmoType == State.MyController.SelectedAmmoType then
+                surface.SetDrawColor(Col)
                 surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
             end
 

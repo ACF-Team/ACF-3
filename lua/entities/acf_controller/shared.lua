@@ -19,6 +19,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", "ForceAWD", { KeyName = "forceawd", Edit = { type = "Bool", order = 16, category = "Miscellaneous", tooltip = "Override to consider mobility as all wheel drive"  } } )
 	self:NetworkVar( "Float", "ReloadAngle", { KeyName = "reloadangle", Edit = { type = "Float", order = 17, category = "Miscellaneous", min = -30, max = 30, tooltip = "If nonzero, Elevates the primary weapon to this angle when loading" } } )
 	self:NetworkVar( "Float", "SmokeFuse", { KeyName = "smokefuse", Edit = { type = "Float", order = 18, category = "Miscellaneous", min = 0, max = 1, tooltip = "IF nonzero, airburst fuse time in seconds for smoke launchers" } } )
+	self:NetworkVar( "Float", "FireDelay", { KeyName = "firedelay", Edit = { type = "Float", order = 19, category = "Miscellaneous", min = 0, max = 5, tooltip = "Fallback fire delay if non can be found (e.g. missiles)" } } )
 
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 20, category = "Camera Settings", min = 0.001, max = 90, tooltip = "FOV zoom rate with scroll"  } } )
 	self:NetworkVar( "Float", "ZoomMin", { KeyName = "zoommin", Edit = { type = "Float", order = 21, category = "Camera Settings" , min = 0.001, max = 90, tooltip = "FOV when zoomed in (closer to 0)"  } } )
