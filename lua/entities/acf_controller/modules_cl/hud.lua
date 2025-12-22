@@ -9,6 +9,7 @@ local DrawLine = surface.DrawLine
 local AmmoTypes    = ACF.Classes.AmmoTypes
 
 local TraceLine = util.TraceLine
+local CurTime = CurTime
 
 return function(State)
     -- Receive ammo count info from server
@@ -77,11 +78,28 @@ return function(State)
         return Tr.HitPos or vector_origin
     end
 
-    -- local Scale = State.MyController:GetHUDScale()
-    -- surface.CreateFont( "ACFHUDFONT", {
-    -- 	font = "Arial", extended = false, size = 13 * Scale, weight = 500, blursize = 0, scanlines = 0, antialias = true, underline = false,
-    -- 	italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
-    -- } )
+    -- Don't want fonts to change too often, so cache them and only change every 0.5 seconds
+    local StoredFonts = {}
+    local LastFontTimestamp = CurTime()
+    local LastCreatedFont
+    local function GetFont(Scale)
+        local RoundScale = math.Round(Scale, 2)
+        if StoredFonts[RoundScale] then
+            return StoredFonts[RoundScale]
+        elseif CurTime() - LastFontTimestamp > 0.5 then
+            local FontName = "ACFHUDFONT" .. tostring(RoundScale)
+            surface.CreateFont(FontName, {
+                font = "Arial", extended = false, size = 13 * RoundScale, weight = 500, blursize = 0, scanlines = 0, antialias = true, underline = false,
+                italic = false, strikeout = false, symbol = false, rotary = false, shadow = false, additive = false, outline = false,
+            })
+            StoredFonts[RoundScale] = FontName
+            LastFontTimestamp = CurTime()
+            LastCreatedFont = FontName
+            return FontName
+        else
+            return LastCreatedFont
+        end
+    end
 
     local CrewMaterial = Material("materials/icon16/status_online.png")
     local ComputerMaterial = Material("materials/icon16/computer.png")
@@ -102,7 +120,7 @@ return function(State)
         end
     end
 
-    local function DrawPictograph(mat, text, x, y, scale, col_fg, col_bg, col_sh)
+    local function DrawPictograph(mat, text, font, x, y, scale, col_fg, col_bg, col_sh)
         surface.SetDrawColor(col_sh)
         surface.DrawRect(x, y, 40 * scale, 40 * scale)
         surface.SetDrawColor(col_bg)
@@ -110,7 +128,7 @@ return function(State)
         surface.SetDrawColor(col_fg)
         surface.SetMaterial(mat)
         surface.DrawTexturedRect(x + 4 * scale, y + 4 * scale, 32 * scale, 32 * scale)
-        DrawText(text, "DermaDefault", x + 4 * scale, y + 4 * scale, col_bg, TEXT_ALIGN_LEFT)
+        DrawText(text, font, x + 4 * scale, y + 4 * scale, col_bg, TEXT_ALIGN_LEFT)
     end
 
     -- HUD RELATED
@@ -136,6 +154,8 @@ return function(State)
 
         if State.MyController:GetDisableAIOHUD() then return end -- Disable hud if not enabled
 
+        local Font = GetFont(Scale)
+
         -- HUD 1
         local HudType = State.MyController:GetHUDType()
         if HudType == 0 then
@@ -143,9 +163,9 @@ return function(State)
             DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
 
             local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Primary_AT", ""), State.MyController:GetNWInt("AHS_Primary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
+            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
             local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
         elseif HudType == 1 then
             -- View border
             DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
@@ -174,44 +194,44 @@ return function(State)
             -- Ammo type | Ammo count | Time left
             SetDrawColor( Col )
             local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Primary_AT", ""), State.MyController:GetNWInt("AHS_Primary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
+            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
             local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
             DrawReload(State.MyController:GetNWEntity( "AHS_Primary", nil ), State.MyController:GetNWBool("AHS_Primary_RD", false), 10 * Scale / 1)
 
             local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Secondary_AT", ""), State.MyController:GetNWInt("AHS_Secondary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
+            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
             local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
             DrawReload(State.MyController:GetNWEntity( "AHS_Secondary", nil ), State.MyController:GetNWBool("AHS_Secondary_RD", false), 10 * Scale / 2)
 
             local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Tertiary_AT", ""), State.MyController:GetNWInt("AHS_Tertiary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, "DermaDefault", x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
+            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
             local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", "DermaDefault", x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
             DrawReload(State.MyController:GetNWEntity( "AHS_Tertiary", nil ), State.MyController:GetNWBool("AHS_Tertiary_RD", false), 10 * Scale / 3)
 
             -- Speed, Gear, Fuel, Crew
             local unit = State.MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"
-            DrawText("SPD: " .. State.MyController:GetNWFloat("AHS_Speed") .. unit, "DermaDefault", x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
-            DrawText("Gear: " .. State.MyController:GetNWFloat("AHS_Gear"), "DermaDefault", x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText("SPD: " .. State.MyController:GetNWFloat("AHS_Speed") .. unit, Font, x + 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText("Gear: " .. State.MyController:GetNWFloat("AHS_Gear"), Font, x + 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
             local unit = State.MyController:GetFuelUnit() == 0 and " L" or " G"
 
             local Fuel = State.MyController:GetNWFloat("AHS_Fuel")
             local FuelCap = State.MyController:GetNWFloat("AHS_FuelCap")
-            DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
+            DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, Font, x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
             -- Ballistic Computer, Smoke Launchers, Crew
             local ax, ay = x + 268 * Scale, y - 246 * Scale
             local BallCompStatus = State.MyController:GetNWInt("AHS_TurretComp_Status", 0)
             local BallCompMaterial = BallCompStatus == 1 and ComputerCalculateMaterial or BallCompStatus == 2 and ComputerSuccessMaterial or BallCompStatus == 3 and ComputerErrorMaterial or ComputerMaterial
-            DrawPictograph(BallCompMaterial, "", ax, ay, Scale, white, Col, shade)
+            DrawPictograph(BallCompMaterial, "", Font, ax, ay, Scale, white, Col, shade)
 
             local ax, ay = x + 314 * Scale, y - 246 * Scale
-            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, white, Col, shade)
+            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), Font, ax, ay, Scale, white, Col, shade)
 
             local ax, ay = x + 360 * Scale, y - 246 * Scale
-            DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, white, Col, shade)
+            DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
         end
 
         local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
@@ -227,7 +247,7 @@ return function(State)
             end
 
             local Lighting = AmmoType == LoadedAmmoType and white or dimmed
-            DrawPictograph(Material, AmmoCount, ax, ay, Scale, Lighting, Col, shade)
+            DrawPictograph(Material, AmmoCount, Font, ax, ay, Scale, Lighting, Col, shade)
         end
 
         for Receiver, Data in pairs(State.MyController.ReceiverData or {}) do
