@@ -253,10 +253,10 @@ return function(State)
         for Receiver, Data in pairs(State.MyController.ReceiverData or {}) do
             if not IsValid(Receiver) then continue end
             local Direction, Time = Data[1], Data[2]
-            local Frac = (CurTime() - Time) / 5
+            local Frac = (CurTime() - Time) / 5 -- Wait 5 seconds before fading
             if Frac < 1 then
                 local RP = Receiver:GetPos()
-                local HitPos = ranger( RP, Direction:GetNormalized(), 99999, MyFilter )
+                local HitPos = ranger( RP, Direction:GetNormalized(), 99999, State.MyFilter )
                 local SP1 = RP:ToScreen()
                 local SP2 = HitPos:ToScreen()
                 SetDrawColor(cyan.r, cyan.g, cyan.b, (1 - Frac) * 255)
