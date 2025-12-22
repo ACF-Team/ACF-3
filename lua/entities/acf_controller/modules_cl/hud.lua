@@ -201,16 +201,17 @@ return function(State)
             local FuelCap = State.MyController:GetNWFloat("AHS_FuelCap")
             DrawText("Fuel: " .. Fuel .. " / " .. FuelCap .. unit, "DermaDefault", x + 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
 
-            local ax, ay = x + 360 * Scale, y - 246 * Scale
-            DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, white, Col, shade)
-
-            local ax, ay = x + 314 * Scale, y - 246 * Scale
-            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, white, Col, shade)
-
+            -- Ballistic Computer, Smoke Launchers, Crew
             local ax, ay = x + 268 * Scale, y - 246 * Scale
             local BallCompStatus = State.MyController:GetNWInt("AHS_TurretComp_Status", 0)
             local BallCompMaterial = BallCompStatus == 1 and ComputerCalculateMaterial or BallCompStatus == 2 and ComputerSuccessMaterial or BallCompStatus == 3 and ComputerErrorMaterial or ComputerMaterial
             DrawPictograph(BallCompMaterial, "", ax, ay, Scale, white, Col, shade)
+
+            local ax, ay = x + 314 * Scale, y - 246 * Scale
+            DrawPictograph(SmokeMaterial, State.MyController:GetNWInt("AHS_Smoke_SL"), ax, ay, Scale, white, Col, shade)
+
+            local ax, ay = x + 360 * Scale, y - 246 * Scale
+            DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), ax, ay, Scale, white, Col, shade)
         end
 
         local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
