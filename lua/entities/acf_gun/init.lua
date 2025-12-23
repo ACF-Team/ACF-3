@@ -754,7 +754,7 @@ do -- Metamethods --------------------------------
 			ACF.trace(TraceData)
 
 			-- Determine if the muzzle is blocked (first contraption entity hit)
-			TraceData.start	 = self:LocalToWorld(self.Muzzle) + self:GetForward() -- For some guns, the attachment is still within the hitbox
+			TraceData.start	 = self:LocalToWorld(self.Muzzle) + self:GetForward() * 6 -- For some guns, the attachment is still within the hitbox
 			TraceData.endpos = TraceData.start + self:GetForward() * 1000 -- Check 1000 units ahead
 			TraceData.filter = filter
 			TraceData.output = TraceRes2
