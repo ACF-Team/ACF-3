@@ -17,6 +17,8 @@ AddCSLuaFile("modules_cl/overlay.lua")
 AddCSLuaFile("modules_cl/camera.lua")
 AddCSLuaFile("modules_cl/hud.lua")
 
+AddCSLuaFile("modules_sh/helpers_sh.lua")
+
 -- Localizations
 local ACF = ACF
 local HookRun     = hook.Run
