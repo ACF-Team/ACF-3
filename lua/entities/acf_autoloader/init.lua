@@ -4,6 +4,7 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 local ACF         = ACF
+local HookRun     = hook.Run
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.AutoloaderCaliber = math.Clamp(ClientData.AutoloaderCaliber or 1, ACF.MinAutoloaderCaliber, ACF.MaxAutoloaderCaliber)
@@ -18,10 +19,13 @@ function ENT:ACF_PreSpawn()
 	self.VerticalSpeed = 10 -- Speed shells can be elevated at, against gravity (u/s)
 	self.RotationalSpeed = 10 -- Speed shells can be rotated at (deg/s)
 
+	-- Linked entities
+	self.Gun = nil
+	self.AmmoCrates = {}
+
 	-- State variables
 	self.AutoloaderGunBaseReloadTime = nil
 	self.AutoloaderAmmoBaseReloadTime = {}
-	self.Ammos = {}
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
@@ -64,8 +68,8 @@ end)
 
 ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if This.Ammos[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
-	This.Ammos[Ammo] = true
+	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+	This.AmmoCrates[Ammo] = true
 	Ammo.Autoloaders[This] = true
 
 	local MoveOffset = This:WorldToLocal(Ammo:GetPos())
@@ -81,8 +85,8 @@ end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if not This.Ammos[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
-	This.Ammos[Ammo] = nil
+	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
+	This.AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
 
 	This.AutoloaderAmmoBaseReloadTime[Ammo] = nil
@@ -103,6 +107,53 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Shell Caliber", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Shell Length", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
+end
+
+-- Adv Dupe 2 Related
+do
+	-- Hopefully we can improve this when the codebase is refactored.
+	function ENT:PreEntityCopy()
+		if IsValid(self.Gun) then
+			duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
+		end
+
+		if next(self.AmmoCrates) then
+			local Entities = {}
+			for Ent in pairs(self.AmmoCrates) do Entities[#Entities + 1] = Ent:EntIndex() end
+			duplicator.StoreEntityModifier(self, "ACFAmmoCrates", Entities)
+		end
+
+		-- Wire dupe info
+		self.BaseClass.PreEntityCopy(self)
+	end
+
+	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		local EntMods = Ent.EntityMods
+
+		if EntMods and EntMods.ACFGun then
+			local Gun = CreatedEntities[EntMods.ACFGun[1]]
+			if IsValid(Gun) then self:Link(Gun) end
+		end
+
+		if EntMods and EntMods.ACFAmmoCrates then
+			for _, EntIndex in ipairs(EntMods.ACFAmmoCrates) do
+				local Ammo = CreatedEntities[EntIndex]
+				if IsValid(Ammo) then self:Link(Ammo) end
+			end
+		end
+
+		--Wire dupe info
+		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	end
+
+	function ENT:OnRemove()
+		HookRun("ACF_OnEntityLast", "acf_controller", self)
+
+		if IsValid(self.Gun) then self:Unlink(self.Gun) end
+		for v, _ in pairs(self.AmmoCrates) do self:Unlink(v) end
+
+		WireLib.Remove(self)
+	end
 end
 
 ACF.Classes.Entities.Register()
