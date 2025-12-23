@@ -18,6 +18,9 @@ function ENT:ACF_PreSpawn()
 	self.VerticalSpeed = 10 -- Speed shells can be elevated at, against gravity (u/s)
 	self.RotationalSpeed = 10 -- Speed shells can be rotated at (deg/s)
 
+	-- State variables
+	self.AutoloaderGunBaseReloadTime = nil
+	self.AutoloaderAmmoBaseReloadTime = {}
 	self.Ammos = {}
 end
 
@@ -34,33 +37,18 @@ function ENT:ACF_PostMenuSpawn()
 	self:DropToFloor()
 end
 
-ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
-	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if This.Ammos[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
-	This.Ammos[Ammo] = true
-	Ammo.Autoloaders[This] = true
-	return true, "Autoloader linked successfully."
-end)
-
-ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
-	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if not This.Ammos[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
-	This.Ammos[Ammo] = nil
-	Ammo.Autoloaders[This] = nil
-	return true, "Autoloader unlinked successfully."
-end)
-
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	if This.Gun or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
 	This.Gun = Gun
 	Gun.Autoloader = This
 
 	-- TODO: Technically a gun pointing upwards has horizontal and vertical flipped
-	local MoveOffset = This:WorldToLocal(Gun:GetPos())
+	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
+	local MoveOffset = This:WorldToLocal(BreechPos)
 	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed) 
 	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
-	local ReloadTime = HorizontalReload + VerticalReload
-	print(ReloadTime, HorizontalReload, VerticalReload)
+	This.AutoloaderGunBaseReloadTime = HorizontalReload + VerticalReload
+	print(This.AutoloaderGunBaseReloadTime, HorizontalReload, VerticalReload)
 
 	return true, "Autoloader linked successfully."
 end)
@@ -69,6 +57,35 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	if not This.Gun or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This.Gun = nil
 	Gun.Autoloader = nil
+
+	This.AutoloaderGunBaseReloadTime = nil
+	return true, "Autoloader unlinked successfully."
+end)
+
+ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
+	Ammo.Autoloaders = Ammo.Autoloaders or {}
+	if This.Ammos[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+	This.Ammos[Ammo] = true
+	Ammo.Autoloaders[This] = true
+
+	local MoveOffset = This:WorldToLocal(Ammo:GetPos())
+	local AngleDiff = math.deg(math.acos(This:GetForward():Dot(Ammo:GetForward())))
+	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed)
+	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
+	local RotationalReload = AngleDiff / This.RotationalSpeed
+	This.AutoloaderAmmoBaseReloadTime[Ammo] = HorizontalReload + VerticalReload + RotationalReload
+	print(This.AutoloaderAmmoBaseReloadTime[Ammo], HorizontalReload, VerticalReload, RotationalReload)
+
+	return true, "Autoloader linked successfully."
+end)
+
+ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
+	Ammo.Autoloaders = Ammo.Autoloaders or {}
+	if not This.Ammos[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
+	This.Ammos[Ammo] = nil
+	Ammo.Autoloaders[This] = nil
+
+	This.AutoloaderAmmoBaseReloadTime[Ammo] = nil
 	return true, "Autoloader unlinked successfully."
 end)
 
