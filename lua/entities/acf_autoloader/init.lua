@@ -4,7 +4,6 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 local ACF         = ACF
-local Mobility    = ACF.Mobility
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.AutoloaderCaliber = math.Clamp(ClientData.AutoloaderCaliber or 1, ACF.MinAutoloaderCaliber, ACF.MaxAutoloaderCaliber)
@@ -74,7 +73,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 end)
 
 function ENT:Think()
-	local SelfTbl = self:GetTable()
+	-- local SelfTbl = self:GetTable()
 
 
 
