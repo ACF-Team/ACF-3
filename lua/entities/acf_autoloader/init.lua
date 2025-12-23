@@ -15,6 +15,10 @@ end
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/hunter/blocks/cube025x025x025.mdl")
 
+	self.HorizontalSpeed = 20 -- Speed shells can be rammed at (u/s)
+	self.VerticalSpeed = 10 -- Speed shells can be elevated at, against gravity (u/s)
+	self.RotationalSpeed = 10 -- Speed shells can be rotated at (deg/s)
+
 	self.Ammos = {}
 end
 
@@ -51,6 +55,14 @@ ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	if This.Gun or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
 	This.Gun = Gun
 	Gun.Autoloader = This
+
+	-- TODO: Technically a gun pointing upwards has horizontal and vertical flipped
+	local MoveOffset = This:WorldToLocal(Gun:GetPos())
+	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed) 
+	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
+	local ReloadTime = HorizontalReload + VerticalReload
+	print(ReloadTime, HorizontalReload, VerticalReload)
+
 	return true, "Autoloader linked successfully."
 end)
 
