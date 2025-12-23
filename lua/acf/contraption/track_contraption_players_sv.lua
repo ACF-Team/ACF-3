@@ -20,7 +20,7 @@ hook.Add("cfw.contraption.created", "ACF_CFW_TrackPlayersInContraptions", functi
 end)
 
 function ACF.DoesContraptionHavePlayers(Contraption)
-    return Contraption.ACF_TrackPlayers ~= nil and next(Contraption.ACF_TrackPlayers) ~= nil
+    return Contraption.ACF_TrackPlayers and next(Contraption.ACF_TrackPlayers)
 end
 
 local PlayersCopy = {}

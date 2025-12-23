@@ -4,6 +4,7 @@ local function BaseplateRepulsionCheck(Ent)
 	if IsValid(Ent:GetParent()) then return true end
 	return ACF.IsEntityEligiblePhysmass(Ent)
 end
+local Clock       = ACF.Utilities.Clock
 
 local function GetBaseplateProperties(Ent)
 	if not IsValid(Ent) then return false end
@@ -16,7 +17,7 @@ local function GetBaseplateProperties(Ent)
 	local Contraption = Ent:GetContraption()
 	if not Contraption then return end
 
-	local Now = CurTime()
+	local Now = Clock.CurTime
 	-- This is kinda disgusting to read
 	-- The AABB should be cached off and only repopulated every now and then.
 	-- Getting it every tick would be way too expensive.
@@ -114,7 +115,7 @@ end)
 
 function ENT:PlayBaseplateRepulsionSound(Vel)
 	local Hard = Vel:Length() > 500 and true or false
-	local Now  = CurTime()
+	local Now  = Clock.CurTime
 	local Prev = self.LastPlayRepulsionSound
 	if Prev and Now - Prev < 0.75 then return end
 
