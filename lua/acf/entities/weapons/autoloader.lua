@@ -12,10 +12,7 @@ Weapons.Register("AL", {
 	IsAutomatic = true,
 	Mass        = 2985,
 	Spread      = 0.08,
-	MagSize     = {
-		Min = 8,
-		Max = 12,
-	},
+	MagSize     = 6,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
@@ -36,8 +33,8 @@ Weapons.Register("AL", {
 		Max = 35,
 	},
 	Cyclic = {
-		Min = 20,
-		Max = 10,
+		Min = 15,
+		Max = 8,
 	},
 	BreechConfigs = {
 		MeasuredCaliber = 17.0,
