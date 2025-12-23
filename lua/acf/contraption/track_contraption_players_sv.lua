@@ -19,6 +19,10 @@ hook.Add("cfw.contraption.created", "ACF_CFW_TrackPlayersInContraptions", functi
     Contraption.ACF_TrackPlayers = {}
 end)
 
+function ACF.DoesContraptionHavePlayers(Contraption)
+    return Contraption.ACF_TrackPlayers and next(Contraption.ACF_TrackPlayers)
+end
+
 local PlayersCopy = {}
 hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function(ParentContraption, ChildContraption)
     ParentContraption.ACF_TrackPlayers = ParentContraption.ACF_TrackPlayers or {}
