@@ -47,7 +47,6 @@ ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This.Gun = Gun
 	Gun.Autoloader = This
 
-	-- TODO: Technically a gun pointing upwards has horizontal and vertical flipped
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local MoveOffset = This:WorldToLocal(BreechPos)
 	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed) 
@@ -94,16 +93,15 @@ end)
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
-function ENT:ComputeReload(Gun, Ammo)
+function ENT:GetReloadEff(Gun, Ammo)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
-	local GunArmAngleAligned = self:GetForward():Dot(self:GetForward()) > 0.99
+	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
 
-	-- TODO: Maybe need positional alignment too?
 	if not GunArmAngleAligned then return math.huge end
 
 	-- Check LOS from arm to breech is unobstructed
@@ -122,15 +120,14 @@ function ENT:ComputeReload(Gun, Ammo)
 
 	-- Compute reload time
 	local BaseReload = (self.AutoloaderGunBaseReloadTime or 0) + (self.AutoloaderAmmoBaseReloadTime[Ammo] or 0)
-	self.BaseReload = BaseReload
-	self:UpdateOverlay()
 	return BaseReload
 end
 
 function ENT:Think()
 	local SelfTbl = self:GetTable()
 
-	self:ComputeReload(SelfTbl.Gun, next(SelfTbl.AmmoCrates))
+	self.BaseReload = self:ComputeReload(SelfTbl.Gun, next(SelfTbl.AmmoCrates))
+	self:UpdateOverlay()
 
 	self:NextThink(CurTime() + 0.1)
 
