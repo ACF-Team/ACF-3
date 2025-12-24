@@ -5,6 +5,7 @@ include("shared.lua")
 
 local ACF         = ACF
 local HookRun     = hook.Run
+local TraceLine   = util.TraceLine
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.AutoloaderCaliber = math.Clamp(ClientData.AutoloaderCaliber or 1, ACF.MinAutoloaderCaliber, ACF.MaxAutoloaderCaliber)
@@ -91,6 +92,8 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	return true, "Autoloader unlinked successfully."
 end)
 
+local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
+
 function ENT:ComputeReload(Gun, Ammo)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
@@ -100,12 +103,27 @@ function ENT:ComputeReload(Gun, Ammo)
 
 	local GunArmAngleAligned = self:GetForward():Dot(self:GetForward()) > 0.99
 
-	-- Maybe need positional alignment too?
-	if not GunArmAngleAligned then return 0.0000001 end
+	-- TODO: Maybe need positional alignment too?
+	if not GunArmAngleAligned then return math.huge end
 
+	-- Check LOS from arm to breech is unobstructed
+	TraceConfig.start = AutoloaderPos
+	TraceConfig.endpos = BreechPos
+	TraceConfig.filter = {self, Gun, Ammo}
+	local TraceResult = TraceLine(TraceConfig)
+	if TraceResult.Hit then return math.huge end
 
-	
+	-- Check LOS from arm to ammo is unobstructed
+	TraceConfig.start = AutoloaderPos
+	TraceConfig.endpos = AmmoPos
+	TraceConfig.filter = {self, Gun, Ammo}
+	TraceResult = TraceLine(TraceConfig)
+	if TraceResult.Hit then return math.huge end
+
+	-- Compute reload time
 	local BaseReload = (self.AutoloaderGunBaseReloadTime or 0) + (self.AutoloaderAmmoBaseReloadTime[Ammo] or 0)
+	self.BaseReload = BaseReload
+	self:UpdateOverlay()
 	return BaseReload
 end
 
@@ -120,9 +138,10 @@ function ENT:Think()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	State:AddNumber("Shell Caliber", self:ACF_GetUserVar("AutoloaderCaliber"))
-	State:AddNumber("Shell Length", self:ACF_GetUserVar("AutoloaderLength"))
+	State:AddNumber("Max Shell Caliber", self:ACF_GetUserVar("AutoloaderCaliber"))
+	State:AddNumber("Max Shell Length", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
+	State:AddNumber("Reload Time (s)", self.BaseReload or 0)
 end
 
 -- Adv Dupe 2 Related
