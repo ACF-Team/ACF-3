@@ -1,5 +1,5 @@
-local _, _, _, RecacheBindNW = include("../modules_sh/helpers_sh.lua")
 
+local RecacheBindNW = ENT.RecacheBindNW
 -- Hud related
 do
 	local BallCompStatusToCode = {

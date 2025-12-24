@@ -1,4 +1,5 @@
-local RecacheBindOutput, _, GetKeyState, _ = include("../modules_sh/helpers_sh.lua")
+local RecacheBindOutput = ENT.RecacheBindOutput
+local GetKeyState = ENT.GetKeyState
 
 -- Drivetrain related
 do
