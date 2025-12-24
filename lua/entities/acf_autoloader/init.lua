@@ -109,16 +109,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	print(HorizontalScore, VerticalScore, AngularScore)
 	return 2 * HorizontalScore * VerticalScore * AngularScore
-end
-
-function ENT:Think()
-	local SelfTbl = self:GetTable()
-
-	self:NextThink(CurTime() + 0.1)
-
-	return true
 end
 
 function ENT:ACF_UpdateOverlayState(State)
