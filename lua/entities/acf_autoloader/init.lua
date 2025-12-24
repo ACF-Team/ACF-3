@@ -52,7 +52,6 @@ ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed) 
 	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
 	This.AutoloaderGunBaseReloadTime = HorizontalReload + VerticalReload
-	print(This.AutoloaderGunBaseReloadTime, HorizontalReload, VerticalReload)
 
 	return true, "Autoloader linked successfully."
 end)
@@ -78,7 +77,6 @@ ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
 	local RotationalReload = AngleDiff / This.RotationalSpeed
 	This.AutoloaderAmmoBaseReloadTime[Ammo] = HorizontalReload + VerticalReload + RotationalReload
-	print(This.AutoloaderAmmoBaseReloadTime[Ammo], HorizontalReload, VerticalReload, RotationalReload)
 
 	return true, "Autoloader linked successfully."
 end)
@@ -93,10 +91,28 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	return true, "Autoloader unlinked successfully."
 end)
 
+function ENT:ComputeReload(Gun, Ammo)
+	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
+
+	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
+	local AutoloaderPos = self:GetPos()
+	local AmmoPos = Ammo:GetPos()
+
+	local GunArmAngleAligned = self:GetForward():Dot(self:GetForward()) > 0.99
+
+	-- Maybe need positional alignment too?
+	if not GunArmAngleAligned then return 0.0000001 end
+
+
+	
+	local BaseReload = (self.AutoloaderGunBaseReloadTime or 0) + (self.AutoloaderAmmoBaseReloadTime[Ammo] or 0)
+	return BaseReload
+end
+
 function ENT:Think()
-	-- local SelfTbl = self:GetTable()
+	local SelfTbl = self:GetTable()
 
-
+	self:ComputeReload(SelfTbl.Gun, next(SelfTbl.AmmoCrates))
 
 	self:NextThink(CurTime() + 0.1)
 
