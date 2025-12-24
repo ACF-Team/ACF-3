@@ -742,7 +742,7 @@ do -- Metamethods --------------------------------
 		local Effects   = Utilities.Effects
 		local TraceRes  = {} -- Cached result of clipping trace
 		local TraceData = { start = true, endpos = true, filter = true, mask = MASK_SOLID, output = TraceRes }
-		local TraceRes2 = {} -- Cached result of blocking trace
+		-- local TraceRes2 = {} -- Cached result of blocking trace
 
 		function ENT:BarrelCheck(filter)
 			-- Determine location to start bullet (first non contraption entity hit)
