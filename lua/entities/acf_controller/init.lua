@@ -57,7 +57,10 @@ local IN_ENUM_TO_WIRE_OUTPUT = {
 
 local Clock = Utilities.Clock
 local Defaults = include("modules/defaults.lua")
-local RecacheBindOutput, RecacheBindState, _, _ = include("modules_sh/helpers_sh.lua")
+include("modules_sh/helpers_sh.lua")
+
+local RecacheBindState = ENT.RecacheBindState
+local RecacheBindOutput = ENT.RecacheBindOutput
 
 include("modules/drivetrain.lua")
 include("modules/ammo.lua")

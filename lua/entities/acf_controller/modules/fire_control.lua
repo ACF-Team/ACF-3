@@ -1,5 +1,7 @@
-local RecacheBindOutput, _, GetKeyState, _ = include("../modules_sh/helpers_sh.lua")
 local TimerSimple = timer.Simple
+
+local RecacheBindOutput = ENT.RecacheBindOutput
+local GetKeyState = ENT.GetKeyState
 
 -- Turret related
 do

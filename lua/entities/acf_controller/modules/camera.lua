@@ -1,6 +1,5 @@
 local TraceLine = util.TraceLine
-local RecacheBindOutput, _, _, _ = include("../modules_sh/helpers_sh.lua")
-
+local RecacheBindOutput = ENT.RecacheBindOutput
 -- Camera related
 do
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)
