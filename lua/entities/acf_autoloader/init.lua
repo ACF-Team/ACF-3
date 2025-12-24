@@ -16,10 +16,6 @@ end
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/hunter/blocks/cube025x025x025.mdl")
 
-	self.HorizontalSpeed = 20 -- Speed shells can be rammed at (u/s)
-	self.VerticalSpeed = 10 -- Speed shells can be elevated at, against gravity (u/s)
-	self.RotationalSpeed = 10 -- Speed shells can be rotated at (deg/s)
-
 	-- Linked entities
 	self.Gun = nil
 	self.AmmoCrates = {}
@@ -47,12 +43,6 @@ ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This.Gun = Gun
 	Gun.Autoloader = This
 
-	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
-	local MoveOffset = This:WorldToLocal(BreechPos)
-	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed) 
-	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
-	This.AutoloaderGunBaseReloadTime = HorizontalReload + VerticalReload
-
 	return true, "Autoloader linked successfully."
 end)
 
@@ -60,8 +50,6 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	if not This.Gun or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This.Gun = nil
 	Gun.Autoloader = nil
-
-	This.AutoloaderGunBaseReloadTime = nil
 	return true, "Autoloader unlinked successfully."
 end)
 
@@ -70,14 +58,6 @@ ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
 	This.AmmoCrates[Ammo] = true
 	Ammo.Autoloaders[This] = true
-
-	local MoveOffset = This:WorldToLocal(Ammo:GetPos())
-	local AngleDiff = math.deg(math.acos(This:GetForward():Dot(Ammo:GetForward())))
-	local HorizontalReload = math.abs(MoveOffset.x / This.HorizontalSpeed) + math.abs(MoveOffset.y / This.HorizontalSpeed)
-	local VerticalReload = math.abs(MoveOffset.z / This.VerticalSpeed)
-	local RotationalReload = AngleDiff / This.RotationalSpeed
-	This.AutoloaderAmmoBaseReloadTime[Ammo] = HorizontalReload + VerticalReload + RotationalReload
-
 	return true, "Autoloader linked successfully."
 end)
 
@@ -86,14 +66,13 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
 	This.AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
-
-	This.AutoloaderAmmoBaseReloadTime[Ammo] = nil
 	return true, "Autoloader unlinked successfully."
 end)
 
+-- TODO: abstract this better after autoloaders are implemented... Not my proudest.
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
-function ENT:GetReloadEff(Gun, Ammo)
+function ENT:GetReloadEffAuto(Gun, Ammo)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
@@ -102,32 +81,40 @@ function ENT:GetReloadEff(Gun, Ammo)
 
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
 
-	if not GunArmAngleAligned then return math.huge end
+	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = BreechPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	local TraceResult = TraceLine(TraceConfig)
-	if TraceResult.Hit then return math.huge end
+	if TraceResult.Hit then return 0.000001 end
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = AmmoPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	TraceResult = TraceLine(TraceConfig)
-	if TraceResult.Hit then return math.huge end
+	if TraceResult.Hit then return 0.000001 end
 
-	-- Compute reload time
-	local BaseReload = (self.AutoloaderGunBaseReloadTime or 0) + (self.AutoloaderAmmoBaseReloadTime[Ammo] or 0)
-	return BaseReload
+	-- Gun to arm
+	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
+	local GunMoveOffset = self:WorldToLocal(BreechPos)
+
+	-- Gun to ammo
+	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
+	local AmmoAngleDiff = math.deg(math.acos(self:GetForward():Dot(Ammo:GetForward())))
+
+	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
+	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
+	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
+
+	print(HorizontalScore, VerticalScore, AngularScore)
+	return 2 * HorizontalScore * VerticalScore * AngularScore
 end
 
 function ENT:Think()
 	local SelfTbl = self:GetTable()
-
-	self.BaseReload = self:ComputeReload(SelfTbl.Gun, next(SelfTbl.AmmoCrates))
-	self:UpdateOverlay()
 
 	self:NextThink(CurTime() + 0.1)
 
@@ -138,7 +125,6 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Max Shell Caliber", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
-	State:AddNumber("Reload Time (s)", self.BaseReload or 0)
 end
 
 -- Adv Dupe 2 Related

@@ -89,10 +89,15 @@ do -- Random timer crew stuff
 
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
-		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+		if self.Autoloader then
+			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate or self)
+			self.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+		else
+			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+			self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+		end
 
 		-- Check space behind breech
 		if ACF.LegalChecks and self.BulletData and self.ClassData.BreechConfigs then
@@ -104,7 +109,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x.IsACFAutoloader or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			Debug.Line(wp1, tr.HitPos, 1, Green, true)
