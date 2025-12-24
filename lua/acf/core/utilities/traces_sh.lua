@@ -78,7 +78,7 @@ do -- ACF.trace
 
 		util.TraceLine(TraceData)
 
-		TraceData.whitelist = false
+		-- TraceData.whitelist = false
 
 		if Output.HitNonWorld then
 			if physBoneHavers[Output.Entity:GetClass()] then
