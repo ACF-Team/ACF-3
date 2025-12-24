@@ -370,7 +370,7 @@ do -- ACF global vars
 	ACF.AutoloaderBestDistHorizontal = 6 -- Horizontal distance before which autoloaders are most effective
 	ACF.AutoloaderWorstDistHorizontal = 1000 -- Horizontal distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistVertical = 6 -- Vertical distance before which autoloaders are most effective
-	ACF.AutoloaderWorstDistVertical = 100 -- Vertical distance after which autoloaders are least effective
+	ACF.AutoloaderWorstDistVertical = 250 -- Vertical distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
 	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
 

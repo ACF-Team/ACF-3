@@ -79,8 +79,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
+	-- Require alignment of weapon
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
-
 	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
@@ -109,7 +109,6 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	print(HorizontalScore, VerticalScore, AngularScore)
 	return 2 * HorizontalScore * VerticalScore * AngularScore
 end
 
