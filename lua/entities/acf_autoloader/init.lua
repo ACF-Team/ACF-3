@@ -38,8 +38,21 @@ function ENT:ACF_PostMenuSpawn()
 	self:DropToFloor()
 end
 
-ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
+local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+
+-- Arm to gun links
+ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
 	if This.Gun or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
+
+	return true
+end)
+
+ACF.RegisterClassLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
+	if Gun:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This gun is too far from the autoloader." end
+	return true
+end)
+
+ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This.Gun = Gun
 	Gun.Autoloader = This
 
@@ -53,9 +66,21 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	return true, "Autoloader unlinked successfully."
 end)
 
-ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
+-- Arm to ammo links
+ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
 	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+
+	return true
+end)
+
+ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
+	if Ammo:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far from the autoloader." end
+	if Ammo:GetParent() ~= This:GetParent() then return false, "Autoloader and ammo must share the same parent" end
+	return true
+end)
+
+ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	This.AmmoCrates[Ammo] = true
 	Ammo.Autoloaders[This] = true
 	return true, "Autoloader linked successfully."
@@ -63,7 +88,7 @@ end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end
+	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end -- TODO: refactor when link API is refactored
 	This.AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
 	return true, "Autoloader unlinked successfully."
