@@ -77,7 +77,7 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 
 	local BulletData = Ammo.BulletData
 	if BulletData and (BulletData.Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end
-	if BulletData and (BulletData.ProjLength + BulletData.PropLength - 0.01) > This:ACF_GetUserVar("AutoloaderLength") / 10 then return false, "Ammo is too long for this autoloader." end
+	if BulletData and (BulletData.ProjLength + BulletData.PropLength - 0.01) > This:ACF_GetUserVar("AutoloaderLength") then return false, "Ammo is too long for this autoloader." end
 	return true
 end)
 
