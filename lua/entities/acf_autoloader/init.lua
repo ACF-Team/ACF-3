@@ -7,7 +7,7 @@ local ACF         = ACF
 local TraceLine   = util.TraceLine
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength / 43.233333587646, ClientData.AutoloaderCaliber / 7.2349619865417, ClientData.AutoloaderCaliber / 7.2349619865417) / (25.4)
+	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength / 43.233333587646 * 10, ClientData.AutoloaderCaliber / 7.2349619865417, ClientData.AutoloaderCaliber / 7.2349619865417) / 25.4
 end
 
 function ENT:ACF_PreSpawn()
@@ -139,8 +139,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	State:AddNumber("Max Shell Caliber", self:ACF_GetUserVar("AutoloaderCaliber"))
-	State:AddNumber("Max Shell Length", self:ACF_GetUserVar("AutoloaderLength"))
+	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
+	State:AddNumber("Max Shell Length (mm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
 end
 
