@@ -11,7 +11,7 @@ function ENT.ACF_OnVerifyClientData(ClientData)
 end
 
 function ENT:ACF_PreSpawn()
-	self:SetScaledModel("models/hunter/blocks/cube025x025x025.mdl")
+	self:SetScaledModel("models/acf/autoloader_tractorbeam.mdl")
 
 	-- Linked entities
 	self.Gun = nil
