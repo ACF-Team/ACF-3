@@ -39,8 +39,7 @@ local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 -- Arm to gun links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
-	if This:ACF_GetUserVar("Gun") or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
-
+	if IsValid(This:ACF_GetUserVar("Gun")) or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
 	return true
 end)
 
@@ -52,12 +51,11 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This:ACF_SetUserVar("Gun", Gun)
 	Gun.Autoloader = This
-
 	return true, "Autoloader linked successfully."
 end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
-	if not This:ACF_GetUserVar("Gun") or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
+	if not IsValid(This:ACF_GetUserVar("Gun")) or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This:ACF_SetUserVar("Gun", nil)
 	Gun.Autoloader = nil
 	return true, "Autoloader unlinked successfully."
@@ -106,7 +104,6 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- TODO: maybe check position too later?
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
-	print(GunArmAngleAligned)
 	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
