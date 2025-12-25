@@ -374,7 +374,7 @@ do -- ACF global vars
 	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
 	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
 
-	ACF.InitReloadDelay		= 1		-- Delay after spawning that belt feds are loaded
+	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
 	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
 
