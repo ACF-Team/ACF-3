@@ -7,7 +7,7 @@ local ACF         = ACF
 local TraceLine   = util.TraceLine
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength, ClientData.AutoloaderCaliber, ClientData.AutoloaderCaliber) / (25.4 * 12.312501907349)
+	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength / 43.233333587646, ClientData.AutoloaderCaliber / 7.2349619865417, ClientData.AutoloaderCaliber / 7.2349619865417) / (25.4)
 end
 
 function ENT:ACF_PreSpawn()
