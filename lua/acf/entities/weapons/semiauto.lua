@@ -14,7 +14,7 @@ Weapons.Register("SA", {
 	Mass        = 453,
 	MagSize     = 5,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
-	ReloadMod 	= 1.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 36,
@@ -33,8 +33,8 @@ Weapons.Register("SA", {
 		Max = 10,
 	},
 	Cyclic = {
-		Min = 350,
-		Max = 150,
+		Min = 240,
+		Max = 100,
 	},
 	BreechConfigs = {
 		MeasuredCaliber = 7.6,
