@@ -90,7 +90,7 @@ do -- Random timer crew stuff
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
 		if self.Autoloader then
-			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate or self)
+			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 		else
 			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
