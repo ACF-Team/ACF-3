@@ -514,6 +514,16 @@ do -- Overlay
 		local Projectile = math.Round(self.BulletData.ProjMass, 2)
 		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
 		State:AddHeader("Bullet Info", 2)
+
+		local Caliber = math.Round(self.BulletData.Caliber * 10, 2)
+		local Length  = math.Round(self.BulletData.ProjLength + self.BulletData.PropLength, 2)
+		State:AddKeyValue("Shell dimensions", Caliber .. "mm x " .. Length .. "cm")
+
+		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.Class, self.Weapon, self.BulletData, self.Override), 2)
+		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.Class, self.Weapon, self.BulletData, {MagSize = self.MagSize}), 2)
+		State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
+		State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+
 		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
 		State:AddNumber("Projectile Mass", Projectile, " kg", 2)
 
