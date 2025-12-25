@@ -974,7 +974,7 @@ do -- Crew related
 			-- Random step or Finishing step, whichever is faster.
 			local timeleft = left and math.min(left, rand) or rand
 			-- If time left then recurse, otherwise call Finish
-			if timeleft > 0.001 then
+			if timeleft > engine.TickInterval() then
 				timer.Simple(timeleft, RealLoop)
 			else
 				if Finish and not Finished then Finished = true Finish(Config) end
