@@ -95,7 +95,6 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	return true, "Autoloader unlinked successfully."
 end)
 
--- TODO: abstract this better after autoloaders are implemented... Not my proudest.
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
 function ENT:GetReloadEffAuto(Gun, Ammo)
@@ -105,8 +104,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
+	-- TODO: maybe check position too later?
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
-
 	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
