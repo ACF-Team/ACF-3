@@ -39,7 +39,7 @@ local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 -- Arm to gun links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
-	if This:ACF_GetUserVar("Gun") or Gun:ACF_GetUserVar("Autoloader") then return false, "Autoloader is already linked to that gun." end
+	if This:ACF_GetUserVar("Gun") or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
 
 	return true
 end)
@@ -51,15 +51,15 @@ end)
 
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This:ACF_SetUserVar("Gun", Gun)
-	Gun:ACF_SetUserVar("Autoloader", This)
+	Gun.Autoloader = This
 
 	return true, "Autoloader linked successfully."
 end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
-	if not This:ACF_GetUserVar("Gun") or not Gun:ACF_GetUserVar("Autoloader") then return false, "Autoloader was not linked to that gun." end
+	if not This:ACF_GetUserVar("Gun") or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This:ACF_SetUserVar("Gun", nil)
-	Gun:ACF_SetUserVar("Autoloader", nil)
+	Gun.Autoloader = nil
 	return true, "Autoloader unlinked successfully."
 end)
 
@@ -106,6 +106,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- TODO: maybe check position too later?
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
+	print(GunArmAngleAligned)
 	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
@@ -128,7 +129,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- Gun to ammo
 	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
-	local AmmoAngleDiff = math.deg(math.acos(self:GetForward():Dot(Ammo:GetForward())))
+	local AmmoDirection = Ammo:LocalToWorldAngles(Ammo.ExtraData.LocalAng):Forward()
+	local AmmoAngleDiff = math.deg(math.acos(self:GetForward():Dot(AmmoDirection)))
 
 	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
