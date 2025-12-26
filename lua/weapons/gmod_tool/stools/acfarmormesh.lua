@@ -227,7 +227,7 @@ elseif SERVER then -- Serverside-only stuff
 			net.Broadcast()
 		end
 		self.controller = nil
-		self.selection = {}
+		for v, _ in pairs(self.selection) do self:UnSelectEntity(v) end
 		self:SetStage(0)
 	end
 
@@ -236,6 +236,8 @@ elseif SERVER then -- Serverside-only stuff
 		if not IsValid(self.controller.ent) then return end
 
 		print("Compiling mesh for controller ", self.controller.ent)
+		print("Selected entities:")
+		PrintTable(self.selection)
 
 		self:UnSetController()
 	end
@@ -250,8 +252,14 @@ elseif SERVER then -- Serverside-only stuff
 
 	function TOOL:RightClick(Trace)
 		-- Select the controller
-		if not self.controller then self:SetController(Trace.Entity)
-		else self:FinishController() end
+		local Entity = Trace.Entity
+		local Class = Entity:GetClass()
+		if Class == "acf_armor_controller" then
+			if not self.controller then self:SetController(Entity)
+			elseif self.controller.ent == Entity then self:FinishController() end
+		else
+			if self.selection[Entity] then self:UnSelectEntity(Entity) else self:SelectEntity(Entity) end
+		end
 		return true
 	end
 
