@@ -734,7 +734,7 @@ function Entities.AutoRegister(ENT)
 					end
 				end
 
-				if PrioritizeFieldDefFlag(RestrictionSpecs, Typedef, "IsClientData") then
+				if FirstTimeLiveData or PrioritizeFieldDefFlag(RestrictionSpecs, Typedef, "IsClientData") then
 					SetLiveData(self, v, ClientData[v])
 				end
 			end
