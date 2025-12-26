@@ -64,19 +64,13 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.name", "ACF Armor Compiler")
 	language.Add("tool.acfarmormesh.desc", "Aids in editting an ACF Armor Mesh")
 
-	language.Add("tool.acfarmormesh.modes", "[ALT] Switch between editing/armoring")
-	language.Add("tool.acfarmormesh.targets", "[CTRL] Switch between selecting anything/vertex/convex")
-
 	language.Add("tool.acfarmormesh.left0", "Place a mesh controller")
 	language.Add("tool.acfarmormesh.right0", "Select a mesh controller")
-	language.Add("tool.acfarmormesh.reload0", "Clear a mesh controller")
 
-	language.Add("tool.acfarmormesh.left1", "Add a vertex/convex")
-	language.Add("tool.acfarmormesh.left2", "[SHIFT] Add a basic cube for modification")
-	language.Add("tool.acfarmormesh.right1", "Deselect a controller")
-	language.Add("tool.acfarmormesh.right2", "[SHIFT] Select a vertex/convex")
-	language.Add("tool.acfarmormesh.flashlight1", "[F] Move a vertex/convex")
-	language.Add("tool.acfarmormesh.reload1", "[R] Delete a vertex/convex")
+	language.Add("tool.acfarmormesh.right1", "Select an entity to add to the mesh")
+	language.Add("tool.acfarmormesh.right2", "Select [SHIFT] an entity to add to the mesh")
+	language.Add("tool.acfarmormesh.right3", "Select [E] an entity to add to the mesh")
+	language.Add("tool.acfarmormesh.reload1", "Clear selection")
 
 	surface.CreateFont("Torchfont", { size = 40, weight = 1000, font = "arial" })
 
@@ -107,10 +101,25 @@ if CLIENT then
 		Menu:AddLabel("ACF Armor Mesh Tool")
 		Menu:AddLabel("This tool is used to create and edit ACF armor meshes.")
 
+		-- PLACEHOLDERS
+		local Materials = Menu:AddComboBox()
+		Materials:AddChoice("Rolled Homogenous Armor", 1)
+		Materials:AddChoice("Aluminum", 2)
+		Materials:AddChoice("Rubber", 3)
+		Materials:AddChoice("Textolite", 4)
+		Materials:AddChoice("Kevlar", 5)
+		Materials:AddChoice("Depleted Uranium", 6)
+		Materials:AddChoice("FY1", 7)
+		Materials:AddChoice("FY5", 8)
+		Materials:ChooseOptionID(1)
+		Menu:AddHelp("#tool.acfarmormesh.material_desc")
+
+		local SphereRadius = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
+		SphereRadius:SetConVar("acfarmormesh_sphere_radius")
+		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
+
 		local Instructions = Menu:AddCollapsible("General Instructions", false)
 		Instructions:AddLabel("Test")
-
-		Menu:AddTextEntry("Controller Model: ", "models/hunter/plates/plate025x025.mdl")
 	end
 
 	TOOL.BuildCPanel = CreateMenu
@@ -153,16 +162,16 @@ if CLIENT then
 		LocalPlayer().SelectedController = Selected and Ent or nil
 	end)
 
-	--- Draws the hud/tooltips for this tool
-	function TOOL:DrawHUD()
-		local ent = LocalPlayer().SelectedController
-		if IsValid(ent) then
-			cam.Start3D()
-			render.SetColorMaterial()
-			ent:DrawOverlay()
-			cam.End3D()
-		end
-	end
+	-- --- Draws the hud/tooltips for this tool
+	-- function TOOL:DrawHUD()
+	-- 	local ent = LocalPlayer().SelectedController
+	-- 	if IsValid(ent) then
+	-- 		cam.Start3D()
+	-- 		render.SetColorMaterial()
+	-- 		ent:DrawOverlay()
+	-- 		cam.End3D()
+	-- 	end
+	-- end
 
 	function TOOL:DrawToolScreen()
 		local Trace = self:GetOwner():GetEyeTrace()
@@ -184,17 +193,14 @@ elseif SERVER then -- Serverside-only stuff
 	local function checkOwner(ply, ent)
 		if CPPI then
 			local owner = ent:CPPIGetOwner() or (ent.GetPlayer and ent:GetPlayer())
-			if owner then
-				return owner == ply
-			end
+			if owner then return owner == ply end
 		end
 		return true
 	end
 
+	--- Selects a controller to start editting with
 	function TOOL:SetController(ent)
-		if not IsValid(ent) or ent:GetClass() ~= "acf_armor_controller" or not checkOwner(self:GetOwner(), ent) then
-			return
-		end
+		if not IsValid(ent) or ent:GetClass() ~= "acf_armor_controller" or not checkOwner(self:GetOwner(), ent) then return end
 
 		net.Start("acf_mesh_selected")
 		net.WriteEntity(ent)
@@ -202,12 +208,13 @@ elseif SERVER then -- Serverside-only stuff
 		net.Broadcast()
 
 		self.controller = { ent = ent, col = ent:GetColor(), mat = ent:GetMaterial(), mode = ent:GetRenderMode() }
-		ent:SetColor(Color(0, 0, 255, 255))
+		ent:SetColor(Color(255, 93, 0, 255))
 		ent:SetRenderMode(RENDERMODE_TRANSCOLOR)
 		ent:SetMaterial("models/debug/debugwhite")
 		self:SetStage(1)
 	end
 
+	-- Deselects the current controller
 	function TOOL:UnSetController()
 		if IsValid(self.controller.ent) then
 			self.controller.ent:SetColor(self.controller.col)
@@ -223,33 +230,16 @@ elseif SERVER then -- Serverside-only stuff
 		self:SetStage(0)
 	end
 
-	function TOOL:CheckForExtras()
-		local isFirstTimePredicted = IsFirstTimePredicted()
-		if not isFirstTimePredicted then return end
+	-- Begins compilation process when the controller is reselected
+	function TOOL:FinishController()
+		if not IsValid(self.controller.ent) then return end
 
-		local Player = self:GetOwner()
+		print("Compiling mesh for controller ", self.controller.ent)
 
-		if Player:KeyPressed(IN_DUCK) then
-			-- Switch between editing/armoring
-			print("Change Modes")
-		end
-
-		if Player:KeyPressed(IN_WALK) then
-			-- Switch between only selecting anything/vertex/convex
-			print("Change Targets")
-		end
-	end
-
-	function TOOL:Think()
-		local Player = self:GetOwner()
-		local Trace = Player:GetEyeTrace()
-		local Ent = Trace.Entity
-
-		self:CheckForExtras()
+		self:UnSetController()
 	end
 
 	function TOOL:LeftClick(Trace)
-		local Player = self:GetOwner()
 		if not self.controller then
 			-- No controller, so spawn one
 			SpawnEntity(self, Trace)
@@ -258,25 +248,15 @@ elseif SERVER then -- Serverside-only stuff
 	end
 
 	function TOOL:RightClick(Trace)
-		local Player = self:GetOwner()
-		if Player:KeyDown(IN_SPEED) then
-			-- Select the vertex/convex
-			print("Shift + RightClick")
-			return true
-		end
-
-		print("RightClick")
-		-- Select or deselect the controller...
-		if not self.controller then
-			self:SetController(Trace.Entity)
-		else
-			self:UnSetController()
-		end
+		-- Select the controller
+		if not self.controller then self:SetController(Trace.Entity)
+		else self:FinishController() end
 		return true
 	end
 
 	function TOOL:Reload(Trace)
-		print("Reload")
+		-- Deselect the controller
+		self:UnSetController()
 		return true
 	end
 end
