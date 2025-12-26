@@ -537,14 +537,6 @@ do
 			hook.Remove("Tick", "GForceCalculation" .. Entity:EntIndex())
 		end)
 
-		-- Default material or fallback. This is overridden by AD2 due to entmods if the player applied one.
-		local Mat, _ = Material("sprops/sprops_grid_12x12")
-		local MatPath = ""
-		if not Mat:IsError() then MatPath = "sprops/sprops_grid_12x12"
-		else MatPath = "phoenix_storms/Indenttiles2" end
-		Entity:SetMaterial(MatPath)
-		Entity.MaterialPath = MatPath
-
 		-- Finish setting up the entity
 		HookRun("ACF_OnSpawnEntity", "acf_crew", Entity, Data, CrewModel, CrewType)
 
