@@ -20,6 +20,9 @@ function ENT:ACF_PreSpawn()
 	-- State variables
 	self.AutoloaderGunBaseReloadTime = nil
 	self.AutoloaderAmmoBaseReloadTime = {}
+
+	self.OverlayErrors = {}
+	self.OverlayWarnings = {}
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
@@ -107,7 +110,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local AmmoPos = Ammo:GetPos()
 
 	-- TODO: maybe check position too later?
-	local GunArmAngleAligned = self:GetForward():Dot(BreechAng:Forward()) > 0.99
+	local GunArmAngle = math.deg(math.acos(self:GetForward():Dot(BreechAng:Forward())))
+	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
+	self.OverlayWarnings.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
+	self:UpdateOverlay()
 	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
@@ -115,6 +121,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceConfig.endpos = BreechPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	local TraceResult = TraceLine(TraceConfig)
+	self.OverlayErrors.ArmBreechLOS = TraceResult.Hit and "Autoloader cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
+	self:UpdateOverlay()
 	if TraceResult.Hit then return 0.000001 end
 
 	-- Check LOS from arm to ammo is unobstructed
@@ -122,6 +130,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceConfig.endpos = AmmoPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	TraceResult = TraceLine(TraceConfig)
+	self.OverlayErrors.ArmAmmoLOS = TraceResult.Hit and "Autoloader cannot see the ammo\nOf: " .. (tostring(Ammo) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
+	self:UpdateOverlay()
 	if TraceResult.Hit then return 0.000001 end
 
 	-- Gun to arm
@@ -174,6 +184,12 @@ function ENT:Think()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
+	if next(self.OverlayErrors) then
+		for _, Error in pairs(self.OverlayErrors) do State:AddError(Error) end
+	end
+	if next(self.OverlayWarnings) then
+		for _, Warning in pairs(self.OverlayWarnings) do State:AddWarning(Warning) end
+	end
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
