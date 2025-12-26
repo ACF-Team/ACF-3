@@ -558,6 +558,11 @@ do
 	-- Bare minimum arguments to reconstruct a crew
 	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
+	-- Compatibility with ACE crew entities
+	Entities.Register("ace_crewseat_driver", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("ace_crewseat_gunner", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	Entities.Register("ace_crewseat_loader", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")
 	ACF.RegisterLinkSource("acf_engine", "Crew")
@@ -597,32 +602,28 @@ do
 		return true, "Crew updated successfully!"
 	end
 
-	function ENT:UpdateOverlayText()
-		local Status = self.IsAlive and "Alive" or "Dead"
-		local ErrorCount = table.Count(self.OverlayErrors)
-		if ErrorCount > 0 then
-			Status = Status .. " (" .. ErrorCount .. " errors)"
+	function ENT:ACF_UpdateOverlayState(State)
+		if self.IsAlive then
+			State:AddSuccess("Alive")
+		else
+			State:AddError("Dead")
 		end
 
-		-- Compile error messages
 		for _, Error in pairs(self.OverlayErrors) do
-			Status = Status .. "\n\n" .. Error
+			State:AddError(Error)
 		end
 
-		local str = string.format("%s\n\nRole: %s\nHealth: %s%%\nLean: %s%%\nSpace: %s%%\nMove: %s%%\nFocus: %s%%\nTotal: %s%%\n\nReplaces Others: %s\nReplaceable: %s\nPriority: %s",
-			Status,
-			self.CrewTypeID,
-			math.Round(self.HealthEff * 100, 2),
-			math.Round(self.LeanEff * 100, 2),
-			math.Round(self.SpaceEff * 100, 2),
-			math.Round(self.MoveEff * 100, 2),
-			math.Round(self.Focus * 100, 2),
-			math.Round(self.TotalEff * 100, 2),
-			self.ReplaceOthers,
-			self.ReplaceSelf,
-			self.CrewPriority
-		)
-		return str
+		State:AddWidthBreak()
+		State:AddKeyValue("Role", self.CrewTypeID)
+		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2), "%")
+		State:AddNumber("Lean", math.Round(self.LeanEff * 100, 2), "%")
+		State:AddNumber("Space", math.Round(self.SpaceEff * 100, 2), "%")
+		State:AddNumber("Move", math.Round(self.MoveEff * 100, 2), "%")
+		State:AddNumber("Focus", math.Round(self.Focus * 100, 2), "%")
+		State:AddNumber("Total", math.Round(self.TotalEff * 100, 2), "%")
+		State:AddKeyValue("Replaces Others", self.ReplaceOthers and "Yes" or "No")
+		State:AddKeyValue("Replaceable", self.ReplaceSelf and "Yes" or "No")
+		State:AddNumber("Priority", self.CrewPriority)
 	end
 
 	function ENT:Use(Activator)
@@ -773,6 +774,10 @@ do
 			end
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
+	end
+
+	function ENT:GetCost()
+		return self.CrewType.Cost or 1
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)

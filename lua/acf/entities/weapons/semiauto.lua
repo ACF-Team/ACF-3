@@ -14,7 +14,7 @@ Weapons.Register("SA", {
 	Mass        = 453,
 	MagSize     = 5,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
-	ReloadMod 	= 1.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
+	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 36,
@@ -33,8 +33,8 @@ Weapons.Register("SA", {
 		Max = 10,
 	},
 	Cyclic = {
-		Min = 350,
-		Max = 150,
+		Min = 240,
+		Max = 100,
 	},
 	BreechConfigs = {
 		MeasuredCaliber = 7.6,
@@ -42,7 +42,8 @@ Weapons.Register("SA", {
 			{Name = "Vertical Magazine", LPos = Vector(18.8166, -0, 12.2373), LAng = Angle(0, 0, 0), Width = 5.0628, Height = 16.6836},
 			{Name = "Horizontal Magazine", LPos = Vector(18.8166, -13.6, 0), LAng = Angle(0, 0, 0), Width = 17.563, Height = 5.563},
 		}
-	}
+	},
+	CostScalar	= 0.55
 })
 
 Weapons.RegisterItem("25mmSA", "SA", {

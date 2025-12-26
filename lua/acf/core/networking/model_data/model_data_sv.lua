@@ -42,6 +42,7 @@ do -- Pointer entity creation
 		ModelData.Entity = Entity
 		SendPointerEntity()
 	end
+	ModelData.Create	= Create
 
 	hook.Add("InitPostEntity", "ACF_ModelData", function()
 		Create()
@@ -50,7 +51,7 @@ do -- Pointer entity creation
 	end)
 
 	hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(Player)
-		SendPointerEntity(Player)
+		if IsValid(ModelData.Entity) then SendPointerEntity(Player) else Create() end
 	end)
 
 	hook.Add("ShutDown", "ACF_ModelData", function()
@@ -68,13 +69,45 @@ do -- Model data getter method
 	local function CreatePhysObj(Model)
 		util.PrecacheModel(Model)
 
-		local Entity = ModelData.Entity
+		local Ent = ModelData.Entity
 
-		Entity:SetModel(Model)
-		Entity:PhysicsInit(SOLID_VPHYSICS)
+		if not IsValid(Ent) then
+			ACF.DumpStack("Somehow, the precache entity is no longer valid.")
 
-		return Entity:GetPhysicsObject()
+			ModelData.Create()
+			Ent = ModelData.Entity
+		end
+
+		Ent:SetModel(Model)
+		Ent:PhysicsInit(SOLID_VPHYSICS)
+
+		return Ent:GetPhysicsObject()
 	end
+
+	-------------------------------------------------------------------
+
+	-- Basically the same as below, just doesn't return anything, to be used to pre-load as a contraption spawns in
+	function ModelData.Populate(Model)
+		local Path = ModelData.GetModelPath(Model)
+
+		if not Path then return end
+		if Models[Path] then return end
+
+		local PhysObj = CreatePhysObj(Path)
+		if not IsValid(PhysObj) then return end
+
+		local Min, Max = PhysObj:GetAABB()
+
+		local Data = {
+			Mesh   = ModelData.SanitizeMesh(PhysObj),
+			Volume = PhysObj:GetVolume(),
+			Center = (Min + Max) * 0.5,
+			Size   = Max - Min,
+		}
+
+		Models[Path] = Data
+	end
+
 	-------------------------------------------------------------------
 
 	function ModelData.GetModelData(Model)

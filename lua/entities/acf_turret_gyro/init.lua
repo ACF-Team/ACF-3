@@ -169,19 +169,18 @@ end
 
 do	-- Metamethods and other important stuff
 	do	-- Overlay shenanigans
-		function ENT:UpdateOverlayText()
-			local Status = ""
-
+		function ENT:ACF_UpdateOverlayState(State)
 			if self.IsDual then
-				Status = ("Vertical Drive: " .. (IsValid(self["Turret-V"]) and tostring(self["Turret-V"]) or "Not linked")) .. "\nHorizontal Drive: " .. (IsValid(self["Turret-H"]) and tostring(self["Turret-H"]) or "Not linked")
+				State:AddKeyValue("Vertical Drive", IsValid(self["Turret-V"]) and tostring(self["Turret-V"]) or "Not linked")
+				State:AddKeyValue("Horizontal Drive", IsValid(self["Turret-H"]) and tostring(self["Turret-H"]) or "Not linked")
 			else
-				Status = "Drive: " .. (IsValid(self.Turret) and tostring(self.Turret) or "Not linked")
+				State:AddKeyValue("Drive", IsValid(self.Turret) and tostring(self.Turret) or "Not linked")
 			end
 
 			if self.Active then
-				Status = Status .. "\nActive"
+				State:AddKeyValue("Status", "Active")
 			else
-				Status = Status .. "\nInactve: " .. self.InactiveReason
+				State:AddError("Inactive: " .. self.InactiveReason)
 			end
 
 			return Status
@@ -233,6 +232,10 @@ do	-- Metamethods and other important stuff
 
 			if self.Active == false then self:SetActive(true, "") end
 			return true
+		end
+
+		function ENT:GetCost()
+			return self.IsDual and 8 or 4
 		end
 
 		function ENT:GetInfo()

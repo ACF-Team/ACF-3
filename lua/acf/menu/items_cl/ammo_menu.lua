@@ -48,50 +48,20 @@ local function GetEmptyMass()
 end
 
 
----Calculates the maximum projectile count for a given axis that keeps the dimension under the per-axis limit
----@param Axis number Which axis to check (1=X, 2=Y, 3=Z)
----@param CountY number Current Y count (ignored if Axis == 2)
----@param CountZ number Current Z count (ignored if Axis == 3)
+---Calculates the maximum count values for all axes based on round dimensions and packing
+---@param CountY number Current Y count (for Z axis packing)
+---@param CountZ number Current Z count (for Y axis packing)
 ---@param ToolData table The current tool data
 ---@param BulletData table The current bullet data
----@return number MaxCount The maximum count value for this axis
-local function CalculateMaxCount(Axis, CountY, CountZ, ToolData, BulletData)
+---@return number, number, number MaxX, MaxY, MaxZ
+local function CalculateMaxCounts(CountY, CountZ, ToolData, BulletData)
 	local Class = GetWeaponClass(ToolData)
-	if not (Class and BulletData) then return 50 end -- Default max if no data
+	if not (Class and BulletData) then return 50, 50, 50 end
 
-	-- Get the round size (dimensions of a single projectile)
-	-- This properly handles missiles with custom models via GetModelDimensions
 	local roundSize = ACF.GetCrateSizeFromProjectileCounts(1, 1, 1, Class, ToolData, BulletData)
-	if not roundSize then return 50 end
+	if not roundSize then return 50, 50, 50 end
 
-	-- Use per-axis limits: X is length (192), Y and Z are width (96)
-	local MaxSize = (Axis == 1) and ACF.AmmoMaxLength or ACF.AmmoMaxWidth
-
-	local MaxCount
-
-	if Axis == 1 then
-		-- X axis: simple linear packing (length)
-		MaxCount = math.floor(MaxSize / roundSize.x)
-	elseif Axis == 2 then
-		-- Y axis: hexagonal packing when CountZ > 1 (diameter)
-		if CountZ == 1 then
-			MaxCount = math.floor(MaxSize / roundSize.y)
-		else
-			-- Inverted from: dimension = (count - 1) * size * 0.866 + size
-			MaxCount = math.floor((MaxSize - roundSize.y * 0.134) / (roundSize.y * 0.866))
-		end
-	elseif Axis == 3 then
-		-- Z axis: offset packing when CountY > 1 (diameter)
-		if CountY == 1 then
-			MaxCount = math.floor(MaxSize / roundSize.z)
-		else
-			-- Inverted from: dimension = count * size * 1.5
-			MaxCount = math.floor(MaxSize / (roundSize.z * 1.5))
-		end
-	end
-
-	-- Clamp to reasonable bounds
-	return math.max(1, math.min(MaxCount or 50, 50))
+	return ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, CountY, CountZ)
 end
 
 -- Store references to the count sliders so we can update them
@@ -112,10 +82,7 @@ local function UpdateProjectileCountLimits(ToolData, BulletData, SkipMissiles)
 	local CurrentY = ACF.GetClientNumber("CrateProjectilesY", 3)
 	local CurrentZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
 
-	-- Calculate and apply max values for each axis
-	local MaxX = CalculateMaxCount(1, CurrentY, CurrentZ, ToolData, BulletData)
-	local MaxY = CalculateMaxCount(2, CurrentY, CurrentZ, ToolData, BulletData)
-	local MaxZ = CalculateMaxCount(3, CurrentY, CurrentZ, ToolData, BulletData)
+	local MaxX, MaxY, MaxZ = CalculateMaxCounts(CurrentY, CurrentZ, ToolData, BulletData)
 
 	CountSliders.X:SetMax(MaxX)
 	CountSliders.Y:SetMax(MaxY)
@@ -354,9 +321,6 @@ local function AddCrateInformation(Base, ToolData)
 
 		return CrateText:format(ACF.ContainerArmor, Mass, Rounds)
 	end)
-
-		-- Note about crate scaling behavior
-		Base:AddLabel("#acf.menu.ammo.crate_scaling")
 
 	if Ammo.OnCreateCrateInformation then
 		Ammo:OnCreateCrateInformation(Base, Crate, ToolData, BulletData)
@@ -636,6 +600,15 @@ function ACF.CreateAmmoMenu(Menu)
 		local Count = math.max(1, math.Round(Value))
 		Panel:SetValue(Count)
 		return Count
+	end)
+
+	local Size = Menu:AddLabel("")
+	Size:TrackClientData("CrateProjectilesX", "SetText")
+	Size:TrackClientData("CrateProjectilesY", "SetText")
+	Size:TrackClientData("CrateProjectilesZ", "SetText")
+	Size:DefineSetter(function()
+		local SizeText = language.GetPhrase("#acf.menu.ammo.crate_size")
+		return SizeText:format(math.Round(BoxSize.x, 2), math.Round(BoxSize.y, 2), math.Round(BoxSize.z, 2))
 	end)
 
 	-- Store references for updating max values later

@@ -207,8 +207,13 @@ if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
 	local Objects    = Damage.Objects
+	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
+
+	function Ammo:GetCost(BulletData)
+		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)
+	end
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
@@ -230,11 +235,12 @@ if SERVER then
 		Entity:SetNW2Float("FillerMass", BulletData.BoomFillerMass)
 	end
 
-	function Ammo:GetCrateText(BulletData)
-		local Text = "Muzzle Velocity: %s m/s\nMax Penetration: %s mm\nBlast Radius: %s m\n", "Blast Energy: %s kJ"
+	function Ammo:UpdateCrateOverlay(BulletData, State)
 		local Data = self:GetDisplayData(BulletData)
-
-		return Text:format(math.Round(BulletData.MuzzleVel, 2), math.Round(Data.MaxPen, 2), math.Round(Data.BlastRadius, 2), ACF.NiceNumber(math.Round(Data.BoomFillerMass * ACF.HEPower, 2)))
+		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
+		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
+		State:AddNumber("Blast Radius", Data.BlastRadius, " m")
+		State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ")
 	end
 
 	function Ammo:Detonate(Bullet, HitPos)

@@ -181,7 +181,7 @@ local function SetActive(Entity, Value, EntTbl)
 
 	local ActBool = tobool(Value)
 
-	if EntTbl.Active == NewActive then return end -- Already in the desired state
+	if EntTbl.Active == ActBool then return end -- Already in the desired state
 	if ActBool and EntTbl.Disabled then return end -- Can't activate a disabled engine
 
 	if ActBool then -- Was off, turn on
@@ -370,8 +370,6 @@ do -- Spawn and Update functions
 		Entity:SetPos(Pos)
 		Entity:Spawn()
 
-		ACF.CheckLegal(Entity)
-
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
@@ -513,6 +511,7 @@ function ENT:Enable()
 	SetActive(self, Active, self:GetTable())
 
 	self:UpdateOverlay()
+	ACF.CheckLegal(self) -- MARCH: Check parent chain on enabled
 end
 
 function ENT:Disable()
@@ -549,25 +548,19 @@ function ENT:UpdateOutputs(SelfTbl)
 	end
 end
 
-local Text = "%s\n\n%s\nPower: %s kW / %s hp\nTorque: %s Nm / %s ft-lb\nPowerband: %s - %s RPM\nRedline: %s RPM"
-
-function ENT:UpdateOverlayText()
-	local State
+function ENT:ACF_UpdateOverlayState(State)
 	if not ACF.AllowSpecialEngines and self.IsSpecial then
-		State = "Disabled: Special engines are disabled."
+		State:AddError("Disabled: Special engines are disabled.")
 	elseif self.Active then
-		State = "Active"
+		State:AddSuccess("Active")
 	else
-		State = "Idle"
+		State:AddWarning("Idle")
 	end
-	local Name = self.Name
-	local Power, PowerFt = Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)
-	local Torque, TorqueFt = Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)
-	local PowerbandMin = self.PeakMinRPM
-	local PowerbandMax = self.PeakMaxRPM
-	local Redline = self.LimitRPM
-
-	return Text:format(State, Name, Power, PowerFt, Torque, TorqueFt, PowerbandMin, PowerbandMax, Redline)
+	State:AddKeyValue("Type", self.Name)
+	State:AddKeyValue("Power", ("%s kW / %s hp"):format(Round(self.PeakPower), Round(self.PeakPower * ACF.KwToHp)))
+	State:AddKeyValue("Torque", ("%s Nm / %s ft-lb"):format(Round(self.PeakTorque), Round(self.PeakTorque * ACF.NmToFtLb)))
+	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
+	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -650,12 +643,16 @@ end
 function ENT:ACF_IsLegal()
 	local AllowArbitraryParents = ACF.AllowArbitraryParents
 
-	if not AllowArbitraryParents and not self.ACF_EngineParentValid then
-		return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
-	end
+	-- MARCH: Craftian's change to ACF.CheckLegal calls caused this to break,
+	-- so this self.Active should guard against it.
+	if self.Active then
+		if not AllowArbitraryParents and not self.ACF_EngineParentValid then
+			return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
+		end
 
-	local Contraption = self:GetContraption()
-	if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+		local Contraption = self:GetContraption()
+		if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
+	end
 
 	return true
 end
@@ -679,6 +676,8 @@ hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
+			if not IsValid(Engine) then continue end
+
 			ACF.CheckLegal(Engine)
 		end
 	end
@@ -696,6 +695,8 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", functi
 
 	if Contraption.Engines then
 		for Engine in pairs(Contraption.Engines) do
+			if not IsValid(Engine) then continue end
+
 			ACF.CheckLegal(Engine)
 		end
 	end
@@ -938,6 +939,12 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 
 	--Wire dupe info
 	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+end
+
+function ENT:GetCost()
+	local selftbl = self:GetTable()
+
+	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
 end
 
 function ENT:OnRemove()

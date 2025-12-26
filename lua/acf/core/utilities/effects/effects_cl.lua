@@ -20,20 +20,26 @@ Effects.MaterialColors = {
 do -- Resupply effect
 	local render   = render
 	local Distance = ACF.SupplyDistance
-	local SupplyColor = Color(255, 255, 150, 10) -- Soft yellow color for supply effect
 
 	local Supplies = {}
 	Effects.Supplies = Supplies
 
 	local function DrawSpheres(bDrawingDepth, _, isDraw3DSkybox)
 		if bDrawingDepth or isDraw3DSkybox then return end
+
 		render.SetColorMaterial()
 
-		for Entity in pairs(Supplies) do
+		for Entity, RefillStatuses in pairs(Supplies) do
 			local Pos = Entity:GetPos()
 
-			render.DrawSphere(Pos, Distance, 50, 50, SupplyColor)
-			render.DrawSphere(Pos, -Distance, 50, 50, SupplyColor)
+			for RefillType, Refilled in pairs(RefillStatuses) do
+				if not Refilled then continue end
+
+				local SupplyColor = ACF[RefillType .. "SupplyColor"] or ACF.AmmoSupplyColor
+
+				render.DrawSphere(Pos, Distance, 50, 50, SupplyColor)
+				render.DrawSphere(Pos, -Distance, 50, 50, SupplyColor)
+			end
 		end
 	end
 
@@ -49,22 +55,24 @@ do -- Resupply effect
 		end
 	end
 
-	local function Add(Entity)
+	local function Add(Entity, RefilledAmmo, RefilledFuel)
 		if not IsValid(Entity) then return end
 
 		if not next(Supplies) then
 			hook.Add("PostDrawOpaqueRenderables", "ACF_Supply", DrawSpheres)
 		end
 
-		Supplies[Entity] = true
+		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel }
 
 		Entity:CallOnRemove("ACF_Supply", Remove)
 	end
 
 	net.Receive("ACF_SupplyEffect", function()
 		local Entity = net.ReadEntity()
+		local RefilledAmmo = net.ReadBool()
+		local RefilledFuel = net.ReadBool()
 
-		Add(Entity)
+		Add(Entity, RefilledAmmo, RefilledFuel)
 	end)
 
 	net.Receive("ACF_StopSupplyEffect", function()

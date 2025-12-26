@@ -482,36 +482,53 @@ do -- Spawn/Update/Remove
 end
 
 do -- Overlay
-	local Text = "%s\n\nStorage: %sx%sx%s\n\nContents: %s ( %s / %s )%s%s%s"
-	local BulletText = "\nCartridge Mass: %s kg\nProjectile Mass: %s kg"
-
-	function ENT:UpdateOverlayText()
+	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
-		local AmmoInfo = self.RoundData:GetCrateText(self.BulletData)
-		local ExtraInfo = ACF.GetOverlayText(self)
-		local BulletInfo = ""
-		local Status
 
 		if next(self.Weapons) then
-			Status = self:CanConsume() and "Providing Ammo" or (self.Amount ~= 0 and "Idle" or "Empty")
+			if self:CanConsume() then
+				State:AddSuccess("Providing Ammo")
+			elseif self.Amount ~= 0 then
+				State:AddWarning("Idle")
+			else
+				State:AddError("Empty")
+			end
 		else
-			Status = "Not linked to a weapon!"
+			State:AddError("Not linked to a weapon!")
 		end
 
 		local CountX = self.CrateProjectilesX or 1
 		local CountY = self.CrateProjectilesY or 1
 		local CountZ = self.CrateProjectilesZ or 1
 
-		local Projectile = math.Round(self.BulletData.ProjMass, 2)
-		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
-
-		BulletInfo = BulletText:format(Cartridge, Projectile)
-
 		if AmmoInfo and AmmoInfo ~= "" then
-			AmmoInfo = "\n\n" .. AmmoInfo
+			AmmoInfo = AmmoInfo
 		end
 
-		return Text:format(Status, CountX, CountY, CountZ, AmmoType, self.Amount, self.Capacity, BulletInfo, AmmoInfo, ExtraInfo)
+		State:AddDivider()
+		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
+		State:AddKeyValue("Ammo Type", AmmoType)
+		State:AddProgressBar("Contents", self.Amount, self.Capacity)
+
+		local Projectile = math.Round(self.BulletData.ProjMass, 2)
+		local Cartridge  = math.Round(self.BulletData.CartMass, 2)
+		State:AddHeader("Bullet Info", 2)
+
+		local Caliber = math.Round(self.BulletData.Caliber * 10, 2)
+		local Length  = math.Round(self.BulletData.ProjLength + self.BulletData.PropLength, 2)
+		State:AddKeyValue("Shell dimensions", Caliber .. "mm x " .. Length .. "cm")
+
+		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.Class, self.Weapon, self.BulletData, self.Override), 2)
+		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.Class, self.Weapon, self.BulletData, {MagSize = self.MagSize}), 2)
+		State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
+		State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+
+		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
+		State:AddNumber("Projectile Mass", Projectile, " kg", 2)
+
+		State:AddHeader("Ammo Info", 2)
+		self.RoundData:UpdateCrateOverlay(self.BulletData, State)
+		ACF.AddAdditionalOverlays(self, State)
 	end
 end

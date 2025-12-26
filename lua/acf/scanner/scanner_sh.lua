@@ -138,7 +138,6 @@ DefineScannerType("acf_fueltank",              "ACF Fueltank",            Color(
 
 DefineScannerType("acf_piledriver",            "ACF Piledriver",          Color(255, 100, 90),  "PD",  {})
 DefineScannerType("acf_computer",              "ACF Computer",            Color(235, 235, 255), "E",   {drawModelOverlay = true})
-DefineScannerType("acf_armor",                 "ACF Armor",               Color(235, 235, 255), "PAR", {})
 
 DefineScannerType("acf_turret",                "ACF Turret",              Color(155, 215, 255), "T",   {drawModelOverlay = true, drawMesh = true})
 DefineScannerType("acf_turret_motor",          "ACF Turret Motor",        Color(155, 215, 255), "TM",  {drawModelOverlay = true, drawMesh = true})

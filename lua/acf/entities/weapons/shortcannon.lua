@@ -35,7 +35,8 @@ Weapons.Register("SC", {
 		Locations = {
 			{Name = "Breech", LPos = Vector(-40.8958, 0, 0.015625), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
 		}
-	}
+	},
+	CostScalar	= 0.275
 })
 
 Weapons.RegisterItem("37mmSC", "SC", {

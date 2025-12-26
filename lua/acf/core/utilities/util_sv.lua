@@ -3,7 +3,10 @@ local ACF = ACF
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font
--- resource.AddFile("resource/fonts/16segments-basic.ttf")
+resource.AddFile("resource/fonts/16segments-basic.ttf")
+
+resource.AddFile("resource/fonts/conduit.ttf")
+resource.AddFile("resource/fonts/prototype.ttf")
 
 do -- Networked notifications
 	local Messages = ACF.Utilities.Messages
@@ -527,7 +530,12 @@ do -- Entity linking
 		LinkWatchers[Source] = LinkWatchers[Source] or WeakKeyLUT()
 		LinkWatchers[Target] = LinkWatchers[Target] or WeakKeyLUT()
 		local Timer = ACF.AugmentedTimer(
-			function() ACF.PerformClassLinkCheck(Source, Target) end,
+			function()
+				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
+				if not Status then
+					ACF.SendNotify(Source:CPPIGetOwner(), false, Message or "A link has been automatically removed.")
+				end
+			end,
 			function() return IsValid(Source) and IsValid(Target) end,
 			function()
 				ACF.StopWatchingLink(Source, Target)
@@ -739,14 +747,14 @@ do -- Entity inputs
 	end
 end
 
-do -- Extra overlay text
+do -- Extra overlays
 	--[[
 		Example structure of Classes:
 		
 		Classes = {
 			["acf_ammo"] = {
-				["Kinematic"] = function(Entity), -- Returns text containing muzzle vel, drag coef, etc.
-				["Explosive"] = function(Entity) -- Returns text containing explosive mass, blast radius, etc.
+				["Kinematic"] = function(Entity, State), -- Modifies the overlay state containing muzzle vel, drag coef, etc.
+				["Explosive"] = function(Entity, State) -- Modifies the overlay state containing explosive mass, blast radius, etc.
 			}
 		}
 
@@ -758,7 +766,7 @@ do -- Extra overlay text
 	--- @param ClassName string Name of the class to register for
 	--- @param Identifier string The identitifer to assosciate the function with
 	--- @param Function fun(Entity:table):string A function which takes the entity and returns some text for the identifier
-	function ACF.RegisterOverlayText(ClassName, Identifier, Function)
+	function ACF.RegisterAdditionalOverlay(ClassName, Identifier, Function)
 		if not isstring(ClassName) then return end
 		if Identifier == nil then return end
 		if not isfunction(Function) then return end
@@ -774,10 +782,10 @@ do -- Extra overlay text
 		end
 	end
 
-	--- Removes an overlay callback defined previously by ACF.RegisterOverlayText.
+	--- Removes an overlay callback defined previously by ACF.RegisterAdditionalOverlay.
 	--- @param ClassName string Name of the class to affect
 	--- @param Identifier string The identifier of the function to be removed
-	function ACF.RemoveOverlayText(ClassName, Identifier)
+	function ACF.RemoveAdditionalOverlay(ClassName, Identifier)
 		if not isstring(ClassName) then return end
 		if Identifier == nil then return end
 
@@ -788,25 +796,26 @@ do -- Extra overlay text
 		Class[Identifier] = nil
 	end
 
+	function ACF.HasAdditionalOverlays(Entity)
+		local Class = Classes[Entity:GetClass()]
+
+		if not Class then return false end
+		return next(Class) ~= nil
+	end
 	--- Given an entity, returns its overlay text, made by concatenating the overlay functions for its class.
 	--- @param Entity table The entity to generate overlay text for
 	--- @return string # The overlay text for this entity
-	function ACF.GetOverlayText(Entity)
+	function ACF.AddAdditionalOverlays(Entity, State)
 		local Class = Classes[Entity:GetClass()]
 
-		if not Class then return "" end
+		if not Class then return end
 
-		local Result = ""
-
-		for _, Function in pairs(Class) do
-			local Text = Function(Entity)
-
-			if Text and Text ~= "" then
-				Result = Result .. "\n\n" .. Text
-			end
+		for Name, Function in pairs(Class) do
+			State:AddHeader(Name, 2)
+			State:MarkReliantSlot() -- ^^ targets this
+				Function(Entity, State)
+			State:DiscardReliantSlot()
 		end
-
-		return Result
 	end
 end
 

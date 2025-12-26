@@ -160,10 +160,6 @@ do -- ACF global vars
 	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowProcArmor",            false,    "Procedural armor has been %s.", ACF.BooleanDataCallback(function(Value)
-		ACF.GlobalFilter["acf_armor"] = not Value
-		return Value
-	end))
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
@@ -223,7 +219,6 @@ do -- ACF global vars
 		npc_strider = true,
 		npc_dog = true,
 		phys_bone_follower = true,
-		acf_armor = not ACF.AllowProcArmor, -- Procedural armor filter
 		gmod_wire_expression2 = true,
 		starfall_processor = true,
 		sent_prop2mesh = true,
@@ -274,10 +269,28 @@ do -- ACF global vars
 	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
 
 	-- Material densities
-	ACF.SteelDensity         = 7.9e-3  -- kg/cm^3
-	ACF.RHADensity           = 7.84e-3 -- kg/cm^3
-	ACF.AluminumDensity      = 2.7e-3  -- kg/cm^3
-	ACF.CopperDensity        = 8.96e-3 -- kg/cm^3
+	ACF.SteelDensity         = 7.9e-3 	-- kg/cm^3
+	ACF.RHADensity           = 7.84e-3	-- kg/cm^3
+	ACF.AluminumDensity      = 2.7e-3 	-- kg/cm^3
+	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
+	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
+
+	-- Material conversion to points, kg * modifier
+	ACF.PointConversion		 = {
+		Steel		= 0.04,	-- Projectile steel
+		Aluminum	= 0.25,	-- Sabot material
+		Copper		= 0.15,	-- Liner for HEAT cones
+		Tungsten	= 0.3,	-- Expensive
+		CompB		= 0.1,	-- Normal explosives
+		Octol		= 0.7,	-- Snowflakium, needs to be expensive as a balancing measure
+
+		WP			= 0.01,	-- White phosphorus
+		SF			= 0.02,	-- Smoke filler
+
+		FlareMix	= 0.025,	-- Just some generic mix of hot flammable garbage
+
+		Propellant	= 0.025,	-- Propellant powder
+	}
 
 	-- Debris
 	ACF.ChildDebris          = 50 -- Higher is more debris props; Chance = ACF.ChildDebris / num_children; Only applies to children of acf-killed parent props
@@ -290,7 +303,6 @@ do -- ACF global vars
 		acf_engine = true,
 		acf_piledriver = true,
 		acf_rack = true,
-		acf_armor = true,
 		acf_baseplate = true,
 		acf_turret_computer = true,
 		acf_turret_gyro = true,
@@ -298,6 +310,9 @@ do -- ACF global vars
 		acf_computer = true,
 		acf_radar = true,
 		acf_receiver = true,
+		acf_groundloader = true,
+		acf_supply = true,
+		acf_waterjet = true,
 		prop_physics = true,
 		prop_vehicle_prisoner_pod = true
 	}
@@ -344,6 +359,22 @@ do -- ACF global vars
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
 
+	ACF.MinAutoloaderCaliber = 20	-- Minimum caliber for autoloaders
+	ACF.MaxAutoloaderCaliber = 280	-- Maximum caliber for autoloaders
+	ACF.MinAutoloaderLength = 1	-- Minimum shell length for autoloaders (mm)
+	ACF.MaxAutoloaderLength = 200	-- Maximum shell length for autoloaders (cm)
+	ACF.AutoloaderMaxAngleDiff = 1 -- Maximum deviation between autoloader and breech to be aligned (deg)
+
+	ACF.AutoloaderFallbackCoef = 0.1 -- Minimum possible autoloader efficiency
+	ACF.AutoloaderMaxBonus = 4 	-- Maximum bonus autoloaders can give to reload time
+
+	ACF.AutoloaderBestDistHorizontal = 6 -- Horizontal distance before which autoloaders are most effective
+	ACF.AutoloaderWorstDistHorizontal = 1000 -- Horizontal distance after which autoloaders are least effective
+	ACF.AutoloaderBestDistVertical = 6 -- Vertical distance before which autoloaders are most effective
+	ACF.AutoloaderWorstDistVertical = 100 -- Vertical distance after which autoloaders are least effective
+	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
+	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
+
 	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
 	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
@@ -374,12 +405,12 @@ if SERVER then
 	util.AddNetworkString("ACF_UpdateEntity")
 
 	hook.Add("ACF_OnLoadPersistedData", "ACF Workshop Content", function()
-		if ACF.WorkshopContent then
+		if ACF.ServerData.WorkshopContent then
 			resource.AddWorkshop("2183798463") -- Playermodel Seats
 			resource.AddWorkshop("3248769144") -- ACF-3 Base
 		end
 
-		if ACF.WorkshopExtras then
+		if ACF.ServerData.WorkshopExtras then
 			resource.AddWorkshop("2099387099") -- ACF-3 Removed Sounds
 			resource.AddWorkshop("2782407502") -- ACF-3 Removed Models
 		end
@@ -388,7 +419,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
-	CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
+	-- CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)

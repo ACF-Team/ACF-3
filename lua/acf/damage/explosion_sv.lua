@@ -1,21 +1,51 @@
-local ents         = ents
-local math         = math
-local util         = util
-local ACF          = ACF
-local Damage       = ACF.Damage
-local ModelData    = ACF.ModelData
-local Objects      = Damage.Objects
-local White        = Color(255, 255, 255)
-local Blue         = Color(0, 0, 255)
-local Red          = Color(255, 0, 0)
-local TraceData    = {
+local ACF         = ACF
+local Damage      = ACF.Damage
+local ModelData   = ACF.ModelData
+local Objects     = Damage.Objects
+local Ballistics  = ACF.Ballistics
+local Debug       = ACF.Debug
+local EventViewer = ACF.EventViewer
+
+-- library functions
+local ents       = ents
+local util       = util
+local math       = math
+local sqrt       = math.sqrt
+local floor      = math.floor
+local max        = math.max
+local min        = math.min
+local pi         = math.pi
+local random     = math.random
+local Rand       = math.Rand
+local IsValid    = IsValid
+local Sort       = table.sort
+local ACFTrace   = ACF.trace
+
+-- ACF constants
+local HEPower    = ACF.HEPower
+local HEFrag     = ACF.HEFrag
+local InchToCm   = ACF.InchToCm
+local Threshold  = ACF.Threshold
+local InchToMeter = ACF.InchToMeter
+
+-- Debugging
+local White      = Color(255, 255, 255)
+local Red        = Color(255, 0, 0)
+local Green      = Color(0, 255, 0)
+
+-- Trace data
+local TraceResult = {}
+local TraceData  = {
 	start  = true,
 	endpos = true,
 	filter = true,
 	mask   = MASK_SOLID + CONTENTS_AUX,
+	output = TraceResult
 }
-local Ballistics	= ACF.Ballistics
-local Debug			= ACF.Debug
+
+local function SortByDistSqr(a, b)
+	return a.DistSqr < b.DistSqr
+end
 
 --- Checks whether an entity can be affected by ACF explosions.
 -- @param Entity The entity to be checked.
@@ -38,15 +68,15 @@ end
 --- Returns a random position on the given entity.
 -- @param Entity The entity to get a random position from.
 -- @param A world position based on the shape and size of the given entity.
-function Damage.getRandomPos(Entity)
-	local IsChar = EntACF and EntACF.Type == "Squishy"
+local function getRandomPos(Entity)
+	local IsChar = Entity.ACF and Entity.ACF.Type == "Squishy"
 
 	if IsChar then
 		-- Scale down the "hitbox" since most of the character is in the middle
 		local Mins, Maxs = Entity:GetCollisionBounds()
-		local X    = math.Rand(Mins[1], Maxs[1])
-		local Y    = math.Rand(Mins[2], Maxs[2])
-		local Z    = math.Rand(Mins[3], Maxs[3])
+		local X    = Rand(Mins[1], Maxs[1])
+		local Y    = Rand(Mins[2], Maxs[2])
+		local Z    = Rand(Mins[3], Maxs[3])
 
 		return Entity:LocalToWorld(Vector(X, Y, Z) * 0.65)
 	end
@@ -54,195 +84,287 @@ function Damage.getRandomPos(Entity)
 	if Entity._IsSpherical then
 		local Radius = Entity:BoundingRadius() * 0.5
 
-		return Entity:GetPos() + VectorRand() * math.Rand(1, Radius)
-	else
-		local Model = Entity:GetModel()
-		local Scale = ModelData.GetEntityScale(Entity)
-		local Mesh  = ModelData.GetModelMesh(Model, Scale)
-
-		local Hull     = Mesh[math.random(1, #Mesh)]
-		local TriCount = math.floor(#Hull / 3) -- Number of triangles in the hull
-		local TriIndex = math.random(0, TriCount - 1) -- Random triangle selection
-		local Base     = TriIndex * 3 + 1 -- Multiply back up to the real index
-
-		local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2] -- Get the three vertices of the triangle
-
-		return Entity:LocalToWorld((V1 + V2 + V3) / 3)
+		return Entity:GetPos() + VectorRand() * Rand(1, Radius)
 	end
+
+	local Model    = Entity:GetModel()
+	local Data     = ModelData.GetModelData(Model) -- Used instead of GetModelMesh, which does a full copy
+	local Mesh     = Data.Mesh                     -- Accessing the raw mesh, read-only
+	local Hull     = Mesh[random(1, #Mesh)]        -- Random hull
+	local TriCount = floor(#Hull / 3)              -- Number of triangles in the hull
+	local TriIndex = random(0, TriCount - 1)       -- Random triangle selection
+	local Base     = TriIndex * 3 + 1              -- Multiply back up to the real index
+
+	-- Get the three vertices of the triangle
+	local V1, V2, V3 = Hull[Base], Hull[Base + 1], Hull[Base + 2]
+
+	-- Sample a random point within the triangle using barycentric coordinates
+	local r1, r2 = random(), random()
+
+	if r1 + r2 > 1 then r1, r2 = 1 - r1, 1 - r2 end
+
+	local Point = V1 + r1 * (V2 - V1) + r2 * (V3 - V1)
+
+	-- Apply scale only to the single sampled point
+	local Scale = ModelData.GetEntityScale(Entity)
+
+	Point = Point * Scale
+
+	return Entity:LocalToWorld(Point)
 end
 
---- Creates an explosion. Important to note this explosion is completely invisible
--- See: ACF.Damage.explosionEffect to create a visual representation of an explosion.
+--- Creates an explosion at the given position.
 -- @param Position The world coordinates where the explosion will be created at.
--- @param FillerMass The amount of HE filler on kilograms used to create this explosion.
--- @param FragMass The amount of steel containing the filler on kilograms.
+-- @param FillerMass The amount of HE filler in kilograms.
+-- @param FragMass The amount of steel containing the filler in kilograms.
 -- @param Filter Optional, a list of entities that will not be affected by the explosion.
--- @param DmgInfo A DamageInfo object. It's recommended to populate the Attacker and Inflictor fields.
--- All the other fields will be controlled by the explosion itself, so they're not necessary.
+-- @param DmgInfo A DamageInfo object.
 function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
-	local Power       = FillerMass * ACF.HEPower -- Power in KJ of the filler mass of TNT
+	local ExplosionName
+	if EventViewer.Enabled() then
+		ExplosionName = "ACF Explosion @ " .. SysTime()
+		EventViewer.StartEvent(ExplosionName)
+	end
+
+	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local MaxSphere   = 4 * math.pi * (Radius * ACF.InchToCm) ^ 2 -- Surface Area of the sphere at maximum radius
-	local Fragments   = math.max(math.floor(FillerMass / FragMass * ACF.HEFrag ^ 0.5), 2)
-	local FragMass    = FragMass / Fragments
-	local BaseFragV   = (Power * 50000 / FragMass / Fragments) ^ 0.5
-	local FragArea    = (FragMass / 7.8) ^ 0.33 -- cm2
-	local FragCaliber = 20 * (FragMass / math.pi) ^ 0.5 --mm
 	local Found       = ents.FindInSphere(Position, Radius)
-	local Targets     = {}
-	local Loop        = true -- Find more props to damage whenever a prop dies
 
-	if not Filter then Filter = {} end
-
-	Debug.Cross(Position, 15, 15, White, true)
-	--Debug.Sphere(Position, Radius, 15, White, true)
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion", Position, Power, Radius, Found)
+	end
 
 	do -- Screen shaking
-		local Amp = math.min(Power * 0.0005, 50)
-
+		local Amp = min(Power * 0.0005, 50)
 		util.ScreenShake(Position, Amp, Amp, Amp / 15, Radius * 10)
 	end
 
-	-- Quickly getting rid of all the entities we can't damage
-	for Index, Entity in ipairs(Found) do
+	if not next(Found) then return end -- No targets found, nothing to do
+
+	local MaxSphere    = 4 * pi * (Radius * InchToCm) ^ 2
+	local Fragments    = max(floor(FillerMass / FragMass * HEFrag ^ 0.5), 2)
+	local FragMassCalc = FragMass / Fragments
+	local BaseFragV    = (Power * 50000 / FragMassCalc / Fragments) ^ 0.5
+	local FragArea     = (FragMassCalc / 7.8) ^ 0.33
+	local FragCaliber  = 20 * (FragMassCalc / pi) ^ 0.5
+
+	if not Filter then Filter = {} end
+
+	TraceData.start  = Position
+	TraceData.filter = Filter
+
+	Debug.Cross(Position, 15, 15, White, true)
+
+	DmgInfo:SetOrigin(Position)
+
+	if EventViewer.Enabled() then
+		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion Init", Position, FillerMass, FragMass, Filter, MaxSphere, Fragments)
+	end
+	-- Phase 1: Build sorted target list
+	-- Validate targets, sort by distance, cache target positions
+
+	local TargetList  = {} -- Array for sorting
+	local TargetData  = {} -- Lookup table for quick access
+	local TargetCount = 0
+
+	for _, Entity in ipairs(Found) do
 		if Damage.isValidTarget(Entity) then
-			Targets[Entity] = true
-			Found[Index]    = nil
+			local RandomPos   = getRandomPos(Entity)
+			local Delta       = RandomPos - Position
+			local DistSqr     = Delta:LengthSqr()
+			local Dist        = sqrt(DistSqr)
+			local TraceEndPos = Position + Delta * ((Dist + 24) / Dist)
+
+			local Data = {
+				Entity      = Entity,
+				TraceEndPos = TraceEndPos,
+				DistSqr     = DistSqr,
+				Processed   = false,
+			}
+
+			TargetCount = TargetCount + 1
+			TargetList[TargetCount] = Data
+			TargetData[Entity] = Data
 		else
 			Filter[#Filter + 1] = Entity
 		end
 	end
 
-	if not next(Targets) then return end -- There's nothing to damage
+	if TargetCount == 0 then return end
 
-	DmgInfo:SetOrigin(Position)
+	-- Sort by distance (closest first)
+	Sort(TargetList, SortByDistSqr)
 
-	TraceData.start  = Position
-	TraceData.filter = Filter
+	-- Phase 2: Process targets
+	-- Iterate through targets and check for occlusion
+	-- Blockers (occluders) track which entities they block
+	-- Blocked entities get added to top of stack if blocker is destroyed
 
-	while Loop and Power > 0 do
-		local PowerSpent = 0
-		local Damaged    = {}
+	local Blocking = {} -- Blocking[Entity] = {list of entities this one blocks}
+	local Index    = 1
 
-		Loop = false
+	while Index <= TargetCount and Power > 0 do
+		local Data = TargetList[Index]
+		Index = Index + 1
 
-		for Entity in pairs(Targets) do
-			if not Damage.isValidTarget(Entity) then
-				Filter[#Filter + 1] = Entity
-				Targets[Entity]     = nil
+		if Data.Processed then continue end
 
-				continue
+		local Entity = Data.Entity
+
+		TraceData.endpos = Data.TraceEndPos
+
+		ACFTrace(TraceData)
+
+		if TraceResult.HitWorld then
+			-- Hit world - this entity is permanently blocked from this angle
+			-- Don't mark as processed - give another chance if we happen to hit it while tracing towards another target
+			Debug.Line(Position, Data.TraceEndPos, 15, Green, true)
+
+			continue
+		end
+
+		local HitPos = TraceResult.HitPos
+		local HitEnt = TraceResult.Entity
+
+		if HitEnt ~= Entity then
+			-- We hit something that wasn't our intended target
+			local BlockerData = TargetData[HitEnt]
+
+			if not BlockerData then
+				-- Entity wasn't in our sphere search (model extends into radius)
+				-- Check if it's a valid target and add it to our tracking
+				if IsValid(HitEnt) and Damage.isValidTarget(HitEnt) then
+					local RandomPos   = getRandomPos(HitEnt)
+					local Delta       = RandomPos - Position
+					local DistSqr     = Delta:LengthSqr()
+					local Dist        = sqrt(DistSqr)
+					local TraceEndPos = Position + Delta * ((Dist + 24) / Dist)
+
+					BlockerData = {
+						Entity      = HitEnt,
+						TraceEndPos = TraceEndPos,
+						DistSqr     = DistSqr,
+						Processed   = false,
+					}
+
+					TargetCount = TargetCount + 1
+
+					TargetData[HitEnt]      = BlockerData
+					TargetList[TargetCount] = BlockerData
+				else
+					-- Not a valid target, filter it and mark our original target as unreachable
+					Filter[#Filter + 1] = HitEnt
+					Data.Processed      = true
+
+					--Debug.Line(Position, HitPos, 15, White, true)
+
+					continue
+				end
+			elseif not BlockerData.Processed then
+				-- Blocked by another valid target we haven't processed yet
+				-- If the blocker dies or is penetrated, we'll try to hit this target again
+				local BlockList = Blocking[HitEnt]
+
+				if not BlockList then
+					BlockList = {}
+					Blocking[HitEnt] = BlockList
+				end
+
+				BlockList[#BlockList + 1] = Data
+
+				--Debug.Line(Position, HitPos, 15, Blue, true)
+			else
+				-- Blocker already processed, we're permanently blocked
+				Data.Processed = true
+				--Debug.Line(Position, HitPos, 15, White, true)
 			end
 
-			local HitPos    = Damage.getRandomPos(Entity)
-			local Delta     = HitPos - Position
-			local Direction = Delta:GetNormalized()
+			continue
+		end
 
-			TraceData.endpos = Position + Direction * (Delta:Length() + 24)
+		-- Direct hit on our target!
+		Data.Processed = true
 
-			local Trace  = ACF.trace(TraceData)
-			local HitPos = Trace.HitPos
+		local Delta         = HitPos - Position
+		local Distance      = Delta:Length()
+		local Direction     = Delta / Distance -- Normalize without second sqrt
+		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1)
+		local EntArea       = HitEnt.ACF.Area
+		local EntArmor      = HitEnt.ACF.Armour
+		local Area          = min(EntArea / Sphere, 0.5) * MaxSphere
+		local AreaFraction  = Area / MaxSphere
+		local PowerFraction = Power * AreaFraction
+		local BlastResult, FragResult, Losses, Penetration
 
-			if Trace.HitNonWorld then
-				local HitEnt = Trace.Entity
+		Debug.Line(Position, HitPos, 15, Red, true)
 
-				if not Damaged[HitEnt] and Damage.isValidTarget(HitEnt) then
-					local Distance      = Position:Distance(HitPos)
-					local Sphere        = math.max(4 * math.pi * (Distance * ACF.InchToCm) ^ 2, 1) -- Surface Area of the sphere at the range of that prop
-					local EntArea       = HitEnt.ACF.Area
-					local EntArmor      = HitEnt.ACF.Armour
-					local Area          = math.min(EntArea / Sphere, 0.5) * MaxSphere -- Project the Area of the prop to the Area of the shadow it projects at the explosion max radius
-					local AreaFraction  = Area / MaxSphere
-					local PowerFraction = Power * AreaFraction -- How much of the total power goes to that prop
-					local BlastResult, FragResult, Losses, Penetration
+		DmgInfo:SetHitPos(HitPos)
+		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
-					Debug.Line(Position, HitPos, 15, Red, true) -- Red line for a successful hit
+		do -- Blast damage
+			local Feathering  = 1 - min(0.99, Distance / Radius) ^ 0.5
+			local BlastArea   = EntArea / Threshold * Feathering
+			local BlastEnergy = PowerFraction ^ 0.3 * BlastArea
+			local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
+			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
 
-					DmgInfo:SetHitPos(HitPos)
-					DmgInfo:SetHitGroup(Trace.HitGroup)
+			DmgInfo:SetType(DMG_BLAST)
 
-					do -- Blast damage
-						local Feathering  = 1 - math.min(0.99, Distance / Radius) ^ 0.5 -- 0.5 was ACF.HEFeatherExp
-						local BlastArea   = EntArea / ACF.Threshold * Feathering
-						local BlastEnergy = PowerFraction ^ 0.3 * BlastArea -- 0.3 was ACF.HEBlastPen
-						local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
-						local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
+			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
+			Losses      = BlastResult.Loss * 0.5
+			Penetration = BlastPen > EntArmor
+		end
 
-						DmgInfo:SetType(DMG_BLAST)
+		do -- Fragment damage
+			local FragHit = floor(Fragments * AreaFraction)
 
-						BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
-						Losses      = BlastResult.Loss * 0.5
-						Penetration = BlastPen > EntArmor
-					end
+			if FragHit > 0 then
+				local Loss      = BaseFragV * Distance / Radius
+				local FragVel   = max(BaseFragV - Loss, 0) * InchToMeter
+				local FragPen   = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
+				local HitAngle  = ACF.GetHitAngle(TraceResult, Direction)
+				local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
 
-					do -- Fragment damage
-						local FragHit = math.floor(Fragments * AreaFraction)
+				DmgInfo:SetType(DMG_BULLET)
 
-						if FragHit > 0 then
-							local Loss      = BaseFragV * Distance / Radius
-							local FragVel   = math.max(BaseFragV - Loss, 0) * ACF.InchToMeter
-							local FragPen   = ACF.Penetration(FragVel, FragMass, FragCaliber)
-							local HitAngle  = ACF.GetHitAngle(Trace, Direction)
-							local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
-
-							DmgInfo:SetType(DMG_BULLET)
-
-							FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
-							Losses      = Losses + FragResult.Loss * 0.5
-							Penetration = Penetration or FragResult.Overkill > 0
-						end
-					end
-
-					Damaged[HitEnt] = true -- This entity can no longer receive damage from this explosion
-
-					local FragKill = FragResult and FragResult.Kill
-
-					if BlastResult.Kill or FragKill then
-						-- local Min = HitEnt:OBBMins()
-						-- local Max = HitEnt:OBBMaxs()
-
-						-- Debug.BoxAngles(HitEnt:GetPos(), Min, Max, HitEnt:GetAngles(), 15, Red) -- Red box on destroyed entities
-
-						Filter[#Filter + 1] = HitEnt -- Filter from traces
-						Targets[HitEnt]     = nil -- Remove from list
-
-						if FragKill then
-							ACF.APKill(HitEnt, Direction, PowerFraction, DmgInfo)
-						else
-							local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position, DmgInfo)
-
-							for Fireball in pairs(Debris) do
-								if IsValid(Fireball) then Filter[#Filter + 1] = Fireball end
-							end
-						end
-
-						Loop = true -- Check for new targets since something died, maybe we'll find something new
-					else
-						if Penetration then
-							Filter[#Filter + 1] = HitEnt
-							Targets[HitEnt]     = nil
-
-							Loop = true
-						end
-
-						if ACF.HEPush then -- Just damaged, not killed, so push on it some
-							ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3) -- Assuming about 1/30th of the explosive energy goes to propelling the target prop (Power in KJ * 1000 to get J then divided by 33)
-						end
-					end
-
-					PowerSpent = PowerSpent + PowerFraction * Losses -- Removing the energy spent killing props
-				elseif not Damaged[HitEnt] then
-					Debug.Line(Position, HitPos, 15, Blue, true) -- Blue line for an invalid entity
-
-					Filter[#Filter + 1] = HitEnt -- Filter from traces
-					Targets[HitEnt]     = nil -- Remove from list
-				end
-			else
-				-- Not removed from future damage sweeps so as to provide multiple chances to be hit
-				Debug.Line(Position, HitPos, 15, White, true) -- White line for a miss.
+				FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
+				Losses      = Losses + FragResult.Loss * 0.5
+				Penetration = Penetration or FragResult.Overkill > 0
 			end
 		end
 
-		Power = math.max(Power - PowerSpent, 0)
+		do -- Killed or penetrated
+			local Killed = BlastResult.Kill or (FragResult and FragResult.Kill)
+
+			if Killed or Penetration then
+				Filter[#Filter + 1] = HitEnt
+
+				if Killed then
+					local Debris = ACF.HEKill(HitEnt, Direction, PowerFraction, Position, DmgInfo)
+
+					for Chunk in pairs(Debris) do
+						if IsValid(Chunk) then Filter[#Filter + 1] = Chunk end
+					end
+				end
+
+				-- Add newly-visible entities to the top of the target list
+				local BlockedList = Blocking[HitEnt]
+
+				if BlockedList then
+					for _, BlockedData in ipairs(BlockedList) do
+						if not BlockedData.Processed then
+							TargetCount = TargetCount + 1
+							TargetList[TargetCount] = BlockedData
+						end
+					end
+
+					Blocking[HitEnt] = nil
+				end
+			elseif ACF.HEPush then
+				ACF.KEShove(HitEnt, Position, Direction, PowerFraction * 33.3)
+			end
+		end
+
+		Power = Power - PowerFraction * Losses
 	end
 end

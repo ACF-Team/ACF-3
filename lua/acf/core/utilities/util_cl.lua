@@ -41,6 +41,7 @@ do -- Networked notifications
 			LastNotificationSoundTime = Now
 		end
 
+		Msg = "[ACF] " .. Msg
 		notification.AddLegacy(Msg, Type, 7)
 	end)
 

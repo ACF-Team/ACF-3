@@ -169,7 +169,6 @@ function ENT:Draw()
 
     if LookedAt then
         if HideInfo() then return end
-        self:AddWorldTip()
 
         if not RenderContext.InVehicle and RenderContext.PhysOrTool and RenderContext.InACFMenu then
             self:DrawGizmos()

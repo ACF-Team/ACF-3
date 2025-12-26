@@ -156,21 +156,18 @@ end
 
 do	-- Metamethods and other important stuff
 	do	-- Overlay stuff
-		function ENT:UpdateOverlayText()
-			local Status = ""
+		function ENT:ACF_UpdateOverlayState(State)
 			if IsValid(self.Gun) then
-				Status = "Linked to " .. tostring(self.Gun)
+				State:AddKeyValue("Linked to", tostring(self.Gun))
 			else
-				Status = "Not linked to a gun!"
+				State:AddError("Not linked to a gun!")
 			end
 
 			if self.Status then
-				Status = Status .. "\n" .. self.Status
+				State:AddKeyValue("Status", self.Status)
 			end
 
 			WireLib.TriggerOutput(self, "Status", self.Status)
-
-			return Status
 		end
 	end
 
@@ -615,6 +612,10 @@ do	-- Metamethods and other important stuff
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
+		end
+
+		function ENT:GetCost()
+			return 5
 		end
 
 		function ENT:SetActive(Active, Reason)

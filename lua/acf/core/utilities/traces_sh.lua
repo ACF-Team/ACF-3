@@ -78,6 +78,8 @@ do -- ACF.trace
 
 		util.TraceLine(TraceData)
 
+		-- TraceData.whitelist = false
+
 		if Output.HitNonWorld then
 			if physBoneHavers[Output.Entity:GetClass()] then
 				-- These entities can't be filtered traditionally. Source/Gmod bug.
