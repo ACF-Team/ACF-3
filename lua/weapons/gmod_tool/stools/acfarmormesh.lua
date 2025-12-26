@@ -22,18 +22,11 @@ TOOL.ConfigName	 = ""
 TOOL.Information = {
 	{ name = "left0", stage = 0 },
 	{ name = "right0", stage = 0 },
-	{ name = "reload0", stage = 0 },
-	{ name = "left1", stage = 1 },
-	{ name = "left2", stage = 1, icon2 = "gui/key.png" },
+
 	{ name = "right1", stage = 1 },
 	{ name = "right2", stage = 1, icon2 = "gui/key.png" },
-	{ name = "flashlight1", stage = 1, icon = "gui/key.png" },
+	{ name = "right3", stage = 1, icon2 = "gui/E.png" },
 	{ name = "reload1", stage = 1, icon = "gui/r.png" },
-
-	{ name = "modes", stage = 0, icon = "gui/key.png" },
-	{ name = "targets", stage = 0, icon = "gui/key.png" },
-	{ name = "modes", stage = 1, icon = "gui/key.png" },
-	{ name = "targets", stage = 1, icon = "gui/key.png" },
 }
 
 --- Readable? No. Check the definition in the other ACF file. Just compressed this lazilly.
@@ -162,23 +155,6 @@ if CLIENT then
 		LocalPlayer().SelectedController = Selected and Ent or nil
 	end)
 
-	-- --- Draws the hud/tooltips for this tool
-	-- function TOOL:DrawHUD()
-	-- 	local ent = LocalPlayer().SelectedController
-	-- 	if IsValid(ent) then
-	-- 		cam.Start3D()
-	-- 		render.SetColorMaterial()
-	-- 		ent:DrawOverlay()
-	-- 		cam.End3D()
-	-- 	end
-	-- end
-
-	function TOOL:DrawToolScreen()
-		local Trace = self:GetOwner():GetEyeTrace()
-		local Ent   = Trace.Entity
-		local Weapon = self.Weapon
-	end
-
 	function TOOL:Think()
 
 	end
@@ -198,6 +174,29 @@ elseif SERVER then -- Serverside-only stuff
 		return true
 	end
 
+	local select_color = Color(0, 0, 255, 255)
+	local select_material  = "models/debug/debugwhite"
+
+	function TOOL:SelectEntity(ent)
+		self.selection[ent] = { col = ent:GetColor(), mat = ent:GetMaterial(), mode = ent:GetRenderMode() }
+
+		ent:SetColor(select_color)
+		ent:SetRenderMode(RENDERMODE_TRANSCOLOR)
+		ent:SetMaterial(select_material)
+		ent:CallOnRemove("armormesh_deselect", function(x)
+			self.selection[x] = nil
+		end)
+	end
+
+	function TOOL:UnSelectEntity(ent)
+		local data = self.selection[ent]
+		ent:SetColor(data.col)
+		ent:SetRenderMode(data.mode)
+		ent:SetMaterial(data.mat)
+		ent:RemoveCallOnRemove("armormesh_deselect")
+		self.selection[ent] = nil
+	end
+
 	--- Selects a controller to start editting with
 	function TOOL:SetController(ent)
 		if not IsValid(ent) or ent:GetClass() ~= "acf_armor_controller" or not checkOwner(self:GetOwner(), ent) then return end
@@ -208,6 +207,7 @@ elseif SERVER then -- Serverside-only stuff
 		net.Broadcast()
 
 		self.controller = { ent = ent, col = ent:GetColor(), mat = ent:GetMaterial(), mode = ent:GetRenderMode() }
+		self.selection = {}
 		ent:SetColor(Color(255, 93, 0, 255))
 		ent:SetRenderMode(RENDERMODE_TRANSCOLOR)
 		ent:SetMaterial("models/debug/debugwhite")
@@ -227,6 +227,7 @@ elseif SERVER then -- Serverside-only stuff
 			net.Broadcast()
 		end
 		self.controller = nil
+		self.selection = {}
 		self:SetStage(0)
 	end
 
@@ -256,7 +257,7 @@ elseif SERVER then -- Serverside-only stuff
 
 	function TOOL:Reload(Trace)
 		-- Deselect the controller
-		self:UnSetController()
+		if self.controller then self:UnSetController() end
 		return true
 	end
 end
