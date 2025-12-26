@@ -253,18 +253,6 @@ elseif SERVER then -- Serverside-only stuff
 		if not self.controller then
 			-- No controller, so spawn one
 			SpawnEntity(self, Trace)
-		else
-			-- Controller exists, so add a vertex/convex
-			local ent = self.controller.ent
-			if not IsValid(ent) then return false end
-
-			if Player:KeyDown(IN_SPEED) then
-				-- Add a convex
-				ent:AddConvex(Trace.HitPos)
-			else
-				-- Add a vertex
-				ent:AddVertex(Trace.HitPos)
-			end
 		end
 		return true
 	end
@@ -283,13 +271,11 @@ elseif SERVER then -- Serverside-only stuff
 			self:SetController(Trace.Entity)
 		else
 			self:UnSetController()
-			-- self:SetController(Trace.Entity)
 		end
 		return true
 	end
 
 	function TOOL:Reload(Trace)
-		-- Delete the controller/vertex/convex
 		print("Reload")
 		return true
 	end

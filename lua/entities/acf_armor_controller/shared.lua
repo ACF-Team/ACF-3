@@ -5,6 +5,8 @@ ENT.WireDebugName = "ACF Armor Controller"
 ENT.PluralName    = "ACF Armor Controller2"
 ENT.IsACFEntity = true
 ENT.IsACFArmorController = true
+ENT.ACF_Limit      = 4
+ENT.ACF_PreventArmoring = true
 
 cleanup.Register("acf_armor_controller")
 
