@@ -95,7 +95,7 @@ end)
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
-function ENT:GetReloadEffAuto(Gun, Ammo)
+function ENT:GetReloadEffAuto(Gun, Ammo, IgnoreChecks)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
@@ -104,21 +104,21 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- TODO: maybe check position too later?
 	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
-	if not GunArmAngleAligned then return 0.000001 end
+	if not IgnoreChecks and not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = BreechPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	local TraceResult = TraceLine(TraceConfig)
-	if TraceResult.Hit then return 0.000001 end
+	if not IgnoreChecks and TraceResult.Hit then return 0.000001 end
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = AmmoPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	TraceResult = TraceLine(TraceConfig)
-	if TraceResult.Hit then return 0.000001 end
+	if not IgnoreChecks and TraceResult.Hit then return 0.000001 end
 
 	-- Gun to arm
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
@@ -136,10 +136,27 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	return 2 * HorizontalScore * VerticalScore * AngularScore
 end
 
+function ENT:Think()
+	local Gun = self:ACF_GetUserVar("Gun")
+	local AmmoCrate = next(self:ACF_GetUserVar("AmmoCrates"))
+	if Gun and AmmoCrate and IsValid(Gun) and IsValid(AmmoCrate) then
+		self.EstimatedEfficiency = self:GetReloadEffAuto(Gun, AmmoCrate, true)
+		self.EstimatedReload = ACF.CalcReloadTime(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
+		self.EstimatedReloadMag = ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
+		self:UpdateOverlay()
+	end
+
+	self:NextThink(CurTime() + 5)
+
+	return true
+end
+
 function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (mm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
+	State:AddNumber("Reload (s)", math.Round(self.EstimatedReload or 0, 4))
+	State:AddNumber("Mag Reload (s)", math.Round(self.EstimatedReloadMag or 0, 4))
 end
 
 ACF.Classes.Entities.Register()
