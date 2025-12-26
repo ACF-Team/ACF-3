@@ -684,13 +684,11 @@ function Entities.AutoRegister(ENT)
 		local EntTable          = self:GetTable()
 		local LiveData          = EntTable.ACF_LiveData
 		local CustomGetterCache = EntTable.ACF_CustomGetterCache
-		-- TODO: Is this a bad idea? I just wanted to avoid running validators/etc over and over.
-		local CurrentValue      = LiveData[Key]
-		if CurrentValue == Value then return end
 
 		local RestrictionSpecs = GetEntityTable(Class).Restrictions[Key]
+		local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
+
 		if RestrictionSpecs then
-			local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
 			local Validator = TypeSpecs.Validator
 			if Validator then
 				VerificationCtx:SetCurrentVar(Key)
