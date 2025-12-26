@@ -90,15 +90,23 @@ end
 
 --- Adds an argument type and verifier to the ArgumentTypes dictionary.
 --- @param Type string The type of data
-function Entities.AddUserArgumentType(Type, Def)
+function Entities.AddUserArgumentType(Type)
 	if UserArgumentTypes[Type] then return end
-	Def = Def or {}
 
 	-- Def can contain Validator, PreCopy, PostPaste, Getter
-
+	local Def = {
+		IsClientData = true
+	}
 	UserArgumentTypes[Type] = Def
 	return Def
 end
+
+-- To make some notes on the IsClientData flag:
+--[[
+	IsClientData designates that a type is designed to be validated on user entity updates. This is acceptable for almost
+	all types, but some types are different. LinkedEntity/LinkedEntities for example require going through PostEntityPaste
+	due to dependency load order, and so validating them in Verify/Update functions results in receiving incorrect data.
+]]
 
 function Entities.IterateTypes() return pairs(UserArgumentTypes) end
 
@@ -284,6 +292,8 @@ end
 
 -- Single entity link.
 local LinkedEntityType = Entities.AddUserArgumentType("LinkedEntity")
+LinkedEntityType.IsClientData = false
+
 function LinkedEntityType.Validator(Specs, Value)
 	if not isentity(Value) or not IsValid(Value) then Value = NULL return Value end
 
@@ -293,14 +303,14 @@ function LinkedEntityType.Validator(Specs, Value)
 
 		return NULL
 	end
-
 	return Value
 end
-function LinkedEntityType.PreCopy(_, value)
-	return value:EntIndex()
+function LinkedEntityType.PreCopy(_, _, Value)
+	return Value:EntIndex()
 end
-function LinkedEntityType.PostPaste(self, value, createdEnts)
-	local Ent = createdEnts[value]
+
+function LinkedEntityType.PostPaste(self, _, Value, CreatedEnts)
+	local Ent = CreatedEnts[Value]
 	if not IsValid(Ent) then return NULL end
 
 	return self:Link(Ent) and Ent or NULL
@@ -308,9 +318,10 @@ end
 
 -- Entity link LUT where Key == Entity and Value == true.
 local LinkedEntitiesType = Entities.AddUserArgumentType("LinkedEntities")
+LinkedEntitiesType.IsClientData = false
+
 function LinkedEntitiesType.Validator(Specs, Value)
 	if not istable(Value) then Value = {} return Value end
-	if isnumber(Value[1]) then return Value end -- Hack; but it fixes Validation running before post-fix
 
 	if Specs.Classes then
 		-- Check everything. What's valid?
@@ -326,15 +337,24 @@ function LinkedEntitiesType.Validator(Specs, Value)
 		return Value
 	end
 end
-function LinkedEntitiesType.PreCopy(_, Value)
+
+function LinkedEntitiesType.Init(_)
+	return {} -- Empty table
+end
+
+function LinkedEntitiesType.PreCopy(_, _, Value)
 	local EntIndexTable = {}
 	for Entity in pairs(Value) do
 		EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
 	end
 	return EntIndexTable
 end
-function LinkedEntitiesType.PostPaste(self, Value, CreatedEnts)
-	local EntTable = {}
+
+function LinkedEntitiesType.PostPaste(self, Ctx, Value, CreatedEnts)
+	-- This will have been initialized by LinkedEntitiesType.Init.
+	-- We need the old table in this case since the table is by-ref
+	local EntTable = self:ACF_GetUserVar(Ctx:GetCurrentVarName())
+	table.Empty(EntTable)
 
 	for _, EntIndex in ipairs(Value) do
 		local Created = CreatedEnts[EntIndex]
@@ -589,6 +609,13 @@ AUTOREG TYPE API (semi-internal...)
 -- we need a "live real time" version (which is now UserData) and a "saveable without overwriting the real time
 -- data" (which is now SavedUserData).
 
+-- TODO: This sucks a lot. Need to re-review clientdata/uservar relationship
+local function PrioritizeFieldDefFlag(FieldDef, TypeDef, Flag)
+	local Value = FieldDef[Flag]
+	if Value == nil then return TypeDef[Flag] end
+	return Value
+end
+
 -- Automatically registers an entity. This MUST be the last line in entity/init.lua for everything to work properly
 -- Can be passed with an ENT table if you have some weird usecase, but auto defaults to _G.ENT
 --- @param ENT table A scripted entity class definition (see https://wiki.facepunch.com/gmod/Structures/ENT)
@@ -637,7 +664,9 @@ function Entities.AutoRegister(ENT)
 		-- Perform per argument verification
 		for _, argName in VerificationCtx:IterateVars() do
 			VerificationCtx:SetCurrentVar(argName)
-			if VerificationCtx:CurrentVarHasRestrictions() then
+			local Typedef = VerificationCtx:GetType()
+			local Specs   = VerificationCtx:GetSpecs()
+			if VerificationCtx:CurrentVarHasRestrictions() and PrioritizeFieldDefFlag(Specs, Typedef, "IsClientData") then
 				ClientData[argName] = VerificationCtx:ValidateCurrentVar(ClientData[argName])
 			end
 		end
@@ -652,34 +681,64 @@ function Entities.AutoRegister(ENT)
 
 	--- Updates a specific user var and calls the getter cache.
 	local function SetLiveData(self, Key, Value)
-		self.ACF_LiveData[Key] = Value
+		local EntTable          = self:GetTable()
+		local LiveData          = EntTable.ACF_LiveData
+		local CustomGetterCache = EntTable.ACF_CustomGetterCache
+		-- TODO: Is this a bad idea? I just wanted to avoid running validators/etc over and over.
+		local CurrentValue      = LiveData[Key]
+		if CurrentValue == Value then return end
+
 		local RestrictionSpecs = GetEntityTable(Class).Restrictions[Key]
 		if RestrictionSpecs then
-			VerificationCtx:SetCurrentVar(Key)
 			local TypeSpecs = UserArgumentTypes[RestrictionSpecs.Type]
+			local Validator = TypeSpecs.Validator
+			if Validator then
+				VerificationCtx:SetCurrentVar(Key)
+				LiveData[Key] = VerificationCtx:ValidateCurrentVar(Value)
+			else
+				LiveData[Key] = Value
+			end
+			VerificationCtx:SetCurrentVar(Key)
 			local Getter    = TypeSpecs.Getter
 			if Getter then
-				self.ACF_CustomGetterCache[Key] = Getter(self, VerificationCtx, Value)
+				CustomGetterCache[Key] = Getter(self, VerificationCtx, Value)
 			end
+		else
+			LiveData[Key] = Value
 		end
 	end
 
 	--- Updates the entity's user vars with ClientData
 	--- @param self table The entity to update
 	--- @param ClientData table The client data to use for the update
-	local function UpdateEntityData(self, ClientData, First)
+	local function UpdateEntityData(self, ClientData)
 		local Entity       = GetEntityTable(Class) -- THE ENTITY TABLE, NOT THE ENTITY ITSELF
 		local List         = Entity.List
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
+		local FirstTimeLiveData = not self.ACF_LiveData
 		self.ACF_LiveData = self.ACF_LiveData or {}
+		local ACF_LiveData = self.ACF_LiveData
 		self.ACF_CustomGetterCache = self.ACF_CustomGetterCache or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
-			if UserVars[v].ClientData or First then
-				SetLiveData(self, v, ClientData[v])
+			local RestrictionSpecs = Entity.Restrictions[v]
+			if RestrictionSpecs then
+				local Typedef = UserArgumentTypes[RestrictionSpecs.Type]
+
+				if FirstTimeLiveData then
+					if Typedef.Init then
+						ACF_LiveData[v] = Typedef.Init(RestrictionSpecs)
+					else
+						ACF_LiveData[v] = RestrictionSpecs.Default
+					end
+				end
+
+				if PrioritizeFieldDefFlag(RestrictionSpecs, Typedef, "IsClientData") then
+					SetLiveData(self, v, ClientData[v])
+				end
 			end
 		end
 
@@ -793,7 +852,7 @@ function Entities.AutoRegister(ENT)
 		end
 		hook.Run("ACF_OnSpawnEntity", Class, New, ClientData, ENT.ACF_GetHookArguments(ClientData))
 
-		New:ACF_UpdateEntityData(ClientData, true)
+		New:ACF_UpdateEntityData(ClientData)
 		if New.ACF_PostSpawn then
 			New:ACF_PostSpawn(Player, Pos, Angle, ClientData)
 		end
@@ -832,7 +891,7 @@ function Entities.AutoRegister(ENT)
 			local value     = VerificationCtx:ValidateCurrentVar(self.ACF_LiveData[Var])
 
 			if typedef.PreCopy then
-				value = typedef.PreCopy(self, value)
+				value = typedef.PreCopy(self, VerificationCtx, value)
 			end
 
 			self.ACF_UserData[Var] = value
@@ -848,9 +907,10 @@ function Entities.AutoRegister(ENT)
 
 	--- Runs the PostPaste and Validator methods for each user var
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local UserData = Ent.ACF_UserData or Ent.ACF_LiveData
+		local UserData = Ent.ACF_UserData
 		if not UserData then
-			Ent.ACF_UserData = {}
+			UserData = {}
+			Ent.ACF_UserData = UserData
 		end
 
 		VerificationCtx:StartClientData(UserData)
@@ -861,7 +921,7 @@ function Entities.AutoRegister(ENT)
 
 			local check = UserData and UserData[Key] or Ent[Key]
 			if typedef.PostPaste then
-				check = typedef.PostPaste(Ent, check, CreatedEntities)
+				check = typedef.PostPaste(Ent, VerificationCtx, check, CreatedEntities)
 			end
 
 			SetLiveData(self, Key, check)
@@ -925,7 +985,7 @@ function Entities.AutoRegister(ENT)
 				duplicator.ClearEntityModifier(SpawnedEntity, KeyName)
 			end
 		end
-
+		SpawnedEntity.ACF_UserData = UserData -- Cache it away. PostEntityPaste might want it later anyway
 		return SpawnedEntity
 	end
 

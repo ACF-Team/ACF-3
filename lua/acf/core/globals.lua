@@ -359,6 +359,21 @@ do -- ACF global vars
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
 
+	ACF.MinAutoloaderCaliber = 20	-- Minimum caliber for autoloaders
+	ACF.MaxAutoloaderCaliber = 280	-- Maximum caliber for autoloaders
+	ACF.MinAutoloaderLength = 1	-- Minimum shell length for autoloaders (mm)
+	ACF.MaxAutoloaderLength = 200	-- Maximum shell length for autoloaders (cm)
+
+	ACF.AutoloaderFallbackCoef = 0.1 -- Minimum possible autoloader efficiency
+	ACF.AutoloaderMaxBonus = 4 	-- Maximum bonus autoloaders can give to reload time
+
+	ACF.AutoloaderBestDistHorizontal = 6 -- Horizontal distance before which autoloaders are most effective
+	ACF.AutoloaderWorstDistHorizontal = 1000 -- Horizontal distance after which autoloaders are least effective
+	ACF.AutoloaderBestDistVertical = 6 -- Vertical distance before which autoloaders are most effective
+	ACF.AutoloaderWorstDistVertical = 100 -- Vertical distance after which autoloaders are least effective
+	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
+	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
+
 	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
 	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces

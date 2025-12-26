@@ -11,8 +11,7 @@ ENT.ACF_UserVars = {
 	["Weapon"]   = {
 		Type       = "GroupClass",
 		ClassName  = "Piledrivers",
-		Default    = "PD",
-		ClientData = true
+		Default    = "PD"
 	},
 	["Caliber"]  = {
 		Type       = "Number",
@@ -25,8 +24,7 @@ ENT.ACF_UserVars = {
 		Default    = function(Ctx)
 			return Ctx:ResolveClientData("Weapon").Caliber.Base
 		end,
-		Decimals   = 2,
-		ClientData = true
+		Decimals   = 2
 	}
 }
 

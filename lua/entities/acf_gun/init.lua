@@ -74,7 +74,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == Gun:GetParent() or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = TraceLine(TraceConfig)
 
 		Debug.Line(CrewPos, tr.HitPos, 1, Green, true)
@@ -89,10 +89,15 @@ do -- Random timer crew stuff
 
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-		local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
-		self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+		if self.Autoloader then
+			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
+			self.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+		else
+			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+			self.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+		end
 
 		-- Check space behind breech
 		if ACF.LegalChecks and self.BulletData and self.ClassData.BreechConfigs then
@@ -104,7 +109,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
+			TraceConfig.filter = function(x) return not (x == self or x == self:GetParent() or x.noradius or x.IsACFAutoloader or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			Debug.Line(wp1, tr.HitPos, 1, Green, true)
@@ -161,7 +166,7 @@ do -- Random timer crew stuff
 		return self.AccuracyCrewMod
 	end
 
-	function ENT:UpdateFilter()
+	function ENT:UpdateRotationFilter()
 		local Vertical = self:GetParent()
 		local Rotator = Vertical.Rotator
 		local Filter = {}
@@ -195,7 +200,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
+		TraceConfig.filter = function(x) return not (x == self or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()] or self.RotationFilter[x]) end
 		local tr = TraceLine(TraceConfig)
 
 		if tr.Hit then
@@ -474,7 +479,7 @@ do -- Spawn and Update functions --------------------------------
 		ACF.AugmentedTimer(function(Config) Entity:UpdateLoadMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateAccuracyMod(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
-		ACF.AugmentedTimer(function(Config) Entity:UpdateFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
+		ACF.AugmentedTimer(function(Config) Entity:UpdateRotationFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
 
