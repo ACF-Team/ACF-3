@@ -305,11 +305,12 @@ function LinkedEntityType.Validator(Specs, Value)
 	end
 	return Value
 end
-function LinkedEntityType.PreCopy(_, value)
-	return value:EntIndex()
+function LinkedEntityType.PreCopy(_, _, Value)
+	return Value:EntIndex()
 end
-function LinkedEntityType.PostPaste(self, value, createdEnts)
-	local Ent = createdEnts[value]
+
+function LinkedEntityType.PostPaste(self, _, Value, CreatedEnts)
+	local Ent = CreatedEnts[Value]
 	if not IsValid(Ent) then return NULL end
 
 	return self:Link(Ent) and Ent or NULL
@@ -337,7 +338,11 @@ function LinkedEntitiesType.Validator(Specs, Value)
 	end
 end
 
-function LinkedEntitiesType.PreCopy(_, Value)
+function LinkedEntitiesType.Init(_)
+	return {} -- Empty table
+end
+
+function LinkedEntitiesType.PreCopy(_, _, Value)
 	local EntIndexTable = {}
 	for Entity in pairs(Value) do
 		EntIndexTable[#EntIndexTable + 1] = Entity:EntIndex()
@@ -345,8 +350,11 @@ function LinkedEntitiesType.PreCopy(_, Value)
 	return EntIndexTable
 end
 
-function LinkedEntitiesType.PostPaste(self, Value, CreatedEnts)
-	local EntTable = {}
+function LinkedEntitiesType.PostPaste(self, Ctx, Value, CreatedEnts)
+	-- This will have been initialized by LinkedEntitiesType.Init.
+	-- We need the old table in this case since the table is by-ref
+	local EntTable = self:ACF_GetUserVar(Ctx:GetCurrentVarName())
+	table.Empty(EntTable)
 
 	for _, EntIndex in ipairs(Value) do
 		local Created = CreatedEnts[EntIndex]
@@ -701,7 +709,9 @@ function Entities.AutoRegister(ENT)
 
 		if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
 		self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
+		local FirstTimeLiveData = not self.ACF_LiveData
 		self.ACF_LiveData = self.ACF_LiveData or {}
+		local ACF_LiveData = self.ACF_LiveData
 		self.ACF_CustomGetterCache = self.ACF_CustomGetterCache or {}
 
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
@@ -709,6 +719,15 @@ function Entities.AutoRegister(ENT)
 			local RestrictionSpecs = Entity.Restrictions[v]
 			if RestrictionSpecs then
 				local Typedef = UserArgumentTypes[RestrictionSpecs.Type]
+
+				if FirstTimeLiveData then
+					if Typedef.Init then
+						ACF_LiveData[v] = Typedef.Init(RestrictionSpecs)
+					else
+						ACF_LiveData[v] = RestrictionSpecs.Default
+					end
+				end
+
 				if Typedef.IsClientData then
 					SetLiveData(self, v, ClientData[v])
 				end
@@ -864,7 +883,7 @@ function Entities.AutoRegister(ENT)
 			local value     = VerificationCtx:ValidateCurrentVar(self.ACF_LiveData[Var])
 
 			if typedef.PreCopy then
-				value = typedef.PreCopy(self, value)
+				value = typedef.PreCopy(self, VerificationCtx, value)
 			end
 
 			self.ACF_UserData[Var] = value
@@ -894,7 +913,7 @@ function Entities.AutoRegister(ENT)
 
 			local check = UserData and UserData[Key] or Ent[Key]
 			if typedef.PostPaste then
-				check = typedef.PostPaste(Ent, check, CreatedEntities)
+				check = typedef.PostPaste(Ent, VerificationCtx, check, CreatedEntities)
 			end
 
 			SetLiveData(self, Key, check)
