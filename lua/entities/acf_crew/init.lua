@@ -207,6 +207,7 @@ do -- Random timer stuff
 
 		-- Update oxygen levels and apply drowning if necessary
 		local MouthPos = self:LocalToWorld(self.CrewModel.MouthOffsetL) -- Probably well underwater at this point
+		debugoverlay.Cross(MouthPos, 4, 1, Red, true)
 		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
 			self.Oxygen = self.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
@@ -333,6 +334,7 @@ do -- Random timer stuff
 		if GForceIter % SampleRate ~= 0 then return end
 
 		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		debugoverlay.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
 		-- If specified, affect crew ergonomics based on G forces

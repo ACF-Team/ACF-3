@@ -1,0 +1,24 @@
+"VertexLitGeneric"
+{
+
+    "$basetexture" "props/metalstainless01"
+    "$surfaceprop" "metal"
+
+    "$detail" "detail\metal_detail_01"
+    "$detailscale" "1"
+    "$detailblendfactor" 1
+    "$detailblendmode" "0"
+	
+	
+	$basealphaenvmapmask 1
+	$color2 "[0.5 0.5 0.5]"
+	$blendtintbybasealpha 1
+	
+    "$envmaptint" "[ 0.2 0.2 0.2 ]"
+    "$envmap" "env_cubemap"
+    "$normalmapalphaenvmapmask" 1
+	"$envmapcontrast" 1
+    "$envmapsaturation" 1
+	
+
+}

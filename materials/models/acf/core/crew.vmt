@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+    "$basetexture" "metal/metalwall_silo01a"
+    "$surfaceprop" "flesh"
+
+    "$detail" "detail\metal_detail_01"
+	"$detailscale" "4"
+    "$detailblendfactor" -0.5
+    "$detailblendmode" "0"
+
+	$color2 "[0.9 0.9 0.9]"
+	
+    "$envmaptint" "[ 0.2 0.2 0.2 ]"
+    "$envmap" "env_cubemap"
+    "$normalmapalphaenvmapmask" 1
+	"$envmapcontrast" 1
+    "$envmapsaturation" 1
+}
