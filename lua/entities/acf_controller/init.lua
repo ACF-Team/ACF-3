@@ -71,7 +71,7 @@ include("modules/overlay.lua")
 
 do
 	local Inputs = {
-		"Filter (Filters out entities from the camera trace) [ENTITY]",
+		"Filter (Filters out entities from the camera trace) [ARRAY]",
 	}
 
 	local Outputs = {
@@ -560,10 +560,9 @@ do
 	-- Handle Inputs
 	do
 		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
-			local Filter = ToTable(Value)
-			if not IsValid(Filter) then return end
+			if Value == nil or not istable(Value) then return end
 			Controller.UsesWireFilter = true
-			Controller.Filter = Filter
+			Controller.Filter = Value
 		end)
 	end
 end
