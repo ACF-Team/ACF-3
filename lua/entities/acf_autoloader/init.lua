@@ -3,6 +3,8 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
+ENT.ACF_KillableButIndestructible = true
+
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 
@@ -146,7 +148,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	return 2 * HorizontalScore * VerticalScore * AngularScore
+	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
+	return 2 * HorizontalScore * VerticalScore * AngularScore * HealthScore
 end
 
 function ENT:ACF_Activate(Recalc)
