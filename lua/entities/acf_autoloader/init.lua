@@ -99,11 +99,15 @@ function ENT:GetReloadEffAuto(Gun, Ammo, IgnoreChecks)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
+	local BreechAng = Gun:LocalToWorldAngles(Gun.BreechAng)
+	-- debugoverlay.Cross(BreechPos, 5, 5, Color(255, 0, 0), true)
+	-- debugoverlay.Cross(BreechPos + BreechAng:Forward() * 10, 5, 5, Color(255, 0, 0), true)
+
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
 	-- TODO: maybe check position too later?
-	local GunArmAngleAligned = self:GetForward():Dot(Gun:GetForward()) > 0.99
+	local GunArmAngleAligned = self:GetForward():Dot(BreechAng:Forward()) > 0.99
 	if not IgnoreChecks and not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
@@ -121,7 +125,6 @@ function ENT:GetReloadEffAuto(Gun, Ammo, IgnoreChecks)
 	if not IgnoreChecks and TraceResult.Hit then return 0.000001 end
 
 	-- Gun to arm
-	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local GunMoveOffset = self:WorldToLocal(BreechPos)
 
 	-- Gun to ammo
