@@ -139,6 +139,25 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	return 2 * HorizontalScore * VerticalScore * AngularScore
 end
 
+function ENT:ACF_Activate(Recalc)
+	local PhysObj	= self.ACF.PhysObj
+	local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
+	local Armour	= 1
+	local Health	= (Area / ACF.Threshold) * 0.5
+	local Percent	= 1
+
+	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
+		Percent = self.ACF.Health / self.ACF.MaxHealth
+	end
+
+	self.ACF.Area		= Area
+	self.ACF.Health		= Health * Percent
+	self.ACF.MaxHealth	= Health
+	self.ACF.Armour		= Armour * Percent
+	self.ACF.MaxArmour	= Armour
+	self.ACF.Type		= "Prop"
+end
+
 function ENT:Think()
 	local Gun = self:ACF_GetUserVar("Gun")
 	local AmmoCrate = next(self:ACF_GetUserVar("AmmoCrates"))
