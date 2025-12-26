@@ -95,7 +95,7 @@ end)
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
-function ENT:GetReloadEffAuto(Gun, Ammo, IgnoreChecks)
+function ENT:GetReloadEffAuto(Gun, Ammo)
 	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
@@ -108,21 +108,21 @@ function ENT:GetReloadEffAuto(Gun, Ammo, IgnoreChecks)
 
 	-- TODO: maybe check position too later?
 	local GunArmAngleAligned = self:GetForward():Dot(BreechAng:Forward()) > 0.99
-	if not IgnoreChecks and not GunArmAngleAligned then return 0.000001 end
+	if not GunArmAngleAligned then return 0.000001 end
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = BreechPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	local TraceResult = TraceLine(TraceConfig)
-	if not IgnoreChecks and TraceResult.Hit then return 0.000001 end
+	if TraceResult.Hit then return 0.000001 end
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = AmmoPos
 	TraceConfig.filter = {self, Gun, Ammo}
 	TraceResult = TraceLine(TraceConfig)
-	if not IgnoreChecks and TraceResult.Hit then return 0.000001 end
+	if TraceResult.Hit then return 0.000001 end
 
 	-- Gun to arm
 	local GunMoveOffset = self:WorldToLocal(BreechPos)
@@ -156,7 +156,7 @@ end
 
 function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
-	State:AddNumber("Max Shell Length (mm)", self:ACF_GetUserVar("AutoloaderLength"))
+	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Mass (kg)", math.Round(self:GetPhysicsObject():GetMass(), 2))
 	State:AddNumber("Reload (s)", math.Round(self.EstimatedReload or 0, 4))
 	State:AddNumber("Mag Reload (s)", math.Round(self.EstimatedReloadMag or 0, 4))
