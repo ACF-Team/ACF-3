@@ -609,6 +609,13 @@ AUTOREG TYPE API (semi-internal...)
 -- we need a "live real time" version (which is now UserData) and a "saveable without overwriting the real time
 -- data" (which is now SavedUserData).
 
+-- TODO: This sucks a lot. Need to re-review clientdata/uservar relationship
+local function PrioritizeFieldDefFlag(FieldDef, TypeDef, Flag)
+	local Value = FieldDef[Flag]
+	if Value == nil then return TypeDef[Flag] end
+	return Value
+end
+
 -- Automatically registers an entity. This MUST be the last line in entity/init.lua for everything to work properly
 -- Can be passed with an ENT table if you have some weird usecase, but auto defaults to _G.ENT
 --- @param ENT table A scripted entity class definition (see https://wiki.facepunch.com/gmod/Structures/ENT)
@@ -658,7 +665,8 @@ function Entities.AutoRegister(ENT)
 		for _, argName in VerificationCtx:IterateVars() do
 			VerificationCtx:SetCurrentVar(argName)
 			local Typedef = VerificationCtx:GetType()
-			if VerificationCtx:CurrentVarHasRestrictions() and Typedef.IsClientData then
+			local Specs   = VerificationCtx:GetSpecs()
+			if VerificationCtx:CurrentVarHasRestrictions() and PrioritizeFieldDefFlag(Specs, Typedef, "IsClientData") then
 				ClientData[argName] = VerificationCtx:ValidateCurrentVar(ClientData[argName])
 			end
 		end
@@ -728,7 +736,7 @@ function Entities.AutoRegister(ENT)
 					end
 				end
 
-				if Typedef.IsClientData then
+				if PrioritizeFieldDefFlag(RestrictionSpecs, Typedef, "IsClientData") then
 					SetLiveData(self, v, ClientData[v])
 				end
 			end

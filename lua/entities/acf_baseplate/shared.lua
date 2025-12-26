@@ -15,7 +15,7 @@ ENT.ACF_UserVars = {
     ["Thickness"]      = {Type = "Number",       Min = 0.5, Max = 3,   Default = 3,  Decimals = 2},
     ["DisableAltE"]    = {Type = "Boolean",      Default = false},
     ["Seat"]           = {Type = "LinkedEntity", Classes = {prop_vehicle_prisoner_pod = true}},
-    ["AlreadyHasSeat"] = {Type = "Boolean",      Default = false},
+    ["AlreadyHasSeat"] = {Type = "Boolean",      Default = false, IsClientData = false},
     ["GForceTicks"]    = {Type = "Number",       Min = 1,   Max = 7,   Default = 1,  Decimals = 0},
 }
 
