@@ -1198,6 +1198,44 @@ for TypeName, TypeDef in ACF.Classes.Entities.IterateTypes() do
 	end
 end
 
+-- Similar to ControlPresets derma panel, but for ACF.
+-- Reference: https://github.com/Facepunch/garrysmod/blob/master/garrysmod/gamemodes/sandbox/gamemode/spawnmenu/controls/control_presets.lua
+function PANEL:AddPresetsBar()
+	local Box = self:Add("DPanel")
+	Box:Dock(TOP)
+	Box:SetTall(20)
+	Box:DockMargin(5, 5, 5, 5)
+
+	local Dropdown = vgui.Create("DComboBox", Box)
+	Dropdown:Dock(FILL)
+
+	local RemoveButton = vgui.Create("DImageButton", Box)
+	RemoveButton:Dock(RIGHT)
+	RemoveButton:SetTooltip("Remove preset")
+	RemoveButton:SetImage("icon16/delete.png")
+	RemoveButton:SetStretchToFit(false)
+	RemoveButton:SetSize(20, 20)
+	RemoveButton:DockMargin(0, 0, 0, 0)
+
+	RemoveButton.DoClick = function()
+		print("remove")
+	end
+
+	local SaveButton = vgui.Create("DImageButton", Box)
+	SaveButton:Dock(RIGHT)
+	SaveButton:SetTooltip("Save preset")
+	SaveButton:SetImage("icon16/add.png")
+	SaveButton:SetStretchToFit(false)
+	SaveButton:SetSize(20, 20)
+	SaveButton:DockMargin(2, 0, 0, 0)
+
+	SaveButton.DoClick = function()
+		print("save")
+	end
+end
+
+----------------------------------------------------------------------------
+
 -- Called after a menu item has been fully built (ie. something in menu/items_cl)
 -- Was designed because class views wait until all elements are available, but I'm trying to flesh
 -- out a less annoying API with autoregister

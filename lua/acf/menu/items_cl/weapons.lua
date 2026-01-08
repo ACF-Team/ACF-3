@@ -181,6 +181,7 @@ end
 local function CreateMenu(Menu)
 	local Entries = Weapons.GetEntries()
 
+	local Preset = Menu:AddPresetsBar()
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
