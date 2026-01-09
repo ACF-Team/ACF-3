@@ -1200,16 +1200,20 @@ end
 
 -- Similar to ControlPresets derma panel, but for ACF.
 -- Reference: https://github.com/Facepunch/garrysmod/blob/master/garrysmod/gamemodes/sandbox/gamemode/spawnmenu/controls/control_presets.lua
-function PANEL:AddPresetsBar()
-	local Box = self:Add("DPanel")
-	Box:Dock(TOP)
-	Box:SetTall(20)
-	Box:DockMargin(5, 5, 5, 5)
+function PANEL:AddPresetsBar(Presets, PresetType, Filter)
+	local Panel = self:Add("DPanel")
+	Panel:Dock(TOP)
+	Panel:SetTall(20)
+	Panel:DockMargin(5, 5, 5, 5)
 
-	local Dropdown = vgui.Create("DComboBox", Box)
+	local Dropdown = vgui.Create("DComboBox", Panel)
 	Dropdown:Dock(FILL)
+	Dropdown.OnSelect = function(_, index, value, data)
+		print("selected", index, value, data)
+		ACF.ApplyPreset(Presets, PresetType, value, Filter)
+	end
 
-	local RemoveButton = vgui.Create("DImageButton", Box)
+	local RemoveButton = vgui.Create("DImageButton", Panel)
 	RemoveButton:Dock(RIGHT)
 	RemoveButton:SetTooltip("Remove preset")
 	RemoveButton:SetImage("icon16/delete.png")
@@ -1219,9 +1223,10 @@ function PANEL:AddPresetsBar()
 
 	RemoveButton.DoClick = function()
 		print("remove")
+		ACF.RemovePreset(Presets, PresetType, Dropdown:GetValue())
 	end
 
-	local SaveButton = vgui.Create("DImageButton", Box)
+	local SaveButton = vgui.Create("DImageButton", Panel)
 	SaveButton:Dock(RIGHT)
 	SaveButton:SetTooltip("Save preset")
 	SaveButton:SetImage("icon16/add.png")
@@ -1231,7 +1236,18 @@ function PANEL:AddPresetsBar()
 
 	SaveButton.DoClick = function()
 		print("save")
+		Derma_StringRequest("#preset.saveas_title", "#preset.saveas_desc", "", function( text )
+			if (not text or text:Trim() == "") then presets.BadNameAlert() return end
+			ACF.UpdatePreset(Presets, PresetType, text, Filter)
+		end)
 	end
+
+	local Preset = Presets[PresetType]
+	if Preset then
+		for PresetName, PresetData in pairs(Preset) do Dropdown:AddChoice(PresetName) end
+	end
+
+	return Panel
 end
 
 ----------------------------------------------------------------------------
