@@ -7,6 +7,7 @@ if not FileExists then
     file.Write(Path, "")
 end
 
+-- Load in the file (guaranteed to exist?)
 local Raw = file.Read(Path, "DATA")
 local JSONTable = util.JSONToTable(Raw) or {}
 ACF.Presets = JSONTable

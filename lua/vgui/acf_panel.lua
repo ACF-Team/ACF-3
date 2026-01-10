@@ -1200,6 +1200,7 @@ end
 
 -- Similar to ControlPresets derma panel, but for ACF.
 -- Reference: https://github.com/Facepunch/garrysmod/blob/master/garrysmod/gamemodes/sandbox/gamemode/spawnmenu/controls/control_presets.lua
+-- TODO: refactor later
 function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 	local Panel = self:Add("DPanel")
 	Panel:Dock(TOP)
@@ -1208,9 +1209,16 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 
 	local Dropdown = vgui.Create("DComboBox", Panel)
 	Dropdown:Dock(FILL)
-	Dropdown.OnSelect = function(_, index, value, data)
-		print("selected", index, value, data)
+	Dropdown.OnSelect = function(_, _, value, _)
 		ACF.ApplyPreset(Presets, PresetType, value, Filter)
+	end
+
+	function Dropdown:RefreshChoices()
+		Dropdown:Clear()
+		local Preset = Presets[PresetType]
+		if Preset then
+			for PresetName, PresetData in pairs(Preset) do Dropdown:AddChoice(PresetName) end
+		end
 	end
 
 	local RemoveButton = vgui.Create("DImageButton", Panel)
@@ -1222,8 +1230,17 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 	RemoveButton:DockMargin(0, 0, 0, 0)
 
 	RemoveButton.DoClick = function()
-		print("remove")
-		ACF.RemovePreset(Presets, PresetType, Dropdown:GetValue())
+		local PresetName = Dropdown:GetValue()
+		Derma_Query(
+			"Are you sure you want to remove [" .. PresetName .. "]?", "Confirmation:",
+			"Yes",
+			function()
+				ACF.RemovePreset(Presets, PresetType, PresetName)
+				Dropdown:RefreshChoices()
+			end,
+			"No",
+			function() end
+		)
 	end
 
 	local SaveButton = vgui.Create("DImageButton", Panel)
@@ -1235,16 +1252,21 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 	SaveButton:DockMargin(2, 0, 0, 0)
 
 	SaveButton.DoClick = function()
-		print("save")
 		Derma_StringRequest("#preset.saveas_title", "#preset.saveas_desc", "", function( text )
 			if (not text or text:Trim() == "") then presets.BadNameAlert() return end
-			ACF.UpdatePreset(Presets, PresetType, text, Filter)
-		end)
-	end
+			if ACF.HasPreset(Presets, PresetType, text) then
+				Derma_Query(
+					"Are you sure you want to remove [" .. text .. "]?", "Removing:",
+					"Yes",
+					function() end,
+					"No",
+					function() return end
+				)
+			end
 
-	local Preset = Presets[PresetType]
-	if Preset then
-		for PresetName, PresetData in pairs(Preset) do Dropdown:AddChoice(PresetName) end
+			ACF.UpdatePreset(Presets, PresetType, text, Filter)
+			Dropdown:RefreshChoices()
+		end)
 	end
 
 	return Panel

@@ -181,7 +181,6 @@ end
 local function CreateMenu(Menu)
 	local Entries = Weapons.GetEntries()
 
-	Menu:AddPresetsBar(ACF.Presets, "Weapons", {"Caliber", "Weapon"})
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
 	local ClassBase  = Menu:AddPanel("ACF_Panel")
@@ -194,6 +193,7 @@ local function CreateMenu(Menu)
 	local EntData    = WeaponBase:AddLabel()
 	local BreechIndex = WeaponBase:AddComboBox()
 	BreechIndex:SetName("WeaponBreechIndex")
+	Menu:AddPresetsBar(ACF.Presets, "Ammo", {"AmmoType", "Caliber", "Projectile", "Propellant", "Tracer", "FillerRatio", "LinerAngle", "StandoffRatio", "SmokeWPRatio", "AmmoStage"})
 	local AmmoList   = ACF.CreateAmmoMenu(Menu)
 
 	-- Configuring the ACF Spawner tool
