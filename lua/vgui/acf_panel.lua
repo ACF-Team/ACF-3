@@ -1217,7 +1217,7 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 		Dropdown:Clear()
 		local Preset = Presets[PresetType]
 		if Preset then
-			for PresetName, PresetData in pairs(Preset) do Dropdown:AddChoice(PresetName) end
+			for PresetName, _ in pairs(Preset) do Dropdown:AddChoice(PresetName) end
 		end
 	end
 
@@ -1232,7 +1232,7 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 	RemoveButton.DoClick = function()
 		local PresetName = Dropdown:GetValue()
 		Derma_Query(
-			"Are you sure you want to remove [" .. PresetName .. "]?", "Confirmation:",
+			"Are you sure you want to remove [" .. PresetName .. "]?", "Removing:",
 			"Yes",
 			function()
 				ACF.RemovePreset(Presets, PresetType, PresetName)
@@ -1256,11 +1256,11 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 			if (not text or text:Trim() == "") then presets.BadNameAlert() return end
 			if ACF.HasPreset(Presets, PresetType, text) then
 				Derma_Query(
-					"Are you sure you want to remove [" .. text .. "]?", "Removing:",
+					"Are you sure you want to replace [" .. text .. "]?", "Saving:",
 					"Yes",
 					function() end,
 					"No",
-					function() return end
+					function() end
 				)
 			end
 
@@ -1268,6 +1268,8 @@ function PANEL:AddPresetsBar(Presets, PresetType, Filter)
 			Dropdown:RefreshChoices()
 		end)
 	end
+
+	Dropdown:RefreshChoices()
 
 	return Panel
 end
