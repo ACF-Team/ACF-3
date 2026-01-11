@@ -569,6 +569,13 @@ function ACF.CreateAmmoMenu(Menu)
 	Menu:AddTitle("#acf.menu.ammo.settings")
 
 	local List = Menu:AddComboBox()
+	List:SetClientData("AmmoType", "OnSelect")
+	List:DefineSetter(function(Panel, _, _, Value)
+		for Index, Data in ipairs(List.Data) do
+			if Data.ID == Value then Panel:ChooseOptionID(Index) end
+		end
+		return Value
+	end)
 
 	-- Set default projectile count values before creating controls to prevent nil value errors
 	local DefaultCountX = ACF.GetClientNumber("CrateProjectilesX", 3)
