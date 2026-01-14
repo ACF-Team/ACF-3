@@ -11,9 +11,9 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
     Length = 0.5,
     Models = {
         {Name = "Base", IdentifyAs = "Base", Model = "models/hunter/plates/plate2x5.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1.25, 1), },
-        {Name = "GPS Transmitter", IdentifyAs = "GPS Transmitter", Model = "models/props_lab/reciever01a.mdl", Angles = Angle(0,-90, 0), Position = Vector(0, 0, 10), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-        { Name = "Rack" , IdentifyAs = "Missile Rack" , Model = "models/missiles/rkx1.mdl" , Angles = Angle(-45,90, 0) , Position = Vector(0, 60, 40), ComeFrom = Vector(0, 0, 50) , ParentTo = "Base" , Scale = Vector(1, 1, 1) , },
-        { Name = "AIO" , IdentifyAs = "AIO" , Model = "models/hunter/plates/plate025x025.mdl" , Angles = Angle(0,0, 0) , Position = Vector(15, 35, 5), ComeFrom = Vector(0, 0, 50) , ParentTo = "Base" , Scale = Vector(1, 1, 1) , },
+        {Name = "GPS Transmitter", IdentifyAs = "GPS Transmitter", Model = "models/props_lab/reciever01a.mdl", Angles = Angle(0, -90, 0), Position = Vector(0, 0, 10), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
+        { Name = "Rack" , IdentifyAs = "Missile Rack" , Model = "models/missiles/rkx1.mdl" , Angles = Angle(-45, 90, 0) , Position = Vector(0, 60, 40), ComeFrom = Vector(0, 0, 50) , ParentTo = "Base" , Scale = Vector(1, 1, 1) , },
+        { Name = "AIO" , IdentifyAs = "AIO" , Model = "models/hunter/plates/plate025x025.mdl" , Angles = Angle(0, 0, 0) , Position = Vector(15, 35, 5), ComeFrom = Vector(0, 0, 50) , ParentTo = "Base" , Scale = Vector(1, 1, 1) , },
     }
 }))
 
