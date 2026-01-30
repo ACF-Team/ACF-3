@@ -173,7 +173,7 @@ do -- ACF global vars
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0))
-	ACF.Year                 = 1945
+	ACF.Year                 = 2026 -- Was 1945. Define this hardcoded for now, always the year in course unless more work on this gets done and does actually get used properly
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
