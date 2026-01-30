@@ -43,8 +43,7 @@ end
 local function DoDelayed(Origin, Call, Instant)
 	if Instant then return Call() end
 
-	local SpeedOfSound = ACF.SpeedOfSound -- I dunno if making this variable is okay or just fuck it we ball it right below
-	local Delay = DistanceToOrigin(Origin) / SpeedOfSound
+	local Delay = DistanceToOrigin(Origin) / ACF.SpeedOfSound
 	if Delay > 0.1 then
 		timer.Simple(Delay, function() Call() end)
 	else
