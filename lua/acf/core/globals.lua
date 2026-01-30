@@ -195,6 +195,9 @@ do -- ACF global vars
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
 
+	-- Misc Sound Stuff
+	ACF.SpeedOfSound 		 = 343 * ACF.MeterToInch
+
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
 

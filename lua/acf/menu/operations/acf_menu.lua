@@ -218,8 +218,11 @@ do -- Generic Spawner/Linker operation creator
 		if Total > 1 then
 			ReportMultiple(Player, Action, EntName, Failed, #Success, Total)
 		else
+			-- FIXME(TMF): There's a bug here that prevents entities from being linked 
+			-- Wether we accidentally hit the world in what's some quite obscure bug 
 			local Result  = next(Success) and true or false
-			local Origin  = table.remove(Result and Success or Failed)
+			local Origin  = table.remove(Result and Success or Failed) -- Somehow this table becomes nil
+			-- print(Result, Origin)
 			local Target  = Origin.Name
 			local Message = Origin.Message
 
