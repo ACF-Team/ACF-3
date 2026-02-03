@@ -3,6 +3,8 @@ local Sounds = ACF.Utilities.Sounds
 util.AddNetworkString("ACF_Sounds")
 util.AddNetworkString("ACF_Sounds_Adjustable")
 util.AddNetworkString("ACF_Sounds_AdjustableCreate")
+util.AddNetworkString("ACF_Sounds_Adjustable_Multi")
+util.AddNetworkString("ACF_Sounds_AdjustableCreate_Multi")
 
 --- Sends a single, non-looping sound to all clients in the PAS.
 --- @param Origin table | vector The source to play the sound from
@@ -86,3 +88,26 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 		OriginTbl.SoundTimer = Time + 0.05
 	end
 end
+
+--- Creates a sound table to be broadcasted to all players within PAS.
+--- Just like the CreateAdjustableSound, except meant to play multiple sounds on an entity that can be adjusted based on a variable.
+--- This also allows us to modify the pitch/volume of multiple looping sounds (for an engine) with minimal network usage.
+--- @param Origin table The entity to play the sound from
+--- @param PathTable table The table with multiple sound paths, pitch and volume to be played at a defined RPM
+function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
+	if not IsValid(Origin) then return end
+	if not istable(PathTable) then return end
+
+	-- Literally the same as above but as a table instead, i dunno how bad this is yet
+	net.Start("ACF_Sounds_AdjustableCreate_Multi")
+		net.WriteEntity(Origin)
+		net.WriteTable(PathTable)
+	net.SendPAS(Origin:GetPos())
+end
+
+--[[function Sounds.SendMultipleAdjustableSounds(Origin, _, PathTable)
+	net.Start("ACF_Sounds_Adjustable_Multi")
+		net.WriteEntity(Origin)
+		net.WriteTable(PathTable)
+	net.SendPAS(Origin:GetPos())
+end]]--

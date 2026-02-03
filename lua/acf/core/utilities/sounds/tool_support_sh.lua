@@ -48,11 +48,26 @@ Sounds.acf_engine = {
 		Ent:UpdateSound()
 	end,
 	ResetSound = function(Ent)
-		Ent.SoundPath   = Ent.DefaultSound
-		Ent.SoundPitch  = 1
-		Ent.SoundVolume = 1
+		Ent.SoundPath   		 = Ent.DefaultSound
+		Ent.SoundBank["default"] = Ent.DefaultSound
+		Ent.SoundPitch  		 = 1
+		Ent.SoundVolume 		 = 1
 
 		Ent:UpdateSound()
+	end,
+	GetSoundBank = function(Ent)
+		return {
+			SoundBank = Ent.SoundBank
+		}
+	end,
+	SetSoundBank = function(Ent, SoundBankData)
+		local soundTable = SoundBankData
+		for _, path in soundTable do
+			path[1].Sound:Trim():lower()
+			Ent:UpdateSound()
+		end
+
+		Ent.SoundBank = soundTable
 	end
 }
 

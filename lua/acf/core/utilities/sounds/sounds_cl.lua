@@ -178,6 +178,68 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+do -- Multiple Engine Sounds(ex. Interpolated sounds)
+	local IsValid = IsValid -- Should this stay as local to each scope?
+
+	function Sounds.UpdateMultipleAdjustableSounds(Origin, PathTable)
+		if not IsValid(Origin) then return end
+		if not istable(PathTable) then return end
+
+		local OldTable = Origin.SoundBank
+		local OldPath, OldPitch, OldVolume = OldTable[1], OldTable[2], OldTable[3]
+
+		for _, soundTable in PathTable do
+			if soundTable[1] == OldPath then continue  -- Check for any deltas, if not just move along
+			elseif soundTable[2] == OldPitch then continue
+			elseif soundTable[3] == OldVolume then continue end
+
+			Sounds.UpdateAdjustableSound(Origin, soundTable[1], soundTable[2], soundTable[3])
+		end
+	end
+
+	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable, _, _)
+		if not IsValid(Origin) then return end
+		if not istable(PathTable) then return end
+		local soundTable = PathTable
+
+		-- I hope this works...
+		for _, pathTbl in soundTable do
+			Sounds.CreateAdjustableSound(Origin,
+				pathTbl[1], -- String path
+				pathTbl[2], -- Pitch
+				pathTbl[3]  -- Volume
+			)
+		end
+	end
+
+	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
+		local currentSoundBank = Origin.SoundBank
+		if not currentSoundBank then return end
+
+		-- I suppose this actually gets garbage collected?
+		for _, snd in currentSoundBank do
+			snd:Stop()
+			snd = nil
+		end
+
+		currentSoundBank = nil
+	end
+	-- This might not work as it is...
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+		local Origin = net.ReadEntity()
+		local Path = net.ReadTable()
+		--local Pitch = net.ReadUInt(8)
+		--local Volume = net.Float()
+		local SoundTable = {}
+
+		for rpm, soundPath in Path do
+			if not Sounds.IsValidSound(soundPath) then return end
+			SoundTable[rpm] = soundPath
+		end
+
+		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+	end)
+end
 	--- Returns a table of sound infomation depending on what the trace hit.
 	--- @param Data table The effect data relating to the projectile
 	--- @param Trace table The trace data relating to the projectile
