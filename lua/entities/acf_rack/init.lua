@@ -91,7 +91,7 @@ do
 
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 then
+		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
 			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 		else
