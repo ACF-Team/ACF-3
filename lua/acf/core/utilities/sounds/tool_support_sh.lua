@@ -60,9 +60,10 @@ Sounds.acf_engine = {
 			SoundBank = Ent.SoundBank
 		}
 	end,
+	-- This is dog... Change this!
 	SetSoundBank = function(Ent, SoundBankData)
 		local soundTable = SoundBankData
-		for _, path in soundTable do
+		for _, path in pairs(soundTable) do
 			path[1].Sound:Trim():lower()
 			Ent:UpdateSound()
 		end

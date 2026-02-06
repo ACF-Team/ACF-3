@@ -96,6 +96,8 @@ do -- Playing regular sounds
 	end)
 end
 
+local SoundObjects = {}
+
 do -- Processing adjustable sounds (for example, engine noises)
 	local IsValid = IsValid
 
@@ -106,10 +108,8 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
-		if not IsValid(Origin) then return end
-
-		local Sound = Origin.Sound
-		if not Sound then return end
+		local Sound = Origin
+		if type(Sound) ~= "CSoundPatch" then return end
 
 		Volume = Volume * ACF.Volume
 
@@ -127,19 +127,20 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Path string The path to the sound to be played local to the game's sound folder
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
+	--- @return Sound CSoundPatch The sound object
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 		if not IsValid(Origin) then return end
-		if Origin.Sound then return end
 
 		local Sound = CreateSound(Origin, Path)
-		Origin.Sound = Sound
+		table.insert(SoundObjects, Sound)
 
 		-- Ensuring that the sound can't stick around if the server doesn't properly ask for it to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopAdjustableSound", function(Entity)
 			Sounds.DestroyAdjustableSound(Entity, true)
 		end)
 
-		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
+		Sounds.UpdateAdjustableSound(Sound, Pitch, Volume)
+		return Sound
 	end
 
 	--- Stops an existing adjustable sound on the origin.
@@ -180,64 +181,101 @@ end
 
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid -- Should this stay as local to each scope?
+	-- Convert the string path to a sound that's already created
+	local function ParseString(String)
+		if type(String) ~= "CSoundPatch" then
+			if isstring(String) then
+				for _, v in ipairs(SoundObjects) do
+					if table.IsEmpty(SoundObjects) then error("Tried to parse string with empty SoundObjects table!") end
+					local s = string.gsub(tostring(v), "CSoundPatch [-%A]", "")
+					s = string.gsub(s, "%]$", "") -- Pretty sure i don't need this matched twice just for the ']' at the end
+					if String == s then String = v
+						return String
+					end
+				end
+				error("Failed to parse string to CSoundPatch! (Sound not found)")
+			else
+				error("Cannot parse a non string value!")
+			end
+		return String end
+	end
 
 	function Sounds.UpdateMultipleAdjustableSounds(Origin, PathTable)
 		if not IsValid(Origin) then return end
 		if not istable(PathTable) then return end
 
-		local OldTable = Origin.SoundBank
-		local OldPath, OldPitch, OldVolume = OldTable[1], OldTable[2], OldTable[3]
+		-- Potentially some mechanism here to check for any differences and only update those
+		for _, soundTable in pairs(PathTable) do
+			local Sound  = soundTable[1]
+			local Pitch  = soundTable[2]
+			local Volume = soundTable[3]
 
-		for _, soundTable in PathTable do
-			if soundTable[1] == OldPath then continue  -- Check for any deltas, if not just move along
-			elseif soundTable[2] == OldPitch then continue
-			elseif soundTable[3] == OldVolume then continue end
+			local parsed = ParseString(Sound)
 
-			Sounds.UpdateAdjustableSound(Origin, soundTable[1], soundTable[2], soundTable[3])
+			Sounds.UpdateAdjustableSound(parsed, Pitch, Volume)
 		end
 	end
 
 	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable, _, _)
-		if not IsValid(Origin) then return end
-		if not istable(PathTable) then return end
-		local soundTable = PathTable
-
-		-- I hope this works...
-		for _, pathTbl in soundTable do
-			Sounds.CreateAdjustableSound(Origin,
+		for _, pathTbl in pairs(PathTable) do
+			local Sound = Sounds.CreateAdjustableSound(Origin,
 				pathTbl[1], -- String path
 				pathTbl[2], -- Pitch
 				pathTbl[3]  -- Volume
 			)
+			pathTbl[1] = Sound 	-- Replace string with a sound object
 		end
+		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
+		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
+			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
+		end)
+
+		Sounds.UpdateMultipleAdjustableSounds(Origin, PathTable)
 	end
 
-	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
-		local currentSoundBank = Origin.SoundBank
-		if not currentSoundBank then return end
-
+	function Sounds.DeleteMultipleAdjustableSounds(Origin)
+		local count = 0
+		print("Deleting sounds!")
 		-- I suppose this actually gets garbage collected?
-		for _, snd in currentSoundBank do
+		for idx, snd in ipairs(SoundObjects) do
 			snd:Stop()
 			snd = nil
+			count = idx
 		end
 
-		currentSoundBank = nil
+		--count = 0 -- I dunno why it persists when this function ends lol
+		Origin.Sound = nil
+		print("Successfully deleted " .. count .. " sounds!")
 	end
-	-- This might not work as it is...
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
+		print("Received " .. len .. " bits from server for \"ACF_Sounds_AdjustableCreate_Multi\"")
 		local Origin = net.ReadEntity()
 		local Path = net.ReadTable()
-		--local Pitch = net.ReadUInt(8)
-		--local Volume = net.Float()
-		local SoundTable = {}
 
-		for rpm, soundPath in Path do
-			if not Sounds.IsValidSound(soundPath) then return end
-			SoundTable[rpm] = soundPath
+		if not IsValid(Origin) then return end
+		if not istable(Path) then return end
+
+		-- Only one sound was found, we assume it's at -1 index
+		--if #Path < 1 then
+		--	Sounds.CreateAdjustableSound(Origin, Path[-1][1], 100, 1) -- Might want to network pitch and volume back later
+		--else
+			Sounds.CreateMultipleAdjustableSounds(Origin, Path)
+		--end
+	end)
+
+	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
+		print("Received " .. len .. " bits from server for \"ACF_Sounds_Adjustable_Multi\"")
+		local Origin = net.ReadEntity()
+		local ShouldStop = net.ReadBool()
+		local Table = net.ReadTable()
+
+		if ShouldStop then
+			Sounds.DeleteMultipleAdjustableSounds(Origin)
+		else
+			if not istable(Table) then return end
+			Sounds.UpdateMultipleAdjustableSounds(Origin, Table)
 		end
-
-		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 end
 	--- Returns a table of sound infomation depending on what the trace hit.

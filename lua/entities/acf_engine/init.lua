@@ -118,7 +118,28 @@ local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
-local function GetPitchVolume(Engine)
+-- Maps a value, X, from a range A-B, to a new range C-D
+local function map(x, a, b, c, d)
+	return (x - a) / (b - a) * (d - c) + c
+end
+
+-- Fade function taken from:
+-- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
+-- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
+-- https://i.imgur.com/KaFmaMf.png
+local function fade(n, min, mid, max)
+	local _PI = math.pi
+
+	if n < min or n > max then return 0 end
+
+	if n > mid then
+		min = mid - (max - mid)
+	end
+
+	return math.cos((1 - ((n - min) / (mid - min))) * (_PI / 2))
+end
+
+--[[local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
 	-- Rev limiter code disabled because it has issues with the volume delta time, but it's still here if we need it
@@ -126,6 +147,37 @@ local function GetPitchVolume(Engine)
 	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
 
 	return Pitch, Volume * Engine.SoundVolume
+end]]--
+
+-- Very naive approach to calculate and set interpolated engine sounds
+local function CalcPitchVolume(Engine)
+	local SoundBank = Engine.SoundBank
+	local SoundRPMs = Engine.SoundRPMs
+	local RPM = Engine.FlyRPM
+	local Throttle = Engine.Throttle
+	local SmoothRPM = Engine.SmoothRPM
+	local SmoothThrottle = Engine.SmoothThrottle
+	local AdditionalCurveWidth = 2 or Engine.AddCurveWidth
+	SmoothRPM = SmoothRPM * (1 - 0.1) + RPM
+	SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle
+
+	-- Sound volumes when throttle is 0 and 100 respectively
+	local _OFFVOLUME = 0.25
+	local _ONVOLUME = 1
+	--PrintTable(SoundRPMs)
+	for idx, rpm in pairs(SoundRPMs) do
+		--print("Reached here! " .. idx .. " Times! " .. rpm .. " Rpms!")
+		--PrintTable(SoundBank[rpm])
+		if not SoundRPMs[idx] then continue end
+		local min    = idx == 1 and -100000 or SoundRPMs[idx - 1]
+		local mid    = rpm
+		local max    = idx == #SoundRPMs and 100000 or SoundRPMs[idx + 1]
+		local curve  = fade(SmoothRPM, min - AdditionalCurveWidth, mid, max + AdditionalCurveWidth)
+		local Volume = curve * map(SmoothThrottle, 0, 100, _OFFVOLUME, _ONVOLUME)
+		local Pitch  = (SmoothRPM / rpm)
+		SoundBank[rpm][2] = Pitch * 100
+		SoundBank[rpm][3] = Volume * 100
+	end
 end
 
 local function GetNextFuelTank(Engine)
@@ -178,7 +230,6 @@ end
 
 local function SetActive(Entity, Value, EntTbl)
 	EntTbl = EntTbl or Entity:GetTable()
-
 	local ActBool = tobool(Value)
 
 	if EntTbl.Active == ActBool then return end -- Already in the desired state
@@ -193,7 +244,7 @@ local function SetActive(Entity, Value, EntTbl)
 		EntTbl.Torque    = EntTbl.PeakTorque
 		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		Entity:UpdateSound(EntTbl)
+		Entity:UpdateSoundBank(EntTbl)
 
 		Entity:NextThink(Clock.CurTime + TickInterval())
 
@@ -206,11 +257,12 @@ local function SetActive(Entity, Value, EntTbl)
 			Entity:CalcMassRatio(EntTbl)
 		end)
 	else -- Was on, turn off
-		EntTbl.Active = false
-		EntTbl.FlyRPM = 0
-		EntTbl.Torque = 0
+		EntTbl.Active    = false
+		EntTbl.SmoothRPM = 0
+		EntTbl.FlyRPM    = 0
+		EntTbl.Torque    = 0
 
-		Entity:DestroySound()
+		Entity:DestroyAllSounds()
 
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
@@ -300,8 +352,11 @@ do -- Spawn and Update functions
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
+		Entity.SoundBank 		= Entity.SoundBank or {[-1] = Entity.DefaultSound}
+		Entity.SoundRPMs        = Entity.SoundRPMs
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
+		Entity.AddCurveWidth    = Entity.AddCurveWidth or 0
 		Entity.TorqueCurve      = Engine.TorqueCurve
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
@@ -311,6 +366,8 @@ do -- Spawn and Update functions
 		Entity.PeakMinRPM       = Engine.RPM.PeakMin
 		Entity.PeakMaxRPM       = Engine.RPM.PeakMax
 		Entity.LimitRPM         = Engine.RPM.Limit
+		Entity.SmoothRPM 		= Entity.SmoothRPM or 0
+		Entity.SmoothThrottle   = Entity.SmoothThrottle or 0
 		Entity.RevLimited       = false
 		Entity.FlywheelOverride = Engine.RPM.Override
 		Entity.FlywheelMass     = Engine.FlywheelMass
@@ -329,7 +386,7 @@ do -- Spawn and Update functions
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
-		Entity.IsSpecial        = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
+		Entity.IsSpecial = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -373,28 +430,56 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Active        = false
-		Entity.Gearboxes     = {}
-		Entity.FuelTanks     = {}
-		Entity.LastThink     = 0
-		Entity.MassRatio     = 1
-		Entity.FuelUsage     = 0
-		Entity.Throttle      = 0
-		Entity.FlyRPM        = 0
-		Entity.SoundPath     = Engine.Sound
-		Entity.LastPitch     = 0
-		Entity.LastTorque    = 0
-		Entity.LastFuelUsage = 0
-		Entity.LastPower     = 0
-		Entity.LastRPM       = 0
-		Entity.LastTotalMass = 0
-		Entity.LastPhysMass  = 0
-		Entity.DataStore     = Entities.GetArguments("acf_engine")
+		local SuperDuperHandyTable = {
+									[714]  = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav", 100, 0},
+									[967]  = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav", 100, 0},
+									[1538] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav", 100, 0},
+									[1978] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav", 100, 0},
+									[2571] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav", 100, 0},
+									[3450] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav", 100, 0},
+									[3889] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav", 100, 0},
+									[4482] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav", 100, 0},
+									[4922] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav", 100, 0},
+									[5295] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav", 100, 0},
+									[5823] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav", 100, 0},
+									[6350] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", 100, 0},
+									[6833] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", 100, 0}
+									}
+
+		Entity.Active         = false
+		Entity.Gearboxes      = {}
+		Entity.FuelTanks      = {}
+		Entity.LastThink      = 0
+		Entity.MassRatio      = 1
+		Entity.FuelUsage      = 0
+		Entity.Throttle       = 0
+		Entity.FlyRPM         = 0
+		Entity.SmoothRPM 	  = 0
+		Entity.SmoothThrottle = 0
+		Entity.SoundPath      = Engine.Sound
+		Entity.SoundBank      = SuperDuperHandyTable or {[-1] = Entity.SoundPath} -- i have no idea if this is a good idea
+		Entity.SoundRPMs      = {} -- It only stores the rpms from above, probably not needed
+		Entity.AddCurveWidth  = Entity.AddCurveWidth or 0
+		Entity.LastPitch      = 0
+		Entity.LastTorque     = 0
+		Entity.LastFuelUsage  = 0
+		Entity.LastPower      = 0
+		Entity.LastRPM        = 0
+		Entity.LastTotalMass  = 0
+		Entity.LastPhysMass   = 0
+		Entity.DataStore      = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
 		duplicator.ClearEntityModifier(Entity, "mass")
 
 		UpdateEngine(Entity, Data, Class, Engine, Type)
+
+		for k, _ in pairs(Entity.SoundBank) do
+			table.insert(Entity.SoundRPMs, k)
+		end
+		table.sort(Entity.SoundRPMs)
+
+		--PrintTable(Entity.SoundRPMs)
 
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Engine)
@@ -603,37 +688,25 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:UpdateSound(SelfTbl)
+function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
+	local SoundBank = SelfTbl.SoundBank
 
-	local Path      = SelfTbl.SoundPath
-	local LastSound = SelfTbl.LastSound
-
-	if Path ~= LastSound and LastSound ~= nil then
-		self:DestroySound()
-
-		SelfTbl.LastSound = Path
-	end
-
-	if Path == "" then return end
-	if not SelfTbl.Active then return end
-
-	local Pitch, Volume = GetPitchVolume(SelfTbl)
-
-	if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
-
-	SelfTbl.LastPitch = Pitch
-
-	if SelfTbl.Sound then
-		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
+	if SelfTbl.Sound  then
+		CalcPitchVolume(SelfTbl)
+		Sounds.SendMultipleAdjustableSounds(self, false, SoundBank)
+		--PrintTable(SoundBank)
 	else
-		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
-		SelfTbl.Sound = true
+		Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
+		SelfTbl.Sound = true -- Not really needed anymore i think?
+		print("Soundbank successfully created!")
+		--PrintTable(SoundBank)
 	end
 end
 
-function ENT:DestroySound()
-	Sounds.SendAdjustableSound(self, true)
+function ENT:DestroyAllSounds()
+
+	Sounds.SendMultipleAdjustableSounds(self, true, _)
 
 	self.LastSound  = nil
 	self.LastPitch  = 0
@@ -850,7 +923,7 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	self:UpdateSound(SelfTbl)
+	self:UpdateSoundBank(SelfTbl)
 	self:UpdateOutputs(SelfTbl)
 
 end
@@ -940,7 +1013,7 @@ function ENT:OnRemove()
 
 	hook.Run("ACF_OnEntityLast", "acf_engine", self, Class)
 
-	self:DestroySound()
+	self:DestroyAllSounds()
 
 	for Gearbox in pairs(self.Gearboxes) do
 		self:Unlink(Gearbox)

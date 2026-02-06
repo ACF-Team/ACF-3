@@ -93,21 +93,43 @@ end
 --- Just like the CreateAdjustableSound, except meant to play multiple sounds on an entity that can be adjusted based on a variable.
 --- This also allows us to modify the pitch/volume of multiple looping sounds (for an engine) with minimal network usage.
 --- @param Origin table The entity to play the sound from
---- @param PathTable table The table with multiple sound paths, pitch and volume to be played at a defined RPM
-function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
+--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
+function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	if not IsValid(Origin) then return end
-	if not istable(PathTable) then return end
+	if not istable(SoundTable) then return end
 
-	-- Literally the same as above but as a table instead, i dunno how bad this is yet
+	-- Literally the same as CreateAdjustableSound but as a table instead
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
 		net.WriteEntity(Origin)
-		net.WriteTable(PathTable)
+		net.WriteTable(SoundTable)
 	net.SendPAS(Origin:GetPos())
 end
 
---[[function Sounds.SendMultipleAdjustableSounds(Origin, _, PathTable)
-	net.Start("ACF_Sounds_Adjustable_Multi")
-		net.WriteEntity(Origin)
-		net.WriteTable(PathTable)
-	net.SendPAS(Origin:GetPos())
-end]]--
+--- Sends an update to multiple adjustable sounds to all clients within PAS.  
+--- If all the adjustable sounds were stopped by the client, it will begin playing again on the origin with the given parameters.  
+--- This function mirrors "SendAdjustableSound" and as such is rate limited 
+--- @param Origin table The entity to update the sound on
+--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
+--- @param PathTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM.
+function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, SoundTable)
+	ShouldStop = ShouldStop or false
+	local Time = CurTime()
+	local OriginTbl = Origin.ACF
+	if not OriginTbl then
+		OriginTbl = {}
+		Origin.ACF = OriginTbl
+	end
+	OriginTbl.SoundTimer = OriginTbl.SoundTimer or Time
+
+	-- Slowing down the rate of sending a bit
+	if OriginTbl.SoundTimer <= Time or ShouldStop then
+		net.Start("ACF_Sounds_Adjustable_Multi", true)
+			net.WriteEntity(Origin)
+			net.WriteBool(ShouldStop)
+		if not ShouldStop then
+			net.WriteTable(SoundTable)
+		end
+		net.SendPAS(Origin:GetPos())
+		OriginTbl.SoundTimer = Time + 0.05
+	end
+end
