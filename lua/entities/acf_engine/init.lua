@@ -371,19 +371,19 @@ do -- Spawn and Update functions
 
 		-- Test constant table, remove this before PR!
 		local SuperDuperHandyTestTable = {
-									[714]  = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav", 100, 0},
-									[967]  = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav", 100, 0},
-									[1538] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav", 100, 0},
-									[1978] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav", 100, 0},
-									[2571] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav", 100, 0},
-									[3450] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav", 100, 0},
-									[3889] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav", 100, 0},
-									[4482] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav", 100, 0},
-									[4922] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav", 100, 0},
-									[5295] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav", 100, 0},
-									[5823] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav", 100, 0},
-									[6350] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", 100, 0},
-									[6833] = {"acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", 100, 0}
+									[714]  = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav", Pitch = 100, Volume = 0},
+									[967]  = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav", Pitch = 100, Volume = 0},
+									[1538] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav", Pitch = 100, Volume = 0},
+									[1978] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav", Pitch = 100, Volume = 0},
+									[2571] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav", Pitch = 100, Volume = 0},
+									[3450] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav", Pitch = 100, Volume = 0},
+									[3889] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav", Pitch = 100, Volume = 0},
+									[4482] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav", Pitch = 100, Volume = 0},
+									[4922] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav", Pitch = 100, Volume = 0},
+									[5295] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav", Pitch = 100, Volume = 0},
+									[5823] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav", Pitch = 100, Volume = 0},
+									[6350] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", Pitch = 100, Volume = 0},
+									[6833] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", Pitch = 100, Volume = 0}
 									}
 
 		Entity.Active         = false
@@ -620,27 +620,26 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
--- Change this 
--- TODO(TMF): Optimize how much data is about to be sent to the client!
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	local SoundBank = SelfTbl.SoundBank
 
-	if SelfTbl.Sound  then
-		CalcPitchVolume(SelfTbl)
-		Sounds.SendMultipleAdjustableSounds(self, false, SoundBank)
-		--PrintTable(SoundBank)
+	if SelfTbl.Sound then
+		local Throttle = Round(SelfTbl.Throttle)
+		local RPM = Round(SelfTbl.FlyRPM)
+
+		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM) -- Should this be one thing, two...?
 	else
+		-- TODO(TMF): Optimize how much data is about to be sent to the client!
 		Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
-		SelfTbl.Sound = true -- Not really needed anymore i think?
+		SelfTbl.Sound = true
 		print("Soundbank successfully created!")
-		--PrintTable(SoundBank)
 	end
 end
 
 function ENT:DestroyAllSounds()
 
-	Sounds.SendMultipleAdjustableSounds(self, true, _)
+	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
 
 	self.LastSound  = nil
 	self.LastPitch  = 0
