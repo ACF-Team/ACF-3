@@ -309,7 +309,6 @@ do -- Spawn and Update functions
 		Entity.SoundCount       = SoundCount or 1
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
-		Entity.AddCurveWidth    = Entity.AddCurveWidth or 0
 		Entity.TorqueCurve      = Engine.TorqueCurve
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
@@ -393,7 +392,6 @@ do -- Spawn and Update functions
 		Entity.SoundPath      = Engine.Sound
 		Entity.SoundBank      = Entity.SoundBank or {[-1] = {Path = Entity.SoundPath}} -- i have no idea if this is a good idea
 		Entity.SoundCount     = 0
-		Entity.AddCurveWidth  = Entity.AddCurveWidth or 0
 		Entity.LastPitch      = 0
 		Entity.LastTorque     = 0
 		Entity.LastFuelUsage  = 0
@@ -617,7 +615,7 @@ end
 
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
-	local SoundBank = SelfTbl.SoundBank
+	local SoundBank  = SelfTbl.SoundBank
 	local SoundCount = SelfTbl.SoundCount
 
 	-- If there's more than one sound, then play from the soundbank, otherwise not
@@ -626,12 +624,11 @@ function ENT:UpdateSoundBank(SelfTbl)
 			local Throttle = Round(SelfTbl.Throttle)
 			local RPM = Round(SelfTbl.FlyRPM)
 
-			Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM) -- Should this be one thing, two...?
+			Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 		else
 			-- TODO(TMF): Optimize how much data is about to be sent to the client!
 			Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
 			SelfTbl.Sound = true
-			--print("Soundbank successfully created!")
 		end
 	else
 		local Path      = SelfTbl.SoundPath

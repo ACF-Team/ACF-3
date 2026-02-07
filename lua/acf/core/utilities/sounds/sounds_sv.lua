@@ -121,7 +121,7 @@ function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
 		net.WriteBool(ShouldStop)
 	if not ShouldStop then
 		net.WriteUInt(Throttle or 0, 7)
-		net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 20K RPM. If you do so, you can go off yourself...
+		net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
 	end
 	net.SendPAS(Origin:GetPos())
 end

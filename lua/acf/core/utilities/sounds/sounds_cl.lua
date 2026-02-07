@@ -52,56 +52,6 @@ local function DoDelayed(Origin, Call, Instant)
 end
 DoDelayed = DoDelayed
 
--- Maps a value, X, from a range A-B, to a new range C-D
-local function map(x, a, b, c, d)
-	return (x - a) / (b - a) * (d - c) + c
-end
-
--- Fade function taken from:
--- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
--- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
--- https://i.imgur.com/KaFmaMf.png
-local function fade(n, min, mid, max)
-	local _PI = math.pi
-
-	if n < min or n > max then return 0 end
-
-	if n > mid then
-		min = mid - (max - mid)
-	end
-
-	return math.cos((1 - ((n - min) / (mid - min))) * (_PI / 2))
-end
-
--- This is where we store our sound objects
-local SoundObjects = {}
-local SoundCount = 0
--- Consider if we actually want to do this too! (commented out for now)
---local SmoothRPM = 0
---local SmoothThrottle = 0
-
-local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
-	local AdditionalCurveWidth = Origin.AddCurveWidth or 0
-	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
-	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle * 10
-
-	-- Sound volumes when throttle is 0 and 100 respectively
-	local _OFFVOLUME = 0.25
-	local _ONVOLUME = 1
-
-	-- TODO(TMF): Potentially some mechanism here to check for any differences and only update those
-	for idx, soundTable in ipairs(SoundObjects) do
-		if not SoundObjects[idx].rpm then continue end
-		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
-		local mid    = RPM
-		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
-		local curve  = fade(RPM, min - AdditionalCurveWidth, mid, max + AdditionalCurveWidth)
-		local volume = curve * map(Throttle, 0, 1, _OFFVOLUME, _ONVOLUME)
-		local pitch  = (RPM / soundTable.rpm) * 100
-		Sounds.UpdateAdjustableSound(soundTable.sound, pitch, volume)
-	end
-end
-
 do -- Playing regular sounds
 	--- Plays a single, non-looping sound at the given origin.
 	--- @param Origin table | vector The source to play the sound from
@@ -229,43 +179,104 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+-- Maps a value, X, from a range A-B, to a new range C-D
+local function map(x, a, b, c, d)
+	return (x - a) / (b - a) * (d - c) + c
+end
+
+-- Fade function taken from:
+-- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
+-- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
+-- https://i.imgur.com/KaFmaMf.png
+local function fade(n, min, mid, max)
+	local _PI = math.pi
+
+	if n < min or n > max then return 0 end
+
+	if n > mid then
+		min = mid - (max - mid)
+	end
+
+	return math.cos((1 - ((n - min) / (mid - min))) * (_PI / 2))
+end
+
+-- Consider if we actually want to do this too! (commented out for now)
+--local SmoothRPM = 0
+--local SmoothThrottle = 0
+
+local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
+	local SoundObjects = Origin.SoundObjects
+	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
+	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle * 10
+
+	-- Sound volumes when throttle is 0 and 100 respectively
+	local _OFFVOLUME = 0.25
+	local _ONVOLUME = 1
+
+	-- TODO(TMF): Potentially some mechanism here to check for any differences and only update those
+	for idx, soundTable in ipairs(SoundObjects) do
+		if not soundTable.rpm then continue end
+		local addCurveWidth = soundTable.AddCurveWidth or 0
+		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
+		local mid    = RPM
+		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
+		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
+		local volume = curve * map(Throttle, 0, 1, _OFFVOLUME, _ONVOLUME)
+		local pitch  = (RPM / soundTable.rpm) * 100
+		Sounds.UpdateAdjustableSound(soundTable.sound, pitch, volume)
+	end
+end
+
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid -- Should this stay as local to each scope?
 
+	--- Creates many sounds from a table, and stores their entries in another table.
+	--- Reuses existing methods to create and update sounds but these are locally stored in SoundObjects table.
+	--- The networked table is then discarded.
+	--- @param Origin table The entity to play the sounds from
+	--- @param PathTable table The networked table with nested table(Key as RPM) containing sound path, pitch and volume
 	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
+		-- This is where we store our sound objects
+		local SoundObjects = {}
+		local SoundCount = 0
+
 		for rpm, soundTable in pairs(PathTable) do
 			if not Sounds.IsValidSound(soundTable.Path) then return end
 			local Sound = Sounds.CreateAdjustableSound(Origin,
 				soundTable.Path,
-				soundTable.Pitch or 100,
-				soundTable.Volume or 0
+				soundTable.Pitch or 100, 0 -- Create the sound deafened
 			)
 			SoundCount = SoundCount + 1
-			table.insert(SoundObjects, count, {["rpm"] = rpm, ["sound"] = Sound})
+			-- Insert the sound objects inside the SoundObjects table, indexed as the rpm to play the sound at
+			-- addCurveWidth allows the sound to play in a wider range of RPM's
+			table.insert(SoundObjects, count, {["rpm"] = rpm, ["addCurveWidth"] = soundTable.Width, ["sound"] = Sound})
 
-			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, soundTable.Volume)
+			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, 0)
 		end
+		-- Sort the table if its necessary before moving on, so it plays in sequential order
 		if SoundCount > 1 then
 			table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
 		end
+		Origin.SoundObjects = SoundObjects
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
 		end)
 	end
 
+	--- Stops all the existing sounds from the entity
+	--- @param Origin table The entity to stop all the sounds from
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
-		for idx, snd in ipairs(SoundObjects) do
+		for idx, snd in ipairs(Origin.SoundObjects) do
 			snd.sound:Stop()
-			SoundObjects[idx] = nil
+			Origin.SoundObjects[idx] = nil
 			count = idx
 		end
 		Origin.Sound = nil
 		SoundCount = 0
 	end
 
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
-		print("Received " .. len .. " bits from server for \"ACF_Sounds_AdjustableCreate_Multi\"")
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
 		local Origin = net.ReadEntity()
 		local SoundTable = net.ReadTable()
 
@@ -275,8 +286,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 
-	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
-		print("Received " .. len .. " bits from server for \"ACF_Sounds_Adjustable_Multi\"")
+	net.Receive("ACF_Sounds_Adjustable_Multi", function()
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 		local Throttle = net.ReadUInt(7)
