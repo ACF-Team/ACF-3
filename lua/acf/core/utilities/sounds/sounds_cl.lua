@@ -286,7 +286,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		if ShouldStop then
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
-			DoPitchVolume(Origin, Throttle, RPM)
+			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end
 	end)
 end
