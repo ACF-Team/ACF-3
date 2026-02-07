@@ -71,7 +71,41 @@ do -- Special I4 Engines
 			FOV = 120,
 		},
 	})
-
+	Engines.RegisterItem("2.0L-I4", "SP", {
+		Name		 = "2.0L 4B1 I4 Petrol",
+		Description	 = "The Mitsubishi 4B1 engine is a range of all-alloy straight-4 piston engines built at Mitsubishi's Japanese" ..
+					   "\"World Engine\" powertrain plant in Shiga on the basis of the Global Engine Manufacturing Alliance (GEMA).",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/l4/mini_onhigh.wav",
+		SoundBank    = {
+						[714]  = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav",
+						[967]  = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav",
+						[1538] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav",
+						[1978] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav",
+						[2571] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav",
+						[3450] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav",
+						[3889] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav",
+						[4482] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav",
+						[4922] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav",
+						[5295] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav",
+						[5823] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav",
+						[6350] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav",
+						[6833] = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav"
+					   },
+		Fuel		 = { Petrol = true },
+		Type		 = "GenericPetrol",
+		Mass		 = 138,
+		Torque		 = 199,
+		FlywheelMass = 0.083,
+		Pitch		 = 1,
+		RPM = {
+			Idle	= 700,
+			Limit	= 7500,
+		},
+		Preview = {
+			FOV = 120,
+		},
+	})
 	Engines.RegisterItem("1.9L-I4", "SP", {
 		Name		 = "1.9L I4 Petrol",
 		Description	 = "#acf.descs.engines.sp.1_9",

@@ -52,6 +52,58 @@ local function DoDelayed(Origin, Call, Instant)
 end
 DoDelayed = DoDelayed
 
+-- Maps a value, X, from a range A-B, to a new range C-D
+local function map(x, a, b, c, d)
+	return (x - a) / (b - a) * (d - c) + c
+end
+
+-- Fade function taken from:
+-- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
+-- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
+-- https://i.imgur.com/KaFmaMf.png
+local function fade(n, min, mid, max)
+	local _PI = math.pi
+
+	if n < min or n > max then return 0 end
+
+	if n > mid then
+		min = mid - (max - mid)
+	end
+
+	return math.cos((1 - ((n - min) / (mid - min))) * (_PI / 2))
+end
+
+-- Very naive approach to calculate and set interpolated engine sounds
+local function CalcPitchVolume(Engine)
+	local SoundBank = Engine.SoundBank
+	local SoundRPMs = Engine.SoundRPMs
+	local RPM = Engine.FlyRPM
+	local Throttle = Engine.Throttle
+	local SmoothRPM = Engine.SmoothRPM
+	local SmoothThrottle = Engine.SmoothThrottle
+	local AdditionalCurveWidth = 2 or Engine.AddCurveWidth
+	SmoothRPM = SmoothRPM * (1 - 0.1) + RPM
+	SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle
+
+	-- Sound volumes when throttle is 0 and 100 respectively
+	local _OFFVOLUME = 0.25
+	local _ONVOLUME = 1
+	--PrintTable(SoundRPMs)
+	for idx, rpm in pairs(SoundRPMs) do
+		--print("Reached here! " .. idx .. " Times! " .. rpm .. " Rpms!")
+		--PrintTable(SoundBank[rpm])
+		if not SoundRPMs[idx] then continue end
+		local min    = idx == 1 and -100000 or SoundRPMs[idx - 1]
+		local mid    = rpm
+		local max    = idx == #SoundRPMs and 100000 or SoundRPMs[idx + 1]
+		local curve  = fade(SmoothRPM, min - AdditionalCurveWidth, mid, max + AdditionalCurveWidth)
+		local Volume = curve * map(SmoothThrottle, 0, 100, _OFFVOLUME, _ONVOLUME)
+		local Pitch  = (SmoothRPM / rpm)
+		SoundBank[rpm][2] = Pitch * 100
+		SoundBank[rpm][3] = Volume * 100
+	end
+end
+
 do -- Playing regular sounds
 	--- Plays a single, non-looping sound at the given origin.
 	--- @param Origin table | vector The source to play the sound from
