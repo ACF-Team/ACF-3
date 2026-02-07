@@ -75,6 +75,7 @@ end
 
 -- This is where we store our sound objects
 local SoundObjects = {}
+local SoundCount = 0
 -- Consider if we actually want to do this too! (commented out for now)
 --local SmoothRPM = 0
 --local SmoothThrottle = 0
@@ -155,8 +156,10 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
-		local Sound = Origin
-		if type(Sound) ~= "CSoundPatch" then return end
+		if not IsValid(Origin) then return end
+
+		local Sound = type(Origin) ~= "CSoundPatch" and Origin.Sound or Origin
+		if not Sound then return end
 
 		Volume = Volume * ACF.Volume
 
@@ -230,19 +233,21 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid -- Should this stay as local to each scope?
 
 	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
-		local count = 1
 		for rpm, soundTable in pairs(PathTable) do
+			if not Sounds.IsValidSound(soundTable.Path) then return end
 			local Sound = Sounds.CreateAdjustableSound(Origin,
 				soundTable.Path,
-				soundTable.Pitch,
-				soundTable.Volume
+				soundTable.Pitch or 100,
+				soundTable.Volume or 0
 			)
+			SoundCount = SoundCount + 1
 			table.insert(SoundObjects, count, {["rpm"] = rpm, ["sound"] = Sound})
-			count = count + 1
 
-			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, 0)
+			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, soundTable.Volume)
 		end
-		table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
+		if SoundCount > 1 then
+			table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
+		end
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
@@ -250,16 +255,13 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end
 
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
-		local count = 0
-		print("Deleting sounds!")
-		-- I suppose this actually gets garbage collected?
 		for idx, snd in ipairs(SoundObjects) do
 			snd.sound:Stop()
 			SoundObjects[idx] = nil
 			count = idx
 		end
 		Origin.Sound = nil
-		print("Successfully deleted " .. count .. " sounds!")
+		SoundCount = 0
 	end
 
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
@@ -270,15 +272,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		if not IsValid(Origin) then return end
 		if not istable(SoundTable) then return end
 
-		-- If only one sound was found, we assume it's at -1 index
-		print(#SoundTable)
-		--if #SoundTable < 1 then
-			--PrintTable(SoundTable)
-		--	local SoundTable = SoundTable[-1]
-		--	Sounds.CreateAdjustableSound(Origin, SoundTable.Path, SoundTable.Pitch, SoundTable.Volume)
-		--else
-			Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
-		--end
+		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 
 	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
@@ -292,7 +286,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		if ShouldStop then
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
-			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
+			DoPitchVolume(Origin, Throttle, RPM)
 		end
 	end)
 end

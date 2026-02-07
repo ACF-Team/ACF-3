@@ -118,6 +118,16 @@ local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
+local function GetPitchVolume(Engine)
+	local RPM = Engine.FlyRPM
+	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
+	-- Rev limiter code disabled because it has issues with the volume delta time, but it's still here if we need it
+	local Throttle = Engine.Throttle -- Engine.RevLimited and 0 or Engine.Throttle
+	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
+
+	return Pitch, Volume * Engine.SoundVolume
+end
+
 local function GetNextFuelTank(Engine)
 	local FuelTanks = Engine.FuelTanks
 	if not next(FuelTanks) then return end
@@ -196,7 +206,6 @@ local function SetActive(Entity, Value, EntTbl)
 		end)
 	else -- Was on, turn off
 		EntTbl.Active    = false
-		EntTbl.SmoothRPM = 0
 		EntTbl.FlyRPM    = 0
 		EntTbl.Torque    = 0
 
@@ -273,6 +282,7 @@ do -- Spawn and Update functions
 	-- Engine update function
 	local function UpdateEngine(Entity, Data, Class, Engine, Type)
 		local Mass = Engine.Mass
+		local SoundCount = 0
 
 		Entity.ACF = Entity.ACF or {}
 
@@ -286,12 +296,17 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
+		for _ in pairs(Entity.SoundBank) do
+			SoundCount = SoundCount + 1
+		end
+
 		Entity.Name             = Engine.Name
 		Entity.ShortName        = Engine.ID
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
-		Entity.SoundBank 		= Entity.SoundBank or {[-1] = Entity.DefaultSound}
+		Entity.SoundBank 		= Entity.SoundBank or {[-1] = {Path = Entity.DefaultSound}}
+		Entity.SoundCount       = SoundCount or 1
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.AddCurveWidth    = Entity.AddCurveWidth or 0
@@ -304,8 +319,6 @@ do -- Spawn and Update functions
 		Entity.PeakMinRPM       = Engine.RPM.PeakMin
 		Entity.PeakMaxRPM       = Engine.RPM.PeakMax
 		Entity.LimitRPM         = Engine.RPM.Limit
-		Entity.SmoothRPM 		= Entity.SmoothRPM or 0
-		Entity.SmoothThrottle   = Entity.SmoothThrottle or 0
 		Entity.RevLimited       = false
 		Entity.FlywheelOverride = Engine.RPM.Override
 		Entity.FlywheelMass     = Engine.FlywheelMass
@@ -369,23 +382,6 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		-- Test constant table, remove this before PR!
-		local SuperDuperHandyTestTable = {
-									[714]  = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav", Pitch = 100, Volume = 0},
-									[967]  = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav", Pitch = 100, Volume = 0},
-									[1538] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav", Pitch = 100, Volume = 0},
-									[1978] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav", Pitch = 100, Volume = 0},
-									[2571] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav", Pitch = 100, Volume = 0},
-									[3450] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav", Pitch = 100, Volume = 0},
-									[3889] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav", Pitch = 100, Volume = 0},
-									[4482] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav", Pitch = 100, Volume = 0},
-									[4922] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav", Pitch = 100, Volume = 0},
-									[5295] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav", Pitch = 100, Volume = 0},
-									[5823] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav", Pitch = 100, Volume = 0},
-									[6350] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", Pitch = 100, Volume = 0},
-									[6833] = {Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", Pitch = 100, Volume = 0}
-									}
-
 		Entity.Active         = false
 		Entity.Gearboxes      = {}
 		Entity.FuelTanks      = {}
@@ -394,10 +390,9 @@ do -- Spawn and Update functions
 		Entity.FuelUsage      = 0
 		Entity.Throttle       = 0
 		Entity.FlyRPM         = 0
-		Entity.SmoothRPM 	  = 0
-		Entity.SmoothThrottle = 0
 		Entity.SoundPath      = Engine.Sound
-		Entity.SoundBank      = SuperDuperHandyTestTable or {[-1] = Entity.SoundPath} -- i have no idea if this is a good idea
+		Entity.SoundBank      = Entity.SoundBank or {[-1] = {Path = Entity.SoundPath}} -- i have no idea if this is a good idea
+		Entity.SoundCount     = 0
 		Entity.AddCurveWidth  = Entity.AddCurveWidth or 0
 		Entity.LastPitch      = 0
 		Entity.LastTorque     = 0
@@ -623,23 +618,55 @@ end
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	local SoundBank = SelfTbl.SoundBank
+	local SoundCount = SelfTbl.SoundCount
 
-	if SelfTbl.Sound then
-		local Throttle = Round(SelfTbl.Throttle)
-		local RPM = Round(SelfTbl.FlyRPM)
+	-- If there's more than one sound, then play from the soundbank, otherwise not
+	if SoundCount > 1 then
+		if SelfTbl.Sound then
+			local Throttle = Round(SelfTbl.Throttle)
+			local RPM = Round(SelfTbl.FlyRPM)
 
-		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM) -- Should this be one thing, two...?
+			Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM) -- Should this be one thing, two...?
+		else
+			-- TODO(TMF): Optimize how much data is about to be sent to the client!
+			Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
+			SelfTbl.Sound = true
+			--print("Soundbank successfully created!")
+		end
 	else
-		-- TODO(TMF): Optimize how much data is about to be sent to the client!
-		Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
-		SelfTbl.Sound = true
-		print("Soundbank successfully created!")
+		local Path      = SelfTbl.SoundPath
+		local LastSound = SelfTbl.LastSound
+
+		if Path ~= LastSound and LastSound ~= nil then
+			self:DestroyAllSounds()
+
+			SelfTbl.LastSound = Path
+		end
+
+		if Path == "" then return end
+		if not SelfTbl.Active then return end
+
+		local Pitch, Volume = GetPitchVolume(SelfTbl)
+
+		if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
+
+		SelfTbl.LastPitch = Pitch
+
+		if SelfTbl.Sound then
+			Sounds.SendAdjustableSound(self, false, Pitch, Volume)
+		else
+			Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+			SelfTbl.Sound = true
+		end
 	end
 end
 
 function ENT:DestroyAllSounds()
-
-	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
+	if self.SoundCount > 1 then
+		Sounds.SendMultipleAdjustableSounds(self, true, _, _)
+	else
+		Sounds.SendAdjustableSound(self, true, _, _)
+	end
 
 	self.LastSound  = nil
 	self.LastPitch  = 0
