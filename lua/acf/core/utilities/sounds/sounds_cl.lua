@@ -108,7 +108,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 	function Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
 		if not IsValid(Origin) then return end
 
-		local Sound = type(Origin) ~= "CSoundPatch" and Origin.Sound or Origin
+		local Sound = Origin.Sound
 		if not Sound then return end
 
 		Volume = Volume * ACF.Volume
@@ -216,6 +216,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	-- TODO(TMF): Potentially some mechanism here to check for any differences and only update those
 	for idx, soundTable in ipairs(SoundObjects) do
 		if not soundTable.rpm then continue end
+		Origin.Sound = soundTable.sound
 		local addCurveWidth = soundTable.AddCurveWidth or 0
 		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
 		local mid    = RPM
@@ -223,7 +224,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
 		local volume = curve * map(Throttle, 0, 1, _OFFVOLUME, _ONVOLUME)
 		local pitch  = (RPM / soundTable.rpm) * 100
-		Sounds.UpdateAdjustableSound(soundTable.sound, pitch, volume)
+		Sounds.UpdateAdjustableSound(Origin, pitch, volume)
 	end
 end
 
@@ -249,7 +250,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			SoundCount = SoundCount + 1
 			-- Insert the sound objects inside the SoundObjects table, indexed as the rpm to play the sound at
 			-- addCurveWidth allows the sound to play in a wider range of RPM's
-			table.insert(SoundObjects, count, {["rpm"] = rpm, ["addCurveWidth"] = soundTable.Width, ["sound"] = Sound})
+			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["addCurveWidth"] = soundTable.Width, ["sound"] = Sound})
 
 			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, 0)
 		end
@@ -257,7 +258,9 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		if SoundCount > 1 then
 			table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
 		end
+
 		Origin.SoundObjects = SoundObjects
+		Origin.SoundCount = SoundCount
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
@@ -267,13 +270,13 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	--- Stops all the existing sounds from the entity
 	--- @param Origin table The entity to stop all the sounds from
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
+		if not IsValid(Origin) then return end
 		for idx, snd in ipairs(Origin.SoundObjects) do
 			snd.sound:Stop()
 			Origin.SoundObjects[idx] = nil
-			count = idx
 		end
-		Origin.Sound = nil
-		SoundCount = 0
+		Origin.Sound      = nil
+		Origin.SoundCount = 0
 	end
 
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()

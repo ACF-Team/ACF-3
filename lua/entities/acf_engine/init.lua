@@ -300,8 +300,8 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		-- Coutn all the sounds that exist in the SoundBank
-		for _ in pairs(Entity.SoundBank) do
+		-- Count all the existing sounds in SoundBank
+		for _ in pairs(Engine.SoundBank) do
 			SoundCount = SoundCount + 1
 		end
 
@@ -310,8 +310,8 @@ do -- Spawn and Update functions
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
-		Entity.SoundBank 		= Entity.SoundBank or {[-1] = {Path = Entity.DefaultSound}}
-		Entity.SoundCount       = SoundCount or 0
+		Entity.SoundBank 		= Engine.SoundBank
+		Entity.SoundCount       = SoundCount or 1
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -358,7 +358,6 @@ do -- Spawn and Update functions
 		ACF.Activate(Entity, true)
 
 		Contraption.SetMass(Entity, Mass)
-		print("Finished updating engine! Found " .. SoundCount .. " sound" .. (SoundCount == 1 and "" or "s") .. " in SoundBank!")
 	end
 
 	-- Engine creation function
@@ -396,7 +395,7 @@ do -- Spawn and Update functions
 		Entity.Throttle       = 0
 		Entity.FlyRPM         = 0
 		Entity.SoundPath      = Engine.Sound
-		Entity.SoundBank      = Entity.SoundBank or {[-1] = {Path = Entity.SoundPath}} -- i have no idea if this is a good idea
+		Entity.SoundBank      = Entity.SoundBank or {}
 		Entity.SoundCount     = 0
 		Entity.LastPitch      = 0
 		Entity.LastTorque     = 0

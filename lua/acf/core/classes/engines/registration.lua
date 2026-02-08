@@ -45,11 +45,6 @@ function Engines.RegisterItem(ID, ClassID, Data)
 		Class.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"
 	end
 
-	-- Will this work though?
-	if not Class.SoundBank then
-		Class.SoundBank = {[-1] = Class.Sound}
-	end
-
 	if Loaded then
 		AddPerformanceData(Class)
 	end
