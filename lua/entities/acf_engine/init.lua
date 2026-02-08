@@ -192,7 +192,11 @@ local function SetActive(Entity, Value, EntTbl)
 		EntTbl.Torque    = EntTbl.PeakTorque
 		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		Entity:UpdateSoundBank(EntTbl)
+		if Entity.SoundCount > 1 then
+			Entity:UpdateSoundBank(EntTbl)
+		else
+			Entity:UpdateSound(EntTbl)
+		end
 
 		Entity:NextThink(Clock.CurTime + TickInterval())
 
@@ -296,6 +300,7 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
+		-- Coutn all the sounds that exist in the SoundBank
 		for _ in pairs(Entity.SoundBank) do
 			SoundCount = SoundCount + 1
 		end
@@ -306,7 +311,7 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundBank 		= Entity.SoundBank or {[-1] = {Path = Entity.DefaultSound}}
-		Entity.SoundCount       = SoundCount or 1
+		Entity.SoundCount       = SoundCount or 0
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -353,6 +358,7 @@ do -- Spawn and Update functions
 		ACF.Activate(Entity, true)
 
 		Contraption.SetMass(Entity, Mass)
+		print("Finished updating engine! Found " .. SoundCount .. " sound" .. (SoundCount == 1 and "" or "s") .. " in SoundBank!")
 	end
 
 	-- Engine creation function
@@ -616,45 +622,45 @@ end
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	local SoundBank  = SelfTbl.SoundBank
-	local SoundCount = SelfTbl.SoundCount
 
-	-- If there's more than one sound, then play from the soundbank, otherwise not
-	if SoundCount > 1 then
-		if SelfTbl.Sound then
-			local Throttle = Round(SelfTbl.Throttle)
-			local RPM = Round(SelfTbl.FlyRPM)
+	if SelfTbl.Sound then
+		local Throttle = Round(SelfTbl.Throttle)
+		local RPM = Round(SelfTbl.FlyRPM)
 
-			Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
-		else
-			-- TODO(TMF): Optimize how much data is about to be sent to the client!
-			Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
-			SelfTbl.Sound = true
-		end
+		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 	else
-		local Path      = SelfTbl.SoundPath
-		local LastSound = SelfTbl.LastSound
+		-- TODO(TMF): Optimize how much data is about to be sent to the client!
+		Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
+		SelfTbl.Sound = true
+	end
+end
 
-		if Path ~= LastSound and LastSound ~= nil then
-			self:DestroyAllSounds()
+function ENT:UpdateSound(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
 
-			SelfTbl.LastSound = Path
-		end
+	local Path      = SelfTbl.SoundPath
+	local LastSound = SelfTbl.LastSound
 
-		if Path == "" then return end
-		if not SelfTbl.Active then return end
+	if Path ~= LastSound and LastSound ~= nil then
+		self:DestroyAllSounds()
 
-		local Pitch, Volume = GetPitchVolume(SelfTbl)
+		SelfTbl.LastSound = Path
+	end
 
-		if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
+	if Path == "" then return end
+	if not SelfTbl.Active then return end
 
-		SelfTbl.LastPitch = Pitch
+	local Pitch, Volume = GetPitchVolume(SelfTbl)
 
-		if SelfTbl.Sound then
-			Sounds.SendAdjustableSound(self, false, Pitch, Volume)
-		else
-			Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
-			SelfTbl.Sound = true
-		end
+	if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
+
+	SelfTbl.LastPitch = Pitch
+
+	if SelfTbl.Sound then
+		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
+	else
+		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+		SelfTbl.Sound = true
 	end
 end
 
@@ -880,7 +886,12 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	self:UpdateSoundBank(SelfTbl)
+	if self.SoundCount > 1 then
+		self:UpdateSoundBank(SelfTbl)
+	else
+		self:UpdateSound(SelfTbl)
+	end
+
 	self:UpdateOutputs(SelfTbl)
 
 end

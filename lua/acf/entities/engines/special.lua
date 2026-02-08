@@ -71,6 +71,7 @@ do -- Special I4 Engines
 			FOV = 120,
 		},
 	})
+	-- Test engine, remove before PR!
 	Engines.RegisterItem("2.0L-I4", "SP", {
 		Name		 = "2.0L 4B1 I4 Petrol",
 		Description	 = "The Mitsubishi 4B1 engine is a range of all-alloy straight-4 piston engines built at Mitsubishi's Japanese" ..
