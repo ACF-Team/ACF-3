@@ -65,8 +65,10 @@ end
 	--- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 	ShouldStop = ShouldStop or false
+
 	local Time = CurTime()
 	local OriginTbl = Origin.ACF
+
 	if not OriginTbl then
 		OriginTbl = {}
 		Origin.ACF = OriginTbl
@@ -116,8 +118,10 @@ end
 function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
 	if not IsValid(Origin) then return end
 	ShouldStop = ShouldStop or false
+
 	local Time = CurTime()
 	local OriginTbl = Origin.ACF
+
 	if not OriginTbl then
 		OriginTbl = {}
 		Origin.ACF = OriginTbl
