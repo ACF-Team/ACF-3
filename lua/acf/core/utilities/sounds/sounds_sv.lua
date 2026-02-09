@@ -113,8 +113,8 @@ end
 	--- This function is also rate limited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time. 
 	--- @param Origin table The entity to update the sound from
 	--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
-	--- @param Throttle? int The entity's throttle
-	--- @param RPM? int The entity's RPM
+	--- @param Throttle int The entity's throttle
+	--- @param RPM int The entity's RPM
 function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
 	if not IsValid(Origin) then return end
 	ShouldStop = ShouldStop or false
