@@ -118,6 +118,17 @@ local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
+-- Count all the existing sounds in a SoundBank
+local function GetSoundCount(Engine)
+	if not Engine.SoundBank then return end
+
+	local SoundCount = 0
+	for _ in pairs(Engine.SoundBank) do
+		SoundCount = SoundCount + 1
+	end
+	return SoundCount
+end
+
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
@@ -286,7 +297,6 @@ do -- Spawn and Update functions
 	-- Engine update function
 	local function UpdateEngine(Entity, Data, Class, Engine, Type)
 		local Mass = Engine.Mass
-		local SoundCount = 0
 
 		Entity.ACF = Entity.ACF or {}
 
@@ -300,18 +310,13 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		-- Count all the existing sounds in SoundBank
-		for _ in pairs(Engine.SoundBank) do
-			SoundCount = SoundCount + 1
-		end
-
 		Entity.Name             = Engine.Name
 		Entity.ShortName        = Engine.ID
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundBank 		= Engine.SoundBank
-		Entity.SoundCount       = SoundCount or 1
+		Entity.SoundCount       = GetSoundCount(Engine) or 1
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -623,9 +628,8 @@ function ENT:UpdateSoundBank(SelfTbl)
 	local SoundBank  = SelfTbl.SoundBank
 
 	if SelfTbl.Sound then
-		local Throttle = Round(SelfTbl.Throttle)
+		local Throttle = Round(SelfTbl.Throttle, 2) * 100
 		local RPM = Round(SelfTbl.FlyRPM)
-
 		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 	else
 		-- TODO(TMF): Optimize how much data is about to be sent to the client!

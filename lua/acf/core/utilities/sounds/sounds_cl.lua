@@ -204,6 +204,7 @@ end
 --local SmoothRPM = 0
 --local SmoothThrottle = 0
 
+-- This is where the magic to interpolate sounds happen.
 local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	local SoundObjects = Origin.SoundObjects
 	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
@@ -217,13 +218,16 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	for idx, soundTable in ipairs(SoundObjects) do
 		if not soundTable.rpm then continue end
 		Origin.Sound = soundTable.sound
-		local addCurveWidth = soundTable.AddCurveWidth or 0
+
+		local addCurveWidth = soundTable.width or 0
+		local enginePitch = soundTable.pitch or 1
 		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
 		local mid    = RPM
 		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
 		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
-		local volume = curve * map(Throttle, 0, 1, _OFFVOLUME, _ONVOLUME)
-		local pitch  = (RPM / soundTable.rpm) * 100
+		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME)
+		local pitch  = (RPM / soundTable.rpm) * enginePitch
+
 		Sounds.UpdateAdjustableSound(Origin, pitch, volume)
 	end
 end
@@ -231,13 +235,12 @@ end
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid -- Should this stay as local to each scope?
 
-	--- Creates many sounds from a table, and stores their entries in another table.
-	--- Reuses existing methods to create and update sounds but these are locally stored in SoundObjects table.
-	--- The networked table is then discarded.
+	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
+	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
-	--- @param PathTable table The networked table with nested table(Key as RPM) containing sound path, pitch and volume
+	--- @param PathTable table The networked table with nested table(Key as RPM) containing sound path, pitch and width
 	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
-		-- This is where we store our sound objects
+		-- This is where we store our sound objects and keep count of them
 		local SoundObjects = {}
 		local SoundCount = 0
 
@@ -248,14 +251,16 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 				soundTable.Pitch or 100, 0 -- Create the sound deafened
 			)
 			SoundCount = SoundCount + 1
-			-- Insert the sound objects inside the SoundObjects table, indexed as the rpm to play the sound at
-			-- addCurveWidth allows the sound to play in a wider range of RPM's
-			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["addCurveWidth"] = soundTable.Width, ["sound"] = Sound})
+
+			-- Insert the CSoundPatch type objects inside the SoundObjects table, alongside with the rpm it has be to play at the desired pitch
+			-- width allows the sound to play in a wider range of RPM's
+			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["width"] = soundTable.Width, ["pitch"] = soundTable.Pitch, ["sound"] = Sound})
 
 			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, 0)
 		end
-		-- Sort the table if its necessary before moving on, so it plays in sequential order
-		if SoundCount > 1 then
+
+		-- Sort the table before moving on, so it can be iterated in sequential order
+		if SoundCount > 1 then -- Potentially unnecessary conditional, will see...
 			table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
 		end
 
@@ -275,7 +280,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			snd.sound:Stop()
 			Origin.SoundObjects[idx] = nil
 		end
-		Origin.Sound      = nil
+		Origin.Sound      = nil -- Just in case
 		Origin.SoundCount = 0
 	end
 
@@ -292,13 +297,13 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	net.Receive("ACF_Sounds_Adjustable_Multi", function()
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
-		local Throttle = net.ReadUInt(7)
-		local RPM = net.ReadUInt(14)
 
 		-- Do we really need to remove every existing sound when the engine just turns off?
 		if ShouldStop then
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
+			local Throttle = net.ReadUInt(7)
+			local RPM = net.ReadUInt(14)
 			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end
 	end)

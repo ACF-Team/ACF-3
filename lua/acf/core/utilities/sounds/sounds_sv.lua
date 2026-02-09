@@ -90,8 +90,8 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 end
 
 	--- Creates a sound table to be broadcasted to all players within PAS.
-	--- This allows us to then create multiple sounds attached to a single entity, fully clientsided.
-	--- For creating 13 sounds, the data required can ballon up to 1.537kb's of data at once.
+	--- This allows us to then create multiple sounds attached to a single entity, and be played fully clientside.
+	--- For creating 13 sounds, the data being sent can ballon up to 1.537kb's of data at once.
 	--- @param Origin table The entity to play the sound from
 	--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
 function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
@@ -107,7 +107,7 @@ end
 
 	--- Sends an update to the client regarding Throttle, RPM and if it should stop the sound, from an engine.
 	--- This also allows us to modify the pitch/volume of multiple looping sounds (for an engine) with minimal network usage.
-	--- The sound calculations are also performed entirely clientside and require minimum network usage, and require net unreliable for better sound composition.
+	--- The sound calculations are performed entirely clientside and require net unreliable for better sound composition.
 	--- @param Origin table The entity to update the sound from
 	--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
 	--- @param Throttle? int The entity's throttle
