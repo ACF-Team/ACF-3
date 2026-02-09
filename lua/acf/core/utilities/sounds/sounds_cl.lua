@@ -254,9 +254,9 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 
 			-- Insert the CSoundPatch type objects inside the SoundObjects table, alongside with the rpm it has be to play at the desired pitch
 			-- width allows the sound to play in a wider range of RPM's
-			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["width"] = soundTable.Width, ["pitch"] = soundTable.Pitch, ["sound"] = Sound})
+			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["width"] = soundTable.Width or 0, ["pitch"] = soundTable.Pitch or 100, ["sound"] = Sound})
 
-			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch, 0)
+			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch or 100, 0)
 		end
 
 		-- Sort the table before moving on, so it can be iterated in sequential order

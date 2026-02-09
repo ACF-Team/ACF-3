@@ -108,6 +108,7 @@ end
 	--- Sends an update to the client regarding Throttle, RPM and if it should stop the sound, from an engine.
 	--- This also allows us to modify the pitch/volume of multiple looping sounds (for an engine) with minimal network usage.
 	--- The sound calculations are performed entirely clientside and require net unreliable for better sound composition.
+	--- This function is also rate limited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time. 
 	--- @param Origin table The entity to update the sound from
 	--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
 	--- @param Throttle? int The entity's throttle
@@ -115,13 +116,24 @@ end
 function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
 	if not IsValid(Origin) then return end
 	ShouldStop = ShouldStop or false
-
-	net.Start("ACF_Sounds_Adjustable_Multi", true)
-		net.WriteEntity(Origin)
-		net.WriteBool(ShouldStop)
-	if not ShouldStop then
-		net.WriteUInt(Throttle or 0, 7)
-		net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
+	local Time = CurTime()
+	local OriginTbl = Origin.ACF
+	if not OriginTbl then
+		OriginTbl = {}
+		Origin.ACF = OriginTbl
 	end
-	net.SendPAS(Origin:GetPos())
+	OriginTbl.SoundTimer = OriginTbl.SoundTimer or Time
+
+	-- Slowing down the rate of sending a bit
+	if OriginTbl.SoundTimer <= Time or ShouldStop then
+		net.Start("ACF_Sounds_Adjustable_Multi", true)
+			net.WriteEntity(Origin)
+			net.WriteBool(ShouldStop)
+		if not ShouldStop then
+			net.WriteUInt(Throttle or 0, 7)
+			net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
+		end
+		net.SendPAS(Origin:GetPos())
+		OriginTbl.SoundTimer = Time + 0.05
+	end
 end
