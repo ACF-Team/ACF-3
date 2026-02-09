@@ -189,6 +189,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	self:UpdateOverlay()
 	if TraceResult.Hit then return 0.000001 end
 
+	self.OverlayErrors.MountPoint = Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1 and "Autoloader is linked to a rack with\nMultiple mount points, which is unsupported." or nil
+
 	-- Gun to arm
 	local GunMoveOffset = self:WorldToLocal(BreechPos)
 

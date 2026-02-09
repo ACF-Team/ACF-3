@@ -213,19 +213,27 @@ do -- ACF global vars
 
 	-- WE WANT NO INTERACTION WITH THESE ENTITIES
 	ACF.GlobalFilter = {
-		gmod_ghost = true,
-		acf_debris = true,
-		prop_ragdoll = true,
-		gmod_wire_hologram = true,
-		starfall_hologram = true,
-		prop_vehicle_crane = true,
-		prop_dynamic = true,
-		npc_strider = true,
-		npc_dog = true,
-		phys_bone_follower = true,
+		acf_debris            = true,
+
+		gmod_ghost            = true,
+
 		gmod_wire_expression2 = true,
-		starfall_processor = true,
-		sent_prop2mesh = true,
+		gmod_wire_hologram    = true,
+
+		phys_bone_follower    = true,
+		prop_dynamic          = true,
+		prop_ragdoll          = true,
+		prop_vehicle_crane    = true,
+
+		npc_dog               = true,
+		npc_strider           = true,
+
+		sent_prop2mesh        = true,
+
+		starfall_hologram     = true,
+		starfall_prop         = true,
+		starfall_screen       = true,
+		starfall_processor    = true,
 	}
 
 	-- THESE ENTITIES ARE FILTERED BUT CAN STILL BE ARMORED, FOR BACKWARDS COMPATIBILITY

@@ -2,7 +2,6 @@ local ScrW = ScrW
 local ScrH = ScrH
 local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
-local DrawCircle = surface.DrawCircle
 local DrawText = draw.DrawText
 local DrawLine = surface.DrawLine
 
@@ -108,17 +107,30 @@ return function(State)
     local ComputerErrorMaterial = Material("materials/icon16/computer_error.png")
     local SmokeMaterial = Material("acf/icons/shell_smoke.png")
 
-    local ColorReady = Color(0, 255, 0, 255)
-    local ColorNotReady = Color(255, 0, 0, 255)
+    local ColorReady = Color(0, 200, 0, 255)
+    local ColorReadyBright = Color(0, 255, 0, 255)
+    local ColorNotReady = Color(200, 0, 0, 255)
     local ColorReadyDull = Color(0, 255, 0, 100)
     local ColorNotReadyDull = Color(255, 0, 0, 100)
 
-    local function DrawReload(Entity, Ready, Radius)
+    local function DrawProgressRing(fidelity, x, y, r, percent, ready)
+        local step = (360 / fidelity)
+        local cutoff = math.ceil(percent * fidelity)
+        for i = 1, fidelity do
+            local curang = -((i-1) * step + step / 2) - 180
+            local a1 = math.rad(curang - step / 2)
+            local a2 = math.rad(curang + step / 2)
+            surface.SetDrawColor(ready and ColorReadyBright or i > cutoff and ColorNotReady or ColorReady)
+            surface.DrawLine(x + r * math.sin(a1), y + r * math.cos(a1), x + r * math.sin(a2), y + r * math.cos(a2))
+        end
+    end
+
+    local function DrawReload(Entity, Ready, Radius, Percent)
         if IsValid(Entity) then
             local HitPos = ranger( Entity:GetPos(), Entity:GetForward(), 99999, State.MyFilter )
             local sp = HitPos:ToScreen()
             SetDrawColor( Ready and ColorReady or ColorNotReady )
-            DrawCircle( sp.x, sp.y, Radius)
+            DrawProgressRing(30, sp.x, sp.y, Radius, Percent, Ready)
         end
     end
 
@@ -195,23 +207,16 @@ return function(State)
 
             -- Ammo type | Ammo count | Time left
             SetDrawColor( Col )
-            local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Primary_AT", ""), State.MyController:GetNWInt("AHS_Primary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_RIGHT)
-            local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 210 * Scale, Col, TEXT_ALIGN_LEFT)
-            DrawReload(State.MyController:GetNWEntity( "AHS_Primary", nil ), State.MyController:GetNWBool("AHS_Primary_RD", false), 10 * Scale / 1)
 
-            local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Secondary_AT", ""), State.MyController:GetNWInt("AHS_Secondary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_RIGHT)
-            local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 230 * Scale, Col, TEXT_ALIGN_LEFT)
-            DrawReload(State.MyController:GetNWEntity( "AHS_Secondary", nil ), State.MyController:GetNWBool("AHS_Secondary_RD", false), 10 * Scale / 2)
-
-            local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Tertiary_AT", ""), State.MyController:GetNWInt("AHS_Tertiary_SL", 0)
-            DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_RIGHT)
-            local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
-            DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x - 310 * Scale, y + 250 * Scale, Col, TEXT_ALIGN_LEFT)
-            DrawReload(State.MyController:GetNWEntity( "AHS_Tertiary", nil ), State.MyController:GetNWBool("AHS_Tertiary_RD", false), 10 * Scale / 3)
+            for Index, Prefix in pairs({"AHS_Primary", "AHS_Secondary", "AHS_Tertiary"}) do
+                local AmmoType, AmmoCount = State.MyController:GetNWString(Prefix .. "_AT", ""), State.MyController:GetNWInt(Prefix .. "_SL", 0)
+                DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + (190 + Index * 20) * Scale, Col, TEXT_ALIGN_RIGHT)
+                local Ready = State.MyController:GetNWBool(Prefix .. "_RD", false)
+                local TimeLeft = Ready and 0 or math.max(math.Round(State.MyController:GetNWFloat(Prefix .. "_NF", 0) - CurTime(), 2), 0)
+                DrawText(TimeLeft, Font, x - 310 * Scale, y + (190 + Index * 20) * Scale, Col, TEXT_ALIGN_LEFT)
+                local Progress = 1 - (TimeLeft / State.MyController:GetNWFloat(Prefix .. "_RT", 0))
+                DrawReload(State.MyController:GetNWEntity( Prefix, nil ), State.MyController:GetNWBool(Prefix .. "_RD", false), 10 * Scale / Index, Progress)
+            end
 
             -- Speed, Gear, Fuel, Crew
             local unit = State.MyController:GetSpeedUnit() == 0 and " KPH" or " MPH"

@@ -407,7 +407,7 @@ do -- Spawn and Update functions --------------------------------
 
 	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Entity, List)
 		if Entity:GetClass() ~= "acf_gun" then return end
-		if Entity.Caliber <= ACF.MinFuzeCaliber then return end
+		if Entity.Caliber < ACF.MinFuzeCaliber then return end
 
 		List[#List + 1] = "Fuze (Sets the delay in seconds in which explosive rounds will detonate after leaving the weapon.)"
 	end)
@@ -1030,7 +1030,6 @@ do -- Metamethods --------------------------------
 					if Manual then -- Automatics don't change their rate of fire
 						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
 						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
-						self.ReloadTime = IdealTime / eff
 					end
 					return eff
 				end

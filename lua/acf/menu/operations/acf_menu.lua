@@ -108,7 +108,7 @@ do -- Generic Spawner/Linker operation creator
 	end
 
 	local function SelectEntity(Entity, Name, Tool)
-		if not IsValid(Entity) then return false end
+		if not ACF.Check(Entity) then return false end
 
 		local Player = Tool:GetOwner()
 		local Ents   = GetPlayerEnts(Player)
@@ -189,6 +189,8 @@ do -- Generic Spawner/Linker operation creator
 		local Total    = 0
 
 		for K in pairs(Ents) do
+			if not ACF.Check(K) then continue end
+
 			local EntFunc = OnKey and K.Unlink or K.Link
 			local Result  = false
 			local Message
@@ -215,6 +217,8 @@ do -- Generic Spawner/Linker operation creator
 			UnselectEntity(K, Name, Tool)
 		end
 
+		if Total == 0 then return end
+
 		if Total > 1 then
 			ReportMultiple(Player, Action, EntName, Failed, #Success, Total)
 		else
@@ -227,10 +231,10 @@ do -- Generic Spawner/Linker operation creator
 		end
 	end
 
-	--- Creates a menu operation  
-	--- Mostly serves as a wrapper for (https://wiki.facepunch.com/gmod/Tool_Information_Display)  
-	--- Internally links the helpers SpawnEntity and SelectEntity to your left and right mouse  
-	--- To actually define an entity's linking or spawn behaviour, use the entity files (e.g. init.lua)  
+	--- Creates a menu operation
+	--- Mostly serves as a wrapper for (https://wiki.facepunch.com/gmod/Tool_Information_Display)
+	--- Internally links the helpers SpawnEntity and SelectEntity to your left and right mouse
+	--- To actually define an entity's linking or spawn behaviour, use the entity files (e.g. init.lua)
 	--- @param Name string The name of the link type performed by the toolgun (e.g. Weapon, Engine, etc.)
 	--- @param Primary string The type of the entity to be spawned on left click (purely aesthetical)
 	--- @param Secondary string | nil The type of entity to be spawned on shift + right click (purely aesthetical)
@@ -284,7 +288,7 @@ do -- Generic Spawner/Linker operation creator
 
 					local Entity = Trace.Entity
 
-					if not IsValid(Entity) then return false end
+					if not ACF.Check(Entity) then return false end
 
 					local Player = Tool:GetOwner()
 					local Ents   = GetPlayerEnts(Player)

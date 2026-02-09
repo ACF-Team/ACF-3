@@ -71,7 +71,7 @@ function Ammo:BaseConvert(ToolData)
 	Data.ShovePower = 0.1
 	Data.LimitVel   = 700 --Most efficient penetration speed in m/s
 	Data.Ricochet   = 65 --Base ricochet angle
-	Data.CanFuze    = Data.Caliber * 10 > ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
+	Data.CanFuze    = Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers > 20mm
 
 	GUIData.MinFillerVol = 0
 

@@ -56,6 +56,8 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 			if Contraption1 == Contraption2 then continue end
 
 			if not ACF.DoesContraptionHavePlayers(Contraption1) or not ACF.DoesContraptionHavePlayers(Contraption2) then continue end
+			-- Final chance for addons to handle it. If something returns false, we continue.
+			if hook.Run("ACF_OnBaseplateRepulsion", BP1, BP2) == false then continue end
 
 			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
 
@@ -79,31 +81,6 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 		end
 	end
 end)
-
-function ENT:BaseplateRepulsion()
-	if not self.Size then return end
-	if self:IsPlayerHolding() then return end
-	local SelfValid, _, SelfPos, SelfVel, SelfContraption, SelfMass, SelfRadius = GetBaseplateProperties(self)
-	if not SelfValid then return end
-
-	for Victim in pairs(ACF.ActiveBaseplatesTable) do
-		local VictimValid, VictimPhysics, VictimPos, _, VictimContraption, VictimMass, VictimRadius = GetBaseplateProperties(Victim, self, SelfPos, SelfRadius)
-		if not VictimValid then continue end
-
-		-- This is already blocked by the CFW detour, so this is just in case
-		-- that breaks for whatever reason
-		if SelfContraption == VictimContraption then continue end
-
-		local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(SelfPos, SelfRadius, VictimPos, VictimRadius)
-		local MassRatio = math.Clamp(SelfMass / VictimMass, 0, .9)
-		local LinImpulse, AngImpulse = VictimPhysics:CalculateForceOffset(((SelfVel / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * MassRatio * 100, IntersectionCenter)
-
-		VictimPhysics:ApplyForceCenter(LinImpulse)
-		VictimPhysics:ApplyTorqueCenter(VictimPhysics:LocalToWorldVector(AngImpulse * 2))
-		self:PlayBaseplateRepulsionSound(SelfVel)
-		Victim:PlayBaseplateRepulsionSound(SelfVel)
-	end
-end
 
 function ENT:PlayBaseplateRepulsionSound(Vel)
 	local Hard = Vel:Length() > 500 and true or false

@@ -4,7 +4,7 @@ local function GetNum(Slot) return math.Round(Slot.Data[2] * (GetConVar("acf_men
 
 do
     local ELEMENT = {}
-    local function GetText(Num) return ("%s Nm / %s ft-lb"):format(Num, math.Round(Num * ACF.KwToHp)) end
+    local function GetText(Num) return ("%s kW / %s hp"):format(Num, math.Round(Num * ACF.KwToHp)) end
     function ELEMENT.Render(_, Slot)
         Overlay.KeyValueRenderMode = 1
         Overlay.BasicKeyValueRender(_, Slot.Data[1], GetText(GetNum(Slot)))
@@ -20,7 +20,7 @@ end
 local Overlay = ACF.Overlay
 do
     local ELEMENT = {}
-    local function GetText(Num) return ("%s - %s RPM"):format(Num, math.Round(Num * ACF.NmToFtLb)) end
+    local function GetText(Num) return ("%s Nm / %s ft-lb"):format(Num, math.Round(Num * ACF.NmToFtLb)) end
     function ELEMENT.Render(_, Slot)
         Overlay.KeyValueRenderMode = 1
         Overlay.BasicKeyValueRender(_, Slot.Data[1], GetText(GetNum(Slot)))
