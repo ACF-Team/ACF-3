@@ -1,12 +1,210 @@
+local panels = {}
+
+-- NOTICE WHEN REVIEWING THIS: i would have used the methods that March's provided to us to use instead of plain vgui, however i noticed 
+-- that it brings more positioning issues when parenting any element to another, so instead i just did the good old way, just to have this working!
+local function addPanel(Menu, ParentPanel)
+	local id = #panels + 1
+
+	local Wide = Menu:GetWide()
+	local ButtonHeight = 20
+	local parent = ParentPanel
+	parent = parent -- So the linter stops bitching, idk if i need this extra arg 
+
+	local panel = Menu:AddPanel("DPanel")
+	panel:SetWide(Wide)
+	panel:SetTall(54)
+	panel:SetText("")
+	panel:Dock(TOP)
+	panel.id = id
+
+	local top_panel = vgui.Create("DPanel", panel)
+	top_panel.Paint = function() end
+	top_panel:Dock(TOP)
+	top_panel:DockMargin(0, 2, 0, 2)
+
+	local bottom_panel = vgui.Create("DPanel", panel)
+	bottom_panel.Paint = function() end
+	bottom_panel:Dock(TOP)
+
+	local num_panel = vgui.Create("DLabel", top_panel)
+	num_panel:SetText(panel.id .. " = ")
+	num_panel:Dock(LEFT)
+	num_panel:DockMargin(4, 0, -36, 0)
+	num_panel:SetColor(color_black)
+
+	local rpmInput = vgui.Create("DNumberWang", top_panel)
+	rpmInput:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
+	rpmInput:SetTall(ButtonHeight)
+	rpmInput:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16
+	rpmInput:Dock(LEFT)
+	rpmInput:DockMargin(0, 0, 2, 0)
+
+	local soundPath = vgui.Create("DTextEntry", top_panel)
+	soundPath:SetText("")
+	soundPath:SetWide(Wide - 20)
+	soundPath:SetTall(ButtonHeight)
+	soundPath:SetMultiline(false)
+	soundPath:Dock(FILL)
+	soundPath:DockMargin(0, 0, 2, 0)
+	--soundPath:SetConVar("wire_soundemitter_sound")
+
+	local removeButton = vgui.Create("DImageButton", top_panel)
+	removeButton:SetImage( "icon16/delete.png" )
+	removeButton:SizeToContents()
+	--removeButton:SetPos( 0, 4 )
+	removeButton:Dock(RIGHT)
+	removeButton:SetTooltip("Remove this sound")
+	removeButton.DoClick = function()
+
+		local id = panel.id
+		panels[id]:Remove()
+		panels[id] = nil
+		table.remove(panels, id)
+	end
+
+	local searchbutton = vgui.Create("DImageButton", top_panel)
+	searchbutton:SetImage("icon16/application_view_list.png")
+	searchbutton:SizeToContents()
+	searchbutton:Dock(RIGHT)
+	searchbutton:SetTooltip("Open sound browser")
+	searchbutton.DoClick = function()
+		RunConsoleCommand("wire_sound_browser_open")
+	end
+
+	local pitchLabel = vgui.Create("DLabel", bottom_panel)
+	pitchLabel:SetTall(ButtonHeight)
+	pitchLabel:SetText("Pitch:")
+	pitchLabel:Dock(LEFT)
+	pitchLabel:DockMargin(4, 0, -28, 0)
+	pitchLabel:SetColor(color_black)
+
+	local pitch = vgui.Create("DNumberWang", bottom_panel)
+	pitch:SetTall(ButtonHeight)
+	pitch:SetMinMax(0, 255)
+	pitch:Dock(LEFT)
+	pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
+	pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+
+	local volumeLabel = vgui.Create("DLabel", bottom_panel)
+	volumeLabel:SetTall(ButtonHeight)
+	volumeLabel:SetText("Volume:")
+	volumeLabel:Dock(LEFT)
+	volumeLabel:DockMargin(4, 0, -20, 0)
+	volumeLabel:SetColor(color_black)
+
+	local volume = vgui.Create("DNumberWang", bottom_panel)
+	volume:SetTall(ButtonHeight)
+	volume:SetMinMax(0, 1)
+	volume:SetDecimals(2)
+	volume:SetInterval(0.01)
+	volume:SetFraction(0.01)
+	volume:Dock(LEFT)
+	volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
+	volume:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+
+	local widthLabel = vgui.Create("DLabel", bottom_panel)
+	widthLabel:SetTall(ButtonHeight)
+	widthLabel:SetText("Width:")
+	widthLabel:Dock(LEFT)
+	widthLabel:DockMargin(4, 0, -24, 0)
+	widthLabel:SetColor(color_black)
+
+	local width = vgui.Create("DNumberWang", bottom_panel)
+	width:SetTall(ButtonHeight)
+	width:SetMinMax(0, 16)
+	width:Dock(LEFT)
+	width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve")
+	width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
+
+	table.insert(panels, panel)
+	return panel
+end
+
+local function do4thPanel(Menu)
+	local mainPanel = Menu:AddPanel("DPanel")
+	mainPanel:SizeToContents()
+
+	local top_panel = Menu:AddPanel("DPanel")
+	top_panel:SetParent(mainPanel)
+	top_panel:SetText("")
+	top_panel:Dock(TOP)
+	top_panel.Paint = function() end
+
+	local rpmLabel = Menu:AddPanel("DLabel")
+	rpmLabel:SetParent(top_panel)
+	rpmLabel:SetText("RPM")
+	rpmLabel:Dock(LEFT)
+	rpmLabel:DockMargin(20, 0, 0, 0)
+	rpmLabel:SetColor(color_black)
+
+	local addbtn = Menu:AddPanel("DImageButton")
+	addbtn:SetParent(top_panel)
+	addbtn:SetImage("icon16/add.png")
+	addbtn:SetSize(16, 16)
+	addbtn:Dock(RIGHT)
+	addbtn:DockMargin(20, 0, 0, 0)
+
+	addbtn:SetTooltip("Add a new value")
+	addbtn.DoClick = function()
+		addPanel(Menu, mainPanel)
+		PrintTable(panels)
+	end
+
+	local pathLabel = Menu:AddPanel("DLabel")
+	pathLabel:SetParent(top_panel)
+	pathLabel:SetText("Sound Path")
+	pathLabel:Dock(FILL)
+	pathLabel:DockMargin(0, 0, 20, 0)
+	pathLabel:Center()
+	pathLabel:DockPadding(20, 0, 0, 0)
+	pathLabel:SetColor(color_black)
+
+	addPanel(Menu, mainPanel) -- add the first
+end
+
 --- Generates the menu used in the Sound Replacer tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel)
 	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
-	local Wide = Menu:GetWide()
+	Menu.OnRemove = function()
+		for panel in pairs(panels) do
+			panel = nil
+			table.remove(panels, panel)
+		end
+	end
+	--local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
 
-	local SoundNameText = Menu:AddPanel("DTextEntry")
+	local optionSelectionBox = Menu:AddPanel("DComboBox")
+	optionSelectionBox:SetText("Select an Option...")
+	optionSelectionBox:Dock(TOP)
+	optionSelectionBox:SetTall(ButtonHeight)
+	optionSelectionBox:AddChoice("Generic - One sound. ")
+	optionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ")
+	optionSelectionBox:AddChoice("Engines - Simple interpolated. ")
+	optionSelectionBox:AddChoice("Engines - Custom interpolated. ")
+	optionSelectionBox.OnSelect = function(_, index, value)
+		-- Ideas for how i want this to look like, thinking about how to implement these...
+		-- Wether it makes sense to have it like this or not, we'll see...
+		print("This option should show... \n")
+		if index == 1 then
+			print(value .. "Old menu with text entry for a single sound")
+
+		elseif index == 2 then
+			print(value .. "New menu with three text entries stylized as [Label] = [Sound Path]")
+		-- This one in particular is probably not really necessary, if i manage to consolidate this idea with the custom one...
+		elseif index == 3 then
+			print(value .. "New menu with a slider(min = 2, max = 5) that dynamically adds a label \
+				 (can be numeric like 00, 33, 66, 99 OR verylow, low, mid, high, veryhigh; we'd see) and the text entries for them sound paths; For simple sound interpolation")
+
+		elseif index == 4 then
+			-- Creates an invisible generic panel(like a HTML div)
+			do4thPanel(Menu)
+		end
+	end
+
+	--[[local SoundNameText = Menu:AddPanel("DTextEntry")
 	SoundNameText:SetText("")
 	SoundNameText:SetWide(Wide - 20)
 	SoundNameText:SetTall(ButtonHeight)
@@ -62,4 +260,6 @@ function ACF.CreateSoundMenu(Panel)
 	VolumeSlider:SetConVar("acfsound_volume")
 	local PitchSlider = Menu:AddSlider("#tool.acfsound.pitch", 0.1, 2, 2)
 	PitchSlider:SetConVar("acfsound_pitch")
+
+	--]]
 end
