@@ -134,7 +134,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize")
+	Entities.Register("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize", "Teeth")
 
 	function ENT:Update(Data)
 		VerifyData(Data)
@@ -179,6 +179,9 @@ do	-- Metamethods and other important stuff
 			else
 				State:AddError("Inactive: Not linked to a turret drive!")
 			end
+
+			State:AddKeyValue("Torque", ("%G Nm"):format(self.Torque))
+			State:AddKeyValue("Gear Teeth", ("%G t"):format(self.Teeth))
 		end
 	end
 

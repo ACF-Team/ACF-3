@@ -18,6 +18,8 @@ local function CreateMenu(Menu)
     playerList:Dock(FILL)
 
     local highlight = Color(162, 206, 255, 194)
+    local TextColor = Menu:GetSkin().Colours.Label.Dark
+
     local function PopulatePlayerList()
         playerList:Clear()
 
@@ -44,7 +46,7 @@ local function CreateMenu(Menu)
                     draw.RoundedBox(2, 0, 0, w, h, highlight)
                 end
 
-                draw.SimpleText(name, "ACF_Label", 32, h / 2, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                draw.SimpleText(name, "ACF_Label", 32, h / 2, TextColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
             end
 
             function line:DoClickInternal()

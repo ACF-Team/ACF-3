@@ -1,6 +1,6 @@
 -- This is a page intended to be used only when an ACF survey is active.
 -- Just disable it when it's no longer needed so that we can easily reuse it again for future surveys.
-
+--[[
 local function CreateMenu(Menu)
 	Menu:AddTitle("ACF 2025 Survey")
 
@@ -17,3 +17,4 @@ local function CreateMenu(Menu)
 end
 
 ACF.AddMenuItem(1, "#acf.menu.about", "Survey", "book_open", CreateMenu)
+]]

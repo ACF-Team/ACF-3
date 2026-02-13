@@ -67,7 +67,7 @@ do -- Generic Spawner/Linker operation creator
 			if Result.ACF_PostMenuSpawn then
 				Result:ACF_PostMenuSpawn(Trace)
 			else
-				Result:DropToFloor()
+				ACF.DropToFloor(Result)
 			end
 			Result:SetSpawnEffect(true)
 
@@ -259,7 +259,10 @@ do -- Generic Spawner/Linker operation creator
 				OnHolster    = ACF.ReleaseGhostEntity,
 				OnEnterOp    = ACF.CreateGhostEntity,
 				OnExitOp     = ACF.ReleaseGhostEntity,
-				OnThink      = ACF.RenderGhostEntity,
+				OnThink      = function(Tool)
+					ACF.RenderGhostEntity(Tool)
+					ACF.RunHoldOverlay(Tool)
+				end,
 			})
 
 			ACF.RegisterToolInfo("acf_menu", "Spawner", Name, {

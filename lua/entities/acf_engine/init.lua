@@ -25,6 +25,8 @@ do
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
+		Target:InvalidateClientInfo()
+
 		return true, "Engine linked successfully!"
 	end)
 
@@ -39,6 +41,8 @@ do
 
 			Engine:UpdateOverlay()
 			Target:UpdateOverlay()
+
+			Target:InvalidateClientInfo()
 
 			return true, "Engine unlinked successfully!"
 		end

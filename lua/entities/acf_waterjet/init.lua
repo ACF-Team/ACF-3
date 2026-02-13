@@ -69,10 +69,6 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	self.Gearboxes = {}
 end
 
-function ENT:ACF_PostMenuSpawn()
-	self:DropToFloor()
-end
-
 ACF.RegisterClassLink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 	if Gearbox.Effectors[This] then return false, "This waterjet is already connected to this gearbox!" end
 

@@ -721,6 +721,8 @@ function Entities.AutoRegister(ENT)
 		local ACF_LiveData = self.ACF_LiveData
 		self.ACF_CustomGetterCache = self.ACF_CustomGetterCache or {}
 
+		VerificationCtx:StartClientData(ClientData)
+
 		-- For entity arguments that are marked as client data, set them on the entity from ClientData
 		for _, v in ipairs(List) do
 			local RestrictionSpecs = Entity.Restrictions[v]
@@ -740,6 +742,8 @@ function Entities.AutoRegister(ENT)
 				end
 			end
 		end
+
+		VerificationCtx:EndClientData()
 
 		if Wire_Inputs then
 			WireIO.SetupInputs(self, Wire_Inputs, ClientData, ENT.ACF_GetHookArguments(ClientData))
@@ -790,7 +794,7 @@ function Entities.AutoRegister(ENT)
 	--- Called elsewhere by the menu tool after spawning if specified
 	if not ENT.ACF_PostMenuSpawn then
 		function ENT:ACF_PostMenuSpawn()
-			self:DropToFloor()
+			ACF.DropToFloor(self)
 		end
 	end
 
@@ -820,6 +824,8 @@ function Entities.AutoRegister(ENT)
 	--- @param ClientData table The client data to use for the entity
 	--- @return Entity # The created entity
 	function Entity.Spawn(Player, Pos, Angle, ClientData)
+		VerifyClientData(ClientData)
+
 		if ACF_Limit then
 			if isfunction(ACF_Limit) then
 				if not ACF_Limit(Player, ClientData) then return end
@@ -833,8 +839,6 @@ function Entities.AutoRegister(ENT)
 
 		local New = ents.Create(Class)
 		if not IsValid(New) then return end
-
-		VerifyClientData(ClientData)
 
 		New:SetPos(Pos)
 		New:SetAngles(Angle)

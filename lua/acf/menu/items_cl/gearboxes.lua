@@ -115,6 +115,12 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 					GearboxPreview:GetEntity():SetBodygroup(1, Value and 1 or 0)
 				end)
 
+				local GhostEnt = ACF.GetGhostEntity()
+
+				if IsValid(GhostEnt) then
+					GhostEnt:SetBodygroup(1, Value and 1 or 0)
+				end
+
 				return Value
 			end)
 			Base:AddHelp("#acf.menu.gearboxes.dual_clutch_desc")
@@ -124,6 +130,12 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 
 			timer.Simple(0.05, function()
 				GearboxPreview:GetEntity():SetBodygroup(1, 0)
+
+				local GhostEnt = ACF.GetGhostEntity()
+
+				if IsValid(GhostEnt) then
+					GhostEnt:SetBodygroup(1, 0)
+				end
 			end)
 		end
 

@@ -11,11 +11,6 @@ ACF.PersistClientData("CrateProjectilesX", 3)
 ACF.PersistClientData("CrateProjectilesY", 3)
 ACF.PersistClientData("CrateProjectilesZ", 3)
 
--- Plate size
-ACF.PersistClientData("PlateSizeX", 24)
-ACF.PersistClientData("PlateSizeY", 24)
-ACF.PersistClientData("PlateSizeZ", 5)
-
 -- Fuel tank size and shape
 ACF.PersistClientData("FuelSizeX", 24)
 ACF.PersistClientData("FuelSizeY", 24)

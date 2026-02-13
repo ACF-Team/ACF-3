@@ -101,13 +101,13 @@ do -- Size and scale setter methods
 	end
 end
 
-function ENT:SetScaledModel( Model )
+function ENT:SetScaledModel(Model)
 	if not self.ACF then self.ACF = {} end
 	Contraption.SetModel(self, Model)
 
 	local Data = self.ScaleData
 	if Model and (Data.Type ~= "Model" or Data.Path ~= Model) then
-		self:SetScaleData("Model", Model )
+		self:SetScaleData("Model", Model)
 		self:Restore()
 	end
 end

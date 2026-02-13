@@ -11,6 +11,8 @@ local BaddiesLess  = ACF.ArmorableGlobalFilterExceptions
 local MinimumArmor = ACF.MinimumArmor
 local MaximumArmor = ACF.MaxThickness
 
+util.AddNetworkString("ACF_Error_Entity")
+
 -- This particular message needs a delay in order to avoid erroneous shaming
 local function ShameNotSolid(Entity)
 	TimerSimple(1.1, function()
@@ -101,6 +103,8 @@ function ACF.DisableEntity(Entity, Reason, Message, Timeout)
 				ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
 			end
 		end
+		-- Send the entity to the client
+		net.Start("ACF_Error_Entity") net.WriteEntity(Entity) net.Send(Entity:CPPIGetOwner())
 	end
 
 	if Timeout then Timeout = math.max(Timeout, 1) end

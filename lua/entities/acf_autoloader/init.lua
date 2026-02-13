@@ -43,10 +43,6 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	ACF.Contraption.SetMass(self, Volume * 250)
 end
 
-function ENT:ACF_PostMenuSpawn()
-	self:DropToFloor()
-end
-
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
 local function BroadcastEntity(Name, Entity, Entity2, State)

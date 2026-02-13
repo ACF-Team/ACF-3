@@ -13,7 +13,7 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	end
 end
 
-function ENT:ACF_PreSpawn(_, _, _, _)
+function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/holograms/cube.mdl")
 	self:SetMaterial("hunter/myplastic")
 end
@@ -66,7 +66,6 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end)
 end
 
-
 function ENT:PreEntityCopy()
 	if IsValid(self.Pod) then
 		duplicator.StoreEntityModifier(self, "LuaSeatID", {self.Pod:EntIndex()})
@@ -91,6 +90,6 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 end
 
 function ENT:ACF_PostMenuSpawn()
-	self:DropToFloor()
+	ACF.DropToFloor(self)
 	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 end

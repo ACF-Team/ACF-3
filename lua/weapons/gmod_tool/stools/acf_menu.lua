@@ -14,7 +14,6 @@ if CLIENT then
 
 		if not IsValid(Entity) then return end
 		if not Entity.DrawOverlay then return end
-
 		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
 
 		if Distance <= 65536 then

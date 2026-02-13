@@ -114,7 +114,7 @@ local function CreateNewEntity(Player, Trace)
 	else
 		local PhysObj = Result:GetPhysicsObject()
 
-		Result:DropToFloor()
+		ACF.DropToFloor(Result)
 
 		if IsValid(PhysObj) then
 			PhysObj:EnableMotion(false)

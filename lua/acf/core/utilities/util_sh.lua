@@ -1235,6 +1235,7 @@ do -- Reload related
 
 	--- Configures a lua seat after it has been created.
 	--- Whenever the seat is created, this should be called after.
+	--- @param Entity any The entity to attach the seat to
 	--- @param Pod any The seat to configure
 	--- @param Player any The owner of the seat
 	function ACF.ConfigureLuaSeat(Entity, Pod, Player)
@@ -1355,5 +1356,33 @@ do
 		end
 
 		return sign .. result .. (fraction and "." .. fraction or "")
+	end
+end
+
+do
+	local Offset = Vector(0, 0, 256)
+
+	--- Shared implementation of UTIL_DropToFloor (roughly).
+	--- @param Entity any The entity to try dropping to the floor
+	function ACF.DropToFloor(Entity)
+		Entity:SetGroundEntity(NULL)
+
+		local EntPos = Entity:GetPos()
+		local EntCollisionGroup = Entity:GetCollisionGroup()
+		local TraceCollisionGroup = EntCollisionGroup == COLLISION_GROUP_PUSHAWAY and COLLISION_GROUP_NONE or EntCollisionGroup
+		local Trace = util.TraceEntity({
+			start = EntPos,
+			endpos = EntPos - Offset,
+			collisiongroup = TraceCollisionGroup,
+			filter = Entity,
+		}, Entity)
+
+		if Trace.AllSolid then return -1 end
+		if Trace.Fraction == 1 then return 0 end
+
+		Entity:SetPos(Trace.HitPos)
+		Entity:SetGroundEntity(Trace.Entity)
+
+		return 1
 	end
 end

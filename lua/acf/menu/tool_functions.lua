@@ -602,30 +602,41 @@ do -- Ghost entity handling
 		local Scale = EntData.Scale
 		local ModelSize = ModelData.GetModelSize(EntData.Model)
 		if not ModelSize then return Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0) end
-		local HeightOffset = Vector(0, 0, ModelSize.z / 2)
 
-		if Scale and not Scale:IsEqualTol(DefaultScale, 0) then
-			if not EntData.AbsoluteScale then
-				Scale = Scale / ModelSize
-			end
-
-			HeightOffset.z = (Scale.z * ModelSize.z) / 2
+		if Scale and not Scale:IsEqualTol(DefaultScale, 0) and not EntData.AbsoluteScale then
+			Scale = Scale / ModelSize
 		end
 
-		return HeightOffset, ModelSize, Scale
+		local ModelMesh = ModelData.GetModelMesh(EntData.Model, Scale)
+
+		return ModelMesh, ModelSize, Scale
 	end
 
 	local function ModifyGhostEntity(GhostEnt, EntKey)
 		local EntData = GhostData[EntKey]
 		GhostEnt:SetModel(EntData.Model)
 
-		local Scale = EntData.Scale
-		GhostEnt.HeightOffset, GhostEnt.ModelSize, Scale = GetModelDimensions(EntData)
+		GhostEnt.ModelMesh, GhostEnt.ModelSize, GhostEnt.Scale = GetModelDimensions(EntData)
+		local ModelMesh, Scale = GhostEnt.ModelMesh, GhostEnt.Scale
 
 		if Scale then
 			local ScaleMatrix = Matrix()
 			ScaleMatrix:Scale(Scale)
 			GhostEnt:EnableMatrix("RenderMultiply", ScaleMatrix)
+
+			if ModelMesh then
+				GhostEnt:PhysicsInitMultiConvex(ModelMesh)
+				GhostEnt:EnableCustomCollisions(true)
+				GhostEnt:SetRenderBounds(GhostEnt:GetCollisionBounds())
+				GhostEnt:DrawShadow(false)
+
+				local PhysObj = GhostEnt:GetPhysicsObject()
+
+				if IsValid(PhysObj) then
+					PhysObj:EnableMotion(false)
+					PhysObj:Sleep()
+				end
+			end
 		end
 
 		if EntData.Material then
@@ -651,8 +662,7 @@ do -- Ghost entity handling
 		if EntData.Model --[[and EntData.Model ~= ""]] then
 			--if not IsValid(Tool.GhostEntity) then
 				local Trace        = Player:GetEyeTrace()
-				local HeightOffset = GetModelDimensions(EntData)
-				local Position     = Trace.HitPos + HeightOffset + (EntData.PosOffset or vector_origin)
+				local Position     = Trace.HitPos + (Trace.HitNormal * 128) + (EntData.PosOffset or vector_origin)
 				local Angles       = Trace.HitNormal:Angle():Up():Angle() + (EntData.AngOffset or angle_zero)
 
 				MakeGhostEntity(Tool, EntData.Model, Position, Angles)
@@ -714,17 +724,22 @@ do -- Ghost entity handling
 			ModifyGhostEntity(GhostEnt, EntKey)
 		end
 
-		if IsValid(TraceEnt) and TraceEnt:GetClass() == UpdateClass then
+		local CanUpdate = IsValid(TraceEnt) and TraceEnt:GetClass() == UpdateClass
+
+		if CanUpdate then
 			Position = TraceEnt:GetPos() + (EntData.PosOffset or vector_origin)
 			Angles   = TraceEnt:GetAngles() + (EntData.AngOffset or angle_zero)
 		else
-			local HeightOffset = GhostEnt.HeightOffset or vector_origin
-			Position = Trace.HitPos + HeightOffset + (EntData.PosOffset or vector_origin)
+			Position = Trace.HitPos + (Trace.HitNormal * 128) + (EntData.PosOffset or vector_origin)
 			Angles   = Trace.HitNormal:Angle():Up():Angle() + (EntData.AngOffset or angle_zero)
 		end
 
 		GhostEnt:SetPos(Position)
 		GhostEnt:SetAngles(Angles)
+
+		if not CanUpdate then
+			ACF.DropToFloor(GhostEnt)
+		end
 	end
 
 	function ACF.ReleaseGhostEntity(Tool)
@@ -733,11 +748,47 @@ do -- Ghost entity handling
 		Tool:ReleaseGhostEntity()
 	end
 
+	function ACF.GetGhostEntity()
+		return ToolEnt and ToolEnt.GhostEntity
+	end
+
+	local HoldOverlay = {} -- Entities to keep overlay on for
+
+	-- Respects occlusion
+	hook.Add("PreDrawOpaqueRenderables", "ACF_Menu_DrawOverlay", function()
+		local Player = LocalPlayer()
+		local Trace = Player:GetEyeTrace()
+		for Entity in pairs(HoldOverlay) do
+			if not IsValid(Entity) then continue end
+			if not Entity.DrawOverlay then continue end
+			if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then continue end
+
+			Entity:DrawOverlay(Trace)
+		end
+	end)
+
+	function ACF.RunHoldOverlay(Tool)
+		local isFirstTimePredicted = IsFirstTimePredicted()
+		if not isFirstTimePredicted then return end
+
+		local Player = Tool:GetOwner()
+		if Player:KeyPressed(IN_WALK) then
+			local Trace = Player:GetEyeTrace()
+			local Entity = Trace.Entity
+			if not IsValid(Entity) then return end
+			if not Entity.DrawOverlay then return end
+			if HoldOverlay[Entity] then HoldOverlay[Entity] = nil else HoldOverlay[Entity] = true end
+
+			local Weapon = Tool.Weapon
+			Weapon:DoShootEffect( Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, isFirstTimePredicted )
+		end
+	end
+
 	hook.Add("ACF_OnUpdateClientData", "ACF_HandleGhostEntities", function(_, Key)
 		if Key ~= "Primary" and Key ~= "Secondary" then return end
 
 		--if Value == "N/A" then
-			ACF.UpdateGhostEntity({[Key] = {Model = "", Material = "", Scale = DefaultScale, AbsoluteScale = false, PosOffset = nil, AngOffset = nil}})
+			ACF.UpdateGhostEntity({[Key] = {Model = "", Material = "", Scale = Vector(DefaultScale), AbsoluteScale = false, PosOffset = nil, AngOffset = nil}})
 		--end
 	end)
 end

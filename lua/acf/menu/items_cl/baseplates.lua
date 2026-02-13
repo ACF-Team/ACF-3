@@ -45,7 +45,7 @@ local function CreateMenu(Menu)
 
 	local function UpdatePreviewSize()
 		local X, Y, Z = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
-		BaseplatePreview:SetModelScale(Vector(X, Y, Z))
+		BaseplatePreview:SetModelScale(Vector(Y, X, Z)) -- Yes, X and Y are swapped on purpose...
 	end
 	local function ProducerSelfUpdate(Self, _, Producer) if Self == Producer then UpdatePreviewSize() end end
 	SizeX.ACF_OnUpdate = ProducerSelfUpdate
