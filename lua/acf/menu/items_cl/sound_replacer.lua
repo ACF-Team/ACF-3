@@ -1,7 +1,5 @@
 local panels = {}
 
--- NOTICE WHEN REVIEWING THIS: i would have used the methods that March's provided to us to use instead of plain vgui, however i noticed 
--- that it brings more positioning issues when parenting any element to another, so instead i just did the good old way, just to have this working!
 local function addPanel(Menu, ParentPanel)
 	local id = #panels + 1
 
