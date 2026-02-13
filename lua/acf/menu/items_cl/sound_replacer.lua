@@ -12,35 +12,43 @@ local function addPanel(Menu, ParentPanel)
 
 	local panel = Menu:AddPanel("DPanel")
 	panel:SetWide(Wide)
-	panel:SetTall(54)
+	panel:SetTall(60)
 	panel:SetText("")
 	panel:Dock(TOP)
+	panel:DockMargin(0, -5, 0, 10)
 	panel.id = id
 
-	local top_panel = vgui.Create("DPanel", panel)
+	local top_panel = Menu:AddPanel("DPanel")
+	top_panel:SetParent(panel)
 	top_panel.Paint = function() end
 	top_panel:Dock(TOP)
-	top_panel:DockMargin(0, 2, 0, 2)
+	top_panel:DockMargin(0, 2, 0, 0)
 
-	local bottom_panel = vgui.Create("DPanel", panel)
+	local bottom_panel = Menu:AddPanel("DPanel")
+	bottom_panel:SetParent(panel)
 	bottom_panel.Paint = function() end
-	bottom_panel:Dock(TOP)
+	bottom_panel:Dock(BOTTOM)
+	bottom_panel:DockMargin(0, 0, 0, -6)
+	bottom_panel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
 
-	local num_panel = vgui.Create("DLabel", top_panel)
+	local num_panel = Menu:AddPanel("DLabel")
+	num_panel:SetParent(top_panel)
 	num_panel:SetText(panel.id .. " = ")
 	num_panel:Dock(LEFT)
 	num_panel:DockMargin(4, 0, -36, 0)
 	num_panel:SetColor(color_black)
 	num_panel.id = id
 
-	local rpmInput = vgui.Create("DNumberWang", top_panel)
+	local rpmInput = Menu:AddPanel("DNumberWang")
+	rpmInput:SetParent(top_panel)
 	rpmInput:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
 	rpmInput:SetTall(ButtonHeight)
 	rpmInput:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16
 	rpmInput:Dock(LEFT)
 	rpmInput:DockMargin(0, 0, 2, 0)
 
-	local soundPath = vgui.Create("DTextEntry", top_panel)
+	local soundPath = Menu:AddPanel("DTextEntry")
+	soundPath:SetParent(top_panel)
 	soundPath:SetText("")
 	soundPath:SetWide(Wide - 20)
 	soundPath:SetTall(ButtonHeight)
@@ -49,7 +57,8 @@ local function addPanel(Menu, ParentPanel)
 	soundPath:DockMargin(0, 0, 2, 0)
 	--soundPath:SetConVar("wire_soundemitter_sound")
 
-	local removeButton = vgui.Create("DImageButton", top_panel)
+	local removeButton = Menu:AddPanel("DImageButton")
+	removeButton:SetParent(top_panel)
 	removeButton:SetImage( "icon16/delete.png" )
 	removeButton:SizeToContents()
 	--removeButton:SetPos( 0, 4 )
@@ -68,44 +77,48 @@ local function addPanel(Menu, ParentPanel)
 
 		for i = id, #panels do
 			panels[i].id = i
-			num_panel[i].id = i
+			num_panel.id = i
 			--panels[i]:SetText(panel.id .. " = ")
-			num_panel[i].id:SetText(panel.id .. " = ")
-			print(i, num_panel[i], num_panel[i].id)
+			num_panel:SetText(panel.id .. " = ")
 		end
 	end
 
-	local searchbutton = vgui.Create("DImageButton", top_panel)
-	searchbutton:SetImage("icon16/application_view_list.png")
-	searchbutton:SizeToContents()
-	searchbutton:Dock(RIGHT)
-	searchbutton:SetTooltip("Open sound browser")
-	searchbutton.DoClick = function()
+	local searchButton = Menu:AddPanel("DImageButton")
+	searchButton:SetParent(top_panel)
+	searchButton:SetImage("icon16/application_view_list.png")
+	searchButton:SizeToContents()
+	searchButton:Dock(RIGHT)
+	searchButton:SetTooltip("Open sound browser")
+	searchButton.DoClick = function()
 		RunConsoleCommand("wire_sound_browser_open")
 	end
 
-	local pitchLabel = vgui.Create("DLabel", bottom_panel)
+	local pitchLabel = Menu:AddPanel("DLabel")
+	pitchLabel:SetParent(bottom_panel)
 	pitchLabel:SetTall(ButtonHeight)
 	pitchLabel:SetText("Pitch:")
 	pitchLabel:Dock(LEFT)
 	pitchLabel:DockMargin(4, 0, -28, 0)
 	pitchLabel:SetColor(color_black)
 
-	local pitch = vgui.Create("DNumberWang", bottom_panel)
+	local pitch = Menu:AddPanel("DNumberWang")
+	pitch:SetParent(bottom_panel)
 	pitch:SetTall(ButtonHeight)
 	pitch:SetMinMax(0, 255)
 	pitch:Dock(LEFT)
 	pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
 	pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 
-	local volumeLabel = vgui.Create("DLabel", bottom_panel)
+	local volumeLabel = Menu:AddPanel("DLabel")
+	volumeLabel:SetParent(bottom_panel)
 	volumeLabel:SetTall(ButtonHeight)
 	volumeLabel:SetText("Volume:")
 	volumeLabel:Dock(LEFT)
 	volumeLabel:DockMargin(4, 0, -20, 0)
 	volumeLabel:SetColor(color_black)
 
-	local volume = vgui.Create("DNumberWang", bottom_panel)
+	local volume = Menu:AddPanel("DNumberWang")
+	volume:SetParent(bottom_panel)
 	volume:SetTall(ButtonHeight)
 	volume:SetMinMax(0, 1)
 	volume:SetDecimals(2)
@@ -115,14 +128,16 @@ local function addPanel(Menu, ParentPanel)
 	volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
 	volume:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 
-	local widthLabel = vgui.Create("DLabel", bottom_panel)
+	local widthLabel = Menu:AddPanel("DLabel")
+	widthLabel:SetParent(bottom_panel)
 	widthLabel:SetTall(ButtonHeight)
 	widthLabel:SetText("Width:")
 	widthLabel:Dock(LEFT)
 	widthLabel:DockMargin(4, 0, -24, 0)
 	widthLabel:SetColor(color_black)
 
-	local width = vgui.Create("DNumberWang", bottom_panel)
+	local width = Menu:AddPanel("DNumberWang")
+	width:SetParent(bottom_panel)
 	width:SetTall(ButtonHeight)
 	width:SetMinMax(0, 16)
 	width:Dock(LEFT)
@@ -143,24 +158,29 @@ local function do4thPanel(Menu)
 	top_panel:Dock(TOP)
 	top_panel.Paint = function() end
 
+	local numLabel = Menu:AddPanel("DLabel")
+	numLabel:SetParent(top_panel)
+	numLabel:SetText("N°")
+	numLabel:Dock(LEFT)
+	numLabel:DockMargin(4, 0, 0, 0)
+	numLabel:SetColor(color_black)
+
 	local rpmLabel = Menu:AddPanel("DLabel")
 	rpmLabel:SetParent(top_panel)
 	rpmLabel:SetText("RPM")
 	rpmLabel:Dock(LEFT)
-	rpmLabel:DockMargin(20, 0, 0, 0)
+	rpmLabel:DockMargin(-36, 0, 0, 0)
 	rpmLabel:SetColor(color_black)
 
 	local addbtn = Menu:AddPanel("DImageButton")
 	addbtn:SetParent(top_panel)
 	addbtn:SetImage("icon16/add.png")
-	addbtn:SetSize(16, 16)
+	addbtn:SizeToContents()
 	addbtn:Dock(RIGHT)
-	addbtn:DockMargin(20, 0, 0, 0)
-
+	addbtn:DockMargin(0, 0, 0, 0)
 	addbtn:SetTooltip("Add a new value")
 	addbtn.DoClick = function()
 		addPanel(Menu, mainPanel)
-		PrintTable(panels)
 	end
 
 	local pathLabel = Menu:AddPanel("DLabel")
@@ -169,7 +189,6 @@ local function do4thPanel(Menu)
 	pathLabel:Dock(FILL)
 	pathLabel:DockMargin(0, 0, 20, 0)
 	pathLabel:Center()
-	pathLabel:DockPadding(20, 0, 0, 0)
 	pathLabel:SetColor(color_black)
 
 	addPanel(Menu, mainPanel) -- add the first
