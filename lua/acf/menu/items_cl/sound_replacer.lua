@@ -31,6 +31,7 @@ local function addPanel(Menu, ParentPanel)
 	num_panel:Dock(LEFT)
 	num_panel:DockMargin(4, 0, -36, 0)
 	num_panel:SetColor(color_black)
+	num_panel.id = id
 
 	local rpmInput = vgui.Create("DNumberWang", top_panel)
 	rpmInput:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
@@ -55,11 +56,23 @@ local function addPanel(Menu, ParentPanel)
 	removeButton:Dock(RIGHT)
 	removeButton:SetTooltip("Remove this sound")
 	removeButton.DoClick = function()
+		-- Don't remove the last item
+		if #panels == 1 then
+			removeButton.DoClick = function() end
+			return
+		end
 
 		local id = panel.id
 		panels[id]:Remove()
-		panels[id] = nil
 		table.remove(panels, id)
+
+		for i = id, #panels do
+			panels[i].id = i
+			num_panel[i].id = i
+			--panels[i]:SetText(panel.id .. " = ")
+			num_panel[i].id:SetText(panel.id .. " = ")
+			print(i, num_panel[i], num_panel[i].id)
+		end
 	end
 
 	local searchbutton = vgui.Create("DImageButton", top_panel)
