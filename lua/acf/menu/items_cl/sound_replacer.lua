@@ -16,7 +16,7 @@ local function addComplexPanel(Menu)
 		panel:SetText("")
 		panel:Dock(TOP)
 		panel:DockMargin(0, -5, 0, 10)
-	panel.id = id
+		panel.id = id
 
 	local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
 		top_panel:SetParent(panel)
@@ -38,7 +38,7 @@ local function addComplexPanel(Menu)
 		numLabel:Dock(LEFT)
 		numLabel:DockMargin(4, 0, -36, 0)
 		numLabel:SetColor(color_black)
-	numLabel.id = id
+		numLabel.id = id
 
 	local rpm = Menu:AddPanel("DNumberWang")
 		rpm:SetParent(top_panel)
@@ -48,6 +48,7 @@ local function addComplexPanel(Menu)
 		rpm:SetValue(1000 * id)
 		rpm:Dock(LEFT)
 		rpm:DockMargin(0, 0, 2, 0)
+		panel.rpm = rpm
 
 	local soundPath = Menu:AddPanel("DTextEntry")
 		soundPath:SetParent(top_panel)
@@ -130,6 +131,7 @@ local function addComplexPanel(Menu)
 		pitchLabel:SetColor(color_black)
 
 	local pitch = Menu:AddPanel("DNumberWang")
+		panel.pitch = pitch
 		pitch:SetParent(bottom_panel)
 		pitch:SetTall(ButtonHeight)
 		pitch:SetMinMax(0, 255)
@@ -147,6 +149,7 @@ local function addComplexPanel(Menu)
 		volumeLabel:SetColor(color_black)
 
 	local volume = Menu:AddPanel("DNumberWang")
+		panel.volume = volume
 		volume:SetParent(bottom_panel)
 		volume:SetTall(ButtonHeight)
 		volume:SetMinMax(0, 1)
@@ -167,6 +170,7 @@ local function addComplexPanel(Menu)
 		widthLabel:SetColor(color_black)
 
 	local width = Menu:AddPanel("DNumberWang")
+		panel.width = width
 		width:SetParent(bottom_panel)
 		width:SetTall(ButtonHeight)
 		width:SetMinMax(0, 16)
@@ -259,24 +263,58 @@ local function doPanel(Num, Menu)
 
 		end,
 		-- Fourth panel, Engines - Custom interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
-		-- Has a graph at the bottom of the list with a graph to better visualise how they play at a determined engine RPM
+		-- Has a graph at the top of the list to better visualise how they play at a determined engine RPM
 		[4] = function()
 			Menu:AddLabel("This is the fourth panel, I don't know what to add here yet but you can imagine its gonna be something mindblowing, so stay tuned!")
+
+			-- Adding these before the main panel shit happens
+			local SoundPre = Menu:AddPanel("ACF_Panel")
+				SoundPre:SetWide(Wide)
+				SoundPre:SetTall(ButtonHeight)
+
+			local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
+				SoundPrePlay:SetIcon("icon16/sound.png")
+				SoundPrePlay.DoClick = function()
+					-- Do something here to play them sounds!
+				end
+
+			-- Playing a silent sound will mute the preview but not the sound emitters.
+			local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav")
+				SoundPreStop:SetIcon("icon16/sound_mute.png")
+
+				-- Set the Play/Stop button positions here
+				SoundPre:InvalidateLayout(true)
+				SoundPre.PerformLayout = function()
+					local HWide = SoundPre:GetWide() / 2
+					SoundPrePlay:SetSize(HWide, ButtonHeight)
+					SoundPrePlay:Dock(LEFT)
+					SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which the previous button didn't
+				end
+
+			-- The panel for the rest 
 			local mainPanel = Menu:AddPanel("DPanel")
 			-- TODO(TMF): Allow this panel to save and load the values that the user has placed!
 			panels = nil
 			panels = {} -- Reset the panels table
 			mainPanel:SizeToContents()
-			mainPanel:SetTall(160)
+			mainPanel:SetTall(200)
 
 			-- I am unable to have the graph to accomodate itself to the bottom of this list dynamically, so instead i put it to be at the top
 			local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
 				top_panel:SetParent(mainPanel)
 				top_panel:SetText("")
-				top_panel:Dock(TOP)
 				top_panel:Dock(FILL)
 				top_panel:DockMargin(0, 0, 0, 0)
 				top_panel.Paint = function() end
+
+			local _ = Menu:AddPanel("DPanel")
+				_:SetParent(top_panel)
+				_:SetText("")
+				_:SetTall(24)
+				_:Dock(TOP)
+				_:DockMargin(4, 4, 4, 4)
+				_:SetWide(Wide)
+				_.Paint = function() end
 
 			local bottom_panel = Menu:AddPanel("DPanel") -- Same here...
 				bottom_panel:SetParent(mainPanel)
@@ -284,6 +322,36 @@ local function doPanel(Num, Menu)
 				bottom_panel:Dock(BOTTOM)
 				bottom_panel:DockMargin(0, 0, 0, 0)
 				bottom_panel.Paint = function() end
+
+			local idleLabel = Menu:AddPanel("DLabel")
+				idleLabel:SetParent(_)
+				idleLabel:SetText("Idle:")
+				idleLabel:Dock(LEFT)
+				idleLabel:DockMargin(4, 0, 0, 0)
+				idleLabel:SetColor(color_black)
+
+			local idle = Menu:AddPanel("DNumberWang")
+				idle:SetParent(_)
+				idle:SetMinMax(100, 2000)
+				idle:SetValue(idle:GetMin())
+				idle:Dock(LEFT)
+				idle:DockMargin(-40, 0, 0, 0)
+				idle:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
+
+			local redlineLabel = Menu:AddPanel("DLabel")
+				redlineLabel:SetParent(_)
+				redlineLabel:SetText("Redline:")
+				redlineLabel:Dock(LEFT)
+				redlineLabel:DockMargin(4, 0, 0, 0)
+				redlineLabel:SetColor(color_black)
+
+			local redline = Menu:AddPanel("DNumberWang")
+				redline:SetParent(_)
+				redline:SetMinMax(idle:GetValue(), 16383)
+				redline:SetValue(idle:GetValue() + 1000)
+				redline:Dock(LEFT)
+				redline:DockMargin(-24, 0, 0, 0)
+				redline:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 
 			-- Made it global for now, this is dumb
 			graphPanel = Menu:AddGraph()
@@ -295,7 +363,12 @@ local function doPanel(Num, Menu)
 				graphPanel:SetYSpacing(100)
 				graphPanel:SetFidelity(10)
 				graphPanel:Dock(FILL)
-				graphPanel:DockMargin(4, 4, 4, 2)
+				graphPanel:DockMargin(4, 0, 4, 2)
+
+			local slider = Menu:AddSlider("RPM", idle:GetValue(), redline:GetValue())
+				slider:SetParent(top_panel)
+				slider:Dock(BOTTOM)
+				slider:DockMargin(4, 0, 4, 0)
 
 			local numLabel = Menu:AddLabel("N°")
 				numLabel:SetParent(bottom_panel)

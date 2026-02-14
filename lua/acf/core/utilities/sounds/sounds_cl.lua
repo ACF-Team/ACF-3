@@ -180,11 +180,6 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
--- Maps a value, X, from a range A-B, to a new range C-D
---local function map(x, a, b, c, d)
---	return (x - a) / (b - a) * (d - c) + c
---end
-
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
@@ -215,7 +210,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	local _OFFVOLUME = 0.25
 	local _ONVOLUME = 1
 
-	-- TODO(TMF): Potentially some mechanism here to check for any differences and only update those
+	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
 	for idx, soundTable in ipairs(SoundObjects) do
 		if not soundTable.rpm then continue end
 		Origin.Sound = soundTable.sound
