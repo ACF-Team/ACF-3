@@ -20,7 +20,7 @@ local function addPanel(Menu, ParentPanel)
 	top_panel:SetParent(panel)
 	top_panel.Paint = function() end
 	top_panel:Dock(TOP)
-	top_panel:DockMargin(0, 2, 0, 0)
+	top_panel:DockMargin(0, 4, 0, 0)
 
 	local bottom_panel = Menu:AddPanel("DPanel")
 	bottom_panel:SetParent(panel)
@@ -41,7 +41,7 @@ local function addPanel(Menu, ParentPanel)
 	rpmInput:SetParent(top_panel)
 	rpmInput:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
 	rpmInput:SetTall(ButtonHeight)
-	rpmInput:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16
+	rpmInput:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 	rpmInput:Dock(LEFT)
 	rpmInput:DockMargin(0, 0, 2, 0)
 
@@ -61,7 +61,9 @@ local function addPanel(Menu, ParentPanel)
 	removeButton:SizeToContents()
 	--removeButton:SetPos( 0, 4 )
 	removeButton:Dock(RIGHT)
-	removeButton:SetTooltip("Remove this sound")
+	removeButton:DockMargin(2, 2, 2, 2)
+	removeButton:Center()
+	removeButton:SetTooltip("Remove this sound.")
 	removeButton.DoClick = function()
 		-- Don't remove the last item
 		if #panels == 1 then
@@ -69,16 +71,16 @@ local function addPanel(Menu, ParentPanel)
 			return
 		end
 
+		for k, _ in pairs(panels) do
+			panel.id = k
+			num_panel.id = id
+			num_panel:SetText(num_panel.id .. " = ")
+			print(k, id, num_panel.id)
+		end
+
 		local id = panel.id
 		panels[id]:Remove()
 		table.remove(panels, id)
-
-		for i = id, #panels do
-			panels[i].id = i
-			num_panel.id = i
-			--panels[i]:SetText(panel.id .. " = ")
-			num_panel:SetText(panel.id .. " = ")
-		end
 	end
 
 	local searchButton = Menu:AddPanel("DImageButton")
@@ -86,7 +88,9 @@ local function addPanel(Menu, ParentPanel)
 	searchButton:SetImage("icon16/application_view_list.png")
 	searchButton:SizeToContents()
 	searchButton:Dock(RIGHT)
-	searchButton:SetTooltip("Open sound browser")
+	searchButton:DockMargin(2, 2, 2, 2)
+	searchButton:Center()
+	searchButton:SetTooltip("Open sound browser.")
 	searchButton.DoClick = function()
 		RunConsoleCommand("wire_sound_browser_open")
 	end
@@ -175,8 +179,8 @@ local function do4thPanel(Menu)
 	addbtn:SetImage("icon16/add.png")
 	addbtn:SizeToContents()
 	addbtn:Dock(RIGHT)
-	addbtn:DockMargin(0, 0, 0, 0)
-	addbtn:SetTooltip("Add a new value")
+	addbtn:DockMargin(2, 2, 2, 2)
+	addbtn:SetTooltip("Add a new sound.")
 	addbtn.DoClick = function()
 		addPanel(Menu, mainPanel)
 	end
@@ -185,7 +189,7 @@ local function do4thPanel(Menu)
 	pathLabel:SetParent(top_panel)
 	pathLabel:SetText("Sound Path")
 	pathLabel:Dock(FILL)
-	pathLabel:DockMargin(0, 0, 20, 0)
+	pathLabel:DockMargin(-12, 0, 0, 0)
 	pathLabel:Center()
 	pathLabel:SetColor(color_black)
 
