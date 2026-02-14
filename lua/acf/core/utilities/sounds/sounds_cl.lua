@@ -1,4 +1,5 @@
 local Sounds = ACF.Utilities.Sounds
+local map = math.Remap
 
 do -- Valid sound check
 	local file     = file
@@ -180,9 +181,9 @@ do -- Processing adjustable sounds (for example, engine noises)
 end
 
 -- Maps a value, X, from a range A-B, to a new range C-D
-local function map(x, a, b, c, d)
-	return (x - a) / (b - a) * (d - c) + c
-end
+--local function map(x, a, b, c, d)
+--	return (x - a) / (b - a) * (d - c) + c
+--end
 
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades

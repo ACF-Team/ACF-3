@@ -1,3 +1,5 @@
+local Sounds = ACF.Utilities.Sounds
+
 local panels = {}
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
 local addBtn -- Dumb glocals cause i can't pattern!
@@ -8,22 +10,22 @@ local function addComplexPanel(Menu)
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 
-	local mainPanel = Menu:AddPanel("DPanel")
-		mainPanel:SetWide(Wide)
-		mainPanel:SetTall(60)
-		mainPanel:SetText("")
-		mainPanel:Dock(TOP)
-		mainPanel:DockMargin(0, -5, 0, 10)
-	mainPanel.id = id
+	local panel = Menu:AddPanel("DPanel")
+		panel:SetWide(Wide)
+		panel:SetTall(60)
+		panel:SetText("")
+		panel:Dock(TOP)
+		panel:DockMargin(0, -5, 0, 10)
+	panel.id = id
 
 	local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
-		top_panel:SetParent(mainPanel)
+		top_panel:SetParent(panel)
 		top_panel:Dock(TOP)
 		top_panel:DockMargin(0, 4, 0, 0)
 		top_panel.Paint = function() end
 
 	local bottom_panel = Menu:AddPanel("DPanel") -- Same as above
-		bottom_panel:SetParent(mainPanel)
+		bottom_panel:SetParent(panel)
 		bottom_panel:Dock(BOTTOM)
 		bottom_panel:DockMargin(0, 0, 0, -6)
 		bottom_panel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
@@ -32,7 +34,7 @@ local function addComplexPanel(Menu)
 	local numLabel = Menu:AddPanel("DLabel")
 		numLabel:SetParent(top_panel)
 		numLabel:SetFont("ACF_Control")
-		numLabel:SetText(mainPanel.id .. " = ")
+		numLabel:SetText(panel.id .. " = ")
 		numLabel:Dock(LEFT)
 		numLabel:DockMargin(4, 0, -36, 0)
 		numLabel:SetColor(color_black)
@@ -55,6 +57,27 @@ local function addComplexPanel(Menu)
 		soundPath:SetMultiline(false)
 		soundPath:Dock(FILL)
 		soundPath:DockMargin(0, 0, 2, 0)
+		panel.soundPath = soundPath
+		soundPath.OnChange = function()
+			local isValid = Sounds.IsValidSound
+			local value = soundPath:GetValue()
+
+			if isValid(value) then
+				panel.soundPath:SetTooltip()
+				panel.parseIcon:SetImage("icon16/accept.png")
+			else
+				panel.soundPath:SetTooltip("Invalid sound: File does not exist")
+				panel.parseIcon:SetImage("icon16/cancel.png")
+			end
+		end
+
+	local parseIcon = Menu:AddPanel("DImage")
+		panel.parseIcon = parseIcon
+		parseIcon:SetParent(soundPath)
+		parseIcon:Dock(RIGHT)
+		parseIcon:DockMargin(2, 2, 2, 2)
+		parseIcon:SetImage("icon16/accept.png")
+		parseIcon:SizeToContents()
 
 	local removeBtn = Menu:AddPanel("DImageButton")
 		removeBtn:SetParent(top_panel)
@@ -74,12 +97,12 @@ local function addComplexPanel(Menu)
 
 			-- Move the label number of the other panels up to compensate
 			for k in ipairs(panels) do
-				mainPanel.id = k
+				panel.id = k
 				numLabel.id = id
 				numLabel:SetText(numLabel.id .. " = ")
 			end
 
-			local id = mainPanel.id
+			local id = panel.id
 			panels[id]:Remove()
 			table.remove(panels, id)
 
@@ -151,19 +174,7 @@ local function addComplexPanel(Menu)
 		width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
 		width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
-	-- I'm so fucking done with this retarded panel
-	if not IsValid(graphPanel) then graphPanel = Menu:AddGraph() end
-		graphPanel:SetParent(Menu)
-		graphPanel:SetSize(Wide, 160)
-		graphPanel:SetPos(graphPanel:GetX(), graphPanel:GetY() + (32 * #panels))
-		graphPanel:SetXLabel("RPM")
-		graphPanel:SetYLabel("Pitch")
-		graphPanel:SetXSpacing(1000)
-		graphPanel:SetYSpacing(100)
-		graphPanel:SetFidelity(10)
-		graphPanel:Dock(BOTTOM)
-		graphPanel:DockMargin(0, 0, 0, 0)
-	table.insert(panels, mainPanel)
+	table.insert(panels, panel)
 	return panel
 end
 
@@ -256,34 +267,57 @@ local function doPanel(Num, Menu)
 			panels = nil
 			panels = {} -- Reset the panels table
 			mainPanel:SizeToContents()
+			mainPanel:SetTall(160)
 
-			local _ = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
-				_:SetParent(mainPanel)
-				_:SetText("")
-				_:Dock(TOP)
-				_.Paint = function() end
+			-- I am unable to have the graph to accomodate itself to the bottom of this list dynamically, so instead i put it to be at the top
+			local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
+				top_panel:SetParent(mainPanel)
+				top_panel:SetText("")
+				top_panel:Dock(TOP)
+				top_panel:Dock(FILL)
+				top_panel:DockMargin(0, 0, 0, 0)
+				top_panel.Paint = function() end
+
+			local bottom_panel = Menu:AddPanel("DPanel") -- Same here...
+				bottom_panel:SetParent(mainPanel)
+				bottom_panel:SetText("")
+				bottom_panel:Dock(BOTTOM)
+				bottom_panel:DockMargin(0, 0, 0, 0)
+				bottom_panel.Paint = function() end
+
+			-- Made it global for now, this is dumb
+			graphPanel = Menu:AddGraph()
+				graphPanel:SetParent(top_panel)
+				graphPanel:SetPos(graphPanel:GetX(), graphPanel:GetY() + (32 * #panels))
+				graphPanel:SetXLabel("RPM")
+				graphPanel:SetYLabel("Pitch/Volume")
+				graphPanel:SetXSpacing(1000)
+				graphPanel:SetYSpacing(100)
+				graphPanel:SetFidelity(10)
+				graphPanel:Dock(FILL)
+				graphPanel:DockMargin(4, 4, 4, 2)
 
 			local numLabel = Menu:AddLabel("N°")
-				numLabel:SetParent(_)
+				numLabel:SetParent(bottom_panel)
 				numLabel:Dock(LEFT)
 				numLabel:DockMargin(4, 0, 0, 0)
 				numLabel:SetColor(color_black)
 
 			local rpmLabel = Menu:AddLabel("RPM")
-				rpmLabel:SetParent(_)
+				rpmLabel:SetParent(bottom_panel)
 				rpmLabel:Dock(LEFT)
 				rpmLabel:DockMargin(-36, 0, 0, 0)
 				rpmLabel:SetColor(color_black)
 
 			local pathLabel = Menu:AddLabel("Sound Path")
-				pathLabel:SetParent(_)
+				pathLabel:SetParent(bottom_panel)
 				pathLabel:Dock(LEFT)
 				pathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
 				pathLabel:SetColor(color_black)
 
-			-- Made a global for now, this is dumb
+			-- Made it global for now, this is dumb
 			addBtn = Menu:AddPanel("DImageButton")
-				addBtn:SetParent(_)
+				addBtn:SetParent(bottom_panel)
 				addBtn:SetImage("icon16/add.png")
 				addBtn:SizeToContents()
 				addBtn:Dock(RIGHT)
