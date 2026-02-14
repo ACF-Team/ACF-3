@@ -1,209 +1,300 @@
 local panels = {}
+local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
+local addBtn -- Dumb glocal cause i can't pattern!
 
-local function addPanel(Menu, ParentPanel)
+local function addComplexPanel(Menu)
 	local id = #panels + 1
 
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
-	local parent = ParentPanel
-	parent = parent -- So the linter stops bitching, idk if i need this extra arg 
 
-	local panel = Menu:AddPanel("DPanel")
-	panel:SetWide(Wide)
-	panel:SetTall(60)
-	panel:SetText("")
-	panel:Dock(TOP)
-	panel:DockMargin(0, -5, 0, 10)
-	panel.id = id
+	local mainPanel = Menu:AddPanel("DPanel")
+		mainPanel:SetWide(Wide)
+		mainPanel:SetTall(60)
+		mainPanel:SetText("")
+		mainPanel:Dock(TOP)
+		mainPanel:DockMargin(0, -5, 0, 10)
+	mainPanel.id = id
 
-	local top_panel = Menu:AddPanel("DPanel")
-	top_panel:SetParent(panel)
-	top_panel.Paint = function() end
-	top_panel:Dock(TOP)
-	top_panel:DockMargin(0, 4, 0, 0)
+	local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
+		top_panel:SetParent(mainPanel)
+		top_panel:Dock(TOP)
+		top_panel:DockMargin(0, 4, 0, 0)
+		top_panel.Paint = function() end
 
-	local bottom_panel = Menu:AddPanel("DPanel")
-	bottom_panel:SetParent(panel)
-	bottom_panel.Paint = function() end
-	bottom_panel:Dock(BOTTOM)
-	bottom_panel:DockMargin(0, 0, 0, -6)
-	bottom_panel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
+	local bottom_panel = Menu:AddPanel("DPanel") -- Same as above
+		bottom_panel:SetParent(mainPanel)
+		bottom_panel:Dock(BOTTOM)
+		bottom_panel:DockMargin(0, 0, 0, -6)
+		bottom_panel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
+		bottom_panel.Paint = function() end
 
-	local num_panel = Menu:AddPanel("DLabel")
-	num_panel:SetParent(top_panel)
-	num_panel:SetText(panel.id .. " = ")
-	num_panel:Dock(LEFT)
-	num_panel:DockMargin(4, 0, -36, 0)
-	num_panel:SetColor(color_black)
-	num_panel.id = id
+	local numLabel = Menu:AddPanel("DLabel")
+		numLabel:SetParent(top_panel)
+		numLabel:SetFont("ACF_Control")
+		numLabel:SetText(mainPanel.id .. " = ")
+		numLabel:Dock(LEFT)
+		numLabel:DockMargin(4, 0, -36, 0)
+		numLabel:SetColor(color_black)
+	numLabel.id = id
 
-	local rpmInput = Menu:AddPanel("DNumberWang")
-	rpmInput:SetParent(top_panel)
-	rpmInput:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
-	rpmInput:SetTall(ButtonHeight)
-	rpmInput:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-	rpmInput:Dock(LEFT)
-	rpmInput:DockMargin(0, 0, 2, 0)
+	local rpm = Menu:AddPanel("DNumberWang")
+		rpm:SetParent(top_panel)
+		rpm:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
+		rpm:SetTall(ButtonHeight)
+		rpm:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
+		rpm:SetValue(1000 * id)
+		rpm:Dock(LEFT)
+		rpm:DockMargin(0, 0, 2, 0)
 
 	local soundPath = Menu:AddPanel("DTextEntry")
-	soundPath:SetParent(top_panel)
-	soundPath:SetText("")
-	soundPath:SetWide(Wide - 20)
-	soundPath:SetTall(ButtonHeight)
-	soundPath:SetMultiline(false)
-	soundPath:Dock(FILL)
-	soundPath:DockMargin(0, 0, 2, 0)
+		soundPath:SetParent(top_panel)
+		soundPath:SetText("")
+		soundPath:SetWide(Wide - 20)
+		soundPath:SetTall(ButtonHeight)
+		soundPath:SetMultiline(false)
+		soundPath:Dock(FILL)
+		soundPath:DockMargin(0, 0, 2, 0)
 
-	local removeButton = Menu:AddPanel("DImageButton")
-	removeButton:SetParent(top_panel)
-	removeButton:SetImage( "icon16/delete.png" )
-	removeButton:SizeToContents()
-	removeButton:Dock(RIGHT)
-	removeButton:DockMargin(2, 2, 2, 2)
-	removeButton:Center()
-	removeButton:SetTooltip("Remove this sound.")
-	removeButton.DoClick = function()
-		-- Don't remove the last item
-		if #panels == 1 then
-			removeButton.DoClick = function() end
-			return
+	local removeBtn = Menu:AddPanel("DImageButton")
+		removeBtn:SetParent(top_panel)
+		removeBtn:SetImage( "icon16/delete.png" )
+		removeBtn:SizeToContents()
+		removeBtn:Dock(RIGHT)
+		removeBtn:DockMargin(2, 2, 2, 2)
+		removeBtn:Center()
+		removeBtn:SetTooltip("Remove this sound.")
+		removeBtn.DoClick = function()
+			-- TODO(TMF): Have it do a popup modal prompting for removal before executing this function!
+			-- Don't remove the last item
+			if #panels == 1 then
+				removeBtn.DoClick = function() end
+				return
+			end
+
+			-- Move the label number of the other panels up to compensate
+			for k in ipairs(panels) do
+				mainPanel.id = k
+				numLabel.id = id
+				numLabel:SetText(numLabel.id .. " = ")
+			end
+
+			local id = mainPanel.id
+			panels[id]:Remove()
+			table.remove(panels, id)
+
+			addBtn:SetEnabled(true) -- Reenable our button
 		end
 
-		for k in ipairs(panels) do
-			panel.id = k
-			num_panel.id = id
-			num_panel:SetText(num_panel.id .. " = ")
+	local searchBtn = Menu:AddPanel("DImageButton")
+		searchBtn:SetParent(top_panel)
+		searchBtn:SetImage("icon16/application_view_list.png")
+		searchBtn:SizeToContents()
+		searchBtn:Dock(RIGHT)
+		searchBtn:DockMargin(2, 2, 2, 2)
+		searchBtn:Center()
+		searchBtn:SetTooltip("Open sound browser.")
+		searchBtn.DoClick = function()
+			RunConsoleCommand("wire_sound_browser_open")
 		end
-
-		local id = panel.id
-		panels[id]:Remove()
-		table.remove(panels, id)
-	end
-
-	local searchButton = Menu:AddPanel("DImageButton")
-	searchButton:SetParent(top_panel)
-	searchButton:SetImage("icon16/application_view_list.png")
-	searchButton:SizeToContents()
-	searchButton:Dock(RIGHT)
-	searchButton:DockMargin(2, 2, 2, 2)
-	searchButton:Center()
-	searchButton:SetTooltip("Open sound browser.")
-	searchButton.DoClick = function()
-		RunConsoleCommand("wire_sound_browser_open")
-	end
 
 	local pitchLabel = Menu:AddPanel("DLabel")
-	pitchLabel:SetParent(bottom_panel)
-	pitchLabel:SetTall(ButtonHeight)
-	pitchLabel:SetText("Pitch:")
-	pitchLabel:Dock(LEFT)
-	pitchLabel:DockMargin(4, 0, -28, 0)
-	pitchLabel:SetColor(color_black)
+		pitchLabel:SetParent(bottom_panel)
+		pitchLabel:SetFont("ACF_Control")
+		pitchLabel:SetText("Pitch:")
+		pitchLabel:Dock(LEFT)
+		pitchLabel:DockMargin(4, 0, -28, 0)
+		pitchLabel:SetColor(color_black)
 
 	local pitch = Menu:AddPanel("DNumberWang")
-	pitch:SetParent(bottom_panel)
-	pitch:SetTall(ButtonHeight)
-	pitch:SetMinMax(0, 255)
-	pitch:SetValue(100)
-	pitch:Dock(LEFT)
-	pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
-	pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+		pitch:SetParent(bottom_panel)
+		pitch:SetTall(ButtonHeight)
+		pitch:SetMinMax(0, 255)
+		pitch:SetValue(100)
+		pitch:Dock(LEFT)
+		pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
+		pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 
 	local volumeLabel = Menu:AddPanel("DLabel")
-	volumeLabel:SetParent(bottom_panel)
-	volumeLabel:SetTall(ButtonHeight)
-	volumeLabel:SetText("Volume:")
-	volumeLabel:Dock(LEFT)
-	volumeLabel:DockMargin(4, 0, -20, 0)
-	volumeLabel:SetColor(color_black)
+		volumeLabel:SetParent(bottom_panel)
+		volumeLabel:SetFont("ACF_Control")
+		volumeLabel:SetText("Volume:")
+		volumeLabel:Dock(LEFT)
+		volumeLabel:DockMargin(4, 0, -16, 0)
+		volumeLabel:SetColor(color_black)
 
 	local volume = Menu:AddPanel("DNumberWang")
-	volume:SetParent(bottom_panel)
-	volume:SetTall(ButtonHeight)
-	volume:SetMinMax(0, 1)
-	volume:SetDecimals(2)
-	volume:SetInterval(0.01)
-	volume:SetFraction(0.01)
-	volume:SetValue(1)
-	volume:Dock(LEFT)
-	volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
-	volume:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+		volume:SetParent(bottom_panel)
+		volume:SetTall(ButtonHeight)
+		volume:SetMinMax(0, 1)
+		volume:SetDecimals(2)
+		volume:SetInterval(0.01)
+		volume:SetFraction(0.01)
+		volume:SetValue(1)
+		volume:Dock(LEFT)
+		volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
+		volume:SetWide(40) -- Equivalent to 000 w/ decimal point + up/down buttons at font size = 16 + padding
 
 	local widthLabel = Menu:AddPanel("DLabel")
-	widthLabel:SetParent(bottom_panel)
-	widthLabel:SetTall(ButtonHeight)
-	widthLabel:SetText("Width:")
-	widthLabel:Dock(LEFT)
-	widthLabel:DockMargin(4, 0, -24, 0)
-	widthLabel:SetColor(color_black)
+		widthLabel:SetParent(bottom_panel)
+		widthLabel:SetFont("ACF_Control")
+		widthLabel:SetText("Width:")
+		widthLabel:Dock(LEFT)
+		widthLabel:DockMargin(4, 0, -24, 0)
+		widthLabel:SetColor(color_black)
 
 	local width = Menu:AddPanel("DNumberWang")
-	width:SetParent(bottom_panel)
-	width:SetTall(ButtonHeight)
-	width:SetMinMax(0, 16)
-	width:Dock(LEFT)
-	width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve")
-	width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
+		width:SetParent(bottom_panel)
+		width:SetTall(ButtonHeight)
+		width:SetMinMax(0, 16)
+		width:Dock(LEFT)
+		width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
+		width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
-	table.insert(panels, panel)
-	PrintTable(panels)
+	table.insert(panels, mainPanel)
 	return panel
 end
 
-local function do4thPanel(Menu)
-	local mainPanel = Menu:AddPanel("DPanel")
-	-- Clear the panels table 
-	panels = nil
-	panels = {}
-	mainPanel:SizeToContents()
+-- Build the panels according to our selection
+local function doPanel(Num, Menu)
+	local case = {
+		-- I explictly gave these their numeric keys so its easier to infer which panel we're working with
+		-- First panel, Generic - One sound. Old menu with text entry for a single sound
+		[1] = function ()
+			local Wide = Menu:GetWide()
+			local ButtonHeight = 20
 
-	local top_panel = Menu:AddPanel("DPanel")
-	top_panel:SetParent(mainPanel)
-	top_panel:SetText("")
-	top_panel:Dock(TOP)
-	top_panel.Paint = function() end
+			Menu:AddLabel("This is the first panel, I don't know what to add here yet but you can imagine its gonna be something good, so stay tuned!")
 
-	local numLabel = Menu:AddPanel("DLabel")
-	numLabel:SetParent(top_panel)
-	numLabel:SetText("N°")
-	numLabel:Dock(LEFT)
-	numLabel:DockMargin(4, 0, 0, 0)
-	numLabel:SetColor(color_black)
+			local SoundNameText = Menu:AddPanel("DTextEntry")
+				SoundNameText:SetText("")
+				SoundNameText:SetWide(Wide - 20)
+				SoundNameText:SetTall(ButtonHeight)
+				SoundNameText:SetMultiline(false)
+				SoundNameText:SetConVar("wire_soundemitter_sound")
 
-	local rpmLabel = Menu:AddPanel("DLabel")
-	rpmLabel:SetParent(top_panel)
-	rpmLabel:SetText("RPM")
-	rpmLabel:Dock(LEFT)
-	rpmLabel:DockMargin(-36, 0, 0, 0)
-	rpmLabel:SetColor(color_black)
+			local SoundBrowserButton = Menu:AddButton("#tool.acfsound.open_browser", "wire_sound_browser_open", SoundNameText:GetValue(), "1")
+				SoundBrowserButton:SetWide(Wide)
+				SoundBrowserButton:SetTall(ButtonHeight)
+				SoundBrowserButton:SetIcon("icon16/application_view_list.png")
 
-	local addbtn = Menu:AddPanel("DImageButton")
-	addbtn:SetParent(top_panel)
-	addbtn:SetImage("icon16/add.png")
-	addbtn:SizeToContents()
-	addbtn:Dock(RIGHT)
-	addbtn:DockMargin(2, 2, 2, 2)
-	addbtn:SetTooltip("Add a new sound.")
-	addbtn.DoClick = function()
-		addPanel(Menu, mainPanel)
-	end
+			local SoundPre = Menu:AddPanel("ACF_Panel")
+				SoundPre:SetWide(Wide)
+				SoundPre:SetTall(ButtonHeight)
 
-	local pathLabel = Menu:AddPanel("DLabel")
-	pathLabel:SetParent(top_panel)
-	pathLabel:SetText("Sound Path")
-	pathLabel:Dock(FILL)
-	pathLabel:DockMargin(-12, 0, 0, 0)
-	pathLabel:Center()
-	pathLabel:SetColor(color_black)
+			local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
+				SoundPrePlay:SetIcon("icon16/sound.png")
+				SoundPrePlay.DoClick = function()
+					RunConsoleCommand("play", SoundNameText:GetValue())
+				end
 
-	addPanel(Menu, mainPanel) -- add the first
+			-- Playing a silent sound will mute the preview but not the sound emitters.
+			local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav")
+				SoundPreStop:SetIcon("icon16/sound_mute.png")
+
+				-- Set the Play/Stop button positions here
+				SoundPre:InvalidateLayout(true)
+				SoundPre.PerformLayout = function()
+					local HWide = SoundPre:GetWide() / 2
+					SoundPrePlay:SetSize(HWide, ButtonHeight)
+					SoundPrePlay:Dock(LEFT)
+					SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which the previous button didn't
+				end
+
+			local CopyButton = Menu:AddButton("#tool.acfsound.copy")
+				CopyButton:SetWide(Wide)
+				CopyButton:SetTall(ButtonHeight)
+				CopyButton:SetIcon("icon16/page_copy.png")
+				CopyButton.DoClick = function()
+					SetClipboardText(SoundNameText:GetValue())
+				end
+
+			local ClearButton = Menu:AddButton("#tool.acfsound.clear")
+				ClearButton:SetWide(Wide)
+				ClearButton:SetTall(ButtonHeight)
+				ClearButton:SetIcon("icon16/cancel.png")
+				ClearButton.DoClick = function()
+					SoundNameText:SetValue("")
+					RunConsoleCommand("wire_soundemitter_sound", "")
+				end
+
+			local VolumeSlider = Menu:AddSlider("#tool.acfsound.volume", 0.1, 1, 2)
+				VolumeSlider:SetConVar("acfsound_volume")
+			local PitchSlider = Menu:AddSlider("#tool.acfsound.pitch", 0.1, 2, 2)
+				PitchSlider:SetConVar("acfsound_pitch")
+		end,
+		-- Second panel, Weapons - Start/Loop/Stop. New menu with three text entries labeled as "Start", "Loop", "End" respectively, to put the sound paths
+		-- Layout is similar to the first option
+		[2] = function()
+			Menu:AddLabel("This is the second panel, I don't know what to add here yet but you can imagine its gonna be something nice, so stay tuned!")
+
+		end,
+		-- Third panel, Engines - Simple interpolated. New menu with a slider that creates N amount of text entries to put the sound paths
+		-- Layout is similar to the first option
+		[3] = function()
+			Menu:AddLabel("This is the third panel, I don't know what to add here yet but you can imagine its gonna be something fantastic, so stay tuned!")
+
+		end,
+		-- Fourth panel, Engines - Custom interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
+		-- Has a graph at the bottom of the list with a graph to better visualise how they play at a determined engine RPM
+		[4] = function()
+			Menu:AddLabel("This is the fourth panel, I don't know what to add here yet but you can imagine its gonna be something mindblowing, so stay tuned!")
+			local mainPanel = Menu:AddPanel("DPanel")
+			-- TODO(TMF): Allow this panel to save and load the values that the user has placed!
+			panels = nil
+			panels = {} -- Reset the panels table
+			mainPanel:SizeToContents()
+
+			local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
+				top_panel:SetParent(mainPanel)
+				top_panel:SetText("")
+				top_panel:Dock(TOP)
+				top_panel.Paint = function() end
+
+			local numLabel = Menu:AddLabel("N°")
+				numLabel:SetParent(top_panel)
+				numLabel:Dock(LEFT)
+				numLabel:DockMargin(4, 0, 0, 0)
+				numLabel:SetColor(color_black)
+
+			local rpmLabel = Menu:AddLabel("RPM")
+				rpmLabel:SetParent(top_panel)
+				rpmLabel:Dock(LEFT)
+				rpmLabel:DockMargin(-36, 0, 0, 0)
+				rpmLabel:SetColor(color_black)
+
+			local pathLabel = Menu:AddLabel("Sound Path")
+				pathLabel:SetParent(top_panel)
+				pathLabel:Dock(LEFT)
+				pathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
+				pathLabel:SetColor(color_black)
+
+			-- Made a global for now, this is dumb
+			addBtn = Menu:AddPanel("DImageButton")
+				addBtn:SetParent(top_panel)
+				addBtn:SetImage("icon16/add.png")
+				addBtn:SizeToContents()
+				addBtn:Dock(RIGHT)
+				addBtn:DockMargin(2, 2, 2, 2)
+				addBtn:SetTooltip("Add a new sound.")
+				addBtn.DoClick = function()
+					if #panels >= _MAXSOUNDS then addBtn:SetEnabled(false) return end -- Disable the button if enough panels exist already
+					addComplexPanel(Menu)
+				end
+
+			-- Add the first panel if none exists
+			if #panels == 0 then addComplexPanel(Menu) end
+		end
+	}
+
+	local switch = case[Num]
+	switch()
 end
 
 --- Generates the menu used in the Sound Replacer tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel)
 	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
-	--local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
 
@@ -215,86 +306,11 @@ function ACF.CreateSoundMenu(Panel)
 	optionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ")
 	optionSelectionBox:AddChoice("Engines - Simple interpolated. ")
 	optionSelectionBox:AddChoice("Engines - Custom interpolated. ")
-	optionSelectionBox.OnSelect = function(_, index, value)
+	optionSelectionBox.OnSelect = function(_, index, _)
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
-		-- Ideas for how i want this to look like, thinking about how to implement these...
-		-- Wether it makes sense to have it like this or not, we'll see...
-		print("This option should show... \n")
-		if index == 1 then
-			print(value .. "Old menu with text entry for a single sound")
-
-		elseif index == 2 then
-			print(value .. "New menu with three text entries stylized as [Label] = [Sound Path]")
-		-- This one in particular is probably not really necessary, if i manage to consolidate this idea with the custom one...
-		elseif index == 3 then
-			print(value .. "New menu with a slider(min = 2, max = 5) that dynamically adds a label \
-				 (can be numeric like 00, 33, 66, 99 OR verylow, low, mid, high, veryhigh; we'd see) and the text entries for them sound paths; For simple sound interpolation")
-
-		elseif index == 4 then
-			-- Creates an invisible generic panel(like a HTML div)
-			do4thPanel(Menu)
-		end
-
+		-- Build the panels according to our selection
+		doPanel(index, Menu)
 		Menu:EndTemporal(Panel)
 	end
-
-	--[[local SoundNameText = Menu:AddPanel("DTextEntry")
-	SoundNameText:SetText("")
-	SoundNameText:SetWide(Wide - 20)
-	SoundNameText:SetTall(ButtonHeight)
-	SoundNameText:SetMultiline(false)
-	SoundNameText:SetConVar("wire_soundemitter_sound")
-
-	local SoundBrowserButton = Menu:AddButton("#tool.acfsound.open_browser", "wire_sound_browser_open", SoundNameText:GetValue(), "1")
-	SoundBrowserButton:SetWide(Wide)
-	SoundBrowserButton:SetTall(ButtonHeight)
-	SoundBrowserButton:SetIcon("icon16/application_view_list.png")
-
-	local SoundPre = Menu:AddPanel("ACF_Panel")
-	SoundPre:SetWide(Wide)
-	SoundPre:SetTall(ButtonHeight)
-
-	local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
-	SoundPrePlay:SetIcon("icon16/sound.png")
-	SoundPrePlay.DoClick = function()
-		RunConsoleCommand("play", SoundNameText:GetValue())
-	end
-
-	-- Playing a silent sound will mute the preview but not the sound emitters.
-	local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav")
-	SoundPreStop:SetIcon("icon16/sound_mute.png")
-
-	-- Set the Play/Stop button positions here
-	SoundPre:InvalidateLayout(true)
-	SoundPre.PerformLayout = function()
-		local HWide = SoundPre:GetWide() / 2
-		SoundPrePlay:SetSize(HWide, ButtonHeight)
-		SoundPrePlay:Dock(LEFT)
-		SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which the previous button didn't.
-	end
-
-	local CopyButton = Menu:AddButton("#tool.acfsound.copy")
-	CopyButton:SetWide(Wide)
-	CopyButton:SetTall(ButtonHeight)
-	CopyButton:SetIcon("icon16/page_copy.png")
-	CopyButton.DoClick = function()
-		SetClipboardText(SoundNameText:GetValue())
-	end
-
-	local ClearButton = Menu:AddButton("#tool.acfsound.clear")
-	ClearButton:SetWide(Wide)
-	ClearButton:SetTall(ButtonHeight)
-	ClearButton:SetIcon("icon16/cancel.png")
-	ClearButton.DoClick = function()
-		SoundNameText:SetValue("")
-		RunConsoleCommand("wire_soundemitter_sound", "")
-	end
-
-	local VolumeSlider = Menu:AddSlider("#tool.acfsound.volume", 0.1, 1, 2)
-	VolumeSlider:SetConVar("acfsound_volume")
-	local PitchSlider = Menu:AddSlider("#tool.acfsound.pitch", 0.1, 2, 2)
-	PitchSlider:SetConVar("acfsound_pitch")
-
-	--]]
 end
