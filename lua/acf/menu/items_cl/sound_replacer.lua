@@ -1,10 +1,10 @@
 local panels = {}
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local addBtn -- Dumb glocal cause i can't pattern!
+local addBtn -- Dumb glocals cause i can't pattern!
+local graphPanel
 
 local function addComplexPanel(Menu)
 	local id = #panels + 1
-
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 
@@ -151,6 +151,18 @@ local function addComplexPanel(Menu)
 		width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
 		width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
+	-- I'm so fucking done with this retarded panel
+	if not IsValid(graphPanel) then graphPanel = Menu:AddGraph() end
+		graphPanel:SetParent(Menu)
+		graphPanel:SetSize(Wide, 160)
+		graphPanel:SetPos(graphPanel:GetX(), graphPanel:GetY() + (32 * #panels))
+		graphPanel:SetXLabel("RPM")
+		graphPanel:SetYLabel("Pitch")
+		graphPanel:SetXSpacing(1000)
+		graphPanel:SetYSpacing(100)
+		graphPanel:SetFidelity(10)
+		graphPanel:Dock(BOTTOM)
+		graphPanel:DockMargin(0, 0, 0, 0)
 	table.insert(panels, mainPanel)
 	return panel
 end
@@ -245,33 +257,33 @@ local function doPanel(Num, Menu)
 			panels = {} -- Reset the panels table
 			mainPanel:SizeToContents()
 
-			local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
-				top_panel:SetParent(mainPanel)
-				top_panel:SetText("")
-				top_panel:Dock(TOP)
-				top_panel.Paint = function() end
+			local _ = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
+				_:SetParent(mainPanel)
+				_:SetText("")
+				_:Dock(TOP)
+				_.Paint = function() end
 
 			local numLabel = Menu:AddLabel("N°")
-				numLabel:SetParent(top_panel)
+				numLabel:SetParent(_)
 				numLabel:Dock(LEFT)
 				numLabel:DockMargin(4, 0, 0, 0)
 				numLabel:SetColor(color_black)
 
 			local rpmLabel = Menu:AddLabel("RPM")
-				rpmLabel:SetParent(top_panel)
+				rpmLabel:SetParent(_)
 				rpmLabel:Dock(LEFT)
 				rpmLabel:DockMargin(-36, 0, 0, 0)
 				rpmLabel:SetColor(color_black)
 
 			local pathLabel = Menu:AddLabel("Sound Path")
-				pathLabel:SetParent(top_panel)
+				pathLabel:SetParent(_)
 				pathLabel:Dock(LEFT)
 				pathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
 				pathLabel:SetColor(color_black)
 
 			-- Made a global for now, this is dumb
 			addBtn = Menu:AddPanel("DImageButton")
-				addBtn:SetParent(top_panel)
+				addBtn:SetParent(_)
 				addBtn:SetImage("icon16/add.png")
 				addBtn:SizeToContents()
 				addBtn:Dock(RIGHT)
