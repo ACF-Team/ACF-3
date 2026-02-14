@@ -53,13 +53,11 @@ local function addPanel(Menu, ParentPanel)
 	soundPath:SetMultiline(false)
 	soundPath:Dock(FILL)
 	soundPath:DockMargin(0, 0, 2, 0)
-	--soundPath:SetConVar("wire_soundemitter_sound")
 
 	local removeButton = Menu:AddPanel("DImageButton")
 	removeButton:SetParent(top_panel)
 	removeButton:SetImage( "icon16/delete.png" )
 	removeButton:SizeToContents()
-	--removeButton:SetPos( 0, 4 )
 	removeButton:Dock(RIGHT)
 	removeButton:DockMargin(2, 2, 2, 2)
 	removeButton:Center()
@@ -71,11 +69,10 @@ local function addPanel(Menu, ParentPanel)
 			return
 		end
 
-		for k, _ in pairs(panels) do
+		for k in ipairs(panels) do
 			panel.id = k
 			num_panel.id = id
 			num_panel:SetText(num_panel.id .. " = ")
-			print(k, id, num_panel.id)
 		end
 
 		local id = panel.id
@@ -107,6 +104,7 @@ local function addPanel(Menu, ParentPanel)
 	pitch:SetParent(bottom_panel)
 	pitch:SetTall(ButtonHeight)
 	pitch:SetMinMax(0, 255)
+	pitch:SetValue(100)
 	pitch:Dock(LEFT)
 	pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
 	pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
@@ -126,6 +124,7 @@ local function addPanel(Menu, ParentPanel)
 	volume:SetDecimals(2)
 	volume:SetInterval(0.01)
 	volume:SetFraction(0.01)
+	volume:SetValue(1)
 	volume:Dock(LEFT)
 	volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
 	volume:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
@@ -147,11 +146,15 @@ local function addPanel(Menu, ParentPanel)
 	width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
 	table.insert(panels, panel)
+	PrintTable(panels)
 	return panel
 end
 
 local function do4thPanel(Menu)
 	local mainPanel = Menu:AddPanel("DPanel")
+	-- Clear the panels table 
+	panels = nil
+	panels = {}
 	mainPanel:SizeToContents()
 
 	local top_panel = Menu:AddPanel("DPanel")
@@ -200,12 +203,6 @@ end
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel)
 	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
-	Menu.OnRemove = function()
-		for panel in pairs(panels) do
-			panel = nil
-			table.remove(panels, panel)
-		end
-	end
 	--local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
@@ -219,6 +216,8 @@ function ACF.CreateSoundMenu(Panel)
 	optionSelectionBox:AddChoice("Engines - Simple interpolated. ")
 	optionSelectionBox:AddChoice("Engines - Custom interpolated. ")
 	optionSelectionBox.OnSelect = function(_, index, value)
+		Menu:StartTemporal(Panel)
+		Menu:ClearTemporal(Panel)
 		-- Ideas for how i want this to look like, thinking about how to implement these...
 		-- Wether it makes sense to have it like this or not, we'll see...
 		print("This option should show... \n")
@@ -236,6 +235,8 @@ function ACF.CreateSoundMenu(Panel)
 			-- Creates an invisible generic panel(like a HTML div)
 			do4thPanel(Menu)
 		end
+
+		Menu:EndTemporal(Panel)
 	end
 
 	--[[local SoundNameText = Menu:AddPanel("DTextEntry")
