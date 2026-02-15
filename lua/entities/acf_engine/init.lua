@@ -630,14 +630,14 @@ end
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	local SoundBank  = SelfTbl.SoundBank
+	local SoundCount = SelfTbl.SoundCount
 
 	if SelfTbl.Sound then
 		local Throttle = Round(SelfTbl.Throttle, 2) * 100
 		local RPM = Round(SelfTbl.FlyRPM)
 		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 	else
-		-- TODO(TMF): Optimize how much data is about to be sent to the client!
-		Sounds.CreateMultipleAdjustableSounds(self, SoundBank)
+		Sounds.CreateMultipleAdjustableSounds(self, SoundBank, SoundCount)
 		SelfTbl.Sound = true
 	end
 end

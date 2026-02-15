@@ -221,7 +221,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		local mid    = RPM
 		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
 		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
-		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME)
+		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.volume or 1)
 		local pitch  = (RPM / soundTable.rpm) * enginePitch
 
 		Sounds.UpdateAdjustableSound(Origin, pitch, volume)
@@ -240,7 +240,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		local SoundObjects = {}
 		local SoundCount = 0
 
-		for rpm, soundTable in pairs(PathTable) do
+		for _, soundTable in ipairs(PathTable) do
 			if not Sounds.IsValidSound(soundTable.Path) then return end
 			local Sound = Sounds.CreateAdjustableSound(Origin,
 				soundTable.Path,
@@ -248,17 +248,19 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			)
 			SoundCount = SoundCount + 1
 
-			-- Insert the CSoundPatch type objects inside the SoundObjects table, alongside with the rpm it has be to play at the desired pitch
-			-- width allows the sound to play in a wider range of RPM's
-			table.insert(SoundObjects, SoundCount, {["rpm"] = rpm, ["width"] = soundTable.Width or 0, ["pitch"] = soundTable.Pitch or 100, ["sound"] = Sound})
+			-- Insert the CSoundPatch type objects inside the SoundObjects table, alongside with the rpm it has be to play at the desired pitch,
+			-- the volume and the width which allows the sound to play in a wider range of RPM's
+			table.insert(SoundObjects, SoundCount, {["rpm"]    = soundTable.RPM,
+													["width"]  = soundTable.Width or 0,
+													["pitch"]  = soundTable.Pitch or 100,
+													["volume"] = soundTable.Volume or 1,
+													["sound"]  = Sound})
 
 			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch or 100, 0)
 		end
 
-		-- Sort the table before moving on, so it can be iterated in sequential order
-		if SoundCount > 1 then -- Potentially unnecessary conditional, will see...
-			table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
-		end
+		-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
+		table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
 
 		Origin.SoundObjects = SoundObjects
 		Origin.SoundCount = SoundCount
@@ -280,17 +282,48 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		Origin.SoundCount = 0
 	end
 
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
+		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!")
+		local SoundTable = {}
+
 		local Origin = net.ReadEntity()
-		local SoundTable = net.ReadTable()
+		local Count = net.ReadUInt(4)
+		local CountTable = function (Table)
+			if not istable(Table) then return end
 
-		if not IsValid(Origin) then return end
-		if not istable(SoundTable) then return end
+			local Count = 0
+			for _ in pairs(Table) do
+				Count = Count + 1
+			end
+			return Count
+		end
+		local I = 0
 
-		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+		while (I < Count) do
+			local Key 		 = net.ReadUInt(14)
+			local StringPath = net.ReadString()
+			local Pitch 	 = net.ReadUInt(8)
+			local Volume 	 = net.ReadUInt(7)
+			local Width 	 = net.ReadUInt(4)
+
+			Volume = Volume * 0.01 -- Reduce the received value down to a float
+			table.insert(SoundTable, {	RPM    = Key,
+									  	Path   = StringPath,
+										Pitch  = Pitch,
+										Volume = Volume,
+									  	Width  = Width })
+			I = I + 1
+		end
+
+		if CountTable(SoundTable) == Count then
+			Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+		else
+			print("Got " .. CountTable(SoundTable) .. " out of a total of " .. Count .. " sounds!")
+		end
 	end)
 
-	net.Receive("ACF_Sounds_Adjustable_Multi", function()
+	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
+		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!")
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 

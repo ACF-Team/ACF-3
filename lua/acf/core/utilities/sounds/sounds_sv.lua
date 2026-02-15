@@ -96,14 +96,31 @@ end
 	--- For creating 13 sounds, the data being sent can ballon up to 1.537kb's of data at once.
 	--- @param Origin table The entity to play the sound from
 	--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
-function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundCount)
 	if not IsValid(Origin) then return end
 	if not istable(SoundTable) then return end
 
-	-- Literally the same as CreateAdjustableSound but as a table instead
+	-- Separate our table in chunks to be sent instead of all at once
+	-- This saves about 40% in data size vs. sending the whole table
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
 		net.WriteEntity(Origin)
-		net.WriteTable(SoundTable)
+		net.WriteUInt(SoundCount, 4)
+
+		for k, v in pairs(SoundTable) do
+			local key = k
+			local stringPath = v.Path
+			local pitch = v.Pitch
+			local volume = v.Volume
+			local width = v.Width
+
+			net.WriteUInt(key, 14)
+			net.WriteString(stringPath)
+			net.WriteUInt(pitch, 8)
+
+			volume = volume * 100 -- Sending the approximate volume as an int to reduce message size
+			net.WriteUInt(volume, 7)
+			net.WriteUInt(width, 4)
+		end
 	net.SendPAS(Origin:GetPos())
 end
 
