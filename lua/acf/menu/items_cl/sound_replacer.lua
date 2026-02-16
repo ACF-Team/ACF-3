@@ -307,7 +307,7 @@ local function BuildPanelsFromSelection(Num, Menu)
 				TopPanel:DockMargin(0, 0, 0, 0)
 				TopPanel.Paint = function() end
 
-			local _ = Menu:AddPanel("DPanel") -- Nameless panel just so it i can properly fit these fucking panels
+			local _ = Menu:AddPanel("DPanel") -- Nameless panel just so i can properly fit these fucking panels
 				_:SetParent(TopPanel)
 				_:SetText("")
 				_:SetTall(24)
