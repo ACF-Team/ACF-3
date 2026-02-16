@@ -1,190 +1,190 @@
 local Sounds = ACF.Utilities.Sounds
 
-local panels = {}
+local Panels = {}
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local addBtn -- Dumb glocals cause i can't pattern!
-local graphPanel
+local AddBtn -- Dumb glocals cause i can't pattern!
+local GraphPanel
 
-local function addComplexPanel(Menu)
-	local id = #panels + 1
+local function AddComplexPanel(Menu)
+	local ID = #Panels + 1
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 
-	local panel = Menu:AddPanel("DPanel")
-		panel:SetWide(Wide)
-		panel:SetTall(60)
-		panel:SetText("")
-		panel:Dock(TOP)
-		panel:DockMargin(0, -5, 0, 10)
-		panel.id = id
+	local Panel = Menu:AddPanel("DPanel")
+		Panel:SetWide(Wide)
+		Panel:SetTall(60)
+		Panel:SetText("")
+		Panel:Dock(TOP)
+		Panel:DockMargin(0, -5, 0, 10)
+		Panel.ID = ID
 
-	local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
-		top_panel:SetParent(panel)
-		top_panel:Dock(TOP)
-		top_panel:DockMargin(0, 4, 0, 0)
-		top_panel.Paint = function() end
+	local TopPanel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
+		TopPanel:SetParent(Panel)
+		TopPanel:Dock(TOP)
+		TopPanel:DockMargin(0, 4, 0, 0)
+		TopPanel.Paint = function() end
 
-	local bottom_panel = Menu:AddPanel("DPanel") -- Same as above
-		bottom_panel:SetParent(panel)
-		bottom_panel:Dock(BOTTOM)
-		bottom_panel:DockMargin(0, 0, 0, -6)
-		bottom_panel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
-		bottom_panel.Paint = function() end
+	local BottomPanel = Menu:AddPanel("DPanel") -- Same as above
+		BottomPanel:SetParent(Panel)
+		BottomPanel:Dock(BOTTOM)
+		BottomPanel:DockMargin(0, 0, 0, -6)
+		BottomPanel:SetTall(34) -- Why is it setting the tall of its children as well :sob:
+		BottomPanel.Paint = function() end
 
-	local numLabel = Menu:AddPanel("DLabel")
-		numLabel:SetParent(top_panel)
-		numLabel:SetFont("ACF_Control")
-		numLabel:SetText(panel.id .. " = ")
-		numLabel:Dock(LEFT)
-		numLabel:DockMargin(4, 0, -36, 0)
-		numLabel:SetColor(color_black)
-		numLabel.id = id
+	local NumLabel = Menu:AddPanel("DLabel")
+		NumLabel:SetParent(TopPanel)
+		NumLabel:SetFont("ACF_Control")
+		NumLabel:SetText(Panel.ID .. " = ")
+		NumLabel:Dock(LEFT)
+		NumLabel:DockMargin(4, 0, -36, 0)
+		NumLabel:SetColor(color_black)
+		NumLabel.ID = ID
 
-	local rpm = Menu:AddPanel("DNumberWang")
-		rpm:SetParent(top_panel)
-		rpm:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
-		rpm:SetTall(ButtonHeight)
-		rpm:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-		rpm:SetValue(1000 * id)
-		rpm:Dock(LEFT)
-		rpm:DockMargin(0, 0, 2, 0)
-		panel.rpm = rpm
+	local Rpm = Menu:AddPanel("DNumberWang")
+		Rpm:SetParent(TopPanel)
+		Rpm:SetMinMax(0, 16383) -- Maximum number it can be networked to the client, also a minmax...
+		Rpm:SetTall(ButtonHeight)
+		Rpm:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
+		Rpm:SetValue(1000 * ID)
+		Rpm:Dock(LEFT)
+		Rpm:DockMargin(0, 0, 2, 0)
+		Panel.RPM = Rpm
 
-	local soundPath = Menu:AddPanel("DTextEntry")
-		soundPath:SetParent(top_panel)
-		soundPath:SetText("")
-		soundPath:SetWide(Wide - 20)
-		soundPath:SetTall(ButtonHeight)
-		soundPath:SetMultiline(false)
-		soundPath:Dock(FILL)
-		soundPath:DockMargin(0, 0, 2, 0)
-		panel.soundPath = soundPath
-		soundPath.OnChange = function()
+	local SoundPath = Menu:AddPanel("DTextEntry")
+		SoundPath:SetParent(TopPanel)
+		SoundPath:SetText("")
+		SoundPath:SetWide(Wide - 20)
+		SoundPath:SetTall(ButtonHeight)
+		SoundPath:SetMultiline(false)
+		SoundPath:Dock(FILL)
+		SoundPath:DockMargin(0, 0, 2, 0)
+		Panel.SoundPath = SoundPath
+		SoundPath.OnChange = function()
 			local isValid = Sounds.IsValidSound
-			local value = soundPath:GetValue()
+			local value = SoundPath:GetValue()
 
 			if isValid(value) then
-				panel.soundPath:SetTooltip()
-				panel.parseIcon:SetImage("icon16/accept.png")
+				Panel.SoundPath:SetTooltip()
+				Panel.ParseIcon:SetImage("icon16/accept.png")
 			else
-				panel.soundPath:SetTooltip("Invalid sound: File does not exist")
-				panel.parseIcon:SetImage("icon16/cancel.png")
+				Panel.SoundPath:SetTooltip("Invalid sound: File does not exist")
+				Panel.ParseIcon:SetImage("icon16/cancel.png")
 			end
 		end
 
-	local parseIcon = Menu:AddPanel("DImage")
-		panel.parseIcon = parseIcon
-		parseIcon:SetParent(soundPath)
-		parseIcon:Dock(RIGHT)
-		parseIcon:DockMargin(2, 2, 2, 2)
-		parseIcon:SetImage("icon16/accept.png")
-		parseIcon:SizeToContents()
+	local ParseIcon = Menu:AddPanel("DImage")
+		Panel.ParseIcon = ParseIcon
+		ParseIcon:SetParent(SoundPath)
+		ParseIcon:Dock(RIGHT)
+		ParseIcon:DockMargin(2, 2, 2, 2)
+		ParseIcon:SetImage("icon16/accept.png")
+		ParseIcon:SizeToContents()
 
-	local removeBtn = Menu:AddPanel("DImageButton")
-		removeBtn:SetParent(top_panel)
-		removeBtn:SetImage( "icon16/delete.png" )
-		removeBtn:SizeToContents()
-		removeBtn:Dock(RIGHT)
-		removeBtn:DockMargin(2, 2, 2, 2)
-		removeBtn:Center()
-		removeBtn:SetTooltip("Remove this sound.")
-		removeBtn.DoClick = function()
+	local RemoveBtn = Menu:AddPanel("DImageButton")
+		RemoveBtn:SetParent(TopPanel)
+		RemoveBtn:SetImage( "icon16/delete.png" )
+		RemoveBtn:SizeToContents()
+		RemoveBtn:Dock(RIGHT)
+		RemoveBtn:DockMargin(2, 2, 2, 2)
+		RemoveBtn:Center()
+		RemoveBtn:SetTooltip("Remove this sound.")
+		RemoveBtn.DoClick = function()
 			-- TODO(TMF): Have it do a popup modal prompting for removal before executing this function!
 			-- Don't remove the last item
-			if #panels == 1 then
-				removeBtn.DoClick = function() end
+			if #Panels == 1 then
+				RemoveBtn.DoClick = function() end
 				return
 			end
 
-			-- Move the label number of the other panels up to compensate
-			for k in ipairs(panels) do
-				panel.id = k
-				numLabel.id = id
-				numLabel:SetText(numLabel.id .. " = ")
+			-- Move the label number of the other Panels up to compensate
+			for k in ipairs(Panels) do
+				Panel.ID = k
+				NumLabel.ID = ID
+				NumLabel:SetText(NumLabel.ID .. " = ")
 			end
 
-			local id = panel.id
-			panels[id]:Remove()
-			table.remove(panels, id)
+			local ID = Panel.ID
+			Panels[ID]:Remove()
+			table.remove(Panels, ID)
 
-			addBtn:SetEnabled(true) -- Reenable our button
+			AddBtn:SetEnabled(true) -- Reenable our button
 		end
 
-	local searchBtn = Menu:AddPanel("DImageButton")
-		searchBtn:SetParent(top_panel)
-		searchBtn:SetImage("icon16/application_view_list.png")
-		searchBtn:SizeToContents()
-		searchBtn:Dock(RIGHT)
-		searchBtn:DockMargin(2, 2, 2, 2)
-		searchBtn:Center()
-		searchBtn:SetTooltip("Open sound browser.")
-		searchBtn.DoClick = function()
+	local SearchBtn = Menu:AddPanel("DImageButton")
+		SearchBtn:SetParent(TopPanel)
+		SearchBtn:SetImage("icon16/application_view_list.png")
+		SearchBtn:SizeToContents()
+		SearchBtn:Dock(RIGHT)
+		SearchBtn:DockMargin(2, 2, 2, 2)
+		SearchBtn:Center()
+		SearchBtn:SetTooltip("Open sound browser.")
+		SearchBtn.DoClick = function()
 			RunConsoleCommand("wire_sound_browser_open")
 		end
 
-	local pitchLabel = Menu:AddPanel("DLabel")
-		pitchLabel:SetParent(bottom_panel)
-		pitchLabel:SetFont("ACF_Control")
-		pitchLabel:SetText("Pitch:")
-		pitchLabel:Dock(LEFT)
-		pitchLabel:DockMargin(4, 0, -28, 0)
-		pitchLabel:SetColor(color_black)
+	local PitchLabel = Menu:AddPanel("DLabel")
+		PitchLabel:SetParent(BottomPanel)
+		PitchLabel:SetFont("ACF_Control")
+		PitchLabel:SetText("Pitch:")
+		PitchLabel:Dock(LEFT)
+		PitchLabel:DockMargin(4, 0, -28, 0)
+		PitchLabel:SetColor(color_black)
 
-	local pitch = Menu:AddPanel("DNumberWang")
-		panel.pitch = pitch
-		pitch:SetParent(bottom_panel)
-		pitch:SetTall(ButtonHeight)
-		pitch:SetMinMax(0, 255)
-		pitch:SetValue(100)
-		pitch:Dock(LEFT)
-		pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
-		pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+	local Pitch = Menu:AddPanel("DNumberWang")
+		Panel.Pitch = Pitch
+		Pitch:SetParent(BottomPanel)
+		Pitch:SetTall(ButtonHeight)
+		Pitch:SetMinMax(0, 255)
+		Pitch:SetValue(100)
+		Pitch:Dock(LEFT)
+		Pitch:SetTooltip("Set the pitch of your sound to play at this exact RPM")
+		Pitch:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 
-	local volumeLabel = Menu:AddPanel("DLabel")
-		volumeLabel:SetParent(bottom_panel)
-		volumeLabel:SetFont("ACF_Control")
-		volumeLabel:SetText("Volume:")
-		volumeLabel:Dock(LEFT)
-		volumeLabel:DockMargin(4, 0, -16, 0)
-		volumeLabel:SetColor(color_black)
+	local VolumeLabel = Menu:AddPanel("DLabel")
+		VolumeLabel:SetParent(BottomPanel)
+		VolumeLabel:SetFont("ACF_Control")
+		VolumeLabel:SetText("Volume:")
+		VolumeLabel:Dock(LEFT)
+		VolumeLabel:DockMargin(4, 0, -16, 0)
+		VolumeLabel:SetColor(color_black)
 
-	local volume = Menu:AddPanel("DNumberWang")
-		panel.volume = volume
-		volume:SetParent(bottom_panel)
-		volume:SetTall(ButtonHeight)
-		volume:SetMinMax(0, 1)
-		volume:SetDecimals(2)
-		volume:SetInterval(0.01)
-		volume:SetFraction(0.01)
-		volume:SetValue(1)
-		volume:Dock(LEFT)
-		volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
-		volume:SetWide(40) -- Equivalent to 000 w/ decimal point + up/down buttons at font size = 16 + padding
+	local Volume = Menu:AddPanel("DNumberWang")
+		Panel.Volume = Volume
+		Volume:SetParent(BottomPanel)
+		Volume:SetTall(ButtonHeight)
+		Volume:SetMinMax(0, 1)
+		Volume:SetDecimals(2)
+		Volume:SetInterval(0.01)
+		Volume:SetFraction(0.01)
+		Volume:SetValue(1)
+		Volume:Dock(LEFT)
+		Volume:SetTooltip("Set the volume of your sound to play at this exact RPM")
+		Volume:SetWide(40) -- Equivalent to 000 w/ decimal point + up/down buttons at font size = 16 + padding
 
-	local widthLabel = Menu:AddPanel("DLabel")
-		widthLabel:SetParent(bottom_panel)
-		widthLabel:SetFont("ACF_Control")
-		widthLabel:SetText("Width:")
-		widthLabel:Dock(LEFT)
-		widthLabel:DockMargin(4, 0, -24, 0)
-		widthLabel:SetColor(color_black)
+	local WidthLabel = Menu:AddPanel("DLabel")
+		WidthLabel:SetParent(BottomPanel)
+		WidthLabel:SetFont("ACF_Control")
+		WidthLabel:SetText("Width:")
+		WidthLabel:Dock(LEFT)
+		WidthLabel:DockMargin(4, 0, -24, 0)
+		WidthLabel:SetColor(color_black)
 
-	local width = Menu:AddPanel("DNumberWang")
-		panel.width = width
-		width:SetParent(bottom_panel)
-		width:SetTall(ButtonHeight)
-		width:SetMinMax(0, 16)
-		width:Dock(LEFT)
-		width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
-		width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
+	local Width = Menu:AddPanel("DNumberWang")
+		Panel.Width = Width
+		Width:SetParent(BottomPanel)
+		Width:SetTall(ButtonHeight)
+		Width:SetMinMax(0, 16)
+		Width:Dock(LEFT)
+		Width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
+		Width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
-	table.insert(panels, panel)
-	return panel
+	table.insert(Panels, Panel)
+	return Panel
 end
 
 -- Build the panels according to our selection
-local function doPanel(Num, Menu)
-	local case = {
+local function BuildPanelsFromSelection(Num, Menu)
+	local Case = {
 		-- I explictly gave these their numeric keys so its easier to infer which panel we're working with
 		-- First panel, Generic - One sound. Old menu with text entry for a single sound
 		[1] = function ()
@@ -256,7 +256,7 @@ local function doPanel(Num, Menu)
 			Menu:AddLabel("This is the second panel, I don't know what to add here yet but you can imagine its gonna be something nice, so stay tuned!")
 
 		end,
-		-- Third panel, Engines - Simple interpolated. New menu with a slider that creates N amount of text entries to put the sound paths
+		-- Third panel, Engines - Simple interpolated. New menu with a Slider that creates N amount of text entries to put the sound paths
 		-- Layout is similar to the first option
 		[3] = function()
 			Menu:AddLabel("This is the third panel, I don't know what to add here yet but you can imagine its gonna be something fantastic, so stay tuned!")
@@ -292,23 +292,23 @@ local function doPanel(Num, Menu)
 				end
 
 			-- The panel for the rest 
-			local mainPanel = Menu:AddPanel("DPanel")
+			local MainPanel = Menu:AddPanel("DPanel")
 			-- TODO(TMF): Allow this panel to save and load the values that the user has placed!
-			panels = nil
-			panels = {} -- Reset the panels table
-			mainPanel:SizeToContents()
-			mainPanel:SetTall(200)
+			Panels = nil
+			Panels = {} -- Reset the panels table
+			MainPanel:SizeToContents()
+			MainPanel:SetTall(200)
 
 			-- I am unable to have the graph to accomodate itself to the bottom of this list dynamically, so instead i put it to be at the top
-			local top_panel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
-				top_panel:SetParent(mainPanel)
-				top_panel:SetText("")
-				top_panel:Dock(FILL)
-				top_panel:DockMargin(0, 0, 0, 0)
-				top_panel.Paint = function() end
+			local TopPanel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
+				TopPanel:SetParent(MainPanel)
+				TopPanel:SetText("")
+				TopPanel:Dock(FILL)
+				TopPanel:DockMargin(0, 0, 0, 0)
+				TopPanel.Paint = function() end
 
-			local _ = Menu:AddPanel("DPanel")
-				_:SetParent(top_panel)
+			local _ = Menu:AddPanel("DPanel") -- Nameless panel just so it i can properly fit these fucking panels
+				_:SetParent(TopPanel)
 				_:SetText("")
 				_:SetTall(24)
 				_:Dock(TOP)
@@ -316,98 +316,98 @@ local function doPanel(Num, Menu)
 				_:SetWide(Wide)
 				_.Paint = function() end
 
-			local bottom_panel = Menu:AddPanel("DPanel") -- Same here...
-				bottom_panel:SetParent(mainPanel)
-				bottom_panel:SetText("")
-				bottom_panel:Dock(BOTTOM)
-				bottom_panel:DockMargin(0, 0, 0, 0)
-				bottom_panel.Paint = function() end
+			local BottomPanel = Menu:AddPanel("DPanel") -- Same here...
+				BottomPanel:SetParent(MainPanel)
+				BottomPanel:SetText("")
+				BottomPanel:Dock(BOTTOM)
+				BottomPanel:DockMargin(0, 0, 0, 0)
+				BottomPanel.Paint = function() end
 
-			local idleLabel = Menu:AddPanel("DLabel")
-				idleLabel:SetParent(_)
-				idleLabel:SetText("Idle:")
-				idleLabel:Dock(LEFT)
-				idleLabel:DockMargin(4, 0, 0, 0)
-				idleLabel:SetColor(color_black)
+			local IdleLabel = Menu:AddPanel("DLabel")
+				IdleLabel:SetParent(_)
+				IdleLabel:SetText("Idle:")
+				IdleLabel:Dock(LEFT)
+				IdleLabel:DockMargin(4, 0, 0, 0)
+				IdleLabel:SetColor(color_black)
 
-			local idle = Menu:AddPanel("DNumberWang")
-				idle:SetParent(_)
-				idle:SetMinMax(100, 2000)
-				idle:SetValue(idle:GetMin())
-				idle:Dock(LEFT)
-				idle:DockMargin(-40, 0, 0, 0)
-				idle:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
+			local Idle = Menu:AddPanel("DNumberWang")
+				Idle:SetParent(_)
+				Idle:SetMinMax(0, 2000)
+				Idle:SetValue(Idle:GetMin())
+				Idle:Dock(LEFT)
+				Idle:DockMargin(-40, 0, 0, 0)
+				Idle:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 
-			local redlineLabel = Menu:AddPanel("DLabel")
-				redlineLabel:SetParent(_)
-				redlineLabel:SetText("Redline:")
-				redlineLabel:Dock(LEFT)
-				redlineLabel:DockMargin(4, 0, 0, 0)
-				redlineLabel:SetColor(color_black)
+			local RedlineLabel = Menu:AddPanel("DLabel")
+				RedlineLabel:SetParent(_)
+				RedlineLabel:SetText("Redline:")
+				RedlineLabel:Dock(LEFT)
+				RedlineLabel:DockMargin(4, 0, 0, 0)
+				RedlineLabel:SetColor(color_black)
 
-			local redline = Menu:AddPanel("DNumberWang")
-				redline:SetParent(_)
-				redline:SetMinMax(idle:GetValue(), 16383)
-				redline:SetValue(idle:GetValue() + 1000)
-				redline:Dock(LEFT)
-				redline:DockMargin(-24, 0, 0, 0)
-				redline:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-
-			-- Made it global for now, this is dumb
-			graphPanel = Menu:AddGraph()
-				graphPanel:SetParent(top_panel)
-				graphPanel:SetPos(graphPanel:GetX(), graphPanel:GetY() + (32 * #panels))
-				graphPanel:SetXLabel("RPM")
-				graphPanel:SetYLabel("Pitch/Volume")
-				graphPanel:SetXSpacing(1000)
-				graphPanel:SetYSpacing(100)
-				graphPanel:SetFidelity(10)
-				graphPanel:Dock(FILL)
-				graphPanel:DockMargin(4, 0, 4, 2)
-
-			local slider = Menu:AddSlider("RPM", idle:GetValue(), redline:GetValue())
-				slider:SetParent(top_panel)
-				slider:Dock(BOTTOM)
-				slider:DockMargin(4, 0, 4, 0)
-
-			local numLabel = Menu:AddLabel("N°")
-				numLabel:SetParent(bottom_panel)
-				numLabel:Dock(LEFT)
-				numLabel:DockMargin(4, 0, 0, 0)
-				numLabel:SetColor(color_black)
-
-			local rpmLabel = Menu:AddLabel("RPM")
-				rpmLabel:SetParent(bottom_panel)
-				rpmLabel:Dock(LEFT)
-				rpmLabel:DockMargin(-36, 0, 0, 0)
-				rpmLabel:SetColor(color_black)
-
-			local pathLabel = Menu:AddLabel("Sound Path")
-				pathLabel:SetParent(bottom_panel)
-				pathLabel:Dock(LEFT)
-				pathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
-				pathLabel:SetColor(color_black)
+			local Redline = Menu:AddPanel("DNumberWang")
+				Redline:SetParent(_)
+				Redline:SetMinMax(Idle:GetValue(), 16383)
+				Redline:SetValue(Idle:GetValue() + 1000)
+				Redline:Dock(LEFT)
+				Redline:DockMargin(-24, 0, 0, 0)
+				Redline:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 
 			-- Made it global for now, this is dumb
-			addBtn = Menu:AddPanel("DImageButton")
-				addBtn:SetParent(bottom_panel)
-				addBtn:SetImage("icon16/add.png")
-				addBtn:SizeToContents()
-				addBtn:Dock(RIGHT)
-				addBtn:DockMargin(2, 2, 2, 2)
-				addBtn:SetTooltip("Add a new sound.")
-				addBtn.DoClick = function()
-					if #panels >= _MAXSOUNDS then addBtn:SetEnabled(false) return end -- Disable the button if enough panels exist already
-					addComplexPanel(Menu)
+			GraphPanel = Menu:AddGraph()
+				GraphPanel:SetParent(TopPanel)
+				GraphPanel:SetPos(GraphPanel:GetX(), GraphPanel:GetY() + (32 * #Panels))
+				GraphPanel:SetXLabel("RPM")
+				GraphPanel:SetYLabel("Pitch/Volume")
+				GraphPanel:SetXSpacing(1000)
+				GraphPanel:SetYSpacing(100)
+				GraphPanel:SetFidelity(10)
+				GraphPanel:Dock(FILL)
+				GraphPanel:DockMargin(4, 0, 4, 2)
+
+			local RPMSlider = Menu:AddSlider("RPM", Idle:GetValue(), Redline:GetValue())
+				RPMSlider:SetParent(TopPanel)
+				RPMSlider:Dock(BOTTOM)
+				RPMSlider:DockMargin(4, 0, 4, 0)
+
+			local NumLabel = Menu:AddLabel("N°")
+				NumLabel:SetParent(BottomPanel)
+				NumLabel:Dock(LEFT)
+				NumLabel:DockMargin(4, 0, 0, 0)
+				NumLabel:SetColor(color_black)
+
+			local RpmLabel = Menu:AddLabel("RPM")
+				RpmLabel:SetParent(BottomPanel)
+				RpmLabel:Dock(LEFT)
+				RpmLabel:DockMargin(-36, 0, 0, 0)
+				RpmLabel:SetColor(color_black)
+
+			local PathLabel = Menu:AddLabel("Sound Path")
+				PathLabel:SetParent(BottomPanel)
+				PathLabel:Dock(LEFT)
+				PathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
+				PathLabel:SetColor(color_black)
+
+			-- Made it global for now, this is dumb
+			AddBtn = Menu:AddPanel("DImageButton")
+				AddBtn:SetParent(BottomPanel)
+				AddBtn:SetImage("icon16/add.png")
+				AddBtn:SizeToContents()
+				AddBtn:Dock(RIGHT)
+				AddBtn:DockMargin(2, 2, 2, 2)
+				AddBtn:SetTooltip("Add a new sound.")
+				AddBtn.DoClick = function()
+					if #Panels >= _MAXSOUNDS then AddBtn:SetEnabled(false) return end -- Disable the button if enough panels exist already
+					AddComplexPanel(Menu)
 				end
 
 			-- Add the first panel if none exists
-			if #panels == 0 then addComplexPanel(Menu) end
+			if #Panels == 0 then AddComplexPanel(Menu) end
 		end
 	}
 
-	local switch = case[Num]
-	switch()
+	local Switch = Case[Num]
+	Switch()
 end
 
 --- Generates the menu used in the Sound Replacer tool.
@@ -417,19 +417,19 @@ function ACF.CreateSoundMenu(Panel)
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
 
-	local optionSelectionBox = Menu:AddPanel("DComboBox")
-	optionSelectionBox:SetText("Select an Option...")
-	optionSelectionBox:Dock(TOP)
-	optionSelectionBox:SetTall(ButtonHeight)
-	optionSelectionBox:AddChoice("Generic - One sound. ")
-	optionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ")
-	optionSelectionBox:AddChoice("Engines - Simple interpolated. ")
-	optionSelectionBox:AddChoice("Engines - Custom interpolated. ")
-	optionSelectionBox.OnSelect = function(_, index, _)
+	local OptionSelectionBox = Menu:AddPanel("DComboBox")
+	OptionSelectionBox:SetText("Select an Option...")
+	OptionSelectionBox:Dock(TOP)
+	OptionSelectionBox:SetTall(ButtonHeight)
+	OptionSelectionBox:AddChoice("Generic - One sound. ")
+	OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ")
+	OptionSelectionBox:AddChoice("Engines - Simple interpolated. ")
+	OptionSelectionBox:AddChoice("Engines - Custom interpolated. ")
+	OptionSelectionBox.OnSelect = function(_, Index, _)
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
 		-- Build the panels according to our selection
-		doPanel(index, Menu)
+		BuildPanelsFromSelection(Index, Menu)
 		Menu:EndTemporal(Panel)
 	end
 end
