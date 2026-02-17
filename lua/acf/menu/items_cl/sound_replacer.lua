@@ -1,12 +1,11 @@
+local ACF = ACF
 local Sounds = ACF.Utilities.Sounds
 
-local Panels = {}
+local Current = {Panels = {}, }
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local AddBtn -- Dumb glocals cause i can't pattern!
-local GraphPanel
 
 local function AddComplexPanel(Menu)
-	local ID = #Panels + 1
+	local ID = #Current.Panels + 1
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 
@@ -38,7 +37,6 @@ local function AddComplexPanel(Menu)
 		NumLabel:Dock(LEFT)
 		NumLabel:DockMargin(4, 0, -36, 0)
 		NumLabel:SetColor(color_black)
-		NumLabel.ID = ID
 
 	local Rpm = Menu:AddPanel("DNumberWang")
 		Rpm:SetParent(TopPanel)
@@ -91,23 +89,22 @@ local function AddComplexPanel(Menu)
 		RemoveBtn.DoClick = function()
 			-- TODO(TMF): Have it do a popup modal prompting for removal before executing this function!
 			-- Don't remove the last item
-			if #Panels == 1 then
+			if #Current.Panels == 1 then
 				RemoveBtn.DoClick = function() end
 				return
 			end
 
 			-- Move the label number of the other Panels up to compensate
-			for k in ipairs(Panels) do
+			for k in ipairs(Current.Panels) do
 				Panel.ID = k
-				NumLabel.ID = ID
-				NumLabel:SetText(NumLabel.ID .. " = ")
+				NumLabel:SetText(Panel.ID .. " = ")
 			end
 
 			local ID = Panel.ID
-			Panels[ID]:Remove()
-			table.remove(Panels, ID)
+			Current.Panels[ID]:Remove()
+			table.remove(Current.Panels, ID)
 
-			AddBtn:SetEnabled(true) -- Reenable our button
+			--AddBtn:SetEnabled(true) -- Reenable our button
 		end
 
 	local SearchBtn = Menu:AddPanel("DImageButton")
@@ -178,19 +175,18 @@ local function AddComplexPanel(Menu)
 		Width:SetTooltip("Widens the curve of the sound, making it pitch up sooner/later in the curve") -- Better description for this!
 		Width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
-	table.insert(Panels, Panel)
+	table.insert(Current.Panels, Panel)
 	return Panel
 end
 
 -- Build the panels according to our selection
 local function BuildPanelsFromSelection(Num, Menu)
+	local Wide = Menu:GetWide()
+	local ButtonHeight = 20
 	local Case = {
 		-- I explictly gave these their numeric keys so its easier to infer which panel we're working with
 		-- First panel, Generic - One sound. Old menu with text entry for a single sound
 		[1] = function ()
-			local Wide = Menu:GetWide()
-			local ButtonHeight = 20
-
 			Menu:AddLabel("This is the first panel, I don't know what to add here yet but you can imagine its gonna be something good, so stay tuned!")
 
 			local SoundNameText = Menu:AddPanel("DTextEntry")
@@ -255,6 +251,14 @@ local function BuildPanelsFromSelection(Num, Menu)
 		[2] = function()
 			Menu:AddLabel("This is the second panel, I don't know what to add here yet but you can imagine its gonna be something nice, so stay tuned!")
 
+			local KoolWackyClientPanelThang = Menu:AddPanel("DPanel")
+
+			local SliderX = Menu:AddSlider()
+			SliderX:SetParent(KoolWackyClientPanelThang)
+
+			--local Min = 0
+			--local Max = 16383
+
 		end,
 		-- Third panel, Engines - Simple interpolated. New menu with a Slider that creates N amount of text entries to put the sound paths
 		-- Layout is similar to the first option
@@ -267,31 +271,122 @@ local function BuildPanelsFromSelection(Num, Menu)
 		[4] = function()
 			Menu:AddLabel("This is the fourth panel, I don't know what to add here yet but you can imagine its gonna be something mindblowing, so stay tuned!")
 
-			-- Adding these before the main panel shit happens
+			-- The menu is divided in two groups
+			-- The top group where the graph lies
+			local GraphGroup = Menu:AddCollapsible("Graph", nil, "icon16/chart_curve_edit.png")
+			local GraphPanel = Menu:AddPanel("DPanel")
+			local LabelTop = Menu:AddLabel()
+			local SoundGraph = Menu:AddGraph()
+			local PanelBottom = Menu:AddPanel("ACF_Panel")
+			local IdleLabel = Menu:AddLabel("Idle:")
+			local IdleWang = Menu:AddPanel("DNumberWang", 0, 2000)
+			local RedlineLabel = Menu:AddLabel("Redline:")
+			local RedlineWang = Menu:AddPanel("DNumberWang", 0, 16383)
+			local RPMSlider = Menu:AddSlider("RPM", 0, 16383)
 			local SoundPre = Menu:AddPanel("ACF_Panel")
-				SoundPre:SetWide(Wide)
-				SoundPre:SetTall(ButtonHeight)
-
 			local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
-				SoundPrePlay:SetIcon("icon16/sound.png")
-				SoundPrePlay.DoClick = function()
-					-- Do something here to play them sounds!
-				end
+			local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters
 
-			-- Playing a silent sound will mute the preview but not the sound emitters.
-			local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav")
-				SoundPreStop:SetIcon("icon16/sound_mute.png")
+			-- The properties
+			GraphGroup:DockMargin(0, 0, 0, 0)
+			GraphPanel:SetParent(GraphGroup)
+			GraphPanel:DockPadding(4, 4, 4, 8)
+			GraphPanel:Dock(TOP)
+			GraphPanel:SetTall(368) -- Why can't this grow dynamically 
+			LabelTop:SetParent(GraphPanel)
+			LabelTop:Dock(TOP)
+			SoundGraph:SetParent(GraphPanel)
+			SoundGraph:Dock(TOP)
+			SoundGraph:SetTall(192)
+			PanelBottom:SetParent(GraphPanel)
+			PanelBottom:Dock(TOP)
+			PanelBottom:DockPadding(0, 4, 4, -4)
+			PanelBottom:SetTall(34)
 
-				-- Set the Play/Stop button positions here
-				SoundPre:InvalidateLayout(true)
-				SoundPre.PerformLayout = function()
-					local HWide = SoundPre:GetWide() / 2
-					SoundPrePlay:SetSize(HWide, ButtonHeight)
-					SoundPrePlay:Dock(LEFT)
-					SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which the previous button didn't
-				end
+			IdleLabel:SetParent(PanelBottom)
+			IdleLabel:Dock(LEFT)
+			IdleWang:SetParent(PanelBottom)
+			IdleWang:Dock(LEFT)
+			IdleWang:SetClientData("Idle", "OnValueChanged")
+			IdleWang:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetMinMax(0, 2000) -- I shouldn't even need to do this!
+				Panel:SetValue(Value)
+				Current.Idle = Value
 
-			-- The panel for the rest 
+				return Value
+			end)
+
+			RedlineLabel:SetParent(PanelBottom)
+			RedlineLabel:Dock(LEFT)
+			RedlineLabel:DockMargin(8, 4, 0, 0) -- Fucking retarded
+			RedlineWang:SetParent(PanelBottom)
+			RedlineWang:Dock(LEFT)
+			RedlineWang:SetClientData("Redline", "OnValueChanged")
+			RedlineWang:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetMin(Current.Idle or 1)
+				Panel:SetMax(16383)
+				Panel:SetValue(Value)
+				Current.Redline = Value
+
+				return Value
+			end)
+
+			RPMSlider:SetParent(GraphPanel)
+			RPMSlider:Dock(TOP)
+			RPMSlider:SetWide(Wide)
+			RPMSlider:SetClientData("RPMSlider", "OnValueChanged")
+			RPMSlider:DefineSetter(function(Panel, _, _, Value)
+				local Min = Current.Idle or 0
+				local Max = Current.Redline or 1
+
+				Panel:SetMin(Min)
+				Panel:SetMax(Max)
+				Panel:SetValue(Value)
+				Current.RPM = Value
+
+				return Value
+			end)
+
+			SoundPre:SetParent(GraphPanel)
+			SoundPre:SetWide(Wide)
+			SoundPre:SetTall(ButtonHeight)
+			SoundPrePlay:SetIcon("icon16/sound.png")
+			SoundPrePlay.DoClick = function()
+				-- Do something here to play them sounds!
+			end
+			SoundPreStop:SetIcon("icon16/sound_mute.png")
+
+			-- Set the Play/Stop button positions here
+			SoundPre:InvalidateLayout(true)
+			SoundPre.PerformLayout = function()
+				local HWide = SoundPre:GetWide() / 2
+				SoundPrePlay:SetSize(HWide, ButtonHeight)
+				SoundPrePlay:Dock(LEFT)
+				SoundPreStop:Dock(FILL) -- FILL will cover the remaining space which the previous button didn't
+			end
+
+			-- The bottom group where the panels are added and removed dynamically
+			local ValuesGroup = Menu:AddCollapsible("Values", nil, "icon16/application_double.png")
+			--ValuesGroup:SetTall(96)
+
+			local AddValue = Menu:AddPanel("DImageButton")
+			AddValue:SetParent(ValuesGroup)
+			AddValue:SetImage("icon16/add.png")
+			AddValue:SetSize(ButtonHeight, ButtonHeight)
+			AddValue:Dock(BOTTOM)
+			AddValue:DockMargin(2, 2, 2, 2)
+			AddValue:SetTooltip("Add a new sound.")
+			AddValue.DoClick = function()
+				if #Current.Panels >= _MAXSOUNDS then AddValue:SetEnabled(false) return end -- Disable the button if enough panels exist already
+				AddComplexPanel(ValuesGroup)
+			end
+
+			function ValuesGroup.PerformLayout()
+				AddValue:Center()
+				AddValue:SetPos(0, 92 * #Current.Panels or 1)
+			end
+
+			--[[
 			local MainPanel = Menu:AddPanel("DPanel")
 			-- TODO(TMF): Allow this panel to save and load the values that the user has placed!
 			Panels = nil
@@ -403,6 +498,7 @@ local function BuildPanelsFromSelection(Num, Menu)
 
 			-- Add the first panel if none exists
 			if #Panels == 0 then AddComplexPanel(Menu) end
+		]]--
 		end
 	}
 
