@@ -4,7 +4,7 @@ local Sounds = ACF.Utilities.Sounds
 local Current = {Panels = {}, }
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
 
-local function AddComplexPanel(Menu)
+--[[local function AddValuePanel(Menu)
 	local ID = #Current.Panels + 1
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
@@ -15,7 +15,8 @@ local function AddComplexPanel(Menu)
 		Panel:SetText("")
 		Panel:Dock(TOP)
 		Panel:DockMargin(0, -5, 0, 10)
-		Panel.ID = ID
+		Menu:Dock(FILL)
+		Current.Panels.ID = ID
 
 	local TopPanel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to.
 		TopPanel:SetParent(Panel)
@@ -33,7 +34,7 @@ local function AddComplexPanel(Menu)
 	local NumLabel = Menu:AddPanel("DLabel")
 		NumLabel:SetParent(TopPanel)
 		NumLabel:SetFont("ACF_Control")
-		NumLabel:SetText(Panel.ID .. " = ")
+		NumLabel:SetText(Current.Panels.ID .. " = ")
 		NumLabel:Dock(LEFT)
 		NumLabel:DockMargin(4, 0, -36, 0)
 		NumLabel:SetColor(color_black)
@@ -46,7 +47,7 @@ local function AddComplexPanel(Menu)
 		Rpm:SetValue(1000 * ID)
 		Rpm:Dock(LEFT)
 		Rpm:DockMargin(0, 0, 2, 0)
-		Panel.RPM = Rpm
+		Current.Panels.RPM = Rpm
 
 	local SoundPath = Menu:AddPanel("DTextEntry")
 		SoundPath:SetParent(TopPanel)
@@ -56,7 +57,7 @@ local function AddComplexPanel(Menu)
 		SoundPath:SetMultiline(false)
 		SoundPath:Dock(FILL)
 		SoundPath:DockMargin(0, 0, 2, 0)
-		Panel.SoundPath = SoundPath
+		Current.Panels.SoundPath = SoundPath
 		SoundPath.OnChange = function()
 			local isValid = Sounds.IsValidSound
 			local value = SoundPath:GetValue()
@@ -96,11 +97,11 @@ local function AddComplexPanel(Menu)
 
 			-- Move the label number of the other Panels up to compensate
 			for k in ipairs(Current.Panels) do
-				Panel.ID = k
-				NumLabel:SetText(Panel.ID .. " = ")
+				Current.Panels.ID = k
+				NumLabel:SetText(Current.Panels.ID .. " = ")
 			end
 
-			local ID = Panel.ID
+			local ID = Current.Panels.ID
 			Current.Panels[ID]:Remove()
 			table.remove(Current.Panels, ID)
 
@@ -128,7 +129,7 @@ local function AddComplexPanel(Menu)
 		PitchLabel:SetColor(color_black)
 
 	local Pitch = Menu:AddPanel("DNumberWang")
-		Panel.Pitch = Pitch
+		Current.Panels.Pitch = Pitch
 		Pitch:SetParent(BottomPanel)
 		Pitch:SetTall(ButtonHeight)
 		Pitch:SetMinMax(0, 255)
@@ -146,7 +147,7 @@ local function AddComplexPanel(Menu)
 		VolumeLabel:SetColor(color_black)
 
 	local Volume = Menu:AddPanel("DNumberWang")
-		Panel.Volume = Volume
+		Current.Panels.Volume = Volume
 		Volume:SetParent(BottomPanel)
 		Volume:SetTall(ButtonHeight)
 		Volume:SetMinMax(0, 1)
@@ -167,7 +168,7 @@ local function AddComplexPanel(Menu)
 		WidthLabel:SetColor(color_black)
 
 	local Width = Menu:AddPanel("DNumberWang")
-		Panel.Width = Width
+		Current.Panels.Width = Width
 		Width:SetParent(BottomPanel)
 		Width:SetTall(ButtonHeight)
 		Width:SetMinMax(0, 16)
@@ -176,11 +177,167 @@ local function AddComplexPanel(Menu)
 		Width:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 
 	table.insert(Current.Panels, Panel)
+	PrintTable(Current)
+	return Panel
+end]]--
+
+local function AddValuePanel(Menu)
+	local ID = #Current.Panels + 1
+	--local Wide = Menu:GetWide()
+	local ButtonHeight = 20
+
+	local _, ValueGroup = Menu:AddCollapsible()
+	local Panel = Menu:AddPanel("DPanel")
+	local TopDiv = Menu:AddPanel("ACF_Panel") -- This is equivalent to a HTML's Div, just here to parent other children to.
+	local BotDiv = Menu:AddPanel("ACF_Panel") -- This is equivalent to a HTML's Div, just here to parent other children to.
+	local RPMWang, RPMLabel = Menu:AddNumberWang("RPM:", 0, 16383, 0)
+	local _, PathLabel, PathText = Menu:AddTextEntry("Path:")
+	local ParseIcon = Menu:AddPanel("DImage")
+	local RemoveButton = Menu:AddPanel("DImageButton")
+	local SearchButton = Menu:AddPanel("DImageButton")
+
+	local PitchWang, PitchLabel = Menu:AddNumberWang("Pitch:", 0, 255, 0)
+	local VolumeWang, VolumeLabel = Menu:AddNumberWang("Volume:", 0, 1, 2)
+	local WidthWang, WidthLabel = Menu:AddNumberWang("Width:", 0, 15, 0)
+
+	ValueGroup:DockMargin(0, 0, 0, 0)
+	ValueGroup:SetLabel("Value " .. ID)
+
+	Panel:SetParent(ValueGroup)
+	Panel:SetTall(72)
+	Panel:DockPadding(4, 6, 4, 0)
+	Panel:DockMargin(0, 0, 0, 0)
+
+	TopDiv:SetParent(Panel)
+	TopDiv:Dock(TOP)
+
+	BotDiv:SetParent(Panel)
+	BotDiv:Dock(BOTTOM)
+
+	RPMLabel:SetParent(TopDiv)
+	RPMLabel:DockMargin(0, 0, 0, 0)
+	RPMLabel:Dock(LEFT)
+
+	RPMWang:SetParent(TopDiv)
+	RPMWang:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
+	RPMWang:DockMargin(-30, 0, 0, 0)
+	RPMWang:Dock(LEFT)
+	RPMWang:SetClientData("RPM " .. ID, "OnValueChanged")
+	RPMWang:DefineSetter(function(Panel, _, _, Value)
+		Current.Panels[ID].RPM = Value
+		return Value, Panel
+	end)
+
+	PathLabel:SetParent(TopDiv)
+	PathLabel:Dock(LEFT)
+
+	PathText:SetParent(TopDiv)
+	PathText:Dock(FILL)
+	PathText:DockMargin(-25, 0, 0, 0)
+	PathText:SetTall(ButtonHeight)
+	PathText:SetClientData("Path " .. ID, "OnValueChanged")
+	PathText:DefineSetter(function(Panel, _, _, Value)
+		local isValid = Sounds.IsValidSound
+
+		if isValid(Value) then
+			Panel:SetTooltip()
+			ParseIcon:SetImage("icon16/accept.png")
+
+			Current.Panels[ID].Path = Value
+			Current.Panels[ID].LastPath = Value
+			return Value, Panel
+		else
+			Panel:SetTooltip("Invalid sound: File does not exist")
+			ParseIcon:SetImage("icon16/cancel.png")
+			Current.Panels[ID].Path = Current.Panels[ID].LastPath
+		end
+		return false, Panel
+	end)
+
+	ParseIcon:SetParent(PathText)
+	ParseIcon:Dock(RIGHT)
+	ParseIcon:DockMargin(3, 3, 3, 3)
+	ParseIcon:SetImage("icon16/accept.png")
+	ParseIcon:SizeToContents()
+
+	RemoveButton:SetParent(TopDiv)
+	RemoveButton:Center()
+	RemoveButton:Dock(RIGHT)
+	RemoveButton:DockMargin(3, 3, 3, 3)
+	RemoveButton:SetImage("icon16/delete.png")
+	RemoveButton:SetTooltip("Remove this sound.")
+	RemoveButton:SizeToContents()
+	--[[RemoveButton.DoClick = function()
+		-- TODO(TMF): Have it do a popup modal prompting for removal before executing this function!
+		-- Don't remove the last item
+		if #Current.Panels == 1 then
+			RemoveButton.DoClick = function() end
+			return
+		end
+
+		-- Move the label number of the other Panels up to compensate
+		for k, v in ipairs(Current.Panels) do
+			v.ID = k
+			ValueGroup:SetLabel("Value " .. v.ID)
+		end
+
+		local panel = Panel.ID
+		panel[ID]:Remove()
+		table.remove(Current.Panels, ID)
+
+		--AddBtn:SetEnabled(true) -- Reenable our button
+	end]]--
+
+	SearchButton:SetParent(TopDiv)
+	SearchButton:Center()
+	SearchButton:Dock(RIGHT)
+	SearchButton:DockMargin(3, 3, 3, 3)
+	SearchButton:SetImage("icon16/application_view_list.png")
+	SearchButton:SetTooltip("Open sound browser.")
+	SearchButton:SizeToContents()
+	SearchButton.DoClick = function()
+		RunConsoleCommand("wire_sound_browser_open")
+	end
+
+	PitchLabel:SetParent(BotDiv)
+	PitchLabel:Dock(LEFT)
+
+	PitchWang:SetParent(BotDiv)
+	PitchWang:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
+	PitchWang:DockMargin(-30, 0, 4, 0)
+	PitchWang:Dock(LEFT)
+
+	VolumeLabel:SetParent(BotDiv)
+	VolumeLabel:Dock(LEFT)
+
+	VolumeWang:SetParent(BotDiv)
+	VolumeWang:SetWide(40) -- Equivalent to 0.00 + up/down buttons at font size = 16 + padding
+	VolumeWang:DockMargin(-16, 0, 4, 0)
+	VolumeWang:Dock(LEFT)
+
+	WidthLabel:SetParent(BotDiv)
+	WidthLabel:Dock(LEFT)
+
+	WidthWang:SetParent(BotDiv)
+	WidthWang:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
+	WidthWang:DockMargin(-24, 0, 4, 0)
+	WidthWang:Dock(LEFT)
+
+	Panel.ID = ID
+	Panel.RPM = RPMWang:GetValue()
+	Panel.Path = PathText:GetValue()
+	Panel.LastPath = Panel.Path
+
+	table.insert(Current.Panels, {ID = Panel.ID,
+								  RPM = Panel.RPM,
+								  Path = Panel.Path,
+								  LastPath = Path
+								 })
 	return Panel
 end
 
 -- Build the panels according to our selection
-local function BuildPanelsFromSelection(Num, Menu)
+local function CreateSubMenu(Num, Menu)
 	local Wide = Menu:GetWide()
 	local ButtonHeight = 20
 	local Case = {
@@ -287,6 +444,13 @@ local function BuildPanelsFromSelection(Num, Menu)
 			local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
 			local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters
 
+			-- Set defaults
+			local DefaultIdle = ACF.GetClientData("Idle", 800)
+			local DefaultRedline = ACF.GetClientData("Redline", 8000)
+			ACF.SetClientData("Idle", DefaultIdle, true)
+			ACF.SetClientData("Redline", DefaultRedline, true)
+			ACF.SetClientData("RPMSlider", (DefaultIdle + DefaultRedline) / 2, true)
+
 			-- The properties
 			GraphGroup:DockMargin(0, 0, 0, 0)
 			GraphPanel:SetParent(GraphGroup)
@@ -367,138 +531,26 @@ local function BuildPanelsFromSelection(Num, Menu)
 
 			-- The bottom group where the panels are added and removed dynamically
 			local ValuesGroup = Menu:AddCollapsible("Values", nil, "icon16/application_double.png")
-			--ValuesGroup:SetTall(96)
+			ValuesGroup:DockMargin(0, 4, 0, 4)
+			local ValuesPanel = Menu:AddPanel("ACF_Panel")
+			ValuesPanel:SetParent(ValuesGroup)
+			ValuesPanel:Dock(TOP)
 
 			local AddValue = Menu:AddPanel("DImageButton")
-			AddValue:SetParent(ValuesGroup)
 			AddValue:SetImage("icon16/add.png")
-			AddValue:SetSize(ButtonHeight, ButtonHeight)
-			AddValue:Dock(BOTTOM)
-			AddValue:DockMargin(2, 2, 2, 2)
 			AddValue:SetTooltip("Add a new sound.")
 			AddValue.DoClick = function()
 				if #Current.Panels >= _MAXSOUNDS then AddValue:SetEnabled(false) return end -- Disable the button if enough panels exist already
-				AddComplexPanel(ValuesGroup)
+				AddValuePanel(ValuesPanel)
 			end
 
 			function ValuesGroup.PerformLayout()
 				AddValue:Center()
-				AddValue:SetPos(0, 92 * #Current.Panels or 1)
+				AddValue:SetSize(16, 16)
 			end
 
-			--[[
-			local MainPanel = Menu:AddPanel("DPanel")
-			-- TODO(TMF): Allow this panel to save and load the values that the user has placed!
-			Panels = nil
-			Panels = {} -- Reset the panels table
-			MainPanel:SizeToContents()
-			MainPanel:SetTall(200)
-
-			-- I am unable to have the graph to accomodate itself to the bottom of this list dynamically, so instead i put it to be at the top
-			local TopPanel = Menu:AddPanel("DPanel") -- This is equivalent to a HTML's Div, just here to parent other children to
-				TopPanel:SetParent(MainPanel)
-				TopPanel:SetText("")
-				TopPanel:Dock(FILL)
-				TopPanel:DockMargin(0, 0, 0, 0)
-				TopPanel.Paint = function() end
-
-			local _ = Menu:AddPanel("DPanel") -- Nameless panel just so i can properly fit these fucking panels
-				_:SetParent(TopPanel)
-				_:SetText("")
-				_:SetTall(24)
-				_:Dock(TOP)
-				_:DockMargin(4, 4, 4, 4)
-				_:SetWide(Wide)
-				_.Paint = function() end
-
-			local BottomPanel = Menu:AddPanel("DPanel") -- Same here...
-				BottomPanel:SetParent(MainPanel)
-				BottomPanel:SetText("")
-				BottomPanel:Dock(BOTTOM)
-				BottomPanel:DockMargin(0, 0, 0, 0)
-				BottomPanel.Paint = function() end
-
-			local IdleLabel = Menu:AddPanel("DLabel")
-				IdleLabel:SetParent(_)
-				IdleLabel:SetText("Idle:")
-				IdleLabel:Dock(LEFT)
-				IdleLabel:DockMargin(4, 0, 0, 0)
-				IdleLabel:SetColor(color_black)
-
-			local Idle = Menu:AddPanel("DNumberWang")
-				Idle:SetParent(_)
-				Idle:SetMinMax(0, 2000)
-				Idle:SetValue(Idle:GetMin())
-				Idle:Dock(LEFT)
-				Idle:DockMargin(-40, 0, 0, 0)
-				Idle:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-
-			local RedlineLabel = Menu:AddPanel("DLabel")
-				RedlineLabel:SetParent(_)
-				RedlineLabel:SetText("Redline:")
-				RedlineLabel:Dock(LEFT)
-				RedlineLabel:DockMargin(4, 0, 0, 0)
-				RedlineLabel:SetColor(color_black)
-
-			local Redline = Menu:AddPanel("DNumberWang")
-				Redline:SetParent(_)
-				Redline:SetMinMax(Idle:GetValue(), 16383)
-				Redline:SetValue(Idle:GetValue() + 1000)
-				Redline:Dock(LEFT)
-				Redline:DockMargin(-24, 0, 0, 0)
-				Redline:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-
-			-- Made it global for now, this is dumb
-			GraphPanel = Menu:AddGraph()
-				GraphPanel:SetParent(TopPanel)
-				GraphPanel:SetPos(GraphPanel:GetX(), GraphPanel:GetY() + (32 * #Panels))
-				GraphPanel:SetXLabel("RPM")
-				GraphPanel:SetYLabel("Pitch/Volume")
-				GraphPanel:SetXSpacing(1000)
-				GraphPanel:SetYSpacing(100)
-				GraphPanel:SetFidelity(10)
-				GraphPanel:Dock(FILL)
-				GraphPanel:DockMargin(4, 0, 4, 2)
-
-			local RPMSlider = Menu:AddSlider("RPM", Idle:GetValue(), Redline:GetValue())
-				RPMSlider:SetParent(TopPanel)
-				RPMSlider:Dock(BOTTOM)
-				RPMSlider:DockMargin(4, 0, 4, 0)
-
-			local NumLabel = Menu:AddLabel("N°")
-				NumLabel:SetParent(BottomPanel)
-				NumLabel:Dock(LEFT)
-				NumLabel:DockMargin(4, 0, 0, 0)
-				NumLabel:SetColor(color_black)
-
-			local RpmLabel = Menu:AddLabel("RPM")
-				RpmLabel:SetParent(BottomPanel)
-				RpmLabel:Dock(LEFT)
-				RpmLabel:DockMargin(-36, 0, 0, 0)
-				RpmLabel:SetColor(color_black)
-
-			local PathLabel = Menu:AddLabel("Sound Path")
-				PathLabel:SetParent(BottomPanel)
-				PathLabel:Dock(LEFT)
-				PathLabel:DockMargin(-12, 5, 0, 0) -- The top margin is fucking bullshit, why wont this align by itself??? :sob: :sob: :sob:
-				PathLabel:SetColor(color_black)
-
-			-- Made it global for now, this is dumb
-			AddBtn = Menu:AddPanel("DImageButton")
-				AddBtn:SetParent(BottomPanel)
-				AddBtn:SetImage("icon16/add.png")
-				AddBtn:SizeToContents()
-				AddBtn:Dock(RIGHT)
-				AddBtn:DockMargin(2, 2, 2, 2)
-				AddBtn:SetTooltip("Add a new sound.")
-				AddBtn.DoClick = function()
-					if #Panels >= _MAXSOUNDS then AddBtn:SetEnabled(false) return end -- Disable the button if enough panels exist already
-					AddComplexPanel(Menu)
-				end
-
-			-- Add the first panel if none exists
-			if #Panels == 0 then AddComplexPanel(Menu) end
-		]]--
+			-- Add the first panel if it none exists
+			if #Current.Panels == 0 then AddValuePanel(ValuesPanel) end
 		end
 	}
 
@@ -525,7 +577,7 @@ function ACF.CreateSoundMenu(Panel)
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
 		-- Build the panels according to our selection
-		BuildPanelsFromSelection(Index, Menu)
+		CreateSubMenu(Index, Menu)
 		Menu:EndTemporal(Panel)
 	end
 end
