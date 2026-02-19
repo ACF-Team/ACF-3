@@ -184,7 +184,7 @@ end
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
 -- https://i.imgur.com/KaFmaMf.png
-local function fade(n, min, mid, max)
+function Sounds.Fade(n, min, mid, max)
 	local _PI = math.pi
 
 	if n < min or n > max then return 0 end
@@ -220,7 +220,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
 		local mid    = RPM
 		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
-		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
+		local curve  = Sounds.Fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
 		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.volume or 1)
 		local pitch  = (RPM / soundTable.rpm) * enginePitch
 
