@@ -20,6 +20,7 @@ do
         HUDType = 1,
         HUDScale = 1,
         HUDColor = Vector(1, 0.5, 0),
+        HUDColor2 = Vector(1, 0.5, 0),
 
         BrakeStrength = 300,
         SpeedTop = 60,

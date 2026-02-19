@@ -58,6 +58,35 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	WireLib.TriggerOutput(self, "Vehicles", {Pod})
 end
 
+-- Show/Hide physical entities when entering/existing seats, if the contraption has auto treads (networking optimization)
+local ShouldHidePhysicalIfExists = {
+	["sent_tanktracks_legacy"] = true,
+	["sent_tanktracks_auto"] = true,
+}
+local function ShowHidePhysicalEntities(Contraption, NoDraw)
+	local ShouldRun = false
+	for _, Class in ipairs(table.GetKeys(Contraption.entsbyclass)) do
+		if ShouldHidePhysicalIfExists[Class] then ShouldRun = true end
+	end
+	if not ShouldRun then return end
+	for ent, _ in pairs(Contraption.ents) do
+		if IsValid(ent) and not IsValid(ent:GetParent()) and not ent.IsACFEntity then ent:SetNoDraw(NoDraw) end
+		if IsValid(ent) and not IsValid(ent:GetParent()) and not ent.IsACFEntity then ent:SetNoDraw(NoDraw) end
+	end
+end
+
+hook.Add("PlayerEnteredVehicle", "ACFHidePhysicalEntities", function(_, Veh)
+	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
+		ShowHidePhysicalEntities(Veh:GetContraption(), true)
+	end
+end)
+
+hook.Add("PlayerLeaveVehicle", "ACFHidePhysicalEntities", function(_, Veh)
+	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
+		ShowHidePhysicalEntities(Veh:GetContraption(), false)
+	end
+end)
+
 -- Exposes Pod to util_sh and other things with a more unique name
 -- frankly, should rename Pod entirely
 function ENT:ACF_GetSeatProxy() return self.Pod end

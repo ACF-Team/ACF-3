@@ -597,6 +597,12 @@ do
 			end
 		end
 
+		-- Handle camera entity selection
+		local Parent1 = IsValid(self:GetCam1Parent()) and self:GetCam1Parent():EntIndex() or 0
+		local Parent2 = IsValid(self:GetCam2Parent()) and self:GetCam2Parent():EntIndex() or 0
+		local Parent3 = IsValid(self:GetCam3Parent()) and self:GetCam3Parent():EntIndex() or 0
+		duplicator.StoreEntityModifier(self, "CamParents", {Parent1, Parent2, Parent3})
+
 		-- Wire dupe info
 		self.BaseClass.PreEntityCopy(self)
 	end
@@ -615,6 +621,14 @@ do
 				end
 				EntMods[Field] = nil
 			end
+		end
+
+		-- Handle camera parent entities
+		if EntMods.CamParents then
+			self:SetCam1Parent(CreatedEntities[EntMods.CamParents[1]])
+			self:SetCam2Parent(CreatedEntities[EntMods.CamParents[2]])
+			self:SetCam3Parent(CreatedEntities[EntMods.CamParents[3]])
+			EntMods.CamParents = nil
 		end
 
 		--Wire dupe info

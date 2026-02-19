@@ -27,6 +27,8 @@ return function(State)
     function UpdateCamera(ply)
         State.CamOffset = State.MyController["GetCam" .. State.Mode .. "Offset"]()
         State.CamOrbit = State.MyController["GetCam" .. State.Mode .. "Orbit"]()
+        State.CamParent = State.MyController["GetCam" .. State.Mode .. "Parent"]()
+        if not IsValid(State.CamParent) then State.CamParent = State.MyController end
 
         net.Start("ACF_Controller_CamInfo", true)
         net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
@@ -67,7 +69,7 @@ return function(State)
         net.SendToServer()
     end)
 
-    local LastFOV = FOV
+    local LastFOV = State.FOV
     hook.Add("PlayerBindPress", "ACFControllerScroll", function(ply, bind, _)
         local delta = bind == "invnext" and 1 or bind == "invprev" and -1 or nil
         if not delta then return end
@@ -99,7 +101,7 @@ return function(State)
         local Pod = Player:GetVehicle()
         if not IsValid(Pod) then return end
 
-        local PreOrbit = State.MyController:LocalToWorld(State.CamOffset)
+        local PreOrbit = State.CamParent:LocalToWorld(State.CamOffset)
         local PostOrbit = PreOrbit - State.CamAng:Forward() * State.CamOrbit
 
         local View = {
