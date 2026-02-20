@@ -105,7 +105,7 @@ do -- Radar Receiver
 			if not k.UseGuidance then continue end -- Don't waste time on missiles that don't have functional guidance
 			if not ValidMissileRadars[k.Guidance] then continue end -- Further filter for anything without radar on the missile itself
 
-			if Countermeasures.ConeContainsPos(k.Position, k:GetForward(), k.ViewCone, ReceiverOrigin) then RadarSource[k] = true end
+			if Countermeasures.ConeContainsPos(k.ACF_Position, k:GetForward(), k.ViewCone, ReceiverOrigin) then RadarSource[k] = true end
 		end
 
 		return RadarSource

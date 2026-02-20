@@ -24,7 +24,7 @@ else
 	end
 
 	function Guidance:SeekTarget(Missile)
-		local Position   = Missile.Position
+		local Position   = Missile.ACF_Position
 		local Targets    = Countermeasures.GetMissilesInCone(Position, Missile:GetForward(), self.SeekCone)
 		local HighestDot = 0
 		local Target, TargetPos
@@ -33,7 +33,7 @@ else
 			if Missile == Entity then continue end
 			if Entity.IsAntiMissile then continue end
 
-			local EntPos   = Entity.Position
+			local EntPos   = Entity.ACF_Position
 			local Distance = Position:DistToSqr(EntPos)
 
 			if Distance < self.MinDistance then continue end
@@ -60,7 +60,7 @@ else
 		end
 
 		local Targets    = Radar.Targets
-		local Position   = Missile.Position
+		local Position   = Missile.ACF_Position
 		local HighestDot = 0
 		local Target, TargetPos
 
@@ -100,7 +100,7 @@ else
 
 		if not IsValid(Target) then return end
 
-		local Position = Target.Position
+		local Position = Target.ACF_Position
 
 		if self.OnRadar then
 			if not Radar then return end
@@ -119,7 +119,7 @@ else
 		local Radar     = self:GetRadar()
 		local TargetPos = self:GetTargetPosition(Radar)
 
-		if TargetPos and self:CheckConeLOS(Missile, Missile.Position, TargetPos, self.ViewConeCos) then
+		if TargetPos and self:CheckConeLOS(Missile, Missile.ACF_Position, TargetPos, self.ViewConeCos) then
 			return { TargetPos = TargetPos, ViewCone = self.ViewCone }
 		end
 

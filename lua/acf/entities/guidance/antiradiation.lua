@@ -28,7 +28,7 @@ else
 	function Guidance:UpdateTarget(Missile)
 		if not next(Radars) then return end
 
-		local Position = Missile.Position
+		local Position = Missile.ACF_Position
 		local HighestDot = 0
 		local Target, TargetPos
 
@@ -69,7 +69,7 @@ else
 	function Guidance:GetGuidance(Missile)
 		local TargetPos = self:GetTargetPosition()
 
-		if TargetPos and self:CheckConeLOS(Missile, Missile.Position, TargetPos, self.ViewConeCos) then
+		if TargetPos and self:CheckConeLOS(Missile, Missile.ACF_Position, TargetPos, self.ViewConeCos) then
 			return { TargetPos = TargetPos, ViewCone = self.ViewCone }
 		end
 

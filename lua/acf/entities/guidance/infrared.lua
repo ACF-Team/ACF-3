@@ -10,13 +10,13 @@ else
 	end
 
 	function Guidance:UpdateTarget(Missile)
-		local Position   = Missile.Position
+		local Position   = Missile.ACF_Position
 		local Targets    = ACF.GetEntitiesInCone(Position, Missile:GetForward(), self.SeekCone)
 		local HighestDot = 0
 		local Target, TargetPos
 
 		for Entity in pairs(Targets) do
-			local EntPos   = Entity.Position
+			local EntPos   = Entity.ACF_Position
 			local Distance = Position:DistToSqr(EntPos)
 
 			if Distance < self.MinDistance then continue end
@@ -41,7 +41,7 @@ else
 
 		if not IsValid(Target) then return end
 
-		return Target.Position
+		return Target.ACF_Position
 	end
 
 	function Guidance:GetGuidance(Missile)
@@ -53,7 +53,7 @@ else
 
 		local TargetPos = self:GetTargetPosition()
 
-		if TargetPos and self:CheckConeLOS(Missile, Missile.Position, TargetPos, self.ViewConeCos) then
+		if TargetPos and self:CheckConeLOS(Missile, Missile.ACF_Position, TargetPos, self.ViewConeCos) then
 			return { TargetPos = TargetPos, ViewCone = self.ViewCone }
 		end
 

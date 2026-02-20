@@ -1174,17 +1174,17 @@ do -- Misc -------------------------------------
 
 	function ENT:Think()
 		local Time     = Clock.CurTime
-		local Previous = self.Position
+		local Previous = self.ACF_Position
 		local Current  = GetPosition(self)
 
-		self.Position = Current
+		self.ACF_Position = Current
 
 		if Previous then
 			local DeltaTime = Time - self.LastThink
 
-			self.Velocity = (Current - Previous) / DeltaTime
+			self.ACF_Velocity = (Current - Previous) / DeltaTime
 		else
-			self.Velocity = Vector()
+			self.ACF_Velocity = Vector()
 		end
 
 		self:NextThink(Time)

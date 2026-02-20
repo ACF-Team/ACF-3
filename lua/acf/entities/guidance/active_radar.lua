@@ -10,13 +10,13 @@ else
 	end
 
 	function Guidance:SeekTarget(Missile)
-		local Position   = Missile.Position
+		local Position   = Missile.ACF_Position
 		local Targets    = ACF.GetEntitiesInCone(Position, Missile:GetForward(), self.SeekCone)
 		local HighestDot = 0
 		local Target, TargetPos
 
 		for Entity in pairs(Targets) do
-			local EntPos   = Entity.Position
+			local EntPos   = Entity.ACF_Position
 			local Distance = Position:DistToSqr(EntPos)
 
 			if Distance < self.MinDistance then continue end

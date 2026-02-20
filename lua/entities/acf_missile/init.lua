@@ -107,7 +107,7 @@ end
 local function Dud(Missile)
 	local PhysObj   = Missile:GetPhysicsObject()
 	local HitNormal = Missile.HitNormal
-	local Velocity  = Missile.Velocity
+	local Velocity  = Missile.ACF_Velocity
 	local CurDir    = Missile.CurDir
 
 	if HitNormal then
@@ -174,7 +174,7 @@ local function CalcFlight(Missile)
 
 	if DeltaTime <= 0 then return end
 
-	local Pos            = Missile.Position
+	local Pos            = Missile.ACF_Position
 	local Dir            = Missile.CurDir
 	local LastVel        = Missile.LastVel
 	local LastSpeed      = LastVel:Length()
@@ -190,7 +190,7 @@ local function CalcFlight(Missile)
 	local Guidance    = Missile.UseGuidance and Missile.GuidanceData:GetGuidance(Missile)
 	local TargetPos   = Guidance and Guidance.TargetPos
 
-	-- debugoverlay.Line(Missile.Position, TargetPos, 10, Color(0, 0, 255), true)
+	-- debugoverlay.Line(Missile.ACF_Position, TargetPos, 10, Color(0, 0, 255), true)
 	if TargetPos then
 		-- Getting the relative position, velocity and acceleration
 		local RelPos = TargetPos - Pos
@@ -233,7 +233,7 @@ local function CalcFlight(Missile)
 	DirAng:RotateAroundAxis(Missile.RotAxis:GetNormalized(), Missile.RotAxis:Length() * DeltaTime)
 	Dir = DirAng:Forward()
 	Missile.RotAxis = Missile.RotAxis * (1 - 0.7 * DeltaTime)
-	-- debugoverlay.Line(Missile.Position, Missile.Position + Missile.RotAxis * 10, 10, Color(255, 0, 0), true)
+	-- debugoverlay.Line(Missile.ACF_Position, Missile.ACF_Position + Missile.RotAxis * 10, 10, Color(255, 0, 0), true)
 
 	local FuelMod = math.Clamp(Missile.MotorLength / DeltaTime, 0, 1)
 	if Missile.MotorEnabled then
@@ -253,14 +253,14 @@ local function CalcFlight(Missile)
 	local DotSimple = Up.x * VelNorm.x + Up.y * VelNorm.y + Up.z * VelNorm.z
 	local Lift      = -Up * DotSimple * LiftMultiplier
 
-	-- debugoverlay.Line(Missile.Position, Missile.Position + VelNorm * 10, 10, Color(0, 0, 255), true)
-	-- debugoverlay.Line(Missile.Position, Missile.Position + Up * 10, 10, Color(255, 0, 0), true)
-	-- debugoverlay.Line(Missile.Position, Missile.Position + Dir * 10, 10, Color(255, 0, 0), true)
+	-- debugoverlay.Line(Missile.ACF_Position, Missile.ACF_Position + VelNorm * 10, 10, Color(0, 0, 255), true)
+	-- debugoverlay.Line(Missile.ACF_Position, Missile.ACF_Position + Up * 10, 10, Color(255, 0, 0), true)
+	-- debugoverlay.Line(Missile.ACF_Position, Missile.ACF_Position + Dir * 10, 10, Color(255, 0, 0), true)
 	local Drag      = LastVel * (Missile.DragCoef * LastSpeed) / ACF.DragDiv * ACF.Scale / Missile.Mass
 	local Vel       = LastVel + (GravityVector + Thrust + Lift - Drag) * DeltaTime
 	local EndPos    = Pos + Vel * DeltaTime
 
-	Missile.Velocity = Vel
+	Missile.ACF_Velocity = Vel
 
 	--Hit detection
 	TraceData.start = Pos
@@ -301,7 +301,7 @@ local function CalcFlight(Missile)
 
 	Missile.LastVel = Vel
 	Missile.LastPos = Pos
-	Missile.Position = EndPos
+	Missile.ACF_Position = EndPos
 	Missile.CurDir = Dir
 
 	--Missile trajectory debugging
@@ -510,7 +510,7 @@ function ENT:Launch(Delay, IsMisfire)
 	local Point      = self.MountPoint
 	local Rack       = self.Launcher
 	local Flight     = BulletData.Flight or self:LocalToWorldAngles(Point.Angle):Forward()
-	local Velocity   = Rack.Velocity + self.SpeedBoost * Flight
+	local Velocity   = Rack.ACF_Velocity + self.SpeedBoost * Flight
 	local DeltaTime  = engine.TickInterval()
 
 	if Rack.SoundPath and Rack.SoundPath ~= "" then
@@ -520,16 +520,16 @@ function ENT:Launch(Delay, IsMisfire)
 	BulletData.Flight = Velocity
 	BulletData.Pos    = Rack:LocalToWorld(Point.Position)
 
-	self.Launched    = true
-	self.ThinkDelay  = DeltaTime
-	self.GhostPeriod = Clock.CurTime + ACF.GhostPeriod
-	self.NoDamage    = nil
-	self.LastThink   = Clock.CurTime - DeltaTime
-	self.Position    = BulletData.Pos
-	self.LastPos     = self.Position
-	self.Velocity    = Velocity
-	self.LastVel     = Velocity
-	self.CurDir      = Flight
+	self.Launched     = true
+	self.ThinkDelay   = DeltaTime
+	self.GhostPeriod  = Clock.CurTime + ACF.GhostPeriod
+	self.NoDamage     = nil
+	self.LastThink    = Clock.CurTime - DeltaTime
+	self.ACF_Position = BulletData.Pos
+	self.LastPos      = self.ACF_Position
+	self.ACF_Velocity = Velocity
+	self.LastVel      = Velocity
+	self.CurDir       = Flight
 
 	if self.RackModel then
 		self:UpdateModel(self.RealModel)
@@ -576,7 +576,7 @@ function ENT:Launch(Delay, IsMisfire)
 end
 
 function ENT:DoFlight(ToPos, ToDir)
-	local NewPos = ToPos or self.Position
+	local NewPos = ToPos or self.ACF_Position
 	local NewDir = ToDir or self.CurDir
 
 	-- Destroy the missile if it is out of bounds. Allow OOB upward, though.
@@ -626,7 +626,7 @@ function ENT:Detonate(Destroyed)
 	end
 
 	BulletData.Pos = BulletData.Pos or   self:GetPos()
-	BulletData.Flight = self.Velocity or Vector(0, 0, 0)
+	BulletData.Flight = self.ACF_Velocity or Vector(0, 0, 0)
 
 	if IsValid(PhysObj) then
 		PhysObj:EnableMotion(false)

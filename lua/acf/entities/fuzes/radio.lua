@@ -15,6 +15,6 @@ else
 
 		if not Target then return false end
 
-		return Missile.Position:Distance(Target) <= self.Distance
+		return Missile.ACF_Position:Distance(Target) <= self.Distance
 	end
 end

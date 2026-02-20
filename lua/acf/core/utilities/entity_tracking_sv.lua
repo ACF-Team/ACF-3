@@ -11,7 +11,7 @@ local function UpdateValues(Contraption)
 
 	local PhysObj  = Entity:GetPhysicsObject()
 	local Velocity = Entity:GetVelocity()
-	local PrevPos  = Entity.Position
+	local PrevPos  = Entity.ACF_Position
 	local Position
 
 	if IsValid(PhysObj) then
@@ -26,8 +26,8 @@ local function UpdateValues(Contraption)
 		Velocity = (Position - PrevPos) / Clock.DeltaTime
 	end
 
-	Entity.Position = Position
-	Entity.Velocity = Velocity
+	Entity.ACF_Position = Position
+	Entity.ACF_Velocity = Velocity
 	Contraption.Ancestor = Entity
 end
 

@@ -13,8 +13,8 @@ local TraceData  = { start = true, endpos = true, filter = true }
 local ZERO       = Vector()
 
 local function CheckViewCone(Missile, HitPos)
-	local Position = Missile.Position
-	local Forward  = Missile.Velocity:GetNormalized()
+	local Position = Missile.ACF_Position
+	local Forward  = Missile.ACF_Velocity:GetNormalized()
 	local Direction = (HitPos - Position):GetNormalized()
 
 	return Direction:Dot(Forward) >= Missile.ViewCone
@@ -99,8 +99,8 @@ function ACF.MakeGLATGM(Player, Gun, BulletData)
 	Entity.SpiralRadius = Entity.IsSubcaliber and 120 / Caliber or nil
 	Entity.SpiralSpeed  = Entity.IsSubcaliber and 360 / Entity.AccelLength or nil
 	Entity.SpiralAngle  = Entity.IsSubcaliber and 0 or nil
-	Entity.Position     = BulletData.Pos
-	Entity.Velocity     = BulletData.Flight:GetNormalized() * Entity.LaunchVel
+	Entity.ACF_Position = BulletData.Pos
+	Entity.ACF_Velocity = BulletData.Flight:GetNormalized() * Entity.LaunchVel
 	Entity.Inaccuracy   = 0
 
 	Entity.Filter[#Entity.Filter + 1] = Entity
@@ -224,7 +224,7 @@ function ENT:Think()
 	local CanGuide  = self.GuideDelay <= Time
 	local Computer  = self:GetComputer()
 	local CanSee    = IsValid(Computer) and CheckViewCone(self, Computer.HitPos)
-	local Position  = self.Position
+	local Position  = self.ACF_Position
 	local NextDir, NextAng
 
 	self.Speed = self.LaunchVel + self.DiffVel * math.Clamp(1 - (self.AccelTime - Time) / self.AccelLength, 0, 1)
@@ -234,7 +234,7 @@ function ENT:Think()
 		local Distance    = Origin:Distance(Position) + self.Speed * 0.15
 		local Target      = Origin + Computer.TraceDir * Distance
 		local Expected    = (Target - Position):GetNormalized():Angle()
-		local Current     = self.Velocity:GetNormalized():Angle()
+		local Current     = self.ACF_Velocity:GetNormalized():Angle()
 		local _, LocalAng = WorldToLocal(Target, Expected, Position, Current)
 		local Clamped     = ClampAngle(LocalAng, self.Agility * DeltaTime)
 		local _, WorldAng = LocalToWorld(Vector(), Clamped, Position, Current)
@@ -247,7 +247,7 @@ function ENT:Think()
 		local Spread = self.Inaccuracy * DeltaTime * 0.005
 		local Added  = VectorRand() * Spread
 
-		NextDir = (self.Velocity:GetNormalized() + Added):GetNormalized()
+		NextDir = (self.ACF_Velocity:GetNormalized() + Added):GetNormalized()
 		NextAng = NextDir:Angle()
 
 		self.Inaccuracy = self.Inaccuracy + DeltaTime * 50
@@ -266,22 +266,22 @@ function ENT:Think()
 	end
 
 
-	self.Position = self.Position + NextDir * self.Speed * DeltaTime
-	self.Velocity = (self.Position - Position) / DeltaTime
+	self.ACF_Position = self.ACF_Position + NextDir * self.Speed * DeltaTime
+	self.ACF_Velocity = (self.ACF_Position - Position) / DeltaTime
 
 	TraceData.start  = Position
-	TraceData.endpos = self.Position
+	TraceData.endpos = self.ACF_Position
 	TraceData.filter = self.Filter
 
 	local Result = ACF.trace(TraceData)
 
 	if Result.Hit then
-		self.Position = Result.HitPos
+		self.ACF_Position = Result.HitPos
 
 		return self:Detonate()
 	end
 
-	self:SetPos(self.Position)
+	self:SetPos(self.ACF_Position)
 	self:SetAngles(NextAng)
 	self:NextThink(Time)
 
@@ -294,10 +294,10 @@ function ENT:Detonate()
 	if self.Detonated then return end
 
 	local BulletData = self.BulletData
-	local Position   = self.Position
+	local Position   = self.ACF_Position
 
 	BulletData.Filter = self.Filter
-	BulletData.Flight = self.Velocity:GetNormalized() * self.Speed
+	BulletData.Flight = self.ACF_Velocity:GetNormalized() * self.Speed
 	BulletData.Pos    = Position
 	BulletData.DetonatorAngle = 91
 

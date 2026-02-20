@@ -168,11 +168,11 @@ local function ScanForEntities(Entity)
 	local Spread = ACF.MaxDamageInaccuracy * EntDamage
 
 	for Ent in pairs(Detected) do
-		local EntPos = Ent.Position or Ent:GetPos()
+		local EntPos = Ent.ACF_Position or Ent:GetPos()
 
 		if CheckLOS(Origin, EntPos) and (math.Rand(0, 1) >= (EntDamage / 10)) then
 			local EntSpread = VectorRand(-Spread, Spread)
-			local EntVel = Ent.Velocity or Ent:GetVelocity()
+			local EntVel = Ent.ACF_Velocity or Ent:GetVelocity()
 			local Owner = GetEntityOwner(Entity.Owner, Ent)
 			local Index = GetEntityIndex(Ent)
 

@@ -22,7 +22,7 @@ else
 		end
 
 		local Targets    = Radar.Targets
-		local Position   = Missile.Position
+		local Position   = Missile.ACF_Position
 		local HighestDot = 0
 		local Target, TargetPos
 
