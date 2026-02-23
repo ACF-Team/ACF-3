@@ -75,8 +75,12 @@ function TOOL:RightClick(trace)
 
 	local class = trace.Entity:GetClass()
 	local support = ACF.SoundToolSupport[class]
+
 	if not support then return false end
+
 	local soundData = support.GetSound(trace.Entity)
+	local soundTable = support.GetSoundBank(trace.Entity).SoundBank
+
 	owner:ConCommand("wire_soundemitter_sound " .. soundData.Sound)
 
 	if soundData.Pitch then
