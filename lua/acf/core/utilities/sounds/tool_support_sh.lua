@@ -48,9 +48,9 @@ Sounds.acf_engine = {
 		Ent:UpdateSound()
 	end,
 	ResetSound = function(Ent)
-		Ent.SoundPath   		 = Ent.DefaultSound
-		Ent.SoundPitch  		 = 1
-		Ent.SoundVolume 		 = 1
+		Ent.SoundPath   = Ent.DefaultSound
+		Ent.SoundPitch  = 1
+		Ent.SoundVolume = 1
 
 		Ent:UpdateSound()
 	end,
@@ -59,17 +59,10 @@ Sounds.acf_engine = {
 			SoundBank = Ent.SoundBank
 		}
 	end,
-	-- This is dog... Change this!
 	SetSoundBank = function(Ent, SoundBankData)
-		local soundTable = SoundBankData
-
-		for K, V in ipairs(soundTable) do
-			print("Called \"SetSoundBank\" from \"tool_support_sh.lua\" but no implementation was made!")
-			print(K, V)
-		end
-
 		Ent.SoundBank = SoundBankData
 
+		Ent:UpdateSoundBank()
 	end
 }
 

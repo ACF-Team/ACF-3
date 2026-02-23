@@ -106,19 +106,19 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundCount)
 		net.WriteEntity(Origin)
 		net.WriteUInt(SoundCount, 4)
 
-		for k, v in pairs(SoundTable) do
-			local key = k
+		for _, v in ipairs(SoundTable) do
+			local rpm = v.RPM
 			local stringPath = v.Path
 			local pitch = v.Pitch
 			local volume = v.Volume
 			local width = v.Width
 
-			net.WriteUInt(key, 14)
+			net.WriteUInt(rpm, 14)
 			net.WriteString(stringPath)
 			net.WriteUInt(pitch, 8)
 
 			volume = volume * 100 -- Sending the approximate volume as an int to reduce message size
-			net.WriteUInt(volume, 7)
+			net.WriteUInt(volume, 8)
 			net.WriteUInt(width, 4)
 		end
 	net.SendPAS(Origin:GetPos())

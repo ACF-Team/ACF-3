@@ -212,17 +212,17 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 
 	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
 	for idx, soundTable in ipairs(SoundObjects) do
-		if not soundTable.rpm then continue end
-		Origin.Sound = soundTable.sound
+		if not soundTable.RPM then continue end
+		Origin.Sound = soundTable.Sound
 
-		local addCurveWidth = soundTable.width or 0
-		local enginePitch = soundTable.pitch or 1
-		local min    = idx == 1 and 0 or SoundObjects[idx - 1].rpm
+		local addCurveWidth = soundTable.Width or 0
+		local enginePitch = soundTable.Pitch or 1
+		local min    = idx == 1 and 0 or SoundObjects[idx - 1].RPM
 		local mid    = RPM
-		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].rpm
+		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].RPM
 		local curve  = Sounds.Fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
-		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.volume or 1)
-		local pitch  = (RPM / soundTable.rpm) * enginePitch
+		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.Volume or 1)
+		local pitch  = (RPM / soundTable.RPM) * enginePitch
 
 		Sounds.UpdateAdjustableSound(Origin, pitch, volume)
 	end
@@ -234,35 +234,26 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
 	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
-	--- @param PathTable table The networked table with nested table(Key as RPM) containing sound path, pitch and width
-	function Sounds.CreateMultipleAdjustableSounds(Origin, PathTable)
-		-- This is where we store our sound objects and keep count of them
-		local SoundObjects = {}
+	--- @param SoundTable table The networked table with nested table containing rpm, sound path, pitch, volume, width and empty sound
+	function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 		local SoundCount = 0
 
-		for _, soundTable in ipairs(PathTable) do
-			if not Sounds.IsValidSound(soundTable.Path) then return end
+		for _, sndTable in ipairs(SoundTable) do
+			if not Sounds.IsValidSound(sndTable.Path) then return end
 			local Sound = Sounds.CreateAdjustableSound(Origin,
-				soundTable.Path,
-				soundTable.Pitch or 100, 0 -- Create the sound deafened
+				sndTable.Path,
+				sndTable.Pitch or 100, 0 -- Create the sound deafened
 			)
+			sndTable.Sound = Sound
 			SoundCount = SoundCount + 1
 
-			-- Insert the CSoundPatch type objects inside the SoundObjects table, alongside with the rpm it has be to play at the desired pitch,
-			-- the volume and the width which allows the sound to play in a wider range of RPM's
-			table.insert(SoundObjects, SoundCount, {["rpm"]    = soundTable.RPM,
-													["width"]  = soundTable.Width or 0,
-													["pitch"]  = soundTable.Pitch or 100,
-													["volume"] = soundTable.Volume or 1,
-													["sound"]  = Sound})
-
-			Sounds.UpdateAdjustableSound(Origin, soundTable.Pitch or 100, 0)
+			Sounds.UpdateAdjustableSound(Origin, sndTable.Pitch or 100, 0)
 		end
 
 		-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
-		table.sort(SoundObjects, function(a, b) return a.rpm < b.rpm end)
+		table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
 
-		Origin.SoundObjects = SoundObjects
+		Origin.SoundObjects = SoundTable
 		Origin.SoundCount = SoundCount
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
@@ -275,7 +266,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
 		if not IsValid(Origin) then return end
 		for idx, snd in ipairs(Origin.SoundObjects) do
-			snd.sound:Stop()
+			snd.Sound:Stop()
 			Origin.SoundObjects[idx] = nil
 		end
 		Origin.Sound      = nil -- Just in case
@@ -300,18 +291,19 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		local I = 0
 
 		while (I < Count) do
-			local Key 		 = net.ReadUInt(14)
+			local RPM 		 = net.ReadUInt(14)
 			local StringPath = net.ReadString()
 			local Pitch 	 = net.ReadUInt(8)
-			local Volume 	 = net.ReadUInt(7)
+			local Volume 	 = net.ReadUInt(8)
 			local Width 	 = net.ReadUInt(4)
 
 			Volume = Volume * 0.01 -- Reduce the received value down to a float
-			table.insert(SoundTable, {	RPM    = Key,
+			table.insert(SoundTable, {	RPM    = RPM,
 									  	Path   = StringPath,
-										Pitch  = Pitch,
-										Volume = Volume,
-									  	Width  = Width })
+										Pitch  = Pitch or 100,
+										Volume = Volume or 1,
+									  	Width  = Width or 0,
+									    Sound  = nil }) -- Fuck it we ball
 			I = I + 1
 		end
 

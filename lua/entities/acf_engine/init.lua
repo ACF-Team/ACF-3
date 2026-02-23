@@ -320,7 +320,7 @@ do -- Spawn and Update functions
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundBank 		= Engine.SoundBank
-		Entity.SoundCount       = GetSoundCount(Engine) or 1
+		Entity.SoundCount       = GetSoundCount(Engine)
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -404,7 +404,7 @@ do -- Spawn and Update functions
 		Entity.Throttle       = 0
 		Entity.FlyRPM         = 0
 		Entity.SoundPath      = Engine.Sound
-		Entity.SoundBank      = Entity.SoundBank or {}
+		Entity.SoundBank      = Engine.SoundBank
 		Entity.SoundCount     = 0
 		Entity.LastPitch      = 0
 		Entity.LastTorque     = 0
