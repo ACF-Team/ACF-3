@@ -3,7 +3,7 @@ local Sounds = ACF.Utilities.Sounds
 local GetClientData, SetClientData = ACF.GetClientData, ACF.SetClientData
 local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientString
 
-local AddValue
+local AddValue, ListPanel, ValuesGroup, SoundGraph
 local Current = {Panels = {},
 				 Count  = 0,
 				 Graph  = {
@@ -35,7 +35,7 @@ local function UpdateGraph(Panel)
 	end
 end
 
-local function AddValuePanel(Menu, Graph)
+local function AddValuePanel(Menu, Data)
 	Current.Count = Current.Count + 1
 	local ID = math.max(Current.Count, #Current.Panels)
 	local ButtonHeight = 20
@@ -63,6 +63,12 @@ local function AddValuePanel(Menu, Graph)
 	local DefaultVolume = 1
 	local DefaultWidth  = 0
 
+	Data = istable(Data) and Data or { RPM = GetClientNumber("RPM " .. ID, DefaultRPM),
+								    Path = GetClientString("Path " .. ID, DefaultPath),
+								    Pitch = GetClientNumber("Pitch " .. ID, DefaultPitch),
+								    Volume = GetClientNumber("Volume " .. ID, DefaultVolume),
+								    Width = GetClientNumber("Width " .. ID, DefaultWidth)}
+
 	MPanel:DockMargin(0, 0, 0, 0)
 	MPanel:SetLabel("Value " .. ID)
 
@@ -85,7 +91,7 @@ local function AddValuePanel(Menu, Graph)
 	RPMWang:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 	RPMWang:DockMargin(-30, 0, 0, 0)
 	RPMWang:Dock(LEFT)
-	RPMWang:SetValue(GetClientNumber("RPM " .. ID, DefaultRPM))
+	RPMWang:SetValue(Data.RPM)
 	RPMWang:SetClientData("RPM " .. ID, "OnValueChanged")
 	RPMWang:DefineSetter(function(Panel, _, _, Value)
 		-- TODO(TMF): The max value below is hardcoded, this should be a global!
@@ -105,7 +111,7 @@ local function AddValuePanel(Menu, Graph)
 	PathText:Dock(FILL)
 	PathText:DockMargin(-25, 0, 0, 0)
 	PathText:SetTall(ButtonHeight)
-	PathText:SetValue(GetClientString("Path " .. ID, DefaultPath))
+	PathText:SetValue(Data.Path)
 	PathText:SetClientData("Path " .. ID, "OnChange")
 	-- Bitch this aint working! :sob: :sob: :sob:
 	PathText:DefineSetter(function(Panel, _, _, Value)
@@ -165,7 +171,7 @@ local function AddValuePanel(Menu, Graph)
 		AddValue:SetEnabled(true) -- Re-enable our add button
 		Current.Count = Current.Count - 1
 
-		UpdateGraph(Graph)
+		UpdateGraph(SoundGraph)
 	end
 
 	SearchButton:SetParent(TopDiv)
@@ -187,7 +193,7 @@ local function AddValuePanel(Menu, Graph)
 	PitchWang:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 	PitchWang:DockMargin(-30, 0, 4, 0)
 	PitchWang:Dock(LEFT)
-	PitchWang:SetValue(GetClientNumber("Pitch " .. ID, DefaultPitch))
+	PitchWang:SetValue(Data.Pitch)
 	PitchWang:SetClientData("Pitch " .. ID, "OnValueChanged")
 	PitchWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Pitch " .. ID, Value)
@@ -200,7 +206,7 @@ local function AddValuePanel(Menu, Graph)
 	VolumeWang:SetWide(40) -- Equivalent to 0.00 + up/down buttons at font size = 16 + padding
 	VolumeWang:DockMargin(-16, 0, 4, 0)
 	VolumeWang:Dock(LEFT)
-	VolumeWang:SetValue(GetClientNumber("Volume " .. ID, DefaultVolume))
+	VolumeWang:SetValue(Data.Volume)
 	VolumeWang:SetClientData("Volume " .. ID, "OnValueChanged")
 	VolumeWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Volume " .. ID, Value)
@@ -213,14 +219,14 @@ local function AddValuePanel(Menu, Graph)
 	WidthWang:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 	WidthWang:DockMargin(-24, 0, 4, 0)
 	WidthWang:Dock(LEFT)
-	WidthWang:SetValue(GetClientNumber("Width " .. ID, DefaultWidth))
+	WidthWang:SetValue(Data.Width)
 	WidthWang:SetClientData("Width " .. ID, "OnValueChanged")
 	WidthWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Width " .. ID, Value)
 	end)
 
 	table.insert(Current.Panels, MPanel)
-	UpdateGraph(Graph)
+	UpdateGraph(SoundGraph)
 	return MPanel
 end
 
@@ -316,7 +322,7 @@ local function CreateSubMenu(Num, Menu)
 			local GraphGroup = Menu:AddCollapsible("Graph", nil, "icon16/chart_curve_edit.png")
 			local GraphPanel = Menu:AddPanel("DPanel")
 			local LabelTop = Menu:AddLabel()
-			local SoundGraph = Menu:AddGraph()
+			SoundGraph = Menu:AddGraph() -- This one is glocal
 			local PanelBottom = Menu:AddPanel("ACF_Panel")
 			local IdleLabel = Menu:AddLabel("Idle:")
 			local IdleWang = Menu:AddPanel("DNumberWang", 0, 2000)
@@ -431,13 +437,13 @@ local function CreateSubMenu(Num, Menu)
 			end
 
 			-- The bottom group where the panels are added and removed dynamically
-			local ValuesGroup = Menu:AddCollapsible("Values", nil, "icon16/application_double.png")
+			ValuesGroup = Menu:AddCollapsible("Values", nil, "icon16/application_double.png")
 			ValuesGroup:DockMargin(0, 4, 0, 4)
 			-- I don't know if this makes sense, but somehow it gives me less trouble to later remove any arbitrary panels
 			Menu:StartTemporal(ValuesGroup)
 			Menu:ClearTemporal(ValuesGroup)
 
-			local ListPanel = Menu:AddPanel("DListLayout")
+			ListPanel = Menu:AddPanel("DListLayout")
 			ListPanel:SetParent(ValuesGroup)
 			ListPanel:Dock(TOP)
 
@@ -451,15 +457,15 @@ local function CreateSubMenu(Num, Menu)
 			AddValue:SetStretchToFit(false)
 			AddValue:SetSize(16, 16)
 			AddValue.DoClick = function()
-				ListPanel:Add(AddValuePanel(Menu, SoundGraph))
+				ListPanel:Add(AddValuePanel(Menu, _))
 				-- Disable the button if enough panels exist already
 				if #Current.Panels >= _MAXSOUNDS then AddValue:SetEnabled(false) return end
 
 			end
 			-- Add the first panel if none exists
 			if #Current.Panels == 0 then
-				ListPanel:Add(AddValuePanel(Menu, SoundGraph))
-			 end
+				ListPanel:Add(AddValuePanel(Menu, _))
+			end
 		end
 	}
 
@@ -488,5 +494,57 @@ function ACF.CreateSoundMenu(Panel)
 		-- Build the panels according to our selection
 		CreateSubMenu(Index, Menu)
 		Menu:EndTemporal(Panel)
+	end
+
+	do -- SoundBank entity data reception and menu population
+		local function PopulateMenu(Table, Count)
+			-- We set it to option 4 since that's where the values are located at 
+			OptionSelectionBox:ChooseOption(OptionSelectionBox:GetOptionText(4), 4)
+
+			-- Reset them panels
+			Current.Panels = nil
+			Current.Panels = {}
+			Current.Count  = 0
+
+			-- Wipe the clients values list
+			Menu:ClearTemporal(ListPanel)
+
+			for I = 1, Count do
+				local Data = Table[I]
+
+				ListPanel:Add(AddValuePanel(Menu, Data))
+			end
+		end
+
+		net.Receive("ACF_SoundMenu_Get_Multi", function(len)
+			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"")
+
+			local Origin = net.ReadEntity()
+			--local Bool = net.ReadBool()
+			if not Origin then return end
+
+			local Count = net.ReadUInt(4)
+			local SoundTable = {}
+
+			for _ = 1, Count do
+				local RPM 		 = net.ReadUInt(14)
+				local StringPath = net.ReadString()
+				local Pitch 	 = net.ReadUInt(8)
+				local Volume 	 = net.ReadUInt(8)
+				local Width 	 = net.ReadUInt(4)
+
+				Volume = Volume * 0.01 -- Reduce the received value down to a float
+
+				table.insert(SoundTable, {	RPM    = RPM,
+											Path   = StringPath,
+											Pitch  = Pitch or 100,
+											Volume = Volume or 1,
+											Width  = Width or 0 })
+			end
+			-- Sort the table before calling the function below
+			table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
+
+			PopulateMenu(SoundTable, Count)
+		end)
 	end
 end

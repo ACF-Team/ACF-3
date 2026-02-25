@@ -12,7 +12,45 @@ TOOL.Information = {
 	{ name = "info" }
 }
 
+-- NOTE: I would have used concommands just to set clients data, however i didn't feel like using them here since i don't know how to use them lol
+-- So instead i went the dumb, hard and convoluted way and network the data needed back and forth
+if SERVER then
+	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Server to Client
+	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Client to Server
+	util.AddNetworkString("ACF_SoundMenu_GetSoundBank") --????
+end
+
 local Sounds = ACF.SoundToolSupport
+
+local function GetSoundBankData(Player, Entity, Data, Loopback)
+	local soundTable = Data
+	local count = #soundTable
+
+	net.Start("ACF_SoundMenu_Get_Multi")
+		net.WriteEntity(Entity)
+	if not Loopback then
+		net.WriteUInt(count, 4)
+
+		for _, v in ipairs(soundTable) do
+			local rpm = v.RPM
+			local stringPath = v.Path
+			local pitch = v.Pitch
+			local volume = v.Volume
+			local width = v.Width
+
+			net.WriteUInt(rpm, 14)
+			net.WriteString(stringPath)
+			net.WriteUInt(pitch, 8)
+
+			volume = volume * 100 -- Sending the approximate volume as an int to reduce message size
+			net.WriteUInt(volume, 8)
+			net.WriteUInt(width, 4)
+		end
+	else
+		net.WriteBool(true)
+	end
+	net.Send(Player)
+end
 
 local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
@@ -52,6 +90,11 @@ local function IsReallyValid(trace, ply)
 	return true
 end
 
+local function ReplaceSounds(Player, Entity, Data)
+	ErrorNoHaltWithStack("A call to \"ReplaceSounds\" was made but no implementation was done!")
+	print("Received: Player: " .. Player .. ", Entity: " .. Entity .. ", Data: " .. Data)
+end
+
 function TOOL:LeftClick(trace)
 	local owner = self:GetOwner()
 
@@ -63,6 +106,20 @@ function TOOL:LeftClick(trace)
 	local volume = owner:GetInfoNum("acfsound_volume", 1)
 
 	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
+
+	do
+		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
+			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply)
+
+			local Origin = net.ReadEntity()
+			local Table = net.ReadTable()
+
+			if not Origin then return end
+			if not istable(Table) then return end
+
+			ReplaceSounds(_, Entity, Table)
+		end)
+	end
 
 	return true
 end
@@ -79,7 +136,6 @@ function TOOL:RightClick(trace)
 	if not support then return false end
 
 	local soundData = support.GetSound(trace.Entity)
-	local soundTable = support.GetSoundBank(trace.Entity).SoundBank
 
 	owner:ConCommand("wire_soundemitter_sound " .. soundData.Sound)
 
@@ -89,6 +145,15 @@ function TOOL:RightClick(trace)
 
 	if soundData.Volume then
 		owner:ConCommand("acfsound_volume " .. soundData.Volume)
+	end
+
+	-- Soundbank stuff, if it gets found, we switch to that instead
+	if not trace.Entity.SoundBank then return true end
+	local soundTable = support.GetSoundBank(trace.Entity).SoundBank
+
+	-- Send the found soundbank table from the entity to the client for sound menu population
+	if soundTable then
+		GetSoundBankData(owner, trace.Entity, soundTable)
 	end
 
 	return true
