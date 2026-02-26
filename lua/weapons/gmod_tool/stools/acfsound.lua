@@ -23,12 +23,13 @@ end
 local Sounds = ACF.SoundToolSupport
 
 local function GetSoundBankData(Player, Entity, Data, Loopback)
-	local soundTable = Data
-	local count = #soundTable
-
 	net.Start("ACF_SoundMenu_Get_Multi")
 		net.WriteEntity(Entity)
 	if not Loopback then
+		local soundTable = Data
+		local count = #soundTable
+
+		net.WriteBool(false) -- Just in case
 		net.WriteUInt(count, 4)
 
 		for _, v in ipairs(soundTable) do
@@ -92,7 +93,8 @@ end
 
 local function ReplaceSounds(Player, Entity, Data)
 	ErrorNoHaltWithStack("A call to \"ReplaceSounds\" was made but no implementation was done!")
-	print("Received: Player: " .. Player .. ", Entity: " .. Entity .. ", Data: " .. Data)
+	print("Received: Player: " .. Player:Nick() .. ", Entity: " .. tostring(Entity) .. ", Data: ")
+	PrintTable(Data)
 end
 
 function TOOL:LeftClick(trace)
@@ -107,9 +109,11 @@ function TOOL:LeftClick(trace)
 
 	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
 
-	do
+	-- Simple call just to get the client's sound table menu data 
+	GetSoundBankData(owner, trace.Entity, _, true)
+	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
 		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
-			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply)
+			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick())
 
 			local Origin = net.ReadEntity()
 			local Table = net.ReadTable()
@@ -117,7 +121,7 @@ function TOOL:LeftClick(trace)
 			if not Origin then return end
 			if not istable(Table) then return end
 
-			ReplaceSounds(_, Entity, Table)
+			ReplaceSounds(ply, Entity, Table)
 		end)
 	end
 
@@ -153,7 +157,7 @@ function TOOL:RightClick(trace)
 
 	-- Send the found soundbank table from the entity to the client for sound menu population
 	if soundTable then
-		GetSoundBankData(owner, trace.Entity, soundTable)
+		GetSoundBankData(owner, trace.Entity, soundTable, false)
 	end
 
 	return true

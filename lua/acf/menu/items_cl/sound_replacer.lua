@@ -101,6 +101,8 @@ local function AddValuePanel(Menu, Data)
 		Panel:SetMinMax(min, max) -- YEA, I MINMAX MY NUMBERS, SO What!?
 		Panel:SetValue(Value)
 
+		Current.Panels[ID].RPM = Value
+
 		return Value, Panel
 	end)
 
@@ -112,21 +114,23 @@ local function AddValuePanel(Menu, Data)
 	PathText:DockMargin(-25, 0, 0, 0)
 	PathText:SetTall(ButtonHeight)
 	PathText:SetValue(Data.Path)
-	PathText:SetClientData("Path " .. ID, "OnChange")
-	-- Bitch this aint working! :sob: :sob: :sob:
+	PathText:SetClientData("Path " .. ID, "OnValueChange")
 	PathText:DefineSetter(function(Panel, _, _, Value)
 		local isValid = Sounds.IsValidSound
 
+		print(Value)
 		if isValid(Value) then
 			ParseIcon:SetTooltip()
 			ParseIcon:SetImage("icon16/accept.png")
 
 			SetClientData("Path " .. ID, Value)
+			Current.Panels[ID].Path = Value
 		else
 			ParseIcon:SetTooltip("Invalid sound: File does not exist")
 			ParseIcon:SetImage("icon16/cancel.png")
 
-			SetClientData("Path " .. ID, DefaultPath)
+			SetClientData("Path " .. ID, "")
+			Current.Panels[ID].Path = ""
 		end
 		return Value, Panel
 	end)
@@ -152,11 +156,11 @@ local function AddValuePanel(Menu, Data)
 		end
 
 		-- Reset our client data
-		SetClientData("RPM " .. ID, DefaultRPM, true)
-		SetClientData("Path " .. ID, DefaultPath, true)
-		SetClientData("Pitch " .. ID, DefaultPitch, true)
-		SetClientData("Volume " .. ID, DefaultVolume, true)
-		SetClientData("Width " .. ID, DefaultWidth, true)
+		SetClientData("RPM " .. ID, nil, true)
+		SetClientData("Path " .. ID, nil, true)
+		SetClientData("Pitch " .. ID, nil, true)
+		SetClientData("Volume " .. ID, nil, true)
+		SetClientData("Width " .. ID, nil, true)
 
 		-- Remove the panel in question
 		MPanel:Remove()
@@ -197,6 +201,7 @@ local function AddValuePanel(Menu, Data)
 	PitchWang:SetClientData("Pitch " .. ID, "OnValueChanged")
 	PitchWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Pitch " .. ID, Value)
+		Current.Panels[ID].Pitch = Value
 	end)
 
 	VolumeLabel:SetParent(BotDiv)
@@ -210,6 +215,7 @@ local function AddValuePanel(Menu, Data)
 	VolumeWang:SetClientData("Volume " .. ID, "OnValueChanged")
 	VolumeWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Volume " .. ID, Value)
+		Current.Panels[ID].Volume = Value
 	end)
 
 	WidthLabel:SetParent(BotDiv)
@@ -223,6 +229,7 @@ local function AddValuePanel(Menu, Data)
 	WidthWang:SetClientData("Width " .. ID, "OnValueChanged")
 	WidthWang:DefineSetter(function(_, _, _, Value)
 		SetClientData("Width " .. ID, Value)
+		Current.Panels[ID].Width = Value
 	end)
 
 	table.insert(Current.Panels, MPanel)
@@ -480,6 +487,14 @@ function ACF.CreateSoundMenu(Panel)
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
 
+	--[[for ID = 1, 16 do
+		SetClientData("RPM " .. ID, nil, true)
+		SetClientData("Path " .. ID, nil, true)
+		SetClientData("Pitch " .. ID, nil, true)
+		SetClientData("Volume " .. ID, nil, true)
+		SetClientData("Width " .. ID, nil, true)
+	end]]--
+
 	local OptionSelectionBox = Menu:AddComboBox()
 	OptionSelectionBox:SetText("Select an Option...")
 	OptionSelectionBox:Dock(TOP)
@@ -520,31 +535,53 @@ function ACF.CreateSoundMenu(Panel)
 			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"")
 
 			local Origin = net.ReadEntity()
-			--local Bool = net.ReadBool()
 			if not Origin then return end
 
-			local Count = net.ReadUInt(4)
-			local SoundTable = {}
+			local Feedback = net.ReadBool()
+			if not Feedback then
+				local Count = net.ReadUInt(4)
+				local SoundTable = {}
 
-			for _ = 1, Count do
-				local RPM 		 = net.ReadUInt(14)
-				local StringPath = net.ReadString()
-				local Pitch 	 = net.ReadUInt(8)
-				local Volume 	 = net.ReadUInt(8)
-				local Width 	 = net.ReadUInt(4)
+				for _ = 1, Count do
+					local RPM 		 = net.ReadUInt(14)
+					local StringPath = net.ReadString()
+					local Pitch 	 = net.ReadUInt(8)
+					local Volume 	 = net.ReadUInt(8)
+					local Width 	 = net.ReadUInt(4)
 
-				Volume = Volume * 0.01 -- Reduce the received value down to a float
+					Volume = Volume * 0.01 -- Reduce the received value down to a float
 
-				table.insert(SoundTable, {	RPM    = RPM,
-											Path   = StringPath,
-											Pitch  = Pitch or 100,
-											Volume = Volume or 1,
-											Width  = Width or 0 })
+					table.insert(SoundTable, {	RPM    = RPM,
+												Path   = StringPath,
+												Pitch  = Pitch or 100,
+												Volume = Volume or 1,
+												Width  = Width or 0 })
+				end
+				-- Sort the table before calling the function below
+				table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
+
+				PopulateMenu(SoundTable, Count)
+			else
+				net.Start("ACF_SoundMenu_Set_Multi")
+					net.WriteEntity(Origin)
+
+					local Table = {}
+					for I = 1, Current.Count do
+						local RPM = GetClientNumber("RPM " .. I)
+						local Path = GetClientString("Path " .. I)
+						local Pitch = GetClientNumber("Pitch " .. I)
+						local Volume = GetClientNumber("Volume " .. I)
+						local Width = GetClientNumber("Width " .. I)
+
+						table.insert(Table, {RPM = RPM,
+											 Path = Path,
+											 Pitch = Pitch,
+											 Volume = Volume,
+											 Width = Width})
+					end
+					net.WriteTable(Table)
+				net.SendToServer()
 			end
-			-- Sort the table before calling the function below
-			table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
-
-			PopulateMenu(SoundTable, Count)
 		end)
 	end
 end
