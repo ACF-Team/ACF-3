@@ -487,14 +487,6 @@ function ACF.CreateSoundMenu(Panel)
 	local ButtonHeight = 20
 	Menu:AddLabel("#tool.acfsound.help")
 
-	--[[for ID = 1, 16 do
-		SetClientData("RPM " .. ID, nil, true)
-		SetClientData("Path " .. ID, nil, true)
-		SetClientData("Pitch " .. ID, nil, true)
-		SetClientData("Volume " .. ID, nil, true)
-		SetClientData("Width " .. ID, nil, true)
-	end]]--
-
 	local OptionSelectionBox = Menu:AddComboBox()
 	OptionSelectionBox:SetText("Select an Option...")
 	OptionSelectionBox:Dock(TOP)

@@ -91,10 +91,13 @@ local function IsReallyValid(trace, ply)
 	return true
 end
 
-local function ReplaceSounds(Player, Entity, Data)
-	ErrorNoHaltWithStack("A call to \"ReplaceSounds\" was made but no implementation was done!")
-	print("Received: Player: " .. Player:Nick() .. ", Entity: " .. tostring(Entity) .. ", Data: ")
-	PrintTable(Data)
+local function ReplaceSounds(_, Entity, Data)
+	if not IsValid(Entity) then return end
+
+	local Support = Sounds[Entity:GetClass()]
+	if not Support then return end
+
+	Support.SetSoundBank(Entity, Data)
 end
 
 function TOOL:LeftClick(trace)
@@ -109,7 +112,7 @@ function TOOL:LeftClick(trace)
 
 	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
 
-	-- Simple call just to get the client's sound table menu data 
+	-- Simple call just to get the client's sound menu data 
 	GetSoundBankData(owner, trace.Entity, _, true)
 	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
 		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
@@ -121,7 +124,8 @@ function TOOL:LeftClick(trace)
 			if not Origin then return end
 			if not istable(Table) then return end
 
-			ReplaceSounds(ply, Entity, Table)
+			PrintTable(Table)
+			ReplaceSounds(ply, Origin, Table)
 		end)
 	end
 
