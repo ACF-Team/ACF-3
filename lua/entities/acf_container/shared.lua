@@ -5,8 +5,6 @@ ENT.WireDebugName   = "ACF Container"
 ENT.PluralName      = "ACF Containers"
 ENT.IsACFContainer  = true
 
-ENT.RenderGroup = RENDERGROUP_BOTH
-
 -- Shape model definitions
 local ShapeModels = {
 	Box      = "models/acf/core/s_fuel.mdl",

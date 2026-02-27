@@ -4,7 +4,7 @@ local Damage    = ACF.Damage
 local Debug		= ACF.Debug
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("HEAT", "AP")
-
+local Clock 	= ACF.Utilities.Clock
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
@@ -252,6 +252,7 @@ if SERVER then
 		local Fragments = Bullet.CasingMass
 		local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
+		Bullet.KillTime = Clock.CurTime
 		Damage.createExplosion(HitPos, Filler, Fragments, nil, DmgInfo)
 
 		-- Move the jet start to the impact point and back it up by the passive standoff

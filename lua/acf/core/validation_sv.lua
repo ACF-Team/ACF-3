@@ -233,7 +233,7 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 	local EntACF = Entity.ACF
 
 	if not EntACF then
-		if Entity:IsWorld() or Entity:IsWeapon() or StringFind(Class, "func_") then
+		if Entity:IsWorld() or Entity:IsWeapon() or Entity:GetBrushPlaneCount() > 0 or StringFind(Class, "func_") then
 			Baddies[Class] = true
 
 			return false

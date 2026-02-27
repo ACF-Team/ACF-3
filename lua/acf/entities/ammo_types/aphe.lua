@@ -3,7 +3,7 @@ local Classes   = ACF.Classes
 local Damage    = ACF.Damage
 local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("APHE", "AP")
-
+local Clock 	= ACF.Utilities.Clock
 
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
@@ -137,6 +137,7 @@ if SERVER then
 		local Fragment = Bullet.ProjMass - Filler
 		local DmgInfo  = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
+		Bullet.KillTime = Clock.CurTime
 		Damage.createExplosion(Position, Filler, Fragment, nil, DmgInfo)
 
 		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)

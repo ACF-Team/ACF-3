@@ -64,7 +64,7 @@ end
 function Ballistics.CalcBulletFlight(Bullet)
 	local ClockTime = Clock.CurTime
 
-	if Bullet.KillTime and ClockTime > Bullet.KillTime then
+	if Bullet.KillTime and ClockTime >= Bullet.KillTime then
 		return Ballistics.RemoveBullet(Bullet)
 	end
 

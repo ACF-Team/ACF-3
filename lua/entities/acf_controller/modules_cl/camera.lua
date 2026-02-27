@@ -1,9 +1,12 @@
+local CurTime = CurTime
+
 return function(State)
     State.CamAng = angle_zero
     State.FOV = 90
     State.Mode = 1
     State.CamOffset = vector_origin
     State.CamOrbit = 0
+    State.LastTimeAimTransmitted = 0
 
     -- Camera related
     local WorldCamMins = Vector(-4, -4, -4)
@@ -49,6 +52,7 @@ return function(State)
     end)
 
     hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)
+        if x == 0 and y == 0 then return end
         if not IsValid(State.MyController) then return end
 
         local MinFOV = State.MyController:GetZoomMin()
@@ -63,10 +67,13 @@ return function(State)
         local TrueSlew = Slew * 1 / 60 -- Previously used frametime, to keep average sensitivity the same, use 1/60 for 60 FPS
         State.CamAng = Angle(math.Clamp(State.CamAng.pitch + y * TrueSlew, -90, 90), State.CamAng.yaw - x * TrueSlew, 0)
 
-        net.Start("ACF_Controller_CamData", true)
-        net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-        net.WriteAngle(State.CamAng)
-        net.SendToServer()
+        if CurTime() > State.LastTimeAimTransmitted + 0.1 then -- Don't send aim data more than 10 times per second
+            State.LastTimeAimTransmitted = CurTime()
+            net.Start("ACF_Controller_CamData", true)
+            net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
+            net.WriteAngle(State.CamAng)
+            net.SendToServer()
+        end
     end)
 
     local LastFOV = State.FOV

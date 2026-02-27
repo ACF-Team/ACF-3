@@ -24,3 +24,10 @@ function Components.RegisterItem(ID, ClassID, Data)
 end
 
 Classes.AddGroupedFunctions(Components, Entries)
+
+-- This isn't actually related to components, but it doesn't have its own unique place to go...
+Classes.AddSboxLimit({
+	Name   = "_acf_controller",
+	Amount = 6,
+	Text   = "Maximum amount of ACF controllers a player can create."
+})

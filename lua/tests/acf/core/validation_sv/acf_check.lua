@@ -17,6 +17,7 @@ return {
             IsValid = function() return true end,
             IsWorld = function() return false end,
             IsWeapon = function() return false end,
+            GetBrushPlaneCount = function() return 0 end,
             GetClass = function() return "prop_physics" end,
             GetPhysicsObject = function() return PhysObj end,
         }
@@ -87,6 +88,21 @@ return {
                 Ent.ACF = nil
                 Ent.GetClass = function() return "prop_physics2" end
                 Ent.IsWeapon = function() return true end
+
+                local Activate = stub( ACF, "Activate" )
+
+                expect( ACF.Check( Ent ) ).to.beFalse()
+                expect( Activate ).wasNot.called()
+            end
+        },
+
+        {
+            name = "Returns false and does not Activate when Ent.ACF is not set, and Entity has a brush model",
+            func = function( State )
+                local Ent = State.Ent
+                Ent.ACF = nil
+                Ent.GetClass = function() return "prop_physics3" end
+                Ent.GetBrushPlaneCount = function() return 20 end
 
                 local Activate = stub( ACF, "Activate" )
 

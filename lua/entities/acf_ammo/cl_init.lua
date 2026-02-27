@@ -183,8 +183,8 @@ end
 
 do --MARK: Ammo rendering
 	local drawBoxes      = GetConVar( "acf_drawboxes" )
-	local wireOutline    = GetConVar( "wire_drawoutline" )
 	local getRoundOffset = ACF.GetRoundOffset
+	local WireRender     = Wire_Render
 
 	local function cleanupRoundModels( entity )
 		if not entity._RoundModels then return end
@@ -310,18 +310,17 @@ do --MARK: Ammo rendering
 	end
 
 	function ENT:Draw()
-		local ply = LocalPlayer()
-		if not IsValid( ply ) then return end
-
-		local looking          = ply:GetEyeTrace().Entity == self
-		local canShowInternals = looking and drawBoxes:GetBool() and self.HasData
+		local RenderContext = ACF.RenderContext
+		local LookedAt = RenderContext.LookAt == self
 
 		-- Not looking at the crate or ammo drawing is disabled
-		if not canShowInternals then
+		if not LookedAt or not drawBoxes:GetBool() or not self.HasData then
 			cleanupRoundModels( self )
 
-			if self.BaseClass and self.BaseClass.Draw then
-				self.BaseClass.Draw( self )
+			local BaseClass = self.BaseClass
+
+			if BaseClass and BaseClass.Draw then
+				BaseClass.Draw( self )
 			else
 				self:DrawModel()
 			end
@@ -330,7 +329,7 @@ do --MARK: Ammo rendering
 		end
 
 		-- Optional wireframe outline
-		if wireOutline and wireOutline:GetBool() then
+		if RenderContext.ShouldDrawOutline then
 			self:DrawEntityOutline()
 		end
 
@@ -353,8 +352,8 @@ do --MARK: Ammo rendering
 		self:DrawModel()
 		render.CullMode( MATERIAL_CULLMODE_CCW )
 
-		if Wire_Render then
-			Wire_Render( self )
+		if WireRender then
+			WireRender( self )
 		end
 	end
 

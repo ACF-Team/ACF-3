@@ -116,6 +116,8 @@ do
 		VerifyData(Data)
 
 		-- Creating the entity
+		if not Player:CheckLimit("_acf_controller") then return false end
+
 		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
 		if CanSpawn == false then return false end
 
@@ -126,6 +128,9 @@ do
 		Entity:SetAngles(Ang)
 		Entity:SetPos(Pos)
 		Entity:Spawn()
+
+		Player:AddCleanup("acf_controller", Entity)
+		Player:AddCount("_acf_controller", Entity)
 
 		Entity.Name = "ACF AIO Controller"
 		Entity.ShortName = "ACF AIO Controller"
@@ -242,17 +247,19 @@ end
 do
 	function ENT:ProcessReceivers(SelfTbl)
 		for Receiver, _ in pairs(SelfTbl.Receivers) do
-			local Detected = Receiver.Outputs.Detected.Value
-			local Direction = Receiver.Outputs.Direction.Value
-			if IsValid(Receiver) and (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
-				SelfTbl.ReceiverDirections[Receiver] = Direction
-				SelfTbl.ReceiverDetecteds[Receiver] = Detected
-				if Detected == 0 then return end
-				net.Start("ACF_Controller_Receivers")
-				net.WriteEntity(self)
-				net.WriteEntity(Receiver)
-				net.WriteVector(Direction)
-				net.Send(self.Driver)
+			if IsValid(Receiver) then
+				local Detected = Receiver.Outputs.Detected.Value
+				local Direction = Receiver.Outputs.Direction.Value
+				if (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
+					SelfTbl.ReceiverDirections[Receiver] = Direction
+					SelfTbl.ReceiverDetecteds[Receiver] = Detected
+					if Detected == 0 then return end
+					net.Start("ACF_Controller_Receivers")
+					net.WriteEntity(self)
+					net.WriteEntity(Receiver)
+					net.WriteVector(Direction)
+					net.Send(self.Driver)
+				end
 			end
 		end
 	end
