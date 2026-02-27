@@ -17,7 +17,6 @@ TOOL.Information = {
 if SERVER then
 	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Server to Client
 	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Client to Server
-	util.AddNetworkString("ACF_SoundMenu_GetSoundBank") --????
 end
 
 local Sounds = ACF.SoundToolSupport
