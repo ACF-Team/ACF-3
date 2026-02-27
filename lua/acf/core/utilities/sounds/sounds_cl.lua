@@ -274,12 +274,12 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end
 
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!")
+		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local SoundTable = {}
 
 		local Origin = net.ReadEntity()
 		local Count = net.ReadUInt(4)
-		local CountTable = function (Table)
+		local CountTable = function (Table) -- This function might not be needed, its for debugging purposes
 			if not istable(Table) then return end
 
 			local Count = 0
@@ -310,12 +310,12 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		if CountTable(SoundTable) == Count then
 			Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 		else
-			print("Got " .. CountTable(SoundTable) .. " out of a total of " .. Count .. " sounds!")
+			print("Got " .. CountTable(SoundTable) .. " out of a total of " .. Count .. " sounds!") -- Debug print
 		end
 	end)
 
 	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!")
+		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 

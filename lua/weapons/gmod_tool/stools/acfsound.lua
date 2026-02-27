@@ -115,15 +115,27 @@ function TOOL:LeftClick(trace)
 	GetSoundBankData(owner, trace.Entity, _, true)
 	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
 		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
-			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick())
+			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick()) -- Debug print
 
+			local SoundTable = {}
 			local Origin = net.ReadEntity()
-			local Table = net.ReadTable()
+			local Count = net.ReadUInt(4)
 
 			if not Origin then return end
-			if not istable(Table) then return end
+			for _ = 1, Count do
+				local RPM 		 = net.ReadUInt(14)
+				local StringPath = net.ReadString()
+				local Pitch 	 = net.ReadUInt(8)
+				local Volume 	 = net.ReadUInt(8)
+				local Width 	 = net.ReadUInt(4)
 
-			PrintTable(Table)
+				Volume = Volume * 0.01 -- Reduce the received value down to a float
+				table.insert(SoundTable, {	RPM    = RPM,
+											Path   = StringPath,
+											Pitch  = Pitch or 100,
+											Volume = Volume or 1,
+											Width  = Width or 0})
+			end
 			ReplaceSounds(ply, Origin, Table)
 		end)
 	end

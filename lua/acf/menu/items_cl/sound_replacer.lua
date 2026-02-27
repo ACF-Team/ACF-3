@@ -524,12 +524,13 @@ function ACF.CreateSoundMenu(Panel)
 		end
 
 		net.Receive("ACF_SoundMenu_Get_Multi", function(len)
-			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"")
+			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"") -- Debug print
 
 			local Origin = net.ReadEntity()
 			if not Origin then return end
 
 			local Feedback = net.ReadBool()
+			-- Get and populate menu
 			if not Feedback then
 				local Count = net.ReadUInt(4)
 				local SoundTable = {}
@@ -553,25 +554,25 @@ function ACF.CreateSoundMenu(Panel)
 				table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
 
 				PopulateMenu(SoundTable, Count)
-			else
+			else -- Get and Set entities' soundbank
 				net.Start("ACF_SoundMenu_Set_Multi")
 					net.WriteEntity(Origin)
+					net.WriteUInt(Current.Count, 4)
+				for I = 1, I <= Current.Count do
+					local RPM = GetClientNumber("RPM " .. I)
+					local Path = GetClientString("Path " .. I)
+					local Pitch = GetClientNumber("Pitch " .. I)
+					local Volume = GetClientNumber("Volume " .. I)
+					local Width = GetClientNumber("Width " .. I)
 
-					local Table = {}
-					for I = 1, Current.Count do
-						local RPM = GetClientNumber("RPM " .. I)
-						local Path = GetClientString("Path " .. I)
-						local Pitch = GetClientNumber("Pitch " .. I)
-						local Volume = GetClientNumber("Volume " .. I)
-						local Width = GetClientNumber("Width " .. I)
-
-						table.insert(Table, {RPM = RPM,
-											 Path = Path,
-											 Pitch = Pitch,
-											 Volume = Volume,
-											 Width = Width})
-					end
-					net.WriteTable(Table)
+					Volume = Volume * 100 -- Increase the value up to an int
+					net.WriteUInt(RPM, 14)
+					net.WriteString(Path)
+					net.WriteUInt(Pitch, 8)
+					net.WriteUInt(Volume, 8)
+					net.WriteUInt(Width, 4)
+				end
+				-- We're taking the supposition here that the values being sent are already sorted
 				net.SendToServer()
 			end
 		end)
