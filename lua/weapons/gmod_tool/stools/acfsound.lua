@@ -21,7 +21,7 @@ end
 
 local Sounds = ACF.SoundToolSupport
 
-local function GetSoundBankData(Player, Entity, Data, Loopback)
+local function DoSoundBankData(Player, Entity, Data, Loopback)
 	net.Start("ACF_SoundMenu_Get_Multi")
 		net.WriteEntity(Entity)
 	if not Loopback then
@@ -112,7 +112,7 @@ function TOOL:LeftClick(trace)
 	ReplaceSound(owner, trace.Entity, { sound, pitch, volume })
 
 	-- Simple call just to get the client's sound menu data 
-	GetSoundBankData(owner, trace.Entity, _, true)
+	DoSoundBankData(owner, trace.Entity, _, true)
 	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
 		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
 			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick()) -- Debug print
@@ -172,7 +172,7 @@ function TOOL:RightClick(trace)
 
 	-- Send the found soundbank table from the entity to the client for sound menu population
 	if soundTable then
-		GetSoundBankData(owner, trace.Entity, soundTable, false)
+		DoSoundBankData(owner, trace.Entity, soundTable, false)
 	end
 
 	return true
