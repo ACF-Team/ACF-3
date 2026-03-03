@@ -629,10 +629,9 @@ end
 
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
+
 	local SoundBank  = SelfTbl.SoundBank
 	local SoundCount = GetSoundCount(self)
-
-	--PrintTable(SelfTbl.SoundBank)
 
 	if SelfTbl.Sound then
 		local Throttle = Round(SelfTbl.Throttle, 2) * 100

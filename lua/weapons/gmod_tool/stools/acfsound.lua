@@ -136,7 +136,7 @@ function TOOL:LeftClick(trace)
 											Volume = Volume or 1,
 											Width  = Width or 0})
 			end
-			ReplaceSounds(ply, Origin, Table)
+			ReplaceSounds(ply, Origin, SoundTable)
 		end)
 	end
 
