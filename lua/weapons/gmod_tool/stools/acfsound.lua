@@ -24,7 +24,7 @@ local Sounds = ACF.SoundToolSupport
 local function DoSoundBankData(Player, Entity, Data, Loopback)
 	net.Start("ACF_SoundMenu_Get_Multi")
 		net.WriteEntity(Entity)
-	if not Loopback then
+	if not Loopback then -- Send the sound table to populate the client's sound replacer menu
 		local soundTable = Data
 		local count = #soundTable
 
@@ -47,7 +47,7 @@ local function DoSoundBankData(Player, Entity, Data, Loopback)
 			net.WriteUInt(width, 4)
 		end
 	else
-		net.WriteBool(true)
+		net.WriteBool(true) -- Otherwise we get from the client's data vars to create and replace the entity's soundbank
 	end
 	net.Send(Player)
 end
@@ -136,7 +136,7 @@ function TOOL:LeftClick(trace)
 											Volume = Volume or 1,
 											Width  = Width or 0})
 			end
-			ReplaceSounds(ply, Origin, Table)
+			ReplaceSounds(ply, Origin, SoundTable)
 		end)
 	end
 
