@@ -130,7 +130,7 @@ local function GetSoundCount(Engine)
 	for _ in pairs(Engine.SoundBank) do
 		SoundCount = SoundCount + 1
 	end
-	return SoundCount
+	return math.max(SoundCount, 1)
 end
 
 local function GetPitchVolume(Engine)
@@ -319,8 +319,9 @@ do -- Spawn and Update functions
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
+		Entity.DefaultSoundBank = Engine.SoundBank
 		Entity.SoundBank 		= Engine.SoundBank
-		Entity.SoundCount       = GetSoundCount(Engine) or 1
+		Entity.SoundCount       = GetSoundCount(Engine)
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -636,10 +637,16 @@ function ENT:UpdateSoundBank(SelfTbl)
 	if SelfTbl.Sound then
 		local Throttle = Round(SelfTbl.Throttle, 2) * 100
 		local RPM = Round(SelfTbl.FlyRPM)
+
 		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 	else
-		Sounds.CreateMultipleAdjustableSounds(self, SoundBank, SoundCount)
-		SelfTbl.Sound = true
+		if table.IsEmpty(SoundBank) then
+			SelfTbl.SoundBank = SelfTbl.DefaultSoundBank or {}
+		else
+			Sounds.CreateMultipleAdjustableSounds(self, SoundBank, SoundCount)
+			SelfTbl.Sound = true
+		end
+
 		SelfTbl.SoundCount = GetSoundCount(self)
 	end
 end

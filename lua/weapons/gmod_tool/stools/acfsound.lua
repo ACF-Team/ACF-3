@@ -46,8 +46,8 @@ local function DoSoundBankData(Player, Entity, Data, Loopback)
 			net.WriteUInt(volume, 8)
 			net.WriteUInt(width, 4)
 		end
-	else
-		net.WriteBool(true) -- Otherwise we get from the client's data vars to create and replace the entity's soundbank
+	else -- Otherwise we get from the client's data vars to create and replace the entity's soundbank
+		net.WriteBool(true)
 	end
 	net.Send(Player)
 end
@@ -71,6 +71,20 @@ end
 
 duplicator.RegisterEntityModifier("acf_replacesound", ReplaceSound)
 
+-- Just like the above function, except for soundbanks
+local function ReplaceSounds(_, Entity, Data)
+	if not IsValid(Entity) then return end
+
+	local Support = Sounds[Entity:GetClass()]
+	if not Support then return end
+
+	Support.SetSoundBank(Entity, Data)
+
+	duplicator.StoreEntityModifier(Entity, "acf_replacesoundbank", Data)
+end
+
+duplicator.RegisterEntityModifier("acf_replacesoundbank", ReplaceSounds)
+
 local function IsReallyValid(trace, ply)
 	if not trace.Entity:IsValid() then return false end
 	if trace.Entity:IsPlayer() then return false end
@@ -90,15 +104,6 @@ local function IsReallyValid(trace, ply)
 	return true
 end
 
-local function ReplaceSounds(_, Entity, Data)
-	if not IsValid(Entity) then return end
-
-	local Support = Sounds[Entity:GetClass()]
-	if not Support then return end
-
-	Support.SetSoundBank(Entity, Data)
-end
-
 function TOOL:LeftClick(trace)
 	local owner = self:GetOwner()
 
@@ -114,8 +119,8 @@ function TOOL:LeftClick(trace)
 	-- Simple call just to get the client's sound menu data 
 	DoSoundBankData(owner, trace.Entity, _, true)
 	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
-		net.Receive("ACF_SoundMenu_Set_Multi", function (len, ply)
-			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick()) -- Debug print
+		net.Receive("ACF_SoundMenu_Set_Multi", function (_, ply)
+			--print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick()) -- Debug print
 
 			local SoundTable = {}
 			local Origin = net.ReadEntity()
@@ -186,6 +191,10 @@ function TOOL:Reload(trace)
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
 	support.ResetSound(trace.Entity)
+
+	-- If it has a soundbank set, we also reset that
+	if not trace.Entity.SoundBank then return true end
+	support.ResetSoundBank(trace.Entity)
 
 	return true
 end
