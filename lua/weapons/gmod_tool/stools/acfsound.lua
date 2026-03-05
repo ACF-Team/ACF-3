@@ -12,15 +12,22 @@ TOOL.Information = {
 	{ name = "info" }
 }
 
--- NOTE: I would have used concommands just to set clients data, however i didn't feel like using them here since i don't know how to use them lol
+-- NOTE(TMF): I would have used concommands just to set clients data, however i didn't feel like using them here since i don't know how to use them lol
 -- So instead i went the dumb, hard and convoluted way and network the data needed back and forth
 if SERVER then
-	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Server to Client
-	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Client to Server
+	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Networks data from Entity(Server) to Client
+	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Networks data from Client to Entity(Server)
 end
 
 local Sounds = ACF.SoundToolSupport
 
+	--- This function acts like a getter/setter where we network an entity soundbank data back and forth between the client and the server 
+	--- This allows the client to populate a menu with the data received from the server's entity(engine) or...
+	--- Sends any datavars that the client has back to the server to update an entity's soundbank table with the datavars that the client had, if any.
+	--- @param Player player The player who clicked on the Entity
+	--- @param Entity entity The entity, which has to be an engine(for now)
+	--- @param Data table? The soundbank table to set soundbank Data to the Entity or not
+	--- @param Loopback bool? False to just populate a client menu and its datavars or True to GET the datavars from client and send them back 
 local function DoSoundBankData(Player, Entity, Data, Loopback)
 	net.Start("ACF_SoundMenu_Get_Multi")
 		net.WriteEntity(Entity)
@@ -52,6 +59,7 @@ local function DoSoundBankData(Player, Entity, Data, Loopback)
 	net.Send(Player)
 end
 
+-- Sets the sound, pitch and volume to a valid ACF entity
 local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
 
@@ -85,6 +93,7 @@ end
 
 duplicator.RegisterEntityModifier("acf_replacesoundbank", ReplaceSounds)
 
+-- An improved IsValid function, just to check if an entity is ACF class and if it has support from this tool
 local function IsReallyValid(trace, ply)
 	if not trace.Entity:IsValid() then return false end
 	if trace.Entity:IsPlayer() then return false end
@@ -118,10 +127,8 @@ function TOOL:LeftClick(trace)
 
 	-- Simple call just to get the client's sound menu data 
 	DoSoundBankData(owner, trace.Entity, _, true)
-	do -- Sound Table from client reception, this is the same as the one displayed on the client's menu
+	do -- Receives any datavars from the client, which matches what's seen regarding any values on the menu 
 		net.Receive("ACF_SoundMenu_Set_Multi", function (_, ply)
-			--print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Set_Multi\" from player " .. ply:Nick()) -- Debug print
-
 			local SoundTable = {}
 			local Origin = net.ReadEntity()
 			local Count = net.ReadUInt(4)

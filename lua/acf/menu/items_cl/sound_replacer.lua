@@ -523,16 +523,15 @@ function ACF.CreateSoundMenu(Panel)
 			-- Set the slider to whatever count is
 			ListSlider:SetValue(Count)
 		end
-		-- A net string to receive and populate the menu or to send back to server the client's datavars
-		net.Receive("ACF_SoundMenu_Get_Multi", function(len)
-			print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"") -- Debug print
+		-- Receives data to populate the menu or to send back to server the client's datavars
+		net.Receive("ACF_SoundMenu_Get_Multi", function()
+			--print("Received " .. len .. " bits for call: \"ACF_SoundMenu_Get_Multi\"") -- Debug print
 
 			local Origin = net.ReadEntity()
 			if not Origin then return end
 
 			local Feedback = net.ReadBool()
-			-- Get the data from the entity and populate menu
-			if not Feedback then
+			if not Feedback then -- Get the data from the entity and populate menu
 				local Count = net.ReadUInt(4)
 
 				for I = 1, Count do
@@ -551,7 +550,7 @@ function ACF.CreateSoundMenu(Panel)
 					SetClientData("Width " .. I, Width)
 				end
 				PopulateMenu(Count)
-			else -- Get and Set entities' soundbank
+			else -- Gets any datavars and networks them back to the server
 				net.Start("ACF_SoundMenu_Set_Multi")
 					net.WriteEntity(Origin)
 					net.WriteUInt(Current.Count, 4)
@@ -569,7 +568,7 @@ function ACF.CreateSoundMenu(Panel)
 					net.WriteUInt(Volume, 8)
 					net.WriteUInt(Width, 4)
 				end
-				-- We're taking the supposition here that the values being sent are already sorted
+				-- We're making the supposition here that the values being sent are already sorted
 				net.SendToServer()
 			end
 		end)
