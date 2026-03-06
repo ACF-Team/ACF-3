@@ -4,13 +4,20 @@ local GetClientData, SetClientData = ACF.GetClientData, ACF.SetClientData
 local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientString
 
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local Current = {Panels = {},     -- Contains the panel objects
-				Count  = 0,      -- Keeps count of them
-				Graph  = {       -- This only relates to the graph
+local Current = {Panels = {},     		-- Contains the panel objects
+				 Count  = 0,      		-- Keeps count of them
+				 Graph  = {       		-- This only relates to the graph
 					Idle      = 0,
 					Redline   = 1,
-					RPMSlider = 2}
-				}
+					RPMSlider = 2},
+				 Colors = (function() 	-- This IIFE returns a table with all the randomized colors 
+					local ColorTable = {}
+					for I = 1, _MAXSOUNDS do
+						ColorTable[I] = ColorRand()
+					end
+					return ColorTable
+				 end)()
+				 }
 --- Generates the menu used in the Sound Replacer tool.
 --- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel)
@@ -18,29 +25,31 @@ function ACF.CreateSoundMenu(Panel)
 	-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
 	-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
 	local function UpdateGraph(Panel)
-		local Count = #Current.Panels
+		local Count = Current.Count
 		if not Count then return end
+
+		local clamp = math.Clamp
+		local fade = Sounds.Fade
 
 		Panel:Clear()
 
 		for I = 1, Count do
-			local addCurveWidth = GetClientNumber("Width " .. I, 0) -- Current.Panels[I].Width 
-			local pitch = GetClientNumber("Pitch " .. I, 0) -- Current.Panels[I].Pitch 
+			local addCurveWidth = GetClientNumber("Width " .. I, 0)
+			local pitch = GetClientNumber("Pitch " .. I, 0)
 			--local volume = Current.Panels[I].Volume * 100 -- Idk if we want to plot volume as a function
-			local min = I == 1 and 0 or GetClientNumber("RPM " .. math.Clamp(I - 1 - addCurveWidth, 0, 16383))
+			local min = I == 1 and 0 or GetClientNumber("RPM " .. clamp(I - 1 - addCurveWidth, 1, _MAXSOUNDS))
 			local mid = GetClientNumber("RPM " .. I, 0)
 			-- TODO(TMF): The max value below is hardcoded, this should be a global!
-			local max = I == Count and 16383 or GetClientNumber("RPM " .. math.Clamp(I + 1 + addCurveWidth, 0, 16383))
+			local max = I == Count and 16383 or GetClientNumber("RPM " .. clamp(I + 1 + addCurveWidth, 1, _MAXSOUNDS))
 
-			Panel:PlotFunction("Sound " .. I, nil, function(X)
-				return (Sounds.Fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * pitch
+			Panel:PlotFunction("Sound " .. I, Current.Colors[I], function(X)
+				return (fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * pitch
 			end)
 		end
 	end
 	-- The function that adds the panels to the menu
 	local function AddValuePanel(Menu)
-		local ID = #Current.Panels == 0 and 1 or #Current.Panels + 1
-		local ButtonHeight = 20
+		local ID = #Current.Panels == 0 and 1 or #Current.Panels + 1 -- Ensure it always begins from 1 and increments from there on
 
 		-- Defaults
 		local DefaultPath   = ""
@@ -106,7 +115,7 @@ function ACF.CreateSoundMenu(Panel)
 		PathText:SetParent(TopDiv)
 		PathText:Dock(FILL)
 		PathText:DockMargin(-25, 0, 0, 0)
-		PathText:SetTall(ButtonHeight)
+		PathText:SetTall(Menu.ButtonHeight)
 		PathText:SetValue(GetClientString("Path " .. ID, DefaultPath))
 		PathText:SetClientData("Path " .. ID, "OnValueChange")
 		PathText:DefineSetter(function(Panel, _, _, Value)
@@ -323,8 +332,10 @@ function ACF.CreateSoundMenu(Panel)
 				-- The top group where the graph lies
 				local GraphGroup = self:AddCollapsible("Graph", nil, "icon16/chart_curve_edit.png")
 				local GraphPanel = self:AddPanel("DPanel")
-				local LabelTop = self:AddLabel()
-				SoundGraph = self:AddGraph() -- A Glocal so we can feed the other functions
+				local LabelTop = self:AddLabel("This graph shows how your engine sound/s will be heard in function of RPM.\
+												Beware this panel can be resource intensive if you add too many sounds!")
+				local RefreshBtn = self:AddPanel("DImageButton")
+				SoundGraph = self:AddGraph() -- A Glocal so other functions can call this
 				local PanelBottom = self:AddPanel("ACF_Panel")
 				local IdleLabel = self:AddLabel("Idle:")
 				local IdleWang = self:AddPanel("DNumberWang", 0, 2000)
@@ -335,6 +346,7 @@ function ACF.CreateSoundMenu(Panel)
 				local SoundPre = self:AddPanel("ACF_Panel")
 				local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
 				local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters
+				local VolumeSlider = self:AddSlider("#tool.acfsound.volume", 0.1, 1, 2)
 
 				-- Set defaults
 				local DefaultIdle = GetClientData("Idle", 800)
@@ -349,10 +361,21 @@ function ACF.CreateSoundMenu(Panel)
 				GraphPanel:SetParent(GraphGroup)
 				GraphPanel:DockPadding(4, 4, 4, 8)
 				GraphPanel:Dock(TOP)
-				GraphPanel:SetTall(368) -- Why can't this grow dynamically 
+				GraphPanel:SetTall(436) -- Why can't this grow dynamically 
 
 				LabelTop:SetParent(GraphPanel)
 				LabelTop:Dock(TOP)
+				LabelTop:DockMargin(0, 2, 0, 2)
+
+				RefreshBtn:SetParent(LabelTop)
+				RefreshBtn:Dock(RIGHT)
+				RefreshBtn:SetImage("icon16/arrow_refresh_small.png")
+				RefreshBtn:SetTooltip("Refresh this graph.")
+				RefreshBtn:SetStretchToFit(false)
+				RefreshBtn:SetSize(16, 16)
+				RefreshBtn.DoClick = function()
+					UpdateGraph(SoundGraph)
+				end
 
 				SoundGraph:SetParent(GraphPanel)
 				SoundGraph:Dock(TOP)
@@ -377,6 +400,7 @@ function ACF.CreateSoundMenu(Panel)
 				IdleWang:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetMinMax(0, 2000) -- I shouldn't even need to do this!
 					Panel:SetValue(Value)
+					RedlineWang:SetMin(Value or 1)
 					Current.Graph["Idle"] = Value
 
 					return Value
@@ -389,15 +413,14 @@ function ACF.CreateSoundMenu(Panel)
 				RedlineWang:SetParent(PanelBottom)
 				RedlineWang:Dock(LEFT)
 				RedlineWang:SetValue(DefaultRedline)
+				RedlineWang:SetMinMax(Current.Graph["Idle"], 16383)
 				RedlineWang:SetClientData("Redline", "OnValueChanged")
 				RedlineWang:DefineSetter(function(Panel, _, _, Value)
 					-- TODO(TMF): The max value below is hardcoded, this should be a global!
-					Panel:SetMin(Current.Graph["Idle"] or 1)
-					Panel:SetMax(16383)
 					Panel:SetValue(Value)
 					Current.Graph["Redline"] = Value
 
-					SoundGraph:SetXRange(0, Value + Current.Graph["Idle"])
+					SoundGraph:SetXRange(0, Value + 1000)
 					SoundGraph:SetXSpacing(Value < 1000 and 100 or 1000)
 					return Value
 				end)
@@ -419,6 +442,10 @@ function ACF.CreateSoundMenu(Panel)
 					SoundGraph:PlotLimitLine("RPM", false, Value, color_black)
 					return Value
 				end)
+
+				VolumeSlider:SetConVar("acfsound_volume")
+				VolumeSlider:SetParent(GraphPanel)
+				VolumeSlider:Dock(TOP)
 
 				SoundPre:SetParent(GraphPanel)
 				SoundPre:SetWide(Menu.Wide)
@@ -476,11 +503,11 @@ function ACF.CreateSoundMenu(Panel)
 				ListPanel:SetParent(ValuesGroup)
 				ListPanel:Dock(TOP)
 				ListPanel.OnChildAdded = function()
-					-- Disable the button if enough panels exist already
-					if #Current.Panels >= _MAXSOUNDS then AddValue:SetEnabled(false) return end
-
 					Current.Count = #Current.Panels
 					UpdateGraph(SoundGraph) -- Update our graph	
+
+					-- Disable the button if enough panels exist already
+					if #Current.Panels >= _MAXSOUNDS then AddValue:SetEnabled(false) return end
 				end
 				ListPanel.OnChildRemoved = function()
 					AddValue:SetEnabled(true) -- Re-enable our add button

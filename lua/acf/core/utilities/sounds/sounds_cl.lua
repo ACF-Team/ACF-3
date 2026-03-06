@@ -1,5 +1,7 @@
 local Sounds = ACF.Utilities.Sounds
+local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
 local map = math.Remap
+local clamp = math.Clamp
 
 do -- Valid sound check
 	local file     = file
@@ -183,7 +185,6 @@ end
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
--- https://i.imgur.com/KaFmaMf.png
 function Sounds.Fade(n, min, mid, max)
 	local _PI = math.pi
 
@@ -201,12 +202,16 @@ end
 --local SmoothThrottle = 0
 
 -- This is where the magic to interpolate sounds happen.
+-- In order to make yourself a better idea of what this does you can consult the image below:
+-- https://i.imgur.com/KaFmaMf.png
 local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	local SoundObjects = Origin.SoundObjects
+	local fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
 	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
 	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle * 10
 
 	-- Sound volumes when throttle is 0 and 100 respectively
+	-- TODO(TMF): This should be able to be configured from the sound menu or to be a function of the engine's load
 	local _OFFVOLUME = 0.25
 	local _ONVOLUME = 1
 
@@ -217,10 +222,10 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 
 		local addCurveWidth = soundTable.Width or 0
 		local enginePitch = soundTable.Pitch or 1
-		local min    = idx == 1 and 0 or SoundObjects[idx - 1].RPM
+		local min    = idx == 1 and 0 or SoundObjects[clamp(idx - 1 - addCurveWidth, 1, _MAXSOUNDS)].RPM
 		local mid    = RPM
-		local max    = idx == #SoundObjects and 16383 or SoundObjects[idx + 1].RPM
-		local curve  = Sounds.Fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
+		local max    = idx == #SoundObjects and 16383 or SoundObjects[clamp(idx + 1 + addCurveWidth, 1, _MAXSOUNDS)].RPM
+		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
 		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.Volume or 1)
 		local pitch  = (RPM / soundTable.RPM) * enginePitch
 
@@ -273,21 +278,14 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		Origin.SoundCount = 0
 	end
 
+	-- For multiple sounds creation
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
 		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local SoundTable = {}
 
 		local Origin = net.ReadEntity()
 		local Count = net.ReadUInt(4)
-		local CountTable = function (Table) -- This function might not be needed, its for debugging purposes
-			if not istable(Table) then return end
 
-			local Count = 0
-			for _ in pairs(Table) do
-				Count = Count + 1
-			end
-			return Count
-		end
 		local I = 0
 
 		while (I < Count) do
@@ -306,14 +304,10 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 									    Sound  = nil }) -- Fuck it we ball
 			I = I + 1
 		end
-
-		if CountTable(SoundTable) == Count then
-			Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
-		else
-			print("Got " .. CountTable(SoundTable) .. " out of a total of " .. Count .. " sounds!") -- Debug print
-		end
+		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 
+	-- For updates on multiple sounds
 	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
 		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
 		local Origin = net.ReadEntity()
