@@ -10,11 +10,18 @@ local Current = {Panels = {},     		-- Contains the panel objects
 					Idle      = 0,
 					Redline   = 1,
 					RPMSlider = 2},
-				 Colors = (function() 	-- This IIFE returns a table with all the randomized colors 
+				 Colors = (function() 	-- This IIFE returns a table with all the randomized colors and if the text should be dark or light colored
 					local ColorTable = {}
+
 					for I = 1, _MAXSOUNDS do
-						ColorTable[I] = ColorRand()
+						local colorRand = ColorRand()
+
+						-- Calculate luminance to determine text color (0.2126*R + 0.7152*G + 0.0722*B)
+						local luminance = (0.2126 * colorRand.r + 0.7152 * colorRand.g + 0.0722 * colorRand.b) / 255
+						local textColor = luminance > 0.5 and color_black or color_white
+						ColorTable[I] = {colorRand, textColor}
 					end
+
 					return ColorTable
 				 end)()
 				 }
@@ -42,7 +49,7 @@ function ACF.CreateSoundMenu(Panel)
 			-- TODO(TMF): The max value below is hardcoded, this should be a global!
 			local max = I == Count and 16383 or GetClientNumber("RPM " .. clamp(I + 1 + addCurveWidth, 1, _MAXSOUNDS))
 
-			Panel:PlotFunction("Sound " .. I, Current.Colors[I], function(X)
+			Panel:PlotLimitFunction("Sound " .. I, 0, 16383, Current.Colors[I][1], function(X)
 				return (fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * pitch
 			end)
 		end
@@ -50,10 +57,12 @@ function ACF.CreateSoundMenu(Panel)
 	-- The function that adds the panels to the menu
 	local function AddValuePanel(Menu)
 		local ID = #Current.Panels == 0 and 1 or #Current.Panels + 1 -- Ensure it always begins from 1 and increments from there on
+		local BGColor   = Current.Colors[ID][1] or color_white
+		local TextColor = Current.Colors[ID][2]
 
 		-- Defaults
-		local DefaultPath   = ""
 		local DefaultRPM    = 1000 * ID
+		local DefaultPath   = ""
 		local DefaultPitch  = 100
 		local DefaultVolume = 1
 		local DefaultWidth  = 0
@@ -81,6 +90,7 @@ function ACF.CreateSoundMenu(Panel)
 		Base:SetTall(72)
 		Base:DockPadding(4, 6, 4, 0)
 		Base:DockMargin(0, 0, 0, 0)
+		Base:SetBackgroundColor(BGColor)
 
 		TopDiv:SetParent(Base)
 		TopDiv:Dock(TOP)
@@ -91,6 +101,7 @@ function ACF.CreateSoundMenu(Panel)
 		RPMLabel:SetParent(TopDiv)
 		RPMLabel:DockMargin(0, 0, 0, 0)
 		RPMLabel:Dock(LEFT)
+		RPMLabel:SetTextColor(TextColor)
 
 		RPMWang:SetParent(TopDiv)
 		RPMWang:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
@@ -111,6 +122,7 @@ function ACF.CreateSoundMenu(Panel)
 
 		PathLabel:SetParent(TopDiv)
 		PathLabel:Dock(LEFT)
+		PathLabel:SetTextColor(TextColor)
 
 		PathText:SetParent(TopDiv)
 		PathText:Dock(FILL)
@@ -162,8 +174,9 @@ function ACF.CreateSoundMenu(Panel)
 
 			-- Set the label of the remaining panels up
 			for i = ID, Current.Count do
-				if not Current.Panels[i] then continue end
+				if not Current.Panels[i] and IsValid(Current.Panels[i]) then continue end
 				Current.Panels[i]:SetLabel("Value " .. i)
+				Current.Panels[i]:SetBGColor(Current.Colors[i][1])
 			end
 		end
 
@@ -181,6 +194,7 @@ function ACF.CreateSoundMenu(Panel)
 
 		PitchLabel:SetParent(BotDiv)
 		PitchLabel:Dock(LEFT)
+		PitchLabel:SetTextColor(TextColor)
 
 		PitchWang:SetParent(BotDiv)
 		PitchWang:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
@@ -194,6 +208,7 @@ function ACF.CreateSoundMenu(Panel)
 
 		VolumeLabel:SetParent(BotDiv)
 		VolumeLabel:Dock(LEFT)
+		VolumeLabel:SetTextColor(TextColor)
 
 		VolumeWang:SetParent(BotDiv)
 		VolumeWang:SetWide(40) -- Equivalent to 0.00 + up/down buttons at font size = 16 + padding
@@ -207,6 +222,7 @@ function ACF.CreateSoundMenu(Panel)
 
 		WidthLabel:SetParent(BotDiv)
 		WidthLabel:Dock(LEFT)
+		WidthLabel:SetTextColor(TextColor)
 
 		WidthWang:SetParent(BotDiv)
 		WidthWang:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
