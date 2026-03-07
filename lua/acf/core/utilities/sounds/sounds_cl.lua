@@ -279,8 +279,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end
 
 	-- For multiple sounds creation
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+		--print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local SoundTable = {}
 
 		local Origin = net.ReadEntity()
@@ -308,8 +308,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end)
 
 	-- For updates on multiple sounds
-	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
+	net.Receive("ACF_Sounds_Adjustable_Multi", function()
+		--print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 
