@@ -124,7 +124,7 @@ local TickInterval = engine.TickInterval
 
 -- Count all the existing sounds in a SoundBank
 local function GetSoundCount(Engine)
-	if not Engine.SoundBank then return end
+	if not Engine.SoundBank then return 1 end
 
 	local SoundCount = 0
 	for _ in pairs(Engine.SoundBank) do
